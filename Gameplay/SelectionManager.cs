@@ -1,0 +1,206 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Sinbinder.Gameplay
+{
+    public class SelectionManager : MonoBehaviour
+    {
+        public static SelectionManager Instance { get; private set; }
+
+        [SerializeField] private RectTransform _selectionBox;
+        [SerializeField] private LayerMask _unitLayer;
+        [SerializeField] private LayerMask _groundLayer;
+
+        private List<SelectionComponent> _selectedUnits = new();
+        private List<SelectionComponent> _allUnits = new();
+
+        private Vector2 _selectionStart;
+        private bool _isSelecting;
+        private Camera _cam;
+
+        public System.Action<List<SelectionComponent>> OnSelectionChanged;
+
+        void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+                _cam = Camera.main;
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        void Update()
+        {
+            HandleSelectionInput();
+            HandleCommandInput();
+        }
+
+        public void RegisterUnit(SelectionComponent unit)
+        {
+            if (!_allUnits.Contains(unit))
+                _allUnits.Add(unit);
+        }
+
+        public void UnregisterUnit(SelectionComponent unit)
+        {
+            _allUnits.Remove(unit);
+            _selectedUnits.Remove(unit);
+        }
+
+        private void HandleSelectionInput()
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                _selectionStart = Input.mousePosition;
+                _isSelecting = true;
+
+                if (_selectionBox != null)
+                {
+                    _selectionBox.gameObject.SetActive(true);
+                    _selectionBox.position = _selectionStart;
+                    _selectionBox.sizeDelta = Vector2.zero;
+                }
+            }
+
+            if (_isSelecting && Input.GetMouseButton(0))
+            {
+                Vector2 currentPos = Input.mousePosition;
+                Vector2 min = Vector2.Min(_selectionStart, currentPos);
+                Vector2 max = Vector2.Max(_selectionStart, currentPos);
+
+                if (_selectionBox != null)
+                {
+                    _selectionBox.position = min;
+                    _selectionBox.sizeDelta = max - min;
+                }
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                _isSelecting = false;
+                if (_selectionBox != null)
+                    _selectionBox.gameObject.SetActive(false);
+
+                float dragDistance = Vector2.Distance(_selectionStart, Input.mousePosition);
+
+                if (dragDistance < 10f)
+                {
+                    HandleSingleClick();
+                }
+                else
+                {
+                    HandleBoxSelection();
+                }
+            }
+        }
+
+        private void HandleSingleClick()
+        {
+            Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, _unitLayer))
+            {
+                var unit = hit.collider.GetComponent<SelectionComponent>();
+                if (unit != null)
+                {
+                    if (!Input.GetKey(KeyCode.LeftShift))
+                        DeselectAll();
+
+                    SelectUnit(unit);
+                }
+                else
+                {
+                    DeselectAll();
+                }
+            }
+            else
+            {
+                DeselectAll();
+            }
+        }
+
+        private void HandleBoxSelection()
+        {
+            DeselectAll();
+
+            Vector2 min = Vector2.Min(_selectionStart, Input.mousePosition);
+            Vector2 max = Vector2.Max(_selectionStart, Input.mousePosition);
+            Rect selectionRect = new Rect(min, max - min);
+
+            foreach (var unit in _allUnits)
+            {
+                if (unit == null) continue;
+
+                Vector3 screenPos = _cam.WorldToScreenPoint(unit.transform.position);
+                if (selectionRect.Contains(screenPos))
+                {
+                    SelectUnit(unit);
+                }
+            }
+        }
+
+        private void SelectUnit(SelectionComponent unit)
+        {
+            unit.Select();
+            _selectedUnits.Add(unit);
+            OnSelectionChanged?.Invoke(_selectedUnits);
+        }
+
+        private void DeselectAll()
+        {
+            foreach (var unit in _selectedUnits)
+            {
+                if (unit != null)
+                    unit.Deselect();
+            }
+            _selectedUnits.Clear();
+            OnSelectionChanged?.Invoke(_selectedUnits);
+        }
+
+        public List<SelectionComponent> GetSelectedUnits()
+        {
+            _selectedUnits.RemoveAll(u => u == null);
+            return _selectedUnits;
+        }
+
+        private void HandleCommandInput()
+        {
+            if (Input.GetMouseButtonDown(1) && _selectedUnits.Count > 0)
+            {
+                Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
+                if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+                {
+                    var enemyUnit = hit.collider.GetComponent<SelectionComponent>();
+                    if (enemyUnit != null && !_selectedUnits.Contains(enemyUnit))
+                    {
+                        foreach (var unit in _selectedUnits)
+                        {
+                            if (unit != null)
+                            {
+                                var mover = unit.GetComponent<UnitMover>();
+                                if (mover != null)
+                                    mover.CommandAttack(enemyUnit.gameObject);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var unit in _selectedUnits)
+                        {
+                            if (unit != null)
+                            {
+                                var mover = unit.GetComponent<UnitMover>();
+                                if (mover != null)
+                                    mover.CommandMove(hit.point);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
