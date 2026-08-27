@@ -1,0 +1,72 @@
+🛩️ Чек-лист: Knightcore-сцена и AOS-заготовка
+Цель: превратить пустую сцену в мрачный, стилизованный под Knightcore прототип с готовым фундаментом для AOS.
+
+1. Подготовка сцены (5 минут)
+☑ Открой Unity и создай новую сцену (File → New Scene). Сохрани её как TestScene.unity.
+☑ Удали Directional Light (он нам не нужен, будет своё освещение).
+☑ Добавь плоскость (GameObject → 3D Object → Plane). Это будет пол. Назови её Ground.
+☑ Добавь 2–3 куба, растяни их, чтобы получились стены/надгробия. Расставь вокруг.
+☑ Note: Пока используем встроенные примитивы. Модели будут позже.
+2. Knightcore-фильтр (10 минут)
+☑ Убедись, что установлен Post Processing (Window → Package Manager → Post Processing → Install).
+☑ На Main Camera добавь компонент Post Process Layer. В поле Volume Layer выбери слой Everything (или создай новый слой PostProcessing).
+☑ В Project создай Post Process Profile (ПКМ → Create → Post Processing Profile). Назови KnightcoreProfile.
+☑ На Main Camera добавь компонент Post Process Volume. Поставь галочку Is Global. В поле Profile перетащи созданный KnightcoreProfile.
+☑ В Project выбери KnightcoreProfile. В инспекторе нажимай Add Effect и добавляй эффекты строго в этом порядке:
+Color Grading: Mode = Low Definition Range (LDR). Temperature = -10, Saturation = -25, Contrast = 15.
+
+Vignette: Intensity = 0.4, Color = чёрный.
+
+Grain: Intensity = 0.2, Size = 1.8, Colored = галочку снять.
+
+Bloom: Intensity = 0.15, Threshold = 0.9.
+
+Chromatic Aberration: Intensity = 0.15.
+
+☑ Note: Если эффект не виден, убедись, что на Main Camera включена галочка Post Processing (она появляется после добавления Post Process Layer).
+3. Туман и освещение (5 минут)
+☑ Открой Window → Rendering → Lighting.
+☑ Нажми кнопку New Lighting Settings (если её нет, создай в Project через ПКМ → Create → Lighting Settings).
+☑ В разделе Environment включи галочку Fog.
+☑ Цвет тумана поставь тёмно-серый (#1A1A1A). Плотность (Density) = 0.04.
+☑ В разделе Environment Lighting поставь Source = Color, Ambient Color = тёмно-серый (#2A2A2A).
+☑ Note: Сцена станет мрачной. Если слишком темно, снизь плотность тумана до 0.02.
+4. Заготовка для AOS (5 минут)
+☑ Создай пустой GameObject, назови AOS_Manager.
+☑ На AOS_Manager повесь скрипты:
+AOSEngine/MemoryProcessor.cs
+
+AOSEngine/AOSEventHub.cs
+
+Gameplay/CombatManager.cs
+
+Gameplay/UnitFactory.cs
+
+Gameplay/SoulManager.cs
+
+☑ Создай второй пустой объект, назови GameControllers. Повесь на него:
+Core/GamePauseController.cs
+
+Gameplay/SelectionManager.cs
+
+Gameplay/SinbinderPlayer.cs
+
+☑ Сохрани сцену.
+☑ Note: Пока достаточно. Мы не будем копаться в каждом скрипте, просто заложим фундамент для будущей боевой сцены.
+5. Первый скриншот (3 минуты)
+☑ Нажми Play, убедись, что нет красных ошибок в консоли.
+☑ Сделай скриншот (кнопка Print Screen или Win+Shift+S).
+☑ Сохрани его в папку Promo на рабочем столе.
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+Вот твой план на вечер. Всё расписано по минутам и без лишних движений.
+
+Найти первую модель: Зайди в Asset Store, скачай любого бесплатного скелета или зомби.
+
+Создать сцену и Knightcore: Создай сцену, настрой фильтр и туман.
+
+Расставить декорации: Сделай пол, стены, надгробия (можно использовать примитивы, т.к. на них Knightcore всё равно наложит туман и зерно).
+
+Разместить первых NPC: Поставь скачанные модели в сцену.
+
+Сохранить и сделать скриншот: Это будет твой первый кадр, который не стыдно показать.
