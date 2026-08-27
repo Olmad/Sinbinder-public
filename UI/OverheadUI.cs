@@ -1,35 +1,27 @@
-// Assets/_Project/Scripts/UI/OverheadUIPool.cs
-using System.Collections.Generic;
+// Assets/_Project/Scripts/UI/OverheadUI.cs
 using UnityEngine;
 
 namespace Sinbinder.UI
 {
-    public static class OverheadUIPool
+    /// <summary>
+    /// Корень надголовного интерфейса воина: полоска здоровья и значок намерения.
+    /// Собирается в UnitFactory, переиспользуется через OverheadUIPool.
+    /// </summary>
+    public class OverheadUI : MonoBehaviour
     {
-        private static Queue<GameObject> _pool = new();
+        [SerializeField] private HealthBarUI _healthBar;
+        [SerializeField] private DecisionIconUI _decisionIcon;
 
-        public static GameObject Get()
+        public HealthBarUI HealthBar
         {
-            if (_pool.Count > 0)
-            {
-                var obj = _pool.Dequeue();
-                obj.SetActive(true);
-                return obj;
-            }
-            return null;
+            get => _healthBar;
+            set => _healthBar = value;
         }
 
-        public static void Return(GameObject obj)
+        public DecisionIconUI DecisionIcon
         {
-            obj.SetActive(false);
-            _pool.Enqueue(obj);
-        }
-
-        public static void Clear()
-        {
-            foreach (var obj in _pool)
-                GameObject.Destroy(obj);
-            _pool.Clear();
+            get => _decisionIcon;
+            set => _decisionIcon = value;
         }
     }
 }

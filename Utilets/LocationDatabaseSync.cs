@@ -1,3 +1,6 @@
+#if UNITY_EDITOR
+// Файл зависит от UnityEditor. Без этой обёртки сборка плеера падает с CS0246,
+// потому что скрипт лежит не в папке Editor.
 // Assets/_Project/Scripts/Editor/LocationDatabaseSync.cs
 using System.Collections.Generic;
 using System.IO;
@@ -104,3 +107,4 @@ namespace Sinbinder.Utilets
         }
     }
 }
+#endif

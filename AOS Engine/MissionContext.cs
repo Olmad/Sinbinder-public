@@ -1,11 +1,19 @@
-public class MissionContext : DecisionContext
+// Assets/_Project/Scripts/AOS Engine/MissionContext.cs
+namespace Sinbinder.AOS
 {
-    public MissionID MissionID;
-    public bool HasInnocentVictims;
-    public bool HasGuiltyParty;
-    public bool HasTreasure;
-    public bool HasAltar;
-    public bool IsVillageIntact;
-    public NPCData Traveler;
-    public NPCData VillageElder;
+    /// <summary>
+    /// Контекст автономной миссии. Расширяет боевой DecisionContext
+    /// фактами уровня задания — их читают те же модули личности.
+    /// </summary>
+    public class MissionContext : DecisionContext
+    {
+        public MissionID MissionID;
+        public bool HasInnocentVictims;
+        public bool HasGuiltyParty;
+        public bool HasTreasure;
+        public bool HasAltar;
+        public bool IsVillageIntact;
+        public NPCData Traveler;
+        public NPCData VillageElder;
+    }
 }

@@ -18,6 +18,7 @@ namespace Sinbinder.AOS
         public string CommandType;
         public int UnpaidMissions;
         public Warrior TargetWarrior;
+        public Warrior Commander;
         public float RelationshipWithCommander;
         public List<MemoryRecord> RecentMemories;
         public bool EnemyIsUndead;

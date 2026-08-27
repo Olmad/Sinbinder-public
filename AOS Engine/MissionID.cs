@@ -1,7 +1,11 @@
-public enum MissionID
+// Assets/_Project/Scripts/AOS Engine/MissionID.cs
+namespace Sinbinder.AOS
 {
-    None,
-    FalseGod,
-    Plague,
-    // ...
+    /// <summary>Идентификатор сюжетной миссии.</summary>
+    public enum MissionID
+    {
+        None,
+        FalseGod,
+        Plague
+    }
 }
