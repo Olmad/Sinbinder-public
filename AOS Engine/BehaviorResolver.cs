@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Sinbinder.AOS.Modules;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 namespace Sinbinder.AOS
@@ -16,6 +17,30 @@ namespace Sinbinder.AOS
         public const float HesitationGap = 10f;
 
         private List<IPersonalityModule> _modules;
+
+        /// <summary>
+        /// База нарративных перков. Сто штук написано, и до сих пор
+        /// PerkResolver не вызывался ниоткуда: «Мать-волчица», «Бывший
+        /// Охотник», «Певец смерти» существовали как данные и не влияли
+        /// на решения ни одним битом.
+        /// </summary>
+        private static PerkDatabase _perks;
+        private static bool _perksLookedUp;
+
+        private static PerkDatabase Perks
+        {
+            get
+            {
+                if (_perksLookedUp) return _perks;
+                _perksLookedUp = true;
+                _perks = Resources.Load<PerkDatabase>("PerkDatabase");
+                if (_perks == null)
+                    Debug.LogWarning("[AOS] Resources/PerkDatabase не найден — "
+                        + "сюжетные перки не влияют на решения. Создай ассет через "
+                        + "Assets → Create → Sinbinder → Perk Database и положи в Resources.");
+                return _perks;
+            }
+        }
 
         public BehaviourResolver()
         {
@@ -56,12 +81,7 @@ namespace Sinbinder.AOS
         /// </summary>
         public Decision DecideDetailed(Warrior warrior, DecisionContext context)
         {
-            Dictionary<ActionType, float> scores = new()
-            {
-                { ActionType.Attack, 0 }, { ActionType.SaveAlly, 0 },
-                { ActionType.Loot, 0 }, { ActionType.Flee, 0 },
-                { ActionType.Idle, 0 }, { ActionType.ObeyCommand, 0 }
-            };
+            var scores = BuildCandidates(warrior, context);
 
             if (MemoryProcessor.Instance != null)
                 context.RecentMemories = MemoryProcessor.Instance.GetMemories(warrior);
@@ -88,6 +108,9 @@ namespace Sinbinder.AOS
 
             // Снаряжение: восьмой рычаг игрока. Считается один раз, после характера.
             TemptationResolver.Apply(scores, context);
+
+            // Сюжетные перки: врождённая история воина правит очки.
+            PerkResolver.ApplyPerks(scores, warrior, context, Perks);
 
             var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
             var best = sorted[0];
@@ -117,6 +140,43 @@ namespace Sinbinder.AOS
 
             decision.RefusedCommand = context.HasCommand && decision.Action != ActionType.ObeyCommand;
             return decision;
+        }
+
+        /// <summary>
+        /// Что воин вообще может выбрать в этот момент.
+        ///
+        /// Пять базовых действий доступны всегда. Подчинение — только если
+        /// приказ есть: без него «подчиниться» было пустым кандидатом,
+        /// который мог выиграть голосование и выродиться в бездействие.
+        /// Умения добавляются с самого воина: какие компоненты на нём висят
+        /// и что из них не на откате.
+        /// </summary>
+        private Dictionary<ActionType, float> BuildCandidates(Warrior warrior, DecisionContext context)
+        {
+            var scores = new Dictionary<ActionType, float>
+            {
+                { ActionType.Attack, 0f }, { ActionType.SaveAlly, 0f },
+                { ActionType.Loot, 0f }, { ActionType.Flee, 0f },
+                { ActionType.Idle, 0f }
+            };
+
+            if (context.HasCommand)
+                scores[ActionType.ObeyCommand] = 0f;
+
+            if (warrior == null) return scores;
+
+            foreach (var set in warrior.GetComponents<ISkillSet>())
+            {
+                if (set?.SkillActions == null) continue;
+                foreach (var action in set.SkillActions)
+                {
+                    if (scores.ContainsKey(action)) continue;
+                    if (!set.CanUseSkill(action)) continue;   // на откате — не предлагаем
+                    scores[action] = 0f;
+                }
+            }
+
+            return scores;
         }
 
         /// <summary>

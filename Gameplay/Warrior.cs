@@ -49,6 +49,31 @@ namespace Sinbinder.Gameplay
         public ReputationData Reputation = new();
         public int Salary => _soul.Level * 10;
 
+        // ---------- приказ игрока ----------
+
+        [SerializeField] private PendingCommand _command;
+
+        /// <summary>
+        /// Последний приказ игрока. Записан, но не обязательно исполнен:
+        /// исполнение решает голосование, а не игрок.
+        /// </summary>
+        public PendingCommand Command => _command;
+
+        public bool HasCommand => _command.IsSet;
+
+        public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null)
+        {
+            _command = new PendingCommand
+            {
+                Kind = kind,
+                Point = point,
+                Target = target,
+                IssuedAt = Time.time
+            };
+        }
+
+        public void ClearCommand() => _command = default;
+
         public void Initialize(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem, bool isCommander = false, Team team = Team.Player)
         {
             _id = System.Guid.NewGuid().ToString();

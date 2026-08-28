@@ -38,6 +38,34 @@ namespace Sinbinder.Gameplay
         {
             HandleSelectionInput();
             HandleCommandInput();
+            HandleStanceInput();
+        }
+
+        /// <summary>
+        /// H — держать позицию, D — обороняться, Esc — снять приказ.
+        /// Это тоже предложения, а не команды: голосование решает.
+        /// </summary>
+        private void HandleStanceInput()
+        {
+            if (_selectedUnits.Count == 0) return;
+
+            CommandKind kind = CommandKind.None;
+            bool clear = false;
+
+            if (Input.GetKeyDown(KeyCode.H)) kind = CommandKind.Hold;
+            else if (Input.GetKeyDown(KeyCode.D)) kind = CommandKind.Defend;
+            else if (Input.GetKeyDown(KeyCode.Escape)) clear = true;
+            else return;
+
+            foreach (var unit in _selectedUnits)
+            {
+                if (unit == null) continue;
+                var warrior = unit.GetComponent<Warrior>();
+                if (warrior == null || warrior.IsDead) continue;
+
+                if (clear) warrior.ClearCommand();
+                else warrior.IssueCommand(kind, warrior.transform.position);
+            }
         }
 
         public void RegisterUnit(SelectionComponent unit)
@@ -174,30 +202,23 @@ namespace Sinbinder.Gameplay
                 Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out RaycastHit hit, 100f))
                 {
+                    // Приказ записывается на воина и уходит в голосование.
+                    // Раньше он шёл прямо в NavMeshAgent, минуя AOS, и
+                    // исполнялся всегда — то есть подчинения как решения
+                    // не существовало, а модуль Верности был мёртвым кодом.
                     var enemyUnit = hit.collider.GetComponent<SelectionComponent>();
-                    if (enemyUnit != null && !_selectedUnits.Contains(enemyUnit))
+                    bool isAttackOrder = enemyUnit != null && !_selectedUnits.Contains(enemyUnit);
+
+                    foreach (var unit in _selectedUnits)
                     {
-                        foreach (var unit in _selectedUnits)
-                        {
-                            if (unit != null)
-                            {
-                                var mover = unit.GetComponent<UnitMover>();
-                                if (mover != null)
-                                    mover.CommandAttack(enemyUnit.gameObject);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (var unit in _selectedUnits)
-                        {
-                            if (unit != null)
-                            {
-                                var mover = unit.GetComponent<UnitMover>();
-                                if (mover != null)
-                                    mover.CommandMove(hit.point);
-                            }
-                        }
+                        if (unit == null) continue;
+                        var warrior = unit.GetComponent<Warrior>();
+                        if (warrior == null || warrior.IsDead) continue;
+
+                        if (isAttackOrder)
+                            warrior.IssueCommand(CommandKind.Attack, enemyUnit.transform.position, enemyUnit.gameObject);
+                        else
+                            warrior.IssueCommand(CommandKind.Move, hit.point);
                     }
                 }
             }

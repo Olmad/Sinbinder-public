@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Sinbinder.Gameplay
 {
     [RequireComponent(typeof(AOS.AOSWarriorWrapper))]
-    public class PatienceSkills : MonoBehaviour
+    public class PatienceSkills : MonoBehaviour, AOS.ISkillSet
     {
         public float IronStanceDefBonus = 40f;
         public float IronStanceDuration = 8f;
@@ -37,6 +37,9 @@ namespace Sinbinder.Gameplay
             _secondWindTimer -= Time.deltaTime;
             _unshakableTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.IronStance, AOS.ActionType.CounterAttack, AOS.ActionType.SecondWind, AOS.ActionType.Unshakable };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(AOS.ActionType action)
         {

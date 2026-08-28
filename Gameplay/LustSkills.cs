@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Sinbinder.Gameplay
 {
     [RequireComponent(typeof(AOS.AOSWarriorWrapper))]
-    public class LustSkills : MonoBehaviour
+    public class LustSkills : MonoBehaviour, AOS.ISkillSet
     {
         public float CharmDuration = 6f;
         public float CharmCooldown = 18f;
@@ -30,6 +30,9 @@ namespace Sinbinder.Gameplay
             _seduceTimer -= Time.deltaTime;
             _fatalTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Charm, AOS.ActionType.KissOfDeath, AOS.ActionType.Seduce, AOS.ActionType.FatalPassion };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(AOS.ActionType action)
         {

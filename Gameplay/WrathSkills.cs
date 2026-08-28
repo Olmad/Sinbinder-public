@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Sinbinder.Gameplay
 {
     [RequireComponent(typeof(AOS.AOSWarriorWrapper))]
-    public class WrathSkills : MonoBehaviour
+    public class WrathSkills : MonoBehaviour, AOS.ISkillSet
     {
         public float BerserkDuration = 8f;
         public float BerserkAttackBonus = 0.5f;
@@ -30,6 +30,9 @@ namespace Sinbinder.Gameplay
             _berserkTimer -= Time.deltaTime;
             _powerStrikeTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Berserk, AOS.ActionType.PowerStrike };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(AOS.ActionType action)
         {

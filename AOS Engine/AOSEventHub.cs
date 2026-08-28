@@ -93,6 +93,53 @@ namespace Sinbinder.AOS
             MemoryProcessor.Instance?.CreateMemory(savior, "SavedAlly", saved.Id, EmotionType.Joy, 0.7f);
         }
 
+        /// <summary>Отказ подчиниться. Раз в бою на воина — событие, а не шум.</summary>
+        public System.Action<Warrior, Decision, DecisionContext> OnRefusal;
+
+        private readonly System.Collections.Generic.Dictionary<string, float> _lastRefusal = new();
+
+        /// <summary>
+        /// Воин не выполнил приказ.
+        ///
+        /// Это главный момент игры, поэтому он проходит здесь, а не тонет
+        /// в Debug.Log: отказ запоминается обеими сторонами, вызывает
+        /// эмоцию и поднимает подписчиков — микропаузу, значок, журнал.
+        ///
+        /// Голосование идёт раз в секунду, а приказ живёт дольше, поэтому
+        /// один и тот же отказ повторялся бы каждый такт. Гасим повтор:
+        /// не чаще раза в несколько секунд на воина.
+        /// </summary>
+        public void OnCommandRefused(Warrior warrior, Decision decision, DecisionContext context)
+        {
+            if (warrior == null) return;
+
+            if (_lastRefusal.TryGetValue(warrior.Id, out float last)
+                && Time.time - last < RefusalCooldown) return;
+            _lastRefusal[warrior.Id] = Time.time;
+
+            var commander = context?.Commander;
+
+            EmotionSystem.Instance?.TriggerEmotion(warrior, EmotionType.Anger, 0.25f);
+
+            // Воин помнит, что ослушался; командир помнит, что его ослушались.
+            MemoryProcessor.Instance?.CreateMemory(
+                warrior, "RefusedCommand", commander != null ? commander.Id : "",
+                EmotionType.Anger, 0.4f);
+
+            if (commander != null && commander != warrior)
+            {
+                EmotionSystem.Instance?.TriggerEmotion(commander, EmotionType.Anger, 0.3f);
+                MemoryProcessor.Instance?.CreateMemory(
+                    commander, "AllyDisobeyed", warrior.Id, EmotionType.Anger, 0.5f);
+            }
+
+            Debug.Log($"[AOS] ОТКАЗ: {PhraseGenerator.LogLine(warrior, context, decision)}");
+            OnRefusal?.Invoke(warrior, decision, context);
+        }
+
+        /// <summary>Пауза между двумя отказами одного воина, секунды.</summary>
+        public const float RefusalCooldown = 4f;
+
         public void OnBetrayal(Warrior traitor, Warrior betrayedCommander)
         {
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Anger, 0.8f);

@@ -5,7 +5,7 @@ using Sinbinder.AOS;
 
 namespace Sinbinder.Gameplay
 {
-    public class SlothSkills : MonoBehaviour
+    public class SlothSkills : MonoBehaviour, AOS.ISkillSet
     {
         public float YawnStunDuration = 4f;
         public float YawnCooldown = 18f;
@@ -29,6 +29,9 @@ namespace Sinbinder.Gameplay
             _auraTimer -= Time.deltaTime;
             _sleepTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Yawn, AOS.ActionType.LazyHeal, AOS.ActionType.AuraOfApathy, AOS.ActionType.EternalSleep };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(ActionType action)
         {

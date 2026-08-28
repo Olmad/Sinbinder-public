@@ -5,7 +5,7 @@ using Sinbinder.AOS;
 
 namespace Sinbinder.Gameplay
 {
-    public class DiligenceSkills : MonoBehaviour
+    public class DiligenceSkills : MonoBehaviour, AOS.ISkillSet
     {
         public float WorkSurgeDuration = 10f;
         public float WorkSurgeSpeedBonus = 0.3f;
@@ -25,6 +25,9 @@ namespace Sinbinder.Gameplay
             _inspirationTimer -= Time.deltaTime;
             _tirelessTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.WorkSurge, AOS.ActionType.WorkInspiration, AOS.ActionType.Tireless };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(ActionType action)
         {

@@ -18,6 +18,12 @@ namespace Sinbinder.AOS
 
         public ActionType LastDecision { get; private set; }
 
+        /// <summary>Последнее решение вместе с причиной. Читают подсказка и журнал.</summary>
+        public Decision LastDecisionDetail { get; private set; }
+
+        /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
+        public DecisionContext LastContext { get; private set; }
+
         void Awake()
         {
             _warrior = GetComponent<Warrior>();
@@ -28,8 +34,22 @@ namespace Sinbinder.AOS
         public ActionType Decide()
         {
             if (_self != null && _self.IsDead) return ActionType.Idle;
-            var context = CombatDecisionContext.Create(_warrior);
-            LastDecision = _resolver.Decide(_warrior, context);
+
+            // Приказ уезжает в контекст. Без второго аргумента HasCommand
+            // всегда оставался false, LoyaltyModule возвращал ноль,
+            // и ObeyCommand не мог победить ни при каких условиях.
+            var cmd = _warrior.Command;
+            var context = CombatDecisionContext.Create(_warrior, cmd.TypeName);
+
+            var decision = _resolver.DecideDetailed(_warrior, context);
+
+            LastContext = context;
+            LastDecisionDetail = decision;
+            LastDecision = decision.Action;
+
+            if (decision.RefusedCommand)
+                AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
+
             return LastDecision;
         }
 
@@ -43,6 +63,7 @@ namespace Sinbinder.AOS
                 case ActionType.Flee: ExecuteFlee(); break;
                 case ActionType.Loot: ExecuteLoot(); break;
                 case ActionType.SaveAlly: ExecuteSaveAlly(); break;
+                case ActionType.ObeyCommand: ExecuteCommand(); break;
                 case ActionType.AcceptBribe:
                     if (_warrior.Team == Team.Player)
                         _warrior.Team = Team.Enemy;
@@ -52,6 +73,69 @@ namespace Sinbinder.AOS
                     break;
                 default:
                     TryExecuteSkill(action);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Исполнение того, что велел игрок. Ветки не было вовсе:
+        /// ObeyCommand проваливался в default, оттуда в TryExecuteSkill,
+        /// не находил подходящего умения и вырождался в Idle.
+        /// То есть подчинение исполнялось как «стоять на месте».
+        /// </summary>
+        private void ExecuteCommand()
+        {
+            var cmd = _warrior.Command;
+            if (!cmd.IsSet) { Execute(ActionType.Idle); return; }
+
+            var mover = GetComponent<UnitMover>();
+
+            switch (cmd.Kind)
+            {
+                case CommandKind.Attack:
+                    if (cmd.Target != null)
+                    {
+                        var dmg = cmd.Target.GetComponent<Damageable>();
+                        if (dmg != null && !dmg.IsDead)
+                        {
+                            if (mover != null) mover.CommandMove(cmd.Target.transform.position);
+
+                            var autoAttack = GetComponent<AutoAttack>();
+                            if (autoAttack != null
+                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.AttackRange)
+                            {
+                                autoAttack.ForceAttack(dmg);
+                                if (dmg.IsDead) OnKilledEnemy(dmg.Warrior);
+                            }
+                            return;
+                        }
+                    }
+                    // Цель мертва или исчезла: приказ выполнен, снимаем.
+                    _warrior.ClearCommand();
+                    break;
+
+                case CommandKind.Move:
+                    if (mover != null) mover.CommandMove(cmd.Point);
+                    // Дошёл — приказ исчерпан.
+                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f)
+                        _warrior.ClearCommand();
+                    break;
+
+                case CommandKind.Hold:
+                    if (mover != null) mover.Stop();
+                    break;
+
+                case CommandKind.Defend:
+                    if (mover != null) mover.Stop();
+                    // Оборона: бить только того, кто подошёл сам.
+                    var near = FindBestTarget();
+                    var aa = GetComponent<AutoAttack>();
+                    if (near != null && aa != null
+                        && Vector3.Distance(transform.position, near.transform.position) <= aa.AttackRange)
+                    {
+                        aa.ForceAttack(near);
+                        if (near.IsDead) OnKilledEnemy(near.Warrior);
+                    }
                     break;
             }
         }
@@ -168,15 +252,24 @@ namespace Sinbinder.AOS
             }
         }
 
+        /// <summary>
+        /// Исполнение умения. Раньше здесь была лестница из шести
+        /// GetComponent с перечислением конкретных классов: добавить набор
+        /// умений значило не забыть дописать сюда ещё одну ветку.
+        /// Теперь спрашиваются все наборы, какие на воине есть.
+        /// </summary>
         private void TryExecuteSkill(ActionType action)
         {
-            if (GetComponent<WrathSkills>()?.CanUseSkill(action) == true) GetComponent<WrathSkills>().ExecuteSkill(action);
-            else if (GetComponent<PatienceSkills>()?.CanUseSkill(action) == true) GetComponent<PatienceSkills>().ExecuteSkill(action);
-            else if (GetComponent<LustSkills>()?.CanUseSkill(action) == true) GetComponent<LustSkills>().ExecuteSkill(action);
-            else if (GetComponent<GluttonySkills>()?.CanUseSkill(action) == true) GetComponent<GluttonySkills>().ExecuteSkill(action);
-            else if (GetComponent<SlothSkills>()?.CanUseSkill(action) == true) GetComponent<SlothSkills>().ExecuteSkill(action);
-            else if (GetComponent<DiligenceSkills>()?.CanUseSkill(action) == true) GetComponent<DiligenceSkills>().ExecuteSkill(action);
-            else Execute(ActionType.Idle);
+            foreach (var set in GetComponents<ISkillSet>())
+            {
+                if (set == null || !set.CanUseSkill(action)) continue;
+                set.ExecuteSkill(action);
+                return;
+            }
+
+            // Умения нет или оно на откате — воин стоит, но не проваливается
+            // обратно в Execute: это была бы рекурсия.
+            ShowDecisionIcon(ActionType.Idle);
         }
 
         private void ShowDecisionIcon(ActionType action)

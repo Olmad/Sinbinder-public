@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Sinbinder.Gameplay
 {
     [RequireComponent(typeof(AOS.AOSWarriorWrapper))]
-    public class GluttonySkills : MonoBehaviour
+    public class GluttonySkills : MonoBehaviour, AOS.ISkillSet
     {
         public float DevourHealPercent = 0.2f;
         public float BellyArmorBonus = 15f;
@@ -25,6 +25,9 @@ namespace Sinbinder.Gameplay
             _vomitTimer -= Time.deltaTime;
             _hungerTimer -= Time.deltaTime;
         }
+        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Devour, AOS.ActionType.Vomit, AOS.ActionType.InsatiableHunger };
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+
 
         public bool CanUseSkill(AOS.ActionType action)
         {
