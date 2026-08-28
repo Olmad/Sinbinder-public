@@ -85,6 +85,15 @@ namespace Sinbinder.AOS
         public float MoralityViciousLoot = 15f;
         public float MoralityViciousSaveAllyPenalty = -20f;
 
+        [Header("Пол: усталость, зацепление, спина")]
+        public float SlothIdleFatigueMultiplier = 55f;
+        public float SlothAttackFatiguePenalty = -30f;
+        public float PrideIdleFatigueRefusal = -35f;
+        public float PrideRearStrikeRefusal = -30f;
+        public float FearFleeSurroundedBonus = 60f;
+        public float WrathAttackFatigueIgnore = 20f;
+        public float LoyaltyObeyEngagedPenalty = -35f;
+
         [Header("Гордыня")]
         public float PrideAttackSinMultiplier = 0.4f;
         public float PrideFleeSinMultiplier = 0.8f;

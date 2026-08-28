@@ -80,6 +80,7 @@ namespace Sinbinder.AOS
                     return "он не умеет стоять, когда есть кого ударить";
 
                 case "Fear":
+                    if (context.Surrounded) return "его обступили со всех сторон";
                     if (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.3f)
                         return "на нём нет живого места";
                     if (context.NearbyEnemies >= 3) return "их слишком много";
@@ -87,6 +88,9 @@ namespace Sinbinder.AOS
 
                 case "Pride":
                     if (decision.Action == ActionType.Flee) return "он скорее ляжет, чем побежит";
+                    if (context.TargetBackExposed) return "он не бьёт в спину";
+                    if (context.Fatigue > 0.3f && decision.Action != ActionType.Idle)
+                        return "он не признаёт, что устал";
                     if (decision.RefusedCommand) return "он не привык, чтобы им распоряжались";
                     if (context.LastAlive) return "он остался один и не собирается уходить";
                     return "он не может позволить себе выглядеть слабым";
@@ -104,6 +108,8 @@ namespace Sinbinder.AOS
                     return "он тащит всё, до чего дотянется";
 
                 case "Sloth":
+                    if (context.IsExhausted) return "он выдохся и больше не может";
+                    if (context.Fatigue > 0.4f) return "силы у него на исходе";
                     return "у него не осталось воли";
 
                 case "Patience":
@@ -112,6 +118,9 @@ namespace Sinbinder.AOS
                 case "Loyalty":
                     if (context.RelationshipWithCommander > 70f) return "он верит командиру";
                     return "приказ есть приказ";
+
+                case "Engagement":
+                    return "уйти отсюда — значит подставить спину";
 
                 case "Morality":
                     if (warrior.Soul != null && warrior.Soul.Moral == MoralType.Pious)

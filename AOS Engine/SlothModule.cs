@@ -24,7 +24,14 @@ namespace Sinbinder.AOS.Modules
             {
                 score += sin * _config.SlothIdleSinMultiplier;
                 if (context.DangerLevel < 0.3f) score += _config.SlothIdleLowDangerBonus;
+
+                // Усталость — главный союзник уныния. Чем меньше сил,
+                // тем громче голос «постоять».
+                score += context.Fatigue * _config.SlothIdleFatigueMultiplier;
             }
+
+            if (action == ActionType.Attack && context.IsExhausted)
+                score += _config.SlothAttackFatiguePenalty;
 
             if (context.DangerLevel > 0.6f || context.CurrentHP < context.MaxHP * 0.4f)
             {

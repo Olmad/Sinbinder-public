@@ -31,6 +31,10 @@ namespace Sinbinder.AOS.Modules
                 if (action == ActionType.Idle) score += _config.FearIdleDangerPenalty;
             }
 
+            // Окружённый боится не врага, а того, что уйти уже нельзя.
+            if (context.Surrounded && action == ActionType.Flee)
+                score += _config.FearFleeSurroundedBonus;
+
             if (action == ActionType.Attack)
                 score += _config.FearAttackGlobalPenalty * 10f; // небольшая общая нерешительность
 

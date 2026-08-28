@@ -45,7 +45,17 @@ namespace Sinbinder.Gameplay
         private void Attack(Damageable target)
         {
             _cooldownTimer = _attackCooldown;
-            target.TakeDamage(_attackDamage, gameObject);
+
+            // Удар стоит сил, а выдохшийся бьёт вполсилы.
+            float damage = _attackDamage;
+            var fatigue = GetComponent<Fatigue>();
+            if (fatigue != null)
+            {
+                damage *= fatigue.Effectiveness;
+                fatigue.SpendForAttack();
+            }
+
+            target.TakeDamage(damage, gameObject);
         }
 
         private void FindClosestEnemy()

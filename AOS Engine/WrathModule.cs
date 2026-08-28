@@ -35,6 +35,13 @@ namespace Sinbinder.AOS.Modules
                     if (sin > 40f) score += _config.WrathIdleHighSinPenalty;
                     break;
             }
+
+            // Гнев не считает силы: усталость его не останавливает,
+            // а раззадоривает. Единственный голос, который на неё
+            // отвечает прибавкой, а не убавкой.
+            if (action == ActionType.Attack && sin > 40f && context.IsExhausted)
+                score += _config.WrathAttackFatigueIgnore;
+
             return score * Weight;
         }
     }

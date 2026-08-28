@@ -32,6 +32,29 @@ public bool BrotherNearby;
 public bool AllyDamagedRecently;
 public bool LastAlive;
 
+        // ---------- положение на поле ----------
+        // Пол игры: величины, которые есть у боя сами по себе, и которые
+        // при этом читают модули личности. Механика, которую грехи не
+        // читают, была бы второй игрой сбоку.
+
+        /// <summary>Насколько воин вымотан, 0…1.</summary>
+        public float Fatigue;
+
+        /// <summary>Сил почти не осталось.</summary>
+        public bool IsExhausted;
+
+        /// <summary>Со сколькими противниками воин сцеплен в ближнем бою.</summary>
+        public int EngagedWith;
+
+        /// <summary>Сцеплен хотя бы с одним: уйти отсюда стоит удара вслед.</summary>
+        public bool IsEngaged;
+
+        /// <summary>Двое и больше: защита падает.</summary>
+        public bool Surrounded;
+
+        /// <summary>У ближайшей цели открыта спина.</summary>
+        public bool TargetBackExposed;
+
         // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();
 

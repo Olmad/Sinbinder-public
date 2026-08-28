@@ -52,6 +52,33 @@ namespace Sinbinder.AOS
                 Commander = commander // ← новое поле
             };
 
+            // Положение на поле: усталость, зацепление, открытая спина.
+            var fatigue = warrior.GetComponent<Fatigue>();
+            if (fatigue != null)
+            {
+                context.Fatigue = fatigue.Spent;
+                context.IsExhausted = fatigue.IsExhausted;
+            }
+
+            var engagement = warrior.GetComponent<Engagement>();
+            if (engagement != null)
+            {
+                context.EngagedWith = engagement.Count;
+                context.IsEngaged = engagement.IsEngaged;
+                context.Surrounded = engagement.IsSurrounded;
+            }
+
+            // Есть ли рядом противник, которого можно ударить в спину.
+            foreach (var enemy in enemies)
+            {
+                if (enemy == null || enemy.IsDead) continue;
+                if (Facing.IsFromBehind(enemy.transform, warrior.transform.position))
+                {
+                    context.TargetBackExposed = true;
+                    break;
+                }
+            }
+
             // Типы противников. Пока читаются по оболочке и по имени;
             // когда у врагов появятся теги, переехать на них.
             context.EnemyIsUndead = enemies.Any(e => e.Shell == ShellType.Skeleton || e.Shell == ShellType.Zombie);

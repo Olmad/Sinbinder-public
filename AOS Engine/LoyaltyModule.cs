@@ -21,6 +21,14 @@ namespace Sinbinder.AOS.Modules
             if (context.HasCommand && action == ActionType.ObeyCommand)
             {
                 score += soul.Loyalty * _config.LoyaltyObeySinMultiplier;
+
+                // У приказа появилась цена. Уйти из ближнего боя — значит
+                // подставиться под удар вслед, и «отойди» перестаёт быть
+                // бесплатным. Именно это делает отказ иногда правильным,
+                // а голосование — спором по существу, а не капризом.
+                if (context.IsEngaged && context.CommandType == "Move")
+                    score += _config.LoyaltyObeyEngagedPenalty
+                             * (context.Surrounded ? 1.5f : 1f);
             }
             return score * Weight;
         }

@@ -33,6 +33,11 @@ namespace Sinbinder.AOS.Modules
             {
                 case ActionType.Attack:
                     score += pride * _config.PrideAttackSinMultiplier;
+
+                    // Не бьёт в спину — и теряет на этом урон.
+                    // Добродетель, за которую платят.
+                    if (pride > 40f && context.TargetBackExposed)
+                        score += _config.PrideRearStrikeRefusal;
                     break;
 
                 case ActionType.Flee:
@@ -49,6 +54,13 @@ namespace Sinbinder.AOS.Modules
                 case ActionType.SaveAlly:
                     // Спасать — значит признать, что кто-то важнее тебя.
                     score -= pride * _config.PrideSaveAllySinMultiplier;
+                    break;
+
+                case ActionType.Idle:
+                    // «Я не устал». Гордый отказывается признать, что
+                    // выдохся, и продолжает, пока не свалится.
+                    if (pride > 30f && context.Fatigue > 0.3f)
+                        score += _config.PrideIdleFatigueRefusal;
                     break;
 
                 case ActionType.LastStand:

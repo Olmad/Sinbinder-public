@@ -41,6 +41,7 @@ namespace Sinbinder.Gameplay
         {
             if (IsDead) return;
 
+            damage = ApplyPosition(damage, attacker);
             _hp -= damage;
 
             if (_hp <= 0f)
@@ -48,6 +49,23 @@ namespace Sinbinder.Gameplay
                 _hp = 0f;
                 Die(attacker);
             }
+        }
+
+        /// <summary>
+        /// Положение решает не меньше, чем оружие: удар в спину бьёт
+        /// сильнее, окружённый защищается хуже. Это пол игры — механики,
+        /// которые работают, даже если снять с воинов личности.
+        /// </summary>
+        private float ApplyPosition(float damage, GameObject attacker)
+        {
+            if (attacker != null)
+                damage *= Facing.DamageMultiplier(transform, attacker.transform.position);
+
+            var engagement = GetComponent<Engagement>();
+            if (engagement != null)
+                damage *= engagement.IncomingMultiplier;
+
+            return damage;
         }
 
         private void Die(GameObject killer)
