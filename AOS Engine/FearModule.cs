@@ -12,15 +12,11 @@ namespace Sinbinder.AOS.Modules
 
         public FearModule()
         {
-            _config = Resources.Load<AOSConfig>("AOSConfig");
-            if (_config == null)
-                Debug.LogWarning("[FearModule] AOSConfig не найден в Resources!");
+            _config = AOSConfig.Load();
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
-            if (_config == null) return 0f;
-
             float score = 0f;
 
             if (context.CurrentHP < context.MaxHP * 0.4f)

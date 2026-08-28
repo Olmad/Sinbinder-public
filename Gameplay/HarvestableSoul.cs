@@ -40,7 +40,9 @@ namespace Sinbinder.Gameplay
             if (_harvested) return null;
             _harvested = true;
 
-            var soul = new SoulData(_soul.Name, _soul.Sin, _soul.Moral, _soul.Level, _soul.SinIntensity, _soul.Memory);
+            // Копия со всеми семью спектрами: прежняя запись через один грех
+            // и одну интенсивность теряла шесть шкал из семи.
+            var soul = new SoulData(_soul);
 
             Debug.Log($"[HARVEST] Душа собрана: {soul.Name} (качество: {harvestedQuality})");
 

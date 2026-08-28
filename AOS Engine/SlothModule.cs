@@ -12,17 +12,13 @@ namespace Sinbinder.AOS.Modules
 
         public SlothModule()
         {
-            _config = Resources.Load<AOSConfig>("AOSConfig");
-            if (_config == null)
-                Debug.LogWarning("[SlothModule] AOSConfig не найден в Resources!");
+            _config = AOSConfig.Load();
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
-            if (_config == null) return 0f;
-
             float score = 0f;
-            float sin = soul.SinIntensity;
+            float sin = soul.Get(SinType.Sloth);
 
             if (action == ActionType.Idle)
             {

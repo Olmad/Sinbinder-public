@@ -12,15 +12,11 @@ namespace Sinbinder.AOS.Modules
 
         public LoyaltyModule()
         {
-            _config = Resources.Load<AOSConfig>("AOSConfig");
-            if (_config == null)
-                Debug.LogWarning("[LoyaltyModule] AOSConfig не найден в Resources!");
+            _config = AOSConfig.Load();
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
-            if (_config == null) return 0f;
-
             float score = 0f;
             if (context.HasCommand && action == ActionType.ObeyCommand)
             {

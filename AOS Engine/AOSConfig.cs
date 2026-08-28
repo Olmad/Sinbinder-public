@@ -6,6 +6,36 @@ namespace Sinbinder.AOS
     [CreateAssetMenu(fileName = "AOSConfig", menuName = "Sinbinder/AOS Config")]
     public class AOSConfig : ScriptableObject
     {
+        private static AOSConfig _fallback;
+
+        /// <summary>
+        /// Конфиг из Resources, а если ассета нет — рабочий экземпляр
+        /// со значениями по умолчанию.
+        ///
+        /// Раньше каждый модуль сам звал Resources.Load и при отсутствии
+        /// ассета возвращал ноль на любое действие. Отсутствие одного
+        /// файла бесшумно выключало всю личность разом: воины двигались,
+        /// решений не принимали, в консоли — одно предупреждение.
+        /// Теперь игра работает и без ассета, а предупреждение выдаётся
+        /// один раз и по делу.
+        /// </summary>
+        public static AOSConfig Load()
+        {
+            var asset = Resources.Load<AOSConfig>("AOSConfig");
+            if (asset != null) return asset;
+
+            if (_fallback == null)
+            {
+                _fallback = CreateInstance<AOSConfig>();
+                _fallback.name = "AOSConfig (значения по умолчанию)";
+                Debug.LogWarning("[AOS] Resources/AOSConfig не найден. "
+                    + "Работаю на значениях по умолчанию — создай ассет "
+                    + "через Assets → Create → Sinbinder → AOS Config "
+                    + "и положи в папку Resources, чтобы настраивать баланс.");
+            }
+            return _fallback;
+        }
+
         [Header("Жадность")]
         public float GreedLootPerItem = 15f;
         public float GreedSinMultiplier = 0.5f;
@@ -54,6 +84,32 @@ namespace Sinbinder.AOS
         public float MoralityViciousAttack = 20f;
         public float MoralityViciousLoot = 15f;
         public float MoralityViciousSaveAllyPenalty = -20f;
+
+        [Header("Гордыня")]
+        public float PrideAttackSinMultiplier = 0.4f;
+        public float PrideFleeSinMultiplier = 0.8f;
+        public float PrideFleeHighSinPenalty = -70f;
+        public float PrideObeySinMultiplier = 0.35f;
+        public float PrideLastAliveBonus = 45f;
+        public float PrideSaveAllySinMultiplier = 0.2f;
+
+        [Header("Зависть")]
+        public float EnvyLootSinMultiplier = 0.4f;
+        public float EnvySaveAllySinMultiplier = 0.5f;
+        public float EnvyAttackCommanderRelationMultiplier = 0.25f;
+        public float EnvyObeyLowRelationPenalty = -25f;
+
+        [Header("Похоть")]
+        public float LustLootSinMultiplier = 0.35f;
+        public float LustObeySinMultiplier = 0.25f;
+        public float LustSaveAllyBondBonus = 30f;
+        public float LustIdleSinMultiplier = 0.2f;
+
+        [Header("Чревоугодие")]
+        public float GluttonyLootSinMultiplier = 0.45f;
+        public float GluttonyIdleSinMultiplier = 0.3f;
+        public float GluttonyAttackSinMultiplier = 0.2f;
+        public float GluttonyLootPerBody = 8f;
 
         [Header("Память")]
         public float MemorySaveAllyStrengthMultiplier = 50f;

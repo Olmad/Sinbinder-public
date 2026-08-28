@@ -13,17 +13,13 @@ namespace Sinbinder.AOS.Modules
 
         public GreedModule()
         {
-            _config = Resources.Load<AOSConfig>("AOSConfig"); // или передавай через менеджер
-            if (_config == null)
-                Debug.LogWarning("[GreedModule] AOSConfig не найден в Resources!");
+            _config = AOSConfig.Load();
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
-            if (_config == null) return 0f;
-
             float score = 0f;
-            float sin = soul.SinIntensity;
+            float sin = soul.Get(SinType.Greed);
 
             switch (action)
             {

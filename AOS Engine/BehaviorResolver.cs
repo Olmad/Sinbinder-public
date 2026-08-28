@@ -54,13 +54,7 @@ namespace Sinbinder.AOS
             if (MemoryProcessor.Instance != null)
                 context.RecentMemories = MemoryProcessor.Instance.GetMemories(warrior);
 
-            var soul = new Soul
-            {
-                Name = warrior.DisplayName,
-                SinIntensity = warrior.Soul.SinIntensity,
-                Morality = (MoralityType)(int)warrior.Soul.Moral,
-                Loyalty = warrior.Loyalty
-            };
+            var soul = Soul.FromWarrior(warrior);
 
             // Кто именно поднял каждое действие сильнее всех — это и есть причина.
             var loudest = new Dictionary<ActionType, (string module, float value)>();
@@ -118,13 +112,7 @@ namespace Sinbinder.AOS
         /// </summary>
         public MissionAction DecideMission(Warrior warrior, MissionContext context, List<MissionAction> availableActions)
         {
-            var soul = new Soul
-            {
-                Name = warrior.DisplayName,
-                SinIntensity = warrior.Soul.SinIntensity,
-                Morality = (MoralityType)(int)warrior.Soul.Moral,
-                Loyalty = warrior.Loyalty
-            };
+            var soul = Soul.FromWarrior(warrior);
 
             if (availableActions == null || availableActions.Count == 0)
             {

@@ -1,4 +1,6 @@
 // Assets/_Project/Scripts/AOS/Modules/PatienceModule.cs
+using Sinbinder.Core;
+
 namespace Sinbinder.AOS.Modules
 {
     public class PatienceModule : IPersonalityModule
@@ -9,7 +11,8 @@ namespace Sinbinder.AOS.Modules
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
             float score = 0f;
-            float patience = -soul.SinIntensity; // Чем меньше Гнев, тем больше Терпение
+            // Терпение — отрицательная половина спектра Гнева, а не отдельная шкала.
+            float patience = -soul.Get(SinType.Wrath);
 
             switch (action)
             {

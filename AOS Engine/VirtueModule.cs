@@ -12,17 +12,15 @@ namespace Sinbinder.AOS.Modules
 
         public VirtueModule()
         {
-            _config = Resources.Load<AOSConfig>("AOSConfig");
-            if (_config == null)
-                Debug.LogWarning("[VirtueModule] AOSConfig не найден в Resources!");
+            _config = AOSConfig.Load();
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
-            if (_config == null) return 0f;
-
             float score = 0f;
-            float virtue = -soul.SinIntensity;
+            // Общая добродетельность: среднее по всем семи спектрам со знаком минус.
+            // Это голос «в целом хорошего человека», а не одной конкретной шкалы.
+            float virtue = -soul.Average;
 
             switch (action)
             {
