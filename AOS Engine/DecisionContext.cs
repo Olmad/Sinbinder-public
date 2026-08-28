@@ -32,7 +32,11 @@ public bool BrotherNearby;
 public bool AllyDamagedRecently;
 public bool LastAlive;
 
-        // НОВОЕ: Предметы, которые несёт воин
+        // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();
+
+        // Сюжетные перки воина. Читает PerkResolver.
+        public List<Sinbinder.Core.NarrativePerk> AvailableNarrativePerks
+            = new List<Sinbinder.Core.NarrativePerk>();
     }
 }

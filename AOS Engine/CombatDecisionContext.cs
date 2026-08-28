@@ -1,6 +1,8 @@
 // Assets/_Project/Scripts/AOS/CombatDecisionContext.cs
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 namespace Sinbinder.AOS
@@ -32,23 +34,6 @@ namespace Sinbinder.AOS
                 if (commander != null)
                     relationshipWithCommander = warrior.Relationships.GetRelationship(warrior.Id, commander.Id);
             }
-            // после вычисления enemies и allies
-context.EnemyIsUndead = enemies.Any(e => e.Shell == ShellType.Skeleton || e.Shell == ShellType.Zombie);
-context.EnemyIsPlant = enemies.Any(e => e.Shell == ShellType.Golem); // условно, замени на теги позже
-context.EnemyIsBeast = enemies.Any(e => e.Shell == ShellType.Ghost); // аналогично
-// для других типов нужны теги во врагах, пока можно завязать на ShellType или имя
-context.EnemyIsBandit = enemies.Any(e => e.DisplayName.Contains("Бандит"));
-context.EnemyIsHunter = enemies.Any(e => e.DisplayName.Contains("Охотник"));
-context.EnemyIsMagister = enemies.Any(e => e.DisplayName.Contains("Магистр"));
-context.EnemyIsPrisoner = enemies.Any(e => e.DisplayName.Contains("Заключённый"));
-
-// BrotherNearby – проверить, есть ли у воина перк "Брат по оружию" и есть ли в отряде другой воин с таким же перком
-if (warrior.Soul.Memory?.NarrativePerks.Exists(p => p.PerkName == "Брат по оружию") == true)
-{
-    context.BrotherNearby = allies.Any(a => a != warrior && a.Soul.Memory?.NarrativePerks.Exists(p => p.PerkName == "Брат по оружию") == true);
-}
-// LastAlive – если все союзники мертвы или ранены
-context.LastAlive = allies.All(a => a.IsDead || a.HP <= 0) && !warrior.IsDead;
             var context = new DecisionContext
             {
                 CurrentHP = warrior.HP,
@@ -66,6 +51,28 @@ context.LastAlive = allies.All(a => a.IsDead || a.HP <= 0) && !warrior.IsDead;
                 RecentMemories = MemoryProcessor.Instance?.GetMemories(warrior) ?? new List<MemoryRecord>(),
                 Commander = commander // ← новое поле
             };
+
+            // Типы противников. Пока читаются по оболочке и по имени;
+            // когда у врагов появятся теги, переехать на них.
+            context.EnemyIsUndead = enemies.Any(e => e.Shell == ShellType.Skeleton || e.Shell == ShellType.Zombie);
+            context.EnemyIsPlant = enemies.Any(e => e.Shell == ShellType.Golem);
+            context.EnemyIsBeast = enemies.Any(e => e.Shell == ShellType.Ghost);
+            context.EnemyIsBandit = enemies.Any(e => e.DisplayName.Contains("Бандит"));
+            context.EnemyIsHunter = enemies.Any(e => e.DisplayName.Contains("Охотник"));
+            context.EnemyIsMagister = enemies.Any(e => e.DisplayName.Contains("Магистр"));
+            context.EnemyIsPrisoner = enemies.Any(e => e.DisplayName.Contains("Заключённый"));
+
+            // Брат рядом: перк "Брат по оружию" есть и у воина, и у кого-то из своих.
+            if (warrior.Soul.Memory?.NarrativePerks != null
+                && warrior.Soul.Memory.NarrativePerks.Exists(p => p.PerkName == "Брат по оружию"))
+            {
+                context.BrotherNearby = allies.Any(a => a != warrior
+                    && a.Soul.Memory?.NarrativePerks != null
+                    && a.Soul.Memory.NarrativePerks.Exists(p => p.PerkName == "Брат по оружию"));
+            }
+
+            // Последний живой: рядом не осталось своих на ногах.
+            context.LastAlive = allies.Count == 0 && !warrior.IsDead;
 
             // Прокидываем предметы из инвентаря
             if (Inventory.PlayerInventory.Instance != null)
