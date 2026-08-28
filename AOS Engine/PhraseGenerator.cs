@@ -85,6 +85,24 @@ namespace Sinbinder.AOS
                     if (context.NearbyEnemies >= 3) return "их слишком много";
                     return "ему страшно";
 
+                case "Pride":
+                    if (decision.Action == ActionType.Flee) return "он скорее ляжет, чем побежит";
+                    if (decision.RefusedCommand) return "он не привык, чтобы им распоряжались";
+                    if (context.LastAlive) return "он остался один и не собирается уходить";
+                    return "он не может позволить себе выглядеть слабым";
+
+                case "Envy":
+                    if (context.RelationshipWithCommander < 40f)
+                        return "он не считает командира выше себя";
+                    return "он не хочет, чтобы это досталось кому-то другому";
+
+                case "Lust":
+                    if (context.BrotherNearby) return "он не бросит своего";
+                    return "он видит то, чего хочет, и больше ничего не слышит";
+
+                case "Gluttony":
+                    return "он тащит всё, до чего дотянется";
+
                 case "Sloth":
                     return "у него не осталось воли";
 

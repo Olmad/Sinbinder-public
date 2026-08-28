@@ -21,14 +21,26 @@ namespace Sinbinder.AOS
         {
             _modules = new List<IPersonalityModule>
             {
+                // Семь грехов — по одному голосу на шкалу.
                 new GreedModule(),
+                new PrideModule(),
                 new WrathModule(),
-                new VirtueModule(),
+                new EnvyModule(),
+                new LustModule(),
+                new GluttonyModule(),
+                new SlothModule(),
+
+                // Терпение читает шкалу Гнева со знаком минус. Отдельный
+                // голос нужен потому, что только он высказывается за
+                // умения Терпения — больше их никто не предлагает.
+                new PatienceModule(),
+
+                // Голоса, у которых нет своей шкалы.
                 new FearModule(),
                 new LoyaltyModule(),
                 new MoralityModule(),
                 new MemoryModule(),
-                new SlothModule()
+                new VirtueModule()
             };
         }
 
