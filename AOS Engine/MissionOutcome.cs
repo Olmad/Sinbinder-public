@@ -1,9 +1,14 @@
-public enum MissionOutcome
+// Assets/_Project/Scripts/AOS Engine/MissionOutcome.cs
+namespace Sinbinder.AOS
 {
-    VillageSaved,
-    VillageDestroyed,
-    VillageAbandoned,
-    NewCultEstablished,
-    TravelerEscaped,
-    TravelerKilled
+    /// <summary>Чем закончилась миссия после решения командира.</summary>
+    public enum MissionOutcome
+    {
+        VillageSaved,
+        VillageDestroyed,
+        VillageAbandoned,
+        NewCultEstablished,
+        TravelerEscaped,
+        TravelerKilled
+    }
 }

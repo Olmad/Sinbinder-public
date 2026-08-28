@@ -15,6 +15,9 @@ namespace Sinbinder.Core
 
         [Tooltip("Врождённые модификаторы действий, которые не меняются со временем.")]
         public List<ActionModifier> ActionModifiers = new();
+
+        [Tooltip("Нарративные перки души: личная история, которую разбирает PerkResolver.")]
+        public List<NarrativePerk> NarrativePerks = new();
     }
 
     [System.Serializable]

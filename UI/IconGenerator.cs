@@ -1,10 +1,12 @@
+#if UNITY_EDITOR
+// Файл зависит от UnityEditor. Без этой обёртки сборка плеера падает с CS0246,
+// потому что скрипт лежит не в папке Editor.
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor;
 
 public static class IconGenerator
 {
-    #if UNITY_EDITOR
     [MenuItem("Tools/Generate AOS Icons")]
     public static void GenerateIcons()
     {
@@ -55,5 +57,5 @@ public static class IconGenerator
         System.IO.File.WriteAllBytes(filePath, pngData);
         Object.DestroyImmediate(tex);
     }
-    #endif
 }
+#endif
