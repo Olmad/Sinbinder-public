@@ -168,6 +168,8 @@ var context = CombatDecisionContext.Create(_warrior);   // второй аргу
 | `ShellType` без `using Sinbinder.Core` | там же | CS0103 |
 | `context.AvailableNarrativePerks` — поля не существовало | там же | CS1061 |
 | Дубликат `GreedModule` в одном namespace | `AOS Engine/GreedModule.cs` | CS0101, удалён |
+| `CreateMemory` получал строку «гнев» вместо `EmotionType`, 7 вызовов | `AOSEventHub.cs` | CS1503 |
+| `TryGetLine` вызывался с четырьмя аргументами вместо трёх | `DialogueTrigger.cs:218` | CS1501 |
 
 Плюс подключено: `TemptationResolver` (снаряжение как рычаг),
 `IMissionModule` (мирный голос), `Decision` + `DecideDetailed`

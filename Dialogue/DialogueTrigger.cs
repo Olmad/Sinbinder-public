@@ -215,7 +215,9 @@ namespace Sinbinder.Dialogue
 
         private string GetDialogueLine(Warrior speaker, Warrior target, string situation)
         {
-            if (DialogueLoader.TryGetLine(speaker, target, situation, out string text)) return text;
+            // TryGetLine принимает говорящего и ситуацию; собеседник ей не нужен.
+            // Если реплики должны обращаться к target по имени — нужна перегрузка загрузчика.
+            if (DialogueLoader.TryGetLine(speaker, situation, out string text)) return text;
             return $"[{speaker.DisplayName}]: ...";
         }
     }

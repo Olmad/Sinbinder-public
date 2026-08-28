@@ -44,7 +44,7 @@ namespace Sinbinder.AOS
                     Importance = 0.5f,
                     Time = System.DateTime.Now
                 });
-                MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, "удовлетворение", 0.5f);
+                MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, EmotionType.Joy, 0.5f);
 
                 // Проверка специальных перков убийцы (Мститель, Бывший Охотник и т.д.)
                 if (killerWarrior.Soul.Memory?.NarrativePerks != null)
@@ -72,10 +72,10 @@ namespace Sinbinder.AOS
                 {
                     EmotionSystem.Instance?.TriggerEmotion(w, EmotionType.Sadness, 0.4f);
                     EmotionSystem.Instance?.TriggerEmotion(w, EmotionType.Anger, 0.3f);
-                    MemoryProcessor.Instance?.CreateMemory(w, "AllyDied", victim.Id, "печаль", 0.7f);
+                    MemoryProcessor.Instance?.CreateMemory(w, "AllyDied", victim.Id, EmotionType.Sadness, 0.7f);
 
                     if (killerWarrior != null)
-                        MemoryProcessor.Instance?.CreateMemory(w, "EnemyKilledAlly", killerWarrior.Id, "гнев", 0.8f);
+                        MemoryProcessor.Instance?.CreateMemory(w, "EnemyKilledAlly", killerWarrior.Id, EmotionType.Anger, 0.8f);
                 }
             }
         }
@@ -89,15 +89,15 @@ namespace Sinbinder.AOS
             savior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SaveAlly, Importance = 0.7f, Time = System.DateTime.Now });
             TitleManager.UpdateTitle(savior);
 
-            MemoryProcessor.Instance?.CreateMemory(saved, "AllySavedMe", savior.Id, "благодарность", 0.9f);
-            MemoryProcessor.Instance?.CreateMemory(savior, "SavedAlly", saved.Id, "гордость", 0.7f);
+            MemoryProcessor.Instance?.CreateMemory(saved, "AllySavedMe", savior.Id, EmotionType.Joy, 0.9f);
+            MemoryProcessor.Instance?.CreateMemory(savior, "SavedAlly", saved.Id, EmotionType.Joy, 0.7f);
         }
 
         public void OnBetrayal(Warrior traitor, Warrior betrayedCommander)
         {
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Anger, 0.8f);
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Sadness, 0.5f);
-            MemoryProcessor.Instance?.CreateMemory(betrayedCommander, "AllyBetrayedMe", traitor.Id, "гнев", 1.0f);
+            MemoryProcessor.Instance?.CreateMemory(betrayedCommander, "AllyBetrayedMe", traitor.Id, EmotionType.Anger, 1.0f);
 
             var allWarriors = Object.FindObjectsOfType<Warrior>();
             foreach (var w in allWarriors)
@@ -107,7 +107,7 @@ namespace Sinbinder.AOS
                 if (dist < 20f)
                 {
                     EmotionSystem.Instance?.TriggerEmotion(w, EmotionType.Anger, 0.4f);
-                    MemoryProcessor.Instance?.CreateMemory(w, "WitnessedBetrayal", traitor.Id, "гнев", 0.6f);
+                    MemoryProcessor.Instance?.CreateMemory(w, "WitnessedBetrayal", traitor.Id, EmotionType.Anger, 0.6f);
                 }
             }
         }
