@@ -40,11 +40,14 @@ namespace Sinbinder.Gameplay
             if (_harvested) return null;
             _harvested = true;
 
-            // Копия со всеми семью спектрами: прежняя запись через один грех
-            // и одну интенсивность теряла шесть шкал из семи.
-            var soul = new SoulData(_soul);
+            // Копия с потерями по качеству. До этого качество считалось
+            // по времени и ни на что не влияло: душа была одна и та же
+            // хоть через минуту, хоть через час, и смерть воина не стоила
+            // ничего. Теперь стоит — и у боя появляется вторая ставка
+            // помимо победы: успеть.
+            var soul = SoulDecay.Harvest(_soul, harvestedQuality);
 
-            Debug.Log($"[HARVEST] Душа собрана: {soul.Name} (качество: {harvestedQuality})");
+            Debug.Log($"[HARVEST] Душа собрана: {soul.Name} — {SoulDecay.Describe(harvestedQuality)}");
 
             Destroy(gameObject, 0.1f);
             return soul;

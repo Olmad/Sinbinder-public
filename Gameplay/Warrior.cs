@@ -17,6 +17,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _id;
         [SerializeField] private Core.SoulData _soul;
         [SerializeField] private Core.ShellType _shell;
+        [SerializeField] private Core.ShellData _shellData;
         [SerializeField] private float _maxHP;
         [SerializeField] private float _hp;
         [SerializeField] private float _attack;
@@ -35,6 +36,9 @@ namespace Sinbinder.Gameplay
         public string DisplayName => _soul.Name;
         public Core.SoulData Soul => _soul;
         public Core.ShellType Shell => _shell;
+
+        /// <summary>Оболочка целиком, если воин собран из неё. Может быть null.</summary>
+        public Core.ShellData ShellData => _shellData;
         public Core.VirtueSystem Virtue => _virtue;
         public float HP => _hp;
         public float MaxHP => _maxHP;
@@ -73,6 +77,34 @@ namespace Sinbinder.Gameplay
         }
 
         public void ClearCommand() => _command = default;
+
+        /// <summary>
+        /// Связывание души с полноценной оболочкой.
+        ///
+        /// Оболочка перестаёт быть косметикой: она задаёт тело и тянет
+        /// душу на себя. Смещение спектров оседает здесь, один раз,
+        /// и оно необратимо — вынув душу из волка, получите не ту,
+        /// кого вкладывали.
+        /// </summary>
+        public void Initialize(Core.SoulData soul, Core.ShellData shell, Core.RelationshipSystem relSystem,
+            bool isCommander = false, Team team = Team.Player)
+        {
+            Core.ShellBinder.Bind(soul, shell);
+
+            Initialize(soul, shell != null ? shell.type : Core.ShellType.Skeleton,
+                relSystem, isCommander, team);
+
+            _shellData = shell;
+            if (shell == null) return;
+
+            _maxHP = shell.EffectiveHP + soul.Level * 10f;
+            _hp = _maxHP;
+            _defense = shell.baseDefense + soul.Level;
+
+            var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null && shell.movementSpeed > 0f)
+                agent.speed = shell.movementSpeed;
+        }
 
         public void Initialize(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem, bool isCommander = false, Team team = Team.Player)
         {
