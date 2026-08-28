@@ -1,6 +1,7 @@
 // Assets/_Project/Scripts/Gameplay/WrathSkills.cs
 using System.Collections;
 using UnityEngine;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Gameplay
 {

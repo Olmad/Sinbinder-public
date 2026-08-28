@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UnityEngine.AI;
 using Sinbinder.UI;
 using Sinbinder.Core;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Gameplay
 {

@@ -4,6 +4,7 @@
 using System.Collections;
 using UnityEngine;
 using Sinbinder.Gameplay;
+using Sinbinder.Core;
 
 namespace Sinbinder.AOS
 {

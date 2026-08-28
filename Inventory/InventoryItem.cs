@@ -1,5 +1,6 @@
 // Assets/_Project/Scripts/Inventory/InventoryItem.cs
 using UnityEngine;
+using Sinbinder.Core;
 
 namespace Sinbinder.Inventory
 {

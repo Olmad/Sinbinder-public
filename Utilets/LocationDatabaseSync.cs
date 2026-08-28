@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Sinbinder.Core;
 
 namespace Sinbinder.Utilets
 {

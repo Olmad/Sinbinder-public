@@ -1,6 +1,7 @@
 // Assets/_Project/Scripts/Audio/VoiceGenerator.cs
 using UnityEngine;
 using Sinbinder.AOS;
+using Sinbinder.Gameplay;
 
 namespace Sinbinder.Audio
 {

@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Audio;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Utilets
 {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Gameplay;
+using Sinbinder.Core;
 
 namespace Sinbinder.AOS
 {

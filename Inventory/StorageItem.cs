@@ -1,4 +1,5 @@
 using UnityEngine;
+using Sinbinder.Core;
 
 namespace Sinbinder.Inventory
 {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Core
 {
