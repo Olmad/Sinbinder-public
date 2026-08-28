@@ -53,8 +53,11 @@ namespace Sinbinder.AOS
                     scores[action] += module.Evaluate(soul, context, action) * weight;
             }
 
-            var best = scores.OrderByDescending(kv => kv.Value).First();
+            // Снаряжение: восьмой рычаг игрока. Считается один раз, после характера.
+            TemptationResolver.Apply(scores, context);
+
             var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
+            var best = sorted[0];
             float gap = sorted[0].Value - sorted[1].Value;
 
             if (gap < 10f)
@@ -80,21 +83,35 @@ namespace Sinbinder.AOS
                 Loyalty = warrior.Loyalty
             };
 
+            if (availableActions == null || availableActions.Count == 0)
+            {
+                Debug.LogWarning($"[AOS MISSION] {warrior.DisplayName}: пустой список действий.");
+                return default;
+            }
+
             // Создаём словарь только из доступных действий
             Dictionary<MissionAction, float> scores = new();
             foreach (var action in availableActions)
                 scores[action] = 0f;
 
+            int voices = 0;
             foreach (var module in _modules)
             {
+                if (!(module is IMissionModule missionModule)) continue;
+                voices++;
+
                 float weight = EmotionSystem.Instance != null
                     ? EmotionSystem.Instance.GetEmotionWeight(warrior, module.ModuleID) : 1.0f;
                 foreach (var action in availableActions)
-                    scores[action] += module.EvaluateMission(soul, context, action) * weight;
+                    scores[action] += missionModule.EvaluateMission(soul, context, action) * weight;
             }
 
+            if (voices == 0)
+                Debug.LogWarning("[AOS MISSION] Ни один модуль не голосует по миссиям: "
+                    + "решение определяется порядком списка, а не характером.");
+
             var best = scores.OrderByDescending(kv => kv.Value).First();
-            Debug.Log($"[AOS MISSION] {warrior.DisplayName} выбрал {best.Key} (очки: {best.Value:F1})");
+            Debug.Log($"[AOS MISSION] {warrior.DisplayName} выбрал {best.Key} (очки: {best.Value:F1}, голосов: {voices})");
             return best.Key;
         }
     }

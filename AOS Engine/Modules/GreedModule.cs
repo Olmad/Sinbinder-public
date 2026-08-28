@@ -30,13 +30,7 @@ namespace Sinbinder.AOS.Modules
                 case ActionType.Loot:
                     score += context.NearbyLoot * _config.GreedLootPerItem;
                     score += sin * _config.GreedSinMultiplier;
-
-                    // Проверяем предметы-искусители
-                    foreach (var item in context.CarriedItems)
-                    {
-                        if (item.TemptationSin == Core.SinType.Greed && item.TemptationValue > 0)
-                            score += item.TemptationValue * 0.2f;
-                    }
+                    // Предметы-искусители считает TemptationResolver, один раз на решение.
                     break;
 
                 case ActionType.SaveAlly:
