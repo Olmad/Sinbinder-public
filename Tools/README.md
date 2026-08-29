@@ -33,6 +33,30 @@ python3 Tools/check.py --quiet  # только итог
 не гарантию сборки. Перегрузки, версии API Unity и `.meta`-файлы
 проверяются только редактором.
 
+## unity-check.ps1 / unity-check.sh — сборка без редактора
+
+```
+powershell -ExecutionPolicy Bypass -File Tools\unity-check.ps1
+./Tools/unity-check.sh                                    # macOS, Linux
+```
+
+Находит нужную версию Unity по `ProjectSettings/ProjectVersion.txt`,
+запускает её в пакетном режиме (`-batchmode -nographics -quit`),
+прогоняет самопроверку движка и печатает из лога ошибки компиляции,
+итог проверки и исключения. Редактор открывать не нужно.
+
+Первый запуск долгий: Unity импортирует ассеты. Дальше быстро.
+
+Скрипт принимает путь к проекту, если запускается не изнутри него:
+
+```
+powershell -File Tools\unity-check.ps1 -Project "C:\Unity\Sinbinder"
+./Tools/unity-check.sh /home/user/Unity/Sinbinder
+```
+
+Код выхода: 0 — самопроверка прошла, 1 — нет, 2 — не нашёл Unity
+или проект.
+
 ## Что проверяет сам движок
 
 `Tests/SelfCheck.cs` — проверка логики, а не синтаксиса:
