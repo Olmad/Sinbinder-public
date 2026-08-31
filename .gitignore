@@ -46,3 +46,7 @@ __pycache__/
 # ---- Система ----
 .DS_Store
 Thumbs.db
+
+# Стенд балансировки
+Tools/bench/bin/
+Tools/bench/obj/

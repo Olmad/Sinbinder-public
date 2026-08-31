@@ -71,6 +71,34 @@ public bool LastAlive;
         /// </summary>
         public bool CommandIsFallBack;
 
+        /// <summary>
+        /// Сделал ли воин то, о чём просили, — даже если выбрал это
+        /// по своей причине, а не из послушания.
+        ///
+        /// Приказ «в атаку» гневному, который и так рвётся драться,
+        /// раньше засчитывался отказом: голосование выбирало Attack,
+        /// а не ObeyCommand, и воин с командиром получали обоюдную
+        /// память о непослушании за то, что приказ был исполнен.
+        /// На прогоне таких ложных отказов оказалось около восьмой части.
+        ///
+        /// Для отхода это уже было разобрано (Flee при CommandIsFallBack).
+        /// Здесь то же правило распространено на остальные приказы.
+        /// </summary>
+        public bool SatisfiedBy(ActionType action)
+        {
+            if (!HasCommand) return false;
+            if (action == ActionType.ObeyCommand) return true;
+
+            switch (CommandType)
+            {
+                case "Attack":   return action == ActionType.Attack;
+                case "Hold":     return action == ActionType.Idle;
+                case "Defend":   return action == ActionType.Idle || action == ActionType.Attack;
+                case "FallBack": return action == ActionType.Flee;
+                default:         return CommandIsFallBack && action == ActionType.Flee;
+            }
+        }
+
         // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();
 

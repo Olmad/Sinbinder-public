@@ -76,10 +76,15 @@ namespace Sinbinder.AOS
         public float NerveFloor = 0.4f;
         public float NerveCeiling = 1.6f;
 
+        // Прежние значения (85/90/60) давали Страху до двухсот очков
+        // до умножения на вес 2.0, при том что остальные голоса дают
+        // десятки. На прогоне в 400 000 голосований Страх выигрывал
+        // половину всех решений, отряд убегал в половине случаев,
+        // а приказ проигрывал пять раз из шести. Уменьшены втрое.
         [Header("Страх")]
-        public float FearFleeLowHpBonus = 85f;
+        public float FearFleeLowHpBonus = 30f;
         public float FearAttackLowHpPenalty = -55f;
-        public float FearFleeDangerMultiplier = 90f;
+        public float FearFleeDangerMultiplier = 32f;
         public float FearIdleDangerPenalty = -20f;
         public float FearAttackGlobalPenalty = -0.2f;
 
@@ -90,7 +95,7 @@ namespace Sinbinder.AOS
         public float VirtueObeySinMultiplier = 0.3f;
 
         [Header("Верность")]
-        public float LoyaltyObeySinMultiplier = 0.5f;
+        public float LoyaltyObeySinMultiplier = 2.5f;
 
         [Header("Мораль")]
         public float MoralityPiousSaveAlly = 40f;
@@ -114,7 +119,7 @@ namespace Sinbinder.AOS
                + "Нужен, чтобы совет остался советом: без него Страх выдавал "
                + "до пятисот очков там, где остальные голоса дают по сорок, "
                + "и решал в одиночку. Ноль отключает ограничение.")]
-        public float MaxVoice = 120f;
+        public float MaxVoice = 80f;
 
         [Tooltip("Сила установки отряда. При единице самая решительная "
                + "поправка (полсотни очков) сопоставима с сильным голосом "
@@ -133,7 +138,7 @@ namespace Sinbinder.AOS
         public float SlothAttackFatiguePenalty = -30f;
         public float PrideIdleFatigueRefusal = -35f;
         public float PrideRearStrikeRefusal = -30f;
-        public float FearFleeSurroundedBonus = 60f;
+        public float FearFleeSurroundedBonus = 21f;
         public float WrathAttackFatigueIgnore = 20f;
         public float LoyaltyObeyEngagedPenalty = -35f;
 

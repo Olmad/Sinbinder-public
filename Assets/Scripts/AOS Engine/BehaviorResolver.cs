@@ -206,8 +206,7 @@ namespace Sinbinder.AOS
             // ослушанием значило бы записать человеку отказ за то, что он
             // послушался, и выдать ему с командиром обоюдную память
             // о непослушании (AOSEventHub.OnCommandRefused).
-            bool obeyed = decision.Action == ActionType.ObeyCommand
-                || (decision.Action == ActionType.Flee && context.CommandIsFallBack);
+            bool obeyed = context.SatisfiedBy(decision.Action);
 
             // Замереть и ослушаться — разные вещи. Колеблющийся не выбрал
             // ничего вместо приказа: два голоса тянули его поровну, и он
