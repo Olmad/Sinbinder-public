@@ -1,0 +1,207 @@
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory.meta
+C:\Users\Fortuna\Desktop\構Scripts N\MissionAction.cs
+C:\Users\Fortuna\Desktop\構Scripts N\ProjectStructure.txt
+C:\Users\Fortuna\Desktop\構Scripts N\UI.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Utilets.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\ActionType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\ActionType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSEventHub.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSEventHub.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSSceneSetup.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSSceneSetup.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSWarriorWrapper.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AOSWarriorWrapper.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AutoAttackAOS.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AutoAttackAOS.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AutoBattleResolver.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\AutoBattleResolver.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\BehaviorResolver.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\BehaviorResolver.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\CombatDecisionContext.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\CombatDecisionContext.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\CrisisType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\CrisisType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\DebugAOS.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\DebugAOS.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\DecisionContext.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\DecisionContext.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\EmotionSystem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\EmotionSystem.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\FalseGodQuest.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\FearModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\FearModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\GreedModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\GreedModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\IPersonalityModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\IPersonalityModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\LoyaltyModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\LoyaltyModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MemoryModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MemoryModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MemoryProcessor.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MemoryRecord.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MemoryRecord.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionAction.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionContext.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionDatabase.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionID.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionOutcome.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MissionResolver.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\Modules.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MoralityModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\MoralityModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\Quest.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\RumourManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\RumourManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\SlothModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\SlothModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\Soul.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\Soul.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\SquadStrategy.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\SquadStrategy.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\StrategyDatabase.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\StrategyDatabase.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleCeremony.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleCeremony.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleDatabase.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleDatabase.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\TitleManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\VirtueModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\VirtueModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\WrathModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\WrathModule.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\AOS Engine\Modules\PatienceModule.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\GamePauseController.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\GamePauseController.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Memory.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\MemorySeed.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\MemorySeed.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\MoralType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\RelationshipSystem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\ShellType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\SinType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\SoulData.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Virtue.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisData.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisDatabase.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisDatabase.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisResolver.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisResolver.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Crisis\CrisisType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\MoralType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\MoralType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\ShellType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\ShellType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SinType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SinType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SoulData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SoulData.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SoulQuality.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Soul\SoulQuality.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Virtue\VirtueSystem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Virtue\VirtueSystem.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Virtue\VirtueType.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Core\Virtue\VirtueType.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueAnimator.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueAnimator.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueCameraController.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueCameraController.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueDatabase.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueDatabase.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueLoader.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueLoader.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueTrigger.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Dialogue\DialogueTrigger.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\AutoAttack.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\AutoAttack.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattlefieldData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattlefieldData.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattlefieldManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattlefieldManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattleTest.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BattleTest.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BodyComponent.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\BodyComponent.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\ClassData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\CombatManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\CombatManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\Damageable.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\Damageable.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\DialogueTestSpawner.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\DialogueTestSpawner.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\DiligenceSkills.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\DiligenceSkills.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\GluttonySkills .cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\GluttonySkills .cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\HarvestableBody.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\HarvestableBody.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\HarvestableSoul.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\HarvestableSoul.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootCarrySystem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootCarrySystem.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootDrop.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootDrop.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootTable.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LootTable.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LustSkills.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\LustSkills.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\PatienceSkills.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\PatienceSkills.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\RTS_Camera.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\RTS_Camera.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SelectionComponent.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SelectionComponent.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SelectionManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SelectionManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\ShellData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SinbinderPlayer.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SinbinderPlayer.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SkillData.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SkillManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SlothSkills.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SlothSkills.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulHarvester.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulHarvester.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulIndicator.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulIndicator.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulManager.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\SoulManager.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\UnitFactory.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\UnitFactory.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\UnitMover.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\UnitMover.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\Warrior.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\Warrior.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\WrathSkills.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Gameplay\WrathSkills.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\Inventory.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\Inventory.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\InventoryItem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\InventoryItem.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\StorageItem.cs
+C:\Users\Fortuna\Desktop\構Scripts N\Inventory\StorageItem.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\CheatSpawner.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\CheatSpawner.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\DecisionIconUI.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\DecisionIconUI.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\DialogueUI.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\DialogueUI.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\HealthBarUI.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\HealthBarUI.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\IconGenerator.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\IconGenerator.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\OverheadUI.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\OverheadUI.cs.meta
+C:\Users\Fortuna\Desktop\構Scripts N\UI\UnitInfoPanel.cs
+C:\Users\Fortuna\Desktop\構Scripts N\UI\UnitInfoPanel.cs.meta
