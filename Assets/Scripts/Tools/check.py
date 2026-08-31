@@ -23,7 +23,9 @@ import re
 import sys
 from collections import defaultdict
 
-SKIP_DIRS = {'.git', 'Library', 'Temp', 'obj', 'Build', 'docs', 'Tools'}
+SKIP_DIRS = {'.git', 'Library', 'Temp', 'obj', 'Build', 'Builds', 'Logs',
+             'Packages', 'ProjectSettings', 'docs', 'Tools', '__pycache__',
+             'TutorialInfo'}   # шаблон Unity, не наш код
 
 UNITY_TYPES = {
     'Vector2', 'Vector3', 'Vector4', 'Quaternion', 'Mathf', 'Debug', 'Time', 'Color', 'Color32',
@@ -34,6 +36,8 @@ UNITY_TYPES = {
     'Application', 'Screen', 'Rect', 'LayerMask', 'Ray', 'Material', 'Shader', 'Gizmos',
     'HideFlags', 'Object', 'Random', 'Renderer', 'Collider', 'Rigidbody', 'AnimationCurve',
     'EditorBuildSettingsScene', 'EditorUtility', 'AssetDatabase', 'MenuItem', 'SerializedObject',
+    'GUIStyle', 'GUIContent', 'GUILayout', 'GUI', 'EditorGUILayout', 'EditorGUI', 'EditorStyles',
+    'Handles', 'SceneView', 'PrefabUtility', 'EditorSceneManager', 'SceneManager', 'Undo',
 }
 
 DOTNET_TYPES = {
@@ -46,7 +50,7 @@ KEYWORD_CALLS = {'if', 'for', 'while', 'switch', 'foreach', 'return', 'lock', 'c
 
 LINQ = re.compile(
     r'\.(Any|All|Where|Select|SelectMany|FirstOrDefault|LastOrDefault|OrderBy|OrderByDescending'
-    r'|GroupBy|Distinct|Aggregate|SingleOrDefault|ToList|ToArray|ToDictionary)\s*\(')
+    r'|GroupBy|Distinct|Aggregate|SingleOrDefault|ToList|ToDictionary)\s*\(')
 
 RE_NAMESPACE = re.compile(r'namespace\s+([\w.]+)')
 RE_TYPE_DECL = re.compile(

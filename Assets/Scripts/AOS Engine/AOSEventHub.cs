@@ -161,6 +161,12 @@ namespace Sinbinder.AOS
 
         public void OnBattleEnd(bool playerWon, int enemiesKilled, int alliesLost)
         {
+            // Сводка по решениям — единственное место, где видно долю
+            // отказов при отданном приказе. Разработчику, не игроку:
+            // это четвёртая ступень прозрачности.
+            Debug.Log(AOSStats.Report());
+            AOSStats.Reset();
+
             var allWarriors = Object.FindObjectsOfType<Warrior>();
             foreach (var w in allWarriors)
             {

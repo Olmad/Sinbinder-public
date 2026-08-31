@@ -102,6 +102,8 @@ namespace Sinbinder.AOS
             // Кто именно поднял каждое действие сильнее всех — это и есть причина.
             var loudest = new Dictionary<ActionType, (string module, float value)>();
 
+            float maxVoice = AOSConfig.Load().MaxVoice;
+
             foreach (var module in _modules)
             {
                 float weight = EmotionSystem.Instance != null
@@ -110,6 +112,18 @@ namespace Sinbinder.AOS
                 foreach (var action in scores.Keys.ToList())
                 {
                     float voice = module.Evaluate(soul, context, action) * weight;
+
+                    // Потолок вклада. Без него Страх выдавал до пятисот очков
+                    // там, где остальные голоса дают по сорок: его тройной
+                    // бонус (мало здоровья, высокая опасность, окружение)
+                    // умножался на вес 2.0. Совет, в котором один участник
+                    // может перекричать всех разом, — не совет.
+                    //
+                    // Ограничение симметрично: запретить голосу в одиночку
+                    // проталкивать действие и в одиночку его хоронить —
+                    // одно и то же требование.
+                    if (maxVoice > 0f) voice = Mathf.Clamp(voice, -maxVoice, maxVoice);
+
                     scores[action] += voice;
 
                     if (!loudest.TryGetValue(action, out var current) || voice > current.value)
@@ -122,6 +136,20 @@ namespace Sinbinder.AOS
 
             // Сюжетные перки: врождённая история воина правит очки.
             PerkResolver.ApplyPerks(scores, warrior, context, Perks);
+
+            // Установка отряда: седьмой рычаг игрока. Меняет склонность
+            // всех сразу, но не отменяет характер — поправка складывается
+            // с голосами и может им проиграть.
+            if (warrior != null && warrior.Team == Team.Player)
+            {
+                float scale = AOSConfig.Load().StrategyScale;
+                if (scale > 0f)
+                {
+                    foreach (var mod in Gameplay.SquadOrders.CurrentModifiers())
+                        if (scores.ContainsKey(mod.Action))
+                            scores[mod.Action] += mod.Bonus * scale;
+                }
+            }
 
             var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
             var best = sorted[0];
@@ -163,9 +191,13 @@ namespace Sinbinder.AOS
             }
             else
             {
+                // Без пометки о приказе строка лога не даёт отличить
+                // послушание от его отсутствия: главное число игры
+                // оставалось неизмеримым.
                 Debug.Log($"[AOS] {warrior.DisplayName} выбрал {best.Key} "
                     + $"(очки: {best.Value:F1}, gap: {gap:F1}, уверенность: {confidence:F2}, "
-                    + $"громче всех: {decision.TopModule})");
+                    + $"громче всех: {decision.TopModule}, "
+                    + $"приказ: {(context.HasCommand ? context.CommandType : "нет")})");
             }
 
             // Приказ отойти исполняется и бегством. Воин, побежавший от
@@ -188,6 +220,8 @@ namespace Sinbinder.AOS
             // из которых никто ничего не решил. Игрок при этом всё равно
             // всё видит: журнал пишет «не сдвинулся с места — не смог выбрать».
             decision.RefusedCommand = context.HasCommand && !obeyed && !decision.Hesitated;
+
+            AOSStats.Record(decision, context);
             return decision;
         }
 
