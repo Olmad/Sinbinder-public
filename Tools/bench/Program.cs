@@ -215,6 +215,125 @@ static class Bench
             .Select(kv => $"{kv.Key} {kv.Value * 100.0 / Math.Max(total, 1):F1}%"));
     }
 
+    // ---------- честна ли панель пророчеств ----------
+    //
+    // TemperamentPredictor обещает игроку, как воин поступит в четырёх
+    // положениях, и на этом обещании стоит третье требование к демо:
+    // отказ можно было предотвратить, и игрок это видел. Если панель
+    // ошибается, вся лестница прозрачности — ложь, а отказ читается
+    // как подстава.
+    //
+    // Проверка: берём пророчество для положения (на тех же выдуманных
+    // контекстах, что строит предсказатель), потом много раз ставим
+    // воина в ПОХОЖЕЕ, но не тождественное положение — сохраняем
+    // определяющий признак, остальное случайно — и смотрим, совпадает
+    // ли поступок с обещанным.
+
+    static DecisionContext Predictor(Warrior w, int kind)
+    {
+        var c = new DecisionContext
+        {
+            CurrentHP = w.MaxHP, MaxHP = w.MaxHP,
+            NearbyEnemies = 2, NearbyAllies = 2, DangerLevel = 0.3f,
+            UnpaidMissions = w.UnpaidMissions,
+            RelationshipWithCommander = 50f,
+            RecentMemories = new List<MemoryRecord>(),
+            CarriedItems = new List<InventoryItem>()
+        };
+        if (kind == 1) c.AllyInDanger = true;
+        if (kind == 2) c.NearbyLoot = 3;
+        if (kind == 3) { c.HasCommand = true; c.CommandType = "Move"; c.IsEngaged = true; c.EngagedWith = 1; }
+        return c;
+    }
+
+    static DecisionContext Similar(Random r, Warrior w, int kind)
+    {
+        var c = MakeContext(r, w, kind == 3);
+        if (c.NearbyEnemies == 0) c.NearbyEnemies = 1 + r.Next(3);
+        c.AllyInDanger = kind == 1;
+        if (kind == 1 && c.NearbyAllies == 0) c.NearbyAllies = 1;
+        c.NearbyLoot = kind == 2 ? 1 + r.Next(3) : 0;
+        if (kind == 3) { c.HasCommand = true; c.CommandType = "Move"; c.IsEngaged = true; c.EngagedWith = Math.Max(1, c.EngagedWith); }
+        return c;
+    }
+
+    static void Prophecy(AOSConfig cfg, int n)
+    {
+        Console.WriteLine("\n=== ЧЕСТНА ЛИ ПАНЕЛЬ ПРОРОЧЕСТВ ===");
+        Console.WriteLine("совпало — воин поступил так, как обещала панель\n");
+
+        string[] names = { "Пока бой ровен", "Когда падает друг",
+                           "Когда рядом золото", "Когда велено отойти" };
+        var modules = Modules();
+        var r = new Random(101);
+
+        // Калибровка: при какой уверенности обещание можно давать без
+        // оговорок. Формулировка должна соответствовать точности, иначе
+        // панель врёт даже когда движок прав.
+        {
+            var buckets = new (float lo, float hi, int hit, int total)[]
+            {
+                (0.00f, 0.10f, 0, 0), (0.10f, 0.25f, 0, 0), (0.25f, 0.50f, 0, 0),
+                (0.50f, 0.80f, 0, 0), (0.80f, 1.20f, 0, 0), (1.20f, 99f, 0, 0)
+            };
+            var rr = new Random(202);
+            for (int i = 0; i < n / 8; i++)
+            {
+                var w = new Warrior { Soul = MakeSoul(rr, "В"), Loyalty = (float)(rr.NextDouble() * 100) };
+                int kind = rr.Next(4);
+                var told = Vote(modules, w, Predictor(w, kind), cfg, SquadStrategy.Balanced);
+                if (told.Hesitated) continue;
+                var real = Vote(modules, w, Similar(rr, w, kind), cfg, SquadStrategy.Balanced);
+                for (int b = 0; b < buckets.Length; b++)
+                    if (told.Confidence >= buckets[b].lo && told.Confidence < buckets[b].hi)
+                    {
+                        buckets[b].total++;
+                        if (real.Action == told.Action) buckets[b].hit++;
+                        break;
+                    }
+            }
+            Console.WriteLine("калибровка: уверенность → доля сбывшихся");
+            foreach (var b in buckets)
+                if (b.total > 50)
+                    Console.WriteLine($"    {b.lo:F2}–{(b.hi > 90 ? 99 : b.hi),4:F2}  "
+                        + $"{b.hit * 100.0 / b.total,5:F1}%   ({b.total} случаев)");
+            Console.WriteLine();
+        }
+
+        Console.WriteLine($"{"положение",22} {"всего",9} {"уверенно",10} {"с оговоркой",12} {"колеблется",11}");
+        for (int kind = 0; kind < 4; kind++)
+        {
+            int hit = 0, total = 0, vague = 0;
+            int sureHit = 0, sureTotal = 0, softHit = 0, softTotal = 0;
+
+            for (int i = 0; i < n / 40; i++)
+            {
+                var w = new Warrior { Soul = MakeSoul(r, "В"), Loyalty = (float)(r.NextDouble() * 100) };
+                var told = Vote(modules, w, Predictor(w, kind), cfg, SquadStrategy.Balanced);
+                if (told.Hesitated) { vague++; continue; }
+
+                // Так предсказатель выбирает формулировку: при разрыве
+                // втрое выше порога он обещает без оговорок, иначе
+                // добавляет «скорее всего, но не наверняка».
+                bool sure = told.Confidence > cfg.HesitationShare * 3f;
+
+                for (int k = 0; k < 5; k++)
+                {
+                    var real = Vote(modules, w, Similar(r, w, kind), cfg, SquadStrategy.Balanced);
+                    total++;
+                    bool ok = real.Action == told.Action;
+                    if (ok) hit++;
+                    if (sure) { sureTotal++; if (ok) sureHit++; }
+                    else      { softTotal++; if (ok) softHit++; }
+                }
+            }
+            Console.WriteLine($"{names[kind],22} {hit * 100.0 / Math.Max(total, 1),8:F1}% "
+                + $"{sureHit * 100.0 / Math.Max(sureTotal, 1),10:F1}% "
+                + $"{softHit * 100.0 / Math.Max(softTotal, 1),12:F1}% "
+                + $"{vague * 100.0 / Math.Max(n / 40, 1),11:F1}%");
+        }
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -373,6 +492,8 @@ static class Bench
                 + $"{P(ActionType.Flee),5:F1}% {P(ActionType.ObeyCommand),5:F1}% "
                 + $"{tv.Key + " " + (tv.Value * 100.0 / t.Voices.Values.Sum()).ToString("F0") + "%",12}");
         }
+
+        Prophecy(cfg, n);
 
         Console.WriteLine("\n=== ПОРОГ КОЛЕБАНИЯ ===");
         foreach (float hs in new float[] { 0.05f, 0.10f, 0.15f, 0.20f, 0.30f })

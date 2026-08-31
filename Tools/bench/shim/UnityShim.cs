@@ -39,7 +39,12 @@ namespace UnityEngine
         public static void Break() { }
     }
 
-    public class Object { public string name; }
+    public class Object
+    {
+        public string name;
+        public static void DestroyImmediate(object o) { }
+        public static void Destroy(object o) { }
+    }
     public class ScriptableObject : Object
     {
         public static T CreateInstance<T>() where T : ScriptableObject, new() => new T();
@@ -50,6 +55,33 @@ namespace UnityEngine
         public float x, y, z;
         public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
         public static Vector3 zero => new Vector3(0, 0, 0);
+        public static Vector3 back => new Vector3(0, 0, -1);
+        public static Vector3 forward => new Vector3(0, 0, 1);
+
+        public float sqrMagnitude => x * x + y * y + z * z;
+        public float magnitude => Mathf.Sqrt(sqrMagnitude);
+
+        public Vector3 normalized
+        {
+            get { float m = magnitude; return m < 1e-6f ? zero : new Vector3(x / m, y / m, z / m); }
+        }
+
+        public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
+        public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
+        public static Vector3 operator *(Vector3 a, float f) => new Vector3(a.x * f, a.y * f, a.z * f);
+        public static Vector3 operator /(Vector3 a, float f) => new Vector3(a.x / f, a.y / f, a.z / f);
+
+        public static float Dot(Vector3 a, Vector3 b) => a.x * b.x + a.y * b.y + a.z * b.z;
+
+        public static float Distance(Vector3 a, Vector3 b) => (a - b).magnitude;
+
+        /// <summary>Угол между направлениями в градусах.</summary>
+        public static float Angle(Vector3 a, Vector3 b)
+        {
+            float d = a.normalized.x * b.normalized.x + a.normalized.y * b.normalized.y
+                    + a.normalized.z * b.normalized.z;
+            return (float)(Math.Acos(Mathf.Clamp(d, -1f, 1f)) * 180.0 / Math.PI);
+        }
     }
 
     [AttributeUsage(AttributeTargets.Field)]      public class SerializeField : Attribute { }
