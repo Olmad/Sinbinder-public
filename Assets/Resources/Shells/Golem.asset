@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd4dd1b17ef2ba24d8238123fe01da93, type: 3}
+  m_Name: Golem
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.ShellData
+  shellName: "\u0413\u043E\u043B\u0435\u043C"
+  type: 3
+  baseHP: 42
+  baseDefense: 4
+  movementSpeed: 2
+  canBeRevived: 1
+  wear: 0.1
+  spectrumBias:
+  - 0
+  - 25
+  - 0
+  - -25
+  - 0
+  - 0
+  - 0
+  bindStrength: 0.5

@@ -1,0 +1,3104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-9170105816604100227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "059 \u041C\u0435\u043B\u044C\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u0435\u043B\u044C\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041C\u043E\u043B\u043E\u043B \u0437\u0435\u0440\u043D\u043E. \u0415\u0433\u043E
+    \u0430\u0442\u0430\u043A\u0438 \u043F\u043E\u0434\u043D\u0438\u043C\u0430\u044E\u0442
+    \u043E\u0431\u043B\u0430\u043A\u043E \u043F\u044B\u043B\u0438, \u043E\u0441\u043B\u0435\u043F\u043B\u044F\u044E\u0449\u0435\u0435
+    \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u041F\u044B\u043B\u044C\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-9103744161413135152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "047 \u0422\u0430\u043D\u0446\u043E\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0422\u0430\u043D\u0446\u043E\u0440"
+  Type: 0
+  Description: "\u0422\u0430\u043D\u0446\u0435\u0432\u0430\u043B \u043D\u0430 \u0441\u0446\u0435\u043D\u0435.
+    \u0415\u0433\u043E \u0443\u043A\u043B\u043E\u043D\u0435\u043D\u0438\u0435 \u043F\u043E\u0432\u044B\u0448\u0435\u043D\u043E,
+    \u0430 \u0430\u0442\u0430\u043A\u0438 \u0432\u044B\u0433\u043B\u044F\u0434\u044F\u0442
+    \u043A\u0430\u043A \u0442\u0430\u043D\u0435\u0446."
+  Title: "\u0422\u0430\u043D\u0446\u0443\u044E\u0449\u0438\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8990575229737388108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "019 \u0412\u0435\u0447\u043D\u044B\u0439 \u0441\u0442\u0440\u0430\u043D\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0412\u0435\u0447\u043D\u044B\u0439 \u0441\u0442\u0440\u0430\u043D\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041D\u0435 \u043C\u043E\u0436\u0435\u0442 \u043E\u0441\u0442\u0430\u0432\u0430\u0442\u044C\u0441\u044F
+    \u043D\u0430 \u043E\u0434\u043D\u043E\u043C \u043C\u0435\u0441\u0442\u0435. \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C
+    \u043F\u0435\u0440\u0435\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u0432\u044B\u0448\u0435\u043D\u0430
+    \u043D\u0430 15%, \u043D\u043E \u0437\u0430\u0449\u0438\u0442\u0430 \u0432 \u0433\u0430\u0440\u043D\u0438\u0437\u043E\u043D\u0435
+    \u0441\u043D\u0438\u0436\u0435\u043D\u0430."
+  Title: "\u0421\u043A\u0438\u0442\u0430\u043B\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InGarrison
+    ScoreModifier: 30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8784441656285308422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "028 \u041D\u044B\u0440\u044F\u043B\u044C\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041D\u044B\u0440\u044F\u043B\u044C\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u041F\u0440\u043E\u0432\u0451\u043B \u0436\u0438\u0437\u043D\u044C
+    \u0432 \u043C\u043E\u0440\u0435. \u0412 \u0432\u043E\u0434\u043D\u044B\u0445
+    \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445 \u0435\u0433\u043E \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C
+    \u0438 \u0430\u0442\u0430\u043A\u0430 \u043F\u043E\u0432\u044B\u0448\u0435\u043D\u044B."
+  Title: "\u041C\u043E\u0440\u0441\u043A\u043E\u0439 \u0412\u043E\u043B\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: NearWater
+    ScoreModifier: 20
+  - Condition: NearWater
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8776261526080183013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "003 \u0425\u0440\u0430\u043D\u0438\u0442\u0435\u043B\u044C \u0440\u0443\u0438\u043D"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0425\u0440\u0430\u043D\u0438\u0442\u0435\u043B\u044C \u0440\u0443\u0438\u043D"
+  Type: 0
+  Description: "\u041A\u043B\u044F\u043B\u0441\u044F \u0437\u0430\u0449\u0438\u0449\u0430\u0442\u044C
+    \u0434\u0440\u0435\u0432\u043D\u0438\u0435 \u043C\u0435\u0441\u0442\u0430. \u0412
+    \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445 \u0442\u0438\u043F\u0430 '\u0421\u043A\u043B\u0435\u043F'
+    \u0432\u0441\u0435 \u0445\u0430\u0440\u0430\u043A\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043A\u0438
+    \u0443\u0434\u0432\u0430\u0438\u0432\u0430\u044E\u0442\u0441\u044F."
+  Title: "\u0421\u0442\u0440\u0430\u0436 \u0417\u0430\u0431\u044B\u0442\u044B\u0445
+    \u0417\u0430\u043B\u043E\u0432"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InRuins
+    ScoreModifier: 100
+  - Condition: InRuins
+    ScoreModifier: -50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8512651420495453525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "018 \u041E\u0442\u0441\u0442\u0443\u043F\u043D\u0438\u043A-\u041C\u0430\u0433\u0438\u0441\u0442\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041E\u0442\u0441\u0442\u0443\u043F\u043D\u0438\u043A-\u041C\u0430\u0433\u0438\u0441\u0442\u0440"
+  Type: 3
+  Description: "\u0421\u0431\u0435\u0436\u0430\u043B \u0438\u0437 \u041E\u0440\u0434\u0435\u043D\u0430
+    \u041C\u0430\u0433\u0438\u0441\u0442\u0440\u043E\u0432, \u043F\u0440\u0438\u0445\u0432\u0430\u0442\u0438\u0432
+    \u0441\u0435\u043A\u0440\u0435\u0442\u043D\u044B\u0435 \u0437\u043D\u0430\u043D\u0438\u044F.
+    \u041C\u0430\u0433\u0438\u0441\u0442\u0440\u044B \u043E\u0431\u044A\u044F\u0432\u0438\u043B\u0438
+    \u043D\u0430 \u043D\u0435\u0433\u043E \u043E\u0445\u043E\u0442\u0443."
+  Title: "\u0415\u0440\u0435\u0442\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsMagister
+    ScoreModifier: 50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8411247656759019035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "048 \u0424\u043E\u043D\u0430\u0440\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0424\u043E\u043D\u0430\u0440\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0417\u0430\u0436\u0438\u0433\u0430\u043B \u0443\u043B\u0438\u0447\u043D\u044B\u0435
+    \u0444\u043E\u043D\u0430\u0440\u0438. \u0412 \u0442\u0451\u043C\u043D\u044B\u0445
+    \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445 \u0438\u0437\u043B\u0443\u0447\u0430\u0435\u0442
+    \u0441\u0432\u0435\u0442, \u043E\u0441\u043B\u0430\u0431\u043B\u044F\u044F \u0432\u0440\u0430\u0433\u043E\u0432-\u043D\u0435\u0436\u0438\u0442\u044C."
+  Title: "\u0421\u0432\u0435\u0442\u043E\u043D\u043E\u0441\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InDarkness
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-8322712999180302688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "042 \u0428\u0443\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0428\u0443\u0442"
+  Type: 0
+  Description: "\u0412\u0435\u0441\u0435\u043B\u0438\u043B \u043A\u043E\u0440\u043E\u043B\u0435\u0439.
+    \u041C\u043E\u0436\u0435\u0442 \u0440\u0430\u0441\u0441\u043C\u0435\u0448\u0438\u0442\u044C
+    \u0432\u0440\u0430\u0433\u0430, \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E
+    \u0441\u043D\u0438\u0436\u0430\u044F \u0435\u0433\u043E \u0430\u0442\u0430\u043A\u0443,
+    \u043D\u043E \u0438\u043D\u043E\u0433\u0434\u0430 \u0448\u0443\u0442\u043A\u0430
+    \u043F\u0440\u043E\u0432\u0430\u043B\u0438\u0432\u0430\u0435\u0442\u0441\u044F."
+  Title: "\u041A\u043E\u0440\u043E\u043B\u0435\u0432\u0441\u043A\u0438\u0439 \u0428\u0443\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-7858702979629179518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "009 \u0411\u044B\u0432\u0448\u0438\u0439 \u041E\u0445\u043E\u0442\u043D\u0438\u043A
+    (\u043D\u0435\u043D\u0430\u0432\u0438\u0434\u0438\u0442)"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0411\u044B\u0432\u0448\u0438\u0439 \u041E\u0445\u043E\u0442\u043D\u0438\u043A
+    (\u043D\u0435\u043D\u0430\u0432\u0438\u0434\u0438\u0442)"
+  Type: 3
+  Description: "\u041F\u0440\u043E\u0432\u0430\u043B\u0438\u043B \u0438\u043D\u0438\u0446\u0438\u0430\u0446\u0438\u044E
+    \u0438 \u0442\u0435\u043F\u0435\u0440\u044C \u0432\u044B\u043C\u0435\u0449\u0430\u0435\u0442
+    \u0437\u043B\u043E\u0431\u0443 \u043D\u0430 \u0431\u044B\u0432\u0448\u0438\u0445
+    \u0442\u043E\u0432\u0430\u0440\u0438\u0449\u0430\u0445."
+  Title: "\u041E\u0445\u043E\u0442\u043D\u0438\u043A \u043D\u0430 \u041E\u0445\u043E\u0442\u043D\u0438\u043A\u043E\u0432"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsHunter
+    ScoreModifier: 60
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-7802764581123397023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "016 \u0421\u043F\u0430\u0441\u0451\u043D\u043D\u044B\u0439 \u043C\u0430\u0433"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043F\u0430\u0441\u0451\u043D\u043D\u044B\u0439 \u043C\u0430\u0433"
+  Type: 4
+  Description: "\u041C\u0430\u0433 \u0441\u043F\u0430\u0441 \u0435\u043C\u0443 \u0436\u0438\u0437\u043D\u044C
+    \u043E\u0442 \u043F\u0440\u043E\u043A\u043B\u044F\u0442\u0438\u044F. \u041F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    +30% \u043A \u0437\u0430\u0449\u0438\u0442\u0435 \u043E\u0442 \u043C\u0430\u0433\u0438\u0438,
+    \u043D\u043E \u0431\u043E\u0438\u0442\u0441\u044F \u0442\u0435\u043C\u043D\u043E\u0442\u044B."
+  Title: "\u0427\u0430\u0440\u043E\u0434\u0435\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InDarkness
+    ScoreModifier: 50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-7459318032920159475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "088 \u0413\u043E\u043D\u0447\u0430\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u043E\u043D\u0447\u0430\u0440"
+  Type: 0
+  Description: "\u041B\u0435\u043F\u0438\u043B \u0433\u043E\u0440\u0448\u043A\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0442\u044C
+    \u0433\u043B\u0438\u043D\u044F\u043D\u044B\u0435 \u043B\u043E\u0432\u0443\u0448\u043A\u0438,
+    \u0437\u0430\u043C\u0435\u0434\u043B\u044F\u044E\u0449\u0438\u0435 \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0413\u043E\u0440\u0448\u0435\u0447\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-7172256587368687402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "089 \u041A\u0443\u0437\u043D\u0435\u0446"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0443\u0437\u043D\u0435\u0446"
+  Type: 0
+  Description: "\u041A\u043E\u0432\u0430\u043B \u043E\u0440\u0443\u0436\u0438\u0435.
+    \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043C\u0435\u044E\u0442
+    \u0448\u0430\u043D\u0441 \u0441\u043B\u043E\u043C\u0430\u0442\u044C \u043E\u0440\u0443\u0436\u0438\u0435
+    \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u041E\u0440\u0443\u0436\u0435\u0439\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-6970108318743925406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "037 \u0421\u043B\u0435\u043F\u043E\u0439 \u043C\u0443\u0434\u0440\u0435\u0446"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043B\u0435\u043F\u043E\u0439 \u043C\u0443\u0434\u0440\u0435\u0446"
+  Type: 0
+  Description: "\u041B\u0438\u0448\u0451\u043D \u0437\u0440\u0435\u043D\u0438\u044F,
+    \u043D\u043E \u0447\u0443\u0432\u0441\u0442\u0432\u0443\u0435\u0442 \u043B\u043E\u0436\u044C.
+    \u041D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0430\u0442\u0430\u043A\u043E\u0432\u0430\u0442\u044C,
+    \u043D\u043E \u0435\u0433\u043E \u0441\u043E\u0432\u0435\u0442\u044B \u043F\u043E\u0432\u044B\u0448\u0430\u044E\u0442
+    \u0437\u0430\u0449\u0438\u0442\u0443 \u0432\u0441\u0435\u0433\u043E \u043E\u0442\u0440\u044F\u0434\u0430."
+  Title: "\u041F\u0440\u043E\u0432\u0438\u0434\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: -100
+  - Condition: Always
+    ScoreModifier: 30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-6938822112570562991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "081 \u0411\u044B\u0432\u0448\u0438\u0439 \u0440\u0430\u0431"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0411\u044B\u0432\u0448\u0438\u0439 \u0440\u0430\u0431"
+  Type: 4
+  Description: "\u041E\u0441\u0432\u043E\u0431\u043E\u0434\u0438\u043B\u0441\u044F
+    \u0438\u0437 \u0440\u0430\u0431\u0441\u0442\u0432\u0430 \u0438 \u0442\u0435\u043F\u0435\u0440\u044C
+    \u0446\u0435\u043D\u0438\u0442 \u0441\u0432\u043E\u0431\u043E\u0434\u0443 \u043F\u0440\u0435\u0432\u044B\u0448\u0435
+    \u0432\u0441\u0435\u0433\u043E. \u041D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C
+    \u043F\u043E\u0440\u0430\u0431\u043E\u0449\u0451\u043D \u043C\u0430\u0433\u0438\u0435\u0439."
+  Title: "\u041E\u0441\u0432\u043E\u0431\u043E\u0436\u0434\u0451\u043D\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-6675074891957142663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "083 \u0428\u0430\u0445\u0442\u0451\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0428\u0430\u0445\u0442\u0451\u0440"
+  Type: 0
+  Description: "\u0414\u043E\u0431\u044B\u0432\u0430\u043B \u0440\u0443\u0434\u0443
+    \u0432 \u0433\u043B\u0443\u0431\u043E\u043A\u0438\u0445 \u0448\u0430\u0445\u0442\u0430\u0445.
+    \u0412 \u043F\u043E\u0434\u0437\u0435\u043C\u0435\u043B\u044C\u044F\u0445 \u043D\u0430\u0445\u043E\u0434\u0438\u0442
+    \u0431\u043E\u043B\u044C\u0448\u0435 \u043F\u043E\u043B\u0435\u0437\u043D\u044B\u0445
+    \u0438\u0441\u043A\u043E\u043F\u0430\u0435\u043C\u044B\u0445."
+  Title: "\u0428\u0430\u0445\u0442\u0451\u0440"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InCave
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-6332106443491204788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "022 \u0413\u043B\u0430\u0434\u0438\u0430\u0442\u043E\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u043B\u0430\u0434\u0438\u0430\u0442\u043E\u0440"
+  Type: 0
+  Description: "\u0421\u0440\u0430\u0436\u0430\u043B\u0441\u044F \u043D\u0430 \u0430\u0440\u0435\u043D\u0435.
+    \u041F\u043E\u043B\u0443\u0447\u0430\u0435\u0442 \u0431\u043E\u043D\u0443\u0441
+    \u043A \u0430\u0442\u0430\u043A\u0435, \u0435\u0441\u043B\u0438 \u0431\u043E\u0439
+    \u0434\u043B\u0438\u0442\u0441\u044F \u0434\u043E\u043B\u044C\u0448\u0435 3 \u0445\u043E\u0434\u043E\u0432."
+  Title: "\u0410\u0440\u0435\u043D\u0430\u0442\u043E\u0440"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: LongBattle
+    ScoreModifier: 25
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-6068021629421205566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "082 \u0421\u043C\u043E\u0442\u0440\u0438\u0442\u0435\u043B\u044C \u043C\u0430\u044F\u043A\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043C\u043E\u0442\u0440\u0438\u0442\u0435\u043B\u044C \u043C\u0430\u044F\u043A\u0430"
+  Type: 0
+  Description: "\u0413\u043E\u0434\u0430\u043C\u0438 \u0436\u0438\u043B \u043D\u0430
+    \u043E\u0434\u0438\u043D\u043E\u043A\u043E\u043C \u043C\u0430\u044F\u043A\u0435.
+    \u0415\u0433\u043E \u0437\u0440\u0435\u043D\u0438\u0435 \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442
+    \u0437\u0430\u043C\u0435\u0447\u0430\u0442\u044C \u0432\u0440\u0430\u0433\u043E\u0432
+    \u043D\u0430 \u0431\u043E\u043B\u044C\u0448\u0435\u043C \u0440\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u0438."
+  Title: "\u0421\u043C\u043E\u0442\u0440\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-5757263785111577087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "057 \u041A\u0430\u043C\u0435\u043D\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0430\u043C\u0435\u043D\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0421\u0442\u0440\u043E\u0438\u043B \u0437\u0430\u043C\u043A\u0438.
+    \u0412 \u043E\u0431\u043E\u0440\u043E\u043D\u0435 \u0435\u0433\u043E \u0437\u0430\u0449\u0438\u0442\u0430
+    \u043F\u043E\u0432\u044B\u0448\u0430\u0435\u0442\u0441\u044F \u043D\u0430 30%."
+  Title: "\u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InDefense
+    ScoreModifier: -50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-5254457286241871969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "023 \u041C\u0441\u0442\u0438\u0442\u0435\u043B\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u0441\u0442\u0438\u0442\u0435\u043B\u044C"
+  Type: 5
+  Description: "\u041F\u043E\u0442\u0435\u0440\u044F\u043B \u0441\u0435\u043C\u044C\u044E
+    \u0438\u0437-\u0437\u0430 \u0431\u0430\u043D\u0434\u0438\u0442\u043E\u0432. \u041F\u0440\u0438
+    \u0432\u0441\u0442\u0440\u0435\u0447\u0435 \u0441 \u0431\u0430\u043D\u0434\u0438\u0442\u0430\u043C\u0438
+    \u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0432 \u043D\u0435\u043A\u043E\u043D\u0442\u0440\u043E\u043B\u0438\u0440\u0443\u0435\u043C\u0443\u044E
+    \u044F\u0440\u043E\u0441\u0442\u044C."
+  Title: "\u041C\u0441\u0442\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsBandit
+    ScoreModifier: 100
+  - Condition: EnemyIsBandit
+    ScoreModifier: -100
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-4722087230212655611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "054 \u041F\u0438\u0441\u0430\u0440\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0438\u0441\u0430\u0440\u044C"
+  Type: 0
+  Description: "\u0412\u0451\u043B \u043B\u0435\u0442\u043E\u043F\u0438\u0441\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043E\u0432\u044B\u0432\u0430\u0442\u044C
+    \u0434\u0440\u0435\u0432\u043D\u0438\u0435 \u0442\u0435\u043A\u0441\u0442\u044B,
+    \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u044F \u0441\u0435\u043A\u0440\u0435\u0442\u043D\u044B\u0435
+    \u043B\u043E\u043A\u0430\u0446\u0438\u0438."
+  Title: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-4250914292476554693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "049 \u041A\u0443\u0437\u043D\u0435\u0446-\u043E\u0440\u0443\u0436\u0435\u0439\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0443\u0437\u043D\u0435\u0446-\u043E\u0440\u0443\u0436\u0435\u0439\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041A\u043E\u0432\u0430\u043B \u043E\u0440\u0443\u0436\u0438\u0435.
+    \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043C\u0435\u044E\u0442
+    \u0448\u0430\u043D\u0441 \u0441\u043B\u043E\u043C\u0430\u0442\u044C \u043E\u0440\u0443\u0436\u0438\u0435
+    \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u041E\u0440\u0443\u0436\u0435\u0439\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-4081094069621073497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "068 \u041F\u0430\u0440\u0444\u044E\u043C\u0435\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0430\u0440\u0444\u044E\u043C\u0435\u0440"
+  Type: 0
+  Description: "\u0421\u043E\u0437\u0434\u0430\u0432\u0430\u043B \u0434\u0443\u0445\u0438.
+    \u0415\u0433\u043E \u0430\u0440\u043E\u043C\u0430\u0442\u044B \u043C\u043E\u0433\u0443\u0442
+    \u043A\u0430\u043A \u043F\u0440\u0438\u0432\u043B\u0435\u0447\u044C, \u0442\u0430\u043A
+    \u0438 \u043E\u0442\u043F\u0443\u0433\u043D\u0443\u0442\u044C \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0410\u0440\u043E\u043C\u0430\u0442\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3940663730960671846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "084 \u0414\u0440\u043E\u0432\u043E\u0441\u0435\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u0440\u043E\u0432\u043E\u0441\u0435\u043A"
+  Type: 0
+  Description: "\u0420\u0443\u0431\u0438\u043B \u043B\u0435\u0441. \u0415\u0433\u043E
+    \u0430\u0442\u0430\u043A\u0438 \u043F\u043E \u0432\u0440\u0430\u0433\u0430\u043C
+    \u0438\u0437 \u0434\u0435\u0440\u0435\u0432\u0430 \u0438\u043B\u0438 \u0440\u0430\u0441\u0442\u0435\u043D\u0438\u0439
+    \u043D\u0430\u043D\u043E\u0441\u044F\u0442 \u0443\u0434\u0432\u043E\u0435\u043D\u043D\u044B\u0439
+    \u0443\u0440\u043E\u043D."
+  Title: "\u041B\u0435\u0441\u043E\u0440\u0443\u0431"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsPlant
+    ScoreModifier: 50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3826139854880002945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "015 \u0411\u044B\u0432\u0448\u0438\u0439 \u043D\u0430\u0434\u0437\u0438\u0440\u0430\u0442\u0435\u043B\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0411\u044B\u0432\u0448\u0438\u0439 \u043D\u0430\u0434\u0437\u0438\u0440\u0430\u0442\u0435\u043B\u044C"
+  Type: 3
+  Description: "\u0420\u0430\u0431\u043E\u0442\u0430\u043B \u0432 \u0442\u044E\u0440\u044C\u043C\u0435
+    \u041C\u0430\u0433\u0438\u0441\u0442\u0440\u0430. \u041F\u0440\u0438 \u0432\u0441\u0442\u0440\u0435\u0447\u0435
+    \u0441 \u0437\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u043C\u0438
+    \u0438\u043B\u0438 \u0431\u044B\u0432\u0448\u0438\u043C\u0438 \u043A\u043E\u043B\u043B\u0435\u0433\u0430\u043C\u0438
+    \u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0432 \u044F\u0440\u043E\u0441\u0442\u044C."
+  Title: "\u0422\u044E\u0440\u0435\u043C\u0449\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsPrisoner
+    ScoreModifier: 40
+  - Condition: EnemyIsMagister
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3764631251688154484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "050 \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u0432\u044B\u0436\u0438\u0432\u0448\u0438\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u0432\u044B\u0436\u0438\u0432\u0448\u0438\u0439"
+  Type: 0
+  Description: "\u0415\u0434\u0438\u043D\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439,
+    \u043A\u0442\u043E \u0432\u044B\u0436\u0438\u043B \u043F\u043E\u0441\u043B\u0435
+    \u0431\u0438\u0442\u0432\u044B. \u041A\u043E\u0433\u0434\u0430 \u043E\u043D \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F
+    \u043E\u0434\u0438\u043D \u043F\u0440\u043E\u0442\u0438\u0432 \u0432\u0440\u0430\u0433\u043E\u0432,
+    \u0435\u0433\u043E \u0441\u0438\u043B\u0430 \u0443\u0434\u0432\u0430\u0438\u0432\u0430\u0435\u0442\u0441\u044F."
+  Title: "\u041E\u0434\u0438\u043D\u043E\u043A\u0438\u0439 \u0412\u043E\u043B\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: LastAlive
+    ScoreModifier: 200
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3697171966508967661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "097 \u0427\u0430\u0441\u043E\u0432\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0427\u0430\u0441\u043E\u0432\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0427\u0438\u043D\u0438\u043B \u0447\u0430\u0441\u044B. \u0415\u0433\u043E
+    \u0447\u0443\u0432\u0441\u0442\u0432\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438
+    \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u043E\u0442\u0440\u044F\u0434\u0443
+    \u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u043D\u0430
+    5% \u0431\u044B\u0441\u0442\u0440\u0435\u0435."
+  Title: "\u0425\u0440\u043E\u043D\u043E\u043C\u0435\u0442\u0440\u0438\u0441\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3676946007124645181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "044 \u041C\u0435\u0442\u0435\u043E\u0440\u043E\u043B\u043E\u0433"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u0435\u0442\u0435\u043E\u0440\u043E\u043B\u043E\u0433"
+  Type: 0
+  Description: "\u041F\u0440\u0435\u0434\u0441\u043A\u0430\u0437\u044B\u0432\u0430\u043B
+    \u043F\u043E\u0433\u043E\u0434\u0443. \u0427\u0443\u0432\u0441\u0442\u0432\u0443\u0435\u0442
+    \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u043A\u043B\u0438\u043C\u0430\u0442\u0430
+    \u0438 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442 \u0431\u0430\u0444\u0444\u044B
+    \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043C\u043E\u0441\u0442\u0438 \u043E\u0442
+    \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F."
+  Title: "\u041F\u0440\u0435\u0434\u0441\u043A\u0430\u0437\u0430\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3641657666738938612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "020 \u041F\u0430\u043B\u0430\u0447"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0430\u043B\u0430\u0447"
+  Type: 0
+  Description: "\u041F\u0440\u0438\u0432\u043E\u0434\u0438\u043B \u043F\u0440\u0438\u0433\u043E\u0432\u043E\u0440\u044B
+    \u0432 \u0438\u0441\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435. \u041C\u043E\u0436\u0435\u0442
+    \u0434\u043E\u0431\u0438\u0442\u044C \u0440\u0430\u043D\u0435\u043D\u043E\u0433\u043E
+    \u0432\u0440\u0430\u0433\u0430, \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u044F
+    5% HP, \u043D\u043E \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u0438 \u0435\u0433\u043E
+    \u0431\u043E\u044F\u0442\u0441\u044F."
+  Title: "\u0418\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3489791854313248738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "025 \u0414\u0440\u0435\u0441\u0441\u0438\u0440\u043E\u0432\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u0440\u0435\u0441\u0441\u0438\u0440\u043E\u0432\u0449\u0438\u043A"
+  Type: 2
+  Description: "\u041F\u0440\u0438 \u0436\u0438\u0437\u043D\u0438 \u0434\u0440\u0435\u0441\u0441\u0438\u0440\u043E\u0432\u0430\u043B
+    \u0432\u043E\u043B\u043A\u043E\u0432. \u041C\u043E\u0436\u0435\u0442 \u043F\u0440\u0438\u0440\u0443\u0447\u0430\u0442\u044C
+    \u0434\u0438\u043A\u0438\u0445 \u0437\u0432\u0435\u0440\u0435\u0439 \u0432 \u0431\u043E\u044E."
+  Title: "\u041F\u043E\u0432\u0435\u043B\u0438\u0442\u0435\u043B\u044C \u0417\u0432\u0435\u0440\u0435\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsBeast
+    ScoreModifier: -50
+  - Condition: EnemyIsBeast
+    ScoreModifier: 50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3479797231485918442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "090 \u041F\u043B\u043E\u0442\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043B\u043E\u0442\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0421\u0442\u0440\u043E\u0438\u043B \u0434\u043E\u043C\u0430. \u041C\u043E\u0436\u0435\u0442
+    \u0431\u044B\u0441\u0442\u0440\u043E \u0432\u043E\u0437\u0432\u043E\u0434\u0438\u0442\u044C
+    \u0431\u0430\u0440\u0440\u0438\u043A\u0430\u0434\u044B, \u0434\u0430\u0432\u0430\u044F
+    \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u0430\u043C \u0443\u043A\u0440\u044B\u0442\u0438\u0435."
+  Title: "\u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3383524683344691481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "074 \u0413\u043B\u0430\u0448\u0430\u0442\u0430\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u043B\u0430\u0448\u0430\u0442\u0430\u0439"
+  Type: 0
+  Description: "\u041E\u0431\u044A\u044F\u0432\u043B\u044F\u043B \u043A\u043E\u0440\u043E\u043B\u0435\u0432\u0441\u043A\u0438\u0435
+    \u0443\u043A\u0430\u0437\u044B. \u0415\u0433\u043E \u0433\u043E\u043B\u043E\u0441
+    \u0432\u0434\u043E\u0445\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432,
+    \u043F\u043E\u0432\u044B\u0448\u0430\u044F \u0438\u0445 \u0430\u0442\u0430\u043A\u0443
+    \u043D\u0430 10%."
+  Title: "\u0417\u044B\u0447\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3378704978217999218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "014 \u0411\u0440\u0430\u0442 \u043F\u043E \u043E\u0440\u0443\u0436\u0438\u044E"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0411\u0440\u0430\u0442 \u043F\u043E \u043E\u0440\u0443\u0436\u0438\u044E"
+  Type: 1
+  Description: "\u0415\u0433\u043E \u0431\u0440\u0430\u0442 \u0441\u043B\u0443\u0436\u0438\u0442
+    \u0432 \u0442\u043E\u043C \u0436\u0435 \u0432\u043E\u0439\u0441\u043A\u0435.
+    \u0415\u0441\u043B\u0438 \u043E\u043D\u0438 \u0432 \u043E\u0434\u043D\u043E\u043C
+    \u043E\u0442\u0440\u044F\u0434\u0435, \u043E\u0431\u0430 \u043F\u043E\u043B\u0443\u0447\u0430\u044E\u0442
+    \u0441\u043F\u043E\u0441\u043E\u0431\u043D\u043E\u0441\u0442\u044C \xAB\u0411\u0440\u0430\u0442\u0441\u043A\u0438\u0439
+    \u0443\u0434\u0430\u0440\xBB."
+  Title: "\u0411\u0440\u0430\u0442\u0441\u0442\u0432\u043E"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: BrotherNearby
+    ScoreModifier: 30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3318193662179848122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "046 \u0412\u043E\u0440-\u043A\u0430\u0440\u043C\u0430\u043D\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0412\u043E\u0440-\u043A\u0430\u0440\u043C\u0430\u043D\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041C\u0430\u0441\u0442\u0435\u0440\u0441\u043A\u0438 \u043E\u0431\u0447\u0438\u0449\u0430\u043B
+    \u043A\u0430\u0440\u043C\u0430\u043D\u044B. \u041C\u043E\u0436\u0435\u0442 \u0443\u043A\u0440\u0430\u0441\u0442\u044C
+    \u043F\u0440\u0435\u0434\u043C\u0435\u0442 \u0443 \u0432\u0440\u0430\u0433\u0430
+    \u043F\u0435\u0440\u0435\u0434 \u0431\u043E\u0435\u043C."
+  Title: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3248686898756969561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "045 \u0421\u0431\u043E\u0440\u0449\u0438\u043A \u043D\u0430\u043B\u043E\u0433\u043E\u0432"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0431\u043E\u0440\u0449\u0438\u043A \u043D\u0430\u043B\u043E\u0433\u043E\u0432"
+  Type: 0
+  Description: "\u0421\u043E\u0431\u0438\u0440\u0430\u043B \u043F\u043E\u0434\u0430\u0442\u0438.
+    \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043C\u0435\u044E\u0442
+    \u0448\u0430\u043D\u0441 \u0443\u043A\u0440\u0430\u0441\u0442\u044C \u0437\u043E\u043B\u043E\u0442\u043E
+    \u0443 \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u041D\u0430\u043B\u043E\u0433\u043E\u0432\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3155002515219048168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "001 \u041F\u0435\u0432\u0435\u0446 \u0441\u043C\u0435\u0440\u0442\u0438"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0435\u0432\u0435\u0446 \u0441\u043C\u0435\u0440\u0442\u0438"
+  Type: 0
+  Description: "\u0413\u043E\u043B\u043E\u0441 \u044D\u0442\u043E\u0433\u043E \u0432\u043E\u0438\u043D\u0430
+    \u043F\u0440\u0435\u043A\u0440\u0430\u0441\u0435\u043D \u0438 \u0433\u0443\u0431\u0438\u0442\u0435\u043B\u0435\u043D.
+    \u0420\u0430\u0437 \u0432 3 \u0445\u043E\u0434\u0430 \u043E\u043D \u043F\u043E\u0451\u0442,
+    \u043D\u0430\u043A\u043B\u0430\u0434\u044B\u0432\u0430\u044F \u0421\u0442\u0440\u0430\u0445
+    \u043D\u0430 \u0432\u0440\u0430\u0433\u043E\u0432 \u0438\u043B\u0438 \u041F\u0435\u0447\u0430\u043B\u044C
+    \u043D\u0430 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432."
+  Title: "\u0413\u043B\u0430\u0441 \u0420\u043E\u043A\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 1
+    VoiceType: 0
+    PitchMultiplier: 1.3
+    DurationMultiplier: 1.5
+--- !u!114 &-3143890505293020607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "010 \u041F\u0440\u0438\u0437\u0440\u0430\u043A \u0440\u043E\u0434\u043D\u044B\u0445
+    \u043C\u0435\u0441\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0440\u0438\u0437\u0440\u0430\u043A \u0440\u043E\u0434\u043D\u044B\u0445
+    \u043C\u0435\u0441\u0442"
+  Type: 0
+  Description: "\u041F\u043E\u0433\u0438\u0431 \u0432\u0434\u0430\u043B\u0438 \u043E\u0442
+    \u0434\u043E\u043C\u0430. \u041F\u0440\u0438 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0438
+    \u0432 \u043C\u0435\u0441\u0442\u043E \u0441\u043C\u0435\u0440\u0442\u0438 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    \u043F\u0440\u0438\u0437\u0440\u0430\u0447\u043D\u0443\u044E \u044F\u0440\u043E\u0441\u0442\u044C."
+  Title: "\u0421\u0442\u0440\u0430\u043D\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: AtDeathPlace
+    ScoreModifier: 40
+  - Condition: AtDeathPlace
+    ScoreModifier: -50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-3123636131666642319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "041 \u041A\u0430\u0440\u0442\u043E\u0433\u0440\u0430\u0444"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0430\u0440\u0442\u043E\u0433\u0440\u0430\u0444"
+  Type: 0
+  Description: "\u0421\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u043B \u043A\u0430\u0440\u0442\u044B
+    \u043F\u043E\u0434\u0437\u0435\u043C\u0435\u043B\u0438\u0439. \u0417\u043D\u0430\u0435\u0442
+    \u0440\u0430\u0441\u043F\u043E\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043B\u043E\u0432\u0443\u0448\u0435\u043A
+    \u0438 \u043D\u0430 20% \u0440\u0435\u0436\u0435 \u0432 \u043D\u0438\u0445 \u043F\u043E\u043F\u0430\u0434\u0430\u0435\u0442\u0441\u044F."
+  Title: "\u0427\u0435\u0440\u0442\u0451\u0436\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2750725493549118901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "040 \u041F\u043E\u0432\u0430\u0440-\u043E\u0442\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043E\u0432\u0430\u0440-\u043E\u0442\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C"
+  Type: 0
+  Description: "\u0411\u044B\u043B \u043F\u0440\u0438\u0434\u0432\u043E\u0440\u043D\u044B\u043C
+    \u043F\u043E\u0432\u0430\u0440\u043E\u043C \u0438 \u0437\u043D\u0430\u043B \u0442\u043E\u043B\u043A
+    \u0432 \u044F\u0434\u0430\u0445. \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438
+    \u0438\u043C\u0435\u044E\u0442 \u0448\u0430\u043D\u0441 \u043E\u0442\u0440\u0430\u0432\u0438\u0442\u044C
+    \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u0428\u0435\u043F\u0447\u0443\u0449\u0438\u0439 \u042F\u0434"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2287519837030375627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "070 \u0427\u0430\u0441\u043E\u0432\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0427\u0430\u0441\u043E\u0432\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0427\u0438\u043D\u0438\u043B \u0447\u0430\u0441\u044B. \u0415\u0433\u043E
+    \u0447\u0443\u0432\u0441\u0442\u0432\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438
+    \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u043E\u0442\u0440\u044F\u0434\u0443
+    \u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u043D\u0430
+    5% \u0431\u044B\u0441\u0442\u0440\u0435\u0435."
+  Title: "\u0425\u0440\u043E\u043D\u043E\u043C\u0435\u0442\u0440\u0438\u0441\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2264059487230588338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "031 \u0410\u043B\u0445\u0438\u043C\u0438\u043A-\u043D\u0435\u0443\u0434\u0430\u0447\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0410\u043B\u0445\u0438\u043C\u0438\u043A-\u043D\u0435\u0443\u0434\u0430\u0447\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0412\u0437\u043E\u0440\u0432\u0430\u043B \u0441\u0432\u043E\u044E
+    \u043B\u0430\u0431\u043E\u0440\u0430\u0442\u043E\u0440\u0438\u044E. \u0412 \u0431\u043E\u044E
+    \u043C\u043E\u0436\u0435\u0442 \u0441\u043B\u0443\u0447\u0430\u0439\u043D\u043E
+    \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u0432\u0437\u0440\u044B\u0432, \u043D\u0430\u043D\u043E\u0441\u044F\u0449\u0438\u0439
+    \u0443\u0440\u043E\u043D \u0432\u0441\u0435\u043C \u0432\u043E\u043A\u0440\u0443\u0433."
+  Title: "\u0412\u0437\u0440\u044B\u0432\u043E\u043E\u043F\u0430\u0441\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2220973114555137056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "066 \u0421\u0432\u0435\u0447\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0432\u0435\u0447\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0414\u0435\u043B\u0430\u043B \u0441\u0432\u0435\u0447\u0438. \u0412
+    \u0442\u0451\u043C\u043D\u044B\u0445 \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445
+    \u0435\u0433\u043E \u0441\u0432\u0435\u0442 \u0443\u0441\u0438\u043B\u0438\u0432\u0430\u0435\u0442
+    \u0430\u0442\u0430\u043A\u0443 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432."
+  Title: "\u041E\u0441\u0432\u0435\u0442\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InDarkness
+    ScoreModifier: 15
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2130405908683896186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "036 \u041D\u0435\u043A\u0440\u043E\u043C\u0430\u043D\u0442-\u043D\u0435\u0443\u0434\u0430\u0447\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041D\u0435\u043A\u0440\u043E\u043C\u0430\u043D\u0442-\u043D\u0435\u0443\u0434\u0430\u0447\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041F\u044B\u0442\u0430\u043B\u0441\u044F \u043F\u043E\u0434\u043D\u044F\u0442\u044C
+    \u0430\u0440\u043C\u0438\u044E \u043C\u0451\u0440\u0442\u0432\u044B\u0445, \u043D\u043E
+    \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0438\u043B \u0442\u043E\u043B\u044C\u043A\u043E
+    \u0445\u043E\u043C\u044F\u0447\u043A\u0430. \u0422\u0435\u043F\u0435\u0440\u044C
+    \u0435\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043D\u043E\u0433\u0434\u0430
+    \u043F\u0440\u0438\u0437\u044B\u0432\u0430\u044E\u0442 \u0445\u043E\u043C\u044F\u043A\u0430-\u0437\u043E\u043C\u0431\u0438."
+  Title: "\u0425\u043E\u043C\u044F\u0447\u0438\u0439 \u041B\u043E\u0440\u0434"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-2014617353008889909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "065 \u041F\u0435\u043A\u0430\u0440\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0435\u043A\u0430\u0440\u044C"
+  Type: 0
+  Description: "\u041F\u0451\u043A \u0445\u043B\u0435\u0431. \u041C\u043E\u0436\u0435\u0442
+    \u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0433\u043E\u0440\u044F\u0447\u0443\u044E
+    \u0431\u0443\u0445\u0430\u043D\u043A\u0443, \u043E\u0442\u0432\u043B\u0435\u043A\u0430\u044F
+    \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u0425\u043B\u0435\u0431\u043E\u043F\u0451\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1996795622142021441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "085 \u041F\u0447\u0435\u043B\u043E\u0432\u043E\u0434"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0447\u0435\u043B\u043E\u0432\u043E\u0434"
+  Type: 0
+  Description: "\u0420\u0430\u0437\u0432\u043E\u0434\u0438\u043B \u043F\u0447\u0451\u043B.
+    \u041C\u043E\u0436\u0435\u0442 \u0432\u044B\u043F\u0443\u0441\u0442\u0438\u0442\u044C
+    \u0440\u043E\u0439, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043E\u0442\u0432\u043B\u0435\u0447\u0451\u0442
+    \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u041F\u0430\u0441\u0435\u0447\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1975862277642117525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "004 \u0414\u0432\u043E\u0439\u043D\u0430\u044F \u0436\u0438\u0437\u043D\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u0432\u043E\u0439\u043D\u0430\u044F \u0436\u0438\u0437\u043D\u044C"
+  Type: 0
+  Description: "\u0411\u044B\u043B \u0430\u0440\u0438\u0441\u0442\u043E\u043A\u0440\u0430\u0442\u043E\u043C
+    \u0438 \u0440\u0430\u0437\u0431\u043E\u0439\u043D\u0438\u043A\u043E\u043C. \u041C\u043E\u0436\u043D\u043E
+    \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u0442\u044C \u0440\u0435\u0436\u0438\u043C\u044B
+    \u0432\u043D\u0435 \u0431\u043E\u044F."
+  Title: "\u0414\u0432\u0443\u043B\u0438\u043A\u0438\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: AristocratMode
+    ScoreModifier: -30
+  - Condition: BanditMode
+    ScoreModifier: 30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1503825626554604686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "086 \u0412\u0438\u043D\u043E\u0433\u0440\u0430\u0434\u0430\u0440\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0412\u0438\u043D\u043E\u0433\u0440\u0430\u0434\u0430\u0440\u044C"
+  Type: 0
+  Description: "\u0412\u044B\u0440\u0430\u0449\u0438\u0432\u0430\u043B \u0432\u0438\u043D\u043E\u0433\u0440\u0430\u0434.
+    \u0415\u0433\u043E \u043F\u0440\u0438\u0441\u0443\u0442\u0441\u0442\u0432\u0438\u0435
+    \u043F\u043E\u0432\u044B\u0448\u0430\u0435\u0442 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435
+    \u0437\u0434\u043E\u0440\u043E\u0432\u044C\u044F \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432."
+  Title: "\u0412\u0438\u043D\u043E\u0433\u0440\u0430\u0434\u0430\u0440\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1430783006265740445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "075 \u0424\u043E\u043A\u0443\u0441\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0424\u043E\u043A\u0443\u0441\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u043B \u0444\u043E\u043A\u0443\u0441\u044B.
+    \u041C\u043E\u0436\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u0438\u043B\u043B\u044E\u0437\u0438\u044E,
+    \u043E\u0442\u0432\u043B\u0435\u043A\u0430\u044F \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0418\u043B\u043B\u044E\u0437\u0438\u043E\u043D\u0438\u0441\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1371193049328065424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "061 \u0421\u0442\u0435\u043A\u043B\u043E\u0434\u0443\u0432"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0442\u0435\u043A\u043B\u043E\u0434\u0443\u0432"
+  Type: 0
+  Description: "\u0412\u044B\u0434\u0443\u0432\u0430\u043B \u0441\u0442\u0435\u043A\u043B\u043E.
+    \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043C\u0435\u044E\u0442
+    \u0448\u0430\u043D\u0441 \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u043E\u0441\u0442\u0440\u0443\u044E
+    \u0441\u0442\u0435\u043A\u043B\u044F\u043D\u043D\u0443\u044E \u043A\u0440\u043E\u0448\u043A\u0443,
+    \u043D\u0430\u043D\u043E\u0441\u044F\u0449\u0443\u044E \u0434\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439
+    \u0443\u0440\u043E\u043D."
+  Title: "\u0421\u0442\u0435\u043A\u043B\u044F\u043D\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-1056573174032012600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "043 \u041A\u0443\u043A\u043E\u043B\u044C\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0443\u043A\u043E\u043B\u044C\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u043B \u043C\u0430\u0440\u0438\u043E\u043D\u0435\u0442\u043A\u0430\u043C\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0432\u0441\u0435\u043B\u0438\u0442\u044C\u0441\u044F
+    \u0432 \u043C\u0451\u0440\u0442\u0432\u043E\u0435 \u0442\u0435\u043B\u043E \u0432\u0440\u0430\u0433\u0430
+    \u0438 \u0443\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C \u0438\u043C 1
+    \u0445\u043E\u0434."
+  Title: "\u041C\u0430\u0440\u0438\u043E\u043D\u0435\u0442\u043E\u0447\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-899798420894611558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "064 \u041F\u043B\u043E\u0442\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043B\u043E\u0442\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0421\u0442\u0440\u043E\u0438\u043B \u0434\u043E\u043C\u0430. \u041C\u043E\u0436\u0435\u0442
+    \u0431\u044B\u0441\u0442\u0440\u043E \u0432\u043E\u0437\u0432\u043E\u0434\u0438\u0442\u044C
+    \u0431\u0430\u0440\u0440\u0438\u043A\u0430\u0434\u044B, \u0434\u0430\u0432\u0430\u044F
+    \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u0430\u043C \u0443\u043A\u0440\u044B\u0442\u0438\u0435."
+  Title: "\u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-736096472488594085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "087 \u0421\u0430\u0434\u043E\u0432\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0430\u0434\u043E\u0432\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0423\u0445\u0430\u0436\u0438\u0432\u0430\u043B \u0437\u0430 \u0441\u0430\u0434\u043E\u043C.
+    \u041C\u043E\u0436\u0435\u0442 \u0432\u044B\u0440\u0430\u0449\u0438\u0432\u0430\u0442\u044C
+    \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u043B\u043E\u0432\u0443\u0448\u043A\u0438-\u0440\u0430\u0441\u0442\u0435\u043D\u0438\u044F
+    \u043D\u0430 \u043F\u043E\u043B\u0435 \u0431\u043E\u044F."
+  Title: "\u0421\u0430\u0434\u043E\u0432\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-348818520372878689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "039 \u041C\u043E\u043D\u0430\u0445-\u043C\u043E\u043B\u0447\u0430\u043B\u044C\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u043E\u043D\u0430\u0445-\u043C\u043E\u043B\u0447\u0430\u043B\u044C\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0414\u0430\u043B \u043E\u0431\u0435\u0442 \u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044F.
+    \u0415\u0433\u043E \u0443\u0434\u0430\u0440\u044B \u0431\u0435\u0437\u0437\u0432\u0443\u0447\u043D\u044B
+    \u0438 \u043D\u0435 \u043F\u0440\u0438\u0432\u043B\u0435\u043A\u0430\u044E\u0442
+    \u0432\u043D\u0438\u043C\u0430\u043D\u0438\u044F \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0422\u0438\u0445\u0438\u0439 \u0423\u0431\u0438\u0439\u0446\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 10
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-222199715741336592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "099 \u0413\u0440\u043E\u0431\u043E\u0432\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u0440\u043E\u0431\u043E\u0432\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0425\u043E\u0440\u043E\u043D\u0438\u043B \u043C\u0451\u0440\u0442\u0432\u044B\u0445.
+    \u041D\u0435\u0436\u0438\u0442\u044C \u0430\u0442\u0430\u043A\u0443\u0435\u0442
+    \u0435\u0433\u043E \u0441 \u043C\u0435\u043D\u044C\u0448\u0435\u0439 \u0432\u0435\u0440\u043E\u044F\u0442\u043D\u043E\u0441\u0442\u044C\u044E."
+  Title: "\u041C\u043E\u0433\u0438\u043B\u044C\u0449\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsUndead
+    ScoreModifier: -30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-139093154611206669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "069 \u042E\u0432\u0435\u043B\u0438\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u042E\u0432\u0435\u043B\u0438\u0440"
+  Type: 0
+  Description: "\u041E\u0431\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043B
+    \u0434\u0440\u0430\u0433\u043E\u0446\u0435\u043D\u043D\u043E\u0441\u0442\u0438.
+    \u041D\u0430\u0445\u043E\u0434\u0438\u0442 \u043D\u0430 20% \u0431\u043E\u043B\u044C\u0448\u0435
+    \u0437\u043E\u043B\u043E\u0442\u0430 \u043F\u0440\u0438 \u0441\u0431\u043E\u0440\u0435
+    \u0434\u043E\u0431\u044B\u0447\u0438."
+  Title: "\u0414\u0440\u0430\u0433\u043E\u0446\u0435\u043D\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &-15437240738469194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "076 \u0410\u043A\u0440\u043E\u0431\u0430\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0410\u043A\u0440\u043E\u0431\u0430\u0442"
+  Type: 0
+  Description: "\u0412\u044B\u0441\u0442\u0443\u043F\u0430\u043B \u0432 \u0446\u0438\u0440\u043A\u0435.
+    \u0415\u0433\u043E \u0443\u043A\u043B\u043E\u043D\u0435\u043D\u0438\u0435 \u043F\u043E\u0432\u044B\u0448\u0435\u043D\u043E
+    \u043D\u0430 15%."
+  Title: "\u0413\u0438\u043C\u043D\u0430\u0441\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cff3903d4e415d48acf52dc06e8029f, type: 3}
+  m_Name: PerkDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.PerkDatabase
+  AllPerks:
+  - {fileID: -3155002515219048168}
+  - {fileID: 8029456208237687721}
+  - {fileID: -8776261526080183013}
+  - {fileID: -1975862277642117525}
+  - {fileID: 4447940561057145820}
+  - {fileID: 5114989686110280523}
+  - {fileID: 2451059945411025550}
+  - {fileID: 1958876290053938625}
+  - {fileID: -7858702979629179518}
+  - {fileID: -3143890505293020607}
+  - {fileID: 6098965145044437287}
+  - {fileID: 6414277315344841357}
+  - {fileID: 4636410673235167916}
+  - {fileID: -3378704978217999218}
+  - {fileID: -3826139854880002945}
+  - {fileID: -7802764581123397023}
+  - {fileID: 5608745161605885791}
+  - {fileID: -8512651420495453525}
+  - {fileID: -8990575229737388108}
+  - {fileID: -3641657666738938612}
+  - {fileID: 334974538779248817}
+  - {fileID: -6332106443491204788}
+  - {fileID: -5254457286241871969}
+  - {fileID: 6813900761382497338}
+  - {fileID: -3489791854313248738}
+  - {fileID: 3984767655760275881}
+  - {fileID: 3909228798730567148}
+  - {fileID: -8784441656285308422}
+  - {fileID: 670670311472393771}
+  - {fileID: 2044065650434014294}
+  - {fileID: -2264059487230588338}
+  - {fileID: 3956270360709150157}
+  - {fileID: 3302622950940081419}
+  - {fileID: 4041522646576957724}
+  - {fileID: 4260299138610674591}
+  - {fileID: -2130405908683896186}
+  - {fileID: -6970108318743925406}
+  - {fileID: 8166607357890628164}
+  - {fileID: -348818520372878689}
+  - {fileID: -2750725493549118901}
+  - {fileID: -3123636131666642319}
+  - {fileID: -8322712999180302688}
+  - {fileID: -1056573174032012600}
+  - {fileID: -3676946007124645181}
+  - {fileID: -3248686898756969561}
+  - {fileID: -3318193662179848122}
+  - {fileID: -9103744161413135152}
+  - {fileID: -8411247656759019035}
+  - {fileID: -4250914292476554693}
+  - {fileID: -3764631251688154484}
+  - {fileID: 8675263192475540721}
+  - {fileID: 9096596762628618777}
+  - {fileID: 6488886231731273122}
+  - {fileID: -4722087230212655611}
+  - {fileID: 7039395139634138155}
+  - {fileID: 189355018911677839}
+  - {fileID: -5757263785111577087}
+  - {fileID: 3816475594066895979}
+  - {fileID: -9170105816604100227}
+  - {fileID: 551077454852986872}
+  - {fileID: -1371193049328065424}
+  - {fileID: 6359440729993245147}
+  - {fileID: 7871283841900009008}
+  - {fileID: -899798420894611558}
+  - {fileID: -2014617353008889909}
+  - {fileID: -2220973114555137056}
+  - {fileID: 4440499349513178922}
+  - {fileID: -4081094069621073497}
+  - {fileID: -139093154611206669}
+  - {fileID: -2287519837030375627}
+  - {fileID: 6578005114197868932}
+  - {fileID: 3885646512365484985}
+  - {fileID: 8987118031570502746}
+  - {fileID: -3383524683344691481}
+  - {fileID: -1430783006265740445}
+  - {fileID: -15437240738469194}
+  - {fileID: 8183242765133508902}
+  - {fileID: 5099700974082470552}
+  - {fileID: 3713062933213272609}
+  - {fileID: 1554278258730690064}
+  - {fileID: -6938822112570562991}
+  - {fileID: -6068021629421205566}
+  - {fileID: -6675074891957142663}
+  - {fileID: -3940663730960671846}
+  - {fileID: -1996795622142021441}
+  - {fileID: -1503825626554604686}
+  - {fileID: -736096472488594085}
+  - {fileID: -7459318032920159475}
+  - {fileID: -7172256587368687402}
+  - {fileID: -3479797231485918442}
+  - {fileID: 9112995999134816880}
+  - {fileID: 8341840742520679244}
+  - {fileID: 4489137347360766349}
+  - {fileID: 6670376259546994385}
+  - {fileID: 8019879119384418246}
+  - {fileID: 8966569978038201378}
+  - {fileID: -3697171966508967661}
+  - {fileID: 3111673555449067258}
+  - {fileID: -222199715741336592}
+  - {fileID: 3577670668181437758}
+--- !u!114 &189355018911677839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "056 \u0412\u0438\u043D\u043E\u0434\u0435\u043B"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0412\u0438\u043D\u043E\u0434\u0435\u043B"
+  Type: 0
+  Description: "\u0414\u0435\u043B\u0430\u043B \u043B\u0443\u0447\u0448\u0435\u0435
+    \u0432\u0438\u043D\u043E \u0432 \u0434\u043E\u043B\u0438\u043D\u0435. \u041C\u043E\u0436\u0435\u0442
+    \u043E\u043F\u044C\u044F\u043D\u0438\u0442\u044C \u0432\u0440\u0430\u0433\u0430,
+    \u0441\u043D\u0438\u0436\u0430\u044F \u0435\u0433\u043E \u0442\u043E\u0447\u043D\u043E\u0441\u0442\u044C."
+  Title: "\u0412\u0438\u043D\u043D\u044B\u0439 \u041C\u0430\u0433"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &334974538779248817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "021 \u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439 \u0441\u0442\u0440\u0430\u043D\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439 \u0441\u0442\u0440\u0430\u043D\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041D\u043E\u0441\u0438\u0442 \u0434\u0440\u0435\u0432\u043D\u0435\u0435
+    \u043F\u0440\u043E\u043A\u043B\u044F\u0442\u0438\u0435, \u043A\u043E\u0442\u043E\u0440\u043E\u0435
+    \u0443\u0441\u0438\u043B\u0438\u0432\u0430\u0435\u0442 \u0435\u0433\u043E \u0432
+    \u0431\u043E\u044E, \u043D\u043E \u043C\u0435\u0434\u043B\u0435\u043D\u043D\u043E
+    \u0438\u0441\u0442\u043E\u0449\u0430\u0435\u0442 \u0437\u0434\u043E\u0440\u043E\u0432\u044C\u0435."
+  Title: "\u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 15
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &551077454852986872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "060 \u041F\u0430\u0441\u0442\u0443\u0445"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0430\u0441\u0442\u0443\u0445"
+  Type: 0
+  Description: "\u041F\u0430\u0441 \u043E\u0432\u0435\u0446. \u041C\u043E\u0436\u0435\u0442
+    \u043F\u0440\u0438\u0440\u0443\u0447\u0430\u0442\u044C \u0434\u0438\u043A\u0438\u0445
+    \u0436\u0438\u0432\u043E\u0442\u043D\u044B\u0445, \u043A\u0430\u043A \u0438 \u0414\u0440\u0435\u0441\u0441\u0438\u0440\u043E\u0432\u0449\u0438\u043A,
+    \u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u0442\u0440\u0430\u0432\u043E\u044F\u0434\u043D\u044B\u0445."
+  Title: "\u041F\u0430\u0441\u0442\u044B\u0440\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsHerbivore
+    ScoreModifier: -50
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &670670311472393771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "029 \u0424\u0430\u043B\u044C\u0448\u0438\u0432\u043E\u043C\u043E\u043D\u0435\u0442\u0447\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0424\u0430\u043B\u044C\u0448\u0438\u0432\u043E\u043C\u043E\u043D\u0435\u0442\u0447\u0438\u043A"
+  Type: 0
+  Description: "\u0423\u043C\u0435\u0435\u0442 \u043F\u043E\u0434\u0434\u0435\u043B\u044B\u0432\u0430\u0442\u044C
+    \u043C\u043E\u043D\u0435\u0442\u044B. \u041F\u0435\u0440\u0438\u043E\u0434\u0438\u0447\u0435\u0441\u043A\u0438
+    \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0444\u0430\u043B\u044C\u0448\u0438\u0432\u043E\u0435
+    \u0437\u043E\u043B\u043E\u0442\u043E, \u043A\u043E\u0442\u043E\u0440\u043E\u0435
+    \u043C\u043E\u0436\u0435\u0442 \u043E\u0431\u043C\u0430\u043D\u0443\u0442\u044C
+    \u0442\u043E\u0440\u0433\u043E\u0432\u0446\u0435\u0432."
+  Title: "\u0427\u0435\u043A\u0430\u043D\u0449\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &1554278258730690064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "080 \u0421\u043A\u0430\u043B\u043E\u043B\u0430\u0437"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043A\u0430\u043B\u043E\u043B\u0430\u0437"
+  Type: 0
+  Description: "\u041F\u043E\u043A\u043E\u0440\u044F\u043B \u0433\u043E\u0440\u044B.
+    \u041C\u043E\u0436\u0435\u0442 \u0437\u0430\u0431\u0438\u0440\u0430\u0442\u044C\u0441\u044F
+    \u043D\u0430 \u0441\u0442\u0435\u043D\u044B, \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u044F
+    \u043D\u043E\u0432\u044B\u0435 \u043F\u0443\u0442\u0438."
+  Title: "\u0410\u043B\u044C\u043F\u0438\u043D\u0438\u0441\u0442"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &1958876290053938625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "008 \u0423\u0447\u0438\u0442\u0435\u043B\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0423\u0447\u0438\u0442\u0435\u043B\u044C"
+  Type: 2
+  Description: "\u041F\u0440\u0438 \u0436\u0438\u0437\u043D\u0438 \u0443\u0447\u0438\u043B
+    \u0431\u043E\u044E \u041A\u0438\u0440\u0430\u043D\u0430. \u0415\u0441\u043B\u0438
+    \u0443\u0447\u0435\u043D\u0438\u043A \u0432 \u043E\u0442\u0440\u044F\u0434\u0435,
+    \u0431\u0440\u043E\u0441\u0430\u0435\u0442\u0441\u044F \u043D\u0430 \u0435\u0433\u043E
+    \u0437\u0430\u0449\u0438\u0442\u0443."
+  Title: "\u041D\u0430\u0441\u0442\u0430\u0432\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: "\u041A\u0438\u0440\u0430\u043D"
+  Effects:
+  - Condition: AllyIsStudent
+    ScoreModifier: 80
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &2044065650434014294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "030 \u0421\u043E\u043C\u043D\u0430\u043C\u0431\u0443\u043B\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043E\u043C\u043D\u0430\u043C\u0431\u0443\u043B\u0430"
+  Type: 0
+  Description: "\u0425\u043E\u0434\u0438\u0442 \u0432\u043E \u0441\u043D\u0435. \u041D\u043E\u0447\u044C\u044E
+    \u043C\u043E\u0436\u0435\u0442 \u0441\u043B\u0443\u0447\u0430\u0439\u043D\u043E
+    \u043F\u043E\u043A\u0438\u043D\u0443\u0442\u044C \u043B\u0430\u0433\u0435\u0440\u044C,
+    \u043D\u043E \u0435\u0441\u043B\u0438 \u0435\u0433\u043E \u0440\u0430\u0437\u0431\u0443\u0434\u0438\u0442\u044C
+    \u0432\u043E \u0432\u0440\u0435\u043C\u044F \u0431\u0438\u0442\u0432\u044B, \u0432\u043F\u0430\u0434\u0430\u0435\u0442
+    \u0432 \u0431\u0435\u0440\u0441\u0435\u0440\u043A."
+  Title: "\u041B\u0443\u043D\u0430\u0442\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: NightTime
+    ScoreModifier: 40
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &2451059945411025550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "007 \u041C\u0430\u0442\u044C-\u0432\u043E\u043B\u0447\u0438\u0446\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u0430\u0442\u044C-\u0432\u043E\u043B\u0447\u0438\u0446\u0430"
+  Type: 1
+  Description: "\u041F\u0440\u0438 \u0436\u0438\u0437\u043D\u0438 \u0431\u044B\u043B\u0430
+    \u043C\u0430\u0442\u0435\u0440\u044C\u044E, \u043A\u043E\u0442\u043E\u0440\u0430\u044F
+    \u0437\u0430\u0449\u0438\u0449\u0430\u043B\u0430 \u0441\u0432\u043E\u0435\u0433\u043E
+    \u0440\u0435\u0431\u0451\u043D\u043A\u0430 \u0446\u0435\u043D\u043E\u0439 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0439
+    \u0436\u0438\u0437\u043D\u0438. \u0418\u0449\u0435\u0442 \u0434\u043E\u0447\u044C
+    \u043F\u043E \u0438\u043C\u0435\u043D\u0438 \u042D\u043B\u0438\u0441."
+  Title: "\u0417\u0430\u0449\u0438\u0442\u043D\u0438\u0446\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: "\u042D\u043B\u0438\u0441"
+  Effects:
+  - Condition: NearChild
+    ScoreModifier: 100
+  - Condition: ChildFound
+    ScoreModifier: -50
+  - Condition: ChildNotFound
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3111673555449067258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "098 \u0410\u0440\u0445\u0438\u0432\u0430\u0440\u0438\u0443\u0441"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0410\u0440\u0445\u0438\u0432\u0430\u0440\u0438\u0443\u0441"
+  Type: 0
+  Description: "\u0425\u0440\u0430\u043D\u0438\u043B \u0434\u0440\u0435\u0432\u043D\u0438\u0435
+    \u0437\u043D\u0430\u043D\u0438\u044F. \u041C\u043E\u0436\u0435\u0442 \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u043E\u0432\u0430\u0442\u044C
+    \u043C\u0430\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u044B."
+  Title: "\u0425\u0440\u0430\u043D\u0438\u0442\u0435\u043B\u044C \u0417\u043D\u0430\u043D\u0438\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3302622950940081419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "033 \u0417\u0430\u043A\u043B\u0438\u043D\u0430\u0442\u0435\u043B\u044C
+    \u0437\u043C\u0435\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0417\u0430\u043A\u043B\u0438\u043D\u0430\u0442\u0435\u043B\u044C \u0437\u043C\u0435\u0439"
+  Type: 2
+  Description: "\u0423\u043C\u0435\u0435\u0442 \u0443\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C
+    \u0437\u043C\u0435\u044F\u043C\u0438. \u041F\u0440\u0438 \u0432\u0441\u0442\u0440\u0435\u0447\u0435
+    \u0441\u043E \u0437\u043C\u0435\u044F\u043C\u0438 \u043C\u043E\u0436\u0435\u0442
+    \u043F\u0435\u0440\u0435\u043C\u0430\u043D\u0438\u0442\u044C \u0438\u0445 \u043D\u0430
+    \u0441\u0432\u043E\u044E \u0441\u0442\u043E\u0440\u043E\u043D\u0443."
+  Title: "\u0417\u043C\u0435\u0438\u043D\u044B\u0439 \u042F\u0437\u044B\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsSnake
+    ScoreModifier: -100
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3577670668181437758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "100 \u0417\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0417\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0439"
+  Type: 3
+  Description: "\u0421\u0431\u0435\u0436\u0430\u043B \u0438\u0437 \u0442\u044E\u0440\u044C\u043C\u044B.
+    \u0417\u043D\u0430\u0435\u0442, \u043A\u0430\u043A \u0441\u043D\u0438\u043C\u0430\u0442\u044C
+    \u043E\u043A\u043E\u0432\u044B \u0438 \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u0442\u044C
+    \u0437\u0430\u043C\u043A\u0438."
+  Title: "\u0411\u0435\u0433\u043B\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3713062933213272609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "079 \u041F\u043B\u043E\u0432\u0435\u0446"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043B\u043E\u0432\u0435\u0446"
+  Type: 0
+  Description: "\u041F\u0435\u0440\u0435\u043F\u043B\u044B\u0432\u0430\u043B \u0440\u0435\u043A\u0438.
+    \u0412 \u0432\u043E\u0434\u043D\u044B\u0445 \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445
+    \u043D\u0435 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442 \u0448\u0442\u0440\u0430\u0444\u043E\u0432
+    \u043A \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438."
+  Title: "\u041F\u043B\u043E\u0432\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: NearWater
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3816475594066895979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "058 \u0420\u044B\u0431\u0430\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0420\u044B\u0431\u0430\u043A"
+  Type: 0
+  Description: "\u041B\u043E\u0432\u0438\u043B \u0440\u044B\u0431\u0443 \u0441\u0435\u0442\u044F\u043C\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u043E\u043F\u0443\u0442\u0430\u0442\u044C \u0432\u0440\u0430\u0433\u0430,
+    \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E \u043B\u0438\u0448\u0438\u0432
+    \u0435\u0433\u043E \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438
+    \u0434\u0432\u0438\u0433\u0430\u0442\u044C\u0441\u044F."
+  Title: "\u0420\u044B\u0431\u043E\u043B\u043E\u0432"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3885646512365484985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "072 \u0413\u0440\u043E\u0431\u043E\u0432\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u0440\u043E\u0431\u043E\u0432\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u0425\u043E\u0440\u043E\u043D\u0438\u043B \u043C\u0451\u0440\u0442\u0432\u044B\u0445.
+    \u041D\u0435\u0436\u0438\u0442\u044C \u0430\u0442\u0430\u043A\u0443\u0435\u0442
+    \u0435\u0433\u043E \u0441 \u043C\u0435\u043D\u044C\u0448\u0435\u0439 \u0432\u0435\u0440\u043E\u044F\u0442\u043D\u043E\u0441\u0442\u044C\u044E."
+  Title: "\u041C\u043E\u0433\u0438\u043B\u044C\u0449\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyIsUndead
+    ScoreModifier: -30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3909228798730567148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "027 \u0421\u0432\u044F\u0449\u0435\u043D\u043D\u0438\u043A-\u0440\u0430\u0441\u0441\u0442\u0440\u0438\u0433\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0432\u044F\u0449\u0435\u043D\u043D\u0438\u043A-\u0440\u0430\u0441\u0441\u0442\u0440\u0438\u0433\u0430"
+  Type: 3
+  Description: "\u0411\u044B\u043B \u0441\u0432\u044F\u0449\u0435\u043D\u043D\u0438\u043A\u043E\u043C,
+    \u043D\u043E \u0440\u0430\u0437\u0443\u0432\u0435\u0440\u0438\u043B\u0441\u044F.
+    \u0415\u0433\u043E \u043C\u043E\u043B\u0438\u0442\u0432\u044B \u043C\u043E\u0433\u0443\u0442
+    \u043A\u0430\u043A \u0438\u0441\u0446\u0435\u043B\u0438\u0442\u044C, \u0442\u0430\u043A
+    \u0438 \u043D\u0430\u0432\u0440\u0435\u0434\u0438\u0442\u044C."
+  Title: "\u041E\u0442\u0441\u0442\u0443\u043F\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3956270360709150157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "032 \u0414\u0432\u043E\u0439\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u0432\u043E\u0439\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0411\u044B\u043B \u043F\u043E\u0445\u043E\u0436 \u043D\u0430 \u0438\u0437\u0432\u0435\u0441\u0442\u043D\u043E\u0433\u043E
+    \u043F\u0440\u0435\u0441\u0442\u0443\u043F\u043D\u0438\u043A\u0430. \u0418\u043D\u043E\u0433\u0434\u0430
+    \u0432\u0440\u0430\u0433\u0438 \u043F\u0440\u0438\u043D\u0438\u043C\u0430\u044E\u0442
+    \u0435\u0433\u043E \u0437\u0430 \u0442\u043E\u0433\u043E \u0441\u0430\u043C\u043E\u0433\u043E
+    \u0438 \u043F\u044B\u0442\u0430\u044E\u0442\u0441\u044F \u0443\u0431\u0438\u0442\u044C
+    \u0432 \u043F\u0435\u0440\u0432\u0443\u044E \u043E\u0447\u0435\u0440\u0435\u0434\u044C."
+  Title: "\u041B\u043E\u0436\u043D\u0430\u044F \u0422\u0435\u043D\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &3984767655760275881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "026 \u041A\u043E\u043D\u0442\u0440\u0430\u0431\u0430\u043D\u0434\u0438\u0441\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u043E\u043D\u0442\u0440\u0430\u0431\u0430\u043D\u0434\u0438\u0441\u0442"
+  Type: 0
+  Description: "\u0417\u043D\u0430\u0435\u0442 \u0442\u0430\u0439\u043D\u044B\u0435
+    \u0442\u0440\u043E\u043F\u044B \u0438 \u0443\u043C\u0435\u0435\u0442 \u043D\u0430\u0445\u043E\u0434\u0438\u0442\u044C
+    \u0440\u0435\u0434\u043A\u0438\u0435 \u0442\u043E\u0432\u0430\u0440\u044B. \u0428\u0430\u043D\u0441
+    \u043D\u0430\u0439\u0442\u0438 \u0434\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439
+    \u043F\u0440\u0435\u0434\u043C\u0435\u0442 \u043F\u0440\u0438 \u0441\u0431\u043E\u0440\u0435
+    \u0434\u043E\u0431\u044B\u0447\u0438."
+  Title: "\u0422\u0435\u043D\u0435\u0432\u043E\u0439 \u0422\u043E\u0440\u0433\u043E\u0432\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4041522646576957724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "034 \u0414\u043E\u043B\u0436\u043D\u0438\u043A \u043A\u043E\u0440\u043E\u043D\u044B"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u043E\u043B\u0436\u043D\u0438\u043A \u043A\u043E\u0440\u043E\u043D\u044B"
+  Type: 4
+  Description: "\u0414\u043E\u043B\u0436\u0435\u043D \u0441\u043B\u0443\u0436\u0438\u0442\u044C
+    \u043A\u043E\u0440\u043E\u043B\u044E. \u0415\u0441\u043B\u0438 \u0432 \u043E\u0442\u0440\u044F\u0434\u0435
+    \u0435\u0441\u0442\u044C \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436 \u0441
+    \u043A\u043E\u0440\u043E\u043B\u0435\u0432\u0441\u043A\u0438\u043C \u0442\u0438\u0442\u0443\u043B\u043E\u043C,
+    \u0435\u0433\u043E \u043F\u0440\u0438\u043A\u0430\u0437\u044B \u0432\u044B\u043F\u043E\u043B\u043D\u044F\u044E\u0442\u0441\u044F
+    \u0431\u0435\u0441\u043F\u0440\u0435\u043A\u043E\u0441\u043B\u043E\u0432\u043D\u043E."
+  Title: "\u041A\u043E\u0440\u043E\u043B\u0435\u0432\u0441\u043A\u0438\u0439 \u0421\u043B\u0443\u0433\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: RoyalCommander
+    ScoreModifier: 300
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4260299138610674591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "035 \u041E\u0445\u043E\u0442\u043D\u0438\u043A \u0437\u0430 \u0433\u043E\u043B\u043E\u0432\u0430\u043C\u0438"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041E\u0445\u043E\u0442\u043D\u0438\u043A \u0437\u0430 \u0433\u043E\u043B\u043E\u0432\u0430\u043C\u0438"
+  Type: 5
+  Description: "\u0418\u0449\u0435\u0442 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u043E\u0433\u043E
+    \u0447\u0435\u043B\u043E\u0432\u0435\u043A\u0430. \u041F\u0440\u0438 \u0432\u0441\u0442\u0440\u0435\u0447\u0435
+    \u0441 \u0446\u0435\u043B\u044C\u044E \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    \u043D\u0435\u0432\u0435\u0440\u043E\u044F\u0442\u043D\u0443\u044E \u043C\u043E\u0449\u044C."
+  Title: "\u041E\u0445\u043E\u0442\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: TargetFound
+    ScoreModifier: 200
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4440499349513178922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "067 \u041A\u0440\u0430\u0441\u0438\u043B\u044C\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0440\u0430\u0441\u0438\u043B\u044C\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u041A\u0440\u0430\u0441\u0438\u043B \u0442\u043A\u0430\u043D\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0442\u044C
+    \u0434\u044B\u043C\u043E\u0432\u0443\u044E \u0437\u0430\u0432\u0435\u0441\u0443,
+    \u0441\u043A\u0440\u044B\u0432\u0430\u044F \u043E\u0442\u0440\u044F\u0434."
+  Title: "\u041A\u0440\u0430\u0441\u0438\u043B\u044C\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4447940561057145820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "005 \u041A\u043B\u044F\u0442\u0432\u0430 \u0432\u0435\u0440\u043D\u043E\u0441\u0442\u0438"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u043B\u044F\u0442\u0432\u0430 \u0432\u0435\u0440\u043D\u043E\u0441\u0442\u0438"
+  Type: 4
+  Description: "\u0414\u0430\u043B \u043D\u0435\u0440\u0443\u0448\u0438\u043C\u0443\u044E
+    \u043A\u043B\u044F\u0442\u0432\u0443 \u0441\u043B\u0443\u0436\u0438\u0442\u044C
+    \u043A\u043E\u043C\u0430\u043D\u0434\u0438\u0440\u0443. \u041D\u0438\u043A\u043E\u0433\u0434\u0430
+    \u043D\u0435 \u043F\u0440\u0435\u0434\u0430\u0441\u0442 \u0438 \u043D\u0435 \u043E\u0442\u043A\u0430\u0436\u0435\u0442\u0441\u044F
+    \u0432\u044B\u043F\u043E\u043B\u043D\u044F\u0442\u044C \u043F\u0440\u0438\u043A\u0430\u0437\u044B."
+  Title: "\u0412\u0435\u0440\u043D\u044B\u0439 \u0414\u043E \u0413\u0440\u043E\u0431\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: CommanderInDanger
+    ScoreModifier: 100
+  - Condition: CommanderOrders
+    ScoreModifier: 200
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4489137347360766349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "093 \u0421\u0432\u0435\u0447\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0432\u0435\u0447\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0414\u0435\u043B\u0430\u043B \u0441\u0432\u0435\u0447\u0438. \u0412
+    \u0442\u0451\u043C\u043D\u044B\u0445 \u043B\u043E\u043A\u0430\u0446\u0438\u044F\u0445
+    \u0435\u0433\u043E \u0441\u0432\u0435\u0442 \u0443\u0441\u0438\u043B\u0438\u0432\u0430\u0435\u0442
+    \u0430\u0442\u0430\u043A\u0443 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432."
+  Title: "\u041E\u0441\u0432\u0435\u0442\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InDarkness
+    ScoreModifier: 15
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &4636410673235167916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "013 \u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439 \u0430\u043C\u0443\u043B\u0435\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439 \u0430\u043C\u0443\u043B\u0435\u0442"
+  Type: 0
+  Description: "\u041D\u043E\u0441\u0438\u0442 \u0430\u043C\u0443\u043B\u0435\u0442,
+    \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u0440\u0438\u043D\u043E\u0441\u0438\u0442
+    \u043D\u0435\u0441\u0447\u0430\u0441\u0442\u044C\u044F. \u0420\u0430\u0437 \u0432
+    10 \u0445\u043E\u0434\u043E\u0432 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    \u0441\u043B\u0443\u0447\u0430\u0439\u043D\u044B\u0439 \u0434\u0435\u0431\u0430\u0444\u0444."
+  Title: "\u041F\u0440\u043E\u043A\u043B\u044F\u0442\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &5099700974082470552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "078 \u0411\u0435\u0433\u0443\u043D"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0411\u0435\u0433\u0443\u043D"
+  Type: 0
+  Description: "\u0423\u0447\u0430\u0441\u0442\u0432\u043E\u0432\u0430\u043B \u0432
+    \u043C\u0430\u0440\u0430\u0444\u043E\u043D\u0430\u0445. \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C
+    \u043F\u0435\u0440\u0435\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u0432\u044B\u0448\u0435\u043D\u0430
+    \u043D\u0430 10%."
+  Title: "\u0421\u043F\u0440\u0438\u043D\u0442\u0435\u0440"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &5114989686110280523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "006 \u041F\u043E\u0431\u0435\u0436\u0434\u0451\u043D\u043D\u044B\u0439
+    \u0447\u0435\u043C\u043F\u0438\u043E\u043D"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u043E\u0431\u0435\u0436\u0434\u0451\u043D\u043D\u044B\u0439 \u0447\u0435\u043C\u043F\u0438\u043E\u043D"
+  Type: 5
+  Description: "\u041A\u043E\u0433\u0434\u0430-\u0442\u043E \u0431\u044B\u043B \u0432\u0435\u043B\u0438\u0447\u0430\u0439\u0448\u0438\u043C,
+    \u043D\u043E \u043F\u0440\u043E\u0438\u0433\u0440\u0430\u043B. \u0418\u0449\u0435\u0442
+    \u0434\u043E\u0441\u0442\u043E\u0439\u043D\u043E\u0433\u043E \u043F\u0440\u043E\u0442\u0438\u0432\u043D\u0438\u043A\u0430,
+    \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C \u0442\u0438\u0442\u0443\u043B.
+    \u041F\u0440\u0438 \u043F\u043E\u0431\u0435\u0434\u0435 \u043D\u0430\u0434 \u0441\u0438\u043B\u044C\u043D\u044B\u043C
+    \u0432\u0440\u0430\u0433\u043E\u043C \u044D\u0432\u043E\u043B\u044E\u0446\u0438\u043E\u043D\u0438\u0440\u0443\u0435\u0442
+    \u0432 \u043F\u0435\u0440\u043A \xAB\u0427\u0435\u043C\u043F\u0438\u043E\u043D\xBB."
+  Title: "\u041F\u0430\u0432\u0448\u0438\u0439 \u0427\u0435\u043C\u043F\u0438\u043E\u043D"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: EnemyStronger
+    ScoreModifier: 80
+  - Condition: WinDuel
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &5608745161605885791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "017 \u0427\u0435\u043C\u043F\u0438\u043E\u043D"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0427\u0435\u043C\u043F\u0438\u043E\u043D"
+  Type: 0
+  Description: "\u0412\u0435\u0440\u043D\u0443\u043B \u0441\u0432\u043E\u0439 \u0442\u0438\u0442\u0443\u043B
+    \u0432 \u0447\u0435\u0441\u0442\u043D\u043E\u043C \u0431\u043E\u044E. \u041F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    \u0443\u0432\u0430\u0436\u0435\u043D\u0438\u0435 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432
+    \u0438 \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u044B\u0439 \u0431\u0430\u0444\u0444
+    \u043A \u0430\u0442\u0430\u043A\u0435."
+  Title: "\u0427\u0435\u043C\u043F\u0438\u043E\u043D"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 20
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6098965145044437287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "011 \u0414\u043E\u043B\u0433 \u043F\u0435\u0440\u0435\u0434 \u043F\u0430\u0432\u0448\u0438\u043C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0414\u043E\u043B\u0433 \u043F\u0435\u0440\u0435\u0434 \u043F\u0430\u0432\u0448\u0438\u043C"
+  Type: 4
+  Description: "\u0415\u0434\u0438\u043D\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439
+    \u0432\u044B\u0436\u0438\u0432\u0448\u0438\u0439 \u0438\u0437 \u0441\u0432\u043E\u0435\u0433\u043E
+    \u043E\u0442\u0440\u044F\u0434\u0430. \u041F\u043E\u043A\u043B\u044F\u043B\u0441\u044F
+    \u0437\u0430\u0449\u0438\u0449\u0430\u0442\u044C \u043A\u043E\u043C\u0430\u043D\u0434\u0438\u0440\u0430,
+    \u0447\u0442\u043E\u0431\u044B \u0438\u0441\u043A\u0443\u043F\u0438\u0442\u044C
+    \u0432\u0438\u043D\u0443."
+  Title: "\u0418\u0441\u043A\u0443\u043F\u0438\u0442\u0435\u043B\u044C"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: CommanderInDanger
+    ScoreModifier: 120
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6359440729993245147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "062 \u0413\u043E\u043D\u0447\u0430\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0413\u043E\u043D\u0447\u0430\u0440"
+  Type: 0
+  Description: "\u041B\u0435\u043F\u0438\u043B \u0433\u043E\u0440\u0448\u043A\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0442\u044C
+    \u0433\u043B\u0438\u043D\u044F\u043D\u044B\u0435 \u043B\u043E\u0432\u0443\u0448\u043A\u0438,
+    \u0437\u0430\u043C\u0435\u0434\u043B\u044F\u044E\u0449\u0438\u0435 \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0413\u043E\u0440\u0448\u0435\u0447\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6414277315344841357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "012 \u041B\u0435\u0441\u043D\u043E\u0439 \u043E\u0442\u0448\u0435\u043B\u044C\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041B\u0435\u0441\u043D\u043E\u0439 \u043E\u0442\u0448\u0435\u043B\u044C\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041C\u043D\u043E\u0433\u043E \u043B\u0435\u0442 \u043F\u0440\u043E\u0436\u0438\u043B
+    \u0432 \u0447\u0430\u0449\u0435. \u0412 \u043B\u0435\u0441\u0443 \u0432\u0441\u0435
+    \u0435\u0433\u043E \u0445\u0430\u0440\u0430\u043A\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043A\u0438
+    \u043F\u043E\u0432\u044B\u0448\u0430\u044E\u0442\u0441\u044F \u043D\u0430 20%."
+  Title: "\u0425\u043E\u0437\u044F\u0438\u043D \u041B\u0435\u0441\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: InForest
+    ScoreModifier: 30
+  - Condition: InForest
+    ScoreModifier: -30
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6488886231731273122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "053 \u041A\u043E\u043D\u044E\u0445"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u043E\u043D\u044E\u0445"
+  Type: 0
+  Description: "\u0423\u0445\u0430\u0436\u0438\u0432\u0430\u043B \u0437\u0430 \u043B\u043E\u0448\u0430\u0434\u044C\u043C\u0438.
+    \u041F\u0440\u0438 \u043F\u0435\u0440\u0435\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0438
+    \u0432\u0435\u0440\u0445\u043E\u043C \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C
+    \u043E\u0442\u0440\u044F\u0434\u0430 \u0443\u0432\u0435\u043B\u0438\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044F."
+  Title: "\u0412\u0441\u0430\u0434\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6578005114197868932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "071 \u0410\u0440\u0445\u0438\u0432\u0430\u0440\u0438\u0443\u0441"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0410\u0440\u0445\u0438\u0432\u0430\u0440\u0438\u0443\u0441"
+  Type: 0
+  Description: "\u0425\u0440\u0430\u043D\u0438\u043B \u0434\u0440\u0435\u0432\u043D\u0438\u0435
+    \u0437\u043D\u0430\u043D\u0438\u044F. \u041C\u043E\u0436\u0435\u0442 \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u043E\u0432\u0430\u0442\u044C
+    \u043C\u0430\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u044B."
+  Title: "\u0425\u0440\u0430\u043D\u0438\u0442\u0435\u043B\u044C \u0417\u043D\u0430\u043D\u0438\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6670376259546994385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "094 \u041A\u0440\u0430\u0441\u0438\u043B\u044C\u0449\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u0440\u0430\u0441\u0438\u043B\u044C\u0449\u0438\u043A"
+  Type: 0
+  Description: "\u041A\u0440\u0430\u0441\u0438\u043B \u0442\u043A\u0430\u043D\u0438.
+    \u041C\u043E\u0436\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0442\u044C
+    \u0434\u044B\u043C\u043E\u0432\u0443\u044E \u0437\u0430\u0432\u0435\u0441\u0443,
+    \u0441\u043A\u0440\u044B\u0432\u0430\u044F \u043E\u0442\u0440\u044F\u0434."
+  Title: "\u041A\u0440\u0430\u0441\u0438\u043B\u044C\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &6813900761382497338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "024 \u041E\u0442\u0440\u0430\u0432\u043B\u0435\u043D\u043D\u044B\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041E\u0442\u0440\u0430\u0432\u043B\u0435\u043D\u043D\u044B\u0439"
+  Type: 0
+  Description: "\u0411\u044B\u043B \u043E\u0442\u0440\u0430\u0432\u043B\u0435\u043D
+    \u0438 \u0432\u044B\u0436\u0438\u043B, \u043F\u043E\u043B\u0443\u0447\u0438\u0432
+    \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u044F\u0435\u043C\u043E\u0441\u0442\u044C
+    \u043A \u044F\u0434\u0430\u043C, \u043D\u043E \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u0443\u044E
+    \u0441\u043B\u0430\u0431\u043E\u0441\u0442\u044C."
+  Title: "\u0412\u044B\u0436\u0438\u0432\u0448\u0438\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: -5
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &7039395139634138155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "055 \u0417\u0432\u043E\u043D\u0430\u0440\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0417\u0432\u043E\u043D\u0430\u0440\u044C"
+  Type: 0
+  Description: "\u0417\u0432\u043E\u043D\u0438\u043B \u0432 \u0446\u0435\u0440\u043A\u043E\u0432\u043D\u044B\u0435
+    \u043A\u043E\u043B\u043E\u043A\u043E\u043B\u0430. \u0415\u0433\u043E \u043A\u0440\u0438\u043A\u0438
+    \u0432 \u0431\u043E\u044E \u0438\u043C\u0435\u044E\u0442 \u0448\u0430\u043D\u0441
+    \u043E\u0433\u043B\u0443\u0448\u0438\u0442\u044C \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u041A\u043E\u043B\u043E\u043A\u043E\u043B"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &7871283841900009008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "063 \u041A\u043E\u0436\u0435\u0432\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041A\u043E\u0436\u0435\u0432\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u0412\u044B\u0434\u0435\u043B\u044B\u0432\u0430\u043B \u043A\u043E\u0436\u0443.
+    \u0415\u0433\u043E \u0431\u0440\u043E\u043D\u044F \u043F\u0440\u043E\u0447\u043D\u0435\u0435
+    \u043E\u0431\u044B\u0447\u043D\u043E\u0439, \u043D\u043E \u043E\u043D \u0443\u044F\u0437\u0432\u0438\u043C
+    \u043A \u043E\u0433\u043D\u044E."
+  Title: "\u041A\u043E\u0436\u0435\u0432\u0435\u043D\u043D\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8019879119384418246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "095 \u041F\u0430\u0440\u0444\u044E\u043C\u0435\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0430\u0440\u0444\u044E\u043C\u0435\u0440"
+  Type: 0
+  Description: "\u0421\u043E\u0437\u0434\u0430\u0432\u0430\u043B \u0434\u0443\u0445\u0438.
+    \u0415\u0433\u043E \u0430\u0440\u043E\u043C\u0430\u0442\u044B \u043C\u043E\u0433\u0443\u0442
+    \u043A\u0430\u043A \u043F\u0440\u0438\u0432\u043B\u0435\u0447\u044C, \u0442\u0430\u043A
+    \u0438 \u043E\u0442\u043F\u0443\u0433\u043D\u0443\u0442\u044C \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u0410\u0440\u043E\u043C\u0430\u0442\u0438\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8029456208237687721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "002 \u041D\u0435\u043C\u043E\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041D\u0435\u043C\u043E\u0439"
+  Type: 0
+  Description: "\u041D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0433\u043E\u0432\u043E\u0440\u0438\u0442\u044C,
+    \u043D\u043E \u0435\u0433\u043E \u043F\u0440\u0438\u0441\u0443\u0442\u0441\u0442\u0432\u0438\u0435
+    \u0443\u0441\u043F\u043E\u043A\u0430\u0438\u0432\u0430\u0435\u0442 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432
+    (+10% \u043A \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044E
+    \u043C\u043E\u0440\u0430\u043B\u0438)."
+  Title: "\u0411\u0435\u0437\u043C\u043E\u043B\u0432\u043D\u044B\u0439 \u0421\u0442\u0440\u0430\u0436"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 1
+    VoiceType: 0
+    PitchMultiplier: 0.5
+    DurationMultiplier: 2
+--- !u!114 &8166607357890628164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "038 \u0412\u0435\u0447\u043D\u044B\u0439 \u043E\u043F\u0442\u0438\u043C\u0438\u0441\u0442"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0412\u0435\u0447\u043D\u044B\u0439 \u043E\u043F\u0442\u0438\u043C\u0438\u0441\u0442"
+  Type: 0
+  Description: "\u0414\u0430\u0436\u0435 \u0432 \u0441\u043C\u0435\u0440\u0442\u0438
+    \u0432\u0438\u0434\u0438\u0442 \u0445\u043E\u0440\u043E\u0448\u0435\u0435. \u0415\u0433\u043E
+    \u043F\u0440\u0438\u0441\u0443\u0442\u0441\u0442\u0432\u0438\u0435 \u043F\u043E\u0432\u044B\u0448\u0430\u0435\u0442
+    \u043C\u043E\u0440\u0430\u043B\u044C \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432,
+    \u043D\u043E \u0441\u0430\u043C \u043E\u043D \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442
+    \u0431\u043E\u043B\u044C\u0448\u0435 \u0443\u0440\u043E\u043D\u0430."
+  Title: "\u0421\u043E\u043B\u043D\u0435\u0447\u043D\u044B\u0439 \u041B\u0443\u0447"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: -10
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8183242765133508902
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "077 \u0421\u0438\u043B\u0430\u0447"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u0438\u043B\u0430\u0447"
+  Type: 0
+  Description: "\u041F\u043E\u0434\u043D\u0438\u043C\u0430\u043B \u0442\u044F\u0436\u0435\u0441\u0442\u0438.
+    \u0415\u0433\u043E \u0430\u0442\u0430\u043A\u0438 \u0438\u043C\u0435\u044E\u0442
+    \u0448\u0430\u043D\u0441 \u043E\u0433\u043B\u0443\u0448\u0438\u0442\u044C \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u0422\u044F\u0436\u0435\u043B\u043E\u0432\u0435\u0441"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8341840742520679244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "092 \u041F\u0435\u043A\u0430\u0440\u044C"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041F\u0435\u043A\u0430\u0440\u044C"
+  Type: 0
+  Description: "\u041F\u0451\u043A \u0445\u043B\u0435\u0431. \u041C\u043E\u0436\u0435\u0442
+    \u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0433\u043E\u0440\u044F\u0447\u0443\u044E
+    \u0431\u0443\u0445\u0430\u043D\u043A\u0443, \u043E\u0442\u0432\u043B\u0435\u043A\u0430\u044F
+    \u0432\u0440\u0430\u0433\u0430."
+  Title: "\u0425\u043B\u0435\u0431\u043E\u043F\u0451\u043A"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8675263192475540721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "051 \u0421\u043A\u043E\u0440\u0431\u044F\u0449\u0438\u0439 \u043E\u0442\u0435\u0446"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0421\u043A\u043E\u0440\u0431\u044F\u0449\u0438\u0439 \u043E\u0442\u0435\u0446"
+  Type: 1
+  Description: "\u041F\u043E\u0442\u0435\u0440\u044F\u043B \u0441\u044B\u043D\u0430
+    \u0432 \u0431\u043E\u044E \u0438 \u0442\u0435\u043F\u0435\u0440\u044C \u0432\u0438\u043D\u0438\u0442
+    \u0441\u0435\u0431\u044F. \u041F\u0440\u0438 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0438
+    \u0443\u0440\u043E\u043D\u0430 \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u043C
+    \u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0432 \u044F\u0440\u043E\u0441\u0442\u044C."
+  Title: "\u041E\u0442\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: AllyDamaged
+    ScoreModifier: 40
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8966569978038201378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "096 \u042E\u0432\u0435\u043B\u0438\u0440"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u042E\u0432\u0435\u043B\u0438\u0440"
+  Type: 0
+  Description: "\u041E\u0431\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043B
+    \u0434\u0440\u0430\u0433\u043E\u0446\u0435\u043D\u043D\u043E\u0441\u0442\u0438.
+    \u041D\u0430\u0445\u043E\u0434\u0438\u0442 \u043D\u0430 20% \u0431\u043E\u043B\u044C\u0448\u0435
+    \u0437\u043E\u043B\u043E\u0442\u0430 \u043F\u0440\u0438 \u0441\u0431\u043E\u0440\u0435
+    \u0434\u043E\u0431\u044B\u0447\u0438."
+  Title: "\u0414\u0440\u0430\u0433\u043E\u0446\u0435\u043D\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &8987118031570502746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "073 \u0417\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0439"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0417\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0439"
+  Type: 3
+  Description: "\u0421\u0431\u0435\u0436\u0430\u043B \u0438\u0437 \u0442\u044E\u0440\u044C\u043C\u044B.
+    \u0417\u043D\u0430\u0435\u0442, \u043A\u0430\u043A \u0441\u043D\u0438\u043C\u0430\u0442\u044C
+    \u043E\u043A\u043E\u0432\u044B \u0438 \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u0442\u044C
+    \u0437\u0430\u043C\u043A\u0438."
+  Title: "\u0411\u0435\u0433\u043B\u0435\u0446"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &9096596762628618777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "052 \u0422\u0440\u0430\u0432\u043D\u0438\u0446\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u0422\u0440\u0430\u0432\u043D\u0438\u0446\u0430"
+  Type: 0
+  Description: "\u0417\u043D\u0430\u043B\u0430 \u043B\u0435\u0447\u0435\u0431\u043D\u044B\u0435
+    \u0442\u0440\u0430\u0432\u044B. \u041C\u043E\u0436\u0435\u0442 \u0438\u0441\u0446\u0435\u043B\u044F\u0442\u044C
+    \u0441\u043E\u044E\u0437\u043D\u0438\u043A\u043E\u0432 \u0432\u043D\u0435 \u0431\u043E\u044F,
+    \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044F \u043D\u0430\u0439\u0434\u0435\u043D\u043D\u044B\u0435
+    \u0440\u0430\u0441\u0442\u0435\u043D\u0438\u044F."
+  Title: "\u0417\u043D\u0430\u0445\u0430\u0440\u043A\u0430"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
+--- !u!114 &9112995999134816880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd01ee968dffcb499a6a4dfc55657f6, type: 3}
+  m_Name: "091 \u041C\u0435\u043B\u044C\u043D\u0438\u043A"
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.SoulPerk
+  PerkName: "\u041C\u0435\u043B\u044C\u043D\u0438\u043A"
+  Type: 0
+  Description: "\u041C\u043E\u043B\u043E\u043B \u0437\u0435\u0440\u043D\u043E. \u0415\u0433\u043E
+    \u0430\u0442\u0430\u043A\u0438 \u043F\u043E\u0434\u043D\u0438\u043C\u0430\u044E\u0442
+    \u043E\u0431\u043B\u0430\u043A\u043E \u043F\u044B\u043B\u0438, \u043E\u0441\u043B\u0435\u043F\u043B\u044F\u044E\u0449\u0435\u0435
+    \u0432\u0440\u0430\u0433\u043E\u0432."
+  Title: "\u041F\u044B\u043B\u044C\u043D\u044B\u0439"
+  RequiredLocationTag: 
+  RelatedCharacterName: 
+  Effects:
+  - Condition: Always
+    ScoreModifier: 0
+  VoiceModifier:
+    OverrideVoiceType: 0
+    VoiceType: 1
+    PitchMultiplier: 1
+    DurationMultiplier: 1
