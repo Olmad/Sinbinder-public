@@ -1,207 +1,270 @@
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\MissionAction.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\ProjectStructure.txt
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Utilets.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\ActionType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\ActionType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSEventHub.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSEventHub.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSSceneSetup.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSSceneSetup.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSWarriorWrapper.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AOSWarriorWrapper.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AutoAttackAOS.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AutoAttackAOS.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AutoBattleResolver.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\AutoBattleResolver.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\BehaviorResolver.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\BehaviorResolver.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\CombatDecisionContext.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\CombatDecisionContext.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\CrisisType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\CrisisType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\DebugAOS.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\DebugAOS.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\DecisionContext.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\DecisionContext.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\EmotionSystem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\EmotionSystem.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\FalseGodQuest.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\FearModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\FearModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\GreedModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\GreedModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\IPersonalityModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\IPersonalityModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\LoyaltyModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\LoyaltyModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MemoryModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MemoryModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MemoryProcessor.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MemoryRecord.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MemoryRecord.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionAction.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionContext.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionDatabase.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionID.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionOutcome.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MissionResolver.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\Modules.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MoralityModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\MoralityModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\Quest.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\RumourManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\RumourManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\SlothModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\SlothModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\Soul.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\Soul.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\SquadStrategy.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\SquadStrategy.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\StrategyDatabase.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\StrategyDatabase.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleCeremony.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleCeremony.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleDatabase.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleDatabase.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\TitleManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\VirtueModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\VirtueModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\WrathModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\WrathModule.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\AOS Engine\Modules\PatienceModule.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\GamePauseController.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\GamePauseController.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Memory.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\MemorySeed.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\MemorySeed.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\MoralType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\RelationshipSystem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\ShellType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\SinType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\SoulData.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Virtue.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisData.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisDatabase.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisDatabase.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisResolver.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisResolver.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Crisis\CrisisType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\MoralType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\MoralType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\ShellType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\ShellType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SinType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SinType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SoulData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SoulData.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SoulQuality.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Soul\SoulQuality.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Virtue\VirtueSystem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Virtue\VirtueSystem.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Virtue\VirtueType.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Core\Virtue\VirtueType.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueAnimator.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueAnimator.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueCameraController.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueCameraController.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueDatabase.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueDatabase.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueLoader.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueLoader.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueTrigger.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Dialogue\DialogueTrigger.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\AutoAttack.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\AutoAttack.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattlefieldData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattlefieldData.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattlefieldManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattlefieldManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattleTest.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BattleTest.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BodyComponent.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\BodyComponent.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\ClassData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\CombatManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\CombatManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\Damageable.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\Damageable.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\DialogueTestSpawner.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\DialogueTestSpawner.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\DiligenceSkills.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\DiligenceSkills.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\GluttonySkills .cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\GluttonySkills .cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\HarvestableBody.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\HarvestableBody.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\HarvestableSoul.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\HarvestableSoul.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootCarrySystem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootCarrySystem.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootDrop.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootDrop.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootTable.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LootTable.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LustSkills.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\LustSkills.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\PatienceSkills.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\PatienceSkills.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\RTS_Camera.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\RTS_Camera.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SelectionComponent.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SelectionComponent.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SelectionManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SelectionManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\ShellData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SinbinderPlayer.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SinbinderPlayer.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SkillData.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SkillManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SlothSkills.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SlothSkills.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulHarvester.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulHarvester.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulIndicator.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulIndicator.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulManager.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\SoulManager.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\UnitFactory.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\UnitFactory.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\UnitMover.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\UnitMover.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\Warrior.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\Warrior.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\WrathSkills.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Gameplay\WrathSkills.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\Inventory.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\Inventory.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\InventoryItem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\InventoryItem.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\StorageItem.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\Inventory\StorageItem.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\CheatSpawner.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\CheatSpawner.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\DecisionIconUI.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\DecisionIconUI.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\DialogueUI.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\DialogueUI.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\HealthBarUI.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\HealthBarUI.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\IconGenerator.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\IconGenerator.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\OverheadUI.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\OverheadUI.cs.meta
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\UnitInfoPanel.cs
-C:\Users\Fortuna\Desktop\ç\Scripts N\UI\UnitInfoPanel.cs.meta
+–°—Ç—Ä—É–∫—Ç—É—Ä–∞ —Ä–µ–ø–æ–∑–∏—Ç–æ—Ä–∏—è Sinbinder.
+–°–æ—Å—Ç–∞–≤–ª–µ–Ω–æ –∞–≤—Ç–æ–º–∞—Ç–∏—á–µ—Å–∫–∏. –ü—Ä–µ–∂–Ω–∏–π —Ñ–∞–π–ª –æ–ø–∏—Å—ã–≤–∞–ª –ª–æ–∫–∞–ª—å–Ω—ã–µ –ø—É—Ç–∏
+C:\Users\...\Scripts N\ –∏ —É—Å—Ç–∞—Ä–µ–ª –ø–æ—Å–ª–µ –ø–µ—Ä–µ–Ω–æ—Å–∞ —Å–∫—Ä–∏–ø—Ç–æ–≤ –ø–æ–¥ Assets/.
+
+Assets/AOS Engine.meta
+Assets/AOS Engine/AOSConfig.cs
+Assets/AOS Engine/AOSEventHub.cs
+Assets/AOS Engine/AOSEventHub.cs.meta
+Assets/AOS Engine/AOSSceneSetup.cs
+Assets/AOS Engine/AOSSceneSetup.cs.meta
+Assets/AOS Engine/AOSWarriorWrapper.cs
+Assets/AOS Engine/AOSWarriorWrapper.cs.meta
+Assets/AOS Engine/ActionType.cs
+Assets/AOS Engine/ActionType.cs.meta
+Assets/AOS Engine/AutoAttackAOS.cs
+Assets/AOS Engine/AutoAttackAOS.cs.meta
+Assets/AOS Engine/AutoBattleResolver.cs
+Assets/AOS Engine/AutoBattleResolver.cs.meta
+Assets/AOS Engine/BattleNarrator.cs
+Assets/AOS Engine/BattleRecord.cs
+Assets/AOS Engine/BehaviorResolver.cs
+Assets/AOS Engine/BehaviorResolver.cs.meta
+Assets/AOS Engine/CombatDecisionContext.cs
+Assets/AOS Engine/CombatDecisionContext.cs.meta
+Assets/AOS Engine/DebugAOS.cs
+Assets/AOS Engine/DebugAOS.cs.meta
+Assets/AOS Engine/Decision.cs
+Assets/AOS Engine/DecisionContext.cs
+Assets/AOS Engine/DecisionContext.cs.meta
+Assets/AOS Engine/DeedType.cs
+Assets/AOS Engine/EmotionSystem.cs
+Assets/AOS Engine/EmotionSystem.cs.meta
+Assets/AOS Engine/FalseGodQuest.cs
+Assets/AOS Engine/FearModule.cs
+Assets/AOS Engine/FearModule.cs.meta
+Assets/AOS Engine/IMissionModule.cs
+Assets/AOS Engine/IPersonalityModule.cs
+Assets/AOS Engine/IPersonalityModule.cs.meta
+Assets/AOS Engine/ISkillSet.cs
+Assets/AOS Engine/LoyaltyModule.cs
+Assets/AOS Engine/LoyaltyModule.cs.meta
+Assets/AOS Engine/MemoryModule.cs
+Assets/AOS Engine/MemoryModule.cs.meta
+Assets/AOS Engine/MemoryProcessor.cs
+Assets/AOS Engine/MemoryRecord.cs
+Assets/AOS Engine/MemoryRecord.cs.meta
+Assets/AOS Engine/MissionAction.cs
+Assets/AOS Engine/MissionContext.cs
+Assets/AOS Engine/MissionDatabase.cs
+Assets/AOS Engine/MissionID.cs
+Assets/AOS Engine/MissionOutcome.cs
+Assets/AOS Engine/MissionResolver.cs
+Assets/AOS Engine/Modules.meta
+Assets/AOS Engine/Modules/EnvyModule.cs
+Assets/AOS Engine/Modules/GluttonyModule.cs
+Assets/AOS Engine/Modules/GreedModule.cs
+Assets/AOS Engine/Modules/LustModule.cs
+Assets/AOS Engine/Modules/PatienceModule.cs
+Assets/AOS Engine/Modules/PrideModule.cs
+Assets/AOS Engine/MoralityModule.cs
+Assets/AOS Engine/MoralityModule.cs.meta
+Assets/AOS Engine/NPCData.cs
+Assets/AOS Engine/PerkResolver.cs
+Assets/AOS Engine/PhraseGenerator.cs
+Assets/AOS Engine/Quest.cs
+Assets/AOS Engine/RefusalPresenter.cs
+Assets/AOS Engine/ReputationData.cs
+Assets/AOS Engine/Rumour.cs
+Assets/AOS Engine/RumourManager.cs
+Assets/AOS Engine/RumourManager.cs.meta
+Assets/AOS Engine/SlothModule.cs
+Assets/AOS Engine/SlothModule.cs.meta
+Assets/AOS Engine/Soul.cs
+Assets/AOS Engine/Soul.cs.meta
+Assets/AOS Engine/SquadStrategy.cs
+Assets/AOS Engine/SquadStrategy.cs.meta
+Assets/AOS Engine/StrategyDatabase.cs
+Assets/AOS Engine/StrategyDatabase.cs.meta
+Assets/AOS Engine/StrategyModifier.cs
+Assets/AOS Engine/TemperamentPredictor.cs
+Assets/AOS Engine/TemptationResolver.cs
+Assets/AOS Engine/TitleCeremony.cs
+Assets/AOS Engine/TitleCeremony.cs.meta
+Assets/AOS Engine/TitleCeremonyBehaviour.cs
+Assets/AOS Engine/TitleDatabase.cs
+Assets/AOS Engine/TitleDatabase.cs.meta
+Assets/AOS Engine/TitleManager.cs
+Assets/AOS Engine/TitleManager.cs.meta
+Assets/AOS Engine/TitleRule.cs
+Assets/AOS Engine/VirtueModule.cs
+Assets/AOS Engine/VirtueModule.cs.meta
+Assets/AOS Engine/WrathModule.cs
+Assets/AOS Engine/WrathModule.cs.meta
+Assets/Audio/VoiceGenerator.cs
+Assets/Audio/VoiceModifier.cs
+Assets/Core.meta
+Assets/Core/Crisis.meta
+Assets/Core/Crisis/CrisisData.cs
+Assets/Core/Crisis/CrisisData.cs.meta
+Assets/Core/Crisis/CrisisDatabase.cs
+Assets/Core/Crisis/CrisisDatabase.cs.meta
+Assets/Core/Crisis/CrisisManager.cs
+Assets/Core/Crisis/CrisisManager.cs.meta
+Assets/Core/Crisis/CrisisResolver.cs
+Assets/Core/Crisis/CrisisResolver.cs.meta
+Assets/Core/Crisis/CrisisType.cs
+Assets/Core/Crisis/CrisisType.cs.meta
+Assets/Core/GamePauseController.cs
+Assets/Core/GamePauseController.cs.meta
+Assets/Core/LocationDatabase.cs
+Assets/Core/LocationManager.cs
+Assets/Core/Memory.meta
+Assets/Core/MemorySeed.cs
+Assets/Core/MemorySeed.cs.meta
+Assets/Core/RelationshipSystem.cs
+Assets/Core/Soul/MoralType.cs
+Assets/Core/Soul/MoralType.cs.meta
+Assets/Core/Soul/NarrativePerk.cs
+Assets/Core/Soul/PerkDatabase.cs
+Assets/Core/Soul/PerkEffect.cs
+Assets/Core/Soul/PerkType.cs
+Assets/Core/Soul/ShellBinder.cs
+Assets/Core/Soul/ShellType.cs
+Assets/Core/Soul/ShellType.cs.meta
+Assets/Core/Soul/SinType.cs
+Assets/Core/Soul/SinType.cs.meta
+Assets/Core/Soul/SoulData.cs
+Assets/Core/Soul/SoulData.cs.meta
+Assets/Core/Soul/SoulDecay.cs
+Assets/Core/Soul/SoulPerk.cs
+Assets/Core/Soul/SoulQuality.cs
+Assets/Core/Soul/SoulQuality.cs.meta
+Assets/Core/Virtue.meta
+Assets/Core/Virtue/VirtueSystem.cs
+Assets/Core/Virtue/VirtueSystem.cs.meta
+Assets/Core/Virtue/VirtueType.cs
+Assets/Core/Virtue/VirtueType.cs.meta
+Assets/Dialogue.meta
+Assets/Dialogue/DialogueAnimator.cs
+Assets/Dialogue/DialogueAnimator.cs.meta
+Assets/Dialogue/DialogueCameraController.cs
+Assets/Dialogue/DialogueCameraController.cs.meta
+Assets/Dialogue/DialogueDatabase.cs
+Assets/Dialogue/DialogueDatabase.cs.meta
+Assets/Dialogue/DialogueLoader.cs
+Assets/Dialogue/DialogueLoader.cs.meta
+Assets/Dialogue/DialogueSituation.cs
+Assets/Dialogue/DialogueTrigger.cs
+Assets/Dialogue/DialogueTrigger.cs.meta
+Assets/Gameplay.meta
+Assets/Gameplay/AutoAttack.cs
+Assets/Gameplay/AutoAttack.cs.meta
+Assets/Gameplay/BattleTest.cs
+Assets/Gameplay/BattleTest.cs.meta
+Assets/Gameplay/BattlefieldData.cs
+Assets/Gameplay/BattlefieldData.cs.meta
+Assets/Gameplay/BattlefieldManager.cs
+Assets/Gameplay/BattlefieldManager.cs.meta
+Assets/Gameplay/BodyComponent.cs
+Assets/Gameplay/BodyComponent.cs.meta
+Assets/Gameplay/ClassData.cs
+Assets/Gameplay/CombatManager.cs
+Assets/Gameplay/CombatManager.cs.meta
+Assets/Gameplay/Damageable.cs
+Assets/Gameplay/Damageable.cs.meta
+Assets/Gameplay/DialogueTestSpawner.cs
+Assets/Gameplay/DialogueTestSpawner.cs.meta
+Assets/Gameplay/DiligenceSkills.cs
+Assets/Gameplay/DiligenceSkills.cs.meta
+Assets/Gameplay/Engagement.cs
+Assets/Gameplay/Facing.cs
+Assets/Gameplay/Fatigue.cs
+Assets/Gameplay/GluttonySkills.cs
+Assets/Gameplay/GluttonySkills.cs.meta
+Assets/Gameplay/HarvestableBody.cs
+Assets/Gameplay/HarvestableBody.cs.meta
+Assets/Gameplay/HarvestableSoul.cs
+Assets/Gameplay/HarvestableSoul.cs.meta
+Assets/Gameplay/LootCarrySystem.cs
+Assets/Gameplay/LootCarrySystem.cs.meta
+Assets/Gameplay/LootDrop.cs
+Assets/Gameplay/LootDrop.cs.meta
+Assets/Gameplay/LootTable.cs
+Assets/Gameplay/LootTable.cs.meta
+Assets/Gameplay/LustSkills.cs
+Assets/Gameplay/LustSkills.cs.meta
+Assets/Gameplay/PatienceSkills.cs
+Assets/Gameplay/PatienceSkills.cs.meta
+Assets/Gameplay/PendingCommand.cs
+Assets/Gameplay/RTS_Camera.cs
+Assets/Gameplay/RTS_Camera.cs.meta
+Assets/Gameplay/SelectionComponent.cs
+Assets/Gameplay/SelectionComponent.cs.meta
+Assets/Gameplay/SelectionManager.cs
+Assets/Gameplay/SelectionManager.cs.meta
+Assets/Gameplay/ShellData.cs
+Assets/Gameplay/SinbinderPlayer.cs
+Assets/Gameplay/SinbinderPlayer.cs.meta
+Assets/Gameplay/SkillData.cs
+Assets/Gameplay/SkillManager.cs
+Assets/Gameplay/SlothSkills.cs
+Assets/Gameplay/SlothSkills.cs.meta
+Assets/Gameplay/SoulHarvester.cs
+Assets/Gameplay/SoulHarvester.cs.meta
+Assets/Gameplay/SoulIndicator.cs
+Assets/Gameplay/SoulIndicator.cs.meta
+Assets/Gameplay/SoulManager.cs
+Assets/Gameplay/SoulManager.cs.meta
+Assets/Gameplay/UnitFactory.cs
+Assets/Gameplay/UnitFactory.cs.meta
+Assets/Gameplay/UnitMover.cs
+Assets/Gameplay/UnitMover.cs.meta
+Assets/Gameplay/Warrior.cs
+Assets/Gameplay/Warrior.cs.meta
+Assets/Gameplay/WrathSkills.cs
+Assets/Gameplay/WrathSkills.cs.meta
+Assets/Inventory.meta
+Assets/Inventory/InventoryItem.cs
+Assets/Inventory/InventoryItem.cs.meta
+Assets/Inventory/PlayerInventory.cs
+Assets/Inventory/PlayerInventory.cs.meta
+Assets/Inventory/StorageItem.cs
+Assets/Inventory/StorageItem.cs.meta
+Assets/Tests/SelfCheck.cs
+Assets/Tests/SelfCheckMenu.cs
+Assets/Tests/SelfCheckRunner.cs
+Assets/UI.meta
+Assets/UI/BattleLogUI.cs
+Assets/UI/CheatSpawner.cs
+Assets/UI/CheatSpawner.cs.meta
+Assets/UI/DecisionIconUI.cs
+Assets/UI/DecisionIconUI.cs.meta
+Assets/UI/DialogueUI.cs
+Assets/UI/DialogueUI.cs.meta
+Assets/UI/HealthBarUI.cs
+Assets/UI/HealthBarUI.cs.meta
+Assets/UI/IconGenerator.cs
+Assets/UI/IconGenerator.cs.meta
+Assets/UI/OverheadUI.cs
+Assets/UI/OverheadUI.cs.meta
+Assets/UI/OverheadUIPool.cs
+Assets/UI/SoulAssemblyUI.cs
+Assets/UI/UnitInfoPanel.cs
+Assets/UI/UnitInfoPanel.cs.meta
+Assets/UI/WarriorTooltipUI.cs
+Assets/Utilets.meta
+Assets/Utilets/LocationDatabaseSync.cs
+Assets/Utilets/PerkDatabaseInitializer.cs
+CLAUDE.md
+ProjectStructure.txt
+README.md
+TODO.txt
+Tools/README.md
+Tools/check.py
+Tools/unity-check.ps1
+Tools/unity-check.sh
+check-list.txt
+docs/00-GDD.md
+docs/01-VISION.md
+docs/02-AOS.md
+docs/03-STATUS.md
+docs/04-ROADMAP.md
+docs/05-BOUNDS.md
+docs/06-SELLING.md
+docs/07-VERDICT.md
+docs/08-FLOOR.md
+docs/09-PROLOGUE.md
+docs/10-REFUSAL.md
+docs/11-MISSING.md
+docs/README.md

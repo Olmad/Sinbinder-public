@@ -43,8 +43,12 @@ function Fail($message) {
 # ---------- найти проект ----------
 
 if (-not $Project) {
+    # Корень проекта опознаётся по двум папкам сразу. Одной Assets мало:
+    # в самом репозитории скриптов она тоже есть, а ProjectSettings — нет.
     $candidate = (Get-Location).Path
-    while ($candidate -and -not (Test-Path (Join-Path $candidate "Assets"))) {
+    while ($candidate -and -not (
+        (Test-Path (Join-Path $candidate "Assets")) -and
+        (Test-Path (Join-Path $candidate "ProjectSettings")))) {
         $parent = Split-Path $candidate -Parent
         if ($parent -eq $candidate) { $candidate = ""; break }
         $candidate = $parent
@@ -57,6 +61,9 @@ if (-not $Project) {
 
 if (-not (Test-Path (Join-Path $Project "Assets"))) {
     Fail "в $Project нет папки Assets — это не проект Unity"
+}
+if (-not (Test-Path (Join-Path $Project "ProjectSettings"))) {
+    Fail "в $Project нет папки ProjectSettings. Похоже, это репозиторий скриптов, а не проект Unity. Укажи настоящий проект параметром -Project"
 }
 
 Write-Host "Проект: $Project"

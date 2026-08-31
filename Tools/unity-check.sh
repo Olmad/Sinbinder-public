@@ -10,14 +10,17 @@ set -uo pipefail
 
 project="${1:-}"
 if [ -z "$project" ]; then
+    # По двум папкам сразу: одной Assets мало — в репозитории скриптов
+    # она тоже есть, а ProjectSettings нет.
     project="$PWD"
-    while [ "$project" != "/" ] && [ ! -d "$project/Assets" ]; do
+    while [ "$project" != "/" ] && { [ ! -d "$project/Assets" ] || [ ! -d "$project/ProjectSettings" ]; }; do
         project="$(dirname "$project")"
     done
 fi
 
-if [ ! -d "$project/Assets" ]; then
-    echo "ОШИБКА: не нашёл папку проекта Unity. Укажи её первым аргументом." >&2
+if [ ! -d "$project/Assets" ] || [ ! -d "$project/ProjectSettings" ]; then
+    echo "ОШИБКА: не нашёл проект Unity (нужны папки Assets и ProjectSettings)." >&2
+    echo "Укажи корень проекта первым аргументом." >&2
     exit 2
 fi
 

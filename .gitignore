@@ -1,0 +1,47 @@
+# ---- Unity ----
+# Служебные папки: генерируются заново при открытии проекта.
+# Library/ бывает в несколько гигабайт — в репозиторий ей нельзя.
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Файлы проектов Visual Studio и Rider: Unity их пересоздаёт.
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+*.sln.iml
+
+# Сборки и пакеты
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+
+# ---- Инструменты проекта ----
+Tools/unity-check.log
+__pycache__/
+*.pyc
+
+# ---- Система ----
+.DS_Store
+Thumbs.db

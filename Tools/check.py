@@ -23,7 +23,8 @@ import re
 import sys
 from collections import defaultdict
 
-SKIP_DIRS = {'.git', 'Library', 'Temp', 'obj', 'Build', 'docs', 'Tools'}
+SKIP_DIRS = {'.git', 'Library', 'Temp', 'obj', 'Build', 'Builds', 'Logs',
+             'Packages', 'ProjectSettings', 'docs', 'Tools', '__pycache__'}
 
 UNITY_TYPES = {
     'Vector2', 'Vector3', 'Vector4', 'Quaternion', 'Mathf', 'Debug', 'Time', 'Color', 'Color32',
