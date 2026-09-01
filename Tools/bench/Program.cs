@@ -419,6 +419,64 @@ static class Bench
             : "  бой идёт: воины действуют");
     }
 
+    // ---------- слухи ----------
+    // RumourManager тоже не вызывался ни разу. Проверяем главное:
+    // выходит ли что-нибудь наружу и накапливается ли молва.
+
+    static void Rumours()
+    {
+        Console.WriteLine("\n=== СЛУХИ (никогда не запускались) ===");
+        RumourManager.Clear();
+
+        var r = new Random(404);
+        var squad = new List<Warrior>();
+        for (int i = 0; i < 5; i++)
+            squad.Add(new Warrior { Soul = MakeSoul(r, "Воин" + i), Team = Team.Player,
+                                    Relationships = new RelationshipSystem() });
+        var enemy = new Warrior { Soul = MakeSoul(r, "Чужой"), Team = Team.Enemy,
+                                  Relationships = new RelationshipSystem() };
+
+        var hero = squad[0];
+
+        // Один слушатель слышит о герое трижды — молва должна копиться,
+        // а текст обновляться вместе с деянием.
+        RumourManager.Spread(squad[1], hero, DeedType.SaveAlly, 30f);
+        // What отдаёт живой объект, а не снимок — значение надо забрать сразу.
+        float progress1 = RumourManager.What(squad[1], hero).Progress;
+        string text1 = RumourManager.What(squad[1], hero).Text;
+
+        RumourManager.Spread(squad[1], hero, DeedType.LastStand, 30f);
+        RumourManager.Spread(squad[1], hero, DeedType.LastStand, 30f);
+        var after3 = RumourManager.What(squad[1], hero);
+
+        Console.WriteLine($"  копится:  после первого {progress1:F0}, "
+                        + $"после трёх {after3.Progress:F0}");
+        Console.WriteLine($"  текст:    было «{text1}», стало «{after3.Text}»");
+        Console.WriteLine($"  верит:    {RumourManager.Believes(squad[1], hero)} "
+                        + $"(порог {RumourManager.ConfirmAt:F0})");
+
+        // Остальные тоже слышат — считаем, сколько верят.
+        for (int i = 2; i < squad.Count; i++)
+            RumourManager.Spread(squad[i], hero, DeedType.LastStand, 120f);
+        Console.WriteLine($"  верящих в отряде: {RumourManager.BelieverCount(hero)} из {squad.Count - 1}");
+
+        // Чужому не рассказывают.
+        RumourManager.Spread(enemy, hero, DeedType.Kill, 200f);
+        Console.WriteLine($"  чужой услышал: {(RumourManager.What(enemy, hero) == null ? "нет" : "ДА — ошибка")}");
+
+        // Сам о себе не сплетничает.
+        RumourManager.Spread(hero, hero, DeedType.Kill, 200f);
+        Console.WriteLine($"  сам о себе:    {(RumourManager.What(hero, hero) == null ? "нет" : "ДА — ошибка")}");
+
+        // Пустые аргументы не роняют.
+        RumourManager.Spread(null, hero, DeedType.Kill, 10f);
+        RumourManager.Spread(squad[1], null, DeedType.Kill, 10f);
+        Console.WriteLine("  пустые аргументы: не уронили");
+
+        RumourManager.Clear();
+        Console.WriteLine($"  после Clear: слухов о герое {RumourManager.About(hero).Count}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -580,6 +638,7 @@ static class Bench
 
         Prophecy(cfg, n);
         AutoBattle(cfg, n);
+        Rumours();
 
         Console.WriteLine("\n=== ПОРОГ КОЛЕБАНИЯ ===");
         foreach (float hs in new float[] { 0.05f, 0.10f, 0.15f, 0.20f, 0.30f })
