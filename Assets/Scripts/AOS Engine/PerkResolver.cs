@@ -1,5 +1,6 @@
 // Assets/_Project/Scripts/AOS Engine/PerkResolver.cs
 using System.Collections.Generic;
+using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
@@ -62,6 +63,11 @@ namespace Sinbinder.AOS
                 case "ChildFound":
                     return activePerk.IsFound && !string.IsNullOrEmpty(activePerk.RelatedCharacterID);
 
+                // Отрицание предыдущего. Использовалось в контенте
+                // и не было реализовано — перк молча не срабатывал.
+                case "ChildNotFound":
+                    return !activePerk.IsFound;
+
                 case "EnemyStronger":
                     return context.NearbyEnemies > 0;
 
@@ -101,8 +107,26 @@ case "LastAlive":
 case "InDefense":
     return context.HasCommand && context.CommandType == "Defend";
                 default:
+                    // Условие, которого никто не написал, раньше просто
+                    // возвращало false. Перк при этом существовал, лежал
+                    // в базе и не срабатывал никогда — и узнать об этом
+                    // было неоткуда.
+                    //
+                    // Молчание тут дороже шума: содержимое ста перков
+                    // писалось часами, а выключается опечаткой в одном
+                    // слове. Говорим вслух, но один раз на условие.
+                    Warn(condition);
                     return false;
             }
+        }
+
+        private static readonly HashSet<string> _warned = new HashSet<string>();
+
+        private static void Warn(string condition)
+        {
+            if (string.IsNullOrEmpty(condition) || !_warned.Add(condition)) return;
+            Debug.LogWarning($"[ПЕРКИ] Условие «{condition}» не реализовано "
+                + "в PerkResolver.IsConditionMet — перки с ним не сработают ни разу.");
         }
     }
 }
