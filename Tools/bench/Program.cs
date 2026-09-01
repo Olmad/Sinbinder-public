@@ -334,6 +334,91 @@ static class Bench
         }
     }
 
+    // ---------- автономный бой ----------
+    //
+    // AutoBattleResolver не вызывался ни разу за всю историю проекта.
+    // Здесь его цикл повторён на настоящем AutoBattleContext, чтобы
+    // проверить главное: собирается ли осмысленный бюллетень без сцены.
+    // Прежний CombatDecisionContext возвращал мир без врагов, в нём
+    // оставалось одно «стоять», и бой проходил в неподвижности.
+
+    static void AutoBattle(AOSConfig cfg, int n)
+    {
+        Console.WriteLine("\n=== АВТОНОМНЫЙ БОЙ (никогда не запускался) ===");
+        var modules = Modules();
+        var r = new Random(303);
+
+        int battles = Math.Max(200, n / 500);
+        int draws = 0, squadWins = 0, enemyWins = 0;
+        long turnSum = 0, actionSum = 0, idleSum = 0;
+
+        for (int b = 0; b < battles; b++)
+        {
+            var squad = new List<Warrior>();
+            var foes = new List<Warrior>();
+            for (int i = 0; i < 4; i++)
+            {
+                squad.Add(new Warrior { Soul = MakeSoul(r, "С" + i), Attack = 5f + (float)r.NextDouble() * 4f,
+                                        Loyalty = (float)(r.NextDouble() * 100), Team = Team.Player,
+                                        IsCommander = i == 0, Relationships = new RelationshipSystem() });
+                foes.Add(new Warrior { Soul = MakeSoul(r, "В" + i), Attack = 5f + (float)r.NextDouble() * 4f,
+                                       Loyalty = (float)(r.NextDouble() * 100), Team = Team.Enemy,
+                                       Relationships = new RelationshipSystem() });
+            }
+
+            int turns = 0;
+            while (turns < 20 && squad.Exists(w => !w.IsDead) && foes.Exists(e => !e.IsDead))
+            {
+                foreach (var w in squad.Where(x => !x.IsDead).ToList())
+                {
+                    var ctx = AutoBattleContext.Create(w, squad, foes);
+                    var o = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                    actionSum++; if (o.Action == ActionType.Idle) idleSum++;
+                    if (o.Action == ActionType.Attack)
+                    {
+                        var t = foes.Where(x => !x.IsDead).OrderBy(x => x.HP).FirstOrDefault();
+                        t?.TakeDamage(w.Attack);
+                    }
+                    else if (o.Action == ActionType.SaveAlly)
+                    {
+                        var a = squad.Where(x => !x.IsDead && x != w && x.HP < x.MaxHP * 0.5f)
+                                     .OrderBy(x => x.HP).FirstOrDefault();
+                        a?.Heal(5f);
+                    }
+                }
+                foreach (var e in foes.Where(x => !x.IsDead).ToList())
+                {
+                    var ctx = AutoBattleContext.Create(e, foes, squad);
+                    var o = Vote(modules, e, ctx, cfg, SquadStrategy.Balanced);
+                    actionSum++; if (o.Action == ActionType.Idle) idleSum++;
+                    if (o.Action == ActionType.Attack)
+                    {
+                        var t = squad.Where(x => !x.IsDead).OrderBy(x => x.HP).FirstOrDefault();
+                        t?.TakeDamage(e.Attack);
+                    }
+                }
+                turns++;
+            }
+
+            turnSum += turns;
+            bool squadAlive = squad.Exists(w => !w.IsDead);
+            bool foesAlive = foes.Exists(e => !e.IsDead);
+            if (squadAlive && foesAlive) draws++;
+            else if (squadAlive) squadWins++;
+            else enemyWins++;
+        }
+
+        Console.WriteLine($"боёв: {battles}, средняя длина {turnSum / (double)battles:F1} ходов "
+                        + $"(предел 20)");
+        Console.WriteLine($"исходы: победа отряда {squadWins * 100.0 / battles:F0}%, "
+                        + $"поражение {enemyWins * 100.0 / battles:F0}%, "
+                        + $"ничья по истечении ходов {draws * 100.0 / battles:F0}%");
+        Console.WriteLine($"бездействие: {idleSum * 100.0 / Math.Max(actionSum, 1):F1}% решений");
+        Console.WriteLine(idleSum * 100.0 / Math.Max(actionSum, 1) > 80
+            ? "  ВНИМАНИЕ: бой проходит в неподвижности — бюллетень пуст"
+            : "  бой идёт: воины действуют");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -494,6 +579,7 @@ static class Bench
         }
 
         Prophecy(cfg, n);
+        AutoBattle(cfg, n);
 
         Console.WriteLine("\n=== ПОРОГ КОЛЕБАНИЯ ===");
         foreach (float hs in new float[] { 0.05f, 0.10f, 0.15f, 0.20f, 0.30f })
