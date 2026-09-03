@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class WrathModule : IPersonalityModule
+    public class WrathModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Wrath";
         public float Weight => 1.0f;
@@ -57,5 +57,28 @@ namespace Sinbinder.AOS.Modules
 
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. По таблице гневный убивает: злобный вырезает
+        /// всех, прочие ограничиваются путником. Который из двух —
+        /// решает Мораль, поэтому здесь оба поднимаются вместе.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float sin = soul.Get(SinType.Wrath) * _config.MissionSinScale;
+
+            switch (action)
+            {
+                // Обычный гнев бьёт одного; вырезать всех — это уже
+                // не гнев, а злоба, и добавляет её Мораль.
+                case MissionAction.KillTraveler:  return sin;
+                case MissionAction.KillEveryone:  return sin * 0.8f;
+                case MissionAction.DestroyAltar:  return sin * 0.4f;
+                case MissionAction.IgnoreVillage: return -sin;
+                case MissionAction.HelpVillage:   return -sin * 0.6f;
+                default:                          return 0f;
+            }
+        }
+
     }
 }

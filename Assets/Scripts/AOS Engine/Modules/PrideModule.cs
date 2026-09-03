@@ -12,7 +12,7 @@ namespace Sinbinder.AOS.Modules
     /// этом урон. Смирение (отрицательная половина шкалы) делает обратное:
     /// слушается охотнее и спасает чаще.
     /// </summary>
-    public class PrideModule : IPersonalityModule
+    public class PrideModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Pride";
         public float Weight => 1.1f;
@@ -106,5 +106,29 @@ namespace Sinbinder.AOS.Modules
 
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. По таблице гордый оставляет по себе памятник:
+        /// злобный рушит алтарь, прочие освящают. Что именно — решает
+        /// Мораль; здесь поднимаются оба, потому что важен сам след.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float sin = soul.Get(SinType.Pride) * _config.MissionSinScale;
+            if (context != null && !context.HasAltar
+                && (action == MissionAction.SanctifyAltar || action == MissionAction.DestroyAltar))
+                return 0f;
+
+            switch (action)
+            {
+                // Освятить — обычный памятник себе; разрушить требует
+                // злобы, и её добавляет Мораль.
+                case MissionAction.SanctifyAltar:  return sin;
+                case MissionAction.DestroyAltar:   return sin * 0.85f;
+                case MissionAction.IgnoreVillage:  return -sin;  // пройти мимо — незаметно
+                default:                           return 0f;
+            }
+        }
+
     }
 }

@@ -4,7 +4,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class GreedModule : IPersonalityModule
+    public class GreedModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Greed";
         public float Weight => 1.0f;
@@ -47,5 +47,24 @@ namespace Sinbinder.AOS.Modules
             }
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. По таблице квеста жадный при любой морали
+        /// облагает деревню данью — деньги есть деньги.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float sin = soul.Get(SinType.Greed) * _config.MissionSinScale;
+
+            switch (action)
+            {
+                case MissionAction.TaxVillage:     return sin;
+                case MissionAction.EnslaveVillage: return sin * 0.35f;  // доход, но хлопотный
+                case MissionAction.HelpVillage:    return -sin * 0.5f;  // даром не работает
+                case MissionAction.IgnoreVillage:  return -sin * 0.3f;  // мимо денег не проходит
+                default:                           return 0f;
+            }
+        }
+
     }
 }

@@ -477,6 +477,87 @@ static class Bench
         Console.WriteLine($"  после Clear: слухов о герое {RumourManager.About(hero).Count}");
     }
 
+    // ---------- мирные миссии ----------
+    //
+    // FalseGodQuest содержит таблицу «грех × мораль → поступок» на
+    // пятнадцать строк — авторский замысел того, как командир решает
+    // судьбу деревни. ResolveCommander её не читает: он зовёт
+    // голосование, у которого до сегодня не было ни одного голосующего.
+    //
+    // Проверка прямая: воспроизводит ли голосование таблицу.
+
+    static void Missions(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== МИРНЫЕ МИССИИ: сходится ли с таблицей квеста ===");
+
+        var table = new (SinType sin, MoralType moral, MissionAction want)[]
+        {
+            (SinType.Wrath, MoralType.Vicious, MissionAction.KillEveryone),
+            (SinType.Wrath, MoralType.Neutral, MissionAction.KillTraveler),
+            (SinType.Wrath, MoralType.Pious,   MissionAction.KillTraveler),
+            (SinType.Pride, MoralType.Vicious, MissionAction.DestroyAltar),
+            (SinType.Pride, MoralType.Neutral, MissionAction.SanctifyAltar),
+            (SinType.Pride, MoralType.Pious,   MissionAction.SanctifyAltar),
+            (SinType.Greed, MoralType.Vicious, MissionAction.TaxVillage),
+            (SinType.Greed, MoralType.Neutral, MissionAction.TaxVillage),
+            (SinType.Greed, MoralType.Pious,   MissionAction.TaxVillage),
+            (SinType.Sloth, MoralType.Vicious, MissionAction.IgnoreVillage),
+            (SinType.Sloth, MoralType.Neutral, MissionAction.IgnoreVillage),
+            (SinType.Sloth, MoralType.Pious,   MissionAction.IgnoreVillage),
+            (SinType.Envy,  MoralType.Vicious, MissionAction.EnslaveVillage),
+            (SinType.Envy,  MoralType.Neutral, MissionAction.EnslaveVillage),
+            (SinType.Envy,  MoralType.Pious,   MissionAction.HelpVillage),
+        };
+
+        var available = new List<MissionAction>
+        {
+            MissionAction.KillEveryone, MissionAction.KillTraveler,
+            MissionAction.DestroyAltar, MissionAction.SanctifyAltar,
+            MissionAction.TaxVillage,   MissionAction.IgnoreVillage,
+            MissionAction.EnslaveVillage, MissionAction.HelpVillage
+        };
+
+        var modules = Modules();
+        int hit = 0;
+
+        foreach (var row in table)
+        {
+            var spectra = new float[7];
+            spectra[(int)row.sin] = 80f;
+            var soul = new SoulData("К", row.moral, 2, spectra);
+            var w = new Warrior { Soul = soul, Loyalty = 50f };
+
+            var ctx = new MissionContext
+            {
+                HasAltar = true, IsVillageIntact = true, HasInnocentVictims = true,
+                RecentMemories = new List<MemoryRecord>(),
+                CarriedItems = new List<InventoryItem>()
+            };
+
+            var scores = new Dictionary<MissionAction, float>();
+            foreach (var a in available) scores[a] = 0f;
+
+            var s2 = Soul.FromWarrior(w);
+            int voices = 0;
+            foreach (var m in modules)
+            {
+                if (!(m is IMissionModule mm)) continue;
+                voices++;
+                foreach (var a in available) scores[a] += mm.EvaluateMission(s2, ctx, a);
+            }
+
+            var best = scores.OrderByDescending(kv => kv.Value).First();
+            bool ok = best.Key == row.want;
+            if (ok) hit++;
+
+            Console.WriteLine($"  {(ok ? "+" : "-")} {row.sin,-8} {row.moral,-8} "
+                + $"таблица {row.want,-14} голосование {best.Key,-14}"
+                + (voices == 0 ? "  (НЕТ ГОЛОСУЮЩИХ)" : ""));
+        }
+
+        Console.WriteLine($"\n  сошлось {hit} из {table.Length}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -639,6 +720,7 @@ static class Bench
         Prophecy(cfg, n);
         AutoBattle(cfg, n);
         Rumours();
+        Missions(cfg);
 
         Console.WriteLine("\n=== ПОРОГ КОЛЕБАНИЯ ===");
         foreach (float hs in new float[] { 0.05f, 0.10f, 0.15f, 0.20f, 0.30f })

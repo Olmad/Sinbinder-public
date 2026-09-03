@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class SlothModule : IPersonalityModule
+    public class SlothModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Sloth";
         public float Weight => 1.2f;
@@ -55,5 +55,18 @@ namespace Sinbinder.AOS.Modules
 
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. По таблице унылый проходит мимо при любой
+        /// морали: всё остальное — работа.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float sin = soul.Get(SinType.Sloth) * _config.MissionSinScale;
+
+            if (action == MissionAction.IgnoreVillage) return sin;
+            return -sin * 0.4f;
+        }
+
     }
 }

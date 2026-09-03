@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class MoralityModule : IPersonalityModule
+    public class MoralityModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Morality";
         public float Weight => 1.0f;
@@ -47,5 +47,52 @@ namespace Sinbinder.AOS.Modules
             }
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. Мораль не выбирает поступок, а выбирает между
+        /// жестоким и мягким вариантом того, к чему уже тянет грех.
+        /// Отсюда в таблице квеста и берутся расхождения: гневный
+        /// злобный режет всех, гневный благочестивый — одного;
+        /// завистливый благочестивый вовсе помогает.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float w = _config.MissionMoralWeight;
+
+            // Совесть запрещает громко, а предлагает тихо. Запреты идут
+            // в полный вес, поощрения — в долю от него, и порок устроен
+            // так же: он разрешает худшее, но не выдумывает своих целей.
+            // Поэтому жадный мерзавец всё-таки обкладывает деревню данью,
+            // а не угоняет её в рабство: грех выбирает поступок, мораль —
+            // его меру.
+            if (soul.Morality == MoralityType.Pious)
+            {
+                switch (action)
+                {
+                    case MissionAction.HelpVillage:    return w * 0.7f;
+                    case MissionAction.SanctifyAltar:  return w * 0.1f;
+                    case MissionAction.KillEveryone:   return -w * 2f;
+                    case MissionAction.EnslaveVillage: return -w * 1.6f;
+                    case MissionAction.DestroyAltar:   return -w * 1.4f;
+                    case MissionAction.KillTraveler:   return -w * 0.6f;
+                    case MissionAction.TaxVillage:     return -w * 0.5f;
+                }
+            }
+            else if (soul.Morality == MoralityType.Vicious)
+            {
+                switch (action)
+                {
+                    case MissionAction.KillEveryone:   return w * 0.4f;
+                    case MissionAction.DestroyAltar:   return w * 0.35f;
+                    case MissionAction.EnslaveVillage: return w * 0.3f;
+                    case MissionAction.TaxVillage:     return w * 0.2f;
+                    case MissionAction.HelpVillage:    return -w;
+                    case MissionAction.SanctifyAltar:  return -w * 0.8f;
+                }
+            }
+
+            return 0f;
+        }
+
     }
 }

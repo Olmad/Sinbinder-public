@@ -12,7 +12,7 @@ namespace Sinbinder.AOS.Modules
     /// чужая власть раздражает завистника сильнее, чем чужое золото.
     /// Доброжелательность (отрицательная половина) делает обратное.
     /// </summary>
-    public class EnvyModule : IPersonalityModule
+    public class EnvyModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Envy";
         public float Weight => 1.0f;
@@ -62,5 +62,24 @@ namespace Sinbinder.AOS.Modules
 
             return score * Weight;
         }
+
+        /// <summary>
+        /// Мирная миссия. По таблице завистливый обращает деревню
+        /// в рабство — кроме благочестивого, который помогает.
+        /// Это расхождение создаёт Мораль, а не Зависть.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            float sin = soul.Get(SinType.Envy) * _config.MissionSinScale;
+
+            switch (action)
+            {
+                case MissionAction.EnslaveVillage: return sin;
+                case MissionAction.TaxVillage:     return sin * 0.3f;   // дань — слабое утешение
+                case MissionAction.HelpVillage:    return -sin * 0.4f;
+                default:                           return 0f;
+            }
+        }
+
     }
 }

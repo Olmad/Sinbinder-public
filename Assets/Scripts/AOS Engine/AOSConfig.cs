@@ -173,6 +173,16 @@ namespace Sinbinder.AOS
         public float GluttonyAttackSinMultiplier = 0.2f;
         public float GluttonyLootPerBody = 8f;
 
+        // Веса мирных миссий выведены из таблицы commanderOutcomes
+        // в FalseGodQuest: грех × мораль → поступок. Голосование должно
+        // эту таблицу воспроизводить, а не подменять, поэтому каждый
+        // голос тянет к тому, что в ней записано за его грехом,
+        // а Мораль выбирает между жестоким и мягким вариантом.
+        [Header("Мирные миссии")]
+        public float MissionSinScale = 0.6f;
+        public float MissionMoralWeight = 45f;
+        public float MissionVirtueScale = 0.5f;
+
         [Header("Память: чем держатся за прошлое")]
         [Tooltip("Своей шкалы у памяти нет — цепкость собирается из "
                + "имеющихся, своя на каждый род воспоминания. Ноль во всех "
