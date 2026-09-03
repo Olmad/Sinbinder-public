@@ -558,6 +558,104 @@ static class Bench
         Console.WriteLine($"\n  сошлось {hit} из {table.Length}");
     }
 
+
+    // ---------- где голос упирается в потолок ----------
+
+    static DecisionContext TypicalContext()
+    {
+        var c = new DecisionContext
+        {
+            NearbyEnemies = 3, NearbyAllies = 2, NearbyLoot = 1,
+            CurrentHP = 60f, MaxHP = 100f, DangerLevel = 0.7f,
+            AllyInDanger = true, HasCommand = true, CommandType = "Attack",
+            RelationshipWithCommander = 50f, Fatigue = 0.3f,
+            RecentMemories = new List<MemoryRecord>(),
+            CarriedItems = new List<InventoryItem>()
+        };
+        c.EngagedWith = 1; c.IsEngaged = true;
+        return c;
+    }
+
+    static void Saturation(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== НАСЫЩЕНИЕ: при каком грехе модуль упирается в MaxVoice ===");
+        Console.WriteLine($"MaxVoice = {cfg.MaxVoice}\n");
+
+        var ctx = TypicalContext();
+        var actions = new[] { ActionType.Attack, ActionType.Flee, ActionType.Idle,
+                              ActionType.Loot, ActionType.SaveAlly, ActionType.ObeyCommand };
+
+        foreach (var m in Modules())
+        {
+            int at = -1;
+            float peakAt100 = 0f;
+            for (int v = 1; v <= 200 && at < 0; v++)
+            {
+                var spectra = new float[7];
+                for (int i = 0; i < 7; i++) spectra[i] = v;
+                var soul = new Soul
+                {
+                    Name = "T", Spectra = spectra,
+                    Morality = MoralityType.Neutral,
+                    Loyalty = Math.Min(v, 100)
+                };
+                foreach (var a in actions)
+                {
+                    float voice = Math.Abs(m.Evaluate(soul, ctx, a));
+                    if (v == 100 && voice > peakAt100) peakAt100 = voice;
+                    if (voice >= cfg.MaxVoice) { at = v; break; }
+                }
+            }
+
+            string verdict = at < 0
+                ? $"не упирается (громче всего при 100: {peakAt100:F0})"
+                : at <= 100
+                    ? $"упирается при {at}  ← выше этого разницы нет"
+                    : $"упирается при {at}";
+            Console.WriteLine($"  {m.ModuleID,-10} {verdict}");
+        }
+    }
+
+    static void CapComparison(int n, AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ПОТОЛОК ШКАЛЫ: меняется ли решение выше 100 ===");
+
+        var modules = Modules();
+        int[] caps = { 100, 40, 60, 80, 125, 150, 200 };
+        var differs = new int[caps.Length];
+
+        var r = new Random(7);
+        for (int i = 0; i < n; i++)
+        {
+            var baseSoul = MakeSoul(r, "Б");
+            var spectra = baseSoul.CopySpectra();
+
+            int dom = 0;
+            for (int k = 1; k < 7; k++)
+                if (Math.Abs(spectra[k]) > Math.Abs(spectra[dom])) dom = k;
+
+            var w = new Warrior { Loyalty = (float)(r.NextDouble() * 100) };
+            var c = MakeContext(r, w, r.NextDouble() < 0.5);
+
+            ActionType baseline = default;
+            for (int ci = 0; ci < caps.Length; ci++)
+            {
+                var sp = (float[])spectra.Clone();
+                sp[dom] = Math.Sign(sp[dom]) * caps[ci];
+                w.Soul = new SoulData("Б", (MoralType)baseSoul.Moral, 2, sp);
+
+                var o = Vote(modules, w, c, cfg, SquadStrategy.Balanced);
+                if (ci == 0) baseline = o.Action;
+                else if (o.Action != baseline) differs[ci]++;
+            }
+        }
+
+        Console.WriteLine($"  выборка: {n:N0} положений, доминирующий грех поднят до потолка\n");
+        for (int ci = 1; ci < caps.Length; ci++)
+            Console.WriteLine($"  потолок {caps[ci],3}: решение отличается от потолка 100 "
+                            + $"в {differs[ci] * 100.0 / n:F1}% случаев");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -568,6 +666,15 @@ static class Bench
         // Регистрируем наш экземпляр, иначе каждый создаст запасной
         // и правки весов на стенде не дойдут до голосования.
         UnityEngine.Resources.Register(cfg);
+
+        // Секции перебора весов правят cfg на месте и не возвращают его
+        // обратно — всё, что идёт после них, считалось бы на объедках
+        // последнего варианта. Снимок берём здесь, восстанавливаем перед
+        // замерами, которые обязаны видеть настоящий конфиг.
+        var snapshot = (
+            cfg.MaxVoice, cfg.HesitationShare,
+            cfg.FearFleeLowHpBonus, cfg.FearFleeDangerMultiplier,
+            cfg.FearFleeSurroundedBonus, cfg.LoyaltyObeySinMultiplier);
 
         Console.WriteLine($"=== ОСНОВНОЙ ПРОГОН: {n:N0} голосований ===");
         Console.WriteLine($"MaxVoice={cfg.MaxVoice}  HesitationShare={cfg.HesitationShare}  "
@@ -720,7 +827,13 @@ static class Bench
         Prophecy(cfg, n);
         AutoBattle(cfg, n);
         Rumours();
+        (cfg.MaxVoice, cfg.HesitationShare,
+         cfg.FearFleeLowHpBonus, cfg.FearFleeDangerMultiplier,
+         cfg.FearFleeSurroundedBonus, cfg.LoyaltyObeySinMultiplier) = snapshot;
+
         Missions(cfg);
+        Saturation(cfg);
+        CapComparison(Math.Min(n, 50000), cfg);
 
         Console.WriteLine("\n=== ПОРОГ КОЛЕБАНИЯ ===");
         foreach (float hs in new float[] { 0.05f, 0.10f, 0.15f, 0.20f, 0.30f })
