@@ -86,12 +86,20 @@ namespace Sinbinder.Utilets
             BuildCouncil(canvas);
             BuildTitle(canvas);
 
-            // Камера ниже роста фигур и смотрит чуть вверх: силуэты
-            // нависают над проснувшимся. Отрицательный наклон — взгляд вверх.
-            CameraRig(new Vector3(0f, 0.85f, -7.5f), new Vector3(-7f, 0f, 0f));
+            // Камера стоит у палатки на возвышенности и смотрит вниз,
+            // на лагерь. Прежняя постановка — «ниже роста фигур, силуэты
+            // нависают» — считалась под бестелесного Греховода, у которого
+            // не было кадра, где он есть. Теперь у него тело, и один кадр
+            // должен показать и его самого, и отряд, которым он командует
+            // (docs/09-PROLOGUE.md §3 и §4, сцена 1).
+            Hill(new Vector3(0f, 0f, -12f), radius: 5f, height: 2.6f);
+            CameraRig(new Vector3(0f, 3.5f, -12.5f), new Vector3(13f, 0f, 0f));
 
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
+
+            Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
+            CouncilTable(new Vector3(3.2f, 0f, -3.4f));
 
             // Врагов в лагере нет: выступаем, когда назначен старший.
             // Здесь же пролог начинается — забываем прошлый отряд.
@@ -116,6 +124,13 @@ namespace Sinbinder.Utilets
 
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
+
+            // Тот же лагерь, та же расстановка. Узнавание места и есть то,
+            // что делает разгром разгромом, — значит палатки и холм обязаны
+            // стоять там же, где стояли на доле 1.
+            Hill(new Vector3(0f, 0f, -12f), radius: 5f, height: 2.6f);
+            Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
+            CouncilTable(new Vector3(3.2f, 0f, -3.4f));
 
             Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 4, width: 7f);
             Director("Prologue_Escape", waitForBattle: true);
@@ -276,6 +291,166 @@ namespace Sinbinder.Utilets
             l.shadows = LightShadows.Soft;
 
             return campfire;
+        }
+
+        /// <summary>
+        /// Возвышенность, на которой стоит палатка Греховода. Сплющенный
+        /// цилиндр: холм из одного примитива, зато лагерь виден сверху.
+        /// </summary>
+        private static void Hill(Vector3 position, float radius, float height)
+        {
+            var hill = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            hill.name = "Возвышенность";
+            hill.transform.position = position + new Vector3(0f, height * 0.5f, 0f);
+            hill.transform.localScale = new Vector3(radius * 2f, height * 0.5f, radius * 2f);
+
+            // Палатка Греховода наверху, входом к лагерю: из неё он и выходит.
+            Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
+                name: "Палатка Греховода", size: 1.25f);
+        }
+
+        /// <summary>
+        /// Лагерь: двадцать пять палаток вокруг костра, из них пять
+        /// брошенных. Пустая палатка с колышком — вся предыстория, которая
+        /// нужна: отряд нёс потери до того, как игрок проснулся
+        /// (docs/09-PROLOGUE.md §4, сцена 1). Ни строчки объяснения.
+        ///
+        /// Раскладка по индексу, без Random: лагерь обязан выглядеть
+        /// одинаково при каждом запуске, иначе игрок не узнает место
+        /// на доле 4, а именно узнавание делает разгром разгромом.
+        ///
+        /// Место под холмом освобождается, и брошенные размечаются уже
+        /// по выжившим местам. Иначе палатка уезжает внутрь возвышенности,
+        /// а вместе с ней теряется и одна из пяти пустых — то есть
+        /// пропадает ровно та деталь, ради которой всё это ставится.
+        /// </summary>
+        private static void Tents(Vector3 hillCentre, float hillRadius)
+        {
+            const int total = 25;
+            const int inner = 11;
+            const int mourning = 5;
+            const float clearance = 1.2f;
+
+            var places = new List<Vector3>();
+
+            for (int i = 0; i < total; i++)
+            {
+                bool ring = i < inner;
+                int index = ring ? i : i - inner;
+                int count = ring ? inner : total - inner;
+
+                float radius = ring ? 6.2f : 9.4f;
+                float angle = (index / (float)count) * Mathf.PI * 2f
+                            + (ring ? 0f : Mathf.PI / count);
+
+                var position = new Vector3(Mathf.Sin(angle) * radius, 0f,
+                                           Mathf.Cos(angle) * radius);
+
+                // Под холмом палаток нет: там стоит одна, наверху.
+                if (Vector3.Distance(position, hillCentre) < hillRadius + clearance)
+                    continue;
+
+                places.Add(position);
+            }
+
+            var camp = new GameObject("Палатки");
+            int fallen = 0;
+
+            for (int i = 0; i < places.Count; i++)
+            {
+                // Пятеро павших, разведённых по кругу ровно: пустые не
+                // должны сбиться в одну сторону, игрок обязан заметить их
+                // не приглядываясь.
+                bool abandoned = fallen < mourning
+                              && i >= fallen * places.Count / mourning;
+                if (abandoned) fallen++;
+
+                var position = places[i];
+                float yaw = Mathf.Atan2(position.x, position.z) * Mathf.Rad2Deg + 180f;
+
+                var tent = Tent(position, yaw, abandoned,
+                    abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", 1f);
+                tent.transform.SetParent(camp.transform);
+            }
+
+            if (fallen != mourning)
+                Debug.LogWarning($"[СБОРКА] Пустых палаток {fallen}, а должно быть {mourning}.");
+        }
+
+        /// <summary>
+        /// Палатка — куб, повёрнутый на сорок пять градусов и наполовину
+        /// ушедший в землю: над землёй остаётся треугольник. Один примитив
+        /// на палатку, двадцать шесть примитивов на весь лагерь.
+        ///
+        /// Брошенная просела и завалилась набок, и рядом торчит колышек.
+        /// Разница делается формой, а не цветом: материалов сборщик сцен
+        /// не ставит нигде, и заводить их ради пяти палаток не стоит.
+        /// </summary>
+        private static GameObject Tent(Vector3 position, float yaw, bool abandoned,
+            string name, float size)
+        {
+            var tent = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            tent.name = name;
+            tent.transform.position = position;
+
+            float height = abandoned ? 0.55f : 1.0f;
+            tent.transform.localScale = new Vector3(1.5f * size, 1.5f * size * height,
+                                                    2.2f * size);
+            tent.transform.rotation = Quaternion.Euler(abandoned ? 14f : 0f, yaw, 45f);
+
+            if (!abandoned) return tent;
+
+            // Колышек: имя павшего повесить пока не на что — TextMesh требует
+            // шрифта, которого в сборщике нет. Колышек стоит, имя ждёт.
+            var peg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            peg.name = "Колышек";
+            peg.transform.SetParent(tent.transform.parent);
+            peg.transform.position = position + new Vector3(0.9f, 0.35f, 0.9f);
+            peg.transform.localScale = new Vector3(0.08f, 0.35f, 0.08f);
+            peg.transform.rotation = Quaternion.Euler(9f, 0f, 5f);
+
+            return tent;
+        }
+
+        /// <summary>
+        /// Стол военного совета с хрустальным шаром. Шар — предмет в лагере,
+        /// который видно от палатки: на доле 3 он наливается красным,
+        /// и это первое, что игрок замечает, не подходя к столу.
+        /// </summary>
+        private static void CouncilTable(Vector3 position)
+        {
+            var table = new GameObject("Стол совета");
+            table.transform.position = position;
+
+            var top = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            top.name = "Столешница";
+            top.transform.SetParent(table.transform);
+            top.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            top.transform.localScale = new Vector3(1.6f, 0.12f, 1.1f);
+
+            var leg = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            leg.name = "Опора";
+            leg.transform.SetParent(table.transform);
+            leg.transform.localPosition = new Vector3(0f, 0.45f, 0f);
+            leg.transform.localScale = new Vector3(0.35f, 0.9f, 0.35f);
+
+            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            ball.name = "Хрустальный шар";
+            ball.transform.SetParent(table.transform);
+            ball.transform.localPosition = new Vector3(0f, 1.22f, 0f);
+            ball.transform.localScale = Vector3.one * 0.42f;
+
+            var glow = new GameObject("Свечение");
+            glow.transform.SetParent(ball.transform);
+            glow.transform.localPosition = Vector3.zero;
+
+            var light = glow.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.45f, 0.62f, 0.95f);
+            light.intensity = 1.4f;
+            light.range = 7f;
+
+            ball.AddComponent<CrystalBall>();
         }
 
         private static void Hunters(Vector3 position, Vector3 lookAt, int count, float width)
