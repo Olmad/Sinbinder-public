@@ -714,6 +714,52 @@ static class Bench
         Console.WriteLine(bad == 0 ? "\n  все проверки прошли" : $"\n  ПРОВАЛОВ: {bad}");
     }
 
+    // ---------- возвращение отряда ----------
+
+    static void HomecomingCheck()
+    {
+        Console.WriteLine("\n=== ЭПИЛОГ: кто вернулся ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        const int sent = 5;
+
+        // Ни один исход не должен обнулить отряд: командир возвращается
+        // всегда, иначе рассказывать о вылазке будет некому.
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+        {
+            int back = Homecoming.Returned(sin, sent);
+            Check(back >= 1, $"{sin}: вернулся хотя бы один");
+            Check(back <= sent, $"{sin}: вернулось не больше ушедших");
+            Check(!string.IsNullOrEmpty(Homecoming.Story(sin)), $"{sin}: объяснение есть");
+            Check(!Homecoming.Story(sin).Any(char.IsDigit), $"{sin}: объяснение без цифр");
+        }
+
+        // Три исхода из сценария должны отличаться друг от друга: ради
+        // этого игрок и выбирал старшего полчаса назад.
+        int sloth = Homecoming.Returned(SinType.Sloth, sent);
+        int wrath = Homecoming.Returned(SinType.Wrath, sent);
+        int greed = Homecoming.Returned(SinType.Greed, sent);
+        Check(sloth == 1, "Уныние возвращается один");
+        Check(wrath == 2, "Гнев приводит одного");
+        Check(greed == sent - 1, "Жадность теряет одного");
+        Check(sloth != wrath && wrath != greed && sloth != greed,
+            "три исхода различимы");
+
+        // Края: пустой отряд и отряд из одного не должны ломать эпилог.
+        Check(Homecoming.Returned(SinType.Greed, 0) == 0, "никого не отправляли — никто не вернулся");
+        Check(Homecoming.Returned(SinType.Sloth, 1) == 1, "ушёл один — он и вернулся");
+
+        Console.WriteLine($"  из пятерых вернутся: Уныние {sloth}, Гнев {wrath}, "
+                        + $"Жадность {greed}, Гордыня {Homecoming.Returned(SinType.Pride, sent)}, "
+                        + $"Зависть {Homecoming.Returned(SinType.Envy, sent)}");
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -890,6 +936,7 @@ static class Bench
          cfg.FearFleeSurroundedBonus, cfg.LoyaltyObeySinMultiplier) = snapshot;
 
         LeadershipCheck();
+        HomecomingCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

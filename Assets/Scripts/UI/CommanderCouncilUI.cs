@@ -268,6 +268,11 @@ namespace Sinbinder.UI
 
             SquadRoster.ChooseCommander(warrior.DisplayName);
 
+            // Отряд действительно уходит. Без этого выбор старшего ничего
+            // не менял бы в лагере, а в эпилоге возвращаться было бы некому:
+            // «пятеро уходят, остаются Карган и трое» (пролог §4, сцена 2).
+            SquadRoster.SendAway(warrior.DisplayName, _requiredSquad);
+
             // Командир обязан остаться один: GetCommander берёт первого
             // попавшегося, и без этой уборки верность считалась бы к тому,
             // кого игрок не выбирал.
@@ -275,6 +280,11 @@ namespace Sinbinder.UI
             {
                 if (w == null || w.Team != Team.Player) continue;
                 w.SetCommander(w.DisplayName == warrior.DisplayName);
+
+                // Ушедшие исчезают из лагеря на глазах: игрок должен
+                // увидеть, что отряд поредел, ещё до прихода Охотников.
+                if (SquadRoster.TryGet(w.DisplayName, out var m) && m.IsAway)
+                    w.gameObject.SetActive(false);
             }
 
             if (_panel != null) _panel.SetActive(false);

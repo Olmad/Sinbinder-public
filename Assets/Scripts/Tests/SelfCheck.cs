@@ -72,6 +72,7 @@ namespace Sinbinder.Tests
                 Narration();
                 Voting();
                 Commanding();
+                Epilogue();
                 TextRules();
             }
             catch (Exception e)
@@ -534,6 +535,79 @@ namespace Sinbinder.Tests
             }
             Check(!HasDigit(Leadership.Shortfall(0f, 5)),
                 "нехватка навыка описана без цифр");
+        }
+
+        /// <summary>
+        /// Отправка отряда и его возвращение. Проверяем обещание сценария:
+        /// «пятеро уходят, остаются Карган и трое», а в эпилоге состав
+        /// зависит от того, кого игрок поставил старшим.
+        /// </summary>
+        private static void Epilogue()
+        {
+            var saved = new List<SquadRoster.Member>(SquadRoster.Members);
+
+            try
+            {
+                SquadRoster.Set(CampLike());
+                SquadRoster.ChooseCommander("Опытный А");
+                SquadRoster.SendAway("Опытный А", 5);
+
+                int away = 0, stayed = 0;
+                bool guardStayed = false, otherLeadersStayed = true;
+
+                foreach (var m in SquadRoster.Members)
+                {
+                    if (m.IsAway) { away++; continue; }
+                    stayed++;
+                    if (!string.IsNullOrEmpty(m.Unavailable)) guardStayed = true;
+                }
+
+                foreach (var m in SquadRoster.Away)
+                    if (Leadership.IsExperienced(m.Leadership) && !m.IsCommander)
+                        otherLeadersStayed = false;
+
+                Same(away, 5, "с командиром ушли пятеро");
+                Same(stayed, 4, "в лагере остались четверо");
+                Check(guardStayed, "телохранитель не уходит");
+                Check(otherLeadersStayed, "прочие опытные остаются в лагере");
+
+                // Ушедших нет ни в одной сцене. Если Remember их забудет,
+                // возвращаться в эпилоге будет некому.
+                SquadRoster.Remember(new List<Warrior>());
+                int stillAway = 0;
+                foreach (var m in SquadRoster.Away) stillAway++;
+                Same(stillAway, 5, "ушедшие пережили смену сцены");
+
+                // Три исхода обязаны отличаться — ради этого и был совет.
+                Same(Homecoming.Returned(SinType.Sloth, 5), 1, "Уныние возвращается один");
+                Check(Homecoming.Returned(SinType.Wrath, 5)
+                      != Homecoming.Returned(SinType.Greed, 5),
+                    "Гнев и Жадность возвращаются по-разному");
+                Check(Homecoming.Returned(SinType.Greed, 0) == 0,
+                    "пустой отряд не возвращает никого");
+            }
+            finally
+            {
+                SquadRoster.Set(saved);
+            }
+        }
+
+        /// <summary>Состав вроде лагерного: страж, трое опытных, пятеро рядовых.</summary>
+        private static List<SquadRoster.Member> CampLike()
+        {
+            var list = new List<SquadRoster.Member>
+            {
+                new SquadRoster.Member { Name = "Страж", Sin = SinType.Pride,
+                    Leadership = 90f, Unavailable = "телохранитель" },
+                new SquadRoster.Member { Name = "Опытный А", Sin = SinType.Sloth, Leadership = 55f },
+                new SquadRoster.Member { Name = "Опытный Б", Sin = SinType.Greed, Leadership = 40f },
+                new SquadRoster.Member { Name = "Опытный В", Sin = SinType.Wrath, Leadership = 25f },
+            };
+
+            for (int i = 0; i < 5; i++)
+                list.Add(new SquadRoster.Member { Name = $"Рядовой {i + 1}", Sin = SinType.Envy });
+
+            return list;
         }
 
         private static bool HasDigit(string text)

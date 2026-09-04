@@ -47,6 +47,13 @@ namespace Sinbinder.Gameplay
             public float Leadership;
 
             /// <summary>
+            /// Ушёл с отрядом на доле 2. Такого нет ни в одной сцене
+            /// пролога, и он обязан пережить их все: вернётся он только
+            /// в эпилоге (docs/09-PROLOGUE.md §4, сцена 8).
+            /// </summary>
+            public bool IsAway;
+
+            /// <summary>
             /// Почему его нельзя поставить старшим. Пусто — можно.
             /// Причина показывается игроку прямо в строке совета, чтобы
             /// он не жал кнопку, которая соврёт (docs/09-PROLOGUE.md §6).
@@ -67,6 +74,53 @@ namespace Sinbinder.Gameplay
                 foreach (var m in _members) if (m.IsCommander) return m.Name;
                 return "";
             }
+        }
+
+        /// <summary>Кто ушёл на вылазку и не показывается до эпилога.</summary>
+        public static IEnumerable<Member> Away
+        {
+            get
+            {
+                foreach (var m in _members) if (m.IsAway) yield return m;
+            }
+        }
+
+        /// <summary>
+        /// Отправить отряд на доле 2. Уходит выбранный старший и рядовые
+        /// при нём — опытные остаются в лагере, иначе к доле 4 защищать
+        /// его будет некому, а телохранитель не уходит никогда.
+        ///
+        /// Порядок набора — по списку, без Random: тот же выбор игрока
+        /// обязан уводить тех же людей.
+        /// </summary>
+        public static void SendAway(string commanderName, int size)
+        {
+            int taken = 0;
+
+            for (int i = 0; i < _members.Count && taken < size; i++)
+            {
+                var m = _members[i];
+                if (m.Name != commanderName) continue;
+
+                m.IsAway = true;
+                _members[i] = m;
+                taken++;
+            }
+
+            for (int i = 0; i < _members.Count && taken < size; i++)
+            {
+                var m = _members[i];
+                if (m.IsAway) continue;
+                if (!string.IsNullOrEmpty(m.Unavailable)) continue;   // телохранитель
+                if (Leadership.IsExperienced(m.Leadership)) continue; // опытные остаются
+
+                m.IsAway = true;
+                _members[i] = m;
+                taken++;
+            }
+
+            Debug.Log($"[ОТРЯД] С {commanderName} ушли {taken}. "
+                    + $"В лагере остались {_members.Count - taken}.");
         }
 
         public static void Set(IEnumerable<Member> members)
@@ -100,6 +154,11 @@ namespace Sinbinder.Gameplay
         {
             var survivors = new List<Member>();
 
+            // Ушедших в сцене нет и быть не может. Не перенести их руками —
+            // значит потерять отряд, который обязан вернуться в эпилоге,
+            // и вместе с ним весь смысл военного совета.
+            foreach (var m in _members) if (m.IsAway) survivors.Add(m);
+
             foreach (var w in warriors)
             {
                 if (w == null || w.IsDead || w.Soul == null) continue;
@@ -120,11 +179,16 @@ namespace Sinbinder.Gameplay
                     // молча обнулить при первой же смене доли, и к совету
                     // все пришли бы рядовыми.
                     Leadership = PreviousLeadership(w.DisplayName),
-                    Unavailable = PreviousUnavailable(w.DisplayName)
+                    Unavailable = PreviousUnavailable(w.DisplayName),
+                    IsAway = false
                 });
             }
 
-            if (survivors.Count == 0) return;   // сцену закрыли до сборки отряда
+            // Сцену закрыли до сборки отряда. Ушедшие не в счёт: они живы
+            // и без сцены, но одни они отрядом не считаются.
+            bool anyoneHere = false;
+            foreach (var m in survivors) if (!m.IsAway) { anyoneHere = true; break; }
+            if (!anyoneHere) return;
 
             _members.Clear();
             _members.AddRange(survivors);
