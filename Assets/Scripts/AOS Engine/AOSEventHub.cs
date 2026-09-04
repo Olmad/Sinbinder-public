@@ -62,7 +62,7 @@ namespace Sinbinder.AOS
             }
 
             // Реакция союзников на смерть
-            var allWarriors = Object.FindObjectsOfType<Warrior>();
+            var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
                 if (w.IsDead || w.Team != victim.Team || w == victim) continue;
@@ -146,7 +146,7 @@ namespace Sinbinder.AOS
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Sadness, 0.5f);
             MemoryProcessor.Instance?.CreateMemory(betrayedCommander, "AllyBetrayedMe", traitor.Id, EmotionType.Anger, 1.0f);
 
-            var allWarriors = Object.FindObjectsOfType<Warrior>();
+            var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
                 if (w.IsDead || w.Team != betrayedCommander.Team) continue;
@@ -167,7 +167,7 @@ namespace Sinbinder.AOS
             Debug.Log(AOSStats.Report());
             AOSStats.Reset();
 
-            var allWarriors = Object.FindObjectsOfType<Warrior>();
+            var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
                 if (w.IsDead) continue;

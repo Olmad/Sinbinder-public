@@ -52,7 +52,7 @@ namespace Sinbinder.Gameplay
 
         IEnumerator DevourRoutine()
         {
-            var corpses = FindObjectsOfType<HarvestableBody>();
+            var corpses = FindObjectsByType<HarvestableBody>(FindObjectsSortMode.InstanceID);
             foreach (var body in corpses)
             {
                 if (!body.IsCollected && Vector3.Distance(transform.position, body.transform.position) < 2f)

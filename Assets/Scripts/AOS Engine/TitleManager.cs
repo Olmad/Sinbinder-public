@@ -59,7 +59,7 @@ namespace Sinbinder.AOS
 
         private static Warrior FindWarriorWithTitle(string title)
         {
-            var all = Object.FindObjectsOfType<Warrior>();
+            var all = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             return all.FirstOrDefault(w => w.Reputation.CurrentName == $"{title} {w.DisplayName}");
         }
     }

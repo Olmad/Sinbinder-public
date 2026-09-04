@@ -102,7 +102,7 @@ namespace Sinbinder.UI
 
             Hint($"{warrior.DisplayName} принял: {item.Name}.");
 
-            var log = Object.FindObjectOfType<BattleLogUI>();
+            var log = Object.FindFirstObjectByType<BattleLogUI>();
             log?.Write($"{warrior.DisplayName} взял: {item.Name}.");
         }
 

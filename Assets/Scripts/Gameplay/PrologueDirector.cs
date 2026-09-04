@@ -102,7 +102,7 @@ namespace Sinbinder.Gameplay
             if (_leaving) return;
             _leaving = true;
 
-            var log = Object.FindObjectOfType<UI.BattleLogUI>();
+            var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
             if (log != null && !string.IsNullOrEmpty(line)) log.Write(line);
 
             StartCoroutine(LeaveRoutine(wiped));
@@ -119,7 +119,7 @@ namespace Sinbinder.Gameplay
 
             if (wiped || string.IsNullOrEmpty(_nextScene))
             {
-                var end = Object.FindObjectOfType<UI.DemoEndUI>();
+                var end = Object.FindFirstObjectByType<UI.DemoEndUI>();
                 if (end != null) { end.Show(wiped); yield break; }
 
                 Debug.Log("[ПРОЛОГ] Демо окончено.");

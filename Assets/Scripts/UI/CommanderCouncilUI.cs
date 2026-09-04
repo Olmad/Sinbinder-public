@@ -80,7 +80,7 @@ namespace Sinbinder.UI
             foreach (var m in SquadRoster.Members)
                 if (m.IsCandidate) names.Add(m.Name);
 
-            foreach (var w in Object.FindObjectsOfType<Warrior>())
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null || w.IsDead || w.Team != Team.Player) continue;
                 if (!names.Contains(w.DisplayName)) continue;
@@ -175,7 +175,7 @@ namespace Sinbinder.UI
             // Командир обязан остаться один: GetCommander берёт первого
             // попавшегося, и без этой уборки верность считалась бы к тому,
             // кого игрок не выбирал.
-            foreach (var w in Object.FindObjectsOfType<Warrior>())
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null || w.Team != Team.Player) continue;
                 w.SetCommander(w.DisplayName == warrior.DisplayName);
@@ -184,7 +184,7 @@ namespace Sinbinder.UI
             if (_panel != null) _panel.SetActive(false);
             Core.GamePauseController.Instance?.Resume();
 
-            var log = Object.FindObjectOfType<BattleLogUI>();
+            var log = Object.FindFirstObjectByType<BattleLogUI>();
             log?.Write($"{warrior.DisplayName} принял отряд.");
         }
     }

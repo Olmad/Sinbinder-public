@@ -19,7 +19,7 @@ namespace Sinbinder.UI
             _relSystem = new Core.RelationshipSystem(AOS.MemoryProcessor.Instance);
 
             if (_factory == null)
-                _factory = FindObjectOfType<UnitFactory>();
+                _factory = FindFirstObjectByType<UnitFactory>();
 
             Debug.Log($"[CHEAT] Режим спавна: {(_spawnAsEnemy ? "ВРАГ" : "СОЮЗНИК")}. Нажми 0 для переключения. Нажми 5 для нанесения урона союзникам.");
 
@@ -46,7 +46,7 @@ namespace Sinbinder.UI
             // Нанесение урона всем союзникам
             if (Input.GetKeyDown(KeyCode.Alpha5))
             {
-                var allWarriors = FindObjectsOfType<Warrior>();
+                var allWarriors = FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
                 foreach (var w in allWarriors)
                 {
                     if (w.Team == Team.Player && !w.IsDead)

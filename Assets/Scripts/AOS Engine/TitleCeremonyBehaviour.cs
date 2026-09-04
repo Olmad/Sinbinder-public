@@ -13,7 +13,7 @@ namespace Sinbinder.AOS
         public IEnumerator PlayCeremony(Warrior warrior, string title, bool isLegendary)
         {
             GamePauseController.Instance?.Pause();
-            var cameraController = FindObjectOfType<Dialogue.DialogueCameraController>();
+            var cameraController = FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (cameraController != null)
             {
                 cameraController.SaveCameraPosition();

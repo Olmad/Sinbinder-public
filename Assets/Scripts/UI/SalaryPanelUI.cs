@@ -130,7 +130,7 @@ namespace Sinbinder.UI
 
         private void Log(string text)
         {
-            var log = Object.FindObjectOfType<BattleLogUI>();
+            var log = Object.FindFirstObjectByType<BattleLogUI>();
             if (log != null) log.Write(text);
             else Debug.Log("[ПЛАТА] " + text);
         }

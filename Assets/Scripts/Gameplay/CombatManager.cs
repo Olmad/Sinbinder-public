@@ -30,7 +30,7 @@ namespace Sinbinder.Gameplay
 
         void Start()
         {
-            if (_inventory == null) _inventory = FindObjectOfType<PlayerInventory>();
+            if (_inventory == null) _inventory = FindFirstObjectByType<PlayerInventory>();
         }
 
         void Update()

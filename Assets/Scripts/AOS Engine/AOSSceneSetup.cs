@@ -38,7 +38,7 @@ namespace Sinbinder.AOS
 
         private void SetupAllWarriors()
         {
-            var warriors = Object.FindObjectsOfType<Warrior>();
+            var warriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in warriors)
                 SetupWarrior(w.gameObject);
 

@@ -16,7 +16,7 @@ namespace Sinbinder.Gameplay
             _relSystem = new Core.RelationshipSystem(AOS.MemoryProcessor.Instance);
 
             if (_dialogueTrigger == null)
-                _dialogueTrigger = FindObjectOfType<Dialogue.DialogueTrigger>();
+                _dialogueTrigger = FindFirstObjectByType<Dialogue.DialogueTrigger>();
 
             // Союзники — Team.Player (синие)
             SpawnWarrior("Гордый Скелет", SinType.Pride, MoralType.Pious, ShellType.Skeleton, true, Team.Player, new Vector3(-5, 0, 0));

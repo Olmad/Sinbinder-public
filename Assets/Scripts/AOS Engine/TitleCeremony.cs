@@ -9,7 +9,7 @@ namespace Sinbinder.AOS
     {
         public static void Start(Warrior warrior, string title, bool isLegendary)
         {
-            var ceremony = Object.FindObjectOfType<TitleCeremonyBehaviour>();
+            var ceremony = Object.FindFirstObjectByType<TitleCeremonyBehaviour>();
             if (ceremony == null)
             {
                 Debug.LogWarning("[TITLE] TitleCeremonyBehaviour не найден на сцене!");

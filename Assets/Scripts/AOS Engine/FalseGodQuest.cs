@@ -132,7 +132,7 @@ namespace Sinbinder.AOS
             if (chosenOption == null) return;
 
             // Применяем изменения к игроку (через SinbinderPlayer или GameManager)
-            var player = FindObjectOfType<SinbinderPlayer>();
+            var player = FindFirstObjectByType<SinbinderPlayer>();
             if (player != null)
             {
                 player.Reputation.Respect += chosenOption.respectChange;

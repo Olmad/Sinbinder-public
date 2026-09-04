@@ -24,7 +24,7 @@ namespace Sinbinder.UI
 
         void Start()
         {
-            var trigger = FindObjectOfType<DialogueTrigger>();
+            var trigger = FindFirstObjectByType<DialogueTrigger>();
             if (trigger != null)
             {
                 trigger.OnDialogueStart += OnDialogueStart;
@@ -32,7 +32,7 @@ namespace Sinbinder.UI
             }
 
             if (_cameraController == null)
-                _cameraController = FindObjectOfType<DialogueCameraController>();
+                _cameraController = FindFirstObjectByType<DialogueCameraController>();
 
             if (_dialoguePanel != null)
                 _dialoguePanel.SetActive(false);
@@ -40,7 +40,7 @@ namespace Sinbinder.UI
 
         void OnDestroy()
         {
-            var trigger = FindObjectOfType<DialogueTrigger>();
+            var trigger = FindFirstObjectByType<DialogueTrigger>();
             if (trigger != null)
             {
                 trigger.OnDialogueStart -= OnDialogueStart;
@@ -74,7 +74,7 @@ namespace Sinbinder.UI
 
             Core.GamePauseController.Instance?.Pause();
 
-            _allWarriors = new List<Warrior>(FindObjectsOfType<Warrior>());
+            _allWarriors = new List<Warrior>(FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID));
 
             if (_dialoguePanel != null)
                 _dialoguePanel.SetActive(true);

@@ -332,7 +332,7 @@ namespace Sinbinder.Utilets
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            if (Object.FindObjectOfType<EventSystem>() == null)
+            if (Object.FindFirstObjectByType<EventSystem>() == null)
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
