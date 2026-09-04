@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/MissionOutcome.cs
+// Assets/Scripts/AOS Engine/MissionOutcome.cs
 namespace Sinbinder.AOS
 {
     /// <summary>Чем закончилась миссия после решения командира.</summary>

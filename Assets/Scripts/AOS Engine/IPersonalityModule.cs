@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/IPersonalityModule.cs
+// Assets/Scripts/AOS Engine/IPersonalityModule.cs
 namespace Sinbinder.AOS
 {
     public interface IPersonalityModule

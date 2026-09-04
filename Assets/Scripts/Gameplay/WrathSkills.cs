@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/WrathSkills.cs
+// Assets/Scripts/Gameplay/WrathSkills.cs
 using System.Collections;
 using UnityEngine;
 using Sinbinder.AOS;

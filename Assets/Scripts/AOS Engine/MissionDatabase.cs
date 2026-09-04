@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/MissionDatabase.cs
+// Assets/Scripts/AOS Engine/MissionDatabase.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS

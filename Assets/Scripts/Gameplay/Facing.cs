@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/Facing.cs
+// Assets/Scripts/Gameplay/Facing.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

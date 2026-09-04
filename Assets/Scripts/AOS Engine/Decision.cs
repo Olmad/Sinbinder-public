@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/Decision.cs
+// Assets/Scripts/AOS Engine/Decision.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

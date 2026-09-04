@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/SquadStrategy.cs
+// Assets/Scripts/AOS Engine/SquadStrategy.cs
 namespace Sinbinder.AOS
 {
     public enum SquadStrategy

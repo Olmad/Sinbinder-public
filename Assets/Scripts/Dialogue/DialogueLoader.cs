@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Dialogue/DialogueLoader.cs
+// Assets/Scripts/Dialogue/DialogueLoader.cs
 using UnityEngine;
 using Sinbinder.Gameplay;
 

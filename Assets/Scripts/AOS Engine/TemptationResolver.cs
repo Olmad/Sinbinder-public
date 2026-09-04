@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/TemptationResolver.cs
+// Assets/Scripts/AOS Engine/TemptationResolver.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;

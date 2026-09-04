@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/Damageable.cs
+// Assets/Scripts/Gameplay/Damageable.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

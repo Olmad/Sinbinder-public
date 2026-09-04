@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/AOSConfig.cs
+// Assets/Scripts/AOS Engine/AOSConfig.cs
 using UnityEngine;
 
 namespace Sinbinder.AOS

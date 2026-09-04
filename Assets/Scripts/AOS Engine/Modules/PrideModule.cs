@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/PrideModule.cs
+// Assets/Scripts/AOS Engine/Modules/PrideModule.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Dialogue/DialogueAnimator.cs
+// Assets/Scripts/Dialogue/DialogueAnimator.cs
 using UnityEngine;
 
 namespace Sinbinder.Dialogue

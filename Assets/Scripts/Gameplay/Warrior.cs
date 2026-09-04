@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/Warrior.cs
+// Assets/Scripts/Gameplay/Warrior.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;

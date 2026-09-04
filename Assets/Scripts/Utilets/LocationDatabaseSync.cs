@@ -1,7 +1,7 @@
 #if UNITY_EDITOR
 // Файл зависит от UnityEditor. Без этой обёртки сборка плеера падает с CS0246,
 // потому что скрипт лежит не в папке Editor.
-// Assets/_Project/Scripts/Editor/LocationDatabaseSync.cs
+// Assets/Scripts/Utilets/LocationDatabaseSync.cs
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,7 +15,7 @@ namespace Sinbinder.Utilets
     [InitializeOnLoad]
     public static class LocationDatabaseSync
     {
-        private const string DATABASE_PATH = "Assets/_Project/Scripts/Core/LocationDatabase.asset";
+        private const string DATABASE_PATH = "Assets/Scripts/Core/LocationDatabase.asset";
 
         static LocationDatabaseSync()
         {
@@ -49,7 +49,7 @@ namespace Sinbinder.Utilets
             // Если Build Settings пуст, ищем все .unity файлы в папке Scenes
             if (buildScenes.Count == 0)
             {
-                string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Project/Scenes" });
+                string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes" });
                 foreach (string guid in sceneGuids)
                 {
                     string path = AssetDatabase.GUIDToAssetPath(guid);

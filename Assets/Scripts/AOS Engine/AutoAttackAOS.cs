@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/AutoAttackAOS.cs
+// Assets/Scripts/AOS Engine/AutoAttackAOS.cs
 using System.Collections;
 using UnityEngine;
 

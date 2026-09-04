@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/WarriorTooltipUI.cs
+// Assets/Scripts/UI/WarriorTooltipUI.cs
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;

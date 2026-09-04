@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/AutoAttack.cs
+// Assets/Scripts/Gameplay/AutoAttack.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

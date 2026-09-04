@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/DiligenceSkills.cs
+// Assets/Scripts/Gameplay/DiligenceSkills.cs
 using System.Collections;
 using UnityEngine;
 using Sinbinder.AOS;

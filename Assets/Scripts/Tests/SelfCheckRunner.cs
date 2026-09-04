@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Tests/SelfCheckRunner.cs
+// Assets/Scripts/Tests/SelfCheckRunner.cs
 using UnityEngine;
 
 namespace Sinbinder.Tests

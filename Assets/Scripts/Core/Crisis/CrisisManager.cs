@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Crisis/CrisisManager.cs
+// Assets/Scripts/Core/Crisis/CrisisManager.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Gameplay;

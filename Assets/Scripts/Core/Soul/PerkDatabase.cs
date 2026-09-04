@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/PerkDatabase.cs
+// Assets/Scripts/Core/Soul/PerkDatabase.cs
 using System.Collections.Generic;
 using UnityEngine;
 

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/AOSWarriorWrapper.cs
+// Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs
 using UnityEngine;
 using System.Collections.Generic;
 using Sinbinder.Gameplay;

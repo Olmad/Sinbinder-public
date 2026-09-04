@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/GluttonySkills.cs
+// Assets/Scripts/Gameplay/GluttonySkills.cs
 using System.Collections;
 using UnityEngine;
 

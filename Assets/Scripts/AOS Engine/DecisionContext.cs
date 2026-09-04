@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/DecisionContext.cs
+// Assets/Scripts/AOS Engine/DecisionContext.cs
 using System.Collections.Generic;
 using Sinbinder.Gameplay;
 using Sinbinder.Inventory;

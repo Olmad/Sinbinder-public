@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Crisis/CrisisData.cs
+// Assets/Scripts/Core/Crisis/CrisisData.cs
 using System.Collections.Generic;
 using UnityEngine;
 

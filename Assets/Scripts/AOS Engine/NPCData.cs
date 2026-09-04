@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/NPCData.cs
+// Assets/Scripts/AOS Engine/NPCData.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

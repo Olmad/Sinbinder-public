@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/EmotionSystem.cs
+// Assets/Scripts/AOS Engine/EmotionSystem.cs
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;

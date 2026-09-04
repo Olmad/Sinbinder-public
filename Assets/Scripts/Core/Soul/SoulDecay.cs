@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/SoulDecay.cs
+// Assets/Scripts/Core/Soul/SoulDecay.cs
 using UnityEngine;
 
 namespace Sinbinder.Core

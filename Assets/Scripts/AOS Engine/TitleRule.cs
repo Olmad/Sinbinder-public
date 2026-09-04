@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/TitleRule.cs
+// Assets/Scripts/AOS Engine/TitleRule.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/RefusalPresenter.cs
+// Assets/Scripts/AOS Engine/RefusalPresenter.cs
 using System.Collections;
 using UnityEngine;
 using Sinbinder.Gameplay;

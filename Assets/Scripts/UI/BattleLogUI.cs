@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/BattleLogUI.cs
+// Assets/Scripts/UI/BattleLogUI.cs
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

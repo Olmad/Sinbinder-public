@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/ActionType.cs
+// Assets/Scripts/AOS Engine/ActionType.cs
 namespace Sinbinder.AOS
 {
     public enum ActionType

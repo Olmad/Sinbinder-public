@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/SoulPerk.cs
+// Assets/Scripts/Core/Soul/SoulPerk.cs
 using System;
 using System.Collections.Generic;
 using UnityEngine;

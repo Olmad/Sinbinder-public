@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/LustSkills.cs
+// Assets/Scripts/Gameplay/LustSkills.cs
 using System.Collections;
 using UnityEngine;
 

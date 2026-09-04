@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/TitleManager.cs
+// Assets/Scripts/AOS Engine/TitleManager.cs
 using System.Linq;
 using UnityEngine;
 using Sinbinder.Gameplay;

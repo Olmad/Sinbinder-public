@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/ReputationData.cs
+// Assets/Scripts/AOS Engine/ReputationData.cs
 using System;
 using System.Collections.Generic;
 

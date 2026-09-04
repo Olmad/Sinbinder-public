@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/PendingCommand.cs
+// Assets/Scripts/Gameplay/PendingCommand.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

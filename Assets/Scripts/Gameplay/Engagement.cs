@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/Engagement.cs
+// Assets/Scripts/Gameplay/Engagement.cs
 using System.Collections.Generic;
 using UnityEngine;
 

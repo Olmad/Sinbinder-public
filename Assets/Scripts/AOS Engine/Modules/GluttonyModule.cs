@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/GluttonyModule.cs
+// Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

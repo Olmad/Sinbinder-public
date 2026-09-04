@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/GreedModule.cs
+// Assets/Scripts/AOS Engine/Modules/GreedModule.cs
 using UnityEngine;
 using Sinbinder.Core;
 

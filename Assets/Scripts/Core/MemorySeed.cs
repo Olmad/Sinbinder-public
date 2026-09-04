@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/MemorySeed.cs
+// Assets/Scripts/Core/MemorySeed.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/EnvyModule.cs
+// Assets/Scripts/AOS Engine/Modules/EnvyModule.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

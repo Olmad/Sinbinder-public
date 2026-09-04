@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/PatienceModule.cs
+// Assets/Scripts/AOS Engine/Modules/PatienceModule.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

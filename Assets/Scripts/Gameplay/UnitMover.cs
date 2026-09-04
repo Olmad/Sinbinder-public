@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/UnitMover.cs
+// Assets/Scripts/Gameplay/UnitMover.cs
 using UnityEngine;
 using UnityEngine.AI;
 

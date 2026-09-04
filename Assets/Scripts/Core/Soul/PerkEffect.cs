@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/PerkEffect.cs
+// Assets/Scripts/Core/Soul/PerkEffect.cs
 using Sinbinder.AOS;
 
 namespace Sinbinder.Core

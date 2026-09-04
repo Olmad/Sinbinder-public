@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/DialogueTestSpawner.cs
+// Assets/Scripts/Gameplay/DialogueTestSpawner.cs
 using UnityEngine;
 using Sinbinder.Core;
 

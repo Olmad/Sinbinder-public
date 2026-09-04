@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/SoulAssemblyUI.cs
+// Assets/Scripts/UI/SoulAssemblyUI.cs
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;

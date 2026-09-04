@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/CombatDecisionContext.cs
+// Assets/Scripts/AOS Engine/CombatDecisionContext.cs
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;

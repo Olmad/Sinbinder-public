@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/GamePauseController.cs
+// Assets/Scripts/Core/GamePauseController.cs
 using UnityEngine;
 
 namespace Sinbinder.Core

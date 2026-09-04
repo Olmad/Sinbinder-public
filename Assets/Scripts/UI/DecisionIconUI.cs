@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/DecisionIconUI.cs
+// Assets/Scripts/UI/DecisionIconUI.cs
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/Rumour.cs
+// Assets/Scripts/AOS Engine/Rumour.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/TitleCeremony.cs
+// Assets/Scripts/AOS Engine/TitleCeremony.cs
 using System.Collections;
 using UnityEngine;
 using Sinbinder.Gameplay;

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/MissionID.cs
+// Assets/Scripts/AOS Engine/MissionID.cs
 namespace Sinbinder.AOS
 {
     /// <summary>Идентификатор сюжетной миссии.</summary>

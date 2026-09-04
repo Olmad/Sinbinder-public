@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Dialogue/DialogueTrigger.cs
+// Assets/Scripts/Dialogue/DialogueTrigger.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;

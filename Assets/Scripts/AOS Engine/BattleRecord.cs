@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/BattleRecord.cs
+// Assets/Scripts/AOS Engine/BattleRecord.cs
 using System.Collections.Generic;
 
 namespace Sinbinder.AOS

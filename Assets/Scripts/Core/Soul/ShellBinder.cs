@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/ShellBinder.cs
+// Assets/Scripts/Core/Soul/ShellBinder.cs
 using UnityEngine;
 
 namespace Sinbinder.Core

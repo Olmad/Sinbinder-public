@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/ISkillSet.cs
+// Assets/Scripts/AOS Engine/ISkillSet.cs
 using System.Collections.Generic;
 
 namespace Sinbinder.AOS

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Audio/VoiceModifier.cs
+// Assets/Scripts/Audio/VoiceModifier.cs
 namespace Sinbinder.Audio
 {
     /// <summary>

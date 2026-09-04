@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/PatienceSkills.cs
+// Assets/Scripts/Gameplay/PatienceSkills.cs
 using System.Collections;
 using UnityEngine;
 

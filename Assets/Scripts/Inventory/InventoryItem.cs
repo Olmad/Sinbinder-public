@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Inventory/InventoryItem.cs
+// Assets/Scripts/Inventory/InventoryItem.cs
 using UnityEngine;
 using Sinbinder.Core;
 

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/PerkType.cs
+// Assets/Scripts/Core/Soul/PerkType.cs
 namespace Sinbinder.Core
 {
     /// <summary>

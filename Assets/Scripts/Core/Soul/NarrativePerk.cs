@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Soul/NarrativePerk.cs
+// Assets/Scripts/Core/Soul/NarrativePerk.cs
 namespace Sinbinder.Core
 {
     /// <summary>

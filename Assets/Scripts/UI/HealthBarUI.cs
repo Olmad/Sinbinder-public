@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/HealthBarUI.cs
+// Assets/Scripts/UI/HealthBarUI.cs
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;

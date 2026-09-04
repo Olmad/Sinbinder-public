@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/SinbinderPlayer.cs
+// Assets/Scripts/Gameplay/SinbinderPlayer.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

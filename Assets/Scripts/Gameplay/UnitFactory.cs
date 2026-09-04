@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/UnitFactory.cs
+// Assets/Scripts/Gameplay/UnitFactory.cs
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AI;

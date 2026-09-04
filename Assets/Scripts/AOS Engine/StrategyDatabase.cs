@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/StrategyDatabase.cs
+// Assets/Scripts/AOS Engine/StrategyDatabase.cs
 using System.Collections.Generic;
 
 namespace Sinbinder.AOS

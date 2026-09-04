@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/TemperamentPredictor.cs
+// Assets/Scripts/AOS Engine/TemperamentPredictor.cs
 using System.Collections.Generic;
 using Sinbinder.Gameplay;
 

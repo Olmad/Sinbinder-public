@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/DeedType.cs
+// Assets/Scripts/AOS Engine/DeedType.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

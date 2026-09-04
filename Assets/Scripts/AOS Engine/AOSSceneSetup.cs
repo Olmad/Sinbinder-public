@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/AOSSceneSetup.cs
+// Assets/Scripts/AOS Engine/AOSSceneSetup.cs
 using UnityEngine;
 using Sinbinder.Gameplay;
 

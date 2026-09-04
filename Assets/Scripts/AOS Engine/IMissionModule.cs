@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/IMissionModule.cs
+// Assets/Scripts/AOS Engine/IMissionModule.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

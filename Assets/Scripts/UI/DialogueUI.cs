@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/DialogueUI.cs
+// Assets/Scripts/UI/DialogueUI.cs
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

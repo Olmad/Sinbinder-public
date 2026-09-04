@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/OverheadUIPool.cs
+// Assets/Scripts/UI/OverheadUIPool.cs
 using System.Collections.Generic;
 using UnityEngine;
 

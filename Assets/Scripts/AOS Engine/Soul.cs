@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/Soul.cs
+// Assets/Scripts/AOS Engine/Soul.cs
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;

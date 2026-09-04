@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/CheatSpawner.cs
+// Assets/Scripts/UI/CheatSpawner.cs
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;

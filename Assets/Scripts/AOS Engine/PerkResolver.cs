@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/PerkResolver.cs
+// Assets/Scripts/AOS Engine/PerkResolver.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;

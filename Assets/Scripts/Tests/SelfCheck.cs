@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Tests/SelfCheck.cs
+// Assets/Scripts/Tests/SelfCheck.cs
 using System;
 using System.Collections.Generic;
 using System.Text;

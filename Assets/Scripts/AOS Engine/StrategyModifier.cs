@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/StrategyModifier.cs
+// Assets/Scripts/AOS Engine/StrategyModifier.cs
 namespace Sinbinder.AOS
 {
     /// <summary>

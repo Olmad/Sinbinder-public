@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/SlothSkills.cs
+// Assets/Scripts/Gameplay/SlothSkills.cs
 using System.Collections;
 using UnityEngine;
 using Sinbinder.AOS;

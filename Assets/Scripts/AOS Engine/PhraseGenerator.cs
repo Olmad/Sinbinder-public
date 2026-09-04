@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/PhraseGenerator.cs
+// Assets/Scripts/AOS Engine/PhraseGenerator.cs
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 

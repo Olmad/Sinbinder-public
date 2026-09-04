@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/MissionResolver.cs
+// Assets/Scripts/AOS Engine/MissionResolver.cs
 using UnityEngine;
 using Sinbinder.Gameplay;
 

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/Modules/LustModule.cs
+// Assets/Scripts/AOS Engine/Modules/LustModule.cs
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/TitleCeremonyBehaviour.cs
+// Assets/Scripts/AOS Engine/TitleCeremonyBehaviour.cs
 // Вынесен из TitleCeremony.cs: Unity требует, чтобы имя файла
 // совпадало с именем MonoBehaviour, иначе скрипт нельзя повесить на объект.
 using System.Collections;

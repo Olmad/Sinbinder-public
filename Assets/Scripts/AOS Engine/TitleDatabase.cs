@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS/TitleDatabase.cs
+// Assets/Scripts/AOS Engine/TitleDatabase.cs
 using System.Collections.Generic;
 
 namespace Sinbinder.AOS

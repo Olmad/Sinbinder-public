@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Gameplay/Fatigue.cs
+// Assets/Scripts/Gameplay/Fatigue.cs
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

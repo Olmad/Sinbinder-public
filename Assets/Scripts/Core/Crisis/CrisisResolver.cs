@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Core/Crisis/CrisisResolver.cs
+// Assets/Scripts/Core/Crisis/CrisisResolver.cs
 using UnityEngine;
 using Sinbinder.AOS;
 using Sinbinder.Gameplay;

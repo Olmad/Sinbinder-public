@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/UI/OverheadUI.cs
+// Assets/Scripts/UI/OverheadUI.cs
 using UnityEngine;
 
 namespace Sinbinder.UI

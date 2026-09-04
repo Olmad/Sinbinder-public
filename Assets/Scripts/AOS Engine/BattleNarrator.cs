@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/AOS Engine/BattleNarrator.cs
+// Assets/Scripts/AOS Engine/BattleNarrator.cs
 using System.Collections.Generic;
 using System.Text;
 

@@ -1,4 +1,4 @@
-// Assets/_Project/Scripts/Tests/SelfCheckMenu.cs
+// Assets/Scripts/Tests/SelfCheckMenu.cs
 //
 // Редакторный скрипт. Он лежит не в папке Editor, поэтому обёрнут
 // целиком, включая using: без обёртки сборка плеера падает на
