@@ -133,7 +133,31 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             if (!_carryOver) return;
-            SquadRoster.Remember(GetComponentsInChildren<Warrior>());
+
+            var squad = GetComponentsInChildren<Warrior>();
+
+            // Если на сцене был край карты — дальше идут только те, кого
+            // игрок успел до него довести. Побег это отбор, а не переход
+            // (docs/09-PROLOGUE.md §4, сцена 5).
+            //
+            // Спрашиваем итог отбора, а не саму зону: порядок уничтожения
+            // объектов не гарантирован, и живой ссылки здесь может уже
+            // не быть.
+            if (EscapeZone.SelectionMade)
+            {
+                var escaped = new List<Warrior>();
+                foreach (var w in squad)
+                {
+                    if (w == null || w.IsDead) continue;
+                    foreach (var name in EscapeZone.EscapedNames)
+                        if (w.DisplayName == name) { escaped.Add(w); break; }
+                }
+
+                SquadRoster.Remember(escaped);
+                return;
+            }
+
+            SquadRoster.Remember(squad);
         }
 
         [ContextMenu("Собрать лагерь")]

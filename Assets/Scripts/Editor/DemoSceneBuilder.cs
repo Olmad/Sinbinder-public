@@ -120,7 +120,7 @@ namespace Sinbinder.Utilets
             Ground("Земля", 6f);
             Managers();
             BuildSalary(Interface());
-            CameraRig(new Vector3(0f, 6.5f, -11f), new Vector3(28f, 0f, 0f));
+            CameraRig(new Vector3(0f, 6.5f, -11f), new Vector3(28f, 0f, 0f), movable: true);
 
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
@@ -133,7 +133,12 @@ namespace Sinbinder.Utilets
             CouncilTable(new Vector3(3.2f, 0f, -3.4f));
 
             Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 4, width: 7f);
-            Director("Prologue_Escape", waitForBattle: true);
+
+            // Уходим не по концу боя, а по краю карты: вторую волну
+            // не полагается перебить, полагается унести от неё ноги.
+            // Охотники идут с севера, значит бежать — на юг, за холм.
+            Escape(new Vector3(0f, 0f, -25f), radius: 6f);
+            Director("Prologue_Escape", waitForBattle: false, waitForEscape: true);
 
             Save(scene, "Prologue_Raid");
         }
@@ -150,7 +155,7 @@ namespace Sinbinder.Utilets
             Ground("Дорога", 8f);
             Managers();
             BuildSalary(Interface());
-            CameraRig(new Vector3(0f, 5.5f, -12f), new Vector3(24f, 0f, 0f));
+            CameraRig(new Vector3(0f, 5.5f, -12f), new Vector3(24f, 0f, 0f), movable: true);
 
             var squad = new GameObject("Отряд");
             squad.transform.position = Vector3.zero;
@@ -259,7 +264,14 @@ namespace Sinbinder.Utilets
                     "Assets/Resources/DialogueDatabase.asset")));
         }
 
-        private static void CameraRig(Vector3 position, Vector3 euler)
+        /// <summary>
+        /// Камера. В боевых долях — подвижная: RTS_Camera лежит в проекте
+        /// и не была подключена ни к одной сцене, то есть игрок не мог
+        /// отвести взгляд от точки, куда его поставили. Для доли 5 это
+        /// не мелочь: край карты, до которого надо довести отряд, стоит
+        /// за спиной у неподвижной камеры.
+        /// </summary>
+        private static void CameraRig(Vector3 position, Vector3 euler, bool movable = false)
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
             go.transform.position = position;
@@ -272,6 +284,8 @@ namespace Sinbinder.Utilets
             cam.nearClipPlane = 0.1f;
 
             go.AddComponent<AudioListener>();
+
+            if (movable) go.AddComponent<RTS_Camera>();
         }
 
         private static GameObject Campfire(Vector3 position)
@@ -527,7 +541,8 @@ namespace Sinbinder.Utilets
         /// Ведущий пролога: чем кончается доля и куда идти дальше.
         /// Без него четыре сцены остаются четырьмя тестами.
         /// </summary>
-        private static void Director(string nextScene, bool waitForBattle, bool startsPrologue = false)
+        private static void Director(string nextScene, bool waitForBattle,
+            bool startsPrologue = false, bool waitForEscape = false)
         {
             var go = new GameObject("Ведущий пролога");
             var director = go.AddComponent<PrologueDirector>();
@@ -535,8 +550,47 @@ namespace Sinbinder.Utilets
             var so = new SerializedObject(director);
             so.FindProperty("_nextScene").stringValue = nextScene ?? "";
             so.FindProperty("_waitForBattle").boolValue = waitForBattle;
+            so.FindProperty("_waitForEscape").boolValue = waitForEscape;
             so.FindProperty("_startsPrologue").boolValue = startsPrologue;
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// Край карты: круг, до которого надо довести отряд. Ставится
+        /// на противоположной от Охотников стороне — бежать полагается
+        /// от них, а не сквозь них.
+        /// </summary>
+        private static void Escape(Vector3 position, float radius)
+        {
+            var go = new GameObject("Край карты");
+            go.transform.position = position;
+
+            var zone = go.AddComponent<EscapeZone>();
+            var so = new SerializedObject(zone);
+            so.FindProperty("_radius").floatValue = radius;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            // Край карты должен быть виден, иначе игрок не поймёт, куда
+            // бежать, и решит, что механики нет. Два столба и холодный
+            // свет между ними — дорога наружу.
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var post = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                post.name = "Столб";
+                post.transform.SetParent(go.transform);
+                post.transform.localPosition = new Vector3(radius * 0.55f * side, 1.3f, 0f);
+                post.transform.localScale = new Vector3(0.22f, 1.3f, 0.22f);
+            }
+
+            var beacon = new GameObject("Свет дороги");
+            beacon.transform.SetParent(go.transform);
+            beacon.transform.localPosition = new Vector3(0f, 2.4f, 0f);
+
+            var light = beacon.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.58f, 0.72f, 0.95f);
+            light.intensity = 2.2f;
+            light.range = radius * 2.4f;
         }
 
         /// <summary>

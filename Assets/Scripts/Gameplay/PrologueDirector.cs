@@ -33,6 +33,11 @@ namespace Sinbinder.Gameplay
                + "уводить. Строке журнала надо успеть прочитаться.")]
         [SerializeField] private float _delaySeconds = 4f;
 
+        [Tooltip("Ждать ли, пока игрок уведёт отряд за край карты. Доля 5: "
+               + "побег — не катсцена, а отбор. Условие ставит EscapeZone, "
+               + "директор только уходит по её слову.")]
+        [SerializeField] private bool _waitForEscape;
+
         [Tooltip("Начало пролога: забыть прошлый отряд. Ставить только "
                + "на первой доле — остальные обязаны получить выживших.")]
         [SerializeField] private bool _startsPrologue;
@@ -66,9 +71,15 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.OnUnitsChanged -= OnUnitsChanged;
         }
 
+        /// <summary>
+        /// Уйти немедленно. Зовёт <see cref="EscapeZone"/>, когда отсчёт
+        /// вышел: кто в круге — тот идёт дальше.
+        /// </summary>
+        public void LeaveNow(string line) => Leave(line);
+
         void Update()
         {
-            if (_leaving || _waitForBattle) return;
+            if (_leaving || _waitForBattle || _waitForEscape) return;
 
             // Лагерь: выступаем, когда старший назначен.
             if (string.IsNullOrEmpty(SquadRoster.CommanderName)) return;
@@ -77,22 +88,26 @@ namespace Sinbinder.Gameplay
 
         private void OnUnitsChanged()
         {
-            if (_leaving || !_waitForBattle) return;
+            if (_leaving) return;
 
             var combat = CombatManager.Instance;
             if (combat == null) return;
 
-            if (combat.GetAliveEnemyCount() > 0) { _battleJoined = true; return; }
-
-            // До первой встречи с врагом ноль на поле ничего не значит:
-            // отряд ещё только собирается.
-            if (!_battleJoined) return;
-
-            if (combat.GetAlivePlayerCount() == 0)
+            // Отряд, которого не стало, дальше не идёт ни по какому условию.
+            // Проверяем это в любом режиме: на побеге ждать края было бы
+            // некому, и демо заперлось бы на мёртвом поле.
+            if (_battleJoined && combat.GetAlivePlayerCount() == 0)
             {
                 Leave("Отряд не вернулся.", wiped: true);
                 return;
             }
+
+            // До первой встречи с врагом ноль на поле ничего не значит:
+            // отряд ещё только собирается.
+            if (combat.GetAliveEnemyCount() > 0) { _battleJoined = true; return; }
+
+            if (!_waitForBattle) return;   // уходим не по концу боя
+            if (!_battleJoined) return;
 
             Leave("Поле осталось за отрядом.");
         }
