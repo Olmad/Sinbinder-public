@@ -38,6 +38,20 @@ namespace Sinbinder.Gameplay
 
             /// <summary>Кого игрок выбрал. До совета — ни один.</summary>
             public bool IsCommander;
+
+            /// <summary>
+            /// Навык командования. Определяет только размер отряда,
+            /// который этот воин уведёт (<see cref="Leadership"/>).
+            /// Ноль — рядовой: вести может, но возьмёт троих.
+            /// </summary>
+            public float Leadership;
+
+            /// <summary>
+            /// Почему его нельзя поставить старшим. Пусто — можно.
+            /// Причина показывается игроку прямо в строке совета, чтобы
+            /// он не жал кнопку, которая соврёт (docs/09-PROLOGUE.md §6).
+            /// </summary>
+            public string Unavailable;
         }
 
         private static readonly List<Member> _members = new();
@@ -99,7 +113,14 @@ namespace Sinbinder.Gameplay
                     Loyalty = w.Loyalty,
                     UnpaidMissions = w.UnpaidMissions,
                     IsCandidate = WasCandidate(w.DisplayName),
-                    IsCommander = w.IsCommander
+                    IsCommander = w.IsCommander,
+
+                    // Навык и запрет живут только здесь: у Warrior их нет,
+                    // и снять их со сцены невозможно. Не перенести — значит
+                    // молча обнулить при первой же смене доли, и к совету
+                    // все пришли бы рядовыми.
+                    Leadership = PreviousLeadership(w.DisplayName),
+                    Unavailable = PreviousUnavailable(w.DisplayName)
                 });
             }
 
@@ -113,6 +134,28 @@ namespace Sinbinder.Gameplay
         private static bool WasCandidate(string name)
         {
             foreach (var m in _members) if (m.Name == name) return m.IsCandidate;
+            return false;
+        }
+
+        private static float PreviousLeadership(string name)
+        {
+            foreach (var m in _members) if (m.Name == name) return m.Leadership;
+            return 0f;
+        }
+
+        private static string PreviousUnavailable(string name)
+        {
+            foreach (var m in _members) if (m.Name == name) return m.Unavailable;
+            return "";
+        }
+
+        /// <summary>Найти воина в составе по имени.</summary>
+        public static bool TryGet(string name, out Member member)
+        {
+            foreach (var m in _members)
+                if (m.Name == name) { member = m; return true; }
+
+            member = default;
             return false;
         }
 

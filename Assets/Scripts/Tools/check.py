@@ -56,8 +56,13 @@ RE_NAMESPACE = re.compile(r'namespace\s+([\w.]+)')
 RE_TYPE_DECL = re.compile(
     r'^\s*(?:public|internal)\s+(?:static\s+|sealed\s+|abstract\s+|partial\s+|readonly\s+)*'
     r'(class|struct|enum|interface)\s+(\w+)', re.M)
+# readonly здесь обязателен: без него `private readonly struct` не
+# опознавался как объявление, и тип, объявленный так, шёл в отчёт
+# как несуществующий. Ложная тревога, но она обесценивает весь отчёт:
+# анализатор, который врёт, перестают читать.
 RE_ANY_TYPE_DECL = re.compile(
-    r'^\s*(?:public|internal|private|protected)?\s*(?:static\s+|sealed\s+|abstract\s+|partial\s+)*'
+    r'^\s*(?:public|internal|private|protected)?\s*'
+    r'(?:static\s+|sealed\s+|abstract\s+|partial\s+|readonly\s+|ref\s+)*'
     r'(?:class|struct|enum|interface)\s+(\w+)', re.M)
 RE_METHOD_DECL = re.compile(
     r'^\s*(?:public|private|protected|internal)\s+(?:static\s+|virtual\s+|override\s+|async\s+)*'

@@ -40,6 +40,12 @@ namespace Sinbinder.UI
                + "именно для того, чтобы его позвал будущий сценарий доли 2.")]
         [SerializeField] private float _openAfterSeconds = 30f;
 
+        [Tooltip("Сколько человек требует миссия доли 3. Карган объясняет "
+               + "это вслух: «там довольно опасно, нужно пятеро». Тот, чей "
+               + "навык командования столько не уводит, в списке виден, но "
+               + "не выбирается — и рядом написано почему.")]
+        [SerializeField] private int _requiredSquad = 5;
+
         private readonly List<GameObject> _spawned = new();
         private bool _done;
 
@@ -58,42 +64,110 @@ namespace Sinbinder.UI
         {
             if (_done || _panel == null) return;
 
-            var candidates = FindCandidates();
-            if (candidates.Count == 0) return;
+            var options = FindOptions();
+            if (options.Count == 0) return;
 
-            Build(candidates);
+            Build(options);
 
             _panel.SetActive(true);
             Core.GamePauseController.Instance?.Pause();
         }
 
         /// <summary>
-        /// Кандидаты — живые свои, помеченные в составе отряда.
-        /// Ищем среди воинов сцены, а не в списке: пророчество надо
-        /// спрашивать у настоящей души со всеми смещениями оболочки.
+        /// Строка совета: воин, его навык и причина, по которой его нельзя
+        /// поставить старшим (пусто — можно).
         /// </summary>
-        private List<Warrior> FindCandidates()
+        private readonly struct Option
         {
-            var found = new List<Warrior>();
-            var names = new HashSet<string>();
+            public readonly Warrior Warrior;
+            public readonly float Skill;
+            public readonly string Blocked;
 
-            foreach (var m in SquadRoster.Members)
-                if (m.IsCandidate) names.Add(m.Name);
+            public Option(Warrior warrior, float skill, string blocked)
+            {
+                Warrior = warrior;
+                Skill = skill;
+                Blocked = blocked;
+            }
+
+            public bool CanChoose => string.IsNullOrEmpty(Blocked);
+        }
+
+        /// <summary>
+        /// В списке — <b>все</b> живые свои, а не трое отмеченных.
+        /// Повести отряд может и рядовой: навык командования решает не
+        /// «можно ли», а «скольких уведёт» (docs/09-PROLOGUE.md §4).
+        /// Опытные идут первыми и подписаны — это и есть то выделение,
+        /// ради которого список вообще существует.
+        ///
+        /// Пророчество спрашиваем у настоящей души со сцены, а не у записи
+        /// в составе: у неё есть смещения оболочки, а у записи их нет.
+        /// </summary>
+        private List<Option> FindOptions()
+        {
+            var options = new List<Option>();
 
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null || w.IsDead || w.Team != Team.Player) continue;
-                if (!names.Contains(w.DisplayName)) continue;
-                found.Add(w);
+
+                float skill = 0f;
+                string blocked = "";
+
+                if (SquadRoster.TryGet(w.DisplayName, out var member))
+                {
+                    skill = member.Leadership;
+                    blocked = member.Unavailable;
+                }
+
+                // Навыка не хватает на этот отряд — виден, но не выбирается.
+                // Именно здесь рядовой упирается в требование доли 3, и это
+                // единственное объяснение, зачем нужен опытный, которое
+                // игроку не придётся читать в справке.
+                if (string.IsNullOrEmpty(blocked) && !Leadership.CanLead(skill, _requiredSquad))
+                    blocked = Leadership.Shortfall(skill, _requiredSquad);
+
+                options.Add(new Option(w, skill, blocked));
+            }
+
+            // Если порог не проходит никто — совет запер бы игру насмерть:
+            // панель ставит игру на паузу, а PrologueDirector ждёт выбранного
+            // старшего, чтобы вывести отряд из лагеря. Такое случится, если
+            // опытные не дожили. Тогда требование отступает, но запрет из
+            // состава — нет: Карган телохранитель при любом раскладе.
+            bool anyone = false;
+            foreach (var o in options) if (o.CanChoose) { anyone = true; break; }
+
+            if (!anyone)
+            {
+                Debug.LogWarning("[СОВЕТ] Никто не уводит отряд нужного размера. "
+                               + "Требование снято, иначе пролог не двинется.");
+
+                for (int i = 0; i < options.Count; i++)
+                {
+                    var o = options[i];
+                    bool blockedByRoster =
+                        SquadRoster.TryGet(o.Warrior.DisplayName, out var m)
+                        && !string.IsNullOrEmpty(m.Unavailable);
+
+                    if (!blockedByRoster) options[i] = new Option(o.Warrior, o.Skill, "");
+                }
             }
 
             // Порядок обхода сцены не гарантирован, а список обязан
             // выглядеть одинаково при каждом запуске: ничего случайного.
-            found.Sort((a, b) => string.CompareOrdinal(a.DisplayName, b.DisplayName));
-            return found;
+            // Сперва те, кого выбрать можно, среди них — по навыку.
+            options.Sort((a, b) =>
+            {
+                if (a.CanChoose != b.CanChoose) return a.CanChoose ? -1 : 1;
+                if (!Mathf.Approximately(a.Skill, b.Skill)) return b.Skill.CompareTo(a.Skill);
+                return string.CompareOrdinal(a.Warrior.DisplayName, b.Warrior.DisplayName);
+            });
+
+            return options;
         }
 
-        private void Build(List<Warrior> candidates)
+        private void Build(List<Option> options)
         {
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
@@ -101,16 +175,18 @@ namespace Sinbinder.UI
             if (_title != null) _title.text = "Кого поставить старшим";
 
             float y = 0f;
-            foreach (var warrior in candidates)
+            foreach (var option in options)
             {
-                var row = Row(warrior, y);
+                var row = Row(option, y);
                 _spawned.Add(row);
-                y -= 150f;
+                y -= 178f;
             }
         }
 
-        private GameObject Row(Warrior warrior, float y)
+        private GameObject Row(Option option, float y)
         {
+            var warrior = option.Warrior;
+
             var go = new GameObject(warrior.DisplayName, typeof(RectTransform));
             go.transform.SetParent(_rows, false);
 
@@ -120,27 +196,45 @@ namespace Sinbinder.UI
             rt.pivot = new Vector2(0f, 1f);
             rt.offsetMin = new Vector2(0f, 0f);
             rt.offsetMax = new Vector2(0f, 0f);
-            rt.sizeDelta = new Vector2(0f, 140f);
+            rt.sizeDelta = new Vector2(0f, 168f);
             rt.anchoredPosition = new Vector2(0f, y);
 
             var plate = go.AddComponent<Image>();
-            plate.color = new Color(0.10f, 0.09f, 0.08f, 0.92f);
+            plate.color = option.CanChoose
+                ? new Color(0.10f, 0.09f, 0.08f, 0.92f)
+                : new Color(0.07f, 0.06f, 0.06f, 0.80f);
 
-            var button = go.AddComponent<Button>();
-            button.targetGraphic = plate;
-            button.onClick.AddListener(() => Choose(warrior));
+            // Кнопка вешается только на тех, кого можно выбрать. Строка,
+            // которая не сработает, не должна и нажиматься: игра про
+            // настоящие решения не имеет права соврать на первом же.
+            if (option.CanChoose)
+            {
+                var button = go.AddComponent<Button>();
+                button.targetGraphic = plate;
+                button.onClick.AddListener(() => Choose(warrior));
+            }
 
-            Label(rt, warrior.DisplayName, 30, new Vector2(18f, -10f), 40f);
+            Label(rt, warrior.DisplayName, 30, new Vector2(18f, -10f), 40f,
+                option.CanChoose);
+
+            // Навык командования словами, без шкалы: цифры игроку не
+            // показываются нигде (docs/00-GDD.md §7). Для невыбираемого
+            // здесь стоит причина — и она же объясняет, чего ему не хватает.
+            Label(rt, option.CanChoose
+                    ? Leadership.Describe(option.Skill)
+                    : option.Blocked,
+                20, new Vector2(18f, -48f), 26f, option.CanChoose);
 
             // Четыре строки настоящего пророчества. Последняя из них —
             // и есть завязка доли 6.
             Label(rt, TemperamentPredictor.Describe(warrior), 21,
-                new Vector2(18f, -52f), 84f);
+                new Vector2(18f, -76f), 84f, option.CanChoose);
 
             return go;
         }
 
-        private void Label(RectTransform parent, string text, int size, Vector2 offset, float height)
+        private void Label(RectTransform parent, string text, int size,
+            Vector2 offset, float height, bool bright = true)
         {
             var go = new GameObject("Строка", typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -158,7 +252,9 @@ namespace Sinbinder.UI
             label.font = _font;
             label.fontSize = size;
             label.alignment = TextAnchor.UpperLeft;
-            label.color = new Color(0.91f, 0.89f, 0.85f);
+            label.color = bright
+                ? new Color(0.91f, 0.89f, 0.85f)
+                : new Color(0.55f, 0.52f, 0.48f);
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Overflow;
             label.raycastTarget = false;      // клик обязан доходить до строки

@@ -656,6 +656,64 @@ static class Bench
                             + $"в {differs[ci] * 100.0 / n:F1}% случаев");
     }
 
+
+    // ---------- навык командования ----------
+
+    static void LeadershipCheck()
+    {
+        Console.WriteLine("\n=== НАВЫК КОМАНДОВАНИЯ: одна ось, одно следствие ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        // Рядовой ведёт, но мало. Это и есть разница «командир — рядовой».
+        Check(Leadership.SquadSize(0f) == Leadership.PrivateSquad, "ноль навыка уводит троих");
+        Check(!Leadership.IsExperienced(0f), "ноль навыка — не командир");
+        Check(Leadership.IsExperienced(25f), "двадцать пять — уже командир");
+
+        // Предел и края шкалы.
+        Check(Leadership.SquadSize(100f) == Leadership.MaxSquad, "сотня уводит двенадцать");
+        Check(Leadership.SquadSize(-50f) == Leadership.PrivateSquad, "минус не ломает шкалу");
+        Check(Leadership.SquadSize(9000f) == Leadership.MaxSquad, "выше сотни не растёт");
+
+        // Монотонность: больше опыта — не меньше людей.
+        int prev = 0;
+        for (int v = 0; v <= 100; v++)
+        {
+            int size = Leadership.SquadSize(v);
+            Check(size >= prev, $"навык {v} уводит не меньше предыдущего");
+            prev = size;
+        }
+
+        // Порог демо: миссия доли 3 требует пятерых. Опытные проходят,
+        // рядовой — нет, и именно это объясняет игроку, зачем нужен старший.
+        Check(!Leadership.CanLead(0f, 5), "рядовой не уводит пятерых");
+        Check(Leadership.CanLead(25f, 5), "Брат Хальд (25) уводит пятерых");
+        Check(Leadership.CanLead(40f, 5), "Мара Сквалыга (40) уводит пятерых");
+        Check(Leadership.CanLead(55f, 5), "Вейн Тихий (55) уводит пятерых");
+
+        // Игрок не должен видеть цифр нигде.
+        foreach (float v in new[] { 0f, 25f, 40f, 55f, 90f })
+        {
+            string text = Leadership.Describe(v);
+            Check(!text.Any(char.IsDigit), $"описание навыка {v} без цифр: «{text}»");
+        }
+        Check(!Leadership.Shortfall(0f, 5).Any(char.IsDigit), "нехватка описана без цифр");
+
+        Console.WriteLine($"  состав лагеря: рядовой {Leadership.SquadSize(0f)}, "
+                        + $"Хальд {Leadership.SquadSize(25f)}, "
+                        + $"Мара {Leadership.SquadSize(40f)}, "
+                        + $"Вейн {Leadership.SquadSize(55f)}, "
+                        + $"Карган {Leadership.SquadSize(90f)}");
+        Console.WriteLine($"  словами: рядовой — «{Leadership.Describe(0f)}», "
+                        + $"Вейн — «{Leadership.Describe(55f)}»");
+        Console.WriteLine($"  не проходит: «{Leadership.Shortfall(0f, 5)}»");
+        Console.WriteLine(bad == 0 ? "\n  все проверки прошли" : $"\n  ПРОВАЛОВ: {bad}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -831,6 +889,7 @@ static class Bench
          cfg.FearFleeLowHpBonus, cfg.FearFleeDangerMultiplier,
          cfg.FearFleeSurroundedBonus, cfg.LoyaltyObeySinMultiplier) = snapshot;
 
+        LeadershipCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

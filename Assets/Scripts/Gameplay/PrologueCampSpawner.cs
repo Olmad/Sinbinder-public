@@ -40,18 +40,32 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static readonly CampMember[] Squad =
         {
-            new("Карган Старый Ворон", SinType.Pride,    MoralType.Neutral, 90f, 75f, true),
-            new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, true),
-            new("Мара Сквалыга",       SinType.Greed,    MoralType.Vicious, 65f, 70f, true),
-            new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, false),
-            new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, false),
-            new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, false),
-            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, false),
+            // Карган водит больше всех и старшим не идёт: он телохранитель.
+            // Причина стоит здесь, а не в интерфейсе, потому что игрок
+            // увидит её строкой в совете и не нажмёт кнопку, которая соврёт
+            // (docs/09-PROLOGUE.md §6).
+            new("Карган Старый Ворон", SinType.Pride,    MoralType.Neutral, 90f, 75f, 90f,
+                "телохранитель, не отходит от вас"),
+
+            // Трое опытных. Грехи взяты те, что канон закрепил за тройкой
+            // кандидатов: Уныние, Жадность, Гнев. Имена канон не закрепляет.
+            // Навыки разведены так, чтобы уводили по-разному, но все трое
+            // проходили порог миссии доли 3 в пять человек.
+            new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f),
+            new("Мара Сквалыга",       SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f),
+            new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, 25f),
+
+            // Рядовые. Повести отряд могут, но уведут троих — на миссию
+            // доли 3, где нужно пятеро, их не хватит. Это и объясняет
+            // игроку, зачем вообще нужен опытный.
+            new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, 0f),
+            new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0f),
+            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
             // первый безобидный приказ в лагере, и доля 2 — обучение
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
             // по унынию после Вейна, но лагерный приказ ему уже по силам.
-            new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, false),
+            new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f),
         };
 
         private readonly struct CampMember
@@ -77,17 +91,27 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public readonly float Loyalty;
 
-            public readonly bool IsCommander;
+            /// <summary>
+            /// Навык командования: только размер отряда, который он уведёт
+            /// (<see cref="Leadership"/>). Ноль — рядовой. Он тоже может
+            /// повести, просто возьмёт троих.
+            /// </summary>
+            public readonly float Leadership;
+
+            /// <summary>Почему старшим его не поставить. Пусто — можно.</summary>
+            public readonly string Unavailable;
 
             public CampMember(string name, SinType sin, MoralType moral,
-                float intensity, float loyalty, bool isCommander)
+                float intensity, float loyalty, float leadership,
+                string unavailable = "")
             {
                 Name = name;
                 Sin = sin;
                 Moral = moral;
                 Intensity = intensity;
                 Loyalty = loyalty;
-                IsCommander = isCommander;
+                Leadership = leadership;
+                Unavailable = unavailable;
             }
         }
 
@@ -140,10 +164,13 @@ namespace Sinbinder.Gameplay
                     Loyalty = m.Loyalty,
                     UnpaidMissions = 0,
 
-                    // Трое помечены кандидатами, но командиром пока никто:
-                    // до военного совета доли 3 отряд идёт без старшего.
-                    IsCandidate = m.IsCommander,
-                    IsCommander = false
+                    // Опытные помечены кандидатами, но командиром пока
+                    // никто: до военного совета доли 3 отряд идёт без старшего.
+                    IsCandidate = Leadership.IsExperienced(m.Leadership),
+                    IsCommander = false,
+
+                    Leadership = m.Leadership,
+                    Unavailable = m.Unavailable
                 };
         }
 
@@ -191,8 +218,8 @@ namespace Sinbinder.Gameplay
             body.transform.localPosition = new Vector3(0f, 0.75f, 0f);
             body.transform.localRotation = Quaternion.identity;
 
-            // Кандидата видно ростом ещё до совета: игрок должен успеть
-            // разглядеть троих, из которых будет выбирать.
+            // Опытного видно ростом ещё до совета: игрок должен успеть
+            // разглядеть тех, из кого будет выбирать.
             body.transform.localScale = (member.IsCommander || member.IsCandidate)
                 ? new Vector3(0.5f, 1.5f, 0.5f)
                 : new Vector3(0.5f, 1.2f, 0.5f);

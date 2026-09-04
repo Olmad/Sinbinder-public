@@ -71,6 +71,7 @@ namespace Sinbinder.Tests
                 Geometry();
                 Narration();
                 Voting();
+                Commanding();
                 TextRules();
             }
             catch (Exception e)
@@ -500,6 +501,47 @@ namespace Sinbinder.Tests
         // ================= правила текста =================
 
         private static readonly Regex Digit = new Regex(@"\d");
+
+        /// <summary>
+        /// Навык командования. Проверяем ровно то, что он обещает:
+        /// он решает, скольких уведут, и ничего больше.
+        /// </summary>
+        private static void Commanding()
+        {
+            Same(Leadership.SquadSize(0f), Leadership.PrivateSquad,
+                "без опыта уводит троих");
+            Same(Leadership.SquadSize(100f), Leadership.MaxSquad,
+                "полный опыт уводит двенадцать");
+            Check(!Leadership.IsExperienced(0f), "рядовой не помечен командиром");
+            Check(Leadership.IsExperienced(25f), "с опытом 25 уже командир");
+
+            // Края шкалы не должны ломать список совета.
+            Same(Leadership.SquadSize(-10f), Leadership.PrivateSquad,
+                "отрицательный опыт не уводит меньше троих");
+            Same(Leadership.SquadSize(1000f), Leadership.MaxSquad,
+                "опыт выше сотни не уводит больше предела");
+
+            // Порог миссии доли 3: пятеро. Рядовой не проходит, и это
+            // единственное объяснение, зачем игроку опытный старший.
+            Check(!Leadership.CanLead(0f, 5), "рядовой не поведёт пятерых");
+            Check(Leadership.CanLead(25f, 5), "самый слабый из опытных поведёт пятерых");
+
+            // Цифр игроку не показываем нигде, включая эти строки.
+            foreach (float skill in new[] { 0f, 25f, 55f, 90f })
+            {
+                string line = Leadership.Describe(skill);
+                Check(!HasDigit(line), $"навык описан без цифр: «{line}»");
+            }
+            Check(!HasDigit(Leadership.Shortfall(0f, 5)),
+                "нехватка навыка описана без цифр");
+        }
+
+        private static bool HasDigit(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (char c in text) if (char.IsDigit(c)) return true;
+            return false;
+        }
 
         private static void TextRules()
         {
