@@ -71,6 +71,14 @@ RE_METHOD_DECL = re.compile(
 # класса пишется без квалификации и раньше проверку обходил.
 RE_CALL = re.compile(r'(?:\.|(?<![\w.]))(\w+)\s*\(([^();]*)\)')
 RE_MONO_CLASS = re.compile(r'public class (\w+)\s*:\s*[^{]*MonoBehaviour')
+
+# Старый ввод: UnityEngine.Input. Под настройкой «только новый Input System»
+# каждый такой вызов бросает InvalidOperationException в рантайме,
+# и компилятор об этом молчит — потому и проверяем здесь.
+RE_OLD_INPUT = re.compile(
+    r'(?<![\w.])Input\s*\.\s*'
+    r'(GetKey\w*|GetButton\w*|GetMouseButton\w*|GetAxis\w*|mousePosition'
+    r'|mouseScrollDelta|touches|touchCount|GetTouch|anyKey\w*|inputString)')
 RE_NEW = re.compile(r'\bnew\s+([A-Z]\w+)\s*[\(\{]')
 SPLIT_ARGS = re.compile(r',(?![^<>()]*[>)])')
 
@@ -284,6 +292,47 @@ class Checker:
                 self.report(p, line_of(s, first_using),
                             'using UnityEditor стоит выше #if UNITY_EDITOR — обёртка не работает')
 
+    def input_handler(self):
+        """
+        Старый Input под настройкой «только новый Input System».
+
+        Ошибка невидимая вдвойне: компилятор пропускает, а падает оно
+        только в рантайме и только на первом нажатии клавиши — то есть
+        игра запускается, показывает лагерь и не слушается вообще ничем.
+        Ни камеры, ни выделения, ни жатвы душ, ни кнопок интерфейса:
+        StandaloneInputModule на EventSystem тоже читает старый Input.
+
+        activeInputHandler: 0 — старый, 1 — новый, 2 — оба.
+        """
+        settings = os.path.join('ProjectSettings', 'ProjectSettings.asset')
+        if not os.path.exists(settings):
+            return
+
+        text = io.open(settings, encoding='utf-8', errors='replace').read()
+        m = re.search(r'activeInputHandler:\s*(\d+)', text)
+        if not m:
+            # Настройки нет — это событие, а не ноль: молча решить,
+            # что всё в порядке, значит однажды проглядеть тот же баг.
+            self.report(settings, 0, 'activeInputHandler не найден — '
+                                     'проверить ввод нечем')
+            return
+
+        if m.group(1) != '1':
+            return
+
+        users = sorted(p for p, s in self.src.items() if RE_OLD_INPUT.search(strip(s)))
+        if not users:
+            return
+
+        self.report(settings, line_of(text, m.start()),
+                    'activeInputHandler: 1 (только новый Input System), '
+                    'а старый UnityEngine.Input зовут ' + str(len(users))
+                    + ' файлов — в рантайме это исключение на первом же '
+                      'нажатии. Ставить 2 (оба) или переписывать ввод.')
+
+        for path in users:
+            self.report(path, 0, 'зовёт старый UnityEngine.Input')
+
     def unknown_new(self):
         known = set(self.owner) | self.declared_anywhere | UNITY_TYPES | DOTNET_TYPES
         for p, s in self.src.items():
@@ -303,6 +352,7 @@ class Checker:
         self.use_before_declaration()
         self.file_names()
         self.editor_guards()
+        self.input_handler()
         self.unknown_new()
         return self.problems
 
