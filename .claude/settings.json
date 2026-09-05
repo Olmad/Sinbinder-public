@@ -1,5 +1,19 @@
 {
   "env": {
     "CLAUDE_CODE_MAX_RETRIES": "2"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 Tools/handoff.py --hook || python Tools/handoff.py --hook",
+            "timeout": 40,
+            "statusMessage": "Сверяю проект с репозиторием"
+          }
+        ]
+      }
+    ]
   }
 }
