@@ -42,8 +42,16 @@ namespace Sinbinder.Gameplay
                + "на первой доле — остальные обязаны получить выживших.")]
         [SerializeField] private bool _startsPrologue;
 
+        [Tooltip("Сколько лагерь ждёт чужого слова после назначения старшего. "
+               + "Сцену 3 — тревогу шара — ведёт CrystalBall, и уводит лагерь "
+               + "тоже он. Этот срок нужен на случай, когда вести некому: "
+               + "шара в сцене нет. Тогда директор уходит сам и говорит "
+               + "об этом в консоль — пропавшая сцена должна быть слышна.")]
+        [SerializeField] private float _campGrace = 30f;
+
         private bool _battleJoined;
         private bool _leaving;
+        private float _sinceCommander;
 
         /// <summary>
         /// Состав отряда статичен и переживает не только смену сцены,
@@ -81,8 +89,16 @@ namespace Sinbinder.Gameplay
         {
             if (_leaving || _waitForBattle || _waitForEscape) return;
 
-            // Лагерь: выступаем, когда старший назначен.
+            // Лагерь: старший назначен — начинается сцена 3, и ведёт её шар.
             if (string.IsNullOrEmpty(SquadRoster.CommanderName)) return;
+
+            // Реальное время: совет только что снял паузу, и растягивать
+            // страховку на чужие остановки незачем.
+            _sinceCommander += Time.unscaledDeltaTime;
+            if (_sinceCommander < _campGrace) return;
+
+            Debug.LogWarning("[ПРОЛОГ] Тревоги не случилось: лагерь уходит "
+                           + "без сцены 3.");
             Leave("Отряд выступает.");
         }
 

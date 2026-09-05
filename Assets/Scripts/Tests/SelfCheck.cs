@@ -73,6 +73,7 @@ namespace Sinbinder.Tests
                 Voting();
                 Commanding();
                 Epilogue();
+                Approach();
                 TextRules();
             }
             catch (Exception e)
@@ -585,11 +586,76 @@ namespace Sinbinder.Tests
                     "Гнев и Жадность возвращаются по-разному");
                 Check(Homecoming.Returned(SinType.Greed, 0) == 0,
                     "пустой отряд не возвращает никого");
+
+                // Догадка Каргана на сцене 3 и рассказ на сцене 8 растут
+                // из одного греха. Разойдись они — доля 3 обещала бы исход,
+                // которого не будет.
+                foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+                {
+                    string guess = Homecoming.Guess(sin);
+                    Check(!string.IsNullOrEmpty(guess), $"{sin}: догадка есть");
+                    Check(!HasDigit(guess), $"{sin}: догадка без цифр");
+                }
+
+                Check(Homecoming.Guess(SinType.Sloth) != Homecoming.Guess(SinType.Wrath)
+                   && Homecoming.Guess(SinType.Wrath) != Homecoming.Guess(SinType.Greed),
+                    "три канонных греха гадают по-разному");
             }
             finally
             {
                 SquadRoster.Set(saved);
             }
+        }
+
+        /// <summary>
+        /// Куда ложится взгляд игрока и что значит «подойти к столу»
+        /// (docs/09-PROLOGUE.md §4, сцена 2).
+        ///
+        /// Ошибка здесь тихая вдвойне: совет, открывшийся сам на первом
+        /// кадре, выглядит ровно так же, как совет, к которому игрок
+        /// подошёл. Разницу видно только по тому, что игрок ничего не делал.
+        /// </summary>
+        private static void Approach()
+        {
+            // Взгляд ровно вниз падает под ноги.
+            Check(CampFocus.TryGroundPoint(new Vector3(2f, 4f, -3f),
+                    Vector3.down, 0f, out var under), "взгляд вниз даёт точку");
+            Near(under.x, 2f, "вниз: точка под ногами по X");
+            Near(under.z, -3f, "вниз: точка под ногами по Z");
+
+            // Горизонт не пересекает землю нигде. Наивная формула вернула бы
+            // сюда ноль и решила бы, что игрок стоит у костра — то есть
+            // почти у стола.
+            Check(!CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                    Vector3.forward, 0f, out _), "горизонт не даёт точки");
+            Check(!CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                    new Vector3(0f, 1f, 1f), 0f, out _), "взгляд вверх не даёт точки");
+            Check(!CampFocus.TryGroundPoint(new Vector3(0f, 0f, 0f),
+                    new Vector3(0f, -1f, 1f), 0f, out _), "камера на земле не даёт точки");
+
+            // Наклон 45 с высоты 4 кладёт точку ровно в четырёх впереди.
+            Check(CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                    new Vector3(0f, -1f, 1f), 0f, out var slant), "наклон даёт точку");
+            Near(slant.z, 4f, "наклон 45 с высоты 4 даёт 4 вперёд");
+
+            // Высота в «подойти» не участвует.
+            Near(CampFocus.GroundDistance(new Vector3(0f, 100f, 0f),
+                    new Vector3(3f, 0f, 4f)), 5f, "расстояние считается по земле");
+
+            // Выключенная проверка не должна выглядеть пройденной.
+            Check(!CampFocus.Reached(new Vector3(0f, 4f, 0f), Vector3.down,
+                    Vector3.zero, 0f), "нулевой радиус никого не пускает");
+
+            // Постановка лагеря из DemoSceneBuilder: открывающий кадр
+            // не дотягивается до шара, а подойдя — дотягивается.
+            var eye = new Vector3(0f, 3.5f, -12.5f);
+            var forward = Quaternion.Euler(13f, 0f, 0f) * Vector3.forward;
+            var ball = new Vector3(3.0f, 1.22f, 2.2f);
+
+            Check(!CampFocus.Reached(eye, forward, ball, CampFocus.TableReach),
+                "открывающий кадр не открывает совет сам");
+            Check(CampFocus.Reached(eye + new Vector3(3.0f, 0f, 4.8f), forward,
+                    ball, CampFocus.TableReach), "подойдя, игрок стол достаёт");
         }
 
         /// <summary>Состав вроде лагерного: страж, трое опытных, пятеро рядовых.</summary>

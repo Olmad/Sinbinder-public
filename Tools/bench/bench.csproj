@@ -1,0 +1,89 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Стенд балансировки.
+
+    Собирает НАСТОЯЩИЕ модули из Assets/Scripts и прогоняет через них
+    сотни тысяч голосований. Файлы не копируются, а подключаются по
+    ссылке: стенд не может отстать от игры.
+
+    Юнити для этого не нужен. Модули принимают (Soul, DecisionContext,
+    ActionType) и не трогают сцену — им хватает крошечной заглушки
+    UnityEngine в папке shim.
+
+    Запуск:  dotnet run —project Tools/bench 400000
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>CS0414;CS0169;CS0649;CS0067;CS8321;CS0108</NoWarn>
+    <AssemblyName>bench</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="shim/*.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+
+  <!-- Живой код игры, по ссылке -->
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/DecisionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Soul.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IPersonalityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AOSConfig.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MemoryRecord.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/TemptationResolver.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AOSStats.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/StrategyModifier.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/SquadStrategy.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/StrategyDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/FearModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/LoyaltyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MemoryModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MoralityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/SlothModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/VirtueModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/WrathModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GreedModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PrideModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/EnvyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/LustModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/MoralType.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/SoulData.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/NarrativePerk.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Virtue/VirtueType.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MemorySeed.cs" />
+    <Compile Include="../../Assets/Scripts/Inventory/InventoryItem.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/SquadOrders.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AutoBattleContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/RumourManager.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Rumour.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/DeedType.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionAction.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionID.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/NPCData.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IMissionModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/PhraseGenerator.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/BattleNarrator.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/SoulQuality.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/SoulDecay.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/ShellBinder.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/ShellType.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ShellData.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Facing.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Leadership.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Homecoming.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CampFocus.cs" />
+  </ItemGroup>
+
+</Project>

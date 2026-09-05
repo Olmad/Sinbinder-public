@@ -21,6 +21,14 @@ namespace Sinbinder.Gameplay
             _cam = Camera.main;
             _targetPosition = transform.position;
             _targetZoom = _cam.fieldOfView;
+
+            // Кадр, поставленный в сцене, — это решение постановщика,
+            // и отбирать его нельзя. Потолок 30 ниже авторских 55, а зум
+            // подрезает цель каждый кадр: стоило повесить эту камеру
+            // на сцену, и вид молча сужался на первом же кадре.
+            // Ставим потолком то, с чего кадр начат.
+            if (_cam.fieldOfView > _maxZoom) _maxZoom = _cam.fieldOfView;
+            if (_cam.fieldOfView < _minZoom) _minZoom = _cam.fieldOfView;
         }
 
         void Update()

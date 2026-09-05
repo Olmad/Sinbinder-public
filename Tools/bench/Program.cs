@@ -754,9 +754,101 @@ static class Bench
         Check(Homecoming.Returned(SinType.Greed, 0) == 0, "никого не отправляли — никто не вернулся");
         Check(Homecoming.Returned(SinType.Sloth, 1) == 1, "ушёл один — он и вернулся");
 
+        // Догадка Каргана на сцене 3 обещает то же, что эпилог вернёт
+        // на сцене 8: обе растут из греха командира. Разные наборы грехов
+        // означали бы, что доля 3 обещает исход, которого не будет.
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+        {
+            string guess = Homecoming.Guess(sin);
+            Check(!string.IsNullOrEmpty(guess), $"{sin}: догадка есть");
+            Check(!guess.Any(char.IsDigit), $"{sin}: догадка без цифр");
+        }
+
+        // Догадка обязана отличать командиров друг от друга — иначе
+        // выбор старшего не слышен в тот же вечер, когда он сделан.
+        var guesses = new HashSet<string>();
+        foreach (SinType sin in new[] { SinType.Sloth, SinType.Wrath, SinType.Greed })
+            guesses.Add(Homecoming.Guess(sin));
+        Check(guesses.Count == 3, "три канонных греха гадают по-разному");
+
         Console.WriteLine($"  из пятерых вернутся: Уныние {sloth}, Гнев {wrath}, "
                         + $"Жадность {greed}, Гордыня {Homecoming.Returned(SinType.Pride, sent)}, "
                         + $"Зависть {Homecoming.Returned(SinType.Envy, sent)}");
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
+    /// <summary>
+    /// Куда ложится взгляд игрока и что считается «подойти к столу».
+    ///
+    /// Тихая ошибка здесь стоила бы всей сцены 2: совет, открывшийся сам
+    /// на первом кадре, выглядит точно так же, как совет, к которому
+    /// игрок подошёл, — и разницу видно только по тому, что игрок ничего
+    /// не делал.
+    /// </summary>
+    static void CampFocusCheck()
+    {
+        Console.WriteLine("\n=== ЛАГЕРЬ: куда смотрит игрок ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        // Взгляд ровно вниз с высоты 4 падает под ноги.
+        Check(CampFocus.TryGroundPoint(new Vector3(2f, 4f, -3f),
+                new Vector3(0f, -1f, 0f), 0f, out var under), "вниз: точка есть");
+        Check(MathF.Abs(under.x - 2f) < 0.01f && MathF.Abs(under.z + 3f) < 0.01f,
+            "вниз: падает под ноги");
+
+        // Горизонт не пересекает землю нигде. Наивная формула вернула бы
+        // сюда ноль и решила бы, что игрок стоит в начале координат —
+        // то есть у костра, то есть почти у стола.
+        Check(!CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                new Vector3(0f, 0f, 1f), 0f, out _), "горизонт: точки нет");
+        Check(!CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                new Vector3(0f, 1f, 1f), 0f, out _), "вверх: точки нет");
+        Check(!CampFocus.TryGroundPoint(new Vector3(0f, 0f, 0f),
+                new Vector3(0f, -1f, 1f), 0f, out _), "камера на земле: точки нет");
+        Check(!CampFocus.TryGroundPoint(new Vector3(0f, -2f, 0f),
+                new Vector3(0f, -1f, 1f), 0f, out _), "камера под землёй: точки нет");
+
+        // Наклон 45 с высоты 4: точка ровно в четырёх метрах впереди.
+        Check(CampFocus.TryGroundPoint(new Vector3(0f, 4f, 0f),
+                new Vector3(0f, -1f, 1f), 0f, out var slant), "наклон: точка есть");
+        Check(MathF.Abs(slant.z - 4f) < 0.01f, "наклон 45 с высоты 4 даёт 4 вперёд");
+
+        // Высота в «подойти» не участвует: подняться над столом — не то же
+        // самое, что подойти к нему.
+        Check(MathF.Abs(CampFocus.GroundDistance(
+                new Vector3(0f, 100f, 0f), new Vector3(3f, 0f, 4f)) - 5f) < 0.01f,
+            "расстояние считается по земле");
+
+        // Радиус ноль и меньше никого не пускает — иначе выключённая
+        // проверка выглядела бы как пройденная.
+        Check(!CampFocus.Reached(new Vector3(0f, 4f, 0f), new Vector3(0f, -1f, 0f),
+                Vector3.zero, 0f), "нулевой радиус не срабатывает");
+
+        // Настоящая постановка лагеря: открывающий кадр не должен
+        // дотягиваться до шара. Это те же числа, что стоят в сборщике сцен.
+        var eye = new Vector3(0f, 3.5f, -12.5f);
+        var forward = new Vector3(0f, -MathF.Sin(13f * MathF.PI / 180f),
+                                      MathF.Cos(13f * MathF.PI / 180f));
+        var ball = new Vector3(3.0f, 1.22f, 2.2f);
+
+        Check(!CampFocus.Reached(eye, forward, ball, CampFocus.TableReach),
+            "открывающий кадр НЕ дотягивается до стола");
+
+        CampFocus.TryGroundPoint(eye, forward, ball.y, out var opening);
+        float away = CampFocus.GroundDistance(opening, ball);
+        Check(away > CampFocus.TableReach + 1.5f, "запас до стола больше полутора метров");
+
+        // А дойти можно: сместим камеру туда, куда ведёт WASD.
+        Check(CampFocus.Reached(eye + new Vector3(3.0f, 0f, 4.8f), forward,
+                ball, CampFocus.TableReach), "подойдя, игрок стол достаёт");
+
+        Console.WriteLine($"  от открывающего кадра до шара {away:F2} м "
+                        + $"при радиусе {CampFocus.TableReach:F1}");
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
@@ -937,6 +1029,7 @@ static class Bench
 
         LeadershipCheck();
         HomecomingCheck();
+        CampFocusCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

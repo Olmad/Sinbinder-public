@@ -32,13 +32,12 @@ namespace Sinbinder.UI
         [SerializeField] private RectTransform _rows;
         [SerializeField] private Font _font;
 
-        [Tooltip("Через сколько секунд игрового времени собирается совет. "
-               + "По хронометражу пролога доля 2 идёт 1:00–1:30, совет — "
-               + "с 1:30. Время здесь заглушка: правильный повод открыть "
-               + "совет — три исполненных приказа подряд, но события "
-               + "«приказ исполнен» в движке пока нет. Метод Open публичный "
-               + "именно для того, чтобы его позвал будущий сценарий доли 2.")]
-        [SerializeField] private float _openAfterSeconds = 30f;
+        [Tooltip("Запасной срок. Совет открывает шар, когда игрок подходит "
+               + "к столу; счётчик нужен только на случай, когда подходить "
+               + "не к чему — шара в сцене нет или нет камеры. Тогда совет "
+               + "откроется сам и скажет об этом в консоль: пропавшая сцена "
+               + "должна быть слышна, а не тиха.")]
+        [SerializeField] private float _openAfterSeconds = 45f;
 
         [Tooltip("Сколько человек требует миссия доли 3. Карган объясняет "
                + "это вслух: «там довольно опасно, нужно пятеро». Тот, чей "
@@ -48,6 +47,7 @@ namespace Sinbinder.UI
 
         private readonly List<GameObject> _spawned = new();
         private bool _done;
+        private CrystalBall _ball;
 
         void Start()
         {
@@ -57,12 +57,63 @@ namespace Sinbinder.UI
             // сцена перезапущена или это следующая доля, панель не нужна.
             if (!string.IsNullOrEmpty(SquadRoster.CommanderName)) { _done = true; return; }
 
-            Invoke(nameof(Open), _openAfterSeconds);
+            // Совет собирает шар: игрок подходит к столу, и Карган его
+            // окликает (docs/09-PROLOGUE.md §4, сцена 2). Счётчик остаётся
+            // страховкой — без него сцена без шара запирает демо насмерть,
+            // потому что PrologueDirector ждёт назначенного старшего.
+            _ball = Object.FindFirstObjectByType<CrystalBall>();
+
+            if (_ball == null)
+                Debug.LogWarning("[СОВЕТ] Шара в сцене нет: подходить не к чему, "
+                               + "совет откроется по счётчику.");
+
+            Summon();
+            Invoke(nameof(OpenBySelf), _openAfterSeconds);
+        }
+
+        /// <summary>
+        /// Карган окликает игрока и объясняет, зачем идти к столу.
+        /// Без этой строки «подойди к шару» остаётся догадкой, а игра,
+        /// которая никогда не пишет цифр, обязана хотя бы писать словами.
+        /// </summary>
+        private void Summon()
+        {
+            var log = Object.FindFirstObjectByType<BattleLogUI>();
+            if (log == null) return;
+
+            log.Write("Карган: «Владыка, отряд Марги Копателя вернулся "
+                    + "с трофеями. У нас ещё осталась точка интереса. "
+                    + "Давайте отправим его».");
+
+            if (_ball != null)
+                log.Write("Он ждёт у стола с хрустальным шаром.");
+        }
+
+        void Update()
+        {
+            if (_done || _ball == null) return;
+            if (!_ball.PlayerIsClose()) return;
+
+            Open();
+        }
+
+        /// <summary>
+        /// Открыть по истечении страховочного срока. Отдельный вход,
+        /// чтобы отличить «игрок пришёл» от «его не дождались»: второе
+        /// обязано быть слышно.
+        /// </summary>
+        private void OpenBySelf()
+        {
+            if (_done || _panel == null || _panel.activeSelf) return;
+
+            Debug.LogWarning("[СОВЕТ] К столу так и не подошли: совет открыт "
+                           + "по счётчику.");
+            Open();
         }
 
         public void Open()
         {
-            if (_done || _panel == null) return;
+            if (_done || _panel == null || _panel.activeSelf) return;
 
             var options = FindOptions();
             if (options.Count == 0) return;

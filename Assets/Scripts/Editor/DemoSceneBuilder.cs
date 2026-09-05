@@ -92,14 +92,29 @@ namespace Sinbinder.Utilets
             // не было кадра, где он есть. Теперь у него тело, и один кадр
             // должен показать и его самого, и отряд, которым он командует
             // (docs/09-PROLOGUE.md §3 и §4, сцена 1).
-            Hill(new Vector3(0f, 0f, -12f), radius: 5f, height: 2.6f);
-            CameraRig(new Vector3(0f, 3.5f, -12.5f), new Vector3(13f, 0f, 0f));
+            var hill = new Vector3(0f, 0f, -12f);
+            var eye = new Vector3(0f, 3.5f, -12.5f);
+            var look = new Vector3(13f, 0f, 0f);
+
+            // Стол стоит в стороне от того, куда смотрит открывающий кадр.
+            // Взгляд с холма ложится у костра, и стол, поставленный туда же,
+            // открыл бы совет на первом же кадре — игрок бы не подошёл
+            // к нему, а оказался. Сходится это или нет, считает CheckCamp,
+            // а не глаз.
+            var table = new Vector3(3.0f, 0f, 2.2f);
+
+            Hill(hill, radius: 5f, height: 2.6f);
+
+            // Подвижная: к столу игрок обязан подойти сам (§4, сцена 2).
+            // Со статичной камерой стол просто стоял в кадре.
+            CameraRig(eye, look, movable: true);
 
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
 
-            Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
-            CouncilTable(new Vector3(3.2f, 0f, -3.4f));
+            Tents(hill, hillRadius: 5f);
+            CouncilTable(table);
+            CheckCamp(table, eye, look, TentPlaces(hill, hillRadius: 5f));
 
             // Врагов в лагере нет: выступаем, когда назначен старший.
             // Здесь же пролог начинается — забываем прошлый отряд.
@@ -130,7 +145,7 @@ namespace Sinbinder.Utilets
             // стоять там же, где стояли на доле 1.
             Hill(new Vector3(0f, 0f, -12f), radius: 5f, height: 2.6f);
             Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
-            CouncilTable(new Vector3(3.2f, 0f, -3.4f));
+            CouncilTable(new Vector3(3.0f, 0f, 2.2f));
 
             Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 4, width: 7f);
 
@@ -338,11 +353,16 @@ namespace Sinbinder.Utilets
         /// а вместе с ней теряется и одна из пяти пустых — то есть
         /// пропадает ровно та деталь, ради которой всё это ставится.
         /// </summary>
-        private static void Tents(Vector3 hillCentre, float hillRadius)
+        /// <summary>
+        /// Где стоят палатки. Отдельно от их постройки, потому что знать
+        /// это нужно не только им: стол совета обязан не влезть внутрь
+        /// палатки, а проверить это можно только по тому же списку.
+        /// Две расстановки разошлись бы молча.
+        /// </summary>
+        private static List<Vector3> TentPlaces(Vector3 hillCentre, float hillRadius)
         {
             const int total = 25;
             const int inner = 11;
-            const int mourning = 5;
             const float clearance = 1.2f;
 
             var places = new List<Vector3>();
@@ -366,6 +386,15 @@ namespace Sinbinder.Utilets
 
                 places.Add(position);
             }
+
+            return places;
+        }
+
+        private static void Tents(Vector3 hillCentre, float hillRadius)
+        {
+            const int mourning = 5;
+
+            var places = TentPlaces(hillCentre, hillRadius);
 
             var camp = new GameObject("Палатки");
             int fallen = 0;
@@ -431,6 +460,53 @@ namespace Sinbinder.Utilets
         /// который видно от палатки: на доле 3 он наливается красным,
         /// и это первое, что игрок замечает, не подходя к столу.
         /// </summary>
+        /// <summary>
+        /// Сходится ли постановка лагеря сама с собой.
+        ///
+        /// Две ошибки, которые глазами в коде не видны, а в сцене видны
+        /// сразу и поздно: стол, влезший в палатку, и стол, стоящий ровно
+        /// там, куда смотрит открывающий кадр. Второе тише и хуже —
+        /// совет открылся бы на первом же кадре сам, и «игрок подошёл
+        /// к столу» превратилось бы в «игрок там оказался».
+        ///
+        /// Взгляд считается тем же правилом, которым его считает шар
+        /// в рантайме (<see cref="CampFocus"/>), иначе проверка проверяла
+        /// бы не то, что происходит.
+        /// </summary>
+        private static void CheckCamp(Vector3 table, Vector3 eye, Vector3 euler,
+            List<Vector3> tents)
+        {
+            const float tentClearance = 2.4f;
+            var ball = table + new Vector3(0f, 1.22f, 0f);
+
+            float nearest = float.MaxValue;
+            foreach (var t in tents)
+                nearest = Mathf.Min(nearest, Vector3.Distance(t, table));
+
+            if (nearest < tentClearance)
+                Debug.LogWarning($"[СБОРКА] Стол совета в {nearest:0.0} м от палатки — "
+                               + "они пересекутся.");
+
+            var forward = Quaternion.Euler(euler) * Vector3.forward;
+
+            if (!CampFocus.TryGroundPoint(eye, forward, ball.y, out var focus))
+            {
+                Debug.LogWarning("[СБОРКА] Открывающий кадр не смотрит в землю: "
+                               + "подводить взгляд к столу будет нечем.");
+                return;
+            }
+
+            float toBall = CampFocus.GroundDistance(focus, ball);
+
+            if (toBall <= CampFocus.TableReach)
+                Debug.LogWarning($"[СБОРКА] Взгляд открывающего кадра уже в {toBall:0.0} м "
+                               + $"от шара при радиусе {CampFocus.TableReach:0.0} — совет "
+                               + "откроется сам, и игрок к нему не подойдёт.");
+            else
+                Debug.Log($"[СБОРКА] До стола от открывающего кадра {toBall:0.0} м "
+                        + $"при радиусе {CampFocus.TableReach:0.0}.");
+        }
+
         private static void CouncilTable(Vector3 position)
         {
             var table = new GameObject("Стол совета");
