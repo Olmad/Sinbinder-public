@@ -821,7 +821,11 @@ namespace Sinbinder.Utilets
             rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
             rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
 
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.CommanderCouncilUI>();
+            // Компонент висит на Canvas, а не на самой панели: в Start он
+            // панель выключает, а у выключенного объекта не крутится Update —
+            // и слежение за тем, подошёл ли игрок к столу, не работало бы
+            // ни разу. Ровно на этом уже обжёгся DialogueUI.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.CommanderCouncilUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
                      ("_font", UIFont()));
         }

@@ -27,7 +27,13 @@ namespace Sinbinder.UI
         [SerializeField] private float _holdSeconds = 5f;
         [SerializeField] private float _fadeSeconds = 0.6f;
 
+        [Tooltip("Сколько держать строку, когда следом ждут другие. Когда "
+               + "говорят все сразу, каждый говорит короче — иначе очередь "
+               + "отстанет от боя на минуту.")]
+        [SerializeField] private float _rushSeconds = 1.6f;
+
         private readonly List<string> _history = new();
+        private readonly Queue<string> _pending = new();
         private Coroutine _showing;
 
         /// <summary>Всё, что случилось за бой. Для рассказа после боя.</summary>
@@ -51,6 +57,15 @@ namespace Sinbinder.UI
             Write(PhraseGenerator.LogLine(warrior, context, decision));
         }
 
+        /// <summary>
+        /// Строки становятся в очередь, а не затирают друг друга.
+        ///
+        /// Раньше вторая строка, написанная в том же кадре, заменяла первую
+        /// мгновенно: игрок не видел её ни одного кадра. Для игры, вся суть
+        /// которой в том, чтобы игрок понял, почему воин поступил так, —
+        /// это худший из возможных багов: объяснение было, и его съели.
+        /// В истории оно при этом оставалось, поэтому и не замечалось.
+        /// </summary>
         public void Write(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
@@ -58,27 +73,50 @@ namespace Sinbinder.UI
             _history.Add(text);
 
             if (_line == null) return;
-            _line.text = text;
 
-            if (_showing != null) StopCoroutine(_showing);
-            _showing = StartCoroutine(ShowRoutine());
+            _pending.Enqueue(text);
+            if (_showing == null) _showing = StartCoroutine(ShowRoutine());
         }
 
+        /// <summary>
+        /// Время нескалированное: панели пролога останавливают игру, а строка
+        /// журнала обязана дочитываться и на паузе.
+        /// </summary>
         private IEnumerator ShowRoutine()
         {
-            if (_group == null) yield break;
-
-            _group.alpha = 1f;
-            yield return new WaitForSeconds(_holdSeconds);
-
-            float t = 0f;
-            while (t < _fadeSeconds)
+            while (_pending.Count > 0)
             {
-                t += Time.deltaTime;
-                _group.alpha = 1f - t / _fadeSeconds;
-                yield return null;
+                _line.text = _pending.Dequeue();
+
+                if (_group != null) _group.alpha = 1f;
+
+                // Ждут другие — эта уступает им место раньше.
+                float hold = _pending.Count > 0 ? _rushSeconds : _holdSeconds;
+                yield return new WaitForSecondsRealtime(hold);
+
+                // Пока ждали, могла прийти следующая: тогда не гаснем,
+                // а сразу показываем её — мигание между репликами одного
+                // разговора выглядит как сбой.
+                if (_pending.Count > 0) continue;
+
+                // Гасить нечего — но очередь всё равно надо дочерпать,
+                // иначе строки застряли бы в ней до следующей записи.
+                if (_group == null) continue;
+
+                float t = 0f;
+                while (t < _fadeSeconds)
+                {
+                    // Успела прийти строка посреди угасания — вернуть свет.
+                    if (_pending.Count > 0) break;
+
+                    t += Time.unscaledDeltaTime;
+                    _group.alpha = 1f - t / _fadeSeconds;
+                    yield return null;
+                }
+
+                if (_pending.Count == 0) _group.alpha = 0f;
             }
-            _group.alpha = 0f;
+
             _showing = null;
         }
 
