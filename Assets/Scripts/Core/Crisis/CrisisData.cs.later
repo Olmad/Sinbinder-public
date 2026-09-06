@@ -1,0 +1,52 @@
+// ОТЛОЖЕНО ДО ОСНОВНОЙ ИГРЫ
+//
+// Этот файл не компилируется: расширение .cs.later Unity не знает, и в
+// сборку демо он не попадает. Код цел и ждёт — вернуть его в игру значит
+// убрать «.later» из имени (у всех пяти файлов Core/Crisis сразу).
+//
+// Почему отложено: кризисы вне демо (docs/11-MISSING.md §2.2 — «кризисов
+// нет (вне демо)»). Слой не исполнялся ни разу и не мог: CrisisManager
+// не стоял ни в одной сцене, CrisisDatabase.asset не создан, а CheckCrisis
+// не звал никто. Ни один файл вне Core/Crisis на эти типы не ссылается —
+// проверено, поэтому отложены все пять разом.
+//
+// Что уже сделано и не потеряно: CrisisResolver вычищен от Random.Range
+// (пять бросков), решение принято в docs/07-VERDICT.md. Возвращать его
+// придётся уже детерминированным — таким он здесь и лежит.
+//
+// Что чинить при возвращении: ApplyChoice и SettleQuarrel зовут
+// RelationshipSystem.Change, помеченный [Obsolete] — он заводит
+// воспоминания с именем «LegacyChange». Других вызовов у этого метода
+// в проекте нет: пока кризисы отложены, устаревший путь мёртв целиком.
+
+// Assets/Scripts/Core/Crisis/CrisisData.cs
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Sinbinder.Core
+{
+    [System.Serializable]
+    public class CrisisChoice
+    {
+        public string Text;
+        public string OutcomeText;
+        public float VirtueChange;
+        public float LoyaltyChange;
+        public float RelationshipChange;
+        public bool RequiresGold;
+        public int GoldCost;
+    }
+
+    [System.Serializable]
+    public class CrisisData
+    {
+        public string Id;
+        public CrisisType Type;
+        public SinType WarriorSin;          // <-- Точное указание греха воина
+        public string Title;
+        public string Description;
+        public string WarriorQuote;
+        public List<CrisisChoice> Choices;
+        public string TriggerCondition;
+    }
+}

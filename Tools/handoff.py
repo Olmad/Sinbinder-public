@@ -25,15 +25,12 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRANCH = 'claude/3d-horror-survival-game-ckrslc'
 
-# Файлы, пришедшие из облака: .meta им может сделать только редактор.
-FROM_CLOUD = [
-    'Assets/Scripts/Gameplay/CampFocus.cs',
-    'Assets/Scripts/Gameplay/CrystalBall.cs',
-    'Assets/Scripts/Gameplay/EscapeZone.cs',
-    'Assets/Scripts/Gameplay/Homecoming.cs',
-    'Assets/Scripts/Gameplay/Leadership.cs',
-    'Assets/Scripts/docs/13-DRIFT.md',
-]
+# Что Unity считает ассетом и чему полагается .meta. Список намеренно
+# не записан руками: захардкоженный перечень устаревает молча — ровно
+# тем способом, который этот скрипт и создан ловить.
+META_EXTENSIONS = ('.cs', '.md', '.py', '.sh', '.ps1', '.cs.later')
+
+SKIP_DIRS = {'Library', 'Temp', 'obj', 'bin', 'Logs', '.git'}
 
 
 def git(*args):
@@ -70,9 +67,26 @@ def scenes_older_than_builder():
 
 
 def missing_meta():
-    return [f for f in FROM_CLOUD
-            if os.path.exists(os.path.join(ROOT, f))
-            and not os.path.exists(os.path.join(ROOT, f + '.meta'))]
+    """Ассеты без .meta. Создать их может только открытый редактор."""
+    out = []
+    base = os.path.join(ROOT, 'Assets')
+
+    for root, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+
+        for f in files:
+            if f.endswith('.meta'):
+                continue
+            if not f.endswith(META_EXTENSIONS):
+                continue
+
+            full = os.path.join(root, f)
+            if os.path.exists(full + '.meta'):
+                continue
+
+            out.append(os.path.relpath(full, ROOT).replace(os.sep, '/'))
+
+    return sorted(out)
 
 
 def behind():
@@ -114,8 +128,11 @@ def report():
 
     m = missing_meta()
     if m:
-        urgent.append('Ждут .meta от редактора (создать, открыв проект, '
-                      'и закоммитить до пересборки сцен): ' + ', '.join(m))
+        shown = ', '.join(m[:6])
+        if len(m) > 6:
+            shown += f' и ещё {len(m) - 6}'
+        urgent.append(f'Ждут .meta от редактора ({len(m)} шт.; создать, '
+                      f'открыв проект, и закоммитить до пересборки сцен): {shown}')
 
     return urgent, lines
 
