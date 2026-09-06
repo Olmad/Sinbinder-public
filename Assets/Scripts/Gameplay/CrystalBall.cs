@@ -47,6 +47,12 @@ namespace Sinbinder.Gameplay
                + "раньше, чем игрок заметит, что лагерь поредел.")]
         [SerializeField] private float _alarmAfterCouncil = 7f;
 
+        [Tooltip("Сколько ждать, пока игрок разберёт трофеи Марги. Тревога — "
+               + "вторая половина сцены 3, и приходить раньше первой ей "
+               + "незачем. Срок нужен на случай, когда игрок к сундуку "
+               + "так и не подошёл: сцена не должна ждать вечно.")]
+        [SerializeField] private float _waitForChest = 40f;
+
         [Tooltip("Сколько игрок смотрит в горящий шар, прежде чем лагерь "
                + "уходит в разгром.")]
         [SerializeField] private float _watchSeconds = 6f;
@@ -60,6 +66,14 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static bool Raised { get; private set; }
 
+        /// <summary>
+        /// Ведёт ли шар сцену прямо сейчас. Директор смотрит сюда, чтобы
+        /// не отсчитывать свой запас, пока сцену есть кому вести: иначе
+        /// два срока пришлось бы держать согласованными руками, а они
+        /// разъезжаются при первой же правке любого из них.
+        /// </summary>
+        public static bool Leading { get; private set; }
+
         private Transform _eye;
         private bool _sequenceStarted;
         private bool _leadsAlarm;
@@ -71,6 +85,7 @@ namespace Sinbinder.Gameplay
             // Свой же прошлый прогон: без уборки второй запуск демо
             // из редактора начинался бы с уже отгремевшей тревогой.
             Raised = false;
+            Leading = false;
             IsAlarmed = false;
 
             Apply();
@@ -121,6 +136,13 @@ namespace Sinbinder.Gameplay
             Apply();
         }
 
+        void OnDestroy()
+        {
+            // Сцену закрыли посреди тревоги. Оставить Leading поднятым —
+            // значит запереть следующий лагерь навсегда.
+            Leading = false;
+        }
+
         private void Apply()
         {
             if (_glow == null) return;
@@ -135,6 +157,7 @@ namespace Sinbinder.Gameplay
                 && !string.IsNullOrEmpty(SquadRoster.CommanderName))
             {
                 _sequenceStarted = true;
+                Leading = true;
                 StartCoroutine(AlarmRoutine());
             }
 
@@ -152,6 +175,19 @@ namespace Sinbinder.Gameplay
         private IEnumerator AlarmRoutine()
         {
             yield return new WaitForSecondsRealtime(_alarmAfterCouncil);
+
+            // Первая половина сцены 3 — трофеи. Тревога ждёт её, но не
+            // бесконечно: игрок мог не пойти к сундуку вовсе, и запирать
+            // на этом демо нельзя.
+            float waited = 0f;
+            while (!TrophyChest.Looted && waited < _waitForChest)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (!TrophyChest.Looted)
+                Debug.Log("[ШАР] Трофеи так и не разобрали: тревога не ждёт дольше.");
 
             Alarm();
 
@@ -174,6 +210,9 @@ namespace Sinbinder.Gameplay
 
             log?.Write("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
                      + "ребят как косточки крысы».");
+
+            // Сцена доведена: дальше директор свободен и без нас.
+            Leading = false;
 
             // Уводит лагерь шар, а не счётчик директора: сцена 3 кончается
             // тогда, когда договорил Карган.

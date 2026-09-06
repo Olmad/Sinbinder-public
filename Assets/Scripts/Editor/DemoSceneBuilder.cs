@@ -114,7 +114,15 @@ namespace Sinbinder.Utilets
 
             Tents(hill, hillRadius: 5f);
             CouncilTable(table);
-            CheckCamp(table, eye, look, TentPlaces(hill, hillRadius: 5f));
+
+            // Сцена 3, первая половина: сундук с трофеями Марги. Стоит
+            // по другую сторону от костра, чем стол, — чтобы к нему
+            // пришлось идти отдельно, а не задеть взглядом заодно
+            // с советом. Сходится это или нет, считает CheckCamp.
+            var chest = new Vector3(-1.7f, 0f, -2.6f);
+            TrophyChestProp(chest);
+
+            CheckCamp(table, chest, eye, look, TentPlaces(hill, hillRadius: 5f));
 
             // Врагов в лагере нет: выступаем, когда назначен старший.
             // Здесь же пролог начинается — забываем прошлый отряд.
@@ -280,6 +288,11 @@ namespace Sinbinder.Utilets
             // остаётся документом: все четыре ступени были бы включены
             // всегда, и трассировка с очками и весами сыпалась бы игроку.
             managers.AddComponent<Core.TransparencySettings>();
+
+            // Кошелёк и вещи игрока. Его не было ни в одной сцене, поэтому
+            // PlayerInventory.Instance всегда был пуст: плата после боя
+            // уходила в никуда, а трофеи было некуда класть.
+            managers.AddComponent<Sinbinder.Inventory.PlayerInventory>();
 
             // Доля 6: полторы секунды тишины на первом отказе.
             managers.AddComponent<Sinbinder.UI.RefusalSilence>();
@@ -537,21 +550,24 @@ namespace Sinbinder.Utilets
         /// в рантайме (<see cref="CampFocus"/>), иначе проверка проверяла
         /// бы не то, что происходит.
         /// </summary>
-        private static void CheckCamp(Vector3 table, Vector3 eye, Vector3 euler,
-            List<Vector3> tents)
+        private static void CheckCamp(Vector3 table, Vector3 chest, Vector3 eye,
+            Vector3 euler, List<Vector3> tents)
         {
             const float tentClearance = 2.4f;
+            const float apartness = 5f;
+
             var ball = table + new Vector3(0f, 1.22f, 0f);
-
-            float nearest = float.MaxValue;
-            foreach (var t in tents)
-                nearest = Mathf.Min(nearest, Vector3.Distance(t, table));
-
-            if (nearest < tentClearance)
-                Debug.LogWarning($"[СБОРКА] Стол совета в {nearest:0.0} м от палатки — "
-                               + "они пересекутся.");
-
             var forward = Quaternion.Euler(euler) * Vector3.forward;
+
+            Clearance("Стол совета", table, tents, tentClearance);
+            Clearance("Сундук Марги", chest, tents, tentClearance);
+
+            // Две цели сцены не должны сливаться в одну: подойдя к столу,
+            // игрок не должен заодно открыть и сундук.
+            float between = CampFocus.GroundDistance(table, chest);
+            if (between < apartness)
+                Debug.LogWarning($"[СБОРКА] Стол и сундук в {between:0.0} м друг от друга — "
+                               + "к ним придётся подходить одним шагом.");
 
             if (!CampFocus.TryGroundPoint(eye, forward, ball.y, out var focus))
             {
@@ -560,14 +576,40 @@ namespace Sinbinder.Utilets
                 return;
             }
 
-            float toBall = CampFocus.GroundDistance(focus, ball);
+            Untouched("шара", focus, ball);
 
-            if (toBall <= CampFocus.TableReach)
-                Debug.LogWarning($"[СБОРКА] Взгляд открывающего кадра уже в {toBall:0.0} м "
-                               + $"от шара при радиусе {CampFocus.TableReach:0.0} — совет "
-                               + "откроется сам, и игрок к нему не подойдёт.");
+            if (CampFocus.TryGroundPoint(eye, forward, chest.y, out var lowFocus))
+                Untouched("сундука", lowFocus, chest);
+        }
+
+        /// <summary>Не влез ли предмет в палатку.</summary>
+        private static void Clearance(string what, Vector3 where,
+            List<Vector3> tents, float clearance)
+        {
+            float nearest = float.MaxValue;
+            foreach (var t in tents)
+                nearest = Mathf.Min(nearest, Vector3.Distance(t, where));
+
+            if (nearest < clearance)
+                Debug.LogWarning($"[СБОРКА] {what} в {nearest:0.0} м от палатки — "
+                               + "они пересекутся.");
+        }
+
+        /// <summary>
+        /// Не стоит ли предмет там, куда смотрит открывающий кадр.
+        /// Если стоит — он сработает сам на первом кадре, и «игрок подошёл»
+        /// превратится в «игрок оказался».
+        /// </summary>
+        private static void Untouched(string what, Vector3 focus, Vector3 thing)
+        {
+            float d = CampFocus.GroundDistance(focus, thing);
+
+            if (d <= CampFocus.TableReach)
+                Debug.LogWarning($"[СБОРКА] Взгляд открывающего кадра уже в {d:0.0} м "
+                               + $"от {what} при радиусе {CampFocus.TableReach:0.0} — "
+                               + "сработает само, и игрок к нему не подойдёт.");
             else
-                Debug.Log($"[СБОРКА] До стола от открывающего кадра {toBall:0.0} м "
+                Debug.Log($"[СБОРКА] До {what} от открывающего кадра {d:0.0} м "
                         + $"при радиусе {CampFocus.TableReach:0.0}.");
         }
 
@@ -605,6 +647,37 @@ namespace Sinbinder.Utilets
             light.range = 7f;
 
             ball.AddComponent<CrystalBall>();
+        }
+
+        /// <summary>
+        /// Сундук с трофеями: ящик и крышка на нём. Крышка — отдельный
+        /// объект с собственной точкой поворота, иначе она открывалась бы
+        /// вокруг собственной середины и въезжала бы в ящик.
+        /// </summary>
+        private static void TrophyChestProp(Vector3 position)
+        {
+            var chest = new GameObject("Сундук Марги");
+            chest.transform.position = position;
+
+            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = "Ящик";
+            box.transform.SetParent(chest.transform);
+            box.transform.localPosition = new Vector3(0f, 0.28f, 0f);
+            box.transform.localScale = new Vector3(1.1f, 0.56f, 0.7f);
+
+            // Петля у заднего края: крышка поворачивается вокруг неё.
+            var hinge = new GameObject("Крышка");
+            hinge.transform.SetParent(chest.transform);
+            hinge.transform.localPosition = new Vector3(0f, 0.56f, -0.35f);
+
+            var lid = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            lid.name = "Створка";
+            lid.transform.SetParent(hinge.transform);
+            lid.transform.localPosition = new Vector3(0f, 0.06f, 0.35f);
+            lid.transform.localScale = new Vector3(1.15f, 0.12f, 0.75f);
+
+            var trophy = chest.AddComponent<TrophyChest>();
+            Wire(trophy, ("_lid", hinge.transform));
         }
 
         private static void Hunters(Vector3 position, Vector3 lookAt, int count, float width)

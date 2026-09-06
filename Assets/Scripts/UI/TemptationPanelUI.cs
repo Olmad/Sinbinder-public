@@ -26,22 +26,62 @@ namespace Sinbinder.UI
         [SerializeField] private Font _font;
 
         private readonly List<InventoryItem> _items = new();
+        private readonly List<GameObject> _spawned = new();
 
         void Start()
         {
-            _items.AddRange(TemptationCatalog.Demo());
+            Rebuild();
+
+            var purse = PlayerInventory.Instance;
+            if (purse != null) purse.OnInventoryChanged += Rebuild;
+        }
+
+        void OnDestroy()
+        {
+            var purse = PlayerInventory.Instance;
+            if (purse != null) purse.OnInventoryChanged -= Rebuild;
+        }
+
+        /// <summary>
+        /// Список — это то, что у игрока есть, а не то, что бывает.
+        ///
+        /// Раньше панель показывала каталог: три вещи появлялись сами
+        /// на старте любой сцены, и рычаг «вложить вещь в руку» работал
+        /// до того, как игрок хоть что-то нашёл. Теперь вещи приходят
+        /// из сундука Марги (сцена 3), а до него панель честно пуста.
+        /// </summary>
+        private void Rebuild()
+        {
+            foreach (var go in _spawned) if (go != null) Destroy(go);
+            _spawned.Clear();
+            _items.Clear();
+
+            var purse = PlayerInventory.Instance;
+
+            if (purse == null)
+            {
+                // Кошелька нет — это событие, а не пустой список: молчать
+                // здесь значит показать игроку пустую панель без причины.
+                Debug.LogWarning("[ВЕЩИ] PlayerInventory в сцене нет — "
+                               + "показывать нечего и брать неоткуда.");
+                Hint("Нести нечего.");
+                return;
+            }
+
+            _items.AddRange(purse.GetAllItems());
 
             float y = 0f;
             foreach (var item in _items)
             {
-                Row(item, y);
+                _spawned.Add(Row(item, y));
                 y -= 74f;
             }
 
-            Hint();
+            if (_items.Count == 0) Hint("Нести нечего.");
+            else Hint();
         }
 
-        private void Row(InventoryItem item, float y)
+        private GameObject Row(InventoryItem item, float y)
         {
             var go = new GameObject(item.Name, typeof(RectTransform));
             go.transform.SetParent(_rows, false);
@@ -80,6 +120,8 @@ namespace Sinbinder.UI
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
             text.text = $"{item.Name} — {Pull(item)}";
+
+            return go;
         }
 
         /// <summary>К чему тянет вещь. Словами: чисел игрок не видит.</summary>
