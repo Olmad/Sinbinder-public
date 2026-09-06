@@ -21,9 +21,9 @@ namespace Sinbinder.Gameplay
     /// (<see cref="CampFocus"/>): в лагере всё, что можно сделать,
     /// делается ногами.
     ///
-    /// До сундука у игрока нет ни одной вещи, и это правильно: восьмой
-    /// рычаг — вложить вещь в руку воину — должен сперва быть заработан,
-    /// а не выдан на старте сцены.
+    /// В сундуке простое снаряжение и ничего больше. Вещи-искусители —
+    /// рычаг полной версии (docs/09-PROLOGUE.md §7), и в демо их нет
+    /// намеренно: у всего, что лежит здесь, искушение равно нулю.
     /// </summary>
     public class TrophyChest : MonoBehaviour
     {
@@ -148,7 +148,7 @@ namespace Sinbinder.Gameplay
 
             int taken = 0;
 
-            foreach (var item in TemptationCatalog.Demo())
+            foreach (var item in TrophyCatalog.Chest())
             {
                 if (!purse.AddItem(item)) break;
 

@@ -48,6 +48,12 @@ DOTNET_TYPES = {
 
 KEYWORD_CALLS = {'if', 'for', 'while', 'switch', 'foreach', 'return', 'lock', 'catch', 'using'}
 
+# Отложенное до полной версии: расширение .cs.later Unity не знает,
+# и файл в сборку не попадает. Первая строка обязана это объявлять,
+# иначе через месяц никто не вспомнит, почему код не работает.
+LATER_EXT = '.cs.later'
+LATER_HEADER = '// ОТЛОЖЕНО ДО ОСНОВНОЙ ИГРЫ'
+
 LINQ = re.compile(
     r'\.(Any|All|Where|Select|SelectMany|FirstOrDefault|LastOrDefault|OrderBy|OrderByDescending'
     r'|GroupBy|Distinct|Aggregate|SingleOrDefault|ToList|ToDictionary)\s*\(')
@@ -292,6 +298,50 @@ class Checker:
                 self.report(p, line_of(s, first_using),
                             'using UnityEditor стоит выше #if UNITY_EDITOR — обёртка не работает')
 
+    def deferred(self):
+        """
+        Отложенные файлы: подписаны ли и не зовёт ли их живой код.
+
+        Второе важнее первого. Тип, объявленный только в .cs.later,
+        для Unity не существует — и живой файл, который его зовёт,
+        не соберётся вообще. Ошибка при этом выглядит как «не найден
+        тип», а причина её — в переименовании месячной давности.
+        """
+        later = []
+        for root, dirs, files in os.walk('.'):
+            dirs[:] = [d for d in dirs
+                       if d not in SKIP_DIRS and not d.startswith('.')]
+            for f in files:
+                if f.endswith(LATER_EXT):
+                    later.append(os.path.join(root, f))
+
+        if not later:
+            return
+
+        declared_later = {}      # тип -> файл, где он отложен
+
+        for path in later:
+            text = io.open(path, encoding='utf-8', errors='replace').read()
+
+            first = text.split('\n', 1)[0].strip()
+            if first != LATER_HEADER:
+                self.report(path, 1, 'отложенный файл без заголовка '
+                                     f'«{LATER_HEADER}» в первой строке')
+
+            for _, name in RE_TYPE_DECL.findall(text):
+                declared_later[name] = path
+
+        if not declared_later:
+            return
+
+        for path, text in self.src.items():
+            body = strip(text)
+            for name, where in declared_later.items():
+                if re.search(r'(?<![\w.])' + re.escape(name) + r'(?![\w])', body):
+                    self.report(path, 0,
+                                f'зовёт {name}, а он отложен в {where} — '
+                                'Unity такого типа не увидит')
+
     def input_handler(self):
         """
         Старый Input под настройкой «только новый Input System».
@@ -353,6 +403,7 @@ class Checker:
         self.file_names()
         self.editor_guards()
         self.input_handler()
+        self.deferred()
         self.unknown_new()
         return self.problems
 

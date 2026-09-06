@@ -745,7 +745,11 @@ namespace Sinbinder.Utilets
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
             BuildDialogue(canvasGO.transform);
-            BuildTemptations(canvasGO.transform);
+
+            // Панель искусителей отложена до полной версии вместе
+            // с механикой (docs/09-PROLOGUE.md §7). Метод, который её
+            // собирал, лежит в хвосте Assets/Scripts/UI/TemptationPanelUI.cs.later
+            // и возвращается вместе с ней.
 
             return canvasGO.transform;
         }
@@ -831,34 +835,6 @@ namespace Sinbinder.Utilets
             Wire(ui, ("_panel", panel.gameObject), ("_group", group), ("_line", line));
         }
 
-        /// <summary>
-        /// Восьмой рычаг: вещи, которые можно вложить в руки воину.
-        /// Панель висит всё время — искушение медленное и обратимое,
-        /// у него нет «своего момента».
-        /// </summary>
-        private static void BuildTemptations(Transform parent)
-        {
-            var panel = Panel("Искушения", parent,
-                anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
-                pivot: new Vector2(1f, 0f), size: new Vector2(520f, 268f),
-                position: new Vector2(-40f, 40f));
-
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.07f, 0.06f, 0.06f, 0.85f);
-
-            var hint = Label("Подсказка", panel, 19, TextAnchor.LowerLeft,
-                new Vector2(0f, -222f), 40f);
-
-            var rows = Panel("Вещи", panel,
-                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
-                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 210f),
-                position: new Vector2(0f, -14f));
-            rows.offsetMin = new Vector2(14f, rows.offsetMin.y);
-            rows.offsetMax = new Vector2(-14f, rows.offsetMax.y);
-
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.TemptationPanelUI>();
-            Wire(ui, ("_rows", rows), ("_hint", hint), ("_font", UIFont()));
-        }
 
         /// <summary>Экран конца демо: кто вернулся.</summary>
         private static void BuildDemoEnd(Transform parent)

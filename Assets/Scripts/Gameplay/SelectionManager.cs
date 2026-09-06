@@ -5,13 +5,13 @@ namespace Sinbinder.Gameplay
 {
     public class SelectionManager : MonoBehaviour
     {
-
         /// <summary>
         /// Игрок отдал приказ: какой и скольким. Приказ — не факт, а просьба,
         /// и услышать её должны не только воины: на «отходить» в доле 5
         /// трубит рог, и это единственное место, где такой момент виден.
         /// </summary>
         public static event System.Action<CommandKind, int> OnPlayerOrder;
+
         public static SelectionManager Instance { get; private set; }
 
         [SerializeField] private RectTransform _selectionBox;

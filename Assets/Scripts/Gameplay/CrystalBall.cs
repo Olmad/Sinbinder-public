@@ -179,15 +179,24 @@ namespace Sinbinder.Gameplay
             // Первая половина сцены 3 — трофеи. Тревога ждёт её, но не
             // бесконечно: игрок мог не пойти к сундуку вовсе, и запирать
             // на этом демо нельзя.
-            float waited = 0f;
-            while (!TrophyChest.Looted && waited < _waitForChest)
-            {
-                waited += Time.unscaledDeltaTime;
-                yield return null;
-            }
+            //
+            // Сундука в сцене может не быть совсем — тогда ждать некого,
+            // и сорок секунд пустой паузы были бы не осторожностью,
+            // а провалом в сцене.
+            bool hasChest = Object.FindFirstObjectByType<TrophyChest>() != null;
 
-            if (!TrophyChest.Looted)
-                Debug.Log("[ШАР] Трофеи так и не разобрали: тревога не ждёт дольше.");
+            if (hasChest)
+            {
+                float waited = 0f;
+                while (!TrophyChest.Looted && waited < _waitForChest)
+                {
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+
+                if (!TrophyChest.Looted)
+                    Debug.Log("[ШАР] Трофеи так и не разобрали: тревога не ждёт дольше.");
+            }
 
             Alarm();
 

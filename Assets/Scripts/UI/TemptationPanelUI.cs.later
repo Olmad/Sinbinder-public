@@ -1,3 +1,16 @@
+// ОТЛОЖЕНО ДО ОСНОВНОЙ ИГРЫ
+//
+// Этот файл не компилируется: расширение .cs.later Unity не знает, и в
+// сборку демо он не попадает. Код цел и ждёт — вернуть его в игру значит
+// убрать «.later» из имени.
+//
+// Почему отложено: предметы-искусители — рычаг полной версии, а не демо
+// (docs/09-PROLOGUE.md §7, docs/14-HANDOFF.md §5). Механика в движке
+// живёт и работает: TemptationResolver подключён к голосованию, поля
+// у предмета на месте. Отложен не движок, а подача игроку.
+//
+// Что вернуть вместе с этим файлом: см. хвост файла.
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -170,3 +183,47 @@ namespace Sinbinder.UI
         }
     }
 }
+
+
+// ---------------------------------------------------------------------
+// ЧТО ВЕРНУТЬ ВМЕСТЕ С ЭТИМ ФАЙЛОМ
+//
+// 1. Убрать «.later» из имени этого файла и из
+//    Assets/Scripts/Inventory/TemptationCatalog.cs.later
+// 2. Вернуть в Assets/Scripts/Editor/DemoSceneBuilder.cs метод ниже
+//    и его вызов в Interface(): BuildTemptations(canvasGO.transform);
+// 3. Решить, откуда берутся вещи: панель читает PlayerInventory, а вещи
+//    кладёт туда сундук Марги (TrophyChest). Искусители в сундук
+//    не кладутся — там простое снаряжение из TrophyCatalog.
+//
+// Вырезанный метод сборщика, как есть:
+/*
+        /// <summary>
+        /// Восьмой рычаг: вещи, которые можно вложить в руки воину.
+        /// Панель висит всё время — искушение медленное и обратимое,
+        /// у него нет «своего момента».
+        /// </summary>
+        private static void BuildTemptations(Transform parent)
+        {
+            var panel = Panel("Искушения", parent,
+                anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
+                pivot: new Vector2(1f, 0f), size: new Vector2(520f, 268f),
+                position: new Vector2(-40f, 40f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.07f, 0.06f, 0.06f, 0.85f);
+
+            var hint = Label("Подсказка", panel, 19, TextAnchor.LowerLeft,
+                new Vector2(0f, -222f), 40f);
+
+            var rows = Panel("Вещи", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 210f),
+                position: new Vector2(0f, -14f));
+            rows.offsetMin = new Vector2(14f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-14f, rows.offsetMax.y);
+
+            var ui = panel.gameObject.AddComponent<Sinbinder.UI.TemptationPanelUI>();
+            Wire(ui, ("_rows", rows), ("_hint", hint), ("_font", UIFont()));
+        }
+*/
