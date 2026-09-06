@@ -852,6 +852,74 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
+    /// <summary>
+    /// Лестница прозрачности: кому что позволено видеть.
+    ///
+    /// Главное здесь — что четвёртая ступень заперта, а не выключена.
+    /// Выключенное однажды включают по ошибке, и тогда игрок видит очки
+    /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
+    /// нигде и никогда.
+    /// </summary>
+    static void TransparencyCheck()
+    {
+        Console.WriteLine("\n=== ПРОЗРАЧНОСТЬ: кому что видно ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        Transparency.Reset();
+
+        // Игрок, ничего не настраивавший, получает журнал: игра, которая
+        // продаёт понятный отказ, не имеет права начинаться с непонятного.
+        Check(Transparency.Level == Clarity.Log, "по умолчанию — с журналом");
+        Check(Transparency.Shows(Clarity.Icons), "значки видны");
+        Check(Transparency.Shows(Clarity.Tooltips), "подсказки видны");
+        Check(Transparency.Shows(Clarity.Log), "журнал виден");
+        Check(!Transparency.Shows(Clarity.Trace), "трассировка не видна");
+
+        // Замок: игрок не может добраться до цифр никакими настройками.
+        Check(Transparency.Set(Clarity.Trace) == Clarity.Log,
+            "просьба о трассировке зажата до журнала");
+        Check(!Transparency.Shows(Clarity.Trace), "и после просьбы не видна");
+
+        // Ступень ниже гасит то, что выше, и не гасит то, что ниже.
+        Transparency.Set(Clarity.Icons);
+        Check(Transparency.Shows(Clarity.Icons), "на первой значки видны");
+        Check(!Transparency.Shows(Clarity.Tooltips), "на первой подсказок нет");
+        Check(!Transparency.Shows(Clarity.Log), "на первой журнала нет");
+
+        Transparency.Set(Clarity.Silent);
+        Check(!Transparency.Shows(Clarity.Icons), "молча — значит молча");
+        Check(Transparency.Set((Clarity)(-5)) == Clarity.Silent,
+            "ступень ниже нуля не проваливается");
+
+        // Разработчику открыто всё.
+        Transparency.SetDeveloper(true);
+        Check(Transparency.Set(Clarity.Trace) == Clarity.Trace,
+            "разработчик доходит до трассировки");
+        Check(Transparency.Shows(Clarity.Trace), "и видит её");
+
+        // Заперев замок обратно, ступень обязана опуститься сама, иначе
+        // замок не запирает ничего.
+        Transparency.SetDeveloper(false);
+        Check(Transparency.Level <= Clarity.Log, "замок опустил ступень");
+        Check(!Transparency.Shows(Clarity.Trace), "и трассировки больше нет");
+
+        // Названия ступеней — тоже текст для игрока: без цифр.
+        foreach (Clarity c in Enum.GetValues(typeof(Clarity)))
+        {
+            string name = Transparency.Describe(c);
+            Check(!string.IsNullOrEmpty(name), $"{c}: название есть");
+            Check(!name.Any(char.IsDigit), $"{c}: название без цифр");
+        }
+
+        Transparency.Reset();
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1030,6 +1098,7 @@ static class Bench
         LeadershipCheck();
         HomecomingCheck();
         CampFocusCheck();
+        TransparencyCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

@@ -70,9 +70,15 @@ namespace Sinbinder.UI
         {
             if (string.IsNullOrEmpty(text)) return;
 
+            // История собирается всегда: она нужна рассказу после боя
+            // и разработчику, а стоит ничего. Показ — другое дело.
             _history.Add(text);
 
             if (_line == null) return;
+
+            // Третья ступень прозрачности. Игрок, выбравший меньше,
+            // журнала не видит — но и не теряет его насовсем.
+            if (!Core.Transparency.Shows(Core.Clarity.Log)) return;
 
             _pending.Enqueue(text);
             if (_showing == null) _showing = StartCoroutine(ShowRoutine());

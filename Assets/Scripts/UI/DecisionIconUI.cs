@@ -16,9 +16,13 @@ namespace Sinbinder.UI
             _iconImage.enabled = false;
         }
 
+        /// <summary>
+        /// Первая ступень прозрачности: что он решил, в момент решения.
+        /// </summary>
         public void Show(Sprite icon, float duration = 2f)
         {
             if (_iconImage == null) return;
+            if (!Core.Transparency.Shows(Core.Clarity.Icons)) return;
 
             _iconImage.sprite = icon;
             _iconImage.enabled = true;

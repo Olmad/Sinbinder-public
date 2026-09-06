@@ -186,18 +186,27 @@ namespace Sinbinder.AOS
             {
                 decision.Action = ActionType.Idle;
                 decision.TopModule = "";
-                Debug.Log($"[AOS] {warrior.DisplayName} колеблется "
-                    + $"(gap={gap:F1}, уверенность={confidence:F2})");
             }
-            else
+
+            // Четвёртая ступень прозрачности: очки, разрыв, уверенность.
+            // Игроку это не показывается никогда — и не потому, что строку
+            // забыли выключить, а потому, что ступень для него заперта
+            // (00-GDD.md §7, Core/Transparency.cs). Здесь же единственное
+            // место в игре, где цифры вообще произносятся вслух.
+            if (Core.Transparency.Shows(Core.Clarity.Trace))
             {
-                // Без пометки о приказе строка лога не даёт отличить
-                // послушание от его отсутствия: главное число игры
-                // оставалось неизмеримым.
-                Debug.Log($"[AOS] {warrior.DisplayName} выбрал {best.Key} "
-                    + $"(очки: {best.Value:F1}, gap: {gap:F1}, уверенность: {confidence:F2}, "
-                    + $"громче всех: {decision.TopModule}, "
-                    + $"приказ: {(context.HasCommand ? context.CommandType : "нет")})");
+                if (decision.Hesitated)
+                    Debug.Log($"[AOS] {warrior.DisplayName} колеблется "
+                        + $"(gap={gap:F1}, уверенность={confidence:F2})");
+                else
+                    // Без пометки о приказе строка лога не даёт отличить
+                    // послушание от его отсутствия: главное число игры
+                    // оставалось неизмеримым.
+                    Debug.Log($"[AOS] {warrior.DisplayName} выбрал {best.Key} "
+                        + $"(очки: {best.Value:F1}, gap: {gap:F1}, "
+                        + $"уверенность: {confidence:F2}, "
+                        + $"громче всех: {decision.TopModule}, "
+                        + $"приказ: {(context.HasCommand ? context.CommandType : "нет")})");
             }
 
             // Приказ отойти исполняется и бегством. Воин, побежавший от

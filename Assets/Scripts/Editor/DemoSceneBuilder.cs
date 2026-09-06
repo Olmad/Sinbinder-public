@@ -266,6 +266,11 @@ namespace Sinbinder.Utilets
             // висит, а бой под ней продолжается.
             managers.AddComponent<Core.GamePauseController>();
 
+            // Ступень прозрачности. Без него лестница из 00-GDD.md §7
+            // остаётся документом: все четыре ступени были бы включены
+            // всегда, и трассировка с очками и весами сыпалась бы игроку.
+            managers.AddComponent<Core.TransparencySettings>();
+
             // Доля 6: полторы секунды тишины на первом отказе.
             managers.AddComponent<Sinbinder.UI.RefusalSilence>();
 

@@ -74,6 +74,7 @@ namespace Sinbinder.Tests
                 Commanding();
                 Epilogue();
                 Approach();
+                Ladder();
                 TextRules();
             }
             catch (Exception e)
@@ -656,6 +657,67 @@ namespace Sinbinder.Tests
                 "открывающий кадр не открывает совет сам");
             Check(CampFocus.Reached(eye + new Vector3(3.0f, 0f, 4.8f), forward,
                     ball, CampFocus.TableReach), "подойдя, игрок стол достаёт");
+        }
+
+        /// <summary>
+        /// Лестница прозрачности (00-GDD.md §7).
+        ///
+        /// Проверяем не «выключено ли», а «заперто ли». Разница в том,
+        /// что выключенное однажды включат по ошибке — и тогда игрок
+        /// увидит очки, веса и разрыв, то есть ровно то, чего правило
+        /// «игрок не видит цифр» не допускает нигде.
+        ///
+        /// Состояние восстанавливаем: в редакторе трассировка открыта,
+        /// и отбирать её у автора после проверки нельзя.
+        /// </summary>
+        private static void Ladder()
+        {
+            var savedLevel = Transparency.Level;
+            bool savedDev = Transparency.DeveloperUnlocked;
+
+            try
+            {
+                Transparency.Reset();
+
+                Same(Transparency.Level, Clarity.Log, "по умолчанию — с журналом");
+                Check(Transparency.Shows(Clarity.Icons), "значки видны");
+                Check(Transparency.Shows(Clarity.Tooltips), "подсказки видны");
+                Check(Transparency.Shows(Clarity.Log), "журнал виден");
+                Check(!Transparency.Shows(Clarity.Trace), "трассировка игроку не видна");
+
+                Same(Transparency.Set(Clarity.Trace), Clarity.Log,
+                    "просьба о трассировке зажата до журнала");
+                Check(!Transparency.Shows(Clarity.Trace),
+                    "и после просьбы трассировки нет");
+
+                Transparency.Set(Clarity.Icons);
+                Check(Transparency.Shows(Clarity.Icons), "на первой значки видны");
+                Check(!Transparency.Shows(Clarity.Tooltips), "на первой подсказок нет");
+                Check(!Transparency.Shows(Clarity.Log), "на первой журнала нет");
+
+                Transparency.Set(Clarity.Silent);
+                Check(!Transparency.Shows(Clarity.Icons), "молча — значит молча");
+
+                Transparency.SetDeveloper(true);
+                Same(Transparency.Set(Clarity.Trace), Clarity.Trace,
+                    "разработчик доходит до трассировки");
+                Check(Transparency.Shows(Clarity.Trace), "и видит её");
+
+                // Заперев замок, ступень обязана опуститься сама.
+                Transparency.SetDeveloper(false);
+                Check(Transparency.Level <= Clarity.Log, "замок опустил ступень");
+                Check(!Transparency.Shows(Clarity.Trace), "и трассировки больше нет");
+
+                // Названия ступеней игрок читает глазами — значит без цифр.
+                foreach (Clarity c in Enum.GetValues(typeof(Clarity)))
+                    Check(!HasDigit(Transparency.Describe(c)),
+                        $"{c}: название без цифр");
+            }
+            finally
+            {
+                Transparency.SetDeveloper(savedDev);
+                Transparency.Set(savedLevel);
+            }
         }
 
         /// <summary>Состав вроде лагерного: страж, трое опытных, пятеро рядовых.</summary>

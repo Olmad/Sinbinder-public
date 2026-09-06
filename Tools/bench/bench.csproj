@@ -84,6 +84,7 @@
     <Compile Include="../../Assets/Scripts/Gameplay/Leadership.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/Homecoming.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/CampFocus.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Transparency.cs" />
   </ItemGroup>
 
 </Project>

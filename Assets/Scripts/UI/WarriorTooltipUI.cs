@@ -35,6 +35,10 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // Вторая ступень прозрачности. Игрок, выбравший только значки,
+            // причин не спрашивает — и подсказка ему не мешает.
+            if (!Core.Transparency.Shows(Core.Clarity.Tooltips)) { Hide(); return; }
+
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) return;
 
