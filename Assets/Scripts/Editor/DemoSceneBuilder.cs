@@ -412,6 +412,11 @@ namespace Sinbinder.Utilets
         {
             const int mourning = 5;
 
+            if (Fallen.Count < mourning)
+                Debug.LogWarning($"[СБОРКА] Павших названо {Fallen.Count}, "
+                               + $"а пустых палаток {mourning}: имена на колышках "
+                               + "пойдут по кругу.");
+
             var places = TentPlaces(hillCentre, hillRadius);
 
             var camp = new GameObject("Палатки");
@@ -430,7 +435,8 @@ namespace Sinbinder.Utilets
                 float yaw = Mathf.Atan2(position.x, position.z) * Mathf.Rad2Deg + 180f;
 
                 var tent = Tent(position, yaw, abandoned,
-                    abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", 1f);
+                    abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", 1f,
+                    abandoned ? Fallen.NameFor(fallen - 1) : "");
                 tent.transform.SetParent(camp.transform);
             }
 
@@ -448,7 +454,7 @@ namespace Sinbinder.Utilets
         /// не ставит нигде, и заводить их ради пяти палаток не стоит.
         /// </summary>
         private static GameObject Tent(Vector3 position, float yaw, bool abandoned,
-            string name, float size)
+            string name, float size, string fallenName = "")
         {
             var tent = GameObject.CreatePrimitive(PrimitiveType.Cube);
             tent.name = name;
@@ -461,8 +467,6 @@ namespace Sinbinder.Utilets
 
             if (!abandoned) return tent;
 
-            // Колышек: имя павшего повесить пока не на что — TextMesh требует
-            // шрифта, которого в сборщике нет. Колышек стоит, имя ждёт.
             var peg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             peg.name = "Колышек";
             peg.transform.SetParent(tent.transform.parent);
@@ -470,7 +474,49 @@ namespace Sinbinder.Utilets
             peg.transform.localScale = new Vector3(0.08f, 0.35f, 0.08f);
             peg.transform.rotation = Quaternion.Euler(9f, 0f, 5f);
 
+            PegName(peg.transform.position, fallenName);
+
             return tent;
+        }
+
+        /// <summary>
+        /// Имя павшего над колышком.
+        ///
+        /// Единственная надпись во всём мире демо, а не в интерфейсе, —
+        /// и потому единственная, ради которой заведён TextMesh. Смотрит
+        /// туда же, куда камера: обе камеры лагеря стоят к югу и глядят
+        /// на север, значит текст, не повёрнутый никак, читается сразу.
+        ///
+        /// Пустое имя — не пустая надпись, а ни одной: колышек без имени
+        /// выглядит как недоделка, а колышек с пустым текстом — как баг.
+        /// </summary>
+        private static void PegName(Vector3 pegTop, string fallenName)
+        {
+            if (string.IsNullOrEmpty(fallenName)) return;
+
+            var font = UIFont();
+            if (font == null)
+            {
+                Debug.LogWarning($"[СБОРКА] Шрифта нет — колышек «{fallenName}» "
+                               + "останется без имени.");
+                return;
+            }
+
+            var go = new GameObject($"Имя: {fallenName}");
+            go.transform.position = pegTop + new Vector3(0f, 0.42f, 0f);
+
+            var text = go.AddComponent<TextMesh>();
+            text.text = fallenName;
+            text.font = font;
+            text.fontSize = 42;
+            text.characterSize = 0.10f;
+            text.anchor = TextAnchor.LowerCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = new Color(0.78f, 0.75f, 0.70f);
+
+            // Без материала шрифта TextMesh рисует розовым «шейдер потерян».
+            var renderer = go.GetComponent<MeshRenderer>();
+            if (renderer != null) renderer.sharedMaterial = font.material;
         }
 
         /// <summary>

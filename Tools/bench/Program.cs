@@ -920,6 +920,52 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
+    /// <summary>
+    /// Имена на колышках. Пять пустых палаток — вся предыстория отряда,
+    /// и держится она на том, что имена есть, различимы и не пусты.
+    /// </summary>
+    static void FallenCheck()
+    {
+        Console.WriteLine("\n=== ПАВШИЕ: имена на колышках ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        const int mourning = 5;   // столько пустых палаток ставит сборщик
+
+        Check(Fallen.Count >= mourning, "имён хватает на все пустые палатки");
+        Check(Fallen.Names[0] == "Кир Бессонный", "Кир Бессонный стоит первым");
+
+        var seen = new HashSet<string>();
+        foreach (var name in Fallen.Names)
+        {
+            Check(!string.IsNullOrWhiteSpace(name), "имя не пустое");
+            Check(!name.Any(char.IsDigit), $"«{name}» без цифр");
+            Check(seen.Add(name), $"«{name}» не повторяется");
+        }
+
+        // Колышки просят имена по кругу и обязаны получить их все,
+        // ни одного пустого: пустой колышек в сцене никто не заметит.
+        var used = new HashSet<string>();
+        for (int i = 0; i < mourning; i++)
+        {
+            string n = Fallen.NameFor(i);
+            Check(!string.IsNullOrEmpty(n), $"колышек {i} получил имя");
+            used.Add(n);
+        }
+        Check(used.Count == mourning, "пять колышков — пять разных имён");
+
+        // Край: отрицательный и большой индекс не должны падать.
+        Check(!string.IsNullOrEmpty(Fallen.NameFor(-1)), "отрицательный индекс даёт имя");
+        Check(!string.IsNullOrEmpty(Fallen.NameFor(999)), "большой индекс даёт имя");
+
+        Console.WriteLine($"  павших названо: {Fallen.Count}");
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1099,6 +1145,7 @@ static class Bench
         HomecomingCheck();
         CampFocusCheck();
         TransparencyCheck();
+        FallenCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);
