@@ -5,6 +5,13 @@ namespace Sinbinder.Gameplay
 {
     public class SelectionManager : MonoBehaviour
     {
+
+        /// <summary>
+        /// Игрок отдал приказ: какой и скольким. Приказ — не факт, а просьба,
+        /// и услышать её должны не только воины: на «отходить» в доле 5
+        /// трубит рог, и это единственное место, где такой момент виден.
+        /// </summary>
+        public static event System.Action<CommandKind, int> OnPlayerOrder;
         public static SelectionManager Instance { get; private set; }
 
         [SerializeField] private RectTransform _selectionBox;
@@ -215,6 +222,8 @@ namespace Sinbinder.Gameplay
                     bool isFallBack = Input.GetKey(KeyCode.LeftShift)
                                    || Input.GetKey(KeyCode.RightShift);
 
+                    int given = 0;
+
                     foreach (var unit in _selectedUnits)
                     {
                         if (unit == null) continue;
@@ -225,6 +234,17 @@ namespace Sinbinder.Gameplay
                             warrior.IssueCommand(CommandKind.Attack, enemyUnit.transform.position, enemyUnit.gameObject);
                         else
                             warrior.IssueCommand(isFallBack ? CommandKind.FallBack : CommandKind.Move, hit.point);
+
+                        given++;
+                    }
+
+                    if (given > 0)
+                    {
+                        var kind = isAttackOrder ? CommandKind.Attack
+                                 : isFallBack ? CommandKind.FallBack
+                                 : CommandKind.Move;
+
+                        OnPlayerOrder?.Invoke(kind, given);
                     }
                 }
             }

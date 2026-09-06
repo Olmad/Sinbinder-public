@@ -64,7 +64,15 @@ namespace Sinbinder.Gameplay
         /// </summary>
         void Awake()
         {
-            if (_startsPrologue) SquadRoster.Clear();
+            if (!_startsPrologue) return;
+
+            SquadRoster.Clear();
+
+            // Отъезд камеры один на весь пролог, а не на сцену: его
+            // счётчик переживает смену сцен и потому обязан забываться
+            // здесь же, где забывается отряд. Иначе второй прогон демо
+            // из редактора прошёл бы вообще без единственной постановки.
+            CameraPullback.Forget();
         }
 
         void Start()

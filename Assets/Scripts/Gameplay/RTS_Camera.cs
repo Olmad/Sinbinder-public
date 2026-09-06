@@ -74,6 +74,21 @@ namespace Sinbinder.Gameplay
             _targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
         }
 
+        /// <summary>
+        /// Принять нынешнее положение камеры за своё.
+        ///
+        /// Цель ставится один раз в Awake и больше ниоткуда не берётся.
+        /// Пока камеру никто не двигал мимо этого компонента, всё сходится;
+        /// стоит кому-то отвести её самому — отъезду сцены 5, например, —
+        /// и включённая обратно камера прыгнула бы назад, на цель
+        /// полуторной давности. Поэтому тот, кто двигал, обязан сказать.
+        /// </summary>
+        public void Resync()
+        {
+            _targetPosition = transform.position;
+            if (_cam != null) _targetZoom = _cam.fieldOfView;
+        }
+
         private void SmoothMove()
         {
             transform.position = Vector3.Lerp(transform.position, _targetPosition, 0.9f);

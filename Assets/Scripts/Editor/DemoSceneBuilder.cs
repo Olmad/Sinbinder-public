@@ -135,7 +135,17 @@ namespace Sinbinder.Utilets
             Ground("Земля", 6f);
             Managers();
             BuildSalary(Interface());
-            CameraRig(new Vector3(0f, 6.5f, -11f), new Vector3(28f, 0f, 0f), movable: true);
+
+            // Сцена 5 живёт здесь: приказ отходить, отказ Каргана, побег.
+            // Рог трубит на приказ, камера отъезжает после отказа — и то
+            // и другое случается ровно по разу (docs/09-PROLOGUE.md §9).
+            var camera = CameraRig(new Vector3(0f, 6.5f, -11f),
+                                   new Vector3(28f, 0f, 0f), movable: true);
+            camera.AddComponent<CameraPullback>();
+
+            var horn = new GameObject("Рог");
+            horn.AddComponent<AudioSource>();
+            horn.AddComponent<RetreatHorn>();
 
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
@@ -291,7 +301,8 @@ namespace Sinbinder.Utilets
         /// не мелочь: край карты, до которого надо довести отряд, стоит
         /// за спиной у неподвижной камеры.
         /// </summary>
-        private static void CameraRig(Vector3 position, Vector3 euler, bool movable = false)
+        private static GameObject CameraRig(Vector3 position, Vector3 euler,
+            bool movable = false)
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
             go.transform.position = position;
@@ -306,6 +317,8 @@ namespace Sinbinder.Utilets
             go.AddComponent<AudioListener>();
 
             if (movable) go.AddComponent<RTS_Camera>();
+
+            return go;
         }
 
         private static GameObject Campfire(Vector3 position)
