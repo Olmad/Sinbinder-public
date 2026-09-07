@@ -781,6 +781,7 @@ namespace Sinbinder.Utilets
             }
 
             BuildLog(canvasGO.transform);
+            BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
             BuildHarvestHint(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
@@ -1073,6 +1074,42 @@ namespace Sinbinder.Utilets
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.HarvestHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
+        }
+
+        /// <summary>
+        /// Седьмой рычаг игрока: установка отряда.
+        ///
+        /// Движок читал её всё это время — BehaviorResolver складывает
+        /// склонность отряда с характером воина, — а тронуть её игроку
+        /// было нечем: панели не было ни в одной сцене. Рычаг существовал
+        /// в виде труб без воды, как до этого искушения.
+        ///
+        /// Стоит слева вверху и гаснет через несколько секунд после
+        /// переключения: это состояние, а не сообщение, и висеть постоянно
+        /// ему незачем.
+        /// </summary>
+        private static void BuildStrategy(Transform parent)
+        {
+            var panel = Panel("Установка отряда", parent,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(460f, 300f),
+                position: new Vector2(40f, -40f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.80f);
+
+            var group = panel.gameObject.AddComponent<CanvasGroup>();
+            group.interactable = false;
+            group.blocksRaycasts = false;   // состояние, а не кнопки
+
+            var label = Label("Строка", panel, 21, TextAnchor.UpperLeft,
+                new Vector2(0f, -14f), 272f);
+            label.color = new Color(0.88f, 0.86f, 0.82f);
+
+            // Компонент на Canvas: панель он не выключает, но гасит
+            // CanvasGroup, и держать его на ней всё равно не за чем.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.SquadStrategyUI>();
+            Wire(ui, ("_label", label), ("_group", group));
         }
 
         /// <summary>Ступень 3: журнал. Пишет словами, что и почему произошло.</summary>

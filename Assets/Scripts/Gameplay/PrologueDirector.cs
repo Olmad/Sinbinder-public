@@ -76,6 +76,11 @@ namespace Sinbinder.Gameplay
             TrophyChest.Forget();
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
+
+            // Установка отряда — тоже статика, живущая между сценами.
+            // Второй прогон демо начинался бы с той, что игрок выбрал
+            // в первом, и «по умолчанию» означало бы разное.
+            SquadOrders.Reset();
         }
 
         void Start()
