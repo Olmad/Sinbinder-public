@@ -19,6 +19,32 @@ namespace Sinbinder.Gameplay
 
         public int FadingCount => _fadingSouls.Count;
 
+        void Start()
+        {
+            // До сих пор StartSoulFade не звал никто вообще: души
+            // не начинали угасать никогда, жать было нечего, и весь слой
+            // существовал как труба без воды. Слушать смерти — работа
+            // того, кто ведёт список угасающих, а не чья-то ещё.
+            if (CombatManager.Instance != null)
+                CombatManager.Instance.OnAnyDeath += OnAnyDeath;
+            else
+                Debug.LogWarning("[ДУШИ] CombatManager в сцене нет: "
+                               + "о смертях узнать неоткуда, жать будет нечего.");
+        }
+
+        void OnDestroy()
+        {
+            if (CombatManager.Instance != null)
+                CombatManager.Instance.OnAnyDeath -= OnAnyDeath;
+        }
+
+        private void OnAnyDeath(Damageable killed, GameObject killer)
+        {
+            if (killed == null || killed.Warrior == null) return;
+
+            StartSoulFade(killed.Warrior, killed.transform.position);
+        }
+
         void Awake()
         {
             if (Instance == null)
@@ -38,6 +64,12 @@ namespace Sinbinder.Gameplay
             {
                 var soul = _fadingSouls[i];
                 soul.RemainingTime -= Time.deltaTime;
+
+                // Качество ставилось один раз, в момент смерти, и больше
+                // не менялось: собранная через минуту душа была та же,
+                // что собранная сразу. Цена промедления, расписанная
+                // в SoulDecay до последнего множителя, не наступала никогда.
+                soul.SoulQuality = Core.SoulDecay.QualityAt(soul.RemainingTime, _fadeTime);
 
                 if (soul.RemainingTime <= 0f)
                 {

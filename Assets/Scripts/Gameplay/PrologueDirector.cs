@@ -75,6 +75,7 @@ namespace Sinbinder.Gameplay
             CameraPullback.Forget();
             TrophyChest.Forget();
             UI.MovementHintUI.Forget();
+            UI.HarvestHintUI.Forget();
         }
 
         void Start()

@@ -20,6 +20,36 @@ namespace Sinbinder.Core
     /// </summary>
     public static class SoulDecay
     {
+        /// <summary>
+        /// Во что превратилась душа к этому мигу.
+        ///
+        /// Этого правила не было, и потому не работало всё остальное:
+        /// SoulManager ставил Shock в момент смерти и больше качества
+        /// не трогал ни разу. Собранная через минуту душа была та же
+        /// самая, что собранная сразу, — то есть цена промедления,
+        /// расписанная ниже до последнего множителя, не наступала никогда.
+        ///
+        /// Считается по доле оставшегося времени, а не по секундам:
+        /// сколько душа держится, решает сцена, а порядок распада один.
+        ///
+        /// Мера намеренно грубая — четыре ступени. Игрок видит не число,
+        /// а слово (<see cref="Describe"/>), и ступеней должно быть
+        /// столько, сколько он способен различить на глаз.
+        /// </summary>
+        public static SoulQuality QualityAt(float remaining, float fadeTime)
+        {
+            // Нечего делить — значит нечего и собирать.
+            if (fadeTime <= 0f) return SoulQuality.Dissolved;
+
+            float left = remaining / fadeTime;
+
+            if (left > 0.60f) return SoulQuality.Shock;
+            if (left > 0.30f) return SoulQuality.Acceptance;
+            if (left > 0.10f) return SoulQuality.Fading;
+
+            return SoulQuality.Dissolved;
+        }
+
         /// <summary>Во сколько раз тускнеют спектры при этом качестве.</summary>
         public static float SpectrumFactor(SoulQuality quality)
         {

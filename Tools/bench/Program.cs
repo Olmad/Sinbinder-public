@@ -966,6 +966,70 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
+    /// <summary>
+    /// Распад души во времени. Вторая ставка боя помимо победы — успеть.
+    ///
+    /// Правила не было вовсе, и потому не работало всё остальное:
+    /// множители спектров, память и перки расписаны подробно, а качество
+    /// стояло на Shock до самого конца.
+    /// </summary>
+    static void SoulDecayCheck()
+    {
+        Console.WriteLine("\n=== ДУША: цена промедления ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        const float fade = 60f;
+
+        Check(SoulDecay.QualityAt(fade, fade) == SoulQuality.Shock,
+            "сразу после смерти — Shock");
+        Check(SoulDecay.QualityAt(fade * 0.5f, fade) == SoulQuality.Acceptance,
+            "на половине — Acceptance");
+        Check(SoulDecay.QualityAt(fade * 0.2f, fade) == SoulQuality.Fading,
+            "к концу — Fading");
+        Check(SoulDecay.QualityAt(fade * 0.05f, fade) == SoulQuality.Dissolved,
+            "перед самым угасанием — Dissolved");
+        Check(SoulDecay.QualityAt(0f, fade) == SoulQuality.Dissolved,
+            "угасшая — Dissolved");
+
+        // Ноль в знаменателе — событие, а не Shock: душа, которой некуда
+        // угасать, не должна выглядеть свежайшей.
+        Check(SoulDecay.QualityAt(10f, 0f) == SoulQuality.Dissolved,
+            "нулевое время угасания не даёт свежую душу");
+
+        // Порядок обязан быть монотонным: чем позже пришёл, тем хуже.
+        var seen = new List<SoulQuality>();
+        for (int i = 100; i >= 0; i -= 5)
+            seen.Add(SoulDecay.QualityAt(fade * i / 100f, fade));
+
+        for (int i = 1; i < seen.Count; i++)
+            Check((int)seen[i] >= (int)seen[i - 1], "качество только падает");
+
+        // Промедление обязано стоить: множители и память различимы.
+        Check(SoulDecay.SpectrumFactor(SoulQuality.Shock)
+            > SoulDecay.SpectrumFactor(SoulQuality.Dissolved),
+            "распавшаяся душа тусклее свежей");
+        Check(SoulDecay.KeepsMemory(SoulQuality.Shock), "свежая помнит себя");
+        Check(!SoulDecay.KeepsMemory(SoulQuality.Fading), "гаснущая уже не помнит");
+        Check(!SoulDecay.KeepsPerks(SoulQuality.Dissolved), "распавшаяся без перков");
+
+        // Слова для игрока: без цифр.
+        foreach (SoulQuality q in Enum.GetValues(typeof(SoulQuality)))
+        {
+            string d = SoulDecay.Describe(q);
+            Check(!string.IsNullOrEmpty(d), $"{q}: описание есть");
+            Check(!d.Any(char.IsDigit), $"{q}: описание без цифр");
+        }
+
+        Console.WriteLine("  из шестидесяти секунд: свежая до 24-й, "
+                        + "помнит себя до 42-й, гаснет до 54-й, дальше шелуха");
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1146,6 +1210,7 @@ static class Bench
         CampFocusCheck();
         TransparencyCheck();
         FallenCheck();
+        SoulDecayCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

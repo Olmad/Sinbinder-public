@@ -242,6 +242,10 @@ namespace Sinbinder.Gameplay
             go.AddComponent<Engagement>();
             go.AddComponent<AOS.RefusalPresenter>();
 
+            // Жатва душ: сцена 4 учит ей, а научить некому, если её
+            // некому и делать. Раньше жнец висел только в тестовой сцене.
+            go.AddComponent<SoulHarvester>();
+
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Тело";
             body.transform.SetParent(go.transform);

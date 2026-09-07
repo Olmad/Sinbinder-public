@@ -1,7 +1,24 @@
+// Assets/Scripts/Gameplay/SoulHarvester.cs
 using UnityEngine;
+using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
 {
+    /// <summary>
+    /// Жатва душ. Сцена 4 пролога: первая волна Охотников — это ещё
+    /// и урок о том, что качество души зависит от того, как быстро успел
+    /// (docs/09-PROLOGUE.md §4).
+    ///
+    /// Урок держится на <see cref="SoulDecay"/>: свежая душа сохраняет
+    /// характер, память и перки, распавшаяся — почти ничего. Игрок узнаёт
+    /// это не из справки, а из того, что подобранная поздно душа названа
+    /// иначе, чем подобранная сразу.
+    ///
+    /// Раньше здесь висел OnGUI с надписью «доступно: N» — то есть игроку
+    /// показывалась цифра, чего в этой игре не бывает нигде (00-GDD.md §7).
+    /// Причём на каждом своём воине сразу: надписи рисовались одна поверх
+    /// другой. Подсказку показывает теперь одна панель на сцену, словами.
+    /// </summary>
     public class SoulHarvester : MonoBehaviour
     {
         [SerializeField] private KeyCode _harvestKey = KeyCode.E;
@@ -12,58 +29,55 @@ namespace Sinbinder.Gameplay
 
         void Start()
         {
+            // Именно свой, а не любой Warrior: проверка «компонент есть»
+            // считала бы своим и охотника, повесь его кто-нибудь на врага.
             var warrior = GetComponent<Warrior>();
-            if (warrior != null)
-            {
-                _isPlayerUnit = true;
-                Debug.Log($"[HARVESTER] SoulHarvester активирован на {warrior.DisplayName}");
-            }
+            _isPlayerUnit = warrior != null && warrior.Team == Team.Player;
         }
 
         void Update()
         {
             if (!_isPlayerUnit) return;
+
             _cooldownTimer -= Time.deltaTime;
 
             if (Input.GetKeyDown(_harvestKey) && _cooldownTimer <= 0f)
-            {
                 TryHarvest();
-            }
         }
 
         private void TryHarvest()
         {
-            if (SoulManager.Instance == null)
+            var souls = SoulManager.Instance;
+
+            if (souls == null)
             {
-                Debug.Log("[HARVESTER] SoulManager.Instance == null");
+                // Жать нечем — это событие, а не тишина: клавиша нажата,
+                // и игрок вправе знать, почему ничего не случилось.
+                Debug.LogWarning("[ЖАТВА] SoulManager в сцене нет: "
+                               + "собирать души некому.");
                 return;
             }
 
-            Debug.Log($"[HARVESTER] Попытка жатвы. Угасающих душ: {SoulManager.Instance.FadingCount}");
+            var soul = souls.TryHarvestSoul(transform.position);
 
-            var soul = SoulManager.Instance.TryHarvestSoul(transform.position);
+            // Молчим: компонент висит на каждом своём воине, и «слишком
+            // далеко» написали бы разом все, кто не дотянулся. Что к душе
+            // надо подойти, говорит подсказка — один раз и одна на сцену.
+            if (soul == null) return;
 
-            if (soul != null)
-            {
-                _cooldownTimer = _harvestCooldown;
-                SoulManager.Instance.RemoveIndicator(soul);
-                Debug.Log($"[HARVESTER] Душа собрана: {soul.Warrior.DisplayName}");
-            }
-            else
-            {
-                Debug.Log("[HARVESTER] Нет душ в радиусе");
-            }
+            _cooldownTimer = _harvestCooldown;
+            souls.RemoveIndicator(soul);
+
+            // Вот и весь урок: одно и то же действие названо по-разному
+            // в зависимости от того, насколько игрок промедлил.
+            Log($"Душа собрана: {soul.Warrior.DisplayName}. "
+              + $"{SoulDecay.Describe(soul.SoulQuality)}.");
+
+            if (soul.SoulQuality == SoulQuality.Dissolved)
+                Log("От неё осталась одна воля. Такая поднимется зомби.");
         }
 
-        void OnGUI()
-        {
-            if (!_isPlayerUnit) return;
-            int count = SoulManager.Instance != null ? SoulManager.Instance.FadingCount : 0;
-            if (count > 0)
-            {
-                GUI.Label(new Rect(Screen.width / 2 - 100, Screen.height - 50, 250, 30),
-                    $"Нажмите E для Жатвы душ (доступно: {count})");
-            }
-        }
+        private static void Log(string line)
+            => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
     }
 }

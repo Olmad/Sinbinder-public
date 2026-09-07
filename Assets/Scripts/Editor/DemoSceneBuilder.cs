@@ -314,6 +314,10 @@ namespace Sinbinder.Utilets
             // уходила в никуда, а трофеи было некуда класть.
             managers.AddComponent<Sinbinder.Inventory.PlayerInventory>();
 
+            // Угасающие души. Его не было ни в одной сцене, поэтому
+            // жатва — механика сцены 4 — не работала вовсе.
+            managers.AddComponent<SoulManager>();
+
             // Доля 6: полторы секунды тишины на первом отказе.
             managers.AddComponent<Sinbinder.UI.RefusalSilence>();
 
@@ -770,6 +774,7 @@ namespace Sinbinder.Utilets
 
             BuildLog(canvasGO.transform);
             BuildHint(canvasGO.transform);
+            BuildHarvestHint(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
             BuildDialogue(canvasGO.transform);
@@ -1019,6 +1024,27 @@ namespace Sinbinder.Utilets
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.MovementHintUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_text", line));
+        }
+
+        /// <summary>
+        /// Подсказка о жатве. Отдельной строкой выше «как ходить»: обе
+        /// живут внизу по центру, и наложиться друг на друга им нельзя.
+        /// </summary>
+        private static void BuildHarvestHint(Transform parent)
+        {
+            var panel = Panel("Как жать души", parent,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(720f, 76f),
+                position: new Vector2(0f, 280f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+
+            var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
+            line.color = new Color(0.88f, 0.86f, 0.82f);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.HarvestHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
 
