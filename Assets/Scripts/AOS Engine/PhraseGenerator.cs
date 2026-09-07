@@ -26,8 +26,18 @@ namespace Sinbinder.AOS
             string name = warrior.DisplayName;
 
             if (decision.Hesitated)
-                return $"{name} колеблется. {Noun(decision.TopContender)} и {Noun(decision.RunnerUp)} "
-                     + "тянут его почти поровну.";
+            {
+                // Когда кандидат один, BehaviourResolver кладёт его же
+                // и во второе поле (alone ? best : sorted[1]). Фраза
+                // выходила «Покой и Покой тянут его почти поровну» —
+                // игрок видит бессмыслицу вместо объяснения.
+                if (decision.RunnerUp == decision.TopContender)
+                    return $"{name} медлит. {Noun(decision.TopContender)} тянет его, "
+                         + "но не настолько, чтобы решиться.";
+
+                return $"{name} колеблется. {Noun(decision.TopContender)} и "
+                     + $"{Noun(decision.RunnerUp)} тянут его почти поровну.";
+            }
 
             string what = Verb(decision.Action, context);
             string why = Reason(warrior, context, decision);

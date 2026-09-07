@@ -8,6 +8,10 @@
 // из проекта без единой правки — значит, выводы о весах относятся
 // к его коду, а не к моей выдумке.
 using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using System.Reflection;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -1480,6 +1484,67 @@ static class Bench
 
         Console.WriteLine("\n  Разброс — это и есть «верность что-то значит».");
         Console.WriteLine("  При 2.5 он нулевой: преданный и чужой ведут себя одинаково.");
+
+        // Немонотонность: откуда. Один грех, мелкий шаг по верности.
+        Console.WriteLine("\n  --- откуда немонотонность: Гнев, шаг по верности ---");
+        Console.WriteLine($"  {"верн.",6} {"голос за",9} {"против",8} {"итог",7} "
+                        + $"{"отказов",8}  громче всех");
+
+        foreach (float loyalty in new[] { 20f, 30f, 40f, 50f, 65f, 80f, 95f })
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData("Воин", SinType.Wrath, MoralType.Neutral, 1, 70f),
+                Attack = 5f, Loyalty = loyalty, Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+            var probe = new DecisionContext
+            {
+                CurrentHP = 20f, MaxHP = 30f, NearbyEnemies = 2,
+                RelationshipWithCommander = loyalty,
+                HasCommand = true, CommandType = "FallBack", CommandIsFallBack = true,
+                IsEngaged = true, CommandLeavesFight = true,
+            };
+
+            float pro = 0f, con = 0f;
+            foreach (var mod in modules)
+            {
+                float v = mod.Evaluate(Soul.FromWarrior(w), probe, ActionType.ObeyCommand);
+                v = Math.Clamp(v, -cfg.MaxVoice, cfg.MaxVoice);
+                if (v > 0) pro += v; else con += v;
+            }
+
+            int refused = 0;
+            var mods = new Dictionary<string, int>();
+
+            for (int i = 0; i < 400; i++)
+            {
+                var r = new Random(7000 + i);
+                var ctx = new DecisionContext
+                {
+                    CurrentHP = 12f + (float)r.NextDouble() * 14f,
+                    MaxHP = 30f,
+                    NearbyEnemies = 1 + r.Next(3),
+                    NearbyLoot = r.Next(2),
+                    Fatigue = (float)r.NextDouble() * 0.6f,
+                    RelationshipWithCommander = loyalty,
+                    AllyInDanger = r.Next(3) == 0,
+                    HasCommand = true, CommandType = "FallBack", CommandIsFallBack = true,
+                    IsEngaged = true, CommandLeavesFight = true,
+                };
+                var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                if (!ctx.SatisfiedBy(d.Action) && !d.Hesitated) refused++;
+
+                string mm = string.IsNullOrEmpty(d.Module) ? "—" : d.Module;
+                mods[mm] = mods.TryGetValue(mm, out var c) ? c + 1 : 1;
+            }
+
+            var top = "—"; int bm = 0;
+            foreach (var kv in mods) if (kv.Value > bm) { bm = kv.Value; top = kv.Key; }
+
+            Console.WriteLine($"  {loyalty,6:F0} {pro,9:F1} {con,8:F1} {pro + con,7:F1} "
+                            + $"{refused * 100.0 / 400,7:F1}%  {top}");
+        }
     }
 
     /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
@@ -1563,11 +1628,66 @@ static class Bench
         return (refused / (double)runs, top);
     }
 
+    /// <summary>
+    /// Влить в конфиг значения из Resources/AOSConfig.asset.
+    ///
+    /// Стенд создавал конфиг с нуля и брал значения по умолчанию из кода,
+    /// а игра грузит ассет. Четыре поля расходились: Страх в игре втрое
+    /// громче, голос за подчинение впятеро тише. То есть весь баланс,
+    /// записанный в 12-BALANCE.md, измерялся на конфигурации, которая
+    /// в игре не запускается ни разу.
+    ///
+    /// Читаем YAML грубо, парой регулярок: формат ассета простой,
+    /// а тащить в стенд разбор Unity-сериализации незачем.
+    /// </summary>
+    static void ApplyAsset(AOSConfig cfg)
+    {
+        string path = Path.Combine("..", "..", "Assets", "Resources", "AOSConfig.asset");
+
+        if (!File.Exists(path))
+        {
+            Console.WriteLine("[СТЕНД] Resources/AOSConfig.asset не найден — "
+                            + "меряем на значениях по умолчанию из кода.");
+            return;
+        }
+
+        var text = File.ReadAllText(path);
+        var fields = typeof(AOSConfig).GetFields(BindingFlags.Public | BindingFlags.Instance);
+
+        int applied = 0, differs = 0;
+
+        foreach (var f in fields)
+        {
+            var m = Regex.Match(text, @"^  " + Regex.Escape(f.Name) + @": (-?[\d.]+)$",
+                                RegexOptions.Multiline);
+            if (!m.Success) continue;
+
+            if (f.FieldType == typeof(float))
+            {
+                float v = float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                if (Math.Abs((float)f.GetValue(cfg) - v) > 1e-6f) differs++;
+                f.SetValue(cfg, v);
+                applied++;
+            }
+            else if (f.FieldType == typeof(int))
+            {
+                int v = (int)float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                if ((int)f.GetValue(cfg) != v) differs++;
+                f.SetValue(cfg, v);
+                applied++;
+            }
+        }
+
+        Console.WriteLine($"[СТЕНД] Взято из ассета полей: {applied}, "
+                        + $"из них отличались от кода: {differs}.");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
         int n = args.Length > 0 ? int.Parse(args[0]) : 200000;
         var cfg = ScriptableObject.CreateInstance<AOSConfig>();
+        ApplyAsset(cfg);
 
         // Модули читают конфиг через Resources.Load в своих конструкторах.
         // Регистрируем наш экземпляр, иначе каждый создаст запасной

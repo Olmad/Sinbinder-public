@@ -346,6 +346,11 @@ namespace Sinbinder.Utilets
             // жатва — механика сцены 4 — не работала вовсе.
             managers.AddComponent<SoulManager>();
 
+            // Осматривает сцену на запуске и называет недостающие звенья.
+            // Заведён потому, что пять разрывов подряд нашлись вручную
+            // и по одному — а искать их надо не наугад.
+            managers.AddComponent<SceneDoctor>();
+
             // Доля 6: полторы секунды тишины на первом отказе.
             managers.AddComponent<Sinbinder.UI.RefusalSilence>();
 
