@@ -298,6 +298,37 @@ class Checker:
                 self.report(p, line_of(s, first_using),
                             'using UnityEditor стоит выше #if UNITY_EDITOR — обёртка не работает')
 
+    def singletons(self):
+        """
+        Одиночка, назначающий себя в Start.
+
+        Awake случается раньше любого Start в сцене, чей бы он ни был,
+        а порядок Start между объектами Unity не определяет никак. Значит
+        одиночка, ставящий Instance в Start, доступен другим Start
+        через раз — и не падает, а тихо оказывается null. Проверка Instance
+        != null, которая стоит почти везде, такую подписку молча пропустит.
+
+        В этом проекте так уже случилось однажды: отказ не поднимал
+        ни журнал, ни тишину, и ничего при этом не ломалось.
+        """
+        for p, s in self.src.items():
+            if 'Instance = this' not in s:
+                continue
+
+            body = strip(s)
+
+            # Границы метода ищем грубо: от заголовка до следующего
+            # объявления метода. Для этой проверки хватает.
+            for m in re.finditer(r'void\s+(Awake|Start|OnEnable)\s*\(\s*\)', body):
+                nxt = re.search(r'\n\s*(?:private|public|protected|internal|void|IEnumerator)\s',
+                                body[m.end():])
+                chunk = body[m.end(): m.end() + (nxt.start() if nxt else 4000)]
+
+                if 'Instance = this' in chunk and m.group(1) != 'Awake':
+                    self.report(p, line_of(body, m.start()),
+                                f'Instance назначается в {m.group(1)}, а не в Awake — '
+                                'другие Start увидят null через раз')
+
     def deferred(self):
         """
         Отложенные файлы: подписаны ли и не зовёт ли их живой код.
@@ -403,6 +434,7 @@ class Checker:
         self.file_names()
         self.editor_guards()
         self.input_handler()
+        self.singletons()
         self.deferred()
         self.unknown_new()
         return self.problems
