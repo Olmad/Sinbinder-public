@@ -15,8 +15,14 @@ namespace Sinbinder.Gameplay
         public static SelectionManager Instance { get; private set; }
 
         [SerializeField] private RectTransform _selectionBox;
-        [SerializeField] private LayerMask _unitLayer;
-        [SerializeField] private LayerMask _groundLayer;
+        [Tooltip("По каким слоям искать юнитов. По умолчанию по всем: "
+               + "отдельного слоя для воинов в проекте нет, а пустая маска "
+               + "означает «ни по каким» — луч не находил никого и выделение "
+               + "не работало вовсе. Что попало под луч действительно юнит, "
+               + "решает SelectionComponent, а не слой.")]
+        [SerializeField] private LayerMask _unitLayer = ~0;
+
+        [SerializeField] private LayerMask _groundLayer = ~0;
 
         private List<SelectionComponent> _selectedUnits = new();
         private List<SelectionComponent> _allUnits = new();
@@ -139,7 +145,7 @@ namespace Sinbinder.Gameplay
             Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 100f, _unitLayer))
             {
-                var unit = hit.collider.GetComponent<SelectionComponent>();
+                var unit = hit.collider.GetComponentInParent<SelectionComponent>();
                 if (unit != null)
                 {
                     if (!Input.GetKey(KeyCode.LeftShift))
@@ -213,7 +219,7 @@ namespace Sinbinder.Gameplay
                     // Раньше он шёл прямо в NavMeshAgent, минуя AOS, и
                     // исполнялся всегда — то есть подчинения как решения
                     // не существовало, а модуль Верности был мёртвым кодом.
-                    var enemyUnit = hit.collider.GetComponent<SelectionComponent>();
+                    var enemyUnit = hit.collider.GetComponentInParent<SelectionComponent>();
                     bool isAttackOrder = enemyUnit != null && !_selectedUnits.Contains(enemyUnit);
 
                     // Shift + ПКМ по земле — «отходи», а не «иди туда».

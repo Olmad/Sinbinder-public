@@ -119,16 +119,23 @@ namespace Sinbinder.Gameplay
 
             _fadingSouls.Add(fadingSoul);
 
+            // Префаба нет ни одного, и это не повод оставить душу невидимой:
+            // огонёк — единственное, чем игрок узнаёт, что забирать
+            // и откуда. Собираем сами, как и весь остальной мир демо.
+            SoulIndicator indicator = null;
+
             if (_soulIndicatorPrefab != null)
             {
                 var go = Instantiate(_soulIndicatorPrefab, position, Quaternion.identity);
-                var indicator = go.GetComponent<SoulIndicator>();
-                if (indicator != null)
-                {
-                    indicator.Initialize(fadingSoul);
-                    _indicators.Add(indicator);
-                }
+                indicator = go.GetComponent<SoulIndicator>();
+                if (indicator != null) indicator.Initialize(fadingSoul);
             }
+            else
+            {
+                indicator = SoulIndicator.Create(fadingSoul);
+            }
+
+            if (indicator != null) _indicators.Add(indicator);
 
             Debug.Log($"[SOUL] Душа {warrior.DisplayName} покинула тело. Угаснет через {_fadeTime} сек.");
         }

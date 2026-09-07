@@ -151,8 +151,12 @@ namespace Sinbinder.AOS
             var mover = GetComponent<UnitMover>();
             if (mover != null) mover.CommandMove(target.transform.position);
             float dist = Vector3.Distance(transform.position, target.transform.position);
+            // Проверка стояла ПОСЛЕ обращения: autoAttack.AttackRange
+            // читался у того, кого могло не быть. У прологовых воинов
+            // его и не было — значит на каждом решении Attack, у каждого,
+            // дважды в секунду, летело исключение.
             var autoAttack = GetComponent<AutoAttack>();
-            if (dist <= autoAttack.AttackRange && autoAttack != null)
+            if (autoAttack != null && dist <= autoAttack.AttackRange)
             {
                 autoAttack.ForceAttack(target);
                 // Если цель умерла от этой атаки – записываем деяние

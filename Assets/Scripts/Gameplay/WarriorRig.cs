@@ -50,6 +50,16 @@ namespace Sinbinder.Gameplay
 
             Require<UnitMover>(go);
 
+            // Руки. Без AutoAttack воин не может ударить вообще: и приказ
+            // «атаковать», и собственное решение Attack ищут этот компонент.
+            Require<AutoAttack>(go);
+
+            // И то, без чего игра не игра: возможность его выделить.
+            // Без SelectionComponent игрок не может выбрать никого, а значит
+            // не может отдать ни одного приказа — то есть «отдай приказ,
+            // посмотри, послушают ли» не начинается.
+            Require<SelectionComponent>(go);
+
             // Пол боя и цена приказа (docs/11-MISSING.md §2.3).
             Require<Fatigue>(go);
             Require<Engagement>(go);
