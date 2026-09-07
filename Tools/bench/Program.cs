@@ -1233,6 +1233,8 @@ static class Bench
                 + (reasons.Count >= 4 ? "  ← хватает на скриншот" : "  ← сливаются"));
         }
 
+        ObedienceOrPanic(modules, cfg);
+
         // --- работает ли рычаг ---
         Console.WriteLine("\n  --- Предотвратим ли отказ? Долг Марги ---");
         Console.WriteLine($"  {"долг",-6} {"отказов",8}  причина");
@@ -1257,6 +1259,227 @@ static class Bench
         Console.WriteLine(lever >= 0.15
             ? "  ВЫВОД: рычаг настоящий — заплатив, игрок правда меняет исход."
             : "  ВЫВОД: рычаг слаб. Демо обещает власть, которой у игрока нет.");
+    }
+
+    /// <summary>
+    /// Чем на самом деле кончается приказ отходить: какое действие
+    /// выбрано и какой модуль его протолкнул.
+    ///
+    /// Нужно, чтобы отличить подчинение от совпадения. Приказ «отходить»
+    /// исполняется действием Flee — тем же, которое выбирает Страх,
+    /// когда ему просто страшно. Значит по одному «послушался» нельзя
+    /// сказать, послушался он или сбежал.
+    /// </summary>
+    static void ObedienceOrPanic(List<IPersonalityModule> modules, AOSConfig cfg)
+    {
+        Console.WriteLine("\n  --- подчинение или совпадение? ---");
+        Console.WriteLine($"  {"кто",-8} {"грех",-9} {"действие",-12} {"громче всех",-10} доля");
+
+        var camp = new (string Name, SinType Sin, MoralType Moral, float I, float L, int U)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f, 0),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f, 0),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f, 3),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f, 0),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f, 0),
+        };
+
+        foreach (var m in camp)
+        {
+            var actions = new Dictionary<ActionType, int>();
+            var mods = new Dictionary<string, int>();
+
+            for (int i = 0; i < 600; i++)
+            {
+                var r = new Random(7000 + i);
+                var w = new Warrior
+                {
+                    Soul = new SoulData("Воин", m.Sin, m.Moral, 1, m.I),
+                    Attack = 5f, Loyalty = m.L, Team = Team.Player,
+                    Relationships = new RelationshipSystem(),
+                };
+                var ctx = new DecisionContext
+                {
+                    CurrentHP = 12f + (float)r.NextDouble() * 10f,
+                    MaxHP = 30f,
+                    NearbyEnemies = 1 + r.Next(3),
+                    NearbyLoot = 0,
+                    Fatigue = (float)r.NextDouble() * 0.6f,
+                    UnpaidMissions = m.U,
+                    RelationshipWithCommander = m.L,
+                    HasCommand = true,
+                    CommandType = "FallBack",
+                    CommandIsFallBack = true,
+                };
+
+                var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                actions[d.Action] = actions.TryGetValue(d.Action, out var a) ? a + 1 : 1;
+                string mod = string.IsNullOrEmpty(d.Module) ? "—" : d.Module;
+                mods[mod] = mods.TryGetValue(mod, out var c) ? c + 1 : 1;
+            }
+
+            var topAction = ActionType.Idle; int ba = 0;
+            foreach (var kv in actions) if (kv.Value > ba) { ba = kv.Value; topAction = kv.Key; }
+
+            var topMod = "—"; int bm = 0;
+            foreach (var kv in mods) if (kv.Value > bm) { bm = kv.Value; topMod = kv.Key; }
+
+            Console.WriteLine($"  {m.Name,-8} {m.Sin,-9} {topAction,-12} {topMod,-10} "
+                            + $"{ba * 100.0 / 600,5:F1}%");
+        }
+
+        // Кто и насколько громко голосует за само подчинение.
+        Console.WriteLine("\n  --- голоса ЗА и ПРОТИВ подчинения ---");
+        Console.WriteLine($"  {"грех",-10} {"верность",9} {"голос Loyalty",14} "
+                        + $"{"против него",12}  перевесит?");
+
+        foreach (SinType sin in new[] { SinType.Pride, SinType.Wrath, SinType.Sloth,
+                                        SinType.Greed, SinType.Envy, SinType.Lust })
+        foreach (float loyalty in new[] { 30f, 65f, 95f })
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData("Воин", sin, MoralType.Neutral, 1, 80f),
+                Attack = 5f, Loyalty = loyalty, Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+            var ctx = new DecisionContext
+            {
+                CurrentHP = 20f, MaxHP = 30f, NearbyEnemies = 2, NearbyLoot = 0,
+                UnpaidMissions = 0, RelationshipWithCommander = loyalty,
+                HasCommand = true, CommandType = "FallBack", CommandIsFallBack = true,
+            };
+
+            float pro = 0f, con = 0f;
+            foreach (var mod in modules)
+            {
+                float v = mod.Evaluate(Soul.FromWarrior(w), ctx, ActionType.ObeyCommand);
+                v = Math.Clamp(v, -cfg.MaxVoice, cfg.MaxVoice);
+                if (v > 0) pro += v; else con += v;
+            }
+
+            if (loyalty == 65f)
+                Console.WriteLine($"  {sin,-10} {loyalty,9:F0} {pro,14:F1} {con,12:F1}"
+                                + $"  {(pro + con > 0 ? "подчинится" : "откажется")}");
+        }
+
+        LoyaltySweep(modules, cfg);
+    }
+
+    /// <summary>
+    /// Что будет, если голос за подчинение перестанет упираться в потолок.
+    ///
+    /// Множитель 2.5 при потолке 80 означает, что верность выше 32 не значит
+    /// ничего: и преданный, и почти чужой звучат одинаково громко. Мерим,
+    /// с какого множителя верность снова начинает быть шкалой, а грех —
+    /// иметь шанс.
+    /// </summary>
+    static void LoyaltySweep(List<IPersonalityModule> modules, AOSConfig cfg)
+    {
+        Console.WriteLine("\n  --- цена приказа: сцеплен ли воин ближним боем ---");
+        Console.WriteLine($"  {"положение",-22} {"голос за",9} {"против",9}  итог");
+
+        foreach (var (engaged, label) in new[]
+                 {
+                     (false, "свободен"),
+                     (true,  "сцеплен, приказ уводит"),
+                 })
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData("Воин", SinType.Wrath, MoralType.Neutral, 1, 80f),
+                Attack = 5f, Loyalty = 65f, Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+            var ctx = new DecisionContext
+            {
+                CurrentHP = 20f, MaxHP = 30f, NearbyEnemies = 2,
+                RelationshipWithCommander = 65f,
+                HasCommand = true, CommandType = "FallBack", CommandIsFallBack = true,
+                IsEngaged = engaged, CommandLeavesFight = engaged,
+            };
+
+            float pro = 0f, con = 0f;
+            foreach (var mod in modules)
+            {
+                float v = mod.Evaluate(Soul.FromWarrior(w), ctx, ActionType.ObeyCommand);
+                v = Math.Clamp(v, -cfg.MaxVoice, cfg.MaxVoice);
+                if (v > 0) pro += v; else con += v;
+            }
+
+            Console.WriteLine($"  {label,-22} {pro,9:F1} {con,9:F1}  {pro + con,6:F1}");
+        }
+
+        Console.WriteLine("\n  --- если опустить множитель верности (воин сцеплен) ---");
+        Console.WriteLine($"  {"множ.",6} {"верн.30",9} {"верн.65",9} {"верн.95",9}"
+                        + $" {"разброс",9}  отказов всего");
+
+        float saved = cfg.LoyaltyObeySinMultiplier;
+
+        foreach (float mult in new[] { 2.5f, 1.6f, 1.0f, 0.8f, 0.6f })
+        {
+            cfg.LoyaltyObeySinMultiplier = mult;
+
+            var rates = new List<double>();
+            double all = 0;
+
+            foreach (float loyalty in new[] { 30f, 65f, 95f })
+            {
+                int refused = 0;
+                const int runs = 600;
+
+                for (int i = 0; i < runs; i++)
+                {
+                    var r = new Random(7000 + i);
+                    var sin = (SinType)(i % 7);
+
+                    var w = new Warrior
+                    {
+                        Soul = new SoulData("Воин", sin, MoralType.Neutral, 1,
+                                            50f + (float)r.NextDouble() * 45f),
+                        Attack = 5f, Loyalty = loyalty, Team = Team.Player,
+                        Relationships = new RelationshipSystem(),
+                    };
+                    var ctx = new DecisionContext
+                    {
+                        CurrentHP = 12f + (float)r.NextDouble() * 14f,
+                        MaxHP = 30f,
+                        NearbyEnemies = 1 + r.Next(3),
+                        NearbyLoot = r.Next(2),
+                        Fatigue = (float)r.NextDouble() * 0.6f,
+                        RelationshipWithCommander = loyalty,
+                        AllyInDanger = r.Next(3) == 0,
+                        HasCommand = true,
+                        CommandType = "FallBack",
+                        CommandIsFallBack = true,
+
+                        // Приказ отходить имеет цену только для того, кто
+                        // уже сцеплен: уйти — значит подставить спину.
+                        // Без этого мерилась бы обстановка, в которой
+                        // приказ бесплатен, а таких в сцене 5 не бывает.
+                        IsEngaged = true,
+                        CommandLeavesFight = true,
+                    };
+
+                    var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                    if (!ctx.SatisfiedBy(d.Action) && !d.Hesitated) refused++;
+                }
+
+                double rate = refused / (double)runs;
+                rates.Add(rate);
+                all += rate;
+            }
+
+            double spread = rates.Max() - rates.Min();
+            Console.WriteLine($"  {mult,6:F1} {rates[0] * 100,8:F1}% {rates[1] * 100,8:F1}%"
+                            + $" {rates[2] * 100,8:F1}% {spread * 100,8:F1}п.п."
+                            + $"  {all / 3 * 100,6:F1}%");
+        }
+
+        cfg.LoyaltyObeySinMultiplier = saved;
+
+        Console.WriteLine("\n  Разброс — это и есть «верность что-то значит».");
+        Console.WriteLine("  При 2.5 он нулевой: преданный и чужой ведут себя одинаково.");
     }
 
     /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
