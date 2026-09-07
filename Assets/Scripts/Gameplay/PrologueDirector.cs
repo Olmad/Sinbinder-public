@@ -42,6 +42,16 @@ namespace Sinbinder.Gameplay
                + "на первой доле — остальные обязаны получить выживших.")]
         [SerializeField] private bool _startsPrologue;
 
+        [Tooltip("Последняя доля: через сколько секунд показать эпилог. "
+               + "Ноль — доля кончается не по времени. Нужен склепу: боя "
+               + "там больше нет (сцены 6 и 7 вырезаны), а конец доли "
+               + "прежде вёл именно конец боя.")]
+        [SerializeField] private float _endsAfterSeconds;
+
+        [Tooltip("Что сказать, входя в последнюю долю. Пусто — молча.")]
+        [TextArea(1, 3)]
+        [SerializeField] private string _arrivalLine = "";
+
         [Tooltip("Сколько лагерь ждёт чужого слова после назначения старшего. "
                + "Сцену 3 — тревогу шара — ведёт CrystalBall, и уводит лагерь "
                + "тоже он. Этот срок нужен на случай, когда вести некому: "
@@ -87,6 +97,9 @@ namespace Sinbinder.Gameplay
         {
             if (CombatManager.Instance != null)
                 CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
+
+            if (!string.IsNullOrEmpty(_arrivalLine))
+                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_arrivalLine);
         }
 
         void OnDestroy()
@@ -104,6 +117,17 @@ namespace Sinbinder.Gameplay
         void Update()
         {
             if (_leaving || _waitForBattle || _waitForEscape) return;
+
+            // Последняя доля кончается по времени: игрок входит в склеп,
+            // осматривается, и входит отряд. Ждать здесь нечего и некого.
+            if (_endsAfterSeconds > 0f)
+            {
+                _sinceCommander += Time.unscaledDeltaTime;
+                if (_sinceCommander < _endsAfterSeconds) return;
+
+                Leave("");
+                return;
+            }
 
             // Лагерь: старший назначен — начинается сцена 3, и ведёт её шар.
             if (string.IsNullOrEmpty(SquadRoster.CommanderName)) return;

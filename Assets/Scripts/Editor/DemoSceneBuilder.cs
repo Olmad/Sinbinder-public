@@ -45,7 +45,6 @@ namespace Sinbinder.Utilets
 
             BuildCamp();
             BuildRaid();
-            BuildEscape();
             BuildCryptEntrance();
 
             StartFromCamp();
@@ -196,39 +195,16 @@ namespace Sinbinder.Utilets
             // не полагается перебить, полагается унести от неё ноги.
             // Охотники идут с севера, значит бежать — на юг, за холм.
             Escape(new Vector3(0f, 0f, -25f), radius: 6f, openAtStart: false);
-            Director("Prologue_Escape", waitForBattle: false, waitForEscape: true);
+
+            // Прямо в склеп: сцены 6 и 7 сценария вырезаны из демо
+            // (docs/09-PROLOGUE.md §10). Ни та ни другая не добавляли
+            // механики — прогулка с разговорами и ещё один бой, — а тридцать
+            // минут до расплаты доходило меньшинство.
+            Director("Crypt_Entrance", waitForBattle: false, waitForEscape: true);
 
             Save(scene, "Prologue_Raid");
         }
 
-        /// <summary>
-        /// Побег. Тёплого света больше нет — дальше только холод
-        /// (пролог §4.6), и это единственное, чем сцена отличается
-        /// от предыдущей по свету.
-        /// </summary>
-        private static void BuildEscape()
-        {
-            var scene = NewScene();
-            Atmosphere(warm: false);
-            Ground("Дорога", 8f);
-            Managers();
-
-            var escapeCanvas = Interface();
-            BuildSalary(escapeCanvas);
-            BuildTitle(escapeCanvas, "Не командуй. Искушай.");
-
-            CameraRig(new Vector3(0f, 5.5f, -12f), new Vector3(24f, 0f, 0f), movable: true);
-
-            var squad = new GameObject("Отряд");
-            squad.transform.position = Vector3.zero;
-            squad.AddComponent<PrologueCampSpawner>();
-
-            // Погоня отстаёт, но идёт: охотников больше, чем было в лагере.
-            Hunters(new Vector3(0f, 0f, 16f), Vector3.zero, count: 6, width: 10f);
-            Director("Crypt_Entrance", waitForBattle: true);
-
-            Save(scene, "Prologue_Escape");
-        }
 
         /// <summary>Бой у входа в склеп — чужого, найденного, а не родового.</summary>
         private static void BuildCryptEntrance()
@@ -255,10 +231,15 @@ namespace Sinbinder.Utilets
             squad.transform.position = new Vector3(0f, 0f, -2f);
             squad.AddComponent<PrologueCampSpawner>();
 
-            Hunters(new Vector3(0f, 0f, 5f), Vector3.zero, count: 4, width: 6f);
-
-            // Последняя доля: дальше не сцена, а список тех, кто дошёл.
-            Director(null, waitForBattle: true);
+            // Боя здесь больше нет: сцена 7 сценария вырезана вместе
+            // со сценой 6. Склеп остался ради того единственного, ради чего
+            // он в демо и был, — эпилога: игрок входит, и следом входит
+            // отряд, отправленный полчаса назад.
+            //
+            // Врагов нет, значит и ждать конца боя нечего: доля кончается
+            // по времени, и следом показывается эпилог — кто вернулся.
+            Director(null, waitForBattle: false, endsAfterSeconds: 14f,
+                arrivalLine: "Пустой трон. Алтарь. Замурованный гроб в нише.");
 
             Save(scene, "Crypt_Entrance");
         }
@@ -826,7 +807,8 @@ namespace Sinbinder.Utilets
         /// Без него четыре сцены остаются четырьмя тестами.
         /// </summary>
         private static void Director(string nextScene, bool waitForBattle,
-            bool startsPrologue = false, bool waitForEscape = false)
+            bool startsPrologue = false, bool waitForEscape = false,
+            float endsAfterSeconds = 0f, string arrivalLine = "")
         {
             var go = new GameObject("Ведущий пролога");
             var director = go.AddComponent<PrologueDirector>();
@@ -836,6 +818,8 @@ namespace Sinbinder.Utilets
             so.FindProperty("_waitForBattle").boolValue = waitForBattle;
             so.FindProperty("_waitForEscape").boolValue = waitForEscape;
             so.FindProperty("_startsPrologue").boolValue = startsPrologue;
+            so.FindProperty("_endsAfterSeconds").floatValue = endsAfterSeconds;
+            so.FindProperty("_arrivalLine").stringValue = arrivalLine;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
