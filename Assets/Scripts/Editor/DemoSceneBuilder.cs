@@ -213,7 +213,11 @@ namespace Sinbinder.Utilets
             BuildSalary(canvas);
             BuildDemoEnd(canvas);
 
-            CameraRig(new Vector3(0f, 4.5f, -10f), new Vector3(22f, 0f, 0f));
+            // Подвижная, как и в трёх других сценах: управление, которое
+            // работает везде кроме одного места, читается как поломка,
+            // а не как замысел.
+            CameraRig(new Vector3(0f, 4.5f, -10f), new Vector3(22f, 0f, 0f),
+                      movable: true);
 
             CryptGate(new Vector3(0f, 0f, 8f));
 
@@ -742,6 +746,7 @@ namespace Sinbinder.Utilets
             }
 
             BuildLog(canvasGO.transform);
+            BuildHint(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
             BuildDialogue(canvasGO.transform);
@@ -967,6 +972,29 @@ namespace Sinbinder.Utilets
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.DialogueUI>();
             Wire(ui, ("_dialoguePanel", panel.gameObject),
                      ("_speakerNameText", speaker), ("_dialogueText", line));
+        }
+
+        /// <summary>
+        /// Подсказка «как ходить». Компонент висит на Canvas, а не на самой
+        /// панели: в Start он панель выключает, а выключенный объект
+        /// не крутит Update — и неподвижность отслеживать было бы нечем.
+        /// На этом уже обожглись дважды, диалог и военный совет.
+        /// </summary>
+        private static void BuildHint(Transform parent)
+        {
+            var panel = Panel("Как ходить", parent,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 76f),
+                position: new Vector2(0f, 190f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+
+            var line = Label("Строка", panel, 26, TextAnchor.MiddleCenter);
+            line.color = new Color(0.88f, 0.86f, 0.82f);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.MovementHintUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
 
         /// <summary>Ступень 3: журнал. Пишет словами, что и почему произошло.</summary>

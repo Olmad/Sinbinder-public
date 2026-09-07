@@ -74,6 +74,7 @@ namespace Sinbinder.Gameplay
             // из редактора прошёл бы вообще без единственной постановки.
             CameraPullback.Forget();
             TrophyChest.Forget();
+            UI.MovementHintUI.Forget();
         }
 
         void Start()
