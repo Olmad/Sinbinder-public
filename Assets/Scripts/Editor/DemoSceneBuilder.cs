@@ -294,6 +294,20 @@ namespace Sinbinder.Utilets
             ground.name = name;
             ground.transform.position = Vector3.zero;
             ground.transform.localScale = new Vector3(scale, 1f, scale);
+
+            // Поверхность навигации. Без неё агент — мёртвый груз:
+            // SetDestination не находит, куда идти, и воин стоит. Навмеша
+            // в собранных сценах не было вовсе, поэтому в демо не двигался
+            // никто — охотники не доходили до лагеря, а на побеге до края
+            // карты было некого доводить, и сцена вставала намертво.
+            //
+            // Печём при запуске, а не храним ассетом: хранимые данные надо
+            // не забыть пересобрать после каждой правки геометрии, а забыть
+            // это ровно тот вид ошибки, который здесь ловят всем проектом —
+            // молчаливый. Земля плоская, выпечка стоит доли секунды.
+            var surface = ground.AddComponent<Unity.AI.Navigation.NavMeshSurface>();
+            surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
+            ground.AddComponent<GroundNavMesh>();
         }
 
         /// <summary>

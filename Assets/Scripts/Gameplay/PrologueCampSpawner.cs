@@ -52,7 +52,14 @@ namespace Sinbinder.Gameplay
             // Навыки разведены так, чтобы уводили по-разному, но все трое
             // проходили порог миссии доли 3 в пять человек.
             new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f),
-            new("Мара Сквалыга",       SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f),
+            // Долг в три вылазки — не случайность, а завязка. Строка, которой
+            // игра продаётся дословно («ему не платили третью вылазку подряд»),
+            // рождается только при долге больше двух, а демо заводило всех
+            // с нулём: флагманская реплика была недостижима структурно.
+            // Отряду задолжали до пробуждения — тем же приёмом, что и пять
+            // пустых палаток: лагерь жил до того, как игрок открыл глаза.
+            new("Марга Копатель",      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
+                unpaid: 3),
             new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, 25f),
 
             // Рядовые. Повести отряд могут, но уведут троих — на миссию
@@ -107,9 +114,19 @@ namespace Sinbinder.Gameplay
             /// <summary>Почему старшим его не поставить. Пусто — можно.</summary>
             public readonly string Unavailable;
 
+            /// <summary>
+            /// Сколько вылазок ему не заплатили до начала пролога.
+            ///
+            /// Ноль у всех, кроме одного, и это не мелочь: Жадность
+            /// начинает роптать после второй невыплаты, а строка,
+            /// которой игра продаётся дословно, рождается после третьей.
+            /// С нулём у всех она была недостижима за всё демо.
+            /// </summary>
+            public readonly int Unpaid;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
-                string unavailable = "")
+                string unavailable = "", int unpaid = 0)
             {
                 Name = name;
                 Sin = sin;
@@ -118,6 +135,7 @@ namespace Sinbinder.Gameplay
                 Loyalty = loyalty;
                 Leadership = leadership;
                 Unavailable = unavailable;
+                Unpaid = unpaid;
             }
         }
 
@@ -192,7 +210,7 @@ namespace Sinbinder.Gameplay
                     Moral = m.Moral,
                     Intensity = m.Intensity,
                     Loyalty = m.Loyalty,
-                    UnpaidMissions = 0,
+                    UnpaidMissions = m.Unpaid,
 
                     // Опытные помечены кандидатами, но командиром пока
                     // никто: до военного совета доли 3 отряд идёт без старшего.
@@ -233,20 +251,11 @@ namespace Sinbinder.Gameplay
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
 
-            var damageable = go.AddComponent<Damageable>();
-
-            // Первая ступень прозрачности: значок намерения над головой
-            // и полоса здоровья. Собиралось это только в UnitFactory,
-            // которым пролог не пользуется, — и лестница начиналась
-            // со второй ступени, а главный кадр игры был неснимаем.
-            UI.OverheadBuilder.Attach(go, damageable);
-
-            // Пол боя и цена приказа, список из docs/11-MISSING.md §2.3.
-            // Без RefusalPresenter отказ — главный продукт демо — происходит,
-            // но игрок его не видит: некому сменить значок и выдержать паузу.
-            go.AddComponent<Fatigue>();
-            go.AddComponent<Engagement>();
-            go.AddComponent<AOS.RefusalPresenter>();
+            // Ноги, урон, усталость, значок над головой — всё общее сразу.
+            // Собиралось это только в UnitFactory, которым пролог
+            // не пользуется: воины выходили без агента и не могли сделать
+            // ни шага, а без значка не работала первая ступень лестницы.
+            WarriorRig.Attach(go);
 
             // Жатва душ: сцена 4 учит ей, а научить некому, если её
             // некому и делать. Раньше жнец висел только в тестовой сцене.
