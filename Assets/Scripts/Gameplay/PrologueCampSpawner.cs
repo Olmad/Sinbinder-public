@@ -246,6 +246,10 @@ namespace Sinbinder.Gameplay
             // некому и делать. Раньше жнец висел только в тестовой сцене.
             go.AddComponent<SoulHarvester>();
 
+            // И вторая половина того же урока: собранную душу надо во что-то
+            // вложить, иначе жатва — просто исчезновение трупа.
+            go.AddComponent<SoulBinding>();
+
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Тело";
             body.transform.SetParent(go.transform);

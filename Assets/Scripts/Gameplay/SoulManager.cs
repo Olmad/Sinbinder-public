@@ -19,6 +19,31 @@ namespace Sinbinder.Gameplay
 
         public int FadingCount => _fadingSouls.Count;
 
+        private readonly List<Core.SoulData> _harvested = new();
+
+        /// <summary>
+        /// Собранные души, ждущие тела.
+        ///
+        /// Раньше собранная душа просто исчезала: TryHarvestSoul убирал её
+        /// из списка угасающих, писал строчку в лог и возвращал — а держать
+        /// её было негде. Жатва не давала ничего, и связывать было нечего.
+        ///
+        /// Кладём сюда уже с потерями: <see cref="Core.SoulDecay.Harvest"/>
+        /// снимает копию по качеству, и промедление оседает в самой душе,
+        /// а не в отдельном поле, которое можно забыть прочитать.
+        /// </summary>
+        public IReadOnlyList<Core.SoulData> Harvested => _harvested;
+
+        /// <summary>Забрать душу под связывание. Первая собранная уходит первой.</summary>
+        public Core.SoulData TakeHarvested()
+        {
+            if (_harvested.Count == 0) return null;
+
+            var soul = _harvested[0];
+            _harvested.RemoveAt(0);
+            return soul;
+        }
+
         void Start()
         {
             // До сих пор StartSoulFade не звал никто вообще: души
@@ -126,6 +151,11 @@ namespace Sinbinder.Gameplay
             if (closest != null)
             {
                 _fadingSouls.Remove(closest);
+
+                // Копия с потерями по качеству. Оригинал остаётся у мертвеца:
+                // мы забираем не его, а то, что от него осталось.
+                var kept = Core.SoulDecay.Harvest(closest.Warrior.Soul, closest.SoulQuality);
+                if (kept != null) _harvested.Add(kept);
                 Debug.Log($"[SOUL] Душа {closest.Warrior.DisplayName} собрана! Осталось угасающих: {_fadingSouls.Count}");
                 OnSoulHarvested?.Invoke(closest);
                 return closest;
