@@ -36,8 +36,9 @@ namespace Sinbinder.Gameplay
                + "кто её выпустит.")]
         [SerializeField] private bool _openAtStart = true;
 
-        [Tooltip("Через сколько круг откроется сам, если его никто не открыл. "
-               + "Запирать демо навсегда нельзя ни при какой ошибке сборки.")]
+        [Tooltip("Через сколько секунд ПОСЛЕ НАЧАЛА СЦЕНЫ круг откроется сам, "
+               + "если его никто не открыл. Запирать демо навсегда нельзя "
+               + "ни при какой ошибке сборки.")]
         [SerializeField] private float _opensAnyway = 180f;
 
         /// <summary>Зона в сцене одна.</summary>
@@ -66,6 +67,7 @@ namespace Sinbinder.Gameplay
         private float _leftAt = -1f;
         private float _nextPoll;
         private bool _warned;
+        private float _sceneStarted;
 
         void Awake()
         {
@@ -77,6 +79,12 @@ namespace Sinbinder.Gameplay
             _escapedNames.Clear();
 
             Open = _openAtStart;
+
+            // Именно от начала сцены, а не от запуска игры: Time.time
+            // между сценами не сбрасывается, и предохранитель сработал бы
+            // сразу — стоило игроку провести в лагере три минуты, что
+            // с советом, сундуком и тревогой более чем возможно.
+            _sceneStarted = Time.time;
         }
 
         /// <summary>
@@ -117,7 +125,7 @@ namespace Sinbinder.Gameplay
                 // Открыть должен был кто-то другой. Не открыл — открываем
                 // сами и говорим об этом: запертое навсегда демо хуже
                 // сцены, сыгранной не по порядку.
-                if (_opensAnyway > 0f && Time.time >= _opensAnyway)
+                if (_opensAnyway > 0f && Time.time - _sceneStarted >= _opensAnyway)
                 {
                     Debug.LogWarning("[ПОБЕГ] Край никто не открыл — открываем сами.");
                     Arm();

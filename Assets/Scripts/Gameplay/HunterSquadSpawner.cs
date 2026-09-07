@@ -106,8 +106,22 @@ namespace Sinbinder.Gameplay
 
             _relSystem = new Core.RelationshipSystem(AOS.MemoryProcessor.Instance);
 
+            var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
+
             for (int i = 0; i < _count; i++)
-                SpawnHunter(i);
+            {
+                var hunter = SpawnHunter(i);
+
+                // Вторая волна выходит посреди боя, когда AOSSceneSetup
+                // свою работу давно сделал. Без этого вызова она осталась
+                // бы без AOSWarriorWrapper — шесть тел, которые не думают
+                // и ни за что не голосуют.
+                if (setup != null && hunter != null) setup.SetupWarrior(hunter.gameObject);
+            }
+
+            if (setup == null)
+                Debug.LogWarning("[ПРОЛОГ] AOSSceneSetup в сцене нет: "
+                               + "охотники выйдут без движка решений.");
 
             if (!string.IsNullOrEmpty(_announce))
                 Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_announce);
