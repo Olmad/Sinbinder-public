@@ -142,7 +142,10 @@ namespace Sinbinder.Utilets
             Atmosphere(warm: true);
             Ground("Земля", 6f);
             Managers();
-            BuildSalary(Interface());
+
+            var raidCanvas = Interface();
+            BuildSalary(raidCanvas);
+            BuildTitle(raidCanvas, "Лагерь знали не только свои.");
 
             // Сцена 5 живёт здесь: приказ отходить, отказ Каргана, побег.
             // Рог трубит на приказ, камера отъезжает после отказа — и то
@@ -203,7 +206,11 @@ namespace Sinbinder.Utilets
             Atmosphere(warm: false);
             Ground("Дорога", 8f);
             Managers();
-            BuildSalary(Interface());
+
+            var escapeCanvas = Interface();
+            BuildSalary(escapeCanvas);
+            BuildTitle(escapeCanvas, "Не командуй. Искушай.");
+
             CameraRig(new Vector3(0f, 5.5f, -12f), new Vector3(24f, 0f, 0f), movable: true);
 
             var squad = new GameObject("Отряд");
@@ -228,6 +235,7 @@ namespace Sinbinder.Utilets
             var canvas = Interface();
             BuildSalary(canvas);
             BuildDemoEnd(canvas);
+            BuildTitle(canvas, "Кто-то уже занял этот склеп.");
 
             // Подвижная, как и в трёх других сценах: управление, которое
             // работает везде кроме одного места, читается как поломка,
@@ -850,7 +858,19 @@ namespace Sinbinder.Utilets
         /// и лежит поверх всего остального — до первого кадра игры игрок
         /// не должен видеть ни журнала, ни подсказок.
         /// </summary>
-        private static void BuildTitle(Transform parent)
+        /// <summary>
+        /// Полноэкранная строка на три секунды. Приём §9.4: «текст крупно
+        /// и редко, четыре полноэкранные строки на весь пролог».
+        ///
+        /// Четыре — это по одной на сцену. Стояла одна, в лагере, и приём
+        /// из-за этого не читался как приём: единственная строка выглядит
+        /// заставкой, а четыре — ритмом.
+        ///
+        /// Слова — работа автора. Две из них канон («Греху всё равно, чьё
+        /// это тело», «Не командуй. Искушай.»), две другие поставлены
+        /// облаком и меняются одной строкой в инспекторе.
+        /// </summary>
+        private static void BuildTitle(Transform parent, string text = null)
         {
             var panel = Panel("Заставка", parent,
                 anchorMin: Vector2.zero, anchorMax: Vector2.one,
@@ -868,6 +888,13 @@ namespace Sinbinder.Utilets
 
             var ui = panel.gameObject.AddComponent<Sinbinder.UI.PrologueTitleUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_group", group), ("_line", line));
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                var so = new SerializedObject(ui);
+                so.FindProperty("_text").stringValue = text;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
         }
 
 

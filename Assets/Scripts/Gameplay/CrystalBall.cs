@@ -57,6 +57,13 @@ namespace Sinbinder.Gameplay
                + "уходит в разгром.")]
         [SerializeField] private float _watchSeconds = 6f;
 
+        [Tooltip("Сколько отрядов гаснет на глазах. По сценарию их три: "
+               + "два уже были в пути, третий игрок отправил сам.")]
+        [SerializeField] private int _squadsOut = 3;
+
+        [Tooltip("Сколько длится гибель одного отряда: вспышка и провал.")]
+        [SerializeField] private float _outSeconds = 1.5f;
+
         public bool IsAlarmed { get; private set; }
 
         /// <summary>
@@ -77,6 +84,7 @@ namespace Sinbinder.Gameplay
         private Transform _eye;
         private bool _sequenceStarted;
         private bool _leadsAlarm;
+        private bool _showing;
 
         void Awake()
         {
@@ -215,10 +223,17 @@ namespace Sinbinder.Gameplay
                             + $"Вероятно, {name} {Homecoming.Guess(commander.Sin)}».");
             }
 
-            yield return new WaitForSecondsRealtime(_watchSeconds);
+            // «Игрок смотрит в шар — и видит, как его отряды гаснут один
+            // за другим. Не текст, не сводка. Зрелище» (§4, сцена 3).
+            // Зрелище здесь делается одним источником света: вспышка,
+            // провал в темноту, тишина — и снова. Ровно столько раз,
+            // сколько отрядов было в поле.
+            yield return Extinguish();
 
             log?.Write("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
                      + "ребят как косточки крысы».");
+
+            yield return new WaitForSecondsRealtime(_watchSeconds);
 
             // Сцена доведена: дальше директор свободен и без нас.
             Leading = false;
@@ -231,8 +246,49 @@ namespace Sinbinder.Gameplay
                                 + "впустую, лагерь никуда не уйдёт.");
         }
 
+        /// <summary>
+        /// Отряды гаснут один за другим. Каждый — вспышка и провал:
+        /// свет взлетает выше тревожного и падает почти в ноль, потом
+        /// пауза, и следующий.
+        ///
+        /// Пауза между гибелями длиннее самой гибели: считать их игрок
+        /// должен успевать, а торопливая череда вспышек читается как сбой
+        /// освещения, а не как потеря.
+        /// </summary>
+        private IEnumerator Extinguish()
+        {
+            if (_glow == null || _squadsOut <= 0) yield break;
+
+            // Дыхание молчит, пока идёт зрелище: иначе оно спорит
+            // с вспышками за ту же яркость.
+            _showing = true;
+
+            for (int i = 0; i < _squadsOut; i++)
+            {
+                float t = 0f;
+                while (t < _outSeconds)
+                {
+                    t += Time.unscaledDeltaTime;
+                    float k = Mathf.Clamp01(t / _outSeconds);
+
+                    // Первая четверть — вспышка, остальное — провал.
+                    float level = k < 0.25f
+                        ? Mathf.Lerp(1f, 2.4f, k / 0.25f)
+                        : Mathf.Lerp(2.4f, 0.08f, (k - 0.25f) / 0.75f);
+
+                    _glow.intensity = _alarmIntensity * level;
+                    yield return null;
+                }
+
+                yield return new WaitForSecondsRealtime(_outSeconds * 1.4f);
+            }
+
+            _showing = false;
+        }
+
         private void Breathe()
         {
+            if (_showing) return;
             if (_glow == null || _pulseDepth <= 0f) return;
 
             float baseline = IsAlarmed ? _alarmIntensity : _calmIntensity;
