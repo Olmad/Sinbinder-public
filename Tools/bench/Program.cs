@@ -1682,6 +1682,350 @@ static class Bench
                         + $"из них отличались от кода: {differs}.");
     }
 
+    /// <summary>
+    /// Подбор разумных чисел, а не идеального баланса.
+    ///
+    /// Уникальность воинов несут грех, память, верность и эмоции —
+    /// значит важно не среднее, а <b>разброс</b>. Средняя доля отказов
+    /// должна быть просто вменяемой; расходиться друг с другом воины
+    /// обязаны сильно.
+    ///
+    /// Поэтому меряем сразу две величины на каждой настройке: сколько
+    /// отказов вообще и насколько далеко расходятся девять настоящих душ
+    /// лагеря. Настройка, где средняя приличная, а разброс схлопнулся, —
+    /// хуже, чем чуть кривая средняя при широком разбросе.
+    ///
+    /// Крутим три числа Страха разом, одним множителем: в ассете они
+    /// заданы согласованно (90/85/60), и растаскивать их порознь значит
+    /// подбирать три числа вместо одного.
+    /// </summary>
+    static void FearSweep(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ПОДБОР: сколько отказов и насколько разные ===");
+
+        var modules = Modules();
+
+        var camp = new (string Name, SinType Sin, MoralType Moral, float I, float L, int U)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f, 0),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f, 0),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f, 3),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f, 0),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f, 0),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f, 0),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f, 0),
+        };
+
+        float d0 = cfg.FearFleeDangerMultiplier;
+        float h0 = cfg.FearFleeLowHpBonus;
+        float s0 = cfg.FearFleeSurroundedBonus;
+
+        Console.WriteLine($"  {"множ.",6} {"опасн.",7} {"мало HP",8} {"окруж.",7}"
+                        + $" {"средне",8} {"мин",6} {"макс",6} {"разброс",8}  различимых");
+
+        foreach (float k in new[] { 1.0f, 0.8f, 0.6f, 0.45f, 0.35f, 0.25f })
+        {
+            cfg.FearFleeDangerMultiplier = d0 * k;
+            cfg.FearFleeLowHpBonus = h0 * k;
+            cfg.FearFleeSurroundedBonus = s0 * k;
+
+            var rates = new List<double>();
+
+            foreach (var m in camp)
+            {
+                var (rate, _) = OrderRun(modules, cfg, m.Sin, m.Moral,
+                    m.I, m.L, m.U, 400, loot: 0, allyInDanger: false);
+                rates.Add(rate);
+            }
+
+            double avg = rates.Average();
+            double lo = rates.Min(), hi = rates.Max();
+
+            // Различимых — сколько воинов попадают в разные десятки
+            // процентов. Грубая мера того, отличит ли их игрок на глаз.
+            var bands = new HashSet<int>(rates.Select(x => (int)(x * 10)));
+
+            Console.WriteLine($"  {k,6:F2} {d0 * k,7:F0} {h0 * k,8:F0} {s0 * k,7:F0}"
+                            + $" {avg * 100,7:F1}% {lo * 100,5:F0}% {hi * 100,5:F0}%"
+                            + $" {(hi - lo) * 100,7:F0}п.п.  {bands.Count,2} из 9");
+        }
+
+        cfg.FearFleeDangerMultiplier = d0;
+        cfg.FearFleeLowHpBonus = h0;
+        cfg.FearFleeSurroundedBonus = s0;
+
+        Console.WriteLine("\n  «Различимых» — сколько воинов попадают в разные десятки");
+        Console.WriteLine("  процентов. Это и есть уникальность на глаз игрока.");
+
+        // Страх не та ручка: уменьшая его, мы уменьшаем Flee, а Flee и есть
+        // исполнение приказа отходить. Настоящая ручка — голос Верности.
+        Console.WriteLine("\n  --- голос за подчинение (LoyaltyObeySinMultiplier) ---");
+        Console.WriteLine($"  {"множ.",6} {"голос@75",9} {"средне",8} {"мин",6} {"макс",6}"
+                        + $" {"разброс",8}  различимых  миссии");
+
+        float saved = cfg.LoyaltyObeySinMultiplier;
+
+        foreach (float mult in new[] { 0.5f, 0.8f, 1.1f, 1.4f, 1.7f, 2.0f })
+        {
+            cfg.LoyaltyObeySinMultiplier = mult;
+
+            var rates = new List<double>();
+            foreach (var m in camp)
+            {
+                var (rate, _) = OrderRun(modules, cfg, m.Sin, m.Moral,
+                    m.I, m.L, m.U, 400, loot: 0, allyInDanger: false);
+                rates.Add(rate);
+            }
+
+            double avg = rates.Average();
+            double lo = rates.Min(), hi = rates.Max();
+            var bands = new HashSet<int>(rates.Select(x => (int)(x * 10)));
+
+            int missions = MissionsMatched(cfg);
+
+            Console.WriteLine($"  {mult,6:F1} {Math.Min(75f * mult, cfg.MaxVoice),9:F1}"
+                            + $" {avg * 100,7:F1}% {lo * 100,5:F0}% {hi * 100,5:F0}%"
+                            + $" {(hi - lo) * 100,7:F0}п.п.  {bands.Count,2} из 9"
+                            + $"    {missions}/15");
+        }
+
+        cfg.LoyaltyObeySinMultiplier = saved;
+    }
+
+    /// <summary>Сколько строк таблицы миссий сходится при этом конфиге.</summary>
+    static int MissionsMatched(AOSConfig cfg)
+    {
+        var table = new (SinType sin, MoralType moral, MissionAction want)[]
+        {
+            (SinType.Wrath, MoralType.Vicious, MissionAction.KillEveryone),
+            (SinType.Wrath, MoralType.Neutral, MissionAction.KillTraveler),
+            (SinType.Wrath, MoralType.Pious,   MissionAction.KillTraveler),
+            (SinType.Pride, MoralType.Vicious, MissionAction.DestroyAltar),
+            (SinType.Pride, MoralType.Neutral, MissionAction.SanctifyAltar),
+            (SinType.Pride, MoralType.Pious,   MissionAction.SanctifyAltar),
+            (SinType.Greed, MoralType.Vicious, MissionAction.TaxVillage),
+            (SinType.Greed, MoralType.Neutral, MissionAction.TaxVillage),
+            (SinType.Greed, MoralType.Pious,   MissionAction.TaxVillage),
+            (SinType.Sloth, MoralType.Vicious, MissionAction.IgnoreVillage),
+            (SinType.Sloth, MoralType.Neutral, MissionAction.IgnoreVillage),
+            (SinType.Sloth, MoralType.Pious,   MissionAction.IgnoreVillage),
+            (SinType.Envy,  MoralType.Vicious, MissionAction.EnslaveVillage),
+            (SinType.Envy,  MoralType.Neutral, MissionAction.EnslaveVillage),
+            (SinType.Envy,  MoralType.Pious,   MissionAction.HelpVillage),
+        };
+
+        var available = new[]
+        {
+            MissionAction.KillEveryone, MissionAction.KillTraveler,
+            MissionAction.DestroyAltar, MissionAction.SanctifyAltar,
+            MissionAction.TaxVillage,   MissionAction.IgnoreVillage,
+            MissionAction.EnslaveVillage, MissionAction.HelpVillage
+        };
+
+        var modules = Modules();
+        int hit = 0;
+
+        foreach (var row in table)
+        {
+            var spectra = new float[7];
+            spectra[(int)row.sin] = 80f;
+            var w = new Warrior { Soul = new SoulData("К", row.moral, 2, spectra), Loyalty = 50f };
+
+            var ctx = new MissionContext
+            {
+                HasAltar = true, IsVillageIntact = true, HasInnocentVictims = true,
+                RecentMemories = new List<MemoryRecord>(),
+                CarriedItems = new List<InventoryItem>()
+            };
+
+            var scores = new Dictionary<MissionAction, float>();
+            foreach (var a in available) scores[a] = 0f;
+
+            var soul = Soul.FromWarrior(w);
+            foreach (var m in modules)
+            {
+                if (!(m is IMissionModule mm)) continue;
+                foreach (var a in available) scores[a] += mm.EvaluateMission(soul, ctx, a);
+            }
+
+            if (scores.OrderByDescending(kv => kv.Value).First().Key == row.want) hit++;
+        }
+
+        return hit;
+    }
+
+    /// <summary>
+    /// Мораль отдельно от греха: тот же грех, та же сила, та же верность,
+    /// меняется только мораль. Если разницы нет — мораль не участвует,
+    /// и «воины уникальны» держится на одном грехе.
+    /// </summary>
+    static void MoralityCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== МОРАЛЬ: различает ли она воинов сама по себе ===");
+
+        var modules = Modules();
+
+        Console.WriteLine($"  {"грех",-10} {"Vicious",9} {"Neutral",9} {"Pious",9}"
+                        + $" {"разброс",9}");
+
+        var spreads = new List<double>();
+
+        foreach (SinType sin in new[] { SinType.Pride, SinType.Wrath, SinType.Greed,
+                                        SinType.Sloth, SinType.Envy })
+        {
+            var r = new List<double>();
+
+            foreach (MoralType moral in new[] { MoralType.Vicious, MoralType.Neutral,
+                                                MoralType.Pious })
+            {
+                var (rate, _) = OrderRun(modules, cfg, sin, moral, 60f, 80f, 0, 400,
+                                         loot: 0, allyInDanger: false);
+                r.Add(rate);
+            }
+
+            double spread = r.Max() - r.Min();
+            spreads.Add(spread);
+
+            Console.WriteLine($"  {sin,-10} {r[0] * 100,8:F1}% {r[1] * 100,8:F1}%"
+                            + $" {r[2] * 100,8:F1}% {spread * 100,8:F0}п.п.");
+        }
+
+        Console.WriteLine($"\n  средний разброс по морали: {spreads.Average() * 100:F0} п.п.");
+        Console.WriteLine(spreads.Average() >= 0.15
+            ? "  Мораль участвует: при одном грехе она меняет поведение заметно."
+            : "  Мораль почти не участвует — уникальность держится на грехе.");
+    }
+
+    /// <summary>
+    /// Чувствительность шкал: меняет ли воина разница в одну единицу.
+    ///
+    /// Замысел прямой: «в идеале разница в 1 единицу где угодно заметно
+    /// меняет воина». Это проверяемо. Шагаем по шкале по единице и смотрим,
+    /// как часто соседние значения дают разное решение.
+    ///
+    /// Меряем в одинаковых положениях — иначе мерили бы шум обстановки,
+    /// а не чувствительность шкалы. Разное решение при одном и том же
+    /// положении и разнице в единицу — это и есть «единица что-то значит».
+    ///
+    /// Мёртвая зона — участок, где ни один шаг ничего не меняет. Её видно
+    /// сразу: там, где голос упёрся в потолок, шкала перестаёт быть шкалой.
+    /// </summary>
+    static void SensitivityCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ЧУВСТВИТЕЛЬНОСТЬ: значит ли одна единица ===");
+
+        var modules = Modules();
+        const int probes = 200;
+
+        Console.WriteLine($"  {"шкала",-20} {"ход",-10} {"в среднем меняет",17} "
+                        + $"{"лучший шаг",11}  мёртвая зона");
+
+        foreach (var axis in new[] { "верность", "сила греха", "усталость", "здоровье" })
+        {
+            (int from, int to) = axis switch
+            {
+                "верность"   => (20, 100),
+                "сила греха" => (20, 100),
+                "усталость"  => (0, 100),
+                _            => (3, 30),
+            };
+
+            double sum = 0;
+            int steps = 0;
+            double best = 0; int bestAt = from;
+            int dead = 0, bestDead = 0, deadFrom = -1, curFrom = -1, deadTo = -1;
+
+            ActionType[] previous = null;
+
+            for (int v = from; v <= to; v++)
+            {
+                var now = new ActionType[probes];
+
+                for (int i = 0; i < probes; i++)
+                {
+                    var spectra = new float[7];
+                    spectra[(int)SinType.Greed] = 60f;
+
+                    var w = new Warrior
+                    {
+                        Soul = new SoulData("Воин", MoralType.Neutral, 1, spectra),
+                        Attack = 5f, Loyalty = 70f, Team = Team.Player,
+                        Relationships = new RelationshipSystem(),
+                    };
+
+                    // Двести разных положений, но ОДНИ И ТЕ ЖЕ на обоих шагах:
+                    // иначе мерили бы шум обстановки, а не чувствительность.
+                    var ctx = new DecisionContext
+                    {
+                        CurrentHP = 8f + (i % 20),
+                        MaxHP = 30f,
+                        NearbyEnemies = 1 + (i % 4),
+                        NearbyLoot = i % 3,
+                        Fatigue = (i % 10) / 10f,
+                        RelationshipWithCommander = 70f,
+                        AllyInDanger = i % 3 == 0,
+                        Surrounded = i % 7 == 0,
+                        HasCommand = true, CommandType = "FallBack",
+                        CommandIsFallBack = true,
+                        IsEngaged = true, CommandLeavesFight = true,
+                    };
+
+                    switch (axis)
+                    {
+                        case "верность":
+                            w.Loyalty = v; ctx.RelationshipWithCommander = v; break;
+                        case "сила греха":
+                            spectra[(int)SinType.Greed] = v;
+                            w.Soul = new SoulData("Воин", MoralType.Neutral, 1, spectra);
+                            break;
+                        case "усталость":
+                            ctx.Fatigue = v / 100f; ctx.IsExhausted = v > 70; break;
+                        default:
+                            ctx.CurrentHP = v; break;
+                    }
+
+                    now[i] = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced).Action;
+                }
+
+                if (previous != null)
+                {
+                    int differ = 0;
+                    for (int i = 0; i < probes; i++)
+                        if (now[i] != previous[i]) differ++;
+
+                    double share = differ / (double)probes;
+                    sum += share; steps++;
+
+                    if (share > best) { best = share; bestAt = v; }
+
+                    if (differ == 0)
+                    {
+                        if (curFrom < 0) curFrom = v;
+                        dead++;
+                        if (dead > bestDead) { bestDead = dead; deadFrom = curFrom; deadTo = v; }
+                    }
+                    else { dead = 0; curFrom = -1; }
+                }
+
+                previous = now;
+            }
+
+            double avg = sum / Math.Max(steps, 1);
+            string deadText = bestDead > 3
+                ? $"{deadFrom}–{deadTo} ({bestDead} подряд)"
+                : "нет";
+
+            Console.WriteLine($"  {axis,-20} {from + "–" + to,-10} {avg * 100,16:F1}% "
+                            + $"{best * 100,9:F1}% @{bestAt,-3}  {deadText}");
+        }
+
+        Console.WriteLine("\n  «В среднем меняет» — в скольких положениях из двухсот одна");
+        Console.WriteLine("  единица шкалы даёт другое решение. Это и есть «единица значит».");
+        Console.WriteLine("  Мёртвая зона — участок, где не меняет ни в одном.");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1866,6 +2210,9 @@ static class Bench
         SoulDecayCheck();
         ExpeditionCheck(cfg);
         CampUnderOrderCheck(cfg);
+        FearSweep(cfg);
+        MoralityCheck(cfg);
+        SensitivityCheck(cfg);
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

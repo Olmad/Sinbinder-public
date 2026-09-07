@@ -45,7 +45,7 @@ MonoBehaviour:
   VirtueSaveAllyDangerBonus: 50
   VirtueLootHighVirtuePenalty: -25
   VirtueObeySinMultiplier: 0.3
-  LoyaltyObeySinMultiplier: 0.5
+  LoyaltyObeySinMultiplier: 0.8
   MoralityPiousSaveAlly: 40
   MoralityPiousLootPenalty: -20
   MoralityPiousFleePenalty: -15
