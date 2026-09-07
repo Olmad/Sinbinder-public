@@ -61,6 +61,13 @@ namespace Sinbinder.AOS
             AddIfMissing<AOSEventHub>(managers);
             AddIfMissing<MemoryProcessor>(managers);
             AddIfMissing<EmotionSystem>(managers);
+
+            // Осмотр сцены вешается здесь, а не только в сборщике: иначе
+            // он появлялся бы лишь в пересобранных сценах, а нужен он
+            // прежде всего в старых — тех, про которые неизвестно, что
+            // в них есть. Диагност, доступный только на здоровом
+            // пациенте, бесполезен.
+            AddIfMissing<Gameplay.SceneDoctor>(managers);
         }
 
         private void SetupAllWarriors()
