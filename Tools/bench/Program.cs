@@ -1030,6 +1030,139 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
+    /// <summary>
+    /// Вылазка, которой игрок не видит: тот самый отряд, что уходит
+    /// на сцене 2 и возвращается на сцене 8.
+    ///
+    /// Вопрос ровно один и он про правило пролога (§2): «ни одна
+    /// постановочная сцена не имеет права показать воина, делающего то,
+    /// чего движок AOS не мог бы решить сам». Исход вылазки сейчас берут
+    /// из таблицы Homecoming — то есть из руки сценариста. Здесь мы
+    /// спрашиваем движок: даёт ли он сам по себе разные исходы для разных
+    /// грехов командира?
+    ///
+    /// Если даёт — таблицу надо выбрасывать, и эпилог считать боем.
+    /// Если не даёт — таблица остаётся, но тогда это осознанное
+    /// исключение из правила, а не недосмотр.
+    /// </summary>
+    static void ExpeditionCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ВЫЛАЗКА: решает ли исход грех командира ===");
+
+        var modules = Modules();
+        const int sent = 5;
+        const int runs = 400;
+
+        // Три расклада, а не один. Почти нулевая разница на лёгком враге
+        // ничего не доказывает: если выживают все, различать нечего,
+        // и мы измерили бы не движок, а лёгкость боя.
+        foreach (var (foeCount, foeAttack, label) in new[]
+                 {
+                     (3, 4f, "враг слабее"),
+                     (5, 6f, "вровень"),
+                     (7, 7f, "враг сильнее"),
+                 })
+            Expedition(cfg, modules, sent, runs, foeCount, foeAttack, label);
+    }
+
+    static void Expedition(AOSConfig cfg, List<IPersonalityModule> modules,
+        int sent, int runs, int foeCount, float foeAttack, string label)
+    {
+        Console.WriteLine($"\n  --- {label}: {sent} против {foeCount} ---");
+        Console.WriteLine($"  {"грех",-10} {"стратегия",-16} {"вернулось",10} {"разброс",9}");
+
+        var table = new Dictionary<SinType, double>();
+
+        foreach (SinType sin in new[] { SinType.Sloth, SinType.Wrath, SinType.Greed,
+                                        SinType.Pride, SinType.Envy })
+        {
+            var strategy = SquadOrders.FromSin(sin);
+            var counts = new List<int>();
+
+            for (int b = 0; b < runs; b++)
+            {
+                // Зерно от номера прогона, а не от часов: одинаковый вход
+                // обязан давать одинаковый выход.
+                var r = new Random(1000 + b);
+
+                var squad = new List<Warrior>();
+                var foes = new List<Warrior>();
+
+                for (int i = 0; i < sent; i++)
+                {
+                    var soul = i == 0
+                        ? new SoulData("Старший", sin, MoralType.Neutral, 1, 70f)
+                        : MakeSoul(r, "Рядовой" + i);
+
+                    squad.Add(new Warrior
+                    {
+                        Soul = soul,
+                        Attack = 5f + (float)r.NextDouble() * 3f,
+                        Loyalty = 50f + (float)r.NextDouble() * 40f,
+                        Team = Team.Player,
+                        IsCommander = i == 0,
+                        Relationships = new RelationshipSystem(),
+                    });
+                }
+
+                for (int i = 0; i < foeCount; i++)
+                    foes.Add(new Warrior
+                    {
+                        Soul = MakeSoul(r, "Чужой" + i),
+                        Attack = foeAttack + (float)r.NextDouble() * 3f,
+                        Loyalty = 50f,
+                        Team = Team.Enemy,
+                        Relationships = new RelationshipSystem(),
+                    });
+
+                int turns = 0;
+                while (turns < 20 && squad.Exists(w => !w.IsDead)
+                                  && foes.Exists(e => !e.IsDead))
+                {
+                    Fight(modules, squad, foes, cfg, strategy);
+                    Fight(modules, foes, squad, cfg, SquadStrategy.Balanced);
+                    turns++;
+                }
+
+                counts.Add(squad.Count(w => !w.IsDead));
+            }
+
+            double avg = counts.Average();
+            double spread = Math.Sqrt(counts.Average(c => (c - avg) * (c - avg)));
+            table[sin] = avg;
+
+            Console.WriteLine($"  {sin,-10} {SquadOrders.Name(strategy),-16} "
+                            + $"{avg,10:F2} {spread,9:F2}");
+        }
+
+        double lo = table.Values.Min(), hi = table.Values.Max();
+        Console.WriteLine($"  разница между лучшим и худшим грехом: {hi - lo:F2} из {sent}"
+                        + (hi - lo >= 1.0 ? "  ← различает" : "  ← почти не различает"));
+    }
+
+    /// <summary>Один ход одной стороны.</summary>
+    static void Fight(List<IPersonalityModule> modules, List<Warrior> side,
+        List<Warrior> other, AOSConfig cfg, SquadStrategy strategy)
+    {
+        foreach (var w in side.Where(x => !x.IsDead).ToList())
+        {
+            var ctx = AutoBattleContext.Create(w, side, other);
+            var o = Vote(modules, w, ctx, cfg, strategy);
+
+            if (o.Action == ActionType.Attack)
+            {
+                var t = other.Where(x => !x.IsDead).OrderBy(x => x.HP).FirstOrDefault();
+                t?.TakeDamage(w.Attack);
+            }
+            else if (o.Action == ActionType.SaveAlly)
+            {
+                var a = side.Where(x => !x.IsDead && x != w && x.HP < x.MaxHP * 0.5f)
+                            .OrderBy(x => x.HP).FirstOrDefault();
+                a?.Heal(5f);
+            }
+        }
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1211,6 +1344,7 @@ static class Bench
         TransparencyCheck();
         FallenCheck();
         SoulDecayCheck();
+        ExpeditionCheck(cfg);
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

@@ -1,6 +1,7 @@
 // Assets/Scripts/Gameplay/SquadOrders.cs
 using System.Collections.Generic;
 using Sinbinder.AOS;
+using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
 {
@@ -46,6 +47,42 @@ namespace Sinbinder.Gameplay
 
         // ---------- слова для игрока ----------
         // Ни одной цифры: игрок видит склонность, а не бонус.
+
+        /// <summary>
+        /// Какую манеру задаёт грех.
+        ///
+        /// Ось, выбранная автором: <b>грех задаёт стратегию, навык
+        /// командования — только размер отряда</b> (docs/09-PROLOGUE.md §4).
+        /// В коде её не было вовсе: грехи стояли комментариями в enum
+        /// SquadStrategy и больше нигде, а исход вылазки считался прямой
+        /// таблицей «грех → сколько вернулось», минуя стратегию и минуя
+        /// движок.
+        ///
+        /// Пять соответствий прямо следуют из разметки самого enum:
+        /// Гнев — напролом, Гордыня — не отступать, Жадность — за добычей,
+        /// Уныние — осторожно, Зависть — своё считать чужим.
+        ///
+        /// Похоть и Чревоугодие своей манеры не имеют: в разметке им
+        /// отвечают не они сами, а противостоящие им добродетели. Для них
+        /// взято ближайшее по смыслу, и это <b>решение облака, а не канон</b>.
+        /// </summary>
+        public static SquadStrategy FromSin(SinType sin)
+        {
+            switch (sin)
+            {
+                case SinType.Wrath:    return SquadStrategy.Aggressive;
+                case SinType.Pride:    return SquadStrategy.Defensive;
+                case SinType.Greed:    return SquadStrategy.LootFocused;
+                case SinType.Sloth:    return SquadStrategy.Cautious;
+                case SinType.Envy:     return SquadStrategy.Envious;
+
+                // Не канон: у этих двух своей манеры в разметке нет.
+                case SinType.Gluttony: return SquadStrategy.Conservative;
+                case SinType.Lust:     return SquadStrategy.Balanced;
+
+                default:               return SquadStrategy.Balanced;
+            }
+        }
 
         public static string Name(SquadStrategy s)
         {
