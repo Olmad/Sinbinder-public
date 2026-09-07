@@ -95,6 +95,7 @@ static class Bench
     struct Outcome
     {
         public ActionType Action; public string Module;
+        public ActionType Runner;
         public float Gap, Confidence; public bool Hesitated, Refused;
     }
 
@@ -144,6 +145,7 @@ static class Bench
         {
             Action = best.Key,
             Module = loudest.TryGetValue(best.Key, out var t) ? t.m : "",
+            Runner = sorted.Count > 1 ? sorted[1].Key : best.Key,
             Gap = gap, Confidence = confidence,
             Hesitated = confidence < cfg.HesitationShare
         };
@@ -1163,6 +1165,181 @@ static class Bench
         }
     }
 
+    /// <summary>
+    /// Лагерь под приказом отходить: кто послушается и почему.
+    ///
+    /// Проверяются две вещи, которые не проверялись никогда.
+    ///
+    /// <b>Первая — третье требование к демо</b> (00-GDD.md §8): «отказ
+    /// можно было предотвратить, и игрок это видит». Рычаг заявлен как
+    /// важнейший, а работает ли он — не измерялось ни разу. Если уплата
+    /// долга почти не меняет вероятность отказа, то рычаг декоративный,
+    /// и демо обещает игроку власть, которой у него нет.
+    ///
+    /// <b>Вторая — существует ли главный скриншот</b>: один приказ,
+    /// несколько душ, у каждой свой поступок и своя причина. Если
+    /// объяснения у всех сойдутся в одно, показывать нечего.
+    ///
+    /// Души взяты настоящие, из PrologueCampSpawner.
+    /// </summary>
+    static void CampUnderOrderCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ЛАГЕРЬ ПОД ПРИКАЗОМ «ОТХОДИТЬ» ===");
+
+        var modules = Modules();
+        const int runs = 600;
+
+        // Состав как в PrologueCampSpawner: имя, грех, мораль,
+        // интенсивность, верность, долг.
+        var camp = new (string Name, SinType Sin, MoralType Moral,
+                        float Intensity, float Loyalty, int Unpaid)[]
+        {
+            ("Карган",  SinType.Pride,    MoralType.Neutral, 90f, 75f, 0),
+            ("Вейн",    SinType.Sloth,    MoralType.Pious,   40f, 90f, 0),
+            ("Марга",   SinType.Greed,    MoralType.Vicious, 65f, 70f, 3),
+            ("Хальд",   SinType.Wrath,    MoralType.Pious,   35f, 95f, 0),
+            ("Хорь",    SinType.Envy,     MoralType.Vicious, 45f, 65f, 0),
+            ("Ю",       SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0),
+            ("Лиска",   SinType.Lust,     MoralType.Neutral, 30f, 85f, 0),
+            ("Гурт",    SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0),
+            ("Ждан",    SinType.Pride,    MoralType.Neutral, 30f, 80f, 0),
+        };
+
+        // Три положения. Одно ничего не доказало бы: в голом поле
+        // грехам не за что зацепиться, и разница могла бы отсутствовать
+        // не потому, что её нет, а потому, что не за что хотеть.
+        foreach (var (loot, ally, label) in new[]
+                 {
+                     (0, false, "голое поле: ни добычи, ни раненых"),
+                     (2, false, "рядом добыча"),
+                     (2, true,  "добыча и раненый свой"),
+                 })
+        {
+            Console.WriteLine($"\n  --- {label} ---");
+            Console.WriteLine($"  {"кто",-8} {"грех",-9} {"отказов",8}  причина отказа");
+
+            var reasons = new HashSet<string>();
+
+            foreach (var m in camp)
+            {
+                var (rate, reason) = OrderRun(modules, cfg, m.Sin, m.Moral,
+                    m.Intensity, m.Loyalty, m.Unpaid, runs, loot, ally);
+
+                if (rate > 0.01) reasons.Add(reason);
+                Console.WriteLine($"  {m.Name,-8} {m.Sin,-9} {rate * 100,7:F1}%  {reason}");
+            }
+
+            Console.WriteLine($"  разных причин: {reasons.Count}"
+                + (reasons.Count >= 4 ? "  ← хватает на скриншот" : "  ← сливаются"));
+        }
+
+        // --- работает ли рычаг ---
+        Console.WriteLine("\n  --- Предотвратим ли отказ? Долг Марги ---");
+        Console.WriteLine($"  {"долг",-6} {"отказов",8}  причина");
+
+        // В голом поле: там, где без долга он послушался бы. В богатом
+        // положении он отказывается и так, и рычага не видно — не потому,
+        // что его нет, а потому, что отказ уже насыщен.
+        double paid = 0, owed = 0;
+        for (int unpaid = 0; unpaid <= 3; unpaid++)
+        {
+            var (rate, reason) = OrderRun(modules, cfg, SinType.Greed,
+                MoralType.Vicious, 65f, 70f, unpaid, runs, loot: 0, allyInDanger: false);
+
+            if (unpaid == 0) paid = rate;
+            if (unpaid == 3) owed = rate;
+
+            Console.WriteLine($"  {unpaid,-6} {rate * 100,7:F1}%  {reason}");
+        }
+
+        double lever = owed - paid;
+        Console.WriteLine($"\n  уплата долга меняет отказ на {lever * 100:F1} процентных пункта");
+        Console.WriteLine(lever >= 0.15
+            ? "  ВЫВОД: рычаг настоящий — заплатив, игрок правда меняет исход."
+            : "  ВЫВОД: рычаг слаб. Демо обещает власть, которой у игрока нет.");
+    }
+
+    /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
+    static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
+        AOSConfig cfg, SinType sin, MoralType moral, float intensity,
+        float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true)
+    {
+        int refused = 0;
+        var seen = new Dictionary<string, int>();
+
+        for (int i = 0; i < runs; i++)
+        {
+            var r = new Random(7000 + i);
+
+            var w = new Warrior
+            {
+                Soul = new SoulData("Воин", sin, moral, 1, intensity),
+                Attack = 5f,
+                Loyalty = loyalty,
+                Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+
+            // Положение боя, в котором приказ отходить осмыслен: враг рядом,
+            // здоровье потрёпано, кто-то из своих ранен.
+            var ctx = new DecisionContext
+            {
+                CurrentHP = 12f + (float)r.NextDouble() * 10f,
+                MaxHP = 30f,
+                NearbyEnemies = 1 + r.Next(3),
+                NearbyLoot = loot,
+                Fatigue = (float)r.NextDouble() * 0.6f,
+                UnpaidMissions = unpaid,
+                RelationshipWithCommander = loyalty,
+                AllyInDanger = allyInDanger && r.Next(2) == 0,
+                Surrounded = r.Next(4) == 0,
+                HasCommand = true,
+                CommandType = "FallBack",
+                CommandIsFallBack = true,
+            };
+
+            var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+
+            bool obeyed = ctx.SatisfiedBy(d.Action);
+            if (!obeyed) refused++;
+
+            // Стендовый Outcome — не Decision движка: перекладываем поля,
+            // чтобы объяснение считал настоящий PhraseGenerator, а не копия.
+            var decision = new Decision
+            {
+                Action = d.Action,
+                TopModule = d.Module,
+                Gap = d.Gap,
+                Confidence = d.Confidence,
+                Hesitated = d.Hesitated,
+                RefusedCommand = !obeyed && !d.Hesitated,
+
+                // Без этих двух фраза колебания выходила «Драка и Драка»:
+                // движок их заполняет, а стендовый мостик — забыл. Чуть
+                // не объявили чужим багом свой.
+                TopContender = d.Action,
+                RunnerUp = d.Runner,
+            };
+
+            // Считаем причину только у отказов: игрока интересует, почему
+            // не послушались, а не почему послушались. Смешав их, мы бы
+            // показывали объяснение послушания при половине отказов.
+            if (obeyed) continue;
+
+            string phrase = PhraseGenerator.Explain(w, ctx, decision);
+            if (!string.IsNullOrEmpty(phrase))
+                seen[phrase] = seen.TryGetValue(phrase, out var c) ? c + 1 : 1;
+        }
+
+        string top = "—";
+        int best = 0;
+        foreach (var kv in seen)
+            if (kv.Value > best || (kv.Value == best && string.CompareOrdinal(kv.Key, top) < 0))
+            { best = kv.Value; top = kv.Key; }
+
+        return (refused / (double)runs, top);
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -1345,6 +1522,7 @@ static class Bench
         FallenCheck();
         SoulDecayCheck();
         ExpeditionCheck(cfg);
+        CampUnderOrderCheck(cfg);
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);
