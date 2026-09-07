@@ -233,7 +233,13 @@ namespace Sinbinder.Gameplay
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
 
-            go.AddComponent<Damageable>();
+            var damageable = go.AddComponent<Damageable>();
+
+            // Первая ступень прозрачности: значок намерения над головой
+            // и полоса здоровья. Собиралось это только в UnitFactory,
+            // которым пролог не пользуется, — и лестница начиналась
+            // со второй ступени, а главный кадр игры был неснимаем.
+            UI.OverheadBuilder.Attach(go, damageable);
 
             // Пол боя и цена приказа, список из docs/11-MISSING.md §2.3.
             // Без RefusalPresenter отказ — главный продукт демо — происходит,

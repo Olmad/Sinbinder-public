@@ -28,12 +28,31 @@ namespace Sinbinder.Core
                + "начиналась с того, что выставлено здесь.")]
         [SerializeField] private bool _remember = true;
 
+        [Tooltip("Смотреть глазами игрока. В редакторе четвёртая ступень "
+               + "открыта всегда, и увидеть то, что видит игрок, иначе "
+               + "нечем: автор проверяет игру, которой не существует. "
+               + "Поставить — и редактор ведёт себя как сборка.")]
+        [SerializeField] private bool _asPlayer;
+
         void Awake()
         {
 #if UNITY_EDITOR
-            // Автор смотрит на голоса модулей — это его работа.
-            Transparency.SetDeveloper(true);
-            if (_level < Clarity.Trace) _level = Clarity.Trace;
+            // Автор смотрит на голоса модулей — это его работа. Но
+            // проверять демо надо и с той стороны: галка «глазами игрока»
+            // закрывает замок и в редакторе.
+            Transparency.SetDeveloper(!_asPlayer);
+
+            if (_asPlayer)
+            {
+                if (_level > Transparency.PlayerCeiling) _level = Transparency.PlayerCeiling;
+                Debug.Log($"[ПРОЗРАЧНОСТЬ] Глазами игрока: "
+                        + $"«{Transparency.Describe(_level)}». "
+                        + "Трассировки не будет — так и задумано.");
+            }
+            else if (_level < Clarity.Trace)
+            {
+                _level = Clarity.Trace;
+            }
 #else
             Transparency.SetDeveloper(false);
 #endif

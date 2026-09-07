@@ -114,7 +114,9 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             warrior.Initialize(soul, _shell, _relSystem, false, Team.Player);
 
-            go.AddComponent<Damageable>();
+            var damageable = go.AddComponent<Damageable>();
+            UI.OverheadBuilder.Attach(go, damageable);
+
             go.AddComponent<Fatigue>();
             go.AddComponent<Engagement>();
             go.AddComponent<AOS.RefusalPresenter>();

@@ -143,107 +143,12 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Сборка вынесена в <see cref="UI.OverheadBuilder"/>: тем же
+        /// надголовным интерфейсом пользуются спавнеры пролога, а две
+        /// сборки одного и того же разошлись бы при первой правке.
+        /// </summary>
         private void CreateOverheadUI(GameObject parent, Damageable damageable)
-        {
-            // Пробуем взять из пула
-            GameObject overheadGo = OverheadUIPool.Get();
-
-            if (overheadGo == null)
-            {
-                // Создаём новый, если пул пуст
-                overheadGo = new GameObject("OverheadUI");
-                overheadGo.transform.SetParent(parent.transform, false);
-                overheadGo.transform.localPosition = new Vector3(0, 2.5f, 0);
-                overheadGo.layer = LayerMask.NameToLayer("UI");
-
-                var canvas = overheadGo.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.WorldSpace;
-                canvas.worldCamera = Camera.main;
-
-                var canvasRect = overheadGo.GetComponent<RectTransform>();
-                canvasRect.sizeDelta = new Vector2(120, 30);
-                canvasRect.localScale = new Vector3(0.02f, 0.02f, 0.02f);
-
-                // --- Slider (HealthBar) ---
-                var sliderGo = new GameObject("HealthSlider");
-                sliderGo.transform.SetParent(overheadGo.transform, false);
-                var sliderRect = sliderGo.AddComponent<RectTransform>();
-                sliderRect.anchorMin = new Vector2(0, 1);
-                sliderRect.anchorMax = new Vector2(1, 1);
-                sliderRect.pivot = new Vector2(0.5f, 1);
-                sliderRect.sizeDelta = new Vector2(0, 20);
-                sliderRect.anchoredPosition = new Vector2(0, -2);
-
-                var slider = sliderGo.AddComponent<Slider>();
-                slider.interactable = false;
-                slider.minValue = 0f;
-                slider.maxValue = damageable.MaxHP;
-                slider.value = damageable.HP;
-
-                // Background
-                var bgGo = new GameObject("Background");
-                bgGo.transform.SetParent(sliderGo.transform, false);
-                var bgRect = bgGo.AddComponent<RectTransform>();
-                bgRect.anchorMin = Vector2.zero;
-                bgRect.anchorMax = Vector2.one;
-                bgRect.offsetMin = Vector2.zero;
-                bgRect.offsetMax = Vector2.zero;
-                var bgImage = bgGo.AddComponent<Image>();
-                bgImage.color = new Color(0.15f, 0.15f, 0.15f, 1f);
-
-                // Fill Area
-                var fillAreaGo = new GameObject("Fill Area");
-                fillAreaGo.transform.SetParent(sliderGo.transform, false);
-                var fillAreaRect = fillAreaGo.AddComponent<RectTransform>();
-                fillAreaRect.anchorMin = new Vector2(0, 0);
-                fillAreaRect.anchorMax = new Vector2(1, 1);
-                fillAreaRect.offsetMin = Vector2.zero;
-                fillAreaRect.offsetMax = Vector2.zero;
-
-                // Fill
-                var fillGo = new GameObject("Fill");
-                fillGo.transform.SetParent(fillAreaGo.transform, false);
-                var fillRect = fillGo.AddComponent<RectTransform>();
-                fillRect.anchorMin = Vector2.zero;
-                fillRect.anchorMax = Vector2.one;
-                fillRect.offsetMin = Vector2.zero;
-                fillRect.offsetMax = Vector2.zero;
-                var fillImage = fillGo.AddComponent<Image>();
-                fillImage.color = Color.green;
-
-                slider.fillRect = fillRect;
-                slider.targetGraphic = fillImage;
-
-                var healthBarUI = sliderGo.AddComponent<HealthBarUI>();
-                healthBarUI.ManualInit(damageable, slider, fillImage, overheadGo); // ← передаём ссылку на overheadGo
-
-                // --- Decision Icon ---
-                var iconGo = new GameObject("DecisionIcon");
-                iconGo.transform.SetParent(overheadGo.transform, false);
-                var iconRect = iconGo.AddComponent<RectTransform>();
-                iconRect.anchorMin = new Vector2(0.5f, 0);
-                iconRect.anchorMax = new Vector2(0.5f, 0);
-                iconRect.pivot = new Vector2(0.5f, 0);
-                iconRect.sizeDelta = new Vector2(48, 48);
-                iconRect.anchoredPosition = new Vector2(0, -20);
-
-                var iconImage = iconGo.AddComponent<Image>();
-                var decisionIconUI = iconGo.AddComponent<DecisionIconUI>();
-                decisionIconUI.SetIconImage(iconImage);
-
-                var overheadUI = overheadGo.AddComponent<OverheadUI>();
-                overheadUI.HealthBar = healthBarUI;
-                overheadUI.DecisionIcon = decisionIconUI;
-            }
-            else
-            {
-                // Переиспользуем из пула
-                overheadGo.transform.SetParent(parent.transform, false);
-                overheadGo.transform.localPosition = new Vector3(0, 2.5f, 0);
-                var overheadUI = overheadGo.GetComponent<OverheadUI>();
-                if (overheadUI?.HealthBar != null)
-                    overheadUI.HealthBar.ManualInit(damageable, overheadUI.HealthBar.Slider, overheadUI.HealthBar.FillImage, overheadGo);
-            }
-        }
+            => UI.OverheadBuilder.Attach(parent, damageable);
     }
 }

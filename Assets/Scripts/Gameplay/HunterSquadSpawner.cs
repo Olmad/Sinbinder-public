@@ -160,7 +160,12 @@ namespace Sinbinder.Gameplay
             var soul = new SoulData(name, kind.Sin, kind.Moral, _level, kind.Intensity);
             warrior.Initialize(soul, ShellType.Zombie, _relSystem, index == 0, Team.Enemy);
 
-            go.AddComponent<Damageable>();
+            var damageable = go.AddComponent<Damageable>();
+
+            // Значок намерения нужен и врагу: «видно, что каждый решает
+            // сам» — про всех на поле, а не только про своих.
+            UI.OverheadBuilder.Attach(go, damageable);
+
             go.AddComponent<Fatigue>();
             go.AddComponent<Engagement>();
             go.AddComponent<AOS.RefusalPresenter>();
