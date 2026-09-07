@@ -112,6 +112,12 @@ namespace Sinbinder.Utilets
             var campfire = Campfire(Vector3.zero);
             campfire.AddComponent<PrologueCampSpawner>();
 
+            // Первые полминуты: провожатый напрашивается в спутники,
+            // Карган предупреждает о долге. Одно даёт игроку кому
+            // приказывать до совета, другое — увидеть причину будущего
+            // отказа заранее (00-GDD.md §8, третье требование).
+            campfire.AddComponent<CampOpening>();
+
             Tents(hill, hillRadius: 5f);
             CouncilTable(table);
 

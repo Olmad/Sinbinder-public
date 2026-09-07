@@ -147,14 +147,21 @@ namespace Sinbinder.Gameplay
             }
 
             int taken = 0;
+            var names = new System.Text.StringBuilder();
 
             foreach (var item in TrophyCatalog.Chest())
             {
                 if (!purse.AddItem(item)) break;
 
+                if (taken > 0) names.Append(", ");
+                names.Append(item.Name.ToLowerInvariant());
                 taken++;
-                log?.Write($"{item.Name}. {item.Description}");
             }
+
+            // Одной строкой, а не по строке на вещь: четыре подряд —
+            // это шесть секунд чтения посреди сцены, где игрок только
+            // что научился ходить.
+            if (taken > 0) log?.Write($"В сундуке: {names}.");
 
             return taken;
         }

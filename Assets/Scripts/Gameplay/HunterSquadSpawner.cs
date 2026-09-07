@@ -47,13 +47,55 @@ namespace Sinbinder.Gameplay
         /// Список фиксирован и перебирается по кругу: одинаковый вход
         /// обязан давать одинаковый выход, никакого Random.
         /// </summary>
-        private static readonly (string Name, SinType Sin, MoralType Moral, float Intensity)[] Kinds =
+        private static readonly Kind[] Kinds =
         {
-            ("Охотник",          SinType.Wrath,    MoralType.Vicious, 60f),
-            ("Охотник-следопыт", SinType.Envy,     MoralType.Neutral, 45f),
-            ("Охотник-мясник",   SinType.Gluttony, MoralType.Vicious, 55f),
-            ("Ловчий",           SinType.Greed,    MoralType.Vicious, 50f),
+            // Ростом, скоростью и крепостью — чтобы разницу было видно
+            // на поле, а не только в душе. Драться с четырьмя одинаковыми
+            // кубами неинтересно, а виды уже были: не хватало того,
+            // чем они отличаются на глаз.
+            new("Охотник",          SinType.Wrath,    MoralType.Vicious, 60f,
+                height: 1.30f, girth: 0.55f, speed: 3.5f, toughness: 0),
+
+            // Лёгкий и быстрый: догоняет отставших.
+            new("Охотник-следопыт", SinType.Envy,     MoralType.Neutral, 45f,
+                height: 1.15f, girth: 0.42f, speed: 4.8f, toughness: 0),
+
+            // Тяжёлый и медленный: доходит поздно, но доходит.
+            new("Охотник-мясник",   SinType.Gluttony, MoralType.Vicious, 55f,
+                height: 1.45f, girth: 0.80f, speed: 2.6f, toughness: 1),
+
+            // Средний во всём, и тем узнаваем.
+            new("Ловчий",           SinType.Greed,    MoralType.Vicious, 50f,
+                height: 1.25f, girth: 0.60f, speed: 3.9f, toughness: 0),
         };
+
+        private readonly struct Kind
+        {
+            public readonly string Name;
+            public readonly SinType Sin;
+            public readonly MoralType Moral;
+            public readonly float Intensity;
+
+            public readonly float Height;
+            public readonly float Girth;
+            public readonly float Speed;
+
+            /// <summary>Прибавка к уровню: жизнь, удар и защита разом.</summary>
+            public readonly int Toughness;
+
+            public Kind(string name, SinType sin, MoralType moral, float intensity,
+                float height, float girth, float speed, int toughness)
+            {
+                Name = name;
+                Sin = sin;
+                Moral = moral;
+                Intensity = intensity;
+                Height = height;
+                Girth = girth;
+                Speed = speed;
+                Toughness = toughness;
+            }
+        }
 
         void Start()
         {
@@ -157,20 +199,21 @@ namespace Sinbinder.Gameplay
             go.transform.rotation = transform.rotation;
 
             var warrior = go.AddComponent<Warrior>();
-            var soul = new SoulData(name, kind.Sin, kind.Moral, _level, kind.Intensity);
+            var soul = new SoulData(name, kind.Sin, kind.Moral,
+                                    _level + kind.Toughness, kind.Intensity);
             warrior.Initialize(soul, ShellType.Zombie, _relSystem, index == 0, Team.Enemy);
 
             // Та же оснастка, что и у своих: без агента охотники стояли
             // бы в двенадцати метрах при дальности удара в два, и бой
             // доли 4 не начался бы вовсе.
-            WarriorRig.Attach(go);
+            WarriorRig.Attach(go, kind.Speed);
 
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Тело";
             body.transform.SetParent(go.transform);
-            body.transform.localPosition = new Vector3(0f, 0.8f, 0f);
+            body.transform.localPosition = new Vector3(0f, kind.Height * 0.62f, 0f);
             body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = new Vector3(0.55f, 1.3f, 0.55f);
+            body.transform.localScale = new Vector3(kind.Girth, kind.Height, kind.Girth);
 
             return warrior;
         }
