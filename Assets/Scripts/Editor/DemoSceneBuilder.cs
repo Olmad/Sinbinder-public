@@ -165,12 +165,28 @@ namespace Sinbinder.Utilets
             Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
             CouncilTable(new Vector3(3.0f, 0f, 2.2f));
 
-            Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 4, width: 7f);
+            // Две волны, как в сценарии (§4, сцена 4). Первая — трое слабых,
+            // бой, который нельзя проиграть: игрок должен успеть поверить,
+            // что он бог. Вторая выходит по опустевшему полю, заметно
+            // сильнее, и она же открывает край карты — бежать полагается
+            // от неё, а не вместо первой.
+            Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 3, width: 5f,
+                level: 1);
+
+            // Уровень 2, а не выше: вторая волна обязана быть сильнее,
+            // но не обязана всех положить. Побег — механика отбора, и
+            // отбирать не из кого, если до края никто не добежал.
+            // Жизнь 40, удар 7, защита 3 против своих 30 / 5 / 2.
+            Hunters(new Vector3(0f, 0f, 15f), Vector3.zero, count: 6, width: 10f,
+                level: 2, afterFieldClear: true, opensEscape: true,
+                announce: "Карган: «Владыка, они узнали, где наш лагерь. "
+                        + "Вероятно, от одного из наших. Тяжело это признавать, "
+                        + "но нам нужно бежать».");
 
             // Уходим не по концу боя, а по краю карты: вторую волну
             // не полагается перебить, полагается унести от неё ноги.
             // Охотники идут с севера, значит бежать — на юг, за холм.
-            Escape(new Vector3(0f, 0f, -25f), radius: 6f);
+            Escape(new Vector3(0f, 0f, -25f), radius: 6f, openAtStart: false);
             Director("Prologue_Escape", waitForBattle: false, waitForEscape: true);
 
             Save(scene, "Prologue_Raid");
@@ -684,9 +700,12 @@ namespace Sinbinder.Utilets
             Wire(trophy, ("_lid", hinge.transform));
         }
 
-        private static void Hunters(Vector3 position, Vector3 lookAt, int count, float width)
+        private static void Hunters(Vector3 position, Vector3 lookAt, int count,
+            float width, int level = 1, bool afterFieldClear = false,
+            bool opensEscape = false, string announce = "")
         {
-            var go = new GameObject("Охотники");
+            var go = new GameObject(afterFieldClear ? "Охотники: вторая волна"
+                                                    : "Охотники");
             go.transform.position = position;
             go.transform.LookAt(new Vector3(lookAt.x, position.y, lookAt.z));
 
@@ -695,6 +714,10 @@ namespace Sinbinder.Utilets
             var so = new SerializedObject(spawner);
             so.FindProperty("_count").intValue = count;
             so.FindProperty("_lineWidth").floatValue = width;
+            so.FindProperty("_level").intValue = level;
+            so.FindProperty("_afterFieldClear").boolValue = afterFieldClear;
+            so.FindProperty("_opensEscape").boolValue = opensEscape;
+            so.FindProperty("_announce").stringValue = announce;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -782,7 +805,8 @@ namespace Sinbinder.Utilets
         /// на противоположной от Охотников стороне — бежать полагается
         /// от них, а не сквозь них.
         /// </summary>
-        private static void Escape(Vector3 position, float radius)
+        private static void Escape(Vector3 position, float radius,
+            bool openAtStart = true)
         {
             var go = new GameObject("Край карты");
             go.transform.position = position;
@@ -790,6 +814,7 @@ namespace Sinbinder.Utilets
             var zone = go.AddComponent<EscapeZone>();
             var so = new SerializedObject(zone);
             so.FindProperty("_radius").floatValue = radius;
+            so.FindProperty("_openAtStart").boolValue = openAtStart;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // Край карты должен быть виден, иначе игрок не поймёт, куда

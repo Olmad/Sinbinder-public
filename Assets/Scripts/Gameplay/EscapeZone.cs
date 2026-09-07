@@ -31,6 +31,15 @@ namespace Sinbinder.Gameplay
         [Tooltip("Как часто пересчитывать, кто в круге. Раз в кадр не нужно.")]
         [SerializeField] private float _pollSeconds = 0.25f;
 
+        [Tooltip("Открыт ли край сразу. Снять для доли 4: бежать полагается "
+               + "от второй волны, а не вместо первой. Круг откроет тот, "
+               + "кто её выпустит.")]
+        [SerializeField] private bool _openAtStart = true;
+
+        [Tooltip("Через сколько круг откроется сам, если его никто не открыл. "
+               + "Запирать демо навсегда нельзя ни при какой ошибке сборки.")]
+        [SerializeField] private float _opensAnyway = 180f;
+
         /// <summary>Зона в сцене одна.</summary>
         public static EscapeZone Active { get; private set; }
 
@@ -50,6 +59,9 @@ namespace Sinbinder.Gameplay
 
         public bool Departing { get; private set; }
 
+        /// <summary>Открыт ли край. Закрытый круг никого не считает.</summary>
+        public bool Open { get; private set; }
+
         private readonly HashSet<Warrior> _inside = new();
         private float _leftAt = -1f;
         private float _nextPoll;
@@ -63,6 +75,21 @@ namespace Sinbinder.Gameplay
             // в следующую долю и увёл не тех.
             SelectionMade = false;
             _escapedNames.Clear();
+
+            Open = _openAtStart;
+        }
+
+        /// <summary>
+        /// Открыть край. Зовёт тот, после кого бежать уже пора, — вторая
+        /// волна Охотников. До неё уйти нельзя: отказ Каргана случается
+        /// на отходе, и игрок, ушедший раньше, не увидит продукта демо.
+        /// </summary>
+        public void Arm()
+        {
+            if (Open) return;
+
+            Open = true;
+            Debug.Log("[ПОБЕГ] Край карты открыт.");
         }
 
         void OnDestroy()
@@ -84,6 +111,20 @@ namespace Sinbinder.Gameplay
         void Update()
         {
             if (Departing) return;
+
+            if (!Open)
+            {
+                // Открыть должен был кто-то другой. Не открыл — открываем
+                // сами и говорим об этом: запертое навсегда демо хуже
+                // сцены, сыгранной не по порядку.
+                if (_opensAnyway > 0f && Time.time >= _opensAnyway)
+                {
+                    Debug.LogWarning("[ПОБЕГ] Край никто не открыл — открываем сами.");
+                    Arm();
+                }
+                return;
+            }
+
             if (Time.time < _nextPoll) return;
             _nextPoll = Time.time + _pollSeconds;
 
