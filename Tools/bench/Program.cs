@@ -741,9 +741,19 @@ static class Bench
 
     // ---------- возвращение отряда ----------
 
-    static void HomecomingCheck()
+    /// <summary>
+    /// Эпилог. Числа отсюда ушли: сколько вернулось, считает
+    /// <c>Gameplay.Expedition</c> настоящим боем, а он живёт в Unity
+    /// и стенду недоступен (см. docs/12-BALANCE.md, «Вылазка стала боем»).
+    ///
+    /// Осталось то, что стенд проверить может и обязан: **сходятся ли
+    /// слова Каргана с тем, что движок правда делает.** Раньше они
+    /// расходились молча — таблица хвалила Жадность за сбережённых людей,
+    /// а движок терял с ней людей больше всех после Уныния.
+    /// </summary>
+    static void HomecomingCheck(AOSConfig cfg)
     {
-        Console.WriteLine("\n=== ЭПИЛОГ: кто вернулся ===");
+        Console.WriteLine("\n=== ЭПИЛОГ: сходятся ли слова с движком ===");
 
         int bad = 0;
         void Check(bool ok, string what)
@@ -751,54 +761,48 @@ static class Bench
             if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
         }
 
-        const int sent = 5;
-
-        // Ни один исход не должен обнулить отряд: командир возвращается
-        // всегда, иначе рассказывать о вылазке будет некому.
         foreach (SinType sin in Enum.GetValues(typeof(SinType)))
         {
-            int back = Homecoming.Returned(sin, sent);
-            Check(back >= 1, $"{sin}: вернулся хотя бы один");
-            Check(back <= sent, $"{sin}: вернулось не больше ушедших");
             Check(!string.IsNullOrEmpty(Homecoming.Story(sin)), $"{sin}: объяснение есть");
             Check(!Homecoming.Story(sin).Any(char.IsDigit), $"{sin}: объяснение без цифр");
-        }
-
-        // Три исхода из сценария должны отличаться друг от друга: ради
-        // этого игрок и выбирал старшего полчаса назад.
-        int sloth = Homecoming.Returned(SinType.Sloth, sent);
-        int wrath = Homecoming.Returned(SinType.Wrath, sent);
-        int greed = Homecoming.Returned(SinType.Greed, sent);
-        Check(sloth == 1, "Уныние возвращается один");
-        Check(wrath == 2, "Гнев приводит одного");
-        Check(greed == sent - 1, "Жадность теряет одного");
-        Check(sloth != wrath && wrath != greed && sloth != greed,
-            "три исхода различимы");
-
-        // Края: пустой отряд и отряд из одного не должны ломать эпилог.
-        Check(Homecoming.Returned(SinType.Greed, 0) == 0, "никого не отправляли — никто не вернулся");
-        Check(Homecoming.Returned(SinType.Sloth, 1) == 1, "ушёл один — он и вернулся");
-
-        // Догадка Каргана на сцене 3 обещает то же, что эпилог вернёт
-        // на сцене 8: обе растут из греха командира. Разные наборы грехов
-        // означали бы, что доля 3 обещает исход, которого не будет.
-        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
-        {
-            string guess = Homecoming.Guess(sin);
-            Check(!string.IsNullOrEmpty(guess), $"{sin}: догадка есть");
-            Check(!guess.Any(char.IsDigit), $"{sin}: догадка без цифр");
+            Check(!string.IsNullOrEmpty(Homecoming.Guess(sin)), $"{sin}: догадка есть");
+            Check(!Homecoming.Guess(sin).Any(char.IsDigit), $"{sin}: догадка без цифр");
         }
 
         // Догадка обязана отличать командиров друг от друга — иначе
         // выбор старшего не слышен в тот же вечер, когда он сделан.
         var guesses = new HashSet<string>();
+        var stories = new HashSet<string>();
         foreach (SinType sin in new[] { SinType.Sloth, SinType.Wrath, SinType.Greed })
+        {
             guesses.Add(Homecoming.Guess(sin));
+            stories.Add(Homecoming.Story(sin));
+        }
         Check(guesses.Count == 3, "три канонных греха гадают по-разному");
+        Check(stories.Count == 3, "три канонных греха объясняются по-разному");
 
-        Console.WriteLine($"  из пятерых вернутся: Уныние {sloth}, Гнев {wrath}, "
-                        + $"Жадность {greed}, Гордыня {Homecoming.Returned(SinType.Pride, sent)}, "
-                        + $"Зависть {Homecoming.Returned(SinType.Envy, sent)}");
+        // Ни одно объяснение не имеет права обещать засаду: засады
+        // в автономном бою нет, и именно на ней слова расходились
+        // с движком сильнее всего.
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+        {
+            Check(!Homecoming.Story(sin).Contains("засад"), $"{sin}: объяснение без засады");
+            Check(!Homecoming.Guess(sin).Contains("засад"), $"{sin}: догадка без засады");
+        }
+
+        // Главное: порядок. Слова написаны под движок — значит движок
+        // обязан этот порядок подтверждать, а не наоборот.
+        var table = Expedition(cfg, Modules(), 5, 200, 5, 6f, "сверка слов с движком");
+
+        Check(table[SinType.Sloth] < table[SinType.Wrath],
+            "Уныние возвращает меньше Гнева — как и говорят слова");
+        Check(table[SinType.Greed] < table[SinType.Wrath],
+            "Жадность возвращает меньше Гнева — прежняя таблица утверждала обратное");
+
+        double worst = table.Values.Min();
+        Check(Math.Abs(table[SinType.Sloth] - worst) < 1e-9,
+            "хуже всех Уныние");
+
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
@@ -1090,7 +1094,8 @@ static class Bench
             Expedition(cfg, modules, sent, runs, foeCount, foeAttack, label);
     }
 
-    static void Expedition(AOSConfig cfg, List<IPersonalityModule> modules,
+    static Dictionary<SinType, double> Expedition(AOSConfig cfg,
+        List<IPersonalityModule> modules,
         int sent, int runs, int foeCount, float foeAttack, string label)
     {
         Console.WriteLine($"\n  --- {label}: {sent} против {foeCount} ---");
@@ -1163,6 +1168,8 @@ static class Bench
         double lo = table.Values.Min(), hi = table.Values.Max();
         Console.WriteLine($"  разница между лучшим и худшим грехом: {hi - lo:F2} из {sent}"
                         + (hi - lo >= 1.0 ? "  ← различает" : "  ← почти не различает"));
+
+        return table;
     }
 
     /// <summary>Один ход одной стороны.</summary>
@@ -2552,7 +2559,7 @@ static class Bench
          cfg.FearFleeSurroundedBonus, cfg.LoyaltyObeySinMultiplier) = snapshot;
 
         LeadershipCheck();
-        HomecomingCheck();
+        HomecomingCheck(cfg);
         CampFocusCheck();
         TransparencyCheck();
         FallenCheck();
