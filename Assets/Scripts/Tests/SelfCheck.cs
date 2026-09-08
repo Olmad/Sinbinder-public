@@ -580,12 +580,33 @@ namespace Sinbinder.Tests
                 foreach (var m in SquadRoster.Away) stillAway++;
                 Same(stillAway, 5, "ушедшие пережили смену сцены");
 
-                // Три исхода обязаны отличаться — ради этого и был совет.
-                Same(Homecoming.Returned(SinType.Sloth, 5), 1, "Уныние возвращается один");
-                Check(Homecoming.Returned(SinType.Wrath, 5)
-                      != Homecoming.Returned(SinType.Greed, 5),
-                    "Гнев и Жадность возвращаются по-разному");
-                Check(Homecoming.Returned(SinType.Greed, 0) == 0,
+                // Исход вылазки больше не таблица, а настоящий бой
+                // (Gameplay/Expedition). Значит и проверять надо не число
+                // из таблицы, а свойства боя.
+                var went = new List<SquadRoster.Member>();
+                foreach (var m in SquadRoster.Away) went.Add(m);
+
+                var first = Expedition.Resolve(went);
+                var again = Expedition.Resolve(went);
+
+                Check(first.Count <= went.Count, "вернулось не больше, чем ушло");
+
+                // Повторяемость. Главное свойство: объяснение «он свернул
+                // за блеском» врало бы через раз, если бы тот же выбор
+                // игрока давал разный исход.
+                bool same = first.Count == again.Count;
+                for (int i = 0; same && i < first.Count; i++)
+                    if (first[i] != again[i]) same = false;
+                Check(same, "вылазка повторяема: тот же состав — тот же исход");
+
+                foreach (var name in first)
+                {
+                    bool known = false;
+                    foreach (var m in went) if (m.Name == name) { known = true; break; }
+                    Check(known, $"вернулся тот, кто уходил: {name}");
+                }
+
+                Check(Expedition.Resolve(new List<SquadRoster.Member>()).Count == 0,
                     "пустой отряд не возвращает никого");
 
                 // Догадка Каргана на сцене 3 и рассказ на сцене 8 растут

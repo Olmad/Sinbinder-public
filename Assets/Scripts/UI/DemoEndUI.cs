@@ -72,9 +72,13 @@ namespace Sinbinder.UI
         ///
         /// Игрок выбрал старшего полчаса назад, прочитав пророчество.
         /// Здесь ему возвращают счёт, и состав зависит от того самого
-        /// выбора (00-GDD.md §8). Считает не эта панель, а <see
-        /// cref="Homecoming"/>: правило проверяется стендом, а исход
-        /// зависит от греха командира, не от его имени.
+        /// выбора (00-GDD.md §8).
+        ///
+        /// Считает не эта панель и больше не таблица: вылазку проводит
+        /// <see cref="Expedition"/> настоящим боем через тот же движок,
+        /// что решает всё остальное. Правило пролога §2 — «ни одна
+        /// постановочная сцена не показывает того, чего движок не мог бы
+        /// решить сам» — выполняется теперь и здесь.
         /// </summary>
         private string Comeback()
         {
@@ -91,20 +95,34 @@ namespace Sinbinder.UI
             });
 
             var leader = away[0];
-            int back = Homecoming.Returned(leader.Sin, away.Count);
+            var survivors = Expedition.Resolve(away);
 
             var sb = new StringBuilder();
+
+            // Не вернулся никто — это законный исход настоящего боя,
+            // а не сбой. Таблица такого не допускала: она всегда
+            // возвращала хотя бы одного, и это было обещание,
+            // которого движок не давал.
+            if (survivors.Count == 0)
+            {
+                sb.AppendLine().AppendLine("Из ушедших не вернулся никто.");
+                sb.AppendLine();
+                sb.AppendLine(Homecoming.Story(leader.Sin));
+                sb.AppendLine().Append("Демо окончено.");
+                return sb.ToString();
+            }
+
             sb.AppendLine().AppendLine("В склеп входит отряд, ушедший из лагеря.");
             sb.AppendLine();
 
-            for (int i = 0; i < back && i < away.Count; i++)
+            foreach (var name in survivors)
             {
-                sb.Append(away[i].Name);
-                if (away[i].IsCommander) sb.Append(" — вёл их");
+                sb.Append(name);
+                if (name == leader.Name && leader.IsCommander) sb.Append(" — вёл их");
                 sb.AppendLine();
             }
 
-            if (back < away.Count)
+            if (survivors.Count < away.Count)
             {
                 sb.AppendLine();
                 sb.AppendLine(Homecoming.Story(leader.Sin));
