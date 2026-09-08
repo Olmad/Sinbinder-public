@@ -9,8 +9,6 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _edgeScrollSize = 20f;
         [SerializeField] private float _minZoom = 5f;
         [SerializeField] private float _maxZoom = 30f;
-        [SerializeField] private float _rotateSpeed = 100f;
-        [SerializeField] private float _pitchAngle = 55f;
 
         private Camera _cam;
         private Vector3 _targetPosition;

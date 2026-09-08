@@ -85,7 +85,11 @@ namespace Sinbinder.Audio
                     break;
                 case EmotionType.Hope:
                     voiceType = VoiceType.Sine;
-                    pitch = _basePitch * 1.2f;
+                    // Через поле, а не литералом: 1.2 здесь и есть
+                    // (1 + _hopePitchShift), только вписанное числом —
+                    // оттого ручка надежды была единственной, которая
+                    // ничего не крутила, а компилятор считал поле мёртвым.
+                    pitch = _basePitch * (1 + _hopePitchShift);
                     variation *= 0.8f;
                     duration *= 1.1f;
                     break;

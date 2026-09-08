@@ -179,6 +179,16 @@ namespace Sinbinder.Gameplay
             {
                 if (unit == null) continue;
 
+                // Греховод в рамку не попадает. Он стоит посреди отряда,
+                // и «выделить всех» захватывало бы игрока вместе с ними:
+                // приказ идти уводил бы его самого, отбирая управление
+                // ровно в тот момент, когда игрок им пользуется.
+                //
+                // Щелчком по нему выделить можно — так смотрят его строку
+                // в нижней панели. Разница в том, что щелчок нарочен,
+                // а рамка — нет.
+                if (unit.GetComponentInParent<SinbinderPlayer>() != null) continue;
+
                 Vector3 screenPos = _cam.WorldToScreenPoint(unit.transform.position);
                 if (selectionRect.Contains(screenPos))
                 {
