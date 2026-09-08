@@ -43,7 +43,19 @@ namespace Sinbinder.AOS
         public float GreedSaveAllySinMultiplier = 0.3f;
         public float GreedSaveAllyHighSinPenalty = -20f;
         public float GreedAttackGoodVirtueBonus = 15f;
+        // Полный счёт за невыплаты — он набирается к пятой вылазке
+        // подряд без платы. Ступени ниже считаются долями от него.
         public float GreedObeyUnpaidPenalty = -40f;
+
+        // Насколько каждая следующая невыплата тяжелее предыдущей.
+        // 0 — долг растёт ровно (вторая вдвое дороже первой),
+        // 0.25 — четвёртая уже втрое дороже второй.
+        public float GreedUnpaidGrowth = 0.25f;
+
+        // Насколько счёт за невыплату зависит от жадности. Жадный
+        // ведёт счёт, щедрый машет рукой; при нуле долг обижает всех
+        // одинаково — и перестаёт различать воинов.
+        public float GreedUnpaidSinShare = 0.008f;
 
         [Header("Гнев")]
         public float WrathAttackPerEnemy = 15f;

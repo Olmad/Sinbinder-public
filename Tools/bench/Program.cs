@@ -1246,8 +1246,9 @@ static class Bench
         // В голом поле: там, где без долга он послушался бы. В богатом
         // положении он отказывается и так, и рычага не видно — не потому,
         // что его нет, а потому, что отказ уже насыщен.
-        double paid = 0, owed = 0;
-        for (int unpaid = 0; unpaid <= 3; unpaid++)
+        double paid = 0, owed = 0, previous = 0;
+        int stepsHeard = 0;
+        for (int unpaid = 0; unpaid <= 5; unpaid++)
         {
             var (rate, reason) = OrderRun(modules, cfg, SinType.Greed,
                 MoralType.Vicious, 65f, 70f, unpaid, runs, loot: 0, allyInDanger: false);
@@ -1255,14 +1256,45 @@ static class Bench
             if (unpaid == 0) paid = rate;
             if (unpaid == 3) owed = rate;
 
-            Console.WriteLine($"  {unpaid,-6} {rate * 100,7:F1}%  {reason}");
+            // Ступень «слышна», если одна невыплата двигает исход хотя бы
+            // на три положения из ста. Ради этого замер и переделан:
+            // прежде спрашивали только про края и не видели выключателя.
+            string step = "—";
+            if (unpaid > 0)
+            {
+                double d = rate - previous;
+                if (Math.Abs(d) >= 0.03) stepsHeard++;
+                step = $"{d * 100,+6:F1}";
+            }
+            previous = rate;
+
+            Console.WriteLine($"  {unpaid,-6} {rate * 100,7:F1}% {step,8}  {reason}");
         }
 
         double lever = owed - paid;
         Console.WriteLine($"\n  уплата долга меняет отказ на {lever * 100:F1} процентных пункта");
+        Console.WriteLine($"  слышных ступеней: {stepsHeard} из 5");
         Console.WriteLine(lever >= 0.15
             ? "  ВЫВОД: рычаг настоящий — заплатив, игрок правда меняет исход."
             : "  ВЫВОД: рычаг слаб. Демо обещает власть, которой у игрока нет.");
+        Console.WriteLine(stepsHeard >= 3
+            ? "  ВЫВОД: долг — шкала. Частичная уплата тоже что-то значит."
+            : "  ВЫВОД: долг — выключатель. Игрок не увидит, что задолжал, "
+            + "пока не станет поздно.");
+
+        // --- один и тот же долг двум разным душам ---
+        Console.WriteLine("\n  --- Долг в три вылазки: кто как считает ---");
+        Console.WriteLine($"  {"жадность",-10} {"отказов",8}  причина");
+
+        foreach (float greed in new[] { -80f, -40f, 0f, 40f, 80f })
+        {
+            var (rate, reason) = OrderRun(modules, cfg, SinType.Greed,
+                MoralType.Vicious, greed, 70f, 3, runs, loot: 0, allyInDanger: false);
+            Console.WriteLine($"  {greed,-10:F0} {rate * 100,7:F1}%  {reason}");
+        }
+
+        Console.WriteLine("  Долг был единственным рычагом игрока, который действовал");
+        Console.WriteLine("  на всех одинаково. Если строки совпали — он всё ещё такой.");
     }
 
     /// <summary>

@@ -127,9 +127,11 @@ namespace Sinbinder.Gameplay
 
             foreach (var m in SquadRoster.Members)
             {
-                // Больше двух — тот порог, за которым Жадность начинает
-                // ставить свои счёты выше приказа.
-                if (m.UnpaidMissions <= 2) continue;
+                // Порога, за которым Жадность вдруг ставит счёты выше
+                // приказа, больше нет: долг стал шкалой. Предупреждаем
+                // с двух невыплат — с них замер стенда впервые слышит
+                // разницу в исходе (docs/12-BALANCE.md, «Долг»).
+                if (m.UnpaidMissions < 2) continue;
 
                 if (!found || m.UnpaidMissions > debtor.UnpaidMissions
                     || (m.UnpaidMissions == debtor.UnpaidMissions

@@ -19,6 +19,8 @@ MonoBehaviour:
   GreedSaveAllyHighSinPenalty: -20
   GreedAttackGoodVirtueBonus: 15
   GreedObeyUnpaidPenalty: -40
+  GreedUnpaidGrowth: 0.25
+  GreedUnpaidSinShare: 0.008
   WrathAttackPerEnemy: 15
   WrathSinMultiplier: 0.3
   WrathAllyInDangerBonus: 20

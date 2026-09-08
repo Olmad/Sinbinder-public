@@ -81,7 +81,14 @@ namespace Sinbinder.AOS
             switch (decision.TopModule)
             {
                 case "Greed":
-                    if (context.UnpaidMissions > 2) return "ему не платили третью вылазку подряд";
+                    // У долга теперь есть ступени, и у каждой свой голос.
+                    // Пока Жадность отказывалась только на третьей невыплате,
+                    // хватало двух строк; теперь воин может отказать и на
+                    // второй, и объяснение обязано это различать — иначе
+                    // игрок услышит «третью» там, где задолжали две.
+                    if (context.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
+                    if (context.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
+                    if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
                     if (context.UnpaidMissions > 0) return "ему до сих пор не заплатили";
                     if (context.NearbyLoot > 0) return "добыча лежала слишком близко";
                     return "он думает о своей доле";
