@@ -109,6 +109,19 @@ namespace Sinbinder.AOS
         [Header("Верность")]
         public float LoyaltyObeySinMultiplier = 2.5f;
 
+        // Верность, при которой воину всё равно: выше — приказ мешает
+        // заниматься своим, ниже — своеволие даётся легче.
+        public float LoyaltyIndifferent = 50f;
+
+        // Насколько тяжело верному пренебречь стоящим приказом.
+        //
+        // Ноль — не «не сделано», а измеренный выбор: помеха покупает
+        // чувствительность верности ценой уникальности воинов, и цена
+        // оказалась выше товара. Разбор и цифры — docs/12-BALANCE.md,
+        // раздел «Помеха своеволию». Стенд крутит эту ручку сам
+        // (DisobeyDragSweep), так что проверить заново стоит один прогон.
+        public float LoyaltyDisobeyDrag = 0f;
+
         [Header("Мораль")]
         public float MoralityPiousSaveAlly = 40f;
         public float MoralityPiousLootPenalty = -20f;

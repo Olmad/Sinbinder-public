@@ -48,6 +48,8 @@ MonoBehaviour:
   VirtueLootHighVirtuePenalty: -25
   VirtueObeySinMultiplier: 0.3
   LoyaltyObeySinMultiplier: 0.8
+  LoyaltyIndifferent: 50
+  LoyaltyDisobeyDrag: 0
   MoralityPiousSaveAlly: 40
   MoralityPiousLootPenalty: -20
   MoralityPiousFleePenalty: -15

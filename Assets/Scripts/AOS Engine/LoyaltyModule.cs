@@ -17,8 +17,11 @@ namespace Sinbinder.AOS.Modules
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {
+            if (!context.HasCommand) return 0f;
+
             float score = 0f;
-            if (context.HasCommand && action == ActionType.ObeyCommand)
+
+            if (action == ActionType.ObeyCommand)
             {
                 score += soul.Loyalty * _config.LoyaltyObeySinMultiplier;
 
@@ -30,6 +33,28 @@ namespace Sinbinder.AOS.Modules
                     score += _config.LoyaltyObeyEngagedPenalty
                              * (context.Surrounded ? 1.5f : 1f);
             }
+            else if (!context.SatisfiedBy(action))
+            {
+                // Верность голосовала ровно за одно действие — и потому
+                // молчала везде, где приказ и без неё не был первым.
+                // Замер чувствительности нашёл на ней мёртвую зону
+                // в пятьдесят единиц подряд: от 21 до 70 верность
+                // не меняла ни одного решения из двухсот.
+                //
+                // Причина не в том, что голос тих, а в том, что он
+                // звучал не там. Верность — не награда за приказ,
+                // а цена за то, чтобы им пренебречь: пока приказ стоит,
+                // верному тяжело заняться своим. И наоборот — неверному
+                // легче: ниже точки безразличия помеха превращается
+                // в поблажку, и своеволие становится ему по средствам.
+                //
+                // Действия, которые приказ и так исполняют, не трогаем:
+                // «отходи» исполняется Бегством, и мешать Бегству значило
+                // бы наказывать за послушание.
+                score -= (soul.Loyalty - _config.LoyaltyIndifferent)
+                         * _config.LoyaltyDisobeyDrag;
+            }
+
             return score * Weight;
         }
     }

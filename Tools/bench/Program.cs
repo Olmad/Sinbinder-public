@@ -1826,6 +1826,145 @@ static class Bench
         cfg.LoyaltyObeySinMultiplier = saved;
     }
 
+    /// <summary>
+    /// Чувствительность одной шкалы верности при текущем конфиге:
+    /// в скольких положениях из ста одна единица меняет решение
+    /// и какова самая длинная мёртвая зона.
+    ///
+    /// Отдельно от SensitivityCheck потому, что подбор ручки обязан
+    /// мерить то, ради чего ручку крутят. Иначе мы бы выбирали помеху
+    /// по доле отказов, а мёртвую зону смотрели потом и отдельно —
+    /// то есть выбирали вслепую.
+    /// </summary>
+    static (double Avg, int Dead) LoyaltyFeel(AOSConfig cfg)
+    {
+        var modules = Modules();
+        const int probes = 100;
+
+        double sum = 0; int steps = 0;
+        int dead = 0, worst = 0;
+        ActionType[] previous = null;
+
+        for (int v = 20; v <= 100; v++)
+        {
+            var now = new ActionType[probes];
+
+            for (int i = 0; i < probes; i++)
+            {
+                var spectra = new float[7];
+                spectra[(int)SinType.Greed] = 60f;
+
+                var w = new Warrior
+                {
+                    Soul = new SoulData("Воин", MoralType.Neutral, 1, spectra),
+                    Attack = 5f, Loyalty = v, Team = Team.Player,
+                    Relationships = new RelationshipSystem(),
+                };
+
+                var ctx = new DecisionContext
+                {
+                    CurrentHP = 8f + (i % 20),
+                    MaxHP = 30f,
+                    NearbyEnemies = 1 + (i % 4),
+                    NearbyLoot = i % 3,
+                    Fatigue = (i % 10) / 10f,
+                    RelationshipWithCommander = v,
+                    AllyInDanger = i % 3 == 0,
+                    Surrounded = i % 7 == 0,
+                    HasCommand = true, CommandType = "FallBack",
+                    CommandIsFallBack = true,
+                    IsEngaged = true, CommandLeavesFight = true,
+                };
+
+                now[i] = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced).Action;
+            }
+
+            if (previous != null)
+            {
+                int differ = 0;
+                for (int i = 0; i < probes; i++)
+                    if (now[i] != previous[i]) differ++;
+
+                sum += differ / (double)probes; steps++;
+
+                if (differ == 0) { dead++; if (dead > worst) worst = dead; }
+                else dead = 0;
+            }
+
+            previous = now;
+        }
+
+        return (sum / Math.Max(steps, 1), worst);
+    }
+
+    /// <summary>
+    /// Подбор помехи своеволию: насколько тяжело верному пренебречь
+    /// стоящим приказом.
+    ///
+    /// Смотрим сразу на четыре величины, потому что ручка тянет их
+    /// в разные стороны: помеха уменьшает отказы (хорошо, автор считает
+    /// их частыми), но может схлопнуть разброс (плохо, разброс и есть
+    /// уникальность воинов) и обязана уменьшать мёртвую зону — иначе
+    /// её незачем было вводить.
+    /// </summary>
+    static void DisobeyDragSweep(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ПОМЕХА СВОЕВОЛИЮ: подбор ===");
+
+        var modules = Modules();
+
+        var camp = new (string Name, SinType Sin, MoralType Moral, float I, float L, int U)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f, 0),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f, 0),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f, 3),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f, 0),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f, 0),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f, 0),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f, 0),
+        };
+
+        float saved = cfg.LoyaltyDisobeyDrag;
+
+        Console.WriteLine($"  {"помеха",7} {"помеха@95",10} {"средне",8} {"разброс",8}"
+                        + $"  различимых  {"единица",8}  мёртвая  миссии");
+
+        foreach (float drag in new[] { 0f, 0.35f, 0.6f, 0.9f, 1.2f, 1.6f, 2.2f })
+        {
+            cfg.LoyaltyDisobeyDrag = drag;
+
+            var rates = new List<double>();
+            foreach (var m in camp)
+            {
+                var (rate, _) = OrderRun(modules, cfg, m.Sin, m.Moral,
+                    m.I, m.L, m.U, 400, loot: 0, allyInDanger: false);
+                rates.Add(rate);
+            }
+
+            double avg = rates.Average();
+            double lo = rates.Min(), hi = rates.Max();
+            var bands = new HashSet<int>(rates.Select(x => (int)(x * 10)));
+
+            var (feel, deadZone) = LoyaltyFeel(cfg);
+            int missions = MissionsMatched(cfg);
+
+            Console.WriteLine($"  {drag,7:F2} {(95f - cfg.LoyaltyIndifferent) * drag,10:F1}"
+                            + $" {avg * 100,7:F1}% {(hi - lo) * 100,7:F0}п.п."
+                            + $"  {bands.Count,2} из 9    {feel * 100,7:F1}%"
+                            + $"  {deadZone,5}    {missions}/15");
+        }
+
+        cfg.LoyaltyDisobeyDrag = saved;
+
+        Console.WriteLine("\n  «Помеха@95» — сколько очков теряет действие, которым верный");
+        Console.WriteLine("  воин пренебрёг бы приказом. «Единица» — в скольких положениях");
+        Console.WriteLine("  из ста одна единица верности меняет решение. «Мёртвая» — самый");
+        Console.WriteLine("  длинный участок шкалы, где не меняет ни в одном.");
+        Console.WriteLine("  Ноль в первой строке — поведение до правки.");
+    }
+
     /// <summary>Сколько строк таблицы миссий сходится при этом конфиге.</summary>
     static int MissionsMatched(AOSConfig cfg)
     {
@@ -2245,6 +2384,7 @@ static class Bench
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);
+        DisobeyDragSweep(cfg);
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);
