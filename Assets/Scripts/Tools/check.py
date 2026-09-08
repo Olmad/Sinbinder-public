@@ -438,7 +438,64 @@ class Checker:
                     continue
                 self.report(p, line_of(body, m.start()), f'CS0246: тип {t} нигде не объявлен')
 
+    # Файлы, из которых складывается решение воина. Всё, что здесь
+    # написано, обязано давать одинаковый ответ на одинаковый вход —
+    # это правило проекта, и оно же условие будущей сетевой игры
+    # (docs/15-AFTER.md §1, Assets/Scripts/Multiplayer/*.cs.later).
+    DECIDES = (
+        'AOS Engine/BehaviorResolver.cs',
+        'AOS Engine/PhraseGenerator.cs',
+        'AOS Engine/AutoBattleContext.cs',
+        'AOS Engine/AutoBattleResolver.cs',
+        'AOS Engine/CombatDecisionContext.cs',
+        'AOS Engine/TemperamentPredictor.cs',
+        'AOS Engine/SkillCatalog.cs',
+        'Core/Soul/SoulDecay.cs',
+        'Core/Soul/ShellBinder.cs',
+        'Core/Soul/ShellChoice.cs',
+    )
+
+    # Ключ к текущему времени, случайности или к тому, что у каждой машины
+    # своё. Порядок обхода сцены сюда не попадает намеренно: он ловится
+    # глазами, а FindObjectsSortMode.InstanceID в проекте стоит везде.
+    UNSTABLE = (
+        ('Random.', 'случайность'),
+        ('Time.', 'текущее время'),
+        ('DateTime.', 'часы машины'),
+        ('Guid.NewGuid', 'значение, своё у каждой машины'),
+    )
+
+    def determinism(self):
+        """
+        Решение обязано быть повторяемым.
+
+        Правило «одинаковый вход даёт одинаковый выход» держится в проекте
+        с самого начала — ради того, чтобы игрок мог учиться на объяснениях.
+        Держится оно тем, что все помнят; проверки не было ни одной.
+
+        Ловим не всё подряд, а только те файлы, из которых складывается
+        решение. В остальных Time.deltaTime законен: поворот головы при
+        отказе, откат умения, задержка реплики — это показ, а не выбор.
+        """
+        for p, s in self.src.items():
+            flat = p.replace(chr(92), '/')
+            if not any(flat.endswith(d) for d in self.DECIDES) \
+                    and '/Modules/' not in flat \
+                    and not (flat.endswith('Module.cs') and 'AOS Engine' in flat):
+                continue
+
+            body = strip(s)
+            for token, why in self.UNSTABLE:
+                i = body.find(token)
+                if i < 0:
+                    continue
+                self.report(p, line_of(body, i),
+                            f'решение обязано быть повторяемым, а {token} '
+                            f'даёт {why}. Если это показ, а не выбор — '
+                            f'вынести из файла решения')
+
     def run(self):
+        self.determinism()
         self.duplicate_types()
         self.braces()
         self.linq()

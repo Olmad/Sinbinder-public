@@ -1,0 +1,192 @@
+// ОТЛОЖЕНО ДО ОСНОВНОЙ ИГРЫ
+//
+// См. NetTick.cs.later — там объяснено, почему вся папка отложена.
+//
+// Этот файл — единственный в папке, который про дизайн, а не про сеть.
+// Если из всей папки когда-нибудь выживет один файл, пусть это будет он.
+
+using System.Collections.Generic;
+using Sinbinder.AOS;
+using Sinbinder.Gameplay;
+
+namespace Sinbinder.Multiplayer
+{
+    /// <summary>
+    /// Воин, которому приказали двое.
+    ///
+    /// <b>Это не костыль под кооператив, а механика в чистом виде.</b>
+    /// Голосование с самого начала умеет взвешивать несогласные голоса;
+    /// второй Греховод — просто ещё один голос, и верность к нему
+    /// считается своя. Ни один известный кооператив так не устроен,
+    /// потому что ни у кого нет для этого движка.
+    ///
+    /// Отсюда главное следствие, и оно определяет весь режим:
+    /// <b>второй игрок не борется с первым за управление отрядом —
+    /// он борется за доверие отряда.</b> Нельзя перекликать напарника;
+    /// можно заслужить больше, чем он. «Не командуй. Искушай.»,
+    /// применённое к своему же союзнику.
+    ///
+    /// <b>Что уже есть и не пришлось выдумывать.</b> Верность считается
+    /// не «вообще», а к конкретному командиру: <c>RelationshipSystem
+    /// .GetRelationship(warriorId, commanderId)</c> и поле
+    /// <c>DecisionContext.RelationshipWithCommander</c> существуют
+    /// с самого начала. Отношения не хранятся, а складываются из общей
+    /// памяти — значит второй командир получает свою историю отношений
+    /// с каждым воином автоматически, просто потому что он в этой памяти
+    /// участвует.
+    /// </summary>
+    public static class TwoCommanders
+    {
+        /// <summary>Приказ и тот, кто его отдал.</summary>
+        public readonly struct Standing
+        {
+            public readonly Warrior Commander;
+            public readonly string Kind;
+            public readonly bool LeavesFight;
+
+            public Standing(Warrior commander, string kind, bool leavesFight)
+            {
+                Commander = commander;
+                Kind = kind;
+                LeavesFight = leavesFight;
+            }
+        }
+
+        /// <summary>Чем кончился спор двух приказов.</summary>
+        public readonly struct Verdict
+        {
+            /// <summary>Чей приказ победил. Пусто — не послушался никого.</summary>
+            public readonly Warrior Obeyed;
+
+            /// <summary>Что воин на самом деле делает.</summary>
+            public readonly ActionType Action;
+
+            /// <summary>Кого он при этом ослушался. Пусто — ослушаться было некого.</summary>
+            public readonly Warrior Refused;
+
+            public Verdict(Warrior obeyed, ActionType action, Warrior refused)
+            {
+                Obeyed = obeyed;
+                Action = action;
+                Refused = refused;
+            }
+        }
+
+        /// <summary>
+        /// Решить, кого воин послушает.
+        ///
+        /// Способ намеренно тупой и намеренно честный: <b>голосуем
+        /// столько раз, сколько стоящих приказов</b>, каждый раз подставляя
+        /// верность к тому командиру, и берём тот исход, в котором воин
+        /// приказ исполнил. Своей формулы «чей приказ громче» здесь нет
+        /// и быть не должно — это была бы вторая правда рядом с движком,
+        /// и она разошлась бы с ним при первой же правке модулей.
+        ///
+        /// Два приказа — два прогона резолвера. Для кооператива на двоих
+        /// этого достаточно, и цена честности здесь заведомо ниже цены
+        /// расхождения.
+        ///
+        /// <b>Важно, что решает не только верность.</b> Воин, который
+        /// чуть больше доверяет первому, но чей грех согласен со вторым
+        /// приказом, уйдёт за вторым. Верность — вес голоса, а не право
+        /// вето: иначе кооператив свёлся бы к соревнованию, кто больше
+        /// нахвалил, и перестал бы быть про характеры.
+        /// </summary>
+        public static Verdict Decide(BehaviourResolver resolver, Warrior warrior,
+            DecisionContext context, IReadOnlyList<Standing> orders)
+        {
+            if (resolver == null || warrior == null || context == null)
+                return new Verdict(null, ActionType.Idle, null);
+
+            // Приказов нет — обычное решение, обычной дорогой.
+            if (orders == null || orders.Count == 0)
+            {
+                context.HasCommand = false;
+                return new Verdict(null, resolver.Decide(warrior, context), null);
+            }
+
+            Warrior obeyedBy = null;
+            ActionType chosen = ActionType.Idle;
+            float best = float.MinValue;
+
+            // Порядок обхода задан списком, а не сценой: в шаговой схеме
+            // два участника обязаны перебрать приказы одинаково, иначе
+            // при равных весах они выберут разных командиров и разойдутся.
+            for (int i = 0; i < orders.Count; i++)
+            {
+                var order = orders[i];
+
+                context.HasCommand = true;
+                context.CommandType = order.Kind;
+                context.CommandIsFallBack = order.LeavesFight;
+                context.CommandLeavesFight = order.LeavesFight;
+                context.Commander = order.Commander;
+                context.RelationshipWithCommander = TrustIn(warrior, order.Commander);
+
+                var action = resolver.Decide(warrior, context);
+
+                // Послушался — запоминаем, насколько охотно. «Насколько»
+                // берём из верности: сравнивать надо не сами очки (они
+                // считаются заново на каждом прогоне и между прогонами
+                // несопоставимы), а того, за кем воин пошёл.
+                if (!context.SatisfiedBy(action)) continue;
+
+                float trust = context.RelationshipWithCommander;
+                if (trust <= best) continue;
+
+                best = trust;
+                obeyedBy = order.Commander;
+                chosen = action;
+            }
+
+            // Никого не послушал. Действие берём из последнего прогона:
+            // отказ — это тоже решение, и воин его уже принял.
+            if (obeyedBy == null)
+            {
+                var last = orders[orders.Count - 1];
+
+                context.HasCommand = true;
+                context.CommandType = last.Kind;
+                context.Commander = last.Commander;
+                context.RelationshipWithCommander = TrustIn(warrior, last.Commander);
+
+                return new Verdict(null, resolver.Decide(warrior, context), null);
+            }
+
+            // Кого ослушался: тот из отдавших приказ, за кем он не пошёл.
+            // Именно эта строка и есть продукт кооператива — игрок обязан
+            // увидеть, что воин выбрал не его, и услышать почему.
+            Warrior refused = null;
+            for (int i = 0; i < orders.Count; i++)
+                if (orders[i].Commander != obeyedBy) { refused = orders[i].Commander; break; }
+
+            return new Verdict(obeyedBy, chosen, refused);
+        }
+
+        /// <summary>
+        /// Насколько этот воин доверяет этому Греховоду.
+        ///
+        /// Спрашиваем общую память, а не отдельное поле: отношения
+        /// в проекте вычисляются, а не хранятся, и заводить второму
+        /// командиру собственную шкалу значило бы создать вторую правду
+        /// о персонаже, которая рано или поздно разойдётся с первой.
+        /// </summary>
+        private static float TrustIn(Warrior warrior, Warrior commander)
+        {
+            if (warrior == null || commander == null) return 50f;
+            if (warrior.Relationships == null) return warrior.Loyalty;
+
+            return warrior.Relationships.GetRelationship(warrior.Id, commander.Id);
+        }
+
+        /// <summary>
+        /// Что сказать игроку, за которым не пошли.
+        ///
+        /// Без цифр и без обвинений — как и всякое объяснение в этой игре.
+        /// Причину называет PhraseGenerator; здесь только та часть, которой
+        /// в одиночной игре не бывает: воин выбрал между двумя.
+        /// </summary>
+        public static string Chose(string warrior, string obeyed)
+            => $"{warrior} пошёл за {obeyed}.";
+    }
+}
