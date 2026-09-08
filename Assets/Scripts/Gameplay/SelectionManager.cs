@@ -66,7 +66,10 @@ namespace Sinbinder.Gameplay
             bool clear = false;
 
             if (Input.GetKeyDown(KeyCode.H)) kind = CommandKind.Hold;
-            else if (Input.GetKeyDown(KeyCode.D)) kind = CommandKind.Defend;
+            // Оборона на G, а не на D: D одновременно ведёт камеру вправо
+            // (RTS_Camera), и при выделенном отряде одно нажатие делало
+            // и то и другое. WASD принадлежат камере целиком.
+            else if (Input.GetKeyDown(KeyCode.G)) kind = CommandKind.Defend;
             else if (Input.GetKeyDown(KeyCode.Escape)) clear = true;
             else return;
 

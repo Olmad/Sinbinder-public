@@ -46,7 +46,7 @@ namespace Sinbinder.Gameplay
 
             try
             {
-                var relations = new RelationshipSystem();
+                var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
                 var squad = new List<Warrior>();
                 var foes = new List<Warrior>();
 

@@ -145,7 +145,7 @@ namespace Sinbinder.Gameplay
             if (!found) return;
 
             var bodyguard = Bodyguard();
-            string who = bodyguard != null ? bodyguard.Name : "Карган Старый Ворон";
+            string who = bodyguard.HasValue ? bodyguard.Value.Name : "Карган Старый Ворон";
 
             Log($"{who}: «Владыка, ваше наказание {Possessive(debtor.Name)} "
               + "затянулось. Подумайте о последствиях».");
