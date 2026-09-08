@@ -25,8 +25,14 @@ namespace Sinbinder.Multiplayer
         /// <summary>Кто приказал. Не «игрок номер один», а конкретный Греховод.</summary>
         public int CommanderId;
 
-        /// <summary>Кому. Идентификатор воина, общий у всех участников.</summary>
-        public string WarriorId;
+        /// <summary>
+        /// Кому. Общий номер из <see cref="NetIdentity"/>, а не
+        /// <c>Warrior.Id</c>: тот создаётся как <c>Guid.NewGuid</c>
+        /// и свой у каждой машины. Первая редакция этого файла клала
+        /// сюда именно его, и пакет уходил бы с номером, которого
+        /// у получателя нет.
+        /// </summary>
+        public int WarriorNet;
 
         /// <summary>Чего от него хотят: «Attack», «Move», «Hold», «FallBack».</summary>
         public string Kind;
@@ -54,8 +60,8 @@ namespace Sinbinder.Multiplayer
             if (a.CommanderId != b.CommanderId)
                 return a.CommanderId.CompareTo(b.CommanderId);
 
-            int byWarrior = string.CompareOrdinal(a.WarriorId, b.WarriorId);
-            if (byWarrior != 0) return byWarrior;
+            if (a.WarriorNet != b.WarriorNet)
+                return a.WarriorNet.CompareTo(b.WarriorNet);
 
             return string.CompareOrdinal(a.Kind, b.Kind);
         }

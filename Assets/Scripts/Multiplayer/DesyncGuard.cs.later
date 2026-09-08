@@ -39,25 +39,24 @@ namespace Sinbinder.Multiplayer
         /// <summary>
         /// Отпечаток состояния, от которого зависят решения.
         ///
-        /// Воины сортируются по идентификатору: порядок обхода сцены
-        /// у участников разный, и без сортировки отпечаток расходился бы
-        /// сам по себе — прибор ловил бы собственную тень.
+        /// Порядок берётся из <see cref="NetIdentity"/>, а не из обхода
+        /// сцены и не из <c>Warrior.Id</c>. Первая редакция сортировала
+        /// и хэшировала именно по <c>Warrior.Id</c> — и это была ошибка,
+        /// которая обесценивала весь прибор: идентификатор создаётся как
+        /// <c>Guid.NewGuid</c>, свой у каждой машины, и отпечатки
+        /// разошлись бы на первой же сверке в идеально синхронной партии.
         /// </summary>
-        public static ulong Fingerprint(IReadOnlyList<Warrior> warriors)
+        public static ulong Fingerprint(NetIdentity ids)
         {
-            if (warriors == null) return 0UL;
-
-            var sorted = new List<Warrior>(warriors);
-            sorted.Sort((a, b) => string.CompareOrdinal(
-                a != null ? a.Id : "", b != null ? b.Id : ""));
+            if (ids == null) return 0UL;
 
             ulong hash = 1469598103934665603UL;   // FNV-1a, 64 бита
 
-            foreach (var w in sorted)
+            foreach (var w in ids.InOrder())
             {
                 if (w == null) continue;
 
-                Mix(ref hash, w.Id);
+                Mix(ref hash, ids.NumberOf(w));
                 Mix(ref hash, w.IsDead ? 1 : 0);
 
                 // Здоровье и усталость округляем: у участников они
