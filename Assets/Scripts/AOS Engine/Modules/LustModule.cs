@@ -55,6 +55,39 @@ namespace Sinbinder.AOS.Modules
                     if (context.NearbyEnemies == 0 && context.NearbyLoot == 0)
                         score += lust * _config.LustIdleSinMultiplier;
                     break;
+
+                // ---------- собственные умения ----------
+                //
+                // Пороги стоят в разных местах шкалы намеренно. Замер
+                // чувствительности (docs/12-BALANCE.md) показал, что шкалы
+                // работают плато: одна единица не значит почти нигде.
+                // Порог — единственное место, где она значит всё сразу,
+                // и умения дают их по нескольку на каждую шкалу.
+
+                case ActionType.Charm:
+                    if (lust > 30f && context.NearbyEnemies > 0)
+                        score += 30f + lust * 0.25f;
+                    break;
+
+                case ActionType.Seduce:
+                    if (lust > 50f && context.NearbyEnemies > 0)
+                        score += 35f + lust * 0.2f;
+                    break;
+
+                case ActionType.KissOfDeath:
+                    // Отнимает жизнь у врага и отдаёт себе. Нужен тогда,
+                    // когда своей уже мало.
+                    if (lust > 60f && context.NearbyEnemies > 0
+                        && context.CurrentHP < context.MaxHP * 0.5f)
+                        score += 45f + lust * 0.3f;
+                    break;
+
+                case ActionType.FatalPassion:
+                    // Бьёт и себя тоже. На это идут от избытка, а не от нужды.
+                    if (lust > 80f && context.NearbyEnemies > 0
+                        && context.CurrentHP > context.MaxHP * 0.5f)
+                        score += 50f + lust * 0.25f;
+                    break;
             }
 
             return score * Weight;

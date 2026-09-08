@@ -29,8 +29,11 @@ namespace Sinbinder.Gameplay
             _auraTimer -= Time.deltaTime;
             _sleepTimer -= Time.deltaTime;
         }
-        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Yawn, AOS.ActionType.LazyHeal, AOS.ActionType.AuraOfApathy, AOS.ActionType.EternalSleep };
-        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+        // Список умений живёт в AOS.SkillCatalog, а не здесь: им
+        // пользуются и проводка, и стенд, а две копии одного списка
+        // рано или поздно разойдутся.
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions
+            => AOS.SkillCatalog.For(Sinbinder.Core.SinType.Sloth, 1f);
 
 
         public bool CanUseSkill(ActionType action)

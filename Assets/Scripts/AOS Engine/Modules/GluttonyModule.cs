@@ -48,6 +48,31 @@ namespace Sinbinder.AOS.Modules
                 case ActionType.Attack:
                     score -= gluttony * _config.GluttonyAttackSinMultiplier;
                     break;
+
+                // ---------- собственные умения ----------
+                //
+                // Пороги стоят в разных местах шкалы намеренно. Замер
+                // чувствительности (docs/12-BALANCE.md) показал, что шкалы
+                // работают плато: одна единица не значит почти нигде.
+                // Порог — единственное место, где она значит всё сразу,
+                // и умения дают их по нескольку на каждую шкалу.
+
+                case ActionType.Devour:
+                    // Труп рядом обеспечивает бюллетень: CanUseSkill
+                    // не предлагает Пожирание, когда есть нечего.
+                    if (gluttony > 25f && context.CurrentHP < context.MaxHP * 0.7f)
+                        score += 30f + gluttony * 0.3f;
+                    break;
+
+                case ActionType.Vomit:
+                    if (gluttony > 50f && context.NearbyEnemies > 0)
+                        score += 35f + gluttony * 0.2f;
+                    break;
+
+                case ActionType.InsatiableHunger:
+                    if (gluttony > 70f)
+                        score += 40f + gluttony * 0.25f;
+                    break;
             }
 
             return score * Weight;

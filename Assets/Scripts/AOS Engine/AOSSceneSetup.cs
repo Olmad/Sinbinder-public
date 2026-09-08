@@ -90,6 +90,10 @@ namespace Sinbinder.AOS
             AddIfMissing<AOSWarriorWrapper>(go);
             AddIfMissing<AutoAttackAOS>(go);
 
+            // Умения. Здесь, а не в WarriorRig.Attach: набор выбирается
+            // по душе, а душу спавнеры задают после того, как слепят тело.
+            Gameplay.WarriorRig.AttachSkills(go);
+
             var oldAttack = go.GetComponent<AutoAttack>();
             if (oldAttack != null) oldAttack.enabled = false;
         }

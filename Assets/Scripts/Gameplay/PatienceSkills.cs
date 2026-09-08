@@ -37,8 +37,11 @@ namespace Sinbinder.Gameplay
             _secondWindTimer -= Time.deltaTime;
             _unshakableTimer -= Time.deltaTime;
         }
-        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.IronStance, AOS.ActionType.CounterAttack, AOS.ActionType.SecondWind, AOS.ActionType.Unshakable };
-        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+        // Список умений живёт в AOS.SkillCatalog, а не здесь: им
+        // пользуются и проводка, и стенд, а две копии одного списка
+        // рано или поздно разойдутся.
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions
+            => AOS.SkillCatalog.For(Sinbinder.Core.SinType.Wrath, -1f);
 
 
         public bool CanUseSkill(AOS.ActionType action)

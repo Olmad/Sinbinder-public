@@ -47,6 +47,33 @@ namespace Sinbinder.AOS.Modules
                 case ActionType.Idle:
                     if (sin > 40f) score += _config.WrathIdleHighSinPenalty;
                     break;
+
+                // ---------- собственные умения ----------
+                //
+                // Пороги стоят в разных местах шкалы намеренно. Замер
+                // чувствительности (docs/12-BALANCE.md) показал, что шкалы
+                // работают плато: одна единица не значит почти нигде.
+                // Порог — единственное место, где она значит всё сразу,
+                // и умения дают их по нескольку на каждую шкалу.
+
+                case ActionType.PowerStrike:
+                    if (sin > 25f && context.NearbyEnemies > 0)
+                    {
+                        score += 30f + sin * 0.25f;
+                        if (context.TargetBackExposed) score += 20f;
+                    }
+                    break;
+
+                case ActionType.Berserk:
+                    // Берсерк меняет защиту на силу. Гневному это кажется
+                    // выгодной сделкой ровно тогда, когда врагов больше
+                    // одного — то есть когда защита всё равно не спасёт.
+                    if (sin > 55f && context.NearbyEnemies >= 2)
+                    {
+                        score += 45f + sin * 0.35f;
+                        if (context.Surrounded) score += 15f;
+                    }
+                    break;
             }
 
             // Гнев не считает силы: усталость его не останавливает,

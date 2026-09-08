@@ -103,21 +103,40 @@ static class Bench
         public float Gap, Confidence; public bool Hesitated, Refused;
     }
 
-    static Dictionary<ActionType, float> Candidates(DecisionContext c)
+    /// <summary>
+    /// Умения в бюллетене стенда. По умолчанию выключены: пока движок
+    /// их никому не вешает, включённые умения мерили бы не игру, а замысел.
+    /// </summary>
+    static bool _skillsOnBallot = false;
+
+    static Dictionary<ActionType, float> Candidates(DecisionContext c, Soul soul = null)
     {
         var s = new Dictionary<ActionType, float> { { ActionType.Idle, 0f } };
         if (c.NearbyEnemies > 0) { s[ActionType.Attack] = 0f; s[ActionType.Flee] = 0f; }
         if (c.NearbyLoot > 0) s[ActionType.Loot] = 0f;
         if (c.AllyInDanger) s[ActionType.SaveAlly] = 0f;
         if (c.HasCommand) s[ActionType.ObeyCommand] = 0f;
+
+        // Список умений берётся из SkillCatalog — из той же таблицы,
+        // которую спрашивают сами наборы умений в игре. Своей копии
+        // у стенда нет намеренно: прибор, который сам решает, что воин
+        // умеет, меряет себя.
+        //
+        // Откат здесь не учитывается: в стенде нет времени, а значит
+        // все умения считаются готовыми. Это верхняя оценка их влияния,
+        // и так честнее — заниженная оценка усыпила бы.
+        if (_skillsOnBallot && soul != null)
+            foreach (var action in SkillCatalog.Dominant(soul))
+                s[action] = 0f;
+
         return s;
     }
 
     static Outcome Vote(List<IPersonalityModule> modules, Warrior w, DecisionContext c,
                         AOSConfig cfg, SquadStrategy strategy)
     {
-        var scores = Candidates(c);
         var soul = Soul.FromWarrior(w);
+        var scores = Candidates(c, soul);
         var loudest = new Dictionary<ActionType, (string m, float v)>();
 
         foreach (var module in modules)
@@ -1965,6 +1984,165 @@ static class Bench
         Console.WriteLine("  Ноль в первой строке — поведение до правки.");
     }
 
+    /// <summary>
+    /// Что будет, если привесить воинам умения.
+    ///
+    /// Проводки пока нет: наборы умений написаны, но ни на кого не
+    /// вешаются. Записка предлагала «сперва привесить — баланс
+    /// не тронется, умения встанут в бюллетень с нулём». Это надо
+    /// проверить до того, как править игру, а не после: действие
+    /// с нулём выигрывает у всего, что ушло в минус, и «ноль»
+    /// в голосовании — не то же самое, что «нет».
+    ///
+    /// Меряем на девяти душах лагеря, в положении «приказ отходить,
+    /// враг рядом» — том самом, на котором стоит вся остальная сверка.
+    /// </summary>
+    static void SkillsCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== УМЕНИЯ В БЮЛЛЕТЕНЕ: что будет, если привесить ===");
+
+        var modules = Modules();
+
+        var camp = new (string Name, SinType Sin, MoralType Moral, float I, float L, int U)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f, 0),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f, 0),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f, 3),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f, 0),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f, 0),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f, 0),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f, 0),
+        };
+
+        Console.WriteLine($"  {"кто",-8} {"грех",-9} {"умений",7} {"отказов до",11}"
+                        + $" {"после",7} {"под приказом",10} {"в бою",10}  чаще всего");
+
+        int silent = 0;
+
+        foreach (var m in camp)
+        {
+            _skillsOnBallot = false;
+            var (before, _) = OrderRun(modules, cfg, m.Sin, m.Moral, m.I, m.L, m.U,
+                                       400, loot: 0, allyInDanger: false);
+
+            _skillsOnBallot = true;
+            var (after, _) = OrderRun(modules, cfg, m.Sin, m.Moral, m.I, m.L, m.U,
+                                      400, loot: 0, allyInDanger: false);
+
+            // Сколько раз победило именно умение, а не базовое действие.
+            var spectra = new float[7];
+            spectra[(int)m.Sin] = m.I;
+            var probe = new SoulData("Воин", m.Moral, 1, spectra);
+            var skills = new HashSet<ActionType>(
+                SkillCatalog.For(m.Sin, m.I));
+
+            int won = 0;
+            var which = new Dictionary<ActionType, int>();
+
+            for (int i = 0; i < 400; i++)
+            {
+                var r = new Random(7000 + i);
+                var w = new Warrior
+                {
+                    Soul = new SoulData("Воин", m.Sin, m.Moral, 1, m.I),
+                    Attack = 5f, Loyalty = m.L, Team = Team.Player,
+                    Relationships = new RelationshipSystem(),
+                };
+                var ctx = new DecisionContext
+                {
+                    CurrentHP = 12f + (float)r.NextDouble() * 10f,
+                    MaxHP = 30f,
+                    NearbyEnemies = 1 + r.Next(3),
+                    NearbyLoot = 0,
+                    Fatigue = (float)r.NextDouble() * 0.6f,
+                    UnpaidMissions = m.U,
+                    RelationshipWithCommander = m.L,
+                    AllyInDanger = false,
+                    Surrounded = r.Next(4) == 0,
+                    HasCommand = true,
+                    CommandType = "FallBack",
+                    CommandIsFallBack = true,
+                };
+
+                var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                if (!skills.Contains(d.Action)) continue;
+
+                won++;
+                which[d.Action] = which.TryGetValue(d.Action, out var c) ? c + 1 : 1;
+            }
+
+            _skillsOnBallot = false;
+
+            string top = "—";
+            int best = 0;
+            foreach (var kv in which)
+                if (kv.Value > best) { best = kv.Value; top = kv.Key.ToString(); }
+
+            // Бой без приказа. Умения проверяются здесь, а не только
+            // под приказом: под приказом Верность 65-95 перекрывает всё,
+            // и нулевой результат сказал бы не «умения слабы», а «мы
+            // смотрели туда, где решает не характер».
+            _skillsOnBallot = true;
+            int freeWon = 0;
+            var freeWhich = new Dictionary<ActionType, int>();
+
+            for (int i = 0; i < 400; i++)
+            {
+                var r = new Random(9000 + i);
+                var w = new Warrior
+                {
+                    Soul = new SoulData("Воин", m.Sin, m.Moral, 1, m.I),
+                    Attack = 5f, Loyalty = m.L, Team = Team.Player,
+                    Relationships = new RelationshipSystem(),
+                };
+                var ctx = new DecisionContext
+                {
+                    CurrentHP = 8f + (float)r.NextDouble() * 16f,
+                    MaxHP = 30f,
+                    NearbyEnemies = 1 + r.Next(3),
+                    NearbyAllies = r.Next(3),
+                    NearbyLoot = 0,
+                    Fatigue = (float)r.NextDouble(),
+                    IsExhausted = r.Next(3) == 0,
+                    UnpaidMissions = m.U,
+                    AllyInDanger = false,
+                    Surrounded = r.Next(4) == 0,
+                    TargetBackExposed = r.Next(3) == 0,
+                    DangerLevel = (float)r.NextDouble(),
+                    HasCommand = false,
+                };
+
+                var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                if (!skills.Contains(d.Action)) continue;
+
+                freeWon++;
+                freeWhich[d.Action] = freeWhich.TryGetValue(d.Action, out var c2) ? c2 + 1 : 1;
+            }
+            _skillsOnBallot = false;
+
+            string freeTop = "—";
+            int freeBest = 0;
+            foreach (var kv in freeWhich)
+                if (kv.Value > freeBest) { freeBest = kv.Value; freeTop = kv.Key.ToString(); }
+
+            int count = SkillCatalog.For(m.Sin, m.I).Count;
+            if (count == 0) silent++;
+
+            Console.WriteLine($"  {m.Name,-8} {m.Sin,-9} {count,7} {before * 100,10:F1}%"
+                            + $" {after * 100,6:F1}% {won / 4.0,10:F1}% {freeWon / 4.0,10:F1}%"
+                            + $"  {freeTop}");
+        }
+
+        Console.WriteLine($"\n  Воинов без единого умения: {silent} из 9 — у Жадности,");
+        Console.WriteLine("  Гордыни и Зависти наборов не написано вовсе.");
+        Console.WriteLine("  «Отказов до/после» — меняется ли послушание от одного факта,");
+        Console.WriteLine("  что умения появились в бюллетене. Два следующих столбца — как");
+        Console.WriteLine("  часто воин делает своё вместо базового действия: под приказом");
+        Console.WriteLine("  и в бою, где приказа нет и решает только характер.");
+    }
+
     /// <summary>Сколько строк таблицы миссий сходится при этом конфиге.</summary>
     static int MissionsMatched(AOSConfig cfg)
     {
@@ -2385,6 +2563,7 @@ static class Bench
         MoralityCheck(cfg);
         SensitivityCheck(cfg);
         DisobeyDragSweep(cfg);
+        SkillsCheck(cfg);
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

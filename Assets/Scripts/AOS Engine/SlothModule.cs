@@ -53,6 +53,58 @@ namespace Sinbinder.AOS.Modules
             if (action == ActionType.SaveAlly)
                 score -= sin * _config.SlothSaveAllySinMultiplier;
 
+            // ---------- собственные умения ----------
+            //
+            // Пороги стоят в разных местах шкалы намеренно. Замер
+            // чувствительности (docs/12-BALANCE.md) показал, что шкалы
+            // работают плато: одна единица не значит почти нигде. Порог —
+            // единственное место, где она значит всё сразу, и умения дают
+            // их по нескольку на каждую шкалу.
+            //
+            // Оба полюса: Усердие — это Уныние со знаком минус, и умения
+            // у него свои. Одна шкала, два набора, восемь порогов.
+            float diligence = -sin;
+
+            switch (action)
+            {
+                case ActionType.LazyHeal:
+                    if (sin > 25f && context.CurrentHP < context.MaxHP * 0.6f)
+                        score += 30f + sin * 0.3f;
+                    break;
+
+                case ActionType.Yawn:
+                    if (sin > 45f && context.NearbyEnemies > 0)
+                        score += 35f + sin * 0.2f;
+                    break;
+
+                case ActionType.AuraOfApathy:
+                    if (sin > 65f && context.NearbyEnemies >= 2)
+                        score += 45f + sin * 0.25f;
+                    break;
+
+                case ActionType.EternalSleep:
+                    // Крайнее средство унылого: он не бежит и не дерётся,
+                    // он выходит из происходящего.
+                    if (sin > 85f && context.IsExhausted)
+                        score += 55f + sin * 0.3f;
+                    break;
+
+                case ActionType.WorkSurge:
+                    if (diligence > 35f && !context.IsExhausted)
+                        score += 30f + diligence * 0.25f;
+                    break;
+
+                case ActionType.Tireless:
+                    if (diligence > 60f && context.Fatigue > 0.5f)
+                        score += 40f + diligence * 0.3f;
+                    break;
+
+                case ActionType.WorkInspiration:
+                    if (diligence > 75f && context.NearbyAllies > 0)
+                        score += 45f + diligence * 0.25f;
+                    break;
+            }
+
             return score * Weight;
         }
 

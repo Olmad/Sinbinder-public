@@ -25,15 +25,22 @@ namespace Sinbinder.Gameplay
             _vomitTimer -= Time.deltaTime;
             _hungerTimer -= Time.deltaTime;
         }
-        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Devour, AOS.ActionType.Vomit, AOS.ActionType.InsatiableHunger };
-        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+        // Список умений живёт в AOS.SkillCatalog, а не здесь: им
+        // пользуются и проводка, и стенд, а две копии одного списка
+        // рано или поздно разойдутся.
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions
+            => AOS.SkillCatalog.For(Sinbinder.Core.SinType.Gluttony, 1f);
 
 
         public bool CanUseSkill(AOS.ActionType action)
         {
             return action switch
             {
-                AOS.ActionType.Devour => true,
+                // Пожирание предлагалось всегда, даже когда есть нечего:
+                // умение выигрывало голосование и молча ничего не делало.
+                // Бюллетень спрашивает именно здесь — значит и проверять
+                // надо здесь, а не оправдываться пустой корутиной.
+                AOS.ActionType.Devour => CorpseWithinReach(),
                 AOS.ActionType.Vomit => _vomitTimer <= 0f,
                 AOS.ActionType.InsatiableHunger => _hungerTimer <= 0f,
                 _ => false
@@ -50,12 +57,25 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        private bool CorpseWithinReach()
+        {
+            foreach (var body in FindObjectsByType<HarvestableBody>(FindObjectsSortMode.InstanceID))
+            {
+                if (body == null || body.IsCollected) continue;
+                if (Vector3.Distance(transform.position, body.transform.position) < DevourReach)
+                    return true;
+            }
+            return false;
+        }
+
+        private const float DevourReach = 2f;
+
         IEnumerator DevourRoutine()
         {
             var corpses = FindObjectsByType<HarvestableBody>(FindObjectsSortMode.InstanceID);
             foreach (var body in corpses)
             {
-                if (!body.IsCollected && Vector3.Distance(transform.position, body.transform.position) < 2f)
+                if (!body.IsCollected && Vector3.Distance(transform.position, body.transform.position) < DevourReach)
                 {
                     _warrior.Heal(_warrior.MaxHP * DevourHealPercent);
                     body.MarkCollected();

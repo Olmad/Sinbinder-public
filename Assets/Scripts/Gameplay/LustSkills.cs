@@ -30,8 +30,11 @@ namespace Sinbinder.Gameplay
             _seduceTimer -= Time.deltaTime;
             _fatalTimer -= Time.deltaTime;
         }
-        private static readonly AOS.ActionType[] _actions = { AOS.ActionType.Charm, AOS.ActionType.KissOfDeath, AOS.ActionType.Seduce, AOS.ActionType.FatalPassion };
-        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions => _actions;
+        // Список умений живёт в AOS.SkillCatalog, а не здесь: им
+        // пользуются и проводка, и стенд, а две копии одного списка
+        // рано или поздно разойдутся.
+        public System.Collections.Generic.IReadOnlyList<AOS.ActionType> SkillActions
+            => AOS.SkillCatalog.For(Sinbinder.Core.SinType.Lust, 1f);
 
 
         public bool CanUseSkill(AOS.ActionType action)
