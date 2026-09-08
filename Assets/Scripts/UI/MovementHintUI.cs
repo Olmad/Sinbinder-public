@@ -34,7 +34,8 @@ namespace Sinbinder.UI
         [SerializeField] private float _moved = 0.25f;
 
         [TextArea(1, 3)]
-        [SerializeField] private string _line = "W, A, S, D — осмотреться.";
+        [SerializeField] private string _line =
+            "W, A, S, D — идти. Камера идёт за вами.";
 
         /// <summary>
         /// Показывали ли уже. Статично и переживает смену сцен: подсказка
@@ -53,6 +54,18 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
+
+            // Следим за Греховодом, а не за камерой: ходит теперь он.
+            // Пока тела не было, «сдвинулся» значило «повёл видом», и
+            // подсказка гасла от одного движения мыши к краю экрана —
+            // то есть ровно тогда, когда игрок ещё ничего не понял.
+            if (Gameplay.SinbinderPlayer.Exists)
+            {
+                _eye = Gameplay.SinbinderPlayer.Instance.transform;
+                _wasAt = _eye.position;
+                if (_text != null) _text.text = _line;
+                return;
+            }
 
             var cam = Camera.main;
             if (cam == null)

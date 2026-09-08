@@ -120,6 +120,14 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public bool PlayerIsClose()
         {
+            // Есть тело — спрашиваем тело. «Подойти» обязано значить
+            // «дойти ногами»: пока Греховода в сцене не было, подойти
+            // к столу можно было, не сходя с места, — достаточно навести
+            // на него камеру. Отсюда и ощущение, что совет случается сам.
+            if (SinbinderPlayer.Exists)
+                return CampFocus.GroundDistance(SinbinderPlayer.Where,
+                                                transform.position) <= _reach;
+
             if (_eye == null) return false;
 
             return CampFocus.Reached(_eye.position, _eye.forward,

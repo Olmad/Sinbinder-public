@@ -98,10 +98,21 @@ namespace Sinbinder.Gameplay
             // Подходит сам, настоящим приказом через настоящий конвейер:
             // это первое, что игрок видит исполненным, и подделывать его
             // нельзя (docs/09-PROLOGUE.md §2).
-            var cam = Camera.main;
-            if (cam == null) return;
+            // Идёт к Греховоду, а не к камере. «Позвольте пройтись с вами»
+            // обязано значить «с вами»: пока тела не было, провожатый
+            // шёл к точке обзора, и обещание исполнялось только на словах.
+            Vector3 to;
+            if (SinbinderPlayer.Exists)
+            {
+                to = SinbinderPlayer.Where;
+            }
+            else
+            {
+                var cam = Camera.main;
+                if (cam == null) return;
+                to = cam.transform.position;
+            }
 
-            var to = cam.transform.position;
             to.y = best.transform.position.y;
 
             var from = best.transform.position;

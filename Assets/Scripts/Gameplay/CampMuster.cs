@@ -104,6 +104,11 @@ namespace Sinbinder.Gameplay
                 {
                     if (w == null || w.IsDead || w.Team != Team.Player) continue;
 
+                    // Греховода к столу не зовут: он тот, кто зовёт.
+                    // Иначе Карган потом упрекнул бы игрока за то,
+                    // что тот не подошёл к самому себе.
+                    if (w is SinbinderPlayer) continue;
+
                     _wasFar[w] = CampFocus.GroundDistance(w.transform.position,
                                                           table.position) > _gathered;
                 }

@@ -92,7 +92,25 @@ namespace Sinbinder.Gameplay
 
             // Смотрим одного: спавнеры собирают всех одинаково, и разрыв
             // у одного значит разрыв у всех.
+            //
+            // Но не Греховода: он единственный, кто по замыслу без
+            // AOSWarriorWrapper — тело есть, бюллетеня нет. Попадись он
+            // в образец, осмотр каждый раз кричал бы «он ничего не решает»
+            // про того, кому решать и не положено.
             var w = warriors[0];
+            for (int i = 0; i < warriors.Length; i++)
+            {
+                if (warriors[i] is SinbinderPlayer) continue;
+                w = warriors[i];
+                break;
+            }
+
+            if (w is SinbinderPlayer)
+            {
+                report.AppendLine("  в сцене только Греховод, отряда нет");
+                return 1;
+            }
+
             string who = w.DisplayName;
 
             broken += NeedOn<Damageable>(w, report, who, "его нельзя ранить");

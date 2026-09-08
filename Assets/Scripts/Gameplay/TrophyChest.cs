@@ -82,8 +82,15 @@ namespace Sinbinder.Gameplay
                     Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_invite);
             }
 
-            if (!CampFocus.Reached(_eye.position, _eye.forward,
-                                   transform.position, _reach)) return;
+            // Тем же правилом, что и стол совета: есть тело — открывает
+            // тело. «Подойти к сундуку», не сходя с места, — не подход.
+            if (SinbinderPlayer.Exists)
+            {
+                if (CampFocus.GroundDistance(SinbinderPlayer.Where,
+                                             transform.position) > _reach) return;
+            }
+            else if (!CampFocus.Reached(_eye.position, _eye.forward,
+                                        transform.position, _reach)) return;
 
             Open();
         }

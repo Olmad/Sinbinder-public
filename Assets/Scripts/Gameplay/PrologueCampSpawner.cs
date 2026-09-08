@@ -22,6 +22,13 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _circleRadius = 3.5f;
         [SerializeField] private bool _spawnOnStart = true;
 
+        /// <summary>
+        /// На сколько Греховод отходит от полога палатки в сторону лагеря.
+        /// Не ноль: стоя в самой палатке, он был бы ею закрыт, и первое,
+        /// что игрок увидел бы о себе, — что себя не видно.
+        /// </summary>
+        [SerializeField] private float _playerStepFromTent = 1.6f;
+
         [Tooltip("Уносить ли состав отряда в следующую сцену. Снимать только "
                + "для отладочных сцен, которым нужен полный отряд каждый раз.")]
         [SerializeField] private bool _carryOver = true;
@@ -194,6 +201,8 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < squad.Count; i++)
                 SpawnMember(squad[i], i, squad.Count);
 
+            SpawnPlayer();
+
             Debug.Log($"[ПРОЛОГ] Лагерь собран: {squad.Count} фигур вокруг костра"
                 + (string.IsNullOrEmpty(SquadRoster.CommanderName)
                     ? ", командир ещё не выбран." : $", командир — {SquadRoster.CommanderName}."));
@@ -234,6 +243,45 @@ namespace Sinbinder.Gameplay
                 Mathf.Cos(angle) * _circleRadius,
                 0f,
                 Mathf.Sin(angle) * _circleRadius);
+        }
+
+        /// <summary>
+        /// Поставить Греховода у его палатки на холме.
+        ///
+        /// Место не выдумано: доля 1 пролога — «вышел из палатки на холме,
+        /// под ним лагерь» (docs/13-DRIFT.md §2). Палатка в сцене уже стоит,
+        /// её ставит сборщик; ищем её по имени, а не по координатам, чтобы
+        /// холм можно было двигать, не трогая этот файл.
+        ///
+        /// Не нашли — ставим у костра и говорим об этом вслух: Греховод
+        /// без места хуже, чем Греховод не на своём месте.
+        /// </summary>
+        private void SpawnPlayer()
+        {
+            var tent = GameObject.Find("Палатка Греховода");
+            Vector3 where;
+
+            if (tent != null)
+            {
+                // Перед входом, лицом к лагерю: он только что вышел.
+                Vector3 toCamp = transform.position - tent.transform.position;
+                toCamp.y = 0f;
+                where = tent.transform.position
+                      + toCamp.normalized * _playerStepFromTent;
+            }
+            else
+            {
+                Debug.LogWarning("[ПРОЛОГ] Палатки Греховода в сцене нет: "
+                               + "ставлю его у костра. Доля 1 задумана "
+                               + "с холма — пересоберите сцены.");
+                where = transform.position + new Vector3(0f, 0f, -_circleRadius * 1.6f);
+            }
+
+            var player = SinbinderPlayer.Spawn(where, transform.parent);
+            if (player == null) return;
+
+            player.transform.LookAt(new Vector3(
+                transform.position.x, player.transform.position.y, transform.position.z));
         }
 
         private Warrior SpawnMember(SquadRoster.Member member, int index, int total)

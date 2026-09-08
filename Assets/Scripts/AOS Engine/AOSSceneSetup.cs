@@ -87,6 +87,12 @@ namespace Sinbinder.AOS
         /// </summary>
         public void SetupWarrior(GameObject go)
         {
+            // Греховод — единственный Warrior в сцене, который не голосует.
+            // Тело у него есть, души в смысле бюллетеня — нет: весь замысел
+            // игры в том, что приказ игрока проходит через чужие души.
+            // Дай ему модули — и он смог бы отказать сам себе.
+            if (go.GetComponent<Gameplay.SinbinderPlayer>() != null) return;
+
             AddIfMissing<AOSWarriorWrapper>(go);
             AddIfMissing<AutoAttackAOS>(go);
 

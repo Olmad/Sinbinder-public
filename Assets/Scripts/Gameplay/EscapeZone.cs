@@ -158,7 +158,12 @@ namespace Sinbinder.Gameplay
 
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
+                // Греховод — не отряд. Он тоже Warrior и тоже Team.Player,
+                // но «довести отряд до края карты» считается по тем, кого
+                // ведут, а не по тому, кто ведёт: иначе он попал бы
+                // и в список ушедших, и в счёт недождавшихся.
                 if (w == null || w.IsDead || w.Team != Team.Player) continue;
+                if (w is SinbinderPlayer) continue;
 
                 var here = transform.position;
                 var there = w.transform.position;
@@ -177,7 +182,8 @@ namespace Sinbinder.Gameplay
 
             int left = 0;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
-                if (w != null && !w.IsDead && w.Team == Team.Player && !_inside.Contains(w)) left++;
+                if (w != null && !w.IsDead && w.Team == Team.Player
+                    && !(w is SinbinderPlayer) && !_inside.Contains(w)) left++;
 
             if (left > 0) Log(left == 1 ? "Одного не дождались." : $"Не дождались: {left}.");
 

@@ -86,6 +86,7 @@ namespace Sinbinder.Gameplay
             TrophyChest.Forget();
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
+            UI.CommandHintUI.Forget();
 
             // Установка отряда — тоже статика, живущая между сценами.
             // Второй прогон демо начинался бы с той, что игрок выбрал

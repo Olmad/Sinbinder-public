@@ -410,6 +410,52 @@ namespace Sinbinder.Utilets
             // Палатка Греховода наверху, входом к лагерю: из неё он и выходит.
             Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
                 name: "Палатка Греховода", size: 1.25f);
+
+            Slope(position, radius, height);
+        }
+
+        /// <summary>
+        /// Склон с холма к лагерю.
+        ///
+        /// Пока Греховод был камерой, холм мог быть барабаном с отвесными
+        /// стенками: смотреть с него ничто не мешало. Теперь он с него
+        /// сходит — а навмеш вертикальных стен не печёт, и без склона
+        /// вершина оказалась бы отдельным островом. Игрок вышел бы
+        /// из палатки и застрял в первой же сцене насмерть, ровно там,
+        /// где демо начинается.
+        ///
+        /// Наклон держим заметно положе сорока пяти градусов — порога,
+        /// выше которого навмеш поверхность отбрасывает. Запас нужен
+        /// потому, что печётся всё в рантайме и проверить глазом
+        /// перед запуском нечего.
+        /// </summary>
+        private static void Slope(Vector3 hillCentre, float radius, float height)
+        {
+            // Вниз — в сторону костра. Он стоит в начале координат
+            // в обеих прологовых сценах.
+            Vector3 down = Vector3.zero - hillCentre;
+            down.y = 0f;
+
+            if (down.sqrMagnitude < 0.01f) down = Vector3.forward;
+            down.Normalize();
+
+            // Разбег вдвое длиннее подъёма: около двадцати семи градусов.
+            float run = height * 2f;
+
+            Vector3 top = hillCentre + down * radius + new Vector3(0f, height, 0f);
+            Vector3 foot = hillCentre + down * (radius + run);
+
+            var ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ramp.name = "Спуск";
+            ramp.transform.position = (top + foot) * 0.5f;
+
+            // Локальная ось Z вдоль склона, локальная Y — нормаль
+            // поверхности. LookRotation сам разложит и то и другое,
+            // поэтому ни знака угла, ни порядка Эйлера здесь знать
+            // не нужно — а именно на них тут проще всего ошибиться.
+            ramp.transform.rotation = Quaternion.LookRotation(foot - top, Vector3.up);
+            ramp.transform.localScale = new Vector3(
+                radius * 0.8f, 0.3f, Vector3.Distance(top, foot));
         }
 
         /// <summary>
@@ -794,7 +840,9 @@ namespace Sinbinder.Utilets
             BuildLog(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
+            BuildCommandHint(canvasGO.transform);
             BuildHarvestHint(canvasGO.transform);
+            BuildSelectedUnit(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
             // Выбор тела нужен везде, где можно собрать душу, а собрать
@@ -1111,6 +1159,68 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
+        /// Вторая ступень обучения: приказывать. Между «как ходить»
+        /// и «как жать души» — в том порядке, в каком они нужны игроку.
+        ///
+        /// Строка своя, а не общая с движением: обе могут оказаться
+        /// на экране разом, если игрок пошёл сам, не дождавшись первой.
+        /// </summary>
+        private static void BuildCommandHint(Transform parent)
+        {
+            var panel = Panel("Как приказывать", parent,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 76f),
+                position: new Vector2(0f, 276f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+
+            var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
+            line.color = new Color(0.88f, 0.86f, 0.82f);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.CommandHintUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_text", line));
+        }
+
+        /// <summary>
+        /// Нижняя панель: кто выделен, чем он живёт, что делает.
+        ///
+        /// Внизу по центру, под обеими подсказками: подсказки уходят,
+        /// когда игрок научился, а панель остаётся навсегда — значит
+        /// её место ниже, у самого края.
+        ///
+        /// Компонент на Canvas, а не на панели: панель он выключает сам,
+        /// когда показывать некого, а у выключенного объекта не крутится
+        /// Update. Тот же урок, что с военным советом и диалогом.
+        /// </summary>
+        private static void BuildSelectedUnit(Transform parent)
+        {
+            var panel = Panel("Кто выделен", parent,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 112f),
+                position: new Vector2(0f, 16f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.88f);
+
+            var name = Label("Имя", panel, 30, TextAnchor.MiddleLeft,
+                new Vector2(0f, -10f), 38f);
+            name.color = new Color(0.94f, 0.92f, 0.88f);
+
+            var sin = Label("Шкала", panel, 22, TextAnchor.MiddleLeft,
+                new Vector2(0f, -48f), 30f);
+            sin.color = new Color(0.78f, 0.66f, 0.62f);
+
+            var action = Label("Действие", panel, 22, TextAnchor.MiddleLeft,
+                new Vector2(0f, -78f), 30f);
+            action.color = new Color(0.72f, 0.76f, 0.80f);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.SelectedUnitPanelUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_nameLine", name),
+                     ("_sinLine", sin), ("_actionLine", action));
+        }
+
+        /// <summary>
         /// Подсказка о жатве. Отдельной строкой выше «как ходить»: обе
         /// живут внизу по центру, и наложиться друг на друга им нельзя.
         /// </summary>
@@ -1119,7 +1229,7 @@ namespace Sinbinder.Utilets
             var panel = Panel("Как жать души", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(720f, 76f),
-                position: new Vector2(0f, 280f));
+                position: new Vector2(0f, 366f));
 
             var backdrop = panel.gameObject.AddComponent<Image>();
             backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);

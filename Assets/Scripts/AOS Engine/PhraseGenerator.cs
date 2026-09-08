@@ -161,17 +161,69 @@ namespace Sinbinder.AOS
 
         private static string Verb(ActionType action, DecisionContext context)
         {
+            // Единственный случай, которому нужны обстоятельства: у кого
+            // именно он в ногах. Всё прочее — общий словарь ниже, и держать
+            // его надо в одном месте: два списка слов для одних и тех же
+            // действий разъезжаются молча.
+            if (action == ActionType.SaveAlly && context.TargetWarrior != null)
+                return $"бросается к {context.TargetWarrior.DisplayName}";
+
+            return Doing(action);
+        }
+
+        /// <summary>
+        /// Что он делает — одним глаголом, без обстоятельств.
+        ///
+        /// Умения названы поимённо, все двадцать, что есть в игре
+        /// (<see cref="SkillCatalog"/>). До этого их не называл никто:
+        /// воин, выбравший Мощный Удар, показывался игроку как
+        /// «действует по-своему» — то есть самое характерное, что он
+        /// делает, было единственным, чего нельзя было прочесть.
+        /// </summary>
+        public static string Doing(ActionType action)
+        {
             switch (action)
             {
+                // Базовые
                 case ActionType.Attack: return "идёт в драку";
-                case ActionType.SaveAlly:
-                    return context.TargetWarrior != null
-                        ? $"бросается к {context.TargetWarrior.DisplayName}"
-                        : "бросается к раненому";
+                case ActionType.SaveAlly: return "бросается к раненому";
                 case ActionType.Loot: return "идёт за добычей";
                 case ActionType.Flee: return "отходит";
                 case ActionType.Idle: return "стоит на месте";
                 case ActionType.ObeyCommand: return "делает, как велено";
+
+                // Гнев
+                case ActionType.Berserk: return "впадает в бешенство";
+                case ActionType.PowerStrike: return "бьёт со всей силы";
+
+                // Терпение
+                case ActionType.IronStance: return "встаёт железной стойкой";
+                case ActionType.CounterAttack: return "ждёт удара, чтобы ответить";
+                case ActionType.SecondWind: return "переводит дыхание";
+                case ActionType.Unshakable: return "стоит несдвигаемо";
+
+                // Уныние
+                case ActionType.Yawn: return "зевает";
+                case ActionType.LazyHeal: return "лениво зализывает раны";
+                case ActionType.AuraOfApathy: return "заражает всех безразличием";
+                case ActionType.EternalSleep: return "засыпает намертво";
+
+                // Усердие
+                case ActionType.WorkSurge: return "работает за троих";
+                case ActionType.WorkInspiration: return "подгоняет остальных";
+                case ActionType.Tireless: return "не знает усталости";
+
+                // Похоть
+                case ActionType.Charm: return "очаровывает";
+                case ActionType.KissOfDeath: return "целует насмерть";
+                case ActionType.Seduce: return "переманивает на свою сторону";
+                case ActionType.FatalPassion: return "сгорает от страсти";
+
+                // Чревоугодие
+                case ActionType.Devour: return "пожирает";
+                case ActionType.Vomit: return "извергает съеденное";
+                case ActionType.InsatiableHunger: return "не может насытиться";
+
                 default: return "действует по-своему";
             }
         }
