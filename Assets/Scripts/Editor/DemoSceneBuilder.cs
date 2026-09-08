@@ -117,6 +117,11 @@ namespace Sinbinder.Utilets
             // отказа заранее (00-GDD.md §8, третье требование).
             campfire.AddComponent<CampOpening>();
 
+            // Повод отдать полдюжины приказов до того, как отказ начнёт
+            // стоить крови: Карган просит собрать отряд к столу. Совет
+            // за сбором не заперт — это повод, а не ворота.
+            campfire.AddComponent<CampMuster>();
+
             Tents(hill, hillRadius: 5f);
             CouncilTable(table);
 
