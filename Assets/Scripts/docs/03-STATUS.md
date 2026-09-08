@@ -89,6 +89,12 @@ var context = CombatDecisionContext.Create(_warrior);   // второй аргу
 голосование. `WrathSkills`, `LustSkills`, `SlothSkills` и остальные
 написаны и недостижимы.
 
+> **Наполовину устарело — сверено по коду 8 сентября.** Бюллетень
+> перестал быть жёстким: `BuildCandidates` опрашивает `ISkillSet`
+> и принимает готовые умения. Недостижимы они теперь по двум другим
+> причинам: наборы ни на кого не вешаются, и модули (кроме Терпения)
+> за свои умения не голосуют. Разбор — `14-HANDOFF.md` §6.
+
 ## Дубликаты и мусор
 
 | Что | Где | Опасность |
@@ -96,7 +102,7 @@ var context = CombatDecisionContext.Create(_warrior);   // второй аргу
 | ~~`CrisisType` + `CrisisManager` ×2~~ | — | **Снято 28 августа.** Ветка `AOS Engine/CrisisType.cs` удалена, см. ниже |
 | `Soul` — временный адаптер | `AOS Engine/Soul.cs` | Дублирует `SoulData`, теряет данные при копировании. Помечен «в будущем заменить» |
 | `MoralityType` | там же | Дублирует `Core.MoralType` |
-| `GluttonySkills .cs` | `Gameplay/` | Пробел в имени файла. Работает, но ломает инструменты |
+| ~~`GluttonySkills .cs`~~ | `Gameplay/` | **Снято.** Пробела в имени больше нет — файл `GluttonySkills.cs` |
 | Пути в комментариях | почти везде | Указывают на `Assets/_Project/Scripts/`, которого нет — исходники лежат в `Scripts N` |
 
 ## Что было починено 27 августа
