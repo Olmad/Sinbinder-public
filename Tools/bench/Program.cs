@@ -2150,6 +2150,187 @@ static class Bench
         Console.WriteLine("  и в бою, где приказа нет и решает только характер.");
     }
 
+    /// <summary>
+    /// Оболочки, прочитанные из тех же ассетов, что грузит игра.
+    ///
+    /// Своей таблицы тел у стенда нет намеренно. Прибор, который сам
+    /// придумывает, что умеет оболочка, меряет себя, а не игру — этот
+    /// урок проекту уже стоил целого документа по балансу.
+    /// </summary>
+    static List<ShellData> LoadShells()
+    {
+        var list = new List<ShellData>();
+        string dir = Path.Combine("..", "..", "Assets", "Resources", "Shells");
+
+        if (!Directory.Exists(dir))
+        {
+            Console.WriteLine("[СТЕНД] Resources/Shells не найден — оболочки не мерим.");
+            return list;
+        }
+
+        foreach (var path in Directory.GetFiles(dir, "*.asset").OrderBy(x => x))
+        {
+            var text = File.ReadAllText(path);
+            var shell = ScriptableObject.CreateInstance<ShellData>();
+
+            shell.shellName = Unescape(One(text, "shellName")).Trim('"');
+            shell.type = (ShellType)(int)Num(text, "type");
+            shell.baseHP = Num(text, "baseHP");
+            shell.baseDefense = Num(text, "baseDefense");
+            shell.movementSpeed = Num(text, "movementSpeed");
+            shell.canBeRevived = Num(text, "canBeRevived") > 0.5f;
+            shell.wear = Num(text, "wear");
+            shell.bindStrength = Num(text, "bindStrength");
+
+            shell.spectrumBias = new float[SoulData.SpectrumCount];
+            var block = Regex.Match(text, @"^  spectrumBias:\n((?:  - -?[\d.]+\n)+)",
+                                    RegexOptions.Multiline);
+            if (block.Success)
+            {
+                int i = 0;
+                foreach (Match m in Regex.Matches(block.Groups[1].Value, @"-?[\d.]+"))
+                {
+                    if (i >= SoulData.SpectrumCount) break;
+                    shell.spectrumBias[i++] = float.Parse(m.Value, CultureInfo.InvariantCulture);
+                }
+            }
+
+            list.Add(shell);
+        }
+
+        return list;
+    }
+
+    static string One(string text, string key)
+    {
+        var m = Regex.Match(text, @"^  " + Regex.Escape(key) + @": (.*)$",
+                            RegexOptions.Multiline);
+        return m.Success ? m.Groups[1].Value.Trim() : "";
+    }
+
+    static float Num(string text, string key)
+    {
+        var v = One(text, key);
+        return float.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var f)
+            ? f : 0f;
+    }
+
+    /// <summary>Unity пишет кириллицу в ассетах как \uXXXX.</summary>
+    static string Unescape(string s)
+        => Regex.Replace(s, @"\\u([0-9a-fA-F]{4})",
+                         m => ((char)Convert.ToInt32(m.Groups[1].Value, 16)).ToString());
+
+    /// <summary>
+    /// Выбор оболочки: значит ли он что-нибудь и не запирает ли игрока.
+    ///
+    /// Проверяются две разные вещи. Первая — что правило «оболочка требует
+    /// воли» оставляет выход при любом качестве души: тупик здесь означал бы,
+    /// что игрок собрал душу и не может её никуда деть. Ровно такой тупик
+    /// уже стоил проекту вырезанной сцены побега.
+    ///
+    /// Вторая — что выбор вообще меняет воина. Экран, где четыре кнопки
+    /// дают один результат, хуже отсутствия экрана: он обещает решение
+    /// и не даёт его.
+    /// </summary>
+    static void ShellsCheck()
+    {
+        Console.WriteLine("\n=== ОБОЛОЧКИ: значит ли выбор ===");
+
+        var shells = LoadShells();
+        if (shells.Count == 0) return;
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        Console.WriteLine($"  {"оболочка",-10} {"тянет",6} {"Шок",6} {"Принятие",9}"
+                        + $" {"Угасание",9} {"Раствор",8}");
+
+        foreach (var sh in shells.OrderBy(x => x.bindStrength))
+        {
+            var row = new List<string>();
+            foreach (SoulQuality q in Enum.GetValues(typeof(SoulQuality)))
+                row.Add(ShellChoice.Allows(sh, q) ? "да" : "—");
+
+            Console.WriteLine($"  {sh.shellName,-10} {sh.bindStrength,6:F2} {row[0],6}"
+                            + $" {row[1],9} {row[2],9} {row[3],8}");
+        }
+
+        // Тупика быть не должно ни при одном качестве.
+        foreach (SoulQuality q in Enum.GetValues(typeof(SoulQuality)))
+        {
+            int open = shells.Count(sh => ShellChoice.Allows(sh, q));
+            Check(open > 0, $"{q}: не осталось ни одной оболочки — душу некуда деть");
+        }
+
+        // Отказ обязан быть объяснён, и объяснён без цифр.
+        foreach (var sh in shells)
+            foreach (SoulQuality q in Enum.GetValues(typeof(SoulQuality)))
+            {
+                if (ShellChoice.Allows(sh, q)) continue;
+                string why = ShellChoice.Refusal(sh, q);
+                Check(!string.IsNullOrEmpty(why), $"{sh.shellName}/{q}: отказ без объяснения");
+                Check(!why.Any(char.IsDigit), $"{sh.shellName}/{q}: в отказе цифры");
+            }
+
+        // --- меняет ли тело душу ---
+        //
+        // Смотрим ту шкалу, которую тело тянет сильнее всего, а не
+        // доминирующий грех: доминирующий может быть тем, до которого
+        // этой оболочке нет дела, и тогда таблица показала бы «ничего
+        // не изменилось» там, где изменилось многое.
+        Console.WriteLine("\n  --- что тело делает с душой ---");
+        Console.WriteLine($"  {"оболочка",-10} {"тянет за",-14} {"было",6} {"стало",7}"
+                        + $" {"после второго",14}");
+
+        var spectra = new float[SoulData.SpectrumCount];
+        spectra[(int)SinType.Wrath] = 55f;
+        spectra[(int)SinType.Greed] = 30f;
+        var soul = new SoulData("Проба", MoralType.Neutral, 1, spectra);
+
+        var outcomes = new HashSet<string>();
+        int drifted = 0;
+
+        foreach (var sh in shells.OrderBy(x => x.type))
+        {
+            // Самая громкая шкала этого тела.
+            SinType pulled = SinType.Greed;
+            float loudest = 0f;
+            for (int i = 0; i < SoulData.SpectrumCount; i++)
+            {
+                float v = Math.Abs(sh.GetBias((SinType)i));
+                if (v > loudest) { loudest = v; pulled = (SinType)i; }
+            }
+
+            var once = ShellChoice.Preview(soul, sh);
+            var twice = ShellChoice.Preview(once, sh);
+
+            // Итог целиком, по всем семи шкалам: две оболочки не имеют
+            // права дать одну и ту же душу.
+            var all = new System.Text.StringBuilder();
+            for (int i = 0; i < SoulData.SpectrumCount; i++)
+                all.Append(once.Get((SinType)i).ToString("F1")).Append(';');
+            outcomes.Add(all.ToString());
+
+            // Дрейф необратим: второе связывание уводит дальше первого.
+            if (Math.Abs(twice.Get(pulled) - once.Get(pulled)) > 0.01f) drifted++;
+
+            Console.WriteLine($"  {sh.shellName,-10} {SoulData.GetSinName(pulled),-14}"
+                            + $" {soul.Get(pulled),6:F1} {once.Get(pulled),7:F1}"
+                            + $" {twice.Get(pulled),14:F1}");
+        }
+
+        Check(outcomes.Count == shells.Count,
+            "разные оболочки дают разный итог — иначе выбор ничего не значит");
+
+        Check(drifted == shells.Count,
+            "второе связывание уводит душу дальше — дрейф необратим у всех тел");
+
+        Console.WriteLine(bad == 0 ? "\n  все проверки прошли" : $"\n  ПРОВАЛОВ: {bad}");
+    }
+
     /// <summary>Сколько строк таблицы миссий сходится при этом конфиге.</summary>
     static int MissionsMatched(AOSConfig cfg)
     {
@@ -2571,6 +2752,7 @@ static class Bench
         SensitivityCheck(cfg);
         DisobeyDragSweep(cfg);
         SkillsCheck(cfg);
+        ShellsCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

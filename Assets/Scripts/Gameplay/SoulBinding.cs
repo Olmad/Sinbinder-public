@@ -18,16 +18,22 @@ namespace Sinbinder.Gameplay
     /// Поднятый из такой души и есть зомби — не по названию оболочки,
     /// а по тому, что от него осталось.
     ///
-    /// Оболочка в демо одна, и это тоже намеренно: выбор оболочек — сборка
-    /// воина из 08-FLOOR §3, работа полной версии. Здесь связывание учит
-    /// одному: спеши.
+    /// <b>Оболочку теперь выбирает игрок</b> — <see cref="UI.ShellPickerUI"/>.
+    /// Четыре тела собраны как ассеты давно, а связывание держало зашитого
+    /// зомби: система пользовалась одной своей четвертью. И урок «спеши»
+    /// стал механикой, а не словом рассказчика: правило
+    /// <see cref="ShellChoice"/> не пускает истлевшую душу в тяжёлое тело,
+    /// так что промедление отнимает не качество, а <b>выбор</b>.
+    ///
+    /// Экрана в сцене может не быть — тогда связываем прежним способом,
+    /// в поле <c>_shell</c>. Отсутствие интерфейса не имеет права
+    /// отменить механику.
     /// </summary>
     public class SoulBinding : MonoBehaviour
     {
         [SerializeField] private KeyCode _bindKey = KeyCode.R;
 
-        [Tooltip("Во что связывать. В демо одна оболочка: выбор оболочек — "
-               + "сборка воина из полной версии.")]
+        [Tooltip("Во что связывать, когда экрана выбора в сцене нет.")]
         [SerializeField] private ShellType _shell = ShellType.Zombie;
 
         [Tooltip("Как далеко от связавшего встаёт поднятый.")]
@@ -40,6 +46,11 @@ namespace Sinbinder.Gameplay
         private RelationshipSystem _relSystem;
 
         private static int _lastComplaintFrame = -1;
+
+        // Компонент висит на каждом своём воине, и по нажатию R сюда
+        // приходят все разом. Связывать должен один: иначе первый откроет
+        // экран выбора, а остальные тут же свяжут душу мимо него.
+        private static int _lastBindFrame = -1;
 
         void Start()
         {
@@ -82,19 +93,47 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            var soul = souls.TakeHarvested();
-            if (soul == null) return;
+            if (_lastBindFrame == Time.frameCount) return;
+            _lastBindFrame = Time.frameCount;
+
+            var picker = Object.FindFirstObjectByType<UI.ShellPickerUI>();
+
+            // Экран открыт — значит выбор уже идёт. Игра на паузе, но
+            // Update крутится и R доходит сюда снова; без этой строки
+            // второе нажатие связало бы душу мимо открытого экрана.
+            if (picker != null && picker.IsOpen) return;
+
+            var kept = souls.PeekHarvested();
+            if (kept.Soul == null) return;
 
             _cooldownTimer = _cooldown;
 
-            var risen = Raise(soul);
+            if (picker != null && picker.Open(kept.Soul, kept.Quality, Bind)) return;
+
+            Bind(_shell);
+        }
+
+        /// <summary>
+        /// Забрать первую собранную и поднять её в выбранном теле.
+        /// Душа забирается здесь, а не при открытии экрана: закрытый
+        /// без выбора экран не имеет права её потерять.
+        /// </summary>
+        private void Bind(ShellType shell)
+        {
+            var souls = SoulManager.Instance;
+            if (souls == null) return;
+
+            var kept = souls.TakeHarvested();
+            if (kept.Soul == null) return;
+
+            var risen = Raise(kept.Soul, shell);
             if (risen == null) return;
 
             // Говорим не «поднят зомби», а чем он оказался: урок в том,
             // что вышло из промедления, а не в названии оболочки.
             Log($"{risen.DisplayName} поднялся и встал рядом.");
 
-            if (soul.Memory == null)
+            if (kept.Soul.Memory == null)
                 Log("Он не помнит, кем был. Слушается — и только.");
         }
 
@@ -103,7 +142,7 @@ namespace Sinbinder.Gameplay
         /// лагерный спавнер: иначе поднятый вёл бы себя не как все,
         /// а движок обязан быть один на всех.
         /// </summary>
-        private Warrior Raise(SoulData soul)
+        private Warrior Raise(SoulData soul, ShellType shell)
         {
             _relSystem ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
 
@@ -112,7 +151,7 @@ namespace Sinbinder.Gameplay
             go.transform.rotation = transform.rotation;
 
             var warrior = go.AddComponent<Warrior>();
-            warrior.Initialize(soul, _shell, _relSystem, false, Team.Player);
+            warrior.Initialize(soul, shell, _relSystem, false, Team.Player);
 
             WarriorRig.Attach(go);
             go.AddComponent<SoulHarvester>();

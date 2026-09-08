@@ -19,7 +19,29 @@ namespace Sinbinder.Gameplay
 
         public int FadingCount => _fadingSouls.Count;
 
-        private readonly List<Core.SoulData> _harvested = new();
+        /// <summary>
+        /// Собранная душа и то, в каком виде её застали.
+        ///
+        /// Качество приходится нести рядом, а не только внутри спектров:
+        /// потери <see cref="Core.SoulDecay.Harvest"/> уже вшил в копию,
+        /// но <b>выбор оболочки</b> спрашивает не «насколько потускнела»,
+        /// а «сколько воли осталось» — и по потускневшим числам этого
+        /// не восстановить. Душа с Гневом 40 могла быть свежей и слабой
+        /// или сильной и истлевшей, и это два разных набора тел.
+        /// </summary>
+        public readonly struct Kept
+        {
+            public readonly Core.SoulData Soul;
+            public readonly Core.SoulQuality Quality;
+
+            public Kept(Core.SoulData soul, Core.SoulQuality quality)
+            {
+                Soul = soul;
+                Quality = quality;
+            }
+        }
+
+        private readonly List<Kept> _harvested = new();
 
         /// <summary>
         /// Собранные души, ждущие тела.
@@ -29,19 +51,22 @@ namespace Sinbinder.Gameplay
         /// её было негде. Жатва не давала ничего, и связывать было нечего.
         ///
         /// Кладём сюда уже с потерями: <see cref="Core.SoulDecay.Harvest"/>
-        /// снимает копию по качеству, и промедление оседает в самой душе,
-        /// а не в отдельном поле, которое можно забыть прочитать.
+        /// снимает копию по качеству, и промедление оседает в самой душе.
         /// </summary>
-        public IReadOnlyList<Core.SoulData> Harvested => _harvested;
+        public IReadOnlyList<Kept> Harvested => _harvested;
+
+        /// <summary>Первая в очереди, не забирая. Нужна экрану выбора тела.</summary>
+        public Kept PeekHarvested()
+            => _harvested.Count == 0 ? default : _harvested[0];
 
         /// <summary>Забрать душу под связывание. Первая собранная уходит первой.</summary>
-        public Core.SoulData TakeHarvested()
+        public Kept TakeHarvested()
         {
-            if (_harvested.Count == 0) return null;
+            if (_harvested.Count == 0) return default;
 
-            var soul = _harvested[0];
+            var kept = _harvested[0];
             _harvested.RemoveAt(0);
-            return soul;
+            return kept;
         }
 
         void Start()
@@ -162,7 +187,7 @@ namespace Sinbinder.Gameplay
                 // Копия с потерями по качеству. Оригинал остаётся у мертвеца:
                 // мы забираем не его, а то, что от него осталось.
                 var kept = Core.SoulDecay.Harvest(closest.Warrior.Soul, closest.SoulQuality);
-                if (kept != null) _harvested.Add(kept);
+                if (kept != null) _harvested.Add(new Kept(kept, closest.SoulQuality));
                 Debug.Log($"[SOUL] Душа {closest.Warrior.DisplayName} собрана! Осталось угасающих: {_fadingSouls.Count}");
                 OnSoulHarvested?.Invoke(closest);
                 return closest;

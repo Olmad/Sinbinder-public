@@ -79,6 +79,7 @@
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulQuality.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulDecay.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/ShellBinder.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/ShellChoice.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/ShellType.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ShellData.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/Facing.cs" />

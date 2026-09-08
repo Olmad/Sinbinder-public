@@ -132,10 +132,14 @@ class Checker:
             # снаружи), но существуют — иначе new ActiveEmotion читается
             # как обращение к несуществующему типу.
             self.declared_anywhere.update(RE_ANY_TYPE_DECL.findall(s))
+            here = set(RE_ANY_TYPE_DECL.findall(s))
             for name, params in RE_METHOD_DECL.findall(s):
                 if name in KEYWORD_CALLS:
                     continue
-                self.methods[name].append(self.param_types(params))
+                # Запоминаем и типы, объявленные в этом файле: у одного
+                # имени метода бывают тёзки в разных классах, и без хозяина
+                # проверка сверяла вызов Одного.Build с сигнатурой Другого.
+                self.methods[name].append((self.param_types(params), here))
 
     @staticmethod
     def param_types(params):
@@ -225,7 +229,17 @@ class Checker:
                 if name not in self.methods or '"' not in args:
                     continue
                 parts = [a.strip() for a in SPLIT_ARGS.split(args)]
-                for sig in self.methods[name]:
+                # Вызов вида Тип.Метод(...) сверяем только с методами
+                # этого типа. Иначе тёзка из чужого класса даёт ложное
+                # срабатывание — и оно тем вреднее, что выглядит настоящим.
+                q = re.search(r'(\w+)\s*\.\s*' + re.escape(name) + r'\s*\($',
+                              s[:m.end(1) + 1])
+                qualifier = q.group(1) if q else None
+
+                for sig, owners in self.methods[name]:
+                    if qualifier and qualifier in self.declared_anywhere \
+                            and qualifier not in owners:
+                        continue
                     if len(sig) != len(parts):
                         continue
                     for i, (a, t) in enumerate(zip(parts, sig)):

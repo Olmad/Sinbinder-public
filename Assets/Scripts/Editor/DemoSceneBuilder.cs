@@ -797,6 +797,10 @@ namespace Sinbinder.Utilets
             BuildHarvestHint(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
+            // Выбор тела нужен везде, где можно собрать душу, а собрать
+            // её можно в любой сцене с боем. Строим со всем остальным
+            // интерфейсом, чтобы не гадать, где игрок нажмёт связывание.
+            BuildShellPicker(canvasGO.transform);
             BuildDialogue(canvasGO.transform);
 
             // Панель искусителей отложена до полной версии вместе
@@ -1016,6 +1020,43 @@ namespace Sinbinder.Utilets
             // и слежение за тем, подошёл ли игрок к столу, не работало бы
             // ни разу. Ровно на этом уже обжёгся DialogueUI.
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.CommanderCouncilUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
+        }
+
+        /// <summary>
+        /// Выбор тела для собранной души.
+        ///
+        /// Четыре оболочки собраны как ассеты, смещения настоящие, дрейф
+        /// работает — и всем этим связывание пользовалось на четверть,
+        /// держа зашитого зомби. Панель открывает кран на уже проложенной
+        /// трубе, и заодно делает урок сцены 4 механикой: истлевшую душу
+        /// тяжёлое тело не примет, и промедление отнимает у игрока
+        /// не качество, а выбор.
+        /// </summary>
+        private static void BuildShellPicker(Transform parent)
+        {
+            var panel = Panel("Выбор тела", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(900f, 700f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+
+            var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
+                new Vector2(0f, -20f), 44f);
+
+            var rows = Panel("Тела", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 620f),
+                position: new Vector2(0f, -74f));
+            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+
+            // На Canvas, а не на панель, которую сам выключает: та же
+            // ошибка, что уже стоила совету неработающего Update.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.ShellPickerUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
                      ("_font", UIFont()));
         }
