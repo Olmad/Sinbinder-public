@@ -1,22 +1,19 @@
 // Assets/Scripts/Crypt/TestLever.cs
 using UnityEngine;
-using Sinbinder.Gameplay;
 
 namespace Sinbinder.Crypt
 {
     /// <summary>
     /// Рычаг на тренировочной площадке.
     ///
-    /// Подойти ногами и нажать. «Подойти» значит именно дойти, а не
-    /// навести взгляд: на этом уже обжёгся совет, когда Греховода
-    /// в сцене не существовало и подойти к столу можно было, не сходя
-    /// с места (`14-HANDOFF.md` §8.1).
+    /// Ничего не считает сам — дёргает <see cref="TestChamber"/>. Вся
+    /// причина живёт в одном месте, иначе площадка рассыплется на пять
+    /// маленьких правд.
     ///
-    /// Рычаг ничего не считает сам — он дёргает
-    /// <see cref="TestChamber"/>. Вся причина живёт в одном месте,
-    /// иначе площадка рассыпется на пять маленьких правд.
+    /// Подход и нажатие — общие для всего склепа
+    /// (<see cref="CryptInteractable"/>).
     /// </summary>
-    public class TestLever : MonoBehaviour
+    public class TestLever : CryptInteractable
     {
         public enum LeverKind
         {
@@ -34,18 +31,10 @@ namespace Sinbinder.Crypt
         [SerializeField] private Trial _trial = Trial.Loot;
         [SerializeField] private TestChamber _chamber;
 
-        [Tooltip("С какого расстояния рычаг слушается.")]
-        [SerializeField] private float _reach = 2.2f;
-
-        [SerializeField] private KeyCode _key = KeyCode.F;
-
-        [Tooltip("Табличка над рычагом. Пусто — соберём из каталога.")]
+        [Tooltip("Табличка. Пусто — соберём из каталога.")]
         [SerializeField] private string _label = "";
 
-        private bool _wasNear;
-
-        /// <summary>Надпись на табличке. Читает и сборщик сцены, и подсказка.</summary>
-        public string Label
+        public override string Label
         {
             get
             {
@@ -69,36 +58,10 @@ namespace Sinbinder.Crypt
                 Debug.LogError("[ПОЛИГОН] Рычаг без площадки: дёргать нечего.");
         }
 
-        void Update()
+        protected override void Use()
         {
             if (_chamber == null) return;
 
-            bool near = Near();
-
-            // Подсказку показываем один раз на подход, а не каждый кадр.
-            if (near && !_wasNear)
-            {
-                string flat = Label.Replace(System.Environment.NewLine, " ")
-                                   .Replace("\n", " ");
-                Say($"{flat} — нажмите {_key}.");
-            }
-            _wasNear = near;
-
-            if (!near || !Input.GetKeyDown(_key)) return;
-
-            Pull();
-        }
-
-        private bool Near()
-        {
-            if (!SinbinderPlayer.Exists) return false;
-
-            return CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position)
-                   <= _reach;
-        }
-
-        private void Pull()
-        {
             switch (_kind)
             {
                 case LeverKind.Repeat:
@@ -128,8 +91,5 @@ namespace Sinbinder.Crypt
             _trial = trial;
             _chamber = chamber;
         }
-
-        private static void Say(string line)
-            => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
     }
 }

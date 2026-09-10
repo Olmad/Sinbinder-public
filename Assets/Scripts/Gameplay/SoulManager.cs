@@ -60,13 +60,30 @@ namespace Sinbinder.Gameplay
             => _harvested.Count == 0 ? default : _harvested[0];
 
         /// <summary>Забрать душу под связывание. Первая собранная уходит первой.</summary>
-        public Kept TakeHarvested()
-        {
-            if (_harvested.Count == 0) return default;
+        public Kept TakeHarvested() => TakeHarvested(0);
 
-            var kept = _harvested[0];
-            _harvested.RemoveAt(0);
+        /// <summary>
+        /// Забрать <b>ту самую</b> душу, а не первую в очереди.
+        ///
+        /// Нужна полкам склепа: там банки стоят рядом, и игрок берёт
+        /// ту, за которой пришёл. Очередь годится, пока выбора нет;
+        /// как только он появился, «первая попавшаяся» стала бы обманом
+        /// — игрок нёс бы к устройству одну душу, а вселялась бы другая.
+        /// </summary>
+        public Kept TakeHarvested(int index)
+        {
+            if (index < 0 || index >= _harvested.Count) return default;
+
+            var kept = _harvested[index];
+            _harvested.RemoveAt(index);
             return kept;
+        }
+
+        /// <summary>Положить душу обратно — банку вернули на полку.</summary>
+        public void PutBack(Kept kept)
+        {
+            if (kept.Soul == null) return;
+            _harvested.Add(kept);
         }
 
         void Start()

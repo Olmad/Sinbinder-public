@@ -138,39 +138,19 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Поднять воина из души. Собран так же, как своих собирает
-        /// лагерный спавнер: иначе поднятый вёл бы себя не как все,
-        /// а движок обязан быть один на всех.
+        /// Поднять воина из души.
+        ///
+        /// Сборка живёт в <see cref="Raising"/>, а не здесь: поднимать
+        /// умеет ещё и устройство склепа, и две копии этой сборки
+        /// разошлись бы на первой же правке.
         /// </summary>
         private Warrior Raise(SoulData soul, ShellType shell)
         {
             _relSystem ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
 
-            var go = new GameObject(soul.Name);
-            go.transform.position = transform.position + transform.right * _riseOffset;
-            go.transform.rotation = transform.rotation;
-
-            var warrior = go.AddComponent<Warrior>();
-            warrior.Initialize(soul, shell, _relSystem, false, Team.Player);
-
-            WarriorRig.Attach(go);
-            go.AddComponent<SoulHarvester>();
-            go.AddComponent<SoulBinding>();
-
-            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Тело";
-            body.transform.SetParent(go.transform);
-            body.transform.localPosition = new Vector3(0f, 0.65f, 0f);
-            body.transform.localScale = new Vector3(0.5f, 1.05f, 0.5f);
-
-            // Поднятый посреди боя не проходит через настройку сцены:
-            // без этого вызова он остался бы телом без движка решений.
-            var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
-            if (setup != null) setup.SetupWarrior(go);
-            else Debug.LogWarning("[СВЯЗЫВАНИЕ] AOSSceneSetup в сцене нет: "
-                                + "поднятый не будет ничего решать.");
-
-            return warrior;
+            return Raising.Rise(soul, shell,
+                transform.position + transform.right * _riseOffset,
+                transform.rotation, _relSystem);
         }
 
         private static void Log(string line)

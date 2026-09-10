@@ -309,14 +309,133 @@ namespace Sinbinder.Utilets
                   Sinbinder.Crypt.TestLever.LeverKind.NextSubject,
                   default, new Vector3(x + 0.8f, 0f, 0f));
 
+            BindingZone(new Vector3(-9f, 0f, 2f));
+
             // Тело Греховода: без него «подойти к рычагу» снова означало бы
             // «навести взгляд», а этот урок проекту уже дорого обошёлся.
             var spawn = new GameObject("Появление Греховода");
-            spawn.transform.position = new Vector3(0f, 0f, -3f);
+            spawn.transform.position = new Vector3(-4f, 0f, -3f);
             spawn.AddComponent<Sinbinder.Crypt.TestChamberEntry>();
 
             Save(scene, "Crypt_Test");
         }
+
+        /// <summary>
+        /// Зона первая: устройство связывания, полка с банками, стол тел.
+        ///
+        /// Три предмета и дорога между ними. Дорога здесь и есть механика:
+        /// связывание, которое делается не сходя с места, — это меню,
+        /// из которого его и вынимали. Игрок берёт банку с полки, несёт
+        /// её к гнезду, возвращается за телом, кладёт, дёргает рычаг.
+        ///
+        /// И на этой дороге он может ошибиться: истлевшую душу голем
+        /// не примет, и узнает игрок об этом у гнезда, а не из серой
+        /// строки списка.
+        /// </summary>
+        private static void BindingZone(Vector3 origin)
+        {
+            var zone = new GameObject("Связывание");
+            zone.transform.position = origin;
+
+            // --- устройство ---
+            var altar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            altar.name = "Устройство";
+            altar.transform.SetParent(zone.transform);
+            altar.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+            altar.transform.localScale = new Vector3(2.2f, 1f, 1.2f);
+
+            var rise = Spot(zone.transform, "Место поднятого", new Vector3(0f, 0f, -2.5f));
+
+            var device = altar.AddComponent<Sinbinder.Crypt.BindingDevice>();
+            Wire(device, ("_riseSpot", rise));
+
+            Socket(zone.transform, device, Sinbinder.Crypt.BindingSocket.Slot.Soul,
+                   new Vector3(-0.7f, 1.1f, 0f));
+            Socket(zone.transform, device, Sinbinder.Crypt.BindingSocket.Slot.Shell,
+                   new Vector3(0.7f, 1.1f, 0f));
+
+            var handleGo = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            handleGo.name = "Рычаг связывания";
+            handleGo.transform.SetParent(zone.transform);
+            handleGo.transform.localPosition = new Vector3(1.6f, 0.8f, 0f);
+            handleGo.transform.localScale = new Vector3(0.14f, 0.8f, 0.14f);
+            handleGo.AddComponent<Sinbinder.Crypt.BindingHandle>().Set(device);
+
+            // --- полка с банками ---
+            var shelf = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            shelf.name = "Полка";
+            shelf.transform.SetParent(zone.transform);
+            shelf.transform.localPosition = new Vector3(-3.2f, 0.5f, 1.6f);
+            shelf.transform.localScale = new Vector3(4.4f, 1f, 0.6f);
+
+            // Банки расставляет сама полка: она вид на список жатвы,
+            // а не собственный запас душ.
+            var jars = new GameObject("Банки");
+            jars.transform.SetParent(zone.transform);
+            jars.transform.localPosition = new Vector3(-4.8f, 1f, 1.6f);
+            jars.AddComponent<Sinbinder.Crypt.SoulShelf>();
+
+            // --- стол с телами ---
+            var table = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            table.name = "Стол тел";
+            table.transform.SetParent(zone.transform);
+            table.transform.localPosition = new Vector3(3.2f, 0.5f, 1.6f);
+            table.transform.localScale = new Vector3(3.6f, 1f, 0.9f);
+
+            float x = 2f;
+            foreach (Sinbinder.Core.ShellType type in
+                     System.Enum.GetValues(typeof(Sinbinder.Core.ShellType)))
+            {
+                var stand = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                stand.name = $"Тело — {type}";
+                stand.transform.SetParent(zone.transform);
+                stand.transform.localPosition = new Vector3(x, 1.25f, 1.6f);
+                stand.transform.localScale = new Vector3(0.3f, 0.25f, 0.3f);
+
+                stand.AddComponent<Sinbinder.Crypt.ShellStand>().Set(type);
+
+                Plate(stand.transform, CryptHandsName(type), 1.8f);
+                x += 0.9f;
+            }
+        }
+
+        /// <summary>Гнездо устройства.</summary>
+        private static void Socket(Transform parent, Sinbinder.Crypt.BindingDevice device,
+            Sinbinder.Crypt.BindingSocket.Slot slot, Vector3 local)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.name = slot == Sinbinder.Crypt.BindingSocket.Slot.Soul
+                ? "Гнездо души" : "Ложе тела";
+            go.transform.SetParent(parent);
+            go.transform.localPosition = local;
+            go.transform.localScale = new Vector3(0.34f, 0.08f, 0.34f);
+
+            go.AddComponent<Sinbinder.Crypt.BindingSocket>().Set(slot, device);
+
+            Plate(go.transform, go.name, 2.6f);
+        }
+
+        /// <summary>Надпись в мире. Игрок читает её, подходя, и не уходит в интерфейс.</summary>
+        private static void Plate(Transform parent, string text, float height)
+        {
+            var plate = new GameObject("Табличка");
+            plate.transform.SetParent(parent);
+            plate.transform.localPosition = new Vector3(0f, height, 0f);
+
+            var mesh = plate.AddComponent<TextMesh>();
+            mesh.text = text;
+            mesh.characterSize = 0.1f;
+            mesh.fontSize = 64;
+            mesh.anchor = TextAnchor.LowerCenter;
+            mesh.alignment = TextAlignment.Center;
+            mesh.color = new Color(0.86f, 0.84f, 0.78f);
+
+            plate.AddComponent<Sinbinder.UI.Billboard>();
+        }
+
+        /// <summary>Имя оболочки для таблички. Берётся оттуда же, откуда его берёт игра.</summary>
+        private static string CryptHandsName(Sinbinder.Core.ShellType type)
+            => Sinbinder.Crypt.CryptHands.ShellName(type);
 
         /// <summary>Пустая точка-ориентир. Позиция жёсткая и видна в сцене.</summary>
         private static Transform Spot(Transform parent, string name, Vector3 local)
