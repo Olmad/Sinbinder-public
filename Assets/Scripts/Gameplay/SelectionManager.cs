@@ -353,6 +353,26 @@ namespace Sinbinder.Gameplay
                         var warrior = unit.GetComponent<Warrior>();
                         if (warrior == null || warrior.IsDead) continue;
 
+                        // Греховод не голосует — значит и приказ ему отдавать
+                        // некуда: IssueCommand кладёт приказ в бюллетень,
+                        // а бюллетень читает AOSWarriorWrapper, которого
+                        // у героя нет намеренно. Приказ уходил в пустоту:
+                        // выделить его было можно, сдвинуть — нет.
+                        //
+                        // Он и не должен голосовать: это игрок. Значит ноги
+                        // слушают прямо, без спора.
+                        if (warrior is SinbinderPlayer)
+                        {
+                            var legs = warrior.GetComponent<UnitMover>();
+                            if (legs != null)
+                            {
+                                if (isAttackOrder) legs.CommandAttack(enemyUnit.gameObject);
+                                else legs.CommandMove(hit.point);
+                                given++;
+                            }
+                            continue;
+                        }
+
                         if (isAttackOrder)
                             warrior.IssueCommand(CommandKind.Attack, enemyUnit.transform.position, enemyUnit.gameObject);
                         else
