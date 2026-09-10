@@ -120,6 +120,9 @@ class Checker:
         self.declared_anywhere = set()     # включая вложенные и приватные
         self.enums = set()
         self.methods = defaultdict(list)   # метод -> список сигнатур
+        self.ctors = defaultdict(list)     # тип -> список (мин, макс) аргументов
+        self.ctor_files = defaultdict(set) # тип -> файлы, где он объявлен
+        self.partial = set()               # типы, разложенные по файлам
 
         for p, s in self.src.items():
             m = RE_NAMESPACE.search(s)
@@ -133,6 +136,19 @@ class Checker:
             # как обращение к несуществующему типу.
             self.declared_anywhere.update(RE_ANY_TYPE_DECL.findall(s))
             here = set(RE_ANY_TYPE_DECL.findall(s))
+            # Конструкторы: имя метода совпадает с именем типа, объявленного
+            # в этом же файле. Тёзка-метод в C# невозможен, поэтому сверка
+            # по имени здесь надёжна.
+            for name in here:
+                for m in re.finditer(
+                        r'^\s*(?:public|internal|protected|private)\s+'
+                        + re.escape(name) + r'\s*\(([^)]*)\)\s*(?::[^;{]*)?\{',
+                        s, re.M):
+                    self.ctors[name].append(self.arity(m.group(1)))
+                self.ctor_files[name].add(p)
+                if re.search(r'partial\s+(?:class|struct)\s+' + re.escape(name), s):
+                    self.partial.add(name)
+
             for name, params in RE_METHOD_DECL.findall(s):
                 if name in KEYWORD_CALLS:
                     continue
@@ -152,6 +168,100 @@ class Checker:
             toks = part.split()
             out.append(toks[-2] if len(toks) >= 2 else (toks[0] if toks else ''))
         return out
+
+    @staticmethod
+    def arity(params):
+        """
+        Сколько аргументов принимает список параметров: (минимум, максимум).
+
+        Параметр со значением по умолчанию можно не передавать, params
+        принимает сколько угодно — отсюда вилка, а не число.
+        """
+        params = params.strip()
+        if not params:
+            return (0, 0)
+        parts = Checker.top_level(params)
+        least = 0
+        for part in parts:
+            if 'params ' in part:
+                return (least, 99)
+            if '=' not in part:
+                least += 1
+        return (least, len(parts))
+
+    @staticmethod
+    def top_level(text):
+        """Разбить по запятым нулевой глубины. Скобки и обобщения — глубина."""
+        parts, depth, cur = [], 0, ''
+        for ch in text:
+            if ch in '([{<':
+                depth += 1
+            elif ch in ')]}>':
+                depth -= 1
+            if ch == ',' and depth == 0:
+                parts.append(cur)
+                cur = ''
+            else:
+                cur += ch
+        parts.append(cur)
+        return [x for x in (p.strip() for p in parts) if x]
+
+    @staticmethod
+    def call_args(body, open_paren):
+        """Текст внутри скобок вызова. None, если скобки не закрылись."""
+        depth, i = 0, open_paren
+        while i < len(body):
+            if body[i] in '([{':
+                depth += 1
+            elif body[i] in ')]}':
+                depth -= 1
+                if depth == 0:
+                    return body[open_paren + 1:i]
+            i += 1
+        return None
+
+    def constructor_arity(self):
+        """
+        CS1729: у типа нет конструктора с таким числом аргументов.
+
+        Заведено по следу: ветка не собиралась из-за `new RelationshipSystem()`,
+        а параметрless-конструктор существовал **только в заглушке стенда**.
+        Проверка смотрела на стенд и молчала. Это тот же корень, что и
+        у округления в заглушке (13-DRIFT.md): прибор предложил то, чего
+        в игре нет.
+
+        Осторожность важнее полноты. Пропускаем всё, в чём не уверены:
+        типы, объявленные больше чем в одном файле, partial, обобщённые
+        и всё, чего в проекте не объявляли.
+        """
+        for p, s in self.src.items():
+            body = strip(s)
+            for m in re.finditer(r'\bnew\s+([A-Z]\w+)\s*\(', body):
+                t = m.group(1)
+
+                if t in self.partial or t not in self.ctor_files:
+                    continue
+                if len(self.ctor_files[t]) != 1:
+                    continue          # тёзки в разных файлах — не разобрать
+                if t not in self.declared_anywhere:
+                    continue
+
+                args = self.call_args(body, m.end() - 1)
+                if args is None:
+                    continue
+
+                given = len(self.top_level(args))
+                shapes = self.ctors[t] or [(0, 0)]   # нет своих — только пустой
+
+                if any(lo <= given <= hi for lo, hi in shapes):
+                    continue
+
+                want = ', '.join(f'{lo}' if lo == hi else f'{lo}-{hi}'
+                                 for lo, hi in sorted(set(shapes)))
+                self.report(p, line_of(body, m.start()),
+                            f'CS1729: у типа {t} нет конструктора на {given} '
+                            f'аргумент(ов) — есть на {want}. Если такой есть '
+                            f'в заглушке стенда, то это заглушка врёт, а не игра')
 
     def report(self, path, line, text):
         self.problems.append((path, line, text))
@@ -511,6 +621,7 @@ class Checker:
         self.singletons()
         self.deferred()
         self.unknown_new()
+        self.constructor_arity()
         return self.problems
 
 
