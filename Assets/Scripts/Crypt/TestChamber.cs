@@ -132,8 +132,12 @@ namespace Sinbinder.Crypt
             var context = _mind.LastContext;
             if (context == null || !context.HasCommand) return;
 
+            // Проверять решение на null нельзя: Decision — структура,
+            // и `== null` даже не компилируется. Проверять и не нужно:
+            // AOSWarriorWrapper.Decide кладёт контекст и решение подряд,
+            // одной парой строк, так что непустой контекст выше уже
+            // означает, что решение принято.
             var decision = _mind.LastDecisionDetail;
-            if (decision == null) return;
 
             _recorded = true;
 

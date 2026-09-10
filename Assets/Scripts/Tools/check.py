@@ -89,6 +89,21 @@ RE_OLD_INPUT = re.compile(
 # проверке невидимо целиком — она требовала имя типа сразу после new.
 # Найдено на собственной ошибке: класс зовут BehaviourResolver,
 # а файл BehaviorResolver.cs, и опечатка прошла мимо всех правил.
+# Структуры проекта. Нужны отдельно от RE_TYPE_DECL: там важен вид
+# объявления, здесь — только то, что тип значимый, и вложенные
+# с приватными считаются наравне с публичными.
+RE_STRUCT_DECL = re.compile(
+    r'^\s*(?:public|internal|private|protected)?\s*'
+    r'(?:static\s+|sealed\s+|readonly\s+|ref\s+|partial\s+)*'
+    r'struct\s+(\w+)', re.M)
+# Свойство и поле: запоминаем объявленный тип, чтобы потом узнать тип
+# переменной, выведенной через var. Знак вопроса захватываем нарочно —
+# Decision? сравнивать с null можно, и такую строку трогать нельзя.
+RE_MEMBER_DECL = re.compile(
+    r'^\s*(?:public|internal|protected|private)\s+'
+    r'(?:static\s+|readonly\s+|virtual\s+|override\s+|const\s+)*'
+    r'([\w<>\[\]\.]+\??)\s+(\w+)\s*(?:\{\s*get|=>|;|=[^=])', re.M)
+
 RE_NEW = re.compile(r'\bnew\s+(?:[A-Z]\w*\s*\.\s*)*([A-Z]\w+)\s*[\(\{]')
 SPLIT_ARGS = re.compile(r',(?![^<>()]*[>)])')
 
@@ -127,6 +142,8 @@ class Checker:
         self.ctors = defaultdict(list)     # тип -> список (мин, макс) аргументов
         self.ctor_files = defaultdict(set) # тип -> файлы, где он объявлен
         self.partial = set()               # типы, разложенные по файлам
+        self.structs = set()               # значимые типы: их нельзя сравнить с null
+        self.member_type = defaultdict(set)  # имя свойства или поля -> объявленный тип
 
         for p, s in self.src.items():
             m = RE_NAMESPACE.search(s)
@@ -139,6 +156,9 @@ class Checker:
             # снаружи), но существуют — иначе new ActiveEmotion читается
             # как обращение к несуществующему типу.
             self.declared_anywhere.update(RE_ANY_TYPE_DECL.findall(s))
+            self.structs.update(RE_STRUCT_DECL.findall(s))
+            for t, name in RE_MEMBER_DECL.findall(s):
+                self.member_type[name].add(t)
             here = set(RE_ANY_TYPE_DECL.findall(s))
             # Конструкторы: имя метода совпадает с именем типа, объявленного
             # в этом же файле. Тёзка-метод в C# невозможен, поэтому сверка
@@ -266,6 +286,71 @@ class Checker:
                             f'CS1729: у типа {t} нет конструктора на {given} '
                             f'аргумент(ов) — есть на {want}. Если такой есть '
                             f'в заглушке стенда, то это заглушка врёт, а не игра')
+
+    def struct_only_type(self, member):
+        """
+        Тип свойства или поля — но только если ответ однозначен.
+
+        Тёзки в разных классах, обобщённые типы и Nullable пропускаем:
+        у Nullable сравнение с null законно, а у тёзки мы не знаем,
+        чей именно член перед нами.
+        """
+        types = self.member_type.get(member)
+        if not types or len(types) != 1:
+            return None
+
+        t = next(iter(types))
+        if t.endswith('?') or '<' in t or '[' in t:
+            return None
+
+        return t if t in self.structs else None
+
+    def struct_vs_null(self):
+        """
+        CS0019: структуру нельзя сравнить с null.
+
+        Заведено по следу: ветка не собиралась из-за `decision == null`,
+        где Decision — struct. Ошибка жила в файле, которого не компилировал
+        никто, кроме Юнити, и нашлась только на редакторе. Это дёшево
+        находить здесь: тип структуры объявлен в проекте, тип свойства —
+        тоже.
+
+        Ловим три формы и, как и с конструкторами, пропускаем всё,
+        в чём не уверены: лучше промолчать, чем оболгать.
+        """
+        for p, s in self.src.items():
+            body = strip(s)
+            hits = []
+
+            # 1. Прямо по члену: что-нибудь.LastDecisionDetail == null
+            for m in re.finditer(r'\.(\w+)\s*[!=]=\s*null\b', body):
+                t = self.struct_only_type(m.group(1))
+                if t:
+                    hits.append((m.start(), m.group(1), t))
+
+            # 2. Через var: тип выводится из члена справа.
+            local = {}
+            for m in re.finditer(r'\bvar\s+(\w+)\s*=\s*[^;]*?\.(\w+)\s*;', body):
+                t = self.struct_only_type(m.group(2))
+                if t:
+                    local[m.group(1)] = t
+
+            # 3. Явным типом: Decision d = ...
+            for name in self.structs:
+                for m in re.finditer(
+                        r'(?<![\w.])' + re.escape(name) + r'\s+(\w+)\s*=[^=]', body):
+                    local[m.group(1)] = name
+
+            for var, t in local.items():
+                for m in re.finditer(
+                        r'(?<![\w.])' + re.escape(var) + r'\s*[!=]=\s*null\b', body):
+                    hits.append((m.start(), var, t))
+
+            for pos, what, t in hits:
+                self.report(p, line_of(body, pos),
+                            f'CS0019: {what} — это структура {t}, '
+                            f'её нельзя сравнить с null. Если проверка нужна, '
+                            f'сравнивать надо поле или объявлять {t}?')
 
     def report(self, path, line, text):
         self.problems.append((path, line, text))
@@ -626,6 +711,7 @@ class Checker:
         self.deferred()
         self.unknown_new()
         self.constructor_arity()
+        self.struct_vs_null()
         return self.problems
 
 

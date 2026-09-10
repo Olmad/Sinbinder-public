@@ -292,6 +292,55 @@ namespace N
 }
 '''}, 'CS1729'),
 
+    ('struct_vs_null', {
+        'Verdict.cs': '''
+namespace N
+{
+    public struct Verdict
+    {
+        public int Action;
+    }
+
+    public class Mind
+    {
+        public Verdict Last { get; private set; }
+    }
+
+    public class User
+    {
+        void M(Mind mind)
+        {
+            if (mind.Last == null) return;
+        }
+    }
+}
+'''}, 'CS0019'),
+
+    ('struct_vs_null/через var', {
+        'Verdict.cs': '''
+namespace N
+{
+    public struct Verdict
+    {
+        public int Action;
+    }
+
+    public class Mind
+    {
+        public Verdict Last { get; private set; }
+    }
+
+    public class User
+    {
+        void M(Mind mind)
+        {
+            var v = mind.Last;
+            if (v == null) return;
+        }
+    }
+}
+'''}, 'CS0019'),
+
     ('input_handler', {
         'ProjectSettings/ProjectSettings.asset': '  activeInputHandler: 1\n',
         'Keys.cs': '''
