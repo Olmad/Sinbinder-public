@@ -94,6 +94,50 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>Имя объекта рамки. Его же ставит сборщик сцен.</summary>
+        private const string BoxName = "Рамка выделения";
+
+        /// <summary>
+        /// Рамка выделения, найденная заново, если прежней не стало.
+        ///
+        /// Менеджер переживает смену сцен (<c>DontDestroyOnLoad</c>
+        /// в Awake), а рамка живёт на Canvas и умирает вместе со сценой.
+        /// Ссылки, связанной в сборщике, хватало бы ровно на одну сцену:
+        /// со второй рамка стала бы невидимой, и понять почему было бы
+        /// нечем — выделение-то работает.
+        ///
+        /// Ищем через <see cref="Transform.Find"/>, а не
+        /// <c>GameObject.Find</c>: рамка выключена, пока её не тянут,
+        /// а выключенные объекты второй не находит.
+        /// </summary>
+        private RectTransform Box()
+        {
+            if (_selectionBox != null) return _selectionBox;
+
+            foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.InstanceID))
+            {
+                var found = canvas.transform.Find(BoxName) as RectTransform;
+                if (found == null) continue;
+
+                _selectionBox = found;
+                return found;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Во сколько раз холст растянут против своего эталона.
+        /// Единица, если холста нет: тогда и делить не на что.
+        /// </summary>
+        private static float CanvasScale(RectTransform box)
+        {
+            var canvas = box.GetComponentInParent<Canvas>();
+            if (canvas == null) return 1f;
+
+            return Mathf.Approximately(canvas.scaleFactor, 0f) ? 1f : canvas.scaleFactor;
+        }
+
         public void RegisterUnit(SelectionComponent unit)
         {
             if (!_allUnits.Contains(unit))
@@ -113,11 +157,12 @@ namespace Sinbinder.Gameplay
                 _selectionStart = Input.mousePosition;
                 _isSelecting = true;
 
-                if (_selectionBox != null)
+                var box = Box();
+                if (box != null)
                 {
-                    _selectionBox.gameObject.SetActive(true);
-                    _selectionBox.position = _selectionStart;
-                    _selectionBox.sizeDelta = Vector2.zero;
+                    box.gameObject.SetActive(true);
+                    box.position = _selectionStart;
+                    box.sizeDelta = Vector2.zero;
                 }
             }
 
@@ -127,18 +172,25 @@ namespace Sinbinder.Gameplay
                 Vector2 min = Vector2.Min(_selectionStart, currentPos);
                 Vector2 max = Vector2.Max(_selectionStart, currentPos);
 
-                if (_selectionBox != null)
+                var box = Box();
+                if (box != null)
                 {
-                    _selectionBox.position = min;
-                    _selectionBox.sizeDelta = max - min;
+                    // position — в экранных пикселях (холст экранный),
+                    // а sizeDelta — в единицах холста. При CanvasScaler
+                    // это разные вещи: без деления на масштаб рамка
+                    // совпадала бы с курсором только на 1920×1080,
+                    // а на любом другом экране отставала бы от него.
+                    box.position = min;
+                    box.sizeDelta = (max - min) / CanvasScale(box);
                 }
             }
 
             if (Input.GetMouseButtonUp(0))
             {
                 _isSelecting = false;
-                if (_selectionBox != null)
-                    _selectionBox.gameObject.SetActive(false);
+                var box = Box();
+                if (box != null)
+                    box.gameObject.SetActive(false);
 
                 float dragDistance = Vector2.Distance(_selectionStart, Input.mousePosition);
 
@@ -179,7 +231,12 @@ namespace Sinbinder.Gameplay
 
         private void HandleBoxSelection()
         {
-            DeselectAll();
+            // Shift копит выделение — и рамкой тоже, а не только щелчком.
+            // Раньше рамка сбрасывала набранное всегда, и две половины
+            // одного жеста вели себя по-разному: щелчком с Shift воин
+            // добавлялся, рамкой с Shift — отряд начинался заново.
+            if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                DeselectAll();
 
             Vector2 min = Vector2.Min(_selectionStart, Input.mousePosition);
             Vector2 max = Vector2.Max(_selectionStart, Input.mousePosition);
@@ -209,6 +266,13 @@ namespace Sinbinder.Gameplay
 
         private void SelectUnit(SelectionComponent unit)
         {
+            // Уже выделенного не добавляем второй раз. С Shift это
+            // случается легко — обвести рамкой того, по кому уже щёлкнул, —
+            // и стоило бы дорого: приказ рассылается перебором списка,
+            // то есть двойник получил бы его дважды, а счёт выделенных
+            // показал бы больше, чем на поле.
+            if (_selectedUnits.Contains(unit)) return;
+
             unit.Select();
             _selectedUnits.Add(unit);
             OnSelectionChanged?.Invoke(_selectedUnits);

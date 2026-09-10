@@ -28,3 +28,6 @@ MonoBehaviour:
   - SceneName: Crypt_Entrance
     DisplayName: Crypt_Entrance
     Tag: Crypt
+  - SceneName: Crypt_Test
+    DisplayName: Crypt_Test
+    Tag: Crypt

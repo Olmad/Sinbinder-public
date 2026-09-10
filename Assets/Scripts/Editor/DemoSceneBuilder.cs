@@ -1161,6 +1161,7 @@ namespace Sinbinder.Utilets
                 es.AddComponent<StandaloneInputModule>();
             }
 
+            BuildSelectionBox(canvasGO.transform);
             BuildLog(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
@@ -1480,6 +1481,65 @@ namespace Sinbinder.Utilets
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.MovementHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
+        }
+
+        /// <summary>
+        /// Прямоугольник выделения — тот самый, что тянут мышью.
+        ///
+        /// <see cref="Gameplay.SelectionManager"/> умеет тянуть рамку
+        /// с самого начала, но поле <c>_selectionBox</c> не заполнял никто:
+        /// выделение работало, а на экране не было видно ничего. Игрок
+        /// тянул мышь по пустому месту и не мог понять, выделяет он или
+        /// промахивается, — а это первый жест, которым в тактике вообще
+        /// пользуются.
+        ///
+        /// Опора и якорь в левом нижнем углу: менеджер ставит рамке
+        /// <c>position</c> в меньший угол и растит <c>sizeDelta</c>
+        /// от него. При любой другой опоре рамка росла бы из середины
+        /// и уезжала бы от курсора.
+        ///
+        /// Заливка плюс кромка, а не одна заливка: на светлой земле
+        /// полупрозрачный прямоугольник без края теряется.
+        /// </summary>
+        private static void BuildSelectionBox(Transform parent)
+        {
+            var rt = Panel("Рамка выделения", parent,
+                anchorMin: Vector2.zero, anchorMax: Vector2.zero,
+                pivot: Vector2.zero, size: Vector2.zero, position: Vector2.zero);
+
+            var fill = rt.gameObject.AddComponent<Image>();
+            fill.color = new Color(0.45f, 0.85f, 0.5f, 0.14f);
+
+            // Рамка не должна перехватывать щелчки: она рисуется поверх
+            // земли ровно в тот момент, когда игрок по земле и щёлкает.
+            fill.raycastTarget = false;
+
+            Edge("Верх", rt, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 2f));
+            Edge("Низ", rt, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 2f));
+            Edge("Левая", rt, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(2f, 0f));
+            Edge("Правая", rt, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(2f, 0f));
+
+            // Выключена: менеджер включает её на нажатие и гасит на отпуск.
+            rt.gameObject.SetActive(false);
+        }
+
+        /// <summary>Одна сторона рамки. Растягивается вдоль, толщина — из size.</summary>
+        private static void Edge(string name, RectTransform parent,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 size)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = size;
+
+            var image = go.AddComponent<Image>();
+            image.color = new Color(0.58f, 0.95f, 0.6f, 0.85f);
+            image.raycastTarget = false;
         }
 
         /// <summary>
