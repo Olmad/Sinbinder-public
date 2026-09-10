@@ -94,6 +94,17 @@ namespace Sinbinder.Gameplay
         /// обязан уводить тех же людей.
         /// </summary>
         public static void SendAway(string commanderName, int size)
+            => SendAway(commanderName, size, keepExperienced: true);
+
+        /// <summary>
+        /// То же, но с выбором: держать ли опытных дома.
+        ///
+        /// В прологе они остаются — иначе к доле 4 защищать лагерь
+        /// некому. В склепе такого правила нет: игрок сам решает, кем
+        /// рискнуть, и запрет «опытные не ходят» отнял бы у него ровно
+        /// то решение, ради которого зона и построена.
+        /// </summary>
+        public static void SendAway(string commanderName, int size, bool keepExperienced)
         {
             int taken = 0;
 
@@ -112,7 +123,7 @@ namespace Sinbinder.Gameplay
                 var m = _members[i];
                 if (m.IsAway) continue;
                 if (!string.IsNullOrEmpty(m.Unavailable)) continue;   // телохранитель
-                if (Leadership.IsExperienced(m.Leadership)) continue; // опытные остаются
+                if (keepExperienced && Leadership.IsExperienced(m.Leadership)) continue;
 
                 m.IsAway = true;
                 _members[i] = m;
@@ -121,6 +132,52 @@ namespace Sinbinder.Gameplay
 
             Debug.Log($"[ОТРЯД] С {commanderName} ушли {taken}. "
                     + $"В лагере остались {_members.Count - taken}.");
+        }
+
+        /// <summary>
+        /// Отряд вернулся. Кого нет в списке выживших — тот не вернулся,
+        /// и его в составе больше нет.
+        ///
+        /// <b>И каждому вернувшемуся прибавляется невыплата.</b> Это
+        /// не мелочь учёта, а тот самый рычаг: долг — единственная
+        /// причина отказа, которую игрок может убрать заранее
+        /// (<c>12-BALANCE.md</c>, «Долг»). Пока вылазка ничего не стоила,
+        /// рычага не было; теперь после каждой ему должны, и заплатить
+        /// или нет — решение.
+        /// </summary>
+        public static void ComeBack(IReadOnlyList<string> survivors)
+        {
+            for (int i = _members.Count - 1; i >= 0; i--)
+            {
+                var m = _members[i];
+                if (!m.IsAway) continue;
+
+                bool alive = false;
+                if (survivors != null)
+                    for (int j = 0; j < survivors.Count; j++)
+                        if (survivors[j] == m.Name) { alive = true; break; }
+
+                if (!alive) { _members.RemoveAt(i); continue; }
+
+                m.IsAway = false;
+                m.IsCommander = false;
+                m.UnpaidMissions++;
+                _members[i] = m;
+            }
+        }
+
+        /// <summary>Заплатить всем: долги обнуляются, верность растёт.</summary>
+        public static void PayEveryone()
+        {
+            for (int i = 0; i < _members.Count; i++)
+            {
+                var m = _members[i];
+                if (m.UnpaidMissions <= 0) continue;
+
+                m.UnpaidMissions = 0;
+                m.Loyalty = Mathf.Min(100f, m.Loyalty + 5f);
+                _members[i] = m;
+            }
         }
 
         public static void Set(IEnumerable<Member> members)

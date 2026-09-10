@@ -310,6 +310,14 @@ namespace Sinbinder.Utilets
                   default, new Vector3(x + 0.8f, 0f, 0f));
 
             BindingZone(new Vector3(-9f, 0f, 2f));
+            MapZone(new Vector3(9f, 0f, 2f), canvas);
+
+            // Отряд: те самые девять душ лагеря. Полигон нарочно берёт
+            // измеренных стендом, а не выдуманных — иначе опыт не с чем
+            // сверять, и «он отказал» останется впечатлением.
+            var squad = new GameObject("Отряд");
+            squad.transform.position = new Vector3(0f, 0f, -6f);
+            squad.AddComponent<PrologueCampSpawner>();
 
             // Тело Греховода: без него «подойти к рычагу» снова означало бы
             // «навести взгляд», а этот урок проекту уже дорого обошёлся.
@@ -397,6 +405,58 @@ namespace Sinbinder.Utilets
                 Plate(stand.transform, CryptHandsName(type), 1.8f);
                 x += 0.9f;
             }
+        }
+
+        /// <summary>
+        /// Зона третья: шар с картой вылазок.
+        ///
+        /// Стол и шар те же, что в лагере, — и это не экономия, а правило:
+        /// предмет, который в одном месте открывает совет, а в другом
+        /// выглядит иначе, игрок считает двумя разными предметами.
+        ///
+        /// Карта открывается подходом к шару, как и совет: подойти
+        /// значит дойти ногами.
+        /// </summary>
+        private static void MapZone(Vector3 origin, Transform canvas)
+        {
+            CouncilTable(origin);
+
+            // Доска вылазок — счёт, а не предмет: ей незачем стоять
+            // на видном месте, но она обязана быть в сцене.
+            var board = new GameObject("Вылазки");
+            board.transform.position = origin;
+            board.AddComponent<Sinbinder.Crypt.MissionBoard>();
+
+            BuildMissionMap(canvas);
+        }
+
+        /// <summary>Панель карты. Строится как совет и по тем же правилам.</summary>
+        private static void BuildMissionMap(Transform parent)
+        {
+            var panel = Panel("Карта вылазок", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 640f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+
+            var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
+                new Vector2(0f, -20f), 56f);
+
+            var rows = Panel("Точки", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 550f),
+                position: new Vector2(0f, -86f));
+            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+
+            // На Canvas, а не на панель, которую сам выключает: у
+            // выключенного объекта не крутится Update, и подход к шару
+            // остался бы незамеченным. Совет на этом уже спотыкался.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.MissionMapUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
         }
 
         /// <summary>Гнездо устройства.</summary>

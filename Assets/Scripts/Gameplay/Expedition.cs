@@ -37,6 +37,17 @@ namespace Sinbinder.Gameplay
         /// Пустой список — не вернулся никто.
         /// </summary>
         public static List<string> Resolve(List<SquadRoster.Member> away)
+            => Resolve(away, away != null ? away.Count : 0);
+
+        /// <summary>
+        /// То же, но противник задан отдельно.
+        ///
+        /// В прологе он был вровень по числу ушедших: там точка одна,
+        /// и выбирать не из чего. На карте склепа точки разной тяжести,
+        /// и «их там больше» обязано что-то значить — иначе выбор точки
+        /// это выбор названия.
+        /// </summary>
+        public static List<string> Resolve(List<SquadRoster.Member> away, int foeCount)
         {
             var survivors = new List<string>();
             if (away == null || away.Count == 0) return survivors;
@@ -69,7 +80,7 @@ namespace Sinbinder.Gameplay
                 //
                 // Грехи чужих разведены по кругу, а не одинаковы: отряд
                 // из семи одинаковых душ вёл бы себя как один воин.
-                for (int i = 0; i < away.Count; i++)
+                for (int i = 0; i < Mathf.Max(foeCount, 1); i++)
                 {
                     var sin = (SinType)(i % 7);
                     foes.Add(Make(holder, "Чужой", sin, MoralType.Vicious,

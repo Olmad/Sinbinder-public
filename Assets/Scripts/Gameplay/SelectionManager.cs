@@ -49,6 +49,16 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            // На паузе игрок разговаривает с панелью, а не с отрядом.
+            //
+            // Без этой строки любая открытая панель — совет, выбор тела,
+            // карта вылазок — продолжала пропускать выделение и приказы
+            // мимо себя: щелчок по строке панели попадал заодно и в землю
+            // за ней, а Esc «назад» снимал приказы с отряда. Панель ставит
+            // паузу, значит пауза и есть признак того, что руки заняты.
+            if (Core.GamePauseController.Instance != null
+                && Core.GamePauseController.Instance.IsPaused) return;
+
             HandleSelectionInput();
             HandleCommandInput();
             HandleStanceInput();
