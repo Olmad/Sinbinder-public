@@ -203,7 +203,7 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = JunctionCatalog.Situation(_chosen.Junction)
-                            + "  Что вы им скажете?  Esc — назад";
+                            + "  Что вы им скажете?  Esc — к карте";
 
             Rows(out float y);
 
