@@ -223,7 +223,7 @@ namespace Sinbinder.AOS
                     // Запись деяния за сбор добычи
                     if (gold > 0)
                     {
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.CollectMostLoot, Importance = gold / 10f, Time = System.DateTime.Now });
+                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.CollectMostLoot, Importance = gold / 10f });
                         TitleManager.UpdateTitle(_warrior);
                     }
                 }
@@ -331,16 +331,16 @@ namespace Sinbinder.AOS
         public void OnKilledEnemy(Warrior enemy)
         {
             if (enemy == null) return;
-            _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 0.5f, Time = System.DateTime.Now });
+            _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 0.5f });
             // Специальные деяния для перков
             if (_warrior.Soul.Memory?.NarrativePerks != null)
             {
                 foreach (var perk in _warrior.Soul.Memory.NarrativePerks)
                 {
                     if (perk.PerkName == "Мститель" && enemy.DisplayName.Contains("Бандит"))
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f, Time = System.DateTime.Now });
+                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
                     if (perk.PerkName == "Бывший Охотник (ненавидит)" && enemy.DisplayName.Contains("Охотник"))
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f, Time = System.DateTime.Now });
+                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
                 }
             }
             TitleManager.UpdateTitle(_warrior);

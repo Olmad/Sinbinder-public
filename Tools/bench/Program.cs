@@ -2563,6 +2563,201 @@ static class Bench
         Console.WriteLine("  Мёртвая зона — участок, где не меняет ни в одном.");
     }
 
+
+    // ──────────────────────────────────────────────────────────────
+    //  ДОБЫЧА
+    //
+    //  Раньше труп стоил Random.Range(5, 20). Оттуда случайность шла
+    //  дальше: важность деяния = золото/10, TitleManager складывает
+    //  важность по типу деяния и сравнивает с порогом в TitleDatabase,
+    //  а титул — шестой из восьми рычагов игрока. Два прогона с одними
+    //  душами давали разные имена.
+    //
+    //  Замер отвечает на два вопроса. Первый: одинаков ли выход на
+    //  одинаковом входе. Второй, ради которого замер и нужен: куда
+    //  уехал порог титула. Средняя добыча за труп была 12 — если
+    //  новая средняя другая, титулы придут раньше или позже, и это
+    //  надо увидеть числом, а не на глаз.
+    // ──────────────────────────────────────────────────────────────
+
+    readonly struct Corpse
+    {
+        public readonly string Name;
+        public readonly ShellType Shell;
+        public readonly SinType Sin;
+        public readonly MoralType Moral;
+        public readonly float Intensity;
+        public readonly int Level;
+
+        public Corpse(string name, ShellType shell, SinType sin, MoralType moral,
+                      float intensity, int level)
+        {
+            Name = name; Shell = shell; Sin = sin;
+            Moral = moral; Intensity = intensity; Level = level;
+        }
+
+        public SoulData Soul() => new SoulData(Name, Sin, Moral, Level, Intensity);
+    }
+
+    /// <summary>
+    /// Охотники пролога — ровно те, что в HunterSquadSpawner.Kinds.
+    /// Это единственные трупы, которые игрок разбирает в демо.
+    /// </summary>
+    static Corpse[] PrologueDead() => new[]
+    {
+        new Corpse("Охотник",          ShellType.Zombie, SinType.Wrath,    MoralType.Vicious, 60f, 1),
+        new Corpse("Охотник-следопыт", ShellType.Zombie, SinType.Envy,     MoralType.Neutral, 45f, 1),
+        new Corpse("Охотник-мясник",   ShellType.Zombie, SinType.Gluttony, MoralType.Vicious, 55f, 2),
+        new Corpse("Ловчий",           ShellType.Zombie, SinType.Greed,    MoralType.Vicious, 50f, 1),
+    };
+
+    static void LootCheck()
+    {
+        Console.WriteLine("\n=== ДОБЫЧА: чего стоит труп ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        // ── 1. Повторяемость ──
+        // Тот же вход дважды обязан дать тот же выход. Раньше это
+        // не выполнялось ни разу.
+        foreach (var c in PrologueDead())
+        {
+            int a = BodyWorth.Gold(c.Shell, c.Soul());
+            int b = BodyWorth.Gold(c.Shell, c.Soul());
+            Check(a == b, $"{c.Name}: два одинаковых трупа дали {a} и {b}");
+            Check(BodyWorth.Equipment(c.Shell, c.Soul())
+               == BodyWorth.Equipment(c.Shell, c.Soul()),
+                  $"{c.Name}: снаряжение не повторилось");
+        }
+
+        // ── 2. Охотники пролога ──
+        Console.WriteLine($"  {"кто",-18} {"грех",-12} {"золото",7} {"важность",9}  снаряжение");
+
+        double sum = 0;
+        int min = int.MaxValue, max = 0;
+        foreach (var c in PrologueDead())
+        {
+            var soul = c.Soul();
+            int gold = BodyWorth.Gold(c.Shell, soul);
+            string kit = BodyWorth.Equipment(c.Shell, soul) ?? "—";
+            sum += gold;
+            min = Math.Min(min, gold);
+            max = Math.Max(max, gold);
+            Console.WriteLine($"  {c.Name,-18} {c.Sin,-12} {gold,7} {gold / 10f,9:F2}  {kit}");
+        }
+
+        double avg = sum / PrologueDead().Length;
+        const double WasAvg = 12.0;   // (5 + 19) / 2 при Random.Range(5, 20)
+
+        Console.WriteLine($"\n  средняя за труп: {avg:F2}   было при жребии: {WasAvg:F2}   "
+                        + $"сдвиг {(avg / WasAvg - 1) * 100:+0.0;-0.0}%");
+        Console.WriteLine($"  разброс: {min}…{max}   было: 5…19 (но у одного и того же трупа)");
+
+        // Средняя обязана остаться в пределах десятой части прежней,
+        // иначе титулы придут заметно раньше или позже, а балансировать
+        // их сейчас никто не просил.
+        Check(Math.Abs(avg / WasAvg - 1) <= 0.10,
+              $"средняя добыча уехала на {(avg / WasAvg - 1) * 100:F0}% — пороги титулов сдвинутся");
+
+        // ── 3. Порог титула: сколько трупов до имени ──
+        Console.WriteLine("\n  Сколько трупов до титула (средняя важность "
+                        + $"{avg / 10:F2} за труп, было {WasAvg / 10:F2}):");
+        Console.WriteLine($"    {"титул",-16} {"счёт",5} {"важность",9} {"трупов было",12} {"стало",7}");
+
+        int idleCount = 0, lootRules = 0;
+
+        foreach (var rule in TitleDatabase.Rules)
+        {
+            if (rule.MainDeed != DeedType.CollectMostLoot) continue;
+            lootRules++;
+
+            double wasN = Math.Ceiling(rule.RequiredImportance / (WasAvg / 10));
+            double nowN = Math.Ceiling(rule.RequiredImportance / (avg / 10));
+
+            Console.WriteLine($"    {rule.Title,-16} {rule.RequiredCount,5} "
+                            + $"{rule.RequiredImportance,9:F0} {wasN,12:F0} {nowN,7:F0}");
+
+            // Порог по счёту деяний не работает: важность набирается
+            // много позже, чем счёт. Это не провал правки — так было
+            // и при жребии (столбец «было»); это старый долг в
+            // TitleDatabase, и здесь он только назван.
+            if (rule.RequiredCount < nowN) idleCount++;
+        }
+
+        if (idleCount > 0)
+            Console.WriteLine($"\n  ДОЛГ: у {idleCount} из {lootRules} жадных титулов "
+                            + "RequiredCount ничего не решает — имя держит одна важность. "
+                            + "Правка добычи этого не создала и не лечит.");
+
+        // ── 4. Читается ли грех через добычу ──
+        // Ради этого правка и стоит того: четыре вида охотников должны
+        // отличаться добычей так же, как отличаются повадкой.
+        var greedy = new Corpse("жадный", ShellType.Zombie, SinType.Greed, MoralType.Neutral, 80f, 1);
+        var slothful = new Corpse("унылый", ShellType.Zombie, SinType.Sloth, MoralType.Neutral, 80f, 1);
+        var generous = new Corpse("щедрый", ShellType.Zombie, SinType.Greed, MoralType.Neutral, -80f, 1);
+
+        int gGold = BodyWorth.Gold(greedy.Shell, greedy.Soul());
+        int sGold = BodyWorth.Gold(slothful.Shell, slothful.Soul());
+        int vGold = BodyWorth.Gold(generous.Shell, generous.Soul());
+
+        Console.WriteLine($"\n  жадный {gGold}   унылый {sGold}   щедрый {vGold}"
+                        + $"   (одна оболочка, одна мораль)");
+
+        Check(gGold > sGold, "жадный труп обязан быть богаче унылого");
+        Check(gGold > vGold, "щедрый труп обязан быть беднее жадного — "
+                           + "добродетель это та же шкала со знаком минус");
+        Check(gGold >= sGold * 1.4, "разница между жадным и унылым слишком мала, "
+                                  + "чтобы игрок её заметил");
+
+        // ── 5. Оболочка ──
+        Console.WriteLine($"\n  {"оболочка",-10} {"пусто",6} {"жадный 80",10} {"унылый 80",10}");
+        foreach (ShellType sh in Enum.GetValues(typeof(ShellType)))
+        {
+            var blank = new SoulData("никакой", MoralType.Neutral, 1, new float[7]);
+            int flat = BodyWorth.Gold(sh, blank);
+            int gg = BodyWorth.Gold(sh, new SoulData("ж", SinType.Greed, MoralType.Neutral, 1, 80f));
+            int ss = BodyWorth.Gold(sh, new SoulData("у", SinType.Sloth, MoralType.Neutral, 1, 80f));
+            Console.WriteLine($"  {sh,-10} {flat,6} {gg,10} {ss,10}");
+        }
+
+        Check(BodyWorth.Gold(ShellType.Ghost,
+                new SoulData("ж", SinType.Greed, MoralType.Neutral, 1, 100f)) == 0,
+              "с призрака нечего взять: тела нет");
+
+        // ── 6. Снаряжение ──
+        // Прежний жребий оставлял трофей на трёх трупах из десяти.
+        // Теперь его носят те, кому он что-то значил, — доля должна
+        // остаться того же порядка, иначе опись отряда изменится.
+        int withKit = 0, total = 0;
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+            foreach (float inten in new[] { -80f, -40f, 0f, 40f, 80f })
+            {
+                total++;
+                if (BodyWorth.HasEquipment(ShellType.Zombie,
+                        new SoulData("x", sin, MoralType.Neutral, 1, inten)))
+                    withKit++;
+            }
+
+        double share = withKit * 100.0 / total;
+        Console.WriteLine($"\n  трофей остаётся на {share:F0}% трупов по всей сетке "
+                        + $"грех×сила (жребий давал 30%)");
+
+        int kits = 0;
+        foreach (var c in PrologueDead())
+            if (BodyWorth.HasEquipment(c.Shell, c.Soul())) kits++;
+        Console.WriteLine($"  из четырёх охотников пролога трофей несут: {kits}");
+
+        Check(kits > 0, "ни один охотник пролога не несёт трофея — "
+                      + "обучение снаряжению в доле 3 остаётся без предмета");
+        Check(kits < PrologueDead().Length, "трофей несут все — он перестал что-либо значить");
+
+        Console.WriteLine(bad == 0 ? "  Добыча: чисто." : $"  Добыча: провалов {bad}.");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -2753,6 +2948,7 @@ static class Bench
         DisobeyDragSweep(cfg);
         SkillsCheck(cfg);
         ShellsCheck();
+        LootCheck();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

@@ -453,6 +453,9 @@ class Checker:
         'Core/Soul/SoulDecay.cs',
         'Core/Soul/ShellBinder.cs',
         'Core/Soul/ShellChoice.cs',
+        'Gameplay/BodyWorth.cs',
+        'AOS Engine/TitleManager.cs',
+        'AOS Engine/TitleDatabase.cs',
     )
 
     # Ключ к текущему времени, случайности или к тому, что у каждой машины

@@ -41,8 +41,7 @@ namespace Sinbinder.AOS
                 killerWarrior.Reputation.Deeds.Add(new DeedRecord
                 {
                     Type = DeedType.Kill,
-                    Importance = 0.5f,
-                    Time = System.DateTime.Now
+                    Importance = 0.5f
                 });
                 MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, EmotionType.Joy, 0.5f);
 
@@ -52,9 +51,9 @@ namespace Sinbinder.AOS
                     foreach (var perk in killerWarrior.Soul.Memory.NarrativePerks)
                     {
                         if (perk.PerkName == "Мститель" && victim.DisplayName.Contains("Бандит"))
-                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f, Time = System.DateTime.Now });
+                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
                         if (perk.PerkName == "Бывший Охотник (ненавидит)" && victim.DisplayName.Contains("Охотник"))
-                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f, Time = System.DateTime.Now });
+                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
                     }
                 }
                 // Обновляем титул убийцы
@@ -86,7 +85,7 @@ namespace Sinbinder.AOS
             EmotionSystem.Instance?.TriggerEmotion(saved, EmotionType.Joy, 0.5f);
 
             // Деяние "Спасение союзника"
-            savior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SaveAlly, Importance = 0.7f, Time = System.DateTime.Now });
+            savior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SaveAlly, Importance = 0.7f });
             TitleManager.UpdateTitle(savior);
 
             MemoryProcessor.Instance?.CreateMemory(saved, "AllySavedMe", savior.Id, EmotionType.Joy, 0.9f);
@@ -176,11 +175,11 @@ namespace Sinbinder.AOS
                     MemoryProcessor.Instance?.RecordBattle(w, playerWon, enemiesKilled, alliesLost);
 
                     // Деяние "Выживание в миссии"
-                    w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f, Time = System.DateTime.Now });
+                    w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
 
                     // Если союзников не осталось – "Последний рубеж"
                     if (alliesLost >= CombatManager.Instance.GetAlivePlayerCount())
-                        w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.LastStand, Importance = 1.0f, Time = System.DateTime.Now });
+                        w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.LastStand, Importance = 1.0f });
 
                     TitleManager.UpdateTitle(w);
                 }

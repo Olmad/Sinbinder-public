@@ -75,6 +75,7 @@ namespace Sinbinder.Tests
                 Epilogue();
                 Approach();
                 Ladder();
+                Spoils();
                 TextRules();
             }
             catch (Exception e)
@@ -89,6 +90,61 @@ namespace Sinbinder.Tests
             }
 
             return _report;
+        }
+
+        // ================= добыча =================
+
+        /// <summary>
+        /// Чего стоит труп.
+        ///
+        /// Здесь стоял Random.Range(5, 20), и случайность оттуда доходила
+        /// до титула — то есть до рычага игрока. Разбор ведёт стенд
+        /// (Tools/bench → ДОБЫЧА), но стенд считает на своей заглушке
+        /// Mathf. Эта проверка — единственное место, где те же числа
+        /// считает настоящий Юнити: если заглушка и движок разойдутся
+        /// в округлении, разойдутся здесь.
+        /// </summary>
+        private static void Spoils()
+        {
+            var hunter = new SoulData("Ловчий", SinType.Greed, MoralType.Vicious, 1, 50f);
+
+            int first = BodyWorth.Gold(ShellType.Zombie, hunter);
+            int second = BodyWorth.Gold(ShellType.Zombie,
+                new SoulData("Ловчий", SinType.Greed, MoralType.Vicious, 1, 50f));
+            Same(second, first, "два одинаковых трупа стоят разного");
+
+            // Числа те же, что печатает стенд. Расхождение означает,
+            // что заглушка врёт, а не что баланс поехал.
+            Same(first, 15, "Ловчий пролога стоит не того, что показал замер");
+            Same(BodyWorth.Gold(ShellType.Zombie,
+                    new SoulData("Охотник", SinType.Wrath, MoralType.Vicious, 1, 60f)),
+                 10, "Охотник пролога стоит не того, что показал замер");
+
+            var greedy = new SoulData("жадный", SinType.Greed, MoralType.Neutral, 1, 80f);
+            var generous = new SoulData("щедрый", SinType.Greed, MoralType.Neutral, 1, -80f);
+            var idle = new SoulData("унылый", SinType.Sloth, MoralType.Neutral, 1, 80f);
+
+            Check(BodyWorth.Gold(ShellType.Zombie, greedy)
+                > BodyWorth.Gold(ShellType.Zombie, generous),
+                  "щедрый труп обязан быть беднее жадного");
+            Check(BodyWorth.Gold(ShellType.Zombie, greedy)
+                > BodyWorth.Gold(ShellType.Zombie, idle),
+                  "унылый труп обязан быть беднее жадного");
+
+            // С призрака нечего взять: тела нет, и это не «мало».
+            Same(BodyWorth.Gold(ShellType.Ghost, greedy), 0,
+                 "с призрака что-то сняли");
+            Check(!BodyWorth.HasEquipment(ShellType.Ghost, greedy),
+                  "на призраке нашлось снаряжение");
+
+            // Трофей носит тот, кому он что-то значил.
+            var proud = new SoulData("гордый", SinType.Pride, MoralType.Neutral, 1, 60f);
+            Check(BodyWorth.HasEquipment(ShellType.Skeleton, proud),
+                  "гордый лёг без трофея");
+            Check(!BodyWorth.HasEquipment(ShellType.Skeleton, idle),
+                  "унылый почему-то нёс трофей");
+            Same(BodyWorth.Equipment(ShellType.Skeleton, idle), null,
+                 "у трупа без снаряжения нашлось название предмета");
         }
 
         // ================= утверждения =================

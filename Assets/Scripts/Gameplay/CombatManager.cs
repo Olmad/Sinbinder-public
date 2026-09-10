@@ -111,7 +111,7 @@ namespace Sinbinder.Gameplay
             var bodyObj = new GameObject($"Body_{killed.Warrior.DisplayName}");
             bodyObj.transform.position = pos;
             var harvestableBody = bodyObj.AddComponent<HarvestableBody>();
-            harvestableBody.Initialize(killed.Warrior.Shell, Random.Range(5, 20), Random.value < 0.3f, "Сломанный меч");
+            harvestableBody.Initialize(killed.Warrior.Shell, killed.Warrior.Soul);
             _bodiesOnField.Add(harvestableBody);
         }
 

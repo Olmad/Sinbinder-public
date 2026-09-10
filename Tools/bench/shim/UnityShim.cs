@@ -16,7 +16,15 @@ namespace UnityEngine
         public static int Max(int a, int b) => a > b ? a : b;
         public static float Max(float a, float b) => a > b ? a : b;
         public static float Abs(float v) => Math.Abs(v);
-        public static float Round(float v) => (float)Math.Round(v, MidpointRounding.AwayFromZero);
+        // Юнити округляет через Math.Round без указания правила, то есть
+        // «к чётному»: 0.5 → 0, 1.5 → 2, 2.5 → 2. Здесь стояло
+        // AwayFromZero, и на ровной половине стенд считал не то, что
+        // считает игра. Прибор обязан брать данные оттуда же, откуда
+        // их берёт игра, — и округлять так же.
+        public static float Round(float v) => (float)Math.Round(v);
+        public static int RoundToInt(float v) => (int)Math.Round(v);
+        public static int FloorToInt(float v) => (int)Math.Floor(v);
+        public static int CeilToInt(float v) => (int)Math.Ceiling(v);
         public static float Lerp(float a, float b, float t) => a + (b - a) * Clamp01(t);
         public static float InverseLerp(float a, float b, float v)
             => Math.Abs(b - a) < 1e-6f ? 0f : Clamp01((v - a) / (b - a));

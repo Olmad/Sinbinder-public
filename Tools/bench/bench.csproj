@@ -88,6 +88,9 @@
     <Compile Include="../../Assets/Scripts/Gameplay/CampFocus.cs" />
     <Compile Include="../../Assets/Scripts/Core/Transparency.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/Fallen.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/BodyWorth.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/TitleRule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/TitleDatabase.cs" />
   </ItemGroup>
 
 </Project>
