@@ -91,6 +91,19 @@ namespace Sinbinder.UI
                 if (_cameraController != null)
                     _cameraController.StopSway();
 
+                // Убитых вычёркиваем перед каждой строкой.
+                //
+                // Список набран один раз, до цикла, а цикл долгий: он ждёт
+                // наводки камеры и печатает текст по букве. За это время
+                // воин успевает погибнуть — а погибший уничтожается, и
+                // GetComponent у него бросает MissingReferenceException.
+                // Разговор при этом рвался посреди фразы.
+                //
+                // Заметить это чтением кода было почти нельзя: строчка
+                // выше, `w.Id`, у мёртвого работает — управляемый объект
+                // цел, и лишь обращение к нативной части падает.
+                _allWarriors.RemoveAll(w => w == null);
+
                 var speaker = _allWarriors.Find(w => w.Id == line.SpeakerId);
 
                 foreach (var w in _allWarriors)

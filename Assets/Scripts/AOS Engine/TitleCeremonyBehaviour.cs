@@ -12,6 +12,13 @@ namespace Sinbinder.AOS
     {
         public IEnumerator PlayCeremony(Warrior warrior, string title, bool isLegendary)
         {
+            // Титул присуждается за деяние, а деяние бывает последним:
+            // воин может не дожить до собственной церемонии. Наводить
+            // камеру на уничтоженного нельзя — transform обращается
+            // к нативной части и бросает MissingReferenceException,
+            // а пауза при этом уже поставлена, и игра застыла бы навсегда.
+            if (warrior == null) yield break;
+
             GamePauseController.Instance?.Pause();
             var cameraController = FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (cameraController != null)
