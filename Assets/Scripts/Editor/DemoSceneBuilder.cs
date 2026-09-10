@@ -249,6 +249,115 @@ namespace Sinbinder.Utilets
             Save(scene, "Crypt_Entrance");
         }
 
+        /// <summary>
+        /// Тренировочная площадка склепа — четвёртая зона хаба.
+        ///
+        /// Строится отдельным пунктом меню и в отдельную сцену: демо-пролог
+        /// от неё не зависит и не ломается, пока площадка настраивается.
+        ///
+        /// Смысл зоны — <b>повторяемый опыт</b>. Игрок ставит условия
+        /// рычагами, отдаёт приказ, читает объяснение, меняет ровно одно
+        /// и повторяет. Это возможно только потому, что движок повторяем:
+        /// правило «одинаковый вход даёт одинаковый выход» здесь
+        /// перестаёт быть требованием к коду и становится механикой.
+        ///
+        /// Рычаги расставлены по одному на голос, а не по одному
+        /// на предмет: площадка — это схема души, разложенная по комнате.
+        /// </summary>
+        [MenuItem("Sinbinder/Собрать полигон")]
+        public static void BuildTestChamberScene()
+        {
+            var scene = NewScene();
+            Atmosphere(warm: false);
+            Ground("Плиты", 3f);
+            Managers();
+
+            var canvas = Interface();
+            BuildTitle(canvas, "Полигон. Поставьте условие — и повторите.");
+
+            CameraRig(new Vector3(0f, 7f, -9f), new Vector3(38f, 0f, 0f), movable: true);
+
+            // Площадка и её точки. Позиции жёсткие: повтор обязан ставить
+            // всё туда же, иначе опыт не опыт.
+            var chamber = new GameObject("Полигон");
+            chamber.transform.position = Vector3.zero;
+
+            var subject = Spot(chamber.transform, "Место подопытного", new Vector3(0f, 0f, 2f));
+            var prop = Spot(chamber.transform, "Место предмета", new Vector3(3f, 0f, 3.5f));
+            var foes = Spot(chamber.transform, "Место чужих", new Vector3(0f, 0f, 6f));
+
+            var test = chamber.AddComponent<Sinbinder.Crypt.TestChamber>();
+            Wire(test, ("_subjectSpot", subject), ("_propSpot", prop), ("_enemySpot", foes));
+
+            // Рычаги вдоль стены, лицом к площадке. Первым — повтор:
+            // он главный, и стоять он должен там, куда игрок смотрит,
+            // вернувшись от подопытного.
+            Lever(chamber.transform, test, Sinbinder.Crypt.TestLever.LeverKind.Repeat,
+                  default, new Vector3(-5f, 0f, 0f));
+
+            float x = -3f;
+            foreach (Sinbinder.Crypt.Trial trial in
+                     System.Enum.GetValues(typeof(Sinbinder.Crypt.Trial)))
+            {
+                Lever(chamber.transform, test,
+                      Sinbinder.Crypt.TestLever.LeverKind.Condition, trial,
+                      new Vector3(x, 0f, 0f));
+                x += 1.6f;
+            }
+
+            Lever(chamber.transform, test,
+                  Sinbinder.Crypt.TestLever.LeverKind.NextSubject,
+                  default, new Vector3(x + 0.8f, 0f, 0f));
+
+            // Тело Греховода: без него «подойти к рычагу» снова означало бы
+            // «навести взгляд», а этот урок проекту уже дорого обошёлся.
+            var spawn = new GameObject("Появление Греховода");
+            spawn.transform.position = new Vector3(0f, 0f, -3f);
+            spawn.AddComponent<Sinbinder.Crypt.TestChamberEntry>();
+
+            Save(scene, "Crypt_Test");
+        }
+
+        /// <summary>Пустая точка-ориентир. Позиция жёсткая и видна в сцене.</summary>
+        private static Transform Spot(Transform parent, string name, Vector3 local)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent);
+            go.transform.localPosition = local;
+            return go.transform;
+        }
+
+        /// <summary>Рычаг с табличкой. Надпись берётся из каталога, а не пишется тут.</summary>
+        private static void Lever(Transform parent, Sinbinder.Crypt.TestChamber chamber,
+            Sinbinder.Crypt.TestLever.LeverKind kind, Sinbinder.Crypt.Trial trial,
+            Vector3 local)
+        {
+            var stand = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            stand.name = "Рычаг";
+            stand.transform.SetParent(parent);
+            stand.transform.localPosition = local + new Vector3(0f, 0.6f, 0f);
+            stand.transform.localScale = new Vector3(0.18f, 0.6f, 0.18f);
+
+            var lever = stand.AddComponent<Sinbinder.Crypt.TestLever>();
+            lever.Set(kind, trial, chamber);
+
+            // Табличка стоит в мире, а не в интерфейсе: игрок читает её,
+            // подходя, и не отрывается от комнаты.
+            var plate = new GameObject("Табличка");
+            plate.transform.SetParent(stand.transform);
+            plate.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+
+            var text = plate.AddComponent<TextMesh>();
+            text.text = lever.Label;
+            text.characterSize = 0.12f;
+            text.fontSize = 64;
+            text.anchor = TextAnchor.LowerCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = new Color(0.86f, 0.84f, 0.78f);
+
+            plate.AddComponent<Sinbinder.UI.Billboard>();
+        }
+
         // ---------- общий каркас ----------
 
         private static UnityEngine.SceneManagement.Scene NewScene()
