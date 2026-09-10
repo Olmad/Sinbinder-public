@@ -63,6 +63,15 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
+            // WASD принадлежат режиму камеры. В тактическом ими водят
+            // камеру — это руки игрока там, — и ноги обязаны молчать,
+            // иначе одно нажатие делает два дела разом.
+            if (_eye != null)
+            {
+                var view = _eye.GetComponent<RTS_Camera>();
+                if (view != null && !view.FirstPersonNow) { Walking = false; return; }
+            }
+
             Vector3 wish = Vector3.zero;
             if (Input.GetKey(KeyCode.W)) wish.z += 1f;
             if (Input.GetKey(KeyCode.S)) wish.z -= 1f;
@@ -95,7 +104,10 @@ namespace Sinbinder.Gameplay
             else
                 transform.position += step * (_speed * Time.deltaTime);
 
-            transform.rotation = Quaternion.LookRotation(step);
+            // Поворот тела не трогаем: в первом лице курс задаёт голова
+            // (RTS_Camera), и шаг вбок не должен разворачивать героя туда,
+            // куда он не смотрит. Раньше это было разумно — камера висела
+            // за спиной сама по себе; теперь развернуло бы и взгляд.
             Walking = true;
         }
     }

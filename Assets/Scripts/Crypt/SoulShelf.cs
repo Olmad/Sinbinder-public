@@ -115,6 +115,10 @@ namespace Sinbinder.Crypt
 
             plate.AddComponent<UI.Billboard>();
 
+            // Гаснет, пока на банку не посмотрят: полка на девять душ,
+            // подписанных разом, читается как список, а не как полка.
+            plate.AddComponent<UI.WorldPlate>();
+
             return jar;
         }
 

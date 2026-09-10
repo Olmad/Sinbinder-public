@@ -98,6 +98,32 @@ namespace Sinbinder.Gameplay
         private const string BoxName = "Рамка выделения";
 
         /// <summary>
+        /// Камера, найденная заново, если прежней не стало.
+        ///
+        /// Та же беда, что у рамки: менеджер переживает смену сцен,
+        /// а камера — нет. Ссылка бралась один раз в Awake, и со второй
+        /// сцены каждый щелчок бил бы по уничтоженному объекту.
+        /// </summary>
+        private Camera Cam()
+        {
+            if (_cam == null) _cam = Camera.main;
+            return _cam;
+        }
+
+        /// <summary>
+        /// Смотрит ли игрок глазами героя. Тогда курсор заперт в середине
+        /// экрана: тянуть рамку нечем, и щелчок означает «то, на что смотрю».
+        /// </summary>
+        private bool FirstPerson()
+        {
+            var cam = Cam();
+            if (cam == null) return false;
+
+            var view = cam.GetComponent<RTS_Camera>();
+            return view != null && view.FirstPersonNow;
+        }
+
+        /// <summary>
         /// Рамка выделения, найденная заново, если прежней не стало.
         ///
         /// Менеджер переживает смену сцен (<c>DontDestroyOnLoad</c>
@@ -155,9 +181,13 @@ namespace Sinbinder.Gameplay
             if (Input.GetMouseButtonDown(0))
             {
                 _selectionStart = Input.mousePosition;
-                _isSelecting = true;
 
-                var box = Box();
+                // В первом лице рамки нет: курсор заперт, тянуть нечем.
+                // Щелчок при этом работает как был — луч из середины
+                // экрана и есть прицел.
+                _isSelecting = !FirstPerson();
+
+                var box = _isSelecting ? Box() : null;
                 if (box != null)
                 {
                     box.gameObject.SetActive(true);
@@ -207,7 +237,7 @@ namespace Sinbinder.Gameplay
 
         private void HandleSingleClick()
         {
-            Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 100f, _unitLayer))
             {
                 var unit = hit.collider.GetComponentInParent<SelectionComponent>();
@@ -256,7 +286,7 @@ namespace Sinbinder.Gameplay
                 // а рамка — нет.
                 if (unit.GetComponentInParent<SinbinderPlayer>() != null) continue;
 
-                Vector3 screenPos = _cam.WorldToScreenPoint(unit.transform.position);
+                Vector3 screenPos = Cam().WorldToScreenPoint(unit.transform.position);
                 if (selectionRect.Contains(screenPos))
                 {
                     SelectUnit(unit);
@@ -299,7 +329,7 @@ namespace Sinbinder.Gameplay
         {
             if (Input.GetMouseButtonDown(1) && _selectedUnits.Count > 0)
             {
-                Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
+                Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out RaycastHit hit, 100f))
                 {
                     // Приказ записывается на воина и уходит в голосование.

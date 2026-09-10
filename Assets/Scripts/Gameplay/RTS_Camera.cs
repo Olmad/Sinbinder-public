@@ -2,30 +2,52 @@ using UnityEngine;
 
 namespace Sinbinder.Gameplay
 {
+    /// <summary>
+    /// Два взгляда, и у каждого свои руки.
+    ///
+    /// Прежняя пара — «тактический» и «за плечом» — управлялась одинаково:
+    /// краем экрана. Это не жанр ни одной из двух игр, которыми она
+    /// притворяется. В стратегии камеру водят клавишами и смотрят почти
+    /// отвесно; в игре от первого лица мышь вертит головой, а курсора
+    /// на экране нет вовсе. Смешение давало худшее от обоих: в бою камера
+    /// уезжала от края экрана сама, а в склепе повернуться можно было
+    /// только уводом мыши в угол.
+    ///
+    /// Теперь режимы разведены до конца, вплоть до курсора.
+    /// </summary>
     public class RTS_Camera : MonoBehaviour
     {
-        /// <summary>Два взгляда на одну игру.</summary>
         public enum CameraView
         {
-            /// <summary>Сверху и под углом: видно поле, видно отряд.</summary>
+            /// <summary>Почти отвесно сверху. WASD водит камеру, курсор свободен.</summary>
             Tactical = 0,
 
-            /// <summary>За плечом: видно, куда идёшь и что написано на табличке.</summary>
-            Shoulder = 1,
+            /// <summary>Глазами героя. Мышь вертит голову, курсор захвачен.</summary>
+            FirstPerson = 1,
         }
 
-        [Tooltip("С какого взгляда начинается сцена. Склеп — за плечом, бой — тактический.")]
+        [Tooltip("С какого взгляда начинается сцена. Склеп — от первого лица, бой — тактический.")]
         [SerializeField] private CameraView _mode = CameraView.Tactical;
 
         [SerializeField] private KeyCode _switchKey = KeyCode.V;
 
-        [Header("За плечом")]
-        [SerializeField] private float _shoulderDistance = 4.6f;
-        [SerializeField] private float _shoulderHeight = 2.3f;
-        [SerializeField] private float _shoulderLook = 1.3f;
+        [Header("Первое лицо")]
+        [Tooltip("Высота глаз над ногами.")]
+        [SerializeField] private float _eyeHeight = 1.65f;
 
-        [Tooltip("Как быстро край экрана разворачивает взгляд, градусов в секунду.")]
-        [SerializeField] private float _turnSpeed = 110f;
+        [Tooltip("Чувствительность мыши, градусов на единицу оси.")]
+        [SerializeField] private float _mouseSensitivity = 2.2f;
+
+        [Tooltip("Насколько можно задрать и опустить взгляд, градусов.")]
+        [SerializeField] private float _pitchLimit = 82f;
+
+        [Header("Тактический")]
+        [Tooltip("Наклон. Девяносто — строго вниз; чуть меньше оставляет "
+               + "тени и высоту читаемыми.")]
+        [SerializeField] private float _tacticalPitch = 84f;
+
+        [Tooltip("Высота над землёй, когда возвращаемся из первого лица.")]
+        [SerializeField] private float _tacticalHeight = 22f;
 
         [SerializeField] private float _moveSpeed = 20f;
         [SerializeField] private float _scrollSpeed = 500f;
@@ -37,34 +59,14 @@ namespace Sinbinder.Gameplay
         private Vector3 _targetPosition;
         private float _targetZoom;
 
-        /// <summary>
-        /// Смещение камеры относительно Греховода. Берётся не из настроек,
-        /// а из кадра, который поставил сборщик сцены: камера уже стоит
-        /// там, где надо, и отбирать у постановщика ракурс нельзя
-        /// (то же правило, что и с потолком зума ниже).
-        ///
-        /// Считается лениво, при первой встрече с героем: спавнер лагеря
-        /// создаёт его в Start, а камера просыпается в Awake — в Awake
-        /// героя ещё нет.
-        /// </summary>
-        private Vector3 _offset;
-        private bool _offsetTaken;
-
-        /// <summary>
-        /// Куда смотрит камера за плечом. <b>Её собственный курс,
-        /// а не курс героя</b> — и это принципиально.
-        ///
-        /// Ходьба считается от направления камеры (<see cref="PlayerWalk"/>),
-        /// и если бы камера считалась от направления героя, вышла бы петля:
-        /// шаг вперёд поворачивает героя, поворот героя разворачивает
-        /// камеру, разворот камеры меняет «вперёд». Герой крутился бы
-        /// на месте, и виноватым выглядел бы навмеш.
-        ///
-        /// Разрывается она так: курс камеры меняет только игрок — краем
-        /// экрана. Герой поворачивается следом за шагом и на камеру
-        /// не влияет.
-        /// </summary>
         private float _yaw;
+        private float _pitch;
+
+        /// <summary>Виден ли сейчас взгляд от первого лица. Спрашивают другие.</summary>
+        public bool FirstPersonNow => _mode == CameraView.FirstPerson && Following;
+
+        /// <summary>Есть ли за кем следовать: без тела первое лицо бессмысленно.</summary>
+        private bool Following => SinbinderPlayer.Exists;
 
         void Awake()
         {
@@ -72,190 +74,218 @@ namespace Sinbinder.Gameplay
             _targetPosition = transform.position;
             _targetZoom = _cam.fieldOfView;
             _yaw = transform.eulerAngles.y;
+            _pitch = transform.eulerAngles.x;
 
-            // Кадр, поставленный в сцене, — это решение постановщика,
-            // и отбирать его нельзя. Потолок 30 ниже авторских 55, а зум
-            // подрезает цель каждый кадр: стоило повесить эту камеру
-            // на сцену, и вид молча сужался на первом же кадре.
-            // Ставим потолком то, с чего кадр начат.
+            // Кадр, поставленный в сцене, — решение постановщика, и зум
+            // не имеет права его подрезать на первом же кадре.
             if (_cam.fieldOfView > _maxZoom) _maxZoom = _cam.fieldOfView;
             if (_cam.fieldOfView < _minZoom) _minZoom = _cam.fieldOfView;
         }
 
+        void Start()
+        {
+            // В Awake героя ещё нет — его лепят спавнеры в своих Start.
+            // Решать про курсор до этого рано: без тела первого лица
+            // не бывает, и мышь пришлось бы отпускать обратно.
+            ApplyCursor();
+            if (_mode == CameraView.Tactical) LookDown();
+        }
+
+        void OnDisable()
+        {
+            // Отдать мышь. Компонент выключают на время разговора и при
+            // смене сцены, и захваченный курсор пережил бы и то и другое:
+            // игрок остался бы без указателя в панели, которую сам открыл.
+            Release();
+        }
+
         void Update()
         {
-            if (Dialogue.DialogueCameraController.Instance != null && 
+            if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue)
                 return;
 
+            // На паузе игрок разговаривает с панелью, и мышь нужна ему,
+            // а не камере.
+            bool paused = Core.GamePauseController.Instance != null
+                       && Core.GamePauseController.Instance.IsPaused;
+
+            if (paused) { Release(); return; }
+
             if (Input.GetKeyDown(_switchKey)) Switch();
 
-            if (_mode == CameraView.Shoulder && Following) Shoulder();
-            else HandleMovement();
+            ApplyCursor();
+
+            if (FirstPersonNow) FirstPerson();
+            else Tactical();
 
             HandleZoom();
-            SmoothMove();
         }
 
         /// <summary>
-        /// Сменить взгляд.
-        ///
-        /// За плечом — когда ходишь: видно, куда идёшь, и читаются
-        /// таблички. Тактический — когда командуешь: видно поле и весь
-        /// отряд. Ходить при тактическом всё равно можно, но это
-        /// перетаскивание фишки, а не ходьба, — с этого и начался разговор.
-        ///
-        /// Без тела героя за плечом смотреть не на что: остаётся
-        /// тактический.
+        /// Сменить взгляд. Без тела героя первое лицо невозможно —
+        /// остаёмся в тактическом и молчим: это не ошибка сцены,
+        /// а сцена без Греховода.
         /// </summary>
         public void Switch()
         {
-            if (!Following)
-            {
-                _mode = CameraView.Tactical;
-                return;
-            }
+            if (!Following) { _mode = CameraView.Tactical; LookDown(); return; }
 
             _mode = _mode == CameraView.Tactical
-                ? CameraView.Shoulder
+                ? CameraView.FirstPerson
                 : CameraView.Tactical;
 
-            // Возвращаясь в тактический, забываем старое смещение:
-            // взгляд за плечом увёл камеру далеко от того места,
-            // где смещение бралось, и она прыгнула бы рывком.
-            if (_mode == CameraView.Tactical) _offsetTaken = false;
+            if (_mode == CameraView.Tactical) LookDown();
+            else _pitch = 0f;   // из-под потолка голова не начинает смотреть в пол
+
+            ShowHero(_mode == CameraView.Tactical);
         }
 
         /// <summary>Задать взгляд из сборщика сцены.</summary>
-        public void SetView(CameraView view) => _mode = view;
-
-        /// <summary>
-        /// Взгляд за плечом: камера держится позади героя на своём курсе.
-        ///
-        /// Курс меняет край экрана, а не герой (см. пояснение у
-        /// <c>_yaw</c>). Высота и расстояние постоянные: качающаяся
-        /// за спиной камера в игре, где читают таблички и значки над
-        /// головами, мешает читать.
-        /// </summary>
-        private void Shoulder()
+        public void SetView(CameraView view)
         {
-            if (Input.mousePosition.x < _edgeScrollSize) _yaw -= _turnSpeed * Time.deltaTime;
-            if (Input.mousePosition.x > Screen.width - _edgeScrollSize)
-                _yaw += _turnSpeed * Time.deltaTime;
-
-            var hero = SinbinderPlayer.Where;
-            var back = Quaternion.Euler(0f, _yaw, 0f) * Vector3.back;
-
-            _targetPosition = hero + back * _shoulderDistance
-                            + Vector3.up * _shoulderHeight;
-
-            // Смотрим не в ноги, а на уровень головы и чуть дальше: иначе
-            // половину кадра занимает пол, а таблички уходят за верхний край.
-            var look = hero + Vector3.up * _shoulderLook;
-            var toLook = look - transform.position;
-
-            if (toLook.sqrMagnitude > 0.001f)
-                transform.rotation = Quaternion.Slerp(transform.rotation,
-                    Quaternion.LookRotation(toLook), 0.35f);
+            _mode = view;
+            if (view == CameraView.Tactical) LookDown();
         }
 
-        /// <summary>
-        /// Есть ли за кем следовать. Пока Греховода в сценах не было,
-        /// камера была игроком; теперь она — взгляд на игрока.
-        /// </summary>
-        private bool Following => SinbinderPlayer.Exists;
+        // ---------- первое лицо ----------
 
-        private void HandleMovement()
+        /// <summary>
+        /// Глазами героя. Мышь вертит голову, ноги слушают WASD
+        /// (<see cref="PlayerWalk"/>), край экрана не делает ничего.
+        ///
+        /// Положение ставится прямо, без сглаживания: сглаженная голова
+        /// плывёт за шагом и читается как качка, а не как ходьба.
+        /// </summary>
+        private void FirstPerson()
+        {
+            _yaw += Input.GetAxisRaw("Mouse X") * _mouseSensitivity;
+            _pitch -= Input.GetAxisRaw("Mouse Y") * _mouseSensitivity;
+            _pitch = Mathf.Clamp(_pitch, -_pitchLimit, _pitchLimit);
+
+            transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            transform.position = SinbinderPlayer.Where + Vector3.up * _eyeHeight;
+
+            // Тело поворачивается туда, куда смотрит голова. Курс задаёт
+            // камера, а не шаг: иначе шаг поворачивал бы героя, поворот
+            // героя — камеру, и он крутился бы на месте.
+            var hero = SinbinderPlayer.Instance;
+            if (hero != null)
+                hero.transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
+        }
+
+        // ---------- тактический ----------
+
+        /// <summary>
+        /// Вид сверху. WASD водит камеру — здесь она и есть руки игрока,
+        /// а Греховод стоит там, где стоял.
+        /// </summary>
+        private void Tactical()
         {
             Vector3 move = Vector3.zero;
 
-            // W, A, S, D читает Греховод (PlayerWalk), а не камера.
-            // Одни и те же клавиши на двух хозяевах — это тот же род
-            // поломки, что был у D: нажатие делало бы два дела разом.
-            if (!Following)
-            {
-                if (Input.GetKey(KeyCode.W)) move.z += 1;
-                if (Input.GetKey(KeyCode.S)) move.z -= 1;
-                if (Input.GetKey(KeyCode.A)) move.x -= 1;
-                if (Input.GetKey(KeyCode.D)) move.x += 1;
-            }
+            if (Input.GetKey(KeyCode.W)) move.z += 1;
+            if (Input.GetKey(KeyCode.S)) move.z -= 1;
+            if (Input.GetKey(KeyCode.A)) move.x -= 1;
+            if (Input.GetKey(KeyCode.D)) move.x += 1;
 
             if (Input.mousePosition.x < _edgeScrollSize) move.x -= 1;
             if (Input.mousePosition.x > Screen.width - _edgeScrollSize) move.x += 1;
             if (Input.mousePosition.y < _edgeScrollSize) move.z -= 1;
             if (Input.mousePosition.y > Screen.height - _edgeScrollSize) move.z += 1;
 
-            // Двигаем вперёд относительно направления взгляда (по горизонтали)
-            Vector3 forward = _cam.transform.forward;
-            forward.y = 0;
-            forward.Normalize();
-            Vector3 right = _cam.transform.right;
-            right.y = 0;
-            right.Normalize();
+            // Отвесной камере «вперёд» — это север карты, а не её взгляд:
+            // взгляд смотрит в землю, и его проекция вырождается.
+            var forward = Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
+            var right = Quaternion.Euler(0f, _yaw, 0f) * Vector3.right;
 
-            Vector3 shift = (forward * move.z + right * move.x).normalized
-                          * (_moveSpeed * Time.deltaTime);
+            _targetPosition += (forward * move.z + right * move.x).normalized
+                             * (_moveSpeed * Time.deltaTime);
 
-            if (Following)
-            {
-                // Край экрана не уводит камеру от героя, а разворачивает
-                // взгляд вокруг него: смещение меняется, привязка остаётся.
-                // Иначе игрок случайно уехал бы от собственного тела
-                // и не понял, как вернуться.
-                TakeOffset();
-                _offset += shift;
-                _targetPosition = SinbinderPlayer.Where + _offset;
-            }
-            else
-            {
-                _targetPosition += shift;
-            }
+            transform.position = Vector3.Lerp(transform.position, _targetPosition, 0.35f);
+            transform.rotation = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
         }
 
         /// <summary>
-        /// Запомнить, как камера стоит относительно героя, — один раз,
-        /// при первой встрече. См. пояснение у поля <c>_offset</c>.
+        /// Поставить камеру над героем и наклонить вниз. Зовётся при входе
+        /// в тактический: из первого лица камера стоит у него в голове,
+        /// и без этого вид сверху начался бы изнутри черепа.
         /// </summary>
-        private void TakeOffset()
+        private void LookDown()
         {
-            if (_offsetTaken) return;
+            _pitch = _tacticalPitch;
 
-            _offset = transform.position - SinbinderPlayer.Where;
-            _offsetTaken = true;
+            var ground = Following ? SinbinderPlayer.Where : transform.position;
+            ground.y = 0f;
+
+            _targetPosition = ground + Vector3.up * _tacticalHeight;
+            transform.position = _targetPosition;
+            transform.rotation = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
+        }
+
+        // ---------- курсор и тело ----------
+
+        /// <summary>
+        /// Мышь принадлежит режиму. В первом лице курсора нет и он заперт
+        /// в середине экрана — иначе поворот упирался бы в край окна.
+        /// В тактическом курсор нужен: им выделяют и отдают приказы.
+        /// </summary>
+        private void ApplyCursor()
+        {
+            if (FirstPersonNow)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
+                Release();
+            }
+        }
+
+        private static void Release()
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        /// <summary>
+        /// Показать или спрятать тело героя. В первом лице камера стоит
+        /// внутри капсулы, и та застила бы пол-экрана изнанкой.
+        /// </summary>
+        private void ShowHero(bool visible)
+        {
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null) return;
+
+            foreach (var r in hero.GetComponentsInChildren<Renderer>(true))
+                r.enabled = visible;
         }
 
         private void HandleZoom()
         {
+            // В первом лице колесо ничего не приближает: там не зум,
+            // а шаг. Поле зрения трогать нельзя — оно и есть кадр.
+            if (FirstPersonNow) return;
+
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             _targetZoom -= scroll * _scrollSpeed * Time.deltaTime;
             _targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
+
+            _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, _targetZoom, 0.35f);
         }
 
         /// <summary>
-        /// Принять нынешнее положение камеры за своё.
-        ///
-        /// Цель ставится один раз в Awake и больше ниоткуда не берётся.
-        /// Пока камеру никто не двигал мимо этого компонента, всё сходится;
-        /// стоит кому-то отвести её самому — отъезду сцены 5, например, —
-        /// и включённая обратно камера прыгнула бы назад, на цель
-        /// полуторной давности. Поэтому тот, кто двигал, обязан сказать.
+        /// Принять нынешнее положение камеры за своё. Зовёт тот, кто двигал
+        /// камеру мимо этого компонента, — отъезд доли 5, например.
         /// </summary>
         public void Resync()
         {
             _targetPosition = transform.position;
             if (_cam != null) _targetZoom = _cam.fieldOfView;
+
             _yaw = transform.eulerAngles.y;
-
-            // И смещение относительно героя тоже: после отъезда сцены 5
-            // камера стоит уже не там, где встала при первой встрече,
-            // а старое смещение вернуло бы её рывком назад.
-            _offsetTaken = false;
-        }
-
-        private void SmoothMove()
-        {
-            transform.position = Vector3.Lerp(transform.position, _targetPosition, 0.9f);
-            _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, _targetZoom, 0.9f);
+            _pitch = transform.eulerAngles.x;
         }
     }
 }

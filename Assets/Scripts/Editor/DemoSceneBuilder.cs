@@ -275,11 +275,12 @@ namespace Sinbinder.Utilets
             var canvas = Interface();
             BuildTitle(canvas, "Полигон. Поставьте условие — и повторите.");
 
-            // Склеп начинается со взгляда за плечом: здесь ходят между
-            // зонами и читают таблички, а тактический вид годится
-            // для поля, а не для комнаты. Переключается на V.
+            // Склеп начинается от первого лица: здесь ходят между зонами
+            // и читают таблички, а тактический вид годится для поля,
+            // а не для комнаты. Переключается на V — и вместе с видом
+            // меняются руки: мышь вертит голову или водит курсором.
             CameraRig(new Vector3(0f, 3f, -8f), new Vector3(12f, 0f, 0f), movable: true,
-                      view: RTS_Camera.CameraView.Shoulder);
+                      view: RTS_Camera.CameraView.FirstPerson);
 
             // Площадка и её точки. Позиции жёсткие: повтор обязан ставить
             // всё туда же, иначе опыт не опыт.
@@ -526,6 +527,11 @@ namespace Sinbinder.Utilets
             mesh.color = new Color(0.86f, 0.84f, 0.78f);
 
             plate.AddComponent<Sinbinder.UI.Billboard>();
+
+            // Молчит, пока на предмет не посмотрят. Комната из десятка
+            // подписанных разом предметов — это стена текста, сквозь
+            // которую не видно самой комнаты.
+            plate.AddComponent<Sinbinder.UI.WorldPlate>();
         }
 
         /// <summary>Имя оболочки для таблички. Берётся оттуда же, откуда его берёт игра.</summary>
@@ -570,6 +576,11 @@ namespace Sinbinder.Utilets
             text.color = new Color(0.86f, 0.84f, 0.78f);
 
             plate.AddComponent<Sinbinder.UI.Billboard>();
+
+            // Молчит, пока на предмет не посмотрят. Комната из десятка
+            // подписанных разом предметов — это стена текста, сквозь
+            // которую не видно самой комнаты.
+            plate.AddComponent<Sinbinder.UI.WorldPlate>();
         }
 
         // ---------- общий каркас ----------
@@ -650,6 +661,10 @@ namespace Sinbinder.Utilets
             // PlayerInventory.Instance всегда был пуст: плата после боя
             // уходила в никуда, а трофеи было некуда класть.
             managers.AddComponent<Sinbinder.Inventory.PlayerInventory>();
+
+            // Кто решает, чья надпись сейчас горит. Один на сцену:
+            // луч пускается раз за кадр, а не по разу на предмет.
+            managers.AddComponent<Sinbinder.UI.PlateSight>();
 
             // Угасающие души. Его не было ни в одной сцене, поэтому
             // жатва — механика сцены 4 — не работала вовсе.
@@ -900,7 +915,7 @@ namespace Sinbinder.Utilets
             peg.transform.localScale = new Vector3(0.08f, 0.35f, 0.08f);
             peg.transform.rotation = Quaternion.Euler(9f, 0f, 5f);
 
-            PegName(peg.transform.position, fallenName);
+            PegName(tent.transform, peg.transform.position, fallenName);
 
             return tent;
         }
@@ -916,7 +931,7 @@ namespace Sinbinder.Utilets
         /// Пустое имя — не пустая надпись, а ни одной: колышек без имени
         /// выглядит как недоделка, а колышек с пустым текстом — как баг.
         /// </summary>
-        private static void PegName(Vector3 pegTop, string fallenName)
+        private static void PegName(Transform tent, Vector3 pegTop, string fallenName)
         {
             if (string.IsNullOrEmpty(fallenName)) return;
 
@@ -931,6 +946,24 @@ namespace Sinbinder.Utilets
             var go = new GameObject($"Имя: {fallenName}");
             go.transform.position = pegTop + new Vector3(0f, 0.42f, 0f);
 
+            // В детях у палатки, а не у колышка: гаснущую надпись зажигает
+            // взгляд на предмет, а колышек — палочка в восемь сантиметров,
+            // и целиться в неё через лагерь было бы мучением. Смотришь
+            // на просевшую палатку — читаешь, кто в ней жил.
+            if (tent != null)
+            {
+                go.transform.SetParent(tent, worldPositionStays: true);
+
+                // Палатка — куб, растянутый по трём осям врозь, и надпись
+                // унаследовала бы это растяжение. Гасим его обратным
+                // масштабом: имя павшего обязано читаться, а не плыть.
+                var k = tent.lossyScale;
+                go.transform.localScale = new Vector3(
+                    k.x == 0f ? 1f : 1f / k.x,
+                    k.y == 0f ? 1f : 1f / k.y,
+                    k.z == 0f ? 1f : 1f / k.z);
+            }
+
             var text = go.AddComponent<TextMesh>();
             text.text = fallenName;
             text.font = font;
@@ -943,6 +976,8 @@ namespace Sinbinder.Utilets
             // Без материала шрифта TextMesh рисует розовым «шейдер потерян».
             var renderer = go.GetComponent<MeshRenderer>();
             if (renderer != null) renderer.sharedMaterial = font.material;
+
+            go.AddComponent<Sinbinder.UI.WorldPlate>();
         }
 
         /// <summary>
