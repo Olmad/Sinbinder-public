@@ -315,6 +315,7 @@ namespace Sinbinder.Utilets
 
             BindingZone(new Vector3(-9f, 0f, 2f));
             MapZone(new Vector3(9f, 0f, 2f), canvas);
+            UpgradeZone(new Vector3(0f, 0f, 10f));
 
             // Отряд: те самые девять душ лагеря. Полигон нарочно берёт
             // измеренных стендом, а не выдуманных — иначе опыт не с чем
@@ -432,6 +433,36 @@ namespace Sinbinder.Utilets
             board.AddComponent<Sinbinder.Crypt.MissionBoard>();
 
             BuildMissionMap(canvas);
+        }
+
+        /// <summary>
+        /// Зона вторая: два гнезда под улучшения склепа.
+        ///
+        /// Пустых, и это главное. Гнездо — честное обещание: место есть,
+        /// а принести туда что-то можно только с вылазки. Комната без
+        /// гнёзд не обещала бы ничего; комната с десятью обещала бы
+        /// строительство, которого не будет.
+        ///
+        /// Ровно два, и оба стоят на виду: игрок обязан с первого взгляда
+        /// понимать, что это предел, а не начало ветки.
+        /// </summary>
+        private static void UpgradeZone(Vector3 origin)
+        {
+            var zone = new GameObject("Гнёзда");
+            zone.transform.position = origin;
+
+            for (int i = 0; i < Sinbinder.Crypt.CryptUpgrades.Limit; i++)
+            {
+                var plinth = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                plinth.name = $"Гнездо {i + 1}";
+                plinth.transform.SetParent(zone.transform);
+                plinth.transform.localPosition = new Vector3(i * 3f - 1.5f, 0.5f, 0f);
+                plinth.transform.localScale = new Vector3(1.1f, 1f, 1.1f);
+
+                plinth.AddComponent<Sinbinder.Crypt.UpgradeSocket>().SetEmpty();
+
+                Plate(plinth.transform, "Пустое гнездо", 1.6f);
+            }
         }
 
         /// <summary>Панель карты. Строится как совет и по тем же правилам.</summary>

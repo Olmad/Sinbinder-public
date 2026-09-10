@@ -86,7 +86,20 @@ namespace Sinbinder.Crypt
 
             LastReport = Report(mission, away, survivors, commanderName);
 
-            if (survivors.Count > 0) TakeSpoils(mission);
+            if (survivors.Count > 0)
+            {
+                TakeSpoils(mission);
+
+                // Золото несут с любой вылазки, но взять его некуда,
+                // пока нет Казны. Поэтому улучшение — не прибавка
+                // к числу, а разрешение числу вообще существовать.
+                if (CryptUpgrades.Installed(Upgrade.Treasury))
+                {
+                    int coin = mission.Foes * CoinPerFoe;
+                    Inventory.PlayerInventory.Instance?.AddGold(coin);
+                    Log("В казну прибыло.");
+                }
+            }
 
             return LastReport;
         }
@@ -143,11 +156,11 @@ namespace Sinbinder.Crypt
                     break;
 
                 case Spoils.Upgrade:
-                    if (Upgrades < UpgradeLimit)
+                    if (CryptUpgrades.Bring(out var what))
                     {
                         Upgrades++;
-                        Log($"Оттуда принесли то, что ставят в склепе. "
-                          + $"Найдётся место — поставите.");
+                        Log($"Оттуда принесли: {CryptUpgrades.Name(what)}. "
+                          + "Найдётся гнездо — поставите.");
                     }
                     else Log("Такое у вас уже есть, и второго места нет.");
                     break;
@@ -189,8 +202,15 @@ namespace Sinbinder.Crypt
             Log("Оттуда принесли душу. Она на полке.");
         }
 
+        /// <summary>Сколько монет приносит один поверженный.</summary>
+        private const int CoinPerFoe = 6;
+
         /// <summary>Забыть добычу при новой игре.</summary>
-        public static void Forget() => Upgrades = 0;
+        public static void Forget()
+        {
+            Upgrades = 0;
+            CryptUpgrades.Forget();
+        }
 
         private static void Log(string line)
             => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);

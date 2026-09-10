@@ -8,6 +8,17 @@ namespace Sinbinder.Gameplay
         public static SoulManager Instance { get; private set; }
 
         [SerializeField] private float _fadeTime = 60f;
+
+        /// <summary>
+        /// Сколько душа держится с учётом склепа.
+        ///
+        /// Срок остаётся здешним, множитель приходит от улучшений:
+        /// Ледник продлевает вдвое. Так улучшение меняет не число
+        /// в настройках, а <b>выбор тела</b> — истлевшую душу тяжёлое
+        /// тело не примет, и продлить ей жизнь значит вернуть игроку
+        /// решение.
+        /// </summary>
+        private float FadeTime => _fadeTime * Crypt.CryptUpgrades.FadeMultiplier;
         [SerializeField] private float _harvestRadius = 3f;
         [SerializeField] private GameObject _soulIndicatorPrefab;
 
@@ -136,7 +147,7 @@ namespace Sinbinder.Gameplay
                 // не менялось: собранная через минуту душа была та же,
                 // что собранная сразу. Цена промедления, расписанная
                 // в SoulDecay до последнего множителя, не наступала никогда.
-                soul.SoulQuality = Core.SoulDecay.QualityAt(soul.RemainingTime, _fadeTime);
+                soul.SoulQuality = Core.SoulDecay.QualityAt(soul.RemainingTime, FadeTime);
 
                 if (soul.RemainingTime <= 0f)
                 {
@@ -155,7 +166,7 @@ namespace Sinbinder.Gameplay
             {
                 Warrior = warrior,
                 Position = position,
-                RemainingTime = _fadeTime,
+                RemainingTime = FadeTime,
                 SoulQuality = Core.SoulQuality.Shock
             };
 
@@ -179,7 +190,7 @@ namespace Sinbinder.Gameplay
 
             if (indicator != null) _indicators.Add(indicator);
 
-            Debug.Log($"[SOUL] Душа {warrior.DisplayName} покинула тело. Угаснет через {_fadeTime} сек.");
+            Debug.Log($"[SOUL] Душа {warrior.DisplayName} покинула тело. Угаснет через {FadeTime} сек.");
         }
 
         public FadingSoul TryHarvestSoul(Vector3 harvesterPosition)
