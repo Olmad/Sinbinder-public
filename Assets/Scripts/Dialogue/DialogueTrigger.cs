@@ -59,9 +59,13 @@ namespace Sinbinder.Dialogue
             var allies = CombatManager.Instance?.GetAliveAllies() ?? new List<Damageable>();
             var enemies = CombatManager.Instance?.GetAliveEnemies() ?? new List<Damageable>();
 
-            var player = SinbinderPlayer.Instance;
-            if (player != null && !player.IsDead && !allies.Contains(player.GetComponent<Damageable>()))
-                allies.Insert(0, player.GetComponent<Damageable>());
+            // Греховод в разговорах не участвует. Игра про то, что говорят
+            // друг другу воины, — их голосами и держится вся подача личности.
+            // Реплики самого Греховода отобрали бы у сцены её предмет:
+            // игрок слушал бы себя вместо тех, кем командует.
+            //
+            // Свои слова у него будут в финальном бою полной версии,
+            // и это единственное место, где они уместны.
 
             foreach (var allyDmg in allies)
             {
@@ -206,8 +210,12 @@ namespace Sinbinder.Dialogue
         private float GetPriority(Warrior w)
         {
             if (w == null) return 0f;
-            var player = SinbinderPlayer.Instance;
-            if (player != null && w.Id == player.Id) return 999f;
+
+            // Греховода в говорящие не берём вовсе, а не ставим первым:
+            // раньше он получал приоритет 999 и заглушал собой любого,
+            // кому было что сказать.
+            if (w is SinbinderPlayer) return 0f;
+
             float baseP = w.Soul.Sin switch { SinType.Pride => 100, SinType.Wrath => 90, SinType.Envy => 70, SinType.Lust => 60, SinType.Greed => 50, SinType.Gluttony => 40, SinType.Sloth => 10, _ => 0 };
             baseP += w.Soul.Moral switch { MoralType.Vicious => 20, MoralType.Neutral => 0, MoralType.Pious => -10, _ => 0 };
             return baseP;

@@ -1,13 +1,19 @@
 // Assets/Scripts/UI/PlateSight.cs
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Sinbinder.UI
 {
     /// <summary>
-    /// На что нацелен игрок — и чья надпись поэтому горит.
+    /// На что нацелен игрок — и чья подпись поэтому видна.
     ///
     /// Один на сцену, а не по компоненту на табличку: луч пускается
     /// один раз за кадр, а не по разу на каждый предмет в комнате.
+    ///
+    /// Показывается подпись строкой у нижней панели, а не над самим
+    /// предметом. Так она всегда в одном месте экрана: её не надо искать
+    /// взглядом, она не наезжает на панель выделенного воина и не пляшет
+    /// вместе с предметом, к которому подходишь.
     ///
     /// Куда целятся, зависит от взгляда, и это не мелочь:
     /// в первом лице курсора нет вовсе, целится середина экрана —
@@ -15,8 +21,8 @@ namespace Sinbinder.UI
     /// <c>Input.mousePosition</c> в обоих случаях было бы неверно:
     /// при захваченном курсоре он стоит там, где его заперли.
     ///
-    /// Горит ровно одна табличка. Две подписи разом — это уже та самая
-    /// стена текста, от которой всё и затевалось.
+    /// Видна ровно одна подпись. Две разом — это уже та самая стена
+    /// текста, от которой всё и затевалось.
     /// </summary>
     public class PlateSight : MonoBehaviour
     {
@@ -29,12 +35,24 @@ namespace Sinbinder.UI
                + "или на его примитиве, глубже трёх не бывает.")]
         [SerializeField] private int _levels = 4;
 
+        [Tooltip("Строка, в которой показывается подпись. Стоит над панелью "
+               + "выделенного воина: подпись всегда в одном месте экрана, "
+               + "её не надо искать и она ни на что не наезжает.")]
+        [SerializeField] private GameObject _panel;
+        [SerializeField] private Text _line;
+
         private Camera _cam;
         private WorldPlate _lit;
 
         void Start()
         {
             _cam = Camera.main;
+
+            if (_panel != null) _panel.SetActive(false);
+
+            if (_line == null)
+                Debug.LogWarning("[ТАБЛИЧКИ] Строка подписи не связана в сцене: "
+                               + "показывать надписи будет негде. Пересоберите сцены.");
 
             if (_cam == null)
             {
@@ -52,17 +70,25 @@ namespace Sinbinder.UI
 
             if (found == _lit) return;
 
-            if (_lit != null) _lit.Show(false);
             _lit = found;
-            if (_lit != null) _lit.Show(true);
+            Draw();
+        }
+
+        private void Draw()
+        {
+            string what = _lit != null ? _lit.Text : string.Empty;
+            bool show = !string.IsNullOrWhiteSpace(what);
+
+            if (_line != null) _line.text = what;
+            if (_panel != null) _panel.SetActive(show);
         }
 
         void OnDisable()
         {
             // Гаснем за собой: компонент выключают вместе со сценой,
-            // и оставленная гореть надпись пережила бы её.
-            if (_lit != null) _lit.Show(false);
+            // и оставленная строка пережила бы её.
             _lit = null;
+            if (_panel != null) _panel.SetActive(false);
         }
 
         private WorldPlate Aimed()

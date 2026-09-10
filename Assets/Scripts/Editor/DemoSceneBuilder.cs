@@ -1203,6 +1203,7 @@ namespace Sinbinder.Utilets
             BuildCommandHint(canvasGO.transform);
             BuildHarvestHint(canvasGO.transform);
             BuildSelectedUnit(canvasGO.transform);
+            BuildPlateLine(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
             // Выбор тела нужен везде, где можно собрать душу, а собрать
@@ -1556,6 +1557,38 @@ namespace Sinbinder.Utilets
 
             // Выключена: менеджер включает её на нажатие и гасит на отпуск.
             rt.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Строка, в которой читается подпись предмета.
+        ///
+        /// Прямо над панелью выделенного воина, впритык: обе живут внизу
+        /// по центру и вместе читаются как один блок, а не как две надписи,
+        /// не поделившие экран. Панель занимает по высоте 112 от края,
+        /// значит строка начинается со 128.
+        ///
+        /// Компонент, который её заполняет, стоит на Managers — там же,
+        /// где и наблюдатель; здесь только связываем.
+        /// </summary>
+        private static void BuildPlateLine(Transform parent)
+        {
+            var panel = Panel("Подпись предмета", parent,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 48f),
+                position: new Vector2(0f, 132f));
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+
+            var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
+            line.color = new Color(0.90f, 0.88f, 0.82f);
+
+            var sight = Object.FindFirstObjectByType<Sinbinder.UI.PlateSight>();
+            if (sight != null) Wire(sight, ("_panel", panel.gameObject), ("_line", line));
+            else Debug.LogWarning("[СЦЕНЫ] PlateSight в сцене не найден: "
+                               + "подписи предметов показывать будет некому.");
+
+            panel.gameObject.SetActive(false);
         }
 
         /// <summary>Одна сторона рамки. Растягивается вдоль, толщина — из size.</summary>
