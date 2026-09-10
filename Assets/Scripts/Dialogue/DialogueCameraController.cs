@@ -58,11 +58,29 @@ namespace Sinbinder.Dialogue
             _cam = Camera.main;
         }
 
+        /// <summary>
+        /// Камера, найденная заново, если прежней не стало.
+        ///
+        /// Контроллер стоит на Managers, а тот переживает смену сцен:
+        /// на нём четыре синглтона, и каждый объявляет DontDestroyOnLoad.
+        /// Камера смены сцен не переживает — то есть со второй сцены
+        /// ссылка, взятая в Awake, указывает на уничтоженный объект,
+        /// и первый же разговор упал бы вместе с наездом.
+        ///
+        /// Третий случай этой болезни подряд, после выделения и рамки.
+        /// Разбор — 14-HANDOFF §12.4.
+        /// </summary>
+        private Camera Cam()
+        {
+            if (_cam == null) _cam = Camera.main;
+            return _cam;
+        }
+
         public void SaveCameraPosition()
         {
-            _originalPosition = _cam.transform.position;
-            _originalRotation = _cam.transform.rotation;
-            _originalFOV = _cam.fieldOfView;
+            _originalPosition = Cam().transform.position;
+            _originalRotation = Cam().transform.rotation;
+            _originalFOV = Cam().fieldOfView;
         }
 
         public IEnumerator FocusOn(Transform target)
@@ -70,7 +88,7 @@ namespace Sinbinder.Dialogue
             if (target == null) yield break;
 
             _inDialogue = true;
-            _cam.fieldOfView = _dialogueFOV;
+            Cam().fieldOfView = _dialogueFOV;
 
             // Перед говорящим, а не за ним. Здесь стояло -target.forward,
             // то есть камера заходила со спины и наводилась на затылок:
@@ -143,8 +161,8 @@ namespace Sinbinder.Dialogue
 
                 Vector3 pos = Frame(anchor, face, side, distance, sway);
 
-                _cam.transform.position = pos;
-                _cam.transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
+                Cam().transform.position = pos;
+                Cam().transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
 
                 yield return null;
             }
@@ -168,7 +186,7 @@ namespace Sinbinder.Dialogue
                 StopCoroutine(_swayCoroutine);
                 _swayCoroutine = null;
             }
-            _cam.fieldOfView = _originalFOV;
+            Cam().fieldOfView = _originalFOV;
             yield return MoveCamera(_originalPosition, _originalRotation);
         }
 
@@ -177,8 +195,8 @@ namespace Sinbinder.Dialogue
             float duration = 1f / _transitionSpeed;
             float elapsed = 0f;
 
-            Vector3 startPos = _cam.transform.position;
-            Quaternion startRot = _cam.transform.rotation;
+            Vector3 startPos = Cam().transform.position;
+            Quaternion startRot = Cam().transform.rotation;
 
             while (elapsed < duration)
             {
@@ -186,13 +204,13 @@ namespace Sinbinder.Dialogue
                 float t = elapsed / duration;
                 t = t * t * (3f - 2f * t);
 
-                _cam.transform.position = Vector3.Lerp(startPos, targetPos, t);
-                _cam.transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
+                Cam().transform.position = Vector3.Lerp(startPos, targetPos, t);
+                Cam().transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
                 yield return null;
             }
 
-            _cam.transform.position = targetPos;
-            _cam.transform.rotation = targetRot;
+            Cam().transform.position = targetPos;
+            Cam().transform.rotation = targetRot;
         }
     }
 }

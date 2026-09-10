@@ -55,15 +55,13 @@ namespace Sinbinder.UI
                                + "показывать надписи будет негде. Пересоберите сцены.");
 
             if (_cam == null)
-            {
                 Debug.LogWarning("[ТАБЛИЧКИ] Камеры в сцене нет: целиться нечем, "
-                               + "надписи останутся погашенными.");
-                enabled = false;
-            }
+                               + "надписи останутся погашенными до следующей сцены.");
         }
 
         void Update()
         {
+            if (_cam == null) _cam = Camera.main;
             if (_cam == null) return;
 
             var found = Aimed();
@@ -74,8 +72,39 @@ namespace Sinbinder.UI
             Draw();
         }
 
+        /// <summary>Имя панели подписи. Его же ставит сборщик сцен.</summary>
+        private const string PanelName = "Подпись предмета";
+
+        /// <summary>
+        /// Панель и строка, найденные заново, если прежних не стало.
+        ///
+        /// Компонент стоит на Managers, а тот переживает смену сцен;
+        /// панель живёт на Canvas и умирает вместе со сценой. Ссылок,
+        /// связанных сборщиком, хватило бы ровно на первую сцену —
+        /// дальше подписи молча пропали бы.
+        ///
+        /// Через Transform.Find, а не GameObject.Find: панель выключена,
+        /// пока не на что смотреть, а выключенные объекты второй не находит.
+        /// </summary>
+        private void Reacquire()
+        {
+            if (_panel != null && _line != null) return;
+
+            foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.InstanceID))
+            {
+                var found = canvas.transform.Find(PanelName);
+                if (found == null) continue;
+
+                _panel = found.gameObject;
+                _line = found.GetComponentInChildren<Text>(true);
+                return;
+            }
+        }
+
         private void Draw()
         {
+            Reacquire();
+
             string what = _lit != null ? _lit.Text : string.Empty;
             bool show = !string.IsNullOrWhiteSpace(what);
 
