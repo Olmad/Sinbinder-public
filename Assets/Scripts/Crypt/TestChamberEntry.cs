@@ -27,8 +27,18 @@ namespace Sinbinder.Crypt
             var player = SinbinderPlayer.Spawn(transform.position, transform.parent);
 
             if (player == null)
+            {
                 Debug.LogError("[ПОЛИГОН] Греховод не поднялся: подойти "
                              + "к рычагам будет некому.");
+                return;
+            }
+
+            // Про смену взгляда надо сказать словами. Игрок, которому
+            // дали тело при тактическом виде, решает не «нажму V»,
+            // а «управление кривое», — и он прав, пока не знает.
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                "W A S D — идти. F — взять или дёрнуть. V — сменить взгляд: "
+                + "за плечом или сверху.");
         }
     }
 }

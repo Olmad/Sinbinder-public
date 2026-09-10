@@ -4,6 +4,29 @@ namespace Sinbinder.Gameplay
 {
     public class RTS_Camera : MonoBehaviour
     {
+        /// <summary>Два взгляда на одну игру.</summary>
+        public enum CameraView
+        {
+            /// <summary>Сверху и под углом: видно поле, видно отряд.</summary>
+            Tactical = 0,
+
+            /// <summary>За плечом: видно, куда идёшь и что написано на табличке.</summary>
+            Shoulder = 1,
+        }
+
+        [Tooltip("С какого взгляда начинается сцена. Склеп — за плечом, бой — тактический.")]
+        [SerializeField] private CameraView _mode = CameraView.Tactical;
+
+        [SerializeField] private KeyCode _switchKey = KeyCode.V;
+
+        [Header("За плечом")]
+        [SerializeField] private float _shoulderDistance = 4.6f;
+        [SerializeField] private float _shoulderHeight = 2.3f;
+        [SerializeField] private float _shoulderLook = 1.3f;
+
+        [Tooltip("Как быстро край экрана разворачивает взгляд, градусов в секунду.")]
+        [SerializeField] private float _turnSpeed = 110f;
+
         [SerializeField] private float _moveSpeed = 20f;
         [SerializeField] private float _scrollSpeed = 500f;
         [SerializeField] private float _edgeScrollSize = 20f;
@@ -27,11 +50,28 @@ namespace Sinbinder.Gameplay
         private Vector3 _offset;
         private bool _offsetTaken;
 
+        /// <summary>
+        /// Куда смотрит камера за плечом. <b>Её собственный курс,
+        /// а не курс героя</b> — и это принципиально.
+        ///
+        /// Ходьба считается от направления камеры (<see cref="PlayerWalk"/>),
+        /// и если бы камера считалась от направления героя, вышла бы петля:
+        /// шаг вперёд поворачивает героя, поворот героя разворачивает
+        /// камеру, разворот камеры меняет «вперёд». Герой крутился бы
+        /// на месте, и виноватым выглядел бы навмеш.
+        ///
+        /// Разрывается она так: курс камеры меняет только игрок — краем
+        /// экрана. Герой поворачивается следом за шагом и на камеру
+        /// не влияет.
+        /// </summary>
+        private float _yaw;
+
         void Awake()
         {
             _cam = Camera.main;
             _targetPosition = transform.position;
             _targetZoom = _cam.fieldOfView;
+            _yaw = transform.eulerAngles.y;
 
             // Кадр, поставленный в сцене, — это решение постановщика,
             // и отбирать его нельзя. Потолок 30 ниже авторских 55, а зум
@@ -48,9 +88,75 @@ namespace Sinbinder.Gameplay
                 Dialogue.DialogueCameraController.Instance.InDialogue)
                 return;
 
-            HandleMovement();
+            if (Input.GetKeyDown(_switchKey)) Switch();
+
+            if (_mode == CameraView.Shoulder && Following) Shoulder();
+            else HandleMovement();
+
             HandleZoom();
             SmoothMove();
+        }
+
+        /// <summary>
+        /// Сменить взгляд.
+        ///
+        /// За плечом — когда ходишь: видно, куда идёшь, и читаются
+        /// таблички. Тактический — когда командуешь: видно поле и весь
+        /// отряд. Ходить при тактическом всё равно можно, но это
+        /// перетаскивание фишки, а не ходьба, — с этого и начался разговор.
+        ///
+        /// Без тела героя за плечом смотреть не на что: остаётся
+        /// тактический.
+        /// </summary>
+        public void Switch()
+        {
+            if (!Following)
+            {
+                _mode = CameraView.Tactical;
+                return;
+            }
+
+            _mode = _mode == CameraView.Tactical
+                ? CameraView.Shoulder
+                : CameraView.Tactical;
+
+            // Возвращаясь в тактический, забываем старое смещение:
+            // взгляд за плечом увёл камеру далеко от того места,
+            // где смещение бралось, и она прыгнула бы рывком.
+            if (_mode == CameraView.Tactical) _offsetTaken = false;
+        }
+
+        /// <summary>Задать взгляд из сборщика сцены.</summary>
+        public void SetView(CameraView view) => _mode = view;
+
+        /// <summary>
+        /// Взгляд за плечом: камера держится позади героя на своём курсе.
+        ///
+        /// Курс меняет край экрана, а не герой (см. пояснение у
+        /// <c>_yaw</c>). Высота и расстояние постоянные: качающаяся
+        /// за спиной камера в игре, где читают таблички и значки над
+        /// головами, мешает читать.
+        /// </summary>
+        private void Shoulder()
+        {
+            if (Input.mousePosition.x < _edgeScrollSize) _yaw -= _turnSpeed * Time.deltaTime;
+            if (Input.mousePosition.x > Screen.width - _edgeScrollSize)
+                _yaw += _turnSpeed * Time.deltaTime;
+
+            var hero = SinbinderPlayer.Where;
+            var back = Quaternion.Euler(0f, _yaw, 0f) * Vector3.back;
+
+            _targetPosition = hero + back * _shoulderDistance
+                            + Vector3.up * _shoulderHeight;
+
+            // Смотрим не в ноги, а на уровень головы и чуть дальше: иначе
+            // половину кадра занимает пол, а таблички уходят за верхний край.
+            var look = hero + Vector3.up * _shoulderLook;
+            var toLook = look - transform.position;
+
+            if (toLook.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.Slerp(transform.rotation,
+                    Quaternion.LookRotation(toLook), 0.35f);
         }
 
         /// <summary>
@@ -138,6 +244,7 @@ namespace Sinbinder.Gameplay
         {
             _targetPosition = transform.position;
             if (_cam != null) _targetZoom = _cam.fieldOfView;
+            _yaw = transform.eulerAngles.y;
 
             // И смещение относительно героя тоже: после отъезда сцены 5
             // камера стоит уже не там, где встала при первой встрече,

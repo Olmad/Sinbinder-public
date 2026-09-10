@@ -275,7 +275,11 @@ namespace Sinbinder.Utilets
             var canvas = Interface();
             BuildTitle(canvas, "Полигон. Поставьте условие — и повторите.");
 
-            CameraRig(new Vector3(0f, 7f, -9f), new Vector3(38f, 0f, 0f), movable: true);
+            // Склеп начинается со взгляда за плечом: здесь ходят между
+            // зонами и читают таблички, а тактический вид годится
+            // для поля, а не для комнаты. Переключается на V.
+            CameraRig(new Vector3(0f, 3f, -8f), new Vector3(12f, 0f, 0f), movable: true,
+                      view: RTS_Camera.CameraView.Shoulder);
 
             // Площадка и её точки. Позиции жёсткие: повтор обязан ставить
             // всё туда же, иначе опыт не опыт.
@@ -646,7 +650,8 @@ namespace Sinbinder.Utilets
         /// за спиной у неподвижной камеры.
         /// </summary>
         private static GameObject CameraRig(Vector3 position, Vector3 euler,
-            bool movable = false)
+            bool movable = false,
+            RTS_Camera.CameraView view = RTS_Camera.CameraView.Tactical)
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
             go.transform.position = position;
@@ -660,7 +665,7 @@ namespace Sinbinder.Utilets
 
             go.AddComponent<AudioListener>();
 
-            if (movable) go.AddComponent<RTS_Camera>();
+            if (movable) go.AddComponent<RTS_Camera>().SetView(view);
 
             return go;
         }
