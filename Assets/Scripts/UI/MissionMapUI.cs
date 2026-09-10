@@ -141,7 +141,8 @@ namespace Sinbinder.UI
                     m.Name,
                     m.Rumour,
                     enough
-                        ? $"{MissionCatalog.Danger(m)} {MissionCatalog.Promise(m.Spoils)}"
+                        ? $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
+                          + MissionCatalog.Promise(m.Spoils)
                         : "Столько людей не наберётся.",
                     enough ? () => PickCommander(m) : (System.Action)null));
 
@@ -174,15 +175,62 @@ namespace Sinbinder.UI
                     name,
                     can ? Leadership.Describe(member.Leadership) : why,
                     prophecy,
-                    can ? () => Send(name) : (System.Action)null));
+                    can ? () => Lead(name) : (System.Action)null));
 
                 y -= 150f;
             }
         }
 
-        private void Send(string commanderName)
+        /// <summary>
+        /// Старший выбран. Если на точке есть развилка — спрашиваем,
+        /// что предложить; если нет — уходят молча.
+        /// </summary>
+        private void Lead(string commanderName)
         {
-            _board.Send(_chosen, commanderName);
+            if (_chosen.Junction == Junction.None) { Send(commanderName, null); return; }
+            PickOffer(commanderName);
+        }
+
+        /// <summary>
+        /// Развилка. Игрок <b>предлагает</b>, и это надо было сказать
+        /// словами: кнопка, после которой случается не то, что на ней
+        /// написано, читается как поломка, пока не объяснено, что это
+        /// не приказ.
+        /// </summary>
+        private void PickOffer(string commanderName)
+        {
+            _pickingCommander = true;
+
+            if (_title != null)
+                _title.text = JunctionCatalog.Situation(_chosen.Junction)
+                            + "  Что вы им скажете?  Esc — назад";
+
+            Rows(out float y);
+
+            foreach (var option in JunctionCatalog.Options(_chosen.Junction))
+            {
+                var offer = option;
+                _spawned.Add(Row(y, true,
+                    JunctionCatalog.Offer(offer),
+                    "Это не приказ. Решать будет старший.",
+                    "",
+                    () => Send(commanderName, offer)));
+
+                y -= 150f;
+            }
+
+            // Промолчать — тоже ход: тогда за отряд не говорит никто,
+            // и видно, чего он хочет сам.
+            _spawned.Add(Row(y, true,
+                "Промолчать.",
+                "Пусть решают сами.",
+                "",
+                () => Send(commanderName, null)));
+        }
+
+        private void Send(string commanderName, MissionAction? offer)
+        {
+            _board.Send(_chosen, commanderName, offer);
 
             // Возвращаемся к карте: отчёт стоит в заголовке, и следующий
             // выбор игрок делает, уже зная цену прошлого.

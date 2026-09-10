@@ -166,6 +166,28 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Сдвинуть верность одного по имени.
+        ///
+        /// Нужно тому, кто судит о поступке: сам роcтер не знает,
+        /// что случилось на дороге, и знать не должен. Он хранит людей,
+        /// а не мораль.
+        /// </summary>
+        public static void ShiftLoyalty(string name, float delta)
+        {
+            if (string.IsNullOrEmpty(name) || Mathf.Approximately(delta, 0f)) return;
+
+            for (int i = 0; i < _members.Count; i++)
+            {
+                if (_members[i].Name != name) continue;
+
+                var m = _members[i];
+                m.Loyalty = Mathf.Clamp(m.Loyalty + delta, 0f, 100f);
+                _members[i] = m;
+                return;
+            }
+        }
+
         /// <summary>Заплатить всем: долги обнуляются, верность растёт.</summary>
         public static void PayEveryone()
         {

@@ -76,6 +76,13 @@ namespace Sinbinder.AOS.Modules
                     case MissionAction.DestroyAltar:   return -w * 1.4f;
                     case MissionAction.KillTraveler:   return -w * 0.6f;
                     case MissionAction.TaxVillage:     return -w * 0.5f;
+
+                    // Обоз. Забрать людей живыми хуже, чем убить:
+                    // мёртвых хотя бы отпустили.
+                    case MissionAction.LetThemPass:          return w * 0.8f;
+                    case MissionAction.TakeGoodsSparePeople: return -w * 0.4f;
+                    case MissionAction.TakeEverything:       return -w * 2f;
+                    case MissionAction.TakePeople:           return -w * 2.2f;
                 }
             }
             else if (soul.Morality == MoralityType.Vicious)
@@ -88,6 +95,12 @@ namespace Sinbinder.AOS.Modules
                     case MissionAction.TaxVillage:     return w * 0.2f;
                     case MissionAction.HelpVillage:    return -w;
                     case MissionAction.SanctifyAltar:  return -w * 0.8f;
+
+                    // Обоз.
+                    case MissionAction.TakePeople:           return w * 0.45f;
+                    case MissionAction.TakeEverything:       return w * 0.4f;
+                    case MissionAction.TakeGoodsSparePeople: return w * 0.15f;
+                    case MissionAction.LetThemPass:          return -w * 0.9f;
                 }
             }
 

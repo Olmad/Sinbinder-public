@@ -15,5 +15,15 @@ namespace Sinbinder.AOS
         public bool IsVillageIntact;
         public NPCData Traveler;
         public NPCData VillageElder;
+
+        /// <summary>
+        /// Игрок что-то предложил на развилке.
+        ///
+        /// Именно предложил: на этом уровне у него ровно та же власть,
+        /// что и в бою, — один голос. Его подаёт LoyaltyModule, и
+        /// проиграть этот голос может так же, как проигрывает приказ.
+        /// </summary>
+        public bool HasSuggestion;
+        public MissionAction SuggestedAction;
     }
 }

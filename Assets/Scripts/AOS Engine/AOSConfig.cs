@@ -206,6 +206,16 @@ namespace Sinbinder.AOS
         [Header("Мирные миссии")]
         public float MissionSinScale = 0.6f;
         public float MissionMoralWeight = 45f;
+
+        /// <summary>
+        /// Насколько громко верность говорит за предложение игрока
+        /// на развилке. Отдельная ручка от боевой (LoyaltyObeySinMultiplier)
+        /// намеренно: та даёт 125 очков при полусотне верности и на совете
+        /// перекрыла бы совесть целиком — предложение игрока всегда
+        /// побеждало бы, и развилка перестала бы быть развилкой.
+        /// Подобрано замером: Tools/bench → РАЗВИЛКА.
+        /// </summary>
+        public float MissionLoyaltyWeight = 0.4f;
         public float MissionVirtueScale = 0.5f;
 
         [Header("Память: чем держатся за прошлое")]

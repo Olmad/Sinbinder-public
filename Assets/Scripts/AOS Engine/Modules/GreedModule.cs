@@ -105,6 +105,14 @@ namespace Sinbinder.AOS.Modules
                 case MissionAction.EnslaveVillage: return sin * 0.35f;  // доход, но хлопотный
                 case MissionAction.HelpVillage:    return -sin * 0.5f;  // даром не работает
                 case MissionAction.IgnoreVillage:  return -sin * 0.3f;  // мимо денег не проходит
+
+                // Обоз. Товар без драки — лучшее, что бывает; всё
+                // остальное это тот же товар, только с возн­ёй.
+                case MissionAction.TakeGoodsSparePeople: return sin;
+                case MissionAction.TakeEverything:       return sin * 0.9f;
+                case MissionAction.TakePeople:           return sin * 0.5f;
+                case MissionAction.LetThemPass:          return -sin;
+
                 default:                           return 0f;
             }
         }

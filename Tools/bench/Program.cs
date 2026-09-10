@@ -2758,6 +2758,267 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  Добыча: чисто." : $"  Добыча: провалов {bad}.");
     }
 
+
+    // ──────────────────────────────────────────────────────────────
+    //  РАЗВИЛКА и ВЫЛАЗКИ
+    //
+    //  Развилка обоза (docs/19-MISSIONS.md §4.1). Проверяется одно:
+    //  предложение игрока обязано иногда выигрывать и иногда
+    //  проигрывать. Всегда выигрывает — это приказ, и вся игра
+    //  разваливается. Никогда — игрока нет за столом.
+    //
+    //  Тальи те же, что в BehaviorResolver.DecideMission, построчно.
+    // ──────────────────────────────────────────────────────────────
+
+    static MissionAction JunctionVote(List<IPersonalityModule> modules, SoulData soul,
+        float loyalty, MissionAction? suggestion, List<MissionAction> options)
+    {
+        var w = new Warrior { Soul = soul, Loyalty = loyalty };
+        var ctx = new MissionContext
+        {
+            HasInnocentVictims = true,
+            HasTreasure = true,
+            HasGuiltyParty = false,
+            RecentMemories = new List<MemoryRecord>(),
+            CarriedItems = new List<InventoryItem>(),
+            HasSuggestion = suggestion.HasValue,
+            SuggestedAction = suggestion ?? default
+        };
+
+        var scores = new Dictionary<MissionAction, float>();
+        foreach (var a in options) scores[a] = 0f;
+
+        var s = Soul.FromWarrior(w);
+        foreach (var m in modules)
+        {
+            if (!(m is IMissionModule mm)) continue;
+            foreach (var a in options) scores[a] += mm.EvaluateMission(s, ctx, a);
+        }
+
+        return scores.OrderByDescending(kv => kv.Value).First().Key;
+    }
+
+    static void JunctionCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== РАЗВИЛКА: слушают ли предложение игрока ===");
+
+        var modules = Modules();
+        var options = Sinbinder.Crypt.JunctionCatalog.Options(Sinbinder.Crypt.Junction.Caravan);
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        Check(options.Count == 4, "у развилки обоза не четыре ответа");
+
+        // ── 1. Что решает командир, когда его не просят ──
+        Console.WriteLine($"  {"грех",-10} {"мораль",-9} сам решит");
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+            foreach (MoralType moral in new[] { MoralType.Vicious, MoralType.Neutral, MoralType.Pious })
+            {
+                var spectra = new float[7];
+                spectra[(int)sin] = 70f;
+                var soul = new SoulData("К", moral, 1, spectra);
+                var own = JunctionVote(modules, soul, 50f, null, options);
+                if (moral == MoralType.Neutral)
+                    Console.WriteLine($"  {sin,-10} {moral,-9} {own}");
+            }
+
+        // ── 2. Слушают ли предложение ──
+        // Считаем по всей сетке: 7 грехов × 3 морали × 4 предложения.
+        int listened = 0, total = 0;
+        var deaf = new List<string>();
+        var obedient = new List<string>();
+
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+            foreach (MoralType moral in new[] { MoralType.Vicious, MoralType.Neutral, MoralType.Pious })
+            {
+                var spectra = new float[7];
+                spectra[(int)sin] = 70f;
+                var soul = new SoulData("К", moral, 1, spectra);
+
+                int here = 0;
+                foreach (var offer in options)
+                {
+                    total++;
+                    if (JunctionVote(modules, soul, 50f, offer, options) == offer)
+                    { listened++; here++; }
+                }
+
+                if (here == 0) deaf.Add($"{sin}/{moral}");
+                if (here == options.Count) obedient.Add($"{sin}/{moral}");
+            }
+
+        double rate = listened * 100.0 / total;
+        Console.WriteLine($"\n  предложение проходит в {rate:F0}% случаев "
+                        + $"({listened} из {total})");
+        Console.WriteLine($"  не слышат вовсе: {(deaf.Count == 0 ? "никто" : string.Join(", ", deaf))}");
+        Console.WriteLine($"  слушаются во всём: {(obedient.Count == 0 ? "никто" : string.Join(", ", obedient))}");
+
+        Check(rate > 25, "предложение почти никогда не проходит — игрока нет за столом");
+        Check(rate < 90, "предложение проходит почти всегда — это приказ, а не искушение");
+        Check(obedient.Count < 8, "слишком многие соглашаются на что угодно");
+
+        // ── 3. Верность обязана что-то менять — но не всё ──
+        //
+        // Мерить это на самых злых парах («попроси праведника вырезать
+        // обоз») бессмысленно: там верность обязана проигрывать, иначе
+        // душа перестаёт быть душой. Меряем по всей сетке: у скольких
+        // пар «кто × что предложили» ответ вообще меняется между
+        // презрением и преданностью.
+        int pairs = 0, flipped = 0;
+
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+            foreach (MoralType moral in new[] { MoralType.Vicious, MoralType.Neutral, MoralType.Pious })
+            {
+                var spectra = new float[7];
+                spectra[(int)sin] = 70f;
+                var soul = new SoulData("К", moral, 1, spectra);
+
+                foreach (var offer in options)
+                {
+                    pairs++;
+                    var cold = JunctionVote(modules, soul, 10f, offer, options);
+                    var warm = JunctionVote(modules, soul, 90f, offer, options);
+                    if (cold != warm) flipped++;
+                }
+            }
+
+        double flipRate = flipped * 100.0 / pairs;
+        Console.WriteLine($"\n  верность 10 → 90 меняет ответ у {flipRate:F0}% пар "
+                        + $"({flipped} из {pairs})");
+
+        // Кого именно она переубеждает — это и есть портрет ручки.
+        Console.WriteLine($"  {"верность",9} {"жадный ← «пропустите»",-26} праведник ← «возьмите товар»");
+        var greedy = new float[7];
+        greedy[(int)SinType.Greed] = 70f;
+        var greedySoul = new SoulData("Жадный", MoralType.Neutral, 1, greedy);
+        var piousSoul = new SoulData("Праведник", MoralType.Pious, 1, new float[7]);
+
+        foreach (float loyal in new[] { 10f, 30f, 50f, 70f, 90f })
+        {
+            var a = JunctionVote(modules, greedySoul, loyal, MissionAction.LetThemPass, options);
+            var b = JunctionVote(modules, piousSoul, loyal, MissionAction.TakeGoodsSparePeople, options);
+            Console.WriteLine($"  {loyal,9:F0} {a,-26} {b}");
+        }
+
+        Check(flipRate > 5, "верность не двигает решение нигде — "
+                          + "ручка MissionLoyaltyWeight мертва");
+        Check(flipRate < 60, "верность переубеждает почти всех — "
+                           + "это приказ, а не голос");
+
+        // ── 4. След на людях ──
+        // Развилка без следа — это выбор из четырёх наград. Смешанный
+        // отряд обязан расколоться за одну вылазку, а не за десять.
+        Console.WriteLine($"\n  {"поступок",-24} {"благочестивый",14} {"ровный",8} {"порочный",10}");
+        foreach (var act in options)
+        {
+            float p = Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Pious, act);
+            float n = Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Neutral, act);
+            float v = Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Vicious, act);
+            Console.WriteLine($"  {act,-24} {p,14:+0.0;-0.0;0} {n,8:+0.0;-0.0;0} {v,10:+0.0;-0.0;0}");
+        }
+
+        float splitAfterMassacre =
+            Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Vicious, MissionAction.TakeEverything)
+          - Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Pious, MissionAction.TakeEverything);
+
+        Console.WriteLine($"\n  резня разводит благочестивого и порочного "
+                        + $"на {splitAfterMassacre:F0} за одну вылазку");
+
+        Check(splitAfterMassacre >= 15f, "резня почти не разводит отряд — "
+                                       + "след слишком тихий, чтобы игрок его заметил");
+        Check(splitAfterMassacre <= 40f, "одна вылазка переворачивает отряд целиком");
+        Check(Sinbinder.Crypt.Aftermath.LoyaltyShift(MoralType.Neutral, MissionAction.LetThemPass) == 0f,
+              "ровному есть дело до отпущенного обоза — у ровного дела нет ни до чего");
+
+        Console.WriteLine(bad == 0 ? "  Развилка: чисто." : $"  Развилка: провалов {bad}.");
+    }
+
+    static void ExpeditionEconomy()
+    {
+        Console.WriteLine("\n=== ВЫЛАЗКИ: сходится ли петля ===");
+        Console.WriteLine("  Долг растёт на размер отряда по 10 за голову. "
+                        + "Доход — добыча плюс то, что сняли с павших.");
+
+        // Стражи строятся Expedition одинаково: скелеты, Vicious, грех
+        // по кругу, сила 40 + 5·номер. Считаем по той же формуле, что
+        // и игра, — через BodyWorth, а не своей.
+        int GuardGold(int index) => BodyWorth.Gold(ShellType.Skeleton,
+            new SoulData("Чужой", (SinType)(index % 7), MoralType.Vicious, 1, 40f + index * 5f));
+
+        Console.WriteLine($"\n  {"точка",-24} {"отряд",6} {"стражи",7} {"добыча",7}"
+                        + $" {"долг",6} {"всё",6} {"половина",9}");
+
+        int profitable = 0, profitableHalf = 0;
+        foreach (var m in Sinbinder.Crypt.MissionCatalog.All())
+        {
+            int prize = Sinbinder.Crypt.MissionCatalog.Coin(m.Prize);
+
+            int all = 0, half = 0;
+            for (int i = 0; i < m.Guards; i++)
+            {
+                all += GuardGold(i);
+                if (i % 2 == 0) half += GuardGold(i);
+            }
+
+            int debt = m.Squad * 10;
+            int net = prize + all - debt;
+            int netHalf = prize + half - debt;
+            if (net > 0) profitable++;
+            if (netHalf > 0) profitableHalf++;
+
+            Console.WriteLine($"  {m.Name,-24} {m.Squad,6} {m.Guards,7} {prize,7}"
+                            + $" {debt,6} {net,+6} {netHalf,+9}");
+        }
+
+        Console.WriteLine($"\n  «всё» — если легла вся охрана; «половина» — "
+                        + "если легла половина. Настоящий бой между ними.");
+        Console.WriteLine($"  окупается при половине павших: {profitableHalf} из "
+                        + $"{Sinbinder.Crypt.MissionCatalog.All().Length}");
+
+        Console.WriteLine($"\n  прибыльных точек: {profitable} из "
+                        + $"{Sinbinder.Crypt.MissionCatalog.All().Length}"
+                        + "   (столбец «с павших» — потолок: столько выйдет, "
+                        + "если ляжет вся охрана)");
+
+        int bad = 0;
+        if (profitable == 0)
+        {
+            bad++;
+            Console.WriteLine("  ПРОВАЛ: ни одна вылазка не окупается — "
+                            + "долг не гасится никогда, а рычаг казны нарисован");
+        }
+        if (profitable == Sinbinder.Crypt.MissionCatalog.All().Length)
+        {
+            bad++;
+            Console.WriteLine("  ПРОВАЛ: окупается всё — долг перестал что-либо значить");
+        }
+
+        // Обоз обязан быть самым прибыльным: он единственная точка,
+        // где богатство и опасность разошлись, и он же — искушение.
+        var caravan = Sinbinder.Crypt.MissionCatalog.All()[0];
+        int caravanNet = Sinbinder.Crypt.MissionCatalog.Coin(caravan.Prize)
+                       + GuardGold(0) + GuardGold(1) - caravan.Squad * 10;
+        foreach (var m in Sinbinder.Crypt.MissionCatalog.All())
+        {
+            if (m.Name == caravan.Name) continue;
+            int f = 0;
+            for (int i = 0; i < m.Guards; i++) f += GuardGold(i);
+            int net = Sinbinder.Crypt.MissionCatalog.Coin(m.Prize) + f - m.Squad * 10;
+            if (net >= caravanNet)
+            {
+                bad++;
+                Console.WriteLine($"  ПРОВАЛ: {m.Name} выгоднее обоза ({net} против "
+                                + $"{caravanNet}) — искушение перестало быть искушением");
+            }
+        }
+
+        Console.WriteLine(bad == 0 ? "  Петля: чисто." : $"  Петля: провалов {bad}.");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -2949,6 +3210,8 @@ static class Bench
         SkillsCheck(cfg);
         ShellsCheck();
         LootCheck();
+        JunctionCheck(cfg);
+        ExpeditionEconomy();
         Missions(cfg);
         Saturation(cfg);
         CapComparison(Math.Min(n, 50000), cfg);

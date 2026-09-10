@@ -126,6 +126,17 @@ namespace Sinbinder.AOS.Modules
                 case MissionAction.SanctifyAltar:  return sin;
                 case MissionAction.DestroyAltar:   return sin * 0.85f;
                 case MissionAction.IgnoreVillage:  return -sin;  // пройти мимо — незаметно
+
+                // Обоз. Здесь гордыня выглядит добродетелью, и это
+                // не путаница: пройти мимо деревни — незаметно, а уйти
+                // от остановленного обоза видят возчики, и об этом пойдёт
+                // слух. Гордому нужен не поступок, а свидетель поступка.
+                // Возчиков же не грабят — это мелко.
+                case MissionAction.LetThemPass:          return sin * 0.6f;
+                case MissionAction.TakeGoodsSparePeople: return -sin * 0.3f;
+                case MissionAction.TakeEverything:       return -sin * 0.2f;
+                case MissionAction.TakePeople:           return -sin * 0.5f;
+
                 default:                           return 0f;
             }
         }

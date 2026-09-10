@@ -58,6 +58,13 @@ namespace Sinbinder.AOS.Modules
                 case MissionAction.KillEveryone:   return -virtue * 1.5f;
                 case MissionAction.EnslaveVillage: return -virtue * 1.2f;
                 case MissionAction.KillTraveler:   return -virtue * 0.8f;
+
+                // Обоз.
+                case MissionAction.LetThemPass:          return virtue;
+                case MissionAction.TakeGoodsSparePeople: return -virtue * 0.5f;
+                case MissionAction.TakeEverything:       return -virtue * 1.5f;
+                case MissionAction.TakePeople:           return -virtue * 1.8f;
+
                 default:                           return 0f;
             }
         }

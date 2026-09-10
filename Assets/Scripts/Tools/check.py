@@ -85,7 +85,11 @@ RE_OLD_INPUT = re.compile(
     r'(?<![\w.])Input\s*\.\s*'
     r'(GetKey\w*|GetButton\w*|GetMouseButton\w*|GetAxis\w*|mousePosition'
     r'|mouseScrollDelta|touches|touchCount|GetTouch|anyKey\w*|inputString)')
-RE_NEW = re.compile(r'\bnew\s+([A-Z]\w+)\s*[\(\{]')
+# Квалифицированное имя ловим тоже: `new AOS.BehaviourResolver()` было
+# проверке невидимо целиком — она требовала имя типа сразу после new.
+# Найдено на собственной ошибке: класс зовут BehaviourResolver,
+# а файл BehaviorResolver.cs, и опечатка прошла мимо всех правил.
+RE_NEW = re.compile(r'\bnew\s+(?:[A-Z]\w*\s*\.\s*)*([A-Z]\w+)\s*[\(\{]')
 SPLIT_ARGS = re.compile(r',(?![^<>()]*[>)])')
 
 
@@ -236,7 +240,7 @@ class Checker:
         """
         for p, s in self.src.items():
             body = strip(s)
-            for m in re.finditer(r'\bnew\s+([A-Z]\w+)\s*\(', body):
+            for m in re.finditer(r'\bnew\s+(?:[A-Z]\w*\s*\.\s*)*([A-Z]\w+)\s*\(', body):
                 t = m.group(1)
 
                 if t in self.partial or t not in self.ctor_files:

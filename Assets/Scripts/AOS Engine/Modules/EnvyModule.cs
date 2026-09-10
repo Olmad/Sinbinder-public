@@ -77,6 +77,14 @@ namespace Sinbinder.AOS.Modules
                 case MissionAction.EnslaveVillage: return sin;
                 case MissionAction.TaxVillage:     return sin * 0.3f;   // дань — слабое утешение
                 case MissionAction.HelpVillage:    return -sin * 0.4f;
+
+                // Обоз. Зависти нужен не товар, а то, что у купца своё:
+                // перстень, дочь, имя. Поэтому людей — выше серебра.
+                case MissionAction.TakePeople:           return sin;
+                case MissionAction.TakeEverything:       return sin * 0.7f;
+                case MissionAction.TakeGoodsSparePeople: return sin * 0.2f;
+                case MissionAction.LetThemPass:          return -sin * 0.5f;
+
                 default:                           return 0f;
             }
         }

@@ -103,6 +103,14 @@ namespace Sinbinder.AOS.Modules
                 case MissionAction.DestroyAltar:  return sin * 0.4f;
                 case MissionAction.IgnoreVillage: return -sin;
                 case MissionAction.HelpVillage:   return -sin * 0.6f;
+
+                // Обоз. Свидетелей не оставляют, а «взять и отпустить» —
+                // недоделанное дело.
+                case MissionAction.TakeEverything:       return sin;
+                case MissionAction.TakePeople:           return sin * 0.2f;
+                case MissionAction.TakeGoodsSparePeople: return -sin * 0.4f;
+                case MissionAction.LetThemPass:          return -sin;
+
                 default:                          return 0f;
             }
         }

@@ -91,6 +91,9 @@
     <Compile Include="../../Assets/Scripts/Gameplay/BodyWorth.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/TitleRule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/TitleDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/MissionCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/JunctionCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/Aftermath.cs" />
   </ItemGroup>
 
 </Project>

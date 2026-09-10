@@ -117,6 +117,19 @@ namespace Sinbinder.AOS.Modules
             float sin = soul.Get(SinType.Sloth) * _config.MissionSinScale;
 
             if (action == MissionAction.IgnoreVillage) return sin;
+
+            // Обоз. Здесь у Уныния впервые есть степени: не всякая работа
+            // одинаково тяжела. Раньше всё, кроме «пройти мимо», стоило
+            // ровно -0.4 — и на развилке обоза это сделало бы «уйти»
+            // хуже безделья, что прямо наоборот.
+            switch (action)
+            {
+                case MissionAction.LetThemPass:          return sin;
+                case MissionAction.TakeGoodsSparePeople: return -sin * 0.2f;
+                case MissionAction.TakeEverything:       return -sin * 0.8f;
+                case MissionAction.TakePeople:           return -sin;
+            }
+
             return -sin * 0.4f;
         }
 

@@ -66,6 +66,17 @@ namespace Sinbinder.Crypt
         /// не видит, — занятие для полосы загрузки, а не для игрока.
         /// </summary>
         public string Send(Mission mission, string commanderName)
+            => Send(mission, commanderName, null);
+
+        /// <summary>
+        /// То же, но игрок что-то предложил на развилке.
+        ///
+        /// Предложил, а не приказал: решает командир, и его решение
+        /// может не совпасть с предложенным. Это тот же порядок, что
+        /// и в бою, — просто на уровне дороги, а не тика.
+        /// </summary>
+        public string Send(Mission mission, string commanderName,
+                           AOS.MissionAction? suggestion)
         {
             if (!EnoughPeople(mission))
                 return "Столько людей не наберётся.";
@@ -78,7 +89,18 @@ namespace Sinbinder.Crypt
 
             if (away.Count == 0) return "Никто не пошёл.";
 
-            var survivors = Expedition.Resolve(away, mission.Foes);
+            // Развилка решается до боя: она решает, будет ли бой вообще.
+            AOS.MissionAction? chosen = mission.Junction == Junction.None
+                ? null
+                : Decide(mission, away, suggestion);
+
+            bool noFight = chosen == AOS.MissionAction.LetThemPass;
+
+            var fight = noFight
+                ? new Expedition.Outcome(Names(away), 0, 0)
+                : Expedition.Fight(away, mission.Guards);
+
+            var survivors = fight.Survivors;
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
@@ -86,22 +108,122 @@ namespace Sinbinder.Crypt
 
             LastReport = Report(mission, away, survivors, commanderName);
 
+            if (chosen.HasValue)
+            {
+                LastReport += " " + JunctionCatalog.Told(chosen.Value);
+                Judge(away, survivors, chosen.Value);
+            }
+
             if (survivors.Count > 0)
             {
-                TakeSpoils(mission);
+                TakeSpoils(mission, chosen);
 
                 // Золото несут с любой вылазки, но взять его некуда,
                 // пока нет Казны. Поэтому улучшение — не прибавка
                 // к числу, а разрешение числу вообще существовать.
                 if (CryptUpgrades.Installed(Upgrade.Treasury))
                 {
-                    int coin = mission.Foes * CoinPerFoe;
-                    Inventory.PlayerInventory.Instance?.AddGold(coin);
-                    Log("В казну прибыло.");
+                    int coin = fight.Taken + Carried(mission, chosen);
+                    if (coin > 0)
+                    {
+                        Inventory.PlayerInventory.Instance?.AddGold(coin);
+                        Log("В казну прибыло.");
+                    }
                 }
             }
 
             return LastReport;
+        }
+
+        private static List<string> Names(List<SquadRoster.Member> away)
+        {
+            var names = new List<string>();
+            foreach (var m in away) names.Add(m.Name);
+            return names;
+        }
+
+        /// <summary>
+        /// Что решит командир на развилке.
+        ///
+        /// Спрашивает <see cref="AOS.BehaviourResolver"/> — тот же слой,
+        /// что решает мирные миссии, и те же семь модулей. Предложение
+        /// игрока входит в голосование как голос верности и может
+        /// проиграть совести или греху.
+        /// </summary>
+        private static AOS.MissionAction Decide(Mission mission,
+            List<SquadRoster.Member> away, AOS.MissionAction? suggestion)
+        {
+            var options = JunctionCatalog.Options(mission.Junction);
+            if (options.Count == 0) return suggestion ?? default;
+
+            SquadRoster.Member boss = away[0];
+            foreach (var m in away) if (m.IsCommander) boss = m;
+
+            var holder = new GameObject("Развилка");
+            holder.SetActive(false);   // ничьих Awake и Update: это вопрос, не сцена
+
+            try
+            {
+                var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
+                var commander = Expedition.Summon(holder, boss, relations);
+
+                var context = new AOS.MissionContext
+                {
+                    // Обоз описывается теми же фактами, что были в контексте
+                    // с самого начала: беззащитные, добыча, виноватых нет.
+                    // Заводить под него новые поля значило бы объявить,
+                    // что грабёж обоза — не то же самое, что грабёж вообще.
+                    HasInnocentVictims = true,
+                    HasTreasure = mission.Prize != Prize.None,
+                    HasGuiltyParty = false,
+                    RecentMemories = new List<AOS.MemoryRecord>(),
+                    CarriedItems = new List<Inventory.InventoryItem>(),
+                    HasSuggestion = suggestion.HasValue,
+                    SuggestedAction = suggestion ?? default
+                };
+
+                var resolver = new AOS.BehaviourResolver();
+                return resolver.DecideMission(commander, context, options);
+            }
+            finally
+            {
+                if (Application.isPlaying) Destroy(holder);
+                else DestroyImmediate(holder);
+            }
+        }
+
+        /// <summary>
+        /// Сколько денег унесли. Уйти — значит уйти ни с чем, а увести
+        /// живых — значит бросить товар: руки заняты.
+        /// </summary>
+        private static int Carried(Mission mission, AOS.MissionAction? chosen)
+        {
+            if (!chosen.HasValue) return MissionCatalog.Coin(mission.Prize);
+
+            switch (chosen.Value)
+            {
+                case AOS.MissionAction.LetThemPass: return 0;
+                case AOS.MissionAction.TakePeople:  return 0;
+                default:                            return MissionCatalog.Coin(mission.Prize);
+            }
+        }
+
+        /// <summary>
+        /// Что вернувшиеся думают о том, что сделали. Правило —
+        /// в <see cref="Aftermath"/>; здесь только применение.
+        /// </summary>
+        private static void Judge(List<SquadRoster.Member> away,
+            List<string> survivors, AOS.MissionAction chosen)
+        {
+            foreach (var m in away)
+            {
+                if (!survivors.Contains(m.Name)) continue;
+
+                float shift = Aftermath.LoyaltyShift(m.Moral, chosen);
+                if (shift != 0f) SquadRoster.ShiftLoyalty(m.Name, shift);
+
+                Log($"{m.Name}: {Aftermath.Judged(m.Moral, chosen)}.");
+            }
         }
 
         /// <summary>
@@ -147,8 +269,16 @@ namespace Sinbinder.Crypt
         /// Добыча. Души кладутся в жатву — то есть на полку зоны
         /// связывания, потому что полка это вид на жатву, а не свой запас.
         /// </summary>
-        private void TakeSpoils(Mission mission)
+        private void TakeSpoils(Mission mission, AOS.MissionAction? chosen)
         {
+            // Развилка меняет не только деньги. Резня оставляет души,
+            // уведённые живыми — тела; отпущенный обоз не оставляет
+            // ничего, и это тоже исход.
+            if (chosen == AOS.MissionAction.TakeEverything) BringSoul(mission.Name);
+            if (chosen == AOS.MissionAction.TakePeople)
+                Log("Живых увели. Что с ними делать, склеп ещё не решил.");
+            if (chosen == AOS.MissionAction.LetThemPass) return;
+
             switch (mission.Spoils)
             {
                 case Spoils.Souls:
@@ -201,9 +331,6 @@ namespace Sinbinder.Crypt
             souls.PutBack(new SoulManager.Kept(kept, SoulQuality.Acceptance));
             Log("Оттуда принесли душу. Она на полке.");
         }
-
-        /// <summary>Сколько монет приносит один поверженный.</summary>
-        private const int CoinPerFoe = 6;
 
         /// <summary>Забыть добычу при новой игре.</summary>
         public static void Forget()

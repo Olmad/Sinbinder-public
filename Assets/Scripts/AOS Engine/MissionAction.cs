@@ -15,6 +15,19 @@ namespace Sinbinder.AOS
         KillEveryone,
         KillTraveler,
         SanctifyAltar,
-        DestroyAltar
+        DestroyAltar,
+
+        // Развилка обоза (docs/19-MISSIONS.md §4.1). Отдельные значения,
+        // а не переиспользование деревенских: «обложить деревню данью»
+        // и «взять товар и отпустить» — разные поступки, и склеить их
+        // ради экономии значило бы завести вторую правду в названии.
+        /// <summary>Взять товар, людей отпустить.</summary>
+        TakeGoodsSparePeople,
+        /// <summary>Взять всё: и товар, и жизни.</summary>
+        TakeEverything,
+        /// <summary>Пропустить. Уйти ни с чем.</summary>
+        LetThemPass,
+        /// <summary>Забрать людей живыми: оболочки дороже серебра.</summary>
+        TakePeople
     }
 }

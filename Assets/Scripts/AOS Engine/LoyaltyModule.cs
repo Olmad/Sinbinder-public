@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class LoyaltyModule : IPersonalityModule
+    public class LoyaltyModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Loyalty";
         public float Weight => 1.0f;
@@ -13,6 +13,22 @@ namespace Sinbinder.AOS.Modules
         public LoyaltyModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>
+        /// Голос за предложение игрока на развилке.
+        ///
+        /// До этого верность на уровне задания не голосовала вовсе:
+        /// семь модулей спорили о совести и жадности, а игрока в этом
+        /// споре не было — он мог только смотреть. Теперь он в нём есть
+        /// ровно на тех же правах, что и в бою: один голос, который
+        /// можно перекричать.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            if (!context.HasSuggestion) return 0f;
+            if (action != context.SuggestedAction) return 0f;
+            return soul.Loyalty * _config.MissionLoyaltyWeight;
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
