@@ -94,7 +94,12 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private static string Count(int n)
+        /// <summary>
+        /// «Пятерых», «троих» — счёт словами. Открыт наружу: панель
+        /// совета говорит о том же отряде теми же словами, и второй
+        /// словарь чисел разошёлся бы с этим на первой же правке.
+        /// </summary>
+        public static string Count(int n)
         {
             switch (n)
             {

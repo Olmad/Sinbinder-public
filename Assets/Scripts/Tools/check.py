@@ -17,6 +17,7 @@ System.Linq, использование переменной до объявле
     python3 Tools/check.py --quiet     только итог
 """
 
+import glob
 import io
 import os
 import re
@@ -104,8 +105,24 @@ RE_MEMBER_DECL = re.compile(
     r'(?:static\s+|readonly\s+|virtual\s+|override\s+|const\s+)*'
     r'([\w<>\[\]\.]+\??)\s+(\w+)\s*(?:\{\s*get|=>|;|=[^=])', re.M)
 
+# Что код ищет в сцене и что создаёт сам. Разница между этими двумя
+# списками и есть «написано, но до сцены не доведено».
+RE_FIND_TYPE = re.compile(
+    r'Find(?:FirstObjectByType|AnyObjectByType|ObjectOfType'
+    r'|ObjectsByType|ObjectsOfType)\s*<\s*([A-Za-z0-9_.]+)\s*>')
+RE_MAKE_TYPE = re.compile(
+    r'(?:AddComponent|AddIfMissing|Require)\s*<\s*([A-Za-z0-9_.]+)\s*>')
+
 RE_NEW = re.compile(r'\bnew\s+(?:[A-Z]\w*\s*\.\s*)*([A-Z]\w+)\s*[\(\{]')
 SPLIT_ARGS = re.compile(r',(?![^<>()]*[>)])')
+
+
+def owner_file(files, name):
+    """Файл, в котором объявлен тип. Для места в отчёте."""
+    for p in files:
+        if os.path.splitext(os.path.basename(p))[0] == name:
+            return p
+    return name
 
 
 def collect(root='.'):
@@ -351,6 +368,95 @@ class Checker:
                             f'CS0019: {what} — это структура {t}, '
                             f'её нельзя сравнить с null. Если проверка нужна, '
                             f'сравнивать надо поле или объявлять {t}?')
+
+    def is_scene_component(self, path):
+        """Компонент ли это, который вообще может стоять в сцене."""
+        return bool(RE_MONO_CLASS.search(self.src.get(path, '')))
+
+    def scene_presence(self):
+        """
+        Тип ищут в сцене, а его нет ни в одной.
+
+        Заведено по следу, который тянется через весь проект. За один
+        день эта поломка нашлась четырежды, и каждый раз её находил
+        человек, глазами, случайно:
+
+        - DialogueCameraController не стоял нигде — наезда камеры
+          на говорящего не случалось ни разу за всё время;
+        - PlayerInventory не стоял нигде — плата после боя уходила в никуда;
+        - SoulManager не стоял нигде — души не угасали;
+        - навмеша не было ни в одной сцене — никто не мог сделать шага.
+
+        Все четыре — один разрыв: система написана, звена до сцены нет.
+        Компилятор молчит, потому что код верен. Стенд молчит, потому что
+        сцен не знает. Молчат все, и узнаётся это, только когда кто-то
+        сядет играть.
+
+        Ловится дёшево: имя файла равно имени MonoBehaviour (правило
+        проекта), у файла есть .meta с GUID, а сцена — текст, в котором
+        GUID либо встречается, либо нет. Unity для этого не нужен,
+        то есть проверка доступна и облачной сессии.
+
+        Осторожность как везде: если тип кто-то создаёт на ходу
+        (AddComponent, AddIfMissing, Require) — молчим, это законно.
+        """
+        scenes = glob.glob(os.path.join('Assets', 'Scenes', '*.unity'))
+        if not scenes:
+            return          # облачная раскладка: сцен в этой папке нет
+
+        # Имя типа -> GUID его скрипта.
+        owner = {}
+        for p in self.files:
+            meta = p + '.meta'
+            if not os.path.exists(meta):
+                continue
+            m = re.search(r'guid:\s*([0-9a-f]{32})',
+                          io.open(meta, encoding='utf-8', errors='replace').read())
+            if m:
+                owner[os.path.splitext(os.path.basename(p))[0]] = m.group(1)
+
+        here = set()
+        for sc in scenes:
+            text = io.open(sc, encoding='utf-8', errors='replace').read()
+            here.update(re.findall(r'guid:\s*([0-9a-f]{32})', text))
+
+        searched, made = defaultdict(set), set()
+        for p, s in self.src.items():
+            body = strip(s)
+            for m in RE_FIND_TYPE.finditer(body):
+                searched[m.group(1).rsplit('.', 1)[-1]].add(p)
+            for m in RE_MAKE_TYPE.finditer(body):
+                made.add(m.group(1).rsplit('.', 1)[-1])
+
+        for name in sorted(searched):
+            if name in made:
+                continue
+            guid = owner.get(name)
+            if guid is None:
+                continue        # не наш скрипт: тип движка или обобщённый
+            if guid in here:
+                continue
+
+            # Ищущий сам может быть вне сцен — отладочный спавнер, которого
+            # никто не ставит. Тогда и поиск никогда не случится, и говорить
+            # не о чем: ложная тревога обесценивает весь отчёт.
+            #
+            # Но молчать так можно только про компоненты. Статический класс
+            # в сцене не стоит и стоять не может, а код его исполняется
+            # откуда угодно — значит поиск живой. Именно так устроен
+            # TitleCeremony, и без этой оговорки правило проглядело бы
+            # ровно ту находку, ради которой заведено.
+            if all(self.is_scene_component(p) and
+                   owner.get(os.path.splitext(os.path.basename(p))[0]) not in here
+                   for p in searched[name]):
+                continue
+
+            where = ', '.join(sorted(
+                os.path.basename(p) for p in searched[name])[:3])
+            self.report(owner_file(self.files, name), 0,
+                        f'{name} ищут в сцене ({where}), но его нет ни в одной '
+                        f'из {len(scenes)}: поиск всегда вернёт null, и всё, '
+                        f'что за ним, молча не произойдёт')
 
     def report(self, path, line, text):
         self.problems.append((path, line, text))
@@ -712,6 +818,7 @@ class Checker:
         self.unknown_new()
         self.constructor_arity()
         self.struct_vs_null()
+        self.scene_presence()
         return self.problems
 
 

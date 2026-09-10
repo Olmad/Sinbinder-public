@@ -674,6 +674,12 @@ namespace Sinbinder.Utilets
             // в глаза: взгляд остаётся приклеенным к глазам героя.
             managers.AddComponent<Sinbinder.Dialogue.DialogueCameraController>();
 
+            // Церемония титула. Найдена смотром сцен: TitleCeremony —
+            // статический класс, он искал этот компонент и не находил,
+            // поэтому титулы присуждались молча, без единой сцены
+            // за всё время. Тот же разрыв, что был у камеры разговора.
+            managers.AddComponent<AOS.TitleCeremonyBehaviour>();
+
             // Угасающие души. Его не было ни в одной сцене, поэтому
             // жатва — механика сцены 4 — не работала вовсе.
             managers.AddComponent<SoulManager>();
@@ -1092,6 +1098,11 @@ namespace Sinbinder.Utilets
             ball.transform.localPosition = new Vector3(0f, 1.22f, 0f);
             ball.transform.localScale = Vector3.one * 0.42f;
 
+            // Подпись с клавишей. Совет открывается нажатием, и об этом
+            // надо сказать там, где нажимают, — а не строкой в журнале,
+            // которую к тому времени уже пролистали.
+            Plate(ball.transform, "Военный совет — F", 1.4f);
+
             var glow = new GameObject("Свечение");
             glow.transform.SetParent(ball.transform);
             glow.transform.localPosition = Vector3.zero;
@@ -1412,9 +1423,14 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void BuildCouncil(Transform parent)
         {
+            // Три столбца: кто, каков он, куда идти. Слева выбирают,
+            // посередине читают о выбранном, справа — о деле. Раньше всё
+            // это лежало одной колонкой, и четыре строки пророчества
+            // на каждого превращали список в простыню, по которой игрок
+            // щёлкал не читая — а щелчок был сразу и назначением.
             var panel = Panel("Военный совет", parent,
                 anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
-                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(980f, 560f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 620f),
                 position: Vector2.zero);
 
             var backdrop = panel.gameObject.AddComponent<Image>();
@@ -1423,22 +1439,54 @@ namespace Sinbinder.Utilets
             var title = Label("Заголовок", panel, 34, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 48f);
 
-            // Контейнер строк: сами строки создаёт панель в рантайме,
-            // потому что пророчество считается движком, а не редактором.
-            var rows = Panel("Кандидаты", panel,
-                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
-                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 470f),
-                position: new Vector2(0f, -80f));
-            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
-            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+            var rows = Column("Кандидаты", panel, 0f, 0.33f);
+            var middle = Column("Кто выбран", panel, 0.345f, 0.655f);
+            var right = Column("Дело", panel, 0.67f, 1f);
 
-            // Компонент висит на Canvas, а не на самой панели: в Start он
-            // панель выключает, а у выключенного объекта не крутится Update —
-            // и слежение за тем, подошёл ли игрок к столу, не работало бы
-            // ни разу. Ровно на этом уже обжёгся DialogueUI.
+            Tint(middle, new Color(0.09f, 0.08f, 0.08f, 0.55f));
+            Tint(right, new Color(0.09f, 0.08f, 0.08f, 0.55f));
+
+            var detail = Label("Описание", middle, 21, TextAnchor.UpperLeft,
+                new Vector2(0f, -16f), 380f);
+            detail.horizontalOverflow = HorizontalWrapMode.Wrap;
+            detail.verticalOverflow = VerticalWrapMode.Truncate;
+
+            var quest = Label("Задача", right, 21, TextAnchor.UpperLeft,
+                new Vector2(0f, -16f), 460f);
+            quest.horizontalOverflow = HorizontalWrapMode.Wrap;
+            quest.verticalOverflow = VerticalWrapMode.Truncate;
+            quest.color = new Color(0.80f, 0.76f, 0.70f);
+
+            // Назначение отдельной кнопкой, внизу среднего столбца: решение
+            // принимается один раз и нарочно, а не первым касанием списка.
+            var confirm = Choice("Назначить", middle, new Vector2(0f, -232f),
+                                 out var confirmLabel);
+
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.CommanderCouncilUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
-                     ("_font", UIFont()));
+                     ("_font", UIFont()), ("_detail", detail), ("_quest", quest),
+                     ("_confirm", confirm), ("_confirmLabel", confirmLabel));
+        }
+
+        /// <summary>Столбец панели: доля ширины от левого края до правого.</summary>
+        private static RectTransform Column(string name, RectTransform parent,
+                                            float from, float to)
+        {
+            var rt = Panel(name, parent,
+                anchorMin: new Vector2(from, 0f), anchorMax: new Vector2(to, 1f),
+                pivot: new Vector2(0.5f, 0.5f), size: Vector2.zero, position: Vector2.zero);
+
+            rt.offsetMin = new Vector2(20f, 24f);
+            rt.offsetMax = new Vector2(-20f, -84f);
+            return rt;
+        }
+
+        /// <summary>Подложка столбца: отделяет его от соседнего без рамок.</summary>
+        private static void Tint(RectTransform rt, Color color)
+        {
+            var image = rt.gameObject.AddComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
         }
 
         /// <summary>

@@ -32,11 +32,27 @@ namespace Sinbinder.UI
         [SerializeField] private RectTransform _rows;
         [SerializeField] private Font _font;
 
+        [Header("Три столбца")]
+        [Tooltip("Средний столбец: кто выбран и чего от него ждать.")]
+        [SerializeField] private Text _detail;
+
+        [Tooltip("Правый столбец: куда отряд идёт и что там известно.")]
+        [SerializeField] private Text _quest;
+
+        [SerializeField] private Button _confirm;
+        [SerializeField] private Text _confirmLabel;
+
+        [Header("Открытие")]
+        [Tooltip("Совет открывается нажатием, а не подходом: игрок должен "
+               + "решить, что он к столу подошёл, а не оказаться перед "
+               + "выбором из трёх судеб оттого, что прошёл мимо.")]
+        [SerializeField] private KeyCode _openKey = KeyCode.F;
+
         [Tooltip("Запасной срок. Совет открывает шар, когда игрок подходит "
                + "к столу; счётчик нужен только на случай, когда подходить "
                + "не к чему — шара в сцене нет или нет камеры. Тогда совет "
                + "откроется сам и скажет об этом в консоль: пропавшая сцена "
-               + "должна быть слышна, а не тиха.\n\n"
+               + "должна быть слышна, а не тиха." + Break
                + "Было 45 секунд, и это столкнулось со сбором к столу: "
                + "Карган просит собрать отряд на четырнадцатой секунде, "
                + "и на весь сбор оставалось полминуты. Игрок, делающий "
@@ -45,15 +61,20 @@ namespace Sinbinder.UI
                + "для сломанной сцены, а не для медлительного игрока.")]
         [SerializeField] private float _openAfterSeconds = 180f;
 
-        /// <summary>
-        /// Вздох между «дошёл» и «выбирай». Не постановочная пауза:
-        /// ровно столько нужно, чтобы прочесть реплику Каргана и понять,
-        /// что сейчас будет решение.
-        /// </summary>
-        [SerializeField] private float _leadInSeconds = 3f;
-
         private bool _approached;
-        private float _opensAt;
+
+        /// <summary>Кого игрок отметил. Назначения ещё не было.</summary>
+        private Option? _picked;
+
+        /// <summary>
+        /// Кого игрок предпочитает — и потому чья половина списка сверху.
+        ///
+        /// Не настройка, а наблюдение: список перестраивается под того,
+        /// кого игрок только что отметил. Отметил опытного — опытные идут
+        /// первыми; отметил новичка — первыми новички. Панель показывает
+        /// игроку его же выбор, а не спорит с ним.
+        /// </summary>
+        private bool _preferExperienced = true;
 
         [Tooltip("Сколько человек требует миссия доли 3. Карган объясняет "
                + "это вслух: «там довольно опасно, нужно пятеро». Тот, чей "
@@ -121,22 +142,18 @@ namespace Sinbinder.UI
 
             if (!_ball.PlayerIsClose()) return;
 
-            // Подводка. Раньше панель открывалась в тот же кадр, в который
-            // игрок оказался рядом, — а «рядом» тогда значило «навёл камеру»,
-            // и выбор из трёх судеб падал на игрока без спроса и без повода.
-            //
-            // Теперь между подходом и выбором стоит вздох: Карган успевает
-            // сказать, зачем звал, а игрок — понять, что сейчас будет
-            // решение, а не следующая строка в журнале.
+            // Подойти — не значит согласиться. Раньше панель открывалась
+            // в тот же кадр, в который игрок оказался рядом, и выбор из трёх
+            // судеб падал на него без спроса. Теперь у стола Карган говорит,
+            // зачем звал, а совет держится нажатием: решение начинается
+            // с решения его начать.
             if (!_approached)
             {
                 _approached = true;
-                _opensAt = Time.time + _leadInSeconds;
                 Greet();
-                return;
             }
 
-            if (Time.time < _opensAt) return;
+            if (!Input.GetKeyDown(_openKey)) return;
 
             Open();
         }
@@ -151,8 +168,9 @@ namespace Sinbinder.UI
             var log = Object.FindFirstObjectByType<BattleLogUI>();
             if (log == null) return;
 
-            log.Write("Карган: «Пришли. Тогда решайте, владыка: кого отправить, "
-                    + "а кого при себе оставить. Я скажу, чего от каждого ждать».");
+            log.Write($"Карган: «Пришли. Нажмите {_openKey} — и решайте, владыка: "
+                    + "кого отправить, а кого при себе оставить. Я скажу, "
+                    + "чего от каждого ждать».");
         }
 
         /// <summary>
@@ -176,6 +194,19 @@ namespace Sinbinder.UI
             var options = FindOptions();
             if (options.Count == 0) return;
 
+            _picked = null;
+
+            // Кнопку связываем здесь, а не в Start: панель может быть
+            // собрана руками, и слушатель, повешенный дважды, назначил бы
+            // старшего дважды.
+            if (_confirm != null)
+            {
+                _confirm.onClick.RemoveAllListeners();
+                _confirm.onClick.AddListener(Appoint);
+            }
+
+            if (_quest != null) _quest.text = QuestText();
+            ShowDetail(null);
             Build(options);
 
             _panel.SetActive(true);
@@ -269,6 +300,12 @@ namespace Sinbinder.UI
             options.Sort((a, b) =>
             {
                 if (a.CanChoose != b.CanChoose) return a.CanChoose ? -1 : 1;
+
+                // Половина, которую игрок предпочитает, идёт первой.
+                bool ea = Leadership.IsExperienced(a.Skill);
+                bool eb = Leadership.IsExperienced(b.Skill);
+                if (ea != eb) return ea == _preferExperienced ? -1 : 1;
+
                 if (!Mathf.Approximately(a.Skill, b.Skill)) return b.Skill.CompareTo(a.Skill);
                 return string.CompareOrdinal(a.Warrior.DisplayName, b.Warrior.DisplayName);
             });
@@ -288,7 +325,7 @@ namespace Sinbinder.UI
             {
                 var row = Row(option, y);
                 _spawned.Add(row);
-                y -= 178f;
+                y -= 78f;
             }
         }
 
@@ -305,7 +342,7 @@ namespace Sinbinder.UI
             rt.pivot = new Vector2(0f, 1f);
             rt.offsetMin = new Vector2(0f, 0f);
             rt.offsetMax = new Vector2(0f, 0f);
-            rt.sizeDelta = new Vector2(0f, 168f);
+            rt.sizeDelta = new Vector2(0f, 70f);
             rt.anchoredPosition = new Vector2(0f, y);
 
             var plate = go.AddComponent<Image>();
@@ -320,10 +357,15 @@ namespace Sinbinder.UI
             {
                 var button = go.AddComponent<Button>();
                 button.targetGraphic = plate;
-                button.onClick.AddListener(() => Choose(warrior));
+
+                // Щелчок отмечает, а не назначает. Пророчество — четыре
+                // строки, и решать по ним, не прочитав, игрок не должен:
+                // раньше первый же щелчок был окончательным.
+                var chosen = option;
+                button.onClick.AddListener(() => Select(chosen));
             }
 
-            Label(rt, warrior.DisplayName, 30, new Vector2(18f, -10f), 40f,
+            Label(rt, warrior.DisplayName, 26, new Vector2(18f, -8f), 32f,
                 option.CanChoose);
 
             // Навык командования словами, без шкалы: цифры игроку не
@@ -332,12 +374,7 @@ namespace Sinbinder.UI
             Label(rt, option.CanChoose
                     ? Leadership.Describe(option.Skill)
                     : option.Blocked,
-                20, new Vector2(18f, -48f), 26f, option.CanChoose);
-
-            // Четыре строки настоящего пророчества. Последняя из них —
-            // и есть завязка доли 6.
-            Label(rt, TemperamentPredictor.Describe(warrior), 21,
-                new Vector2(18f, -76f), 84f, option.CanChoose);
+                18, new Vector2(18f, -38f), 24f, option.CanChoose);
 
             return go;
         }
@@ -368,6 +405,84 @@ namespace Sinbinder.UI
             label.verticalOverflow = VerticalWrapMode.Overflow;
             label.raycastTarget = false;      // клик обязан доходить до строки
             label.text = text;
+        }
+
+        /// <summary>
+        /// Отметить кандидата: середина рассказывает о нём, список
+        /// перестраивается под его половину, кнопка назначения оживает.
+        /// </summary>
+        private void Select(Option option)
+        {
+            if (_done) return;
+
+            _picked = option;
+            _preferExperienced = Leadership.IsExperienced(option.Skill);
+
+            ShowDetail(option);
+            Build(FindOptions());
+        }
+
+        /// <summary>
+        /// Средний столбец. Пока никто не отмечен — говорит, что делать,
+        /// а не молчит пустотой: пустая колонка читается как поломка.
+        /// </summary>
+        private void ShowDetail(Option? option)
+        {
+            bool has = option.HasValue;
+
+            if (_confirm != null) _confirm.interactable = has;
+
+            if (_confirmLabel != null)
+                _confirmLabel.text = has
+                    ? $"Поставить старшим: {option.Value.Warrior.DisplayName}"
+                    : "Выберите, кого поставить";
+
+            if (_detail == null) return;
+
+            if (!has)
+            {
+                _detail.text = "Выберите имя слева." + Break
+                             + "Здесь Карган скажет, чего от него ждать: "
+                             + "сколько уведёт и как поведёт себя, "
+                             + "когда станет трудно.";
+                return;
+            }
+
+            var o = option.Value;
+
+            // Пророчество не пишется руками: его считает движок теми же
+            // модулями, что решают в бою. Иначе панель однажды пообещает
+            // не то, что случится.
+            _detail.text = o.Warrior.DisplayName + Break
+                         + Leadership.Describe(o.Skill) + Break
+                         + TemperamentPredictor.Describe(o.Warrior);
+        }
+
+        /// <summary>Пустая строка между абзацами. Одно место на весь класс.</summary>
+        private const string Break = "\n\n";
+
+        /// <summary>
+        /// Правый столбец: куда идёт отряд. Без чисел — сколько нужно
+        /// людей, сказано словами, как и всё остальное.
+        /// </summary>
+        private string QuestText()
+        {
+            return "Точка интереса" + Break
+                 + "Разведка донесла: за холмами стоит брошенная застава. "
+                 + "Взять там есть что, и потому там небезопасно." + Break
+                 + "Карган: «Там довольно опасно, владыка. Нужен старший, "
+                 + $"который уведёт {Leadership.Count(_requiredSquad)}. "
+                 + "Кто столько не уводит — в списке виден, но не годится, "
+                 + "и рядом написано почему»." + Break
+                 + "Отряд уйдёт сразу. Вернётся не весь и не таким, "
+                 + "каким уходил.";
+        }
+
+        /// <summary>Назначить отмеченного. Отдельно от отметки: решение одно.</summary>
+        private void Appoint()
+        {
+            if (_done || !_picked.HasValue) return;
+            Choose(_picked.Value.Warrior);
         }
 
         private void Choose(Warrior warrior)

@@ -341,6 +341,32 @@ namespace N
 }
 '''}, 'CS0019'),
 
+    ('scene_presence', {
+        'Assets/Scenes/Test.unity': 'GameObject:\n  m_Name: Managers\n',
+        'Lonely.cs': '''
+using UnityEngine;
+namespace N
+{
+    public class Lonely : MonoBehaviour { }
+}
+''',
+        'Lonely.cs.meta': 'guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
+        'Seeker.cs': '''
+using UnityEngine;
+namespace N
+{
+    public static class Seeker
+    {
+        public static void M()
+        {
+            var x = Object.FindFirstObjectByType<Lonely>();
+        }
+    }
+}
+''',
+        'Seeker.cs.meta': 'guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
+    }, 'нет ни в одной'),
+
     ('input_handler', {
         'ProjectSettings/ProjectSettings.asset': '  activeInputHandler: 1\n',
         'Keys.cs': '''
