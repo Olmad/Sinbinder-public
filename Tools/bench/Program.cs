@@ -889,6 +889,49 @@ static class Bench
     /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
     /// нигде и никогда.
     /// </summary>
+    static void CommitmentCheck()
+    {
+        Console.WriteLine("\n=== ОБЯЗАТЕЛЬСТВО: держится ли запрет ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        Commitment.Reset();
+        Check(!Commitment.On, "обязательство взято само собой");
+        Check(Commitment.CanLoad, "в свободной игре не грузится");
+
+        Commitment.Set(true);
+        Check(Commitment.On, "обязательство не взялось");
+        Check(!Commitment.CanLoad,
+              "в ответственной игре можно грузиться — тогда отказ ничего не стоит, "
+            + "и весь движок работает впустую");
+
+        // Запрет обязан объясняться. Молчащая клавиша читается как
+        // поломка, а этот запрет — половина замысла.
+        Check(!string.IsNullOrWhiteSpace(Commitment.WhyNoLoad),
+              "запрет на загрузку ничем не объяснён");
+        Check(!Commitment.WhyNoLoad.Any(char.IsDigit),
+              "в объяснении запрета появилась цифра");
+
+        foreach (bool on in new[] { false, true })
+        {
+            string name = Commitment.Describe(on);
+            Console.WriteLine($"  {(on ? "с обязательством" : "свободно"),-18} «{name}»");
+            Check(!string.IsNullOrWhiteSpace(name), "режим не назван");
+            Check(!name.Any(char.IsDigit), "в названии режима появилась цифра");
+        }
+
+        Commitment.Set(false);
+        Check(Commitment.CanLoad, "обязательство не снимается");
+
+        Commitment.Reset();
+        Console.WriteLine(bad == 0 ? "  Обязательство: чисто."
+                                   : $"  Обязательство: провалов {bad}.");
+    }
+
     static void ClarityFlagsCheck()
     {
         Console.WriteLine("\n=== ГАЛОЧКИ: разбирается ли лестница на части ===");
@@ -3490,6 +3533,7 @@ static class Bench
         CampFocusCheck();
         TransparencyCheck();
         ClarityFlagsCheck();
+        CommitmentCheck();
         FallenCheck();
         SoulDecayCheck();
         ExpeditionCheck(cfg);

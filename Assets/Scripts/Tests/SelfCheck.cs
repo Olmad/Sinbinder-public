@@ -76,6 +76,7 @@ namespace Sinbinder.Tests
                 Approach();
                 Ladder();
                 Spoils();
+                Saving();
                 TextRules();
             }
             catch (Exception e)
@@ -145,6 +146,85 @@ namespace Sinbinder.Tests
                   "унылый почему-то нёс трофей");
             Same(BodyWorth.Equipment(ShellType.Skeleton, idle), null,
                  "у трупа без снаряжения нашлось название предмета");
+        }
+
+        // ================= сохранение =================
+
+        /// <summary>
+        /// Снимок игры доходит до файла и возвращается целым.
+        ///
+        /// Стенду это не проверить: JsonUtility — настоящий Unity,
+        /// и ведёт он себя по-своему. Плоские поля, никаких свойств,
+        /// никаких словарей — узнаётся это обычно на пустом файле,
+        /// который записался без единой ошибки.
+        /// </summary>
+        private static void Saving()
+        {
+            var wasCommitment = Commitment.On;
+            var kept = new List<SquadRoster.Member>(SquadRoster.Members);
+
+            try
+            {
+                SquadRoster.Set(new[]
+                {
+                    new SquadRoster.Member
+                    {
+                        Name = "Проба", Sin = SinType.Greed, Moral = MoralType.Vicious,
+                        Intensity = 60f, Loyalty = 42f, UnpaidMissions = 3,
+                        Leadership = 5f, IsCommander = true,
+                    },
+                    new SquadRoster.Member
+                    {
+                        Name = "Второй", Sin = SinType.Sloth, Moral = MoralType.Pious,
+                        Intensity = -30f, Loyalty = 71f,
+                    },
+                });
+
+                Commitment.Set(true);
+
+                var snapshot = SaveSystem.Snapshot();
+                Same(snapshot.Squad.Count, 2, "снимок взял не весь отряд");
+
+                // Через текст и обратно: в игре между снимком и возвратом
+                // всегда стоит файл, и проверять надо путь целиком.
+                string json = JsonUtility.ToJson(snapshot);
+                var back = JsonUtility.FromJson<SaveGame>(json);
+
+                Check(back != null, "снимок не прочитался обратно");
+                if (back == null) return;
+
+                SquadRoster.Clear();
+                Check(SaveSystem.Restore(back), "снимок не принят обратно");
+
+                Same(SquadRoster.Members.Count, 2, "вернулся не весь отряд");
+                if (SquadRoster.Members.Count < 2) return;
+
+                var first = SquadRoster.Members[0];
+                Same(first.Name, "Проба", "имя не пережило файл");
+                Same(first.Sin, SinType.Greed, "грех не пережил файл");
+                Same(first.Moral, MoralType.Vicious, "мораль не пережила файл");
+                Near(first.Loyalty, 42f, "верность не пережила файл");
+                Same(first.UnpaidMissions, 3, "долг не пережил файл");
+                Check(first.IsCommander, "старшинство не пережило файл");
+
+                var second = SquadRoster.Members[1];
+                Near(second.Intensity, -30f, "добродетель вернулась грехом: "
+                                           + "знак спектра потерян");
+
+                Check(Commitment.On, "режим обязательств не пережил файл — "
+                                   + "ответственную игру можно было бы открыть свободной");
+
+                // Файл другого уклада обязан быть отвергнут целиком.
+                back.Version = SaveGame.Current + 1;
+                Check(!SaveSystem.Restore(back),
+                      "снимок чужого уклада прочитан: половина состояния "
+                    + "хуже, чем ничего, потому что выглядит целой");
+            }
+            finally
+            {
+                SquadRoster.Set(kept);
+                Commitment.Set(wasCommitment);
+            }
         }
 
         // ================= утверждения =================

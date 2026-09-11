@@ -111,6 +111,27 @@ namespace Sinbinder.Crypt
         public static float FadeMultiplier => Installed(Upgrade.Cellar) ? 2f : 1f;
 
         /// <summary>Забыть при новой игре.</summary>
+        /// <summary>Что стоит и что принесено — копией, для сохранения.</summary>
+        public static bool[] InstalledAll() => (bool[])_installed.Clone();
+
+        /// <summary>То же про принесённое, но не поставленное.</summary>
+        public static bool[] BroughtAll() => (bool[])_brought.Clone();
+
+        /// <summary>
+        /// Восстановить из сохранения. Короткий массив не ошибка,
+        /// а старый файл: чего в нём нет, того не было.
+        /// </summary>
+        public static void Restore(bool[] installed, bool[] brought)
+        {
+            Forget();
+
+            for (int i = 0; i < _installed.Length; i++)
+            {
+                if (installed != null && i < installed.Length) _installed[i] = installed[i];
+                if (brought != null && i < brought.Length) _brought[i] = brought[i];
+            }
+        }
+
         public static void Forget()
         {
             for (int i = 0; i < _installed.Length; i++)

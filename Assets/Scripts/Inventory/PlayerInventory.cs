@@ -64,6 +64,17 @@ namespace Sinbinder.Inventory
         public int MaxSlots => _maxSlots;
         public int Gold => _gold;
 
+        /// <summary>
+        /// Поставить казну целиком. Нужно загрузке: складывать
+        /// сохранённое золото через AddGold значило бы прибавлять
+        /// его к тому, что уже лежит в кошельке этой сессии.
+        /// </summary>
+        public void SetGold(int amount)
+        {
+            _gold = amount < 0 ? 0 : amount;
+            OnInventoryChanged?.Invoke();
+        }
+
         public void AddGold(int amount)
         {
             _gold += amount;

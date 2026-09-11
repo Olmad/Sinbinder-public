@@ -91,6 +91,13 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Положить душу обратно — банку вернули на полку.</summary>
+        /// <summary>
+        /// Убрать с полки всё. Нужно загрузке: сохранённые души
+        /// кладутся поверх, и без этого полка складывалась бы
+        /// с полкой текущей игры.
+        /// </summary>
+        public void ClearShelf() => _harvested.Clear();
+
         public void PutBack(Kept kept)
         {
             if (kept.Soul == null) return;
