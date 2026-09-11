@@ -393,6 +393,22 @@ namespace N
 ''',
     }, 'женщины в этом мире уникальны'),
 
+    ('console_key/тильду заняли', {
+        'UI/Hotkey.cs': '''
+using UnityEngine;
+namespace N
+{
+    public class Hotkey : MonoBehaviour
+    {
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.BackQuote)) { }
+        }
+    }
+}
+''',
+    }, 'отведена под консоль'),
+
     ('input_handler', {
         'ProjectSettings/ProjectSettings.asset': '  activeInputHandler: 1\n',
         'Keys.cs': '''

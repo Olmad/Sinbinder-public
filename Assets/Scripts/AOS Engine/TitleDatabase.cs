@@ -30,11 +30,24 @@ namespace Sinbinder.AOS
             // ──────────────────────────────────
             // Жадные титулы (действие Loot / CollectMostLoot)
             // ──────────────────────────────────
-            new TitleRule { Title = "Костекоп", MainDeed = DeedType.CollectMostLoot, RequiredCount = 5, RequiredImportance = 40 },
-            new TitleRule { Title = "Золотоискатель", MainDeed = DeedType.CollectMostLoot, RequiredCount = 12, RequiredImportance = 70 },
+            // Счёт деяний здесь ничего не решал. Важность набирается
+            // за тридцать–шестьдесят трупов, а счёт — за пять–двенадцать,
+            // и второе условие было мёртвым: имя держала одна важность.
+            //
+            // Счёт поднят к тому же месту, где стоит важность, и потому
+            // титул приходит тогда же, когда приходил: балансовое «когда»
+            // не тронуто, починено только «чем». Теперь оба условия
+            // связывают, и связывают разных игроков: у того, кто обирает
+            // редко, но богато, первым упирается счёт; у того, кто тащит
+            // всё подряд, — важность.
+            //
+            // Замер: Tools/bench → ДОБЫЧА, столбцы «трупов по счёту»
+            // и «трупов по важности».
+            new TitleRule { Title = "Костекоп", MainDeed = DeedType.CollectMostLoot, RequiredCount = 30, RequiredImportance = 40 },
+            new TitleRule { Title = "Золотоискатель", MainDeed = DeedType.CollectMostLoot, RequiredCount = 52, RequiredImportance = 70 },
             new TitleRule { Title = "Мародёр", MainDeed = DeedType.FindTreasure, RequiredCount = 15, RequiredImportance = 40 },
-            new TitleRule { Title = "Скупой", MainDeed = DeedType.CollectMostLoot, RequiredCount = 8, RequiredImportance = 35 },
-            new TitleRule { Title = "Золотые Руки", MainDeed = DeedType.CollectMostLoot, RequiredCount = 6, RequiredImportance = 50 },
+            new TitleRule { Title = "Скупой", MainDeed = DeedType.CollectMostLoot, RequiredCount = 26, RequiredImportance = 35 },
+            new TitleRule { Title = "Золотые Руки", MainDeed = DeedType.CollectMostLoot, RequiredCount = 37, RequiredImportance = 50 },
 
             // ──────────────────────────────────
             // Трусливые / Выживальщики

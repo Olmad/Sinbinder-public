@@ -82,6 +82,7 @@ namespace Sinbinder.Utilets
             // Доли 0 и 3 живут только здесь: строка открывает пролог,
             // совет собирается один раз и переносится дальше составом отряда.
             var canvas = Interface();
+            BuildStartPanel(canvas);
             BuildCouncil(canvas);
             BuildTitle(canvas);
 
@@ -273,6 +274,7 @@ namespace Sinbinder.Utilets
             Managers();
 
             var canvas = Interface();
+            BuildStartPanel(canvas);
             BuildTitle(canvas, "Полигон. Поставьте условие — и повторите.");
 
             // Склеп начинается от первого лица: здесь ходят между зонами
@@ -1233,6 +1235,7 @@ namespace Sinbinder.Utilets
             BuildMomentCaption(canvasGO.transform);
             BuildClarityPanel(canvasGO.transform);
             BuildSaveSlots(canvasGO.transform);
+            BuildPause(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
             BuildCommandHint(canvasGO.transform);
@@ -1883,6 +1886,69 @@ namespace Sinbinder.Utilets
             rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.ClarityPanel>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
+        }
+
+        /// <summary>
+        /// Дверь в игру: режим партии и «продолжить».
+        ///
+        /// Ставится <b>только в первую сцену</b>, а не в общий набор:
+        /// демо идёт через три сцены, и вопрос, заданный в каждой,
+        /// превратил бы уговор в формальность. Сам компонент к тому же
+        /// спрашивает один раз за запуск — два сторожа здесь не лишние,
+        /// потому что сцены собираются по одной и забыть легко.
+        /// </summary>
+        private static void BuildStartPanel(Transform parent)
+        {
+            var panel = Panel("Начало", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 720f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.03f, 0.03f, 0.04f, 0.99f);
+
+            var title = Label("Заголовок", panel, 34, TextAnchor.UpperLeft,
+                new Vector2(0f, -28f), 60f);
+
+            var rows = Panel("Строки", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 600f),
+                position: new Vector2(0f, -104f));
+            rows.offsetMin = new Vector2(28f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-28f, rows.offsetMax.y);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.StartPanel>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
+        }
+
+        /// <summary>
+        /// Пауза. В каждой сцене, в отличие от начала: остановиться
+        /// игрок вправе где угодно.
+        /// </summary>
+        private static void BuildPause(Transform parent)
+        {
+            var panel = Panel("Пауза", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(760f, 600f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.04f, 0.04f, 0.05f, 0.97f);
+
+            var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
+                new Vector2(0f, -22f), 54f);
+
+            var rows = Panel("Строки", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 510f),
+                position: new Vector2(0f, -82f));
+            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.PauseMenu>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
                      ("_font", UIFont()));
         }

@@ -270,6 +270,32 @@ class Checker:
         'Tests/SelfCheck.cs',     # доказательство, а не выдача
     )
 
+    # Клавиша, отведённая под консоль. Занимать её нельзя ничем:
+    # консоль открывается одним движением и обязана открываться всегда,
+    # а разбирательство «почему тильда делает что-то другое» стоит
+    # дороже любой сэкономленной клавиши.
+    CONSOLE_KEYS = ('KeyCode.BackQuote', 'KeyCode.Tilde')
+
+    def console_key(self):
+        """
+        Клавиша консоли занята чем-то другим.
+
+        Решение автора: на «ё» ничего не вешать, там будет особенная
+        консоль. Правило заведено до самой консоли нарочно — занятую
+        клавишу освобождать дороже, чем не занимать, а узнают о занятии
+        обычно в тот день, когда консоль уже написана.
+        """
+        for p, s in self.src.items():
+            body = strip(s)
+            for key in self.CONSOLE_KEYS:
+                i = body.find(key)
+                if i < 0:
+                    continue
+
+                self.report(p, line_of(body, i),
+                            f'{key} отведена под консоль и занята быть '
+                            'не может — выберите другую клавишу')
+
     def unique_women(self):
         """
         Женщину нельзя сгенерировать.
@@ -890,6 +916,7 @@ class Checker:
         self.struct_vs_null()
         self.scene_presence()
         self.unique_women()
+        self.console_key()
         return self.problems
 
 
