@@ -266,9 +266,8 @@ class Checker:
     # с полки или получить с вылазки. Значит Gender.Female имеет право
     # стоять только там, где персонажа пишут поимённо, — и нигде больше.
     WOMEN_ALLOWED = (
-        'Core/Grammar.cs',                    # само определение рода
-        'Gameplay/PrologueCampSpawner.cs',    # поимённый отряд пролога
-        'Tests/SelfCheck.cs',                 # доказательство, а не выдача
+        'Core/Grammar.cs',        # само определение рода
+        'Tests/SelfCheck.cs',     # доказательство, а не выдача
     )
 
     def unique_women(self):

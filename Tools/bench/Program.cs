@@ -3334,9 +3334,12 @@ static class Bench
 
         double perBattle = (wordTotal + sceneTotal) / (double)battles;
         Console.WriteLine($"\n  строк в журнал за бой: {perBattle:F1}");
+        int kinds = Enum.GetValues(typeof(ActionType)).Cast<ActionType>()
+                        .Count(a => Moment.Loudness(a) == Notice.Scene);
+
         Console.WriteLine($"  из них просятся на камеру: {sceneTotal / (double)battles:F1}"
-                        + "   (но тратится она на первый случай каждого рода, "
-                        + "то есть не больше трёх за бой)");
+                        + $"   (но тратится она на первый случай каждого рода, "
+                        + $"то есть не больше {kinds} за бой)");
 
         Check(sceneTotal > 0, "ни один поступок не дошёл до камеры — "
                             + "правило не сработает никогда");
@@ -3443,10 +3446,16 @@ static class Bench
               "пересказ длиннее трёх случаев — это протокол, а не рассказ");
         Check(picked.Count > 0, "из вылазки нечего пересказать");
 
-        // Громкое вперёд: если места на три случая, побег обязан попасть
-        // в них раньше похода за добычей.
-        Check(picked[0].Action == ActionType.Flee || picked[0].Action == ActionType.SaveAlly,
-              "пересказ начинается с рядового, а громкое не попало");
+        // Громкое вперёд. Проверяем не список поступков, а порядок
+        // громкости: список меняется от решений автора — добыча вчера
+        // была словом, сегодня камерой, — а правило «сначала громкое»
+        // не меняется. Проверка, написанная по списку, ломается при
+        // каждой такой правке и учит править проверку, а не код.
+        var order = picked.Select(e => Moment.Loudness(e.Action)).ToList();
+        Check(order.SequenceEqual(order.OrderByDescending(x => x)),
+              "пересказ идёт не по громкости: тихое встало впереди громкого");
+        Check(order[0] == Notice.Scene,
+              "пересказ начинается с тихого, хотя громкое в бою было");
 
         Check(!picked.Any(e => e.Action == ActionType.Attack),
               "в пересказ попала драка — это и есть бой, а не случай в бою");

@@ -92,11 +92,17 @@ namespace Sinbinder.AOS
                 case ActionType.Flee:
                 case ActionType.SaveAlly:
                 case ActionType.AcceptBribe:
+
+                // Добыча сюда же, по решению автора: «если сам свернул —
+                // хорошо». И правда — воин, бросивший драку ради блеска,
+                // говорит о себе не меньше, чем беглец. Красть взгляд
+                // под это не страшно: затвор всё равно тратится на первый
+                // случай каждого рода за бой.
+                case ActionType.Loot:
                     return Notice.Scene;
 
                 // Слово. Случается часто и объясняет характер, но красть
                 // под это взгляд — значит отнимать бой у игрока.
-                case ActionType.Loot:
                 case ActionType.BribeEnemy:
                 case ActionType.Devour:
                 case ActionType.Berserk:
