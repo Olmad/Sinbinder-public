@@ -35,7 +35,10 @@ namespace Sinbinder.UI
 
         private IEnumerator HideAfter(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            // По настоящему времени, а не игровому: панели ставят игру
+            // на паузу, и на паузе значок замирал бы горящим навсегда —
+            // ровно тот же вид поломки, от которого лечится показ выше.
+            yield return new WaitForSecondsRealtime(delay);
             if (_iconImage != null)
                 _iconImage.enabled = false;
         }

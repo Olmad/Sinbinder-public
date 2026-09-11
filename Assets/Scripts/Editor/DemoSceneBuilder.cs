@@ -1805,18 +1805,66 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>Ступень 3: журнал. Пишет словами, что и почему произошло.</summary>
+        /// <summary>
+        /// Журнал-консоль: записи копятся, ничего не гаснет, есть прокрутка.
+        ///
+        /// Раньше здесь была одна строка с очередью, и ушедшую строку было
+        /// не вернуть. В игре, которая продаётся объяснением отказа, это
+        /// дороже любой другой потери: объяснение обязано оставаться
+        /// на экране столько, сколько игрок захочет.
+        /// </summary>
         private static void BuildLog(Transform parent)
         {
             var panel = Panel("Журнал", parent,
                 anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 0f),
-                pivot: new Vector2(0f, 0f), size: new Vector2(900f, 120f),
+                pivot: new Vector2(0f, 0f), size: new Vector2(900f, 300f),
                 position: new Vector2(40f, 40f));
 
-            var group = panel.gameObject.AddComponent<CanvasGroup>();
-            var line = Label("Строка", panel, 28, TextAnchor.LowerLeft);
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.04f, 0.04f, 0.05f, 0.72f);
+
+            // Окно просмотра с маской: без неё текст вылезал бы за края
+            // панели, и прокрутка выглядела бы как поехавшая вёрстка.
+            var view = Panel("Окно", panel,
+                anchorMin: Vector2.zero, anchorMax: Vector2.one,
+                pivot: new Vector2(0.5f, 0.5f), size: Vector2.zero, position: Vector2.zero);
+            view.offsetMin = new Vector2(14f, 12f);
+            view.offsetMax = new Vector2(-14f, -12f);
+
+            var viewImage = view.gameObject.AddComponent<Image>();
+            viewImage.color = new Color(1f, 1f, 1f, 0.004f);
+            view.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+
+            // Содержимое растёт вниз от верхнего края: опора сверху,
+            // высота по тексту. При опоре в центре список ездил бы
+            // сам по себе с каждой новой строкой.
+            var content = Panel("Записи", view,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0.5f, 1f), size: new Vector2(0f, 0f),
+                position: Vector2.zero);
+
+            var text = content.gameObject.AddComponent<Text>();
+            text.font = UIFont();
+            text.fontSize = 22;
+            text.alignment = TextAnchor.UpperLeft;
+            text.color = new Color(0.88f, 0.86f, 0.82f);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.raycastTarget = false;
+
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scroll = panel.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = view;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 28f;
 
             var ui = panel.gameObject.AddComponent<Sinbinder.UI.BattleLogUI>();
-            Wire(ui, ("_line", line), ("_group", group));
+            Wire(ui, ("_line", text), ("_scroll", scroll));
         }
 
         /// <summary>

@@ -288,13 +288,41 @@ namespace Sinbinder.AOS
             ShowDecisionIcon(ActionType.Idle);
         }
 
+        /// <summary>Что показывали в прошлый раз. Смотри ShowDecisionIcon.</summary>
+        private ActionType _shownAction;
+        private bool _shownEver;
+
+        /// <summary>
+        /// Первая ступень прозрачности: значок намерения <b>в момент
+        /// решения</b> (00-GDD.md §7).
+        ///
+        /// Показывается на смену намерения, а не каждый такт. Решение
+        /// принимается раз в секунду, а значок горел полторы — то есть
+        /// новый показ приходил раньше, чем истекал старый, и значок
+        /// не гас никогда. Вместо вспышки в момент решения над каждым
+        /// висела постоянная лампа, и «знак атаки» стоял над тем, кто
+        /// просто стоит.
+        ///
+        /// Молчание тоже говорит: пока намерение не менялось, показывать
+        /// нечего. Что он решил и почему — вторая и третья ступени,
+        /// подсказка и журнал.
+        /// </summary>
         private void ShowDecisionIcon(ActionType action)
         {
+            if (_shownEver && action == _shownAction) return;
+
+            _shownAction = action;
+            _shownEver = true;
+
             var overheadUI = GetComponentInChildren<UI.OverheadUI>();
             if (overheadUI?.DecisionIcon != null)
             {
                 Sprite icon = GetIconForAction(action);
-                if (icon != null) overheadUI.DecisionIcon.Show(icon, 1.5f);
+                // Четыре секунды, а не полторы: значок теперь вспыхивает
+                // только на смену намерения, и мелькнувший на полтора
+                // такта успевал бы не всякий взгляд. Гаснуть он всё
+                // равно обязан — иначе это не намерение, а ярлык.
+                if (icon != null) overheadUI.DecisionIcon.Show(icon, 4f);
             }
         }
 
