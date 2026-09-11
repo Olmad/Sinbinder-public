@@ -378,6 +378,21 @@ namespace N
         'Lonely.cs.meta': 'fileFormatVersion: 2\nguid: abcdef0123456789abcdef0123456789\n',
     }, 'сцен не найдено'),
 
+    ('unique_women/женщину сгенерировали', {
+        'Gameplay/Harvester.cs': '''
+namespace N
+{
+    public class Harvester
+    {
+        void Reap()
+        {
+            var soul = Make(Gender.Female);
+        }
+    }
+}
+''',
+    }, 'женщины в этом мире уникальны'),
+
     ('input_handler', {
         'ProjectSettings/ProjectSettings.asset': '  activeInputHandler: 1\n',
         'Keys.cs': '''
