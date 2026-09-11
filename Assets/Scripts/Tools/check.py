@@ -373,6 +373,28 @@ class Checker:
         """Компонент ли это, который вообще может стоять в сцене."""
         return bool(RE_MONO_CLASS.search(self.src.get(path, '')))
 
+    @staticmethod
+    def scene_files():
+        """
+        Сцены проекта, где бы ни стояла текущая папка.
+
+        Раскладок две, и обе рабочие: локально репозиторий — это сама
+        папка Assets/Scripts внутри проекта Unity, в облаке он же лежит
+        целиком. Плюс запуск из корня проекта. Один жёсткий путь ловил
+        только часть из них и молча пропускал остальные.
+        """
+        roots = (
+            os.path.join('Assets', 'Scenes'),                  # корень проекта Unity
+            os.path.join('..', 'Scenes'),                      # Assets/Scripts, локально
+            os.path.join('..', '..', 'Assets', 'Scenes'),      # Assets/Scripts, облако
+        )
+
+        found = []
+        for root in roots:
+            found.extend(glob.glob(os.path.join(root, '*.unity')))
+
+        return sorted({os.path.abspath(p) for p in found})
+
     def scene_presence(self):
         """
         Тип ищут в сцене, а его нет ни в одной.
@@ -400,11 +422,8 @@ class Checker:
         Осторожность как везде: если тип кто-то создаёт на ходу
         (AddComponent, AddIfMissing, Require) — молчим, это законно.
         """
-        scenes = glob.glob(os.path.join('Assets', 'Scenes', '*.unity'))
-        if not scenes:
-            return          # облачная раскладка: сцен в этой папке нет
-
-        # Имя типа -> GUID его скрипта.
+        # Имя типа -> GUID его скрипта. Считаем до сцен: по нему видно,
+        # настоящий это проект или временная папка самопроверки.
         owner = {}
         for p in self.files:
             meta = p + '.meta'
@@ -414,6 +433,20 @@ class Checker:
                           io.open(meta, encoding='utf-8', errors='replace').read())
             if m:
                 owner[os.path.splitext(os.path.basename(p))[0]] = m.group(1)
+
+        scenes = self.scene_files()
+        if not scenes:
+            # Отсутствие данных — событие, а не ноль. Раньше здесь стоял
+            # молчаливый return, и правило целиком не работало при запуске
+            # из Assets/Scripts — то есть ровно так, как его запускать
+            # велит CLAUDE.md. Отчёт при этом печатал «Чисто»: та же
+            # болезнь, против которой правило и заведено, этажом выше.
+            if owner:
+                self.report('Assets/Scenes', 0,
+                            'сцен не найдено — присутствие типов в сценах '
+                            'проверить нечем. Запускать из корня проекта '
+                            'Unity или из Assets/Scripts')
+            return
 
         here = set()
         for sc in scenes:

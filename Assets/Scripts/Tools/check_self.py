@@ -367,6 +367,17 @@ namespace N
         'Seeker.cs.meta': 'guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
     }, 'нет ни в одной'),
 
+    ('scene_presence/сцен нет — сказать об этом', {
+        'Lonely.cs': '''
+using UnityEngine;
+namespace N
+{
+    public class Lonely : MonoBehaviour { }
+}
+''',
+        'Lonely.cs.meta': 'fileFormatVersion: 2\nguid: abcdef0123456789abcdef0123456789\n',
+    }, 'сцен не найдено'),
+
     ('input_handler', {
         'ProjectSettings/ProjectSettings.asset': '  activeInputHandler: 1\n',
         'Keys.cs': '''
