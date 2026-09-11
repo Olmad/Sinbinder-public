@@ -68,6 +68,7 @@ namespace Sinbinder.Gameplay
         private void OnSelfWill(Warrior warrior, Decision decision, DecisionContext context)
         {
             if (warrior == null || warrior.IsDead) return;
+            if (!Core.Transparency.Shows(Core.Detail.Moments)) return;
             if (Moment.Worth(decision, context) != Notice.Scene) return;
 
             if (_running || Time.time < _nextAllowed) return;

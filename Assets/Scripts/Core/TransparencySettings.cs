@@ -20,6 +20,9 @@ namespace Sinbinder.Core
     {
         private const string Key = "sinbinder.clarity";
 
+        /// <summary>Свой набор галочек. Минус один — своего набора нет.</summary>
+        private const string CustomKey = "sinbinder.clarity.custom";
+
         [Tooltip("Что показывать игроку. Выше третьей ступени в сборке "
                + "не поднимется: четвёртая — не настройка, а замок.")]
         [SerializeField] private Clarity _level = Transparency.Default;
@@ -66,6 +69,11 @@ namespace Sinbinder.Core
 
             var got = Transparency.Set(wanted);
 
+            // Свой набор восстанавливаем после ступени: Set его забывает,
+            // и в обратном порядке он бы стёрся собственной загрузкой.
+            if (_remember && PlayerPrefs.GetInt(CustomKey, -1) >= 0)
+                Transparency.SetCustom((Detail)PlayerPrefs.GetInt(CustomKey, 0));
+
             if (got != wanted)
                 Debug.Log($"[ПРОЗРАЧНОСТЬ] Просили «{Transparency.Describe(wanted)}», "
                         + $"доступно «{Transparency.Describe(got)}».");
@@ -83,6 +91,25 @@ namespace Sinbinder.Core
             if (_remember)
             {
                 PlayerPrefs.SetInt(Key, (int)got);
+                PlayerPrefs.SetInt(CustomKey, -1);
+                PlayerPrefs.Save();
+            }
+
+            return got;
+        }
+
+        /// <summary>
+        /// Поставить свой набор галочек и запомнить его.
+        /// Возвращает тот, что получился: просьбу показать цифры
+        /// обрежут, и вызывающий обязан это увидеть.
+        /// </summary>
+        public Detail ChooseCustom(Detail wanted)
+        {
+            var got = Transparency.SetCustom(wanted);
+
+            if (_remember)
+            {
+                PlayerPrefs.SetInt(CustomKey, (int)got);
                 PlayerPrefs.Save();
             }
 

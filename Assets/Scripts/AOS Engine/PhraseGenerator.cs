@@ -76,7 +76,14 @@ namespace Sinbinder.AOS
 
         // ---------- причина ----------
 
-        private static string Reason(Warrior warrior, DecisionContext context, Decision decision)
+        /// <summary>
+        /// Голая причина, без имени и без действия: «их слишком много».
+        ///
+        /// Публично ради подписи момента — она ставит причину второй
+        /// строкой под словом, и имя ей не нужно: камера уже стоит
+        /// на том, о ком речь.
+        /// </summary>
+        public static string Reason(Warrior warrior, DecisionContext context, Decision decision)
         {
             switch (decision.TopModule)
             {

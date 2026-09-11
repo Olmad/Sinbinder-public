@@ -1223,6 +1223,7 @@ namespace Sinbinder.Utilets
             BuildSelectionBox(canvasGO.transform);
             BuildLog(canvasGO.transform);
             BuildMomentCaption(canvasGO.transform);
+            BuildClarityPanel(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
             BuildCommandHint(canvasGO.transform);
@@ -1829,8 +1830,52 @@ namespace Sinbinder.Utilets
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.sizeDelta = new Vector2(420f, 60f);
 
+            // Вторая строка: причина, вполсилы и мельче. Отдельным
+            // Text, а не переносом в том же: у них разные прозрачность,
+            // размер и своя галочка в настройках.
+            var cause = Label("Причина", holder.transform, 24, TextAnchor.MiddleCenter);
+            cause.color = new Color(0.90f, 0.88f, 0.84f);
+
+            var crt = cause.rectTransform;
+            crt.anchorMin = crt.anchorMax = new Vector2(0f, 0f);
+            crt.pivot = new Vector2(0.5f, 0.5f);
+            crt.sizeDelta = new Vector2(620f, 44f);
+
             var ui = holder.AddComponent<Sinbinder.UI.MomentCaption>();
-            Wire(ui, ("_line", line));
+            Wire(ui, ("_line", line), ("_cause", cause));
+        }
+
+        /// <summary>
+        /// Настройка прозрачности: готовые наборы и галочки.
+        ///
+        /// Компонент вешается на Canvas, а не на панель, которую сам
+        /// выключает: у выключенного объекта не крутится Update,
+        /// и нажатие O осталось бы незамеченным. Совет и карта на этом
+        /// уже спотыкались, и это третий раз.
+        /// </summary>
+        private static void BuildClarityPanel(Transform parent)
+        {
+            var panel = Panel("Прозрачность", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(760f, 620f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+
+            var title = Label("Заголовок", panel, 28, TextAnchor.UpperLeft,
+                new Vector2(0f, -20f), 52f);
+
+            var rows = Panel("Строки", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 540f),
+                position: new Vector2(0f, -78f));
+            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.ClarityPanel>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
         }
 
         /// <summary>Ступень 2: подсказка при наведении.</summary>

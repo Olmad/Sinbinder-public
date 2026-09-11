@@ -889,6 +889,93 @@ static class Bench
     /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
     /// нигде и никогда.
     /// </summary>
+    static void ClarityFlagsCheck()
+    {
+        Console.WriteLine("\n=== ГАЛОЧКИ: разбирается ли лестница на части ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        Transparency.Reset();
+
+        // ── 1. Ступени накопительные ──
+        // Повысить прозрачность и что-то при этом потерять нельзя:
+        // иначе лестница перестаёт быть лестницей.
+        var steps = new[] { Clarity.Silent, Clarity.Icons, Clarity.Tooltips,
+                            Clarity.Log, Clarity.Trace };
+
+        Console.WriteLine($"  {"ступень",-10} что показывает");
+        foreach (var step in steps)
+        {
+            var set = Transparency.Preset(step);
+            var names = Transparency.Pieces()
+                .Where(p => (set & p) == p)
+                .Select(Transparency.Describe);
+            Console.WriteLine($"  {step,-10} {(names.Any() ? string.Join(", ", names) : "ничего")}");
+        }
+
+        for (int i = 1; i < steps.Length; i++)
+        {
+            var lower = Transparency.Preset(steps[i - 1]);
+            var upper = Transparency.Preset(steps[i]);
+            Check((upper & lower) == lower,
+                  $"{steps[i]} теряет то, что показывала {steps[i - 1]}");
+        }
+
+        // ── 2. Замок на цифрах ──
+        // Он и есть всё правило «игрок не видит чисел». Обойти его
+        // не должно ни ступенью, ни своей галочкой.
+        Transparency.Reset();
+        Check(!Transparency.Shows(Detail.Trace), "игрок видит внутренности по умолчанию");
+
+        var got = Transparency.SetCustom(Detail.Trace | Detail.Log);
+        Check((got & Detail.Trace) == 0,
+              "своя галочка открыла игроку цифры — замка нет");
+        Check((got & Detail.Log) == Detail.Log,
+              "вместе с цифрами срезали и журнал");
+
+        Transparency.SetDeveloper(true);
+        Transparency.SetCustom(Detail.Trace);
+        Check(Transparency.Shows(Detail.Trace), "разработчику цифры не показываются");
+
+        // Замок закрыли обратно — цифры обязаны уйти и из своего набора.
+        Transparency.SetDeveloper(false);
+        Check(!Transparency.Shows(Detail.Trace),
+              "замок закрыли, а цифры остались: запирать нечем");
+
+        // ── 3. Галочки работают поодиночке ──
+        Transparency.Reset();
+        Transparency.SetCustom(Detail.Moments | Detail.MomentCause);
+
+        Check(Transparency.Shows(Detail.Moments), "слово о поступке не показывается");
+        Check(Transparency.Shows(Detail.MomentCause), "причина под словом не показывается");
+        Check(!Transparency.Shows(Detail.Log), "журнал показывается, хотя не отмечен");
+        Check(!Transparency.Shows(Clarity.Log), "старая проверка ступени разошлась с галочками");
+
+        Transparency.Toggle(Detail.MomentCause, false);
+        Check(Transparency.Shows(Detail.Moments), "выключили причину — пропало и слово");
+        Check(!Transparency.Shows(Detail.MomentCause), "причина не выключилась");
+
+        // ── 4. Ступень забывает галочки ──
+        // Иначе ползунок двигается, а картинка не меняется.
+        Transparency.SetCustom(Detail.Icons);
+        Transparency.Set(Clarity.Log);
+        Check(!Transparency.IsCustom, "выбрали ступень, а свой набор остался");
+        Check(Transparency.Shows(Detail.Log), "ступень с журналом журнала не показывает");
+
+        // ── 5. Значение по умолчанию не изменилось ──
+        Transparency.Reset();
+        Check(Transparency.Shows(Detail.Moments) && Transparency.Shows(Detail.MomentCause),
+              "по умолчанию игрок не видит ни слова о поступке, ни причины — "
+              + "а это продукт демо");
+
+        Console.WriteLine(bad == 0 ? "  Галочки: чисто." : $"  Галочки: провалов {bad}.");
+        Transparency.Reset();
+    }
+
     static void TransparencyCheck()
     {
         Console.WriteLine("\n=== ПРОЗРАЧНОСТЬ: кому что видно ===");
@@ -3385,6 +3472,7 @@ static class Bench
         HomecomingCheck(cfg);
         CampFocusCheck();
         TransparencyCheck();
+        ClarityFlagsCheck();
         FallenCheck();
         SoulDecayCheck();
         ExpeditionCheck(cfg);

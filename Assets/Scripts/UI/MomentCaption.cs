@@ -32,6 +32,13 @@ namespace Sinbinder.UI
 
         [SerializeField] private Text _line;
 
+        [Tooltip("Вторая строка: причина, вполсилы. Её читают, если "
+               + "успевают, и не спотыкаются, если нет.")]
+        [SerializeField] private Text _cause;
+
+        [Range(0.1f, 1f)]
+        [SerializeField] private float _causeAlpha = 0.45f;
+
         private Camera _cam;
         private Transform _target;
         private Coroutine _running;
@@ -40,6 +47,7 @@ namespace Sinbinder.UI
         {
             if (_line == null) _line = GetComponentInChildren<Text>(true);
             if (_line != null) _line.canvasRenderer.SetAlpha(0f);
+            if (_cause != null) _cause.canvasRenderer.SetAlpha(0f);
         }
 
         void Start()
@@ -58,11 +66,28 @@ namespace Sinbinder.UI
         {
             if (_line == null || warrior == null || warrior.IsDead) return;
 
+            // Слово о поступке — отдельная галочка. Игрок, выбравший
+            // тишину, не должен получать её через чёрный ход.
+            if (!Core.Transparency.Shows(Core.Detail.Moments)) return;
+
             string word = PhraseGenerator.Short(decision.Action, context);
             if (string.IsNullOrEmpty(word)) return;
 
             _line.text = word;
             _target = warrior.transform;
+
+            // Причина — своя галочка: кому-то довольно слова, а кто-то
+            // хочет знать, почему. Раньше это можно было узнать только
+            // наведением или из журнала, то есть уже после того, как
+            // всё случилось.
+            bool why = Core.Transparency.Shows(Core.Detail.MomentCause);
+            string cause = why ? PhraseGenerator.Reason(warrior, context, decision) : null;
+
+            if (_cause != null)
+            {
+                _cause.text = string.IsNullOrEmpty(cause) ? "" : cause;
+                _cause.gameObject.SetActive(!string.IsNullOrEmpty(cause));
+            }
 
             // Второе слово перебивает первое: держать очередь здесь
             // незачем — очередь есть у журнала, и она там уместна.
@@ -75,6 +100,12 @@ namespace Sinbinder.UI
         {
             _line.canvasRenderer.SetAlpha(1f);
 
+            // Вполсилы: причину читают, если успевают, и не спотыкаются
+            // о неё, если нет. В полную силу две строки спорят друг
+            // с другом, и не читается ни одна.
+            if (_cause != null && _cause.gameObject.activeSelf)
+                _cause.canvasRenderer.SetAlpha(_causeAlpha);
+
             float until = Time.time + _hold;
             while (Time.time < until)
             {
@@ -83,6 +114,9 @@ namespace Sinbinder.UI
             }
 
             _line.CrossFadeAlpha(0f, _fade, true);
+            if (_cause != null && _cause.gameObject.activeSelf)
+                _cause.CrossFadeAlpha(0f, _fade, true);
+
             _running = null;
         }
 
@@ -106,9 +140,19 @@ namespace Sinbinder.UI
 
             // За спиной камеры WorldToScreenPoint отражает точку вперёд:
             // надпись прыгнула бы на противоположный край экрана.
-            if (screen.z < 0f) { _line.canvasRenderer.SetAlpha(0f); return; }
+            if (screen.z < 0f)
+            {
+                _line.canvasRenderer.SetAlpha(0f);
+                if (_cause != null) _cause.canvasRenderer.SetAlpha(0f);
+                return;
+            }
 
             _line.rectTransform.position = screen;
+
+            // Причина ровно под словом и в экранных пикселях: привязывать
+            // её к миру значило бы считать высоту строки в метрах.
+            if (_cause != null && _cause.gameObject.activeSelf)
+                _cause.rectTransform.position = screen + new Vector3(0f, -38f, 0f);
         }
     }
 }
