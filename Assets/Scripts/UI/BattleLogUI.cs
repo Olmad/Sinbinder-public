@@ -43,16 +43,32 @@ namespace Sinbinder.UI
         {
             if (_group != null) _group.alpha = 0f;
             if (AOSEventHub.Instance != null)
+            {
                 AOSEventHub.Instance.OnRefusal += OnRefusal;
+                AOSEventHub.Instance.OnSelfWill += OnSelfWill;
+            }
         }
 
         void OnDestroy()
         {
             if (AOSEventHub.Instance != null)
+            {
                 AOSEventHub.Instance.OnRefusal -= OnRefusal;
+                AOSEventHub.Instance.OnSelfWill -= OnSelfWill;
+            }
         }
 
         private void OnRefusal(Warrior warrior, Decision decision, DecisionContext context)
+        {
+            Write(PhraseGenerator.LogLine(warrior, context, decision));
+        }
+
+        /// <summary>
+        /// Поступок без приказа. Та же строка, что у отказа: воин и его
+        /// причина описываются одними словами независимо от того, спорил
+        /// он с игроком или тот просто молчал.
+        /// </summary>
+        private void OnSelfWill(Warrior warrior, Decision decision, DecisionContext context)
         {
             Write(PhraseGenerator.LogLine(warrior, context, decision));
         }

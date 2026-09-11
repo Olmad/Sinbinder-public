@@ -95,6 +95,16 @@ namespace Sinbinder.AOS
         /// <summary>Отказ подчиниться. Раз в бою на воина — событие, а не шум.</summary>
         public System.Action<Warrior, Decision, DecisionContext> OnRefusal;
 
+        /// <summary>
+        /// Воин сделал что-то заметное сам, без приказа.
+        ///
+        /// Отдельно от OnRefusal: отказ — это спор с игроком, а это —
+        /// поступок в его отсутствие. До сих пор второе не объявлялось
+        /// ничем, и уникальные моменты движка проходили мимо игрока
+        /// молча. См. Moment.
+        /// </summary>
+        public System.Action<Warrior, Decision, DecisionContext> OnSelfWill;
+
         private readonly System.Collections.Generic.Dictionary<string, float> _lastRefusal = new();
 
         /// <summary>
@@ -138,6 +148,22 @@ namespace Sinbinder.AOS
 
         /// <summary>Пауза между двумя отказами одного воина, секунды.</summary>
         public const float RefusalCooldown = 4f;
+
+        /// <summary>
+        /// Объявить поступок, сделанный без приказа.
+        ///
+        /// Отбор — у <see cref="Moment"/>; здесь только оглашение.
+        /// Держать правило рядом с событием нельзя: его меряет стенд,
+        /// а стенд не знает ни сцены, ни воинов.
+        /// </summary>
+        public void OnSelfWilled(Warrior warrior, Decision decision, DecisionContext context)
+        {
+            if (warrior == null) return;
+            if (Moment.Worth(decision, context) == Notice.None) return;
+
+            Debug.Log($"[AOS] САМ: {PhraseGenerator.LogLine(warrior, context, decision)}");
+            OnSelfWill?.Invoke(warrior, decision, context);
+        }
 
         public void OnBetrayal(Warrior traitor, Warrior betrayedCommander)
         {

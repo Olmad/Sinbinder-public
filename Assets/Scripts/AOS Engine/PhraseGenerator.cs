@@ -224,6 +224,26 @@ namespace Sinbinder.AOS
                 case ActionType.Vomit: return "извергает съеденное";
                 case ActionType.InsatiableHunger: return "не может насытиться";
 
+                // Подкуп и предательство. Дописано по следу замера
+                // (Tools/bench → МОМЕНТЫ): эти шесть объявляются как
+                // поступки, а слов у них не было — заглушка «действует
+                // по-своему» накрывала в том числе переход к врагу,
+                // самое громкое, что вообще умеет движок.
+                case ActionType.BribeEnemy: return "торгуется с чужим";
+                case ActionType.AcceptBribe: return "уходит к чужим";
+
+                // Гордыня
+                case ActionType.DuelChallenge: return "зовёт на поединок";
+                case ActionType.LastStand: return "встаёт насмерть";
+                case ActionType.HeroicPose: return "становится в позу";
+                case ActionType.Inspiration: return "поднимает остальных";
+
+                // Смирение
+                case ActionType.Sacrifice: return "закрывает собой";
+
+                // Зависть
+                case ActionType.StealWeapon: return "тянет чужое оружие";
+
                 default: return "действует по-своему";
             }
         }
@@ -238,9 +258,32 @@ namespace Sinbinder.AOS
                         ? $"бросился к {context.TargetWarrior.DisplayName}"
                         : "бросился к раненому";
                 case ActionType.Loot: return "пошёл за добычей";
-                case ActionType.Flee: return "отступил";
+
+                // Отход и побег — разные вещи, и разница ровно в том,
+                // просили его об этом или нет. Отступить по приказу —
+                // манёвр; развернуться и уйти, когда никто не велел, —
+                // побег, и называть их одним словом значит прятать
+                // от игрока именно то, ради чего здесь движок решений.
+                case ActionType.Flee:
+                    return context != null && context.HasCommand
+                         ? "отступил" : "сбежал";
+
                 case ActionType.Idle: return "остался на месте";
                 case ActionType.ObeyCommand: return "сделал, как велено";
+
+                // Дописано по следу замера (Tools/bench → МОМЕНТЫ):
+                // эти поступки объявляются, а слов у них не было.
+                case ActionType.BribeEnemy: return "торговался с чужим";
+                case ActionType.AcceptBribe: return "ушёл к чужим";
+                case ActionType.DuelChallenge: return "позвал на поединок";
+                case ActionType.LastStand: return "встал насмерть";
+                case ActionType.Sacrifice: return "закрыл собой";
+                case ActionType.StealWeapon: return "потянул чужое оружие";
+                case ActionType.Berserk: return "впал в бешенство";
+                case ActionType.Devour: return "сожрал";
+                case ActionType.Charm: return "очаровал";
+                case ActionType.EternalSleep: return "уснул намертво";
+
                 default: return "поступил по-своему";
             }
         }

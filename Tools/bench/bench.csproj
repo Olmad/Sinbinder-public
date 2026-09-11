@@ -34,6 +34,7 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/SkillCatalog.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Moment.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/DecisionContext.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Soul.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/IPersonalityModule.cs" />

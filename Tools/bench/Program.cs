@@ -3019,6 +3019,181 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  Петля: чисто." : $"  Петля: провалов {bad}.");
     }
 
+
+    // ──────────────────────────────────────────────────────────────
+    //  МОМЕНТЫ
+    //
+    //  Автор заметил убегающего воина краем глаза. Значит движок
+    //  производит ровно те моменты, ради которых игра затевалась,
+    //  а показать их некому.
+    //
+    //  Показывать всё — то же самое, что не показывать ничего:
+    //  решение принимается каждый тик. Замер отвечает на один вопрос:
+    //  сколько строк и сколько наездов выйдет за бой при нынешнем
+    //  отборе. Бой настоящий, тик за тиком, и приказа в нём нет —
+    //  то есть это ровно тот случай, ради которого Moment заведён.
+    // ──────────────────────────────────────────────────────────────
+
+    static void MomentsCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== МОМЕНТЫ: сколько их за бой ===");
+
+        var modules = Modules();
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var words = new Dictionary<ActionType, int>();
+        var scenes = new Dictionary<ActionType, int>();
+        int ticks = 0, battles = 0, selfWilled = 0;
+
+        for (int run = 0; run < 40; run++)
+        {
+            var r = new Random(1000 + run);
+            var ours = new List<Warrior>();
+            var theirs = new List<Warrior>();
+
+            for (int i = 0; i < 6; i++)
+            {
+                ours.Add(new Warrior { Soul = MakeSoul(r, $"С{i}"), Loyalty = 40f + i * 8f });
+                theirs.Add(new Warrior { Soul = MakeSoul(r, $"Ч{i}"), Loyalty = 50f });
+            }
+
+            var last = new Dictionary<Warrior, ActionType>();
+            battles++;
+
+            for (int round = 0; round < 40; round++)
+            {
+                if (ours.All(w => w.IsDead) || theirs.All(w => w.IsDead)) break;
+
+                foreach (var w in ours.Where(x => !x.IsDead).ToList())
+                {
+                    var ctx = AutoBattleContext.Create(w, ours, theirs);
+                    var outcome = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+                    ticks++;
+
+                    if (Moment.SelfWilled(ctx)) selfWilled++;
+
+                    // Тот же затвор, что в AOSWarriorWrapper: объявляем
+                    // начало поступка, а не каждый тик, пока он длится.
+                    bool changed = !last.TryGetValue(w, out var prev)
+                                || prev != outcome.Action;
+                    last[w] = outcome.Action;
+                    if (!changed) continue;
+
+                    var decision = new Decision
+                    {
+                        Action = outcome.Action,
+                        Hesitated = outcome.Hesitated
+                    };
+
+                    var loud = Moment.Worth(decision, ctx);
+                    if (loud == Notice.Word)
+                        words[outcome.Action] = words.GetValueOrDefault(outcome.Action) + 1;
+                    else if (loud == Notice.Scene)
+                        scenes[outcome.Action] = scenes.GetValueOrDefault(outcome.Action) + 1;
+                }
+
+                Fight(modules, theirs, ours, cfg, SquadStrategy.Aggressive);
+            }
+        }
+
+        int wordTotal = words.Values.Sum();
+        int sceneTotal = scenes.Values.Sum();
+
+        Console.WriteLine($"  боёв {battles}, решений {ticks:N0}, "
+                        + $"из них без приказа {selfWilled * 100.0 / Math.Max(ticks, 1):F0}%");
+        Console.WriteLine($"\n  {"что объявлено",-22} {"за все бои",11} {"за один бой",12}");
+
+        foreach (var kv in scenes.OrderByDescending(x => x.Value))
+            Console.WriteLine($"  {kv.Key + " (камера)",-22} {kv.Value,11} "
+                            + $"{kv.Value / (double)battles,12:F1}");
+
+        foreach (var kv in words.OrderByDescending(x => x.Value))
+            Console.WriteLine($"  {kv.Key + " (слово)",-22} {kv.Value,11} "
+                            + $"{kv.Value / (double)battles,12:F1}");
+
+        double perBattle = (wordTotal + sceneTotal) / (double)battles;
+        Console.WriteLine($"\n  строк в журнал за бой: {perBattle:F1}");
+        Console.WriteLine($"  из них просятся на камеру: {sceneTotal / (double)battles:F1}"
+                        + "   (но тратится она на первый случай каждого рода, "
+                        + "то есть не больше трёх за бой)");
+
+        Check(sceneTotal > 0, "ни один поступок не дошёл до камеры — "
+                            + "правило не сработает никогда");
+        Check(perBattle >= 1.0, "за бой объявляется меньше строки — "
+                              + "игрок так и не узнает, что у воинов есть своя воля");
+        Check(perBattle <= 25.0, $"{perBattle:F0} строк за бой — журнал станет "
+                               + "водопадом, и читать его перестанут");
+
+        // Рядовое обязано молчать: иначе объявляется дыхание.
+        var plain = new Decision { Action = ActionType.Attack };
+        var idle = new Decision { Action = ActionType.Idle };
+        var ctxNone = TypicalContext();
+        ctxNone.HasCommand = false;
+        Check(Moment.Worth(plain, ctxNone) == Notice.None, "драка объявляется как поступок");
+        Check(Moment.Worth(idle, ctxNone) == Notice.None, "стояние объявляется как поступок");
+
+        // С приказом — молчим: у отказа своё событие, громче этого.
+        var ctxCmd = TypicalContext();
+        ctxCmd.HasCommand = true;
+        var fled = new Decision { Action = ActionType.Flee };
+        Check(Moment.Worth(fled, ctxCmd) == Notice.None,
+              "побег при живом приказе объявляется дважды — и тут, и отказом");
+        Check(Moment.Worth(fled, ctxNone) == Notice.Scene,
+              "побег без приказа не доходит до камеры");
+
+        // Ярус «слово» в автобое не срабатывает: там нет ни трупов,
+        // ни умений на бюллетене. Значит проверить его боем нельзя —
+        // проверяем прямо: у каждого поступка, который Moment берётся
+        // объявить, обязано быть слово. Названный поступок без слова
+        // даёт пустую строку в журнале, и молча.
+        Console.WriteLine($"\n  {"поступок",-18} {"громкость",10}  слово");
+        int mute = 0, named = 0;
+
+        foreach (ActionType act in Enum.GetValues(typeof(ActionType)))
+        {
+            var probe = new Decision { Action = act };
+            var loud = Moment.Worth(probe, ctxNone);
+            if (loud == Notice.None) continue;
+
+            named++;
+            string word = PhraseGenerator.Doing(act);
+            bool ok = !string.IsNullOrWhiteSpace(word);
+            if (!ok) mute++;
+
+            Console.WriteLine($"  {act,-18} {loud,10}  {(ok ? word : "— НЕТ СЛОВА")}");
+        }
+
+        Check(mute == 0, $"{mute} объявляемых поступков без слова — "
+                       + "журнал напишет пустую строку");
+
+        // Отход по приказу и побег без приказа обязаны называться
+        // по-разному: разница между ними и есть предмет игры.
+        var runner = new Warrior
+        {
+            Soul = new SoulData("Беглец", MoralType.Neutral, 1, new float[7]),
+            Loyalty = 50f
+        };
+        var fleeDecision = new Decision { Action = ActionType.Flee, TopModule = "Fear" };
+
+        string told = PhraseGenerator.LogLine(runner, ctxNone, fleeDecision);
+        string ordered = PhraseGenerator.LogLine(runner, ctxCmd, fleeDecision);
+
+        Console.WriteLine($"\n  без приказа: «{told}»");
+        Console.WriteLine($"  по приказу:  «{ordered}»");
+
+        Check(told != ordered, "побег без приказа и отход по приказу "
+                             + "описываются одинаково — разница потеряна");
+        Check(told.Contains("сбеж"), "побег без приказа не назван побегом");
+        Check(named >= 5, "объявляемых поступков слишком мало: "
+                        + "своеволие снова окажется незаметным");
+
+        Console.WriteLine(bad == 0 ? "  Моменты: чисто." : $"  Моменты: провалов {bad}.");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
@@ -3211,6 +3386,7 @@ static class Bench
         ShellsCheck();
         LootCheck();
         JunctionCheck(cfg);
+        MomentsCheck(cfg);
         ExpeditionEconomy();
         Missions(cfg);
         Saturation(cfg);

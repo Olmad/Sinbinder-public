@@ -43,12 +43,20 @@ namespace Sinbinder.AOS
 
             var decision = _resolver.DecideDetailed(_warrior, context);
 
+            // Смена действия — до присваивания: объявлять надо начало
+            // поступка, а не каждый тик, пока он длится. Бежать можно
+            // полминуты, и «сбегает» полминуты подряд — это не событие,
+            // а мигающая надпись.
+            bool changed = decision.Action != LastDecision;
+
             LastContext = context;
             LastDecisionDetail = decision;
             LastDecision = decision.Action;
 
             if (decision.RefusedCommand)
                 AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
+            else if (changed)
+                AOSEventHub.Instance?.OnSelfWilled(_warrior, decision, context);
 
             return LastDecision;
         }
