@@ -72,14 +72,20 @@ namespace Sinbinder.Gameplay
             // Рядовые. Повести отряд могут, но уведут троих — на миссию
             // доли 3, где нужно пятеро, их не хватит. Это и объясняет
             // игроку, зачем вообще нужен опытный.
-            new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, 0f),
+            // Двое братьев по оружию. Хорь завидует всем, Гурт не говорит
+            // ни с кем — и оба держатся друг друга. Пара выбрана из рядовых
+            // нарочно: кандидаты в старшие уходят с отрядом, а братство
+            // видно только пока оба на виду.
+            new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, 0f,
+                brother: true),
             new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0f),
             new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
             // первый безобидный приказ в лагере, и доля 2 — обучение
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
             // по унынию после Вейна, но лагерный приказ ему уже по силам.
-            new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f),
+            new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f,
+                brother: true),
 
             // Девятый. Пролог обещает, что «воинов видно девять»
             // (docs/09-PROLOGUE.md §4, сцена 1), и число это не
@@ -150,10 +156,25 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public readonly Gender Gender;
 
+            /// <summary>
+            /// Носит ли перк «Брат по оружию».
+            ///
+            /// Братство считает CombatDecisionContext: брат рядом —
+            /// это когда перк есть и у самого воина, и у кого-то
+            /// из своих поблизости. Перк лежал в базе и читался
+            /// движком, но не было его ни у одной души: ветка Похоти
+            /// «он не бросит своего» и прибавка к удару за брата
+            /// не срабатывали ни разу за всё время.
+            ///
+            /// Носителей ровно двое, и это не мелочь: с одним
+            /// братство не бывает, с тремя перестаёт быть парой.
+            /// </summary>
+            public readonly bool Brother;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
                 string unavailable = "", int unpaid = 0,
-                Gender gender = Gender.Male)
+                Gender gender = Gender.Male, bool brother = false)
             {
                 Name = name;
                 Sin = sin;
@@ -164,6 +185,7 @@ namespace Sinbinder.Gameplay
                 Leadership = leadership;
                 Unavailable = unavailable;
                 Unpaid = unpaid;
+                Brother = brother;
             }
         }
 
@@ -249,7 +271,8 @@ namespace Sinbinder.Gameplay
                     IsCommander = false,
 
                     Leadership = m.Leadership,
-                    Unavailable = m.Unavailable
+                    Unavailable = m.Unavailable,
+                    Brother = m.Brother
                 };
         }
 
@@ -306,6 +329,35 @@ namespace Sinbinder.Gameplay
                 transform.position.x, player.transform.position.y, transform.position.z));
         }
 
+        /// <summary>
+        /// Память души. Пока нужна ровно для одного — перка «Брат
+        /// по оружию», по которому движок и узнаёт братьев
+        /// (<c>CombatDecisionContext</c>).
+        ///
+        /// Пустая память и отсутствие памяти — разные вещи: проверка
+        /// в движке смотрит <c>Memory?.NarrativePerks</c>, и лишний
+        /// пустой мешок у восьмерых ничего не стоит, зато у двоих
+        /// в нём лежит то, из-за чего они держатся вместе.
+        /// </summary>
+        private static MemorySeed Memory(SquadRoster.Member member)
+        {
+            if (!member.Brother) return null;
+
+            var seed = new MemorySeed
+            {
+                Object = "брат по оружию",
+                Emotion = "Привязанность",
+                Story = "Они пришли в отряд вдвоём и с тех пор держатся рядом.",
+            };
+
+            seed.NarrativePerks.Add(new NarrativePerk
+            {
+                PerkName = "Брат по оружию",
+                IsFound = true,
+            });
+
+            return seed;
+        }
         private Warrior SpawnMember(SquadRoster.Member member, int index, int total)
         {
             var go = new GameObject(member.Name);
@@ -317,7 +369,7 @@ namespace Sinbinder.Gameplay
 
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(member.Name, member.Sin, member.Moral, 1,
-                                    member.Intensity, null, member.Gender);
+                                    member.Intensity, Memory(member), member.Gender);
             warrior.Initialize(soul, ShellType.Skeleton, _relSystem, member.IsCommander, Team.Player);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
@@ -347,7 +399,31 @@ namespace Sinbinder.Gameplay
                 ? new Vector3(0.5f, 1.5f, 0.5f)
                 : new Vector3(0.5f, 1.2f, 0.5f);
 
+            // Братьев видно без наведения: у обоих над головой одна
+            // и та же бирюзовая метка. Подпись при взгляде — вторая
+            // ступень, а здесь нужна первая: игрок должен заметить пару
+            // до того, как задумается, кто есть кто.
+            if (member.Brother) BrotherMark(go.transform);
+
             return warrior;
+        }
+
+        /// <summary>Метка брата по оружию. Одна на двоих, потому и узнаётся.</summary>
+        private static void BrotherMark(Transform root)
+        {
+            var mark = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mark.name = "Брат по оружию";
+            mark.transform.SetParent(root);
+            mark.transform.localPosition = new Vector3(0f, 1.62f, 0f);
+            mark.transform.localScale = new Vector3(0.34f, 0.1f, 0.34f);
+            mark.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
+
+            var renderer = mark.GetComponent<Renderer>();
+            if (renderer != null) renderer.material.color = new Color(0.25f, 0.80f, 0.74f);
+
+            // Коллайдер снят: метка не должна ловить ни луч выделения,
+            // ни удар. Она знак, а не часть тела.
+            Object.Destroy(mark.GetComponent<Collider>());
         }
     }
 }

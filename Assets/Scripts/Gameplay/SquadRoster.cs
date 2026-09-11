@@ -34,6 +34,13 @@ namespace Sinbinder.Gameplay
             public float Loyalty;
             public int UnpaidMissions;
 
+            /// <summary>
+            /// Носит ли перк «Брат по оружию». Живёт в реестре, а не
+            /// только в составе лагеря: реестр переживает смену сцен,
+            /// и братья обязаны остаться братьями в разгроме.
+            /// </summary>
+            public bool Brother;
+
             /// <summary>Один из трёх, кого можно поставить командиром на доле 3.</summary>
             public bool IsCandidate;
 

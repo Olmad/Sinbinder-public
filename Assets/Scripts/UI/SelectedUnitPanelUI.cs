@@ -128,7 +128,20 @@ namespace Sinbinder.UI
             var soul = who.Soul;
             if (soul == null) return "Душа неизвестна";
 
-            return $"Громче всего: {soul.GetSinName()}";
+            string line = $"Громче всего: {soul.GetSinName()}";
+
+            // Братство — не шкала, а связь, и в панели она стоит рядом
+            // со шкалой не для красоты: движок читает её в бою
+            // (CombatDecisionContext.BrotherNearby), и игрок обязан
+            // видеть то же, что видит движок.
+            return Brother(soul) ? line + " · Брат по оружию" : line;
+        }
+
+        /// <summary>Носит ли душа перк братства.</summary>
+        private static bool Brother(SoulData soul)
+        {
+            return soul.Memory?.NarrativePerks != null
+                && soul.Memory.NarrativePerks.Exists(p => p.PerkName == "Брат по оружию");
         }
 
         /// <summary>
