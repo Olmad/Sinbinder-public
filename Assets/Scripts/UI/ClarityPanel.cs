@@ -93,8 +93,18 @@ namespace Sinbinder.UI
             }
 
             y -= RowHeight * 0.6f;
-            _spawned.Add(Row(y, " ", Transparency.IsCustom ? "— свой набор —" : "— или по частям —", null));
-            y -= RowHeight;
+
+            // Свой набор — такая же строка, как ступени, а не состояние,
+            // в которое сваливаешься. Пока он не собран, строка есть,
+            // но не нажимается: место под него видно заранее.
+            _spawned.Add(Row(y,
+                Transparency.IsCustom ? "▸" : " ",
+                Transparency.HasCustom ? "Свой набор" : "Свой набор — соберите галочками ниже",
+                Transparency.HasCustom && !Transparency.IsCustom
+                    ? () => { Back(); Draw(); }
+                    : (System.Action)null));
+
+            y -= RowHeight * 1.2f;
 
             foreach (var piece in Transparency.Pieces())
             {
@@ -124,6 +134,14 @@ namespace Sinbinder.UI
 
             if (settings != null) settings.Choose(level);
             else Transparency.Set(level);
+        }
+
+        private static void Back()
+        {
+            var settings = Object.FindFirstObjectByType<TransparencySettings>();
+
+            if (settings != null) settings.UseCustom();
+            else Transparency.UseCustom();
         }
 
         private static void Tick(Detail one, bool on)

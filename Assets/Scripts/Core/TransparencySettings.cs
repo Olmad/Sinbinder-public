@@ -23,6 +23,9 @@ namespace Sinbinder.Core
         /// <summary>Свой набор галочек. Минус один — своего набора нет.</summary>
         private const string CustomKey = "sinbinder.clarity.custom";
 
+        /// <summary>Смотрит ли игрок сейчас свой набор, а не ступень.</summary>
+        private const string CustomOnKey = "sinbinder.clarity.custom.on";
+
         [Tooltip("Что показывать игроку. Выше третьей ступени в сборке "
                + "не поднимется: четвёртая — не настройка, а замок.")]
         [SerializeField] private Clarity _level = Transparency.Default;
@@ -69,10 +72,16 @@ namespace Sinbinder.Core
 
             var got = Transparency.Set(wanted);
 
-            // Свой набор восстанавливаем после ступени: Set его забывает,
-            // и в обратном порядке он бы стёрся собственной загрузкой.
+            // Свой набор восстанавливаем после ступени: Set снимает
+            // с него выбор, и в обратном порядке он бы гас собственной
+            // загрузкой. Сам набор восстанавливаем всегда, а включаем
+            // только если игрок на нём и остановился: «набор есть»
+            // и «смотрим набор» — разные вещи.
             if (_remember && PlayerPrefs.GetInt(CustomKey, -1) >= 0)
+            {
                 Transparency.SetCustom((Detail)PlayerPrefs.GetInt(CustomKey, 0));
+                if (PlayerPrefs.GetInt(CustomOnKey, 0) == 0) Transparency.Set(got);
+            }
 
             if (got != wanted)
                 Debug.Log($"[ПРОЗРАЧНОСТЬ] Просили «{Transparency.Describe(wanted)}», "
@@ -91,7 +100,7 @@ namespace Sinbinder.Core
             if (_remember)
             {
                 PlayerPrefs.SetInt(Key, (int)got);
-                PlayerPrefs.SetInt(CustomKey, -1);
+                PlayerPrefs.SetInt(CustomOnKey, 0);
                 PlayerPrefs.Save();
             }
 
@@ -110,10 +119,25 @@ namespace Sinbinder.Core
             if (_remember)
             {
                 PlayerPrefs.SetInt(CustomKey, (int)got);
+                PlayerPrefs.SetInt(CustomOnKey, 1);
                 PlayerPrefs.Save();
             }
 
             return got;
+        }
+
+        /// <summary>Вернуться к собранному набору, не пересобирая его.</summary>
+        public bool UseCustom()
+        {
+            if (!Transparency.UseCustom()) return false;
+
+            if (_remember)
+            {
+                PlayerPrefs.SetInt(CustomOnKey, 1);
+                PlayerPrefs.Save();
+            }
+
+            return true;
         }
     }
 }

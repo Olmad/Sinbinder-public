@@ -959,11 +959,28 @@ static class Bench
         Check(Transparency.Shows(Detail.Moments), "выключили причину — пропало и слово");
         Check(!Transparency.Shows(Detail.MomentCause), "причина не выключилась");
 
-        // ── 4. Ступень забывает галочки ──
-        // Иначе ползунок двигается, а картинка не меняется.
-        Transparency.SetCustom(Detail.Icons);
+        // ── 4. Ступень снимает выбор с галочек, но не стирает их ──
+        //
+        // Две разные вещи, и обе нужны. Смотреть надо ступень — иначе
+        // ползунок двигается, а картинка не меняется. Но сам набор
+        // собирают минуту, а теряют одним щелчком по соседней строке:
+        // игрок, ткнувший «Молча» посмотреть, обязан иметь дорогу назад.
+        Transparency.Reset();
+        Check(!Transparency.UseCustom(), "вернулись к набору, которого не собирали");
+
+        var mine = Transparency.SetCustom(Detail.Icons | Detail.Moments);
+        Check(Transparency.IsCustom, "свой набор не включился");
+
+        Transparency.Set(Clarity.Silent);
+        Check(!Transparency.IsCustom, "выбрали ступень, а смотрим всё равно набор");
+        Check(Transparency.HasCustom, "выбрали ступень — и набор стёрся, возвращаться некуда");
+        Check(Transparency.Shown == Detail.None, "ступень «Молча» что-то показывает");
+
+        Check(Transparency.UseCustom(), "к собранному набору не вернуться");
+        Check(Transparency.IsCustom, "вернулись, а смотрим не набор");
+        Check(Transparency.Shown == mine, "набор вернулся не таким, каким его собирали");
+
         Transparency.Set(Clarity.Log);
-        Check(!Transparency.IsCustom, "выбрали ступень, а свой набор остался");
         Check(Transparency.Shows(Detail.Log), "ступень с журналом журнала не показывает");
 
         // ── 5. Значение по умолчанию не изменилось ──

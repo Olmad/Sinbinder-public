@@ -92,14 +92,24 @@ namespace Sinbinder.Core
         private static bool _developer;
 
         /// <summary>
-        /// Свой набор галочек. Пусто — значит игрок ничего не разбирал
-        /// и смотрит готовую ступень.
+        /// Свой набор галочек. Пусто — значит игрок его ни разу не собирал.
         ///
-        /// Отдельным полем, а не подменой ступени: игрок, повозившийся
-        /// с галочками и передумавший, обязан вернуться туда же, откуда
-        /// уходил. Ступень для этого должна пережить его опыты.
+        /// <b>Переживает выбор готовой ступени.</b> Игрок собрал набор,
+        /// ткнул «Молча» посмотреть, как без подсказок, — и должен иметь
+        /// возможность вернуться к своему. Стирать его при каждом нажатии
+        /// на ступень значит наказывать за любопытство: набор собирают
+        /// минуту, а теряют одним щелчком.
         /// </summary>
         private static Detail? _custom;
+
+        /// <summary>
+        /// Смотрим сейчас свой набор или готовую ступень.
+        ///
+        /// Отдельно от самого набора намеренно: «набора нет» и «набор
+        /// есть, но сейчас не он» — разные вещи, и вторая нужна, чтобы
+        /// было куда возвращаться.
+        /// </summary>
+        private static bool _useCustom;
 
         /// <summary>Текущая ступень.</summary>
         public static Clarity Level => _level;
@@ -137,18 +147,26 @@ namespace Sinbinder.Core
 
             _level = wanted;
 
-            // Выбрал готовую ступень — значит отказался от своих галочек.
-            // Иначе ползунок двигался бы, а картинка не менялась.
-            _custom = null;
+            // Выбрал готовую ступень — смотрим её, а не свой набор.
+            // Но сам набор остаётся: он собран руками, и стирать его
+            // за один щелчок по соседней строке — грабёж.
+            _useCustom = false;
 
             return _level;
         }
 
         /// <summary>Идёт ли сейчас свой набор, а не готовая ступень.</summary>
-        public static bool IsCustom => _custom.HasValue;
+        public static bool IsCustom => _useCustom && _custom.HasValue;
+
+        /// <summary>Собран ли свой набор хоть когда-нибудь: есть ли куда вернуться.</summary>
+        public static bool HasCustom => _custom.HasValue;
+
+        /// <summary>Свой набор, каким его собрали. Пусто — не собирали.</summary>
+        public static Detail Custom => Clamp(_custom ?? Detail.None);
 
         /// <summary>Что показывается прямо сейчас — набором флажков.</summary>
-        public static Detail Shown => Clamp(_custom ?? Preset(_level));
+        public static Detail Shown =>
+            Clamp(IsCustom ? _custom.Value : Preset(_level));
 
         /// <summary>
         /// Набор, который даёт готовая ступень.
@@ -201,7 +219,20 @@ namespace Sinbinder.Core
         public static Detail SetCustom(Detail wanted)
         {
             _custom = Clamp(wanted);
+            _useCustom = true;
             return _custom.Value;
+        }
+
+        /// <summary>
+        /// Вернуться к своему набору, не пересобирая его. Ничего
+        /// не делает, если набора нет: возвращаться некуда.
+        /// </summary>
+        public static bool UseCustom()
+        {
+            if (!_custom.HasValue) return false;
+
+            _useCustom = true;
+            return true;
         }
 
         /// <summary>Одна галочка, не трогая остальные.</summary>
@@ -211,8 +242,12 @@ namespace Sinbinder.Core
             return SetCustom(on ? now | one : now & ~one);
         }
 
-        /// <summary>Вернуться к готовой ступени, забыв галочки.</summary>
-        public static void DropCustom() => _custom = null;
+        /// <summary>Забыть свой набор совсем. Возвращаться станет некуда.</summary>
+        public static void DropCustom()
+        {
+            _custom = null;
+            _useCustom = false;
+        }
 
         /// <summary>Показывать ли это сейчас.</summary>
         public static bool Shows(Detail what)
@@ -299,6 +334,7 @@ namespace Sinbinder.Core
             _developer = false;
             _level = Default;
             _custom = null;
+            _useCustom = false;
         }
     }
 }
