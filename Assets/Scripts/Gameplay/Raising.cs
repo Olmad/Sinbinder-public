@@ -40,7 +40,6 @@ namespace Sinbinder.Gameplay
             // читалось бы как поломка движка, а не как разная сборка.
             WarriorRig.Attach(go);
             go.AddComponent<SoulHarvester>();
-            go.AddComponent<SoulBinding>();
 
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Тело";

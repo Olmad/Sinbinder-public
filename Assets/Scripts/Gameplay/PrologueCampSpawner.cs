@@ -334,7 +334,6 @@ namespace Sinbinder.Gameplay
 
             // И вторая половина того же урока: собранную душу надо во что-то
             // вложить, иначе жатва — просто исчезновение трупа.
-            go.AddComponent<SoulBinding>();
 
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Тело";

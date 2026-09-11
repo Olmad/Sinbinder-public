@@ -96,9 +96,10 @@ namespace Sinbinder.Gameplay
             // неприятно вести камеру.
             WarriorRig.Attach(go, speed: 4.2f);
 
-            // Он и жнёт, и связывает: оба заклинания — его, а не отрядные.
+            // Жатва — его заклинание, а не отрядное. Связывание с него
+            // снято: воин создаётся у устройства руками, а не клавишей
+            // из любой точки мира (SoulBinding.cs.later).
             go.AddComponent<SoulHarvester>();
-            go.AddComponent<SoulBinding>();
 
             // Ходит сам, с клавиш. Это и есть «юнит, а не камера».
             go.AddComponent<PlayerWalk>();
