@@ -221,10 +221,23 @@ namespace Sinbinder.Dialogue
             return baseP;
         }
 
+        /// <summary>
+        /// Что говорящий скажет этому собеседнику.
+        ///
+        /// Сначала спрашиваем <see cref="EncounterLines"/>: он знает
+        /// про обоих — грех против греха, братство, — и отвечает
+        /// по встрече, а не по одному только говорящему.
+        ///
+        /// База остаётся запасной: в ней двадцать одна строка на
+        /// ситуацию, по греху и морали. Прежде она была единственной,
+        /// и собеседник на реплику не влиял вовсе — гордый говорил
+        /// жадному ровно то же, что унылому.
+        /// </summary>
         private string GetDialogueLine(Warrior speaker, Warrior target, string situation)
         {
-            // TryGetLine принимает говорящего и ситуацию; собеседник ей не нужен.
-            // Если реплики должны обращаться к target по имени — нужна перегрузка загрузчика.
+            string said = EncounterLines.Say(speaker, target, situation);
+            if (!string.IsNullOrEmpty(said)) return said;
+
             if (DialogueLoader.TryGetLine(speaker, situation, out string text)) return text;
             return $"[{speaker.DisplayName}]: ...";
         }
