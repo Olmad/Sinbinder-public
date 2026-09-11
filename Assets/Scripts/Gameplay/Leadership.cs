@@ -79,10 +79,20 @@ namespace Sinbinder.Gameplay
         public static string Shortfall(float leadership, int required)
             => $"уведёт {Count(SquadSize(leadership))}, а нужно {Collective(required)}";
 
-        private static string Collective(int n)
+        /// <summary>
+        /// «Двое», «девятеро» — счёт словами в именительном.
+        ///
+        /// Открыт наружу по той же причине, что и <see cref="Count"/>:
+        /// второй словарь чисел разошёлся бы с этим на первой правке.
+        /// Досчитан до двенадцати: обрывался на семи и дальше отдавал
+        /// цифру, а отряд в прологе — девять. Ловушка не выстрелила
+        /// только потому, что самая большая вылазка требует шестерых.
+        /// </summary>
+        public static string Collective(int n)
         {
             switch (n)
             {
+                case 0:  return "никого";
                 case 1:  return "один";
                 case 2:  return "двое";
                 case 3:  return "трое";
@@ -90,7 +100,11 @@ namespace Sinbinder.Gameplay
                 case 5:  return "пятеро";
                 case 6:  return "шестеро";
                 case 7:  return "семеро";
-                default: return n.ToString();
+                case 8:  return "восьмеро";
+                case 9:  return "девятеро";
+                case 10: return "десятеро";
+                case 11: return "одиннадцать";
+                default: return "двенадцать";
             }
         }
 

@@ -3349,6 +3349,53 @@ static class Bench
         Check(named >= 5, "объявляемых поступков слишком мало: "
                         + "своеволие снова окажется незаметным");
 
+        // ── 5. Пересказ вылазки ──
+        // Бой, которого игрок не видел, до сих пор возвращал только
+        // список выживших: запись боя заполнялась и не читалась никем.
+        var record = new BattleRecord();
+        void Log(string who, ActionType act)
+            => record.AddEvent(new BattleEvent { ActorName = who, Action = act });
+
+        Log("Марга", ActionType.Attack);
+        Log("Ловчий", ActionType.Loot);
+        Log("Кир", ActionType.Attack);
+        Log("Мясник", ActionType.Flee);
+        Log("Мясник", ActionType.Flee);      // то же самое второй раз
+        Log("Марга", ActionType.SaveAlly);
+        Log("Ловчий", ActionType.Loot);      // и это тоже
+
+        var picked = Sinbinder.Crypt.Retelling.Pick(record);
+        string story = Sinbinder.Crypt.Retelling.Tell(record);
+
+        Console.WriteLine($"\n  пересказ: «{story}»");
+
+        Check(picked.Count <= Sinbinder.Crypt.Retelling.Most,
+              "пересказ длиннее трёх случаев — это протокол, а не рассказ");
+        Check(picked.Count > 0, "из вылазки нечего пересказать");
+
+        // Громкое вперёд: если места на три случая, побег обязан попасть
+        // в них раньше похода за добычей.
+        Check(picked[0].Action == ActionType.Flee || picked[0].Action == ActionType.SaveAlly,
+              "пересказ начинается с рядового, а громкое не попало");
+
+        Check(!picked.Any(e => e.Action == ActionType.Attack),
+              "в пересказ попала драка — это и есть бой, а не случай в бою");
+
+        int fleeTimes = picked.Count(e => e.Action == ActionType.Flee
+                                       && e.ActorName == "Мясник");
+        Check(fleeTimes <= 1, "один и тот же побег пересказан дважды");
+
+        Check(story.Contains("сбежал"),
+              "побег на вылазке назван отходом — а приказов там не отдают");
+
+        Check(Sinbinder.Crypt.Retelling.Tell(null) == "",
+              "пересказ пустой записи что-то выдумал");
+
+        var dull = new BattleRecord();
+        dull.AddEvent(new BattleEvent { ActorName = "Кир", Action = ActionType.Attack });
+        Check(Sinbinder.Crypt.Retelling.Tell(dull) == "",
+              "из боя, где все просто дрались, выжат рассказ");
+
         Console.WriteLine(bad == 0 ? "  Моменты: чисто." : $"  Моменты: провалов {bad}.");
     }
 

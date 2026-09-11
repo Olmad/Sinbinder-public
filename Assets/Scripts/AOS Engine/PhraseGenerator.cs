@@ -85,6 +85,10 @@ namespace Sinbinder.AOS
         /// </summary>
         public static string Reason(Warrior warrior, DecisionContext context, Decision decision)
         {
+            // Положения может не быть: причину спрашивают и там, где бой
+            // уже кончился. Тогда причины нет — и это ответ, а не сбой.
+            if (context == null) return "";
+
             switch (decision.TopModule)
             {
                 case "Greed":
@@ -294,13 +298,27 @@ namespace Sinbinder.AOS
             }
         }
 
+        /// <summary>
+        /// Что он сделал, в прошедшем: «сбежал», «пошёл за добычей».
+        ///
+        /// Публично ради пересказа вылазки, которую игрок не видел.
+        /// Положения там нет — передаётся null, и это правильный ответ:
+        /// приказов на вылазке не отдают, значит отход был побегом.
+        /// </summary>
+        public static string Did(ActionType action, DecisionContext context)
+            => VerbPast(action, context);
+
         private static string VerbPast(ActionType action, DecisionContext context)
         {
             switch (action)
             {
                 case ActionType.Attack: return "пошёл в драку";
+                // Положения может не быть вовсе: пересказ вылазки знает
+                // действие, но не знает, кого спасали, — бой уже кончился.
+                // Раньше эта строка падала на null, и падала бы только
+                // там, куда ни один прогон до сих пор не заходил.
                 case ActionType.SaveAlly:
-                    return context.TargetWarrior != null
+                    return context != null && context.TargetWarrior != null
                         ? $"бросился к {context.TargetWarrior.DisplayName}"
                         : "бросился к раненому";
                 case ActionType.Loot: return "пошёл за добычей";

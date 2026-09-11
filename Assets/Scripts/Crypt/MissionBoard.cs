@@ -108,6 +108,11 @@ namespace Sinbinder.Crypt
 
             LastReport = Report(mission, away, survivors, commanderName);
 
+            // Что там было. До этого отчёт говорил, кто вернулся,
+            // и молчал о том, почему остальные не вернулись.
+            string told = Retelling.Tell(fight.Record);
+            if (!string.IsNullOrEmpty(told)) LastReport += " " + told;
+
             if (chosen.HasValue)
             {
                 LastReport += " " + JunctionCatalog.Told(chosen.Value);

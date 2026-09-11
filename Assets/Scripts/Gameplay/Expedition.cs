@@ -46,11 +46,20 @@ namespace Sinbinder.Gameplay
             public readonly int Taken;
             public readonly int FoesFallen;
 
-            public Outcome(List<string> survivors, int taken, int foesFallen)
+            /// <summary>
+            /// Что там происходило. Заполняется движком, а пересказывает
+            /// её Crypt.Retelling. До этого запись боя не работала ни
+            /// разу: резолвер умел её вести, но никто её не заводил.
+            /// </summary>
+            public readonly AOS.BattleRecord Record;
+
+            public Outcome(List<string> survivors, int taken, int foesFallen,
+                           AOS.BattleRecord record = null)
             {
                 Survivors = survivors;
                 Taken = taken;
                 FoesFallen = foesFallen;
+                Record = record;
             }
         }
 
@@ -76,8 +85,9 @@ namespace Sinbinder.Gameplay
         public static Outcome Fight(List<SquadRoster.Member> away, int foeCount)
         {
             var survivors = new List<string>();
+            var record = new AOS.BattleRecord();
             int taken = 0, fallen = 0;
-            if (away == null || away.Count == 0) return new Outcome(survivors, 0, 0);
+            if (away == null || away.Count == 0) return new Outcome(survivors, 0, 0, record);
 
             var holder = new GameObject("Вылазка");
             holder.SetActive(false);   // ничьих Awake и Update: это счёт, не сцена
@@ -118,7 +128,10 @@ namespace Sinbinder.Gameplay
                     ? SquadOrders.FromSin(commander.Soul.Sin)
                     : SquadStrategy.Balanced;
 
-                AutoBattleResolver.Resolve(commander, squad, foes, strategy);
+                // Пятый аргумент. Без него запись боя оставалась пустой,
+                // и вылазка возвращала список выживших без единого слова
+                // о том, почему остальные не вернулись.
+                AutoBattleResolver.Resolve(commander, squad, foes, strategy, record);
 
                 for (int i = 0; i < squad.Count; i++)
                     if (!squad[i].IsDead) survivors.Add(away[i].Name);
@@ -139,7 +152,7 @@ namespace Sinbinder.Gameplay
                 else Object.DestroyImmediate(holder);
             }
 
-            return new Outcome(survivors, taken, fallen);
+            return new Outcome(survivors, taken, fallen, record);
         }
 
         /// <summary>

@@ -25,9 +25,51 @@ namespace Sinbinder.Core
     /// </summary>
     public static class SaveSystem
     {
-        /// <summary>Куда пишется быстрое сохранение.</summary>
+        /// <summary>
+        /// Гнёзда свободной игры. Их немного и они постоянные: список,
+        /// который растёт без края, — это архив, а не сохранение.
+        /// </summary>
+        public static readonly string[] Slots = { "первое", "второе", "третье", "быстрое" };
+
+        /// <summary>Быстрое гнездо: в него пишет F5.</summary>
+        public const string Quick = "быстрое";
+
+        /// <summary>
+        /// Единственное гнездо ответственной игры.
+        ///
+        /// Отдельное от гнёзд свободной намеренно: иначе одна партия
+        /// затирала бы записи другой, а вернуться к свободной игре
+        /// после ответственной — законно.
+        /// </summary>
+        public const string Bound = "с обязательством";
+
+        private static string Folder =>
+            Path.Combine(Application.persistentDataPath, "saves");
+
+        /// <summary>Путь к гнезду по имени.</summary>
+        public static string PathOf(string slot)
+        {
+            // Имя гнезда приходит из нашего же списка, но путь собирается
+            // из строки — и однажды кто-нибудь передаст сюда чужую.
+            string safe = string.IsNullOrEmpty(slot) ? Quick : slot;
+            foreach (char bad in Path.GetInvalidFileNameChars())
+                safe = safe.Replace(bad, '_');
+
+            return Path.Combine(Folder, safe + ".sinbin");
+        }
+
+        /// <summary>
+        /// Куда пишет F5 сейчас. В ответственной игре — в её единственное
+        /// гнездо: там «быстрое сохранение» и «сохранение» одно и то же.
+        /// </summary>
         public static string QuickPath =>
-            Path.Combine(Application.persistentDataPath, "quick.sinbin");
+            PathOf(Commitment.On ? Bound : Quick);
+
+        /// <summary>Гнёзда, доступные сейчас. В ответственной игре — одно.</summary>
+        public static string[] Available()
+        {
+            return Commitment.On ? new[] { Bound } : Slots;
+        }
 
         // ──────────────────────────────────
         // Снимок
@@ -44,6 +86,8 @@ namespace Sinbinder.Core
                 Brought = CryptUpgrades.BroughtAll(),
                 Commitment = Commitment.On,
             };
+
+            save.Label = Label(save);
 
             foreach (var m in SquadRoster.Members)
             {
@@ -146,12 +190,36 @@ namespace Sinbinder.Core
         // Файл
         // ──────────────────────────────────
 
+        /// <summary>
+        /// Чем назвать запись. Словами и по тому, что в ней лежит:
+        /// «Склеп · девять воинов · трое в долгу».
+        /// </summary>
+        private static string Label(SaveGame save)
+        {
+            string where = string.IsNullOrEmpty(save.Scene) ? "Где-то" : save.Scene;
+
+            // Счёт словами берём у Leadership: он уже говорит об этом же
+            // отряде теми же словами, и второй словарь чисел разошёлся
+            // бы с ним на первой правке — там об этом прямо написано.
+            string who = Leadership.Collective(save.Squad.Count);
+
+            int owed = 0;
+            foreach (var m in save.Squad) if (m.UnpaidMissions > 0) owed++;
+
+            string debt = owed == 0
+                ? "долгов нет"
+                : $"{Leadership.Collective(owed)} в долгу";
+
+            return $"{where} · {who} · {debt}";
+        }
+
         public static bool Write(SaveGame save, string path)
         {
             if (save == null) return false;
 
             try
             {
+                Directory.CreateDirectory(Folder);
                 File.WriteAllText(path, JsonUtility.ToJson(save, true));
                 return true;
             }

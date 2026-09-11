@@ -1232,6 +1232,7 @@ namespace Sinbinder.Utilets
             BuildLog(canvasGO.transform);
             BuildMomentCaption(canvasGO.transform);
             BuildClarityPanel(canvasGO.transform);
+            BuildSaveSlots(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
             BuildCommandHint(canvasGO.transform);
@@ -1882,6 +1883,32 @@ namespace Sinbinder.Utilets
             rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.ClarityPanel>();
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
+                     ("_font", UIFont()));
+        }
+
+        /// <summary>Гнёзда сохранений. На Canvas по той же причине, что и прочие.</summary>
+        private static void BuildSaveSlots(Transform parent)
+        {
+            var panel = Panel("Сохранения", parent,
+                anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(860f, 560f),
+                position: Vector2.zero);
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+
+            var title = Label("Заголовок", panel, 28, TextAnchor.UpperLeft,
+                new Vector2(0f, -20f), 52f);
+
+            var rows = Panel("Строки", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 480f),
+                position: new Vector2(0f, -78f));
+            rows.offsetMin = new Vector2(24f, rows.offsetMin.y);
+            rows.offsetMax = new Vector2(-24f, rows.offsetMax.y);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.SaveSlotsPanel>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_rows", rows),
                      ("_font", UIFont()));
         }

@@ -12,6 +12,13 @@ namespace Sinbinder.AOS
     public class BattleEvent
     {
         public string ActorId;
+
+        /// <summary>
+        /// Имя действующего. Id — это Guid, свой у каждой машины
+        /// и бессмысленный для пересказа: по нему не скажешь, кто
+        /// свернул за добычей.
+        /// </summary>
+        public string ActorName;
         public string TargetId;
         public ActionType Action;
         public float DamageDealt;

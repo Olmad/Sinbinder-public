@@ -103,7 +103,12 @@ namespace Sinbinder.AOS
         private static void Execute(Warrior warrior, ActionType action,
             List<Warrior> foes, List<Warrior> allies, BattleRecord record)
         {
-            var evt = new BattleEvent { ActorId = warrior.Id, Action = action };
+            var evt = new BattleEvent
+            {
+                ActorId = warrior.Id,
+                ActorName = warrior.DisplayName,
+                Action = action,
+            };
 
             switch (action)
             {
