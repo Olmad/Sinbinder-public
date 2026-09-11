@@ -23,6 +23,13 @@ namespace Sinbinder.Core
         [SerializeField] private string _id;
         [SerializeField] private string _name;
         [SerializeField] private int _moralType;
+
+        /// <summary>
+        /// Пол. Ноль — мужской, и это же значение получают все души,
+        /// сохранённые до того, как пол появился: старый отряд остаётся
+        /// таким, каким был, а не становится наполовину женским молча.
+        /// </summary>
+        [SerializeField] private int _gender;
         [SerializeField] private int _level;
         [SerializeField] private MemorySeed _memory;
 
@@ -35,6 +42,7 @@ namespace Sinbinder.Core
         public string Id => _id;
         public string Name => _name;
         public MoralType Moral => (MoralType)_moralType;
+        public Gender Gender => (Gender)_gender;
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
@@ -138,8 +146,10 @@ namespace Sinbinder.Core
 
         /// <summary>Душа с одним выраженным грехом. Прежняя сигнатура.</summary>
         public SoulData(string name, SinType sin, MoralType moral, int level,
-            float sinIntensity = 0f, MemorySeed memory = null)
+            float sinIntensity = 0f, MemorySeed memory = null,
+            Gender gender = Gender.Male)
         {
+            _gender = (int)gender;
             _id = System.Guid.NewGuid().ToString();
             _name = name;
             _moralType = (int)moral;
@@ -155,8 +165,9 @@ namespace Sinbinder.Core
 
         /// <summary>Душа со всеми семью спектрами сразу.</summary>
         public SoulData(string name, MoralType moral, int level, float[] spectra,
-            MemorySeed memory = null)
+            MemorySeed memory = null, Gender gender = Gender.Male)
         {
+            _gender = (int)gender;
             _id = System.Guid.NewGuid().ToString();
             _name = name;
             _moralType = (int)moral;
@@ -184,6 +195,7 @@ namespace Sinbinder.Core
             _id = System.Guid.NewGuid().ToString();
             _name = other._name;
             _moralType = other._moralType;
+            _gender = other._gender;
             _level = other._level;
             _memory = other._memory;
 

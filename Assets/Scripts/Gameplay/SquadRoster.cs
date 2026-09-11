@@ -29,6 +29,7 @@ namespace Sinbinder.Gameplay
             public string Name;
             public SinType Sin;
             public MoralType Moral;
+            public Gender Gender;
             public float Intensity;
             public float Loyalty;
             public int UnpaidMissions;

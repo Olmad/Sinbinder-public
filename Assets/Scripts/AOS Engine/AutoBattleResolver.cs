@@ -107,6 +107,7 @@ namespace Sinbinder.AOS
             {
                 ActorId = warrior.Id,
                 ActorName = warrior.DisplayName,
+                ActorGender = warrior.Gender,
                 Action = action,
             };
 

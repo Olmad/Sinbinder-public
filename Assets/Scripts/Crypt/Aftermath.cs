@@ -74,8 +74,11 @@ namespace Sinbinder.Crypt
         }
 
         /// <summary>Что он об этом скажет. Без цифр.</summary>
-        public static string Judged(MoralType moral, MissionAction action)
+        public static string Judged(MoralType moral, MissionAction action,
+                                    Gender gender = Gender.Male)
         {
+            string P(string he, string she) => Grammar.Pick(gender, he, she);
+
             if (action == MissionAction.LetThemPass)
             {
                 switch (moral)
@@ -92,7 +95,9 @@ namespace Sinbinder.Crypt
                 return filth >= 1f ? "не смотрит на командира" : "старается не вспоминать";
 
             if (moral == MoralType.Vicious)
-                return filth >= 1f ? "доволен и не скрывает" : "считает, что можно было и больше";
+                return filth >= 1f
+                    ? P("доволен и не скрывает", "довольна и не скрывает")
+                    : "считает, что можно было и больше";
 
             return "молчит";
         }

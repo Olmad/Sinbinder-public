@@ -99,7 +99,7 @@ namespace Sinbinder.Crypt
         private static string Line(BattleEvent ev)
         {
             string who = string.IsNullOrEmpty(ev.ActorName) ? "Кто-то" : ev.ActorName;
-            return $"{who} {PhraseGenerator.Did(ev.Action, null)}.";
+            return $"{who} {PhraseGenerator.Did(ev.Action, null, ev.ActorGender)}.";
         }
     }
 }

@@ -12,6 +12,12 @@ namespace Sinbinder.Gameplay
         public string Id = System.Guid.NewGuid().ToString();
         public SoulData Soul;
         public string DisplayName => Soul != null ? Soul.Name : "";
+
+        // Слово в слово, как в игре (Gameplay/Warrior.cs): пол живёт
+        // у души, а не у оболочки. Заглушка, которая отвечает иначе,
+        // заставит стенд мерить не ту игру — в этот день такое уже
+        // случалось дважды.
+        public Core.Gender Gender => Soul != null ? Soul.Gender : Core.Gender.Male;
         public float Loyalty = 50f;
         public int UnpaidMissions;
         public float HP = 30f, MaxHP = 30f;

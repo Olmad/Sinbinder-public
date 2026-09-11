@@ -20,6 +20,7 @@ namespace Sinbinder.Core
         public string Name;
         public int Sin;
         public int Moral;
+        public int Gender;
         public float Intensity;
         public float Loyalty;
         public int UnpaidMissions;

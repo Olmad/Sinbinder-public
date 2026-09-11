@@ -103,7 +103,8 @@ namespace Sinbinder.Gameplay
                 foreach (var m in away)
                 {
                     var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                                 m.Loyalty, m.IsCommander, Team.Player, relations);
+                                 m.Loyalty, m.IsCommander, Team.Player, relations,
+                                 m.Gender);
                     w.UnpaidMissions = m.UnpaidMissions;
 
                     squad.Add(w);
@@ -168,20 +169,20 @@ namespace Sinbinder.Gameplay
                                      RelationshipSystem relations)
         {
             var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                         m.Loyalty, m.IsCommander, Team.Player, relations);
+                         m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender);
             w.UnpaidMissions = m.UnpaidMissions;
             return w;
         }
 
         private static Warrior Make(GameObject holder, string name, SinType sin,
             MoralType moral, float intensity, float loyalty, bool isCommander,
-            Team team, RelationshipSystem relations)
+            Team team, RelationshipSystem relations, Gender gender = Gender.Male)
         {
             var go = new GameObject(name);
             go.transform.SetParent(holder.transform);
 
             var w = go.AddComponent<Warrior>();
-            w.Initialize(new SoulData(name, sin, moral, 1, intensity),
+            w.Initialize(new SoulData(name, sin, moral, 1, intensity, null, gender),
                          ShellType.Skeleton, relations, isCommander, team);
             // Верность задаётся сдвигом от полусотни: своего сеттера
             // у неё нет, и заводить его ради счётной вылазки незачем.

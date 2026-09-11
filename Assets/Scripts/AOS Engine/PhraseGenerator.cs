@@ -61,10 +61,12 @@ namespace Sinbinder.AOS
             string name = warrior.DisplayName;
 
             if (decision.Hesitated)
-                return $"{name} не сдвинулся с места — не смог выбрать.";
+                return Core.Grammar.Pick(warrior.Gender,
+                    $"{name} не сдвинулся с места — не смог выбрать.",
+                    $"{name} не сдвинулась с места — не смогла выбрать.");
 
             string why = Reason(warrior, context, decision);
-            string what = VerbPast(decision.Action, context);
+            string what = VerbPast(decision.Action, context, warrior.Gender);
 
             if (decision.RefusedCommand)
                 return string.IsNullOrEmpty(why)
@@ -85,9 +87,22 @@ namespace Sinbinder.AOS
         /// </summary>
         public static string Reason(Warrior warrior, DecisionContext context, Decision decision)
         {
+            // Причина пишется в мужском роде, а род наводится один раз
+            // на выходе. Местоимения — закрытый набор, менять их
+            // механически надёжно; глаголы, которые несут род, написаны
+            // ниже парами. См. Core/Grammar.cs.
+            var gender = warrior != null ? warrior.Gender : Core.Gender.Male;
+            return Core.Grammar.For(gender, Because(warrior, context, decision, gender));
+        }
+
+        private static string Because(Warrior warrior, DecisionContext context,
+                                      Decision decision, Core.Gender gender)
+        {
             // Положения может не быть: причину спрашивают и там, где бой
             // уже кончился. Тогда причины нет — и это ответ, а не сбой.
             if (context == null) return "";
+
+            string P(string he, string she) => Core.Grammar.Pick(gender, he, she);
 
             switch (decision.TopModule)
             {
@@ -119,8 +134,15 @@ namespace Sinbinder.AOS
                     if (context.TargetBackExposed) return "он не бьёт в спину";
                     if (context.Fatigue > 0.3f && decision.Action != ActionType.Idle)
                         return "он не признаёт, что устал";
-                    if (decision.RefusedCommand) return "он не привык, чтобы им распоряжались";
-                    if (context.LastAlive) return "он остался один и не собирается уходить";
+                    // «Им» здесь было творительным от «он», а у этого
+                    // слова два разных хозяина, и по строке их не различить.
+                    // Фраза переписана так, чтобы его не было.
+                    if (decision.RefusedCommand)
+                        return P("он не привык к чужим приказам",
+                                 "она не привыкла к чужим приказам");
+                    if (context.LastAlive)
+                        return P("он остался один и не собирается уходить",
+                                 "она осталась одна и не собирается уходить");
                     return "он не может позволить себе выглядеть слабым";
 
                 case "Envy":
@@ -136,7 +158,9 @@ namespace Sinbinder.AOS
                     return "он тащит всё, до чего дотянется";
 
                 case "Sloth":
-                    if (context.IsExhausted) return "он выдохся и больше не может";
+                    if (context.IsExhausted)
+                        return P("он выдохся и больше не может",
+                                 "она выдохлась и больше не может");
                     if (context.Fatigue > 0.4f) return "силы у него на исходе";
                     return "у него не осталось воли";
 
@@ -305,23 +329,33 @@ namespace Sinbinder.AOS
         /// Положения там нет — передаётся null, и это правильный ответ:
         /// приказов на вылазке не отдают, значит отход был побегом.
         /// </summary>
-        public static string Did(ActionType action, DecisionContext context)
-            => VerbPast(action, context);
+        public static string Did(ActionType action, DecisionContext context,
+                                 Core.Gender gender = Core.Gender.Male)
+            => VerbPast(action, context, gender);
 
-        private static string VerbPast(ActionType action, DecisionContext context)
+        private static string VerbPast(ActionType action, DecisionContext context,
+                                       Core.Gender gender)
         {
+            // Обе формы на одной строке. Правило по окончанию тут
+            // не годится: «пошёл» даёт «пошла», а «лёг» — «легла»,
+            // и почти работающее правило выдаёт «пошёла» молча.
+            string P(string he, string she) => Core.Grammar.Pick(gender, he, she);
+
             switch (action)
             {
-                case ActionType.Attack: return "пошёл в драку";
+                case ActionType.Attack: return P("пошёл в драку", "пошла в драку");
+
                 // Положения может не быть вовсе: пересказ вылазки знает
                 // действие, но не знает, кого спасали, — бой уже кончился.
                 // Раньше эта строка падала на null, и падала бы только
                 // там, куда ни один прогон до сих пор не заходил.
                 case ActionType.SaveAlly:
                     return context != null && context.TargetWarrior != null
-                        ? $"бросился к {context.TargetWarrior.DisplayName}"
-                        : "бросился к раненому";
-                case ActionType.Loot: return "пошёл за добычей";
+                        ? P($"бросился к {context.TargetWarrior.DisplayName}",
+                            $"бросилась к {context.TargetWarrior.DisplayName}")
+                        : P("бросился к раненому", "бросилась к раненому");
+
+                case ActionType.Loot: return P("пошёл за добычей", "пошла за добычей");
 
                 // Отход и побег — разные вещи, и разница ровно в том,
                 // просили его об этом или нет. Отступить по приказу —
@@ -330,25 +364,26 @@ namespace Sinbinder.AOS
                 // от игрока именно то, ради чего здесь движок решений.
                 case ActionType.Flee:
                     return context != null && context.HasCommand
-                         ? "отступил" : "сбежал";
+                         ? P("отступил", "отступила")
+                         : P("сбежал", "сбежала");
 
-                case ActionType.Idle: return "остался на месте";
-                case ActionType.ObeyCommand: return "сделал, как велено";
+                case ActionType.Idle: return P("остался на месте", "осталась на месте");
+                case ActionType.ObeyCommand: return P("сделал, как велено", "сделала, как велено");
 
                 // Дописано по следу замера (Tools/bench → МОМЕНТЫ):
                 // эти поступки объявляются, а слов у них не было.
-                case ActionType.BribeEnemy: return "торговался с чужим";
-                case ActionType.AcceptBribe: return "ушёл к чужим";
-                case ActionType.DuelChallenge: return "позвал на поединок";
-                case ActionType.LastStand: return "встал насмерть";
-                case ActionType.Sacrifice: return "закрыл собой";
-                case ActionType.StealWeapon: return "потянул чужое оружие";
-                case ActionType.Berserk: return "впал в бешенство";
-                case ActionType.Devour: return "сожрал";
-                case ActionType.Charm: return "очаровал";
-                case ActionType.EternalSleep: return "уснул намертво";
+                case ActionType.BribeEnemy: return P("торговался с чужим", "торговалась с чужим");
+                case ActionType.AcceptBribe: return P("ушёл к чужим", "ушла к чужим");
+                case ActionType.DuelChallenge: return P("позвал на поединок", "позвала на поединок");
+                case ActionType.LastStand: return P("встал насмерть", "встала насмерть");
+                case ActionType.Sacrifice: return P("закрыл собой", "закрыла собой");
+                case ActionType.StealWeapon: return P("потянул чужое оружие", "потянула чужое оружие");
+                case ActionType.Berserk: return P("впал в бешенство", "впала в бешенство");
+                case ActionType.Devour: return P("сожрал", "сожрала");
+                case ActionType.Charm: return P("очаровал", "очаровала");
+                case ActionType.EternalSleep: return P("уснул намертво", "уснула намертво");
 
-                default: return "поступил по-своему";
+                default: return P("поступил по-своему", "поступила по-своему");
             }
         }
 

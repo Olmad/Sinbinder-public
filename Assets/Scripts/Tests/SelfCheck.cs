@@ -175,8 +175,8 @@ namespace Sinbinder.Tests
                     },
                     new SquadRoster.Member
                     {
-                        Name = "Второй", Sin = SinType.Sloth, Moral = MoralType.Pious,
-                        Intensity = -30f, Loyalty = 71f,
+                        Name = "Вторая", Sin = SinType.Sloth, Moral = MoralType.Pious,
+                        Intensity = -30f, Loyalty = 71f, Gender = Gender.Female,
                     },
                 });
 
@@ -210,6 +210,8 @@ namespace Sinbinder.Tests
                 var second = SquadRoster.Members[1];
                 Near(second.Intensity, -30f, "добродетель вернулась грехом: "
                                            + "знак спектра потерян");
+                Same(second.Gender, Gender.Female, "пол не пережил файл — "
+                                                 + "вернувшаяся женщина стала мужчиной");
 
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");
@@ -482,8 +484,8 @@ namespace Sinbinder.Tests
             Check(BattleNarrator.Build(new List<string>()).Contains("без единого спора"),
                 "пустой список тоже");
 
-            var repeated = BattleNarrator.Build(new List<string> { "Марга ушёл за добычей.", "Марга ушёл за добычей.", "Марга ушёл за добычей." });
-            Same(CountOf(repeated, "Марга ушёл за добычей."), 1,
+            var repeated = BattleNarrator.Build(new List<string> { "Марга ушла за добычей.", "Марга ушла за добычей.", "Марга ушла за добычей." });
+            Same(CountOf(repeated, "Марга ушла за добычей."), 1,
                 "повтор сворачивается в одну строку");
             Check(repeated.Contains("раз за разом"), "повтор помечен как привычка");
 

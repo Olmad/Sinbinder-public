@@ -66,7 +66,7 @@ namespace Sinbinder.Gameplay
             // Отряду задолжали до пробуждения — тем же приёмом, что и пять
             // пустых палаток: лагерь жил до того, как игрок открыл глаза.
             new("Марга Копатель",      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
-                unpaid: 3),
+                unpaid: 3, gender: Gender.Female),
             new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, 25f),
 
             // Рядовые. Повести отряд могут, но уведут троих — на миссию
@@ -74,7 +74,8 @@ namespace Sinbinder.Gameplay
             // игроку, зачем вообще нужен опытный.
             new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, 0f),
             new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0f),
-            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f),
+            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f,
+                gender: Gender.Female),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
             // первый безобидный приказ в лагере, и доля 2 — обучение
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
@@ -131,13 +132,23 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public readonly int Unpaid;
 
+            /// <summary>
+            /// Пол. В отряде двое женщин — так было задумано с самого
+            /// начала, и до сегодня об этом знали только имена: движок
+            /// писал «Марга ушёл за добычей», и эта строка стояла даже
+            /// в самопроверке.
+            /// </summary>
+            public readonly Gender Gender;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
-                string unavailable = "", int unpaid = 0)
+                string unavailable = "", int unpaid = 0,
+                Gender gender = Gender.Male)
             {
                 Name = name;
                 Sin = sin;
                 Moral = moral;
+                Gender = gender;
                 Intensity = intensity;
                 Loyalty = loyalty;
                 Leadership = leadership;
@@ -217,6 +228,7 @@ namespace Sinbinder.Gameplay
                     Name = m.Name,
                     Sin = m.Sin,
                     Moral = m.Moral,
+                    Gender = m.Gender,
                     Intensity = m.Intensity,
                     Loyalty = m.Loyalty,
                     UnpaidMissions = m.Unpaid,
@@ -294,7 +306,8 @@ namespace Sinbinder.Gameplay
             go.transform.LookAt(new Vector3(transform.position.x, go.transform.position.y, transform.position.z));
 
             var warrior = go.AddComponent<Warrior>();
-            var soul = new SoulData(member.Name, member.Sin, member.Moral, 1, member.Intensity);
+            var soul = new SoulData(member.Name, member.Sin, member.Moral, 1,
+                                    member.Intensity, null, member.Gender);
             warrior.Initialize(soul, ShellType.Skeleton, _relSystem, member.IsCommander, Team.Player);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;

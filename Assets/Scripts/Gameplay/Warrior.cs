@@ -49,6 +49,12 @@ namespace Sinbinder.Gameplay
         public Core.SoulData Soul => _soul;
         public Core.ShellType Shell => _shell;
 
+        /// <summary>
+        /// Пол — у души, а не у оболочки. Скелет не мужчина и не женщина;
+        /// мужчина или женщина — тот, кто в нём сидит.
+        /// </summary>
+        public Core.Gender Gender => Soul != null ? Soul.Gender : Core.Gender.Male;
+
         /// <summary>Оболочка целиком, если воин собран из неё. Может быть null.</summary>
         public Core.ShellData ShellData => _shellData;
         public Core.VirtueSystem Virtue => _virtue;

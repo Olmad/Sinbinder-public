@@ -889,6 +889,76 @@ static class Bench
     /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
     /// нигде и никогда.
     /// </summary>
+    static void GenderCheck()
+    {
+        Console.WriteLine("\n=== РОД: согласуется ли текст ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        // ── 1. Местоимения: целыми словами и только ими ──
+        var pairs = new (string was, string now)[]
+        {
+            ("он думает о своей доле", "она думает о своей доле"),
+            ("его обступили со всех сторон", "её обступили со всех сторон"),
+            ("ему до сих пор не заплатили", "ей до сих пор не заплатили"),
+            ("на нём нет живого места", "на ней нет живого места"),
+            ("силы у него на исходе", "силы у неё на исходе"),
+        };
+
+        foreach (var (was, now) in pairs)
+        {
+            string got = Grammar.Her(was);
+            Check(got == now, $"«{was}» → «{got}», а надо «{now}»");
+        }
+
+        // Слово, внутри которого спрятано местоимение, трогать нельзя.
+        Check(Grammar.Her("его обступили со всех сторон").Contains("сторон"),
+              "«сторон» испорчено заменой: местоимение поймано внутри слова");
+        Check(Grammar.Her("оно того стоит") == "оно того стоит",
+              "тронуто слово, которое не местоимение");
+        Check(Grammar.Her("Он ждёт").StartsWith("Она"),
+              "заглавная буква потеряна");
+        Check(Grammar.For(Gender.Male, "он ждёт") == "он ждёт",
+              "мужской род тронут");
+
+        // ── 2. Глаголы: обе формы и они разные ──
+        Console.WriteLine($"\n  {"поступок",-18} {"он",-26} она");
+
+        int same = 0, named = 0;
+        var ctxNone = TypicalContext();
+        ctxNone.HasCommand = false;
+
+        foreach (ActionType act in Enum.GetValues(typeof(ActionType)))
+        {
+            if (Moment.Loudness(act) == Notice.None) continue;
+
+            named++;
+            string he = PhraseGenerator.Did(act, ctxNone, Gender.Male);
+            string she = PhraseGenerator.Did(act, ctxNone, Gender.Female);
+
+            if (he == she) same++;
+            Console.WriteLine($"  {act,-18} {he,-26} {she}");
+        }
+
+        Check(named > 0, "объявляемых поступков не нашлось вовсе");
+        Check(same == 0, $"{same} поступков звучат одинаково в обоих родах — "
+                       + "где-то забыли вторую форму");
+
+        // Ловушка на механическое правило: «пошёл» даёт «пошла»,
+        // и никакая замена окончания этого не берёт.
+        Check(PhraseGenerator.Did(ActionType.Loot, ctxNone, Gender.Female) == "пошла за добычей",
+              "«пошёл» превратился не в «пошла» — правило по окончанию соврало");
+
+        Check(PhraseGenerator.Did(ActionType.Flee, ctxNone, Gender.Female) == "сбежала",
+              "побег в женском роде назван неверно");
+
+        Console.WriteLine(bad == 0 ? "  Род: чисто." : $"  Род: провалов {bad}.");
+    }
+
     static void CommitmentCheck()
     {
         Console.WriteLine("\n=== ОБЯЗАТЕЛЬСТВО: держится ли запрет ===");
@@ -3581,6 +3651,7 @@ static class Bench
         TransparencyCheck();
         ClarityFlagsCheck();
         CommitmentCheck();
+        GenderCheck();
         FallenCheck();
         SoulDecayCheck();
         ExpeditionCheck(cfg);

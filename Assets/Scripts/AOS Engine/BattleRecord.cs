@@ -20,6 +20,9 @@ namespace Sinbinder.AOS
         /// </summary>
         public string ActorName;
         public string TargetId;
+        /// <summary>Пол действующего: без него пересказ говорит «Марга ушёл».</summary>
+        public Core.Gender ActorGender;
+
         public ActionType Action;
         public float DamageDealt;
         public float HealDealt;

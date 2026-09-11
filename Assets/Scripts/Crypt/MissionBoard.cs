@@ -232,7 +232,7 @@ namespace Sinbinder.Crypt
                 float shift = Aftermath.LoyaltyShift(m.Moral, chosen);
                 if (shift != 0f) SquadRoster.ShiftLoyalty(m.Name, shift);
 
-                Log($"{m.Name}: {Aftermath.Judged(m.Moral, chosen)}.");
+                Log($"{m.Name}: {Aftermath.Judged(m.Moral, chosen, m.Gender)}.");
             }
         }
 
