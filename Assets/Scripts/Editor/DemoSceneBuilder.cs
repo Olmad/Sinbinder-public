@@ -1831,7 +1831,12 @@ namespace Sinbinder.Utilets
             var holder = new GameObject("Подпись момента", typeof(RectTransform));
             holder.transform.SetParent(parent, false);
 
-            var line = Label("Слово", holder.transform, 40, TextAnchor.MiddleCenter);
+            // Приведение обязательно: объект создан с RectTransform,
+            // но статический тип у transform всё равно Transform,
+            // а Label просит именно RectTransform.
+            var box = (RectTransform)holder.transform;
+
+            var line = Label("Слово", box, 40, TextAnchor.MiddleCenter);
             line.color = new Color(0.96f, 0.92f, 0.80f);
 
             // Опора по центру: подпись ставится в точку над головой,
@@ -1845,7 +1850,7 @@ namespace Sinbinder.Utilets
             // Вторая строка: причина, вполсилы и мельче. Отдельным
             // Text, а не переносом в том же: у них разные прозрачность,
             // размер и своя галочка в настройках.
-            var cause = Label("Причина", holder.transform, 24, TextAnchor.MiddleCenter);
+            var cause = Label("Причина", box, 24, TextAnchor.MiddleCenter);
             cause.color = new Color(0.90f, 0.88f, 0.84f);
 
             var crt = cause.rectTransform;
