@@ -3150,8 +3150,8 @@ static class Bench
         // проверяем прямо: у каждого поступка, который Moment берётся
         // объявить, обязано быть слово. Названный поступок без слова
         // даёт пустую строку в журнале, и молча.
-        Console.WriteLine($"\n  {"поступок",-18} {"громкость",10}  слово");
-        int mute = 0, named = 0;
+        Console.WriteLine($"\n  {"поступок",-18} {"громкость",10}  {"подпись",-16} слово");
+        int mute = 0, named = 0, longCaption = 0;
 
         foreach (ActionType act in Enum.GetValues(typeof(ActionType)))
         {
@@ -3161,14 +3161,25 @@ static class Bench
 
             named++;
             string word = PhraseGenerator.Doing(act);
-            bool ok = !string.IsNullOrWhiteSpace(word);
+            string brief = PhraseGenerator.Short(act, ctxNone);
+
+            bool ok = !string.IsNullOrWhiteSpace(word)
+                   && !string.IsNullOrWhiteSpace(brief);
             if (!ok) mute++;
 
-            Console.WriteLine($"  {act,-18} {loud,10}  {(ok ? word : "— НЕТ СЛОВА")}");
+            // Подпись читают краем глаза за полсекунды. Три слова там
+            // уже не подпись, а строка, и она проиграет бою.
+            int count = string.IsNullOrWhiteSpace(brief)
+                      ? 0 : brief.Split(' ').Length;
+            if (count > 2) { longCaption++; }
+
+            Console.WriteLine($"  {act,-18} {loud,10}  {(brief ?? "— НЕТ ПОДПИСИ"),-16} {word}");
         }
 
-        Check(mute == 0, $"{mute} объявляемых поступков без слова — "
-                       + "журнал напишет пустую строку");
+        Check(mute == 0, $"{mute} объявляемых поступков без слова или подписи — "
+                       + "журнал напишет пустую строку, а экран пустое место");
+        Check(longCaption == 0, $"{longCaption} подписей длиннее двух слов — "
+                              + "их не прочитают, пока идёт бой");
 
         // Отход по приказу и побег без приказа обязаны называться
         // по-разному: разница между ними и есть предмет игры.

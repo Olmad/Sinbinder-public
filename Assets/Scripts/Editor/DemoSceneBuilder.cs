@@ -1222,6 +1222,7 @@ namespace Sinbinder.Utilets
 
             BuildSelectionBox(canvasGO.transform);
             BuildLog(canvasGO.transform);
+            BuildMomentCaption(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
             BuildHint(canvasGO.transform);
             BuildCommandHint(canvasGO.transform);
@@ -1803,6 +1804,33 @@ namespace Sinbinder.Utilets
 
             var ui = panel.gameObject.AddComponent<Sinbinder.UI.BattleLogUI>();
             Wire(ui, ("_line", line), ("_group", group));
+        }
+
+        /// <summary>
+        /// Ступень 1: одно слово над тем, кто решил сам.
+        ///
+        /// Не в панели, а поверх всего и без фона: подпись ходит за
+        /// воином по экрану, пока камера к нему наезжает. Панель здесь
+        /// была бы рамкой, летающей по полю боя.
+        /// </summary>
+        private static void BuildMomentCaption(Transform parent)
+        {
+            var holder = new GameObject("Подпись момента", typeof(RectTransform));
+            holder.transform.SetParent(parent, false);
+
+            var line = Label("Слово", holder.transform, 40, TextAnchor.MiddleCenter);
+            line.color = new Color(0.96f, 0.92f, 0.80f);
+
+            // Опора по центру: подпись ставится в точку над головой,
+            // и при любой другой опоре она уезжала бы вбок тем сильнее,
+            // чем длиннее слово.
+            var rt = line.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(420f, 60f);
+
+            var ui = holder.AddComponent<Sinbinder.UI.MomentCaption>();
+            Wire(ui, ("_line", line));
         }
 
         /// <summary>Ступень 2: подсказка при наведении.</summary>

@@ -180,6 +180,45 @@ namespace Sinbinder.AOS
         /// «действует по-своему» — то есть самое характерное, что он
         /// делает, было единственным, чего нельзя было прочесть.
         /// </summary>
+        /// <summary>
+        /// Одно-два слова: подпись к моменту, которую читают на бегу.
+        ///
+        /// Три регистра одних и тех же действий живут в одном файле
+        /// намеренно. <see cref="Short"/> — подпись на экране, её читают
+        /// краем глаза за полсекунды. <see cref="Doing"/> — что он делает
+        /// сейчас, для подсказки при наведении. <see cref="LogLine"/> —
+        /// прошедшее время и причина, для журнала. Разнести их по разным
+        /// файлам значило бы завести три списка слов для одних действий,
+        /// и они разъехались бы на первой же правке.
+        ///
+        /// Отход и побег различаются и здесь: разница в том, просили
+        /// его об этом или нет.
+        /// </summary>
+        public static string Short(ActionType action, DecisionContext context)
+        {
+            switch (action)
+            {
+                case ActionType.Flee:
+                    return context != null && context.HasCommand ? "Отходит" : "Сбегает";
+
+                case ActionType.SaveAlly:     return "Спасает";
+                case ActionType.Loot:         return "Грабит";
+                case ActionType.AcceptBribe:  return "Предаёт";
+                case ActionType.BribeEnemy:   return "Торгуется";
+                case ActionType.Devour:       return "Жрёт";
+                case ActionType.Berserk:      return "Звереет";
+                case ActionType.LastStand:    return "Насмерть";
+                case ActionType.DuelChallenge: return "Вызывает";
+                case ActionType.Sacrifice:    return "Закрывает собой";
+                case ActionType.StealWeapon:  return "Ворует";
+                case ActionType.Charm:        return "Морочит";
+                case ActionType.EternalSleep: return "Спит";
+
+                // Рядовое подписи не получает: оно и не объявляется.
+                default: return null;
+            }
+        }
+
         public static string Doing(ActionType action)
         {
             switch (action)
