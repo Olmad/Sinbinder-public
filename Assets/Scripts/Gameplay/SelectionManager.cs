@@ -29,6 +29,7 @@ namespace Sinbinder.Gameplay
 
         private Vector2 _selectionStart;
         private bool _isSelecting;
+        private bool _complainedEmpty;
         private Camera _cam;
 
         public System.Action<List<SelectionComponent>> OnSelectionChanged;
@@ -271,6 +272,23 @@ namespace Sinbinder.Gameplay
             Vector2 min = Vector2.Min(_selectionStart, Input.mousePosition);
             Vector2 max = Vector2.Max(_selectionStart, Input.mousePosition);
             Rect selectionRect = new Rect(min, max - min);
+
+            // Убитых вычёркиваем на месте: воин мог погибнуть между
+            // двумя рамками, а список у менеджера живёт дольше сцены.
+            _allUnits.RemoveAll(u => u == null);
+
+            // Пустой список — событие, а не ноль. Ровно из-за него рамка
+            // не выделяла ничего и никогда: воины на учёт не вставали,
+            // а перебор пустоты выглядел как «рамка кривая», а не как
+            // «рамки нет». Жалуемся один раз за запуск: в каждом кадре
+            // это была бы стена в консоли.
+            if (_allUnits.Count == 0 && !_complainedEmpty)
+            {
+                _complainedEmpty = true;
+                Debug.LogWarning("[ВЫДЕЛЕНИЕ] Рамка обвела пустоту: на учёте "
+                               + "нет ни одного воина. Значит SelectionComponent "
+                               + "не зарегистрировался — смотреть его Start.");
+            }
 
             foreach (var unit in _allUnits)
             {
