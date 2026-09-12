@@ -65,6 +65,13 @@ namespace Sinbinder.Gameplay
             Require<Engagement>(go);
             Require<AOS.RefusalPresenter>(go);
 
+            // Тело говорит то, что решила душа. Молчит, пока аниматора
+            // нет, — он появится вместе с первой моделью, и в тот же
+            // день всё заработает само. Проводка, написанная заранее,
+            // тем и хороша: её не надо вспоминать в вечер, когда модель
+            // наконец легла.
+            Require<WarriorAnimation>(go);
+
             // Первая ступень прозрачности.
             UI.OverheadBuilder.Attach(go, damageable);
 

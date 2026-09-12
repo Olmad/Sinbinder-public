@@ -40,13 +40,15 @@ namespace Sinbinder.Gameplay
             var soul = new SoulData(name, sin, moral, 1, sin == SinType.Pride ? 70f : -30f);
             warrior.Initialize(soul, shell, _relSystem, isCommander, team);
 
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.SetParent(go.transform);
-            cube.transform.localPosition = Vector3.zero;
-            cube.transform.localScale = isCommander ? new Vector3(0.5f, 1.5f, 0.5f) : new Vector3(0.5f, 1f, 0.5f);
+            var body = WarriorLook.Build(go, shell,
+                                         isCommander ? 1.5f : 1f, 0.5f, 0f);
 
-            var renderer = cube.GetComponent<Renderer>();
-            renderer.material.color = team == Team.Player ? Color.blue : Color.red;
+            // Отладочный спавнер красит по стороне: он для того и есть,
+            // чтобы с одного взгляда различать своих и чужих. Красим
+            // то, что вернул шов, а не куб: с моделью это тоже сработает.
+            var renderer = body != null ? body.GetComponentInChildren<Renderer>() : null;
+            if (renderer != null)
+                renderer.material.color = team == Team.Player ? Color.blue : Color.red;
 
             return warrior;
         }

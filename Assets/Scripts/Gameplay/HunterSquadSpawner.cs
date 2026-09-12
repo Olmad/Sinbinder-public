@@ -208,12 +208,9 @@ namespace Sinbinder.Gameplay
             // доли 4 не начался бы вовсе.
             WarriorRig.Attach(go, kind.Speed);
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Тело";
-            body.transform.SetParent(go.transform);
-            body.transform.localPosition = new Vector3(0f, kind.Height * 0.62f, 0f);
-            body.transform.localRotation = Quaternion.identity;
-            body.transform.localScale = new Vector3(kind.Girth, kind.Height, kind.Girth);
+            WarriorLook.Build(go, ShellType.Zombie,
+                                         kind.Height, kind.Girth,
+                                         kind.Height * 0.62f);
 
             return warrior;
         }

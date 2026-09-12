@@ -41,11 +41,10 @@ namespace Sinbinder.Gameplay
             WarriorRig.Attach(go);
             go.AddComponent<SoulHarvester>();
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Тело";
-            body.transform.SetParent(go.transform);
-            body.transform.localPosition = new Vector3(0f, 0.65f, 0f);
-            body.transform.localScale = new Vector3(0.5f, 1.05f, 0.5f);
+            // Оболочка видна: поднятый в големе не должен выглядеть
+            // как поднятый в скелете — иначе выбор тела у устройства
+            // ничего не значит на глаз.
+            WarriorLook.Build(go, shell, 1.05f, 0.5f, 0.65f);
 
             // Поднятый вне старта сцены через настройку не проходит:
             // без этого вызова он остался бы телом без движка решений.

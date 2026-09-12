@@ -419,17 +419,13 @@ namespace Sinbinder.Gameplay
             // И вторая половина того же урока: собранную душу надо во что-то
             // вложить, иначе жатва — просто исчезновение трупа.
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Тело";
-            body.transform.SetParent(go.transform);
-            body.transform.localPosition = new Vector3(0f, 0.75f, 0f);
-            body.transform.localRotation = Quaternion.identity;
-
             // Опытного видно ростом ещё до совета: игрок должен успеть
-            // разглядеть тех, из кого будет выбирать.
-            body.transform.localScale = (member.IsCommander || member.IsCandidate)
-                ? new Vector3(0.5f, 1.5f, 0.5f)
-                : new Vector3(0.5f, 1.2f, 0.5f);
+            // разглядеть тех, из кого будет выбирать. Разница остаётся
+            // и на модели — там она станет разницей в силуэте.
+            bool seasoned = member.IsCommander || member.IsCandidate;
+
+            WarriorLook.Build(go, ShellType.Skeleton,
+                              seasoned ? 1.5f : 1.2f, 0.5f, 0.75f);
 
             // Братьев видно без наведения: у обоих над головой одна
             // и та же бирюзовая метка. Подпись при взгляде — вторая

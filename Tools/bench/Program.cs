@@ -889,6 +889,63 @@ static class Bench
     /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
     /// нигде и никогда.
     /// </summary>
+    static void BodyMotionCheck()
+    {
+        Console.WriteLine("\n=== ТЕЛО: во что превращается решение ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var contract = BodyMotion.All();
+        Console.WriteLine($"  договор с художником: {string.Join(", ", contract)}");
+
+        // Каждое решение обязано во что-то превращаться, и только
+        // в то, что художник обещал нарисовать. Состояние, которого
+        // нет в договоре, — это анимация, которую никто не заказывал:
+        // Animator.Play по чужому имени молча ничего не делает.
+        var used = new Dictionary<string, int>();
+
+        foreach (ActionType act in Enum.GetValues(typeof(ActionType)))
+        {
+            string state = BodyMotion.For(act);
+
+            Check(!string.IsNullOrWhiteSpace(state), $"{act} не превращается ни во что");
+            Check(contract.Contains(state),
+                  $"{act} просит состояние «{state}», которого нет в договоре");
+
+            used[state] = used.GetValueOrDefault(state) + 1;
+        }
+
+        Console.WriteLine($"\n  {"состояние",-10} решений");
+        foreach (var kv in used.OrderByDescending(x => x.Value))
+            Console.WriteLine($"  {kv.Key,-10} {kv.Value}");
+
+        // Побег обязан быть отдельным. Всё остальное можно свести
+        // к удару и ходьбе, но ровно ради побега всё и затевалось:
+        // подпись «Сбегает» над телом, которое бьёт, — враньё.
+        Check(BodyMotion.For(ActionType.Flee) == BodyMotion.Flee,
+              "побег выглядит не побегом — подпись «Сбегает» осталась "
+            + "подписью к ничему");
+
+        Check(BodyMotion.For(ActionType.Idle) == BodyMotion.Idle,
+              "стояние выглядит не стоянием");
+        Check(BodyMotion.For(ActionType.Attack) == BodyMotion.Attack,
+              "драка выглядит не дракой");
+        Check(BodyMotion.For(ActionType.Loot) == BodyMotion.Walk,
+              "поход за добычей выглядит не ходьбой");
+
+        // Пять состояний плюс разговор. Шестое означает, что кто-то
+        // начал заводить анимацию на каждое умение, а их полсотни.
+        Check(contract.Length <= 6,
+              $"состояний стало {contract.Length}: рамка «пять анимаций, "
+            + "не пятьдесят» поехала");
+
+        Console.WriteLine(bad == 0 ? "  Тело: чисто." : $"  Тело: провалов {bad}.");
+    }
+
     static void GenderCheck()
     {
         Console.WriteLine("\n=== РОД: согласуется ли текст ===");
@@ -3666,6 +3723,7 @@ static class Bench
         ClarityFlagsCheck();
         CommitmentCheck();
         GenderCheck();
+        BodyMotionCheck();
         FallenCheck();
         SoulDecayCheck();
         ExpeditionCheck(cfg);
