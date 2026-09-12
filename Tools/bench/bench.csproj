@@ -63,6 +63,10 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/MoralType.cs" />
+    <!-- Ремесло души. Добавлено вслед за SoulData: стенд собирает
+         её живьём, и тип, которого он не знает, валит сборку
+         целиком — а узнаётся это только при следующем замере. -->
+    <Compile Include="../../Assets/Scripts/Core/Soul/Trade.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulData.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/NarrativePerk.cs" />
     <Compile Include="../../Assets/Scripts/Core/Virtue/VirtueType.cs" />
