@@ -45,6 +45,9 @@ namespace Sinbinder.Gameplay
             /// а не свойство сцены, и переживает переход вместе с ней.</summary>
             public Core.Trade Trade;
 
+            /// <summary>Слава, пришедшая с ним. Не заработанный титул.</summary>
+            public bool Legend;
+
             /// <summary>Один из трёх, кого можно поставить командиром на доле 3.</summary>
             public bool IsCandidate;
 

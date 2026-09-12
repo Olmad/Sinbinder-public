@@ -52,7 +52,10 @@ namespace Sinbinder.Gameplay
             // увидит её строкой в совете и не нажмёт кнопку, которая соврёт
             // (docs/09-PROLOGUE.md §6).
             new("Карган Старый Ворон", SinType.Pride,    MoralType.Neutral, 90f, 75f, 90f,
-                "телохранитель, не отходит от вас", trade: Trade.Hunter),
+                "телохранитель, не отходит от вас", legend: true),
+            // Ремесла у него нет нарочно: «Старый Ворон» — уже прозвище,
+            // и оно стоит в имени. «Карган Старый Ворон Охотник» —
+            // это не три сведения о человеке, а одно, сказанное трижды.
 
             // Трое опытных. Грехи взяты те, что канон закрепил за тройкой
             // кандидатов: Уныние, Жадность, Гнев. Имена канон не закрепляет.
@@ -179,11 +182,17 @@ namespace Sinbinder.Gameplay
             /// <summary>Кем он был до отряда. Наклоняет спектры при создании.</summary>
             public readonly Trade Trade;
 
+            /// <summary>
+            /// Легенда: его узнаю́т и обращаются иначе. Не титул,
+            /// заработанный в игре, а слава, пришедшая с ним.
+            /// </summary>
+            public readonly bool Legend;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
                 string unavailable = "", int unpaid = 0,
                 Gender gender = Gender.Male, bool brother = false,
-                Trade trade = Trade.None)
+                Trade trade = Trade.None, bool legend = false)
             {
                 Name = name;
                 Sin = sin;
@@ -196,6 +205,7 @@ namespace Sinbinder.Gameplay
                 Unpaid = unpaid;
                 Brother = brother;
                 Trade = trade;
+                Legend = legend;
             }
         }
 
@@ -283,7 +293,8 @@ namespace Sinbinder.Gameplay
                     Leadership = m.Leadership,
                     Unavailable = m.Unavailable,
                     Brother = m.Brother,
-                    Trade = m.Trade
+                    Trade = m.Trade,
+                    Legend = m.Legend
                 };
         }
 
@@ -387,6 +398,10 @@ namespace Sinbinder.Gameplay
             // раз, при создании: второй вызов удвоил бы наклон.
             soul.SetTrade(member.Trade);
             Trades.Apply(soul, member.Trade);
+
+            // Слава не зарабатывается на месте: она пришла с ним.
+            // Дальше её читают те, кто встречает его через строй.
+            if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
             warrior.Initialize(soul, ShellType.Skeleton, _relSystem, member.IsCommander, Team.Player);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;

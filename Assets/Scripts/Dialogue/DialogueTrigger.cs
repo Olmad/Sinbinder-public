@@ -106,8 +106,23 @@ namespace Sinbinder.Dialogue
             _activeSpeakers.Clear();
 
             var lines = new List<DialogueLine>();
-            allies.Sort((a, b) => GetPriority(b.Warrior).CompareTo(GetPriority(a.Warrior)));
-            enemies.Sort((a, b) => GetPriority(b.Warrior).CompareTo(GetPriority(a.Warrior)));
+
+            // Говорит тот, кто ближе к чужим, а не вечно один и тот же.
+            //
+            // Приоритет считался чистой функцией греха: Гордыня сто, Гнев
+            // девяносто, и так далее. Значит в каждом бою каждого запуска
+            // первым говорил один и тот же воин — у нас это Карган, —
+            // и говорил одно и то же. Сотни написанных реплик игрок
+            // не слышал вовсе.
+            //
+            // Близость — вход, который меняется сам: она зависит от того,
+            // как игрок расставил отряд. Ничего случайного при этом
+            // не добавляется, а разговор получает столько же вариантов,
+            // сколько у игрока способов подойти к врагу.
+            //
+            // Грех остаётся, но решает только при равной близости.
+            allies.Sort((a, b) => Rank(b.Warrior, enemies).CompareTo(Rank(a.Warrior, enemies)));
+            enemies.Sort((a, b) => Rank(b.Warrior, allies).CompareTo(Rank(a.Warrior, allies)));
 
             var firstSpeaker = allies[0].Warrior;
             var firstTarget = enemies[0].Warrior;
@@ -205,6 +220,35 @@ namespace Sinbinder.Dialogue
                 };
                 OnLineAdded?.Invoke(line2);
             }
+        }
+
+
+        /// <summary>
+        /// Кто заговорит первым. Чем ближе к чужим — тем вероятнее он,
+        /// а грех подправляет на доли шага.
+        ///
+        /// Расстояние переворачивается, чтобы больший вес был у меньшего:
+        /// сортировка идёт по убыванию. Тридцать метров — потолок,
+        /// за которым разница уже ничего не значит.
+        /// </summary>
+        private float Rank(Warrior w, List<Damageable> others)
+        {
+            if (w == null) return 0f;
+            if (w is SinbinderPlayer) return 0f;
+
+            float nearest = 30f;
+
+            foreach (var other in others)
+            {
+                if (other == null || other.IsDead || other.Warrior == null) continue;
+
+                float d = Vector3.Distance(w.transform.position, other.transform.position);
+                if (d < nearest) nearest = d;
+            }
+
+            // Близость весит десятками, грех — единицами: он не может
+            // перебить того, кто стоит вплотную, но разводит равных.
+            return (30f - nearest) * 10f + GetPriority(w) * 0.1f;
         }
 
         private float GetPriority(Warrior w)
