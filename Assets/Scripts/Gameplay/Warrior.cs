@@ -46,6 +46,19 @@ namespace Sinbinder.Gameplay
 
         public string Id => _id;
         public string DisplayName => _soul.Name;
+
+        /// <summary>
+        /// Имя, каким его видит игрок: с ремеслом после него,
+        /// а заработанный титул — впереди («Гертон Крестьянин»
+        /// → «Костекоп Гертон»). Разбор приёма — Core/Naming.
+        ///
+        /// DisplayName остаётся голым именем нарочно: по нему
+        /// ищут в составе отряда, сверяют с ушедшими и пишут
+        /// в журнал. Украшенное имя сломало бы все эти сверки
+        /// в тот же день, когда кто-нибудь заработает титул.
+        /// </summary>
+        public string ShownName => Core.Naming.Full(
+            _soul.Name, _soul.Trade, Reputation?.CurrentName);
         public Core.SoulData Soul => _soul;
         public Core.ShellType Shell => _shell;
 

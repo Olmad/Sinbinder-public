@@ -41,6 +41,10 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public bool Brother;
 
+            /// <summary>Ремесло души. Живёт в реестре: оно её свойство,
+            /// а не свойство сцены, и переживает переход вместе с ней.</summary>
+            public Core.Trade Trade;
+
             /// <summary>Один из трёх, кого можно поставить командиром на доле 3.</summary>
             public bool IsCandidate;
 

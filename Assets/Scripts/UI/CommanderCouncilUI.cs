@@ -365,7 +365,7 @@ namespace Sinbinder.UI
                 button.onClick.AddListener(() => Select(chosen));
             }
 
-            Label(rt, warrior.DisplayName, 26, new Vector2(18f, -8f), 32f,
+            Label(rt, warrior.ShownName, 26, new Vector2(18f, -8f), 32f,
                 option.CanChoose);
 
             // Навык командования словами, без шкалы: цифры игроку не
@@ -453,7 +453,7 @@ namespace Sinbinder.UI
             // Пророчество не пишется руками: его считает движок теми же
             // модулями, что решают в бою. Иначе панель однажды пообещает
             // не то, что случится.
-            _detail.text = o.Warrior.DisplayName + Break
+            _detail.text = o.Warrior.ShownName + Break
                          + Leadership.Describe(o.Skill) + Break
                          + TemperamentPredictor.Describe(o.Warrior);
         }

@@ -87,7 +87,7 @@ namespace Sinbinder.UI
             if (who != _shown)
             {
                 _shown = who;
-                _nameLine.text = who.DisplayName;
+                _nameLine.text = who.ShownName;
                 _sinLine.text = SinLine(who);
             }
 

@@ -31,6 +31,13 @@ namespace Sinbinder.Core
         /// </summary>
         [SerializeField] private int _gender;
         [SerializeField] private int _level;
+
+        /// <summary>
+        /// Ремесло: кем душа была до того, как её собрали.
+        /// Ноль — ремесла нет, и это же получают все души,
+        /// сохранённые до того, как ремесло появилось.
+        /// </summary>
+        [SerializeField] private int _trade;
         [SerializeField] private MemorySeed _memory;
 
         [SerializeField] private float[] _spectra;
@@ -43,6 +50,15 @@ namespace Sinbinder.Core
         public string Name => _name;
         public MoralType Moral => (MoralType)_moralType;
         public Gender Gender => (Gender)_gender;
+
+        /// <summary>Ремесло души. Задаётся при создании и не меняется.</summary>
+        public Trade Trade => (Trade)_trade;
+
+        /// <summary>
+        /// Назначить ремесло. Только при создании: Trades.Apply
+        /// уже наклонил спектры, и второй вызов удвоил бы наклон.
+        /// </summary>
+        public void SetTrade(Trade trade) => _trade = (int)trade;
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);

@@ -52,13 +52,14 @@ namespace Sinbinder.Gameplay
             // увидит её строкой в совете и не нажмёт кнопку, которая соврёт
             // (docs/09-PROLOGUE.md §6).
             new("Карган Старый Ворон", SinType.Pride,    MoralType.Neutral, 90f, 75f, 90f,
-                "телохранитель, не отходит от вас"),
+                "телохранитель, не отходит от вас", trade: Trade.Hunter),
 
             // Трое опытных. Грехи взяты те, что канон закрепил за тройкой
             // кандидатов: Уныние, Жадность, Гнев. Имена канон не закрепляет.
             // Навыки разведены так, чтобы уводили по-разному, но все трое
             // проходили порог миссии доли 3 в пять человек.
-            new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f),
+            new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f,
+                trade: Trade.Mage),
             // Долг в три вылазки — не случайность, а завязка. Строка, которой
             // игра продаётся дословно («ему не платили третью вылазку подряд»),
             // рождается только при долге больше двух, а демо заводило всех
@@ -66,8 +67,9 @@ namespace Sinbinder.Gameplay
             // Отряду задолжали до пробуждения — тем же приёмом, что и пять
             // пустых палаток: лагерь жил до того, как игрок открыл глаза.
             new("Марга Копатель",      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
-                unpaid: 3),
-            new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, 25f),
+                unpaid: 3, trade: Trade.Peasant),
+            new("Брат Хальд",          SinType.Wrath,    MoralType.Pious,   35f, 95f, 25f,
+                trade: Trade.Alchemist),
 
             // Рядовые. Повести отряд могут, но уведут троих — на миссию
             // доли 3, где нужно пятеро, их не хватит. Это и объясняет
@@ -77,21 +79,24 @@ namespace Sinbinder.Gameplay
             // нарочно: кандидаты в старшие уходят с отрядом, а братство
             // видно только пока оба на виду.
             new("Одноглазый Хорь",     SinType.Envy,     MoralType.Vicious, 45f, 65f, 0f,
-                brother: true),
-            new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0f),
-            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f),
+                brother: true, trade: Trade.Hunter),
+            new("Толстый Ю",           SinType.Gluttony, MoralType.Neutral, 55f, 80f, 0f,
+                trade: Trade.Peasant),
+            new("Лиска",               SinType.Lust,     MoralType.Neutral, 30f, 85f, 0f,
+                trade: Trade.Archer),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
             // первый безобидный приказ в лагере, и доля 2 — обучение
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
             // по унынию после Вейна, но лагерный приказ ему уже по силам.
             new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f,
-                brother: true),
+                brother: true, trade: Trade.Peasant),
 
             // Девятый. Пролог обещает, что «воинов видно девять»
             // (docs/09-PROLOGUE.md §4, сцена 1), и число это не
             // произвольное: с доли 2 уходят пятеро, и в лагере обязаны
             // остаться Карган и трое. На восьмерых сходилось трое.
-            new("Косой Ждан",          SinType.Pride,    MoralType.Neutral, 30f, 80f, 0f),
+            new("Косой Ждан",          SinType.Pride,    MoralType.Neutral, 30f, 80f, 0f,
+                trade: Trade.Archer),
         };
 
         private readonly struct CampMember
@@ -171,10 +176,14 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public readonly bool Brother;
 
+            /// <summary>Кем он был до отряда. Наклоняет спектры при создании.</summary>
+            public readonly Trade Trade;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
                 string unavailable = "", int unpaid = 0,
-                Gender gender = Gender.Male, bool brother = false)
+                Gender gender = Gender.Male, bool brother = false,
+                Trade trade = Trade.None)
             {
                 Name = name;
                 Sin = sin;
@@ -186,6 +195,7 @@ namespace Sinbinder.Gameplay
                 Unavailable = unavailable;
                 Unpaid = unpaid;
                 Brother = brother;
+                Trade = trade;
             }
         }
 
@@ -272,7 +282,8 @@ namespace Sinbinder.Gameplay
 
                     Leadership = m.Leadership,
                     Unavailable = m.Unavailable,
-                    Brother = m.Brother
+                    Brother = m.Brother,
+                    Trade = m.Trade
                 };
         }
 
@@ -370,6 +381,12 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(member.Name, member.Sin, member.Moral, 1,
                                     member.Intensity, Memory(member), member.Gender);
+
+            // Ремесло тянет душу на себя — тем же приёмом, каким это
+            // делает оболочка (08-FLOOR.md §3.2). Прикладывается один
+            // раз, при создании: второй вызов удвоил бы наклон.
+            soul.SetTrade(member.Trade);
+            Trades.Apply(soul, member.Trade);
             warrior.Initialize(soul, ShellType.Skeleton, _relSystem, member.IsCommander, Team.Player);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
