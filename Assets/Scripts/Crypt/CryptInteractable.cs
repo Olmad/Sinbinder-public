@@ -55,7 +55,44 @@ namespace Sinbinder.Crypt
             if (!near || !Ready) return;
             if (!Input.GetKeyDown(_key)) return;
 
+            // Отвечает только ближайший.
+            //
+            // Предметы зоны стоят вплотную — банка, разъём, подставка,
+            // рукоять, — и радиуса в пару метров хватает, чтобы игрок
+            // оказался рядом сразу с несколькими. У каждого свой Update
+            // с одной и той же проверкой клавиши, а порядок между ними
+            // Unity не определяет: одно нажатие делало несколько дел
+            // сразу и в непредсказуемом порядке.
+            //
+            // Отсюда и «взял душу, а её нельзя поставить»: банка отдавала
+            // её в руки, и в том же кадре разъём забирал обратно.
+            if (!Closest()) return;
+
             Use();
+        }
+
+        /// <summary>
+        /// Я ли ближе всех к игроку среди готовых слушаться.
+        ///
+        /// Перебор по всем: их в зоне десяток, и считается это один раз
+        /// за нажатие, а не каждый кадр.
+        /// </summary>
+        private bool Closest()
+        {
+            float mine = CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position);
+
+            foreach (var other in FindObjectsByType<CryptInteractable>(FindObjectsSortMode.None))
+            {
+                if (other == this || other == null || !other.Ready) continue;
+
+                float theirs = CampFocus.GroundDistance(SinbinderPlayer.Where,
+                                                        other.transform.position);
+
+                if (theirs > other._reach) continue;   // он игрока не слышит
+                if (theirs < mine) return false;
+            }
+
+            return true;
         }
 
         protected bool Near()
