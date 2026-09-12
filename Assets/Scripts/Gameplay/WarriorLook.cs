@@ -31,9 +31,14 @@ namespace Sinbinder.Gameplay
         private const string Folder = "Bodies/";
 
         private static bool _toldAboutMissing;
+        private static bool _toldAboutMotion;
 
         /// <summary>Забыть, что уже жаловались. Для проверок.</summary>
-        public static void Forget() => _toldAboutMissing = false;
+        public static void Forget()
+        {
+            _toldAboutMissing = false;
+            _toldAboutMotion = false;
+        }
 
         /// <summary>
         /// Собрать видимое тело и вернуть его. Рост и толщина остаются
@@ -59,10 +64,18 @@ namespace Sinbinder.Gameplay
                 model.transform.localPosition = Vector3.zero;
                 model.transform.localRotation = Quaternion.identity;
 
-                // Модель приходит своего роста, а нам нужен тот, который
-                // задал спавнер: рост здесь — не украшение, по нему видно
-                // опытного ещё до совета.
-                model.transform.localScale = new Vector3(girth, height, girth);
+                // Модель приходит ростом в единицу, а нам нужен тот,
+                // который задал спавнер: рост здесь — не украшение,
+                // по нему видно опытного ещё до совета.
+                //
+                // Масштаб равномерный, и толщина в него не входит.
+                // Толщина — это про куб: у куба она была шириной в метрах
+                // (0,5), и приложенная к модели превратила бы скелета
+                // в спичку вдвое у́же себя. У модели свои пропорции,
+                // и портить их нечем, кроме как этим числом.
+                model.transform.localScale = Vector3.one * height;
+
+                Animate(model, shell);
 
                 return model.transform;
             }
@@ -82,6 +95,66 @@ namespace Sinbinder.Gameplay
             body.transform.localScale = new Vector3(girth, height, girth);
 
             return body.transform;
+        }
+
+        /// <summary>
+        /// Дать телу контроллер движений.
+        ///
+        /// Импортированная модель несёт <c>Animator</c> без контроллера:
+        /// контроллер — редакторный ассет, в FBX его положить нельзя,
+        /// и на префабе он оказался бы только если завести префаб.
+        /// Префаб рядом с моделью носил бы то же имя в той же папке,
+        /// и <c>Resources.Load</c> выбирал бы из двух — ровно та
+        /// неоднозначность, которую потом ищут часами.
+        ///
+        /// Поэтому контроллер лежит отдельным именем и находится сам:
+        /// <c>Bodies/SkeletonMotion</c> рядом с <c>Bodies/Skeleton</c>.
+        /// Собирает его <c>BodyImport</c> при импорте модели.
+        ///
+        /// Без контроллера <c>Animator.Play</c> молчит, и тело стоит
+        /// в позе привязки — руки в стороны. Поэтому говорим вслух,
+        /// один раз: поза привязки на поле боя выглядит не как
+        /// «анимации ещё нет», а как поломка.
+        /// </summary>
+        private static void Animate(GameObject model, ShellType shell)
+        {
+            var animator = model.GetComponentInChildren<Animator>();
+
+            if (animator == null)
+            {
+                // Так уже было 12 сентября: импортёр не создал аватар,
+                // Unity не повесила Animator, тело приехало без единого
+                // движения — и выглядело это как «анимации не сделаны».
+                // Молчать об этом нельзя: снаружи две причины неотличимы.
+                Told($"[ВИД] На модели {shell} нет Animator — двигаться нечем. "
+                   + "Аватар не создан при импорте; переимпортируйте модель.");
+                return;
+            }
+
+            if (animator.runtimeAnimatorController != null) return;
+
+            var controller = Resources.Load<RuntimeAnimatorController>(
+                Folder + shell + "Motion");
+
+            if (controller != null)
+            {
+                animator.runtimeAnimatorController = controller;
+                return;
+            }
+
+            Told($"[ВИД] Движений нет ({Folder}{shell}Motion) — тело "
+               + "останется в позе привязки. Переимпортируйте модель: "
+               + "контроллер собирается сам, при импорте.");
+        }
+
+        /// <summary>Сказать один раз за запуск. Крик на каждого из девяти
+        /// превращает консоль в мусор, а молчание прячет причину.</summary>
+        private static void Told(string line)
+        {
+            if (_toldAboutMotion) return;
+            _toldAboutMotion = true;
+
+            Debug.LogWarning(line);
         }
 
         private static void Missing(ShellType shell)
