@@ -1241,6 +1241,7 @@ namespace Sinbinder.Utilets
             BuildCommandHint(canvasGO.transform);
             BuildHarvestHint(canvasGO.transform);
             BuildSelectedUnit(canvasGO.transform);
+            BuildSatchel(canvasGO.transform);
             BuildPlateLine(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
             BuildSoulAssembly(canvasGO.transform);
@@ -1634,6 +1635,70 @@ namespace Sinbinder.Utilets
             rt.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// Сума: шесть ячеек справа внизу.
+        ///
+        /// Справа, потому что слева журнал, а по центру — выделенный воин.
+        /// Три блока по краям нижней полосы, и ни один не наезжает
+        /// на другой.
+        ///
+        /// Массивы связываются вручную: Wire умеет одну ссылку, а тут их
+        /// по шесть на поле. Заводить ради этого перегрузку не стали —
+        /// место в проекте одно.
+        /// </summary>
+        private static void BuildSatchel(Transform parent)
+        {
+            const int cells = Sinbinder.Core.Satchel.Size;
+            const float cell = 132f;
+            const float gap = 6f;
+
+            var panel = Panel("Сума", parent,
+                anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
+                pivot: new Vector2(1f, 0f),
+                size: new Vector2(cells * cell + (cells - 1) * gap, 66f),
+                position: new Vector2(-40f, 40f));
+
+            var texts = new Text[cells];
+            var frames = new Image[cells];
+
+            for (int i = 0; i < cells; i++)
+            {
+                var slot = Panel($"Ячейка {i + 1}", panel,
+                    anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 1f),
+                    pivot: new Vector2(0f, 0.5f), size: new Vector2(cell, 0f),
+                    position: new Vector2(i * (cell + gap), 0f));
+
+                frames[i] = slot.gameObject.AddComponent<Image>();
+                frames[i].color = new Color(0.10f, 0.09f, 0.09f, 0.80f);
+
+                texts[i] = Label("Что", slot, 18, TextAnchor.MiddleCenter);
+                texts[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+                texts[i].verticalOverflow = VerticalWrapMode.Truncate;
+            }
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.SatchelUI>();
+            WireArray(ui, "_cells", texts);
+            WireArray(ui, "_frames", frames);
+        }
+
+        /// <summary>Связать поле-массив. Wire умеет только одиночные ссылки.</summary>
+        private static void WireArray(Object target, string field, Object[] values)
+        {
+            var so = new SerializedObject(target);
+            var p = so.FindProperty(field);
+
+            if (p == null)
+            {
+                Debug.LogWarning($"[СЦЕНЫ] У {target.GetType().Name} нет поля {field}");
+                return;
+            }
+
+            p.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++)
+                p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
         /// <summary>
         /// Строка, в которой читается подпись предмета.
         ///

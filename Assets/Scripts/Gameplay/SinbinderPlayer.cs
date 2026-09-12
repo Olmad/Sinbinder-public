@@ -101,6 +101,11 @@ namespace Sinbinder.Gameplay
             // из любой точки мира (SoulBinding.cs.later).
             go.AddComponent<SoulHarvester>();
 
+            // Сума и руки: чем он перекладывает. Висит на нём, а не
+            // на суме — сума статическая, в сцене её нет, а нажатия
+            // слушать кто-то должен.
+            go.AddComponent<SatchelHands>();
+
             // Ходит сам, с клавиш. Это и есть «юнит, а не камера».
             go.AddComponent<PlayerWalk>();
 

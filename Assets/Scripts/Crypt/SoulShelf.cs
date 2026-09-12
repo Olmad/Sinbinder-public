@@ -36,6 +36,7 @@ namespace Sinbinder.Crypt
         [SerializeField] private bool _seedWhenEmpty = true;
 
         private readonly List<SoulJar> _jars = new();
+        private ShelfPlace _place;
         private int _firstIndex;
         private int _knownCount = -1;
 
@@ -88,6 +89,37 @@ namespace Sinbinder.Crypt
 
                 _jars.Add(MakeJar(i, kept));
             }
+
+            MakePlace(shown);
+        }
+
+        /// <summary>
+        /// Свободное место после последней банки. Сюда игрок ставит душу
+        /// из рук — до этого полка была витриной в одну сторону: с неё
+        /// брали, на неё не клали.
+        ///
+        /// Одно место, а не все свободные: ставить в третью ячейку,
+        /// когда вторая пуста, незачем, а меток на полке было бы вдвое
+        /// больше банок.
+        /// </summary>
+        private void MakePlace(int after)
+        {
+            if (_place != null) Destroy(_place.gameObject);
+            if (after >= _slots) return;           // полка полна
+
+            var go = new GameObject("Свободное место");
+            go.transform.SetParent(transform);
+            go.transform.localPosition = new Vector3(after * _step, 0.25f, 0f);
+
+            // Коллайдер нужен, чтобы место можно было разглядеть подписью,
+            // но видимого тела у него нет: пустое место и должно выглядеть
+            // пустым.
+            var box = go.AddComponent<BoxCollider>();
+            box.size = new Vector3(0.4f, 0.5f, 0.4f);
+            box.isTrigger = true;
+
+            _place = go.AddComponent<ShelfPlace>();
+            _place.Bind(this);
         }
 
         private SoulJar MakeJar(int slot, SoulManager.Kept kept)

@@ -45,6 +45,10 @@ namespace Sinbinder.Gameplay
                 TryHarvest();
         }
 
+        /// <summary>Кадр последней жалобы на полные банки: жнец висит
+        /// на каждом своём воине, и без этого жаловались бы все разом.</summary>
+        private int _lastFullFrame = -1;
+
         private void TryHarvest()
         {
             var souls = SoulManager.Instance;
@@ -58,6 +62,20 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
+            // Душа живёт в банке, и банок при себе конечное число.
+            // Это и есть предел «сколько унесёшь»: раньше его не было
+            // вовсе — жатва складывала души в список без счёта.
+            int jar = Core.Satchel.FreeJar();
+            if (jar < 0)
+            {
+                if (_lastFullFrame != Time.frameCount)
+                {
+                    _lastFullFrame = Time.frameCount;
+                    Log("Все банки полны. Поставьте душу на полку или оставьте эту.");
+                }
+                return;
+            }
+
             var soul = souls.TryHarvestSoul(transform.position);
 
             // Молчим: компонент висит на каждом своём воине, и «слишком
@@ -67,6 +85,13 @@ namespace Sinbinder.Gameplay
 
             _cooldownTimer = _harvestCooldown;
             souls.RemoveIndicator(soul);
+
+            // Из общего списка — сразу в банку. Иначе о душе было бы
+            // две правды: она и в суме, и на полке склепа, которая тот же
+            // список и показывает. Полка теперь показывает только то,
+            // что игрок поставил на неё руками.
+            var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
+            if (kept.Soul != null) Core.Satchel.Fill(jar, kept.Soul, kept.Quality);
 
             // Вот и весь урок: одно и то же действие названо по-разному
             // в зависимости от того, насколько игрок промедлил.
