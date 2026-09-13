@@ -260,7 +260,20 @@ namespace Sinbinder.Gameplay
             // обязаны дожить до последней сцены (00-GDD.md §8).
             if (!SquadRoster.HasSquad) SquadRoster.Set(Canon());
 
-            var squad = SquadRoster.Members;
+            // Ушедших не ставим. Они живут в составе — им возвращаться
+            // в эпилоге, — но в сцене их нет и быть не может.
+            //
+            // До 14 сентября круг собирался из всего состава, и в набег
+            // приходили все девять: пятеро, которых игрок только что
+            // отправил с командиром, стояли у костра рядом с Карганом.
+            // Совет доли 3 ничего не менял на поле, а «пятеро уходят,
+            // остаются Карган и трое» (пролог §4) было неправдой ровно
+            // в той сцене, ради которой отряд и редеет. Нашёл прогон
+            // DemoWalkthrough.
+            var squad = new List<SquadRoster.Member>();
+            foreach (var m in SquadRoster.Members)
+                if (!m.IsAway) squad.Add(m);
+
             for (int i = 0; i < squad.Count; i++)
                 SpawnMember(squad[i], i, squad.Count);
 

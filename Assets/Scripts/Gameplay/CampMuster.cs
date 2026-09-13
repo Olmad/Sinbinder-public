@@ -34,8 +34,15 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public class CampMuster : MonoBehaviour
     {
-        [Tooltip("Через сколько секунд после выхода из палатки просить сбор.")]
-        [SerializeField] private float _asksAfter = 14f;
+        [Tooltip("Страховка: если провожатый так и не дошёл. Карган зовёт "
+               + "по тому, что первый воин пошёл рядом, а не по секундам; "
+               + "этот срок только не даёт доле зависнуть и, истекая, "
+               + "пишет предупреждение.")]
+        [SerializeField] private float _askSafety = 90f;
+
+        [Tooltip("Пауза на прочтение: провожатый и Карган не говорят "
+               + "одной строкой. Длительность, а не переход.")]
+        [SerializeField] private float _readPause = 3f;
 
         [Tooltip("Насколько близко к столу нужно подойти, чтобы считаться пришедшим.")]
         [SerializeField] private float _gathered = 6f;
@@ -69,9 +76,18 @@ namespace Sinbinder.Gameplay
 
         void Start() => StartCoroutine(Routine());
 
+        /// <summary>
+        /// Карган зовёт тогда, когда первый воин пошёл рядом
+        /// (<see cref="CampOpening.EscortArrived"/>), — порядок из
+        /// прохождения автора. Раньше звал через четырнадцать секунд
+        /// от старта сцены, и зов мог прийти раньше провожатого.
+        /// </summary>
         private IEnumerator Routine()
         {
-            yield return new WaitForSecondsRealtime(_asksAfter);
+            yield return Beat.Until(() => CampOpening.EscortArrived, _askSafety,
+                "Провожатый так и не пошёл рядом — Карган зовёт к столу без него.");
+
+            yield return new WaitForSecondsRealtime(_readPause);
             Ask();
         }
 

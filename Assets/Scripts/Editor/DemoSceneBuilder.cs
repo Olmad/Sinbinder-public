@@ -155,7 +155,6 @@ namespace Sinbinder.Utilets
             Managers();
 
             var raidCanvas = Interface();
-            BuildSalary(raidCanvas);
             BuildTitle(raidCanvas, "Лагерь знали не только свои.");
 
             // Сцена 5 живёт здесь: приказ отходить, отказ Каргана, побег.
@@ -221,7 +220,7 @@ namespace Sinbinder.Utilets
             Managers();
 
             var canvas = Interface();
-            BuildSalary(canvas);
+            BuildSalary(canvas, askOnArrival: true);
             BuildDemoEnd(canvas);
             BuildTitle(canvas, "Кто-то уже занял этот склеп.");
 
@@ -1357,7 +1356,10 @@ namespace Sinbinder.Utilets
             var line = Label("Строка", panel, 46, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.PrologueTitleUI>();
+            // На холст, как и все панели, что прячут себя: заставка гаснет
+            // уже отработав, но правило одно на всех — DemoSmoke ищет
+            // интерфейс, выключивший сам себя, и исключений не держит.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.PrologueTitleUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_group", group), ("_line", line));
 
             if (!string.IsNullOrEmpty(text))
@@ -1385,7 +1387,11 @@ namespace Sinbinder.Utilets
             var body = Label("Список", panel, 24, TextAnchor.UpperLeft,
                 new Vector2(0f, -100f), 480f);
 
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.DemoEndUI>();
+            // На холст, а не на панель: панель выключается в Start, а
+            // выключенный объект не находит FindFirstObjectByType — директор
+            // склепа не видел конца демо и писал «Демо окончено» в консоль,
+            // оставляя игрока в пустом склепе. Нашёл прогон DemoWalkthrough.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.DemoEndUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_body", body));
         }
 
@@ -1393,7 +1399,7 @@ namespace Sinbinder.Utilets
         /// Плата после боя: второй соблазн пролога. Показывается сама,
         /// когда врагов на поле не осталось.
         /// </summary>
-        private static void BuildSalary(Transform parent)
+        private static void BuildSalary(Transform parent, bool askOnArrival = false)
         {
             var panel = Panel("Плата", parent,
                 anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
@@ -1409,10 +1415,18 @@ namespace Sinbinder.Utilets
             var pay = Choice("Заплатить", panel, new Vector2(-170f, -60f), out var payLabel);
             var hold = Choice("Придержать", panel, new Vector2(170f, -60f), out var holdLabel);
 
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.SalaryPanelUI>();
+            // На холст, а не на панель: компонент панель выключает, а на
+            // выключенном объекте не идёт корутина ожидания заставки —
+            // вопрос о плате в склепе не прозвучал бы ни разу. Тот же
+            // случай, от которого сборщик уже защищает совет и разговор.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.SalaryPanelUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title),
                      ("_payButton", pay), ("_payLabel", payLabel),
                      ("_withholdButton", hold), ("_withholdLabel", holdLabel));
+
+            var so = new SerializedObject(ui);
+            so.FindProperty("_askOnArrival").boolValue = askOnArrival;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         /// <summary>Кнопка выбора с подписью в две строки.</summary>
@@ -2191,7 +2205,11 @@ namespace Sinbinder.Utilets
 
             var text = Label("Текст", panel, 24, TextAnchor.UpperLeft);
 
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.WarriorTooltipUI>();
+            // На холст, а не на панель. Подсказка прячет панель в Awake,
+            // и, живя на ней же, выключала саму себя: Update не шёл ни разу,
+            // и вторая ступень прозрачности — «почему он так решил» при
+            // наведении — не показалась в демо ни одному игроку.
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.WarriorTooltipUI>();
             Wire(ui, ("_panel", panel), ("_text", text), ("_frame", frame));
         }
 

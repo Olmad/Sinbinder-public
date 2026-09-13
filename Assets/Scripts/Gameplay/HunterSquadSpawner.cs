@@ -30,6 +30,11 @@ namespace Sinbinder.Gameplay
                + "Так делается вторая волна: первую надо сперва положить.")]
         [SerializeField] private bool _afterFieldClear;
 
+        [Tooltip("Страховка второй волны: души с поля так и не собрали и они "
+               + "не истлели. Волну ведёт опустевшее от душ поле, а не часы; "
+               + "срок только не даёт доле зависнуть и, истекая, кричит.")]
+        [SerializeField] private float _harvestSafety = 90f;
+
         [Tooltip("Что говорит журнал, когда эта волна выходит. Пусто — молчит.")]
         [TextArea(1, 3)]
         [SerializeField] private string _announce = "";
@@ -135,7 +140,41 @@ namespace Sinbinder.Gameplay
             if (combat == null) return;
 
             if (combat.GetAliveEnemyCount() > 0) { _sawEnemies = true; return; }
-            if (!_sawEnemies) return;
+            if (!_sawEnemies || _waiting) return;
+
+            _waiting = true;
+            StartCoroutine(AfterHarvest());
+        }
+
+        private bool _waiting;
+
+        /// <summary>
+        /// Порядок из прохождения автора: лёгкий бой → сбор → подкрепление
+        /// и сразу побег. До 13 сентября вторая волна выходила в тот же
+        /// миг, как падал последний охотник, и урок жатвы доли 4
+        /// («успей собрать, пока гаснет») шёл под ногами у свежих врагов,
+        /// то есть не шёл вовсе.
+        ///
+        /// Сбор кончается, когда на поле не осталось гаснущих душ —
+        /// собранных или истлевших, всё равно: истлевшая душа — тоже
+        /// исход, о котором игрок узнал. Жатвы в сцене нет — ждать
+        /// некого, и волна выходит сразу.
+        /// </summary>
+        private System.Collections.IEnumerator AfterHarvest()
+        {
+            // Кадр ожидания: смерть последнего охотника сообщается двумя
+            // событиями, и порядок между «поле опустело» и «душа пошла
+            // гаснуть» не гарантирован. Без паузы счётчик душ мог оказаться
+            // нулём ровно в миг, когда последняя ещё не легла, — и волна
+            // вышла бы, не дав её собрать.
+            yield return null;
+
+            var souls = SoulManager.Instance;
+
+            if (souls != null)
+                yield return Beat.Until(() => souls == null || souls.FadingCount == 0,
+                    _harvestSafety,
+                    "Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь.");
 
             SpawnHunters();
         }

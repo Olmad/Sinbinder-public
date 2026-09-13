@@ -34,8 +34,22 @@ namespace Sinbinder.UI
                + "не видит — оно только для кошелька.")]
         [SerializeField] private int _costPerWarrior = 10;
 
+        [Tooltip("Спросить о плате, как только отряд пришёл в сцену, а не "
+               + "по концу боя. Ставится склепу: вылазка кончается побегом, "
+               + "и платят за неё там, куда пришли, а не посреди набега.")]
+        [SerializeField] private bool _askOnArrival;
+
         private bool _sawEnemies;
         private bool _asked;
+
+        /// <summary>
+        /// Ответил ли игрок о плате. Конец доли в склепе ведётся этим,
+        /// а не секундами (<see cref="Gameplay.PrologueDirector"/>):
+        /// эпилог поверх неотвеченной панели запер бы выбор под собой.
+        /// </summary>
+        public static bool Answered { get; private set; }
+
+        void Awake() => Answered = false;
 
         void Start()
         {
@@ -44,8 +58,36 @@ namespace Sinbinder.UI
             if (_payButton != null) _payButton.onClick.AddListener(Pay);
             if (_withholdButton != null) _withholdButton.onClick.AddListener(Withhold);
 
+            // До 14 сентября панель стояла в набеге и открывалась, когда
+            // падала первая волна: «Вылазка окончена» и пауза — посреди
+            // боя, до подкрепления, которое вот-вот выйдет. В порядке
+            // пролога, записанном автором, после сбора душ идут
+            // подкрепление и сразу побег. Нашёл прогон DemoWalkthrough.
+            if (_askOnArrival)
+            {
+                StartCoroutine(AskWhenArrived());
+                return;
+            }
+
             if (CombatManager.Instance != null)
                 CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
+        }
+
+        /// <summary>
+        /// Спросить, когда уйдёт заставка сцены: панель поверх чёрного
+        /// полотна никто не прочтёт.
+        /// </summary>
+        private System.Collections.IEnumerator AskWhenArrived()
+        {
+            yield return Gameplay.Beat.Until(() => Core.GamePauseController.Instance == null
+                                                 || !Core.GamePauseController.Instance.IsPaused,
+                30f, "Заставка склепа не ушла — о плате спрашиваем поверх неё.");
+
+            // Отряд должен успеть появиться: платят живым, а их ставит
+            // спавнер в своём Start.
+            yield return null;
+
+            Open();
         }
 
         void OnDestroy()
@@ -124,6 +166,7 @@ namespace Sinbinder.UI
 
         private void Close()
         {
+            Answered = true;
             if (_panel != null) _panel.SetActive(false);
             Core.GamePauseController.Instance?.Resume();
         }

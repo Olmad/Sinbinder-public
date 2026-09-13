@@ -40,6 +40,42 @@ namespace Sinbinder.AOS
             if (_runOnStart) SetupAllWarriors();
         }
 
+        void OnEnable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+
+        void OnDisable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        /// <summary>
+        /// Каждая следующая доля. <b>Без этого отряд в набеге не думал вовсе.</b>
+        ///
+        /// Этот компонент живёт на Managers, а Managers переживает смену
+        /// сцен: AOSEventHub объявляет DontDestroyOnLoad на весь объект.
+        /// Managers следующей сцены — дубликат, он уничтожается в своём же
+        /// Awake, и его Start не наступает никогда. Значит Start, который
+        /// раздаёт воинам движок решений, работал <b>только в первой сцене</b>.
+        ///
+        /// В набеге девять воинов стояли без AOSWarriorWrapper — без единого
+        /// решения, — пока охотники думали (их спавнер настраивает сам).
+        /// Бой не начинался, первая волна не падала, и дальше не шло ничего.
+        /// Нашёл прогон DemoWalkthrough 14 сентября; руками это выглядело
+        /// бы как «отряд не слушается», то есть как продукт демо.
+        ///
+        /// Настраиваем кадр спустя: спавнеры новой сцены создают воинов
+        /// в своих Start, а те наступают после загрузки. SetupWarrior
+        /// повторный вызов переносит — лишнего не добавит.
+        /// </summary>
+        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+                                   UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (!_runOnStart || this == null) return;
+            StartCoroutine(SetupNextFrame());
+        }
+
+        private System.Collections.IEnumerator SetupNextFrame()
+        {
+            yield return null;
+            SetupAllWarriors();
+        }
+
         [ContextMenu("Setup AOS on Scene")]
         public void SetupScene()
         {

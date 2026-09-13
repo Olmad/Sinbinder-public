@@ -158,6 +158,8 @@ namespace Sinbinder.EditorTools
 
             if (_frameStep == 0 && played > 6f)
             {
+                SelfDisabled();
+
                 _frameStep = 1;
                 _frameAt = played;
                 var w = Object.FindFirstObjectByType<Sinbinder.Gameplay.Warrior>();
@@ -195,6 +197,54 @@ namespace Sinbinder.EditorTools
                 Write("  " + (ok ? "[ПОЛОСЫ] убраны" : "[ОШИБКА] полосы остались")
                       + ": высота " + (top != null ? top.sizeDelta.y.ToString("F0") : "?"));
             }
+        }
+
+        /// <summary>
+        /// Интерфейс, который выключил сам себя.
+        ///
+        /// Класс ошибок, найденный 14 сентября трижды за ночь: компонент
+        /// висит на своей же панели и в Awake/Start её прячет. Дальше
+        /// у выключенного объекта не идёт Update, не стартует корутина
+        /// и его не находит FindFirstObjectByType. Так в демо не было
+        /// ни подсказки при наведении, ни вопроса о плате в склепе,
+        /// ни экрана конца демо — и ни одна проверка этого не видела,
+        /// потому что ничего не падало: всё просто молчало.
+        ///
+        /// Ищем выключенный объект, у компонента которого поле-панель
+        /// указывает на него же.
+        /// </summary>
+        private static void SelfDisabled()
+        {
+            var all = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,
+                                                              FindObjectsSortMode.None);
+            int found = 0;
+
+            foreach (var mb in all)
+            {
+                if (mb == null || mb.gameObject.activeInHierarchy) continue;
+                if (mb.GetType().Namespace == null || !mb.GetType().Namespace.StartsWith("Sinbinder")) continue;
+
+                foreach (var f in mb.GetType().GetFields(System.Reflection.BindingFlags.Instance
+                                                         | System.Reflection.BindingFlags.NonPublic
+                                                         | System.Reflection.BindingFlags.Public))
+                {
+                    if (f.Name != "_panel") continue;
+
+                    var value = f.GetValue(mb) as Object;
+                    GameObject target = value as GameObject;
+                    if (target == null && value is Component c) target = c.gameObject;
+
+                    if (target != null && target == mb.gameObject)
+                    {
+                        found++;
+                        Write("  [ОШИБКА] " + mb.GetType().Name + " висит на своей же панели «"
+                              + mb.gameObject.name + "» и выключил себя: Update, корутины и поиск "
+                              + "для него мертвы. Перевесить на холст.");
+                    }
+                }
+            }
+
+            if (found == 0) Write("  [ИНТЕРФЕЙС] сам себя не выключил никто");
         }
 
         private static void Catch(string message, string stack, LogType type)

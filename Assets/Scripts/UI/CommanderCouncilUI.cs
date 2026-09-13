@@ -63,6 +63,17 @@ namespace Sinbinder.UI
 
         private bool _approached;
 
+        /// <summary>
+        /// Позвал ли Карган. До зова к столу подходить незачем: порядок
+        /// пролога — вышел из палатки, подошёл провожатый, и только тогда
+        /// Карган подзывает (14-HANDOFF §25).
+        /// </summary>
+        private bool _summoned;
+
+        [Tooltip("Страховка зова: провожатый так и не дошёл. Истекая, "
+               + "пишет предупреждение.")]
+        [SerializeField] private float _summonSafety = 90f;
+
         /// <summary>Кого игрок отметил. Назначения ещё не было.</summary>
         private Option? _picked;
 
@@ -113,7 +124,27 @@ namespace Sinbinder.UI
                 Debug.LogWarning("[СОВЕТ] Шара в сцене нет: подходить не к чему, "
                                + "совет откроется по счётчику.");
 
+            StartCoroutine(Summoning());
+        }
+
+        /// <summary>
+        /// Карган зовёт к шару, когда первый воин пошёл рядом, — не в первом
+        /// кадре сцены. До 13 сентября оклик звучал ещё до выхода из палатки,
+        /// а к столу можно было подойти и открыть совет раньше, чем лагерь
+        /// успел хоть что-то сказать.
+        ///
+        /// Счётчик страховки заводится отсюда же, после зова: отсчитывать
+        /// «игрок не подошёл» раньше, чем его позвали, значило бы корить
+        /// за медлительность того, кого ещё не просили.
+        /// </summary>
+        private System.Collections.IEnumerator Summoning()
+        {
+            yield return Gameplay.Beat.Until(() => Gameplay.CampOpening.EscortArrived,
+                _summonSafety,
+                "Провожатый так и не пошёл рядом — Карган зовёт к шару без него.");
+
             Summon();
+            _summoned = true;
             Invoke(nameof(OpenBySelf), _openAfterSeconds);
         }
 
@@ -138,7 +169,7 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            if (_done || _ball == null) return;
+            if (_done || _ball == null || !_summoned) return;
 
             if (!_ball.PlayerIsClose()) return;
 

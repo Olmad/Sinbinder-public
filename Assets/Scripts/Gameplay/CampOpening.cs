@@ -31,28 +31,84 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public class CampOpening : MonoBehaviour
     {
-        [Tooltip("Сколько подождать после заставки, прежде чем заговорить.")]
-        [SerializeField] private float _afterTitle = 5f;
+        [Tooltip("Сколько шагов от палатки считается «вышел». Меньше — "
+               + "провожатый заговорит, пока игрок ещё осматривается на пороге.")]
+        [SerializeField] private float _leftTent = 2.5f;
 
-        [Tooltip("Пауза между провожатым и предупреждением Каргана.")]
-        [SerializeField] private float _between = 7f;
+        [Tooltip("Страховка: если игрок так и не сошёл с места. Не переход, "
+               + "а защита от зависания — и истекая, она пишет предупреждение.")]
+        [SerializeField] private float _leaveSafety = 45f;
 
         [Tooltip("Насколько близко провожатый подходит к игроку.")]
         [SerializeField] private float _escortDistance = 3f;
 
+        [Tooltip("Страховка: провожатый застрял или отказался идти.")]
+        [SerializeField] private float _escortSafety = 25f;
+
+        /// <summary>
+        /// Провожатый дошёл и идёт рядом. Следующий шаг пролога —
+        /// Карган зовёт к столу (<see cref="CampMuster"/>) — ведётся этим,
+        /// а не секундами от старта сцены.
+        ///
+        /// Статично, как <see cref="TrophyChest.Looted"/> и
+        /// <see cref="CrystalBall.Raised"/>: у доли один такой момент,
+        /// и ждущий его не должен искать, у кого спросить.
+        /// </summary>
+        public static bool EscortArrived { get; private set; }
+
+        void Awake() => EscortArrived = false;
+
         void Start() => StartCoroutine(Routine());
 
+        /// <summary>
+        /// Порядок из прохождения автора: вышел из палатки → подошёл
+        /// первый и пошёл рядом → дальше Карган.
+        ///
+        /// Раньше оба шага отсчитывались секундами после заставки, и
+        /// игрок, задержавшийся у палатки, получал провожатого, бегущего
+        /// к пустому месту, а предупреждение о долге — посреди осмотра.
+        /// </summary>
         private IEnumerator Routine()
         {
-            // Реальное время: заставка доли 0 держит игру на паузе,
-            // и отсчитывать под ней игровое было бы нечестно.
-            yield return new WaitForSecondsRealtime(_afterTitle);
+            // Вышел из палатки: заставка ушла и Греховод сделал несколько
+            // шагов. Без тела героя шагать некому — тогда хватает того,
+            // что заставка ушла.
+            //
+            // Сперва ждём, пока уйдёт заставка, и только потом запоминаем,
+            // где он стоит: Греховода ставит спавнер в своём Start,
+            // и снятое раньше место могло оказаться нулём посреди карты.
+            yield return Beat.Until(Free, _leaveSafety,
+                "Заставка так и не ушла — лагерь начинается без неё.");
 
-            Escort();
+            Vector3 start = SinbinderPlayer.Exists ? SinbinderPlayer.Where : Vector3.zero;
 
-            yield return new WaitForSecondsRealtime(_between);
+            yield return Beat.Until(() => Free() && (!SinbinderPlayer.Exists
+                    || CampFocus.GroundDistance(SinbinderPlayer.Where, start) >= _leftTent),
+                _leaveSafety,
+                "Греховод так и не отошёл от палатки — провожатый подходит сам.");
+
+            var escort = Escort();
+
+            if (escort != null)
+                yield return Beat.Until(() => escort == null || escort.IsDead || Beside(escort),
+                    _escortSafety,
+                    "Провожатый не дошёл до Греховода — Карган заговорит без него.");
+
+            EscortArrived = true;
 
             WarnAboutDebt();
+        }
+
+        private static bool Free()
+            => Core.GamePauseController.Instance == null
+            || !Core.GamePauseController.Instance.IsPaused;
+
+        private bool Beside(Warrior w)
+        {
+            if (!SinbinderPlayer.Exists) return true;
+
+            return CampFocus.GroundDistance(w.transform.position, SinbinderPlayer.Where)
+                <= _escortDistance + 3f;
         }
 
         /// <summary>
@@ -62,7 +118,7 @@ namespace Sinbinder.Gameplay
         /// Гордыни, живой и не ушедший. Гордыня здесь не украшение —
         /// она и есть причина, по которой он вызвался.
         /// </summary>
-        private void Escort()
+        private Warrior Escort()
         {
             Warrior best = null;
 
@@ -89,7 +145,7 @@ namespace Sinbinder.Gameplay
                 // но и урока послушания не будет. Молчать об этом нельзя.
                 Debug.LogWarning("[ЛАГЕРЬ] Провожатого не нашлось: "
                                + "некому напроситься в спутники.");
-                return;
+                return null;
             }
 
             Log($"{best.DisplayName}: «Владыка, позвольте пройтись с вами. "
@@ -109,7 +165,7 @@ namespace Sinbinder.Gameplay
             else
             {
                 var cam = Camera.main;
-                if (cam == null) return;
+                if (cam == null) return best;
                 to = cam.transform.position;
             }
 
@@ -123,6 +179,7 @@ namespace Sinbinder.Gameplay
                 to = from + step.normalized * Mathf.Max(0f, step.magnitude - _escortDistance);
 
             best.IssueCommand(CommandKind.Move, to);
+            return best;
         }
 
         /// <summary>

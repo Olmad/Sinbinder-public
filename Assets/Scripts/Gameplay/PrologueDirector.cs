@@ -127,6 +127,19 @@ namespace Sinbinder.Gameplay
             // осматривается, и входит отряд. Ждать здесь нечего и некого.
             if (_endsAfterSeconds > 0f)
             {
+                // Спросили о плате — ждём ответа, сколько нужно. Эпилог
+                // поверх неотвеченной панели запер бы выбор под собой:
+                // до 14 сентября счётчик шёл и на паузе, и через
+                // четырнадцать секунд конец демо ложился поверх вопроса.
+                var salary = Object.FindFirstObjectByType<UI.SalaryPanelUI>();
+                if (salary != null && !UI.SalaryPanelUI.Answered) { _sinceCommander = 0f; return; }
+
+                // Дальше — время на то, чтобы отряд вошёл и строки
+                // прочитались. Длительность, а не переход: шаг, ради
+                // которого доля есть, уже сделан.
+                if (Core.GamePauseController.Instance != null
+                    && Core.GamePauseController.Instance.IsPaused) return;
+
                 _sinceCommander += Time.unscaledDeltaTime;
                 if (_sinceCommander < _endsAfterSeconds) return;
 
@@ -171,7 +184,20 @@ namespace Sinbinder.Gameplay
 
             // До первой встречи с врагом ноль на поле ничего не значит:
             // отряд ещё только собирается.
-            if (combat.GetAliveEnemyCount() > 0) { _battleJoined = true; return; }
+            //
+            // Встречей считается миг, когда на поле видны <b>обе</b> стороны.
+            // До 14 сентября хватало одних врагов — и в начале набега
+            // охотники, случалось, регистрировались раньше отряда: воинов
+            // ставят спавнеры в своих Start, и порядок этих Start Unity
+            // не обещает. Директор видел врагов, видел ноль своих, решал
+            // «отряд не вернулся» — и демо кончалось, не начав боя.
+            // Зависело от порядка загрузки, то есть ломалось через раз.
+            // Нашёл прогон DemoWalkthrough.
+            if (combat.GetAliveEnemyCount() > 0)
+            {
+                if (combat.GetAlivePlayerCount() > 0) _battleJoined = true;
+                return;
+            }
 
             if (!_waitForBattle) return;   // уходим не по концу боя
             if (!_battleJoined) return;

@@ -42,16 +42,13 @@ namespace Sinbinder.Gameplay
                + "заметил игрока. Мерится по земле, в метрах.")]
         [SerializeField] private float _reach = CampFocus.TableReach;
 
-        [Tooltip("Сколько держать лагерь после совета, прежде чем зажечься. "
-               + "Отряд должен успеть уйти на глазах, иначе тревога придёт "
-               + "раньше, чем игрок заметит, что лагерь поредел.")]
-        [SerializeField] private float _alarmAfterCouncil = 7f;
+        [Tooltip("Страховка: игрок так и не подошёл к сундуку. Тревогу ведёт "
+               + "разобранный сундук, а не секунды после совета; срок только "
+               + "не даёт доле зависнуть и, истекая, пишет предупреждение.")]
+        [SerializeField] private float _waitForChest = 120f;
 
-        [Tooltip("Сколько ждать, пока игрок разберёт трофеи Марги. Тревога — "
-               + "вторая половина сцены 3, и приходить раньше первой ей "
-               + "незачем. Срок нужен на случай, когда игрок к сундуку "
-               + "так и не подошёл: сцена не должна ждать вечно.")]
-        [SerializeField] private float _waitForChest = 40f;
+        [Tooltip("Страховка: игрок так и не вернулся к горящему шару.")]
+        [SerializeField] private float _waitForReturn = 90f;
 
         [Tooltip("Сколько игрок смотрит в горящий шар, прежде чем лагерь "
                + "уходит в разгром.")]
@@ -190,29 +187,18 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private IEnumerator AlarmRoutine()
         {
-            yield return new WaitForSecondsRealtime(_alarmAfterCouncil);
-
-            // Первая половина сцены 3 — трофеи. Тревога ждёт её, но не
-            // бесконечно: игрок мог не пойти к сундуку вовсе, и запирать
-            // на этом демо нельзя.
+            // Порядок из прохождения автора: отправили отряд → идём
+            // к сундуку → тревога → идём к шару. До 13 сентября тревога
+            // ждала семь секунд после совета и лишь потом — сундук,
+            // то есть приходила по часам даже тому, кто сундук уже открыл.
             //
             // Сундука в сцене может не быть совсем — тогда ждать некого,
-            // и сорок секунд пустой паузы были бы не осторожностью,
-            // а провалом в сцене.
+            // и пустое ожидание было бы не осторожностью, а провалом.
             bool hasChest = Object.FindFirstObjectByType<TrophyChest>() != null;
 
             if (hasChest)
-            {
-                float waited = 0f;
-                while (!TrophyChest.Looted && waited < _waitForChest)
-                {
-                    waited += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-
-                if (!TrophyChest.Looted)
-                    Debug.Log("[ШАР] Трофеи так и не разобрали: тревога не ждёт дольше.");
-            }
+                yield return Beat.Until(() => TrophyChest.Looted, _waitForChest,
+                    "Трофеи так и не разобрали — тревога приходит без них.");
 
             Alarm();
 
@@ -230,6 +216,18 @@ namespace Sinbinder.Gameplay
                 if (SquadRoster.TryGet(name, out var commander))
                     log.Write($"Карган: «Похоже, что-то случилось. "
                             + $"Вероятно, {name} {Homecoming.Guess(commander.Sin)}».");
+            }
+
+            // Зрелище — тому, кто смотрит. Игрок в этот миг у сундука,
+            // и гасить отряды в шаре, от которого он отошёл, значит показать
+            // главное демо спиной. Карган зовёт, и гаснут они, когда
+            // Греховод подошёл.
+            if (!PlayerIsClose())
+            {
+                log?.Write("Карган: «Владыка, взгляните в шар. Скорее».");
+
+                yield return Beat.Until(PlayerIsClose, _waitForReturn,
+                    "Греховод не вернулся к шару — отряды гаснут без него.");
             }
 
             // «Игрок смотрит в шар — и видит, как его отряды гаснут один

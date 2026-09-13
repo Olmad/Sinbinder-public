@@ -22,13 +22,26 @@ namespace Sinbinder.UI
         private bool _isShowing = false;
         private List<Warrior> _allWarriors;
 
+        /// <summary>
+        /// От кого подписались. Хранится, а не ищется при отписке.
+        ///
+        /// Триггер разговора живёт на Managers и переживает смену сцен,
+        /// а этот экран — нет. Раньше отписка искала триггер заново
+        /// в OnDestroy, посреди выгрузки сцены, и не находила: подписка
+        /// мёртвого экрана оставалась на живом триггере, и первый же
+        /// разговор следующей доли падал в уничтоженный объект.
+        /// Нашёл прогон DemoWalkthrough 13 сентября, на переходе
+        /// из лагеря в набег.
+        /// </summary>
+        private DialogueTrigger _trigger;
+
         void Start()
         {
-            var trigger = FindFirstObjectByType<DialogueTrigger>();
-            if (trigger != null)
+            _trigger = FindFirstObjectByType<DialogueTrigger>();
+            if (_trigger != null)
             {
-                trigger.OnDialogueStart += OnDialogueStart;
-                trigger.OnLineAdded += OnLineAdded;
+                _trigger.OnDialogueStart += OnDialogueStart;
+                _trigger.OnLineAdded += OnLineAdded;
             }
 
             if (_cameraController == null)
@@ -40,16 +53,19 @@ namespace Sinbinder.UI
 
         void OnDestroy()
         {
-            var trigger = FindFirstObjectByType<DialogueTrigger>();
-            if (trigger != null)
+            if (_trigger != null)
             {
-                trigger.OnDialogueStart -= OnDialogueStart;
-                trigger.OnLineAdded -= OnLineAdded;
+                _trigger.OnDialogueStart -= OnDialogueStart;
+                _trigger.OnLineAdded -= OnLineAdded;
             }
         }
 
         private void OnDialogueStart(List<DialogueLine> lines)
         {
+            // Вторая линия обороны: если подписка всё же пережила экран,
+            // уничтоженный экран молчит, а не роняет разговор.
+            if (this == null) return;
+
             _queue.Clear();
             foreach (var line in lines)
                 _queue.Enqueue(line);
@@ -60,6 +76,8 @@ namespace Sinbinder.UI
 
         private void OnLineAdded(DialogueLine line)
         {
+            if (this == null) return;
+
             _queue.Enqueue(line);
             if (!_isShowing)
                 StartCoroutine(ShowDialogue());
