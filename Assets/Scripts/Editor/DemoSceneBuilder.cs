@@ -1249,7 +1249,11 @@ namespace Sinbinder.Utilets
             // её можно в любой сцене с боем. Строим со всем остальным
             // интерфейсом, чтобы не гадать, где игрок нажмёт связывание.
             BuildShellPicker(canvasGO.transform);
-            BuildDialogue(canvasGO.transform);
+            // Полосы — последними из всего интерфейса: порядок отрисовки
+            // у Canvas задаётся порядком детей, и рамка кадра обязана
+            // лежать поверх журнала, панелей и подписей. Построй её
+            // раньше — и сквозь чёрное полезет полоса журнала.
+            BuildLetterbox(canvasGO.transform);
 
             // Панель искусителей отложена до полной версии вместе
             // с механикой (docs/09-PROLOGUE.md §7). Метод, который её
@@ -1551,25 +1555,102 @@ namespace Sinbinder.Utilets
         /// который никто не открывает: DialogueTrigger сочиняет реплики,
         /// а слушать их некому — реплики уходят в событие и пропадают.
         /// </summary>
-        private static void BuildDialogue(Transform parent)
+        /// <summary>
+        /// Разговор. Своей панели у него больше нет: реплика печатается
+        /// на нижней полосе кадра (<see cref="Sinbinder.UI.Letterbox"/>),
+        /// потому что наезд камеры и реплика — одно событие, а не два.
+        ///
+        /// Панель при этом не заводится вовсе, и поле <c>_dialoguePanel</c>
+        /// остаётся пустым: <c>DialogueUI</c> его проверяет на null
+        /// в каждом обращении, а полосу показывает и прячет камера.
+        /// Вторая панель поверх полосы означала бы две копии одной
+        /// реплики на экране.
+        /// </summary>
+        private static void BuildDialogue(Transform parent, Text speaker, Text line)
         {
-            var panel = Panel("Разговор", parent,
-                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(1100f, 200f),
-                position: new Vector2(0f, 200f));
-
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.90f);
-
-            var speaker = Label("Говорящий", panel, 28, TextAnchor.UpperLeft, new Vector2(0f, -14f), 40f);
-            var line = Label("Реплика", panel, 26, TextAnchor.UpperLeft, new Vector2(0f, -60f), 128f);
-
-            // Компонент висит на Canvas, а не на самой панели: в Start он
-            // панель выключает, а выключенный объект не крутит корутину
-            // показа — разговор не начался бы ни разу.
+            // Компонент висит на Canvas, а не на панели: панели нет,
+            // а корутину показа кто-то крутить обязан.
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.DialogueUI>();
-            Wire(ui, ("_dialoguePanel", panel.gameObject),
-                     ("_speakerNameText", speaker), ("_dialogueText", line));
+            Wire(ui, ("_speakerNameText", speaker), ("_dialogueText", line));
+        }
+
+        /// <summary>
+        /// Чёрные полосы кадра и строка на нижней.
+        ///
+        /// Строится в самом конце интерфейса, чтобы лечь поверх всего
+        /// остального, и сразу отдаёт свои две строки разговору: реплика,
+        /// слово поступка и фраза церемонии показываются одним и тем же
+        /// текстом в одном и том же месте экрана.
+        /// </summary>
+        private static void BuildLetterbox(Transform parent)
+        {
+            var holder = new GameObject("Полосы кадра", typeof(RectTransform));
+            holder.transform.SetParent(parent, false);
+
+            var box = (RectTransform)holder.transform;
+            box.anchorMin = Vector2.zero;
+            box.anchorMax = Vector2.one;
+            box.offsetMin = Vector2.zero;
+            box.offsetMax = Vector2.zero;
+
+            var top = Bar("Полоса сверху", box, atTop: true);
+            var bottom = Bar("Полоса снизу", box, atTop: false);
+
+            // Имя говорящего — над репликой и мельче её. У поступка
+            // говорящего нет, и тогда строка прячется целиком.
+            var speaker = Label("Говорящий", bottom, 22, TextAnchor.LowerCenter);
+            speaker.color = new Color(0.72f, 0.68f, 0.60f);
+            Stretch(speaker.rectTransform, top: -12f, bottom: 46f);
+
+            var line = Label("Строка", bottom, 30, TextAnchor.UpperCenter);
+            line.color = new Color(0.94f, 0.92f, 0.86f);
+            Stretch(line.rectTransform, top: -44f, bottom: 10f);
+
+            var letterbox = holder.AddComponent<Sinbinder.UI.Letterbox>();
+            Wire(letterbox, ("_top", top), ("_bottom", bottom),
+                            ("_speaker", speaker), ("_line", line));
+
+            BuildDialogue(parent, speaker, line);
+        }
+
+        /// <summary>
+        /// Одна полоса. Растянута по ширине и прижата к своему краю:
+        /// меняется только высота, и опора стоит у края — иначе полоса
+        /// росла бы в обе стороны и лезла бы в середину кадра.
+        /// </summary>
+        private static RectTransform Bar(string name, RectTransform parent, bool atTop)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var rt = (RectTransform)go.transform;
+            float edge = atTop ? 1f : 0f;
+            rt.anchorMin = new Vector2(0f, edge);
+            rt.anchorMax = new Vector2(1f, edge);
+            rt.pivot = new Vector2(0.5f, edge);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, 0f);
+
+            var image = go.AddComponent<Image>();
+            image.color = Color.black;
+            image.raycastTarget = false;
+
+            // Строка выезжает вместе с полосой, а не висит в воздухе
+            // над ней: без обрезки текст был бы виден ещё до того,
+            // как полоса доедет.
+            go.AddComponent<RectMask2D>();
+
+            return rt;
+        }
+
+        /// <summary>Растянуть по ширине родителя с отступами сверху и снизу.</summary>
+        private static void Stretch(RectTransform rt, float top, float bottom)
+        {
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2(120f, bottom);
+            rt.offsetMax = new Vector2(-120f, top);
         }
 
         /// <summary>

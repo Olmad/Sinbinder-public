@@ -83,12 +83,30 @@ namespace Sinbinder.Dialogue
             _originalFOV = Cam().fieldOfView;
         }
 
-        public IEnumerator FocusOn(Transform target)
+        /// <summary>
+        /// Навести камеру на говорящего и поднять полосы.
+        ///
+        /// Полосы поднимаются здесь, а не у каждого вызывающего, и это
+        /// не экономия строк: наезд в игре один на всё — разговор,
+        /// поступок по своей воле, вручение титула, — и рамка обязана
+        /// быть при нём всегда. Заведи её у вызывающих, и четвёртый
+        /// наезд однажды приедет без рамки, а заметят это на показе.
+        ///
+        /// <paramref name="caption"/> — что написать на нижней полосе.
+        /// Пусто оставляет разговор: там строку печатает по букве
+        /// <see cref="UI.DialogueUI"/>, и подставлять её целиком заранее
+        /// значило бы показать реплику до того, как её произнесли.
+        /// </summary>
+        public IEnumerator FocusOn(Transform target, string caption = null)
         {
             if (target == null) yield break;
 
             _inDialogue = true;
             Cam().fieldOfView = _dialogueFOV;
+
+            // Полосы живут на Canvas и умирают со сценой, а контроллер
+            // её переживает: спрашиваем каждый раз, а не держим ссылку.
+            UI.Letterbox.Instance?.Show(caption);
 
             // Перед говорящим, а не за ним. Здесь стояло -target.forward,
             // то есть камера заходила со спины и наводилась на затылок:
@@ -186,6 +204,12 @@ namespace Sinbinder.Dialogue
                 StopCoroutine(_swayCoroutine);
                 _swayCoroutine = null;
             }
+
+            // Полосы уходят вместе с кадром. Опускаются они за свои
+            // три десятых секунды, а камера едет своим ходом — ждать
+            // друг друга им незачем, и ожидание было бы видно паузой.
+            UI.Letterbox.Instance?.Hide();
+
             Cam().fieldOfView = _originalFOV;
             yield return MoveCamera(_originalPosition, _originalRotation);
         }

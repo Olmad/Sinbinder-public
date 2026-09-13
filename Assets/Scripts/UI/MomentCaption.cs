@@ -132,6 +132,16 @@ namespace Sinbinder.UI
         {
             if (_target == null) return;
 
+            // Под наездом слово уже написано на нижней полосе. Повторять
+            // его над головой незачем: два одинаковых слова на экране
+            // читаются как сбой, а не как нажим.
+            if (Letterbox.Instance != null && Letterbox.Instance.Shown)
+            {
+                _line.canvasRenderer.SetAlpha(0f);
+                if (_cause != null) _cause.canvasRenderer.SetAlpha(0f);
+                return;
+            }
+
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) return;
 

@@ -77,10 +77,14 @@ namespace Sinbinder.Gameplay
             var camera = DialogueCameraController.Instance;
             if (camera == null || camera.InDialogue) return;
 
-            StartCoroutine(Show(warrior));
+            // Слово берём здесь, а не в корутине: решение и обстановка
+            // есть только тут, а через кадр контекст уже чужой. То же
+            // слово показывает MomentCaption над головой — источник
+            // один (PhraseGenerator.Short), и разойтись им негде.
+            StartCoroutine(Show(warrior, PhraseGenerator.Short(decision.Action, context)));
         }
 
-        private IEnumerator Show(Warrior warrior)
+        private IEnumerator Show(Warrior warrior, string word)
         {
             _running = true;
             _nextAllowed = Time.time + _cooldown;
@@ -94,7 +98,10 @@ namespace Sinbinder.Gameplay
             // обрыва на полуфразе.
             var target = warrior.transform;
 
-            yield return camera.FocusOn(target);
+            // Слово ложится на нижнюю полосу: «Сбегает» под наездом
+            // читается как то, ради чего игра и затевалась, а не как
+            // строчка в углу.
+            yield return camera.FocusOn(target, word);
             yield return new WaitForSeconds(_hold);
 
             camera.StopSway();
