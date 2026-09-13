@@ -821,7 +821,15 @@ def action(arm, name, keys):
             pairs, bob = pose[bone]
             pb = arm.pose.bones[bone]
             turn(pb, pairs)
-            if bob is not None:
+            if isinstance(bob, tuple):
+                # Сдвиг в мировых осях — для падения, где таз уходит
+                # и вниз, и вбок. В базис кости переводим той же
+                # матрицей покоя, что и повороты: держать в голове,
+                # куда смотрят её оси, не нужно.
+                rest = pb.bone.matrix_local.to_3x3().inverted()
+                pb.location = rest @ Vector(bob)
+                pb.keyframe_insert("location", frame=frame)
+            elif bob is not None:
                 # Локальный Y кости таза смотрит вверх: она сама
                 # направлена вверх. Подскок пишем туда, а не в мировые
                 # координаты — иначе он не наследуется позой.
@@ -868,12 +876,48 @@ def make_actions(arm, g):
         (21, s((-44, 12, -12, 36, 58, 16), (48, 34, -34, 66), (17, 9, -13, 0), 0.0)),
     ]
 
+    # --- Die: падает. Один раз и навсегда — клип не зациклен
+    #     (BodyImport), и аниматор держит последний кадр.
+    #
+    #     Нужен не для красоты. Damageable.Die() тело из сцены не убирает,
+    #     и пока клипа не было, контроллер показывал на его месте покой:
+    #     труп стоял по стойке смирно среди живых. Это ломало долю 4 —
+    #     «подойди к трупу за душой», когда трупы не отличить, — и долю 5,
+    #     гибель Каргана (разбор коллеги, 13 сентября).
+    #
+    #     Навзничь, а не ничком: камера сверху видит лежащего на спине —
+    #     череп и рёбра, то есть узнаёт, кто это был. Ничком он был бы
+    #     просто спиной. И наклон нарастает, а не стоит сразу: подгибаются
+    #     колени, потом валится корпус — иначе он падает, как доска.
+    def lying(tilt, drop, back, legs, arms, torso):
+        # Поправки походки к рукам здесь снимаем. Они про то, как
+        # оболочка держит руки на ходу: голему локоть выпрямлен,
+        # чтобы не входил в грудь. У лежащего навзничь тот же сгиб
+        # уводит предплечье в землю, и тело повисает над ней на руке —
+        # замерено: голем висел на пятнадцать сантиметров выше пола.
+        down, la, ra, elbow = arms
+        arms = (down - g.down, la, ra, elbow - g.elbow)
+        pose = s(legs, arms, torso, 0.0)
+        pose["Hips"] = ([(X, tilt)], (0.0, back, -drop))
+        return pose
+
+    # Кадры, на которых он уже лежит. Их таз ground() поднимает до земли.
+    die = [
+        (1,  s((-2, 4, -1, 2, 4, 1), (78, 1, -1, 12), (2, 1, 1, 0), 0.0)),
+        (7,  lying(-6, 0.10, 0.00, (-24, 48, -10, -18, 40, -8), (74, -6, 6, 30), (22, 8, 18, 0))),
+        (13, lying(-38, 0.27, 0.05, (-40, 70, -6, -34, 62, -4), (60, -20, 16, 36), (10, 4, 6, 12))),
+        (19, lying(-78, 0.40, 0.12, (-14, 26, 0, -8, 18, 0), (34, -8, 12, 18), (-2, -2, -8, 24))),
+        (23, lying(-90, 0.43, 0.14, (-4, 6, 10, 2, 4, 14), (30, -4, 8, 10), (-4, -2, -10, 30))),
+        (30, lying(-90, 0.44, 0.14, (-4, 6, 12, 2, 4, 16), (28, -4, 8, 8), (-4, -2, -10, 32))),
+    ]
+
     # Имена обязаны совпасть буква в букву с BodyMotion: Animator.Play
     # по чужому имени молча ничего не делает — худший вид поломки,
     # потому что выглядит как «анимация просто не сделана».
     return [action(arm, "Idle", idle),
             action(arm, "Walk", walk),
-            action(arm, "Flee", flee)]
+            action(arm, "Flee", flee),
+            action(arm, "Die", die)]
 
 
 # ------------------------------------------------------------- оболочки
@@ -1050,11 +1094,70 @@ def preview(shell, folder):
     shot("2-walk-side", "Walk", 9, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("3-flee-side", "Flee", 6, (2.1, -0.9, 0.66), (0.0, 0.0, 0.48))
     shot("4-flee-top", "Flee", 6, (0.0, 1.3, 2.5), (0.0, 0.0, 0.45), tall=False)
+    shot("5-die-mid", "Die", 13, (2.2, -0.2, 0.55), (0.0, 0.0, 0.35), tall=False)
+    shot("6-die-end", "Die", 30, (2.4, -0.1, 0.40), (0.0, 0.1, 0.10), tall=False)
+    shot("7-die-top", "Die", 30, (0.001, 0.4, 2.6), (0.0, 0.2, 0.0), tall=False)
 
     print(f"[ТЕЛА] {shell.name}: превью в {folder}")
 
 
 # ---------------------------------------------------------------- запуск
+
+# Лежачие ключи падения: последние два. ground() выравнивает их по земле.
+LYING = (23, 30)
+
+
+def ground(arm, mesh, shell):
+    """
+    Лежит ли упавший на земле — числом, а не на глаз.
+
+    На превью земли нет, и провалившуюся под пол руку от лежащей
+    на полу не отличить. А в игре провалившаяся рука исчезает, и тело
+    читается обрубком.
+
+    Высоту падения не подбираем руками под каждую оболочку: у голема
+    рука толще, у призрака нет ног, и четыре подобранных числа разошлись
+    бы при первой правке пропорций. Последний кадр меряется, и таз
+    на лежачих ключах поднимается ровно настолько, чтобы низ тела лёг
+    в ноль. Потом мерка повторяется и печатается — проверка, а не вера.
+    """
+    act = bpy.data.actions.get("Die")
+    if act is None:
+        return
+
+    arm.animation_data.action = act
+    slots = getattr(act, "slots", None)
+    if slots is not None and len(slots) and hasattr(arm.animation_data, "action_slot"):
+        arm.animation_data.action_slot = slots[0]
+
+    scene = bpy.context.scene
+    last = int(act.frame_range[1])
+
+    def measure():
+        scene.frame_set(last)
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        evaluated = mesh.evaluated_get(depsgraph)
+        data = evaluated.to_mesh()
+        world = mesh.matrix_world
+        heights = [(world @ v.co).z for v in data.vertices]
+        evaluated.to_mesh_clear()
+        return min(heights), max(heights)
+
+    low, _ = measure()
+
+    hips = arm.pose.bones["Hips"]
+    lift = hips.bone.matrix_local.to_3x3().inverted() @ Vector((0.0, 0.0, -low))
+    for frame in LYING:
+        scene.frame_set(frame)
+        hips.location = hips.location + lift
+        hips.keyframe_insert("location", frame=frame)
+
+    low, high = measure()
+    verdict = "лежит" if -0.02 <= low <= 0.03 else ("ПРОВАЛИЛСЯ" if low < -0.02 else "ВИСИТ")
+    print("[ТЕЛА] {}: упал — низ {:.3f}, верх {:.3f}: {}".format(shell.name, low, high, verdict))
+
+    scene.frame_set(1)
+
 
 def make(shell, out_dir, shots):
     wipe()
@@ -1073,6 +1176,8 @@ def make(shell, out_dir, shots):
           .format(shell.name, len(arm.data.bones), len(mesh.data.vertices),
                   len(mesh.data.polygons), min(heights), max(heights),
                   ", ".join(a.name for a in acts)))
+
+    ground(arm, mesh, shell)
 
     export(out_dir / (shell.name + ".fbx"))
 
