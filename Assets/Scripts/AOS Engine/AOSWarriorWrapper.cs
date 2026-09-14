@@ -73,11 +73,17 @@ namespace Sinbinder.AOS
                 case ActionType.SaveAlly: ExecuteSaveAlly(); break;
                 case ActionType.ObeyCommand: ExecuteCommand(); break;
                 case ActionType.AcceptBribe:
-                    if (_warrior.Team == Team.Player)
-                        _warrior.Team = Team.Enemy;
-                    else
-                        _warrior.Team = Team.Player;
+                    bool wasOurs = _warrior.Team == Team.Player;
+                    _warrior.Team = wasOurs ? Team.Enemy : Team.Player;
                     Debug.Log($"[AOS] {_warrior.DisplayName} принял подкуп и перешёл на сторону противника!");
+
+                    // Предательство надо объявить, иначе его никто
+                    // не заметит. Обработчик написан целиком — злость
+                    // командира, отряд рядом, запись в память с весом
+                    // MemoryBetrayalStrengthMultiplier (-40, сильнейшее
+                    // число в конфиге) — и до 14 сентября его не звал
+                    // никто. Воин уходил к чужим, и всем было всё равно.
+                    if (wasOurs) AOSEventHub.Instance?.OnBetrayal(_warrior, Commander());
                     break;
                 default:
                     TryExecuteSkill(action);
@@ -205,6 +211,33 @@ namespace Sinbinder.AOS
             }
         }
 
+
+        /// <summary>
+        /// Командир отряда, которого предали. Ищется по имени из
+        /// <see cref="SquadRoster"/>: хранить ссылку нельзя — воин
+        /// может погибнуть, а ссылка переживёт его и бросит
+        /// MissingReferenceException (тот же случай, что у долгожителей
+        /// на Managers, 13-DRIFT.md).
+        ///
+        /// Командира нет — это событие, а не ноль: предательство
+        /// случилось, объявить его некому, и об этом надо сказать вслух.
+        /// </summary>
+        private Warrior Commander()
+        {
+            string name = SquadRoster.CommanderName;
+
+            if (!string.IsNullOrEmpty(name))
+                foreach (var w in Object.FindObjectsByType<Warrior>(
+                             FindObjectsSortMode.InstanceID))
+                    if (!w.IsDead && w.Team == Team.Player && w.DisplayName == name)
+                        return w;
+
+            Debug.LogWarning($"[AOS] {_warrior.DisplayName} ушёл к чужим, "
+                           + "а старшего в отряде нет — предательство некому "
+                           + "запомнить.");
+            return null;
+        }
+
         private void ExecuteLoot()
         {
             if (CombatManager.Instance == null) return;
@@ -225,6 +258,16 @@ namespace Sinbinder.AOS
                     int gold = closest.CollectGold();
                     string equip = closest.CollectEquipment();
                     closest.MarkCollected();
+
+                    // «Здесь однажды взял». MemoryModule разбирает эту
+                    // запись и тянет жадного обратно к месту поживы —
+                    // но до 14 сентября строку FoundLoot не писал никто
+                    // и нигде, и жадная половина памяти не наступала
+                    // ни разу (11-MISSING.md §6).
+                    MemoryProcessor.Instance?.CreateMemory(
+                        _warrior, "FoundLoot", "", EmotionType.Joy,
+                        Mathf.Clamp01(0.3f + gold * 0.02f));
+
                     Debug.Log($"[LOOT] {_warrior.DisplayName} собрал {gold} золота и {equip ?? "ничего"}");
                     Destroy(closest.gameObject);
 

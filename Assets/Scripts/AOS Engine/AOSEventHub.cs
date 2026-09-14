@@ -167,6 +167,11 @@ namespace Sinbinder.AOS
 
         public void OnBetrayal(Warrior traitor, Warrior betrayedCommander)
         {
+            // Предать можно и когда старшего в отряде нет: обиду тогда
+            // держать некому, а ронять игру на этом нельзя. Зовущий
+            // об этом уже сказал вслух — здесь просто выходим.
+            if (traitor == null || betrayedCommander == null) return;
+
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Anger, 0.8f);
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Sadness, 0.5f);
             MemoryProcessor.Instance?.CreateMemory(betrayedCommander, "AllyBetrayedMe", traitor.Id, EmotionType.Anger, 1.0f);
