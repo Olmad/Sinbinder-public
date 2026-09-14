@@ -75,6 +75,7 @@ namespace Sinbinder.Crypt
                 case ShellType.Zombie:   return "Зомби";
                 case ShellType.Ghost:    return "Призрак";
                 case ShellType.Golem:    return "Голем";
+                case ShellType.Living:   return "Человек";
                 default:                 return type.ToString();
             }
         }

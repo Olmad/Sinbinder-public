@@ -222,6 +222,7 @@ namespace Sinbinder.Core
                 case ShellType.Zombie:   return "тело: зомби";
                 case ShellType.Ghost:    return "тело: призрак";
                 case ShellType.Golem:    return "тело: голем";
+                case ShellType.Living:   return "тело: человек";
                 default:                 return "тело";
             }
         }

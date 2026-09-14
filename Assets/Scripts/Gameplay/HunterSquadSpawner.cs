@@ -65,9 +65,12 @@ namespace Sinbinder.Gameplay
             new("Охотник-следопыт", SinType.Envy,     MoralType.Neutral, 45f,
                 height: 1.15f, girth: 0.42f, speed: 4.8f, toughness: 0),
 
-            // Тяжёлый и медленный: доходит поздно, но доходит.
-            new("Охотник-мясник",   SinType.Gluttony, MoralType.Vicious, 55f,
-                height: 1.45f, girth: 0.80f, speed: 2.6f, toughness: 1),
+            // Инквизитор — рангом выше охотников, и видно это ростом
+            // и крепостью (слово автора от 13 сентября: «не мясники,
+            // а инквизиторы»). Гордыня, а не Чревоугодие: он пришёл
+            // не есть, а судить.
+            new("Инквизитор",       SinType.Pride,    MoralType.Vicious, 55f,
+                height: 1.45f, girth: 0.62f, speed: 2.8f, toughness: 1),
 
             // Средний во всём, и тем узнаваем.
             new("Ловчий",           SinType.Greed,    MoralType.Vicious, 50f,
@@ -171,8 +174,13 @@ namespace Sinbinder.Gameplay
 
             var souls = SoulManager.Instance;
 
+            // Сбор кончается и тогда, когда нести больше не во что: банок
+            // три, а душ на поле обычно четыре. Последнюю не собрать никак,
+            // и ждать, пока она истлеет, значило бы минуту стоять без дела
+            // (замер DemoWalkthrough: подкрепление вышло через 60 с вместо 1).
             if (souls != null)
-                yield return Beat.Until(() => souls == null || souls.FadingCount == 0,
+                yield return Beat.Until(() => souls == null || souls.FadingCount == 0
+                                              || Core.Satchel.FreeJar() < 0,
                     _harvestSafety,
                     "Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь.");
 
@@ -240,14 +248,17 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(name, kind.Sin, kind.Moral,
                                     _level + kind.Toughness, kind.Intensity);
-            warrior.Initialize(soul, ShellType.Zombie, _relSystem, index == 0, Team.Enemy);
+            // Живое тело: охотники — люди. До 14 сентября здесь стоял зомби,
+            // и оболочка тянула их души в Чревоугодие, а движок считал
+            // людей нежитью.
+            warrior.Initialize(soul, ShellType.Living, _relSystem, index == 0, Team.Enemy);
 
             // Та же оснастка, что и у своих: без агента охотники стояли
             // бы в двенадцати метрах при дальности удара в два, и бой
             // доли 4 не начался бы вовсе.
             WarriorRig.Attach(go, kind.Speed);
 
-            WarriorLook.Build(go, ShellType.Zombie,
+            WarriorLook.Build(go, ShellType.Living,
                                          kind.Height, kind.Girth,
                                          kind.Height * 0.62f);
 

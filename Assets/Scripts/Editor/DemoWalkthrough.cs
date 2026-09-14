@@ -196,7 +196,8 @@ namespace Sinbinder.EditorTools
                   () => Enemies() == 0 && FirstWaveOver(), 150f),
 
                 S("набег: души собраны", HarvestAll,
-                  () => SoulManager.Instance == null || SoulManager.Instance.FadingCount == 0, 90f),
+                  () => SoulManager.Instance == null || SoulManager.Instance.FadingCount == 0
+                        || Core.Satchel.FreeJar() < 0, 90f),
 
                 S("набег: подкрепление вышло и край открыт", null,
                   () => EscapeZone.Active != null && EscapeZone.Active.Open, 20f),
@@ -359,9 +360,8 @@ namespace Sinbinder.EditorTools
             var harvester = hero.GetComponent<SoulHarvester>();
             if (harvester == null) return;
 
-            // Банки кончились — освобождаем первую: автопилот проверяет
-            // пролог, а не умение раскладывать сумму по полкам.
-            if (Core.Satchel.FreeJar() < 0) Core.Satchel.Take(0);
+            // Банки кончились — сбор окончен, как у игрока: нести не во что.
+            if (Core.Satchel.FreeJar() < 0) { EditorApplication.update -= Reap; return; }
 
             var m = typeof(SoulHarvester).GetMethod("TryHarvest",
                 BindingFlags.Instance | BindingFlags.NonPublic);

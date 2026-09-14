@@ -401,6 +401,9 @@ namespace Sinbinder.Utilets
             foreach (Sinbinder.Core.ShellType type in
                      System.Enum.GetValues(typeof(Sinbinder.Core.ShellType)))
             {
+                // Живое тело на стол не кладут: связывают мёртвых.
+                if (!Sinbinder.Core.ShellKinds.Bindable(type)) continue;
+
                 var stand = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 stand.name = $"Тело — {type}";
                 stand.transform.SetParent(zone.transform);

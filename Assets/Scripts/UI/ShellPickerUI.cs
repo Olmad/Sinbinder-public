@@ -66,6 +66,9 @@ namespace Sinbinder.UI
             var shells = new List<ShellData>();
             foreach (ShellType type in System.Enum.GetValues(typeof(ShellType)))
             {
+                if (!ShellKinds.Bindable(type)) continue;
+                if (!Crypt.CryptUpgrades.AllowsShell(type)) continue;
+
                 var data = ShellLibrary.Get(type);
                 if (data != null) shells.Add(data);
             }

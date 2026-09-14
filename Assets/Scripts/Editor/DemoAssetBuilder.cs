@@ -246,6 +246,12 @@ namespace Sinbinder.Utilets
             Shell(ShellType.Golem, "Голем",
                 hp: 42f, defense: 4f, speed: 2.0f, revivable: true, wear: 0.10f, bind: 0.50f,
                 (SinType.Pride, 25f), (SinType.Envy, -25f));
+
+            // Живое тело ничего не навязывает: душа в нём своя и родная,
+            // тянуть её некуда. Крепость — меньше зомби, потому что первый
+            // бой набега обязан быть лёгким (слово автора: «лёгкий бой»).
+            Shell(ShellType.Living, "Человек",
+                hp: 24f, defense: 1f, speed: 3.5f, revivable: false, wear: 0f, bind: 0f);
         }
 
         private static void Shell(ShellType type, string displayName,

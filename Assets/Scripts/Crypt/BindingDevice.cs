@@ -45,6 +45,11 @@ namespace Sinbinder.Crypt
                 if (!HasSoul) return "Нет души.";
                 if (!HasShell) return "Нет тела.";
 
+                // Голем — только с оковами. Слово автора: големов в лагере
+                // нет, их получают улучшением устройства связывания.
+                if (!CryptUpgrades.AllowsShell(_shell))
+                    return CryptUpgrades.WhyNot(_shell);
+
                 var data = ShellLibrary.Get(_shell);
                 if (data == null) return "";
 

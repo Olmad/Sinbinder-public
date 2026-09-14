@@ -1,6 +1,6 @@
 namespace Sinbinder.Crypt
 {
-    /// <summary>Что можно поставить в склепе. Всего два, и это предел.</summary>
+    /// <summary>Что можно поставить в склепе.</summary>
     public enum Upgrade
     {
         /// <summary>Ледник: собранные души держатся дольше.</summary>
@@ -8,6 +8,16 @@ namespace Sinbinder.Crypt
 
         /// <summary>Казна: с вылазок несут золото, и отряду есть чем заплатить.</summary>
         Treasury = 1,
+
+        /// <summary>
+        /// Каменные оковы: устройство связывания выдерживает голема.
+        ///
+        /// Слово автора от 13 сентября: «големов в лагере быть не должно —
+        /// их можно получить только с улучшением устройства для связывания
+        /// душ». До этого голем стоял на столе тел наравне с остальными
+        /// и выбирался с первой души.
+        /// </summary>
+        Shackles = 2,
     }
 
     /// <summary>
@@ -35,10 +45,21 @@ namespace Sinbinder.Crypt
     /// </summary>
     public static class CryptUpgrades
     {
-        private static readonly bool[] _installed = new bool[2];
-        private static readonly bool[] _brought = new bool[2];
+        private static readonly bool[] _installed = new bool[3];
+        private static readonly bool[] _brought = new bool[3];
 
-        public const int Limit = 2;
+        public const int Limit = 3;
+
+        /// <summary>
+        /// Можно ли связать душу с этим телом при нынешних улучшениях.
+        /// Голем — только с оковами; остальные — всегда.
+        /// </summary>
+        public static bool AllowsShell(Sinbinder.Core.ShellType shell)
+            => shell != Sinbinder.Core.ShellType.Golem || Installed(Upgrade.Shackles);
+
+        /// <summary>Почему нельзя — словами, для журнала и устройства.</summary>
+        public static string WhyNot(Sinbinder.Core.ShellType shell)
+            => AllowsShell(shell) ? "" : "Устройство не выдержит камня. Нужны каменные оковы.";
 
         /// <summary>Поставлено ли.</summary>
         public static bool Installed(Upgrade what) => _installed[(int)what];
@@ -96,13 +117,28 @@ namespace Sinbinder.Crypt
         }
 
         public static string Name(Upgrade what)
-            => what == Upgrade.Cellar ? "Ледник" : "Казна";
+        {
+            switch (what)
+            {
+                case Upgrade.Cellar:   return "Ледник";
+                case Upgrade.Treasury: return "Казна";
+                default:               return "Каменные оковы";
+            }
+        }
 
         /// <summary>Что оно делает — словами и без цифр.</summary>
         public static string Does(Upgrade what)
-            => what == Upgrade.Cellar
-                ? "Собранные души держатся дольше. Значит и тел им доступно больше."
-                : "С вылазок несут золото. Значит отряду есть чем заплатить.";
+        {
+            switch (what)
+            {
+                case Upgrade.Cellar:
+                    return "Собранные души держатся дольше. Значит и тел им доступно больше.";
+                case Upgrade.Treasury:
+                    return "С вылазок несут золото. Значит отряду есть чем заплатить.";
+                default:
+                    return "Устройство выдерживает камень. Значит душу можно вселить в голема.";
+            }
+        }
 
         /// <summary>
         /// Во сколько раз ледник продлевает жизнь души. Читает

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd4dd1b17ef2ba24d8238123fe01da93, type: 3}
+  m_Name: Living
+  m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.ShellData
+  shellName: "\u0427\u0435\u043B\u043E\u0432\u0435\u043A"
+  type: 4
+  baseHP: 24
+  baseDefense: 1
+  movementSpeed: 3.5
+  canBeRevived: 0
+  wear: 0
+  spectrumBias:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  bindStrength: 0

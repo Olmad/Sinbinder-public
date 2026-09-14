@@ -2879,10 +2879,10 @@ static class Bench
     /// </summary>
     static Corpse[] PrologueDead() => new[]
     {
-        new Corpse("Охотник",          ShellType.Zombie, SinType.Wrath,    MoralType.Vicious, 60f, 1),
-        new Corpse("Охотник-следопыт", ShellType.Zombie, SinType.Envy,     MoralType.Neutral, 45f, 1),
-        new Corpse("Охотник-мясник",   ShellType.Zombie, SinType.Gluttony, MoralType.Vicious, 55f, 2),
-        new Corpse("Ловчий",           ShellType.Zombie, SinType.Greed,    MoralType.Vicious, 50f, 1),
+        new Corpse("Охотник",          ShellType.Living, SinType.Wrath,    MoralType.Vicious, 60f, 1),
+        new Corpse("Охотник-следопыт", ShellType.Living, SinType.Envy,     MoralType.Neutral, 45f, 1),
+        new Corpse("Инквизитор",       ShellType.Living, SinType.Pride,    MoralType.Vicious, 55f, 2),
+        new Corpse("Ловчий",           ShellType.Living, SinType.Greed,    MoralType.Vicious, 50f, 1),
     };
 
     static void LootCheck()
