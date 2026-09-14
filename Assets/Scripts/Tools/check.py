@@ -905,7 +905,113 @@ class Checker:
                             f'даёт {why}. Если это показ, а не выбор — '
                             f'вынести из файла решения')
 
+
+    # Методы, которые зовёт не код, а движок, редактор или сцена.
+    # Список закрытый: всё, чего в нём нет, обязано зваться по имени.
+    ENGINE_CALLS = {
+        'Awake', 'Start', 'Update', 'FixedUpdate', 'LateUpdate',
+        'OnEnable', 'OnDisable', 'OnDestroy', 'OnGUI', 'OnValidate',
+        'Reset', 'OnApplicationQuit', 'OnApplicationPause',
+        'OnApplicationFocus', 'OnDrawGizmos', 'OnDrawGizmosSelected',
+        'OnTriggerEnter', 'OnTriggerExit', 'OnTriggerStay',
+        'OnCollisionEnter', 'OnCollisionExit', 'OnCollisionStay',
+        'OnMouseDown', 'OnMouseUp', 'OnMouseEnter', 'OnMouseExit',
+        'OnMouseOver', 'OnMouseDrag', 'OnBecameVisible', 'OnBecameInvisible',
+        'OnAnimatorMove', 'OnAnimatorIK', 'OnPreRender', 'OnPostRender',
+        'OnPointerClick', 'OnPointerEnter', 'OnPointerExit', 'OnPointerDown',
+        'OnPointerUp', 'OnSelect', 'OnDeselect', 'OnSubmit',
+        'ToString', 'Equals', 'GetHashCode', 'Dispose', 'CompareTo',
+        'GetEnumerator', 'MoveNext', 'OnBeforeSerialize', 'OnAfterDeserialize',
+        'OnPostprocessModel', 'OnPreprocessModel', 'OnPostprocessAllAssets',
+    }
+
+    # Приписки, которыми зовут не по имени: редактор, движок, инспектор.
+    CALLED_BY_MARK = ('MenuItem', 'ContextMenu', 'RuntimeInitializeOnLoadMethod',
+                      'InitializeOnLoadMethod', 'DidReloadScripts',
+                      'PostProcessBuild', 'PostProcessScene', 'Test', 'SetUp')
+
+    def orphans(self):
+        """
+        Публичный метод, которого не зовёт никто.
+
+        Болезнь проекта одна и та же с самого начала: **система написана,
+        звена нет.** Восемь случаев за четыре дня, и самый дорогой из них —
+        `CombatManager.CollectLootWithSquad`: объявлен, через него
+        единственный вызов раздачи добычи, и не вызван ни разу. После боя
+        добыча не доставалась никому, а найдено это было чтением цепочки
+        руками (`11-MISSING.md` §4).
+
+        Читать цепочки руками можно, но не 240 файлов. Здесь то же самое
+        считает машина.
+
+        **Ищем осторожно, чтобы правилу верили.** Имя считается
+        использованным, если встречается где угодно ещё: в другом вызове,
+        в `nameof`, в подписке `+= Имя`, в строке сцены или префаба
+        (`m_MethodName`), — то есть ложных тревог меньше, а пропусков
+        больше. Правило, которое кричит зря, перестают читать, и тогда
+        оно не стоит ничего.
+
+        Не ловим: методы, которые зовёт движок (список выше), помеченные
+        приписками редактора, `override` и `virtual` (их зовут через базу
+        или интерфейс), а также конструкторы.
+        """
+        import re as _re
+
+        bodies = {p: strip(s) for p, s in self.src.items()}
+        blob = '\n'.join(bodies.values())
+
+        # Сцены и префабы зовут метод строкой: m_MethodName: Имя.
+        wired = set()
+        for root, _dirs, names in os.walk('.'):
+            for n in names:
+                if n.endswith(('.sh', '.ps1', '.bat', '.yml', '.yaml')):
+                    try:
+                        with open(os.path.join(root, n), encoding='utf-8',
+                                  errors='ignore') as fh:
+                            for m in _re.finditer(r'[\w.]+\.(\w+)', fh.read()):
+                                wired.add(m.group(1))
+                    except OSError:
+                        pass
+                    continue
+                if not n.endswith(('.unity', '.prefab', '.asset')):
+                    continue
+                try:
+                    with open(os.path.join(root, n), encoding='utf-8',
+                              errors='ignore') as fh:
+                        for m in _re.finditer(r'm_MethodName:\s*(\w+)', fh.read()):
+                            wired.add(m.group(1))
+                except OSError:
+                    continue
+
+        decl = _re.compile(
+            r'^[ \t]*public\s+(?:static\s+|async\s+|unsafe\s+|extern\s+)*'
+            r'(?!class|struct|enum|interface|delegate|event|const|abstract'
+            r'|override|virtual|partial)'
+            r'[\w<>\[\],.?]+\s+(\w+)\s*\(', _re.M)
+
+        for p, body in bodies.items():
+            flat = p.replace(chr(92), '/')
+            stem = os.path.splitext(os.path.basename(flat))[0]
+
+            for m in decl.finditer(body):
+                name = m.group(1)
+
+                if name == stem or name in self.ENGINE_CALLS or name in wired:
+                    continue
+
+                head = body[max(0, m.start() - 240):m.start()]
+                if any(('[' + mark) in head for mark in self.CALLED_BY_MARK):
+                    continue
+
+                if len(_re.findall(r'\b' + _re.escape(name) + r'\b', blob)) > 1:
+                    continue
+
+                self.orphan_list.append((p, line_of(body, m.start()), name))
+
+    orphan_list = None
+
     def run(self):
+        self.orphan_list = []
         self.determinism()
         self.duplicate_types()
         self.braces()
@@ -924,6 +1030,7 @@ class Checker:
         self.scene_presence()
         self.unique_women()
         self.console_key()
+        self.orphans()
         return self.problems
 
 
@@ -934,7 +1041,9 @@ def main():
         print('Файлов .cs не найдено. Запускать из корня репозитория.')
         return 1
 
-    problems = Checker(files).run()
+    checker = Checker(files)
+    problems = checker.run()
+    orphans = checker.orphan_list or []
 
     if not quiet:
         for path, line, text in sorted(problems):
@@ -942,6 +1051,19 @@ def main():
             print(f'{where}: {text}')
         if problems:
             print()
+
+    # Сироты печатаются всегда и никогда не роняют выход. Роняли бы —
+    # локальная сессия потеряла бы чистый базис, на который опирается
+    # каждый её коммит, и правило выключили бы целиком. Разбор сирот —
+    # решение автора по каждой (соединить, отложить, удалить), а не
+    # ошибка сборки.
+    if orphans:
+        print(f'Публичных методов, которых не зовёт никто: {len(orphans)}.'
+              ' Каждый — «написано, до игры не доведено».')
+        if not quiet:
+            for path, line, name in sorted(orphans):
+                print(f'  {path}:{line}: {name}')
+        print()
 
     print(f'Файлов проверено: {len(files)}. Замечаний: {len(problems)}.')
     if not problems:

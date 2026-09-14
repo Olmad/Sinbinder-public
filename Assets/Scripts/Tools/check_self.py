@@ -53,11 +53,22 @@ def run(files):
         os.chdir(root)
         try:
             found = CHECK.collect('.')
-            problems = CHECK.Checker(found).run()
+            checker = CHECK.Checker(found)
+            problems = checker.run()
+            CHECK._last_orphans = checker.orphan_list
         finally:
             os.chdir(was)
 
-    return [text for _, _, text in problems]
+    texts = [text for _, _, text in problems]
+
+    # Сироты живут отдельным списком: они не роняют выход, чтобы
+    # локальная сессия не потеряла чистый базис. Ловушке их всё равно
+    # надо видеть, иначе правило осталось бы без ловушки — а правило
+    # без ловушки в этом проекте уже дважды оказывалось молчащим.
+    for _p, _line, _name in (getattr(CHECK, '_last_orphans', None) or []):
+        texts.append(_name + ' — публичный метод, которого не зовёт никто')
+
+    return texts
 
 
 # ── ловушки ───────────────────────────────────────────────────────
@@ -393,6 +404,19 @@ namespace N
 ''',
     }, 'женщины в этом мире уникальны'),
 
+    ('orphans/публичный метод никто не зовёт', {
+        'Gameplay/Lonely.cs': '''
+using UnityEngine;
+namespace N
+{
+    public class Lonely : MonoBehaviour
+    {
+        public void NobodyCallsThis() { }
+    }
+}
+''',
+    }, 'публичный метод, которого не зовёт никто'),
+
     ('console_key/тильду заняли', {
         'UI/Hotkey.cs': '''
 using UnityEngine;
@@ -445,8 +469,12 @@ namespace Sinbinder.Probe
         void Awake()
         {
             Instance = this;
+            Debug.Log(Best());
         }
 
+        // Зовётся из Awake выше. Метод, которого не зовёт никто, чистым
+        // проектом не является: правило orphans считает его сиротой,
+        // и считает верно.
         public int Best()
         {
             return _kept.Where(x => x > 0).Count();
