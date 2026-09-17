@@ -1148,6 +1148,72 @@ class Checker:
                         'значит смотрит не туда. Ноль замечаний от него ничего '
                         'не значит, пока это так')
 
+
+    # Первая сцена демо. С неё начинается сборка, и только с неё.
+    FIRST_SCENE = "Prologue_Camp"
+
+    def build_list(self):
+        """
+        Список сцен сборки: нет ли в нём того, чего нет на диске.
+
+        Найдено 17 сентября, за три дня до показа: в
+        `EditorBuildSettings.asset` числилась `Prologue_Escape.unity`,
+        которой нет ни на диске, ни в сборщике сцен. Осталась от времён,
+        когда побег был отдельной сценой, — а её свернули в набег
+        («Демо вдвое короче», 7 сентября) и запись забыли.
+
+        Сборку в этом проекте не делали **ни разу**, и потому никто
+        не видел: первая же попытка упёрлась бы в недостающую сцену,
+        и упёрлась бы в субботу перед показом.
+
+        Проверяем две вещи, и обе — про сборку, а не про вкус:
+
+        * каждая перечисленная сцена **существует**;
+        * первой включённой идёт та, с которой демо начинается. Сборка
+          стартует с первой в списке: переставь их местами — и игрок
+          попадёт в набег, минуя лагерь.
+        """
+        here = os.path.dirname(os.path.abspath(__file__))
+
+        settings = None
+        for up in ('.', '..', os.path.join('..', '..'),
+                   os.path.join('..', '..', '..')):
+            guess = os.path.join(here, up, 'ProjectSettings',
+                                 'EditorBuildSettings.asset')
+            if os.path.isfile(guess):
+                settings = os.path.normpath(guess)
+                break
+
+        if settings is None:
+            # Молчать нельзя: правило, не нашедшее файла, обязано сказать
+            # это вслух, а не сойти за «чисто» (13-DRIFT.md, scene_presence).
+            self.report('ProjectSettings/EditorBuildSettings.asset', 0,
+                        'списка сцен сборки не видно — правило build_list '
+                        'ничего не проверило')
+            return
+
+        root = os.path.dirname(os.path.dirname(settings))
+
+        with io.open(settings, encoding='utf-8', errors='ignore') as fh:
+            text = fh.read()
+
+        rows = re.findall(r'-\s+enabled:\s*(\d).*?path:\s*(\S+)', text, re.S)
+        first_on = None
+
+        for enabled, path in rows:
+            if not os.path.isfile(os.path.join(root, path)):
+                self.report('ProjectSettings/EditorBuildSettings.asset', 0,
+                            f'в списке сборки есть {path}, а такой сцены '
+                            f'на диске нет: сборка упрётся в неё')
+
+            if enabled == '1' and first_on is None:
+                first_on = path
+
+        if first_on and self.FIRST_SCENE not in first_on:
+            self.report('ProjectSettings/EditorBuildSettings.asset', 0,
+                        f'сборка начнётся с {first_on}, а демо начинается '
+                        f'с {self.FIRST_SCENE}: игрок попадёт не туда')
+
     def run(self):
         self.orphan_list = []
         self.determinism()
@@ -1170,6 +1236,7 @@ class Checker:
         self.console_key()
         self.orphans()
         self.dead_branches()
+        self.build_list()
         return self.problems
 
 

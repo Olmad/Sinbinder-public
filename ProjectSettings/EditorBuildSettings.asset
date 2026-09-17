@@ -9,20 +9,17 @@ EditorBuildSettings:
     path: Assets/Scenes/Prologue_Camp.unity
     guid: 99a3feeb5ea969844882c9774f224a93
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
     path: Assets/Scenes/Prologue_Raid.unity
     guid: b3b892c71a7480a48a4021380b5d4d53
   - enabled: 1
-    path: Assets/Scenes/Prologue_Escape.unity
-    guid: fc5b155ec40ec0641a35c6edf1e07700
-  - enabled: 1
     path: Assets/Scenes/Crypt_Entrance.unity
     guid: 767e427358f279a4d9b2ab433b0b9963
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Crypt_Test.unity
     guid: 6d3778c2779dd8046bced60d9edd4eff
+  - enabled: 0
+    path: Assets/Scenes/SampleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
