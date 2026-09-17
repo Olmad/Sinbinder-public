@@ -404,6 +404,27 @@ namespace N
 ''',
     }, 'женщины в этом мире уникальны'),
 
+    ('dead_branches/ветка ждёт строку, которой не пишут', {
+        'Gameplay/Waiting.cs': '''
+using UnityEngine;
+namespace N
+{
+    public class Waiting : MonoBehaviour
+    {
+        public string Kind;
+
+        void Update()
+        {
+            switch (Kind)
+            {
+                case "NobodyWritesThis": Debug.Log("!"); break;
+            }
+        }
+    }
+}
+''',
+    }, 'а пишет её никто'),
+
     ('orphans/публичный метод никто не зовёт', {
         'Gameplay/Lonely.cs': '''
 using UnityEngine;
