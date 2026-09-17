@@ -113,7 +113,24 @@ namespace Sinbinder.Core
                 };
             }
 
-            return new SoulData(source.Name, source.Moral, source.Level, spectra, memory);
+            var taken = new SoulData(source.Name, source.Moral, source.Level,
+                                     spectra, memory, source.Gender);
+
+            // Пол и ремесло жатва теряла: конструктор их не берёт, пол
+            // по умолчанию мужской, ремесло — никакое. Поднятая заново
+            // женщина становилась мужчиной, а охотник — никем.
+            // Ни то, ни другое не «забывается»: это не память, а то,
+            // чем он был.
+            taken.SetTrade(source.Trade);
+
+            // Заслуженное имя держится тем же качеством, что и память:
+            // взяли вовремя — он помнит, кем был; взяли поздно — имя
+            // ушло вместе со всем остальным. Отдельного правила заводить
+            // не стали, чтобы у «успей» не было двух разных цен.
+            if (KeepsMemory(quality))
+                taken.Remember(source.EarnedTitle);
+
+            return taken;
         }
     }
 }

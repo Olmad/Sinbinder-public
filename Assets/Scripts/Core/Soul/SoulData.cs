@@ -59,6 +59,27 @@ namespace Sinbinder.Core
         /// уже наклонил спектры, и второй вызов удвоил бы наклон.
         /// </summary>
         public void SetTrade(Trade trade) => _trade = (int)trade;
+
+        [SerializeField] private string _earnedTitle = "";
+
+        /// <summary>
+        /// Имя, заслуженное в прошлой жизни. Пусто у того, кто его
+        /// не заслужил или потерял при жатве.
+        ///
+        /// Заведено 17 сентября по случаю автора: «Копатель умер,
+        /// но Греховод успел забрать душу и снова поднял». Титул живёт
+        /// в <c>Reputation</c> воина и с ним же умирает — значит,
+        /// чтобы поднятый мог себя вспомнить, помнить должна **душа**.
+        ///
+        /// Поле не мёртвое: пишет его гибель титулованного, читает
+        /// первая фраза поднятого (<c>RisingWords</c>), а теряет —
+        /// <see cref="SoulDecay"/> по тому же качеству, по которому
+        /// теряется память. Взяли вовремя — он помнит, кем был; взяли
+        /// поздно — имя ушло вместе со всем остальным.
+        /// </summary>
+        public string EarnedTitle => _earnedTitle ?? "";
+
+        public void Remember(string title) => _earnedTitle = title ?? "";
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
@@ -214,6 +235,13 @@ namespace Sinbinder.Core
             _gender = other._gender;
             _level = other._level;
             _memory = other._memory;
+
+            // Ремесло и заслуженное имя копировались бы молча мимо:
+            // конструктор перечисляет поля вручную, а эти два добавили
+            // позже. Копия души, потерявшая ремесло, — не копия;
+            // здесь не жатва, терять нечему.
+            _trade = other._trade;
+            _earnedTitle = other._earnedTitle;
 
             _spectra = other.CopySpectra();
             _sinType = (int)other.Sin;

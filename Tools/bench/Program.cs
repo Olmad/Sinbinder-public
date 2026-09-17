@@ -3005,6 +3005,114 @@ static class Bench
             : $"  Титулы: разошлись у {bad}. Условие, до которого не дойти, — мёртвое.");
     }
 
+    /// <summary>
+    /// Что говорит поднятый во второй раз.
+    ///
+    /// Случай автора от 17 сентября, дословно: «Копатель умер,
+    /// но Греховод успел забрать душу и снова поднял». До этого дня
+    /// ответа не было — титул жил в репутации, то есть на теле,
+    /// и с телом пропадал.
+    ///
+    /// Цепь из трёх звеньев: смерть кладёт имя в душу
+    /// (<c>SoulManager.StartSoulFade</c> → <c>SoulData.Remember</c>),
+    /// жатва решает, донесла ли душа имя (<c>SoulDecay.Harvest</c>),
+    /// поднятие его произносит (<c>RisingWords</c>). Первое звено
+    /// требует сцены и здесь подставлено вручную; два других —
+    /// живой код игры, и стенд проговаривает их вслух.
+    ///
+    /// Спрашиваем ровно то, из-за чего цепь и заводилась:
+    /// <list type="number">
+    /// <item>имя держится тем же качеством, что и память — успел
+    /// забрать свежей, значит помнит;</item>
+    /// <item>пол и ремесло <b>не</b> зависят от качества: жатва теряла
+    /// их молча, и поднятая женщина становилась мужчиной;</item>
+    /// <item>жребия нет: та же душа в том же теле говорит то же самое.</item>
+    /// </list>
+    /// </summary>
+    static void RaisedAgainCheck()
+    {
+        Console.WriteLine("\n=== ВТОРАЯ ЖИЗНЬ: что доносит душа через смерть ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        // Копатель: охотник, женщина, при жизни заслужил «Костекоп».
+        var spectra = new float[7];
+        spectra[(int)SinType.Greed] = 60f;
+
+        var digger = new SoulData("Сквип", MoralType.Vicious, 2, spectra,
+                                  new MemorySeed { Story = "Копала до самого низа." },
+                                  Gender.Female);
+        digger.SetTrade(Trade.Hunter);
+
+        // Первое звено цепи вручную: в игре это делает смерть.
+        digger.Remember("Костекоп");
+
+        Console.WriteLine("  при жизни: Сквип, охотница, Костекоп, порочная\n");
+        Console.WriteLine($"  {"взяли",-12} {"имя",-10} {"пол",-8} {"ремесло",-9} первая фраза в скелете");
+
+        foreach (SoulQuality q in Enum.GetValues(typeof(SoulQuality)))
+        {
+            var taken = SoulDecay.Harvest(digger, q);
+            string line = RisingWords.OnRising(taken, ShellType.Skeleton);
+
+            Check(taken.Gender == Gender.Female, $"{q}: пол уцелел");
+            Check(taken.Trade == Trade.Hunter, $"{q}: ремесло уцелело");
+
+            bool named = !string.IsNullOrEmpty(taken.EarnedTitle);
+            Check(named == SoulDecay.KeepsMemory(q),
+                  $"{q}: имя держится ровно тем же качеством, что и память");
+
+            // Имя вытесняет ремесло, а не прибавляется к нему.
+            Check(named
+                    ? line.Contains("Костекоп") && !line.Contains("лук")
+                    : line.Contains("лук") && !line.Contains("Костекоп"),
+                  $"{q}: говорит одним голосом — либо имя, либо руки");
+
+            Console.WriteLine($"  {q,-12} {(named ? taken.EarnedTitle : "—"),-10} "
+                            + $"{taken.Gender,-8} {taken.Trade,-9} {line}");
+        }
+
+        // Мораль — вторая ось имени, та же, что на церемонии титула.
+        Console.WriteLine();
+        foreach (MoralType m in Enum.GetValues(typeof(MoralType)))
+        {
+            var one = new SoulData("Сквип", m, 2, spectra, null, Gender.Female);
+            one.Remember("Костекоп");
+            Console.WriteLine($"  {m,-10} {RisingWords.OnRising(one, ShellType.Zombie)}");
+        }
+
+        // Три морали обязаны звучать по-разному, иначе ось декоративна.
+        var voices = new HashSet<string>();
+        foreach (MoralType m in Enum.GetValues(typeof(MoralType)))
+        {
+            var one = new SoulData("Сквип", m, 2, spectra, null, Gender.Female);
+            one.Remember("Костекоп");
+            voices.Add(RisingWords.OnRising(one, ShellType.Zombie));
+        }
+        Check(voices.Count == 3, "три морали — три разных голоса");
+
+        // Жребия нет: тот же вход даёт тот же выход.
+        var again = SoulDecay.Harvest(digger, SoulQuality.Shock);
+        Check(RisingWords.OnRising(again, ShellType.Ghost)
+            == RisingWords.OnRising(SoulDecay.Harvest(digger, SoulQuality.Shock), ShellType.Ghost),
+            "жребия нет: одна душа в одном теле говорит одно и то же");
+
+        // Безымянная душа обязана остаться при своих руках.
+        var plain = new SoulData("Гертон", MoralType.Neutral, 1, spectra);
+        plain.SetTrade(Trade.Peasant);
+        Check(RisingWords.OnRising(plain, ShellType.Golem).Contains("Земля"),
+              "без титула руки говорят как прежде");
+
+        Console.WriteLine();
+        Console.WriteLine(bad == 0
+            ? "  Имя переживает тело ровно настолько, насколько память."
+            : $"  ПРОВАЛОВ: {bad}");
+    }
+
     static void LootCheck()
     {
         Console.WriteLine("\n=== ДОБЫЧА: чего стоит труп ===");
@@ -3856,6 +3964,7 @@ static class Bench
         ShellsCheck();
         LootCheck();
         TitleCheck();
+        RaisedAgainCheck();
         JunctionCheck(cfg);
         MomentsCheck(cfg);
         ExpeditionEconomy();

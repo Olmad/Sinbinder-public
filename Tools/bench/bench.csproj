@@ -104,6 +104,10 @@
     <Compile Include="../../Assets/Scripts/Crypt/MissionCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Crypt/JunctionCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Crypt/Aftermath.cs" />
+    <!-- Первая фраза поднятого. Чистая: ни Unity, ни сцены, только душа
+         и оболочка — значит, стенд может её проговорить, а не поверить
+         на слово, что связь души с именем работает. -->
+    <Compile Include="../../Assets/Scripts/Gameplay/RisingWords.cs" />
   </ItemGroup>
 
 </Project>

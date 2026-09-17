@@ -169,6 +169,15 @@ namespace Sinbinder.Gameplay
 
         public void StartSoulFade(Warrior warrior, Vector3 position)
         {
+            // Имя, заслуженное при жизни, переносим с тела в душу —
+            // здесь и только здесь, потому что здесь душа и уходит.
+            // Титул живёт в ReputationData, то есть на трупе, и вместе
+            // с трупом пропадал: собранный заново воин не мог знать,
+            // кем был. Дальше его судьба общая с памятью — вовремя
+            // взяли, значит помнит (SoulDecay.Harvest).
+            if (warrior != null && warrior.Soul != null)
+                warrior.Soul.Remember(AOS.TitleManager.TitleOf(warrior));
+
             var fadingSoul = new FadingSoul
             {
                 Warrior = warrior,

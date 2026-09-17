@@ -157,8 +157,38 @@ namespace Sinbinder.AOS
 
         /// <summary>Правило, по которому воин носит нынешнее имя.</summary>
         private static TitleRule Current(Warrior warrior)
+            => RuleFor(warrior, warrior.Reputation.CurrentName);
+
+        /// <summary>
+        /// Заслуженное имя без имени носителя: «Костекоп», а не
+        /// «Костекоп Гертон».
+        ///
+        /// Заведено 17 сентября по случаю автора: «Копатель умер,
+        /// но Греховод успел забрать душу и снова поднял». Титул всё
+        /// это время жил в <see cref="ReputationData"/>, то есть
+        /// <b>на теле</b>, и с телом же пропадал: поднятый заново
+        /// не мог знать, кем был, потому что знать было нечему.
+        /// Отсюда эта работа берёт имя и кладёт в душу
+        /// (<see cref="SoulData.Remember"/>) — единственное, что
+        /// переживает тело.
+        ///
+        /// Легендарное имя старше обычного: если воин дорос до него,
+        /// помнить он будет его.
+        /// </summary>
+        public static string TitleOf(Warrior warrior)
         {
-            string name = warrior.Reputation.CurrentName;
+            if (warrior == null || warrior.Reputation == null) return "";
+
+            var legend = RuleFor(warrior, warrior.Reputation.CurrentLegendaryTitle);
+            if (legend != null) return legend.Title;
+
+            var now = RuleFor(warrior, warrior.Reputation.CurrentName);
+            return now != null ? now.Title : "";
+        }
+
+        /// <summary>Правило, сложившее данное имя. Пусто или чужое — null.</summary>
+        private static TitleRule RuleFor(Warrior warrior, string name)
+        {
             if (string.IsNullOrEmpty(name)) return null;
 
             return TitleDatabase.Rules
