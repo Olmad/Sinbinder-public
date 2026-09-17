@@ -151,6 +151,36 @@ namespace Sinbinder.AOS
                 }
             }
 
+            // Фоторежим: гарантированный отказ на один дубль
+            // (<see cref="Dev.CaptureMode"/>). Решение **не подменяется** —
+            // опускается голос подчинения на волосок ниже настоящего
+            // второго, и дальше движок считает всё сам: победителя,
+            // разрыв, уверенность, причину.
+            //
+            // Так сделано нарочно. Первая попытка меняла победителя
+            // местами со вторым, и разрыв выходил отрицательным —
+            // уверенность поехала бы, а подпись соврала. Здесь же отказ
+            // получается **узким**, и «воин колеблется» под словом будет
+            // чистой правдой: он и правда еле отказался.
+            //
+            // Рычаг только разработчику и снимается сразу же: иначе
+            // отказался бы весь отряд разом и кадр развалился бы.
+            if (Dev.CaptureMode.NextRefusal && context.HasCommand
+                && scores.ContainsKey(ActionType.ObeyCommand))
+            {
+                float rival = float.NegativeInfinity;
+                foreach (var pair in scores)
+                    if (pair.Key != ActionType.ObeyCommand && pair.Value > rival)
+                        rival = pair.Value;
+
+                if (rival > float.NegativeInfinity
+                    && scores[ActionType.ObeyCommand] >= rival)
+                {
+                    scores[ActionType.ObeyCommand] = rival - 0.01f;
+                    Dev.CaptureMode.RefusalTaken();
+                }
+            }
+
             var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
             var best = sorted[0];
 
