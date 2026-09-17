@@ -45,6 +45,18 @@ namespace Sinbinder.AOS
                 });
                 MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, EmotionType.Joy, 0.5f);
 
+                // Инквизитор — командир охотников и ловчих (слово автора,
+                // 17 сентября). Убить его — другое деяние, и титул на нём
+                // свой: «Каратель». До этого KillCommander не писал никто,
+                // и титул был недостижим по данным, а не по цене.
+                //
+                // Опознаётся по имени: своего звания у врагов в коде нет,
+                // а заводить ради одной проверки поле в Warrior — дороже,
+                // чем польза. Появится звание — переписать сюда.
+                if (victim.DisplayName != null && victim.DisplayName.Contains("Инквизитор"))
+                    killerWarrior.Reputation.Deeds.Add(new DeedRecord
+                        { Type = DeedType.KillCommander, Importance = 0.5f });
+
                 // Проверка специальных перков убийцы (Мститель, Бывший Охотник и т.д.)
                 if (killerWarrior.Soul.Memory?.NarrativePerks != null)
                 {
