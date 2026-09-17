@@ -57,6 +57,16 @@ namespace Sinbinder.EditorTools
         private static float _startedAt;
         private static int _failed;
 
+        /// <summary>Ошибок и исключений за прогон. Роняют приговор.</summary>
+        private static int _errors;
+
+        /// <summary>
+        /// Сработавших страховок: шаг прошёл, но не потому, что игра
+        /// ответила, а потому, что истёк срок (<see cref="Gameplay.Beat"/>).
+        /// Это третье состояние — не провал и не чистота.
+        /// </summary>
+        private static int _late;
+
         static DemoWalkthrough()
         {
             if (!SessionState.GetBool(Active, false)) return;
@@ -91,6 +101,8 @@ namespace Sinbinder.EditorTools
                 _index = 0;
                 _entered = false;
                 _failed = 0;
+                _errors = 0;
+                _late = 0;
                 Write("=== ПРОХОЖДЕНИЕ ===");
             }
 
@@ -141,14 +153,33 @@ namespace Sinbinder.EditorTools
 
         private static void Finish()
         {
-            Write(_failed == 0
-                ? "=== ПРОЙДЕНО ЦЕЛИКОМ ==="
-                : "=== КОНЕЦ: застряло шагов — " + _failed + " ===");
+            // Приговор обязан считать то, что отчёт записал. До 17 сентября
+            // _failed рос только на истёкшем шаге, а ошибки и сработавшие
+            // страховки уходили в отчёт и на приговор не влияли: прогон,
+            // в котором каждый кадр летит NullReferenceException, печатал
+            // «ПРОЙДЕНО ЦЕЛИКОМ» и выходил с нулём. Для инструмента,
+            // который проходит демо **без человека**, приговор — всё,
+            // что видно (14-HANDOFF.md §26).
+            //
+            // Состояний три, а не два. Страховка — не провал: шаг прошёл,
+            // игра не развалилась. Но и не чистота: игрок на этом месте
+            // не сделал того, ради чего шаг существует, и назвать это
+            // «пройдено целиком» — соврать.
+            if (_failed == 0 && _errors == 0 && _late == 0)
+                Write("=== ПРОЙДЕНО ЦЕЛИКОМ ===");
+            else if (_failed == 0 && _errors == 0)
+                Write("=== ПРОШЛО НА СТРАХОВКАХ: сработало — " + _late
+                    + ". Демо не разваливается, но эти шаги игра "
+                    + "не отработала. Искать [ПРОЛОГ] выше ===");
+            else
+                Write("=== КОНЕЦ: застряло шагов — " + _failed
+                    + ", ошибок — " + _errors
+                    + ", страховок — " + _late + " ===");
 
             SessionState.SetBool(Active, false);
             EditorApplication.update -= Tick;
             EditorApplication.isPlaying = false;
-            EditorApplication.delayCall += () => EditorApplication.Exit(_failed == 0 ? 0 : 1);
+            EditorApplication.delayCall += () => EditorApplication.Exit(_failed == 0 && _errors == 0 ? 0 : 1);
         }
 
         // ─────────────────────────────── шаги ───────────────────────────────
@@ -161,8 +192,12 @@ namespace Sinbinder.EditorTools
                 S("лагерь загрузился, заставка ушла", null,
                   () => Scene("Prologue_Camp") && SinbinderPlayer.Exists && !Paused(), 30f),
 
+                // Проверяем то, что должно было случиться, а не то, что
+                // мы попросили: Done = () => true означал шаг, который
+                // не может провалиться, — а таких в списке проверок
+                // быть не должно вовсе.
                 S("Греховод вышел из палатки", () => StepHero(4.5f),
-                  () => true, 2f),
+                  () => SinbinderPlayer.Exists && !Paused(), 4f),
 
                 S("провожатый дошёл, лагерь пошёл дальше", null,
                   () => CampOpening.EscortArrived, 40f),
@@ -195,9 +230,14 @@ namespace Sinbinder.EditorTools
                 S("набег: первая волна положена", AttackAll,
                   () => Enemies() == 0 && FirstWaveOver(), 150f),
 
+                // SoulManager.Instance == null раньше засчитывался за успех:
+                // нет жнеца в сцене — значит души собраны. Это «ноль вместо
+                // события», против которого весь проект. Нет его — шаг
+                // обязан застрять, и в отчёте будет видно почему.
                 S("набег: души собраны", HarvestAll,
-                  () => SoulManager.Instance == null || SoulManager.Instance.FadingCount == 0
-                        || Core.Satchel.FreeJar() < 0, 90f),
+                  () => SoulManager.Instance != null
+                        && (SoulManager.Instance.FadingCount == 0
+                            || Core.Satchel.FreeJar() < 0), 90f),
 
                 S("набег: подкрепление вышло и край открыт", null,
                   () => EscapeZone.Active != null && EscapeZone.Active.Open, 20f),
@@ -482,10 +522,16 @@ namespace Sinbinder.EditorTools
 
             if (type == LogType.Warning)
             {
+                // Страховка Beat пишет единообразно, с приставкой [ПРОЛОГ].
+                // По ней и отличаем «шаг не случился, но срок вышел»
+                // от прочих предупреждений, которых в игре хватает.
+                if (first.StartsWith("[ПРОЛОГ]")) _late++;
+
                 Write("    [ПРЕДУПРЕЖДЕНИЕ] " + first);
                 return;
             }
 
+            _errors++;
             Write("    [ОШИБКА] " + first);
             Write("        " + (stack ?? "").Split('\n')[0]);
         }
