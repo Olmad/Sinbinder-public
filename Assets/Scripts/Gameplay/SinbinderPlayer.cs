@@ -114,34 +114,38 @@ namespace Sinbinder.Gameplay
             return player;
         }
 
+        private static readonly Color BodyCrimson = new Color(0.42f, 0.06f, 0.12f);
+        private static readonly Color MantleCrimson = new Color(0.14f, 0.04f, 0.08f);
+
         /// <summary>
-        /// Облик. Отряд — белые кубы 0,5 × 1,2; старшие 1,5 ростом.
-        /// Греховод обязан читаться на их фоне с одного взгляда, поэтому
-        /// отличий сразу три, а не одно: он выше всех, он тёмно-багровый
-        /// там, где все белые, и под ним лежит кольцо, которое видно
-        /// даже когда его самого заслонили палатки.
+        /// Облик. Отряд — модели ростом около 1,2, старшие 1,5. Греховод
+        /// обязан читаться на их фоне с одного взгляда, поэтому отличий
+        /// сразу три, а не одно: он выше всех, он тёмно-багровый там, где
+        /// вся палитра игры приглушённо-серая (единственное исключение —
+        /// <c>22-LOOK.md</c>, <c>23-PROMPTS.md</c> §2), и под ним лежит
+        /// кольцо, которое видно даже когда его самого заслонили палатки.
         ///
         /// Три признака, а не один, потому что каждый по отдельности
         /// теряется: рост — среди старших, цвет — в сумерках лагеря,
         /// кольцо — за спинами. Вместе они не теряются нигде.
+        ///
+        /// Тело собирает тот же <see cref="WarriorLook"/>, что и у всех
+        /// (запасной куб на месте, если модели вдруг нет). Капюшон и плащ
+        /// надеты явно, не через <see cref="Wardrobe.For"/>: те правила
+        /// про ремесло и легенду, а Греховод — не воин со сцены боя,
+        /// им не проходит.
         /// </summary>
         private static void BuildBody(Transform root)
         {
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Тело";
-            body.transform.SetParent(root);
-            body.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-            body.transform.localScale = new Vector3(0.55f, 0.95f, 0.55f);
-            Paint(body, new Color(0.42f, 0.06f, 0.12f));
+            var model = WarriorLook.Build(root.gameObject, ShellType.Skeleton,
+                                           height: 1.60f, girth: 0.55f, lift: 0.95f);
 
-            // Плащ: узкий столб над головой, чтобы силуэт не читался
-            // как «просто высокий воин».
-            var mantle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mantle.name = "Плащ";
-            mantle.transform.SetParent(root);
-            mantle.transform.localPosition = new Vector3(0f, 1.95f, 0f);
-            mantle.transform.localScale = new Vector3(0.62f, 0.22f, 0.62f);
-            Paint(mantle, new Color(0.14f, 0.04f, 0.08f));
+            if (model != null)
+            {
+                Wardrobe.Tint(model.gameObject, BodyCrimson);
+                Wardrobe.Wear(model.gameObject, "Hood", MantleCrimson);
+                Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
+            }
 
             // Кольцо под ногами. Плоский цилиндр, чуть над землёй, чтобы
             // не тонуть в ней; коллайдер снят — по нему не ходят и в него
@@ -161,7 +165,7 @@ namespace Sinbinder.Gameplay
             if (renderer == null) return;
 
             // sharedMaterial трогать нельзя: он общий для всех примитивов
-            // сцены, и покраска Греховода перекрасила бы весь отряд.
+            // сцены, и покраска кольца перекрасила бы все кольца сразу.
             renderer.material.color = color;
         }
     }

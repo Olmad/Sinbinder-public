@@ -125,6 +125,7 @@ namespace Sinbinder.Utilets
 
             Tents(hill, hillRadius: 5f);
             CouncilTable(table);
+            CampClutter(hillRadius: 5f);
 
             // Сцена 3, первая половина: сундук с трофеями Марги. Стоит
             // по другую сторону от костра, чем стол, — чтобы к нему
@@ -747,10 +748,70 @@ namespace Sinbinder.Utilets
             return go;
         }
 
+        /// <summary>
+        /// Обстановка лагеря: брёвна у огня, бочки и ящики у палаток,
+        /// знамя и частокол по краю.
+        ///
+        /// Лагерь без этого — девять фигур и костёр посреди пустоты.
+        /// Расставлено формулой, а не на глаз: одинаковый вход даёт
+        /// одинаковый выход, и лагерь узнаётся со второго запуска.
+        ///
+        /// Никаких компонентов: это мир, а не предметы, с которыми
+        /// говорят. Предмет, который обещает взаимодействие и молчит,
+        /// хуже отсутствующего.
+        /// </summary>
+        private static void CampClutter(float hillRadius)
+        {
+            var clutter = new GameObject("Обстановка");
+
+            // Брёвна вокруг костра: на них сидят, и они задают круг,
+            // в котором стоит отряд.
+            for (int i = 0; i < 4; i++)
+            {
+                float a = 40f + i * 90f;
+                var at = Ring(a, 2.6f);
+                Prop("LogBench", clutter.transform, at, a + 90f);
+            }
+
+            // Припасы: бочки и ящики парами, у трёх сторон лагеря.
+            for (int i = 0; i < 3; i++)
+            {
+                float a = 25f + i * 115f;
+                Prop("Barrel", clutter.transform, Ring(a, 6.4f), a);
+                Prop("Crate", clutter.transform, Ring(a + 8f, 7.1f), a + 30f);
+                Prop("Crate", clutter.transform, Ring(a + 13f, 6.7f) + Vector3.up * 0.6f, a - 15f);
+            }
+
+            // Знамя у стола: место, где отряду объявляют решения.
+            Prop("Banner", clutter.transform, new Vector3(4.6f, 0f, 3.4f), 210f);
+
+            // Частокол по дальнему краю — не ограда, а горизонт: лагерь
+            // обязан иметь край, иначе он не лагерь, а поле с палатками.
+            for (int i = 0; i < 9; i++)
+            {
+                float a = 200f + i * 18f;
+                Prop("Palisade", clutter.transform, Ring(a, hillRadius * 2.8f), a + 90f);
+            }
+
+            // Валуны: два у холма, два на противоположной стороне.
+            Prop("Rock", clutter.transform, Ring(160f, 8.2f), 20f, 1.2f);
+            Prop("Rock", clutter.transform, Ring(178f, 9.0f), 140f, 0.8f);
+            Prop("Rock", clutter.transform, Ring(340f, 8.6f), 70f, 1.0f);
+        }
+
+        /// <summary>Точка на круге вокруг костра. Угол в градусах.</summary>
+        private static Vector3 Ring(float degrees, float radius)
+        {
+            float a = degrees * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
+        }
+
         private static GameObject Campfire(Vector3 position)
         {
             var campfire = new GameObject("Костёр");
             campfire.transform.position = position;
+
+            Prop("Campfire", campfire.transform, position);
 
             var light = new GameObject("Тёплый свет");
             light.transform.SetParent(campfire.transform);
@@ -928,25 +989,50 @@ namespace Sinbinder.Utilets
         private static GameObject Tent(Vector3 position, float yaw, bool abandoned,
             string name, float size, string fallenName = "")
         {
-            var tent = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            tent.name = name;
-            tent.transform.position = position;
+            // Модель, если она есть; куб — если нет. Тот же уговор, что
+            // и у тел (WarriorLook): сцена собирается в любом случае.
+            var tent = Prop("Tent", null, position, yaw, size);
 
-            float height = abandoned ? 0.55f : 1.0f;
-            tent.transform.localScale = new Vector3(1.5f * size, 1.5f * size * height,
-                                                    2.2f * size);
-            tent.transform.rotation = Quaternion.Euler(abandoned ? 14f : 0f, yaw, 45f);
+            if (tent != null)
+            {
+                tent.name = name;
+
+                // Брошенная просела и накренилась: пять таких по кругу —
+                // вся предыстория, которая нужна (09-PROLOGUE.md §4).
+                if (abandoned)
+                {
+                    tent.transform.localScale = new Vector3(size, size * 0.62f, size);
+                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f);
+                }
+            }
+            else
+            {
+                tent = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                tent.name = name;
+                tent.transform.position = position;
+
+                float height = abandoned ? 0.55f : 1.0f;
+                tent.transform.localScale = new Vector3(1.5f * size, 1.5f * size * height,
+                                                        2.2f * size);
+                tent.transform.rotation = Quaternion.Euler(abandoned ? 14f : 0f, yaw, 45f);
+            }
 
             if (!abandoned) return tent;
 
-            var peg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            peg.name = "Колышек";
-            peg.transform.SetParent(tent.transform.parent);
-            peg.transform.position = position + new Vector3(0.9f, 0.35f, 0.9f);
-            peg.transform.localScale = new Vector3(0.08f, 0.35f, 0.08f);
-            peg.transform.rotation = Quaternion.Euler(9f, 0f, 5f);
+            var pegAt = position + new Vector3(0.9f, 0f, 0.9f);
+            var peg = Prop("TentPeg", tent.transform.parent, pegAt, yaw);
 
-            PegName(tent.transform, peg.transform.position, fallenName);
+            if (peg == null)
+            {
+                peg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                peg.name = "Колышек";
+                peg.transform.SetParent(tent.transform.parent);
+                peg.transform.position = pegAt + new Vector3(0f, 0.35f, 0f);
+                peg.transform.localScale = new Vector3(0.08f, 0.35f, 0.08f);
+                peg.transform.rotation = Quaternion.Euler(9f, 0f, 5f);
+            }
+
+            PegName(tent.transform, pegAt + new Vector3(0f, 0.62f, 0f), fallenName);
 
             return tent;
         }
@@ -1097,17 +1183,20 @@ namespace Sinbinder.Utilets
             var table = new GameObject("Стол совета");
             table.transform.position = position;
 
-            var top = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            top.name = "Столешница";
-            top.transform.SetParent(table.transform);
-            top.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            top.transform.localScale = new Vector3(1.6f, 0.12f, 1.1f);
+            if (Prop("CouncilTable", table.transform, position) == null)
+            {
+                var top = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                top.name = "Столешница";
+                top.transform.SetParent(table.transform);
+                top.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+                top.transform.localScale = new Vector3(1.6f, 0.12f, 1.1f);
 
-            var leg = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            leg.name = "Опора";
-            leg.transform.SetParent(table.transform);
-            leg.transform.localPosition = new Vector3(0f, 0.45f, 0f);
-            leg.transform.localScale = new Vector3(0.35f, 0.9f, 0.35f);
+                var leg = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                leg.name = "Опора";
+                leg.transform.SetParent(table.transform);
+                leg.transform.localPosition = new Vector3(0f, 0.45f, 0f);
+                leg.transform.localScale = new Vector3(0.35f, 0.9f, 0.35f);
+            }
 
             var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             ball.name = "Хрустальный шар";
@@ -1143,22 +1232,30 @@ namespace Sinbinder.Utilets
             var chest = new GameObject("Сундук Марги");
             chest.transform.position = position;
 
-            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            box.name = "Ящик";
-            box.transform.SetParent(chest.transform);
-            box.transform.localPosition = new Vector3(0f, 0.28f, 0f);
-            box.transform.localScale = new Vector3(1.1f, 0.56f, 0.7f);
+            bool modelled = Prop("Chest", chest.transform, position) != null;
+
+            if (!modelled)
+            {
+                var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                box.name = "Ящик";
+                box.transform.SetParent(chest.transform);
+                box.transform.localPosition = new Vector3(0f, 0.28f, 0f);
+                box.transform.localScale = new Vector3(1.1f, 0.56f, 0.7f);
+            }
 
             // Петля у заднего края: крышка поворачивается вокруг неё.
             var hinge = new GameObject("Крышка");
             hinge.transform.SetParent(chest.transform);
             hinge.transform.localPosition = new Vector3(0f, 0.56f, -0.35f);
 
-            var lid = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            lid.name = "Створка";
-            lid.transform.SetParent(hinge.transform);
-            lid.transform.localPosition = new Vector3(0f, 0.06f, 0.35f);
-            lid.transform.localScale = new Vector3(1.15f, 0.12f, 0.75f);
+            if (Prop("ChestLid", hinge.transform, position + new Vector3(0f, 0.56f, -0.35f)) == null)
+            {
+                var lid = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                lid.name = "Створка";
+                lid.transform.SetParent(hinge.transform);
+                lid.transform.localPosition = new Vector3(0f, 0.06f, 0.35f);
+                lid.transform.localScale = new Vector3(1.15f, 0.12f, 0.75f);
+            }
 
             var trophy = chest.AddComponent<TrophyChest>();
             Wire(trophy, ("_lid", hinge.transform));
@@ -1191,20 +1288,40 @@ namespace Sinbinder.Utilets
             var gate = new GameObject("Вход в склеп");
             gate.transform.position = position;
 
-            for (int i = -1; i <= 1; i += 2)
+            if (Prop("CryptGate", gate.transform, position) == null)
             {
-                var pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                pillar.name = i < 0 ? "Опора левая" : "Опора правая";
-                pillar.transform.SetParent(gate.transform);
-                pillar.transform.localPosition = new Vector3(i * 1.6f, 1.5f, 0f);
-                pillar.transform.localScale = new Vector3(0.8f, 3f, 0.8f);
+                for (int i = -1; i <= 1; i += 2)
+                {
+                    var pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    pillar.name = i < 0 ? "Опора левая" : "Опора правая";
+                    pillar.transform.SetParent(gate.transform);
+                    pillar.transform.localPosition = new Vector3(i * 1.6f, 1.5f, 0f);
+                    pillar.transform.localScale = new Vector3(0.8f, 3f, 0.8f);
+                }
+
+                var lintel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                lintel.name = "Перемычка";
+                lintel.transform.SetParent(gate.transform);
+                lintel.transform.localPosition = new Vector3(0f, 3.2f, 0f);
+                lintel.transform.localScale = new Vector3(4f, 0.6f, 0.9f);
             }
 
-            var lintel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            lintel.name = "Перемычка";
-            lintel.transform.SetParent(gate.transform);
-            lintel.transform.localPosition = new Vector3(0f, 3.2f, 0f);
-            lintel.transform.localScale = new Vector3(4f, 0.6f, 0.9f);
+            // Факелы по сторонам входа: единственный свет у склепа.
+            for (int i = -1; i <= 1; i += 2)
+            {
+                var at = position + new Vector3(i * 1.9f, 1.6f, -0.5f);
+                if (Prop("Torch", gate.transform, at, i < 0 ? -90f : 90f) == null) continue;
+
+                var glow = new GameObject("Огонь");
+                glow.transform.SetParent(gate.transform);
+                glow.transform.position = at + new Vector3(0f, 0.7f, -0.2f);
+
+                var fire = glow.AddComponent<Light>();
+                fire.type = LightType.Point;
+                fire.color = new Color(1f, 0.58f, 0.26f);
+                fire.intensity = 2.4f;
+                fire.range = 9f;
+            }
         }
 
         // ---------- интерфейс: три ступени прозрачности ----------
@@ -2242,6 +2359,28 @@ namespace Sinbinder.Utilets
         }
 
         // ---------- мелкие помощники ----------
+
+        /// <summary>
+        /// Поставить предмет из <c>Resources/Props</c>.
+        ///
+        /// Предметы собирает <c>Tools/blender/props.py</c> — те же числа,
+        /// тот же стиль, что у тел и гардероба. Нет предмета — возвращаем
+        /// <c>null</c>, и вызывающий ставит примитив, как ставил раньше:
+        /// сцена обязана собираться и на голом клоне, где моделей ещё нет.
+        /// </summary>
+        private static GameObject Prop(string name, Transform parent,
+            Vector3 position, float yaw = 0f, float scale = 1f)
+        {
+            var prefab = Resources.Load<GameObject>("Props/" + name);
+            if (prefab == null) return null;
+
+            var go = (GameObject)Object.Instantiate(prefab, parent);
+            go.name = name;
+            go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localScale = Vector3.one * scale;
+            return go;
+        }
 
         private static RectTransform Panel(string name, Transform parent,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size, Vector2 position)

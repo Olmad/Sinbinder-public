@@ -77,28 +77,65 @@ namespace Sinbinder.Gameplay
             if (bones == null || binds == null || bones.Length != binds.Length) return;
 
             foreach (var item in For(warrior))
-                Put(item, bones, binds);
+                Put(item, bones, binds, null);
         }
 
-        private static void Put(string item, Transform[] bones, Matrix4x4[] binds)
+        /// <summary>
+        /// Надеть одну вещь на уже собранную модель — снаружи, не через
+        /// <see cref="For"/>. Нужен Греховоду: он не проходит по правилам
+        /// ремесла и легенды (их считает <see cref="For"/> для обычных
+        /// воинов), а вещь ему нужна одна и та же всегда, и своего цвета
+        /// (<c>tint</c>) — единственное исключение из общей палитры
+        /// (`23-PROMPTS.md` §2).
+        /// </summary>
+        public static GameObject Wear(GameObject model, string item, Color? tint = null)
         {
-            if (!Worn.TryGetValue(item, out var boneName)) return;
+            if (model == null) return null;
+
+            var skin = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (skin == null || skin.sharedMesh == null) return null;
+
+            var bones = skin.bones;
+            var binds = skin.sharedMesh.bindposes;
+            if (bones == null || binds == null || bones.Length != binds.Length) return null;
+
+            return Put(item, bones, binds, tint);
+        }
+
+        /// <summary>Перекрасить всё, что рендерится под этим объектом. Через
+        /// <c>.material</c> (не <c>.sharedMaterial</c>): иначе покраска одного
+        /// воина перекрасила бы всех, кто носит ту же деталь гардероба.</summary>
+        public static void Tint(GameObject go, Color color)
+        {
+            if (go == null) return;
+
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.materials;
+                for (int i = 0; i < mats.Length; i++) mats[i].color = color;
+                r.materials = mats;
+            }
+        }
+
+        private static GameObject Put(string item, Transform[] bones, Matrix4x4[] binds, Color? tint)
+        {
+            if (!Worn.TryGetValue(item, out var boneName)) return null;
 
             int index = -1;
             for (int i = 0; i < bones.Length; i++)
                 if (bones[i] != null && bones[i].name == boneName) { index = i; break; }
 
-            if (index < 0) return;
+            if (index < 0) return null;
 
             var prefab = Resources.Load<GameObject>(Folder + item);
             if (prefab == null)
             {
-                if (_toldAboutMissing) return;
+                if (_toldAboutMissing) return null;
                 _toldAboutMissing = true;
 
                 Debug.Log($"[ГАРДЕРОБ] Части нет ({Folder}{item}) — воины идут "
                         + "без неё. Это не поломка: соберите Tools/blender/wear.py.");
-                return;
+                return null;
             }
 
             var worn = Object.Instantiate(prefab, bones[index]);
@@ -111,6 +148,10 @@ namespace Sinbinder.Gameplay
             worn.transform.localPosition = m.GetColumn(3);
             worn.transform.localRotation = m.rotation;
             worn.transform.localScale = m.lossyScale;
+
+            if (tint.HasValue) Tint(worn, tint.Value);
+
+            return worn;
         }
 
         /// <summary>
