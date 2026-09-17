@@ -75,6 +75,18 @@ namespace Sinbinder.AOS
                 case ActionType.AcceptBribe:
                     bool wasOurs = _warrior.Team == Team.Player;
                     _warrior.Team = wasOurs ? Team.Enemy : Team.Player;
+
+                    // Поля мало. CombatManager решает, кто кому враг,
+                    // по спискам, а не по полю Team: GetEnemies спрашивает
+                    // «в каком ты списке». До 17 сентября перебежчик менял
+                    // только надпись — оставался в списке своих, продолжал
+                    // бить своих новых друзей, а конец боя считал его нашим.
+                    // UpdateTeam для этого и написан, и не звался ниоткуда
+                    // (правило orphans, 11-MISSING.md §5).
+                    var body = GetComponent<Damageable>();
+                    if (body != null && CombatManager.Instance != null)
+                        CombatManager.Instance.UpdateTeam(body, _warrior.Team);
+
                     Debug.Log($"[AOS] {_warrior.DisplayName} принял подкуп и перешёл на сторону противника!");
 
                     // Предательство надо объявить, иначе его никто
@@ -323,6 +335,14 @@ namespace Sinbinder.AOS
             {
                 if (set == null || !set.CanUseSkill(action)) continue;
                 set.ExecuteSkill(action);
+
+                // Умение стоит сил, как и удар. До 17 сентября SpendForSkill
+                // был написан и не звался ниоткуда: умения выходили даром,
+                // и «силы у него на исходе» после десятка умений не наступало
+                // никогда. А на усталость смотрят три модуля из тринадцати —
+                // Гордыня, Лень и Гнев.
+                GetComponent<Gameplay.Fatigue>()?.SpendForSkill();
+
                 return;
             }
 

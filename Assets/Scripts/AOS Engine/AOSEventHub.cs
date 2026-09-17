@@ -197,6 +197,16 @@ namespace Sinbinder.AOS
             Debug.Log(AOSStats.Report());
             AOSStats.Reset();
 
+            // Боевые реплики держатся флагом «уже говорили», и снимает его
+            // только ResetAllBattleDialogues, который не звался ниоткуда
+            // (правило orphans). То есть отряд разговаривал в первом бою
+            // и молчал во всех следующих. В демо с одним боем это невидимо,
+            // а в бесконечных миссиях воины замолкали бы навсегда.
+            // Снимаем в конце боя: к следующему они снова при голосе.
+            if (CombatManager.Instance != null)
+                Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()
+                      ?.ResetAllBattleDialogues();
+
             var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
