@@ -1974,7 +1974,9 @@ static class Bench
     /// </summary>
     static void ApplyAsset(AOSConfig cfg)
     {
-        string path = Path.Combine("..", "..", "Assets", "Resources", "AOSConfig.asset");
+        string root = AssetsRoot();
+        string path = root == null ? "AOSConfig.asset"
+                    : Path.Combine(root, "Resources", "AOSConfig.asset");
 
         if (!File.Exists(path))
         {
@@ -2431,14 +2433,50 @@ static class Bench
     /// придумывает, что умеет оболочка, меряет себя, а не игру — этот
     /// урок проекту уже стоил целого документа по балансу.
     /// </summary>
+
+    /// <summary>
+    /// Папка Assets, найденная от того места, где лежит сам стенд.
+    ///
+    /// До 17 сентября оба загрузчика — конфига и оболочек — брали путь
+    /// относительно **рабочей папки**: `../../Assets/...`. Из `Tools/bench`
+    /// это верно, из корня проекта — нет. И тогда стенд молча пропускал
+    /// два раздела: конфиг брался из значений по умолчанию в коде,
+    /// а оболочки не мерились вовсе. При этом провалов он показывал ноль,
+    /// и ноль этот читался как «чисто».
+    ///
+    /// Это ровно та ложь прибора, которую чинили 7 сентября («Стенд мерил
+    /// не ту игру: конфиг брался из кода, а не из ассета») — починили
+    /// тогда для одной папки запуска и не заметили, что она не одна.
+    ///
+    /// Ищем от каталога сборки вверх: он известен всегда, откуда бы
+    /// стенд ни запустили.
+    /// </summary>
+    static string AssetsRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+
+        for (int up = 0; up < 8 && dir != null; up++, dir = dir.Parent)
+        {
+            string guess = Path.Combine(dir.FullName, "Assets");
+            if (Directory.Exists(Path.Combine(guess, "Resources")))
+                return guess;
+        }
+
+        return null;
+    }
+
     static List<ShellData> LoadShells()
     {
         var list = new List<ShellData>();
-        string dir = Path.Combine("..", "..", "Assets", "Resources", "Shells");
+        string root = AssetsRoot();
+        string dir = root == null ? "Shells"
+                   : Path.Combine(root, "Resources", "Shells");
 
         if (!Directory.Exists(dir))
         {
-            Console.WriteLine("[СТЕНД] Resources/Shells не найден — оболочки не мерим.");
+            Console.WriteLine("  ПРОВАЛ: Resources/Shells не найден — оболочки "
+                            + "не мерены вовсе, и ноль провалов здесь ничего "
+                            + "не значит.");
             return list;
         }
 
@@ -2569,6 +2607,8 @@ static class Bench
 
         foreach (var sh in shells.OrderBy(x => x.type))
         {
+            bool binds = sh.bindStrength > 0f;
+
             // Самая громкая шкала этого тела.
             SinType pulled = SinType.Greed;
             float loudest = 0f;
@@ -2586,21 +2626,49 @@ static class Bench
             var all = new System.Text.StringBuilder();
             for (int i = 0; i < SoulData.SpectrumCount; i++)
                 all.Append(once.Get((SinType)i).ToString("F1")).Append(';');
-            outcomes.Add(all.ToString());
+            if (binds) outcomes.Add(all.ToString());
 
             // Дрейф необратим: второе связывание уводит дальше первого.
-            if (Math.Abs(twice.Get(pulled) - once.Get(pulled)) > 0.01f) drifted++;
+            if (binds && Math.Abs(twice.Get(pulled) - once.Get(pulled)) > 0.01f)
+                drifted++;
 
             Console.WriteLine($"  {sh.shellName,-10} {SoulData.GetSinName(pulled),-14}"
                             + $" {soul.Get(pulled),6:F1} {once.Get(pulled),7:F1}"
                             + $" {twice.Get(pulled),14:F1}");
         }
 
-        Check(outcomes.Count == shells.Count,
+        // Считаем по тем, в кого вселяют. Живое тело (bindStrength 0)
+        // оболочкой не является: в него не вселяют, его не поднимают,
+        // и тянуть душу ему нечем — три числа в Living.asset согласованы
+        // между собой нарочно.
+        //
+        // До 17 сентября обе проверки считали строки таблицы целиком,
+        // и пятая оболочка, заведённая 14 сентября, ломала их обе.
+        // Провал висел в стенде непрочитанным: стенд печатает, а не
+        // роняет, и его читают, только когда ищут что-то другое.
+        int bindable = shells.Count(x => x.bindStrength > 0f);
+
+        Check(outcomes.Count == bindable,
             "разные оболочки дают разный итог — иначе выбор ничего не значит");
 
-        Check(drifted == shells.Count,
-            "второе связывание уводит душу дальше — дрейф необратим у всех тел");
+        Check(drifted == bindable,
+            "второе связывание уводит душу дальше — дрейф необратим "
+          + "у тел, в которые вселяют");
+
+        // И обратное правило, которого не было: в кого не вселяют,
+        // тот и душу не тянет. Иначе тяга висела бы числом, которое
+        // не применяется никогда, — «написано, до игры не доведено»
+        // в чистом виде.
+        foreach (var sh in shells.Where(x => x.bindStrength <= 0f))
+        {
+            bool quiet = true;
+            for (int i = 0; i < SoulData.SpectrumCount; i++)
+                if (Math.Abs(sh.GetBias((SinType)i)) > 0.01f) quiet = false;
+
+            Check(quiet, $"{sh.shellName}: в это тело не вселяют "
+                       + "(bindStrength 0), а тяга у него задана — "
+                       + "число, которое не применится никогда");
+        }
 
         Console.WriteLine(bad == 0 ? "\n  все проверки прошли" : $"\n  ПРОВАЛОВ: {bad}");
     }
