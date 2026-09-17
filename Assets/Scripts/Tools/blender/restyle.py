@@ -22,9 +22,17 @@ Assets/Textures/ИСТОЧНИКИ.md, а не в памяти.
 Запуск:
 
     blender --background --python Tools/blender/restyle.py -- --preview <папка>
+    blender --background --python Tools/blender/restyle.py -- --preview <папка> --base <имя файла из Downloads>
 
 Пока только превью «до» и «после»: в игру переделка не выводится,
 пока автор не решит, какой оболочкой эта основа станет (§22).
+
+**Второй опыт — Охотник, а не Карган.** 13 сентября в `Downloads` рядом
+с `faceted_character...` лёг `dragon_hunter_warrior.glb`: вторая, отдельная
+от `bodies.py`/`wear.py` попытка получить Охотника — не кодом, а из
+готовой основы, тем же путём, что и Карган в `23-PROMPTS.md`. Флаг
+`--base` запускает ровно тот же конвейер на любой модели из `Downloads`,
+не заводя вторую копию файла.
 """
 
 import colorsys
@@ -36,7 +44,7 @@ import numpy as np
 from mathutils import Vector
 
 DOWNLOADS = Path.home() / "Downloads"
-BASE = DOWNLOADS / "faceted_character_locomotion_animation.glb"
+DEFAULT_BASE = "faceted_character_locomotion_animation.glb"
 
 # Во что превращается каждый цвет атласа.
 #
@@ -88,9 +96,9 @@ def restyle_image(img):
     img.update()
 
 
-def load():
+def load(base):
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=str(BASE))
+    bpy.ops.import_scene.gltf(filepath=str(base))
 
 
 def strip():
@@ -98,11 +106,17 @@ def strip():
     Убрать то, что к телу не относится.
 
     Меч — слот класса (22-LOOK.md §2), а не тело, и в руках он мешает
-    ретаргету (23-PROMPTS.md §2). Икосфера — служебный объект основы,
-    он висит в сцене отдельно от рига.
+    ретаргету (23-PROMPTS.md §2). Икосфера и заклинание — служебные
+    и декоративные объекты основы, они висят в сцене отдельно от рига.
+
+    Имена от одной основы к другой разные (`Sword` у faceted_character,
+    `DragonKillerSword_0` у dragon_hunter_warrior) — сравнение по
+    подстроке без учёта регистра, а не по точному имени.
     """
+    drop = ("sword", "spell", "icosphere")
     for o in list(bpy.context.scene.objects):
-        if o.name.startswith("Sword") or o.name == "Icosphere":
+        low = o.name.lower()
+        if any(tag in low for tag in drop):
             bpy.data.objects.remove(o, do_unlink=True)
 
 
@@ -129,18 +143,33 @@ def no_glow():
 
 
 def palette():
-    """Перекрасить атлас цвета. Маска свечения больше не нужна."""
+    """
+    Перекрасить цвет. Маска свечения больше не нужна.
+
+    Основы бывают двух родов: атлас-полосы в текстуре (faceted_character)
+    и одноцветные материалы без единой картинки (dragon_hunter_warrior —
+    ни один Base Color тут не был подключён к текстуре, и первый заход
+    прошёл мимо всей модели, не тронув ни одного материала). Второй
+    случай — то же самое `grade()`, только на значении, а не на пикселях.
+    """
     for m in bpy.data.materials:
         if not m.use_nodes:
             continue
         bsdf = m.node_tree.nodes.get("Principled BSDF")
         base = bsdf.inputs["Base Color"] if bsdf else None
-        if base is None or not base.links:
+        if base is None:
             continue
-        node = base.links[0].from_node
-        if node.type == "TEX_IMAGE" and node.image is not None:
-            restyle_image(node.image)
-            print("[ПЕРЕДЕЛКА] атлас перекрашен: " + node.image.name)
+
+        if base.links:
+            node = base.links[0].from_node
+            if node.type == "TEX_IMAGE" and node.image is not None:
+                restyle_image(node.image)
+                print("[ПЕРЕДЕЛКА] атлас перекрашен: " + node.image.name)
+            continue
+
+        r, g, b, a = base.default_value
+        base.default_value = (*grade(r, g, b), a)
+        print("[ПЕРЕДЕЛКА] цвет перекрашен: " + m.name)
 
 
 def measure():
@@ -219,12 +248,16 @@ def preview(folder, tag):
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     shots = argv[argv.index("--preview") + 1] if "--preview" in argv else None
+    base = DOWNLOADS / (argv[argv.index("--base") + 1] if "--base" in argv else DEFAULT_BASE)
+
+    if not base.exists():
+        raise SystemExit("Нет такого файла в Downloads: " + str(base))
 
     if shots:
-        load(); strip(); fit()
+        load(base); strip(); fit()
         preview(shots, "0-before")
 
-    load()
+    load(base)
     strip()
     no_glow()
     palette()

@@ -46,10 +46,11 @@ namespace Sinbinder.EditorTools
 
         /// <summary>Клипы, которые обязаны зацикливаться. Остальные —
         /// падение, удар — проигрываются один раз, и зацикленное падение
-        /// выглядит как судорога.</summary>
+        /// выглядит как судорога. Talk зациклен: реплика стоит кадрами,
+        /// сколько нужно разговору, а не фиксированное время клипа.</summary>
         private static readonly HashSet<string> Looping = new HashSet<string>
         {
-            BodyMotion.Idle, BodyMotion.Walk, BodyMotion.Flee,
+            BodyMotion.Idle, BodyMotion.Walk, BodyMotion.Flee, BodyMotion.Talk,
         };
 
         private static bool Ours(string path)
