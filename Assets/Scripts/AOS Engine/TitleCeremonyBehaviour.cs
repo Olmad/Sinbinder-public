@@ -25,15 +25,25 @@ namespace Sinbinder.AOS
             // туда: камера подъезжала к воину, тот молчал, игрок не узнавал
             // ни за что титул, ни какой. Теперь она на нижней полосе —
             // там же, где реплики и слова поступков.
-            string line = isLegendary
-                ? "Я вошёл в легенды!"
-                : $"Я заслужил это! Теперь я — {title}!";
+            // Было две строки на всех: «Я вошёл в легенды!» и «Я заслужил
+            // это!». Одинаковые у гордого и у ленивого, у первого титула
+            // и у сотого. Теперь голос зависит от греха (<see cref="TitleWords"/>),
+            // и жребия там нет — два одинаковых прохода дают одну церемонию.
+            string line = TitleWords.Answer(warrior, title, isLegendary);
+            string shout = TitleWords.Shout(warrior, title, isLegendary);
 
             var cameraController = FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (cameraController != null)
             {
                 cameraController.SaveCameraPosition();
                 yield return cameraController.FocusOn(warrior.transform);
+
+                // Сначала кричит отряд, потом отвечает он. Порядок важен:
+                // титул — приговор окружающих, и услышать его игрок должен
+                // от них, а не от самого получившего.
+                UI.Letterbox.Instance?.Say("Отряд", shout);
+                yield return new WaitForSecondsRealtime(1.4f);
+
                 UI.Letterbox.Instance?.Say(warrior.DisplayName, line);
             }
 
