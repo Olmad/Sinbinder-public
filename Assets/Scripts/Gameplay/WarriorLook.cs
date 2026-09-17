@@ -89,6 +89,12 @@ namespace Sinbinder.Gameplay
                 // должно на модели — там и материал, и голова.
                 model.AddComponent<SinEyes>();
 
+                // И одеваем: капюшон, колчан, наплечник, плащ из вороньих
+                // перьев — по тому, кем воин является (22-LOOK.md).
+                // Здесь, а не в спавнерах: спавнеров четыре, и одеть
+                // в трёх из них — значит однажды забыть в четвёртом.
+                Wardrobe.Dress(model, owner.GetComponent<Warrior>());
+
                 return model.transform;
             }
 

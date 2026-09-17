@@ -159,6 +159,7 @@ namespace Sinbinder.EditorTools
             if (_frameStep == 0 && played > 6f)
             {
                 SelfDisabled();
+                Dressed();
 
                 _frameStep = 1;
                 _frameAt = played;
@@ -245,6 +246,52 @@ namespace Sinbinder.EditorTools
             }
 
             if (found == 0) Write("  [ИНТЕРФЕЙС] сам себя не выключил никто");
+        }
+
+        /// <summary>
+        /// Одеты ли воины и село ли надетое на место.
+        ///
+        /// Часть гардероба висит на кости с матрицей привязки
+        /// (<see cref="Sinbinder.Gameplay.Wardrobe"/>), и ошибка в этой
+        /// матрице не роняет ничего: капюшон просто уезжает в сторону
+        /// или под землю. Глазами в пакетном режиме этого не увидеть,
+        /// поэтому меряем: далеко ли надетое от своей кости.
+        /// </summary>
+        private static void Dressed()
+        {
+            int worn = 0;
+            float worst = 0f;
+            string where = "";
+
+            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
+            {
+                if (mf == null || mf.transform.parent == null) continue;
+                if (!Sinbinder.Gameplay.Wardrobe.Knows(mf.gameObject.name)) continue;
+
+                worn++;
+
+                // Меряем от кости, на которой висит, до середины надетого.
+                var bone = mf.transform.parent;
+                var centre = mf.GetComponent<Renderer>() != null
+                    ? mf.GetComponent<Renderer>().bounds.center
+                    : mf.transform.position;
+
+                float gap = Vector3.Distance(bone.position, centre);
+                if (gap > worst) { worst = gap; where = mf.gameObject.name + " на " + bone.name; }
+            }
+
+            if (worn == 0)
+            {
+                Write("  [ГАРДЕРОБ] на воинах ничего не надето");
+                return;
+            }
+
+            // Полметра — это уже не «сидит», а «висит рядом»: самая
+            // длинная часть, плащ, укладывается в треть метра от кости.
+            bool ok = worst < 0.5f;
+            Write("  " + (ok ? "[ГАРДЕРОБ] надето " + worn + " частей, дальше всех "
+                             : "[ОШИБКА] гардероб уехал: ")
+                  + where + " — " + worst.ToString("F2") + " м от кости");
         }
 
         private static void Catch(string message, string stack, LogType type)

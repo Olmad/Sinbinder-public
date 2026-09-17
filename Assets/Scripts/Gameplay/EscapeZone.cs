@@ -193,6 +193,7 @@ namespace Sinbinder.Gameplay
 
             _escapedNames.Clear();
             foreach (var w in _inside)
+            {
                 if (w == null || w.IsDead) continue;
 
                 _escapedNames.Add(w.DisplayName);
@@ -203,6 +204,7 @@ namespace Sinbinder.Gameplay
                 w.Reputation.Deeds.Add(new AOS.DeedRecord
                     { Type = AOS.DeedType.Escape, Importance = 0.3f });
                 AOS.TitleManager.UpdateTitle(w);
+            }
 
             SelectionMade = true;
 
