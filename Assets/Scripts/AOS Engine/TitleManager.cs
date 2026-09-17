@@ -48,7 +48,7 @@ namespace Sinbinder.AOS
             if (best.MainDeed == DeedType.CollectMostLoot
              || best.MainDeed == DeedType.DigMostSouls)
             {
-                var holder = FindWarriorWithTitle(best.Title);
+                var holder = FindWarriorWithTitle(best);
                 if (holder != null && holder != warrior)
                 {
                     float his = Sum(holder.Reputation.Deeds, best.MainDeed);
@@ -62,18 +62,22 @@ namespace Sinbinder.AOS
             // Повышение: имя меняется, только когда новый титул строго
             // сильнее нынешнего. Без этого воин застревал на первом
             // заслуженном имени навсегда.
+            // Слово берётся у правила по полу носителя: «Защитник Марга»
+            // и «Защитница Сквип» — одно правило, один порог, две формы.
+            string word = best.For(warrior.Gender);
+
             var now = Current(warrior);
             if (now == null || Stronger(best, now))
             {
-                warrior.Reputation.CurrentName = $"{best.Title} {warrior.DisplayName}";
-                TitleCeremony.Start(warrior, best.Title, false);
+                warrior.Reputation.CurrentName = $"{word} {warrior.DisplayName}";
+                TitleCeremony.Start(warrior, word, false);
             }
 
             if (!warrior.Reputation.LegendaryUnlocked && Legendary(best))
             {
-                warrior.Reputation.CurrentLegendaryTitle = $"{best.Title} {warrior.DisplayName}";
+                warrior.Reputation.CurrentLegendaryTitle = $"{word} {warrior.DisplayName}";
                 warrior.Reputation.LegendaryUnlocked = true;
-                TitleCeremony.Start(warrior, best.Title, true);
+                TitleCeremony.Start(warrior, word, true);
             }
         }
 
@@ -180,10 +184,10 @@ namespace Sinbinder.AOS
             if (warrior == null || warrior.Reputation == null) return "";
 
             var legend = RuleFor(warrior, warrior.Reputation.CurrentLegendaryTitle);
-            if (legend != null) return legend.Title;
+            if (legend != null) return legend.For(warrior.Gender);
 
             var now = RuleFor(warrior, warrior.Reputation.CurrentName);
-            return now != null ? now.Title : "";
+            return now != null ? now.For(warrior.Gender) : "";
         }
 
         /// <summary>Правило, сложившее данное имя. Пусто или чужое — null.</summary>
@@ -192,13 +196,19 @@ namespace Sinbinder.AOS
             if (string.IsNullOrEmpty(name)) return null;
 
             return TitleDatabase.Rules
-                .FirstOrDefault(r => name == $"{r.Title} {warrior.DisplayName}");
+                .FirstOrDefault(r => name == $"{r.For(warrior.Gender)} {warrior.DisplayName}");
         }
 
-        private static Warrior FindWarriorWithTitle(string title)
+        /// <summary>
+        /// Кто сейчас носит имя по этому правилу. Сверяем по правилу,
+        /// а не по слову: держателем «Защитника» может оказаться
+        /// «Защитница», и спорный титул иначе достался бы обоим сразу.
+        /// </summary>
+        private static Warrior FindWarriorWithTitle(TitleRule rule)
         {
             var all = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
-            return all.FirstOrDefault(w => w.Reputation.CurrentName == $"{title} {w.DisplayName}");
+            return all.FirstOrDefault(
+                w => w.Reputation.CurrentName == $"{rule.For(w.Gender)} {w.DisplayName}");
         }
     }
 }
