@@ -86,6 +86,16 @@ namespace Sinbinder.AOS
 
             // Деяние "Спасение союзника"
             savior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SaveAlly, Importance = 0.7f });
+
+            // Спасли старшего — это другое деяние, и титулы на нём свои
+            // («Щит Отряда», «Телохранитель»). До 17 сентября
+            // ProtectCommander не писал никто, и оба титула были
+            // недостижимы по данным, а не по цене (11-MISSING.md §5).
+            if (saved != null && !string.IsNullOrEmpty(SquadRoster.CommanderName)
+                && saved.DisplayName == SquadRoster.CommanderName)
+                savior.Reputation.Deeds.Add(new DeedRecord
+                    { Type = DeedType.ProtectCommander, Importance = 0.7f });
+
             TitleManager.UpdateTitle(savior);
 
             MemoryProcessor.Instance?.CreateMemory(saved, "AllySavedMe", savior.Id, EmotionType.Joy, 0.9f);
@@ -217,6 +227,15 @@ namespace Sinbinder.AOS
 
                     // Деяние "Выживание в миссии"
                     w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
+
+                    // «Берсерк» стоит на NeverRetreat: за весь бой ни разу
+                    // не побежал. Деяние это не писал никто, и титул был
+                    // недостижим по данным.
+                    var body = w.GetComponent<AOSWarriorWrapper>();
+                    if (body != null && !body.Fled)
+                        w.Reputation.Deeds.Add(new DeedRecord
+                            { Type = DeedType.NeverRetreat, Importance = 0.5f });
+                    body?.ForgetFlight();
 
                     // Если союзников не осталось – "Последний рубеж"
                     if (alliesLost >= CombatManager.Instance.GetAlivePlayerCount())

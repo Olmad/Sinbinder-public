@@ -193,7 +193,16 @@ namespace Sinbinder.Gameplay
 
             _escapedNames.Clear();
             foreach (var w in _inside)
-                if (w != null && !w.IsDead) _escapedNames.Add(w.DisplayName);
+                if (w == null || w.IsDead) continue;
+
+                _escapedNames.Add(w.DisplayName);
+
+                // «Беглец» стоит на Escape, и писать его было некому.
+                // Уйти живым с поля — деяние: не доблесть, но и не ничто,
+                // и титул на нём в игре заведён.
+                w.Reputation.Deeds.Add(new AOS.DeedRecord
+                    { Type = AOS.DeedType.Escape, Importance = 0.3f });
+                AOS.TitleManager.UpdateTitle(w);
 
             SelectionMade = true;
 

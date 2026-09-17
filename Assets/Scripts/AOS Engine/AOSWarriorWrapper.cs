@@ -213,8 +213,19 @@ namespace Sinbinder.AOS
             return best;
         }
 
+        /// <summary>
+        /// Бежал ли этот воин в текущем бою. Нужен «Берсерку»: титул
+        /// стоит на NeverRetreat, а писать это деяние было некому —
+        /// признак есть только у того, кто исполняет побег.
+        /// </summary>
+        public bool Fled { get; private set; }
+
+        public void ForgetFlight() => Fled = false;
+
         private void ExecuteFlee()
         {
+            Fled = true;
+
             var mover = GetComponent<UnitMover>();
             if (mover != null)
             {

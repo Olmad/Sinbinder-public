@@ -95,6 +95,16 @@ namespace Sinbinder.Gameplay
 
             // Вот и весь урок: одно и то же действие названо по-разному
             // в зависимости от того, насколько игрок промедлил.
+            // «Некромант» стоит на DigMostSouls, и писать его было некому.
+            // Жнец висит на своём воине — его и заслуга.
+            var mine = GetComponent<Warrior>();
+            if (mine != null)
+            {
+                mine.Reputation.Deeds.Add(new AOS.DeedRecord
+                    { Type = AOS.DeedType.DigMostSouls, Importance = 1.0f });
+                AOS.TitleManager.UpdateTitle(mine);
+            }
+
             Log($"Душа собрана: {soul.Warrior.DisplayName}. "
               + $"{SoulDecay.Describe(soul.SoulQuality)}.");
 

@@ -130,6 +130,17 @@ namespace Sinbinder.Gameplay
             Looted = true;
             _opening = false;
 
+            // «Мародёр» стоит на FindTreasure, и писать его было некому.
+            // Сундук разбирает игрок, но деяние — у того, кто рядом:
+            // добычу делят на отряд, и заслуга тоже общая не бывает.
+            var nearest = NearestOwn(transform.position);
+            if (nearest != null)
+            {
+                nearest.Reputation.Deeds.Add(new AOS.DeedRecord
+                    { Type = AOS.DeedType.FindTreasure, Importance = 1.2f });
+                AOS.TitleManager.UpdateTitle(nearest);
+            }
+
             if (taken == 0)
                 log?.Write("В сундуке пусто. Марга объяснится, когда вернётся.");
         }
@@ -171,6 +182,26 @@ namespace Sinbinder.Gameplay
             if (taken > 0) log?.Write($"В сундуке: {names}.");
 
             return taken;
+        }
+
+        /// <summary>
+        /// Ближайший свой воин. Заслугу за сундук получает он: добычу
+        /// делят на отряд, но деяние общим не бывает.
+        /// </summary>
+        private static Warrior NearestOwn(Vector3 where)
+        {
+            Warrior best = null;
+            float least = float.MaxValue;
+
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+
+                float d = Vector3.Distance(w.transform.position, where);
+                if (d < least) { least = d; best = w; }
+            }
+
+            return best;
         }
     }
 }
