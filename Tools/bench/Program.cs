@@ -2885,6 +2885,58 @@ static class Bench
         new Corpse("Ловчий",           ShellType.Living, SinType.Greed,    MoralType.Vicious, 50f, 1),
     };
 
+
+    // ─────────────────────────────────────────────────────────────
+    //  ТИТУЛЫ
+    // ─────────────────────────────────────────────────────────────
+
+    /// Базовая важность деяния — та, что пишется безусловно.
+    /// Совпадает с тем, что кладут AOSEventHub и AOSWarriorWrapper.
+    static readonly Dictionary<DeedType, float> DeedBase = new()
+    {
+        { DeedType.Kill, 0.5f },              { DeedType.KillCommander, 0.5f },
+        { DeedType.NeverRetreat, 0.5f },      { DeedType.SaveAlly, 0.7f },
+        { DeedType.ProtectCommander, 0.7f },  { DeedType.SurviveMission, 0.3f },
+        { DeedType.Escape, 0.3f },            { DeedType.LastStand, 1.0f },
+        { DeedType.FindTreasure, 1.2f },      { DeedType.DigMostSouls, 1.0f },
+        { DeedType.RecruitWarrior, 1.0f },    { DeedType.ExecuteEnemy, 0.5f },
+        { DeedType.CollectMostLoot, 1.2f },
+    };
+
+    static void TitleCheck()
+    {
+        Console.WriteLine("\n=== ТИТУЛЫ: когда приходит имя ===");
+        Console.WriteLine("  два столбца обязаны сходиться: если они далеко,");
+        Console.WriteLine("  одно из условий мёртво и имя держит второе\n");
+        Console.WriteLine($"  {"титул",-22} {"деяние",-17} {"по счёту",9} {"по важности",12}  расхождение");
+
+        int bad = 0;
+
+        foreach (var rule in TitleDatabase.Rules)
+        {
+            if (!DeedBase.TryGetValue(rule.MainDeed, out float baseImp) || baseImp <= 0f)
+                continue;
+
+            int byCount = rule.RequiredCount;
+            int byImp = (int)Math.Ceiling(rule.RequiredImportance / baseImp);
+
+            // Расхождение считаем долей от большего: «семь против восьми»
+            // и «семьдесят против восьмидесяти» — разные беды.
+            int most = Math.Max(byCount, byImp);
+            float drift = most == 0 ? 0f : Math.Abs(byCount - byImp) / (float)most;
+
+            string mark = drift <= 0.15f ? "" : "  ← РАСХОЖДЕНИЕ";
+            if (drift > 0.15f) bad++;
+
+            Console.WriteLine($"  {rule.Title,-22} {rule.MainDeed,-17} {byCount,9} {byImp,12}{mark}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(bad == 0
+            ? "  Титулы: счёт и важность сходятся везде."
+            : $"  Титулы: разошлись у {bad}. Условие, до которого не дойти, — мёртвое.");
+    }
+
     static void LootCheck()
     {
         Console.WriteLine("\n=== ДОБЫЧА: чего стоит труп ===");
@@ -3735,6 +3787,7 @@ static class Bench
         SkillsCheck(cfg);
         ShellsCheck();
         LootCheck();
+        TitleCheck();
         JunctionCheck(cfg);
         MomentsCheck(cfg);
         ExpeditionEconomy();
