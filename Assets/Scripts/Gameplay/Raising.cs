@@ -49,11 +49,53 @@ namespace Sinbinder.Gameplay
             // Поднятый вне старта сцены через настройку не проходит:
             // без этого вызова он остался бы телом без движка решений.
             var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
-            if (setup != null) setup.SetupWarrior(go);
+            if (setup != null)
+            {
+                setup.SetupWarrior(go);
+
+                // Поднятие — событие, а игрок видел его молча: тело
+                // появлялось, и всё. Просьба автора от 15 сентября —
+                // показывать это явно. Слова берутся из души и оболочки
+                // (<see cref="RisingWords"/>), жребия там нет.
+                //
+                // Ведём корутину на настройке сцены: Raising статичен,
+                // а наезд камеры — это ожидание. Тот же приём, что
+                // у церемонии титула.
+                setup.StartCoroutine(Speak(warrior, soul, shell));
+            }
             else Debug.LogWarning("[СВЯЗЫВАНИЕ] AOSSceneSetup в сцене нет: "
                                 + "поднятый не будет ничего решать.");
 
             return warrior;
+        }
+
+        /// <summary>
+        /// Наезд на поднятого и его первая фраза.
+        ///
+        /// Камера не обязательна: в склепе она есть, на полигоне может
+        /// не быть. Нет её — фраза всё равно звучит на нижней полосе,
+        /// потому что молчаливое поднятие и было тем, что чинится.
+        /// </summary>
+        private static System.Collections.IEnumerator Speak(
+            Warrior warrior, SoulData soul, ShellType shell)
+        {
+            if (warrior == null) yield break;
+
+            string line = RisingWords.OnRising(soul, shell);
+
+            var camera = Object.FindFirstObjectByType<Dialogue.DialogueCameraController>();
+            if (camera != null)
+            {
+                camera.SaveCameraPosition();
+                yield return camera.FocusOn(warrior.transform);
+            }
+
+            UI.Letterbox.Instance?.Say(warrior.DisplayName, line);
+            Debug.Log($"[ПОДНЯТИЕ] {warrior.DisplayName}: {line}");
+
+            yield return new WaitForSecondsRealtime(2.6f);
+
+            if (camera != null) yield return camera.RestoreCamera();
         }
     }
 }
