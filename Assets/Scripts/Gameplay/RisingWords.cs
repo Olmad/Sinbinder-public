@@ -33,12 +33,34 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public static class RisingWords
     {
+        /// <summary>
+        /// Первая фраза поднятого. Складывается из двух частей, и это
+        /// не украшение, а способ не писать таблицу на тридцать пять
+        /// клеток: <b>оси умножают, а строки складываются</b>.
+        ///
+        /// <list type="bullet">
+        /// <item><b>Тело</b> — что он о себе узнаёт первым: пять оболочек
+        /// на два состояния памяти, десять строк;</item>
+        /// <item><b>Ремесло</b> — к чему тянутся руки прежде головы:
+        /// семь строк.</item>
+        /// </list>
+        ///
+        /// Семнадцать написанных строк дают семьдесят сочетаний,
+        /// и ни одно не выпадает жребием.
+        /// </summary>
         public static string OnRising(SoulData soul, ShellType shell)
         {
             if (soul == null) return "…";
 
-            bool remembers = soul.HasMemory;
+            string body = Body(shell, soul.HasMemory);
+            string hands = Hands(soul.Trade);
 
+            return string.IsNullOrEmpty(hands) ? body : body + " " + hands;
+        }
+
+        /// <summary>Что говорит тело.</summary>
+        private static string Body(ShellType shell, bool remembers)
+        {
             switch (shell)
             {
                 case ShellType.Skeleton:
@@ -65,6 +87,29 @@ namespace Sinbinder.Gameplay
                     return remembers
                         ? "Я вернулся. И я это помню."
                         : "Я… кто-то. Пока этого хватит.";
+            }
+        }
+
+        /// <summary>
+        /// Что ищут руки. Ремесло тянет душу так же, как тянет оболочка
+        /// (<see cref="Trade"/>), и просыпается оно раньше рассудка:
+        /// охотник хватается за лук, прежде чем поймёт, что рук у него
+        /// уже нет.
+        ///
+        /// У <c>None</c> руки молчат, и это не пропуск: тело сказало всё,
+        /// а прибавлять нечего. Пустая строка здесь — ответ.
+        /// </summary>
+        private static string Hands(Trade trade)
+        {
+            switch (trade)
+            {
+                case Trade.Hunter:    return "Где мой лук?";
+                case Trade.Peasant:   return "Земля. Хоть земля на месте.";
+                case Trade.Archer:    return "Пальцы ищут тетиву. Нашли.";
+                case Trade.Alchemist: return "Склянки... Они ведь разбились, да?";
+                case Trade.Mage:      return "Слова ещё здесь. Значит, не всё потеряно.";
+                case Trade.Spider:    return "Углы, тени. Я знаю, куда уходить.";
+                default:              return "";
             }
         }
     }
