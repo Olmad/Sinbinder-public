@@ -15,7 +15,7 @@ namespace Sinbinder.AOS
                 Debug.LogWarning("[TITLE] TitleCeremonyBehaviour не найден на сцене!");
                 return;
             }
-            ceremony.StartCoroutine(ceremony.PlayCeremony(warrior, title, isLegendary));
+            ceremony.Enqueue(warrior, title, isLegendary);
         }
     }
 }
