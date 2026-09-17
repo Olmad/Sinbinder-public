@@ -34,7 +34,14 @@ namespace Sinbinder.Gameplay
         private static bool _toldAboutMotion;
 
         /// <summary>Забыть, что уже жаловались. Для проверок.</summary>
-        public static void Forget()
+        /// <summary>
+        /// Сброс к началу игры. Звался ниоткуда с самого появления —
+        /// правило orphans в check.py нашло это 17 сентября. Теперь
+        /// зовёт сама Unity, и метод перестал быть публичным обещанием,
+        /// которого никто не просил.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm()
         {
             _toldAboutMissing = false;
             _toldAboutMotion = false;
@@ -76,6 +83,11 @@ namespace Sinbinder.Gameplay
                 model.transform.localScale = Vector3.one * height;
 
                 Animate(model, shell);
+
+                // Грех горит в воине: цвет берётся из его же души.
+                // Вешаем здесь, а не в спавнере, потому что гореть
+                // должно на модели — там и материал, и голова.
+                model.AddComponent<SinEyes>();
 
                 return model.transform;
             }

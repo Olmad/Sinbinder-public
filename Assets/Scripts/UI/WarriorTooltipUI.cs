@@ -81,22 +81,10 @@ namespace Sinbinder.UI
         }
 
         /// <summary>
-        /// Цвет доминирующего греха. Игрок не осознаёт связь, но набирает
-        /// её за десяток подсказок и потом читает рамку быстрее текста.
+        /// Цвет доминирующего греха. Таблица — одна на игру
+        /// (<see cref="Core.SinPalette"/>): с 15 сентября тот же цвет
+        /// горит у воина в глазах, и разъехаться им нельзя.
         /// </summary>
-        public static Color SinColor(Core.SinType sin)
-        {
-            switch (sin)
-            {
-                case Core.SinType.Greed:    return new Color(0.85f, 0.68f, 0.24f); // старое золото
-                case Core.SinType.Pride:    return new Color(0.62f, 0.45f, 0.78f); // фиолетовый
-                case Core.SinType.Wrath:    return new Color(0.78f, 0.25f, 0.20f); // тёмно-красный
-                case Core.SinType.Envy:     return new Color(0.36f, 0.62f, 0.42f); // болотный
-                case Core.SinType.Lust:     return new Color(0.80f, 0.40f, 0.55f); // тусклый розовый
-                case Core.SinType.Gluttony: return new Color(0.72f, 0.52f, 0.30f); // ржавый
-                case Core.SinType.Sloth:    return new Color(0.48f, 0.50f, 0.54f); // серый
-                default:                    return new Color(0.80f, 0.79f, 0.76f); // пепел
-            }
-        }
+        public static Color SinColor(Core.SinType sin) => Core.SinPalette.Of(sin);
     }
 }
