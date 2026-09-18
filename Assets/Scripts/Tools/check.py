@@ -45,6 +45,7 @@ UNITY_TYPES = {
     'MeshRenderer', 'MeshFilter', 'Animator', 'RuntimeAnimatorController',
     'AnimationClip', 'RenderSettings', 'QualitySettings', 'TextureImporter',
     'AssetImporter', 'ModelImporter', 'EditorApplication',
+    'RenderTexture', 'RenderTextureFormat', 'Texture', 'Graphics', 'TextureFormat',
 }
 
 DOTNET_TYPES = {

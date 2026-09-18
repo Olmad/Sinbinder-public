@@ -132,6 +132,7 @@ namespace Sinbinder.EditorTools
             if (done)
             {
                 Write("  [ГОТОВО] " + step.Name + " — за " + spent.ToString("F0") + " с");
+                Shot(step.Name);
                 Next();
                 return;
             }
@@ -140,6 +141,7 @@ namespace Sinbinder.EditorTools
             {
                 _failed++;
                 Write("  [ЗАСТРЯЛО] " + step.Name + " — не дождались за " + step.Limit.ToString("F0") + " с");
+                Shot("ЗАСТРЯЛО " + step.Name);
                 Dump();
                 Next();
             }
@@ -430,6 +432,39 @@ namespace Sinbinder.EditorTools
         /// так и оставил загадкой бой, в котором за полторы минуты
         /// не погиб никто.
         /// </summary>
+        /// <summary>
+        /// Снимок шага. Прогон и так печатает, что случилось, — но
+        /// написанное «отряд у края» и увиденное «отряд у края» это,
+        /// как выяснилось 18 сентября, две разные вещи: неделю все
+        /// предметы стояли в сто раз меньше, и ни одна строка отчёта
+        /// об этом не сказала.
+        ///
+        /// Заодно это единственные наши кадры с людьми: воины рождаются
+        /// в игре, и в собранной сцене их нет вовсе.
+        /// </summary>
+        private static void Shot(string step)
+        {
+            _shot++;
+
+            // Имя файла — из имени шага, без двоеточий и косых: иначе
+            // Windows молча откажет в записи посреди прогона.
+            var clean = new System.Text.StringBuilder();
+            foreach (var c in step)
+                clean.Append(Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? ' ' : c);
+
+            try
+            {
+                Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение",
+                    _shot.ToString("00") + " " + clean.ToString().Trim());
+            }
+            catch (Exception e)
+            {
+                Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message);
+            }
+        }
+
+        private static int _shot;
+
         private static void Dump()
         {
             var pause = Core.GamePauseController.Instance;
