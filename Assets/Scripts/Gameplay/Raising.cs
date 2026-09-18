@@ -86,6 +86,12 @@ namespace Sinbinder.Gameplay
             var camera = Object.FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (camera != null)
             {
+                // Поднятому спешить некуда: он ждал дольше. Если кадр
+                // занят разговором у устройства связывания, дождёмся —
+                // иначе первая фраза легла бы поверх чужой и забрала
+                // бы себе дом камеры.
+                yield return camera.WaitUntilFree();
+
                 camera.SaveCameraPosition();
                 yield return camera.FocusOn(warrior.transform);
             }
