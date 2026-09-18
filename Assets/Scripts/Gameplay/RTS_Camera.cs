@@ -159,8 +159,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void FirstPerson()
         {
-            _yaw += Input.GetAxisRaw("Mouse X") * _mouseSensitivity;
-            _pitch -= Input.GetAxisRaw("Mouse Y") * _mouseSensitivity;
+            // Множитель игрока поверх основы, подобранной автором:
+            // сборку получают люди с другой мышью (Core.Preferences).
+            float sens = _mouseSensitivity * Core.Preferences.SensitivityScale;
+
+            _yaw += Input.GetAxisRaw("Mouse X") * sens;
+            _pitch -= Input.GetAxisRaw("Mouse Y") * sens;
             _pitch = Mathf.Clamp(_pitch, -_pitchLimit, _pitchLimit);
 
             transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
