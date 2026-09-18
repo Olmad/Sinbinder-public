@@ -68,6 +68,36 @@ namespace Sinbinder.Dev
             NextRefusal = false;
         }
 
+        /// <summary>
+        /// Поставить себя в сцену самому.
+        ///
+        /// <b>Иначе этих клавиш в игре нет вовсе.</b> Компонент написан
+        /// 17 сентября, а повесить его забыли: в <c>DemoSceneBuilder</c>
+        /// на <c>Managers</c> висит шестнадцать вещей, и <c>CaptureMode</c>
+        /// среди них не было. Выяснилось бы это в воскресенье, с камерой
+        /// в руках, — то есть в единственный момент, когда чинить поздно.
+        ///
+        /// Ставим себя, а не правим сборщик сцен, по двум причинам:
+        /// правка сборщика требует **пересборки трёх сцен**, а перед
+        /// показом трогать сцены дороже; и режим нужен во всех трёх
+        /// сразу, а не в той, которую вспомнили.
+        ///
+        /// Игроку это ничего не даёт: все три рычага стоят за
+        /// <see cref="Transparency.DeveloperUnlocked"/>, а в сборке
+        /// замок закрыт — <c>UNITY_EDITOR</c> там не определён.
+        /// Объект появляется, клавиши молчат.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Install()
+        {
+            if (FindFirstObjectByType<CaptureMode>(FindObjectsInactive.Include) != null)
+                return;
+
+            var go = new GameObject("Режим съёмки");
+            go.AddComponent<CaptureMode>();
+            DontDestroyOnLoad(go);
+        }
+
         void Update()
         {
             if (!Transparency.DeveloperUnlocked) return;

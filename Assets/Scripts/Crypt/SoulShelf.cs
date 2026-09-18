@@ -138,6 +138,9 @@ namespace Sinbinder.Crypt
             plate.transform.localPosition = new Vector3(0f, 2.2f, 0f);
 
             var text = plate.AddComponent<TextMesh>();
+            text.font = PlateFont();
+            if (text.font != null)
+                text.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
             text.text = jar.Label;
             text.characterSize = 0.28f;
             text.fontSize = 64;
@@ -146,6 +149,46 @@ namespace Sinbinder.Crypt
             text.color = new Color(0.82f, 0.86f, 0.90f);
 
             plate.AddComponent<UI.Billboard>();
+
+        /// <summary>
+        /// Шрифт для таблички на банке.
+        ///
+        /// <b>Без него таблички не было видно вовсе.</b> <c>TextMesh</c>,
+        /// созданный кодом, приходит с пустым полем <c>font</c>, а пустой
+        /// шрифт означает не «шрифт по умолчанию», а «рисовать нечем»:
+        /// материал у <c>MeshRenderer</c> тоже берётся у шрифта. Девять
+        /// банок на полке стояли безымянными, и заметить это было некому —
+        /// полку, по <c>26-VERSION.md</c>, не видел никто.
+        ///
+        /// Берём у уже существующего текста в сцене: он собран сборщиком
+        /// сцен, шрифт ему назначен там же и уезжает в сборку вместе
+        /// со сценой. Своего поля не заводим нарочно — оно потребовало бы
+        /// пересборки сцен, а этого добра перед показом лучше не трогать.
+        ///
+        /// Не нашлось — говорим вслух один раз. Отсутствие шрифта
+        /// событие, а не ноль.
+        /// </summary>
+        private static Font PlateFont()
+        {
+            var any = Object.FindFirstObjectByType<UnityEngine.UI.Text>(FindObjectsInactive.Include);
+            if (any != null && any.font != null) return any.font;
+
+            var builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (builtin != null) return builtin;
+
+            if (!_toldAboutFont)
+            {
+                _toldAboutFont = true;
+                Debug.LogWarning("[ПОЛКА] Шрифта для табличек нет: ни одного "
+                               + "Text в сцене, ни встроенного. Банки будут "
+                               + "стоять безымянными — это видно глазом "
+                               + "и чинится назначением шрифта.");
+            }
+            return null;
+        }
+
+        private static bool _toldAboutFont;
+
 
             // Гаснет, пока на банку не посмотрят: полка на девять душ,
             // подписанных разом, читается как список, а не как полка.
