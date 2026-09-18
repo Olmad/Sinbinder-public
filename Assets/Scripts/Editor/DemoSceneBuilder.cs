@@ -76,7 +76,7 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: true);
-            Ground("Земля", 4f);
+            Ground("Земля", 4f, "Ground048");
             Managers();
 
             // Доли 0 и 3 живут только здесь: строка открывает пролог,
@@ -152,7 +152,7 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: true);
-            Ground("Земля", 6f);
+            Ground("Земля", 6f, "Ground110");
             Managers();
 
             var raidCanvas = Interface();
@@ -217,7 +217,7 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Камень", 5f);
+            Ground("Камень", 5f, "PavingStones127");
             Managers();
 
             var canvas = Interface();
@@ -270,7 +270,7 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Плиты", 3f);
+            Ground("Плиты", 3f, "PavingStones127");
             Managers();
 
             var canvas = Interface();
@@ -626,12 +626,26 @@ namespace Sinbinder.Utilets
             l.shadows = LightShadows.Soft;
         }
 
-        private static void Ground(string name, float scale)
+        private static void Ground(string name, float scale, string soil = null)
         {
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = name;
             ground.transform.position = Vector3.zero;
             ground.transform.localScale = new Vector3(scale, 1f, scale);
+
+            // Поверхность земли занимает большую часть кадра: камера стоит
+            // почти отвесно. До 18 сентября тридцать девять скачанных
+            // текстур лежали в проекте мёртвым грузом, а земля была
+            // одноцветной плоскостью.
+            if (!string.IsNullOrEmpty(soil))
+            {
+                var material = MaterialBuilder.Get(soil);
+                var renderer = ground.GetComponent<Renderer>();
+
+                if (material != null && renderer != null) renderer.sharedMaterial = material;
+                else Debug.LogWarning($"[СЦЕНЫ] Материала {soil} нет — земля останется "
+                                    + "одноцветной. Соберите: Sinbinder → Собрать материалы.");
+            }
 
             // Поверхность навигации. Без неё агент — мёртвый груз:
             // SetDestination не находит, куда идти, и воин стоит. Навмеша
@@ -2386,7 +2400,66 @@ namespace Sinbinder.Utilets
             go.transform.position = position;
             go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             go.transform.localScale = Vector3.one * scale;
+
+            Surface(go, name);
             return go;
+        }
+
+        /// <summary>
+        /// Чем покрыт предмет. Подменяется <b>только первый материал</b> —
+        /// тот, из чего предмет сделан; второй и третий остаются свои:
+        /// железные обручи бочки, тёмные прорези, перья. Подменить все
+        /// значило бы потерять разницу между частями, ради которой
+        /// у каждой модели их три.
+        /// </summary>
+        private static void Surface(GameObject go, string prop)
+        {
+            string id = SurfaceOf(prop);
+            if (id == null) return;
+
+            var material = MaterialBuilder.Get(id);
+            if (material == null) return;
+
+            foreach (var renderer in go.GetComponentsInChildren<Renderer>(true))
+            {
+                var slots = renderer.sharedMaterials;
+                if (slots.Length == 0) continue;
+
+                slots[0] = material;
+                renderer.sharedMaterials = slots;
+            }
+        }
+
+        private static string SurfaceOf(string prop)
+        {
+            switch (prop)
+            {
+                case "Tent":
+                    return "Fabric061";
+
+                case "CouncilTable":
+                case "Chest":
+                case "ChestLid":
+                case "Barrel":
+                case "Crate":
+                case "LogBench":
+                case "Palisade":
+                case "TentPeg":
+                case "Torch":
+                    return "Planks037A";
+
+                case "Rock":
+                    return "Rock050";
+
+                case "CryptGate":
+                case "Throne":
+                case "Altar":
+                case "Coffin":
+                    return "Bricks076A";
+
+                default:
+                    return null;      // знамя, сакура, катана — свой цвет
+            }
         }
 
         private static RectTransform Panel(string name, Transform parent,
