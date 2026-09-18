@@ -33,11 +33,31 @@
 ### 1. Прогон. Сегодня же, до всего остального
 
 ```
+powershell -ExecutionPolicy Bypass -File Tools\demo-walkthrough.ps1   # Windows
+./Tools/demo-walkthrough.sh                                            # macOS, Linux
+```
+
+Заведено вечером 17-го, чтобы ты не собирал команду руками. Скрипт сам
+находит Unity по `ProjectVersion.txt`, запускает прогон, печатает отчёт
+и выдёргивает ошибки компиляции — брат `unity-check`. Код выхода:
+**0** прошло, **1** есть провалы, **124** зависло.
+
+Руками то же самое:
+
+```
 Unity -batchmode -projectPath <проект> \
   -executeMethod Sinbinder.EditorTools.DemoWalkthrough.Run
 ```
 
-Без `-quit`. Итог — `Logs/demo-walkthrough.txt`.
+**Без `-quit`** — `DemoWalkthrough` сам входит в Play и сам зовёт
+`EditorApplication.Exit`; `-quit` убил бы редактор до первого шага.
+Итог — `Logs/demo-walkthrough.txt`.
+
+Оговорка: **`.sh` я проверил, `.ps1` — нет.** PowerShell здесь нет.
+Пути к Unity в нём — три обычных места; не нашёл — поправь список
+в самом скрипте, это одна строка. И он сохранён в UTF-8 **с BOM**:
+без BOM PowerShell 5.1 ломается на первой русской строке, о чём
+предупреждает `unity-check.ps1`.
 
 **Его не запускали ни разу.** Он написан, он проходит демо целиком
 без человека — от палатки до склепа, — и что он скажет, не знает никто.
