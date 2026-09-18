@@ -13,7 +13,7 @@ namespace Sinbinder.Dev
     /// и ничего, что просто приятно:
     ///
     /// <list type="bullet">
-    /// <item><b>F9 — чистый кадр.</b> Гасит все холсты. Кадр с отладочной
+    /// <item><b>F12 — чистый кадр.</b> Гасит все холсты. Кадр с отладочной
     /// панелью в ролик не годится вовсе, а гасить их руками по одному —
     /// десять объектов в каждой сцене.</item>
     /// <item><b>F10 — замедление.</b> Главный кадр ролика (слово над
@@ -53,9 +53,14 @@ namespace Sinbinder.Dev
 
         public static void RefusalTaken() => NextRefusal = false;
 
-        [SerializeField] private KeyCode _clean = KeyCode.F9;
+        // F9 занят панелью слотов сохранения (SaveSlotsPanel живёт
+        // в четырёх сценах из четырёх). Столкновение было моим: чистый
+        // кадр открывал бы слоты, а слоты гасили бы интерфейс — и всё
+        // это в единственный момент, когда идёт съёмка. Тройка
+        // переехала на F10-F12 и стоит подряд.
         [SerializeField] private KeyCode _slow = KeyCode.F10;
         [SerializeField] private KeyCode _refuse = KeyCode.F11;
+        [SerializeField] private KeyCode _clean = KeyCode.F12;
 
         [SerializeField] private float _slowScale = 0.35f;
 
