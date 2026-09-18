@@ -33,18 +33,27 @@ version="$(sed -n 's/^m_EditorVersion: *//p' "$version_file" | tr -d '\r')"
 echo "Проект: $project"
 echo "Версия Unity: $version"
 
+# UNITY=... в окружении перебивает поиск: установка бывает какая
+# угодно, и упереться в неё — потерять прогон, а не найти ошибку.
 unity=""
 for candidate in \
+    "${UNITY:-}" \
     "/Applications/Unity/Hub/Editor/$version/Unity.app/Contents/MacOS/Unity" \
     "$HOME/Unity/Hub/Editor/$version/Editor/Unity" \
-    "/opt/unity/editors/$version/Editor/Unity"
+    "/opt/unity/editors/$version/Editor/Unity" \
+    "/c/Program Files/Unity/Hub/Editor/$version/Editor/Unity.exe" \
+    "/c/Program Files/Unity $version/Editor/Unity.exe" \
+    "/c/Program Files/Unity 6000.3.2f1/$version/Editor/Unity.exe"
 do
     [ -x "$candidate" ] && { unity="$candidate"; break; }
 done
 
 [ -n "$unity" ] || { echo "ОШИБКА: Unity $version не найден" >&2; exit 2; }
 
-log="$(dirname "$0")/demo-walkthrough.log"
+# Лог — в Logs/, а не рядом со скриптом: всё, что лежит в Assets,
+# редактор пытается импортировать, и растущий лог он импортирует
+# без конца — «infinite import loop» прямо посреди прогона.
+log="$project/Logs/demo-walkthrough.log"
 report="$project/Logs/demo-walkthrough.txt"
 rm -f "$log" "$report"
 
