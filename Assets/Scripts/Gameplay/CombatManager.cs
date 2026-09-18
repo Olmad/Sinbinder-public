@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
-using Sinbinder.Inventory;
 
 namespace Sinbinder.Gameplay
 {
@@ -9,42 +8,19 @@ namespace Sinbinder.Gameplay
     {
         public static CombatManager Instance { get; private set; }
 
-        [SerializeField] private PlayerInventory _inventory;
-
         private List<Damageable> _playerUnits = new();
         private List<Damageable> _enemyUnits = new();
-        private List<HarvestableSoul> _soulsOnField = new();
         private List<HarvestableBody> _bodiesOnField = new();
 
         public System.Action<Damageable, GameObject> OnAnyDeath;
         public System.Action OnUnitsChanged;
 
-        public List<HarvestableSoul> SoulsOnField => _soulsOnField;
         public List<HarvestableBody> BodiesOnField => _bodiesOnField;
 
         void Awake()
         {
             if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
             else Destroy(gameObject);
-        }
-
-        void Start()
-        {
-            if (_inventory == null) _inventory = FindFirstObjectByType<PlayerInventory>();
-        }
-
-        void Update()
-        {
-            for (int i = _soulsOnField.Count - 1; i >= 0; i--)
-            {
-                if (_soulsOnField[i] == null || _soulsOnField[i].IsHarvested)
-                    _soulsOnField.RemoveAt(i);
-                else if (_soulsOnField[i].Quality == SoulQuality.Dissolved)
-                {
-                    _soulsOnField[i].ForceDissolve();
-                    _soulsOnField.RemoveAt(i);
-                }
-            }
         }
 
         public void RegisterPlayerUnit(Damageable unit) { _playerUnits.Add(unit); OnUnitsChanged?.Invoke(); }
@@ -100,13 +76,22 @@ namespace Sinbinder.Gameplay
             CheckBattleEnd();
         }
 
+        /// <summary>
+        /// Что остаётся на поле от убитого. <b>Только тело.</b>
+        ///
+        /// Здесь же заводилась вторая душа — <c>HarvestableSoul</c>,
+        /// на каждой смерти, невидимая и с незаполненным полем
+        /// <c>_soul</c>: компонент вешали, а <c>Initialize</c> у него
+        /// не звали никогда. Снята 18 сентября, разбор — 14-HANDOFF §43.
+        ///
+        /// Настоящая душа заводится строкой ниже по стеку:
+        /// <c>OnAnyDeath</c> → <see cref="SoulManager.StartSoulFade"/>,
+        /// и она же единственная, у которой есть огонёк, срок и цена
+        /// промедления.
+        /// </summary>
         private void CreateLootOnField(Damageable killed)
         {
             var pos = killed.transform.position;
-            var soulObj = new GameObject($"Soul_{killed.Warrior.DisplayName}");
-            soulObj.transform.position = pos + Vector3.up * 0.5f;
-            var harvestableSoul = soulObj.AddComponent<HarvestableSoul>();
-            _soulsOnField.Add(harvestableSoul);
 
             var bodyObj = new GameObject($"Body_{killed.Warrior.DisplayName}");
             bodyObj.transform.position = pos;
@@ -128,24 +113,20 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Раздать добычу отряду: грех решает, кто что понесёт
+        /// (<see cref="LootCarrySystem.DistributeLoot"/>).
+        ///
+        /// <b>Пока не вызывается ниоткуда</b> — разбор цепи и то, чего
+        /// ей не хватает, в 14-HANDOFF §41.
+        ///
+        /// Здесь же стояла жатва душ прямо на поле, и только воинами
+        /// с грехом Гордыня или Уныние. Снята вместе со второй системой
+        /// душ (§43): души в этой игре жнёт Греховод, а не отряд,
+        /// и жнёт он их через <see cref="SoulManager"/>.
+        /// </summary>
         public CarriedLoot CollectLootWithSquad(List<Warrior> squad)
-        {
-            var loot = LootCarrySystem.DistributeLoot(squad, _bodiesOnField);
-            foreach (var warrior in squad)
-            {
-                if (warrior.IsDead) continue;
-                bool canHarvest = (warrior.Soul.Sin == SinType.Pride) || (warrior.Soul.Sin == SinType.Sloth);
-                if (!canHarvest) continue;
-                foreach (var soul in _soulsOnField)
-                {
-                    if (soul == null || soul.IsHarvested) continue;
-                    var harvested = soul.Harvest(soul.Quality);
-                    if (harvested != null && _inventory != null)
-                        _inventory.AddItem(new InventoryItem(harvested.Name, harvested.GetFullDescription(), ItemType.Soul));
-                }
-            }
-            return loot;
-        }
+            => LootCarrySystem.DistributeLoot(squad, _bodiesOnField);
 
         public int GetAlivePlayerCount() { _playerUnits.RemoveAll(u => u == null || u.IsDead); return _playerUnits.Count; }
         public int GetAliveEnemyCount() { _enemyUnits.RemoveAll(u => u == null || u.IsDead); return _enemyUnits.Count; }

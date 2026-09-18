@@ -438,6 +438,30 @@ namespace N
 ''',
     }, 'публичный метод, которого не зовёт никто'),
 
+    # Ловушка на dangling_fields. Заведена 18 сентября вместе с самим
+    # правилом: поле удалили, а ходить по нему осталось. Все три проверки
+    # тогда сказали «чисто», и файл не собрался бы.
+    ('dangling_fields/ходят по удалённому полю', {
+        'Gameplay/Leftover.cs': '''
+using System.Collections.Generic;
+using UnityEngine;
+namespace N
+{
+    public class Leftover : MonoBehaviour
+    {
+        private List<int> _kept = new();
+
+        void Update()
+        {
+            for (int i = _gone.Count - 1; i >= 0; i--)
+                _gone.RemoveAt(i);
+            _kept.Clear();
+        }
+    }
+}
+''',
+    }, 'поля с таким именем в классе нет'),
+
     ('console_key/тильду заняли', {
         'UI/Hotkey.cs': '''
 using UnityEngine;
@@ -487,9 +511,18 @@ namespace Sinbinder.Probe
 
         private readonly List<int> _kept = new List<int>();
 
+        // Три формы объявления поля, о которые спотыкались первые две
+        // редакции dangling_fields: обобщённый тип с пробелом внутри,
+        // заведение через `= new()` и два поля на одной строке.
+        // Живое поле, объявленное так, сиротой считаться не должно.
+        private readonly Dictionary<string, int> _counts = new();
+        private float _first, _second;
+
         void Awake()
         {
             Instance = this;
+            _counts.Clear();
+            _first = _second;
             Debug.Log(Best());
         }
 
