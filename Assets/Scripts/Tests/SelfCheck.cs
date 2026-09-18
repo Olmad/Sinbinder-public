@@ -372,6 +372,58 @@ namespace Sinbinder.Tests
                 "качество убывает строго со временем");
 
             Check(SoulDecay.Harvest(null, SoulQuality.Shock) == null, "сбор пустой души не падает");
+
+            Shelf();
+        }
+
+        /// <summary>
+        /// Душа, записанная на полку и прочитанная обратно.
+        ///
+        /// Полка теряла **пол, ремесло и заслуженное имя**: конструктор
+        /// их не берёт, и душа вставала мужчиной без ремесла и без имени.
+        /// Женщина переставала быть женщиной — против правила о том, что
+        /// женские лица уникальны, — охотник переставал быть охотником,
+        /// а первая фраза поднятого теряла и руки, и имя.
+        ///
+        /// Зовём тот же код, которым пишет и читает игра
+        /// (<c>SaveSystem.Record</c> и <c>SaveSystem.Soul</c>), а не свою
+        /// копию перекладки: копия проверяла бы саму себя.
+        /// </summary>
+        private static void Shelf()
+        {
+            var her = new SoulData("Сквип", MoralType.Vicious, 2,
+                new[] { 60f, 0f, 0f, 0f, 0f, 0f, 0f }, null, Gender.Female);
+            her.SetTrade(Trade.Hunter);
+            her.Remember("Костекоп");
+
+            var back = SaveSystem.Soul(SaveSystem.Record(her, SoulQuality.Shock));
+
+            Check(back.Gender == Gender.Female, "полка не меняет пол души");
+            Check(back.Trade == Trade.Hunter, "полка не теряет ремесло");
+            Check(back.EarnedTitle == "Костекоп", "полка помнит заслуженное имя");
+            Check(back.Moral == MoralType.Vicious, "полка не теряет мораль");
+            Near(back.Get(SinType.Greed), 60f, "полка не теряет характера");
+
+            // Старая запись новых полей не знает: нули обязаны читаться
+            // как «мужчина, ремесла нет, имени нет», а не падать.
+            var old = new SavedSoul
+            {
+                Name = "Гертон",
+                Moral = (int)MoralType.Neutral,
+                Level = 1,
+                Spectra = new float[7],
+                Quality = (int)SoulQuality.Fading,
+            };
+
+            var read = SaveSystem.Soul(old);
+            Check(read != null && read.Gender == Gender.Male,
+                "старая запись читается мужчиной, а не падает");
+            Check(read.Trade == Trade.None, "у старой записи ремесла нет");
+            Check(read.EarnedTitle == "", "у старой записи имени нет");
+
+            Check(SaveSystem.Record(null, SoulQuality.Shock) == null,
+                "пустая душа в запись не ложится");
+            Check(SaveSystem.Soul(null) == null, "пустая запись не поднимается");
         }
 
         // ================= оболочки =================

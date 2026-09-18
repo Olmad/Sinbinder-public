@@ -114,14 +114,7 @@ namespace Sinbinder.Core
                 {
                     if (kept.Soul == null) continue;
 
-                    save.Shelf.Add(new SavedSoul
-                    {
-                        Name = kept.Soul.Name,
-                        Moral = (int)kept.Soul.Moral,
-                        Level = kept.Soul.Level,
-                        Spectra = kept.Soul.CopySpectra(),
-                        Quality = (int)kept.Quality,
-                    });
+                    save.Shelf.Add(Record(kept.Soul, kept.Quality));
                 }
             }
 
@@ -180,12 +173,57 @@ namespace Sinbinder.Core
 
                 foreach (var s in save.Shelf)
                 {
-                    var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level, s.Spectra);
-                    souls.PutBack(new SoulManager.Kept(soul, (SoulQuality)s.Quality));
+                    souls.PutBack(new SoulManager.Kept(Soul(s), (SoulQuality)s.Quality));
                 }
             }
 
             return true;
+        }
+
+        // ──────────────────────────────────
+        // Душа на полке: туда и обратно
+        // ──────────────────────────────────
+
+        /// <summary>
+        /// Душа в запись. Вынесено отдельно вместе с починкой 18 сентября,
+        /// чтобы самопроверка звала **тот же код**, что и игра: проверка,
+        /// переписывающая перекладку своими руками, не проверяет ничего.
+        ///
+        /// Пол, ремесло и заслуженное имя терялись здесь целиком, а отряд
+        /// (<see cref="SavedMember"/>) пол сохранял всегда — это
+        /// расхождение и выдало недосмотр.
+        /// </summary>
+        public static SavedSoul Record(SoulData soul, SoulQuality quality)
+        {
+            if (soul == null) return null;
+
+            return new SavedSoul
+            {
+                Name = soul.Name,
+                Moral = (int)soul.Moral,
+                Level = soul.Level,
+                Spectra = soul.CopySpectra(),
+                Quality = (int)quality,
+                Gender = (int)soul.Gender,
+                Trade = (int)soul.Trade,
+                Title = soul.EarnedTitle,
+            };
+        }
+
+        /// <summary>
+        /// Запись обратно в душу. У старых записей новых полей нет,
+        /// и читаются они нулями: мужчина, ремесла нет, имени нет —
+        /// ровно то, что старая запись и означала.
+        /// </summary>
+        public static SoulData Soul(SavedSoul s)
+        {
+            if (s == null) return null;
+
+            var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level,
+                                    s.Spectra, null, (Gender)s.Gender);
+            soul.SetTrade((Trade)s.Trade);
+            soul.Remember(s.Title);
+            return soul;
         }
 
         // ──────────────────────────────────
