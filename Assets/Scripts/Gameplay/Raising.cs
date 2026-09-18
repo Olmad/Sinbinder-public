@@ -92,6 +92,15 @@ namespace Sinbinder.Gameplay
                 // бы себе дом камеры.
                 yield return camera.WaitUntilFree();
 
+                // Ждали в живой игре, и ждать могли до двенадцати секунд:
+                // за это время поднятый мог исчезнуть вместе со сценой.
+                // Дальше идут warrior.transform и warrior.DisplayName,
+                // а обращение к уничтоженному MonoBehaviour бросает
+                // MissingReferenceException. Та же перепроверка стоит
+                // в церемонии; здесь её сперва не было — ожидание
+                // я добавил в оба места, а перепроверку в одно.
+                if (warrior == null) yield break;
+
                 camera.SaveCameraPosition();
                 yield return camera.FocusOn(warrior.transform);
             }
