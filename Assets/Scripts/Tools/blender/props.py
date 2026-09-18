@@ -166,6 +166,55 @@ def crate(b):
         b.add(*box((0, 0, z), (0.66, 0.66, 0.06)), bone="", mat=1)
 
 
+def soul_shelf(b):
+    """
+    Полка с банками: доска на кронштейнах, невысокий бортик спереди —
+    не даёт банке скатиться, ей самой полка не занята (`SoulShelf`
+    расставляет банки поверх сама, это только мебель).
+    """
+    top = 0.94
+    b.add(*box((0, 0, top), (4.2, 0.5, 0.06)), bone="", mat=0)
+    b.add(*box((0, -0.24, top + 0.05), (4.2, 0.02, 0.09)), bone="", mat=1)
+    for x in (-1.9, -0.65, 0.65, 1.9):
+        b.add(*box((x, 0, top * 0.5), (0.10, 0.42, top)), bone="", mat=1)
+
+
+def body_table(b):
+    """Стол тел: длинная каменная плита на четырёх ногах."""
+    top = 0.86
+    b.add(*box((0, 0, top), (3.4, 0.85, 0.10)), bone="", mat=0)
+    for sx in (1, -1):
+        for sy in (1, -1):
+            b.add(*box((sx * 1.55, sy * 0.34, (top - 0.10) * 0.5),
+                       (0.14, 0.14, top - 0.10)), bone="", mat=1)
+
+
+def binding_device(b):
+    """
+    Устройство связывания: каменное основание под два гнезда и рычаг —
+    сами гнёзда, ложе и рычаг остаются отдельными объектами
+    (`BindingSocket`, `BindingHandle` двигают именно их), это только
+    постамент под них, с приподнятым ободом по краю.
+    """
+    top = 0.5
+    b.add(*box((0, 0, top * 0.5), (2.2, 1.2, top)), bone="", mat=0)
+    b.add(*box((0, 0, top + 0.03), (2.0, 1.0, 0.06)), bone="", mat=1)
+    for sx, sy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+        b.add(*box((sx * 1.02, sy * 0.52, (top - 0.05) * 0.5),
+                   (0.08, 0.08, top - 0.05)), bone="", mat=2)
+
+
+def upgrade_plinth(b):
+    """
+    Гнездо улучшения: квадратный постамент с пустой выемкой сверху —
+    пустота и есть замысел (`18-CRYPT.md`, зона 2): место есть,
+    а принести в него можно только с вылазки.
+    """
+    top = 0.5
+    b.add(*box((0, 0, top * 0.5), (1.0, 1.0, top)), bone="", mat=0)
+    b.add(*ring((0, 0, top + 0.005), 0.34, 0.05, segs=14), bone="", mat=1)
+
+
 def log_bench(b):
     """Бревно у костра: на нём сидят, и оно задаёт круг."""
     b.add(*tube((-0.95, 0, 0.22), (0.95, 0, 0.22), 0.22, 0.20, segs=12), bone="", mat=0)
@@ -306,6 +355,11 @@ PROPS = [
     Prop("Throne", throne, [STONE, DARK, DARK]),
     Prop("Altar", altar, [STONE, DARK, BONE]),
     Prop("Coffin", coffin, [STONE, DARK, BONE]),
+
+    Prop("SoulShelf", soul_shelf, [WOOD, IRON, DARK]),
+    Prop("BodyTable", body_table, [STONE, DARK, DARK]),
+    Prop("BindingDevice", binding_device, [STONE, IRON, DARK]),
+    Prop("UpgradePlinth", upgrade_plinth, [STONE, DARK, DARK]),
 
     Prop("Rock", rock, [STONE, DARK, DARK]),
     Prop("Sakura", sakura, [BARK, BLOSSOM, DARK]),

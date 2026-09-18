@@ -354,11 +354,18 @@ namespace Sinbinder.Utilets
             zone.transform.position = origin;
 
             // --- устройство ---
-            var altar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            altar.name = "Устройство";
+            var altar = new GameObject("Устройство");
             altar.transform.SetParent(zone.transform);
-            altar.transform.localPosition = new Vector3(0f, 0.5f, 0f);
-            altar.transform.localScale = new Vector3(2.2f, 1f, 1.2f);
+            altar.transform.position = origin;
+
+            if (Prop("BindingDevice", altar.transform, origin) == null)
+            {
+                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.name = "Устройство (примитив)";
+                cube.transform.SetParent(altar.transform);
+                cube.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+                cube.transform.localScale = new Vector3(2.2f, 1f, 1.2f);
+            }
 
             var rise = Spot(zone.transform, "Место поднятого", new Vector3(0f, 0f, -2.5f));
 
