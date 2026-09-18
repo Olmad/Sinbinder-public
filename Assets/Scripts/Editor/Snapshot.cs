@@ -190,7 +190,11 @@ namespace Sinbinder.Utilets
                 Debug.LogWarning($"[СНИМОК] {name}: кадр чёрный ({light:0.000}) — "
                                + "затемнение перехода или нечем рисовать.");
             else
-                Debug.Log($"[СНИМОК] {name}: {file}, света {light:0.000}");
+                Debug.Log($"[СНИМОК] {name}: {file}, света {light:0.000}, "
+                        + $"камера {camera.transform.position.x:0.0} "
+                        + $"{camera.transform.position.y:0.0} "
+                        + $"{camera.transform.position.z:0.0}, "
+                        + $"наклон {camera.transform.eulerAngles.x:0.} гр.");
 
             return true;
         }

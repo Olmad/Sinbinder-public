@@ -953,6 +953,11 @@ namespace Sinbinder.Utilets
             hill.transform.position = position + new Vector3(0f, height * 0.5f, 0f);
             hill.transform.localScale = new Vector3(radius * 2f, height * 0.5f, radius * 2f);
 
+            // Земля, а не белый примитив: без материала холм светится
+            // посреди ночного лагеря ярче костра — на снимке сцены он
+            // читался куском чужой игры.
+            Cover(hill, "Gravel043");
+
             // Палатка Греховода наверху, входом к лагерю: из неё он и выходит.
             Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
                 name: "Палатка Греховода", size: 1.25f);
@@ -1002,6 +1007,8 @@ namespace Sinbinder.Utilets
             ramp.transform.rotation = Quaternion.LookRotation(foot - top, Vector3.up);
             ramp.transform.localScale = new Vector3(
                 radius * 0.8f, 0.3f, Vector3.Distance(top, foot));
+
+            Cover(ramp, "Gravel043");
         }
 
         /// <summary>
@@ -1531,7 +1538,14 @@ namespace Sinbinder.Utilets
             BuildSatchel(canvasGO.transform);
             BuildPlateLine(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
-            BuildSoulAssembly(canvasGO.transform);
+
+            // «Сборку души» в сцены не ставим. Панель собрана, но
+            // заполнить её некому: SoulAssemblyUI.Show не зовёт никто
+            // (14-HANDOFF §, 11-MISSING §). Стояла она при этом в углу
+            // каждого кадра пустым тёмным ящиком — снимки прохождения
+            // 18 сентября это и показали. Пустое окно в углу читается
+            // поломкой игры, а не заготовкой на будущее; вернём вместе
+            // с тем, кто его наполнит.
             // Выбор тела нужен везде, где можно собрать душу, а собрать
             // её можно в любой сцене с боем. Строим со всем остальным
             // интерфейсом, чтобы не гадать, где игрок нажмёт связывание.
@@ -1756,7 +1770,7 @@ namespace Sinbinder.Utilets
             // щёлкал не читая — а щелчок был сразу и назначением.
             var panel = Panel("Военный совет", parent,
                 anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
-                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 620f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 760f),
                 position: Vector2.zero);
 
             var backdrop = panel.gameObject.AddComponent<Image>();
@@ -2501,41 +2515,6 @@ namespace Sinbinder.Utilets
             Wire(ui, ("_panel", panel), ("_text", text), ("_frame", frame));
         }
 
-        /// <summary>
-        /// Сборка души: имя, спектры словами, оболочка и пророчество.
-        /// Пророчество — то самое, что на доле 3 делает отказ обещанием,
-        /// а не подставой.
-        /// </summary>
-        private static void BuildSoulAssembly(Transform parent)
-        {
-            var panel = Panel("Сборка души", parent,
-                anchorMin: new Vector2(1f, 1f), anchorMax: new Vector2(1f, 1f),
-                pivot: new Vector2(1f, 1f), size: new Vector2(560f, 420f),
-                position: new Vector2(-40f, -40f));
-
-            var accent = panel.gameObject.AddComponent<Image>();
-            accent.color = new Color(0.08f, 0.07f, 0.06f, 0.85f);
-
-            var name = Label("Имя", panel, 32, TextAnchor.UpperLeft, new Vector2(0f, -16f), 44f);
-            var spectra = Label("Спектры", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -70f), 150f);
-            var shell = Label("Оболочка", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -228f), 44f);
-            var prophecy = Label("Пророчество", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -280f), 120f);
-
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.SoulAssemblyUI>();
-            Wire(ui, ("_name", name), ("_spectra", spectra), ("_shell", shell),
-                     ("_prophecy", prophecy), ("_accent", accent));
-        }
-
-        // ---------- мелкие помощники ----------
-
-        /// <summary>
-        /// Поставить предмет из <c>Resources/Props</c>.
-        ///
-        /// Предметы собирает <c>Tools/blender/props.py</c> — те же числа,
-        /// тот же стиль, что у тел и гардероба. Нет предмета — возвращаем
-        /// <c>null</c>, и вызывающий ставит примитив, как ставил раньше:
-        /// сцена обязана собираться и на голом клоне, где моделей ещё нет.
-        /// </summary>
         private static GameObject Prop(string name, Transform parent,
             Vector3 position, float yaw = 0f, float scale = 1f)
         {
@@ -2560,6 +2539,14 @@ namespace Sinbinder.Utilets
 
             Surface(go, name);
             return go;
+        }
+
+        /// <summary>Накрыть примитив той же землёй, что и всё вокруг.</summary>
+        private static void Cover(GameObject go, string id)
+        {
+            var material = MaterialBuilder.Get(id);
+            var renderer = go.GetComponent<Renderer>();
+            if (material != null && renderer != null) renderer.sharedMaterial = material;
         }
 
         /// <summary>

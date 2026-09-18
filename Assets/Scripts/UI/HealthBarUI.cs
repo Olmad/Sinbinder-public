@@ -58,10 +58,14 @@ namespace Sinbinder.UI
         private void UpdateColor()
         {
             if (_fillImage == null || _slider == null) return;
+            // Цвета приглушённые, из палитры игры (23-PROMPTS.md §2):
+            // чистые зелёный и красный светились над каждым воином ярче
+            // костра и первыми бросались в глаза на снимке набега —
+            // раньше самих воинов, ради которых кадр и собран.
             float pct = _slider.value / _slider.maxValue;
-            if (pct > 0.6f) _fillImage.color = Color.green;
-            else if (pct > 0.3f) _fillImage.color = Color.yellow;
-            else _fillImage.color = Color.red;
+            if (pct > 0.6f) _fillImage.color = new Color(0.33f, 0.44f, 0.30f);
+            else if (pct > 0.3f) _fillImage.color = new Color(0.58f, 0.46f, 0.22f);
+            else _fillImage.color = new Color(0.56f, 0.17f, 0.15f);
         }
 
         void OnDestroy()

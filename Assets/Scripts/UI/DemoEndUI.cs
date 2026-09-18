@@ -37,7 +37,7 @@ namespace Sinbinder.UI
 
             if (_body != null) _body.text = wiped ? Epitaph() : Roll() + Comeback();
 
-            _panel.SetActive(true);
+            Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
         }
 
