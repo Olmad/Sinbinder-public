@@ -8,14 +8,19 @@ namespace Sinbinder.Gameplay
     ///
     /// Движок уже называет действие — <c>Flee</c>, <c>Attack</c>,
     /// <c>Loot</c>. Не хватало одного: сказать это аниматору.
-    /// <see cref="Dialogue.DialogueAnimator"/> был написан месяцы назад
-    /// и не сыграл ни разу, потому что <c>Animator</c>а в проекте нет
-    /// ни одного — восьмой случай «написано, звена нет».
+    /// <c>DialogueAnimator</c> был написан месяцы назад и не сыграл
+    /// ни разу, потому что <c>Animator</c>а в проекте не было ни одного —
+    /// восьмой случай «написано, звена нет».
     ///
-    /// Компонент висит на воине и молчит, пока аниматора нет: он
-    /// появится вместе с первой моделью, и в тот же день всё заработает
-    /// само. Проводка, написанная заранее, тем и хороша — её не надо
-    /// вспоминать в вечер, когда модель наконец легла.
+    /// <b>18 сентября аниматоры появились</b>: контроллеры пересобраны,
+    /// <c>Talk</c> и <c>Attack</c> перестали быть покоем. Проводка,
+    /// написанная заранее, тем и хороша — вспоминать её в тот вечер
+    /// не пришлось.
+    ///
+    /// Тогда же <c>DialogueAnimator</c> снят совсем: он остался никем
+    /// не повешенным, а повесить его рядом значило бы завести **второго
+    /// хозяина одного `Animator`** — тот же вид беды, что утром того же
+    /// дня развели у камеры. Хозяин тела один, и это здесь.
     ///
     /// Состояние меняем только когда оно сменилось: <c>Animator.Play</c>
     /// каждый кадр перезапускает анимацию с нуля, и воин дёргается
@@ -31,6 +36,7 @@ namespace Sinbinder.Gameplay
 
         private string _now;
         private bool _fell;
+        private bool _talking;
 
         void Awake()
         {
@@ -47,6 +53,7 @@ namespace Sinbinder.Gameplay
             if (_animator == null) _animator = GetComponentInChildren<Animator>();
             if (_animator == null) return;
 
+            HushIfSilent();
             Play(State());
         }
 
@@ -57,9 +64,7 @@ namespace Sinbinder.Gameplay
             if (_self != null && _self.IsDead) { _fell = true; return BodyMotion.Die; }
             if (_fell) return BodyMotion.Die;
 
-            if (Dialogue.DialogueCameraController.Instance != null
-                && Dialogue.DialogueCameraController.Instance.InDialogue
-                && Talking()) return BodyMotion.Talk;
+            if (_talking) return BodyMotion.Talk;
 
             // Ноги важнее решения: воин, решивший «бить», но ещё идущий
             // к цели, на экране идёт. Решение станет ударом, когда он
@@ -78,10 +83,34 @@ namespace Sinbinder.Gameplay
             return agent.velocity.sqrMagnitude > 0.04f;
         }
 
-        private bool Talking()
+        /// <summary>
+        /// Говорит ли <b>этот</b> воин прямо сейчас.
+        ///
+        /// Здесь стояло «идёт ли разговор вообще»: условие спрашивало
+        /// <c>InDialogue</c> дважды и **ни разу — кто говорящий**.
+        /// На совете это значило, что рот шевелят все девятеро разом,
+        /// а разговор в прологе — его хребет.
+        ///
+        /// Ставит флаг тот, кто заставляет говорить: <c>DialogueUI</c>
+        /// гасит его у всех и зажигает у говорящего — эта проводка была
+        /// верной с самого начала, только указывала на
+        /// <c>DialogueAnimator</c>, которого никто не вешал и который
+        /// дрался бы с нами за один <c>Animator</c>. Хозяин тела один,
+        /// и это мы.
+        /// </summary>
+        public void Talk(bool on) => _talking = on;
+
+        /// <summary>
+        /// Страховка от застрявшего рта: разговор мог оборваться
+        /// смертью говорящего или сменой сцены, и гасить флаг стало бы
+        /// некому.
+        /// </summary>
+        private void HushIfSilent()
         {
-            var speaker = Dialogue.DialogueCameraController.Instance;
-            return speaker != null && _warrior != null && speaker.InDialogue;
+            if (!_talking) return;
+
+            var camera = Dialogue.DialogueCameraController.Instance;
+            if (camera == null || !camera.InDialogue) _talking = false;
         }
 
         private void Play(string state)

@@ -126,14 +126,14 @@ namespace Sinbinder.UI
 
                 foreach (var w in _allWarriors)
                 {
-                    var anim = w.GetComponent<DialogueAnimator>();
-                    if (anim != null) anim.StopTalk();
+                    var anim = w.GetComponent<Gameplay.WarriorAnimation>();
+                    if (anim != null) anim.Talk(false);
                 }
 
                 if (speaker != null)
                 {
-                    var anim = speaker.GetComponent<DialogueAnimator>();
-                    if (anim != null) anim.PlayTalk();
+                    var anim = speaker.GetComponent<Gameplay.WarriorAnimation>();
+                    if (anim != null) anim.Talk(true);
 
                     var voice = speaker.GetComponent<VoiceGenerator>();
                     if (_cameraController != null)
@@ -163,8 +163,8 @@ namespace Sinbinder.UI
 
                 if (speaker != null)
                 {
-                    var anim = speaker.GetComponent<DialogueAnimator>();
-                    if (anim != null) anim.StopTalk();
+                    var anim = speaker.GetComponent<Gameplay.WarriorAnimation>();
+                    if (anim != null) anim.Talk(false);
                 }
             }
 
