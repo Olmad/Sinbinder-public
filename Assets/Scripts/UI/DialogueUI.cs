@@ -145,8 +145,10 @@ namespace Sinbinder.UI
                         if (_dialogueText != null)
                             _dialogueText.text += c;
 
+                        // Букву передаём нарочно: от неё дрожит высота,
+                        // и реплика звучит одинаково при каждом прочтении.
                         if (_useVoice && voice != null)
-                            voice.Speak();
+                            voice.Speak(c);
 
                         yield return new WaitForSecondsRealtime(0.03f);
                     }
