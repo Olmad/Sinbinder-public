@@ -235,6 +235,7 @@ namespace Sinbinder.Utilets
                       movable: true);
 
             CryptGate(new Vector3(0f, 0f, 8f));
+            CryptHall();
 
             var squad = new GameObject("Отряд");
             squad.transform.position = new Vector3(0f, 0f, -2f);
@@ -1115,8 +1116,16 @@ namespace Sinbinder.Utilets
                 // вся предыстория, которая нужна (09-PROLOGUE.md §4).
                 if (abandoned)
                 {
-                    tent.transform.localScale = new Vector3(size, size * 0.62f, size);
-                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f);
+                    // Приседает вдвое по высоте — но от того масштаба,
+                    // который уже стоит, а не от единицы: в корне модели
+                    // множитель единиц файла (см. ModelCheck).
+                    // Приседает по локальной Z: оси у модели блендеровские,
+                    // и высота у неё — Z, а не Y. Сжатая по Y палатка
+                    // просто стала бы уже, а не ниже.
+                    var was = tent.transform.localScale;
+                    tent.transform.localScale = new Vector3(was.x, was.y, was.z * 0.62f);
+                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f)
+                                            * Axis(Resources.Load<GameObject>("Props/Tent"));
                 }
             }
             else
@@ -1397,6 +1406,49 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>Вход в склеп: две опоры и перемычка. Больше и не нужно.</summary>
+        /// <summary>
+        /// Зал склепа: трон, алтарь, гроб в нише.
+        ///
+        /// Реплика прибытия говорит о них дословно — «Пустой трон. Алтарь.
+        /// Замурованный гроб в нише» — а в сцене не стояло ни одного:
+        /// модели собраны 16 сентября и с тех пор лежали без места. Игра,
+        /// которая называет то, чего не показывает, читается как обман,
+        /// и первым это заметит зритель на показе.
+        ///
+        /// Трон пустой нарочно. Склеп занят — но тем, кого не видно:
+        /// это и есть вся мысль эпилога, и высказать её лучше пустым
+        /// креслом, чем ещё одной строкой текста.
+        /// </summary>
+        private static void CryptHall()
+        {
+            var hall = new GameObject("Зал");
+
+            // Алтарь по середине: к нему подходит отряд и на нём же
+            // спрашивают плату.
+            Prop("Altar", hall.transform, new Vector3(0f, 0f, 3.4f));
+
+            // Трон сдвинут и развёрнут: стоящий строго по оси читается
+            // мебелью, а поставленный боком — местом, которое занимали.
+            Prop("Throne", hall.transform, new Vector3(-3.4f, 0f, 6.1f), 34f);
+
+            // Гроб у стены, торцом к камере: «в нише» — значит не посреди
+            // прохода.
+            Prop("Coffin", hall.transform, new Vector3(4.8f, 0f, 5.2f), -74f);
+
+            // Ниша: короткая стенка за гробом. Без неё гроб стоит
+            // в чистом поле, и слово «ниша» опять ничем не подтверждено.
+            var niche = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            niche.name = "Ниша";
+            niche.transform.SetParent(hall.transform);
+            niche.transform.position = new Vector3(6.1f, 1.1f, 5.6f);
+            niche.transform.rotation = Quaternion.Euler(0f, -74f, 0f);
+            niche.transform.localScale = new Vector3(0.4f, 2.2f, 3.2f);
+
+            var stone = MaterialBuilder.Get("Bricks076A");
+            var renderer = niche.GetComponent<Renderer>();
+            if (stone != null && renderer != null) renderer.sharedMaterial = stone;
+        }
+
         private static void CryptGate(Vector3 position)
         {
             var gate = new GameObject("Вход в склеп");
@@ -2493,12 +2545,30 @@ namespace Sinbinder.Utilets
             var go = (GameObject)Object.Instantiate(prefab, parent);
             go.name = name;
             go.transform.position = position;
-            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            go.transform.localScale = Vector3.one * scale;
+
+            // Поворот складывается с поворотом осей модели, а не заменяет
+            // его. Blender пишет FBX с осью Z вверх, и Unity доворачивает
+            // корень на 270° по X. Заданный напрямую поворот стирал это,
+            // и предмет ложился на бок — сакура оказалась ростом 2,6 м
+            // вместо 4,3 при высоте дерева три метра.
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f) * Axis(prefab);
+            // Умножаем, а не задаём: корень модели несёт множитель
+            // единиц файла (у предметов из одного объекта это ×100).
+            // Заданный напрямую масштаб стирал его, и предмет становился
+            // сантиметровым — невидимым, но исправно стоящим в сцене.
+            go.transform.localScale = go.transform.localScale * scale;
 
             Surface(go, name);
             return go;
         }
+
+        /// <summary>
+        /// Поворот осей модели: тем, чем импортёр переводит Z-вверх
+        /// Blender в Y-вверх Unity. Складывать с ним, а не затирать —
+        /// иначе предмет ложится набок (см. ModelCheck, «поворот 270»).
+        /// </summary>
+        private static Quaternion Axis(GameObject prefab)
+            => prefab == null ? Quaternion.identity : prefab.transform.localRotation;
 
         /// <summary>
         /// Чем покрыт предмет. Подменяется <b>только первый материал</b> —

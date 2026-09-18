@@ -39,6 +39,12 @@ UNITY_TYPES = {
     'EditorBuildSettingsScene', 'EditorUtility', 'AssetDatabase', 'MenuItem', 'SerializedObject',
     'GUIStyle', 'GUIContent', 'GUILayout', 'GUI', 'EditorGUILayout', 'EditorGUI', 'EditorStyles',
     'Handles', 'SceneView', 'PrefabUtility', 'EditorSceneManager', 'SceneManager', 'Undo',
+    'ParticleSystem', 'ParticleSystemRenderer', 'MinMaxCurve', 'MinMaxGradient',
+    'Gradient', 'GradientColorKey', 'GradientAlphaKey', 'Volume', 'VolumeProfile',
+    'VolumeComponent', 'Bounds', 'Matrix4x4', 'Mesh', 'SkinnedMeshRenderer',
+    'MeshRenderer', 'MeshFilter', 'Animator', 'RuntimeAnimatorController',
+    'AnimationClip', 'RenderSettings', 'QualitySettings', 'TextureImporter',
+    'AssetImporter', 'ModelImporter', 'EditorApplication',
 }
 
 DOTNET_TYPES = {
@@ -727,7 +733,17 @@ class Checker:
                               s[:m.end(1) + 1])
                 qualifier = q.group(1) if q else None
 
-                for sig, owners in self.methods[name]:
+                # Вызов без хозяина — это метод своего же класса. Сверять
+                # его с тёзкой из другого файла нельзя: компилятор туда
+                # даже не смотрит, а проверка выдавала ошибку на ровном месте.
+                here = set(RE_ANY_TYPE_DECL.findall(s))
+                signatures = self.methods[name]
+                if not qualifier:
+                    mine = [x for x in signatures if set(x[1]) & here]
+                    if mine:
+                        signatures = mine
+
+                for sig, owners in signatures:
                     if qualifier and qualifier in self.declared_anywhere \
                             and qualifier not in owners:
                         continue

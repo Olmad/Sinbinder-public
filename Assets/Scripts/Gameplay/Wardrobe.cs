@@ -146,8 +146,16 @@ namespace Sinbinder.Gameplay
             // преобразование, которого ему не хватает.
             var m = binds[index];
             worn.transform.localPosition = m.GetColumn(3);
-            worn.transform.localRotation = m.rotation;
-            worn.transform.localScale = m.lossyScale;
+            // Тоже произведение: сперва оси модели, затем привязка кости.
+            worn.transform.localRotation = m.rotation * prefab.transform.localRotation;
+
+            // Масштаб — произведение двух, а не один из них. Матрица даёт
+            // растяжение кости (обычно единицу), а корень модели несёт
+            // множитель единиц файла: Blender пишет FBX в сантиметрах,
+            // и Unity выравнивает это масштабом корня ×100. Заданный
+            // напрямую масштаб стирал множитель, и вся одежда надевалась
+            // в сто раз меньше — надета, на месте, но невидима.
+            worn.transform.localScale = Vector3.Scale(m.lossyScale, prefab.transform.localScale);
 
             if (tint.HasValue) Tint(worn, tint.Value);
 
