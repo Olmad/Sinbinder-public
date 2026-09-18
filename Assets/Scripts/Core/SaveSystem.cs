@@ -236,7 +236,7 @@ namespace Sinbinder.Core
         /// </summary>
         private static string Label(SaveGame save)
         {
-            string where = string.IsNullOrEmpty(save.Scene) ? "Где-то" : save.Scene;
+            string where = Where(save.Scene);
 
             // Счёт словами берём у Leadership: он уже говорит об этом же
             // отряде теми же словами, и второй словарь чисел разошёлся
@@ -252,6 +252,44 @@ namespace Sinbinder.Core
 
             return $"{where} · {who} · {debt}";
         }
+
+        /// <summary>
+        /// Где игрок записался — <b>словами, а не именем файла</b>.
+        ///
+        /// Здесь стояло имя сцены как есть, и в списке сохранений игрок
+        /// читал «Prologue_Camp · девятеро · долгов нет». Замысел был
+        /// другой и записан прямо в <c>SaveGame.cs</c> над полем метки:
+        /// «Склеп · девять воинов · трое в долгу». Игра, где игрок
+        /// не видит чисел, показывала ему snake_case из проводника.
+        ///
+        /// Сцена, которой здесь нет, названа вслух один раз: молчаливое
+        /// «Где-то» на новой сцене выглядело бы как забытая запись,
+        /// а не как забытая строчка в этом списке.
+        /// </summary>
+        private static string Where(string scene)
+        {
+            if (string.IsNullOrEmpty(scene)) return "Где-то";
+
+            switch (scene)
+            {
+                case "Prologue_Camp":  return "Лагерь";
+                case "Prologue_Raid":  return "Набег";
+                case "Crypt_Entrance": return "Склеп";
+                case "Crypt_Test":     return "Полигон";
+            }
+
+            if (!_toldAboutPlace)
+            {
+                _toldAboutPlace = true;
+                Debug.LogWarning($"[ЗАПИСЬ] Сцена «{scene}» без человеческого "
+                               + "имени — в списке сохранений она будет "
+                               + "«Где-то». Добавьте её в SaveSystem.Where.");
+            }
+
+            return "Где-то";
+        }
+
+        private static bool _toldAboutPlace;
 
         public static bool Write(SaveGame save, string path)
         {
