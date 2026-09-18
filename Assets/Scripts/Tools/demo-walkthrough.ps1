@@ -57,21 +57,61 @@ $version = (Select-String -Path $versionFile -Pattern '^m_EditorVersion: *(.+)$'
 Write-Host "Проект: $Project"
 Write-Host "Версия Unity: $version"
 
-$unity = $null
-foreach ($candidate in @(
-    "C:\Program Files\Unity\Hub\Editor\$version\Editor\Unity.exe",
-    "$env:LOCALAPPDATA\Unity\Hub\Editor\$version\Editor\Unity.exe",
-    "D:\Unity\Hub\Editor\$version\Editor\Unity.exe"
-)) {
-    if (Test-Path $candidate) { $unity = $candidate; break }
+# Unity ставят двумя способами, и путь у них разный: через Hub —
+# <корень>\Hub\Editor\<версия>\Editor\Unity.exe; вручную — в произвольную
+# папку, причём версия может оказаться во вложенной ("C:\Program Files\
+# Unity 6000.3.2f1\6000.3.22f1\Editor" — ровно этот случай на машине
+# автора). Поэтому не гадаем по пути, а спрашиваем у самого Unity.exe —
+# та же находка, что уже работает в unity-check.ps1.
+function Get-UnityVersion($exe) {
+    try { return ((Get-Item $exe).VersionInfo.ProductVersion -split '_')[0] }
+    catch { return "" }
+}
+
+$scanDirs = @()
+foreach ($root in @("$env:ProgramFiles\Unity\Hub\Editor",
+                    "${env:ProgramFiles(x86)}\Unity\Hub\Editor",
+                    "$env:LOCALAPPDATA\Unity\Hub\Editor")) {
+    if (Test-Path $root) { $scanDirs += Get-ChildItem $root -Directory -ErrorAction SilentlyContinue }
+}
+foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+    if ($base -and (Test-Path $base)) {
+        $scanDirs += Get-ChildItem $base -Directory -Filter "Unity*" -ErrorAction SilentlyContinue
+    }
+}
+
+$editors = @()
+$seen = @{}
+foreach ($dir in $scanDirs) {
+    Get-ChildItem $dir.FullName -Recurse -Depth 2 -Filter "Unity.exe" -File -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            if ($seen.ContainsKey($_.FullName)) { return }
+            $seen[$_.FullName] = $true
+            $v = Get-UnityVersion $_.FullName
+            if ($v) { $editors += [PSCustomObject]@{ Version = $v; Path = $_.FullName } }
+        }
+}
+
+$unity = ($editors | Where-Object { $_.Version -eq $version } | Select-Object -First 1).Path
+if (-not $unity -and $editors.Count -gt 0) {
+    $fallback = $editors | Sort-Object Version -Descending | Select-Object -First 1
+    $unity = $fallback.Path
+    Write-Host "Версия $version не установлена, беру $($fallback.Version) — прогон может отличаться" -ForegroundColor Yellow
 }
 
 if (-not $unity) {
-    Write-Error "Unity $version не найден. Поправь список путей в этом скрипте."
+    Write-Error "Unity $version не найден нигде из обычных мест."
     exit 2
 }
+Write-Host "Редактор: $unity"
 
-$log    = Join-Path $PSScriptRoot "demo-walkthrough.log"
+# Лог — в Logs\ проекта, а не рядом со скриптом. Скрипт лежит внутри
+# Assets, и Unity импортирует туда попавшее как ассет: растущий во время
+# прогона лог-файл гонит бесконечный цикл переимпорта (найдено этим же
+# прогоном 18 сентября — та же ловушка, что уже решена в unity-check.ps1).
+$logDir = Join-Path $Project "Logs"
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
+$log    = Join-Path $logDir "demo-walkthrough.log"
 $report = Join-Path $Project "Logs\demo-walkthrough.txt"
 Remove-Item $log, $report -ErrorAction SilentlyContinue
 
