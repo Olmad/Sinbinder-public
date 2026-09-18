@@ -102,6 +102,19 @@ namespace Sinbinder.AOS
             // присуждением и наездом теперь стоят чужие церемонии.
             if (warrior == null) yield break;
 
+            // Кадр делят пятеро, и ждать освобождения надо **до паузы**.
+            // Пауза ставит timeScale в ноль, а чужой наезд (MomentCamera)
+            // держит план через WaitForSeconds, то есть по игровому
+            // времени: поставь мы паузу первой — он не кончился бы уже
+            // никогда, и зритель смотрел бы в замерший кадр весь срок
+            // ожидания. Сначала дожидаемся, потом останавливаем игру.
+            var cameraController = FindFirstObjectByType<Dialogue.DialogueCameraController>();
+            if (cameraController != null)
+                yield return cameraController.WaitUntilFree();
+
+            // Ждали в живой игре — за это время он мог погибнуть.
+            if (warrior == null) yield break;
+
             GamePauseController.Instance?.Pause();
 
             // Фраза церемонии до 13 сентября уходила в Debug.Log и только
@@ -115,7 +128,6 @@ namespace Sinbinder.AOS
             string line = TitleWords.Answer(warrior, title, isLegendary);
             string shout = TitleWords.Shout(warrior, title, isLegendary);
 
-            var cameraController = FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (cameraController != null)
             {
                 cameraController.SaveCameraPosition();
