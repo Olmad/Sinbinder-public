@@ -77,6 +77,7 @@ namespace Sinbinder.Utilets
             var scene = NewScene();
             Atmosphere(warm: true);
             Ground("Земля", 4f, "Ground048");
+            Look();
             Managers();
 
             // Доли 0 и 3 живут только здесь: строка открывает пролог,
@@ -153,6 +154,7 @@ namespace Sinbinder.Utilets
             var scene = NewScene();
             Atmosphere(warm: true);
             Ground("Земля", 6f, "Ground110");
+            Look();
             Managers();
 
             var raidCanvas = Interface();
@@ -218,6 +220,7 @@ namespace Sinbinder.Utilets
             var scene = NewScene();
             Atmosphere(warm: false);
             Ground("Камень", 5f, "PavingStones127");
+            Look();
             Managers();
 
             var canvas = Interface();
@@ -271,6 +274,7 @@ namespace Sinbinder.Utilets
             var scene = NewScene();
             Atmosphere(warm: false);
             Ground("Плиты", 3f, "PavingStones127");
+            Look();
             Managers();
 
             var canvas = Interface();
@@ -827,12 +831,101 @@ namespace Sinbinder.Utilets
             return new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
         }
 
+        /// <summary>
+        /// Общий взгляд сцены: цвет, виньетка, зерно, свечение огня.
+        ///
+        /// Один профиль на все сцены (<c>Assets/Settings/Взгляд.asset</c>) —
+        /// иначе лагерь, набег и склеп разъедутся по тону, и это будет
+        /// видно как разные игры, склеенные вместе.
+        /// </summary>
+        private static void Look()
+        {
+            var profile = EffectsBuilder.Look();
+            if (profile == null)
+            {
+                Debug.LogWarning("[СЦЕНЫ] Профиля взгляда нет — кадр останется "
+                               + "плоским. Соберите: Sinbinder → Собрать эффекты.");
+                return;
+            }
+
+            var go = new GameObject("Взгляд");
+            var volume = go.AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.sharedProfile = profile;
+        }
+
+        /// <summary>
+        /// Искры над огнём: угли поднимаются и гаснут.
+        ///
+        /// Костёр из поленьев и света — предмет; костёр, от которого летят
+        /// искры, — огонь. Разница стоит одной системы частиц и делает
+        /// кадр живым, а не собранным.
+        /// </summary>
+        private static void Embers(Transform parent, Vector3 position, float scale, float rate)
+        {
+            var material = EffectsBuilder.SparkOf();
+            if (material == null) return;
+
+            var go = new GameObject("Искры");
+            go.transform.SetParent(parent);
+            go.transform.position = position;
+
+            var particles = go.AddComponent<ParticleSystem>();
+
+            var main = particles.main;
+            main.duration = 4f;
+            main.loop = true;
+            main.startLifetime = 1.6f * scale;
+            main.startSpeed = 0.9f * scale;
+            main.startSize = 0.07f * scale;
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.62f, 0.22f), new Color(1f, 0.36f, 0.10f));
+            main.gravityModifier = -0.06f;      // вверх: горячее поднимается
+            main.maxParticles = 120;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = particles.emission;
+            emission.rateOverTime = rate;
+
+            var shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 18f;
+            shape.radius = 0.22f * scale;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+
+            // Гаснут, а не исчезают: искра, пропадающая целой, читается
+            // как ошибка, а не как уголь.
+            var fade = particles.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f),
+                        new GradientColorKey(new Color(1f, 0.45f, 0.15f), 0.6f),
+                        new GradientColorKey(new Color(0.35f, 0.10f, 0.05f), 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.15f),
+                        new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            var shrink = particles.sizeOverLifetime;
+            shrink.enabled = true;
+            shrink.size = new ParticleSystem.MinMaxCurve(
+                1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0.25f));
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
         private static GameObject Campfire(Vector3 position)
         {
             var campfire = new GameObject("Костёр");
             campfire.transform.position = position;
 
             Prop("Campfire", campfire.transform, position);
+            Embers(campfire.transform, position + new Vector3(0f, 0.35f, 0f), 1f, 26f);
 
             var light = new GameObject("Тёплый свет");
             light.transform.SetParent(campfire.transform);
@@ -1342,6 +1435,8 @@ namespace Sinbinder.Utilets
                 fire.color = new Color(1f, 0.58f, 0.26f);
                 fire.intensity = 2.4f;
                 fire.range = 9f;
+
+                Embers(gate.transform, at + new Vector3(0f, 0.72f, -0.2f), 0.5f, 14f);
             }
         }
 
