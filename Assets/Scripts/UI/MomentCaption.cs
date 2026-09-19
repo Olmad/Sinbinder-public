@@ -48,6 +48,34 @@ namespace Sinbinder.UI
             if (_line == null) _line = GetComponentInChildren<Text>(true);
             if (_line != null) _line.canvasRenderer.SetAlpha(0f);
             if (_cause != null) _cause.canvasRenderer.SetAlpha(0f);
+
+            Legible(_line);
+            Legible(_cause);
+        }
+
+        /// <summary>
+        /// Обводка, чтобы подпись читалась на любой земле.
+        ///
+        /// Подпись висит **без фона** — так и задумано: рамка, летающая
+        /// по полю боя, была бы хуже. Но на снимках автора от 19 сентября
+        /// слово стоит над пёстрым гравием, и причина под ним расплывается.
+        ///
+        /// <b>Прозрачность причины не трогаем.</b> Её `0.45` — замысел:
+        /// слово кричит, причина шепчет, и поднять её значило бы сломать
+        /// эту разницу. Обводка сохраняет шёпот и переживает сжатие
+        /// видео, которое первым делом съедает как раз тонкое и тусклое.
+        ///
+        /// Вешаем себе сами, а не в сборщике сцен: правка сборщика
+        /// потребовала бы пересборки трёх сцен, а до показа этого лучше
+        /// не трогать.
+        /// </summary>
+        private static void Legible(Text text)
+        {
+            if (text == null || text.GetComponent<Outline>() != null) return;
+
+            var outline = text.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            outline.effectDistance = new Vector2(1.6f, -1.6f);
         }
 
         void Start()

@@ -496,8 +496,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 640f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 56f);
@@ -1698,8 +1697,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(900f, 620f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.03f, 0.03f, 0.04f, 0.98f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 38, TextAnchor.UpperLeft,
                 new Vector2(0f, -28f), 58f);
@@ -1725,8 +1723,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(760f, 300f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.06f, 0.05f, 0.04f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
                 new Vector2(0f, -24f), 60f);
@@ -1790,8 +1787,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 760f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 34, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 48f);
@@ -1863,8 +1859,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(900f, 700f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 44f);
@@ -1999,8 +1994,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 76f),
                 position: new Vector2(0f, 190f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+            var backdrop = Backdrop(panel, Weight.Strip);
 
             var line = Label("Строка", panel, 26, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
@@ -2131,8 +2125,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 48f),
                 position: new Vector2(0f, 132f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+            var backdrop = Backdrop(panel, Weight.Strip);
 
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.90f, 0.88f, 0.82f);
@@ -2178,8 +2171,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 76f),
                 position: new Vector2(0f, 276f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+            var backdrop = Backdrop(panel, Weight.Strip);
 
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
@@ -2209,8 +2201,7 @@ namespace Sinbinder.Utilets
                 // сразу — «Греховод. Приказывает, но не реша…пустая банка».
                 position: new Vector2(0f, 130f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.88f);
+            var backdrop = Backdrop(panel, Weight.Board);
 
             var name = Label("Имя", panel, 30, TextAnchor.MiddleLeft,
                 new Vector2(0f, -10f), 38f);
@@ -2240,8 +2231,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(720f, 76f),
                 position: new Vector2(0f, 366f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.82f);
+            var backdrop = Backdrop(panel, Weight.Strip);
 
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
@@ -2269,8 +2259,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0f, 1f), size: new Vector2(460f, 300f),
                 position: new Vector2(40f, -40f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.80f);
+            var backdrop = Backdrop(panel, Weight.Board);
 
             var group = panel.gameObject.AddComponent<CanvasGroup>();
             group.interactable = false;
@@ -2305,8 +2294,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0f, 0f), size: new Vector2(620f, 220f),
                 position: new Vector2(40f, 40f));
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.04f, 0.04f, 0.05f, 0.72f);
+            var backdrop = Backdrop(panel, Weight.Board);
 
             // Окно просмотра с маской: без неё текст вылезал бы за края
             // панели, и прокрутка выглядела бы как поехавшая вёрстка.
@@ -2410,8 +2398,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(760f, 620f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 28, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 52f);
@@ -2444,8 +2431,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 720f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.03f, 0.03f, 0.04f, 0.99f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 34, TextAnchor.UpperLeft,
                 new Vector2(0f, -28f), 60f);
@@ -2473,8 +2459,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(760f, 600f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.04f, 0.04f, 0.05f, 0.97f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 30, TextAnchor.UpperLeft,
                 new Vector2(0f, -22f), 54f);
@@ -2499,8 +2484,7 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0.5f), size: new Vector2(860f, 560f),
                 position: Vector2.zero);
 
-            var backdrop = panel.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.96f);
+            var backdrop = Backdrop(panel, Weight.Screen);
 
             var title = Label("Заголовок", panel, 28, TextAnchor.UpperLeft,
                 new Vector2(0f, -20f), 52f);
@@ -2634,6 +2618,110 @@ namespace Sinbinder.Utilets
 
                 default:
                     return null;      // знамя, сакура, катана — свой цвет
+            }
+        }
+
+        // ──────────────────────────────────
+        // Три веса панели
+        // ──────────────────────────────────
+
+        /// <summary>
+        /// Фон и рамка панели. <b>Три веса, и это весь список.</b>
+        ///
+        /// Заведено 19 сентября по словам автора: «интерфейс должен быть
+        /// хоть чуть-чуть для человека, сейчас он даже мне глаза режет».
+        /// Померил сперва контраст — он оказался ни при чём, весь текст
+        /// читается с запасом (9–15 к 1 при норме 4.5, разбор в 30-UI).
+        ///
+        /// Резало другое: **двенадцать панелей были одного веса**.
+        /// Четыре разных почти-чёрных фона, три прозрачности, ни одной
+        /// рамки — и на тёмной сцене все они читались одинаковыми
+        /// пятнами с острыми краями. Глазу негде остановиться: приказ
+        /// отряда, журнал и летучая подсказка выглядели одинаково важными.
+        ///
+        /// Разделение не выдумано — оно уже было в числах, просто
+        /// не названо: модальные экраны стояли на 0.96–0.98, постоянные
+        /// панели на 0.80–0.88, летучие подсказки на 0.82.
+        /// Здесь это сделано осознанным.
+        /// </summary>
+        private enum Weight
+        {
+            /// <summary>Экран, который игрок читает: совет, карта, конец демо.</summary>
+            Screen,
+
+            /// <summary>Мебель: всегда в кадре — приказы, выделенный, журнал.</summary>
+            Board,
+
+            /// <summary>Летучая подсказка поверх мира. Рамка ей была бы тяжела.</summary>
+            Strip,
+        }
+
+        private static readonly Color PanelInk = new Color(0.05f, 0.05f, 0.06f);
+        private static readonly Color PanelEdge = new Color(0.62f, 0.58f, 0.50f);
+
+        private static Image Backdrop(RectTransform panel, Weight weight)
+        {
+            float fill = weight switch
+            {
+                Weight.Screen => 0.96f,
+                Weight.Board => 0.86f,
+                _ => 0.82f,
+            };
+
+            var backdrop = panel.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(PanelInk.r, PanelInk.g, PanelInk.b, fill);
+
+            float edge = weight switch
+            {
+                Weight.Screen => 0.30f,
+                Weight.Board => 0.16f,
+                _ => 0f,
+            };
+
+            if (edge > 0f) Frame(panel, edge);
+            return backdrop;
+        }
+
+        /// <summary>
+        /// Волосяная рамка по краю панели.
+        ///
+        /// Четырьмя полосками, а не картинкой: спрайта рамки в проекте
+        /// нет, заводить его ради одной линии — лишний ассет, который
+        /// потом ищут. Полоски не ловят мышь и лежат под содержимым,
+        /// а содержимое стоит с отступом — пересечься им негде.
+        ///
+        /// Рамка здесь делает больше, чем кажется: она превращает пятно
+        /// в предмет. Без неё панель на тёмной сцене — дыра, с ней —
+        /// табличка.
+        /// </summary>
+        private static void Frame(RectTransform panel, float alpha)
+        {
+            const float Hair = 1.5f;
+
+            var color = new Color(PanelEdge.r, PanelEdge.g, PanelEdge.b, alpha);
+
+            (Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax)[] sides =
+            {
+                (new Vector2(0f, 1f), Vector2.one,        new Vector2(0f, -Hair), Vector2.zero),
+                (Vector2.zero,        new Vector2(1f, 0f), Vector2.zero,          new Vector2(0f, Hair)),
+                (Vector2.zero,        new Vector2(0f, 1f), Vector2.zero,          new Vector2(Hair, 0f)),
+                (new Vector2(1f, 0f), Vector2.one,        new Vector2(-Hair, 0f), Vector2.zero),
+            };
+
+            foreach (var side in sides)
+            {
+                var go = new GameObject("Край", typeof(RectTransform));
+                go.transform.SetParent(panel, false);
+
+                var rt = (RectTransform)go.transform;
+                rt.anchorMin = side.min;
+                rt.anchorMax = side.max;
+                rt.offsetMin = side.offMin;
+                rt.offsetMax = side.offMax;
+
+                var image = go.AddComponent<Image>();
+                image.color = color;
+                image.raycastTarget = false;
             }
         }
 
