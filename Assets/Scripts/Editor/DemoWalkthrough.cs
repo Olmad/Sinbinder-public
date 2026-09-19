@@ -486,6 +486,13 @@ namespace Sinbinder.EditorTools
         /// </summary>
         private static void Portraits(string where)
         {
+            // Сперва сам Греховод: он не воин и в общий перебор не попадает,
+            // а показывать в первую очередь надо именно его.
+            var hero = SinbinderPlayer.Instance;
+            if (hero != null)
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
+                    where + " — Греховод", hero.transform);
+
             var seen = new HashSet<Team>();
 
             foreach (var warrior in UnityEngine.Object.FindObjectsByType<Warrior>(

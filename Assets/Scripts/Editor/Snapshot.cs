@@ -99,6 +99,13 @@ namespace Sinbinder.Utilets
         /// вплотную и возвращается на место.
         /// </summary>
         public static void Portrait(string folder, string name, Transform who)
+            => Portrait(folder, name, who, who == null ? Vector3.zero : who.forward);
+
+        /// <summary>
+        /// Портрет с заданной стороны. Пустое направление — с той, с какой
+        /// на бойца смотрит игрок.
+        /// </summary>
+        public static void Portrait(string folder, string name, Transform who, Vector3 dir)
         {
             if (who == null) return;
 
@@ -108,13 +115,38 @@ namespace Sinbinder.Utilets
             var body = who.GetComponentInChildren<SkinnedMeshRenderer>();
             var at = body != null ? body.bounds.center : who.position + Vector3.up;
 
-            // Три четверти спереди-сбоку: в профиль не виден плащ,
-            // в лоб — наплечник. Чуть сверху, как смотрит игрок.
-            // Минус Z — это перед бойца: у наших тел лицо смотрит туда же,
-            // куда «вперёд» у Unity, а камера обязана стоять напротив.
-            // Первые портреты вышли со спины.
-            var side = who.rotation * new Vector3(0.75f, 0.35f, -1.25f);
-            var from = at + side.normalized * 2.1f;
+            // Отходим на два роста, а не на два метра. Греховод выше
+            // воинов, и мерка в метрах резала ему голову: в кадр попадал
+            // плащ и ничего больше.
+            float tall = body != null ? Mathf.Max(0.5f, body.bounds.size.y) : 1.2f;
+
+            // Целимся выше середины: лицо и плечи важнее сапог.
+            at += Vector3.up * tall * 0.18f;
+
+            // Смотрим с той стороны, с которой на бойца смотрит игрок,
+            // а не «спереди по модели»: боец поворачивается по ходу боя,
+            // и оба первых захода — и +Z, и −Z — дали спину.
+            Vector3 toEye;
+
+            if (dir.sqrMagnitude > 0.01f)
+            {
+                toEye = dir.normalized;
+            }
+            else
+            {
+                var eye = Camera.main != null ? Camera.main.transform.position
+                                              : at + new Vector3(0f, 6f, -6f);
+
+                toEye = eye - at;
+                toEye.y = 0f;
+                if (toEye.sqrMagnitude < 0.01f) toEye = Vector3.back;
+                toEye.Normalize();
+            }
+
+            // Чуть вбок и сверху: в лоб не виден наплечник, в профиль плащ.
+            var side = Quaternion.Euler(0f, 28f, 0f) * toEye + Vector3.up * 0.32f;
+
+            var from = at + side.normalized * (tall * 1.75f);
 
             // Между камерой и бойцом может оказаться палатка, холм или
             // частокол — первый же портрет вышел изнутри земли. Упёрлись

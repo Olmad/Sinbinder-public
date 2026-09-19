@@ -118,6 +118,16 @@ namespace Sinbinder.Gameplay
         private static readonly Color MantleCrimson = new Color(0.14f, 0.04f, 0.08f);
 
         /// <summary>
+        /// Глаза Греховода. Лица у него нет: под капюшоном темнота
+        /// и два уголька (слово автора от 20 сентября — как в Overlord).
+        ///
+        /// Цвет задан здесь, а не взят у греха: грех есть у воинов,
+        /// а Греховод — тот, кто их связывает, и гореть ему положено
+        /// одним и тем же всегда.
+        /// </summary>
+        private static readonly Color EyeCrimson = new Color(0.92f, 0.16f, 0.06f);
+
+        /// <summary>
         /// Облик. Отряд — модели ростом около 1,2, старшие 1,5. Греховод
         /// обязан читаться на их фоне с одного взгляда, поэтому отличий
         /// сразу три, а не одно: он выше всех, он тёмно-багровый там, где
@@ -145,6 +155,15 @@ namespace Sinbinder.Gameplay
                 Wardrobe.Tint(model.gameObject, BodyCrimson);
                 Wardrobe.Wear(model.gameObject, "Hood", MantleCrimson);
                 Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
+
+                // Тень надевается ПОСЛЕ общей покраски: иначе она
+                // перекрасилась бы в багрец вместе со всем прочим,
+                // и никакой темноты под капюшоном не осталось бы.
+                Wardrobe.Wear(model.gameObject, "Shade");
+                // Единица, а не полторы: порог свечения в профиле «Взгляд»
+                // стоит на 1,05, и всё ярче него выбеливается добела.
+                // Угольку положено остаться красным.
+                Wardrobe.Tint(model.gameObject, "Eye", EyeCrimson, glow: 1.0f);
             }
 
             // Кольцо под ногами. Плоский цилиндр, чуть над землёй, чтобы

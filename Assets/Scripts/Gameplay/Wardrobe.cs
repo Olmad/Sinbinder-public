@@ -43,6 +43,7 @@ namespace Sinbinder.Gameplay
             { "InquisitorCap", "Head" },
             { "Circlet", "Head" },
             { "Crack", "Head" },
+            { "Shade", "Head" },
 
             { "RavenMantle", "Chest" },
             { "Quiver", "Chest" },
@@ -105,6 +106,40 @@ namespace Sinbinder.Gameplay
         /// <summary>Перекрасить всё, что рендерится под этим объектом. Через
         /// <c>.material</c> (не <c>.sharedMaterial</c>): иначе покраска одного
         /// воина перекрасила бы всех, кто носит ту же деталь гардероба.</summary>
+        /// <summary>
+        /// Покрасить один материал по имени — «Skin», «Cloth», «Eye».
+        ///
+        /// Нужно для лица Греховода: под капюшоном у него тьма, а не
+        /// кожа, но руки и одежда при этом свои. Красить всё разом
+        /// (<see cref="Tint(GameObject, Color)"/>) тут нельзя — пропадёт
+        /// и разница между тканью и кожей, и свет в глазах.
+        /// </summary>
+        public static void Tint(GameObject go, string slot, Color color, float glow = 0f)
+        {
+            if (go == null || string.IsNullOrEmpty(slot)) return;
+
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.materials;
+                bool touched = false;
+
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !mats[i].name.StartsWith(slot)) continue;
+
+                    mats[i].color = color;
+                    touched = true;
+
+                    if (glow <= 0f || !mats[i].HasProperty("_EmissionColor")) continue;
+
+                    mats[i].EnableKeyword("_EMISSION");
+                    mats[i].SetColor("_EmissionColor", color * glow);
+                }
+
+                if (touched) r.materials = mats;
+            }
+        }
+
         public static void Tint(GameObject go, Color color)
         {
             if (go == null) return;

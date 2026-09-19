@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1102 &-6922966355554923588
+--- !u!1102 &-9043013660707272629
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
@@ -26,14 +26,14 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &-5714331638196128315
+--- !u!1102 &-7687624417179691674
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Flee
+  m_Name: Talk
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -46,13 +46,13 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -2397367177677914855, guid: bad4f6847d06faa448d47e45f69ea236, type: 3}
+  m_Motion: {fileID: 8481663800302800499, guid: bad4f6847d06faa448d47e45f69ea236, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &-3975948590003021711
+--- !u!1102 &-4129320334097488495
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
@@ -88,22 +88,22 @@ AnimatorStateMachine:
   m_Name: Base Layer
   m_ChildStates:
   - serializedVersion: 1
-    m_State: {fileID: -6922966355554923588}
+    m_State: {fileID: -9043013660707272629}
     m_Position: {x: 200, y: 0, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -1114559252531032497}
+    m_State: {fileID: -1285434717188920008}
     m_Position: {x: 235, y: 65, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -3975948590003021711}
+    m_State: {fileID: -4129320334097488495}
     m_Position: {x: 270, y: 130, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -5714331638196128315}
+    m_State: {fileID: 8249876609265588083}
     m_Position: {x: 305, y: 195, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: 8922159689551374132}
+    m_State: {fileID: 9120900385825693538}
     m_Position: {x: 340, y: 260, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: 7445544436617018956}
+    m_State: {fileID: -7687624417179691674}
     m_Position: {x: 375, y: 325, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
@@ -114,8 +114,8 @@ AnimatorStateMachine:
   m_EntryPosition: {x: 50, y: 120, z: 0}
   m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
-  m_DefaultState: {fileID: -6922966355554923588}
---- !u!1102 &-1114559252531032497
+  m_DefaultState: {fileID: -9043013660707272629}
+--- !u!1102 &-1285434717188920008
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
@@ -163,14 +163,14 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
---- !u!1102 &7445544436617018956
+--- !u!1102 &8249876609265588083
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Talk
+  m_Name: Flee
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -183,13 +183,13 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 8481663800302800499, guid: bad4f6847d06faa448d47e45f69ea236, type: 3}
+  m_Motion: {fileID: -2397367177677914855, guid: bad4f6847d06faa448d47e45f69ea236, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &8922159689551374132
+--- !u!1102 &9120900385825693538
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
