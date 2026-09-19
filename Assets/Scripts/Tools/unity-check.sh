@@ -30,16 +30,22 @@ echo "Версия Unity: $version"
 
 unity=""
 for candidate in \
+    "${UNITY:-}" \
     "/Applications/Unity/Hub/Editor/$version/Unity.app/Contents/MacOS/Unity" \
     "$HOME/Unity/Hub/Editor/$version/Editor/Unity" \
-    "/opt/unity/editors/$version/Editor/Unity"
+    "/opt/unity/editors/$version/Editor/Unity" \
+    "/c/Program Files/Unity/Hub/Editor/$version/Editor/Unity.exe" \
+    "/c/Program Files/Unity $version/Editor/Unity.exe" \
+    "/c/Program Files/Unity 6000.3.2f1/$version/Editor/Unity.exe"
 do
     [ -x "$candidate" ] && { unity="$candidate"; break; }
 done
 
 [ -n "$unity" ] || { echo "ОШИБКА: Unity $version не найден" >&2; exit 2; }
 
-log="$(dirname "$0")/unity-check.log"
+# В Logs/, а не рядом со скриптом: всё, что лежит в Assets,
+# редактор пытается импортировать, а растущий лог — без конца.
+log="$project/Logs/unity-check.log"
 rm -f "$log"
 
 echo "Запускаю Unity в пакетном режиме. Первый раз это долго."
