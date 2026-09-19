@@ -31,6 +31,20 @@ namespace Sinbinder.UI
         private static readonly Color Full = new(0.94f, 0.92f, 0.86f);
         private static readonly Color Idle = new(0.55f, 0.52f, 0.48f);
 
+        /// <summary>
+        /// Чернила по золоту: текст выбранной ячейки.
+        ///
+        /// Раньше выбранная ячейка красилась золотом, а текст в ней
+        /// оставался прежним — и у пустой ячейки серый `Idle` (яркость
+        /// 0.52) ложился на золото (яркость 0.54). Контраст **1.03 к 1**,
+        /// то есть текста не было видно вовсе; на снимках автора
+        /// от 19 сентября выбранная ячейка стоит пустой надписью.
+        ///
+        /// Тёмные чернила дают против того же золота **4.9 к 1** —
+        /// читается и в кадре, и на сжатом видео.
+        /// </summary>
+        private static readonly Color Ink = new(0.08f, 0.07f, 0.04f);
+
         private float _next;
 
         void Start()
@@ -66,7 +80,9 @@ namespace Sinbinder.UI
                 if (_cells[i] != null)
                 {
                     _cells[i].text = Satchel.Describe(i);
-                    _cells[i].color = slot.Empty || slot.EmptyJar ? Idle : Full;
+                    _cells[i].color = i == chosen
+                        ? Ink
+                        : (slot.Empty || slot.EmptyJar ? Idle : Full);
                 }
 
                 if (_frames != null && i < _frames.Length && _frames[i] != null)
