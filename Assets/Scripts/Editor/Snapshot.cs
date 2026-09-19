@@ -63,7 +63,10 @@ namespace Sinbinder.Utilets
                     open = path;
                 }
 
-                if (Shot(name, from, at)) made++;
+                // Без интерфейса: в несыгранной сцене он весь разом
+                // виден, и чёрное полотно заставки закрывает собой кадр.
+                // Интерфейс снимает прогон — там он живой.
+                if (Shot(name, from, at, Out, withUi: false)) made++;
             }
 
             Debug.Log($"[СНИМОК] Готово: {made} из {Shots.Length}. Лежат в {Out}.");
@@ -86,7 +89,50 @@ namespace Sinbinder.Utilets
             Shot(name, Vector3.zero, Vector3.zero, folder);
         }
 
-        private static bool Shot(string name, Vector3 from, Vector3 at, string folder = Out)
+        /// <summary>
+        /// Портрет: кадр вблизи одного бойца.
+        ///
+        /// Гардероб надевается в игре, а в собранной сцене воинов нет
+        /// вовсе — значит единственное место, где одежду вообще можно
+        /// увидеть, это прогон. С двадцати двух метров тактической камеры
+        /// капюшон от шлема не отличить, поэтому камера на миг подходит
+        /// вплотную и возвращается на место.
+        /// </summary>
+        public static void Portrait(string folder, string name, Transform who)
+        {
+            if (who == null) return;
+
+            Directory.CreateDirectory(folder);
+
+            // Середина тела, а не точка опоры: у ног смотреть не на что.
+            var body = who.GetComponentInChildren<SkinnedMeshRenderer>();
+            var at = body != null ? body.bounds.center : who.position + Vector3.up;
+
+            // Три четверти спереди-сбоку: в профиль не виден плащ,
+            // в лоб — наплечник. Чуть сверху, как смотрит игрок.
+            var side = who.rotation * new Vector3(0.75f, 0.35f, 1.25f);
+            var from = at + side.normalized * 2.1f;
+
+            // Между камерой и бойцом может оказаться палатка, холм или
+            // частокол — первый же портрет вышел изнутри земли. Упёрлись
+            // во что-то по дороге — встаём перед ним.
+            if (Physics.Linecast(at, from, out var wall))
+                from = wall.point + (at - from).normalized * -0.25f;
+
+            // И никогда не из-под земли: боец стоит на склоне чаще, чем
+            // на ровном, и четверть метра высоты тут решает всё.
+            if (from.y < at.y - 0.2f) from.y = at.y - 0.2f;
+
+            Debug.Log($"[ПОРТРЕТ] {name}: из {from.x:0.0} {from.y:0.0} {from.z:0.0} "
+                    + $"на {at.x:0.0} {at.y:0.0} {at.z:0.0}, сам стоит "
+                    + $"{who.position.x:0.0} {who.position.y:0.0} {who.position.z:0.0}, "
+                    + $"тело — {(body == null ? "нет" : body.name)}");
+
+            Shot(name, from, at, folder, withUi: false);
+        }
+
+        private static bool Shot(string name, Vector3 from, Vector3 at, string folder = Out,
+                                 bool withUi = true)
         {
             var camera = Camera.main != null
                        ? Camera.main
@@ -107,7 +153,7 @@ namespace Sinbinder.Utilets
             {
                 camera.transform.position = from;
                 camera.transform.rotation = Quaternion.LookRotation((at - from).normalized);
-                camera.fieldOfView = 42f;
+                camera.fieldOfView = folder == Out ? 42f : 30f;
             }
 
             // Холст на время снимка переезжает на камеру. Экранный холст
@@ -120,6 +166,7 @@ namespace Sinbinder.Utilets
 
             foreach (var canvas in canvases)
             {
+                if (!withUi) break;      // портрет снимают без подсказок и сумы
                 if (canvas.renderMode != RenderMode.ScreenSpaceOverlay) continue;
 
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
@@ -129,6 +176,15 @@ namespace Sinbinder.Utilets
             }
 
             Canvas.ForceUpdateCanvases();
+
+            // Частицы в редакторе стоят: искры над костром и лепестки
+            // сакуры существуют, но на снимке сцены их не было ни одной.
+            // Прогоняем их на несколько секунд вперёд — ровно настолько,
+            // чтобы облако успело сложиться.
+            if (!Application.isPlaying)
+                foreach (var particles in Object.FindObjectsByType<ParticleSystem>(
+                             FindObjectsSortMode.None))
+                    particles.Simulate(4f, true, true);
 
             var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32)
             {

@@ -54,6 +54,7 @@ namespace Sinbinder.Utilets
         {
             // Вечер, а не ночь: лепестки и вода должны читаться цветом,
             // а в темноте пролога от них осталась бы одна серая рябь.
+            RenderSettings.skybox = Dusk();
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.30f, 0.33f, 0.42f);
             RenderSettings.ambientEquatorColor = new Color(0.22f, 0.21f, 0.24f);
@@ -69,7 +70,7 @@ namespace Sinbinder.Utilets
             light.color = new Color(1f, 0.74f, 0.55f);
             light.intensity = 1.35f;
             light.shadows = LightShadows.Soft;
-            sun.transform.rotation = Quaternion.Euler(24f, 38f, 0f);
+            sun.transform.rotation = Quaternion.Euler(9f, 38f, 0f);
 
             var look = EffectsBuilder.Look();
             if (look == null) return;
@@ -78,6 +79,40 @@ namespace Sinbinder.Utilets
             var volume = go.AddComponent<Volume>();
             volume.isGlobal = true;
             volume.sharedProfile = look;
+        }
+
+        /// <summary>
+        /// Небо заката. Без него сцена шла под стандартным полуденным
+        /// небом Unity — ярко-голубым, и весь вечер держался на одном
+        /// тёплом источнике, который это небо перебивало.
+        ///
+        /// Процедурное, а не картинка: шесть чисел вместо восьми мегабайт,
+        /// и солнце в нём стоит там же, где направленный свет.
+        /// </summary>
+        private static Material Dusk()
+        {
+            const string path = "Assets/Materials/Небо заката.mat";
+            var sky = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+            var shader = Shader.Find("Skybox/Procedural");
+            if (shader == null) return sky;
+
+            if (sky == null)
+            {
+                sky = new Material(shader);
+                AssetDatabase.CreateAsset(sky, path);
+            }
+
+            sky.shader = shader;
+            sky.SetFloat("_SunSize", 0.055f);
+            sky.SetFloat("_SunSizeConvergence", 3f);
+            sky.SetFloat("_AtmosphereThickness", 1.75f);   // гуще воздух — краснее закат
+            sky.SetColor("_SkyTint", new Color(0.44f, 0.38f, 0.46f));
+            sky.SetColor("_GroundColor", new Color(0.13f, 0.12f, 0.13f));
+            sky.SetFloat("_Exposure", 0.85f);
+
+            EditorUtility.SetDirty(sky);
+            return sky;
         }
 
         /// <summary>
@@ -97,7 +132,9 @@ namespace Sinbinder.Utilets
             water.name = "Река";
             water.transform.position = new Vector3(0f, -0.18f, 14f);
             water.transform.localScale = new Vector3(8f, 1f, 4f);
-            Wear(water, Paint("Вода", new Color(0.075f, 0.115f, 0.145f), 0.92f));
+            // Тёмная, почти чёрная: гладкая поверхность и так забирает
+            // весь свет неба, и при прежнем цвете река выходила молочной.
+            Wear(water, Paint("Вода", new Color(0.030f, 0.046f, 0.058f), 0.86f));
 
             // Дальний берег: без него река уходит в туман обрывом.
             var far = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -135,7 +172,7 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void Petals(Vector3 at)
         {
-            var material = EffectsBuilder.SparkOf();
+            var material = EffectsBuilder.PetalOf();
             if (material == null) return;
 
             var go = new GameObject("Лепестки");
@@ -147,7 +184,7 @@ namespace Sinbinder.Utilets
             main.loop = true;
             main.startLifetime = 9f;
             main.startSpeed = 0.35f;
-            main.startSize = 0.09f;
+            main.startSize = 0.17f;
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.86f, 0.62f, 0.68f), new Color(0.72f, 0.45f, 0.55f));
             main.gravityModifier = 0.035f;
@@ -155,11 +192,11 @@ namespace Sinbinder.Utilets
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var emission = particles.emission;
-            emission.rateOverTime = 16f;
+            emission.rateOverTime = 28f;
 
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 1.9f;
+            shape.radius = 2.4f;
 
             // Сносит ветром к воде: лепесток, падающий отвесно, читается
             // снегом, а не лепестком.
@@ -197,8 +234,8 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void Duel()
         {
-            Fighter("Скелет слева", new Vector3(-2.4f, 0f, 0.4f), 78f, 1.25f);
-            Fighter("Скелет справа", new Vector3(2.4f, 0f, -0.2f), -104f, 1.32f);
+            Fighter("Скелет слева", new Vector3(-1.5f, 0f, 0.5f), 82f, 1.25f);
+            Fighter("Скелет справа", new Vector3(1.6f, 0f, -0.1f), -99f, 1.32f);
         }
 
         private static void Fighter(string name, Vector3 at, float yaw, float height)
@@ -291,7 +328,9 @@ namespace Sinbinder.Utilets
             go.transform.rotation = Quaternion.LookRotation(
                 (new Vector3(0.4f, 1.0f, 3.0f) - go.transform.position).normalized);
 
-            go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            var urp = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            urp.renderPostProcessing = true;
+            urp.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.FastApproximateAntialiasing;
         }
 
         // ──────────────────────────── проверка ────────────────────────────

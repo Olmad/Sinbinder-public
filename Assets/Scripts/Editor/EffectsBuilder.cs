@@ -31,6 +31,7 @@ namespace Sinbinder.Utilets
         private const string ProfilePath = Dir + "/Взгляд.asset";
         private const string SparkPath = "Assets/Textures/Искра.png";
         private const string SparkMaterial = "Assets/Materials/Искра.mat";
+        private const string PetalMaterial = "Assets/Materials/Лепесток.mat";
 
         [MenuItem("Sinbinder/Собрать эффекты")]
         public static void BuildAll()
@@ -175,17 +176,77 @@ namespace Sinbinder.Utilets
 
             // Аддитивное смешивание: искры складываются со светом костра,
             // а не закрывают его серым квадратом.
+            //
+            // <b>_Blend здесь — не «включить смешивание», а его род</b>
+            // (0 — обычная прозрачность, 1 — предумноженная, 2 —
+            // аддитивная). Единица, стоявшая тут до 19 сентября, означала
+            // предумноженную: белый квадрат текстуры складывался с фоном
+            // целиком, и лепестки сакуры сыпались белыми квадратиками
+            // с чёткими краями. Видно это стало только на снимке.
+            Blend(material, 2f, UnityEngine.Rendering.BlendMode.SrcAlpha,
+                  UnityEngine.Rendering.BlendMode.One);
+
+            EditorUtility.SetDirty(material);
+
+            Petal();
+        }
+
+        /// <summary>
+        /// Род смешивания разом: и числами, и словом. URP смотрит и туда
+        /// и туда, а при пересборке материала сверяет одно с другим.
+        /// </summary>
+        private static void Blend(Material material, float kind,
+            UnityEngine.Rendering.BlendMode src, UnityEngine.Rendering.BlendMode dst)
+        {
             material.SetFloat("_Surface", 1f);
-            material.SetFloat("_Blend", 1f);
-            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_Blend", kind);
+            material.SetFloat("_SrcBlend", (float)src);
+            material.SetFloat("_DstBlend", (float)dst);
+            material.SetFloat("_SrcBlendAlpha", (float)src);
+            material.SetFloat("_DstBlendAlpha", (float)dst);
             material.SetFloat("_ZWrite", 0f);
             material.renderQueue = (int)RenderQueue.Transparent;
+
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.DisableKeyword("_ALPHAMODULATE_ON");
+        }
+
+        /// <summary>
+        /// Лепесток: та же текстура, но обычная прозрачность.
+        ///
+        /// Аддитивный лепесток на закатном небе не виден вовсе — он
+        /// складывается с тем, что и так светлее его. Огню аддитивность
+        /// нужна, цветку — нет, и это два материала, а не один.
+        /// </summary>
+        private static void Petal()
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
+                      ?? Shader.Find("Sprites/Default");
+            if (shader == null) return;
+
+            var material = AssetDatabase.LoadAssetAtPath<Material>(PetalMaterial);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, PetalMaterial);
+            }
+
+            material.shader = shader;
+
+            var sprite = AssetDatabase.LoadAssetAtPath<Texture2D>(SparkPath);
+            if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", sprite);
+            if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", sprite);
+
+            Blend(material, 0f, UnityEngine.Rendering.BlendMode.SrcAlpha,
+                  UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
 
             EditorUtility.SetDirty(material);
         }
+
+        /// <summary>Материал лепестка. Спрашивает сцена с сакурой.</summary>
+        public static Material PetalOf()
+            => AssetDatabase.LoadAssetAtPath<Material>(PetalMaterial);
 
         /// <summary>Профиль взгляда. Спрашивает сборщик сцен.</summary>
         public static VolumeProfile Look()

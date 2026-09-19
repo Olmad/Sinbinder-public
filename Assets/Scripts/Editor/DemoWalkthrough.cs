@@ -465,6 +465,11 @@ namespace Sinbinder.EditorTools
             {
                 Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение",
                     _shot.ToString("00") + " " + clean.ToString().Trim());
+
+                // Два места, где стоит подойти вплотную: лагерь, где
+                // свои, и набег, где охотники. Гардероб виден только так.
+                if (step == "старший назначен") Portraits("лагерь");
+                if (step == "набег: первая волна положена") Portraits("набег");
             }
             catch (Exception e)
             {
@@ -473,6 +478,27 @@ namespace Sinbinder.EditorTools
         }
 
         private static int _shot;
+
+        /// <summary>
+        /// Портреты: по одному от каждой стороны. Не все подряд — двадцать
+        /// пять кадров одинаковых скелетов никто смотреть не станет,
+        /// а различить оболочку и снаряжение хватает и двух.
+        /// </summary>
+        private static void Portraits(string where)
+        {
+            var seen = new HashSet<Team>();
+
+            foreach (var warrior in UnityEngine.Object.FindObjectsByType<Warrior>(
+                         FindObjectsSortMode.None))
+            {
+                if (warrior == null || !warrior.isActiveAndEnabled) continue;
+                if (!seen.Add(warrior.Team)) continue;
+
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
+                    where + " — " + warrior.Team + " — " + warrior.DisplayName,
+                    warrior.transform);
+            }
+        }
 
         private static void Dump()
         {

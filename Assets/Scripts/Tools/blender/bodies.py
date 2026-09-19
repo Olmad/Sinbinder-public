@@ -1061,7 +1061,10 @@ def make_actions(arm, g):
 
 Shell = namedtuple("Shell", "name parts materials build gait")
 
-BONE = (0.855, 0.830, 0.760, 1.0)
+# Кость приглушена 19 сентября. Прежние 0,855 — почти белый:
+# на ночных снимках прохождения скелеты светились ярче костра
+# и читались первыми в каждом кадре, хотя кадр не про них.
+BONE = (0.720, 0.695, 0.630, 1.0)
 HOLLOW = (0.035, 0.030, 0.032, 1.0)
 
 # Глаз. Цвет здесь — заглушка: настоящий ставит игра по греху души
@@ -1080,7 +1083,7 @@ SHELLS = [
     Shell(
         name="Skeleton",
         parts=proportions(),
-        materials=[("Bone", BONE), ("Bone Dry", (0.790, 0.762, 0.690, 1.0)),
+        materials=[("Bone", BONE), ("Bone Dry", (0.655, 0.632, 0.572, 1.0)),
                    ("Hollow", HOLLOW), ("Eye", EYE)],
         build=build_skeleton,
         gait=STRIDE,

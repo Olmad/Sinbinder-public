@@ -33,7 +33,12 @@ namespace Sinbinder.Utilets
         private const string SceneDir = "Assets/Scenes";
 
         /// <summary>Туман из docs/00-GDD.md §9: плотность 0.04, цвет #1A1A1A.</summary>
-        private const float FogDensity = 0.04f;
+        // Камера стоит в двадцати двух метрах и смотрит почти отвесно:
+        // туман на таком расстоянии красит не даль, а весь кадр разом.
+        // При прежних 0,04 серым было больше половины каждой точки —
+        // снимки показали среднюю яркость 0,11 при чёрном фоне 0,10,
+        // то есть лагерь был почти неотличим от пустого экрана.
+        private const float FogDensity = 0.018f;
         private static readonly Color FogColor = new Color32(0x1A, 0x1A, 0x1A, 0xFF);
 
         // ---------- меню ----------
@@ -618,7 +623,7 @@ namespace Sinbinder.Utilets
             RenderSettings.fogColor = FogColor;
 
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color32(0x12, 0x12, 0x14, 0xFF);
+            RenderSettings.ambientLight = new Color32(0x1C, 0x1C, 0x21, 0xFF);
 
             // Слабый холодный ключевой свет, чтобы геометрия читалась
             // и без костра. Он же — единственный источник в сценах без лагеря.
@@ -627,7 +632,10 @@ namespace Sinbinder.Utilets
             var l = key.AddComponent<Light>();
             l.type = LightType.Directional;
             l.color = new Color(0.62f, 0.68f, 0.82f);
-            l.intensity = warm ? 0.28f : 0.55f;
+            // Ночь остаётся ночью, но воин обязан читаться на земле:
+            // до правки его силуэт отличался от грунта на три сотых
+            // яркости, и на показе зритель увидел бы чёрный прямоугольник.
+            l.intensity = warm ? 0.42f : 0.62f;
             l.shadows = LightShadows.Soft;
         }
 
@@ -764,6 +772,15 @@ namespace Sinbinder.Utilets
             var cam = go.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = FogColor;
+
+            // Без этой галочки профиль «Взгляд» не действует вовсе.
+            // Цвет, виньетка, зерно и свечение огня лежали в проекте
+            // с 18 сентября и не работали ни в одной сцене: URP
+            // выключает постобработку у камеры по умолчанию, а включить
+            // её забыли — и это не видно ниоткуда, кроме как глазами.
+            var urp = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            urp.renderPostProcessing = true;
+            urp.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.FastApproximateAntialiasing;
             cam.fieldOfView = 55f;
             cam.nearClipPlane = 0.1f;
 
