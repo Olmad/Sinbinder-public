@@ -492,6 +492,16 @@ namespace Sinbinder.EditorTools
                          FindObjectsSortMode.None))
             {
                 if (warrior == null || !warrior.isActiveAndEnabled) continue;
+
+                // Только стоящие. Павший лежит, и камера, поставленная
+                // «перед лицом», ложится вместе с ним на землю: первый
+                // же портрет вышел изнутри трупа.
+                var body = warrior.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (body == null) continue;
+
+                var size = body.bounds.size;
+                if (size.y < Mathf.Max(size.x, size.z)) continue;
+
                 if (!seen.Add(warrior.Team)) continue;
 
                 Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
