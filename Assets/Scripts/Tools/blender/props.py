@@ -367,6 +367,37 @@ PROPS = [
 ]
 
 
+def unwrap(mesh):
+    """
+    Развёртка коробкой: грань проецируется на ту плоскость, к которой
+    она ближе всего лежит.
+
+    Без развёртки у меша нет ни одной координаты текстуры, и материал
+    со сканом ложится одним цветом — тем, что в точке (0,0). Палатки
+    и ящики так и стояли крашеными плоскостями, хотя текстуры в проекте
+    уже были.
+
+    Единица развёртки — метр мира. Сколько раз текстура ляжет на этот
+    метр, решает тайлинг материала (`MaterialBuilder`), и решает в одном
+    месте: иначе у каждой модели была бы своя плотность, и доски на ящике
+    не совпали бы с досками на столе.
+    """
+    uv = mesh.uv_layers.new(name="UVMap")
+
+    for poly in mesh.polygons:
+        n = poly.normal
+        axis = max(range(3), key=lambda i: abs(n[i]))
+
+        for loop in poly.loop_indices:
+            co = mesh.vertices[mesh.loops[loop].vertex_index].co
+            if axis == 0:
+                uv.data[loop].uv = (co.y, co.z)
+            elif axis == 1:
+                uv.data[loop].uv = (co.x, co.z)
+            else:
+                uv.data[loop].uv = (co.x, co.y)
+
+
 def build(prop):
     bodies.wipe()
 
@@ -376,6 +407,7 @@ def build(prop):
     mesh = bpy.data.meshes.new(prop.name)
     mesh.from_pydata(b.verts, [], b.faces)
     mesh.validate(verbose=False)
+    unwrap(mesh)
 
     for label, rgba in prop.materials:
         m = bpy.data.materials.new(label)

@@ -240,7 +240,7 @@ namespace Sinbinder.UI
             ShowDetail(null);
             Build(options);
 
-            _panel.SetActive(true);
+            Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
         }
 
@@ -361,16 +361,26 @@ namespace Sinbinder.UI
 
             if (_title != null) _title.text = "Кого поставить старшим";
 
+            // Шаг строки считаем по месту, а не берём готовым. Имён
+            // в лагере двенадцать, а места в столбце — на семь строк;
+            // снимок прохождения 18 сентября показал, что пятеро
+            // последних просто вываливались из панели наружу, поверх
+            // мира. Выбрать из списка, которого не видно, нельзя.
+            float room = _rows == null ? 0f : _rows.rect.height;
+            float step = options.Count > 0 && room > 1f
+                       ? Mathf.Min(78f, room / options.Count)
+                       : 78f;
+
             float y = 0f;
             foreach (var option in options)
             {
-                var row = Row(option, y);
+                var row = Row(option, y, Mathf.Max(30f, step - 8f));
                 _spawned.Add(row);
-                y -= 78f;
+                y -= step;
             }
         }
 
-        private GameObject Row(Option option, float y)
+        private GameObject Row(Option option, float y, float height)
         {
             var warrior = option.Warrior;
 
@@ -383,7 +393,7 @@ namespace Sinbinder.UI
             rt.pivot = new Vector2(0f, 1f);
             rt.offsetMin = new Vector2(0f, 0f);
             rt.offsetMax = new Vector2(0f, 0f);
-            rt.sizeDelta = new Vector2(0f, 70f);
+            rt.sizeDelta = new Vector2(0f, height);
             rt.anchoredPosition = new Vector2(0f, y);
 
             var plate = go.AddComponent<Image>();
@@ -415,7 +425,8 @@ namespace Sinbinder.UI
             Label(rt, option.CanChoose
                     ? Leadership.Describe(option.Skill)
                     : option.Blocked,
-                18, new Vector2(18f, -38f), 24f, option.CanChoose);
+                18, new Vector2(18f, -Mathf.Min(38f, height * 0.55f)), 24f,
+                option.CanChoose);
 
             return go;
         }
@@ -552,7 +563,7 @@ namespace Sinbinder.UI
                     w.gameObject.SetActive(false);
             }
 
-            if (_panel != null) _panel.SetActive(false);
+            Modal.Close(_panel);
             Core.GamePauseController.Instance?.Resume();
 
             var log = Object.FindFirstObjectByType<BattleLogUI>();

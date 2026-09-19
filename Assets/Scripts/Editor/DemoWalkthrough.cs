@@ -132,6 +132,7 @@ namespace Sinbinder.EditorTools
             if (done)
             {
                 Write("  [ГОТОВО] " + step.Name + " — за " + spent.ToString("F0") + " с");
+                Shot(step.Name);
                 Next();
                 return;
             }
@@ -140,6 +141,7 @@ namespace Sinbinder.EditorTools
             {
                 _failed++;
                 Write("  [ЗАСТРЯЛО] " + step.Name + " — не дождались за " + step.Limit.ToString("F0") + " с");
+                Shot("ЗАСТРЯЛО " + step.Name);
                 Dump();
                 Next();
             }
@@ -189,8 +191,17 @@ namespace Sinbinder.EditorTools
             return new List<Step>
             {
                 // ── Лагерь ──
+                // Вопрос о сохранении — первое, что видит игрок, и первое,
+                // на что отвечает прогон. Нажимаем каждый кадр, пока он
+                // висит: сцена грузится не мгновенно, и одного нажатия
+                // в начале шага могло бы не хватить.
+                S("ответили на вопрос о сохранении", null,
+                  () => { Sinbinder.UI.StartPanel.ChooseFresh();
+                          return !Sinbinder.UI.StartPanel.Waiting; }, 30f),
+
                 S("лагерь загрузился, заставка ушла", null,
-                  () => Scene("Prologue_Camp") && SinbinderPlayer.Exists && !Paused(), 30f),
+                  () => Scene("Prologue_Camp") && SinbinderPlayer.Exists
+                     && !Sinbinder.UI.PrologueTitleUI.Showing && !Paused(), 30f),
 
                 // Проверяем то, что должно было случиться, а не то, что
                 // мы попросили: Done = () => true означал шаг, который
@@ -430,6 +441,75 @@ namespace Sinbinder.EditorTools
         /// так и оставил загадкой бой, в котором за полторы минуты
         /// не погиб никто.
         /// </summary>
+        /// <summary>
+        /// Снимок шага. Прогон и так печатает, что случилось, — но
+        /// написанное «отряд у края» и увиденное «отряд у края» это,
+        /// как выяснилось 18 сентября, две разные вещи: неделю все
+        /// предметы стояли в сто раз меньше, и ни одна строка отчёта
+        /// об этом не сказала.
+        ///
+        /// Заодно это единственные наши кадры с людьми: воины рождаются
+        /// в игре, и в собранной сцене их нет вовсе.
+        /// </summary>
+        private static void Shot(string step)
+        {
+            _shot++;
+
+            // Имя файла — из имени шага, без двоеточий и косых: иначе
+            // Windows молча откажет в записи посреди прогона.
+            var clean = new System.Text.StringBuilder();
+            foreach (var c in step)
+                clean.Append(Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? ' ' : c);
+
+            try
+            {
+                Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение",
+                    _shot.ToString("00") + " " + clean.ToString().Trim());
+
+                // Два места, где стоит подойти вплотную: лагерь, где
+                // свои, и набег, где охотники. Гардероб виден только так.
+                if (step == "старший назначен") Portraits("лагерь");
+                if (step == "набег: первая волна положена") Portraits("набег");
+            }
+            catch (Exception e)
+            {
+                Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message);
+            }
+        }
+
+        private static int _shot;
+
+        /// <summary>
+        /// Портреты: по одному от каждой стороны. Не все подряд — двадцать
+        /// пять кадров одинаковых скелетов никто смотреть не станет,
+        /// а различить оболочку и снаряжение хватает и двух.
+        /// </summary>
+        private static void Portraits(string where)
+        {
+            var seen = new HashSet<Team>();
+
+            foreach (var warrior in UnityEngine.Object.FindObjectsByType<Warrior>(
+                         FindObjectsSortMode.None))
+            {
+                if (warrior == null || !warrior.isActiveAndEnabled) continue;
+
+                // Только стоящие. Павший лежит, и камера, поставленная
+                // «перед лицом», ложится вместе с ним на землю: первый
+                // же портрет вышел изнутри трупа.
+                var body = warrior.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (body == null) continue;
+
+                var size = body.bounds.size;
+                if (size.y < Mathf.Max(size.x, size.z)) continue;
+
+                if (!seen.Add(warrior.Team)) continue;
+
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
+                    where + " — " + warrior.Team + " — " + warrior.DisplayName,
+                    warrior.transform);
+            }
+        }
+
         private static void Dump()
         {
             var pause = Core.GamePauseController.Instance;

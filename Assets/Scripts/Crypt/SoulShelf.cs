@@ -150,6 +150,13 @@ namespace Sinbinder.Crypt
 
             plate.AddComponent<UI.Billboard>();
 
+            // Гаснет, пока на банку не посмотрят: полка на девять душ,
+            // подписанных разом, читается как список, а не как полка.
+            plate.AddComponent<UI.WorldPlate>();
+
+            return jar;
+        }
+
         /// <summary>
         /// Шрифт для таблички на банке.
         ///
@@ -188,14 +195,6 @@ namespace Sinbinder.Crypt
         }
 
         private static bool _toldAboutFont;
-
-
-            // Гаснет, пока на банку не посмотрят: полка на девять душ,
-            // подписанных разом, читается как список, а не как полка.
-            plate.AddComponent<UI.WorldPlate>();
-
-            return jar;
-        }
 
         /// <summary>
         /// Пробные души для полигона: четыре греха и четыре ступени

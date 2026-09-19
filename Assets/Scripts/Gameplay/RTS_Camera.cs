@@ -193,10 +193,20 @@ namespace Sinbinder.Gameplay
             if (Input.GetKey(KeyCode.A)) move.x -= 1;
             if (Input.GetKey(KeyCode.D)) move.x += 1;
 
-            if (Input.mousePosition.x < _edgeScrollSize) move.x -= 1;
-            if (Input.mousePosition.x > Screen.width - _edgeScrollSize) move.x += 1;
-            if (Input.mousePosition.y < _edgeScrollSize) move.z -= 1;
-            if (Input.mousePosition.y > Screen.height - _edgeScrollSize) move.z += 1;
+            // Край экрана водит камеру только когда мышь в окне и окно
+            // в работе. Иначе камера уезжает сама: курсор, оставленный
+            // за краем окна (а в пакетном прогоне он стоит в углу),
+            // толкает её без остановки. Прогон 18 сентября показал это
+            // в числах — от лагеря до конца демо камера уползла
+            // на четверть километра, и последние семь шагов игра
+            // разыгрывалась в пустоте, за спиной у зрителя.
+            if (MouseInside())
+            {
+                if (Input.mousePosition.x < _edgeScrollSize) move.x -= 1;
+                if (Input.mousePosition.x > Screen.width - _edgeScrollSize) move.x += 1;
+                if (Input.mousePosition.y < _edgeScrollSize) move.z -= 1;
+                if (Input.mousePosition.y > Screen.height - _edgeScrollSize) move.z += 1;
+            }
 
             // Отвесной камере «вперёд» — это север карты, а не её взгляд:
             // взгляд смотрит в землю, и его проекция вырождается.
@@ -206,9 +216,60 @@ namespace Sinbinder.Gameplay
             _targetPosition += (forward * move.z + right * move.x).normalized
                              * (_moveSpeed * Time.deltaTime);
 
+            _targetPosition = Fence(_targetPosition);
+
             transform.position = Vector3.Lerp(transform.position, _targetPosition, 0.35f);
             transform.rotation = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
         }
+
+        /// <summary>
+        /// Мышь в окне и окно в работе. Пакетный прогон и свёрнутое окно
+        /// дают курсор в углу — а угол для края экрана неотличим
+        /// от «игрок ведёт камеру влево-вниз».
+        /// </summary>
+        private static bool MouseInside()
+        {
+            if (!Application.isFocused) return false;
+
+            var m = Input.mousePosition;
+            return m.x > 0f && m.y > 0f && m.x < Screen.width && m.y < Screen.height;
+        }
+
+        /// <summary>
+        /// Не пускать камеру за край мира.
+        ///
+        /// Границу берём у земли, а не из настройки: земля в каждой сцене
+        /// своя, а забор, заданный числом, разошёлся бы с ней при первой
+        /// же правке сцены. За краем земли смотреть всё равно не на что —
+        /// там чёрная пустота, и игрок, уехавший туда, считает, что игра
+        /// сломалась.
+        /// </summary>
+        private Vector3 Fence(Vector3 where)
+        {
+            if (!_fenced)
+            {
+                _fenced = true;
+
+                var ground = GameObject.Find("Земля") ?? GameObject.Find("Камень")
+                          ?? GameObject.Find("Плиты");
+
+                var renderer = ground == null ? null : ground.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    var b = renderer.bounds;
+                    _fence = new Bounds(b.center, b.size);
+                }
+            }
+
+            if (_fence.size.sqrMagnitude < 1f) return where;
+
+            where.x = Mathf.Clamp(where.x, _fence.min.x, _fence.max.x);
+            where.z = Mathf.Clamp(where.z, _fence.min.z, _fence.max.z);
+            return where;
+        }
+
+        private bool _fenced;
+        private Bounds _fence;
 
         /// <summary>
         /// Поставить камеру над героем и наклонить вниз. Зовётся при входе

@@ -119,7 +119,7 @@ namespace Sinbinder.UI
             if (_payLabel != null) _payLabel.text = "Заплатить\nзолото уйдёт из мешка";
             if (_withholdLabel != null) _withholdLabel.text = "Придержать\nони запомнят";
 
-            _panel.SetActive(true);
+            Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
         }
 
@@ -167,7 +167,7 @@ namespace Sinbinder.UI
         private void Close()
         {
             Answered = true;
-            if (_panel != null) _panel.SetActive(false);
+            Modal.Close(_panel);
             Core.GamePauseController.Instance?.Resume();
         }
 

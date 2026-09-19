@@ -33,7 +33,12 @@ namespace Sinbinder.Utilets
         private const string SceneDir = "Assets/Scenes";
 
         /// <summary>Туман из docs/00-GDD.md §9: плотность 0.04, цвет #1A1A1A.</summary>
-        private const float FogDensity = 0.04f;
+        // Камера стоит в двадцати двух метрах и смотрит почти отвесно:
+        // туман на таком расстоянии красит не даль, а весь кадр разом.
+        // При прежних 0,04 серым было больше половины каждой точки —
+        // снимки показали среднюю яркость 0,11 при чёрном фоне 0,10,
+        // то есть лагерь был почти неотличим от пустого экрана.
+        private const float FogDensity = 0.018f;
         private static readonly Color FogColor = new Color32(0x1A, 0x1A, 0x1A, 0xFF);
 
         // ---------- меню ----------
@@ -76,7 +81,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: true);
-            Ground("Земля", 4f);
+            Ground("Земля", 4f, "Ground048");
+            Look();
             Managers();
 
             // Доли 0 и 3 живут только здесь: строка открывает пролог,
@@ -152,7 +158,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: true);
-            Ground("Земля", 6f);
+            Ground("Земля", 6f, "Ground110");
+            Look();
             Managers();
 
             var raidCanvas = Interface();
@@ -217,7 +224,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Камень", 5f);
+            Ground("Камень", 5f, "PavingStones127");
+            Look();
             Managers();
 
             var canvas = Interface();
@@ -232,6 +240,7 @@ namespace Sinbinder.Utilets
                       movable: true);
 
             CryptGate(new Vector3(0f, 0f, 8f));
+            CryptHall();
 
             var squad = new GameObject("Отряд");
             squad.transform.position = new Vector3(0f, 0f, -2f);
@@ -270,7 +279,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Плиты", 3f);
+            Ground("Плиты", 3f, "PavingStones127");
+            Look();
             Managers();
 
             var canvas = Interface();
@@ -613,7 +623,7 @@ namespace Sinbinder.Utilets
             RenderSettings.fogColor = FogColor;
 
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color32(0x12, 0x12, 0x14, 0xFF);
+            RenderSettings.ambientLight = new Color32(0x1C, 0x1C, 0x21, 0xFF);
 
             // Слабый холодный ключевой свет, чтобы геометрия читалась
             // и без костра. Он же — единственный источник в сценах без лагеря.
@@ -622,16 +632,33 @@ namespace Sinbinder.Utilets
             var l = key.AddComponent<Light>();
             l.type = LightType.Directional;
             l.color = new Color(0.62f, 0.68f, 0.82f);
-            l.intensity = warm ? 0.28f : 0.55f;
+            // Ночь остаётся ночью, но воин обязан читаться на земле:
+            // до правки его силуэт отличался от грунта на три сотых
+            // яркости, и на показе зритель увидел бы чёрный прямоугольник.
+            l.intensity = warm ? 0.42f : 0.62f;
             l.shadows = LightShadows.Soft;
         }
 
-        private static void Ground(string name, float scale)
+        private static void Ground(string name, float scale, string soil = null)
         {
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = name;
             ground.transform.position = Vector3.zero;
             ground.transform.localScale = new Vector3(scale, 1f, scale);
+
+            // Поверхность земли занимает большую часть кадра: камера стоит
+            // почти отвесно. До 18 сентября тридцать девять скачанных
+            // текстур лежали в проекте мёртвым грузом, а земля была
+            // одноцветной плоскостью.
+            if (!string.IsNullOrEmpty(soil))
+            {
+                var material = MaterialBuilder.Get(soil);
+                var renderer = ground.GetComponent<Renderer>();
+
+                if (material != null && renderer != null) renderer.sharedMaterial = material;
+                else Debug.LogWarning($"[СЦЕНЫ] Материала {soil} нет — земля останется "
+                                    + "одноцветной. Соберите: Sinbinder → Собрать материалы.");
+            }
 
             // Поверхность навигации. Без неё агент — мёртвый груз:
             // SetDestination не находит, куда идти, и воин стоит. Навмеша
@@ -745,6 +772,15 @@ namespace Sinbinder.Utilets
             var cam = go.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = FogColor;
+
+            // Без этой галочки профиль «Взгляд» не действует вовсе.
+            // Цвет, виньетка, зерно и свечение огня лежали в проекте
+            // с 18 сентября и не работали ни в одной сцене: URP
+            // выключает постобработку у камеры по умолчанию, а включить
+            // её забыли — и это не видно ниоткуда, кроме как глазами.
+            var urp = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            urp.renderPostProcessing = true;
+            urp.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.FastApproximateAntialiasing;
             cam.fieldOfView = 55f;
             cam.nearClipPlane = 0.1f;
 
@@ -813,12 +849,101 @@ namespace Sinbinder.Utilets
             return new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
         }
 
+        /// <summary>
+        /// Общий взгляд сцены: цвет, виньетка, зерно, свечение огня.
+        ///
+        /// Один профиль на все сцены (<c>Assets/Settings/Взгляд.asset</c>) —
+        /// иначе лагерь, набег и склеп разъедутся по тону, и это будет
+        /// видно как разные игры, склеенные вместе.
+        /// </summary>
+        private static void Look()
+        {
+            var profile = EffectsBuilder.Look();
+            if (profile == null)
+            {
+                Debug.LogWarning("[СЦЕНЫ] Профиля взгляда нет — кадр останется "
+                               + "плоским. Соберите: Sinbinder → Собрать эффекты.");
+                return;
+            }
+
+            var go = new GameObject("Взгляд");
+            var volume = go.AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.sharedProfile = profile;
+        }
+
+        /// <summary>
+        /// Искры над огнём: угли поднимаются и гаснут.
+        ///
+        /// Костёр из поленьев и света — предмет; костёр, от которого летят
+        /// искры, — огонь. Разница стоит одной системы частиц и делает
+        /// кадр живым, а не собранным.
+        /// </summary>
+        private static void Embers(Transform parent, Vector3 position, float scale, float rate)
+        {
+            var material = EffectsBuilder.SparkOf();
+            if (material == null) return;
+
+            var go = new GameObject("Искры");
+            go.transform.SetParent(parent);
+            go.transform.position = position;
+
+            var particles = go.AddComponent<ParticleSystem>();
+
+            var main = particles.main;
+            main.duration = 4f;
+            main.loop = true;
+            main.startLifetime = 1.6f * scale;
+            main.startSpeed = 0.9f * scale;
+            main.startSize = 0.07f * scale;
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.62f, 0.22f), new Color(1f, 0.36f, 0.10f));
+            main.gravityModifier = -0.06f;      // вверх: горячее поднимается
+            main.maxParticles = 120;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = particles.emission;
+            emission.rateOverTime = rate;
+
+            var shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 18f;
+            shape.radius = 0.22f * scale;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+
+            // Гаснут, а не исчезают: искра, пропадающая целой, читается
+            // как ошибка, а не как уголь.
+            var fade = particles.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f),
+                        new GradientColorKey(new Color(1f, 0.45f, 0.15f), 0.6f),
+                        new GradientColorKey(new Color(0.35f, 0.10f, 0.05f), 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.15f),
+                        new GradientAlphaKey(0f, 1f) });
+            fade.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            var shrink = particles.sizeOverLifetime;
+            shrink.enabled = true;
+            shrink.size = new ParticleSystem.MinMaxCurve(
+                1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0.25f));
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
         private static GameObject Campfire(Vector3 position)
         {
             var campfire = new GameObject("Костёр");
             campfire.transform.position = position;
 
             Prop("Campfire", campfire.transform, position);
+            Embers(campfire.transform, position + new Vector3(0f, 0.35f, 0f), 1f, 26f);
 
             var light = new GameObject("Тёплый свет");
             light.transform.SetParent(campfire.transform);
@@ -844,6 +969,11 @@ namespace Sinbinder.Utilets
             hill.name = "Возвышенность";
             hill.transform.position = position + new Vector3(0f, height * 0.5f, 0f);
             hill.transform.localScale = new Vector3(radius * 2f, height * 0.5f, radius * 2f);
+
+            // Земля, а не белый примитив: без материала холм светится
+            // посреди ночного лагеря ярче костра — на снимке сцены он
+            // читался куском чужой игры.
+            Cover(hill, "Gravel043");
 
             // Палатка Греховода наверху, входом к лагерю: из неё он и выходит.
             Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
@@ -894,6 +1024,8 @@ namespace Sinbinder.Utilets
             ramp.transform.rotation = Quaternion.LookRotation(foot - top, Vector3.up);
             ramp.transform.localScale = new Vector3(
                 radius * 0.8f, 0.3f, Vector3.Distance(top, foot));
+
+            Cover(ramp, "Gravel043");
         }
 
         /// <summary>
@@ -1008,8 +1140,16 @@ namespace Sinbinder.Utilets
                 // вся предыстория, которая нужна (09-PROLOGUE.md §4).
                 if (abandoned)
                 {
-                    tent.transform.localScale = new Vector3(size, size * 0.62f, size);
-                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f);
+                    // Приседает вдвое по высоте — но от того масштаба,
+                    // который уже стоит, а не от единицы: в корне модели
+                    // множитель единиц файла (см. ModelCheck).
+                    // Приседает по локальной Z: оси у модели блендеровские,
+                    // и высота у неё — Z, а не Y. Сжатая по Y палатка
+                    // просто стала бы уже, а не ниже.
+                    var was = tent.transform.localScale;
+                    tent.transform.localScale = new Vector3(was.x, was.y, was.z * 0.62f);
+                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f)
+                                            * Axis(Resources.Load<GameObject>("Props/Tent"));
                 }
             }
             else
@@ -1290,6 +1430,49 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>Вход в склеп: две опоры и перемычка. Больше и не нужно.</summary>
+        /// <summary>
+        /// Зал склепа: трон, алтарь, гроб в нише.
+        ///
+        /// Реплика прибытия говорит о них дословно — «Пустой трон. Алтарь.
+        /// Замурованный гроб в нише» — а в сцене не стояло ни одного:
+        /// модели собраны 16 сентября и с тех пор лежали без места. Игра,
+        /// которая называет то, чего не показывает, читается как обман,
+        /// и первым это заметит зритель на показе.
+        ///
+        /// Трон пустой нарочно. Склеп занят — но тем, кого не видно:
+        /// это и есть вся мысль эпилога, и высказать её лучше пустым
+        /// креслом, чем ещё одной строкой текста.
+        /// </summary>
+        private static void CryptHall()
+        {
+            var hall = new GameObject("Зал");
+
+            // Алтарь по середине: к нему подходит отряд и на нём же
+            // спрашивают плату.
+            Prop("Altar", hall.transform, new Vector3(0f, 0f, 3.4f));
+
+            // Трон сдвинут и развёрнут: стоящий строго по оси читается
+            // мебелью, а поставленный боком — местом, которое занимали.
+            Prop("Throne", hall.transform, new Vector3(-3.4f, 0f, 6.1f), 34f);
+
+            // Гроб у стены, торцом к камере: «в нише» — значит не посреди
+            // прохода.
+            Prop("Coffin", hall.transform, new Vector3(4.8f, 0f, 5.2f), -74f);
+
+            // Ниша: короткая стенка за гробом. Без неё гроб стоит
+            // в чистом поле, и слово «ниша» опять ничем не подтверждено.
+            var niche = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            niche.name = "Ниша";
+            niche.transform.SetParent(hall.transform);
+            niche.transform.position = new Vector3(6.1f, 1.1f, 5.6f);
+            niche.transform.rotation = Quaternion.Euler(0f, -74f, 0f);
+            niche.transform.localScale = new Vector3(0.4f, 2.2f, 3.2f);
+
+            var stone = MaterialBuilder.Get("Bricks076A");
+            var renderer = niche.GetComponent<Renderer>();
+            if (stone != null && renderer != null) renderer.sharedMaterial = stone;
+        }
+
         private static void CryptGate(Vector3 position)
         {
             var gate = new GameObject("Вход в склеп");
@@ -1328,6 +1511,8 @@ namespace Sinbinder.Utilets
                 fire.color = new Color(1f, 0.58f, 0.26f);
                 fire.intensity = 2.4f;
                 fire.range = 9f;
+
+                Embers(gate.transform, at + new Vector3(0f, 0.72f, -0.2f), 0.5f, 14f);
             }
         }
 
@@ -1370,7 +1555,14 @@ namespace Sinbinder.Utilets
             BuildSatchel(canvasGO.transform);
             BuildPlateLine(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
-            BuildSoulAssembly(canvasGO.transform);
+
+            // «Сборку души» в сцены не ставим. Панель собрана, но
+            // заполнить её некому: SoulAssemblyUI.Show не зовёт никто
+            // (14-HANDOFF §, 11-MISSING §). Стояла она при этом в углу
+            // каждого кадра пустым тёмным ящиком — снимки прохождения
+            // 18 сентября это и показали. Пустое окно в углу читается
+            // поломкой игры, а не заготовкой на будущее; вернём вместе
+            // с тем, кто его наполнит.
             // Выбор тела нужен везде, где можно собрать душу, а собрать
             // её можно в любой сцене с боем. Строим со всем остальным
             // интерфейсом, чтобы не гадать, где игрок нажмёт связывание.
@@ -1595,7 +1787,7 @@ namespace Sinbinder.Utilets
             // щёлкал не читая — а щелчок был сразу и назначением.
             var panel = Panel("Военный совет", parent,
                 anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
-                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 620f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1280f, 760f),
                 position: Vector2.zero);
 
             var backdrop = panel.gameObject.AddComponent<Image>();
@@ -2012,7 +2204,10 @@ namespace Sinbinder.Utilets
             var panel = Panel("Кто выделен", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 112f),
-                position: new Vector2(0f, 16f));
+                // Над сумой, а не на ней: у самого низа подпись выделенного
+                // ложилась поверх банок, и на снимке набега читались обе
+                // сразу — «Греховод. Приказывает, но не реша…пустая банка».
+                position: new Vector2(0f, 130f));
 
             var backdrop = panel.gameObject.AddComponent<Image>();
             backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.88f);
@@ -2104,7 +2299,10 @@ namespace Sinbinder.Utilets
         {
             var panel = Panel("Журнал", parent,
                 anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 0f),
-                pivot: new Vector2(0f, 0f), size: new Vector2(900f, 300f),
+                // Уже прежнего: девятьсот точек журнала доходили
+                // до середины экрана и лезли под подпись выделенного,
+                // а записей в нём редко больше пяти.
+                pivot: new Vector2(0f, 0f), size: new Vector2(620f, 220f),
                 position: new Vector2(40f, 40f));
 
             var backdrop = panel.gameObject.AddComponent<Image>();
@@ -2340,41 +2538,6 @@ namespace Sinbinder.Utilets
             Wire(ui, ("_panel", panel), ("_text", text), ("_frame", frame));
         }
 
-        /// <summary>
-        /// Сборка души: имя, спектры словами, оболочка и пророчество.
-        /// Пророчество — то самое, что на доле 3 делает отказ обещанием,
-        /// а не подставой.
-        /// </summary>
-        private static void BuildSoulAssembly(Transform parent)
-        {
-            var panel = Panel("Сборка души", parent,
-                anchorMin: new Vector2(1f, 1f), anchorMax: new Vector2(1f, 1f),
-                pivot: new Vector2(1f, 1f), size: new Vector2(560f, 420f),
-                position: new Vector2(-40f, -40f));
-
-            var accent = panel.gameObject.AddComponent<Image>();
-            accent.color = new Color(0.08f, 0.07f, 0.06f, 0.85f);
-
-            var name = Label("Имя", panel, 32, TextAnchor.UpperLeft, new Vector2(0f, -16f), 44f);
-            var spectra = Label("Спектры", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -70f), 150f);
-            var shell = Label("Оболочка", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -228f), 44f);
-            var prophecy = Label("Пророчество", panel, 22, TextAnchor.UpperLeft, new Vector2(0f, -280f), 120f);
-
-            var ui = panel.gameObject.AddComponent<Sinbinder.UI.SoulAssemblyUI>();
-            Wire(ui, ("_name", name), ("_spectra", spectra), ("_shell", shell),
-                     ("_prophecy", prophecy), ("_accent", accent));
-        }
-
-        // ---------- мелкие помощники ----------
-
-        /// <summary>
-        /// Поставить предмет из <c>Resources/Props</c>.
-        ///
-        /// Предметы собирает <c>Tools/blender/props.py</c> — те же числа,
-        /// тот же стиль, что у тел и гардероба. Нет предмета — возвращаем
-        /// <c>null</c>, и вызывающий ставит примитив, как ставил раньше:
-        /// сцена обязана собираться и на голом клоне, где моделей ещё нет.
-        /// </summary>
         private static GameObject Prop(string name, Transform parent,
             Vector3 position, float yaw = 0f, float scale = 1f)
         {
@@ -2384,9 +2547,94 @@ namespace Sinbinder.Utilets
             var go = (GameObject)Object.Instantiate(prefab, parent);
             go.name = name;
             go.transform.position = position;
-            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            go.transform.localScale = Vector3.one * scale;
+
+            // Поворот складывается с поворотом осей модели, а не заменяет
+            // его. Blender пишет FBX с осью Z вверх, и Unity доворачивает
+            // корень на 270° по X. Заданный напрямую поворот стирал это,
+            // и предмет ложился на бок — сакура оказалась ростом 2,6 м
+            // вместо 4,3 при высоте дерева три метра.
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f) * Axis(prefab);
+            // Умножаем, а не задаём: корень модели несёт множитель
+            // единиц файла (у предметов из одного объекта это ×100).
+            // Заданный напрямую масштаб стирал его, и предмет становился
+            // сантиметровым — невидимым, но исправно стоящим в сцене.
+            go.transform.localScale = go.transform.localScale * scale;
+
+            Surface(go, name);
             return go;
+        }
+
+        /// <summary>Накрыть примитив той же землёй, что и всё вокруг.</summary>
+        private static void Cover(GameObject go, string id)
+        {
+            var material = MaterialBuilder.Get(id);
+            var renderer = go.GetComponent<Renderer>();
+            if (material != null && renderer != null) renderer.sharedMaterial = material;
+        }
+
+        /// <summary>
+        /// Поворот осей модели: тем, чем импортёр переводит Z-вверх
+        /// Blender в Y-вверх Unity. Складывать с ним, а не затирать —
+        /// иначе предмет ложится набок (см. ModelCheck, «поворот 270»).
+        /// </summary>
+        private static Quaternion Axis(GameObject prefab)
+            => prefab == null ? Quaternion.identity : prefab.transform.localRotation;
+
+        /// <summary>
+        /// Чем покрыт предмет. Подменяется <b>только первый материал</b> —
+        /// тот, из чего предмет сделан; второй и третий остаются свои:
+        /// железные обручи бочки, тёмные прорези, перья. Подменить все
+        /// значило бы потерять разницу между частями, ради которой
+        /// у каждой модели их три.
+        /// </summary>
+        private static void Surface(GameObject go, string prop)
+        {
+            string id = SurfaceOf(prop);
+            if (id == null) return;
+
+            var material = MaterialBuilder.Get(id);
+            if (material == null) return;
+
+            foreach (var renderer in go.GetComponentsInChildren<Renderer>(true))
+            {
+                var slots = renderer.sharedMaterials;
+                if (slots.Length == 0) continue;
+
+                slots[0] = material;
+                renderer.sharedMaterials = slots;
+            }
+        }
+
+        private static string SurfaceOf(string prop)
+        {
+            switch (prop)
+            {
+                case "Tent":
+                    return "Fabric061";
+
+                case "CouncilTable":
+                case "Chest":
+                case "ChestLid":
+                case "Barrel":
+                case "Crate":
+                case "LogBench":
+                case "Palisade":
+                case "TentPeg":
+                case "Torch":
+                    return "Planks037A";
+
+                case "Rock":
+                    return "Rock050";
+
+                case "CryptGate":
+                case "Throne":
+                case "Altar":
+                case "Coffin":
+                    return "Bricks076A";
+
+                default:
+                    return null;      // знамя, сакура, катана — свой цвет
+            }
         }
 
         private static RectTransform Panel(string name, Transform parent,

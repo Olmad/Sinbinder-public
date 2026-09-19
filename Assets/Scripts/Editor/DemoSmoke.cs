@@ -139,6 +139,10 @@ namespace Sinbinder.EditorTools
         {
             float played = Seconds - left;
 
+            // Отвечаем на вопрос о сохранении так же, как игрок: пока
+            // на него не ответили, игра стоит на паузе и проверять нечего.
+            Sinbinder.UI.StartPanel.ChooseFresh();
+
             var box = Sinbinder.UI.Letterbox.Instance;
             var cam = Sinbinder.Dialogue.DialogueCameraController.Instance;
 
@@ -277,7 +281,21 @@ namespace Sinbinder.EditorTools
                     : mf.transform.position;
 
                 float gap = Vector3.Distance(bone.position, centre);
-                if (gap > worst) { worst = gap; where = mf.gameObject.name + " на " + bone.name; }
+                if (gap <= worst) continue;
+
+                worst = gap;
+
+                // Не только «далеко», но и куда именно уехало: своим
+                // местом в кости, своим размером и серединой в мире.
+                // Без этих трёх чисел причину ищут перезапусками.
+                var t = mf.transform;
+                where = mf.gameObject.name + " на " + bone.name
+                      + $" (в кости {t.localPosition.x:0.00} {t.localPosition.y:0.00} "
+                      + $"{t.localPosition.z:0.00}, масштаб {t.localScale.x:0.##}, "
+                      + $"общий {t.lossyScale.x:0.##}, кость ×{bone.lossyScale.x:0.###}, "
+                      + $"хозяин {mf.transform.root.name}, "
+                      + $"середина {centre.x:0.0} {centre.y:0.0} {centre.z:0.0}, "
+                      + $"кость {bone.position.x:0.0} {bone.position.y:0.0} {bone.position.z:0.0})";
             }
 
             if (worn == 0)
