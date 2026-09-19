@@ -267,6 +267,13 @@ namespace Sinbinder.EditorTools
             float worst = 0f;
             string where = "";
 
+            // Заодно самая крупная вещь. Надетое не может быть размером
+            // с воина: облачная сессия 19 сентября увидела на снимке
+            // «белый шар у плеча охотника», и найти его иначе, чем
+            // замером, было нечем.
+            float biggest = 0f;
+            string bulk = "";
+
             foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
             {
                 if (mf == null || mf.transform.parent == null) continue;
@@ -279,6 +286,19 @@ namespace Sinbinder.EditorTools
                 var centre = mf.GetComponent<Renderer>() != null
                     ? mf.GetComponent<Renderer>().bounds.center
                     : mf.transform.position;
+
+                var r = mf.GetComponent<Renderer>();
+                if (r != null)
+                {
+                    var size = r.bounds.size;
+                    float tall = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+
+                    if (tall > biggest)
+                    {
+                        biggest = tall;
+                        bulk = mf.gameObject.name + " на " + bone.name;
+                    }
+                }
 
                 float gap = Vector3.Distance(bone.position, centre);
                 if (gap <= worst) continue;
@@ -306,6 +326,15 @@ namespace Sinbinder.EditorTools
 
             // Полметра — это уже не «сидит», а «висит рядом»: самая
             // длинная часть, плащ, укладывается в треть метра от кости.
+            // Метр — уже не одежда, а предмет мебели на плече. Порог
+            // не ниже: плащ от плеча до колена на воине в полтора метра
+            // занимает восемьдесят сантиметров по-честному, и ругаться
+            // на него значило бы ругаться на плащ.
+            if (biggest > 1.0f)
+                Write($"  [ОШИБКА] надетое размером с воина: {bulk} — {biggest:F2} м");
+            else if (biggest > 0f)
+                Write($"  [ГАРДЕРОБ] самая крупная вещь: {bulk} — {biggest:F2} м");
+
             bool ok = worst < 0.5f;
             Write("  " + (ok ? "[ГАРДЕРОБ] надето " + worn + " частей, дальше всех "
                              : "[ОШИБКА] гардероб уехал: ")

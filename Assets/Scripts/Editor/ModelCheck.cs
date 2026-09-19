@@ -78,6 +78,28 @@ namespace Sinbinder.Utilets
                                  + $"{tall:0.000} м. Предмет уменьшился при сборке.");
             }
 
+            // Три самых крупных предмета сцены. Мелочь ловится порогом,
+            // а великаны — нет: случайно раздутый предмет не ломает
+            // ничего, просто занимает четверть кадра, и замечает это
+            // только глаз. Облачная сессия спросила 19 сентября про
+            // «большую тёмную сферу» — вот способ ответить числом.
+            var big = new System.Collections.Generic.List<(float Tall, string Name)>();
+
+            foreach (var renderer in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (renderer is ParticleSystemRenderer) continue;
+                if (renderer.GetComponentInParent<Canvas>() != null) continue;
+
+                var size = renderer.bounds.size;
+                big.Add((Mathf.Max(size.x, Mathf.Max(size.y, size.z)), renderer.name));
+            }
+
+            big.Sort((a, b) => b.Tall.CompareTo(a.Tall));
+
+            for (int i = 0; i < Mathf.Min(3, big.Count); i++)
+                Debug.Log($"[СЦЕНА] {scene.name}: крупнее всех — {big[i].Name} "
+                        + $"{big[i].Tall:0.0} м");
+
             if (tiny == 0) Debug.Log($"[СЦЕНА] {scene.name}: {all} поверхностей, мелочи нет.");
             else Debug.LogError($"[СЦЕНА] {scene.name}: уменьшенных {tiny} из {all}.");
         }
