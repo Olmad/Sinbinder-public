@@ -149,7 +149,9 @@ namespace Sinbinder.Utilets
 
                 string line = $"[МОДЕЛИ] {name}: "
                             + $"{size.x:0.00}×{size.y:0.00}×{size.z:0.00} м, "
-                            + $"вершин {verts}, частей {parts}, корень ×{root.x:0.##}"
+                            + $"вершин {verts}, частей {parts}, корень ×{root.x:0.##}, "
+                            + $"середина {bounds.center.x:0.00} {bounds.center.y:0.00} "
+                            + $"{bounds.center.z:0.00}"
                             + (turn.sqrMagnitude > 0.01f
                                 ? $", поворот {turn.x:0.#} {turn.y:0.#} {turn.z:0.#}" : "");
 
