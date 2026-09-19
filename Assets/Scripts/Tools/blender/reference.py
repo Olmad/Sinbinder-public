@@ -39,8 +39,26 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
-# Человекоподобные образцы из загрузок. Оружие, мебель и города
-# пропущены: у них нет ни роста, ни плеч.
+# Blender запускает сценарий, не добавляя его папку в пути импорта:
+# без этой строки соседний `bodies` не находится.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# Человекоподобные образцы. Оружие, мебель и города пропущены:
+# у них нет ни роста, ни плеч.
+#
+# Часть лежит в загрузках, часть — на диске D автора, в папках
+# `_inspect_*`. Скелет оттуда автор назвал образцовым, и это главный
+# образец для оболочки Skeleton: у него есть то, чего силуэт не даёт, —
+# как устроены рёбра, таз и кисть.
+ELSEWHERE = [
+    r"D:\_inspect_skeleton\source\Skeleton02(SKETCHFAB).glb",
+    r"D:\_inspect_manthing\source\ManThing.fbx",
+    r"D:\_inspect_chibi\source\chibi body.obj",
+    r"D:d_scan_man_1.glb",
+    r"D:\military_soldier.glb",
+    r"D:\private_military_contractor.glb",
+]
+
 HUMANOIDS = [
     "armored_executioner_-_horned_helm__flail.glb",
     "bone_knight_-_horned_skull_greatsword.glb",
@@ -74,8 +92,19 @@ def wipe():
 
 def load(path):
     """Загрузить образец. Возвращает False, если формат не по зубам."""
+    suffix = path.suffix.lower()
+
     try:
-        bpy.ops.import_scene.gltf(filepath=str(path))
+        if suffix in (".glb", ".gltf"):
+            bpy.ops.import_scene.gltf(filepath=str(path))
+        elif suffix == ".fbx":
+            bpy.ops.import_scene.fbx(filepath=str(path))
+        elif suffix == ".obj":
+            bpy.ops.wm.obj_import(filepath=str(path))
+        else:
+            print(f"[ОБРАЗЕЦ] {path.name}: формат {suffix} не читаем")
+            return False
+
         return True
     except Exception as e:                                  # noqa: BLE001
         print(f"[ОБРАЗЕЦ] {path.name}: не читается ({e})")
@@ -309,21 +338,127 @@ def report(rows):
         print(f"  {k:12} {d:+.3f}{mark}")
 
 
+def frame(folder, name, tall, low):
+    """
+    Снять то, что сейчас в сцене, спереди и в три четверти.
+
+    Камера ортографическая и подогнана по росту: образец в три метра
+    и наше тело в метр обязаны лечь в кадр одинаково, иначе сравнивать
+    нечего. Свет тоже один на всех — по той же причине.
+    """
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+
+    mid = low + tall * 0.5
+
+    cam_data = bpy.data.cameras.new("c")
+    cam_data.type = "ORTHO"
+    cam_data.ortho_scale = tall * 1.15
+    cam = bpy.data.objects.new("c", cam_data)
+    bpy.context.scene.collection.objects.link(cam)
+    bpy.context.scene.camera = cam
+
+    for lamp_at, energy in (((tall, -tall * 1.4, low + tall * 1.3), 1200.0),
+                            ((-tall * 1.1, -tall * 0.7, low + tall * 0.7), 300.0)):
+        light = bpy.data.lights.new("l", type="POINT")
+        light.energy = energy * (tall * tall)
+        obj = bpy.data.objects.new("l", light)
+        obj.location = lamp_at
+        bpy.context.scene.collection.objects.link(obj)
+
+    scene = bpy.context.scene
+    scene.render.resolution_x = 520
+    scene.render.resolution_y = 760
+    scene.world = bpy.data.worlds.new("w")
+    scene.world.color = (0.21, 0.21, 0.23)
+
+    for tag, angle in (("спереди", 0.0), ("три-четверти", 38.0)):
+        a = math.radians(angle)
+        cam.location = (math.sin(a) * tall * 2.0, -math.cos(a) * tall * 2.0, mid)
+        cam.rotation_euler = (Vector((0.0, 0.0, mid)) - Vector(cam.location))             .to_track_quat("-Z", "Y").to_euler()
+
+        scene.render.filepath = str(folder / f"{name}-{tag}.png")
+        bpy.ops.render.render(write_still=True)
+
+    print(f"[ОБРАЗЕЦ] {name}: снято в {folder}")
+
+
+def ours(folder):
+    """
+    Наши тела тем же кадром и тем же светом.
+
+    Без этого сравнение нечестное: наши превью снимаются своей камерой
+    и своим светом, и разница вышла бы между съёмками, а не между
+    моделями.
+    """
+    import bodies
+
+    for shell in bodies.SHELLS:
+        wipe()
+
+        b = bodies.Body()
+        shell.build(b, shell.parts)
+
+        mesh = bpy.data.meshes.new(shell.name)
+        mesh.from_pydata(b.verts, [], b.faces)
+        mesh.validate(verbose=False)
+
+        for label, rgba in shell.materials:
+            m = bpy.data.materials.new(label)
+            m.diffuse_color = rgba
+            m.use_nodes = True
+            bsdf = m.node_tree.nodes.get("Principled BSDF")
+            if bsdf is not None:
+                bsdf.inputs["Base Color"].default_value = rgba
+            mesh.materials.append(m)
+
+        for i, mat in enumerate(b.mats):
+            if i < len(mesh.polygons):
+                mesh.polygons[i].material_index = mat
+
+        obj = bpy.data.objects.new(shell.name, mesh)
+        bpy.context.scene.collection.objects.link(obj)
+
+        low = min(v[2] for v in b.verts)
+        tall = max(v[2] for v in b.verts) - low
+        frame(folder, "НАШЕ-" + shell.name, tall, low)
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+
+    def opt(key):
+        return argv[argv.index(key) + 1] if key in argv else None
+
+    shots = opt("--shots")
     rows = []
 
-    for name in HUMANOIDS:
-        path = downloads() / name
+    paths = [downloads() / name for name in HUMANOIDS]
+    paths += [Path(p) for p in ELSEWHERE]
+
+    for path in paths:
         if not path.exists():
-            print(f"[ОБРАЗЕЦ] {name}: нет в загрузках")
+            print(f"[ОБРАЗЕЦ] {path.name}: нет на месте ({path.parent})")
             continue
 
         row = measure(path)
-        if row is not None:
-            rows.append(row)
+        if row is None:
+            continue
+
+        rows.append(row)
+
+        # Снимаем сразу, пока образец в сцене: второй раз его грузить
+        # незачем, а в памяти он не остаётся — wipe() чистит всё.
+        if shots is not None:
+            verts = points()
+            if verts:
+                low = min(v.z for v in verts)
+                frame(shots, path.stem[:38], max(v.z for v in verts) - low, low)
 
     report(rows)
+
+    if shots is not None:
+        ours(shots)
 
     out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else None
     if out is not None:

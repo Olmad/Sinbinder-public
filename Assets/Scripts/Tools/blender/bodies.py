@@ -84,7 +84,7 @@ FPS = 30
 BASE = dict(
     ankle=0.055, knee=0.285, hip=0.510, waist=0.600, chest=0.700,
     shoulder=0.800, neck=0.848, skull=0.925, top=1.000,
-    leg_x=0.082, shoulder_x=0.118,
+    leg_x=0.082, knee_x=0.063, shoulder_x=0.118,
     elbow=0.292, wrist=0.438, finger=0.525,
 )
 
@@ -98,7 +98,7 @@ def bones(p):
     и иерархии, и «имена не важны» верно ровно до того дня, когда
     кто-нибудь откроет окно настройки аватара.
     """
-    sh, lg = p["shoulder"], p["leg_x"]
+    sh, lg, kx = p["shoulder"], p["leg_x"], p.get("knee_x", p["leg_x"])
     sx, el, wr, fg = p["shoulder_x"], p["elbow"], p["wrist"], p["finger"]
 
     made = [
@@ -117,10 +117,13 @@ def bones(p):
             (tag + "LowerArm", tag + "UpperArm", (s * el, 0, sh),   (s * wr, 0, sh)),
             (tag + "Hand",     tag + "LowerArm", (s * wr, 0, sh),   (s * fg, 0, sh)),
 
-            (tag + "UpperLeg", "Hips",           (s * lg, 0, p["hip"]),   (s * lg, 0, p["knee"])),
-            (tag + "LowerLeg", tag + "UpperLeg", (s * lg, 0, p["knee"]),  (s * lg, 0, p["ankle"])),
-            (tag + "Foot",     tag + "LowerLeg", (s * lg, 0, p["ankle"]), (s * lg, -0.070, 0.012)),
-            (tag + "Toes",     tag + "Foot",     (s * lg, -0.070, 0.012), (s * lg, -0.115, 0.012)),
+            # Бедро идёт от таза внутрь, к колену: на образцовом скелете
+            # с диска D это первое, что отличает человека от вешалки —
+            # таз шире колен, и кость между ними наклонена.
+            (tag + "UpperLeg", "Hips",           (s * lg, 0, p["hip"]),   (s * kx, 0, p["knee"])),
+            (tag + "LowerLeg", tag + "UpperLeg", (s * kx, 0, p["knee"]),  (s * kx, 0, p["ankle"])),
+            (tag + "Foot",     tag + "LowerLeg", (s * kx, 0, p["ankle"]), (s * kx, -0.070, 0.012)),
+            (tag + "Toes",     tag + "Foot",     (s * kx, -0.070, 0.012), (s * kx, -0.115, 0.012)),
         ]
 
     return made
@@ -189,6 +192,33 @@ class Body:
             self.faces.append([i + base for i in f])
             self.mats.append(mat)
         self.groups.setdefault(bone, []).extend(range(base, base + len(verts)))
+
+
+def tilt(verts, about, axis, degrees):
+    """
+    Повернуть готовые вершины вокруг точки. Нужен там, где форма
+    не стоит по осям: крылья таза развёрнуты наружу и вверх, и без
+    поворота они собираются только из кирпичей, а кирпичи читаются
+    ящиком, а не костью.
+    """
+    a = math.radians(degrees)
+    ca, sa = math.cos(a), math.sin(a)
+    ax, ay, az = about
+
+    out = []
+    for x, y, z in verts:
+        x, y, z = x - ax, y - ay, z - az
+
+        if axis == "x":
+            y, z = y * ca - z * sa, y * sa + z * ca
+        elif axis == "y":
+            x, z = x * ca + z * sa, -x * sa + z * ca
+        else:
+            x, y = x * ca - y * sa, x * sa + y * ca
+
+        out.append((x + ax, y + ay, z + az))
+
+    return out
 
 
 def box(center, size):
@@ -353,11 +383,23 @@ def build_skeleton(b, p):
     sh, sx, el, wr, fg = (p["shoulder"], p["shoulder_x"],
                           p["elbow"], p["wrist"], p["finger"])
 
-    # таз: обод, а не куб. Сверху по нему скелет и узнаётся.
-    b.add(*ring((0, 0.004, hip - 0.012), 0.078, 0.019, scale=(1.0, 0.78, 1.1)), bone="Hips")
+    # Таз по образцу с диска D: не скобка, а чаша. Снизу кольцо
+    # седалищных костей, сверху два крыла, развёрнутых наружу
+    # и назад, между ними — крестец. Прежние два кирпича по бокам
+    # читались кронштейном, и именно они делали из скелета вешалку.
+    b.add(*ring((0, 0.004, hip - 0.010), 0.082, 0.021, scale=(1.0, 0.80, 1.00)), bone="Hips")
+
     for side, _ in sides():
-        b.add(*box((side * 0.072, 0.004, hip + 0.018), (0.030, 0.062, 0.055)), bone="Hips")
-    b.add(*box((0, 0.045, hip + 0.030), (0.034, 0.026, 0.070)), bone="Hips")
+        wing, faces = box((side * 0.068, 0.004, hip + 0.022), (0.034, 0.074, 0.060))
+        wing = tilt(wing, (side * 0.044, 0.004, hip - 0.002), "y", side * -24.0)
+        wing = tilt(wing, (side * 0.044, 0.004, hip - 0.002), "x", 7.0)
+        b.add(wing, faces, bone="Hips")
+
+        # Вертлужная впадина: утолщение там, где в таз входит бедро.
+        b.add(*sphere((side * p["leg_x"], 0.004, hip + 0.002), 0.026,
+                      scale=(0.9, 0.8, 0.9), segs=10, rings=6), bone="Hips")
+
+    b.add(*box((0, 0.046, hip + 0.026), (0.036, 0.028, 0.078)), bone="Hips")
 
     for i in range(3):
         b.add(*box((0, 0.040, p["waist"] - 0.005 + i * 0.036), (0.036, 0.032, 0.024)),
@@ -367,12 +409,18 @@ def build_skeleton(b, p):
     # числами. Прежние высоты (0,673…0,771) были подогнаны под старую
     # грудь, и стоило её поднять, как грудная клетка отстала от плеч:
     # обручи повисли отдельно, руки крепились к пустоте.
-    low = p["chest"] - 0.034
-    span = (p["shoulder"] - 0.024) - low
+    low = p["waist"] + 0.004
+    span = (p["shoulder"] - 0.022) - low
 
-    for major, t in ((0.064, 0.0), (0.074, 0.26), (0.082, 0.52),
-                     (0.084, 0.78), (0.078, 1.0)):
-        b.add(*ring((0, 0.006, low + t * span), major, 0.0105,
+    # Семь пар, а не пять обручей: у образца клетка узкая под ключицей,
+    # самая широкая на две трети вниз и снова подбирается к поясу,
+    # а сами рёбра наклонены вперёд-вниз. Одинаковые горизонтальные
+    # кольца — главная примета игрушечного скелета.
+    for major, t, ahead in ((0.050, 1.00, -0.004), (0.062, 0.85, -0.002),
+                            (0.072, 0.70, 0.000), (0.080, 0.54, 0.002),
+                            (0.084, 0.38, 0.004), (0.083, 0.22, 0.006),
+                            (0.074, 0.06, 0.008)):
+        b.add(*ring((0, 0.006 - ahead, low + t * span), major, 0.0100,
                     scale=(1.0, 0.80, 1.25)), bone="Chest")
 
     b.add(*box((0, -0.052, low + span * 0.5), (0.030, 0.016, span + 0.030)),
@@ -412,16 +460,18 @@ def build_skeleton(b, p):
 
         hand(b, tag + "Hand", side, wr, fg, sh, thick=0.018)
 
-        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * p["leg_x"], 0, knee),
+        kx = p.get("knee_x", p["leg_x"])
+
+        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * kx, 0, knee),
              0.026, 0.020, joint=0.030)
         for off in (-0.013, 0.013):
             limb(b, tag + "LowerLeg",
-                 (side * p["leg_x"] + off, 0, knee), (side * p["leg_x"] + off * 0.5, 0, ankle),
+                 (side * kx + off, 0, knee), (side * kx + off * 0.5, 0, ankle),
                  0.0135, 0.0105)
-        b.add(*sphere((side * p["leg_x"], 0, knee), 0.026, segs=10, rings=6),
+        b.add(*sphere((side * kx, 0, knee), 0.026, segs=10, rings=6),
               bone=tag + "LowerLeg")
 
-        foot(b, tag, side, p["leg_x"])
+        foot(b, tag, side, kx)
 
 
 
@@ -559,11 +609,13 @@ def build_zombie(b, p):
                  0.031, 0.024, joint=0.032)
             hand(b, tag + "Hand", side, wr, fg, sh, thick=0.030)
 
-        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * p["leg_x"], 0, knee),
+        kx = p.get("knee_x", p["leg_x"])
+
+        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * kx, 0, knee),
              0.052, 0.038, joint=0.054)
-        limb(b, tag + "LowerLeg", (side * p["leg_x"], 0, knee), (side * p["leg_x"], 0, ankle),
+        limb(b, tag + "LowerLeg", (side * kx, 0, knee), (side * kx, 0, ankle),
              0.038, 0.028, joint=0.040)
-        foot(b, tag, side, p["leg_x"], wide=1.15)
+        foot(b, tag, side, kx, wide=1.15)
 
 
 # ------------------------------------------------------------ призрак
@@ -795,14 +847,16 @@ def build_human(b, p):
         hand(b, tag + "Hand", side, wr, fg, sh, thick=0.030, mat=2)
 
         # Штанина от бедра до колена и до голенища.
-        limb(b, tag + "UpperLeg", (side * lx, 0, hip), (side * lx, 0, knee),
+        kx = p.get("knee_x", lx)
+
+        limb(b, tag + "UpperLeg", (side * lx, 0, hip), (side * kx, 0, knee),
              0.048, 0.038, joint=0.050)
-        limb(b, tag + "LowerLeg", (side * lx, 0, knee), (side * lx, 0, ankle + 0.070),
+        limb(b, tag + "LowerLeg", (side * kx, 0, knee), (side * kx, 0, ankle + 0.070),
              0.038, 0.032, joint=0.040)
         # Сапог: голенище и носок — тёмные.
-        b.add(*tube((side * lx, 0, ankle + 0.075), (side * lx, 0, ankle), 0.036, 0.034,
+        b.add(*tube((side * kx, 0, ankle + 0.075), (side * kx, 0, ankle), 0.036, 0.034,
                     segs=10), bone=tag + "LowerLeg", mat=2)
-        foot(b, tag, side, lx, mat=2, wide=1.1)
+        foot(b, tag, side, kx, mat=2, wide=1.1)
 
 # ------------------------------------------------------------- намотка
 
@@ -1175,7 +1229,7 @@ SHELLS = [
     ),
     Shell(
         name="Ghost",
-        parts=proportions(leg_x=0.060, shoulder_x=0.104,
+        parts=proportions(leg_x=0.060, knee_x=0.048, shoulder_x=0.104,
                           elbow=0.300, wrist=0.470, finger=0.548),
         materials=[("Spirit", (0.735, 0.800, 0.855, 1.0)),
                    ("Spirit Dim", (0.560, 0.640, 0.720, 1.0)), ("Hollow", HOLLOW), ("Eye", EYE)],
@@ -1190,7 +1244,7 @@ SHELLS = [
         name="Golem",
         parts=proportions(hip=0.482, knee=0.258, waist=0.580, chest=0.688,
                           shoulder=0.782, neck=0.830, skull=0.905, top=0.985,
-                          leg_x=0.115, shoulder_x=0.228,
+                          leg_x=0.115, knee_x=0.100, shoulder_x=0.228,
                           elbow=0.372, wrist=0.496, finger=0.568),
         materials=[("Stone", (0.455, 0.445, 0.425, 1.0)),
                    ("Stone Worn", (0.375, 0.365, 0.350, 1.0)), ("Crack", HOLLOW), ("Eye", EYE)],
