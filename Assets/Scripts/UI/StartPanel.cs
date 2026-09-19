@@ -37,13 +37,40 @@ namespace Sinbinder.UI
         /// <summary>Спросить заново. Для меню и проверок.</summary>
         public static void Forget() => _asked = false;
 
+        /// <summary>
+        /// Вопрос на экране и ответа ещё нет.
+        ///
+        /// Спрашивает заставка пролога: до 19 сентября она и этот вопрос
+        /// ставили паузу каждый сам по себе, а снимала её заставка —
+        /// через четыре секунды игра шла, а вопрос «продолжить или начать
+        /// заново» висел поверх неё до конца демо. На снимках прохождения
+        /// он стоял во всех восемнадцати кадрах.
+        /// </summary>
+        public static bool Waiting { get; private set; }
+
+        /// <summary>
+        /// Ответить «начать заново» — для прогона демо и дымовой проверки.
+        ///
+        /// Проверка обязана отвечать на тот же вопрос, что и человек:
+        /// пропускать его особым путём значит проверять не ту игру,
+        /// которую увидит игрок.
+        /// </summary>
+        public static void ChooseFresh()
+        {
+            if (!Waiting) return;
+
+            var panel = Object.FindFirstObjectByType<StartPanel>(FindObjectsInactive.Include);
+            if (panel != null) panel.Begin(false);
+        }
+
         void Start()
         {
             if (_asked) { Hide(); return; }
 
             _asked = true;
+            Waiting = true;
 
-            if (_panel != null) _panel.SetActive(true);
+            if (_panel != null) Modal.Open(_panel);
             GamePauseController.Instance?.Pause();
             Draw();
         }
@@ -53,7 +80,8 @@ namespace Sinbinder.UI
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
 
-            if (_panel != null) _panel.SetActive(false);
+            Waiting = false;
+            Modal.Close(_panel);
         }
 
         private void Begin(bool commitment)

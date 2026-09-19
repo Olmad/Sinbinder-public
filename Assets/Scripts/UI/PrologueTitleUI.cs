@@ -32,11 +32,26 @@ namespace Sinbinder.UI
         [Tooltip("Держать ли игру на паузе, пока строка на экране.")]
         [SerializeField] private bool _pauseWhileShown = true;
 
+        /// <summary>
+        /// Строка на экране. Спрашивает прогон демо: пока она висит,
+        /// игрок ничего сделать не может, и прогон не имеет права
+        /// делать что-то за него — иначе он проверяет не ту игру.
+        /// </summary>
+        public static bool Showing { get; private set; }
+
         void Start() => StartCoroutine(Show());
 
         private IEnumerator Show()
         {
             if (_panel == null || _group == null) yield break;
+
+            // Сперва отвечают на вопрос о сохранении, потом начинается
+            // игра. Иначе две паузы накладываются: вопрос ставит свою,
+            // строка снимает её за обоих — и дальше игра идёт под висящим
+            // вопросом, которого никто уже не может нажать.
+            while (StartPanel.Waiting) yield return null;
+
+            Showing = true;
 
             if (_line != null) _line.text = _text;
             _panel.SetActive(true);
@@ -58,6 +73,7 @@ namespace Sinbinder.UI
 
             _group.alpha = 0f;
             _panel.SetActive(false);
+            Showing = false;
 
             if (_pauseWhileShown) Core.GamePauseController.Instance?.Resume();
         }

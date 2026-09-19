@@ -2187,7 +2187,10 @@ namespace Sinbinder.Utilets
             var panel = Panel("Кто выделен", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 112f),
-                position: new Vector2(0f, 16f));
+                // Над сумой, а не на ней: у самого низа подпись выделенного
+                // ложилась поверх банок, и на снимке набега читались обе
+                // сразу — «Греховод. Приказывает, но не реша…пустая банка».
+                position: new Vector2(0f, 130f));
 
             var backdrop = panel.gameObject.AddComponent<Image>();
             backdrop.color = new Color(0.05f, 0.05f, 0.06f, 0.88f);
@@ -2279,7 +2282,10 @@ namespace Sinbinder.Utilets
         {
             var panel = Panel("Журнал", parent,
                 anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 0f),
-                pivot: new Vector2(0f, 0f), size: new Vector2(900f, 300f),
+                // Уже прежнего: девятьсот точек журнала доходили
+                // до середины экрана и лезли под подпись выделенного,
+                // а записей в нём редко больше пяти.
+                pivot: new Vector2(0f, 0f), size: new Vector2(620f, 220f),
                 position: new Vector2(40f, 40f));
 
             var backdrop = panel.gameObject.AddComponent<Image>();

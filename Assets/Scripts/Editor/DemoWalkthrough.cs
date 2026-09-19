@@ -191,8 +191,17 @@ namespace Sinbinder.EditorTools
             return new List<Step>
             {
                 // ── Лагерь ──
+                // Вопрос о сохранении — первое, что видит игрок, и первое,
+                // на что отвечает прогон. Нажимаем каждый кадр, пока он
+                // висит: сцена грузится не мгновенно, и одного нажатия
+                // в начале шага могло бы не хватить.
+                S("ответили на вопрос о сохранении", null,
+                  () => { Sinbinder.UI.StartPanel.ChooseFresh();
+                          return !Sinbinder.UI.StartPanel.Waiting; }, 30f),
+
                 S("лагерь загрузился, заставка ушла", null,
-                  () => Scene("Prologue_Camp") && SinbinderPlayer.Exists && !Paused(), 30f),
+                  () => Scene("Prologue_Camp") && SinbinderPlayer.Exists
+                     && !Sinbinder.UI.PrologueTitleUI.Showing && !Paused(), 30f),
 
                 // Проверяем то, что должно было случиться, а не то, что
                 // мы попросили: Done = () => true означал шаг, который

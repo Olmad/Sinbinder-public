@@ -139,6 +139,10 @@ namespace Sinbinder.EditorTools
         {
             float played = Seconds - left;
 
+            // Отвечаем на вопрос о сохранении так же, как игрок: пока
+            // на него не ответили, игра стоит на паузе и проверять нечего.
+            Sinbinder.UI.StartPanel.ChooseFresh();
+
             var box = Sinbinder.UI.Letterbox.Instance;
             var cam = Sinbinder.Dialogue.DialogueCameraController.Instance;
 
