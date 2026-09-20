@@ -57,6 +57,13 @@ namespace Sinbinder.EditorTools
 
         public static void Run()
         {
+
+            // Проверки идут молча. Прогон и дымовая проверка входят
+            // в Play и включают весь звук игры — рог отхода, голоса,
+            // бой, — а идут они по десять минут и в любое время суток.
+            // Автор 20 сентября попросил не шуметь: он в это время
+            // занят другим, и рог из-за спины пугает.
+            AudioListener.volume = 0f;
             File.WriteAllText(Report, "");
             SessionState.SetBool(Active, true);
             SessionState.SetInt(Index, 0);

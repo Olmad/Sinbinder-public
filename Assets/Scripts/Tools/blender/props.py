@@ -46,6 +46,14 @@ EMBER = ("Ember", (0.520, 0.240, 0.110, 1.0))
 BONE = ("Bone", (0.820, 0.795, 0.725, 1.0))
 BLOSSOM = ("Blossom", (0.640, 0.430, 0.470, 1.0))
 BARK = ("Bark", (0.175, 0.140, 0.120, 1.0))
+
+# Геральдика: багрец и старое золото. Единственные два цвета в игре,
+# которым позволено быть насыщенными, — и то лишь на знамени.
+# Описание стиля (00-GDD.md §9, «Knightcore») держится на встрече
+# тёмной земли с этими двумя, и до 20 сентября знамя отряда было
+# серым полотнищем, то есть этой встречи не было нигде.
+CRIMSON = ("Crimson", (0.310, 0.045, 0.070, 1.0))
+GOLD = ("Old Gold", (0.455, 0.355, 0.140, 1.0))
 STEEL = ("Steel", (0.520, 0.530, 0.545, 1.0))
 
 Prop = namedtuple("Prop", "name build materials")
@@ -222,11 +230,57 @@ def log_bench(b):
         b.add(*tube((x, 0, 0.0), (x, 0, 0.14), 0.09, 0.08, segs=8), bone="", mat=1)
 
 
+def sheet(x0, x1, z0, z1, wave=0.055, cols=9, rows=6, thick=0.018):
+    """
+    Полотнище с волной: плоская доска тканью не читается ни с какого
+    расстояния, а одна пологая волна вдоль полотна ловит свет по-разному
+    сверху и снизу — и этого хватает.
+
+    Оболочка замкнутая, в два слоя с кромкой: односторонняя ткань
+    исчезает, стоит обойти её с другой стороны.
+    """
+    verts, faces = [], []
+    per = (cols + 1) * 2
+
+    for r in range(rows + 1):
+        tz = r / rows
+        z = z0 + (z1 - z0) * tz
+
+        for layer, dy in ((0, 0.0), (1, thick)):
+            for c in range(cols + 1):
+                tx = c / cols
+                x = x0 + (x1 - x0) * tx
+                # Волна сильнее у свободного края и затухает у древка.
+                y = math.sin(tx * math.pi * 1.6) * wave * tx + dy
+                verts.append((x, y, z))
+
+    def at(r, layer, c):
+        return r * per + layer * (cols + 1) + c
+
+    for r in range(rows):
+        for c in range(cols):
+            faces.append([at(r, 0, c), at(r, 0, c + 1),
+                          at(r + 1, 0, c + 1), at(r + 1, 0, c)])
+            faces.append([at(r, 1, c + 1), at(r, 1, c),
+                          at(r + 1, 1, c), at(r + 1, 1, c + 1)])
+
+        faces.append([at(r, 0, 0), at(r + 1, 0, 0), at(r + 1, 1, 0), at(r, 1, 0)])
+        faces.append([at(r, 1, cols), at(r + 1, 1, cols),
+                      at(r + 1, 0, cols), at(r, 0, cols)])
+
+    for c in range(cols):
+        faces.append([at(0, 1, c), at(0, 1, c + 1), at(0, 0, c + 1), at(0, 0, c)])
+        faces.append([at(rows, 0, c), at(rows, 0, c + 1),
+                      at(rows, 1, c + 1), at(rows, 1, c)])
+
+    return verts, faces
+
+
 def banner(b):
-    """Знамя отряда: шест и полотнище."""
+    """Знамя отряда: шест, багровое полотнище и золотая полоса."""
     b.add(*tube((0, 0, 0), (0, 0, 2.6), 0.045, 0.035, segs=8), bone="", mat=1)
-    b.add(*box((0.32, 0.0, 1.85), (0.62, 0.04, 1.05)), bone="", mat=0)
-    b.add(*box((0.32, 0.0, 1.32), (0.62, 0.05, 0.10)), bone="", mat=2)
+    b.add(*sheet(0.02, 0.63, 1.33, 2.38), bone="", mat=0)
+    b.add(*sheet(0.02, 0.63, 1.27, 1.35, wave=0.050, rows=2), bone="", mat=2)
 
 
 def palisade(b):
@@ -347,7 +401,7 @@ PROPS = [
     Prop("Barrel", barrel, [WOOD, IRON, DARK]),
     Prop("Crate", crate, [WOOD, DARK, IRON]),
     Prop("LogBench", log_bench, [WOOD, BARK, DARK]),
-    Prop("Banner", banner, [CLOTH, WOOD, DARK]),
+    Prop("Banner", banner, [CRIMSON, WOOD, GOLD]),
     Prop("Palisade", palisade, [WOOD, DARK, IRON]),
     Prop("Torch", torch, [WOOD, IRON, EMBER]),
 

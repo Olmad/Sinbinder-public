@@ -20,6 +20,12 @@ namespace Sinbinder.Utilets
     /// ambientCG, плоские цвета персонажей и огонь костра проходят через
     /// одну кривую (14-HANDOFF §16.3, решение вдвоём).
     ///
+    /// <b>Сверено со спецификацией стиля</b> (<c>00-GDD.md</c> §9,
+    /// «Knightcore») 20 сентября: насыщенность −25, контраст +15,
+    /// виньетка 0,40, зерно 0,20 крупностью около 1,8, слабое свечение,
+    /// лёгкая хроматическая аберрация. До сверки профиль был вдвое
+    /// слабее заявленного, а аберрации не было ни одной.
+    ///
     /// Палитра из <c>23-PROMPTS.md</c> §2: приглушённое, холодное, без
     /// золота и блеска. Поэтому насыщенность вниз, температура в синеву,
     /// контраст чуть вверх — и виньетка, которая держит взгляд в центре
@@ -64,9 +70,9 @@ namespace Sinbinder.Utilets
             // ночь, холод, никакого золота (23-PROMPTS.md §2).
             var colour = Grab<ColorAdjustments>(profile);
             colour.saturation.overrideState = true;
-            colour.saturation.value = -14f;
+            colour.saturation.value = -25f;
             colour.contrast.overrideState = true;
-            colour.contrast.value = 10f;
+            colour.contrast.value = 15f;
             colour.postExposure.overrideState = true;
             colour.postExposure.value = -0.15f;
 
@@ -80,7 +86,7 @@ namespace Sinbinder.Utilets
             // читается как дырка в маске, а не как свет.
             var vignette = Grab<Vignette>(profile);
             vignette.intensity.overrideState = true;
-            vignette.intensity.value = 0.34f;
+            vignette.intensity.value = 0.40f;
             vignette.smoothness.overrideState = true;
             vignette.smoothness.value = 0.45f;
 
@@ -88,9 +94,9 @@ namespace Sinbinder.Utilets
             // кадра». Слабое: сильное съедает и без того тёмные детали.
             var grain = Grab<FilmGrain>(profile);
             grain.type.overrideState = true;
-            grain.type.value = FilmGrainLookup.Medium1;
+            grain.type.value = FilmGrainLookup.Medium4;      // крупность около 1.8
             grain.intensity.overrideState = true;
-            grain.intensity.value = 0.22f;
+            grain.intensity.value = 0.20f;
             grain.response.overrideState = true;
             grain.response.value = 0.75f;
 
@@ -103,6 +109,15 @@ namespace Sinbinder.Utilets
             bloom.intensity.value = 0.55f;
             bloom.scatter.overrideState = true;
             bloom.scatter.value = 0.68f;
+
+            // Хроматическая аберрация — последняя строка описания стиля
+            // в 00-GDD.md §9, и единственная, которой в профиле не было
+            // вовсе. Она и отличает «тёмную картинку» от кадра, снятого
+            // стеклом: по краям кадра цвет чуть расходится, в середине
+            // нет. Слабая нарочно — сильная читается поломкой монитора.
+            var glass = Grab<ChromaticAberration>(profile);
+            glass.intensity.overrideState = true;
+            glass.intensity.value = 0.13f;
 
             var tone = Grab<Tonemapping>(profile);
             tone.mode.overrideState = true;
