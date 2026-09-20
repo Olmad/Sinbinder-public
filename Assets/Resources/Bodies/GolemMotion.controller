@@ -1,13 +1,13 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1102 &-8682942273091840574
+--- !u!1102 &-8688885602192042241
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Flee
+  m_Name: Talk
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -20,65 +20,13 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -6096449715388636993, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
+  m_Motion: {fileID: -4874468203423198191, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &-3614649179879158779
-AnimatorState:
-  serializedVersion: 6
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Die
-  m_Speed: 1
-  m_CycleOffset: 0
-  m_Transitions: []
-  m_StateMachineBehaviours: []
-  m_Position: {x: 50, y: 50, z: 0}
-  m_IKOnFeet: 0
-  m_WriteDefaultValues: 1
-  m_Mirror: 0
-  m_SpeedParameterActive: 0
-  m_MirrorParameterActive: 0
-  m_CycleOffsetParameterActive: 0
-  m_TimeParameterActive: 0
-  m_Motion: {fileID: -275988011728487597, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
-  m_Tag: 
-  m_SpeedParameter: 
-  m_MirrorParameter: 
-  m_CycleOffsetParameter: 
-  m_TimeParameter: 
---- !u!1102 &-1982229126083726948
-AnimatorState:
-  serializedVersion: 6
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Walk
-  m_Speed: 1
-  m_CycleOffset: 0
-  m_Transitions: []
-  m_StateMachineBehaviours: []
-  m_Position: {x: 50, y: 50, z: 0}
-  m_IKOnFeet: 0
-  m_WriteDefaultValues: 1
-  m_Mirror: 0
-  m_SpeedParameterActive: 0
-  m_MirrorParameterActive: 0
-  m_CycleOffsetParameterActive: 0
-  m_TimeParameterActive: 0
-  m_Motion: {fileID: 7853026346531396081, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
-  m_Tag: 
-  m_SpeedParameter: 
-  m_MirrorParameter: 
-  m_CycleOffsetParameter: 
-  m_TimeParameter: 
---- !u!1102 &-1515133756928195326
+--- !u!1102 &-8480238600772895427
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
@@ -104,7 +52,33 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1102 &-682262620584437956
+--- !u!1102 &-7189259447971654428
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Die
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: -275988011728487597, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
+--- !u!1102 &-6005283392781036753
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
@@ -152,14 +126,14 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
---- !u!1102 &1349721812154286135
+--- !u!1102 &5191677365213373590
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Talk
+  m_Name: Walk
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -172,7 +146,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -4874468203423198191, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
+  m_Motion: {fileID: 7853026346531396081, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -188,22 +162,22 @@ AnimatorStateMachine:
   m_Name: Base Layer
   m_ChildStates:
   - serializedVersion: 1
-    m_State: {fileID: -1515133756928195326}
+    m_State: {fileID: -8480238600772895427}
     m_Position: {x: 200, y: 0, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -1982229126083726948}
+    m_State: {fileID: 5191677365213373590}
     m_Position: {x: 235, y: 65, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -682262620584437956}
+    m_State: {fileID: -6005283392781036753}
     m_Position: {x: 270, y: 130, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -8682942273091840574}
+    m_State: {fileID: 7192378154266673531}
     m_Position: {x: 305, y: 195, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: -3614649179879158779}
+    m_State: {fileID: -7189259447971654428}
     m_Position: {x: 340, y: 260, z: 0}
   - serializedVersion: 1
-    m_State: {fileID: 1349721812154286135}
+    m_State: {fileID: -8688885602192042241}
     m_Position: {x: 375, y: 325, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
@@ -214,4 +188,30 @@ AnimatorStateMachine:
   m_EntryPosition: {x: 50, y: 120, z: 0}
   m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
-  m_DefaultState: {fileID: -1515133756928195326}
+  m_DefaultState: {fileID: -8480238600772895427}
+--- !u!1102 &7192378154266673531
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Flee
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: -6096449715388636993, guid: 8392bfd0882950e4b842b268658d9cf4, type: 3}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 

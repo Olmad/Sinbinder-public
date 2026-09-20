@@ -54,7 +54,7 @@ ELSEWHERE = [
     r"D:\_inspect_skeleton\source\Skeleton02(SKETCHFAB).glb",
     r"D:\_inspect_manthing\source\ManThing.fbx",
     r"D:\_inspect_chibi\source\chibi body.obj",
-    r"D:d_scan_man_1.glb",
+    r"D:/3d_scan_man_1.glb",
     r"D:\military_soldier.glb",
     r"D:\private_military_contractor.glb",
 ]
