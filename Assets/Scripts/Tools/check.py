@@ -46,6 +46,8 @@ UNITY_TYPES = {
     'AnimationClip', 'RenderSettings', 'QualitySettings', 'TextureImporter',
     'AssetImporter', 'ModelImporter', 'EditorApplication',
     'RenderTexture', 'RenderTextureFormat', 'Texture', 'Graphics', 'TextureFormat',
+    'BuildPipeline', 'BuildPlayerOptions', 'BuildTarget', 'BuildOptions',
+    'BuildReport', 'BuildSummary', 'BuildResult', 'EditorBuildSettings',
 }
 
 DOTNET_TYPES = {
