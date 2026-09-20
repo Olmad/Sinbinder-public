@@ -105,6 +105,7 @@ namespace Sinbinder.UI
             if (_shown) return;
             _shown = true;
 
+            Others(false);
             Run(_height);
         }
 
@@ -114,9 +115,67 @@ namespace Sinbinder.UI
             if (!_shown) return;
             _shown = false;
 
+            Others(true);
             Clear();
             Run(0f);
         }
+
+        private struct Dimmed
+        {
+            public CanvasGroup Group;
+            public float Alpha;
+        }
+
+        private readonly System.Collections.Generic.List<Dimmed> _dimmed = new();
+
+        /// <summary>
+        /// Пока полосы подняты, остального интерфейса не видно.
+        ///
+        /// Полосы закрывают экран сверху и снизу, и панели, стоящие там
+        /// же, не исчезают, а <b>обрезаются</b>: на снимке набега журнал
+        /// и подпись выделенного торчали из-под нижней полосы наполовину.
+        /// Кинематографический миг тем и отличается от игры, что в нём
+        /// нет интерфейса.
+        ///
+        /// Гасим прозрачностью, а не выключением: панели ищут по типу,
+        /// а выключенный объект не находится.
+        /// </summary>
+        private void Others(bool show)
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) return;
+
+            if (show)
+            {
+                // Возвращаем каждому его прежнюю прозрачность, а не
+                // единицу всем подряд: пустой журнал прятался сам
+                // и так же вернулся бы на экран пустой рамкой.
+                foreach (var was in _dimmed)
+                    if (was.Group != null) was.Group.alpha = was.Alpha;
+
+                _dimmed.Clear();
+                return;
+            }
+
+            foreach (Transform child in canvas.transform)
+            {
+                var go = child.gameObject;
+                if (go == gameObject || !go.activeInHierarchy) continue;
+
+                // Гасим только то, что нельзя нажать. Панель с кнопками —
+                // это вопрос игроку (совет, плата, конец демо), и спрятать
+                // её значило бы спрятать вопрос, на который он обязан
+                // ответить. А спрашивают как раз под полосами.
+                if (go.GetComponentInChildren<Button>(true) != null) continue;
+
+                var group = go.GetComponent<CanvasGroup>();
+                if (group == null) group = go.AddComponent<CanvasGroup>();
+
+                _dimmed.Add(new Dimmed { Group = group, Alpha = group.alpha });
+                group.alpha = 0f;
+            }
+        }
+
 
         /// <summary>
         /// Что написано на нижней полосе. Говорящий может быть пуст —

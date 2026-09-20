@@ -18,6 +18,7 @@ namespace Sinbinder.UI
     /// </summary>
     public class SatchelUI : MonoBehaviour
     {
+        [SerializeField] private GameObject _panel;
         [SerializeField] private Text[] _cells;
         [SerializeField] private Image[] _frames;
 
@@ -69,8 +70,29 @@ namespace Sinbinder.UI
             Refresh();
         }
 
+        /// <summary>
+        /// Пока сума пуста, её не видно. Шесть ячеек «пусто» на экране
+        /// с первой секунды — не сума, а рамка, которую игрок читает
+        /// поломкой: ему нечего туда класть до первой собранной души.
+        ///
+        /// Гасим прозрачностью, а не выключением: панель ищут по типу,
+        /// а выключенный объект не находится (этим уже ломались тут
+        /// подсказка, плата и конец демо).
+        /// </summary>
+        private void Fade(bool show)
+        {
+            if (_panel == null) return;
+
+            var group = _panel.GetComponent<CanvasGroup>();
+            if (group == null) group = _panel.AddComponent<CanvasGroup>();
+
+            group.alpha = show ? 1f : 0f;
+        }
+
         private void Refresh()
         {
+            Fade(Satchel.Anything());
+
             int chosen = Satchel.Selected;
 
             for (int i = 0; i < _cells.Length; i++)

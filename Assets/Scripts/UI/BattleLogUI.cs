@@ -40,6 +40,31 @@ namespace Sinbinder.UI
         /// <summary>Всё, что случилось за бой. Для рассказа после боя.</summary>
         public IReadOnlyList<string> History => _history;
 
+        /// <summary>
+        /// Показать журнал. Гасим прозрачностью, а не выключением:
+        /// этот же объект ищут по типу, а выключенный не находится.
+        /// </summary>
+        private void Show()
+        {
+            // Пока полосы подняты, журнал молчит на экране. Во время
+            // набега души собираются как раз под полосами, и каждая
+            // запись вытаскивала журнал обратно поверх кино.
+            if (Letterbox.Instance != null && Letterbox.Instance.Shown) return;
+
+            var group = GetComponent<CanvasGroup>();
+            if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+
+            group.alpha = 1f;
+        }
+
+        void Awake()
+        {
+            var group = GetComponent<CanvasGroup>();
+            if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+
+            group.alpha = 0f;
+        }
+
         public void Write(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
@@ -58,6 +83,11 @@ namespace Sinbinder.UI
             if (_shown.Count > _keep) _shown.RemoveRange(0, _shown.Count - _keep);
 
             _line.text = string.Join(System.Environment.NewLine, _shown);
+
+            // Пустой журнал не показываем: рамка в четверть экрана
+            // с одной строкой внутри читалась поломкой. Появляется
+            // с первой записью и больше не прячется.
+            Show();
 
             Bottom();
         }

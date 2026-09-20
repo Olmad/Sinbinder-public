@@ -2101,6 +2101,7 @@ namespace Sinbinder.Utilets
             }
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.SatchelUI>();
+            Wire(ui, ("_panel", panel.gameObject));
             WireArray(ui, "_cells", texts);
             WireArray(ui, "_frames", frames);
         }

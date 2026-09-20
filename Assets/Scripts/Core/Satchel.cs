@@ -115,6 +115,19 @@ namespace Sinbinder.Core
         }
 
         /// <summary>Налить душу в пустую банку. Ложь — банка не та или занята.</summary>
+        /// <summary>
+        /// Есть ли в суме хоть что-нибудь. Спрашивает интерфейс: шесть
+        /// ячеек «пусто» на экране, пока брать нечего, — это не сума,
+        /// это рамка, которую игрок читает поломкой.
+        /// </summary>
+        public static bool Anything()
+        {
+            for (int i = 0; i < _slots.Length; i++)
+                if (!_slots[i].Empty) return true;
+
+            return false;
+        }
+
         public static bool Fill(int index, SoulData soul, SoulQuality quality)
         {
             Ensure();
