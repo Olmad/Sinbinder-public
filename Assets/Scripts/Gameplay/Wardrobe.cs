@@ -296,14 +296,29 @@ namespace Sinbinder.Gameplay
         /// обещания одинаковости между запусками, и воин менял бы облик
         /// от загрузки к загрузке — ровно то, против чего вся система.
         /// </summary>
-        private static bool Marked(string name)
+        private static bool Marked(string name) => (Stamp(name) % 3) == 0;
+
+        /// <summary>
+        /// Свёртка имени: одно и то же имя даёт одно и то же число
+        /// в любом запуске.
+        ///
+        /// Своя, а не <c>string.GetHashCode</c>: у того нет обещания
+        /// одинаковости между запусками, и воин менял бы облик
+        /// от загрузки к загрузке — ровно то, против чего вся система
+        /// (CLAUDE.md, «ничего случайного»).
+        ///
+        /// Публичная потому, что по ней разводят не только скол черепа:
+        /// лагерь берёт отсюда же рост и сложение своих девятерых.
+        /// Две свёртки в проекте разошлись бы, и разошлись бы молча.
+        /// </summary>
+        public static int Stamp(string name)
         {
-            if (string.IsNullOrEmpty(name)) return false;
+            if (string.IsNullOrEmpty(name)) return 0;
 
             int sum = 0;
             foreach (char c in name) sum = (sum * 31 + c) & 0xFFFF;
 
-            return (sum % 3) == 0;
+            return sum;
         }
     }
 }

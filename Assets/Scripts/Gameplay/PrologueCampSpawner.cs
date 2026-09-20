@@ -442,8 +442,15 @@ namespace Sinbinder.Gameplay
             // и на модели — там она станет разницей в силуэте.
             bool seasoned = member.IsCommander || member.IsCandidate;
 
-            WarriorLook.Build(go, ShellType.Skeleton,
-                              seasoned ? 1.5f : 1.2f, 0.5f, 0.75f);
+            // Девять фигур у костра — девять людей, а не два размера.
+            // Рост и сложение разводятся по имени: одинаковое имя даёт
+            // одинаковое тело в любом запуске, случайности здесь нет.
+            // Разброс небольшой нарочно: заметный в ряду, но не шарж.
+            int stamp = Wardrobe.Stamp(member.Name);
+            float tall = (seasoned ? 1.50f : 1.20f) * (0.95f + (stamp % 6) * 0.02f);
+            float thick = 0.50f * (0.90f + ((stamp / 6) % 6) * 0.04f);
+
+            WarriorLook.Build(go, ShellType.Skeleton, tall, thick, tall * 0.5f);
 
             // Братьев видно без наведения: у обоих над головой одна
             // и та же бирюзовая метка. Подпись при взгляде — вторая
