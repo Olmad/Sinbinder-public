@@ -39,6 +39,12 @@ namespace Sinbinder.Gameplay
 
             if (w.Carried.Count >= Hands) { word = "руки заняты"; return false; }
 
+            // Проверять здесь, а не в Hand: Warrior.Give отказывает второй
+            // вещи с тем же именем, а Hand уже вынул её из запасов — и она
+            // пропадала из игры совсем.
+            foreach (var carried in w.Carried)
+                if (carried.Name == item.Name) { word = "такая у него уже есть"; return false; }
+
             if (soul.Sin == SinType.Sloth && soul.Get(SinType.Sloth) > 40f)
             {
                 word = "не хочет нести лишнего";
@@ -122,7 +128,7 @@ namespace Sinbinder.Gameplay
             if (!WillTake(w, item, out word)) return false;
             if (!store.RemoveItem(item.Id)) { word = "этого в запасах уже нет"; return false; }
 
-            w.Give(item);
+            if (!w.Give(item)) { store.AddItem(item); word = "не взял"; return false; }
             Remember(w, "SinbinderGaveMe");
             return true;
         }
