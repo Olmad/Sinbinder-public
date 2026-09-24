@@ -114,6 +114,7 @@ namespace Sinbinder.Dev
             ["аос"] = c => c.Shoot(),
             ["съемка"] = c => c.Shoot(),
             ["голос"] = c => c.ToggleVoice(),
+            ["удар"] = c => c.ToggleCombat(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -156,10 +157,23 @@ namespace Sinbinder.Dev
                 : "Голос Греховода выключен: любой приказ слышен в полную силу.");
         }
 
+        /// <summary>
+        /// Выключатель удара и защиты (<see cref="Gameplay.CombatMath"/>):
+        /// до прогона бой прежний, включают его третьим проходом.
+        /// </summary>
+        private void ToggleCombat()
+        {
+            Gameplay.CombatMath.Enabled = !Gameplay.CombatMath.Enabled;
+            Write(Gameplay.CombatMath.Enabled
+                ? "Удар и защита включены: от оболочки и от вещей в руках."
+                : "Удар и защита выключены: у всех удар 5, защиты нет.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
             Write("голос — включить или выключить голос Греховода.");
+            Write("удар — включить или выключить удар и защиту от оболочки и вещей.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

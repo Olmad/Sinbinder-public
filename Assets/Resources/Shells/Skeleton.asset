@@ -16,6 +16,7 @@ MonoBehaviour:
   type: 0
   baseHP: 36
   baseDefense: 1
+  baseAttack: 5
   movementSpeed: 3.6
   canBeRevived: 1
   wear: 0.35

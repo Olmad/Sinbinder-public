@@ -27,6 +27,11 @@ namespace Sinbinder.Core
         [Header("Тело")]
         public float baseHP = 20f;
         public float baseDefense = 1f;
+
+        [Tooltip("Удар тела в бою. Вместе с защитой — от оболочки, плюс от вещей "
+               + "в руках (решение автора, 24 сентября). Читается, только пока "
+               + "включён CombatMath.")]
+        public float baseAttack = 5f;
         public float movementSpeed = 3.5f;
         public bool canBeRevived;
 

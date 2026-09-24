@@ -90,8 +90,23 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public float HP => Body is Damageable b ? b.HP : _hp;
         public float MaxHP => Body is Damageable b ? b.MaxHP : _maxHP;
-        public float Attack { get => _attack; set => _attack = value; }
-        public float Defense { get => _defense; set => _defense = value; }
+        /// <summary>
+        /// Удар в бою: от оболочки плюс от вещей в руках (решение автора,
+        /// 24 сентября). Запись меняет основу — ту, что от оболочки; вещи
+        /// прибавляются сверху, пока их несут.
+        /// </summary>
+        public float Attack
+        {
+            get { float sum = _attack; foreach (var i in _carried) if (i != null) sum += i.AttackBonus; return sum; }
+            set => _attack = value;
+        }
+
+        /// <summary>Защита в бою: от оболочки плюс от вещей в руках. См. <see cref="CombatMath"/>.</summary>
+        public float Defense
+        {
+            get { float sum = _defense; foreach (var i in _carried) if (i != null) sum += i.DefenseBonus; return sum; }
+            set => _defense = value;
+        }
         public Core.RelationshipSystem Relationships => _relationships;
         public float Loyalty => _loyalty;
         public int UnpaidMissions { get => _unpaidMissions; set => _unpaidMissions = value; }
@@ -207,7 +222,11 @@ namespace Sinbinder.Gameplay
             // в полосе, которую бой не читал.
             _maxHP = shell.EffectiveHP;
             _hp = _maxHP;
-            _defense = shell.baseDefense + _soul.Level;
+
+            // Удар и защита — тоже только оболочка (решение автора,
+            // 24 сентября); вещи в руках прибавляются в Attack и Defense.
+            _attack = shell.baseAttack;
+            _defense = shell.baseDefense;
 
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (agent != null && shell.movementSpeed > 0f)
@@ -226,8 +245,11 @@ namespace Sinbinder.Gameplay
 
             _maxHP = 20f + soul.Level * 10f;
             _hp = _maxHP;
-            _attack = 3f + soul.Level * 2f;
-            _defense = 1f + soul.Level;
+
+            // Без оболочки — как было в бою у всех: удар 5, защиты нет.
+            // Оболочка перепишет оба числа (ApplyShellBody).
+            _attack = 5f;
+            _defense = 0f;
 
             // Применяем пассивные перки, влияющие на скорость передвижения
             if (_soul.HasMemory && _soul.Memory.NarrativePerks != null)
@@ -277,12 +299,20 @@ namespace Sinbinder.Gameplay
         public void TakeDamage(float damage)
         {
             if (IsDead) return;
-            float actual = Mathf.Max(1f, damage - _defense);
 
             // Есть тело — бьём по телу: смерть обязана пройти тем же путём,
             // что и в бою (CombatManager, труп, душа), а не остаться строкой
-            // в поле, которого никто не видит.
-            if (Body is Damageable b) { b.TakeDamage(actual, null); return; }
+            // в поле, которого никто не видит. Защиту тогда гасит тело —
+            // одно место на весь бой; иначе удар гасился бы дважды.
+            if (Body is Damageable b)
+            {
+                b.TakeDamage(CombatMath.Enabled ? damage : Mathf.Max(1f, damage - _defense), null);
+                return;
+            }
+
+            float actual = CombatMath.Enabled
+                ? CombatMath.Absorb(damage, Defense)
+                : Mathf.Max(1f, damage - _defense);
 
             _hp -= actual;
             if (_hp <= 0f) { _hp = 0f; _isDead = true; Debug.Log($"[SINBINDER] {DisplayName} пал в бою!"); }

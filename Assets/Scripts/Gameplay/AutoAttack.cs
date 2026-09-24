@@ -15,11 +15,32 @@ namespace Sinbinder.Gameplay
         private float _cooldownTimer;
         private bool _isPlayerControlled;
 
-        public float AttackDamage => _attackDamage;
+        /// <summary>
+        /// Сила удара. С 24 сентября — удар воина (оболочка плюс вещи
+        /// в руках, <see cref="Warrior.Attack"/>), пока включён
+        /// <see cref="CombatMath"/>; выключен — прежнее число компонента.
+        /// </summary>
+        public float AttackDamage
+        {
+            get
+            {
+                if (!CombatMath.Enabled) return _attackDamage;
+
+                // Лениво: удар могли повесить раньше, чем душу.
+                if (_warrior == null) _warrior = GetComponent<Warrior>();
+                return _warrior != null ? _warrior.Attack : _attackDamage;
+            }
+        }
+
+        private Warrior _warrior;
         public float AttackRange => _attackRange;
         public Damageable CurrentTarget => _currentTarget;
 
-        void Awake() { _self = GetComponent<Damageable>(); }
+        void Awake()
+        {
+            _self = GetComponent<Damageable>();
+            _warrior = GetComponent<Warrior>();
+        }
 
         void Update()
         {
@@ -47,7 +68,7 @@ namespace Sinbinder.Gameplay
             _cooldownTimer = _attackCooldown;
 
             // Удар стоит сил, а выдохшийся бьёт вполсилы.
-            float damage = _attackDamage;
+            float damage = AttackDamage;
             var fatigue = GetComponent<Fatigue>();
             if (fatigue != null)
             {

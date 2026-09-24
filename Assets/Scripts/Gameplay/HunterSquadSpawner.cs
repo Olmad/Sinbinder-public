@@ -99,7 +99,11 @@ namespace Sinbinder.Gameplay
             public readonly float Girth;
             public readonly float Speed;
 
-            /// <summary>Прибавка к уровню: жизнь, удар и защита разом.</summary>
+            /// <summary>
+            /// Прибавка к уровню души. Жизнь, удар и защиту с 24 сентября даёт
+            /// оболочка и надетое (CombatMath), а не уровень: здесь от неё
+            /// осталась лишь плата и цена тела.
+            /// </summary>
             public readonly int Toughness;
 
             /// <summary>Ищет Греховода магией, если идёт во второй волне.</summary>
@@ -316,6 +320,15 @@ namespace Sinbinder.Gameplay
             // и оболочка тянула их души в Чревоугодие, а движок считал
             // людей нежитью.
             warrior.Initialize(soul, ShellType.Living, _relSystem, index == 0, Team.Enemy);
+
+            // Инквизитор крепче прочих не уровнем — уровней в игре нет, —
+            // а тем, что на нём надето. Защита вещи идёт в бой через
+            // Warrior.Defense (CombatMath), пока удар и защита включены.
+            if (kind.Scries)
+                warrior.Give(new Inventory.InventoryItem(
+                    "Освящённый нагрудник",
+                    "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили.",
+                    Inventory.ItemType.Equipment, defense: 2f));
 
             // Та же оснастка, что и у своих: без агента охотники стояли
             // бы в двенадцати метрах при дальности удара в два, и бой

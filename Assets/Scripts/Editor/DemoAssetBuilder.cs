@@ -239,22 +239,22 @@ namespace Sinbinder.Utilets
 
             // Кость помнит только усталость. Плоти нет — нечем и желать.
             Shell(ShellType.Skeleton, "Скелет",
-                hp: 36f, defense: 1f, speed: 3.6f, revivable: true, wear: 0.35f, bind: 0.30f,
+                hp: 36f, defense: 1f, attack: 5f, speed: 3.6f, revivable: true, wear: 0.35f, bind: 0.30f,
                 (SinType.Sloth, 20f), (SinType.Lust, -25f));
 
             // Гниющее тело помнит голод и не помнит, кем гордилось.
             Shell(ShellType.Zombie, "Зомби",
-                hp: 60f, defense: 2f, speed: 2.4f, revivable: true, wear: 0.55f, bind: 0.40f,
+                hp: 60f, defense: 2f, attack: 6f, speed: 2.4f, revivable: true, wear: 0.55f, bind: 0.40f,
                 (SinType.Gluttony, 25f), (SinType.Pride, -20f));
 
             // Бесплотный не может взять — только смотреть, как берут другие.
             Shell(ShellType.Ghost, "Призрак",
-                hp: 24f, defense: 0f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
+                hp: 24f, defense: 0f, attack: 4f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
                 (SinType.Envy, 25f), (SinType.Greed, -30f));
 
             // Камень не завидует. Камень знает, что он камень.
             Shell(ShellType.Golem, "Голем",
-                hp: 84f, defense: 4f, speed: 2.0f, revivable: true, wear: 0.10f, bind: 0.50f,
+                hp: 84f, defense: 4f, attack: 7f, speed: 2.0f, revivable: true, wear: 0.10f, bind: 0.50f,
                 (SinType.Pride, 25f), (SinType.Envy, -25f));
 
             // Живое тело ничего не навязывает: душа в нём своя и родная,
@@ -262,11 +262,11 @@ namespace Sinbinder.Utilets
             // живой крепче старых костей. Первый бой набега лёгок не потому,
             // что люди слабы, а потому, что первая волна приходит побитой.
             Shell(ShellType.Living, "Человек",
-                hp: 40f, defense: 1f, speed: 3.5f, revivable: false, wear: 0f, bind: 0f);
+                hp: 40f, defense: 1f, attack: 5f, speed: 3.5f, revivable: false, wear: 0f, bind: 0f);
         }
 
         private static void Shell(ShellType type, string displayName,
-            float hp, float defense, float speed, bool revivable, float wear, float bind,
+            float hp, float defense, float attack, float speed, bool revivable, float wear, float bind,
             params (SinType Sin, float Value)[] bias)
         {
             string path = $"{ShellsDir}/{type}.asset";
@@ -277,6 +277,7 @@ namespace Sinbinder.Utilets
             shell.type = type;
             shell.baseHP = hp;
             shell.baseDefense = defense;
+            shell.baseAttack = attack;
             shell.movementSpeed = speed;
             shell.canBeRevived = revivable;
             shell.wear = wear;

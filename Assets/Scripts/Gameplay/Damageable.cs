@@ -62,6 +62,16 @@ namespace Sinbinder.Gameplay
                 striker.MarkStruck();
 
             damage = ApplyPosition(damage, attacker);
+
+            // Защита тела: от оболочки и от вещей в руках (CombatMath).
+            // Воина ищем и здесь: самопроверка идёт без Awake, а в игре
+            // тело бывает собрано раньше души.
+            if (CombatMath.Enabled)
+            {
+                if (_warrior == null) _warrior = GetComponent<Warrior>();
+                if (_warrior != null) damage = CombatMath.Absorb(damage, _warrior.Defense);
+            }
+
             _hp -= damage;
 
             if (_hp <= 0f)

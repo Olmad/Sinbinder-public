@@ -78,6 +78,7 @@ namespace Sinbinder.Tests
                 Spoils();
                 Saving();
                 Bodies();
+                Blows();
                 Titles();
                 Pursuit();
                 Sides();
@@ -118,6 +119,55 @@ namespace Sinbinder.Tests
         /// которую бой не трогал: убитый оставался жив для души, раненый —
         /// цел, лечение уходило в пустоту.
         /// </summary>
+        /// <summary>
+        /// Удар и защита (§60.4, решение автора 24 сентября): от оболочки
+        /// плюс от вещей в руках; защита гасит долю, а не вычитает.
+        /// Выключено — бой прежний.
+        /// </summary>
+        private static void Blows()
+        {
+            bool was = CombatMath.Enabled;
+
+            try
+            {
+                Near(CombatMath.Absorb(5f, 0f), 5f, "без защиты удар доходит целиком");
+                Near(CombatMath.Absorb(8f, CombatMath.Scale), 4f, "защита, равная мере, гасит половину");
+                Check(CombatMath.Absorb(5f, 4f) < CombatMath.Absorb(5f, 1f)
+                      && CombatMath.Absorb(5f, 1000f) > 0f,
+                      "крепче — меньше доходит, но удар не гаснет целиком");
+
+                var bone = NewObject("Удар").AddComponent<Warrior>();
+                bone.Initialize(new SoulData("Удар", SinType.Wrath, MoralType.Neutral, 5, 50f),
+                    ShellType.Skeleton, new RelationshipSystem(null));
+                var young = NewObject("Молодой").AddComponent<Warrior>();
+                young.Initialize(new SoulData("Молодой", SinType.Wrath, MoralType.Neutral, 1, 50f),
+                    ShellType.Skeleton, new RelationshipSystem(null));
+                Near(bone.Attack, young.Attack, "уровень удара не прибавляет — уровней нет");
+                Near(bone.Defense, young.Defense, "уровень защиты не прибавляет");
+
+                float attack = bone.Attack, defense = bone.Defense;
+                foreach (var item in Inventory.TrophyCatalog.Chest()) bone.Give(item);
+                Check(bone.Attack > attack, "топор из сундука прибавляет удара тому, кто его несёт");
+                Check(bone.Defense > defense, "кольчужный ворот прибавляет защиты");
+
+                var body = bone.gameObject.AddComponent<Damageable>();
+                CombatMath.Enabled = true;
+                float before = body.HP;
+                body.TakeDamage(10f, null);
+                Near(before - body.HP, CombatMath.Absorb(10f, bone.Defense),
+                     "тело гасит удар своей защитой — один раз, а не дважды");
+
+                CombatMath.Enabled = false;
+                before = body.HP;
+                body.TakeDamage(10f, null);
+                Near(before - body.HP, 10f, "выключено — удар доходит как прежде");
+            }
+            finally
+            {
+                CombatMath.Enabled = was;
+            }
+        }
+
         private static void Bodies()
         {
             var w = MakeWarrior("Тело", SinType.Wrath, 50f);

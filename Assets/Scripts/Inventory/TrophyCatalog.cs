@@ -23,12 +23,12 @@ namespace Sinbinder.Inventory
             yield return new InventoryItem(
                 "Кольчужный ворот",
                 "Чужой, ушитый по чужой шее. Но шея у всех одна.",
-                ItemType.Equipment);
+                ItemType.Equipment, defense: 2f);
 
             yield return new InventoryItem(
                 "Топор с новым топорищем",
                 "Лезвие старше топорища втрое. Кто-то очень не хотел его бросать.",
-                ItemType.Equipment);
+                ItemType.Equipment, attack: 2f);
 
             yield return new InventoryItem(
                 "Связка вяленого мяса",
