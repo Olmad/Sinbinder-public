@@ -114,12 +114,12 @@ namespace Sinbinder.UI
             var manager = SelectionManager.Instance;
             if (manager != null)
             {
-                var picked = manager.GetSelectedUnits();
-                for (int i = 0; i < picked.Count; i++)
+                var selected = manager.GetSelectedUnits();
+                for (int i = 0; i < selected.Count; i++)
                 {
-                    if (picked[i] == null) continue;
+                    if (selected[i] == null) continue;
 
-                    var warrior = picked[i].GetComponentInParent<Warrior>();
+                    var warrior = selected[i].GetComponentInParent<Warrior>();
                     if (warrior != null) return warrior;
                 }
             }
