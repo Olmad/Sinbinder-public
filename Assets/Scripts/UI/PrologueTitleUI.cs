@@ -39,9 +39,20 @@ namespace Sinbinder.UI
         /// </summary>
         public static bool Showing { get; private set; }
 
-        void Start() => StartCoroutine(Show());
+        void Start() => StartCoroutine(Show(_text));
 
-        private IEnumerator Show()
+        /// <summary>
+        /// Показать строку ещё раз — другую. Набег стал событием лагеря
+        /// (<see cref="Gameplay.RaidEvent"/>), и его строка «Лагерь знали
+        /// не только свои» идёт на том же полотне, что и первая.
+        /// </summary>
+        public void Again(string text)
+        {
+            if (Showing) return;
+            StartCoroutine(Show(text));
+        }
+
+        private IEnumerator Show(string text)
         {
             if (_panel == null || _group == null) yield break;
 
@@ -53,7 +64,7 @@ namespace Sinbinder.UI
 
             Showing = true;
 
-            if (_line != null) _line.text = _text;
+            if (_line != null) _line.text = text;
             _panel.SetActive(true);
             _group.alpha = 1f;
 

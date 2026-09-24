@@ -92,6 +92,18 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Настроить край, поставленный по ходу сцены (<see cref="RaidEvent"/>).
+        /// Звать сразу после AddComponent: Awake уже прошёл, а он открыл край
+        /// по умолчанию — здесь это решение отменяется.
+        /// </summary>
+        public void Configure(float radius, bool openAtStart)
+        {
+            _radius = radius;
+            _openAtStart = openAtStart;
+            Open = openAtStart;
+        }
+
+        /// <summary>
         /// Открыть край. Зовёт тот, после кого бежать уже пора, — вторая
         /// волна Охотников. До неё уйти нельзя: отказ Каргана случается
         /// на отходе, и игрок, ушедший раньше, не увидит продукта демо.

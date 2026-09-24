@@ -79,7 +79,9 @@ namespace Sinbinder.Core
         {
             var save = new SaveGame
             {
-                Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+                Scene = string.IsNullOrEmpty(StagedScene)
+                      ? UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                      : StagedScene,
                 Gold = Inventory.PlayerInventory.Instance != null
                      ? Inventory.PlayerInventory.Instance.Gold : 0,
                 Installed = CryptUpgrades.InstalledAll(),
@@ -140,17 +142,30 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool Arriving { get; private set; }
 
+        /// <summary>
+        /// Какая доля идёт, если она не совпадает со сценой. Набег стал
+        /// событием лагеря (<see cref="RaidEvent"/>): сцена — лагерь, а доля —
+        /// набег, и запись, сделанная посреди него, обязана вернуть в набег,
+        /// а не к совету. Загрузка такой записи открывает отдельную сцену
+        /// набега. Сбрасывается сменой сцены.
+        /// </summary>
+        public static string StagedScene { get; set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Listen()
         {
             Arriving = false;
+            StagedScene = null;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Arrived;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += Arrived;
         }
 
         private static void Arrived(UnityEngine.SceneManagement.Scene scene,
                                     UnityEngine.SceneManagement.LoadSceneMode mode)
-            => Arriving = false;
+        {
+            Arriving = false;
+            StagedScene = null;
+        }
 
         /// <summary>
         /// Восстановить запись <b>и вернуться туда, где записался</b>.

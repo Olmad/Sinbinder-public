@@ -257,25 +257,25 @@ namespace Sinbinder.Gameplay
             {
                 if (w == null || w.IsDead || w.Soul == null) continue;
 
-                survivors.Add(new Member
-                {
-                    Name = w.DisplayName,
-                    Sin = w.Soul.Sin,
-                    Moral = w.Soul.Moral,
-                    Intensity = w.Soul.Get(w.Soul.Sin),
-                    Loyalty = w.Loyalty,
-                    UnpaidMissions = w.UnpaidMissions,
-                    IsCandidate = WasCandidate(w.DisplayName),
-                    IsCommander = w.IsCommander,
+                // Начинаем с прежней записи, а не с пустой: пол, ремесло,
+                // братство, слава, навык и запрет живут только здесь, и снять
+                // их со сцены нельзя. До 24 сентября переносились лишь навык
+                // и запрет — а пол, ремесло, братство и слава обнулялись при
+                // каждой смене доли: уникальная женщина входила в склеп
+                // мужчиной, братья переставали быть братьями.
+                var m = Previous(w);
 
-                    // Навык и запрет живут только здесь: у Warrior их нет,
-                    // и снять их со сцены невозможно. Не перенести — значит
-                    // молча обнулить при первой же смене доли, и к совету
-                    // все пришли бы рядовыми.
-                    Leadership = PreviousLeadership(w.DisplayName),
-                    Unavailable = PreviousUnavailable(w.DisplayName),
-                    IsAway = false
-                });
+                // Со сцены — только то, что сцена меняет.
+                m.Name = w.DisplayName;
+                m.Sin = w.Soul.Sin;
+                m.Moral = w.Soul.Moral;
+                m.Intensity = w.Soul.Get(w.Soul.Sin);
+                m.Loyalty = w.Loyalty;
+                m.UnpaidMissions = w.UnpaidMissions;
+                m.IsCommander = w.IsCommander;
+                m.IsAway = false;
+
+                survivors.Add(m);
             }
 
             // Сцену закрыли до сборки отряда. Ушедшие не в счёт: они живы
@@ -289,22 +289,21 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[ОТРЯД] Дальше идут {survivors.Count}.");
         }
 
-        private static bool WasCandidate(string name)
+        /// <summary>
+        /// Прежняя запись о воине. Нет её — он пришёл не из состава
+        /// (поднятый в склепе): пол и ремесло берём у его души, остальное
+        /// пусто.
+        /// </summary>
+        private static Member Previous(Warrior w)
         {
-            foreach (var m in _members) if (m.Name == name) return m.IsCandidate;
-            return false;
-        }
+            foreach (var m in _members) if (m.Name == w.DisplayName) return m;
 
-        private static float PreviousLeadership(string name)
-        {
-            foreach (var m in _members) if (m.Name == name) return m.Leadership;
-            return 0f;
-        }
-
-        private static string PreviousUnavailable(string name)
-        {
-            foreach (var m in _members) if (m.Name == name) return m.Unavailable;
-            return "";
+            return new Member
+            {
+                Gender = w.Gender,
+                Trade = w.Soul.Trade,
+                Unavailable = "",
+            };
         }
 
         /// <summary>Найти воина в составе по имени.</summary>

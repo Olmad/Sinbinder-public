@@ -112,6 +112,22 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Настроить волну, созданную не сборщиком, а по ходу сцены
+        /// (<see cref="RaidEvent"/>). Звать сразу после AddComponent:
+        /// Start ещё впереди.
+        /// </summary>
+        public void Configure(int count, float width, bool afterFieldClear,
+                              bool opensEscape, string announce)
+        {
+            _count = count;
+            _lineWidth = width;
+            _afterFieldClear = afterFieldClear;
+            _opensEscape = opensEscape;
+            _announce = announce ?? "";
+            _spawnOnStart = true;
+        }
+
         void Start()
         {
             if (_afterFieldClear)

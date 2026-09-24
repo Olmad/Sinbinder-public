@@ -312,8 +312,28 @@ namespace Sinbinder.Gameplay
                 yield break;
             }
 
+            // Набег — событие лагеря, а не отдельная сцена (слово автора,
+            // 24 сентября): Греховода не отбрасывает к палатке, отряд стоит
+            // там, где стоял. Отдельная сцена набега осталась для загрузки
+            // записи, сделанной посреди него.
+            if (_nextScene == RaidEvent.SceneName && RaidEvent.Stage(this)) yield break;
+
             Core.GamePauseController.Instance?.Resume();
             SceneManager.LoadScene(_nextScene);
+        }
+
+        /// <summary>
+        /// Стать ведущим набега в той же сцене: дальше доля кончается
+        /// краем карты, а следующая — <paramref name="next"/>. Зовёт
+        /// <see cref="RaidEvent"/>, развернув набег на месте.
+        /// </summary>
+        public void BecomeRaid(string next)
+        {
+            _nextScene = next;
+            _waitForEscape = true;
+            _waitForBattle = false;
+            _battleJoined = false;
+            _leaving = false;
         }
     }
 }
