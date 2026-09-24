@@ -916,6 +916,11 @@ namespace Sinbinder.Tests
                         Name = "Проба", Sin = SinType.Greed, Moral = MoralType.Vicious,
                         Intensity = 60f, Loyalty = 42f, UnpaidMissions = 3,
                         Leadership = 5f, IsCommander = true,
+                        Gear = new List<InventoryItem>
+                        {
+                            new InventoryItem("Топор пробы", "", ItemType.Equipment, attack: 2f),
+                        },
+                        Pocket = 5,
                     },
                     new SquadRoster.Member
                     {
@@ -928,6 +933,8 @@ namespace Sinbinder.Tests
 
                 var snapshot = SaveSystem.Snapshot();
                 Same(snapshot.Squad.Count, 2, "снимок взял не весь отряд");
+                snapshot.Bag.Add(new InventoryItem("Мясо пробы", "", ItemType.Provision, 3));
+                snapshot.ChestLooted = true;
 
                 // Через текст и обратно: в игре между снимком и возвратом
                 // всегда стоит файл, и проверять надо путь целиком.
@@ -950,6 +957,12 @@ namespace Sinbinder.Tests
                 Near(first.Loyalty, 42f, "верность не пережила файл");
                 Same(first.UnpaidMissions, 3, "долг не пережил файл");
                 Check(first.IsCommander, "старшинство не пережило файл");
+                Check(first.Gear != null && first.Gear.Count == 1 && first.Gear[0].Name == "Топор пробы"
+                      && Math.Abs(first.Gear[0].AttackBonus - 2f) < 0.01f && first.Gear[0].Slot == GearSlot.Weapon,
+                      "надетое не пережило файл");
+                Same(first.Pocket, 5, "карман не пережил файл");
+                Check(back.Bag.Count == 1 && back.Bag[0].Name == "Мясо пробы" && back.ChestLooted,
+                      "мешок Греховода и открытый сундук не пережили файл");
 
                 var second = SquadRoster.Members[1];
                 Near(second.Intensity, -30f, "добродетель вернулась грехом: "

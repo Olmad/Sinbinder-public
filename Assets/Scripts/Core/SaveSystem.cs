@@ -89,6 +89,11 @@ namespace Sinbinder.Core
 
             save.Label = Label(save);
 
+            if (Inventory.PlayerInventory.Instance != null)
+                save.Bag = new List<Inventory.InventoryItem>(Inventory.PlayerInventory.Instance.GetAllItems());
+            save.ChestLooted = TrophyChest.Looted;
+            save.Chest = TrophyChest.Remaining();
+
             foreach (var m in SquadRoster.Members)
             {
                 save.Squad.Add(new SavedMember
@@ -286,6 +291,8 @@ namespace Sinbinder.Core
             Commitment.Set(save.Commitment);
 
             Inventory.PlayerInventory.Instance?.SetGold(save.Gold);
+            Inventory.PlayerInventory.Instance?.ReplaceItems(save.Bag);
+            TrophyChest.Restore(save.ChestLooted, save.Chest);
 
             var souls = SoulManager.Instance;
             if (souls != null)

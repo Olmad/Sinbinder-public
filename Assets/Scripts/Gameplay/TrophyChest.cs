@@ -57,13 +57,53 @@ namespace Sinbinder.Gameplay
         public static bool Looted { get; private set; }
 
         /// <summary>Забыть трофеи. Начало пролога.</summary>
-        public static void Forget() => Looted = false;
+        public static void Forget()
+        {
+            Looted = false;
+            _restoreLooted = null;
+            _restoreContents = null;
+        }
+
+        // Сундук из записи, если сцена с ним ещё впереди (загрузка в лагерь
+        // из другой сцены или другой доли). Берёт его Awake, и только при
+        // приходе по записи (SaveSystem.Arriving) — не при новой игре.
+        private static bool? _restoreLooted;
+        private static List<InventoryItem> _restoreContents;
+
+        /// <summary>
+        /// Вернуть сундук из записи. Сундук в сцене — сразу; сцена будет
+        /// перезагружена — при её приходе. Без этого загрузка в лагерь
+        /// открывала сундук заново, и его монеты ложились в кошель дважды.
+        /// </summary>
+        public static void Restore(bool looted, List<InventoryItem> contents)
+        {
+            _restoreLooted = looted;
+            _restoreContents = contents != null ? new List<InventoryItem>(contents) : null;
+
+            var chest = Object.FindFirstObjectByType<TrophyChest>();
+            if (chest == null) return;
+            Looted = looted;
+            chest._contents.Clear();
+            if (contents != null) chest._contents.AddRange(contents);
+        }
+
+        /// <summary>Что лежит в сундуке сцены — для записи. Сундука нет — пусто.</summary>
+        public static List<InventoryItem> Remaining()
+        {
+            var chest = Object.FindFirstObjectByType<TrophyChest>();
+            return chest != null ? new List<InventoryItem>(chest._contents) : new List<InventoryItem>();
+        }
 
         /// <summary>Сундук — склад, а не раздача. Выключено — всё сразу в мешок, как прежде.</summary>
         public static bool Store { get; set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => Store = false;
+        private static void Rearm()
+        {
+            Store = false;
+            _restoreLooted = null;
+            _restoreContents = null;
+        }
 
         private readonly List<InventoryItem> _contents = new();
 
@@ -76,7 +116,16 @@ namespace Sinbinder.Gameplay
 
         void Awake()
         {
-            Looted = false;
+            // Приход по записи — сундук такой, каким его записали; иначе новый.
+            if (Core.SaveSystem.Arriving && _restoreLooted.HasValue)
+            {
+                Looted = _restoreLooted.Value;
+                if (_restoreContents != null) _contents.AddRange(_restoreContents);
+            }
+            else Looted = false;
+            _restoreLooted = null;
+            _restoreContents = null;
+
             if (_lid == null) _lid = transform.Find("Крышка");
         }
 

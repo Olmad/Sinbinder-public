@@ -90,6 +90,21 @@ namespace Sinbinder.Core
         public List<SavedSoul> Shelf = new();
 
         public int Gold;
+
+        /// <summary>
+        /// Мешок Греховода (docs/34-GEAR.md §9.1). До 24 сентября не писался:
+        /// загрузка из другой сцены теряла всё, что Греховод нёс.
+        /// </summary>
+        public List<Inventory.InventoryItem> Bag = new List<Inventory.InventoryItem>();
+
+        /// <summary>
+        /// Открыт ли сундук Марги и что в нём осталось. Без этого загрузка
+        /// в лагерь из другой сцены открывала сундук заново — и его горсть
+        /// монет ложилась в кошель второй раз.
+        /// </summary>
+        public bool ChestLooted;
+        public List<Inventory.InventoryItem> Chest = new List<Inventory.InventoryItem>();
+
         public bool[] Installed;
         public bool[] Brought;
 

@@ -67,6 +67,16 @@ namespace Sinbinder.Inventory
         }
 
         public List<InventoryItem> GetAllItems() => _items;
+
+        /// <summary>Мешок из записи: всё, что было, — заменить тем, что записано.</summary>
+        public void ReplaceItems(IEnumerable<InventoryItem> items)
+        {
+            _items.Clear();
+            if (items != null)
+                foreach (var item in items)
+                    if (item != null && item.Type != ItemType.Gold) _items.Add(item);
+            OnInventoryChanged?.Invoke();
+        }
         public int Count => _items.Count;
         public int MaxSlots => _maxSlots;
         public int Gold => _gold;
