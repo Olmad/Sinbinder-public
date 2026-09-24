@@ -60,9 +60,87 @@ namespace Sinbinder.Gameplay
             if (Core.GamePauseController.Instance != null
                 && Core.GamePauseController.Instance.IsPaused) return;
 
+            if (Aiming != CommandKind.None)
+            {
+                HandleAiming();
+                HandleStanceInput();
+                return;
+            }
+
             HandleSelectionInput();
             HandleCommandInput();
             HandleStanceInput();
+        }
+
+        // ---------- прицел: приказ с точкой из панели или с клавиши ----------
+
+        /// <summary>
+        /// Какой приказ ждёт точки: «Идти», «Атака» или «Отход» нажаты
+        /// на панели (или M, T, X), и следующий щелчок указывает, куда.
+        /// Как в Warcraft 3. ПКМ — передумать.
+        /// </summary>
+        public CommandKind Aiming { get; private set; } = CommandKind.None;
+
+        /// <summary>Отпущенная кнопка мыши принадлежит прицелу или панели, а не выделению.</summary>
+        private bool _swallowUp;
+
+        public void Aim(CommandKind kind)
+        {
+            if (_selectedUnits.Count == 0) return;
+            Aiming = kind;
+        }
+
+        public void StopAiming() => Aiming = CommandKind.None;
+
+        private void HandleAiming()
+        {
+            if (_selectedUnits.Count == 0) { StopAiming(); return; }
+
+            if (Input.GetMouseButtonDown(1)) { StopAiming(); return; }
+            if (!Input.GetMouseButtonDown(0)) return;
+
+            // Щелчок по самой панели — это выбор другой кнопки, а не точка.
+            if (UI.CommandPanel.Covers(Input.mousePosition)) return;
+
+            _swallowUp = true;
+
+            Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
+
+            // «Атака» — только по живому чужому. Атаки с ходу по земле
+            // пока нет (docs/33-COMMANDS.md, шаг второй): прицел ждёт врага.
+            if (Aiming == CommandKind.Attack)
+            {
+                var foe = hit.collider.GetComponentInParent<Warrior>();
+                if (foe == null || foe.IsDead || foe.Team == Team.Player)
+                {
+                    FindFirstObjectByType<UI.BattleLogUI>()?.Write("Бить некого — укажите врага.");
+                    return;
+                }
+            }
+
+            OrderAt(hit, Aiming == CommandKind.FallBack);
+            StopAiming();
+        }
+
+        /// <summary>Кто выделен — для панели приказов.</summary>
+        public enum Picked { Nobody, HeroOnly, Squad }
+
+        public Picked Selection
+        {
+            get
+            {
+                bool hero = false, squad = false;
+                foreach (var unit in _selectedUnits)
+                {
+                    if (unit == null) continue;
+                    var w = unit.GetComponent<Warrior>();
+                    if (!Ours(w)) continue;
+                    if (w is SinbinderPlayer) hero = true;
+                    else squad = true;
+                }
+                return squad ? Picked.Squad : hero ? Picked.HeroOnly : Picked.Nobody;
+            }
         }
 
         /// <summary>
@@ -78,16 +156,27 @@ namespace Sinbinder.Gameplay
         {
             if (_selectedUnits.Count == 0) return;
 
-            CommandKind kind = CommandKind.None;
-            bool clear = false;
-
-            if (Input.GetKeyDown(KeyCode.H)) kind = CommandKind.Hold;
+            if (Input.GetKeyDown(KeyCode.H)) Stance(CommandKind.Hold);
             // Оборона на G, а не на D: D одновременно ведёт камеру вправо
             // (RTS_Camera), и при выделенном отряде одно нажатие делало
             // и то и другое. WASD принадлежат камере целиком.
-            else if (Input.GetKeyDown(KeyCode.G)) kind = CommandKind.Defend;
-            else if (Input.GetKeyDown(KeyCode.C)) clear = true;
-            else return;
+            else if (Input.GetKeyDown(KeyCode.G)) Stance(CommandKind.Defend);
+            else if (Input.GetKeyDown(KeyCode.C)) Stance(CommandKind.None);
+
+            // Приказы с точкой — через прицел, как на панели (UI.CommandPanel).
+            else if (Input.GetKeyDown(KeyCode.M)) Aim(CommandKind.Move);
+            else if (Input.GetKeyDown(KeyCode.T)) Aim(CommandKind.Attack);
+            else if (Input.GetKeyDown(KeyCode.X)) Aim(CommandKind.FallBack);
+        }
+
+        /// <summary>
+        /// Приказ без точки всем выделенным: держать, обороняться или
+        /// <see cref="CommandKind.None"/> — снять приказ. Зовут клавиши
+        /// и панель приказов.
+        /// </summary>
+        public void Stance(CommandKind kind)
+        {
+            bool clear = kind == CommandKind.None;
 
             foreach (var unit in _selectedUnits)
             {
@@ -230,6 +319,20 @@ namespace Sinbinder.Gameplay
 
         private void HandleSelectionInput()
         {
+            // Нажатие по панели приказов: кнопка своё сделала, выделение
+            // и рамка его не видят — вплоть до отпускания.
+            if (Input.GetMouseButtonDown(0) && UI.CommandPanel.Covers(Input.mousePosition))
+            {
+                _swallowUp = true;
+                return;
+            }
+
+            if (_swallowUp)
+            {
+                if (Input.GetMouseButtonUp(0)) _swallowUp = false;
+                return;
+            }
+
             if (Input.GetMouseButtonDown(0))
             {
                 _selectionStart = Input.mousePosition;
@@ -436,8 +539,26 @@ namespace Sinbinder.Gameplay
         {
             if (Input.GetMouseButtonDown(1) && _selectedUnits.Count > 0)
             {
+                // ПКМ по панели приказов — не приказ в землю за ней.
+                if (UI.CommandPanel.Covers(Input.mousePosition)) return;
+
                 Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+                {
+                    // Shift + ПКМ по земле — «отходи», а не «иди туда».
+                    bool isFallBack = Input.GetKey(KeyCode.LeftShift)
+                                   || Input.GetKey(KeyCode.RightShift);
+                    OrderAt(hit, isFallBack);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Приказ всем выделенным туда, куда попал луч: по живому чужому —
+        /// бить, по земле — идти или отходить. Зовут ПКМ и прицел панели.
+        /// </summary>
+        private void OrderAt(RaycastHit hit, bool isFallBack)
+        {
                 {
                     // Приказ записывается на воина и уходит в голосование.
                     // Раньше он шёл прямо в NavMeshAgent, минуя AOS, и
@@ -453,12 +574,9 @@ namespace Sinbinder.Gameplay
                     var foe = enemyUnit != null ? enemyUnit.GetComponentInParent<Warrior>() : null;
                     bool isAttackOrder = foe != null && !foe.IsDead && foe.Team != Team.Player;
 
-                    // Shift + ПКМ по земле — «отходи», а не «иди туда».
-                    // Разница не в ногах: отход звучит для характера иначе,
-                    // и исполнить его воин может по-своему — побежав.
-                    bool isFallBack = Input.GetKey(KeyCode.LeftShift)
-                                   || Input.GetKey(KeyCode.RightShift);
-
+                    // «Отходи», а не «иди туда»: разница не в ногах. Отход
+                    // звучит для характера иначе, и исполнить его воин может
+                    // по-своему — побежав.
                     int given = 0;
 
                     foreach (var unit in _selectedUnits)
@@ -510,7 +628,6 @@ namespace Sinbinder.Gameplay
                         OnPlayerOrder?.Invoke(kind, given);
                     }
                 }
-            }
         }
     }
 }

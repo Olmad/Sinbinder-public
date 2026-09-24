@@ -29,6 +29,10 @@ SKIP_DIRS = {'.git', 'Library', 'Temp', 'obj', 'Build', 'Builds', 'Logs',
              'TutorialInfo'}   # шаблон Unity, не наш код
 
 UNITY_TYPES = {
+    # Вложенный тип EventTrigger.Entry: правило видит только последнее
+    # имя после new, а вложенных типов Unity не знает (панель приказов,
+    # 24 сентября; компилятор его принял).
+    'Entry',
     'Vector2', 'Vector3', 'Vector4', 'Quaternion', 'Mathf', 'Debug', 'Time', 'Color', 'Color32',
     'Input', 'Camera', 'Physics', 'Physics2D', 'RaycastHit', 'GameObject', 'Transform',
     'MonoBehaviour', 'ScriptableObject', 'Coroutine', 'WaitForSeconds', 'WaitForSecondsRealtime',
