@@ -33,9 +33,16 @@ namespace Sinbinder.UI
                + "Камера дрожит на сглаживании, и ноль здесь не годится.")]
         [SerializeField] private float _moved = 0.25f;
 
+        [Tooltip("Подсказка, когда смотрят глазами Греховода: там W, A, S, D ведут его.")]
         [TextArea(1, 3)]
         [SerializeField] private string _line =
             "W, A, S, D — идти. Камера идёт за вами.";
+
+        [Tooltip("Подсказка, когда смотрят сверху: там W, A, S, D ведут камеру, "
+               + "а Греховода — правая кнопка.")]
+        [TextArea(1, 3)]
+        [SerializeField] private string _fromAbove =
+            "Щёлкните по Греховоду, затем правой кнопкой — куда идти.";
 
         /// <summary>
         /// Показывали ли уже. Статично и переживает смену сцен: подсказка
@@ -63,7 +70,6 @@ namespace Sinbinder.UI
             {
                 _eye = Gameplay.SinbinderPlayer.Instance.transform;
                 _wasAt = _eye.position;
-                if (_text != null) _text.text = _line;
                 return;
             }
 
@@ -119,9 +125,24 @@ namespace Sinbinder.UI
             Show();
         }
 
+        /// <summary>
+        /// Строка под нынешний вид. Лагерь открывается сверху, и там W, A,
+        /// S, D ведут камеру: подсказка «W, A, S, D — идти» до 24 сентября
+        /// посылала игрока водить камеру, пока первый шаг пролога ждал,
+        /// что Греховод отойдёт от палатки. Вид меняется клавишей, поэтому
+        /// строка выбирается в миг показа, а не при старте.
+        /// </summary>
+        private string Line()
+        {
+            var view = Object.FindFirstObjectByType<Gameplay.RTS_Camera>();
+            bool fromAbove = Gameplay.SinbinderPlayer.Exists && view != null && !view.FirstPersonNow;
+            return fromAbove ? _fromAbove : _line;
+        }
+
         private void Show()
         {
             _showing = true;
+            if (_text != null) _text.text = Line();
             if (_panel != null) _panel.SetActive(true);
         }
 
