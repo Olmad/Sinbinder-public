@@ -197,7 +197,8 @@ namespace Sinbinder.Crypt
         private static bool _toldAboutFont;
 
         /// <summary>
-        /// Пробные души для полигона: четыре греха и четыре ступени
+        /// Пробные души для полигона: три греха демо (Жадность, Гордыня,
+        /// Уныние — те же, что у этих людей в отряде) и четыре ступени
         /// распада. Ровно столько, чтобы правило допуска тел было видно
         /// целиком — от свежей, которую примет любое тело, до истлевшей,
         /// которую примет один призрак.
@@ -209,11 +210,11 @@ namespace Sinbinder.Crypt
 
             Put(souls, "Марга Копатель", SinType.Greed, MoralType.Vicious, 65f,
                 SoulQuality.Shock);
-            Put(souls, "Брат Хальд", SinType.Wrath, MoralType.Pious, 55f,
+            Put(souls, "Брат Хальд", SinType.Pride, MoralType.Pious, 55f,
                 SoulQuality.Acceptance);
             Put(souls, "Вейн Тихий", SinType.Sloth, MoralType.Pious, 40f,
                 SoulQuality.Fading);
-            Put(souls, "Одноглазый Хорь", SinType.Envy, MoralType.Vicious, 45f,
+            Put(souls, "Одноглазый Хорь", SinType.Greed, MoralType.Vicious, 45f,
                 SoulQuality.Dissolved);
         }
 
