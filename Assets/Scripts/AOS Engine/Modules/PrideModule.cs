@@ -62,6 +62,10 @@ namespace Sinbinder.AOS.Modules
                     float humiliation = context.IsEngaged && context.CommandLeavesFight
                         ? 1f : _config.PrideObeyPlainOrderShare;
                     score -= pride * _config.PrideObeySinMultiplier * humiliation;
+
+                    // Приказ, крикнутый издали, — не приказ (голос Греховода).
+                    // Смирение со знаком минус: смиренный слушает и далёкий.
+                    score -= pride * _config.PrideDistantOrder * (1f - context.CommandVolume);
                     break;
 
                 case ActionType.SaveAlly:

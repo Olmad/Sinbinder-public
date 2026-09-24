@@ -50,6 +50,11 @@ namespace Sinbinder.AOS.Modules
             if (action == ActionType.Attack)
                 score -= sin * _config.SlothAttackSinMultiplier;
 
+            // Далёкий приказ — законный повод не вставать (голос Греховода).
+            // Только унылому: усердного расстояние не останавливает.
+            if (action == ActionType.ObeyCommand)
+                score -= Mathf.Max(0f, sin) * _config.SlothDistantOrder * (1f - context.CommandVolume);
+
             if (action == ActionType.SaveAlly)
                 score -= sin * _config.SlothSaveAllySinMultiplier;
 

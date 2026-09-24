@@ -1881,10 +1881,75 @@ static class Bench
         }
     }
 
+    /// <summary>
+    /// Голос Греховода (docs/31-VOICE.md): меняет ли расстояние решения —
+    /// и по-разному ли у разных душ. Если на всём диапазоне громкость
+    /// не сдвигает ни одного решения, механики нет, и узнать это надо
+    /// здесь, а не на показе.
+    /// </summary>
+    static void VoiceCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ГОЛОС ГРЕХОВОДА: ОТКАЗЫ ПО ГРОМКОСТИ ===");
+
+        var modules = Modules();
+        const int runs = 400;
+        float[] volumes = { 1f, 0.7f, 0.35f };
+
+        var squad = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f),
+            ("Чужак",  SinType.Pride,    MoralType.Vicious, 70f, 30f),
+        };
+
+        double widest = 0;
+
+        foreach (var (battle, label) in new[] { (false, "лагерь, приказ «иди»"),
+                                                (true,  "бой, приказ «отходи»") })
+        {
+            Console.WriteLine($"\n  --- {label} ---");
+            Console.WriteLine($"  {"кто",-7} {"грех",-9} {"рядом",7} {"издали",7} {"край",7}"
+                            + $" {"сдвиг",7}  причина на краю");
+
+            foreach (var m in squad)
+            {
+                var rates = new double[volumes.Length];
+                string reason = "—";
+
+                for (int v = 0; v < volumes.Length; v++)
+                {
+                    var (rate, why) = OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity,
+                        m.Loyalty, 0, runs, loot: 0, allyInDanger: battle,
+                        volume: volumes[v], battle: battle);
+                    rates[v] = rate;
+                    if (v == volumes.Length - 1) reason = why;
+                }
+
+                double shift = rates[volumes.Length - 1] - rates[0];
+                widest = Math.Max(widest, shift);
+
+                Console.WriteLine($"  {m.Name,-7} {m.Sin,-9} {rates[0] * 100,6:F1}% {rates[1] * 100,6:F1}%"
+                                + $" {rates[2] * 100,6:F1}% {shift * 100,+6:F1}  {reason}");
+            }
+        }
+
+        Console.WriteLine(widest >= 0.05
+            ? "\n  ВЫВОД: расстояние меняет решения — голос есть."
+            : "\n  ВЫВОД: расстояние решений не меняет. Механики нет, есть числа.");
+    }
+
     /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
     static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
         AOSConfig cfg, SinType sin, MoralType moral, float intensity,
-        float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true)
+        float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true,
+        float volume = 1f, bool battle = true)
     {
         int refused = 0;
         var seen = new Dictionary<string, int>();
@@ -1918,7 +1983,21 @@ static class Bench
                 HasCommand = true,
                 CommandType = "FallBack",
                 CommandIsFallBack = true,
+                CommandVolume = volume,
             };
+
+            // Лагерь: врагов нет, здоровье целое, приказ — «иди туда».
+            // Голос Греховода меряется и здесь: в лагере игрок учится
+            // подходить к отряду раньше, чем это станет стоить крови.
+            if (!battle)
+            {
+                ctx.NearbyEnemies = 0;
+                ctx.CurrentHP = ctx.MaxHP;
+                ctx.Surrounded = false;
+                ctx.AllyInDanger = false;
+                ctx.CommandType = "Move";
+                ctx.CommandIsFallBack = false;
+            }
 
             var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
 
@@ -4041,6 +4120,7 @@ static class Bench
         SoulDecayCheck();
         ExpeditionCheck(cfg);
         CampUnderOrderCheck(cfg);
+        VoiceCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

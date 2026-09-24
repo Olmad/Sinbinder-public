@@ -39,7 +39,13 @@ namespace Sinbinder.AOS.Modules
 
             if (action == ActionType.ObeyCommand)
             {
-                score += soul.Loyalty * _config.LoyaltyObeySinMultiplier;
+                // Голос Греховода (docs/31-VOICE.md): далёкий приказ тише,
+                // но верного он догоняет почти целиком. Чем выше верность,
+                // тем меньше она теряет с расстоянием: верный идёт и на тихий
+                // приказ, неверный — только на громкий.
+                float heard = context.CommandVolume
+                            + (1f - context.CommandVolume) * Mathf.Clamp01(soul.Loyalty / 100f);
+                score += soul.Loyalty * _config.LoyaltyObeySinMultiplier * heard;
 
                 // У приказа появилась цена. Уйти из ближнего боя — значит
                 // подставиться под удар вслед, и «отойди» перестаёт быть

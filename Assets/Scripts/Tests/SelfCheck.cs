@@ -85,6 +85,7 @@ namespace Sinbinder.Tests
                 Roster();
                 Pausing();
                 RaidPart();
+                VoiceOfSinbinder();
                 Fog();
                 TextRules();
             }
@@ -391,6 +392,56 @@ namespace Sinbinder.Tests
             finally
             {
                 SaveSystem.StagedScene = was;
+            }
+        }
+
+        /// <summary>
+        /// Голос Греховода (docs/31-VOICE.md): громкость по расстоянию и то,
+        /// как её читают модули. Выключенный голос не меняет ничего.
+        /// </summary>
+        private static void VoiceOfSinbinder()
+        {
+            bool was = Voice.Enabled;
+
+            try
+            {
+                Voice.Enabled = false;
+                Check(Voice.Muffle(Voice.Far * 2f) == 0f, "выключенный голос слышен на любом расстоянии");
+
+                Voice.Enabled = true;
+                float mid = Voice.Muffle((Voice.Near + Voice.Far) * 0.5f);
+                float edge = Voice.Muffle(Voice.Far);
+                Check(Voice.Muffle(Voice.Near) == 0f, "рядом приказ звучит в полную силу");
+                Check(mid > 0f && mid < edge, "издали тише, чем рядом, и громче, чем на краю");
+                Check(Voice.Heard(edge), "на самом краю приказ ещё слышен");
+                Check(!Voice.Heard(Voice.Muffle(Voice.Far + 0.5f)), "за краем приказа не слышно");
+
+                var loyalty = new AOS.Modules.LoyaltyModule();
+                float Obey(float loyal, float volume) => loyalty.Evaluate(
+                    new Soul { Loyalty = loyal },
+                    new DecisionContext { HasCommand = true, CommandType = "Move", CommandVolume = volume },
+                    ActionType.ObeyCommand);
+
+                Check(Obey(50f, 0.35f) < Obey(50f, 1f), "далёкий приказ верности тише близкого");
+                Check(Obey(95f, 0.35f) / Obey(95f, 1f) > Obey(30f, 0.35f) / Obey(30f, 1f),
+                      "верный теряет с расстоянием меньше неверного");
+
+                var pride = new AOS.Modules.PrideModule();
+                var proud = new Soul();
+                proud.Spectra[(int)SinType.Pride] = 80f;
+                var humble = new Soul();
+                humble.Spectra[(int)SinType.Pride] = -80f;
+
+                float Heed(Soul s, float volume) => pride.Evaluate(s,
+                    new DecisionContext { HasCommand = true, CommandType = "Move", CommandVolume = volume },
+                    ActionType.ObeyCommand);
+
+                Check(Heed(proud, 0.35f) < Heed(proud, 1f), "гордец противится приказу, крикнутому издали");
+                Check(Heed(humble, 0.35f) >= Heed(humble, 1f), "смиренному расстояние не помеха");
+            }
+            finally
+            {
+                Voice.Enabled = was;
             }
         }
 

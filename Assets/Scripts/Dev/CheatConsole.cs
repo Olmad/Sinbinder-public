@@ -113,6 +113,8 @@ namespace Sinbinder.Dev
             ["aos"] = c => c.Shoot(),
             ["аос"] = c => c.Shoot(),
             ["съемка"] = c => c.Shoot(),
+            ["голос"] = c => c.ToggleVoice(),
+            ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
             ["?"] = c => c.Help(),
@@ -141,9 +143,23 @@ namespace Sinbinder.Dev
             Close();
         }
 
+        /// <summary>
+        /// Выключатель голоса Греховода (<see cref="Gameplay.Voice"/>). До прогона
+        /// 24 сентября голос выключен, а включают его здесь — вторым проходом,
+        /// чтобы проверить отдельно от правок дня.
+        /// </summary>
+        private void ToggleVoice()
+        {
+            Gameplay.Voice.Enabled = !Gameplay.Voice.Enabled;
+            Write(Gameplay.Voice.Enabled
+                ? "Голос Греховода включён: приказ слышен тем лучше, чем ближе Греховод."
+                : "Голос Греховода выключен: любой приказ слышен в полную силу.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
+            Write("голос — включить или выключить голос Греховода.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

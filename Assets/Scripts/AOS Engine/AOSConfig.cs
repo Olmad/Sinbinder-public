@@ -68,6 +68,11 @@ namespace Sinbinder.AOS
         [Header("Уныние")]
         public float SlothIdleSinMultiplier = 0.5f;
         public float SlothIdleLowDangerBonus = 20f;
+
+        [Tooltip("Голос Греховода: далёкий приказ — законный повод не вставать. "
+               + "Умножается на уныние и на то, насколько приказ приглушён. "
+               + "Усердному расстояние не помеха. docs/31-VOICE.md.")]
+        public float SlothDistantOrder = 0.4f;
         public float SlothFleeDangerThreshold = 55f;
         public float SlothAttackSinMultiplier = 0.3f;
         public float SlothAttackDangerPenalty = -30f;
@@ -178,6 +183,12 @@ namespace Sinbinder.AOS
                + "взглядом врага. Единица снова уравняет любые приказы.")]
         [Range(0f, 1f)] public float PrideObeyPlainOrderShare = 0.3f;
         public float PrideLastAliveBonus = 45f;
+
+        [Tooltip("Голос Греховода: насколько гордыня противится приказу, "
+               + "крикнутому издали. Умножается на гордыню и на то, насколько "
+               + "приказ приглушён. Смирение (гордыня со знаком минус) — "
+               + "наоборот, слушает и далёкий. docs/31-VOICE.md.")]
+        public float PrideDistantOrder = 0.5f;
         public float PrideSaveAllySinMultiplier = 0.2f;
 
         [Header("Зависть")]

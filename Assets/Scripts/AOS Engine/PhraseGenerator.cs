@@ -18,6 +18,12 @@ namespace Sinbinder.AOS
     public static class PhraseGenerator
     {
         /// <summary>
+        /// Громкость, ниже которой отказ объясняется расстоянием. У самой
+        /// ближней границы «издали» причина ещё не в нём.
+        /// </summary>
+        private const float DistantOrder = 0.75f;
+
+        /// <summary>
         /// Подсказка при наведении, настоящее время. Одно-два предложения.
         /// </summary>
         public static string Explain(Warrior warrior, DecisionContext context, Decision decision)
@@ -103,6 +109,22 @@ namespace Sinbinder.AOS
             if (context == null) return "";
 
             string P(string he, string she) => Core.Grammar.Pick(gender, he, she);
+
+            // Голос Греховода: отказ приказу, пришедшему издали. Причина —
+            // та, которую игрок может исправить ногами (docs/31-VOICE.md).
+            //
+            // Расстоянием объясняем только там, где победил голос, который
+            // громкость и читает: гордыня и уныние. Бросившийся к раненому
+            // бросился бы и в упор — стенд показал это сразу (одна доля
+            // на любой громкости), и «приказ пришёл издали» было бы враньём.
+            if (decision.RefusedCommand && context.CommandVolume < DistantOrder)
+            {
+                if (decision.TopModule == "Pride")
+                    return "приказ крикнули издали, а он не из тех, кого зовут криком";
+                if (decision.TopModule == "Sloth")
+                    return P("он сделал вид, что не расслышал",
+                             "она сделала вид, что не расслышала");
+            }
 
             switch (decision.TopModule)
             {

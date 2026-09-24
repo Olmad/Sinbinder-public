@@ -110,6 +110,13 @@ public bool LastAlive;
             }
         }
 
+        /// <summary>
+        /// Громкость приказа: 1 — сказан рядом, в полную силу; меньше —
+        /// издали (голос Греховода, docs/31-VOICE.md). Читают верность,
+        /// гордыня и уныние — каждый по-своему. Без приказа — 1.
+        /// </summary>
+        public float CommandVolume = 1f;
+
         // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();
 

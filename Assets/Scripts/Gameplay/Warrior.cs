@@ -143,14 +143,19 @@ namespace Sinbinder.Gameplay
 
         public bool HasCommand => _command.IsSet;
 
-        public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null)
+        /// <param name="muffle">Насколько приглушён голос Греховода
+        /// (<see cref="Voice.MuffleFor"/>). Сценарные приказы — провожатый,
+        /// прогон демо — звучат в полную силу: это не голос игрока.</param>
+        public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null,
+                                 float muffle = 0f)
         {
             _command = new PendingCommand
             {
                 Kind = kind,
                 Point = point,
                 Target = target,
-                IssuedAt = Time.time
+                IssuedAt = Time.time,
+                Muffle = Mathf.Clamp01(muffle),
             };
         }
 

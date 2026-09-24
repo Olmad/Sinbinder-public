@@ -45,6 +45,14 @@ namespace Sinbinder.Gameplay
         /// <summary>Время выдачи. Свежий приказ звучит громче старого.</summary>
         public float IssuedAt;
 
+        /// <summary>
+        /// Насколько приказ был приглушён в миг выдачи (<see cref="Voice"/>):
+        /// 0 — в полную силу. Хранится приглушённость, а не громкость,
+        /// нарочно: приказ, собранный где-то без неё, по умолчанию слышен
+        /// полностью, а не молчит.
+        /// </summary>
+        public float Muffle;
+
         public bool IsSet => Kind != CommandKind.None;
 
         /// <summary>Строка для DecisionContext.CommandType.</summary>

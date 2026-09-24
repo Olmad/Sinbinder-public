@@ -95,9 +95,55 @@ namespace Sinbinder.Gameplay
                 var warrior = unit.GetComponent<Warrior>();
                 if (!Ours(warrior)) continue;
 
+                if (!Hear(warrior, out float muffle)) continue;
+
                 if (clear) warrior.ClearCommand();
-                else warrior.IssueCommand(kind, warrior.transform.position);
+                else warrior.IssueCommand(kind, warrior.transform.position, null, muffle);
             }
+
+            TellUnheard();
+        }
+
+        // ---------- голос Греховода ----------
+
+        private readonly List<Warrior> _unheard = new();
+
+        /// <summary>
+        /// Слышит ли воин приказ и насколько громко (<see cref="Voice"/>).
+        /// Не слышит — приказа ему нет вовсе: это не отказ, и ни слова
+        /// «отказывается», ни наезда камеры не будет.
+        /// </summary>
+        private bool Hear(Warrior warrior, out float muffle)
+        {
+            muffle = Voice.MuffleFor(warrior);
+            if (Voice.Heard(muffle)) return true;
+
+            _unheard.Add(warrior);
+            return false;
+        }
+
+        /// <summary>Одна строка на приказ, а не по строке на глухого.</summary>
+        private void TellUnheard()
+        {
+            if (_unheard.Count == 0) return;
+
+            string line;
+            if (_unheard.Count == 1)
+            {
+                var w = _unheard[0];
+                line = Core.Grammar.Pick(w.Gender,
+                    $"{w.DisplayName} не расслышал приказ: Греховод далеко.",
+                    $"{w.DisplayName} не расслышала приказ: Греховод далеко.");
+            }
+            else
+            {
+                var names = new List<string>();
+                foreach (var w in _unheard) names.Add(w.DisplayName);
+                line = $"Не расслышали приказ: {string.Join(", ", names)}. Греховод далеко.";
+            }
+
+            _unheard.Clear();
+            FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
         }
 
         /// <summary>Имя объекта рамки. Его же ставит сборщик сцен.</summary>
@@ -441,13 +487,19 @@ namespace Sinbinder.Gameplay
                             continue;
                         }
 
+                        if (!Hear(warrior, out float muffle)) continue;
+
                         if (isAttackOrder)
-                            warrior.IssueCommand(CommandKind.Attack, enemyUnit.transform.position, enemyUnit.gameObject);
+                            warrior.IssueCommand(CommandKind.Attack, enemyUnit.transform.position,
+                                                 enemyUnit.gameObject, muffle);
                         else
-                            warrior.IssueCommand(isFallBack ? CommandKind.FallBack : CommandKind.Move, hit.point);
+                            warrior.IssueCommand(isFallBack ? CommandKind.FallBack : CommandKind.Move,
+                                                 hit.point, null, muffle);
 
                         given++;
                     }
+
+                    TellUnheard();
 
                     if (given > 0)
                     {

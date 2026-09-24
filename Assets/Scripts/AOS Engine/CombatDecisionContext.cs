@@ -74,6 +74,7 @@ namespace Sinbinder.AOS
             var command = warrior.Command;
             context.CommandLeavesFight = command.IsSet && command.LeadsAwayFromFight;
             context.CommandIsFallBack = command.Kind == CommandKind.FallBack;
+            context.CommandVolume = command.IsSet ? 1f - command.Muffle : 1f;
 
             // Есть ли рядом противник, которого можно ударить в спину.
             foreach (var enemy in enemies)
