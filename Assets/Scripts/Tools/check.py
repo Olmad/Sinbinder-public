@@ -299,6 +299,10 @@ class Checker:
     # дороже любой сэкономленной клавиши.
     CONSOLE_KEYS = ('KeyCode.BackQuote', 'KeyCode.Tilde')
 
+    # Её единственный хозяин — сама консоль (24 сентября; запрет автор
+    # снял ради неё же). Всем остальным клавиша по-прежнему закрыта.
+    CONSOLE_OWNER = 'Dev/CheatConsole.cs'
+
     # Слова, которые типом не бывают. `return _soulsOnField;` иначе
     # читалось бы как объявление поля и прятало бы ровно ту беду,
     # ради которой правило заведено.
@@ -378,6 +382,9 @@ class Checker:
         обычно в тот день, когда консоль уже написана.
         """
         for p, s in self.src.items():
+            if str(p).replace('\\', '/').endswith(self.CONSOLE_OWNER):
+                continue
+
             body = strip(s)
             for key in self.CONSOLE_KEYS:
                 i = body.find(key)

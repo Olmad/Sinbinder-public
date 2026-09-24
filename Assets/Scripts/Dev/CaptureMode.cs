@@ -53,6 +53,29 @@ namespace Sinbinder.Dev
 
         public static void RefusalTaken() => NextRefusal = false;
 
+        /// <summary>
+        /// Гарантировать следующий отказ. Зовут F11 и съёмка из консоли
+        /// (<see cref="Shooting"/>): рычаг один, хозяев два.
+        /// </summary>
+        public static void RefuseNext()
+        {
+            NextRefusal = true;
+            Say("следующий отказ гарантирован — снимается после первого же");
+        }
+
+        /// <summary>
+        /// Погасить или вернуть все холсты. Один путь на F12 и на съёмку:
+        /// иначе чистый кадр, включённый одним, возвращал бы другой.
+        /// </summary>
+        public static void ToggleClean()
+        {
+            CleanFrame = !CleanFrame;
+            foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.InstanceID))
+                canvas.enabled = !CleanFrame;
+
+            Say(CleanFrame ? "интерфейс скрыт" : "интерфейс возвращён");
+        }
+
         // F9 занят панелью слотов сохранения (SaveSlotsPanel живёт
         // в четырёх сценах из четырёх). Столкновение было моим: чистый
         // кадр открывал бы слоты, а слоты гасили бы интерфейс — и всё
@@ -107,14 +130,7 @@ namespace Sinbinder.Dev
         {
             if (!Transparency.DeveloperUnlocked) return;
 
-            if (Input.GetKeyDown(_clean))
-            {
-                CleanFrame = !CleanFrame;
-                foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.InstanceID))
-                    canvas.enabled = !CleanFrame;
-
-                Say(CleanFrame ? "интерфейс скрыт" : "интерфейс возвращён");
-            }
+            if (Input.GetKeyDown(_clean)) ToggleClean();
 
             if (Input.GetKeyDown(_slow))
             {
@@ -129,11 +145,7 @@ namespace Sinbinder.Dev
                 Say(_slowed ? "замедление " + _slowScale.ToString("0.00") : "обычный ход");
             }
 
-            if (Input.GetKeyDown(_refuse))
-            {
-                NextRefusal = true;
-                Say("следующий отказ гарантирован — снимается после первого же");
-            }
+            if (Input.GetKeyDown(_refuse)) RefuseNext();
         }
 
         private static void Say(string what)

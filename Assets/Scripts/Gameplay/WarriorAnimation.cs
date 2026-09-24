@@ -37,6 +37,41 @@ namespace Sinbinder.Gameplay
         private string _now;
         private bool _fell;
         private bool _talking;
+        private string _posed;
+        private AnimatorUpdateMode _wasMode;
+
+        /// <summary>Поза, заданная съёмкой, или null — тело слушает душу.</summary>
+        public string Posed => _posed;
+
+        /// <summary>
+        /// Поставить позу из <see cref="BodyMotion"/> поверх решения души.
+        /// Зовёт только съёмка из консоли (<c>Dev.Shooting</c>): для кадра
+        /// нужен воин, который говорит, пока его снимают, а не тогда,
+        /// когда так решил. null — отпустить.
+        ///
+        /// Поставленная поза идёт и на замершем мире: аниматор переводится
+        /// на реальное время и возвращается, когда позу снимают. Так
+        /// буквы могут брать интервью в застывшем бою.
+        /// </summary>
+        public void Pose(string state)
+        {
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+
+            if (_animator != null)
+            {
+                if (_posed == null && state != null)
+                {
+                    _wasMode = _animator.updateMode;
+                    _animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                }
+                else if (_posed != null && state == null)
+                {
+                    _animator.updateMode = _wasMode;
+                }
+            }
+
+            _posed = state;
+        }
 
         void Awake()
         {
@@ -63,6 +98,8 @@ namespace Sinbinder.Gameplay
             // а перезапуск падения выглядит как судорога.
             if (_self != null && _self.IsDead) { _fell = true; return BodyMotion.Die; }
             if (_fell) return BodyMotion.Die;
+
+            if (_posed != null) return _posed;
 
             if (_talking) return BodyMotion.Talk;
 

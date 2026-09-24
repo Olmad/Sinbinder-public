@@ -40,6 +40,9 @@ namespace Sinbinder.UI
         {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
+            // Этот Esc закрыл консоль (Dev.CheatConsole) — меню он не открывает.
+            if (Dev.CheatConsole.OwnsEscape) return;
+
             if (_open) { Close(); return; }
 
             // Пауза открывается только на свободный Esc. Игра уже
