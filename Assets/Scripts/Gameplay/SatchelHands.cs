@@ -47,7 +47,11 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(_next))
             {
                 Satchel.Next();
-                Say($"Ячейка {Satchel.Selected + 1}: {Satchel.Describe(Satchel.Selected)}.");
+                // Без номера ячейки: номер — тоже цифра на экране (автор,
+                // 24 сентября). Какая ячейка под рукой, видно по рамке сумы.
+                int now = Satchel.Selected;
+                Say(Satchel.At(now).Empty ? "Под рукой пустая ячейка."
+                                          : $"Под рукой: {Satchel.Describe(now)}.");
             }
 
             if (Input.GetKeyDown(_swap)) Swap();
@@ -69,7 +73,7 @@ namespace Sinbinder.Gameplay
 
             if (slot.Empty)
             {
-                Say($"Ячейка {i + 1} пуста.");
+                Say("Под рукой пусто — брать нечего.");
                 return;
             }
 
@@ -112,12 +116,12 @@ namespace Sinbinder.Gameplay
 
             if (!Satchel.PutAt(i, slot))
             {
-                Say($"Ячейка {i + 1} занята: {Satchel.Describe(i)}.");
+                Say($"Эта ячейка занята: {Satchel.Describe(i)}.");
                 return;
             }
 
             CryptHands.Drop();
-            Say($"В суму, ячейка {i + 1}: {Satchel.Describe(i)}.");
+            Say($"В суму: {Satchel.Describe(i)}.");
         }
 
         private static void Say(string line)

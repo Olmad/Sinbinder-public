@@ -66,7 +66,12 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// H — держать позицию, D — обороняться, Esc — снять приказ.
+        /// H — держать позицию, G — обороняться, C — снять приказ.
+        ///
+        /// Снятие было на Esc, и одно нажатие делало две вещи: снимало
+        /// приказ и открывало меню паузы, которое слушает ту же клавишу.
+        /// Автор, 24 сентября: «Отмена приказа — на C (cancel)». Esc
+        /// теперь только меню.
         /// Это тоже предложения, а не команды: голосование решает.
         /// </summary>
         private void HandleStanceInput()
@@ -81,7 +86,7 @@ namespace Sinbinder.Gameplay
             // (RTS_Camera), и при выделенном отряде одно нажатие делало
             // и то и другое. WASD принадлежат камере целиком.
             else if (Input.GetKeyDown(KeyCode.G)) kind = CommandKind.Defend;
-            else if (Input.GetKeyDown(KeyCode.Escape)) clear = true;
+            else if (Input.GetKeyDown(KeyCode.C)) clear = true;
             else return;
 
             foreach (var unit in _selectedUnits)

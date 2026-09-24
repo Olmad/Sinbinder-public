@@ -46,6 +46,8 @@ namespace Sinbinder.UI
         /// </summary>
         private static readonly Color Ink = new(0.08f, 0.07f, 0.04f);
 
+        private const string EmptyCell = "— Пусто —";
+
         private float _next;
 
         void Start()
@@ -59,7 +61,39 @@ namespace Sinbinder.UI
                 return;
             }
 
+            Keys();
             Refresh();
+        }
+
+        /// <summary>
+        /// Строка клавиш над сумой. Автор, 24 сентября: «Есть только быстрые
+        /// слоты для банок, и я не понимаю, как между ними переключаться».
+        /// Клавиши были только в УПРАВЛЕНИЕ.md, а на экране — ни слова.
+        ///
+        /// Собирается здесь, а не сборщиком сцен: строка живёт на той же
+        /// панели и гаснет вместе с сумой, и пересобирать сцены ради неё
+        /// незачем.
+        /// </summary>
+        private void Keys()
+        {
+            if (_panel == null || _cells[0] == null) return;
+
+            var go = new GameObject("Клавиши сумы", typeof(RectTransform));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(_panel.transform, false);
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(0f, 4f);
+            rt.sizeDelta = new Vector2(0f, 24f);
+
+            var text = go.AddComponent<Text>();
+            text.font = _cells[0].font;
+            text.fontSize = 16;
+            text.alignment = TextAnchor.MiddleRight;
+            text.color = Idle;
+            text.raycastTarget = false;
+            text.text = "Tab — следующая ячейка · R — взять в руку или положить";
         }
 
         void Update()
@@ -101,7 +135,9 @@ namespace Sinbinder.UI
 
                 if (_cells[i] != null)
                 {
-                    _cells[i].text = Satchel.Describe(i);
+                    // Пустая ячейка — «— Пусто —» (автор, 24 сентября):
+                    // одно слово «пусто» терялось среди названий душ.
+                    _cells[i].text = slot.Empty ? EmptyCell : Satchel.Describe(i);
                     _cells[i].color = i == chosen
                         ? Ink
                         : (slot.Empty || slot.EmptyJar ? Idle : Full);
