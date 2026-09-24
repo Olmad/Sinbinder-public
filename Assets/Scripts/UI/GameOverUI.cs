@@ -88,7 +88,7 @@ namespace Sinbinder.UI
                 es.AddComponent<StandaloneInputModule>();
             }
 
-            var font = Font();
+            var font = UIFont();
 
             // Затемнение всего экрана: мир позади ещё виден, но уже не свой.
             var shade = Rect("Затемнение", transform, Vector2.zero, Vector2.one, Vector2.zero);
@@ -235,7 +235,7 @@ namespace Sinbinder.UI
         /// встроенный. Не нашлось ни одного — говорим вслух: экран конца
         /// без букв хуже, чем без экрана.
         /// </summary>
-        private static Font Font()
+        private static Font UIFont()
         {
             var any = Object.FindFirstObjectByType<Text>(FindObjectsInactive.Include);
             if (any != null && any.font != null) return any.font;
