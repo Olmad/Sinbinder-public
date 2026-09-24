@@ -973,6 +973,14 @@ namespace Sinbinder.Tests
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");
 
+                // Начало доли (решение автора): отметка помнит долю, а в игре
+                // с обязательством вернуться к ней нельзя — уговор режима.
+                SaveSystem.MarkCheckpoint("Prologue_Camp");
+                Check(SaveSystem.Checkpoint != null && SaveSystem.Checkpoint.Scene == "Prologue_Camp",
+                      "отметка начала доли помнит долю");
+                Check(Commitment.On && !SaveSystem.CanRestartPart,
+                      "в игре с обязательством «С начала доли» не предлагается");
+
                 // Файл другого уклада обязан быть отвергнут целиком.
                 back.Version = SaveGame.Current + 1;
                 Check(!SaveSystem.Restore(back),

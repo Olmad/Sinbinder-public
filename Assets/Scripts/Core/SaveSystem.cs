@@ -188,12 +188,58 @@ namespace Sinbinder.Core
             Arriving = false;
             StagedScene = null;
 
+            // Начало доли — её отметка: сюда вернёт «С начала доли».
+            // Сцена — пришедшая, а не «открытая»: в sceneLoaded Unity могла
+            // ещё не сделать её открытой.
+            MarkCheckpoint(scene.name);
+
             // Запись посреди разгрома: лагерь открыт — разгром разворачивается
             // в нём сейчас же, до Start сцены. Шар, совет и открытие лагеря
             // в своих Start видят, что идёт разгром, и молчат.
             string part = _unfold;
             _unfold = null;
             if (part == RaidEvent.SceneName) RaidEvent.Resume(scene);
+        }
+
+        // ──────────────────────────────────
+        // Начало доли
+        // ──────────────────────────────────
+
+        /// <summary>
+        /// Состояние в начале нынешней доли — в памяти, не в файле. Смерть
+        /// Греховода или гибель отряда возвращают сюда кнопкой «С начала
+        /// доли» (решение автора, 24 сентября): для демо на фестивале полный
+        /// перезапуск пролога — это закрытое окно (docs/35-CRITIQUE.md п. 12).
+        /// В игре с обязательством отметки не предлагают: переиграть смерть
+        /// нельзя, в этом уговор.
+        /// </summary>
+        public static SaveGame Checkpoint { get; private set; }
+
+        /// <summary>
+        /// Отметить начало доли. Зовут приход в сцену и начало разгрома
+        /// (<see cref="RaidEvent"/>). <paramref name="part"/> — доля; пусто —
+        /// нынешняя (<see cref="Here"/>).
+        /// </summary>
+        public static void MarkCheckpoint(string part = null)
+        {
+            var save = Snapshot();
+            if (!string.IsNullOrEmpty(StagedScene)) save.Scene = StagedScene;
+            else if (!string.IsNullOrEmpty(part)) save.Scene = part;
+            Checkpoint = save;
+        }
+
+        /// <summary>Можно ли сейчас вернуться к началу доли.</summary>
+        public static bool CanRestartPart => Checkpoint != null && !Commitment.On;
+
+        /// <summary>
+        /// Вернуться к началу доли: отметка — и сцена заново, даже если это
+        /// та же доля (иначе мёртвые остались бы мёртвыми, а охотники — на поле).
+        /// </summary>
+        public static bool RestartPart()
+        {
+            if (!CanRestartPart) return false;
+            GamePauseController.Instance?.Unhalt();
+            return ReturnTo(Checkpoint, reload: true);
         }
 
         /// <summary>
@@ -220,14 +266,16 @@ namespace Sinbinder.Core
         /// заново проиграть её доли, а это уже решение, а не починка
         /// (разбор — 14-HANDOFF §56).
         /// </summary>
-        public static bool ReturnTo(SaveGame save)
+        public static bool ReturnTo(SaveGame save, bool reload = false)
         {
             if (!Restore(save)) return false;
 
             // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
             // и запись «лагерь до совета» по сцене совпала бы с ним: состав
-            // вернулся бы, а охотники остались бы на поле.
-            if (string.IsNullOrEmpty(save.Scene) || save.Scene == Here) return true;
+            // вернулся бы, а охотники остались бы на поле. «С начала доли»
+            // (reload) грузит сцену и в той же доле — начать её заново.
+            if (string.IsNullOrEmpty(save.Scene)) return true;
+            if (save.Scene == Here && !reload) return true;
 
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).

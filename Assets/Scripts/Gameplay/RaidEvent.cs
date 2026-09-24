@@ -101,6 +101,15 @@ namespace Sinbinder.Gameplay
             _stagedIn = scene;
             Core.SaveSystem.StagedScene = SceneName;
 
+            // Разгром — своя доля: «С начала доли» вернёт в его начало,
+            // а не к совету. Состав сперва сверяется с живыми: запись отряда
+            // обновляется только при уходе из сцены, и без сверки отметка
+            // взяла бы его таким, каким он пришёл в лагерь, — без вещей,
+            // отданных у костра, а мешок уже без них.
+            var spawner = Object.FindFirstObjectByType<PrologueCampSpawner>();
+            if (spawner != null) SquadRoster.Remember(spawner.GetComponentsInChildren<Warrior>());
+            Core.SaveSystem.MarkCheckpoint();
+
             // Ведущий лагеря становится ведущим набега до того, как что-то
             // появится: иначе его страховки лагеря успели бы сработать.
             director.BecomeRaid(After);

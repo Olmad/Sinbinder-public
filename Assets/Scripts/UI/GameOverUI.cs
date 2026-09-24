@@ -102,8 +102,26 @@ namespace Sinbinder.UI
             Line("Заголовок", panel, font, title, 40, new Vector2(0f, -36f), 60f);
             Line("Слова", panel, font, body, 24, new Vector2(0f, -116f), 190f);
 
-            Choice("Начать сначала", panel, font, new Vector2(-190f, 70f), Again);
-            Choice("Выйти из игры", panel, font, new Vector2(190f, 70f), Application.Quit);
+            // «С начала доли» — первой: для демо, где игрок пробует пять игр
+            // за вечер, перезапуск всего пролога — закрытое окно (решение
+            // автора, 24 сентября). В игре с обязательством кнопки нет.
+            if (Core.SaveSystem.CanRestartPart)
+            {
+                Choice("С начала доли", panel, font, new Vector2(-290f, 70f), AgainPart, 260f);
+                Choice("Начать сначала", panel, font, new Vector2(0f, 70f), Again, 260f);
+                Choice("Выйти из игры", panel, font, new Vector2(290f, 70f), Application.Quit, 260f);
+            }
+            else
+            {
+                Choice("Начать сначала", panel, font, new Vector2(-190f, 70f), Again);
+                Choice("Выйти из игры", panel, font, new Vector2(190f, 70f), Application.Quit);
+            }
+        }
+
+        /// <summary>Вернуться к началу нынешней доли (<see cref="Core.SaveSystem.RestartPart"/>).</summary>
+        private static void AgainPart()
+        {
+            if (!Core.SaveSystem.RestartPart()) Again();
         }
 
         /// <summary>
@@ -199,7 +217,7 @@ namespace Sinbinder.UI
         }
 
         private static void Choice(string title, RectTransform panel, Font font,
-            Vector2 position, UnityEngine.Events.UnityAction onClick)
+            Vector2 position, UnityEngine.Events.UnityAction onClick, float width = 320f)
         {
             var go = new GameObject(title, typeof(RectTransform));
             go.transform.SetParent(panel, false);
@@ -208,7 +226,7 @@ namespace Sinbinder.UI
             rt.anchorMin = new Vector2(0.5f, 0f);
             rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(320f, 84f);
+            rt.sizeDelta = new Vector2(width, 84f);
             rt.anchoredPosition = position;
 
             var plate = go.AddComponent<Image>();
