@@ -35,7 +35,6 @@ namespace Sinbinder.Utilets
             ("Assets/Scenes/Prologue_Camp.unity", "лагерь", Vector3.zero, Vector3.zero),
             ("Assets/Scenes/Prologue_Camp.unity", "лагерь-костёр",
                 new Vector3(-4.5f, 2.2f, -6.5f), new Vector3(0f, 1.1f, 0f)),
-            ("Assets/Scenes/Prologue_Raid.unity", "набег", Vector3.zero, Vector3.zero),
             ("Assets/Scenes/Crypt_Entrance.unity", "склеп", Vector3.zero, Vector3.zero),
             ("Assets/Scenes/Crypt_Entrance.unity", "склеп-зал",
                 new Vector3(-3.2f, 2.4f, -1.4f), new Vector3(0.8f, 1.2f, 5.2f)),

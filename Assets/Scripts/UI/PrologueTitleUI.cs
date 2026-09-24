@@ -39,7 +39,14 @@ namespace Sinbinder.UI
         /// </summary>
         public static bool Showing { get; private set; }
 
-        void Start() => StartCoroutine(Show(_text));
+        void Start()
+        {
+            // Лагерь открыт записью посреди разгрома: на полотне своя строка,
+            // «Лагерь знали не только свои», и лагерной поверх неё не место.
+            if (Gameplay.RaidEvent.Running) return;
+
+            StartCoroutine(Show(_text));
+        }
 
         /// <summary>
         /// Показать строку ещё раз — другую. Набег стал событием лагеря

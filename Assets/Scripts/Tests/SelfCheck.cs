@@ -84,6 +84,7 @@ namespace Sinbinder.Tests
                 HunterGoals();
                 Roster();
                 Pausing();
+                RaidPart();
                 Fog();
                 TextRules();
             }
@@ -364,6 +365,32 @@ namespace Sinbinder.Tests
             finally
             {
                 Time.timeScale = was;
+            }
+        }
+
+        /// <summary>
+        /// Разгром — доля без своей сцены (§70): запись посреди него помнит
+        /// «набег», а открывается по ней лагерь. Сцены набега в сборке нет,
+        /// и грузить доли по имени значило бы грузить пустоту.
+        /// </summary>
+        private static void RaidPart()
+        {
+            string was = SaveSystem.StagedScene;
+
+            try
+            {
+                Check(RaidEvent.HostOf(RaidEvent.SceneName) == "Prologue_Camp",
+                    "запись посреди разгрома открывает лагерь");
+                Check(RaidEvent.HostOf("Crypt_Entrance") == "Crypt_Entrance",
+                    "остальные доли открывают свои сцены");
+
+                SaveSystem.StagedScene = RaidEvent.SceneName;
+                Check(SaveSystem.Here == RaidEvent.SceneName,
+                    "посреди разгрома запись пишет «набег», а не «лагерь»");
+            }
+            finally
+            {
+                SaveSystem.StagedScene = was;
             }
         }
 

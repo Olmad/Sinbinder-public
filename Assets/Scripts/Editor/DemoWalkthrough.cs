@@ -252,10 +252,9 @@ namespace Sinbinder.EditorTools
                   () => Ball() != null && Ball().IsAlarmed, 10f),
 
                 // С 24 сентября разгром — событие лагеря, а не новая сцена
-                // (RaidEvent). Отдельная сцена набега открывается только
-                // загрузкой записи, сделанной посреди него.
+                // (RaidEvent); отдельной сцены набега нет вовсе.
                 S("Греховод у горящего шара", () => HeroTo(Ball()?.transform, 1.5f),
-                  () => RaidEvent.Running || Scene("Prologue_Raid"), 60f),
+                  () => RaidEvent.Running, 60f),
 
                 // ── Набег ──
                 S("набег: охотники вышли", null,

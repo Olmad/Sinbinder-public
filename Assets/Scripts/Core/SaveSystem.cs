@@ -79,9 +79,7 @@ namespace Sinbinder.Core
         {
             var save = new SaveGame
             {
-                Scene = string.IsNullOrEmpty(StagedScene)
-                      ? UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
-                      : StagedScene,
+                Scene = Here,
                 Gold = Inventory.PlayerInventory.Instance != null
                      ? Inventory.PlayerInventory.Instance.Gold : 0,
                 Installed = CryptUpgrades.InstalledAll(),
@@ -143,19 +141,35 @@ namespace Sinbinder.Core
         public static bool Arriving { get; private set; }
 
         /// <summary>
-        /// Какая доля идёт, если она не совпадает со сценой. Набег стал
-        /// событием лагеря (<see cref="RaidEvent"/>): сцена — лагерь, а доля —
+        /// Какая доля идёт, если она не совпадает со сценой. Набег —
+        /// событие лагеря (<see cref="RaidEvent"/>): сцена — лагерь, а доля —
         /// набег, и запись, сделанная посреди него, обязана вернуть в набег,
-        /// а не к совету. Загрузка такой записи открывает отдельную сцену
-        /// набега. Сбрасывается сменой сцены.
+        /// а не к совету. Сбрасывается сменой сцены.
         /// </summary>
         public static string StagedScene { get; set; }
+
+        /// <summary>
+        /// Где игрок сейчас — в долях, а не в сценах: посреди разгрома это
+        /// «набег», хотя открыт лагерь. По этому месту пишется запись и по
+        /// нему же решается, грузить ли сцену при загрузке.
+        /// </summary>
+        public static string Here =>
+            string.IsNullOrEmpty(StagedScene)
+                ? UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                : StagedScene;
+
+        /// <summary>
+        /// Доля, которую надо развернуть в сцене, открытой загрузкой. Живёт
+        /// от <see cref="ReturnTo"/> до <c>sceneLoaded</c>.
+        /// </summary>
+        private static string _unfold;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Listen()
         {
             Arriving = false;
             StagedScene = null;
+            _unfold = null;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Arrived;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += Arrived;
         }
@@ -165,6 +179,13 @@ namespace Sinbinder.Core
         {
             Arriving = false;
             StagedScene = null;
+
+            // Запись посреди разгрома: лагерь открыт — разгром разворачивается
+            // в нём сейчас же, до Start сцены. Шар, совет и открытие лагеря
+            // в своих Start видят, что идёт разгром, и молчат.
+            string part = _unfold;
+            _unfold = null;
+            if (part == RaidEvent.SceneName) RaidEvent.Resume(scene);
         }
 
         /// <summary>
@@ -186,7 +207,7 @@ namespace Sinbinder.Core
         /// сброс новой игры. Загрузи лагерь без флага, и он молча
         /// выбросит только что восстановленную запись.
         ///
-        /// <b>Загрузка в той же сцене остаётся прежней</b> — состояние
+        /// <b>Загрузка в той же доле остаётся прежней</b> — состояние
         /// на месте, без перезагрузки. Перезагружать сцену значило бы
         /// заново проиграть её доли, а это уже решение, а не починка
         /// (разбор — 14-HANDOFF §56).
@@ -195,21 +216,28 @@ namespace Sinbinder.Core
         {
             if (!Restore(save)) return false;
 
-            string here = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-            if (string.IsNullOrEmpty(save.Scene) || save.Scene == here) return true;
+            // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
+            // и запись «лагерь до совета» по сцене совпала бы с ним: состав
+            // вернулся бы, а охотники остались бы на поле.
+            if (string.IsNullOrEmpty(save.Scene) || save.Scene == Here) return true;
+
+            // Доля «набег» своей сцены не имеет: её открывает лагерь,
+            // а разгром разворачивается в нём по приходу (Arrived).
+            string scene = RaidEvent.HostOf(save.Scene);
 
             // Сцены нет в сборке — не падаем, а говорим. Состояние
             // вернули, место вернуть не можем, и игрок должен это знать.
-            if (!Application.CanStreamedLevelBeLoaded(save.Scene))
+            if (!Application.CanStreamedLevelBeLoaded(scene))
             {
-                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{save.Scene}» нет в сборке: "
+                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{scene}» нет в сборке: "
                                + "состояние возвращено, место — нет.");
                 return true;
             }
 
             Arriving = true;
+            _unfold = scene != save.Scene ? save.Scene : null;
             GamePauseController.Instance?.Resume();
-            UnityEngine.SceneManagement.SceneManager.LoadScene(save.Scene);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
             return true;
         }
 

@@ -74,7 +74,13 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private readonly HashSet<Warrior> _ordered = new HashSet<Warrior>();
 
-        void Start() => StartCoroutine(Routine());
+        void Start()
+        {
+            // Посреди разгрома, открытого записью, к столу не зовут.
+            if (RaidEvent.Running) { enabled = false; return; }
+
+            StartCoroutine(Routine());
+        }
 
         /// <summary>
         /// Карган зовёт тогда, когда первый воин пошёл рядом

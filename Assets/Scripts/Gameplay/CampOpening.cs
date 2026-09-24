@@ -59,7 +59,14 @@ namespace Sinbinder.Gameplay
 
         void Awake() => EscortArrived = false;
 
-        void Start() => StartCoroutine(Routine());
+        void Start()
+        {
+            // Лагерь открыт записью посреди разгрома: открытие давно было,
+            // и провожатый, бегущий к Греховоду под охотниками, — чужая сцена.
+            if (RaidEvent.Running) { EscortArrived = true; return; }
+
+            StartCoroutine(Routine());
+        }
 
         /// <summary>
         /// Порядок из прохождения автора: вышел из палатки → подошёл

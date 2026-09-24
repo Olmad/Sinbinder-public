@@ -23,13 +23,18 @@ namespace Sinbinder.Gameplay
     /// а в лагере юг закрыт частоколом (дуга в четырнадцать метров),
     /// и земля кончается на двадцати. Край — на востоке, за палатками.
     ///
-    /// Сцена набега не удалена: запись, сделанная посреди разгрома, помнит
-    /// долю «набег» (<see cref="Core.SaveSystem.StagedScene"/>), и загрузка
-    /// открывает её, как прежде.
+    /// Отдельной сцены набега больше нет (удалена 24 сентября: автор считал,
+    /// что сцен две — лагерь и склеп, — и так и должно быть). Запись,
+    /// сделанная посреди разгрома, помнит долю «набег»
+    /// (<see cref="Core.SaveSystem.StagedScene"/>); загрузка открывает лагерь,
+    /// и разгром разворачивается в нём заново (<see cref="Resume"/>).
     /// </summary>
     public class RaidEvent : MonoBehaviour
     {
-        /// <summary>Доля, которую событие заменяет. По этому имени его узнаёт ведущий.</summary>
+        /// <summary>
+        /// Имя доли. Сцены с таким именем нет: по нему разгром узнаёт
+        /// ведущий лагеря, а запись — что вернуться надо в разгром.
+        /// </summary>
         public const string SceneName = "Prologue_Raid";
 
         /// <summary>Где разгром разворачивается на месте.</summary>
@@ -52,24 +57,48 @@ namespace Sinbinder.Gameplay
         private static readonly Vector3 Edge = new Vector3(16f, 0f, 0f);
         private const float EdgeRadius = 5f;
 
-        /// <summary>Идёт ли разгром в лагере. Спрашивает прогон демо.</summary>
-        public static bool Running { get; private set; }
+        /// <summary>
+        /// Идёт ли разгром в лагере. Спрашивают прогон демо и то, что в лагере
+        /// начинается само (открытие, сбор, шар, строка на чёрном): посреди
+        /// разгрома, открытого загрузкой, им молчать.
+        ///
+        /// Разгром помнит сцену, в которой развёрнут, а не просто «да»:
+        /// сменили сцену — и он кончился, в каком бы порядке Unity ни
+        /// выгружала старую. Флаг, который снимал бы OnDestroy, мог бы
+        /// дожить до Start нового лагеря и заглушить его открытие.
+        /// </summary>
+        public static bool Running =>
+            _staged && _stagedIn == SceneManager.GetActiveScene();
+
+        private static bool _staged;
+        private static Scene _stagedIn;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => Running = false;
+        private static void Rearm() => _staged = false;
 
         /// <summary>
-        /// Развернуть разгром на месте. Ложь — сцена не лагерь (например,
-        /// загрузили отдельную сцену набега), и тогда ведущий грузит
-        /// следующую долю, как прежде.
+        /// Какую сцену открыть ради доли. Доля «набег» своей сцены не имеет —
+        /// её открывает лагерь; остальные доли и есть сцены.
+        /// </summary>
+        public static string HostOf(string part) => part == SceneName ? CampScene : part;
+
+        /// <summary>
+        /// Развернуть разгром на месте. Ложь — ведущий не в лагере, и тогда
+        /// он грузит следующую долю сам.
         /// </summary>
         public static bool Stage(PrologueDirector director)
         {
             if (director == null) return false;
-            if (SceneManager.GetActiveScene().name != CampScene) return false;
-            if (Running) return true;
 
-            Running = true;
+            // Сцена ведущего, а не открытая: при загрузке записи разгром
+            // ставится из sceneLoaded, и так он не зависит от того, успела ли
+            // Unity сделать новый лагерь открытой сценой.
+            var scene = director.gameObject.scene;
+            if (scene.name != CampScene) return false;
+            if (_staged && _stagedIn == scene) return true;
+
+            _staged = true;
+            _stagedIn = scene;
             Core.SaveSystem.StagedScene = SceneName;
 
             // Ведущий лагеря становится ведущим набега до того, как что-то
@@ -77,18 +106,49 @@ namespace Sinbinder.Gameplay
             director.BecomeRaid(After);
 
             var go = new GameObject("Разгром");
+            SceneManager.MoveGameObjectToScene(go, scene);
             go.AddComponent<RaidEvent>().StartCoroutine(Unfold(go.transform));
             return true;
         }
 
-        void OnDestroy()
+        /// <summary>
+        /// Вернуться в разгром по записи, сделанной посреди него. Зовёт
+        /// <see cref="Core.SaveSystem"/>, когда лагерь открыт загрузкой, —
+        /// до Start сцены, чтобы шар, совет и открытие лагеря успели увидеть,
+        /// что идёт разгром.
+        ///
+        /// Разгром начинается сначала: строка на чёрном, обе волны, край.
+        /// Середины боя запись не хранит (<see cref="Core.SaveSystem"/>),
+        /// и отдельная сцена набега, пока она была, делала то же самое.
+        /// </summary>
+        public static void Resume(Scene scene)
         {
-            // Сцену сменили — разгром кончился вместе с ней.
-            Running = false;
+            // Ищем в открытой сцене, а не где попало: в sceneLoaded старая
+            // сцена может быть ещё не выгружена, и её ведущий нашёлся бы
+            // первым — а он склепа или прошлого лагеря.
+            PrologueDirector director = null;
+            foreach (var d in Object.FindObjectsByType<PrologueDirector>(FindObjectsSortMode.None))
+                if (d.gameObject.scene == scene) { director = d; break; }
+
+            if (Stage(director))
+            {
+                Debug.Log("[ЗАПИСЬ] Запись посреди разгрома: разгром развёрнут в лагере заново.");
+                return;
+            }
+
+            Debug.LogWarning("[ЗАПИСЬ] Запись сделана посреди разгрома, но в открытой "
+                           + "сцене нет ведущего лагеря — разгрому негде развернуться. "
+                           + "Пересоберите сцены демо.");
         }
 
         private static IEnumerator Unfold(Transform root)
         {
+            // Кадр на то, чтобы сцена устоялась. По записи разгром ставится
+            // из sceneLoaded: старая сцена ещё может быть загружена, и её
+            // строка на чёрном или камера нашлись бы вместо своих — строка,
+            // уничтоженная посреди показа, заперла бы разгром до конца игры.
+            yield return null;
+
             // Строка на чёрном — та же, что открывала сцену набега.
             // Пока она на экране, мир стоит, и охотники выходят после.
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();

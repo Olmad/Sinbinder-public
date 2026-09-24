@@ -24,7 +24,6 @@ namespace Sinbinder.Utilets
         private static readonly string[] Scenes =
         {
             "Assets/Scenes/Prologue_Camp.unity",
-            "Assets/Scenes/Prologue_Raid.unity",
             "Assets/Scenes/Crypt_Entrance.unity",
             "Assets/Scenes/Сакура.unity",
         };

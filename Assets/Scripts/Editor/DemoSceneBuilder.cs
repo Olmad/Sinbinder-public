@@ -49,9 +49,9 @@ namespace Sinbinder.Utilets
             if (!ConfirmDiscard()) return;
 
             BuildCamp();
-            BuildRaid();
             BuildCryptEntrance();
 
+            RetireRaid();
             StartFromCamp();
 
             AssetDatabase.SaveAssets();
@@ -144,83 +144,12 @@ namespace Sinbinder.Utilets
 
             // Врагов в лагере нет: выступаем, когда назначен старший.
             // Здесь же пролог начинается — забываем прошлый отряд.
-            Director("Prologue_Raid", waitForBattle: false, startsPrologue: true);
+            // Дальше — разгром, событие этой же сцены (RaidEvent): своей
+            // сцены у него нет, ведущий разворачивает его на месте.
+            Director(RaidEvent.SceneName, waitForBattle: false, startsPrologue: true);
 
             Save(scene, "Prologue_Camp");
         }
-
-        /// <summary>
-        /// Тревога и разгром: те же восемь у того же огня, но с севера
-        /// надвигаются охотники. Лагерь не переставляем — узнавание места
-        /// и есть то, что делает разгром разгромом.
-        /// </summary>
-        private static void BuildRaid()
-        {
-            var scene = NewScene();
-            Atmosphere(warm: true);
-            Ground("Земля", 6f, "Ground110");
-            Look();
-            Managers();
-
-            var raidCanvas = Interface();
-            BuildTitle(raidCanvas, "Лагерь знали не только свои.");
-
-            // Сцена 5 живёт здесь: приказ отходить, отказ Каргана, побег.
-            // Рог трубит на приказ, камера отъезжает после отказа — и то
-            // и другое случается ровно по разу (docs/09-PROLOGUE.md §9).
-            var camera = CameraRig(new Vector3(0f, 6.5f, -11f),
-                                   new Vector3(28f, 0f, 0f), movable: true);
-            camera.AddComponent<CameraPullback>();
-
-            var horn = new GameObject("Рог");
-            horn.AddComponent<AudioSource>();
-            horn.AddComponent<RetreatHorn>();
-
-            var campfire = Campfire(Vector3.zero);
-            campfire.AddComponent<PrologueCampSpawner>();
-
-            // Тот же лагерь, та же расстановка. Узнавание места и есть то,
-            // что делает разгром разгромом, — значит палатки и холм обязаны
-            // стоять там же, где стояли на доле 1.
-            Hill(new Vector3(0f, 0f, -12f), radius: 5f, height: 2.6f);
-            Tents(new Vector3(0f, 0f, -12f), hillRadius: 5f);
-            CouncilTable(new Vector3(3.0f, 0f, 2.2f));
-
-            // Две волны, как в сценарии (§4, сцена 4). Первая — трое слабых,
-            // бой, который нельзя проиграть: игрок должен успеть поверить,
-            // что он бог. Вторая выходит по опустевшему полю, заметно
-            // сильнее, и она же открывает край карты — бежать полагается
-            // от неё, а не вместо первой.
-            Hunters(new Vector3(0f, 0f, 12f), Vector3.zero, count: 3, width: 5f,
-                level: 1);
-
-            // Уровень 2, а не выше: вторая волна обязана быть сильнее,
-            // но не обязана всех положить. Побег — механика отбора, и
-            // отбирать не из кого, если до края никто не добежал.
-            // Жизнь 40, удар 7, защита 3 против своих 30 / 5 / 2.
-            // С 24 сентября жизнь — настоящая: запас тела от оболочки,
-            // человек 40, отряд-скелеты 30. Удар и защита до боя пока
-            // не доходят (у всех удар 5, защиты нет), 14-HANDOFF §60.
-            Hunters(new Vector3(0f, 0f, 15f), Vector3.zero, count: 6, width: 10f,
-                level: 2, afterFieldClear: true, opensEscape: true,
-                announce: "Карган: «Владыка, они узнали, где наш лагерь. "
-                        + "Вероятно, от одного из наших. Тяжело это признавать, "
-                        + "но нам нужно бежать».");
-
-            // Уходим не по концу боя, а по краю карты: вторую волну
-            // не полагается перебить, полагается унести от неё ноги.
-            // Охотники идут с севера, значит бежать — на юг, за холм.
-            Escape(new Vector3(0f, 0f, -25f), radius: 6f, openAtStart: false);
-
-            // Прямо в склеп: сцены 6 и 7 сценария вырезаны из демо
-            // (docs/09-PROLOGUE.md §10). Ни та ни другая не добавляли
-            // механики — прогулка с разговорами и ещё один бой, — а тридцать
-            // минут до расплаты доходило меньшинство.
-            Director("Crypt_Entrance", waitForBattle: false, waitForEscape: true);
-
-            Save(scene, "Prologue_Raid");
-        }
-
 
         /// <summary>Бой у входа в склеп — чужого, найденного, а не родового.</summary>
         private static void BuildCryptEntrance()
@@ -1426,27 +1355,6 @@ namespace Sinbinder.Utilets
             Wire(trophy, ("_lid", hinge.transform));
         }
 
-        private static void Hunters(Vector3 position, Vector3 lookAt, int count,
-            float width, int level = 1, bool afterFieldClear = false,
-            bool opensEscape = false, string announce = "")
-        {
-            var go = new GameObject(afterFieldClear ? "Охотники: вторая волна"
-                                                    : "Охотники");
-            go.transform.position = position;
-            go.transform.LookAt(new Vector3(lookAt.x, position.y, lookAt.z));
-
-            var spawner = go.AddComponent<HunterSquadSpawner>();
-
-            var so = new SerializedObject(spawner);
-            so.FindProperty("_count").intValue = count;
-            so.FindProperty("_lineWidth").floatValue = width;
-            so.FindProperty("_level").intValue = level;
-            so.FindProperty("_afterFieldClear").boolValue = afterFieldClear;
-            so.FindProperty("_opensEscape").boolValue = opensEscape;
-            so.FindProperty("_announce").stringValue = announce;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
         /// <summary>Вход в склеп: две опоры и перемычка. Больше и не нужно.</summary>
         /// <summary>
         /// Зал склепа: трон, алтарь, гроб в нише.
@@ -1618,46 +1526,6 @@ namespace Sinbinder.Utilets
             so.FindProperty("_endsAfterSeconds").floatValue = endsAfterSeconds;
             so.FindProperty("_arrivalLine").stringValue = arrivalLine;
             so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        /// <summary>
-        /// Край карты: круг, до которого надо довести отряд. Ставится
-        /// на противоположной от Охотников стороне — бежать полагается
-        /// от них, а не сквозь них.
-        /// </summary>
-        private static void Escape(Vector3 position, float radius,
-            bool openAtStart = true)
-        {
-            var go = new GameObject("Край карты");
-            go.transform.position = position;
-
-            var zone = go.AddComponent<EscapeZone>();
-            var so = new SerializedObject(zone);
-            so.FindProperty("_radius").floatValue = radius;
-            so.FindProperty("_openAtStart").boolValue = openAtStart;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            // Край карты должен быть виден, иначе игрок не поймёт, куда
-            // бежать, и решит, что механики нет. Два столба и холодный
-            // свет между ними — дорога наружу.
-            for (int side = -1; side <= 1; side += 2)
-            {
-                var post = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                post.name = "Столб";
-                post.transform.SetParent(go.transform);
-                post.transform.localPosition = new Vector3(radius * 0.55f * side, 1.3f, 0f);
-                post.transform.localScale = new Vector3(0.22f, 1.3f, 0.22f);
-            }
-
-            var beacon = new GameObject("Свет дороги");
-            beacon.transform.SetParent(go.transform);
-            beacon.transform.localPosition = new Vector3(0f, 2.4f, 0f);
-
-            var light = beacon.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.color = new Color(0.58f, 0.72f, 0.95f);
-            light.intensity = 2.2f;
-            light.range = radius * 2.4f;
         }
 
         /// <summary>
@@ -2851,6 +2719,30 @@ namespace Sinbinder.Utilets
             EditorSceneManager.SaveScene(scene, path);
             RegisterInBuildSettings(path);
             Debug.Log($"[СЦЕНЫ] Собрана: {path}");
+        }
+
+        /// <summary>
+        /// Сцены набега больше нет: с 24 сентября разгром — событие лагеря
+        /// (<see cref="RaidEvent"/>), и запись посреди него открывает лагерь.
+        /// Проект, где старая сцена ещё лежит или стоит в списке сборки,
+        /// при пересборке от неё избавляется: иначе в игру попала бы копия
+        /// лагеря, в которую никто не ведёт, а список сборки ссылался бы
+        /// на удалённый файл, и сборка игры падала бы на нём. Сцена целиком
+        /// собиралась этим же сборщиком — своего в ней ничего нет.
+        /// </summary>
+        private static void RetireRaid()
+        {
+            const string raid = SceneDir + "/Prologue_Raid.unity";
+
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(raid) != null)
+            {
+                AssetDatabase.DeleteAsset(raid);
+                Debug.Log($"[СЦЕНЫ] Удалена: {raid} — разгром теперь событие лагеря.");
+            }
+
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            if (scenes.RemoveAll(s => s.path == raid) > 0)
+                EditorBuildSettings.scenes = scenes.ToArray();
         }
 
         /// <summary>

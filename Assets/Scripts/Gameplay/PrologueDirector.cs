@@ -314,9 +314,15 @@ namespace Sinbinder.Gameplay
 
             // Набег — событие лагеря, а не отдельная сцена (слово автора,
             // 24 сентября): Греховода не отбрасывает к палатке, отряд стоит
-            // там, где стоял. Отдельная сцена набега осталась для загрузки
-            // записи, сделанной посреди него.
-            if (_nextScene == RaidEvent.SceneName && RaidEvent.Stage(this)) yield break;
+            // там, где стоял. Сцены набега нет вовсе — грузить её нечего.
+            if (_nextScene == RaidEvent.SceneName)
+            {
+                if (!RaidEvent.Stage(this))
+                    Debug.LogError("[ПРОЛОГ] Разгром разворачивается только в лагере "
+                                 + "(Prologue_Camp), а ведущий стоит в другой сцене. "
+                                 + "Пересоберите сцены демо.");
+                yield break;
+            }
 
             Core.GamePauseController.Instance?.Resume();
             SceneManager.LoadScene(_nextScene);
