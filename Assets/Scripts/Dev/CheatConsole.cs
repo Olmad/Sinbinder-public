@@ -119,6 +119,9 @@ namespace Sinbinder.Dev
             ["лагерь"] = c => c.ToggleCamp(),
             ["склад"] = c => c.ToggleStore(),
             ["причина"] = c => c.ToggleReason(),
+            // «всё» не набрать: ё на той же клавише, что закрывает консоль.
+            ["все"] = c => c.AllOn(),
+            ["all"] = c => c.AllOn(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -209,6 +212,22 @@ namespace Sinbinder.Dev
                 : "Причина отказа — самый громкий голос, как прежде.");
         }
 
+        /// <summary>
+        /// Все выключатели дня разом — для общего прохода прогона: один проход
+        /// со всем вместе быстрее шести поодиночке, а поодиночке включают
+        /// только чтобы найти, кто из них виноват.
+        /// </summary>
+        private void AllOn()
+        {
+            Gameplay.Voice.Enabled = true;
+            AOS.Counterfactual.Enabled = true;
+            Gameplay.CombatMath.Enabled = true;
+            Gameplay.LootChain.Enabled = true;
+            Gameplay.CampLife.Enabled = true;
+            Gameplay.TrophyChest.Store = true;
+            Write("Включено всё: голос, причина, удар, добыча, лагерь, склад.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
@@ -218,6 +237,7 @@ namespace Sinbinder.Dev
             Write("лагерь — включить или выключить жизнь в лагере.");
             Write("склад — сундук лагеря как склад: взять, сколько унесёте.");
             Write("причина — объяснять отказ тем, без чего приказ был бы исполнен.");
+            Write("все — включить все шесть разом.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 
