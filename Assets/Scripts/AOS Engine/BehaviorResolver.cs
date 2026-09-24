@@ -211,9 +211,13 @@ namespace Sinbinder.AOS
             decision.RefusedCommand = context.HasCommand && !obeyed && !decision.Hesitated;
 
             // Объяснение «от противного»: без какой причины приказ был бы
-            // исполнен (Counterfactual). Только для отказов — послушание
-            // в объяснении причины не нуждается.
-            if (decision.RefusedCommand && Counterfactual.Enabled)
+            // исполнен (Counterfactual). Для отказов и для колебаний при
+            // приказе: замерший тоже приказа не исполнил, и стенд показал,
+            // что карман и усталость чаще доводят до колебания, чем до
+            // отказа, — без этого их причина осталась бы невидимой.
+            // Послушание в объяснении причины не нуждается.
+            bool balked = decision.RefusedCommand || (decision.Hesitated && context.HasCommand);
+            if (balked && Counterfactual.Enabled)
             {
                 decision.Weighed = true;
                 decision.Decisive = Counterfactual.Decisive(context, c => WouldObey(warrior, c));

@@ -33,6 +33,11 @@ namespace Sinbinder.AOS
 
             if (decision.Hesitated)
             {
+                // Колебание при приказе, взвешенное «от противного»: названа
+                // причина, без которой воин бы послушался, — её игрок и чинит.
+                if (Caused(decision))
+                    return $"{name} колеблется: {Reason(warrior, context, decision)}.";
+
                 // Когда кандидат один, BehaviourResolver кладёт его же
                 // и во второе поле (alone ? best : sorted[1]). Фраза
                 // выходила «Покой и Покой тянут его почти поровну» —
@@ -67,9 +72,12 @@ namespace Sinbinder.AOS
             string name = warrior.DisplayName;
 
             if (decision.Hesitated)
-                return Core.Grammar.Pick(warrior.Gender,
-                    $"{name} не сдвинулся с места — не смог выбрать.",
-                    $"{name} не сдвинулась с места — не смогла выбрать.");
+            {
+                string stuck = Core.Grammar.Pick(warrior.Gender,
+                    $"{name} не сдвинулся с места", $"{name} не сдвинулась с места");
+                if (Caused(decision)) return $"{stuck}: {Reason(warrior, context, decision)}.";
+                return stuck + Core.Grammar.Pick(warrior.Gender, " — не смог выбрать.", " — не смогла выбрать.");
+            }
 
             string why = Reason(warrior, context, decision);
             string what = VerbPast(decision.Action, context, warrior.Gender);
@@ -83,6 +91,11 @@ namespace Sinbinder.AOS
         }
 
         // ---------- причина ----------
+
+        /// <summary>Взвешено «от противного» и причина нашлась — причиной или голосом.</summary>
+        private static bool Caused(Decision decision)
+            => decision.Weighed
+            && (decision.Decisive != Counterfactual.Factor.None || !string.IsNullOrEmpty(decision.DecisiveVoice));
 
         /// <summary>
         /// Голая причина, без имени и без действия: «их слишком много».
@@ -117,7 +130,7 @@ namespace Sinbinder.AOS
             // Взвешено, но ни одна поодиночке не решает — решил характер:
             // ниже, голосом души, без особых правил о дали и кармане и без
             // строк о положении — пересчёт их уже проверил, и они не решили.
-            bool weighed = decision.RefusedCommand && decision.Weighed;
+            bool weighed = decision.Weighed;
             if (weighed && decision.Decisive != Counterfactual.Factor.None)
             {
                 var sin = warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null;

@@ -2047,7 +2047,8 @@ static class Bench
         };
 
         bool was = Counterfactual.Enabled;
-        int total = 0, fixable = 0, wrongOld = 0, silentOld = 0, byVoice = 0, allAtOnce = 0, wrongSin = 0, pairs = 0, hesitated = 0;
+        int total = 0, fixable = 0, wrongOld = 0, silentOld = 0, byVoice = 0, allAtOnce = 0, wrongSin = 0, pairs = 0, hesitated = 0,
+            hesitatedCaused = 0, hesitatedPocket = 0;
         var byFactor = new Dictionary<Counterfactual.Factor, int>();
         var voices = new Dictionary<string, int>();
 
@@ -2064,7 +2065,15 @@ static class Bench
                         // Колебание — не отказ: движок его так и не считает
                         // (RefusedCommand), и объясняет его своя фраза —
                         // «тянут почти поровну». Считаем отдельно.
-                        if (!decision.RefusedCommand) { hesitated++; return; }
+                        if (!decision.RefusedCommand)
+                        {
+                            hesitated++;
+                            if (decision.Decisive != Counterfactual.Factor.None || !string.IsNullOrEmpty(decision.DecisiveVoice))
+                                hesitatedCaused++;
+                            if (decision.Decisive == Counterfactual.Factor.Pocket || decision.DecisiveAlso == Counterfactual.Factor.Pocket)
+                                hesitatedPocket++;
+                            return;
+                        }
                         sitRefused++;
                         var gender = w.Gender;
                         var decisive = decision.Decisive;
@@ -2118,7 +2127,8 @@ static class Bench
         Counterfactual.Enabled = was;
 
         double all = Math.Max(total, 1);
-        Console.WriteLine($"\n  колебаний (не отказы, своя фраза «тянут почти поровну»): {hesitated}");
+        Console.WriteLine($"\n  колебаний при приказе: {hesitated}, из них причина названа в {hesitatedCaused * 100.0 / Math.Max(hesitated, 1):F1}%"
+                        + $" (карман — {hesitatedPocket}); без причины — прежняя фраза «тянут почти поровну»");
         Console.WriteLine($"  всего отказов {total}: исправимых {fixable / all * 100:F1}% — у них названа причина, без которой приказ бы исполнили");
         Console.WriteLine($"  из них парой причин: {pairs / all * 100:F1}%");
         Console.WriteLine("  решившие поодиночке: " + string.Join(", ",
@@ -2370,7 +2380,7 @@ static class Bench
 
             // «От противного» — тем же правилом, что в игре (Counterfactual),
             // но пересчёт — своим голосованием стенда.
-            if (decision.RefusedCommand && Counterfactual.Enabled)
+            if ((decision.RefusedCommand || decision.Hesitated) && Counterfactual.Enabled)
             {
                 decision.Weighed = true;
                 decision.Decisive = Counterfactual.Decisive(ctx, c => Obeys(modules, w, c, cfg));
