@@ -201,6 +201,9 @@ namespace Sinbinder.UI
 
             if (!Input.GetKeyDown(_openKey)) return;
 
+            // F, набранная в консоли (~), — буква, а не «открыть совет».
+            if (Dev.CheatConsole.Open) return;
+
             Open();
         }
 
