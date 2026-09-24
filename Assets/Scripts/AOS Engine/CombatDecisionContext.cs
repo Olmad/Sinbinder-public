@@ -9,6 +9,25 @@ namespace Sinbinder.AOS
 {
     public static class CombatDecisionContext
     {
+        /// <summary>
+        /// Положение, как если бы приказ этого вида только что отдали, — для
+        /// прогноза на панели приказов (docs/35-CRITIQUE.md п. 5): тот же
+        /// сбор, но признаки приказа — от кнопки, а не от нынешнего приказа
+        /// воина. <paramref name="muffle"/> — сколько голоса съела даль.
+        /// </summary>
+        public static DecisionContext Imagine(Warrior warrior, CommandKind kind, float muffle)
+        {
+            var context = Create(warrior, kind == CommandKind.None ? "" : kind.ToString());
+            context.CommandLeavesFight = kind == CommandKind.FallBack || kind == CommandKind.Move
+                                      || kind == CommandKind.Patrol;
+            context.CommandIsFallBack = kind == CommandKind.FallBack;
+            context.CommandVolume = 1f - Mathf.Clamp01(muffle);
+            context.CommandIsPatrol = kind == CommandKind.Patrol;
+            context.CommandIsAttackMove = kind == CommandKind.AttackMove;
+            context.CommandIntoFight = kind == CommandKind.Attack || kind == CommandKind.AttackMove;
+            return context;
+        }
+
         public static DecisionContext Create(Warrior warrior, string commandType = "")
         {
             // Используем CombatManager вместо FindObjectsOfType

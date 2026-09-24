@@ -217,24 +217,31 @@ namespace Sinbinder.AOS
             // отказа, — без этого их причина осталась бы невидимой.
             // Послушание в объяснении причины не нуждается.
             bool balked = decision.RefusedCommand || (decision.Hesitated && context.HasCommand);
-            if (balked && Counterfactual.Enabled)
-            {
-                decision.Weighed = true;
-                decision.Decisive = Counterfactual.Decisive(context, c => WouldObey(warrior, c));
-                if (decision.Decisive == Counterfactual.Factor.None
-                    && Counterfactual.DecisivePair(context, c => WouldObey(warrior, c), out var first, out var second))
-                {
-                    decision.Decisive = first;
-                    decision.DecisiveAlso = second;
-                }
-                if (decision.Decisive == Counterfactual.Factor.None)
-                    decision.DecisiveVoice = Counterfactual.DecisiveVoice(
-                        Counterfactual.Voices(warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null),
-                        id => WouldObey(warrior, context, id));
-            }
+            if (balked && Counterfactual.Enabled) Weigh(warrior, context, ref decision);
 
             AOSStats.Record(decision, context);
             return decision;
+        }
+
+        /// <summary>
+        /// Взвесить неисполненный приказ «от противного» (<see cref="Counterfactual"/>):
+        /// одна причина, пара, голос души — первое, без чего приказ был бы
+        /// исполнен. Одно место на бой и на прогноз панели приказов.
+        /// </summary>
+        public void Weigh(Warrior warrior, DecisionContext context, ref Decision decision)
+        {
+            decision.Weighed = true;
+            decision.Decisive = Counterfactual.Decisive(context, c => WouldObey(warrior, c));
+            if (decision.Decisive == Counterfactual.Factor.None
+                && Counterfactual.DecisivePair(context, c => WouldObey(warrior, c), out var first, out var second))
+            {
+                decision.Decisive = first;
+                decision.DecisiveAlso = second;
+            }
+            if (decision.Decisive == Counterfactual.Factor.None)
+                decision.DecisiveVoice = Counterfactual.DecisiveVoice(
+                    Counterfactual.Voices(warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null),
+                    id => WouldObey(warrior, context, id));
         }
 
         /// <summary>

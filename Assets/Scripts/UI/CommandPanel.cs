@@ -48,6 +48,14 @@ namespace Sinbinder.UI
         }
 
         private readonly List<Slot> _slots = new();
+
+        // Прогноз (docs/35-CRITIQUE.md п. 5): кто пойдёт на этот приказ,
+        // кто вряд ли — и почему. Считается раз в полсекунды, не каждый
+        // кадр: на каждого сомневающегося — пересчёт «от противного».
+        private static BehaviourResolverHolder _resolver;
+        private Slot _forecastFor;
+        private float _forecastAt;
+        private string _forecast = "";
         private RectTransform _grid;
         private CanvasGroup _group;
         private Text _tip;
@@ -134,7 +142,67 @@ namespace Sinbinder.UI
 
             tip += _hover.Tip;
             if (Voice.Enabled) tip += "\nПриказ слышен тем лучше, чем ближе Греховод.";
+
+            string forecast = Forecast(manager, _hover);
+            if (!string.IsNullOrEmpty(forecast)) tip += "\n" + forecast;
             return tip;
+        }
+
+        /// <summary>
+        /// Кто из выделенных пойдёт на приказ этой кнопки и кто вряд ли,
+        /// с причиной «от противного» (<see cref="AOS.Counterfactual"/>).
+        /// Кнопка перестаёт быть договором «нажал — исполнили» и становится
+        /// разведкой: отказ виден до того, как случился. Вторая ступень
+        /// ясности, выключатель «причина». Прогноз, а не обещание: у места,
+        /// куда пошлют, может лежать своё.
+        /// </summary>
+        private string Forecast(SelectionManager manager, Slot slot)
+        {
+            if (!AOS.Counterfactual.Enabled || slot.Act != null || slot.Kind == CommandKind.None) return "";
+            if (!Core.Transparency.Shows(Core.Clarity.Tooltips)) return "";
+
+            if (slot == _forecastFor && Time.unscaledTime - _forecastAt < 0.5f) return _forecast;
+            _forecastFor = slot;
+            _forecastAt = Time.unscaledTime;
+
+            _resolver ??= new BehaviourResolverHolder();
+            var willing = new List<string>();
+            var doubtful = new List<string>();
+            int shown = 0;
+
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                if (unit == null) continue;
+                var w = unit.GetComponentInParent<Warrior>();
+                if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
+
+                var ctx = AOS.CombatDecisionContext.Imagine(w, slot.Kind, Voice.Enabled ? Voice.MuffleFor(w) : 0f);
+                if (_resolver.Value.WouldObey(w, ctx)) { willing.Add(w.DisplayName); continue; }
+
+                if (shown++ >= 3) { doubtful.Add(w.DisplayName); continue; }
+                string why = _resolver.Why(w, ctx);
+                doubtful.Add(string.IsNullOrEmpty(why) ? w.DisplayName : $"{w.DisplayName}: {why}");
+            }
+
+            var lines = new List<string>();
+            if (willing.Count > 0) lines.Add("Скорее пойдут: " + string.Join(", ", willing) + ".");
+            if (doubtful.Count > 0) lines.Add("Вряд ли — " + string.Join("; ", doubtful) + ".");
+            _forecast = string.Join("\n", lines);
+            return _forecast;
+        }
+
+        /// <summary>Один резолвер на панель и причина отказа тем же правилом, что в бою.</summary>
+        private sealed class BehaviourResolverHolder
+        {
+            public readonly AOS.BehaviourResolver Value = new AOS.BehaviourResolver();
+
+            public string Why(Warrior w, AOS.DecisionContext ctx)
+            {
+                var d = new AOS.Decision { RefusedCommand = true };
+                Value.Weigh(w, ctx, ref d);
+                if (d.Decisive == AOS.Counterfactual.Factor.None && string.IsNullOrEmpty(d.DecisiveVoice)) return "";
+                return AOS.PhraseGenerator.Reason(w, ctx, d);
+            }
         }
 
         /// <summary>
