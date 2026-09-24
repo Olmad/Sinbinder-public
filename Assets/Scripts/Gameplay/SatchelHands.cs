@@ -40,6 +40,10 @@ namespace Sinbinder.Gameplay
             if (Core.GamePauseController.Instance != null
                 && Core.GamePauseController.Instance.IsPaused) return;
 
+            // Руки мёртвого сумой не распоряжаются.
+            var self = GetComponent<Warrior>();
+            if (self != null && self.IsDead) return;
+
             if (Input.GetKeyDown(_next))
             {
                 Satchel.Next();

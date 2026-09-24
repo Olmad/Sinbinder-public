@@ -71,14 +71,53 @@ namespace Sinbinder.Gameplay
         /// <summary>Оболочка целиком, если воин собран из неё. Может быть null.</summary>
         public Core.ShellData ShellData => _shellData;
         public Core.VirtueSystem Virtue => _virtue;
-        public float HP => _hp;
-        public float MaxHP => _maxHP;
+        /// <summary>
+        /// Здоровье — у тела, когда тело есть.
+        ///
+        /// До 24 сентября у воина было <b>две полосы здоровья</b>: своя
+        /// и у <see cref="Damageable"/>. Бой бьёт по второй (её же рисует
+        /// полоска над головой), а душа читала первую, которую бой
+        /// не трогал никогда. Для движка решений убитый оставался жив,
+        /// а раненый — цел: мёртвые разговаривали и получали титулы,
+        /// мёртвым Греховодом можно было управлять (слово автора),
+        /// а Страх «бежать, когда меньше сорока процентов», спасение
+        /// раненого товарища и лечение умениями в настоящем бою
+        /// не срабатывали ни разу. Правило проекта — одна правда
+        /// о персонаже, а не две, которые разойдутся. Разошлись.
+        ///
+        /// Свои поля остаются для воина без тела — вылазки, которые
+        /// считаются без сцены (<c>AutoBattleResolver</c>).
+        /// </summary>
+        public float HP => Body is Damageable b ? b.HP : _hp;
+        public float MaxHP => Body is Damageable b ? b.MaxHP : _maxHP;
         public float Attack { get => _attack; set => _attack = value; }
         public float Defense { get => _defense; set => _defense = value; }
         public Core.RelationshipSystem Relationships => _relationships;
         public float Loyalty => _loyalty;
         public int UnpaidMissions { get => _unpaidMissions; set => _unpaidMissions = value; }
-        public bool IsDead => _isDead;
+        public bool IsDead => _isDead || (Body is Damageable b && b.IsDead);
+
+        /// <summary>
+        /// Тело в мире. Его вешают после души (<see cref="WarriorRig"/>
+        /// идёт вторым), поэтому ищем, пока не найдём, и пустоту
+        /// не запоминаем — иначе спросивший раньше времени навсегда
+        /// оставил бы воина без тела. Найденное держим и после
+        /// уничтожения: здоровье — простое поле, прочесть его можно.
+        /// </summary>
+        private Damageable Body
+        {
+            get
+            {
+                if (ReferenceEquals(_body, null) && this != null)
+                {
+                    var found = GetComponent<Damageable>();
+                    if (found != null) _body = found;
+                }
+                return _body;
+            }
+        }
+
+        private Damageable _body;
         public bool IsCommander => _isCommander;
         public Team Team { get => _team; set => _team = value; }
         public ReputationData Reputation = new();
@@ -221,8 +260,14 @@ namespace Sinbinder.Gameplay
 
         public void TakeDamage(float damage)
         {
-            if (_isDead) return;
+            if (IsDead) return;
             float actual = Mathf.Max(1f, damage - _defense);
+
+            // Есть тело — бьём по телу: смерть обязана пройти тем же путём,
+            // что и в бою (CombatManager, труп, душа), а не остаться строкой
+            // в поле, которого никто не видит.
+            if (Body is Damageable b) { b.TakeDamage(actual, null); return; }
+
             _hp -= actual;
             if (_hp <= 0f) { _hp = 0f; _isDead = true; Debug.Log($"[SINBINDER] {DisplayName} пал в бою!"); }
         }
@@ -237,7 +282,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Heal(float amount)
         {
-            if (_isDead) return;
+            if (IsDead) return;
+            if (Body is Damageable b) { b.Heal(amount); return; }
             _hp = Mathf.Min(_maxHP, _hp + Mathf.Abs(amount));
         }
 

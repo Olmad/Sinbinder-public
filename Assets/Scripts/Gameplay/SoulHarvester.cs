@@ -26,18 +26,22 @@ namespace Sinbinder.Gameplay
 
         private float _cooldownTimer;
         private bool _isPlayerUnit;
+        private Warrior _warrior;
 
         void Start()
         {
             // Именно свой, а не любой Warrior: проверка «компонент есть»
             // считала бы своим и охотника, повесь его кто-нибудь на врага.
-            var warrior = GetComponent<Warrior>();
-            _isPlayerUnit = warrior != null && warrior.Team == Team.Player;
+            _warrior = GetComponent<Warrior>();
+            _isPlayerUnit = _warrior != null && _warrior.Team == Team.Player;
         }
 
         void Update()
         {
             if (!_isPlayerUnit) return;
+
+            // Павший не жнёт: руки есть, а жить в них некому.
+            if (_warrior == null || _warrior.IsDead) return;
 
             _cooldownTimer -= Time.deltaTime;
 

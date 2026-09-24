@@ -115,7 +115,9 @@ namespace Sinbinder.AOS
                 yield return cameraController.WaitUntilFree();
 
             // Ждали в живой игре — за это время он мог погибнуть.
-            if (warrior == null) yield break;
+            // Погибший не уничтожается, а ложится: проверка на null
+            // его не видит, и церемония шла над трупом.
+            if (warrior == null || warrior.IsDead) yield break;
 
             GamePauseController.Instance?.Pause();
 

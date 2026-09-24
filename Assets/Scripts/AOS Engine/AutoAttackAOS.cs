@@ -21,6 +21,7 @@ namespace Sinbinder.AOS
 
         private AOSWarriorWrapper _wrapper;
         private RefusalPresenter _presenter;
+        private Gameplay.Damageable _self;
         private float _lastDecisionTime;
         private bool _pausing;
 
@@ -28,10 +29,17 @@ namespace Sinbinder.AOS
         {
             _wrapper = GetComponent<AOSWarriorWrapper>();
             _presenter = GetComponent<RefusalPresenter>();
+            _self = GetComponent<Gameplay.Damageable>();
         }
 
         void Update()
         {
+            // Павший не решает. Decide у мёртвого и так отвечает «ничего»,
+            // но ниже читается <b>прошлое</b> решение: кто умер, отказываясь
+            // от приказа, тот раз в секунду снова проигрывал свой отказ —
+            // реплика над трупом (автор: «мёртвые воины говорят»).
+            if (_self != null && _self.IsDead) return;
+
             if (_pausing) return;
             if (Time.time - _lastDecisionTime < _decisionInterval) return;
             _lastDecisionTime = Time.time;

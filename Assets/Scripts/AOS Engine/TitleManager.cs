@@ -39,6 +39,13 @@ namespace Sinbinder.AOS
             // Тень». Закрыто здесь, на единственном входе, а не на семи.
             if (warrior is SinbinderPlayer) return;
 
+            // Павшему имя не присуждается: деяние могло быть последним,
+            // но церемония над трупом — это кадр, которого игра не хотела.
+            // Заработанное раньше он уносит в душе (SoulManager.StartSoulFade).
+            // До 24 сентября убитый в бою для этой проверки был жив
+            // (Warrior.HP — разбор там), и «Тень» получали мёртвые.
+            if (warrior.IsDead) return;
+
             var deeds = warrior.Reputation.Deeds;
 
             TitleRule best = null;

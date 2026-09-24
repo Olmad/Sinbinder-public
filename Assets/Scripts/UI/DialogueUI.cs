@@ -101,11 +101,6 @@ namespace Sinbinder.UI
             {
                 var line = _queue.Dequeue();
 
-                if (_speakerNameText != null)
-                    _speakerNameText.text = line.SpeakerName;
-                if (_dialogueText != null)
-                    _dialogueText.text = "";
-
                 if (_cameraController != null)
                     _cameraController.StopSway();
 
@@ -123,6 +118,16 @@ namespace Sinbinder.UI
                 _allWarriors.RemoveAll(w => w == null);
 
                 var speaker = _allWarriors.Find(w => w.Id == line.SpeakerId);
+
+                // Павший не договаривает. Погибший лежит, а не исчезает,
+                // и проверка выше его не вычёркивает: строка звучала бы
+                // из трупа, с наездом на него.
+                if (speaker != null && speaker.IsDead) continue;
+
+                if (_speakerNameText != null)
+                    _speakerNameText.text = line.SpeakerName;
+                if (_dialogueText != null)
+                    _dialogueText.text = "";
 
                 foreach (var w in _allWarriors)
                 {

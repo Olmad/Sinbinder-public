@@ -32,6 +32,7 @@ namespace Sinbinder.Gameplay
         private const float Deadzone = 0.01f;
 
         private NavMeshAgent _agent;
+        private Damageable _self;
         private Transform _eye;
 
         /// <summary>Шёл ли он с клавиш в прошлом кадре.</summary>
@@ -40,6 +41,7 @@ namespace Sinbinder.Gameplay
         void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
+            _self = GetComponent<Damageable>();
         }
 
         void Start()
@@ -54,6 +56,12 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            // Мёртвый не ходит. На смерти UnitMover выключает агента,
+            // и ходьба уходила в запасной путь «не на навмеше» — двигать
+            // transform напрямую, то есть сквозь всё. Автор: «мёртвым
+            // Греховодом можно управлять».
+            if (_self != null && _self.IsDead) { Walking = false; return; }
+
             // В разговоре камера отобрана у игрока, и ходить в это время
             // значит уехать из собственной сцены.
             if (Dialogue.DialogueCameraController.Instance != null &&
