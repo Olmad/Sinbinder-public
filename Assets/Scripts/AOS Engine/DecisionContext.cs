@@ -10,6 +10,17 @@ namespace Sinbinder.AOS
         public float CurrentHP;
         public float MaxHP;
         public int NearbyEnemies;
+
+        /// <summary>
+        /// Враги в поле зрения — дальше, чем «рядом», но видны. Нужны погоне:
+        /// до 24 сентября «атаковать» попадало в бюллетень, только когда враг
+        /// ближе десяти метров, и отбежавший на двенадцать для голосования
+        /// переставал существовать. Автор: «враждебные воины не бегут
+        /// в погоню». Гнать ли — решает голос (Гнев и Гордыня гонят, Уныние
+        /// нет); «бежать» по-прежнему только от тех, кто рядом.
+        /// </summary>
+        public int EnemiesInSight;
+
         public int NearbyAllies;
         public bool AllyInDanger;
         public int NearbyLoot;

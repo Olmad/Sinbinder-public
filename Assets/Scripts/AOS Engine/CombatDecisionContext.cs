@@ -39,6 +39,7 @@ namespace Sinbinder.AOS
                 CurrentHP = warrior.HP,
                 MaxHP = warrior.MaxHP,
                 NearbyEnemies = enemies.Count,
+                EnemiesInSight = GetNearbyEnemies(warrior, SightRadius).Count,
                 NearbyAllies = allies.Count,
                 AllyInDanger = allies.Exists(a => a.HP < a.MaxHP * 0.3f),
                 NearbyLoot = loot.Count,
@@ -121,15 +122,36 @@ namespace Sinbinder.AOS
             return context;
         }
 
-        private static List<Warrior> GetNearbyEnemies(Warrior self)
+        /// <summary>
+        /// Докуда видно врага. Дальше «рядом» (десять метров): на этом
+        /// расстоянии не страшно и не тесно, но гнаться уже есть за кем.
+        /// Цель для удара ищется в том же радиусе
+        /// (<see cref="AOSWarriorWrapper.FindBestTarget"/>): видеть врага,
+        /// за которым нельзя пойти, — то же самое, что не видеть.
+        /// </summary>
+        public const float SightRadius = 30f;
+
+        /// <summary>
+        /// Враги и свои — с точки зрения самого воина.
+        ///
+        /// До 24 сентября здесь стояли <c>GetAliveEnemies</c> и
+        /// <c>GetAliveAllies</c>: «враги игрока» и «свои игрока» для любого,
+        /// кто спросит. Для отряда это совпадало, а охотники решали по
+        /// перевёрнутой картине: товарищей считали врагами, а наш отряд —
+        /// своими. Их опасность росла от собственного строя, а «союзник
+        /// в беде» был нашим раненым. Никакая проверка этого не видела:
+        /// стенд кормит модули готовым контекстом, а бой шёл, потому что
+        /// удар ищет цель правильно (<c>GetEnemies</c>).
+        /// </summary>
+        private static List<Warrior> GetNearbyEnemies(Warrior self, float radius = 10f)
         {
             List<Warrior> result = new();
             if (CombatManager.Instance == null) return result;
 
-            foreach (var dmg in CombatManager.Instance.GetAliveEnemies())
+            foreach (var dmg in CombatManager.Instance.GetEnemies(self.gameObject))
             {
                 if (dmg == null || dmg.IsDead || dmg.Warrior == null) continue;
-                if (Vector3.Distance(self.transform.position, dmg.transform.position) < 10f)
+                if (Vector3.Distance(self.transform.position, dmg.transform.position) < radius)
                     result.Add(dmg.Warrior);
             }
             return result;
@@ -140,7 +162,7 @@ namespace Sinbinder.AOS
             List<Warrior> result = new();
             if (CombatManager.Instance == null) return result;
 
-            foreach (var dmg in CombatManager.Instance.GetAliveAllies())
+            foreach (var dmg in CombatManager.Instance.GetAllies(self.gameObject))
             {
                 if (dmg == null || dmg.IsDead || dmg.Warrior == null || dmg.Warrior == self) continue;
                 if (Vector3.Distance(self.transform.position, dmg.transform.position) < 10f)

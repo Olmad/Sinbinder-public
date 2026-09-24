@@ -204,7 +204,11 @@ namespace Sinbinder.AOS
             {
                 if (w == null || w.IsDead) continue;
                 float dist = Vector3.Distance(transform.position, w.transform.position);
-                if (dist < 15f)
+
+                // Тот же радиус, в котором враг виден для голоса. Было 15:
+                // решивший гнаться за тем, кто в двадцати метрах, не находил
+                // цели и шёл грабить.
+                if (dist < CombatDecisionContext.SightRadius)
                 {
                     float score = -dist + (1f - w.HP / w.MaxHP) * 50f;
                     if (score > bestScore) { bestScore = score; best = w; }

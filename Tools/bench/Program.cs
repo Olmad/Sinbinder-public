@@ -113,6 +113,8 @@ static class Bench
     {
         var s = new Dictionary<ActionType, float> { { ActionType.Idle, 0f } };
         if (c.NearbyEnemies > 0) { s[ActionType.Attack] = 0f; s[ActionType.Flee] = 0f; }
+        // Зеркало BehaviorResolver: погоня за видимым, но далёким врагом.
+        if (c.EnemiesInSight > 0) s[ActionType.Attack] = 0f;
         if (c.NearbyLoot > 0) s[ActionType.Loot] = 0f;
         if (c.AllyInDanger) s[ActionType.SaveAlly] = 0f;
         if (c.HasCommand) s[ActionType.ObeyCommand] = 0f;

@@ -48,6 +48,18 @@ namespace Sinbinder.Gameplay
             return _playerUnits.Contains(askerDmg) ? _enemyUnits : _playerUnits;
         }
 
+        /// <summary>
+        /// Свои — с точки зрения спросившего. <see cref="GetAliveAllies"/>
+        /// отвечает «свои игрока» кому угодно, и охотник, спросивший его,
+        /// считал своими наш отряд (14-HANDOFF §62).
+        /// </summary>
+        public List<Damageable> GetAllies(GameObject asker)
+        {
+            var askerDmg = asker.GetComponent<Damageable>();
+            if (askerDmg == null) return new List<Damageable>();
+            return _playerUnits.Contains(askerDmg) ? _playerUnits : _enemyUnits;
+        }
+
         /// <summary> Возвращает ближайшего живого врага в радиусе. </summary>
         public Damageable GetClosestEnemy(Vector3 position, float radius, GameObject asker)
         {

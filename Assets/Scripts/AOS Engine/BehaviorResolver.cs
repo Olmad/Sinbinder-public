@@ -296,6 +296,11 @@ namespace Sinbinder.AOS
                 scores[ActionType.Flee] = 0f;
             }
 
+            // Погоня: враг далеко, но виден. Бить его можно — надо лишь
+            // догнать, и захочет ли воин гнаться, решает голос. Бежать
+            // от далёкого — нет: его ещё нет рядом (DecisionContext.EnemiesInSight).
+            if (context.EnemiesInSight > 0) scores[ActionType.Attack] = 0f;
+
             if (context.NearbyLoot > 0) scores[ActionType.Loot] = 0f;
             if (context.AllyInDanger) scores[ActionType.SaveAlly] = 0f;
             if (context.HasCommand) scores[ActionType.ObeyCommand] = 0f;
