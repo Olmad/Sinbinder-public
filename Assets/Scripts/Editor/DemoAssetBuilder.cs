@@ -227,31 +227,42 @@ namespace Sinbinder.Utilets
         {
             EnsureFolder(ShellsDir);
 
+            // Крепость откалибрована 24 сентября, когда запас тела впервые
+            // дошёл до боя (до того у всех было 30 по умолчанию, 14-HANDOFF §60).
+            // Опоры две, обе из замысла набега (DemoSceneBuilder): отряд
+            // держит 30 — так демо и игралось, — а свежая вторая волна
+            // охотников 40 («заметно сильнее: жизнь 40 против своих 30»).
+            // Поэтому скелет с износом даёт 29.7, человек — 40, остальные
+            // удвоены вместе со скелетом, сохранив прежние соотношения.
+            // Лёгкость первого боя держит не таблица, а раны: первая волна
+            // выходит побитой (HunterSquadSpawner, мысль автора).
+
             // Кость помнит только усталость. Плоти нет — нечем и желать.
             Shell(ShellType.Skeleton, "Скелет",
-                hp: 18f, defense: 1f, speed: 3.6f, revivable: true, wear: 0.35f, bind: 0.30f,
+                hp: 36f, defense: 1f, speed: 3.6f, revivable: true, wear: 0.35f, bind: 0.30f,
                 (SinType.Sloth, 20f), (SinType.Lust, -25f));
 
             // Гниющее тело помнит голод и не помнит, кем гордилось.
             Shell(ShellType.Zombie, "Зомби",
-                hp: 30f, defense: 2f, speed: 2.4f, revivable: true, wear: 0.55f, bind: 0.40f,
+                hp: 60f, defense: 2f, speed: 2.4f, revivable: true, wear: 0.55f, bind: 0.40f,
                 (SinType.Gluttony, 25f), (SinType.Pride, -20f));
 
             // Бесплотный не может взять — только смотреть, как берут другие.
             Shell(ShellType.Ghost, "Призрак",
-                hp: 12f, defense: 0f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
+                hp: 24f, defense: 0f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
                 (SinType.Envy, 25f), (SinType.Greed, -30f));
 
             // Камень не завидует. Камень знает, что он камень.
             Shell(ShellType.Golem, "Голем",
-                hp: 42f, defense: 4f, speed: 2.0f, revivable: true, wear: 0.10f, bind: 0.50f,
+                hp: 84f, defense: 4f, speed: 2.0f, revivable: true, wear: 0.10f, bind: 0.50f,
                 (SinType.Pride, 25f), (SinType.Envy, -25f));
 
             // Живое тело ничего не навязывает: душа в нём своя и родная,
-            // тянуть её некуда. Крепость — меньше зомби, потому что первый
-            // бой набега обязан быть лёгким (слово автора: «лёгкий бой»).
+            // тянуть её некуда. Крепость — меньше зомби, но больше скелета:
+            // живой крепче старых костей. Первый бой набега лёгок не потому,
+            // что люди слабы, а потому, что первая волна приходит побитой.
             Shell(ShellType.Living, "Человек",
-                hp: 24f, defense: 1f, speed: 3.5f, revivable: false, wear: 0f, bind: 0f);
+                hp: 40f, defense: 1f, speed: 3.5f, revivable: false, wear: 0f, bind: 0f);
         }
 
         private static void Shell(ShellType type, string displayName,

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Core.ShellData
   shellName: "\u0427\u0435\u043B\u043E\u0432\u0435\u043A"
   type: 4
-  baseHP: 24
+  baseHP: 40
   baseDefense: 1
   movementSpeed: 3.5
   canBeRevived: 0

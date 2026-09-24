@@ -35,6 +35,13 @@ namespace Sinbinder.Gameplay
                + "срок только не даёт доле зависнуть и, истекая, кричит.")]
         [SerializeField] private float _harvestSafety = 90f;
 
+        [Tooltip("С какой долей здоровья выходит первая волна (та, что не ждёт "
+               + "опустевшего поля). Охотники приходят, перебив отряды в поле, — "
+               + "и первый бой лёгок их ранами, а не слабостью людей. Вторая "
+               + "волна выходит свежей.")]
+        [Range(0.05f, 1f)]
+        [SerializeField] private float _firstWaveHealth = 0.4f;
+
         [Tooltip("Что говорит журнал, когда эта волна выходит. Пусто — молчит.")]
         [TextArea(1, 3)]
         [SerializeField] private string _announce = "";
@@ -200,6 +207,14 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < _count; i++)
             {
                 var hunter = SpawnHunter(i);
+
+                // Первая волна — побитая. До 24 сентября лёгкость первого
+                // боя держалась на том, что здоровье у всех было 30: запас
+                // оболочки до боя не доходил. Теперь люди крепче скелетов,
+                // и «бой, который нельзя проиграть» держат раны.
+                if (!_afterFieldClear && hunter != null
+                    && hunter.TryGetComponent<Damageable>(out var body))
+                    body.Wound(_firstWaveHealth);
 
                 // Вторая волна выходит посреди боя, когда AOSSceneSetup
                 // свою работу давно сделал. Без этого вызова она осталась

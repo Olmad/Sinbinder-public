@@ -18,6 +18,20 @@ namespace Sinbinder.Gameplay
         void Awake()
         {
             _warrior = GetComponent<Warrior>();
+
+            // Запас тела — от оболочки, и только от неё. Душу ставят
+            // раньше тела (Initialize, потом WarriorRig.Attach) везде,
+            // где собирают воинов, поэтому оболочка здесь уже известна,
+            // а полоска над головой, которую строят следом, увидит
+            // верный максимум. До 24 сентября у всех было 30 по умолчанию,
+            // и Голем держал удар ровно как Призрак.
+            //
+            // Initialize ниже по-прежнему может задать запас явно.
+            if (_warrior != null && _warrior.ShellHP > 0f)
+            {
+                _maxHP = _warrior.ShellHP;
+                _hp = _maxHP;
+            }
         }
 
         void Start()
@@ -55,6 +69,18 @@ namespace Sinbinder.Gameplay
                 _hp = 0f;
                 Die(attacker);
             }
+        }
+
+        /// <summary>
+        /// Выйти в бой уже раненым: остаётся такая доля запаса. Нужно первой
+        /// волне охотников — они приходят, перебив отряды в поле, и бой с ними
+        /// лёгок ранами, а не слабостью людей (мысль автора, 24 сентября).
+        /// Ниже единицы здоровья не опускает: ранить — не значит убить.
+        /// </summary>
+        public void Wound(float remaining)
+        {
+            if (IsDead) return;
+            _hp = Mathf.Clamp(_maxHP * remaining, 1f, _maxHP);
         }
 
         /// <summary>

@@ -122,7 +122,10 @@ namespace Sinbinder.Gameplay
             }
 
             warrior.Initialize(soul, shell, relSystem, isCommander, team);
-            damageable.Initialize(20f + soul.Level * 10f, 1f + soul.Level);
+            // Запас тела — от оболочки, как у всех (Damageable.Awake). Здесь
+            // тело повешено раньше души, поэтому передаём явно. Двадцать
+            // и десять за уровень ушли 24 сентября: уровней в игре нет.
+            if (warrior.ShellHP > 0f) damageable.Initialize(warrior.ShellHP, 0f);
             autoAttack.Initialize(3f + soul.Level * 2f, 2f, 1f);
 
             CreateOverheadUI(go, damageable);

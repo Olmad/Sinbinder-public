@@ -98,6 +98,14 @@ namespace Sinbinder.Gameplay
         public bool IsDead => _isDead || (Body is Damageable b && b.IsDead);
 
         /// <summary>
+        /// Сколько держит тело этой оболочки, с износом. Ноль — оболочка
+        /// не загрузилась. Отсюда тело берёт свой запас, появляясь
+        /// (<see cref="Damageable"/>): до 24 сентября оно брало 30
+        /// по умолчанию у всех, и оболочка до боя не доходила никогда.
+        /// </summary>
+        public float ShellHP => _shellData != null ? _shellData.EffectiveHP : 0f;
+
+        /// <summary>
         /// Тело в мире. Его вешают после души (<see cref="WarriorRig"/>
         /// идёт вторым), поэтому ищем, пока не найдём, и пустоту
         /// не запоминаем — иначе спросивший раньше времени навсегда
@@ -189,7 +197,10 @@ namespace Sinbinder.Gameplay
             _shellData = shell;
             if (shell == null) return;
 
-            _maxHP = shell.EffectiveHP + _soul.Level * 10f;
+            // Только оболочка. Десять за уровень ушли 24 сентября: уровней
+            // в игре нет (слово автора), а прибавка жила лишь здесь,
+            // в полосе, которую бой не читал.
+            _maxHP = shell.EffectiveHP;
             _hp = _maxHP;
             _defense = shell.baseDefense + _soul.Level;
 

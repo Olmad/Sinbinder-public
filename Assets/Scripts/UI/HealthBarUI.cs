@@ -51,6 +51,10 @@ namespace Sinbinder.UI
 
             if (_isDead) return;
 
+            // Максимум перечитывается: запас тела может смениться после
+            // того, как полоску построили, и полоска с чужим максимумом
+            // стояла бы полной, пока воин не потеряет лишнее.
+            _slider.maxValue = _damageable.MaxHP;
             _slider.value = _damageable.HP;
             UpdateColor();
         }
