@@ -125,8 +125,20 @@ public bool LastAlive;
         /// <summary>Приказ — атака с ходу: идти и бить всех по дороге.</summary>
         public bool CommandIsAttackMove;
 
+        /// <summary>
+        /// Приказ ведёт в драку: бить врага или атака с ходу. По нему
+        /// объяснение узнаёт отказ жадного с карманом (docs/34-GEAR.md §9.3).
+        /// </summary>
+        public bool CommandIntoFight;
+
         // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();
+
+        /// <summary>
+        /// Золото в личном кармане воина (docs/34-GEAR.md §9.3). Читает
+        /// Жадность: кому есть что терять, тот бережёт себя.
+        /// </summary>
+        public int PocketGold;
 
         // Сюжетные перки воина. Читает PerkResolver.
         public List<Sinbinder.Core.NarrativePerk> AvailableNarrativePerks

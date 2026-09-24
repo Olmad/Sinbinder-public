@@ -53,6 +53,15 @@ namespace Sinbinder.AOS.Modules
                 case ActionType.Attack:
                     if (context.NearbyLoot > 0) score += _config.GreedAttackPenaltyWhenLoot;
                     if (sin < -50f) score += _config.GreedAttackGoodVirtueBonus;
+                    score -= Pocket(context, sin) * _config.GreedPocketAttack;
+                    break;
+
+                case ActionType.Idle:
+                    // Держаться в стороне, пока рядом бьются: голос за это
+                    // отдаёт сама Жадность — и причина отказа будет её,
+                    // а не чужая («не осталось воли»).
+                    if (context.NearbyEnemies > 0)
+                        score += Pocket(context, sin) * _config.GreedPocketAside;
                     break;
 
                 case ActionType.ObeyCommand:
@@ -69,6 +78,16 @@ namespace Sinbinder.AOS.Modules
                     break;
             }
             return score * Weight;
+        }
+
+        /// <summary>
+        /// Насколько карман тянет беречь себя: от нуля до единицы, и только
+        /// у жадного. Щедрому своё золото не дороже чужого.
+        /// </summary>
+        private float Pocket(DecisionContext context, float sin)
+        {
+            if (context.PocketGold <= 0 || sin <= 0f || _config.GreedPocketFull <= 0f) return 0f;
+            return Mathf.Clamp01(context.PocketGold / _config.GreedPocketFull) * (sin / 100f);
         }
 
         /// <summary>

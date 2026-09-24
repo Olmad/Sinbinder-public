@@ -57,6 +57,18 @@ namespace Sinbinder.AOS
         // одинаково — и перестаёт различать воинов.
         public float GreedUnpaidSinShare = 0.008f;
 
+        // Личный карман (docs/34-GEAR.md §9.3): разбогатевший бережёт себя —
+        // реже лезет в драку и охотнее стоит в стороне — стоит, а не бежит:
+        // бегство громче у страха, и причина отказа врала бы. Полный
+        // карман — столько золота, сколько жадный оставляет себе за три-
+        // четыре боя. Сила — прибавка, а не приговор: Марга жаден выше
+        // половины и своего золота не отдаёт, и сильный карман сделал бы
+        // его навсегда негодным для драки. Замер: Tools/bench → КАРМАН
+        // (с полным карманом отказов «бей» у Марги 36 → 47%).
+        public float GreedPocketFull = 40f;
+        public float GreedPocketAttack = 8f;
+        public float GreedPocketAside = 8f;
+
         [Header("Гнев")]
         public float WrathAttackPerEnemy = 15f;
         public float WrathSinMultiplier = 0.3f;

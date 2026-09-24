@@ -170,6 +170,43 @@ namespace Sinbinder.Gameplay
             return parts.Count == 0 ? "" : string.Join(", ", parts);
         }
 
+        /// <summary>Больше этой доли найденного жадный себе не оставит.</summary>
+        public const float MostKept = 0.5f;
+
+        /// <summary>
+        /// Сколько из найденного золота воин оставит себе (docs/34-GEAR.md
+        /// §9.3, середина, предложенная автором): чем жаднее, тем больше,
+        /// но не больше половины; щедрый и равнодушный отдают всё. Без жребия.
+        /// </summary>
+        public static int Kept(Warrior w, int gold)
+        {
+            if (w == null || gold <= 0) return 0;
+            float greed = w.Soul.Get(SinType.Greed) / 100f;
+            if (greed <= 0f) return 0;
+            return (int)System.Math.Floor(gold * System.Math.Min(1f, greed) * MostKept);
+        }
+
+        /// <summary>
+        /// Попросить золото из кармана в кошель Греховода. Золото ценно —
+        /// очень жадный его не отдаст (<see cref="WillGive"/>). Отнятое
+        /// записывается в память, как отнятая вещь.
+        /// </summary>
+        public static bool AskPocket(Warrior w, PlayerInventory store, out string word)
+        {
+            word = "";
+            if (w.PocketGold <= 0) { word = "карман пуст"; return false; }
+
+            if (!WillGivePocket(w, out word)) return false;
+
+            store.AddGold(w.EmptyPocket());
+            Remember(w, "SinbinderTookFromMe");
+            return true;
+        }
+
+        /// <summary>Отдаст ли воин золото из кармана — по тем же правилам, что вещь.</summary>
+        public static bool WillGivePocket(Warrior w, out string word)
+            => WillGive(w, new InventoryItem("Монеты", "", ItemType.Gold, w.PocketGold), out word);
+
         /// <summary>Золото словом: игрок не видит чисел, и казны тоже.</summary>
         public static string GoldWord(int gold)
         {

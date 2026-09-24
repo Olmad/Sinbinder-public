@@ -77,6 +77,8 @@ namespace Sinbinder.AOS
             context.CommandVolume = command.IsSet ? 1f - command.Muffle : 1f;
             context.CommandIsPatrol = command.Kind == CommandKind.Patrol;
             context.CommandIsAttackMove = command.Kind == CommandKind.AttackMove;
+            context.CommandIntoFight = command.Kind == CommandKind.Attack
+                                    || command.Kind == CommandKind.AttackMove;
 
             // Есть ли рядом противник, которого можно ударить в спину.
             foreach (var enemy in enemies)
@@ -115,6 +117,7 @@ namespace Sinbinder.AOS
             // Греховода, и «дать золочёный клинок жадному» соблазняло им
             // весь отряд разом — рычаг был не про этого воина, а про всех.
             context.CarriedItems = new List<Inventory.InventoryItem>(warrior.Carried);
+            context.PocketGold = warrior.PocketGold;
 
             // Прокидываем сюжетные перки
             if (warrior.Soul.HasMemory && warrior.Soul.Memory.NarrativePerks.Count > 0)

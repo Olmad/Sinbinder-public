@@ -80,6 +80,7 @@ namespace Sinbinder.Tests
                 Bodies();
                 Blows();
                 Gear();
+                Pocket();
                 LootToHands();
                 CampSpots();
                 PatrolAndRush();
@@ -241,6 +242,42 @@ namespace Sinbinder.Tests
 
             Check(!Regex.IsMatch(SquadGear.GoldWord(57) + SquadGear.Effect(axe) + SquadGear.Effect(collar), "[0-9]"),
                   "казна и вещи — словами, без чисел");
+        }
+
+        /// <summary>
+        /// Личный карман (docs/34-GEAR.md §9.3): жадный делит найденное
+        /// сам, но не больше половины себе; карман читает Жадность; очень
+        /// жадный своего не отдаёт, умеренный — отдаёт, если попросить.
+        /// </summary>
+        private static void Pocket()
+        {
+            var greedy = MakeWarrior("Скряга", SinType.Greed, 80f);
+            var wrathful = MakeWarrior("Горячий", SinType.Wrath, 80f);
+
+            int kept = SquadGear.Kept(greedy, 20);
+            Check(kept > 0 && kept <= 10, "жадный оставляет себе часть, но не больше половины");
+            Check(SquadGear.Kept(wrathful, 20) == 0, "не жадный отдаёт всё");
+
+            var module = new AOS.Modules.GreedModule();
+            var soul = Soul.FromWarrior(greedy);
+            var poor = new DecisionContext { NearbyEnemies = 2 };
+            var rich = new DecisionContext { NearbyEnemies = 2, PocketGold = 40 };
+            Check(module.Evaluate(soul, rich, ActionType.Attack) < module.Evaluate(soul, poor, ActionType.Attack),
+                  "с полным карманом жадный реже лезет в драку");
+            Check(module.Evaluate(soul, rich, ActionType.Idle) > module.Evaluate(soul, poor, ActionType.Idle),
+                  "и охотнее стоит в стороне: есть что терять");
+            Check(Math.Abs(module.Evaluate(soul, rich, ActionType.Flee) - module.Evaluate(soul, poor, ActionType.Flee)) < 0.001f,
+                  "стоит, а не бежит: бегство — голос страха, и причина врала бы");
+
+            var store = NewObject("Кошель").AddComponent<PlayerInventory>();
+            greedy.Pocket(10);
+            Check(!SquadGear.AskPocket(greedy, store, out _) && greedy.PocketGold == 10,
+                  "очень жадный своего золота не отдаёт");
+
+            var modest = MakeWarrior("Скромник", SinType.Greed, 30f);
+            modest.Pocket(10);
+            Check(SquadGear.AskPocket(modest, store, out _) && modest.PocketGold == 0 && store.Gold == 10,
+                  "умеренный отдаёт, если попросить, — золото уходит в кошель Греховода");
         }
 
         /// <summary>

@@ -101,6 +101,8 @@ namespace Sinbinder.AOS
             return Core.Grammar.For(gender, Because(warrior, context, decision, gender));
         }
 
+        private const string Pocket = "ему есть что терять — карман не пустой";
+
         private static string Because(Warrior warrior, DecisionContext context,
                                       Decision decision, Core.Gender gender)
         {
@@ -126,6 +128,16 @@ namespace Sinbinder.AOS
                              "она сделала вид, что не расслышала");
             }
 
+            // Личный карман (docs/34-GEAR.md §9.3): жадный с непустым
+            // карманом не пошёл в драку и остался стоять. Громче всех за
+            // «стоять» тут обычно усталость, но решил карман: без него
+            // жадный отказывает «бей» бегством, а не стоянием, — стенд
+            // (КАРМАН) показывает, что стоячие отказы приходят с карманом.
+            if (decision.RefusedCommand && context.CommandIntoFight && context.PocketGold > 0
+                && decision.Action == ActionType.Idle
+                && warrior != null && warrior.Soul != null && warrior.Soul.Sin == SinType.Greed)
+                return Pocket;
+
             switch (decision.TopModule)
             {
                 case "Greed":
@@ -139,6 +151,7 @@ namespace Sinbinder.AOS
                     if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
                     if (context.UnpaidMissions > 0) return "ему до сих пор не заплатили";
                     if (context.NearbyLoot > 0) return "добыча лежала слишком близко";
+                    if (context.PocketGold > 0) return Pocket;
                     return "он думает о своей доле";
 
                 case "Wrath":

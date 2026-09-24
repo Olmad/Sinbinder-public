@@ -24,9 +24,9 @@ namespace Sinbinder.Gameplay
     /// уходит в мешок Греховода; сменённое оружие — туда же.</item>
     /// </list>
     ///
-    /// <b>Золото — в кошель Греховода.</b> Жадный будет делить его сам,
-    /// часть оставляя себе (docs/34-GEAR.md §9.3); пока — всё в кошель,
-    /// и журнал говорит, кто подобрал.
+    /// <b>Золото делит тот, кто подобрал</b> (docs/34-GEAR.md §9.3): часть —
+    /// себе в карман, по силе жадности, но не больше половины; остальное —
+    /// в кошель Греховода. Щедрый отдаёт всё. Карман читает Жадность.
     ///
     /// Выключатель: до вечернего прогона 24 сентября выключено, как голос
     /// и удар. Включается командой «добыча» в консоли (~).
@@ -81,12 +81,21 @@ namespace Sinbinder.Gameplay
                 }
             }
 
-            if (loot.Gold > 0 && store != null)
+            // Золото делит тот, кто подобрал: часть себе в карман, остальное —
+            // в кошель Греховода (docs/34-GEAR.md §9.3). Журнал — словами.
+            if (store != null)
             {
-                store.AddGold(loot.Gold);
                 foreach (var (who, gold) in loot.GoldBy)
-                    log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} подбирает {SquadGear.GoldWord(gold)} — в кошель Греховода."));
+                {
+                    int kept = SquadGear.Kept(who, gold);
+                    who.Pocket(kept);
+                    store.AddGold(gold - kept);
+
+                    string found = SquadGear.GoldWord(gold);
+                    log?.Write(Grammar.For(who.Gender, kept == 0
+                        ? $"{who.DisplayName} подбирает {found} и отдаёт всё в кошель Греховода."
+                        : $"{who.DisplayName} подбирает {found}: часть — в кошель Греховода, остальное — себе в карман."));
+                }
             }
         }
 

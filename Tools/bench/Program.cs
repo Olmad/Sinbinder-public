@@ -2002,6 +2002,101 @@ static class Bench
     }
 
     /// <summary>
+    /// Личный карман (docs/34-GEAR.md §9.3): жадный, оставивший себе золото,
+    /// бережёт себя. Карман обязан менять решения, а не только числа —
+    /// иначе это вторая игра сбоку. Меряем приказ «бей» в бою: сколько
+    /// отказов с пустым карманом и с полным. Верных и не жадных карман
+    /// трогать не должен — у них его и не бывает, но проверка честнее,
+    /// если положить золото всем.
+    /// </summary>
+    static void PocketCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ЛИЧНЫЙ КАРМАН: ЕСТЬ ЧТО ТЕРЯТЬ ===");
+
+        var modules = Modules();
+        const int runs = 400;
+        int full = (int)cfg.GreedPocketFull;
+
+        var squad = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f),
+            ("Скряга", SinType.Greed,    MoralType.Neutral, 90f, 50f),
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f),
+        };
+
+        Console.WriteLine($"  {"кто",-7} {"грех",-9} {"пусто",7} {"полон",7}   причина отказа с полным");
+        foreach (var m in squad)
+        {
+            var empty = OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, 0, runs,
+                                 loot: 0, allyInDanger: false, order: "Attack");
+            var rich = OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, 0, runs,
+                                loot: 0, allyInDanger: false, order: "Attack", pocket: full);
+            Console.WriteLine($"  {m.Name,-7} {m.Sin,-9} {empty.Rate * 100,6:F1}% {rich.Rate * 100,6:F1}%   {rich.Reason}");
+        }
+        Console.WriteLine("  (отказ — не бить, когда велено: с полным карманом жадный бережёт себя)");
+
+        // Честность причины: «карман» обязан объяснять примерно столько
+        // решительных отказов, сколько карман и добавил. Больше — причина
+        // врёт про тех, кто отказал бы и с пустым карманом; меньше — карман
+        // решает молча, и игрок не узнает почему. Колебания — свой слой
+        // объяснения («тянут почти поровну»), карман в них честно не назван.
+        foreach (var m in squad.Take(2))
+        {
+            var with = PocketRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, runs, full);
+            var without = PocketRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, runs, 0);
+            double added = with.Decisive - without.Decisive;
+            Console.WriteLine($"  {m.Name}: решительных отказов карман добавил {added * 100:F1}%, "
+                            + $"«карман» назван в {with.Named * 100:F1}%; колебаний {(with.Rate - with.Decisive) * 100:F1}%");
+            Console.WriteLine(Math.Abs(added - with.Named) <= 0.03
+                ? "    ВЫВОД: причина честна — карман назван там, где решил карман."
+                : "    ВЫВОД: причина врёт — «карман» назван не там, где он решил.");
+        }
+
+        // Перебор силы кармана. Марга жаден выше половины, и золото из
+        // кармана не отдаёт (SquadGear.WillGive): слишком сильный карман
+        // сделал бы его навсегда негодным для драки, и игроку нечем было бы
+        // это исправить. Нужна прибавка, а не приговор.
+        Console.WriteLine("\n  перебор силы «в стороне» (удар — той же силы) → отказы с полным карманом");
+        var was = (cfg.GreedPocketAside, cfg.GreedPocketAttack);
+        foreach (float v in new[] { 0f, 5f, 8f, 12f, 20f })
+        {
+            cfg.GreedPocketAside = cfg.GreedPocketAttack = v;
+            var modulesNow = Modules();
+            string line = $"    {v,4:F0}:";
+            foreach (var m in squad.Take(2))
+            {
+                var (rate, _, named) = PocketRun(modulesNow, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, runs, full);
+                line += $"  {m.Name} {rate * 100,5:F1}% (из них «карман» {named * 100,4:F1}%)";
+            }
+            Console.WriteLine(line);
+        }
+        (cfg.GreedPocketAside, cfg.GreedPocketAttack) = was;
+    }
+
+    /// <summary>
+    /// Отказы приказу «бей» с таким карманом. Решительные — без колебаний.
+    /// Названо карманом — сколько решительных объяснено карманом.
+    /// </summary>
+    static (double Rate, double Decisive, double Named) PocketRun(List<IPersonalityModule> modules,
+        AOSConfig cfg, SinType sin, MoralType moral, float intensity, float loyalty, int runs, int pocket)
+    {
+        int refused = 0, decisive = 0, named = 0;
+        for (int i = 0; i < runs; i++)
+        {
+            var (rate, reason) = OrderRun(modules, cfg, sin, moral, intensity, loyalty, 0, 1,
+                                          loot: 0, allyInDanger: false, order: "Attack", pocket: pocket, seed: 7000 + i);
+            if (rate <= 0) continue;
+            refused++;
+            if (reason.StartsWith("Воин колеблется") || reason.StartsWith("Воин медлит")) continue;
+            decisive++;
+            if (reason.Contains("карман")) named++;
+        }
+        return (refused / (double)runs, decisive / (double)runs, named / (double)runs);
+    }
+
+    /// <summary>
     /// Жизнь в лагере (docs/32-CAMP.md): кто где встанет без приказа.
     /// Выбор тот же, что в игре (<see cref="CampChoice"/>). Если все
     /// выбрали костёр — мест нет, и узнать это надо здесь.
@@ -2053,14 +2148,14 @@ static class Bench
     static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
         AOSConfig cfg, SinType sin, MoralType moral, float intensity,
         float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true,
-        float volume = 1f, bool battle = true, string order = null)
+        float volume = 1f, bool battle = true, string order = null, int pocket = 0, int seed = 7000)
     {
         int refused = 0;
         var seen = new Dictionary<string, int>();
 
         for (int i = 0; i < runs; i++)
         {
-            var r = new Random(7000 + i);
+            var r = new Random(seed + i);
 
             var w = new Warrior
             {
@@ -2088,6 +2183,7 @@ static class Bench
                 CommandType = "FallBack",
                 CommandIsFallBack = true,
                 CommandVolume = volume,
+                PocketGold = pocket,
             };
 
             // Лагерь: врагов нет, здоровье целое, приказ — «иди туда».
@@ -2110,6 +2206,7 @@ static class Bench
                 ctx.CommandIsFallBack = false;
                 ctx.CommandIsPatrol = order == "Patrol";
                 ctx.CommandIsAttackMove = order == "AttackMove";
+                ctx.CommandIntoFight = order == "Attack" || order == "AttackMove";
             }
 
             var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
@@ -4236,6 +4333,7 @@ static class Bench
         VoiceCheck(cfg);
         CampCheck();
         CommandsCheck(cfg);
+        PocketCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

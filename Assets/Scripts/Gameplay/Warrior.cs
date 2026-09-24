@@ -391,6 +391,23 @@ namespace Sinbinder.Gameplay
 
         public IReadOnlyList<Inventory.InventoryItem> Carried => _carried;
 
+        /// <summary>
+        /// Личный карман (docs/34-GEAR.md §9.3): своё золото воина. В бою
+        /// не помогает; его читает Жадность — разбогатевший бережёт себя.
+        /// Наполняет его сам воин, деля найденное (<see cref="LootChain"/>).
+        /// </summary>
+        public int PocketGold { get; private set; }
+
+        public void Pocket(int gold) => PocketGold += System.Math.Max(0, gold);
+
+        /// <summary>Вынуть из кармана всё. Сколько вынуто.</summary>
+        public int EmptyPocket()
+        {
+            int all = PocketGold;
+            PocketGold = 0;
+            return all;
+        }
+
         /// <summary>Что надето на этом месте. Пусто — null.</summary>
         public Inventory.InventoryItem Worn(Inventory.GearSlot slot) => _worn[(int)slot];
 

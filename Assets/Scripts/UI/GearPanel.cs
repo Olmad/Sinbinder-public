@@ -210,6 +210,17 @@ namespace Sinbinder.UI
                     _near ? () => TakeBack(item) : (System.Action)null);
             }
 
+            // Личный карман (docs/34-GEAR.md §9.3): своё золото воина.
+            // Строка — только когда в нём что-то есть.
+            if (_warrior.PocketGold > 0)
+            {
+                bool gives = SquadGear.WillGivePocket(_warrior, out string word);
+                Row(_hands, $"Карман: {SquadGear.GoldWord(_warrior.PocketGold)}",
+                    Core.Grammar.For(_warrior.Gender, gives ? "своё золото · отдаст, если попросить"
+                                                            : $"своё золото · не отдаст: {word}"),
+                    _near ? AskPocket : (System.Action)null);
+            }
+
             if (store != null)
             {
                 int shown = 0;
@@ -255,6 +266,13 @@ namespace Sinbinder.UI
         {
             bool ok = SquadGear.Take(_warrior, item, PlayerInventory.Instance, out string word);
             Answer(ok ? $"{_warrior.DisplayName} {word}: {item.Name.ToLowerInvariant()}."
+                      : $"{_warrior.DisplayName} {word}.");
+        }
+
+        private void AskPocket()
+        {
+            bool ok = SquadGear.AskPocket(_warrior, PlayerInventory.Instance, out string word);
+            Answer(ok ? $"{_warrior.DisplayName} отдаёт своё золото в кошель Греховода."
                       : $"{_warrior.DisplayName} {word}.");
         }
 
