@@ -81,7 +81,12 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: true);
-            Ground("Земля", 4f, "Ground048");
+            // Земля вдвое шире прежней. С туманом войны её край стал
+            // виден: под туманом разведанная земля светлее чёрного фона
+            // за нею, и на снимке набега 24 сентября весь кадр обводила
+            // ровная рамка — граница плоскости, а не тумана. Камера
+            // стоит в двадцати двух метрах и видит дальше сорока.
+            Ground("Земля", 9f, "Ground048");
             Look();
             Managers();
 
@@ -156,7 +161,7 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Камень", 5f, "PavingStones127");
+            Ground("Камень", 9f, "PavingStones127");
             Look();
             Managers();
 

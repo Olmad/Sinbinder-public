@@ -107,9 +107,27 @@ namespace Sinbinder.Dialogue
                 return;
             }
 
-            _originalPosition = Cam().transform.position;
-            _originalRotation = Cam().transform.rotation;
-            _originalFOV = Cam().fieldOfView;
+            var cam = Cam();
+
+            // Камеры может не быть вовсе: разговор начинается и от смерти
+            // воина (Damageable.OnDestroy → CombatManager → DialogueTrigger),
+            // а смерть случается и при выгрузке сцены, когда камера уже
+            // уничтожена. Прогон 24 сентября упал здесь исключением
+            // на семьдесят восьмой секунде.
+            //
+            // Молчать нельзя: без дома наезд не вернёт камеру назад,
+            // и это стоит увидеть в журнале, а не искать потом глазами.
+            if (cam == null)
+            {
+                Debug.LogWarning("[КАМЕРА] Дом не запомнен: камеры в сцене "
+                               + "нет. Разговор начат в миг, когда сцена "
+                               + "уже уходит.");
+                return;
+            }
+
+            _originalPosition = cam.transform.position;
+            _originalRotation = cam.transform.rotation;
+            _originalFOV = cam.fieldOfView;
         }
 
         /// <summary>

@@ -38,6 +38,13 @@ namespace Sinbinder.Gameplay
         /// <summary>Размер клетки, в метрах. Мельче — дороже, крупнее — видно ступени.</summary>
         private const float Cell = 0.5f;
 
+        /// <summary>
+        /// Насколько карта тумана шире земли, в метрах с каждой стороны.
+        /// Столько, чтобы её край не попал в кадр: камера стоит
+        /// в двадцати двух метрах и видит заметно дальше края земли.
+        /// </summary>
+        private const float Margin = 30f;
+
         /// <summary>Как часто пересчитывать, кто что видит. Каждый кадр не нужно.</summary>
         private const float TickSeconds = 0.1f;
 
@@ -104,6 +111,13 @@ namespace Sinbinder.Gameplay
         private void Build(Bounds bounds)
         {
             _instance = this;
+
+            // Карта тумана шире земли. Иначе её край попадает в кадр:
+            // за пределами карты шейдер считает точку неразведанной,
+            // и на снимке набега 24 сентября светлая разведанная часть
+            // обрывалась ровным прямоугольником по границе земли.
+            // С запасом граница проходит там, где и так темно.
+            bounds.Expand(new Vector3(Margin * 2f, 0f, Margin * 2f));
 
             _min = new Vector2(bounds.min.x, bounds.min.z);
             _size = new Vector2(Mathf.Max(1f, bounds.size.x), Mathf.Max(1f, bounds.size.z));
@@ -217,13 +231,48 @@ namespace Sinbinder.Gameplay
 
                 _shownSeen[i] = instant ? seen : Mathf.MoveTowards(_shownSeen[i], seen, step);
                 _shownKnown[i] = instant ? known : Mathf.MoveTowards(_shownKnown[i], known, step);
+            }
 
-                _pixels[i] = new Color32((byte)(_shownSeen[i] * 255f),
-                                         (byte)(_shownKnown[i] * 255f), 0, 255);
+            // Вторым проходом, а не в том же: сглаживание смотрит
+            // на соседей, а они в первом проходе ещё не досчитаны —
+            // половина клетки была бы из этого кадра, половина из прошлого.
+            for (int z = 0; z < _h; z++)
+            for (int x = 0; x < _w; x++)
+            {
+                int i = z * _w + x;
+                _pixels[i] = new Color32((byte)(Smooth(_shownSeen, x, z) * 255f),
+                                         (byte)(Smooth(_shownKnown, x, z) * 255f), 0, 255);
             }
 
             _texture.SetPixels32(_pixels);
             _texture.Apply(false);
+        }
+
+        /// <summary>
+        /// Среднее по кресту: клетка и четыре соседа, своя — вчетверо
+        /// весомее.
+        ///
+        /// Зачем. Клетка знает только «видно» или «не видно», и край
+        /// зрения выходит ступенчатым: на снимке набега 24 сентября
+        /// граница тумана шла зубцами по полметра. Сглаживание
+        /// не трогает <b>знание</b> — кого прятать, решает по-прежнему
+        /// клетка, — оно трогает только то, как это знание нарисовано.
+        ///
+        /// За краем карты берём своё значение, а не ноль: иначе туман
+        /// темнел бы рамкой по всей границе земли.
+        /// </summary>
+        private float Smooth(float[] map, int x, int z)
+        {
+            int i = z * _w + x;
+            float self = map[i];
+
+            float sum = self * 4f;
+            sum += x > 0 ? map[i - 1] : self;
+            sum += x < _w - 1 ? map[i + 1] : self;
+            sum += z > 0 ? map[i - _w] : self;
+            sum += z < _h - 1 ? map[i + _w] : self;
+
+            return sum * 0.125f;
         }
 
         // ──────────────────────────────────
