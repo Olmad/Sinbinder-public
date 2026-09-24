@@ -465,7 +465,8 @@ git pull
 powershell -ExecutionPolicy Bypass -File Tools\unity-check.ps1
 ```
 
-Самое рискованное — **проход рендера тумана**, написанный вслепую:
+Самое рискованное — **проход рендера тумана**, написанный без Unity
+(сверен с исходниками URP 17.3, но не собран):
 `Gameplay/FogOfWarFeature.cs` (Render Graph, URP 17) и
 `Assets/Shaders/FogOfWar.shader`. Если упадёт сборка — почти наверняка
 там; пришли строку ошибки как есть. Затем открой `Assets/Settings/PC_Renderer`

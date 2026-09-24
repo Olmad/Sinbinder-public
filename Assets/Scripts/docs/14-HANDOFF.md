@@ -5064,8 +5064,22 @@ on an active agent that has been placed on a NavMesh», и это уже
 ### 67.3 Что проверить — только глазами, и это важно
 
 Проход рендера и шейдер я не мог ни собрать, ни запустить: Unity здесь
-нет, а `check.py` чужих API не проверяет. Если что-то не так, признаки
-будут такие:
+нет, а `check.py` чужих API не проверяет.
+
+**Сверено с исходниками URP 17.3.0** (ветка `6000.3/staging` репозитория
+Unity-Technologies/Graphics — ровно наша версия): каждый вызов C#
+(`requiresIntermediateTexture`, `ConfigureInput`, `RecordRenderGraph`,
+`AddRasterRenderPass`, `UseTexture`, `UseAllGlobalTextures`,
+`SetRenderAttachment`, `SetRenderFunc` с `RasterGraphContext`,
+`GetTextureDesc`/`CreateTexture`, поля `TextureDesc.name`/`clearBuffer`,
+`UniversalResourceData.activeColorTexture`/`cameraDepthTexture`/
+`isActiveTargetBackBuffer`/`cameraColor`, `Blitter.BlitTexture`
+с `RasterCommandBuffer`, `renderingData.cameraData.cameraType`) и каждый
+include шейдера (`Blit.hlsl` сам тянет `sampler_LinearClamp` и отдаёт
+`texcoord`; `SampleSceneDepth`; `ComputeWorldSpacePosition`) совпадают
+с исходником буква в букву. Непроверенным остаётся то, что проверяет
+только сама Unity: компилятор шейдеров и картинка. Если что-то не так,
+признаки будут такие:
 
 1. **Ошибка компиляции** в `FogOfWarFeature.cs` — тогда не соберётся
    весь проект; сообщение покажет строку.
