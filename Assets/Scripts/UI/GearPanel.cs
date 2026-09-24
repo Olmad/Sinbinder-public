@@ -27,6 +27,13 @@ namespace Sinbinder.UI
     {
         [SerializeField] private KeyCode _key = KeyCode.I;
 
+        [Tooltip("От первого лица: смотреть на воина и нажать — разговор, и в нём "
+               + "тот же обмен. Та же клавиша, что «взаимодействовать».")]
+        [SerializeField] private KeyCode _talkKey = KeyCode.F;
+
+        [Tooltip("С какого расстояния можно заговорить, в метрах.")]
+        [SerializeField] private float _talkReach = 3.5f;
+
         private static GearPanel _instance;
 
         /// <summary>Открыт ли экран. Другие клавиши на это время не слушают.</summary>
@@ -67,13 +74,15 @@ namespace Sinbinder.UI
             if (!_open)
             {
                 if (Input.GetKeyDown(_key)) TryOpen();
+                else if (Input.GetKeyDown(_talkKey)) TryTalk();
                 return;
             }
 
             // Воин мог пасть или исчезнуть, пока экран был открыт.
             if (_warrior == null || _warrior.IsDead) { Close(); return; }
 
-            if (Input.GetKeyDown(_key) || Input.GetKeyDown(KeyCode.Escape)) Close();
+            if (Input.GetKeyDown(_key) || Input.GetKeyDown(_talkKey) || Input.GetKeyDown(KeyCode.Escape))
+                Close();
         }
 
         // ──────────────────────────────────
@@ -99,13 +108,47 @@ namespace Sinbinder.UI
                 return;
             }
 
+            OpenFor(w, "");
+        }
+
+        /// <summary>
+        /// Разговор от первого лица: Греховод смотрит на воина рядом и жмёт F.
+        /// Воин отвечает на «как ты?» по своей душе (<see cref="Dialogue.TalkLines"/>),
+        /// а ниже — тот же обмен вещами. Сверху разговора нет: туда приходят
+        /// за вещами, а сюда — ногами, и за это здесь больше слов.
+        /// </summary>
+        private void TryTalk()
+        {
+            var view = FindFirstObjectByType<RTS_Camera>();
+            if (view == null || !view.FirstPersonNow) return;
+
+            var pause = Core.GamePauseController.Instance;
+            if (pause != null && pause.IsPaused) return;
+            if (PlayerInventory.Instance == null) return;
+
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            var ray = new Ray(cam.transform.position, cam.transform.forward);
+            if (!Physics.Raycast(ray, out var hit, _talkReach + 2f)) return;
+
+            var w = hit.collider.GetComponentInParent<Warrior>();
+            if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) return;
+            if (SinbinderPlayer.Exists
+                && CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > _talkReach) return;
+
+            OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»");
+        }
+
+        private void OpenFor(Warrior w, string first)
+        {
             if (_root == null) Build();
 
             _warrior = w;
-            _answer = "";
+            _answer = first;
             _open = true;
             _root.SetActive(true);
-            pause?.Pause();
+            Core.GamePauseController.Instance?.Pause();
             Redraw();
         }
 
@@ -257,7 +300,7 @@ namespace Sinbinder.UI
 
             var hint = Label(panel, "Клавиши", 16, TextAnchor.LowerLeft,
                              new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 10f), new Vector2(-28f, 32f));
-            hint.text = "Щелчок по вещи в руках — забрать в запасы. I или Esc — закрыть.";
+            hint.text = "Щелчок по вещи в руках — забрать в запасы. I, F или Esc — закрыть.";
             hint.color = new Color(0.55f, 0.52f, 0.48f);
 
             _root.SetActive(false);
