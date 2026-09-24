@@ -25,7 +25,20 @@ namespace Sinbinder.Gameplay
         /// числами в сохранённых сценах, и вставка в середину сдвинула бы
         /// все приказы после себя.
         /// </summary>
-        FallBack
+        FallBack,
+
+        /// <summary>
+        /// Патруль: ходить между тем местом, где стоял, и указанной точкой,
+        /// пока приказ не снимут (docs/33-COMMANDS.md, шаг второй). Бросить
+        /// маршрут ради драки — уже не исполнение.
+        /// </summary>
+        Patrol,
+
+        /// <summary>
+        /// Атака с ходу: идти в точку и бить всех по дороге — как A-щелчок
+        /// по земле в Warcraft 3. Драка по пути приказ исполняет, а не нарушает.
+        /// </summary>
+        AttackMove,
     }
 
     /// <summary>
@@ -53,6 +66,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public float Muffle;
 
+        /// <summary>Патруль: откуда вышел — второй конец маршрута.</summary>
+        public Vector3 From;
+
+        /// <summary>Патруль: идёт ли сейчас обратно, к <see cref="From"/>.</summary>
+        public bool Back;
+
         public bool IsSet => Kind != CommandKind.None;
 
         /// <summary>Строка для DecisionContext.CommandType.</summary>
@@ -65,6 +84,6 @@ namespace Sinbinder.Gameplay
         /// в очки, и всё.
         /// </summary>
         public bool LeadsAwayFromFight
-            => Kind == CommandKind.FallBack || Kind == CommandKind.Move;
+            => Kind == CommandKind.FallBack || Kind == CommandKind.Move || Kind == CommandKind.Patrol;
     }
 }

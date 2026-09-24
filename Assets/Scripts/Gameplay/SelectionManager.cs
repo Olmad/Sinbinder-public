@@ -107,20 +107,61 @@ namespace Sinbinder.Gameplay
             Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
             if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
 
-            // «Атака» — только по живому чужому. Атаки с ходу по земле
-            // пока нет (docs/33-COMMANDS.md, шаг второй): прицел ждёт врага.
+            // «Атака» по живому чужому — бить его; по земле — атака с ходу,
+            // как A-щелчок в Warcraft 3: идти туда и бить всех по дороге.
             if (Aiming == CommandKind.Attack)
             {
                 var foe = hit.collider.GetComponentInParent<Warrior>();
                 if (foe == null || foe.IsDead || foe.Team == Team.Player)
                 {
-                    FindFirstObjectByType<UI.BattleLogUI>()?.Write("Бить некого — укажите врага.");
+                    OrderPoint(hit.point, CommandKind.AttackMove);
+                    StopAiming();
                     return;
                 }
             }
 
+            if (Aiming == CommandKind.Patrol)
+            {
+                OrderPoint(hit.point, CommandKind.Patrol);
+                StopAiming();
+                return;
+            }
+
             OrderAt(hit, Aiming == CommandKind.FallBack);
             StopAiming();
+        }
+
+        /// <summary>
+        /// Приказ с точкой без цели: атака с ходу или патруль. Греховод
+        /// просто идёт туда — он не голосует. Голос Греховода — как у всех
+        /// приказов.
+        /// </summary>
+        private void OrderPoint(Vector3 point, CommandKind kind)
+        {
+            int given = 0;
+
+            foreach (var unit in _selectedUnits)
+            {
+                if (unit == null) continue;
+                var warrior = unit.GetComponent<Warrior>();
+                if (!Ours(warrior)) continue;
+
+                if (warrior is SinbinderPlayer)
+                {
+                    var legs = warrior.GetComponent<UnitMover>();
+                    if (legs != null) { legs.CommandMove(point); given++; }
+                    continue;
+                }
+
+                if (!Hear(warrior, out float muffle)) continue;
+
+                if (kind == CommandKind.Patrol) warrior.IssuePatrol(point, muffle);
+                else warrior.IssueCommand(kind, point, null, muffle);
+                given++;
+            }
+
+            TellUnheard();
+            if (given > 0) OnPlayerOrder?.Invoke(kind, given);
         }
 
         /// <summary>Кто выделен — для панели приказов.</summary>
@@ -167,6 +208,7 @@ namespace Sinbinder.Gameplay
             else if (Input.GetKeyDown(KeyCode.M)) Aim(CommandKind.Move);
             else if (Input.GetKeyDown(KeyCode.T)) Aim(CommandKind.Attack);
             else if (Input.GetKeyDown(KeyCode.X)) Aim(CommandKind.FallBack);
+            else if (Input.GetKeyDown(KeyCode.P)) Aim(CommandKind.Patrol);
         }
 
         /// <summary>

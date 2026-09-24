@@ -177,6 +177,19 @@ namespace Sinbinder.Gameplay
         public void ClearCommand() => _command = default;
 
         /// <summary>
+        /// Патруль: ходить отсюда до <paramref name="to"/> и обратно, пока
+        /// не снимут. Второй конец маршрута — там, где воин стоял в миг приказа.
+        /// </summary>
+        public void IssuePatrol(Vector3 to, float muffle = 0f)
+        {
+            IssueCommand(CommandKind.Patrol, to, null, muffle);
+            _command.From = transform.position;
+        }
+
+        /// <summary>Дошёл до конца маршрута — развернуться.</summary>
+        public void TurnPatrol() => _command.Back = !_command.Back;
+
+        /// <summary>
         /// Связывание души с полноценной оболочкой.
         ///
         /// Оболочка перестаёт быть косметикой: она задаёт тело и тянет

@@ -62,6 +62,10 @@ namespace Sinbinder.AOS
         public float WrathSinMultiplier = 0.3f;
         public float WrathAllyInDangerBonus = 20f;
         public float WrathFleeSinMultiplier = 0.6f;
+
+        [Tooltip("Атака с ходу гневному — праздник: прибавка к послушанию, пока он "
+               + "идёт к драке. docs/33-COMMANDS.md.")]
+        public float WrathAttackMove = 0.25f;
         public float WrathFleeHighSinPenalty = -60f;
         public float WrathIdleHighSinPenalty = -40f;
 
@@ -73,6 +77,10 @@ namespace Sinbinder.AOS
                + "Умножается на уныние и на то, насколько приказ приглушён. "
                + "Усердному расстояние не помеха. docs/31-VOICE.md.")]
         public float SlothDistantOrder = 0.4f;
+
+        [Tooltip("Патруль скучен унылому: насколько он голосует против. Усердию "
+               + "(уныние со знаком минус) — наоборот. docs/33-COMMANDS.md.")]
+        public float SlothPatrol = 0.3f;
         public float SlothFleeDangerThreshold = 55f;
         public float SlothAttackSinMultiplier = 0.3f;
         public float SlothAttackDangerPenalty = -30f;

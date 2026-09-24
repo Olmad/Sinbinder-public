@@ -82,6 +82,7 @@ namespace Sinbinder.Tests
                 Gear();
                 LootToHands();
                 CampSpots();
+                PatrolAndRush();
                 Titles();
                 Pursuit();
                 Sides();
@@ -256,6 +257,33 @@ namespace Sinbinder.Tests
             Check(CampChoice.Choose(voices, new Soul()) == CampSpot.Fire, "кому всё равно — греется у огня");
             Check(CampChoice.Choose(voices, One(SinType.Greed, 80f)) == CampChoice.Choose(voices, One(SinType.Greed, 80f)),
                   "одна душа — одно место, без жребия");
+        }
+
+        /// <summary>
+        /// Приказы шага второго (docs/33-COMMANDS.md): патруль ходит
+        /// маршрутом и скучен унылому; атаку с ходу удар по дороге исполняет.
+        /// </summary>
+        private static void PatrolAndRush()
+        {
+            var rush = new DecisionContext { HasCommand = true, CommandType = "AttackMove", CommandIsAttackMove = true };
+            Check(rush.SatisfiedBy(ActionType.Attack), "удар по дороге исполняет атаку с ходу");
+
+            var patrol = new DecisionContext { HasCommand = true, CommandType = "Patrol", CommandIsPatrol = true };
+            Check(!patrol.SatisfiedBy(ActionType.Attack), "бросить маршрут ради драки — не патруль");
+
+            var sloth = new AOS.Modules.SlothModule();
+            var lazy = new Soul();
+            lazy.Spectra[(int)SinType.Sloth] = 70f;
+            var plain = new DecisionContext { HasCommand = true, CommandType = "Move" };
+            Check(sloth.Evaluate(lazy, patrol, ActionType.ObeyCommand) < sloth.Evaluate(lazy, plain, ActionType.ObeyCommand),
+                  "патруль скучен унылому");
+
+            var walker = MakeWarrior("Дозорный", SinType.Wrath, 40f);
+            walker.IssuePatrol(walker.transform.position + Vector3.forward * 10f);
+            Check(walker.Command.Kind == CommandKind.Patrol && walker.Command.From == walker.transform.position,
+                  "патруль помнит, откуда вышел");
+            walker.TurnPatrol();
+            Check(walker.Command.Back, "дойдя до конца, патруль разворачивается");
         }
 
         private static void Bodies()

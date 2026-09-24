@@ -35,6 +35,10 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float sin = soul.Get(SinType.Wrath);
 
+            // Атака с ходу гневному — праздник: идти туда, где будут бить.
+            if (action == ActionType.ObeyCommand && context.CommandIsAttackMove)
+                score += Mathf.Max(0f, sin) * _config.WrathAttackMove;
+
             switch (action)
             {
                 case ActionType.Attack:

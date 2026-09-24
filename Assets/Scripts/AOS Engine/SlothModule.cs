@@ -69,6 +69,10 @@ namespace Sinbinder.AOS.Modules
             if (action == ActionType.ObeyCommand)
                 score -= Mathf.Max(0f, sin) * _config.SlothDistantOrder * (1f - context.CommandVolume);
 
+            // Патруль скучен унылому; усердный (знак минус) идёт охотно.
+            if (action == ActionType.ObeyCommand && context.CommandIsPatrol)
+                score -= sin * _config.SlothPatrol;
+
             if (action == ActionType.SaveAlly)
                 score -= sin * _config.SlothSaveAllySinMultiplier;
 

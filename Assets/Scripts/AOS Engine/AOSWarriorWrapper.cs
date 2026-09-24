@@ -174,6 +174,22 @@ namespace Sinbinder.AOS
                         _warrior.ClearCommand();
                     break;
 
+                // Патруль: туда и обратно, пока не снимут. Драка по дороге —
+                // уже решение голоса, а не маршрут.
+                case CommandKind.Patrol:
+                    var leg = cmd.Back ? cmd.From : cmd.Point;
+                    if (mover != null) mover.CommandMove(leg);
+                    if (Vector3.Distance(transform.position, leg) < 1.5f) _warrior.TurnPatrol();
+                    break;
+
+                // Атака с ходу: идти в точку. Бить по дороге — дело голоса,
+                // и удар приказ исполняет (DecisionContext.SatisfiedBy).
+                case CommandKind.AttackMove:
+                    if (mover != null) mover.CommandMove(cmd.Point);
+                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f)
+                        _warrior.ClearCommand();
+                    break;
+
                 case CommandKind.Hold:
                     if (mover != null) mover.Stop();
                     break;

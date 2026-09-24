@@ -1946,6 +1946,62 @@ static class Bench
     }
 
     /// <summary>
+    /// Приказы шага второго (docs/33-COMMANDS.md): патруль против «иди»
+    /// в лагере, атака с ходу против «отходи» в бою. Патруль обязан быть
+    /// скучнее унылым; атаку с ходу нарушают бегущие, а не бьющие.
+    /// </summary>
+    static void CommandsCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ПРИКАЗЫ ШАГА ВТОРОГО: ПАТРУЛЬ И АТАКА С ХОДУ ===");
+
+        var modules = Modules();
+        const int runs = 400;
+
+        var squad = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f),
+        };
+
+        Console.WriteLine($"  {"кто",-7} {"грех",-9} {"иди",7} {"патруль",8} {"отходи",8} {"с ходу",8}");
+        double moveAll = 0, patrolAll = 0, fallAll = 0, rushAll = 0;
+
+        foreach (var m in squad)
+        {
+            double Rate(bool battle, string order) => OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity,
+                m.Loyalty, 0, runs, loot: 0, allyInDanger: battle, battle: battle, order: order).Rate;
+
+            double move = Rate(false, null), patrol = Rate(false, "Patrol");
+            double fall = Rate(true, null), rush = Rate(true, "AttackMove");
+            moveAll += move; patrolAll += patrol; fallAll += fall; rushAll += rush;
+
+            Console.WriteLine($"  {m.Name,-7} {m.Sin,-9} {move * 100,6:F1}% {patrol * 100,7:F1}%"
+                            + $" {fall * 100,7:F1}% {rush * 100,7:F1}%");
+        }
+
+        int n = squad.Length;
+        Console.WriteLine($"  среднее: иди {moveAll / n * 100:F1}%, патруль {patrolAll / n * 100:F1}%, "
+                        + $"отходи {fallAll / n * 100:F1}%, с ходу {rushAll / n * 100:F1}%");
+        Console.WriteLine(patrolAll > moveAll
+            ? "  ВЫВОД: патруль скучнее простого «иди» — унылые его чувствуют."
+            : "  ВЫВОД: патруль не отличим от «иди» — голос уныния молчит.");
+
+        // Не вывод, а напоминание, как читать правую пару. В бою с ранеными
+        // атаку с ходу нарушают те, кто бежит, — а отход тем же бегством
+        // исполняют; поэтому «с ходу» тут выше «отходи», и это верно
+        // («трус и раненый — нет»). Бьющий по дороге приказ не нарушает:
+        // у гневных и гордых доли равны.
+        Console.WriteLine("  (в бою: «с ходу» нарушают бегущие и спасающие своих, а не бьющие)");
+    }
+
+    /// <summary>
     /// Жизнь в лагере (docs/32-CAMP.md): кто где встанет без приказа.
     /// Выбор тот же, что в игре (<see cref="CampChoice"/>). Если все
     /// выбрали костёр — мест нет, и узнать это надо здесь.
@@ -1997,7 +2053,7 @@ static class Bench
     static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
         AOSConfig cfg, SinType sin, MoralType moral, float intensity,
         float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true,
-        float volume = 1f, bool battle = true)
+        float volume = 1f, bool battle = true, string order = null)
     {
         int refused = 0;
         var seen = new Dictionary<string, int>();
@@ -2045,6 +2101,15 @@ static class Bench
                 ctx.AllyInDanger = false;
                 ctx.CommandType = "Move";
                 ctx.CommandIsFallBack = false;
+            }
+
+            // Приказ шага второго (docs/33-COMMANDS.md): патруль или атака с ходу.
+            if (order != null)
+            {
+                ctx.CommandType = order;
+                ctx.CommandIsFallBack = false;
+                ctx.CommandIsPatrol = order == "Patrol";
+                ctx.CommandIsAttackMove = order == "AttackMove";
             }
 
             var d = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
@@ -4170,6 +4235,7 @@ static class Bench
         CampUnderOrderCheck(cfg);
         VoiceCheck(cfg);
         CampCheck();
+        CommandsCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

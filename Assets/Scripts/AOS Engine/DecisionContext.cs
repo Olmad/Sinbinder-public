@@ -106,6 +106,8 @@ public bool LastAlive;
                 case "Hold":     return action == ActionType.Idle;
                 case "Defend":   return action == ActionType.Idle || action == ActionType.Attack;
                 case "FallBack": return action == ActionType.Flee;
+                // Драка по дороге — это и есть атака с ходу.
+                case "AttackMove": return action == ActionType.Attack;
                 default:         return CommandIsFallBack && action == ActionType.Flee;
             }
         }
@@ -116,6 +118,12 @@ public bool LastAlive;
         /// гордыня и уныние — каждый по-своему. Без приказа — 1.
         /// </summary>
         public float CommandVolume = 1f;
+
+        /// <summary>Приказ — патруль: ходить маршрутом (docs/33-COMMANDS.md).</summary>
+        public bool CommandIsPatrol;
+
+        /// <summary>Приказ — атака с ходу: идти и бить всех по дороге.</summary>
+        public bool CommandIsAttackMove;
 
         // Предметы, которые несёт воин
         public List<InventoryItem> CarriedItems = new List<InventoryItem>();

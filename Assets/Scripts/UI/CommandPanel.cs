@@ -17,9 +17,9 @@ namespace Sinbinder.UI
     /// в WarCraft 3». Сам он не нашёл, как листать суму, — с приказами было
     /// то же самое: клавиши знал только `УПРАВЛЕНИЕ.md`.
     ///
-    /// Новых приказов здесь нет: кнопки зовут то же, что клавиши
-    /// (<see cref="SelectionManager.Stance"/>, <see cref="SelectionManager.Aim"/>).
-    /// Патруль и атака с ходу — шаг второй, через модули.
+    /// Кнопки зовут то же, что клавиши (<see cref="SelectionManager.Stance"/>,
+    /// <see cref="SelectionManager.Aim"/>). Шаг второй — патруль (P) и атака
+    /// с ходу («Атака» по земле) — новые голоса в движке, через модули.
     ///
     /// Ставит себя сама и живёт между сценами, как <see cref="SelectionManager"/>.
     /// </summary>
@@ -119,7 +119,9 @@ namespace Sinbinder.UI
 
         private string Tip(SelectionManager manager, bool heroOnly)
         {
-            if (manager.Aiming == CommandKind.Attack) return "Укажите врага. ПКМ — передумать.";
+            if (manager.Aiming == CommandKind.Attack)
+                return "Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать.";
+            if (manager.Aiming == CommandKind.Patrol) return "Укажите, докуда ходить. ПКМ — передумать.";
             if (manager.Aiming != CommandKind.None) return "Укажите место. ПКМ — передумать.";
             if (_hover == null) return "";
 
@@ -152,14 +154,18 @@ namespace Sinbinder.UI
 
             // Справа внизу, над сумой и её строкой клавиш.
             _grid = Rect("Сетка", canvasGo.transform, new Vector2(1f, 0f),
-                         new Vector2(-40f, 150f), new Vector2(3 * Cell + 2 * Gap, 2 * Cell + Gap));
+                         new Vector2(-40f, 150f), new Vector2(4 * Cell + 3 * Gap, 2 * Cell + Gap));
 
             Add(font, 0, 0, "Идти", "M или ПКМ", CommandKind.Move, aims: true, heroToo: true,
                 "Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит.");
             Add(font, 1, 0, "Атака", "T или ПКМ по врагу", CommandKind.Attack, aims: true, heroToo: true,
-                "Гневный рад. Трус и раненый — нет.");
+                "По врагу — бить его. По земле — идти туда и бить всех по дороге. "
+              + "Гневный рад. Трус и раненый — нет.");
             Add(font, 2, 0, "Отход", "X или Shift + ПКМ", CommandKind.FallBack, aims: true, heroToo: false,
                 "Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит.");
+            Add(font, 3, 0, "Патруль", "P", CommandKind.Patrol, aims: true, heroToo: false,
+                "Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, "
+              + "усердный идёт охотно. Гневный бросит маршрут, увидев врага.");
             Add(font, 0, 1, "Держать", "H", CommandKind.Hold, aims: false, heroToo: false,
                 "Терпеливый стоит. Гневный рвётся.");
             Add(font, 1, 1, "Оборона", "G", CommandKind.Defend, aims: false, heroToo: false,
