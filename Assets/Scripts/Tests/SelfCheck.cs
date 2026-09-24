@@ -81,6 +81,7 @@ namespace Sinbinder.Tests
                 Blows();
                 Gear();
                 LootToHands();
+                CampSpots();
                 Titles();
                 Pursuit();
                 Sides();
@@ -223,6 +224,38 @@ namespace Sinbinder.Tests
             Check(trophy.AttackBonus > 0f && trophy.TemptationSin == SinType.Pride,
                   "трофей бьёт тяжелее и тешит гордыню");
             Check(SquadGear.WillTake(proud, trophy, out _), "гордый берёт трофей в руки");
+        }
+
+        /// <summary>
+        /// Жизнь в лагере (docs/32-CAMP.md): место выбирают модули, по душе,
+        /// одинаково в каждом запуске.
+        /// </summary>
+        private static void CampSpots()
+        {
+            var voices = new List<ICampModule>
+            {
+                new AOS.Modules.GreedModule(), new AOS.Modules.PrideModule(),
+                new AOS.Modules.WrathModule(), new AOS.Modules.EnvyModule(),
+                new AOS.Modules.LustModule(), new AOS.Modules.GluttonyModule(),
+                new AOS.Modules.SlothModule(), new AOS.Modules.LoyaltyModule(),
+            };
+
+            Soul One(SinType sin, float value, float loyalty = 50f)
+            {
+                var s = new Soul { Loyalty = loyalty };
+                s.Spectra[(int)sin] = value;
+                return s;
+            }
+
+            Check(CampChoice.Choose(voices, One(SinType.Greed, 80f)) == CampSpot.Chest, "жадный встаёт у сундука");
+            Check(CampChoice.Choose(voices, One(SinType.Sloth, 80f)) == CampSpot.Tents, "унылый уходит в палатки");
+            Check(CampChoice.Choose(voices, One(SinType.Sloth, -80f)) == CampSpot.Watch, "усердный встаёт в дозор");
+            Check(CampChoice.Choose(voices, One(SinType.Pride, 80f)) == CampSpot.Apart, "гордый стоит в стороне");
+            Check(CampChoice.Choose(voices, One(SinType.Wrath, 10f, 100f)) == CampSpot.Sinbinder,
+                  "верный держится рядом с Греховодом");
+            Check(CampChoice.Choose(voices, new Soul()) == CampSpot.Fire, "кому всё равно — греется у огня");
+            Check(CampChoice.Choose(voices, One(SinType.Greed, 80f)) == CampChoice.Choose(voices, One(SinType.Greed, 80f)),
+                  "одна душа — одно место, без жребия");
         }
 
         private static void Bodies()

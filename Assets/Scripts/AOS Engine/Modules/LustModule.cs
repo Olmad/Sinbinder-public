@@ -12,7 +12,7 @@ namespace Sinbinder.AOS.Modules
     /// Целомудрие (отрицательная половина) — не холодность, а способность
     /// удержать себя.
     /// </summary>
-    public class LustModule : IPersonalityModule
+    public class LustModule : IPersonalityModule, ICampModule
     {
         public string ModuleID => "Lust";
         public float Weight => 0.9f;
@@ -22,6 +22,19 @@ namespace Sinbinder.AOS.Modules
         public LustModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Похоть — всегда в компании, у огня; целомудрие — в стороне.
+            float l = soul.Get(SinType.Lust) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Fire:  return l > 0f ? 8f * l : 0f;
+                case CampSpot.Apart: return l > 0f ? -6f * l : 6f * -l;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

@@ -82,6 +82,7 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/MissionID.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/NPCData.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/IMissionModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/ICampModule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/PhraseGenerator.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/BattleNarrator.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulQuality.cs" />

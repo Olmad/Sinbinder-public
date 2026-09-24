@@ -12,7 +12,7 @@ namespace Sinbinder.AOS.Modules
     /// чужая власть раздражает завистника сильнее, чем чужое золото.
     /// Доброжелательность (отрицательная половина) делает обратное.
     /// </summary>
-    public class EnvyModule : IPersonalityModule, IMissionModule
+    public class EnvyModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Envy";
         public float Weight => 1.0f;
@@ -22,6 +22,20 @@ namespace Sinbinder.AOS.Modules
         public EnvyModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Зависть смотрит на стол, где назначают старшего;
+            // доброжелательность — к огню, к своим.
+            float e = soul.Get(SinType.Envy) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Table: return e > 0f ? 8f * e : 0f;
+                case CampSpot.Fire:  return e < 0f ? 5f * -e : 0f;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

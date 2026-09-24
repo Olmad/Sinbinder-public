@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class WrathModule : IPersonalityModule, IMissionModule
+    public class WrathModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Wrath";
         public float Weight => 1.0f;
@@ -13,6 +13,21 @@ namespace Sinbinder.AOS.Modules
         public WrathModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Гнев не сидит: меряет шагами дозор, лицом туда, откуда придут.
+            // Терпение (гнев со знаком минус) сидит у огня спокойно.
+            float w = soul.Get(SinType.Wrath) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Watch: return w > 0f ? 9f * w : 0f;
+                case CampSpot.Tents: return w > 0f ? -5f * w : 0f;
+                case CampSpot.Fire:  return w < 0f ? 5f * -w : 0f;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

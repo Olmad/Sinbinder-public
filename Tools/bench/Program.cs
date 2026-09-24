@@ -1945,6 +1945,54 @@ static class Bench
             : "\n  ВЫВОД: расстояние решений не меняет. Механики нет, есть числа.");
     }
 
+    /// <summary>
+    /// Жизнь в лагере (docs/32-CAMP.md): кто где встанет без приказа.
+    /// Выбор тот же, что в игре (<see cref="CampChoice"/>). Если все
+    /// выбрали костёр — мест нет, и узнать это надо здесь.
+    /// </summary>
+    static void CampCheck()
+    {
+        Console.WriteLine("\n=== ЖИЗНЬ В ЛАГЕРЕ: КТО ГДЕ ВСТАНЕТ БЕЗ ПРИКАЗА ===");
+
+        var voices = new List<ICampModule>();
+        foreach (var m in Modules()) if (m is ICampModule c) voices.Add(c);
+
+        var squad = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f),
+        };
+
+        var where = new Dictionary<CampSpot, List<string>>();
+        foreach (var m in squad)
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData(m.Name, m.Sin, m.Moral, 1, m.Intensity),
+                Attack = 5f, Loyalty = m.Loyalty, Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+
+            var spot = CampChoice.Choose(voices, Soul.FromWarrior(w));
+            if (!where.ContainsKey(spot)) where[spot] = new List<string>();
+            where[spot].Add(m.Name);
+        }
+
+        foreach (var pair in where)
+            Console.WriteLine($"  {pair.Key,-10} {string.Join(", ", pair.Value)}");
+
+        Console.WriteLine(where.Count >= 4
+            ? $"  ВЫВОД: отряд расходится по {where.Count} местам — лагерь живёт."
+            : $"  ВЫВОД: мест всего {where.Count} — лагерь по-прежнему толпа у костра.");
+    }
+
     /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
     static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
         AOSConfig cfg, SinType sin, MoralType moral, float intensity,
@@ -4121,6 +4169,7 @@ static class Bench
         ExpeditionCheck(cfg);
         CampUnderOrderCheck(cfg);
         VoiceCheck(cfg);
+        CampCheck();
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

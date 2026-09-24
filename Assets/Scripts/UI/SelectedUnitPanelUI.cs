@@ -180,6 +180,14 @@ namespace Sinbinder.UI
             var wrapper = who.GetComponent<AOS.AOSWarriorWrapper>();
             if (wrapper == null) return string.Empty;
 
+            // В лагере «стоит» — это ещё и где: у сундука, в дозоре,
+            // в стороне. Место выбрала душа (CampLife), и его видно словом.
+            if (wrapper.LastDecision == AOS.ActionType.Idle)
+            {
+                string spot = CampLife.Now(who);
+                if (!string.IsNullOrEmpty(spot)) return "Сейчас: " + spot;
+            }
+
             return "Сейчас: " + AOS.PhraseGenerator.Doing(wrapper.LastDecision);
         }
     }

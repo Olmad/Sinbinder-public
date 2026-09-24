@@ -116,6 +116,7 @@ namespace Sinbinder.Dev
             ["голос"] = c => c.ToggleVoice(),
             ["удар"] = c => c.ToggleCombat(),
             ["добыча"] = c => c.ToggleLoot(),
+            ["лагерь"] = c => c.ToggleCamp(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -179,12 +180,22 @@ namespace Sinbinder.Dev
                 : "Добыча выключена: тела остаются лежать, как прежде.");
         }
 
+        /// <summary>Выключатель жизни в лагере (<see cref="Gameplay.CampLife"/>).</summary>
+        private void ToggleCamp()
+        {
+            Gameplay.CampLife.Enabled = !Gameplay.CampLife.Enabled;
+            Write(Gameplay.CampLife.Enabled
+                ? "Лагерь живёт: без приказа каждый встаёт туда, куда тянет душа."
+                : "Лагерь стоит: без приказа все ждут на месте, как прежде.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
             Write("голос — включить или выключить голос Греховода.");
             Write("удар — включить или выключить удар и защиту от оболочки и вещей.");
             Write("добыча — включить или выключить раздачу добычи после боя.");
+            Write("лагерь — включить или выключить жизнь в лагере.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

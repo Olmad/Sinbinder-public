@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class SlothModule : IPersonalityModule, IMissionModule
+    public class SlothModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Sloth";
         public float Weight => 1.2f;
@@ -13,6 +13,20 @@ namespace Sinbinder.AOS.Modules
         public SlothModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Уныние — в палатку, прочь от дозора; усердие (уныние со знаком
+            // минус) — в дозор, и в палатке ему не лежится.
+            float s = soul.Get(SinType.Sloth) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Tents: return s > 0f ? 10f * s : 4f * s;
+                case CampSpot.Watch: return s > 0f ? -6f * s : 9f * -s;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

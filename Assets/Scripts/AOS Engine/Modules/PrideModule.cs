@@ -12,7 +12,7 @@ namespace Sinbinder.AOS.Modules
     /// этом урон. Смирение (отрицательная половина шкалы) делает обратное:
     /// слушается охотнее и спасает чаще.
     /// </summary>
-    public class PrideModule : IPersonalityModule, IMissionModule
+    public class PrideModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Pride";
         public float Weight => 1.1f;
@@ -22,6 +22,21 @@ namespace Sinbinder.AOS.Modules
         public PrideModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Гордыня — в сторону от толпы или к столу, где решают;
+            // смирение — к огню, прислуживать, и прочь от стола.
+            float p = soul.Get(SinType.Pride) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Apart: return p > 0f ? 8f * p : 0f;
+                case CampSpot.Table: return p > 0f ? 5f * p : 3f * p;
+                case CampSpot.Fire:  return p > 0f ? -4f * p : 7f * -p;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

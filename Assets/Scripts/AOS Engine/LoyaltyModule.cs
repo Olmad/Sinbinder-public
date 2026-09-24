@@ -3,7 +3,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class LoyaltyModule : IPersonalityModule, IMissionModule
+    public class LoyaltyModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Loyalty";
         public float Weight => 1.0f;
@@ -29,6 +29,15 @@ namespace Sinbinder.AOS.Modules
             if (!context.HasSuggestion) return 0f;
             if (action != context.SuggestedAction) return 0f;
             return soul.Loyalty * _config.MissionLoyaltyWeight;
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Верный держится рядом с Греховодом; неверный — подальше.
+            // Точка безразличия та же, что в бою (LoyaltyIndifferent).
+            if (spot != CampSpot.Sinbinder) return 0f;
+            return 6f * (soul.Loyalty - _config.LoyaltyIndifferent) / 100f;
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

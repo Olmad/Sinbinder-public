@@ -77,6 +77,16 @@ namespace Sinbinder.AOS
                 return;
             }
 
+            // Жизнь в лагере (docs/32-CAMP.md): решил «стоять» — стоит там,
+            // куда тянет душа. Голос решил что, лагерь — где.
+            if (action == ActionType.Idle && CampLife.Where(_warrior, out var spot, out _))
+            {
+                ShowDecisionIcon(action);
+                var legs = GetComponent<UnitMover>();
+                if (legs != null) legs.CommandMove(spot);
+                return;
+            }
+
             ShowDecisionIcon(action);
             switch (action)
             {

@@ -13,7 +13,7 @@ namespace Sinbinder.AOS.Modules
     /// Умеренность (отрицательная половина) берёт ровно столько,
     /// сколько унесёт.
     /// </summary>
-    public class GluttonyModule : IPersonalityModule
+    public class GluttonyModule : IPersonalityModule, ICampModule
     {
         public string ModuleID => "Gluttony";
         public float Weight => 0.9f;
@@ -23,6 +23,20 @@ namespace Sinbinder.AOS.Modules
         public GluttonyModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Чревоугодие — у котла, над огнём, и не в дозоре на пустой
+            // желудок; воздержанность в дозор идёт спокойно.
+            float u = soul.Get(SinType.Gluttony) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Fire:  return u > 0f ? 9f * u : 0f;
+                case CampSpot.Watch: return u > 0f ? -5f * u : 3f * -u;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)

@@ -4,7 +4,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules
 {
-    public class GreedModule : IPersonalityModule, IMissionModule
+    public class GreedModule : IPersonalityModule, IMissionModule, ICampModule
     {
         public string ModuleID => "Greed";
         public float Weight => 1.0f;
@@ -14,6 +14,20 @@ namespace Sinbinder.AOS.Modules
         public GreedModule()
         {
             _config = AOSConfig.Load();
+        }
+
+        /// <summary>Куда тянет в лагере без приказа (docs/32-CAMP.md).</summary>
+        public float EvaluateSpot(Soul soul, CampSpot spot)
+        {
+            // Жадность — к сундуку; щедрость (жадность со знаком минус) —
+            // к огню, где раздают, и прочь от сундука.
+            float g = soul.Get(SinType.Greed) / 100f;
+            switch (spot)
+            {
+                case CampSpot.Chest: return g > 0f ? 10f * g : 4f * g;
+                case CampSpot.Fire:  return g < 0f ? 6f * -g : 0f;
+                default:             return 0f;
+            }
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
