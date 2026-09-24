@@ -297,6 +297,17 @@ namespace Sinbinder.Gameplay
                 var end = Object.FindFirstObjectByType<UI.DemoEndUI>();
                 if (end != null) { end.Show(wiped); yield break; }
 
+                // Экран конца есть только в склепе. Отряд, легший в набеге,
+                // до 24 сентября кончался строкой в консоли: игрок оставался
+                // на пустом поле без единой кнопки.
+                if (wiped)
+                {
+                    UI.GameOverUI.Show("Отряд не вернулся.",
+                        "Никто не дошёл до склепа. Души разойдутся Некроэфиром, "
+                      + "и помнить о них будет некому.\n\nИгра окончена.");
+                    yield break;
+                }
+
                 Debug.Log("[ПРОЛОГ] Демо окончено.");
                 yield break;
             }

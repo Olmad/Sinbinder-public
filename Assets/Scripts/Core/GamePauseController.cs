@@ -37,8 +37,30 @@ namespace Sinbinder.Core
 
         public void Resume()
         {
+            // Конец игры держит паузу сам: церемония или разговор, начатые
+            // рядом со смертью Греховода, по своему концу позвали бы Resume
+            // и пустили бы бой дальше прямо под экраном конца.
+            if (Halted) return;
+
             IsPaused = false;
             Time.timeScale = 1f;
+        }
+
+        /// <summary>Игра окончена: пауза, которую никто, кроме конца, не снимет.</summary>
+        public bool Halted { get; private set; }
+
+        /// <summary>Остановить мир насовсем — до <see cref="Unhalt"/>.</summary>
+        public void Halt()
+        {
+            Halted = true;
+            Pause();
+        }
+
+        /// <summary>Снять конец игры: начинают сначала.</summary>
+        public void Unhalt()
+        {
+            Halted = false;
+            Resume();
         }
     }
 }
