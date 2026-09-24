@@ -17,6 +17,33 @@ namespace Sinbinder.Dialogue
     /// </summary>
     public static class TalkLines
     {
+        /// <summary>
+        /// Что воин помнит о Греховоде — самое сильное из свежего: отнятое
+        /// или подаренное (<see cref="SquadGear"/> пишет это в память).
+        /// Отношения вычисляются из памяти, но игрок видел их только через
+        /// итог голосования; здесь память говорит сама (docs/35-CRITIQUE.md
+        /// п. 10). Пусто — помнить нечего.
+        /// </summary>
+        public static string Remembers(Warrior w)
+        {
+            var memory = AOS.MemoryProcessor.Instance;
+            if (memory == null || w == null || !SinbinderPlayer.Exists) return "";
+
+            string him = SinbinderPlayer.Instance.Id;
+            AOS.MemoryRecord best = null;
+            foreach (var m in memory.GetMemories(w))
+            {
+                if (m == null || m.TargetID != him) continue;
+                if (m.EventType != "SinbinderTookFromMe" && m.EventType != "SinbinderGaveMe") continue;
+                if (best == null || System.Math.Abs(m.Strength) > System.Math.Abs(best.Strength)) best = m;
+            }
+            if (best == null) return "";
+
+            return best.EventType == "SinbinderTookFromMe"
+                ? "Ты забрал моё. Я помню."
+                : Grammar.Pick(w.Gender, "Ты дал мне — я не забыл.", "Ты дал мне — я не забыла.");
+        }
+
         public static string HowAreYou(Warrior w)
         {
             var soul = w.Soul;

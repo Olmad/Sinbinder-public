@@ -171,7 +171,10 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w == null) return false;
 
-            OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»", near: true);
+            string said = Dialogue.TalkLines.HowAreYou(w);
+            string memory = Dialogue.TalkLines.Remembers(w);
+            if (!string.IsNullOrEmpty(memory)) said += " " + memory;
+            OpenFor(w, $"{w.DisplayName}: «{said}»", near: true);
             return true;
         }
 
@@ -362,6 +365,8 @@ namespace Sinbinder.UI
                 foreach (var item in bag)
                 {
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
+                    string than = SquadGear.Compare(_warrior, item);
+                    if (!string.IsNullOrEmpty(than)) word = $"{than} · {word}";
                     Row(_store, item.Name, Line(item, takes ? word : $"не возьмёт: {word}"),
                         _near ? () => HandOver(item) : (System.Action)null, height);
                     shown++;

@@ -221,6 +221,12 @@ namespace Sinbinder.Tests
                   && store.GetAllItems().Contains(second) && !store.GetAllItems().Contains(third),
                   "сменённое возвращается в запасы, лучшее — в главной руке");
 
+            // Сравнение с тем, что на месте, — словами (разбор, п. 7).
+            var blunt = new InventoryItem("Тупой нож", "", ItemType.Equipment, attack: 1f);
+            Check(SquadGear.Compare(calm, blunt).StartsWith("бьёт слабее")
+                  && !Regex.IsMatch(SquadGear.Compare(calm, blunt), "[0-9]"),
+                  "слабое оружие названо слабее того, что сменит, — без чисел");
+
             var helm = new InventoryItem("Шлем", "", ItemType.Equipment, defense: 1f, slot: GearSlot.Head);
             var helm2 = new InventoryItem("Второй шлем", "", ItemType.Equipment, defense: 3f, slot: GearSlot.Head);
             Check(calm.Give(helm) && !calm.Give(helm2), "второй шлем поверх первого не надеть");

@@ -157,6 +157,34 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Вещь против того, что сейчас на её месте (docs/35-CRITIQUE.md п. 7):
+        /// «бьёт тяжелее» написано и у клинка, и у топора, хотя топор вдвое
+        /// сильнее, — замену без сравнения не выбрать. Словами, без чисел.
+        /// Место свободно — пусто, кроме второй руки: там оружие вполсилы.
+        /// </summary>
+        public static string Compare(Warrior w, InventoryItem item)
+        {
+            if (!Place(w, item, out var slot, out var old)) return "";
+            if (old == null)
+                return slot == GearSlot.Offhand && item.Slot == GearSlot.Weapon ? "во второй руке — вполсилы" : "";
+
+            string what = Lower(old);
+            if (item.AttackBonus > 0f || old.AttackBonus > 0f)
+            {
+                if (item.AttackBonus > old.AttackBonus) return $"бьёт тяжелее, чем {what}";
+                if (item.AttackBonus < old.AttackBonus) return $"бьёт слабее, чем {what}";
+                return $"бьёт как {what}";
+            }
+            if (item.DefenseBonus > 0f || old.DefenseBonus > 0f)
+            {
+                if (item.DefenseBonus > old.DefenseBonus) return $"держит удар лучше, чем {what}";
+                if (item.DefenseBonus < old.DefenseBonus) return $"держит удар хуже, чем {what}";
+                return $"держит удар как {what}";
+            }
+            return "";
+        }
+
+        /// <summary>
         /// Что вещь делает с тем, кто её несёт, — словами. Числа удара
         /// и защиты игрок не видит, он видит, что топор «бьёт тяжелее».
         /// </summary>
