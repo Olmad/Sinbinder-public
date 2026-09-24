@@ -81,6 +81,7 @@ namespace Sinbinder.Tests
                 Blows();
                 Gear();
                 Pocket();
+                ChestStore();
                 LootToHands();
                 CampSpots();
                 PatrolAndRush();
@@ -278,6 +279,31 @@ namespace Sinbinder.Tests
             modest.Pocket(10);
             Check(SquadGear.AskPocket(modest, store, out _) && modest.PocketGold == 0 && store.Gold == 10,
                   "умеренный отдаёт, если попросить, — золото уходит в кошель Греховода");
+        }
+
+        /// <summary>
+        /// Сундук — склад (docs/34-GEAR.md §9.4): вещи перекладываются
+        /// между сундуком и мешком Греховода туда и обратно, ничего не теряя;
+        /// в полный мешок не взять, и вещь остаётся в сундуке.
+        /// </summary>
+        private static void ChestStore()
+        {
+            var chest = NewObject("Сундук").AddComponent<TrophyChest>();
+            var bag = NewObject("Мешок").AddComponent<PlayerInventory>();
+            var axe = new InventoryItem("Топор из сундука", "", ItemType.Equipment, attack: 2f);
+
+            bag.AddItem(axe);
+            Check(chest.Put(axe, bag, out _) && new List<InventoryItem>(chest.Contents).Contains(axe) && !bag.GetAllItems().Contains(axe),
+                  "из мешка — в сундук");
+            Check(chest.Take(axe, bag, out _) && !new List<InventoryItem>(chest.Contents).Contains(axe) && bag.GetAllItems().Contains(axe),
+                  "из сундука — в мешок");
+            Check(!chest.Take(axe, bag, out _), "чего в сундуке нет, того не взять");
+
+            chest.Put(axe, bag, out _);
+            for (int i = 0; bag.Count < bag.MaxSlots && i < 50; i++)
+                bag.AddItem(new InventoryItem($"Груз {i}", "", ItemType.Equipment));
+            Check(!chest.Take(axe, bag, out _) && new List<InventoryItem>(chest.Contents).Contains(axe),
+                  "в полный мешок не взять — вещь остаётся в сундуке");
         }
 
         /// <summary>
@@ -561,6 +587,9 @@ namespace Sinbinder.Tests
                 });
 
                 var her = MakeWarrior(name, SinType.Greed, 40f);
+                var axe = new InventoryItem("Топор беглянки", "", ItemType.Equipment, attack: 2f);
+                her.Give(axe);
+                her.Pocket(7);
                 SquadRoster.Remember(new[] { her });
 
                 Check(SquadRoster.TryGet(name, out var m), "воин пережил смену доли");
@@ -568,6 +597,14 @@ namespace Sinbinder.Tests
                 Same(m.Trade, Trade.Archer, "смена доли не отнимает ремесло");
                 Check(m.Brother, "братство переживает смену доли");
                 Check(m.Legend, "слава переживает смену доли");
+
+                // Вещи на сбежавших остаются на них (docs/34-GEAR.md §9.4):
+                // до 24 сентября всё надетое пропадало при смене доли.
+                Check(m.Gear != null && m.Gear.Contains(axe) && m.Pocket == 7,
+                      "надетое и карман переживают смену доли");
+                var again = Expedition.Summon(NewObject("Держатель"), m, new RelationshipSystem(null));
+                Check(again.Worn(GearSlot.Weapon) == axe && again.PocketGold == 7,
+                      "воин из записи снова в своём и при своём золоте");
             }
             finally
             {

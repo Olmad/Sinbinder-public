@@ -424,6 +424,13 @@ namespace Sinbinder.Gameplay
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
 
+            // Что было на нём, то на нём и осталось (docs/34-GEAR.md §9.4):
+            // сбежавший уносит своё. По порядку мест — лучшее оружие
+            // снова ляжет в главную руку, щит во вторую.
+            if (member.Gear != null)
+                foreach (var item in member.Gear) warrior.Give(item);
+            warrior.Pocket(member.Pocket);
+
             // Ноги, урон, усталость, значок над головой — всё общее сразу.
             // Собиралось это только в UnitFactory, которым пролог
             // не пользуется: воины выходили без агента и не могли сделать

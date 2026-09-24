@@ -19,6 +19,10 @@ namespace Sinbinder.UI
     /// посмотреть издали, щелчки там не работают. Как с голосом
     /// (docs/31-VOICE.md): хочешь дать — подойди.
     ///
+    /// <b>Сундук лагеря</b> — тот же экран, только слева сундук, а не воин
+    /// (§9.4, выключатель «склад»): Греховод берёт, сколько унесёт, и что
+    /// осталось в сундуке — осталось в лагере.
+    ///
     /// У каждой вещи сразу написано, возьмёт ли её воин или отдаст ли. Это
     /// не подсказка ради удобства, а то, ради чего экран есть: игрок учит
     /// отряд, глядя, кто чему рад. «Искушай», а не «экипируй».
@@ -49,6 +53,17 @@ namespace Sinbinder.UI
         /// <summary>Открыт вблизи, в разговоре: можно передавать. Иначе только смотреть.</summary>
         private bool _near;
         private Warrior _warrior;
+
+        /// <summary>Открыт у сундука: слева сундук, а не воин.</summary>
+        private TrophyChest _chest;
+
+        /// <summary>Открыт без воина: мешок Греховода сам по себе, только смотреть.</summary>
+        private bool _bagOnly;
+
+        // Подсказка у предмета: «F — поговорить», «F — сундук». Без неё
+        // о разговоре и о сундуке-складе игрок не узнает никогда.
+        private Text _prompt;
+        private float _nextLook;
         private string _answer = "";
 
         private GameObject _root;
@@ -56,6 +71,7 @@ namespace Sinbinder.UI
         private Text _gold;
         private Text _reply;
         private Text _bagTitle;
+        private Text _leftTitle;
         private Text _hint;
         private RectTransform _hands;
         private RectTransform _store;
@@ -79,17 +95,34 @@ namespace Sinbinder.UI
             if (_instance == this) _instance = null;
         }
 
+        // Консоль выключает экран на время ввода (InputHush) — подсказка
+        // не должна висеть над ней старой.
+        void OnDisable()
+        {
+            if (_prompt != null) _prompt.text = "";
+        }
+
+        /// <summary>Кнопка «Вещи» на панели приказов: то же, что клавиша I.</summary>
+        public static void Toggle()
+        {
+            if (_instance == null) return;
+            if (_instance._open) _instance.Close();
+            else _instance.TryOpen();
+        }
+
         void Update()
         {
+            Prompt();
+
             if (!_open)
             {
                 if (Input.GetKeyDown(_key)) TryOpen();
-                else if (Input.GetKeyDown(_talkKey)) TryTalk();
+                else if (Input.GetKeyDown(_talkKey) && !TryTalk()) TryChest();
                 return;
             }
 
             // Воин мог пасть или исчезнуть, пока экран был открыт.
-            if (_warrior == null || _warrior.IsDead) { Close(); return; }
+            if (_chest == null && !_bagOnly && (_warrior == null || _warrior.IsDead)) { Close(); return; }
 
             if (Input.GetKeyDown(_key) || Input.GetKeyDown(_talkKey) || Input.GetKeyDown(KeyCode.Escape))
                 Close();
@@ -105,18 +138,15 @@ namespace Sinbinder.UI
             var pause = Core.GamePauseController.Instance;
             if (pause != null && pause.IsPaused) return;
 
-            var w = Chosen();
-            if (w == null)
-            {
-                Say("Выделите воина: снаряжение смотрят у того, кто его несёт.");
-                return;
-            }
-
             if (PlayerInventory.Instance == null)
             {
                 Say("Мешка Греховода в этой сцене нет.");
                 return;
             }
+
+            // Воин не выделен (или выделен один Греховод) — свой мешок.
+            var w = Chosen();
+            if (w == null) { OpenBag(); return; }
 
             OpenFor(w, "", near: false);
         }
@@ -127,27 +157,105 @@ namespace Sinbinder.UI
         /// а ниже — тот же обмен вещами. Сверху разговора нет: туда приходят
         /// за вещами, а сюда — ногами, и за это здесь больше слов.
         /// </summary>
-        private void TryTalk()
+        private bool TryTalk()
         {
-            var view = FindFirstObjectByType<RTS_Camera>();
-            if (view == null || !view.FirstPersonNow) return;
-
             var pause = Core.GamePauseController.Instance;
-            if (pause != null && pause.IsPaused) return;
-            if (PlayerInventory.Instance == null) return;
+            if (pause != null && pause.IsPaused) return false;
+            if (PlayerInventory.Instance == null) return false;
 
-            var cam = Camera.main;
-            if (cam == null) return;
-
-            var ray = new Ray(cam.transform.position, cam.transform.forward);
-            if (!Physics.Raycast(ray, out var hit, _talkReach + 2f)) return;
-
-            var w = hit.collider.GetComponentInParent<Warrior>();
-            if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) return;
-            if (SinbinderPlayer.Exists
-                && CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > _talkReach) return;
+            var w = LookedAt();
+            if (w == null) return false;
 
             OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»", near: true);
+            return true;
+        }
+
+        /// <summary>Свой воин, на которого Греховод смотрит вблизи от первого лица. Нет — null.</summary>
+        private Warrior LookedAt()
+        {
+            var view = FindFirstObjectByType<RTS_Camera>();
+            if (view == null || !view.FirstPersonNow) return null;
+
+            var cam = Camera.main;
+            if (cam == null) return null;
+
+            var ray = new Ray(cam.transform.position, cam.transform.forward);
+            if (!Physics.Raycast(ray, out var hit, _talkReach + 2f)) return null;
+
+            var w = hit.collider.GetComponentInParent<Warrior>();
+            if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) return null;
+            if (SinbinderPlayer.Exists
+                && CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > _talkReach) return null;
+            return w;
+        }
+
+        /// <summary>
+        /// Подсказка у предмета: что сделает F, пока экран закрыт. Раз
+        /// в пятую долю секунды — луч и поиск сундука не нужны каждый кадр.
+        /// </summary>
+        private void Prompt()
+        {
+            if (_prompt == null) BuildPrompt();
+            if (_open) { _prompt.text = ""; return; }
+            if (Time.unscaledTime < _nextLook) return;
+            _nextLook = Time.unscaledTime + 0.2f;
+
+            var pause = Core.GamePauseController.Instance;
+            if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null) { _prompt.text = ""; return; }
+
+            var w = LookedAt();
+            if (w != null) { _prompt.text = $"F — поговорить: {w.DisplayName}"; return; }
+
+            _prompt.text = TrophyChest.Reachable() != null ? "F — сундук Марги" : "";
+        }
+
+        /// <summary>Мешок Греховода сам по себе: что несёт он и как отдать это воину.</summary>
+        private void OpenBag()
+        {
+            if (_root == null) Build();
+
+            _warrior = null;
+            _chest = null;
+            _bagOnly = true;
+            _near = false;
+            _answer = "";
+            _open = true;
+            _root.SetActive(true);
+            Core.GamePauseController.Instance?.Pause();
+            Redraw();
+        }
+
+        /// <summary>
+        /// F у открытого сундука — снова к нему (§9.4). В любом виде, сверху
+        /// и от первого лица: сундук не собеседник, к нему только подходят.
+        /// </summary>
+        private void TryChest()
+        {
+            var pause = Core.GamePauseController.Instance;
+            if (pause != null && pause.IsPaused) return;
+
+            var chest = TrophyChest.Reachable();
+            if (chest != null) OpenChest(chest);
+        }
+
+        /// <summary>Открыть сундук лагеря: слева он, справа мешок Греховода.</summary>
+        public static void OpenChest(TrophyChest chest)
+        {
+            if (_instance == null || chest == null || PlayerInventory.Instance == null) return;
+            if (_instance._open) return;
+
+            var panel = _instance;
+            if (panel._root == null) panel.Build();
+
+            panel._chest = chest;
+            panel._bagOnly = false;
+            panel._warrior = null;
+            panel._near = true;
+            panel._answer = "";
+            panel._open = true;
+            panel._root.SetActive(true);
+            Core.GamePauseController.Instance?.Pause();
+            panel.Redraw();
         }
 
         private void OpenFor(Warrior w, string first, bool near)
@@ -155,6 +263,8 @@ namespace Sinbinder.UI
             if (_root == null) Build();
 
             _warrior = w;
+            _chest = null;
+            _bagOnly = false;
             _near = near;
             _answer = first;
             _open = true;
@@ -166,6 +276,8 @@ namespace Sinbinder.UI
         private void Close()
         {
             _open = false;
+            _chest = null;
+            _bagOnly = false;
             if (_root != null) _root.SetActive(false);
             Core.GamePauseController.Instance?.Resume();
         }
@@ -192,10 +304,14 @@ namespace Sinbinder.UI
 
         private void Redraw()
         {
+            if (_chest != null) { RedrawChest(); return; }
+            if (_bagOnly) { RedrawBag(); return; }
+
             var store = PlayerInventory.Instance;
             string name = _warrior.DisplayName;
 
             _title.text = $"Снаряжение: {name}";
+            _leftTitle.text = "На воине";
             Clear(_hands);
             Clear(_store);
 
@@ -223,14 +339,14 @@ namespace Sinbinder.UI
 
             if (store != null)
             {
+                var bag = Bag(store);
+                float height = RowHeight(_store, bag.Count);
                 int shown = 0;
-                foreach (var item in new List<InventoryItem>(store.GetAllItems()))
+                foreach (var item in bag)
                 {
-                    if (item == null || item.Type == ItemType.Gold) continue;
-
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
                     Row(_store, item.Name, Line(item, takes ? word : $"не возьмёт: {word}"),
-                        _near ? () => HandOver(item) : (System.Action)null);
+                        _near ? () => HandOver(item) : (System.Action)null, height);
                     shown++;
                 }
 
@@ -247,12 +363,114 @@ namespace Sinbinder.UI
             _reply.text = _answer;
         }
 
+        /// <summary>
+        /// Сундук и мешок (§9.4). Слева — что лежит в сундуке, справа — мешок;
+        /// щелчок перекладывает. Всё, что останется слева, останется в лагере.
+        /// </summary>
+        private void RedrawChest()
+        {
+            var store = PlayerInventory.Instance;
+
+            _title.text = "Сундук Марги";
+            _leftTitle.text = "В сундуке — щелчок: взять в мешок";
+            _bagTitle.text = "Мешок Греховода — щелчок: положить в сундук";
+            Clear(_hands);
+            Clear(_store);
+
+            var inside = new List<InventoryItem>(_chest.Contents);
+            float left = RowHeight(_hands, inside.Count);
+            foreach (var item in inside)
+            {
+                string how = item.Type == ItemType.Gold ? "в кошель" : "в мешок";
+                Row(_hands, item.Name, Plain(item, how), () => FromChest(item), left);
+            }
+            if (inside.Count == 0) Row(_hands, "— Пусто —", "", null);
+
+            if (store != null)
+            {
+                var bag = Bag(store);
+                float right = RowHeight(_store, bag.Count);
+                foreach (var item in bag)
+                    Row(_store, item.Name, Plain(item, "в сундук"), () => ToChest(item), right);
+                if (bag.Count == 0) Row(_store, "— Пусто —", "", null);
+                _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
+            }
+
+            _hint.text = "Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть.";
+            _reply.text = _answer;
+        }
+
+        /// <summary>
+        /// Мешок сам по себе: слева — что в нём, справа — как этим
+        /// распорядиться. Щелчков нет: отдают из рук в руки, а не отсюда.
+        /// </summary>
+        private void RedrawBag()
+        {
+            var store = PlayerInventory.Instance;
+
+            _title.text = "Мешок Греховода";
+            _leftTitle.text = "В мешке";
+            _bagTitle.text = "Как отдать";
+            Clear(_hands);
+            Clear(_store);
+
+            var bag = store != null ? Bag(store) : new List<InventoryItem>();
+            float height = RowHeight(_hands, bag.Count);
+            foreach (var item in bag) Row(_hands, item.Name, Plain(item, item.Description), null, height);
+            if (bag.Count == 0) Row(_hands, "— Пусто —", "", null);
+
+            Row(_store, "Воину", "подойти к нему и F от первого лица", null);
+            Row(_store, "Посмотреть, что на воине", "выделить его и I — или «Вещи»", null);
+            if (TrophyChest.Store) Row(_store, "В сундук лагеря", "подойти к сундуку и F", null);
+
+            if (store != null) _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
+            _hint.text = "I или Esc — закрыть.";
+            _reply.text = "";
+        }
+
+        private void FromChest(InventoryItem item)
+        {
+            bool ok = _chest.Take(item, PlayerInventory.Instance, out string word);
+            _answer = ok ? $"{item.Name} — {word}." : $"Не взять: {word}.";
+            Redraw();
+        }
+
+        private void ToChest(InventoryItem item)
+        {
+            bool ok = _chest.Put(item, PlayerInventory.Instance, out string word);
+            _answer = ok ? $"{item.Name} — {word}." : $"Не положить: {word}.";
+            Redraw();
+        }
+
+        /// <summary>Вещи мешка без золота: золото — строкой кошеля.</summary>
+        private static List<InventoryItem> Bag(PlayerInventory store)
+        {
+            var bag = new List<InventoryItem>();
+            foreach (var item in store.GetAllItems())
+                if (item != null && item.Type != ItemType.Gold) bag.Add(item);
+            return bag;
+        }
+
+        /// <summary>
+        /// Высота строки, чтобы столбец вместил все: мешок держит восемь вещей,
+        /// а по старой высоте в столбец влезало шесть — остальные уходили
+        /// за край панели.
+        /// </summary>
+        private static float RowHeight(RectTransform column, int rows)
+        {
+            if (rows <= 0) return 58f;
+            float room = column.rect.height > 1f ? column.rect.height : 382f;
+            return Mathf.Clamp((room - 6f * (rows - 1)) / rows, 40f, 58f);
+        }
+
         /// <summary>Вторая строка вещи: что она даёт и как её примут — в роде воина.</summary>
         private string Line(InventoryItem item, string how)
+            => Core.Grammar.For(_warrior.Gender, Plain(item, how));
+
+        private static string Plain(InventoryItem item, string how)
         {
             string effect = SquadGear.Effect(item);
-            string text = string.IsNullOrEmpty(effect) ? how : $"{effect} · {how}";
-            return Core.Grammar.For(_warrior.Gender, text);
+            return string.IsNullOrEmpty(effect) ? how : $"{effect} · {how}";
         }
 
         private void HandOver(InventoryItem item)
@@ -314,10 +532,9 @@ namespace Sinbinder.UI
             _title = Label(panel, "Заголовок", 30, TextAnchor.UpperLeft,
                            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(28f, -64f), new Vector2(-28f, -18f));
 
-            var left = Label(panel, "На воине", 20, TextAnchor.UpperLeft,
-                             new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -100f), new Vector2(-12f, -70f));
-            left.text = "На воине";
-            left.color = new Color(0.80f, 0.72f, 0.46f);
+            _leftTitle = Label(panel, "Слева", 20, TextAnchor.UpperLeft,
+                               new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -100f), new Vector2(-12f, -70f));
+            _leftTitle.color = new Color(0.80f, 0.72f, 0.46f);
 
             _bagTitle = Label(panel, "Мешок", 20, TextAnchor.UpperLeft,
                               new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(12f, -100f), new Vector2(-28f, -70f));
@@ -356,10 +573,11 @@ namespace Sinbinder.UI
             return rt;
         }
 
-        private void Row(RectTransform column, string title, string line, System.Action click)
+        private void Row(RectTransform column, string title, string line, System.Action click,
+                         float height = 58f)
         {
             var rt = Box("Вещь", column, new Vector2(0f, 1f), new Vector2(1f, 1f), Vector2.zero,
-                         new Vector2(0f, 58f), new Color(0.12f, 0.105f, 0.095f, 1f));
+                         new Vector2(0f, height), new Color(0.12f, 0.105f, 0.095f, 1f));
 
             if (click != null)
             {
@@ -424,6 +642,34 @@ namespace Sinbinder.UI
             t.verticalOverflow = VerticalWrapMode.Truncate;
             t.raycastTarget = false;
             return t;
+        }
+
+        /// <summary>Подсказка у предмета — внизу посередине, поверх игры, мимо щелчков.</summary>
+        private void BuildPrompt()
+        {
+            var canvasGo = new GameObject("Подсказка F", typeof(Canvas), typeof(CanvasScaler));
+            canvasGo.transform.SetParent(transform, false);
+            var canvas = canvasGo.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 35;
+            var scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+
+            var go = new GameObject("Строка", typeof(RectTransform), typeof(Text));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(canvasGo.transform, false);
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(0f, 250f);
+            rt.sizeDelta = new Vector2(700f, 40f);
+
+            _prompt = go.GetComponent<Text>();
+            _prompt.font = UIFont();
+            _prompt.fontSize = 24;
+            _prompt.alignment = TextAnchor.MiddleCenter;
+            _prompt.color = new Color(0.94f, 0.86f, 0.62f);
+            _prompt.raycastTarget = false;
+            go.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.85f);
         }
 
         private static Font UIFont()

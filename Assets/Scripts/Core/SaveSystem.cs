@@ -104,6 +104,9 @@ namespace Sinbinder.Core
                     IsCommander = m.IsCommander,
                     IsCandidate = m.IsCandidate,
                     Unavailable = m.Unavailable,
+                    Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear)
+                                          : new List<Inventory.InventoryItem>(),
+                    Pocket = m.Pocket,
                 });
             }
 
@@ -273,6 +276,8 @@ namespace Sinbinder.Core
                     IsCommander = m.IsCommander,
                     IsCandidate = m.IsCandidate,
                     Unavailable = m.Unavailable,
+                    Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear) : null,
+                    Pocket = m.Pocket,
                 });
             }
 

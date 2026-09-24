@@ -117,6 +117,7 @@ namespace Sinbinder.Dev
             ["удар"] = c => c.ToggleCombat(),
             ["добыча"] = c => c.ToggleLoot(),
             ["лагерь"] = c => c.ToggleCamp(),
+            ["склад"] = c => c.ToggleStore(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -176,7 +177,7 @@ namespace Sinbinder.Dev
         {
             Gameplay.LootChain.Enabled = !Gameplay.LootChain.Enabled;
             Write(Gameplay.LootChain.Enabled
-                ? "Добыча включена: после боя грех решает, кто что понесёт, трофеи — в руки."
+                ? "Добыча включена: трофей надевает взявший, золото делит подобравший."
                 : "Добыча выключена: тела остаются лежать, как прежде.");
         }
 
@@ -189,6 +190,15 @@ namespace Sinbinder.Dev
                 : "Лагерь стоит: без приказа все ждут на месте, как прежде.");
         }
 
+        /// <summary>Выключатель сундука-склада (<see cref="Gameplay.TrophyChest.Store"/>).</summary>
+        private void ToggleStore()
+        {
+            Gameplay.TrophyChest.Store = !Gameplay.TrophyChest.Store;
+            Write(Gameplay.TrophyChest.Store
+                ? "Сундук — склад: берёте, сколько унесёте; остальное остаётся в лагере."
+                : "Сундук — раздача: всё сразу в мешок Греховода, как прежде.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
@@ -196,6 +206,7 @@ namespace Sinbinder.Dev
             Write("удар — включить или выключить удар и защиту от оболочки и вещей.");
             Write("добыча — включить или выключить раздачу добычи после боя.");
             Write("лагерь — включить или выключить жизнь в лагере.");
+            Write("склад — сундук лагеря как склад: взять, сколько унесёте.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

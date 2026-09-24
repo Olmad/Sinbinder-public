@@ -171,6 +171,12 @@ namespace Sinbinder.Gameplay
             var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
                          m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender);
             w.UnpaidMissions = m.UnpaidMissions;
+
+            // Надетое и карман спорят в голове (искушение, Жадность) —
+            // спрошенный на развилке обязан решать с ними же.
+            if (m.Gear != null)
+                foreach (var item in m.Gear) w.Give(item);
+            w.Pocket(m.Pocket);
             return w;
         }
 

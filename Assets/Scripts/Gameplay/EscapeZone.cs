@@ -205,7 +205,12 @@ namespace Sinbinder.Gameplay
                 if (w != null && !w.IsDead && w.Team == Team.Player
                     && !(w is SinbinderPlayer) && !_inside.Contains(w)) left++;
 
-            if (left > 0) Log(left == 1 ? "Одного не дождались." : $"Не дождались: {left}.");
+            // Словами, а не числом: игрок чисел не видит. До 24 сентября
+            // здесь было «Не дождались: 3.» — единственная цифра в журнале.
+            if (left > 0) Log(Waited(left));
+
+            // Лагерь брошен: что осталось в сундуке, досталось охотникам.
+            TrophyChest.Abandon();
 
             _escapedNames.Clear();
             foreach (var w in _inside)
@@ -228,6 +233,18 @@ namespace Sinbinder.Gameplay
 
             var director = Object.FindFirstObjectByType<PrologueDirector>();
             if (director != null) director.LeaveNow("Отряд ушёл с поля.");
+        }
+
+        private static string Waited(int left)
+        {
+            switch (left)
+            {
+                case 1:  return "Одного не дождались.";
+                case 2:  return "Двоих не дождались.";
+                case 3:  return "Троих не дождались.";
+                case 4:  return "Четверых не дождались.";
+                default: return "Многих не дождались.";
+            }
         }
 
         private void Log(string line)

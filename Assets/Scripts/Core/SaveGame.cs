@@ -51,6 +51,11 @@ namespace Sinbinder.Core
         public bool IsCommander;
         public bool IsCandidate;
         public string Unavailable;
+
+        // Надетое и карман (docs/34-GEAR.md §9.4). Вещь — [Serializable],
+        // JsonUtility пишет её список как есть.
+        public List<Inventory.InventoryItem> Gear = new List<Inventory.InventoryItem>();
+        public int Pocket;
     }
 
     /// <summary>

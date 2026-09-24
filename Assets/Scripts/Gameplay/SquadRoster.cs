@@ -35,6 +35,17 @@ namespace Sinbinder.Gameplay
             public int UnpaidMissions;
 
             /// <summary>
+            /// Что на нём надето (docs/34-GEAR.md §9.4). Живёт здесь, а не
+            /// только на теле: тело остаётся в сцене, а вещи на сбежавших
+            /// обязаны уйти вместе с ними (решение автора, 24 сентября).
+            /// До этого всё надетое пропадало при каждой смене доли.
+            /// </summary>
+            public List<Inventory.InventoryItem> Gear;
+
+            /// <summary>Золото в личном кармане (§9.3). Уходит вместе с ним.</summary>
+            public int Pocket;
+
+            /// <summary>
             /// Носит ли перк «Брат по оружию». Живёт в реестре, а не
             /// только в составе лагеря: реестр переживает смену сцен,
             /// и братья обязаны остаться братьями в разгроме.
@@ -274,6 +285,8 @@ namespace Sinbinder.Gameplay
                 m.UnpaidMissions = w.UnpaidMissions;
                 m.IsCommander = w.IsCommander;
                 m.IsAway = false;
+                m.Gear = new List<Inventory.InventoryItem>(w.Carried);
+                m.Pocket = w.PocketGold;
 
                 survivors.Add(m);
             }

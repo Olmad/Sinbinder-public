@@ -1,5 +1,6 @@
 // Assets/Scripts/Gameplay/TrophyChest.cs
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Inventory;
 
@@ -24,6 +25,13 @@ namespace Sinbinder.Gameplay
     /// В сундуке простое снаряжение и ничего больше. Вещи-искусители —
     /// рычаг полной версии (docs/09-PROLOGUE.md §7), и в демо их нет
     /// намеренно: у всего, что лежит здесь, искушение равно нулю.
+    ///
+    /// <b>Сундук — склад</b> (docs/34-GEAR.md §9.4, решение автора
+    /// 24 сентября): открытый сундук не высыпается в мешок Греховода,
+    /// а стоит в лагере с вещами. Греховод берёт, сколько унесёт; что
+    /// осталось — осталось в лагере и при бегстве достаётся охотникам.
+    /// Выключатель: до прогона — прежнее «всё сразу в мешок»; «склад»
+    /// в консоли (~).
     /// </summary>
     public class TrophyChest : MonoBehaviour
     {
@@ -50,6 +58,17 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Забыть трофеи. Начало пролога.</summary>
         public static void Forget() => Looted = false;
+
+        /// <summary>Сундук — склад, а не раздача. Выключено — всё сразу в мешок, как прежде.</summary>
+        public static bool Store { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() => Store = false;
+
+        private readonly List<InventoryItem> _contents = new();
+
+        /// <summary>Что лежит в сундуке сейчас.</summary>
+        public IReadOnlyList<InventoryItem> Contents => _contents;
 
         private Transform _eye;
         private bool _invited;
@@ -125,7 +144,7 @@ namespace Sinbinder.Gameplay
                 _lid.localRotation = to;
             }
 
-            int taken = Fill(log);
+            int taken = Store ? Stock(log) : Fill(log);
 
             Looted = true;
             _opening = false;
@@ -143,6 +162,90 @@ namespace Sinbinder.Gameplay
 
             if (taken == 0)
                 log?.Write("В сундуке пусто. Марга объяснится, когда вернётся.");
+        }
+
+        /// <summary>
+        /// Сундук — склад: вещи остаются в нём, игрок сам решает, что взять.
+        /// Называем их так же, одной строкой, и открываем экран сундука.
+        /// </summary>
+        private int Stock(UI.BattleLogUI log)
+        {
+            if (_contents.Count == 0)
+                foreach (var item in TrophyCatalog.Chest()) _contents.Add(item);
+
+            var names = new System.Text.StringBuilder();
+            foreach (var item in _contents)
+            {
+                if (names.Length > 0) names.Append(", ");
+                names.Append(item.Name.ToLowerInvariant());
+            }
+
+            if (_contents.Count > 0)
+                log?.Write($"В сундуке: {names}. Что не унесёте, останется в лагере.");
+
+            UI.GearPanel.OpenChest(this);
+            return _contents.Count;
+        }
+
+        /// <summary>Взять из сундука в мешок Греховода. Золото — в кошель.</summary>
+        public bool Take(InventoryItem item, PlayerInventory bag, out string word)
+        {
+            if (item == null || !_contents.Contains(item)) { word = "этого в сундуке уже нет"; return false; }
+            if (bag == null || !bag.AddItem(item)) { word = "в мешке нет места"; return false; }
+
+            _contents.Remove(item);
+            word = item.Type == ItemType.Gold ? "в кошель" : "в мешок";
+            return true;
+        }
+
+        /// <summary>Положить из мешка в сундук. Оставить можно всё, кроме золота.</summary>
+        public bool Put(InventoryItem item, PlayerInventory bag, out string word)
+        {
+            if (item == null || bag == null || !bag.RemoveItem(item.Id)) { word = "этого в мешке уже нет"; return false; }
+
+            _contents.Add(item);
+            word = "в сундук";
+            return true;
+        }
+
+        /// <summary>
+        /// Сундук, до которого Греховод дотягивается сейчас: открытый,
+        /// склад, рядом. Нет такого — null.
+        /// </summary>
+        public static TrophyChest Reachable()
+        {
+            if (!Store || !Looted) return null;
+
+            var chest = Object.FindFirstObjectByType<TrophyChest>();
+            if (chest == null) return null;
+            if (SinbinderPlayer.Exists
+                && CampFocus.GroundDistance(SinbinderPlayer.Where, chest.transform.position) > chest._reach)
+                return null;
+            return chest;
+        }
+
+        /// <summary>
+        /// Отряд ушёл с поля — лагерь брошен, и сундук достался охотникам
+        /// (решение автора). Называем, что в нём осталось: потеря, о которой
+        /// не сказали, для игрока не случилась.
+        /// </summary>
+        public static void Abandon()
+        {
+            if (!Store) return;
+
+            var chest = Object.FindFirstObjectByType<TrophyChest>();
+            if (chest == null || chest._contents.Count == 0) return;
+
+            var names = new System.Text.StringBuilder();
+            foreach (var item in chest._contents)
+            {
+                if (names.Length > 0) names.Append(", ");
+                names.Append(item.Name.ToLowerInvariant());
+            }
+            chest._contents.Clear();
+
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                $"Сундук Марги остался охотникам: {names}.");
         }
 
         /// <summary>

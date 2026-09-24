@@ -207,6 +207,20 @@ namespace Sinbinder.Gameplay
         public static bool WillGivePocket(Warrior w, out string word)
             => WillGive(w, new InventoryItem("Монеты", "", ItemType.Gold, w.PocketGold), out word);
 
+        /// <summary>
+        /// Что на воине — одной строкой, для панели приказов: надетое и карман.
+        /// Пусто — «ничего не надето».
+        /// </summary>
+        public static string Summary(Warrior w)
+        {
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var item in w.Carried) names.Add(item.Name.ToLowerInvariant());
+
+            string line = names.Count == 0 ? "Ничего не надето." : $"Надето: {string.Join(", ", names)}.";
+            if (w.PocketGold > 0) line += $" В кармане — {GoldWord(w.PocketGold)}.";
+            return line;
+        }
+
         /// <summary>Золото словом: игрок не видит чисел, и казны тоже.</summary>
         public static string GoldWord(int gold)
         {

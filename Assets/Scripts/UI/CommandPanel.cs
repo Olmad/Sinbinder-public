@@ -18,7 +18,9 @@ namespace Sinbinder.UI
     /// то же самое: клавиши знал только `УПРАВЛЕНИЕ.md`.
     ///
     /// Кнопки зовут то же, что клавиши (<see cref="SelectionManager.Stance"/>,
-    /// <see cref="SelectionManager.Aim"/>). Шаг второй — патруль (P) и атака
+    /// <see cref="SelectionManager.Aim"/>). Восьмая — «Вещи» (I): не приказ,
+    /// а экран снаряжения (docs/34-GEAR.md); без наведения подсказка
+    /// говорит, что на выделенном воине. Шаг второй — патруль (P) и атака
     /// с ходу («Атака» по земле) — новые голоса в движке, через модули.
     ///
     /// Ставит себя сама и живёт между сценами, как <see cref="SelectionManager"/>.
@@ -40,6 +42,7 @@ namespace Sinbinder.UI
             public CommandKind Kind;
             public bool Aims;
             public bool HeroToo;
+            public System.Action Act;   // не приказ, а экран: «Вещи»
             public Button Button;
             public Image Face;
         }
@@ -123,14 +126,34 @@ namespace Sinbinder.UI
                 return "Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать.";
             if (manager.Aiming == CommandKind.Patrol) return "Укажите, докуда ходить. ПКМ — передумать.";
             if (manager.Aiming != CommandKind.None) return "Укажите место. ПКМ — передумать.";
-            if (_hover == null) return "";
+            if (_hover == null) return Worn(manager);
 
             string tip = $"{_hover.Word} · {_hover.Key}\n";
+            if (_hover.Act != null) return tip + _hover.Tip;   // экран, а не приказ
             if (heroOnly) return tip + "Греховод слушается всегда.";
 
             tip += _hover.Tip;
             if (Voice.Enabled) tip += "\nПриказ слышен тем лучше, чем ближе Греховод.";
             return tip;
+        }
+
+        /// <summary>
+        /// Без наведения — что на выделенном воине (docs/34-GEAR.md): надетое
+        /// и карман словами. Только для одного своего: у отряда сводка
+        /// была бы стеной текста.
+        /// </summary>
+        private static string Worn(SelectionManager manager)
+        {
+            Warrior only = null;
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                if (unit == null) continue;
+                var w = unit.GetComponentInParent<Warrior>();
+                if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
+                if (only != null) return "";
+                only = w;
+            }
+            return only == null ? "" : $"{SquadGear.Summary(only)} I — вещи.";
         }
 
         // ──────────────────────────────────
@@ -172,6 +195,9 @@ namespace Sinbinder.UI
                 "Стоять и защищаться. Кто рвётся в драку, стоять не любит.");
             Add(font, 2, 1, "Отмена", "C", CommandKind.None, aims: false, heroToo: true,
                 "Снятый приказ — не приказ. Дальше решают сами.");
+            Add(font, 3, 1, "Вещи", "I", CommandKind.None, aims: false, heroToo: true,
+                "Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F.",
+                GearPanel.Toggle);
 
             var tipRect = Rect("Подсказка", canvasGo.transform, new Vector2(1f, 0f),
                                new Vector2(-40f, 150f + 2 * Cell + Gap + 10f), new Vector2(520f, 96f));
@@ -189,9 +215,9 @@ namespace Sinbinder.UI
         }
 
         private void Add(Font font, int col, int row, string word, string key, CommandKind kind,
-                         bool aims, bool heroToo, string tip)
+                         bool aims, bool heroToo, string tip, System.Action act = null)
         {
-            var slot = new Slot { Word = word, Key = key, Kind = kind, Aims = aims, HeroToo = heroToo, Tip = tip };
+            var slot = new Slot { Word = word, Key = key, Kind = kind, Aims = aims, HeroToo = heroToo, Tip = tip, Act = act };
 
             // Ряды сверху вниз: верхний ряд — приказы с точкой.
             var cell = Rect(word, _grid, new Vector2(0f, 1f),
@@ -231,6 +257,7 @@ namespace Sinbinder.UI
             var manager = SelectionManager.Instance;
             if (manager == null) return;
 
+            if (slot.Act != null) { slot.Act(); return; }
             if (slot.Aims) manager.Aim(slot.Kind);
             else manager.Stance(slot.Kind);
         }
