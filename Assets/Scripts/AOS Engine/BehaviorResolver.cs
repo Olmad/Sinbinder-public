@@ -281,6 +281,12 @@ namespace Sinbinder.AOS
             var scores = BuildCandidates(warrior, context);
             float maxVoice = AOSConfig.Load().MaxVoice;
 
+            // Список действий — один на подсчёт, а не по копии на каждый голос:
+            // подсчётов теперь до семидесяти на неисполненный приказ («от
+            // противного»). Копия нужна — менять словарь, перебирая его же
+            // ключи, в Unity нельзя.
+            var actions = new List<ActionType>(scores.Keys);
+
             foreach (var module in _modules)
             {
                 if (silenced != null && module.ModuleID == silenced) continue;
@@ -288,7 +294,7 @@ namespace Sinbinder.AOS
                 float weight = EmotionSystem.Instance != null
                     ? EmotionSystem.Instance.GetEmotionWeight(warrior, module.ModuleID) : 1.0f;
 
-                foreach (var action in scores.Keys.ToList())
+                foreach (var action in actions)
                 {
                     float voice = module.Evaluate(soul, context, action) * weight;
 
