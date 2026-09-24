@@ -217,6 +217,19 @@ namespace Sinbinder.EditorTools
                 S("Греховод вышел из палатки", () => StepHero(4.5f),
                   () => SinbinderPlayer.Exists && !Paused(), 4f),
 
+                // ── Мышь ──
+                // До 24 сентября прогон не касался мыши вовсе, и двенадцать
+                // дней без коллайдеров у воинов (13-DRIFT, восьмая) прошли
+                // сквозь все его зелёные отчёты. Нажатий ввод Unity в прогоне
+                // не принимает, поэтому проверяется путь, по которому идёт
+                // щелчок: луч из камеры попадает в воина, и выделение тем же
+                // методом, что зовёт щелчок, даёт круг у ног.
+                S("мышь: луч от камеры попадает в воина", null,
+                  () => RayFinds(w => w.Team == Team.Player && !(w is SinbinderPlayer)), 10f),
+
+                S("мышь: выделенный получает круг", SelectOneOwn,
+                  () => SelectedWithRing(), 5f),
+
                 S("провожатый дошёл, лагерь пошёл дальше", null,
                   () => CampOpening.EscortArrived, 40f),
 
@@ -247,6 +260,11 @@ namespace Sinbinder.EditorTools
                 // ── Набег ──
                 S("набег: охотники вышли", null,
                   () => Enemies() > 0, 30f),
+
+                // Приказ «бить» — луч в охотника. Только в видимого: того,
+                // кто в тумане, щелчком не достать, и так задумано (§67).
+                S("мышь: луч попадает в видимого охотника", null,
+                  () => RayFinds(w => w.Team == Team.Enemy && !FogOfWar.Hides(w)), 60f),
 
                 S("набег: первая волна положена", AttackAll,
                   () => Enemies() == 0 && FirstWaveOver(), 150f),
@@ -571,6 +589,74 @@ namespace Sinbinder.EditorTools
         private static CrystalBall Ball() => UnityEngine.Object.FindFirstObjectByType<CrystalBall>();
 
         private static TrophyChest Chest() => UnityEngine.Object.FindFirstObjectByType<TrophyChest>();
+
+        /// <summary>
+        /// Попадает ли луч из камеры, пущенный в экранную точку воина,
+        /// в его коллайдер. Ровно это делают щелчок, правый клик и подсказка
+        /// при наведении. Все лучи, а не первый: заслонить воина палаткой —
+        /// не поломка, а вот пройти сквозь него — поломка.
+        /// </summary>
+        private static bool RayFinds(Func<Warrior, bool> which)
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || !which(w)) continue;
+
+                var p = cam.WorldToScreenPoint(w.transform.position + Vector3.up * 0.9f);
+                if (p.z <= 0f || p.x < 0f || p.y < 0f || p.x > Screen.width || p.y > Screen.height)
+                    continue;
+
+                foreach (var hit in Physics.RaycastAll(cam.ScreenPointToRay(p), 200f))
+                    if (hit.collider != null && hit.collider.GetComponentInParent<Warrior>() == w)
+                        return true;
+            }
+
+            return false;
+        }
+
+        private static SelectionComponent _clicked;
+
+        /// <summary>
+        /// Выделить своего тем же методом, что зовёт щелчок
+        /// (<c>SelectionManager.SelectUnit</c>): нажатие в прогоне не подделать,
+        /// а путь после него — можно.
+        /// </summary>
+        private static void SelectOneOwn()
+        {
+            _clicked = null;
+
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) continue;
+                _clicked = w.GetComponent<SelectionComponent>();
+                if (_clicked != null) break;
+            }
+
+            var manager = SelectionManager.Instance;
+            if (manager == null || _clicked == null) return;
+
+            typeof(SelectionManager)
+                .GetMethod("SelectUnit", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.Invoke(manager, new object[] { _clicked });
+        }
+
+        /// <summary>Выделен ли он и горит ли у ног круг. Проверив — снять выделение.</summary>
+        private static bool SelectedWithRing()
+        {
+            var manager = SelectionManager.Instance;
+            if (_clicked == null || manager == null) return false;
+
+            bool selected = manager.GetSelectedUnits().Contains(_clicked);
+            var ring = _clicked.transform.Find("Круг выбора");
+            bool shown = ring != null && ring.gameObject.activeSelf
+                      && ring.GetComponent<LineRenderer>() != null;
+
+            if (selected && shown) manager.Drop(_clicked);
+            return selected && shown;
+        }
 
         /// <summary>
         /// Алтарь зала склепа — туда входит Греховод перед эпилогом.
