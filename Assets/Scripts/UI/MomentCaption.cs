@@ -94,6 +94,9 @@ namespace Sinbinder.UI
         {
             if (_line == null || warrior == null || warrior.IsDead) return;
 
+            // Врага в тумане не видно — не видно и слова над ним.
+            if (Gameplay.FogOfWar.Hides(warrior)) return;
+
             // Слово о поступке — отдельная галочка. Игрок, выбравший
             // тишину, не должен получать её через чёрный ход.
             if (!Core.Transparency.Shows(Core.Detail.Moments)) return;

@@ -78,6 +78,9 @@ namespace Sinbinder.Gameplay
         {
             if (warrior == null || warrior.IsDead) return;
             if (!Core.Transparency.Shows(Core.Detail.Moments)) return;
+
+            // Наезд на врага в тумане выдал бы, где он.
+            if (FogOfWar.Hides(warrior)) return;
             if (Moment.Worth(decision, context) != Notice.Scene) return;
 
             if (_running || Time.time < _nextAllowed) return;

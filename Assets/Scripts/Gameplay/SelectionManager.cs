@@ -337,6 +337,19 @@ namespace Sinbinder.Gameplay
         private static bool Ours(Warrior warrior)
             => warrior != null && !warrior.IsDead && warrior.Team == Team.Player;
 
+        /// <summary>
+        /// Снять выделение с одного. Зовёт туман войны: враг, ушедший
+        /// из зрения, не может оставаться выбранным — круг и строка панели
+        /// выдали бы, где он.
+        /// </summary>
+        public void Drop(SelectionComponent unit)
+        {
+            if (unit == null || !_selectedUnits.Remove(unit)) return;
+
+            unit.Deselect();
+            OnSelectionChanged?.Invoke(_selectedUnits);
+        }
+
         private void SelectUnit(SelectionComponent unit)
         {
             // Уже выделенного не добавляем второй раз. С Shift это

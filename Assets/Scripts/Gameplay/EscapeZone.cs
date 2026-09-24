@@ -114,6 +114,10 @@ namespace Sinbinder.Gameplay
 
             Open = true;
             Debug.Log("[ПОБЕГ] Край карты открыт.");
+
+            // Бежать надо туда, где игрок, может, ещё не бывал: в тумане
+            // войны край открывается серым — дорога видна, врагов на ней нет.
+            FogOfWar.Reveal(transform.position, _radius + 3f);
         }
 
         void OnDestroy()
