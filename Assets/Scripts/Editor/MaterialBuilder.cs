@@ -109,6 +109,14 @@ namespace Sinbinder.Utilets
                 if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);
                 if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0f);
 
+                // Ткань — оболочка без толщины, а перед у палатки открыт:
+                // с отсечённой изнанкой палатку спереди видно насквозь,
+                // одни шесты (слово автора, 24 сентября). Ткань рисуется
+                // с обеих сторон.
+                bool twoSided = DoubleSided(id);
+                if (material.HasProperty("_Cull")) material.SetFloat("_Cull", twoSided ? 0f : 2f);
+                material.doubleSidedGI = twoSided;
+
                 var scale = new Vector2(tiling, tiling);
                 if (material.HasProperty("_BaseMap")) material.SetTextureScale("_BaseMap", scale);
                 if (material.HasProperty("_MainTex")) material.SetTextureScale("_MainTex", scale);
@@ -120,6 +128,9 @@ namespace Sinbinder.Utilets
             AssetDatabase.SaveAssets();
             Debug.Log($"[МАТЕРИАЛЫ] Готово: {made} из {Wanted.Length}.");
         }
+
+        /// <summary>Что рисуется с обеих сторон: тонкое, у чего видна изнанка.</summary>
+        private static bool DoubleSided(string id) => id.StartsWith("Fabric");
 
         /// <summary>Точка входа для пакетного режима.</summary>
         public static void BuildAllBatch() => BuildAll();
