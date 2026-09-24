@@ -80,6 +80,7 @@ namespace Sinbinder.Tests
                 Bodies();
                 Blows();
                 Gear();
+                LootToHands();
                 Titles();
                 Pursuit();
                 Sides();
@@ -200,6 +201,28 @@ namespace Sinbinder.Tests
 
             Check(!Regex.IsMatch(SquadGear.GoldWord(57) + SquadGear.Effect(axe) + SquadGear.Effect(collar), "[0-9]"),
                   "казна и вещи — словами, без чисел");
+        }
+
+        /// <summary>
+        /// Цепь добычи (§83): гордый забирает трофей с тела врага, и трофей
+        /// называет, кому он достался, — чтобы лечь в руки ему, а не отряду.
+        /// </summary>
+        private static void LootToHands()
+        {
+            var proud = MakeWarrior("Гордец", SinType.Pride, 80f);
+            var body = NewObject("Тело врага").AddComponent<HarvestableBody>();
+            body.Initialize(ShellType.Living, 0, true, "Родовой клинок");
+            body.Foe = true;
+
+            var loot = LootCarrySystem.DistributeLoot(new List<Warrior> { proud },
+                                                      new List<HarvestableBody> { body });
+            Check(loot.Trophies.Count == 1 && loot.Trophies[0].Who == proud,
+                  "трофей помнит, кто его забрал");
+
+            var trophy = LootChain.Trophy("Родовой клинок");
+            Check(trophy.AttackBonus > 0f && trophy.TemptationSin == SinType.Pride,
+                  "трофей бьёт тяжелее и тешит гордыню");
+            Check(SquadGear.WillTake(proud, trophy, out _), "гордый берёт трофей в руки");
         }
 
         private static void Bodies()

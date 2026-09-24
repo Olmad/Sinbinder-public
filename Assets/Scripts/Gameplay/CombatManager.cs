@@ -109,6 +109,7 @@ namespace Sinbinder.Gameplay
             bodyObj.transform.position = pos;
             var harvestableBody = bodyObj.AddComponent<HarvestableBody>();
             harvestableBody.Initialize(killed.Warrior.Shell, killed.Warrior.Soul);
+            harvestableBody.Foe = killed.Warrior.Team != Team.Player;
             _bodiesOnField.Add(harvestableBody);
         }
 
@@ -122,6 +123,9 @@ namespace Sinbinder.Gameplay
                     if (unit == null || unit.IsDead) alliesLost++;
                 Debug.Log("[COMBAT] Бой окончен! Лут остался на поле боя.");
                 AOS.AOSEventHub.Instance?.OnBattleEnd(true, enemiesKilled, alliesLost);
+
+                // Цепь добычи (§41): грех решает, кто что понесёт.
+                LootChain.Share(_playerUnits, _bodiesOnField);
             }
         }
 
@@ -129,8 +133,8 @@ namespace Sinbinder.Gameplay
         /// Раздать добычу отряду: грех решает, кто что понесёт
         /// (<see cref="LootCarrySystem.DistributeLoot"/>).
         ///
-        /// <b>Пока не вызывается ниоткуда</b> — разбор цепи и то, чего
-        /// ей не хватает, в 14-HANDOFF §41.
+        /// Конец боя зовёт не это, а <see cref="LootChain.Share"/>: та берёт
+        /// только тела врагов и доводит раздачу до рук (14-HANDOFF §83).
         ///
         /// Здесь же стояла жатва душ прямо на поле, и только воинами
         /// с грехом Гордыня или Уныние. Снята вместе со второй системой

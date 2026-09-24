@@ -115,6 +115,7 @@ namespace Sinbinder.Dev
             ["съемка"] = c => c.Shoot(),
             ["голос"] = c => c.ToggleVoice(),
             ["удар"] = c => c.ToggleCombat(),
+            ["добыча"] = c => c.ToggleLoot(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -169,11 +170,21 @@ namespace Sinbinder.Dev
                 : "Удар и защита выключены: у всех удар 5, защиты нет.");
         }
 
+        /// <summary>Выключатель цепи добычи (<see cref="Gameplay.LootChain"/>).</summary>
+        private void ToggleLoot()
+        {
+            Gameplay.LootChain.Enabled = !Gameplay.LootChain.Enabled;
+            Write(Gameplay.LootChain.Enabled
+                ? "Добыча включена: после боя грех решает, кто что понесёт, трофеи — в руки."
+                : "Добыча выключена: тела остаются лежать, как прежде.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
             Write("голос — включить или выключить голос Греховода.");
             Write("удар — включить или выключить удар и защиту от оболочки и вещей.");
+            Write("добыча — включить или выключить раздачу добычи после боя.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

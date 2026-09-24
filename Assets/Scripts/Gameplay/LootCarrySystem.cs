@@ -10,6 +10,12 @@ namespace Sinbinder.Gameplay
         public int Gold;
         public List<HarvestableBody> Bodies = new();
         public List<string> Equipment = new();
+
+        /// <summary>Кто какой трофей забрал — чтобы вложить его в руки ему, а не отряду.</summary>
+        public List<(Warrior Who, string What)> Trophies = new();
+
+        /// <summary>Кто подобрал золото и сколько — для строки журнала.</summary>
+        public List<(Warrior Who, int Gold)> GoldBy = new();
     }
 
     public static class LootCarrySystem
@@ -28,7 +34,9 @@ namespace Sinbinder.Gameplay
                         var bodyWithGold = bodies.Find(b => b != null && !b.IsCollected && b.GoldValue > 0);
                         if (bodyWithGold != null)
                         {
-                            loot.Gold += bodyWithGold.CollectGold();
+                            int gold = bodyWithGold.CollectGold();
+                            loot.Gold += gold;
+                            loot.GoldBy.Add((warrior, gold));
                             Debug.Log($"[CARRY] {warrior.DisplayName} (Жадный) собирает золото");
                         }
                         break;
@@ -38,7 +46,11 @@ namespace Sinbinder.Gameplay
                         if (bodyWithEquip != null)
                         {
                             string equip = bodyWithEquip.CollectEquipment();
-                            if (equip != null) loot.Equipment.Add(equip);
+                            if (equip != null)
+                            {
+                                loot.Equipment.Add(equip);
+                                loot.Trophies.Add((warrior, equip));
+                            }
                             Debug.Log($"[CARRY] {warrior.DisplayName} (Гордый) забирает трофей: {equip}");
                         }
                         break;

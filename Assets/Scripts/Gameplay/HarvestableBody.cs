@@ -19,6 +19,12 @@ namespace Sinbinder.Gameplay
         public bool IsCollected => _collected;
 
         /// <summary>
+        /// Враг ли лежит. Добычу отряд берёт с врагов (<see cref="LootChain"/>);
+        /// обирать павших товарищей — другой поступок, и он пока не написан.
+        /// </summary>
+        public bool Foe { get; set; }
+
+        /// <summary>
         /// Собрать труп по покойнику.
         ///
         /// Единственная правда о том, чего он стоит, лежит в
