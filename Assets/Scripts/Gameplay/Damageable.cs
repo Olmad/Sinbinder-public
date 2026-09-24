@@ -41,6 +41,12 @@ namespace Sinbinder.Gameplay
         {
             if (IsDead) return;
 
+            // Кто ударил, тот в бою участвовал. Без этой отметки «Тень»
+            // не отличить от остальных (AOSWarriorWrapper.Struck).
+            if (attacker != null
+                && attacker.TryGetComponent<AOS.AOSWarriorWrapper>(out var striker))
+                striker.MarkStruck();
+
             damage = ApplyPosition(damage, attacker);
             _hp -= damage;
 

@@ -247,7 +247,15 @@ namespace Sinbinder.AOS
                     if (body != null && !body.Fled)
                         w.Reputation.Deeds.Add(new DeedRecord
                             { Type = DeedType.NeverRetreat, Importance = 0.5f });
-                    body?.ForgetFlight();
+
+                    // «Тень» стоит на StayedOut: был в бою и не ударил ни разу.
+                    // Выжить мало — выживание выше пишется всем подряд,
+                    // и когда «Тень» стояла на нём, ею становился весь отряд.
+                    if (body != null && !body.Struck)
+                        w.Reputation.Deeds.Add(new DeedRecord
+                            { Type = DeedType.StayedOut, Importance = 0.3f });
+
+                    if (body != null) body.ForgetBattle();
 
                     // Если союзников не осталось – "Последний рубеж"
                     if (alliesLost >= CombatManager.Instance.GetAlivePlayerCount())

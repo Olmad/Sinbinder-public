@@ -20,6 +20,16 @@ namespace Sinbinder.AOS
         NeverRetreat,
         Escape,
         ExecuteEnemy,
-        RecruitWarrior
+        RecruitWarrior,
+
+        /// <summary>
+        /// Был в бою и не ударил ни разу. Пишется в конце боя тому,
+        /// кто выжил, не нанеся ни одного удара, — зеркало
+        /// <see cref="NeverRetreat"/>. На нём стоит «Тень»: до 24 сентября
+        /// она стояла на <see cref="SurviveMission"/>, которое конец боя
+        /// пишет каждому уцелевшему, и после первого же боя «Тенью»
+        /// становились все.
+        /// </summary>
+        StayedOut
     }
 }

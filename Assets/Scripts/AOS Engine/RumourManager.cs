@@ -125,6 +125,7 @@ namespace Sinbinder.AOS
                 case DeedType.Escape:           return "ушёл, когда все легли";
                 case DeedType.ExecuteEnemy:     return "добил пленного";
                 case DeedType.RecruitWarrior:   return "привёл нового";
+                case DeedType.StayedOut:        return "простоял бой в стороне";
                 default:                        return "чем-то отличился";
             }
         }

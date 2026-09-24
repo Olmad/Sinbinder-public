@@ -24,6 +24,13 @@ namespace Sinbinder.UI
     /// а урок: игрок обязан увидеть, что он сам такой же строкой в этой
     /// панели, то есть фигура в мире, а не парящая камера.
     ///
+    /// Но «никто не выделен» обязано читаться иначе, чем «выделен
+    /// Греховод». До 24 сентября это было одно и то же на экране, и автор
+    /// увидел «Греховод выделен, но не слушается»: рамка его пропускала,
+    /// щелчок проходил сквозь него в землю, выделение оставалось пустым —
+    /// а панель показывала его как выбранного. Правому клику было
+    /// некого вести.
+    ///
     /// <b>Цифр здесь нет и быть не может</b> (00-GDD.md §7). Шкала
     /// названа словом, действие названо глаголом; насколько громко
     /// звучит грех — не показывается, потому что это число.
@@ -47,6 +54,7 @@ namespace Sinbinder.UI
 
         private float _next;
         private Warrior _shown;
+        private bool _shownPicked;
 
         void Start()
         {
@@ -71,7 +79,7 @@ namespace Sinbinder.UI
 
         private void Refresh()
         {
-            var who = Current();
+            var who = Current(out bool picked);
 
             if (who == null)
             {
@@ -84,11 +92,12 @@ namespace Sinbinder.UI
 
             // Имя и шкалу перечитываем только при смене героя: они
             // не меняются между кадрами, а строку действия — всегда.
-            if (who != _shown)
+            if (who != _shown || picked != _shownPicked)
             {
                 _shown = who;
+                _shownPicked = picked;
                 _nameLine.text = who.ShownName;
-                _sinLine.text = SinLine(who);
+                _sinLine.text = picked ? SinLine(who) : "Никто не выделен";
             }
 
             _actionLine.text = ActionLine(who);
@@ -96,10 +105,12 @@ namespace Sinbinder.UI
 
         /// <summary>
         /// Кого показывать: первого выделенного, а если не выделен
-        /// никто — самого Греховода.
+        /// никто — самого Греховода. <paramref name="picked"/> — выделен ли
+        /// показанный на самом деле, а не подставлен за пустотой.
         /// </summary>
-        private Warrior Current()
+        private Warrior Current(out bool picked)
         {
+            picked = true;
             var manager = SelectionManager.Instance;
             if (manager != null)
             {
@@ -113,6 +124,7 @@ namespace Sinbinder.UI
                 }
             }
 
+            picked = false;
             return SinbinderPlayer.Instance;
         }
 
@@ -152,8 +164,15 @@ namespace Sinbinder.UI
         {
             if (who is SinbinderPlayer)
             {
+                // Идёт он и с клавиш, и по приказу мыши. Прежде строка
+                // спрашивала только клавиши, и Греховод, шагающий
+                // по правому клику, назывался «Стоит» — ещё одно
+                // «не слушается» там, где он слушался.
                 var walk = who.GetComponent<PlayerWalk>();
-                return walk != null && walk.Walking ? "Идёт" : "Стоит";
+                var legs = who.GetComponent<UnitMover>();
+                bool going = (walk != null && walk.Walking)
+                          || (legs != null && legs.IsMoving);
+                return going ? "Идёт" : "Стоит";
             }
 
             if (!Transparency.Shows(Clarity.Icons)) return string.Empty;

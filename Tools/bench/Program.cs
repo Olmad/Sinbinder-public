@@ -2968,8 +2968,13 @@ static class Bench
         { DeedType.Escape, 0.3f },            { DeedType.LastStand, 1.0f },
         { DeedType.FindTreasure, 1.2f },      { DeedType.DigMostSouls, 1.0f },
         { DeedType.RecruitWarrior, 1.0f },    { DeedType.ExecuteEnemy, 0.5f },
-        { DeedType.CollectMostLoot, 1.2f },
+        { DeedType.CollectMostLoot, 1.2f },   { DeedType.StayedOut, 0.3f },
     };
+
+    /// Деяния, которые конец боя пишет каждому уцелевшему без условий.
+    /// Титул на таком деянии со счётом 1 получает весь отряд после
+    /// первой же волны — так было с «Тенью» до 24 сентября.
+    static readonly HashSet<DeedType> ForEveryone = new() { DeedType.SurviveMission };
 
     static void TitleCheck()
     {
@@ -3003,6 +3008,20 @@ static class Bench
         Console.WriteLine(bad == 0
             ? "  Титулы: счёт и важность сходятся везде."
             : $"  Титулы: разошлись у {bad}. Условие, до которого не дойти, — мёртвое.");
+
+        // Имя — за поступок, а не за присутствие. Выжить в одном бою
+        // может весь отряд разом, и титул за это — не имя, а форма.
+        int free = 0;
+        foreach (var rule in TitleDatabase.Rules)
+        {
+            if (!ForEveryone.Contains(rule.MainDeed) || rule.RequiredCount > 1) continue;
+            free++;
+            Console.WriteLine($"  ПРОВАЛ: «{rule.Title}» даётся за одно {rule.MainDeed} — "
+                            + "его получит каждый уцелевший после первого же боя");
+        }
+        Console.WriteLine(free == 0
+            ? "  Даром, за одно выживание, не даётся ни одно имя."
+            : $"  ПРОВАЛОВ: {free}");
 
         TitleGenderCheck();
     }

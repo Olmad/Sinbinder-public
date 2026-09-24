@@ -88,7 +88,7 @@ namespace Sinbinder.Gameplay
             {
                 if (unit == null) continue;
                 var warrior = unit.GetComponent<Warrior>();
-                if (warrior == null || warrior.IsDead) continue;
+                if (!Ours(warrior)) continue;
 
                 if (clear) warrior.ClearCommand();
                 else warrior.IssueCommand(kind, warrior.transform.position);
@@ -242,6 +242,12 @@ namespace Sinbinder.Gameplay
             if (Physics.Raycast(ray, out RaycastHit hit, 100f, _unitLayer))
             {
                 var unit = hit.collider.GetComponentInParent<SelectionComponent>();
+
+                // Павший стоит на месте и ловит луч, но выделять
+                // в нём некого: щелчок по нему — промах.
+                var who = unit != null ? unit.GetComponentInParent<Warrior>() : null;
+                if (who != null && who.IsDead) unit = null;
+
                 if (unit != null)
                 {
                     if (!Input.GetKey(KeyCode.LeftShift))
@@ -290,27 +296,46 @@ namespace Sinbinder.Gameplay
                                + "не зарегистрировался — смотреть его Start.");
             }
 
+            SelectionComponent hero = null;
+            int caught = 0;
+
             foreach (var unit in _allUnits)
             {
                 if (unit == null) continue;
 
-                // Греховод в рамку не попадает. Он стоит посреди отряда,
-                // и «выделить всех» захватывало бы игрока вместе с ними:
-                // приказ идти уводил бы его самого, отбирая управление
-                // ровно в тот момент, когда игрок им пользуется.
-                //
-                // Щелчком по нему выделить можно — так смотрят его строку
-                // в нижней панели. Разница в том, что щелчок нарочен,
-                // а рамка — нет.
-                if (unit.GetComponentInParent<SinbinderPlayer>() != null) continue;
+                // Рамка собирает отряд, а не толпу: охотник, попавший
+                // в неё посреди свалки, получил бы следующий приказ
+                // в собственное голосование.
+                var warrior = unit.GetComponentInParent<Warrior>();
+                if (!Ours(warrior)) continue;
 
                 Vector3 screenPos = Cam().WorldToScreenPoint(unit.transform.position);
-                if (selectionRect.Contains(screenPos))
-                {
-                    SelectUnit(unit);
-                }
+                if (screenPos.z < 0f || !selectionRect.Contains(screenPos)) continue;
+
+                // Греховод в рамку с отрядом не попадает. Он стоит посреди
+                // них, и «выделить всех» захватывало бы игрока вместе
+                // с ними: приказ идти уводил бы его самого, отбирая
+                // управление ровно в тот момент, когда игрок им пользуется.
+                if (warrior is SinbinderPlayer) { hero = unit; continue; }
+
+                SelectUnit(unit);
+                caught++;
             }
+
+            // А обведённый один — выделяется. До 24 сентября рамка
+            // вокруг одного Греховода не выделяла никого, а нижняя
+            // панель при пустом выделении показывает именно его —
+            // и игрок видел «выделен, но не слушается» (слово автора).
+            if (caught == 0 && hero != null) SelectUnit(hero);
         }
+
+        /// <summary>
+        /// Слушает ли воин приказы игрока: живой и свой. Выделить можно
+        /// и чужого — посмотреть его строку в панели, — но приказ
+        /// охотнику ушёл бы в его голосование как ObeyCommand.
+        /// </summary>
+        private static bool Ours(Warrior warrior)
+            => warrior != null && !warrior.IsDead && warrior.Team == Team.Player;
 
         private void SelectUnit(SelectionComponent unit)
         {
@@ -354,8 +379,15 @@ namespace Sinbinder.Gameplay
                     // Раньше он шёл прямо в NavMeshAgent, минуя AOS, и
                     // исполнялся всегда — то есть подчинения как решения
                     // не существовало, а модуль Верности был мёртвым кодом.
+                    //
+                    // «Бить» — только по живому чужому. Прежняя проверка
+                    // «кто угодно, кроме выделенных» делала целью и своих:
+                    // пока луч проходил воинов насквозь, это было не видно,
+                    // а с телами для луча ПКМ рядом с товарищем стал бы
+                    // приказом его зарубить.
                     var enemyUnit = hit.collider.GetComponentInParent<SelectionComponent>();
-                    bool isAttackOrder = enemyUnit != null && !_selectedUnits.Contains(enemyUnit);
+                    var foe = enemyUnit != null ? enemyUnit.GetComponentInParent<Warrior>() : null;
+                    bool isAttackOrder = foe != null && !foe.IsDead && foe.Team != Team.Player;
 
                     // Shift + ПКМ по земле — «отходи», а не «иди туда».
                     // Разница не в ногах: отход звучит для характера иначе,
@@ -369,7 +401,7 @@ namespace Sinbinder.Gameplay
                     {
                         if (unit == null) continue;
                         var warrior = unit.GetComponent<Warrior>();
-                        if (warrior == null || warrior.IsDead) continue;
+                        if (!Ours(warrior)) continue;
 
                         // Греховод не голосует — значит и приказ ему отдавать
                         // некуда: IssueCommand кладёт приказ в бюллетень,

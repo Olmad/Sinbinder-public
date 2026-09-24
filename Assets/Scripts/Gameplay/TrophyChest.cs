@@ -187,6 +187,10 @@ namespace Sinbinder.Gameplay
         /// <summary>
         /// Ближайший свой воин. Заслугу за сундук получает он: добычу
         /// делят на отряд, но деяние общим не бывает.
+        ///
+        /// Греховод не в счёт. Сундук открывается, когда к нему подходит
+        /// он сам, — то есть ближе всех к сундуку всегда Греховод, и до
+        /// 24 сентября заслуга доставалась ему, а титулов он не носит.
         /// </summary>
         private static Warrior NearestOwn(Vector3 where)
         {
@@ -196,6 +200,7 @@ namespace Sinbinder.Gameplay
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null || w.IsDead || w.Team != Team.Player) continue;
+                if (w is SinbinderPlayer) continue;
 
                 float d = Vector3.Distance(w.transform.position, where);
                 if (d < least) { least = d; best = w; }

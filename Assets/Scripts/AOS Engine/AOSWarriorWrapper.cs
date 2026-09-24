@@ -220,7 +220,22 @@ namespace Sinbinder.AOS
         /// </summary>
         public bool Fled { get; private set; }
 
-        public void ForgetFlight() => Fled = false;
+        /// <summary>
+        /// Ударил ли этот воин хоть раз в текущем бою. Нужен «Тени»:
+        /// титул за то, что был в бою и в нём не участвовал. Ставит его
+        /// <see cref="Damageable.TakeDamage"/> — единственное место, куда
+        /// сходятся все удары: вблизи, умением, по приказу и без.
+        /// </summary>
+        public bool Struck { get; private set; }
+
+        public void MarkStruck() => Struck = true;
+
+        /// <summary>Бой кончился: и бегство, и удары считаются заново.</summary>
+        public void ForgetBattle()
+        {
+            Fled = false;
+            Struck = false;
+        }
 
         private void ExecuteFlee()
         {

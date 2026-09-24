@@ -67,7 +67,18 @@ namespace Sinbinder.AOS
             new TitleRule { Title = "Везунчик", Female = "Везунья", MainDeed = DeedType.SurviveMission, RequiredCount = 5, RequiredImportance = 1.5f },
             new TitleRule { Title = "Беглец", Female = "Беглянка", MainDeed = DeedType.Escape, RequiredCount = 7, RequiredImportance = 2.1f },
             new TitleRule { Title = "Несломленный", Female = "Несломленная", MainDeed = DeedType.LastStand, RequiredCount = 1, RequiredImportance = 1f },
-            new TitleRule { Title = "Тень", Female = "Тень", MainDeed = DeedType.SurviveMission, RequiredCount = 1, RequiredImportance = 0.3f },
+            // «Тень» — тот, кого в бою не видели. До 24 сентября она стояла
+            // на SurviveMission со счётом 1, а конец боя пишет это деяние
+            // каждому уцелевшему: после первой же волны «Тенью» становился
+            // весь отряд, Греховод в том числе, и четыре церемонии подряд
+            // объявляли одно и то же слово (27-TRAILER §9). Автор: «все
+            // получают титул Тень… мне кажется, этот титул сломан».
+            //
+            // Теперь — два боя, простоянных без единого удара. Два, а не
+            // один: в короткой стычке можно не успеть дойти до врага,
+            // и это ещё не характер. Уныние же стоит в стороне раз за разом,
+            // и имя приходит тому, кто его заработал, — голосом, а не жребием.
+            new TitleRule { Title = "Тень", Female = "Тень", MainDeed = DeedType.StayedOut, RequiredCount = 2, RequiredImportance = 0.6f },
             new TitleRule { Title = "Скиталец", Female = "Скиталица", MainDeed = DeedType.SurviveMission, RequiredCount = 20, RequiredImportance = 6f },
 
             // ──────────────────────────────────
