@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace Sinbinder.Inventory
 {
+    /// <summary>
+    /// Мешок Греховода — его личный инвентарь (docs/34-GEAR.md §9.1,
+    /// решение автора 24 сентября). Не «запасы отряда» без места: его
+    /// несёт сам Греховод, поэтому он и уходит с ним из сцены в сцену.
+    /// Воинам вещи передают отсюда из рук в руки (<see cref="Gameplay.SquadGear"/>).
+    /// Золото здесь же — кошель Греховода; в склепе он кладёт его в казну.
+    /// </summary>
     public class PlayerInventory : MonoBehaviour
     {
         public static PlayerInventory Instance { get; private set; }

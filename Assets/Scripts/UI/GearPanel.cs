@@ -8,11 +8,16 @@ using Sinbinder.Inventory;
 namespace Sinbinder.UI
 {
     /// <summary>
-    /// Снаряжение воина и запасы отряда — клавиша I (docs/34-GEAR.md, шаг
-    /// сверху). Слева — пять мест выделенного воина (оружие, щит или второе
-    /// оружие, шлем, броня, пояс), справа — запасы. Вещь
-    /// переносится щелчком, а воин отвечает как душа (<see cref="SquadGear"/>):
+    /// Снаряжение воина и мешок Греховода (docs/34-GEAR.md). Слева — пять
+    /// мест воина (оружие, щит или второе оружие, шлем, броня, пояс),
+    /// справа — мешок, который Греховод несёт сам. Вещь переносится
+    /// щелчком, а воин отвечает как душа (<see cref="SquadGear"/>):
     /// может не взять и может не отдать.
+    ///
+    /// <b>Передают из рук в руки</b> (решение автора, 24 сентября): обмен —
+    /// только в разговоре вблизи (F от первого лица). Клавиша I сверху —
+    /// посмотреть издали, щелчки там не работают. Как с голосом
+    /// (docs/31-VOICE.md): хочешь дать — подойди.
     ///
     /// У каждой вещи сразу написано, возьмёт ли её воин или отдаст ли. Это
     /// не подсказка ради удобства, а то, ради чего экран есть: игрок учит
@@ -21,8 +26,7 @@ namespace Sinbinder.UI
     /// Чисел нет: вместо «удар +2» — «бьёт тяжелее», золото — «кошель».
     /// Пока экран открыт, мир на паузе.
     ///
-    /// Разговор с воином от первого лица (F) с тем же экраном внутри —
-    /// следующий шаг. Ставит себя сам и живёт между сценами.
+    /// Ставит себя сам и живёт между сценами.
     /// </summary>
     public class GearPanel : MonoBehaviour
     {
@@ -41,6 +45,9 @@ namespace Sinbinder.UI
         public static bool Open => _instance != null && _instance._open;
 
         private bool _open;
+
+        /// <summary>Открыт вблизи, в разговоре: можно передавать. Иначе только смотреть.</summary>
+        private bool _near;
         private Warrior _warrior;
         private string _answer = "";
 
@@ -48,6 +55,8 @@ namespace Sinbinder.UI
         private Text _title;
         private Text _gold;
         private Text _reply;
+        private Text _bagTitle;
+        private Text _hint;
         private RectTransform _hands;
         private RectTransform _store;
         private Font _font;
@@ -105,11 +114,11 @@ namespace Sinbinder.UI
 
             if (PlayerInventory.Instance == null)
             {
-                Say("Запасов отряда в этой сцене нет.");
+                Say("Мешка Греховода в этой сцене нет.");
                 return;
             }
 
-            OpenFor(w, "");
+            OpenFor(w, "", near: false);
         }
 
         /// <summary>
@@ -138,14 +147,15 @@ namespace Sinbinder.UI
             if (SinbinderPlayer.Exists
                 && CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > _talkReach) return;
 
-            OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»");
+            OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»", near: true);
         }
 
-        private void OpenFor(Warrior w, string first)
+        private void OpenFor(Warrior w, string first, bool near)
         {
             if (_root == null) Build();
 
             _warrior = w;
+            _near = near;
             _answer = first;
             _open = true;
             _root.SetActive(true);
@@ -197,7 +207,7 @@ namespace Sinbinder.UI
 
                 bool gives = SquadGear.WillGive(_warrior, item, out string word);
                 Row(_hands, $"{place}: {item.Name}", Line(item, gives ? "отдаст" : $"не отдаст: {word}"),
-                    () => TakeBack(item));
+                    _near ? () => TakeBack(item) : (System.Action)null);
             }
 
             if (store != null)
@@ -209,13 +219,19 @@ namespace Sinbinder.UI
 
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
                     Row(_store, item.Name, Line(item, takes ? word : $"не возьмёт: {word}"),
-                        () => HandOver(item));
+                        _near ? () => HandOver(item) : (System.Action)null);
                     shown++;
                 }
 
                 if (shown == 0) Row(_store, "— Пусто —", "", null);
-                _gold.text = $"Казна: {SquadGear.GoldWord(store.Gold)}";
+                _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
             }
+
+            _bagTitle.text = _near ? "Мешок Греховода — щелчок: отдать"
+                                   : "Мешок Греховода";
+            _hint.text = _near
+                ? "Щелчок по вещи на воине — забрать в мешок. Занятое место — замена. I, F или Esc — закрыть."
+                : "Издали только смотрят. Отдать и забрать — подойдя: F от первого лица. I или Esc — закрыть.";
 
             _reply.text = _answer;
         }
@@ -285,25 +301,23 @@ namespace Sinbinder.UI
             left.text = "На воине";
             left.color = new Color(0.80f, 0.72f, 0.46f);
 
-            var right = Label(panel, "Запасы", 20, TextAnchor.UpperLeft,
+            _bagTitle = Label(panel, "Мешок", 20, TextAnchor.UpperLeft,
                               new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(12f, -100f), new Vector2(-28f, -70f));
-            right.text = "Запасы отряда — щелчок: отдать в руки";
-            right.color = new Color(0.80f, 0.72f, 0.46f);
+            _bagTitle.color = new Color(0.80f, 0.72f, 0.46f);
 
             _hands = Column(panel, "Руки", new Vector2(0f, 0f), new Vector2(0.5f, 1f), new Vector2(28f, 110f), new Vector2(-12f, -108f));
-            _store = Column(panel, "Склад", new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(12f, 110f), new Vector2(-28f, -108f));
+            _store = Column(panel, "Мешок Греховода", new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(12f, 110f), new Vector2(-28f, -108f));
 
-            _gold = Label(panel, "Казна", 20, TextAnchor.LowerRight,
+            _gold = Label(panel, "Кошель", 20, TextAnchor.LowerRight,
                           new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(12f, 68f), new Vector2(-28f, 100f));
 
             _reply = Label(panel, "Ответ", 21, TextAnchor.LowerLeft,
                            new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 34f), new Vector2(-28f, 66f));
             _reply.color = new Color(0.94f, 0.86f, 0.62f);
 
-            var hint = Label(panel, "Клавиши", 16, TextAnchor.LowerLeft,
-                             new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 10f), new Vector2(-28f, 32f));
-            hint.text = "Щелчок по вещи на воине — забрать в запасы. Занятое место — замена. I, F или Esc — закрыть.";
-            hint.color = new Color(0.55f, 0.52f, 0.48f);
+            _hint = Label(panel, "Клавиши", 16, TextAnchor.LowerLeft,
+                          new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 10f), new Vector2(-28f, 32f));
+            _hint.color = new Color(0.55f, 0.52f, 0.48f);
 
             _root.SetActive(false);
         }

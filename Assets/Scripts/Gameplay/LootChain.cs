@@ -18,14 +18,15 @@ namespace Sinbinder.Gameplay
     ///
     /// <list type="number">
     /// <item>раздача зовётся в конце боя и берёт только тела врагов;</item>
-    /// <item>трофей вкладывается в руки тому, кто его забрал
-    /// (<see cref="Warrior.Give"/>): клинок бьёт тяжелее и тешит гордыню —
-    /// добыча спорит в голове у того, кто её взял. Не взял (руки полны,
-    /// <see cref="SquadGear"/>) — трофей уходит в запасы отряда.</item>
+    /// <item>трофей надевает тот, кто его забрал (<see cref="SquadGear.Pick"/>):
+    /// клинок бьёт тяжелее и тешит гордыню — добыча спорит в голове у того,
+    /// кто её взял. Не взял (<see cref="SquadGear.WillTake"/>) — трофей
+    /// уходит в мешок Греховода; сменённое оружие — туда же.</item>
     /// </list>
     ///
-    /// <b>Золото — в казну отряда.</b> Чьё оно на самом деле, решает автор
-    /// (§41.4, п. 4); пока так, и журнал говорит, кто его подобрал.
+    /// <b>Золото — в кошель Греховода.</b> Жадный будет делить его сам,
+    /// часть оставляя себе (docs/34-GEAR.md §9.3); пока — всё в кошель,
+    /// и журнал говорит, кто подобрал.
     ///
     /// Выключатель: до вечернего прогона 24 сентября выключено, как голос
     /// и удар. Включается командой «добыча» в консоли (~).
@@ -67,7 +68,7 @@ namespace Sinbinder.Gameplay
                 SquadGear.Place(who, trophy, out _, out var old);
                 if (SquadGear.Pick(who, trophy, store, out string word))
                 {
-                    string swap = old == null ? "" : $" Прежнее — {old.Name.ToLowerInvariant()} — уходит в запасы.";
+                    string swap = old == null ? "" : $" Прежнее — {old.Name.ToLowerInvariant()} — уходит в мешок Греховода.";
                     log?.Write(Grammar.For(who.Gender,
                         $"{who.DisplayName} забирает трофей: {what.ToLowerInvariant()}.{swap}"));
                 }
@@ -76,7 +77,7 @@ namespace Sinbinder.Gameplay
                     store?.AddItem(trophy);
                     string would = Grammar.Pick(who.Gender, "взял бы", "взяла бы");
                     log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} {would} трофей, но {word} — {what.ToLowerInvariant()} уходит в запасы."));
+                        $"{who.DisplayName} {would} трофей, но {word} — {what.ToLowerInvariant()} уходит в мешок Греховода."));
                 }
             }
 
@@ -85,7 +86,7 @@ namespace Sinbinder.Gameplay
                 store.AddGold(loot.Gold);
                 foreach (var (who, gold) in loot.GoldBy)
                     log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} подбирает {SquadGear.GoldWord(gold)} — в казну."));
+                        $"{who.DisplayName} подбирает {SquadGear.GoldWord(gold)} — в кошель Греховода."));
             }
         }
 

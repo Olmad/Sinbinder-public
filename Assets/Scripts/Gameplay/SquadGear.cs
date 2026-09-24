@@ -5,7 +5,9 @@ using Sinbinder.Inventory;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
-    /// Обмен вещами между запасами отряда и воином (docs/34-GEAR.md).
+    /// Обмен вещами между мешком Греховода и воином (docs/34-GEAR.md).
+    /// Мешок — <see cref="PlayerInventory"/>: личный инвентарь Греховода,
+    /// который он несёт сам, а не «запасы отряда» без места.
     ///
     /// Автор, 24 сентября: «у нас нет панели инвентаря и снаряжения…
     /// снаряжение и инвентарь должны быть у обычных воинов». Руки у воина
@@ -178,14 +180,14 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Передать вещь из запасов воину. Ложь — воин не взял, и вещь
-        /// осталась в запасах. Сменённая вещь возвращается в запасы.
+        /// Передать вещь из мешка воину. Ложь — воин не взял, и вещь
+        /// осталась в мешке. Сменённая вещь возвращается в мешок.
         /// Взятое записывается в память.
         /// </summary>
         public static bool Hand(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
             if (!WillTake(w, item, out word)) return false;
-            if (!store.RemoveItem(item.Id)) { word = "этого в запасах уже нет"; return false; }
+            if (!store.RemoveItem(item.Id)) { word = "этого в мешке уже нет"; return false; }
 
             if (!Wear(w, item, store)) { store.AddItem(item); word = "не взял"; return false; }
             Remember(w, "SinbinderGaveMe");
@@ -194,7 +196,7 @@ namespace Sinbinder.Gameplay
 
         /// <summary>
         /// Взять вещь, которая ни у кого не лежит: трофей с тела. Сменённая
-        /// уходит в запасы. Ложь — не взял; куда деть вещь, решает зовущий.
+        /// уходит в мешок. Ложь — не взял; куда деть вещь, решает зовущий.
         /// </summary>
         public static bool Pick(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
@@ -203,14 +205,14 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
-        /// <summary>Надеть — сняв то, что место занимало, в запасы.</summary>
+        /// <summary>Надеть — сняв то, что место занимало, в мешок.</summary>
         private static bool Wear(Warrior w, InventoryItem item, PlayerInventory store)
         {
             if (!Place(w, item, out _, out var old)) return false;
 
             if (old != null)
             {
-                // Сменённое не пропадает: нет места в запасах — не меняет.
+                // Сменённое не пропадает: нет места в мешке — не меняет.
                 if (store == null || !store.AddItem(old)) return false;
                 w.Drop(old);
             }
@@ -224,14 +226,14 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Забрать вещь у воина в запасы. Ложь — не отдал или запасы полны.
+        /// Забрать вещь у воина в мешок. Ложь — не отдал или мешок полон.
         /// Отнятое записывается в память: отношения к Греховоду считаются
         /// и из этого.
         /// </summary>
         public static bool Take(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
             if (!WillGive(w, item, out word)) return false;
-            if (!store.AddItem(item)) { word = "в запасах нет места"; return false; }
+            if (!store.AddItem(item)) { word = "в мешке нет места"; return false; }
 
             w.Drop(item);
             Remember(w, "SinbinderTookFromMe");
