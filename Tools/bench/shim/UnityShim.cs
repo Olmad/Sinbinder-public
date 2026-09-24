@@ -97,6 +97,9 @@ namespace UnityEngine
     [AttributeUsage(AttributeTargets.All)]        public class TooltipAttribute : Attribute { public TooltipAttribute(string s) { } }
     [AttributeUsage(AttributeTargets.All)]        public class RangeAttribute : Attribute { public RangeAttribute(float a, float b) { } }
     [AttributeUsage(AttributeTargets.Class)]      public class CreateAssetMenuAttribute : Attribute { public string fileName, menuName; }
+    public enum RuntimeInitializeLoadType { AfterSceneLoad, BeforeSceneLoad, AfterAssembliesLoaded, BeforeSplashScreen, SubsystemRegistration }
+    [AttributeUsage(AttributeTargets.Method)]     public class RuntimeInitializeOnLoadMethodAttribute : Attribute
+    { public RuntimeInitializeOnLoadMethodAttribute() { } public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) { } }
 
     /// <summary>
     /// Подмена загрузчика ассетов. Модули берут конфиг через

@@ -112,6 +112,21 @@ namespace Sinbinder.AOS
 
             string P(string he, string she) => Core.Grammar.Pick(gender, he, she);
 
+            // Объяснение «от противного» (Counterfactual, docs/35-CRITIQUE.md
+            // §3): названа причина, без которой приказ был бы исполнен.
+            // Взвешено, но ни одна поодиночке не решает — решил характер:
+            // ниже, голосом души, без особых правил о дали и кармане и без
+            // строк о положении — пересчёт их уже проверил, и они не решили.
+            bool weighed = decision.RefusedCommand && decision.Weighed;
+            if (weighed && decision.Decisive != Counterfactual.Factor.None)
+            {
+                var sin = warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null;
+                string main = Counterfactual.Phrase(decision.Decisive, context, sin, gender);
+                return decision.DecisiveAlso == Counterfactual.Factor.None
+                    ? main
+                    : $"{main}, и {Counterfactual.Phrase(decision.DecisiveAlso, context, sin, gender)}";
+            }
+
             // Голос Греховода: отказ приказу, пришедшему издали. Причина —
             // та, которую игрок может исправить ногами (docs/31-VOICE.md).
             //
@@ -119,7 +134,7 @@ namespace Sinbinder.AOS
             // громкость и читает: гордыня и уныние. Бросившийся к раненому
             // бросился бы и в упор — стенд показал это сразу (одна доля
             // на любой громкости), и «приказ пришёл издали» было бы враньём.
-            if (decision.RefusedCommand && context.CommandVolume < DistantOrder)
+            if (!weighed && decision.RefusedCommand && context.CommandVolume < DistantOrder)
             {
                 if (decision.TopModule == "Pride")
                     return "приказ крикнули издали, а он не из тех, кого зовут криком";
@@ -133,12 +148,16 @@ namespace Sinbinder.AOS
             // «стоять» тут обычно усталость, но решил карман: без него
             // жадный отказывает «бей» бегством, а не стоянием, — стенд
             // (КАРМАН) показывает, что стоячие отказы приходят с карманом.
-            if (decision.RefusedCommand && context.CommandIntoFight && context.PocketGold > 0
+            if (!weighed && decision.RefusedCommand && context.CommandIntoFight && context.PocketGold > 0
                 && decision.Action == ActionType.Idle
                 && warrior != null && warrior.Soul != null && warrior.Soul.Sin == SinType.Greed)
                 return Pocket;
 
-            switch (decision.TopModule)
+            // Второй круг «от противного»: решил голос души — его слова.
+            string voice = weighed && !string.IsNullOrEmpty(decision.DecisiveVoice)
+                ? decision.DecisiveVoice : decision.TopModule;
+
+            switch (voice)
             {
                 case "Greed":
                     // У долга теперь есть ступени, и у каждой свой голос.
@@ -146,6 +165,7 @@ namespace Sinbinder.AOS
                     // хватало двух строк; теперь воин может отказать и на
                     // второй, и объяснение обязано это различать — иначе
                     // игрок услышит «третью» там, где задолжали две.
+                    if (weighed) return "он думает о своей доле";
                     if (context.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
                     if (context.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
                     if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
@@ -158,6 +178,7 @@ namespace Sinbinder.AOS
                     return "он не умеет стоять, когда есть кого ударить";
 
                 case "Fear":
+                    if (weighed) return context.NearbyEnemies >= 3 ? "их слишком много" : "ему страшно";
                     if (context.Surrounded) return "его обступили со всех сторон";
                     if (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.3f)
                         return "на нём нет живого места";
@@ -193,6 +214,7 @@ namespace Sinbinder.AOS
                     return "он тащит всё, до чего дотянется";
 
                 case "Sloth":
+                    if (weighed) return "у него не осталось воли";
                     if (context.IsExhausted)
                         return P("он выдохся и больше не может",
                                  "она выдохлась и больше не может");

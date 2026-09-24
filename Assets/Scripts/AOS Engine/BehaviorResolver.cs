@@ -92,8 +92,6 @@ namespace Sinbinder.AOS
         /// </summary>
         public Decision DecideDetailed(Warrior warrior, DecisionContext context)
         {
-            var scores = BuildCandidates(warrior, context);
-
             if (MemoryProcessor.Instance != null)
                 context.RecentMemories = MemoryProcessor.Instance.GetMemories(warrior);
 
@@ -102,54 +100,7 @@ namespace Sinbinder.AOS
             // Кто именно поднял каждое действие сильнее всех — это и есть причина.
             var loudest = new Dictionary<ActionType, (string module, float value)>();
 
-            float maxVoice = AOSConfig.Load().MaxVoice;
-
-            foreach (var module in _modules)
-            {
-                float weight = EmotionSystem.Instance != null
-                    ? EmotionSystem.Instance.GetEmotionWeight(warrior, module.ModuleID) : 1.0f;
-
-                foreach (var action in scores.Keys.ToList())
-                {
-                    float voice = module.Evaluate(soul, context, action) * weight;
-
-                    // Потолок вклада. Без него Страх выдавал до пятисот очков
-                    // там, где остальные голоса дают по сорок: его тройной
-                    // бонус (мало здоровья, высокая опасность, окружение)
-                    // умножался на вес 2.0. Совет, в котором один участник
-                    // может перекричать всех разом, — не совет.
-                    //
-                    // Ограничение симметрично: запретить голосу в одиночку
-                    // проталкивать действие и в одиночку его хоронить —
-                    // одно и то же требование.
-                    if (maxVoice > 0f) voice = Mathf.Clamp(voice, -maxVoice, maxVoice);
-
-                    scores[action] += voice;
-
-                    if (!loudest.TryGetValue(action, out var current) || voice > current.value)
-                        loudest[action] = (module.ModuleID, voice);
-                }
-            }
-
-            // Снаряжение: восьмой рычаг игрока. Считается один раз, после характера.
-            TemptationResolver.Apply(scores, context, AOSConfig.Load().TemptationScale);
-
-            // Сюжетные перки: врождённая история воина правит очки.
-            PerkResolver.ApplyPerks(scores, warrior, context, Perks);
-
-            // Установка отряда: седьмой рычаг игрока. Меняет склонность
-            // всех сразу, но не отменяет характер — поправка складывается
-            // с голосами и может им проиграть.
-            if (warrior != null && warrior.Team == Team.Player)
-            {
-                float scale = AOSConfig.Load().StrategyScale;
-                if (scale > 0f)
-                {
-                    foreach (var mod in Gameplay.SquadOrders.CurrentModifiers())
-                        if (scores.ContainsKey(mod.Action))
-                            scores[mod.Action] += mod.Bonus * scale;
-                }
-            }
+            var scores = Tally(warrior, context, soul, loudest);
 
             // Фоторежим: гарантированный отказ на один дубль
             // (<see cref="Dev.CaptureMode"/>). Решение **не подменяется** —
@@ -259,8 +210,117 @@ namespace Sinbinder.AOS
             // всё видит: журнал пишет «не сдвинулся с места — не смог выбрать».
             decision.RefusedCommand = context.HasCommand && !obeyed && !decision.Hesitated;
 
+            // Объяснение «от противного»: без какой причины приказ был бы
+            // исполнен (Counterfactual). Только для отказов — послушание
+            // в объяснении причины не нуждается.
+            if (decision.RefusedCommand && Counterfactual.Enabled)
+            {
+                decision.Weighed = true;
+                decision.Decisive = Counterfactual.Decisive(context, c => WouldObey(warrior, c));
+                if (decision.Decisive == Counterfactual.Factor.None
+                    && Counterfactual.DecisivePair(context, c => WouldObey(warrior, c), out var first, out var second))
+                {
+                    decision.Decisive = first;
+                    decision.DecisiveAlso = second;
+                }
+                if (decision.Decisive == Counterfactual.Factor.None)
+                    decision.DecisiveVoice = Counterfactual.DecisiveVoice(
+                        Counterfactual.Voices(warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null),
+                        id => WouldObey(warrior, context, id));
+            }
+
             AOSStats.Record(decision, context);
             return decision;
+        }
+
+        /// <summary>
+        /// Исполнил бы воин приказ в таком положении. Тот же подсчёт, что
+        /// в <see cref="DecideDetailed"/>, без его последствий: ни памяти, ни
+        /// статистики, ни съёмочного отказа, ни трассировки. Колебание —
+        /// не исполнение: замерший приказа не выполнил.
+        /// </summary>
+        public bool WouldObey(Warrior warrior, DecisionContext context, string silenced = null)
+        {
+            if (context == null || !context.HasCommand) return false;
+
+            var scores = Tally(warrior, context, Soul.FromWarrior(warrior), null, silenced);
+
+            var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
+            var best = sorted[0];
+            bool alone = sorted.Count < 2;
+            float gap = alone ? 0f : best.Value - sorted[1].Value;
+            float loudness = Mathf.Max(
+                Mathf.Max(Mathf.Abs(best.Value), alone ? 0f : Mathf.Abs(sorted[1].Value)), 1f);
+            float confidence = alone ? 1f : gap / loudness;
+
+            return confidence >= HesitationShare && context.SatisfiedBy(best.Key);
+        }
+
+        /// <summary>
+        /// Очки кандидатов: голоса модулей, вещи, перки, установка отряда.
+        /// Один подсчёт на решение и на пересчёт «от противного» — две копии
+        /// разошлись бы, и объяснение считало бы не ту игру.
+        /// <paramref name="loudest"/> — куда записать громкий голос каждого
+        /// действия; null — не записывать. <paramref name="silenced"/> — голос,
+        /// который молчит (второй круг «от противного»); null — говорят все.
+        /// </summary>
+        private Dictionary<ActionType, float> Tally(Warrior warrior, DecisionContext context, Soul soul,
+            Dictionary<ActionType, (string module, float value)> loudest, string silenced = null)
+        {
+            var scores = BuildCandidates(warrior, context);
+            float maxVoice = AOSConfig.Load().MaxVoice;
+
+            foreach (var module in _modules)
+            {
+                if (silenced != null && module.ModuleID == silenced) continue;
+
+                float weight = EmotionSystem.Instance != null
+                    ? EmotionSystem.Instance.GetEmotionWeight(warrior, module.ModuleID) : 1.0f;
+
+                foreach (var action in scores.Keys.ToList())
+                {
+                    float voice = module.Evaluate(soul, context, action) * weight;
+
+                    // Потолок вклада. Без него Страх выдавал до пятисот очков
+                    // там, где остальные голоса дают по сорок: его тройной
+                    // бонус (мало здоровья, высокая опасность, окружение)
+                    // умножался на вес 2.0. Совет, в котором один участник
+                    // может перекричать всех разом, — не совет.
+                    //
+                    // Ограничение симметрично: запретить голосу в одиночку
+                    // проталкивать действие и в одиночку его хоронить —
+                    // одно и то же требование.
+                    if (maxVoice > 0f) voice = Mathf.Clamp(voice, -maxVoice, maxVoice);
+
+                    scores[action] += voice;
+
+                    if (loudest != null
+                        && (!loudest.TryGetValue(action, out var current) || voice > current.value))
+                        loudest[action] = (module.ModuleID, voice);
+                }
+            }
+
+            // Снаряжение: восьмой рычаг игрока. Считается один раз, после характера.
+            TemptationResolver.Apply(scores, context, AOSConfig.Load().TemptationScale);
+
+            // Сюжетные перки: врождённая история воина правит очки.
+            PerkResolver.ApplyPerks(scores, warrior, context, Perks);
+
+            // Установка отряда: седьмой рычаг игрока. Меняет склонность
+            // всех сразу, но не отменяет характер — поправка складывается
+            // с голосами и может им проиграть.
+            if (warrior != null && warrior.Team == Team.Player)
+            {
+                float scale = AOSConfig.Load().StrategyScale;
+                if (scale > 0f)
+                {
+                    foreach (var mod in Gameplay.SquadOrders.CurrentModifiers())
+                        if (scores.ContainsKey(mod.Action))
+                            scores[mod.Action] += mod.Bonus * scale;
+                }
+            }
+
+            return scores;
         }
 
         /// <summary>

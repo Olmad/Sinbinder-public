@@ -47,5 +47,29 @@ namespace Sinbinder.AOS
 
         /// <summary>Приказ был отдан и проиграл голосование.</summary>
         public bool RefusedCommand;
+
+        /// <summary>
+        /// Отказ взвешен «от противного» (<see cref="Counterfactual"/>):
+        /// поле <see cref="Decisive"/> — правда, а не пусто по умолчанию.
+        /// </summary>
+        public bool Weighed;
+
+        /// <summary>
+        /// Причина, без которой приказ был бы исполнен. None при Weighed —
+        /// ни одна поодиночке не решает: решил характер.
+        /// </summary>
+        public Counterfactual.Factor Decisive;
+
+        /// <summary>
+        /// Вторая причина пары: отказ держался на двух причинах сразу,
+        /// без обеих вместе приказ был бы исполнен. None — не пара.
+        /// </summary>
+        public Counterfactual.Factor DecisiveAlso;
+
+        /// <summary>
+        /// Голос души, без которого приказ был бы исполнен (второй круг,
+        /// когда ни одна причина положения не решает). Null — всё разом.
+        /// </summary>
+        public string DecisiveVoice;
     }
 }

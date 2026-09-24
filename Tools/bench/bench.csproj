@@ -34,6 +34,7 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/SkillCatalog.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Counterfactual.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Moment.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/BodyMotion.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/BattleRecord.cs" />

@@ -118,6 +118,7 @@ namespace Sinbinder.Dev
             ["добыча"] = c => c.ToggleLoot(),
             ["лагерь"] = c => c.ToggleCamp(),
             ["склад"] = c => c.ToggleStore(),
+            ["причина"] = c => c.ToggleReason(),
             ["voice"] = c => c.ToggleVoice(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
@@ -199,6 +200,15 @@ namespace Sinbinder.Dev
                 : "Сундук — раздача: всё сразу в мешок Греховода, как прежде.");
         }
 
+        /// <summary>Выключатель объяснения «от противного» (<see cref="AOS.Counterfactual"/>).</summary>
+        private void ToggleReason()
+        {
+            AOS.Counterfactual.Enabled = !AOS.Counterfactual.Enabled;
+            Write(AOS.Counterfactual.Enabled
+                ? "Причина отказа — та, без которой приказ был бы исполнен."
+                : "Причина отказа — самый громкий голос, как прежде.");
+        }
+
         private void Help()
         {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
@@ -207,6 +217,7 @@ namespace Sinbinder.Dev
             Write("добыча — включить или выключить раздачу добычи после боя.");
             Write("лагерь — включить или выключить жизнь в лагере.");
             Write("склад — сундук лагеря как склад: взять, сколько унесёте.");
+            Write("причина — объяснять отказ тем, без чего приказ был бы исполнен.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

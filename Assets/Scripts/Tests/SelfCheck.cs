@@ -81,6 +81,7 @@ namespace Sinbinder.Tests
                 Blows();
                 Gear();
                 Pocket();
+                ReasonByContrast();
                 ChestStore();
                 LootToHands();
                 CampSpots();
@@ -279,6 +280,75 @@ namespace Sinbinder.Tests
             modest.Pocket(10);
             Check(SquadGear.AskPocket(modest, store, out _) && modest.PocketGold == 0 && store.Gold == 10,
                   "умеренный отдаёт, если попросить, — золото уходит в кошель Греховода");
+        }
+
+        /// <summary>
+        /// Объяснение «от противного» (docs/35-CRITIQUE.md §3): названа та
+        /// причина, без которой приказ был бы исполнен, — и никакая другая.
+        /// </summary>
+        private static void ReasonByContrast()
+        {
+            var c = new DecisionContext
+            {
+                HasCommand = true, CommandType = "Move",
+                CommandVolume = 0.5f, UnpaidMissions = 2, Fatigue = 0.5f,
+            };
+
+            Check(Counterfactual.Decisive(c, x => x.CommandVolume >= 1f) == Counterfactual.Factor.Distance,
+                  "названа причина, без которой приказ исполнили бы");
+            Check(Counterfactual.Decisive(c, x => x.UnpaidMissions == 0) == Counterfactual.Factor.Debt,
+                  "причина, которая не решила, не названа, даже стоя первой по порядку");
+            Check(Counterfactual.Decisive(c, x => x.UnpaidMissions == 0 && x.Fatigue <= 0f) == Counterfactual.Factor.None
+                  && Counterfactual.DecisivePair(c, x => x.UnpaidMissions == 0 && x.Fatigue <= 0f, out var a, out var b)
+                  && a == Counterfactual.Factor.Debt && b == Counterfactual.Factor.Fatigue,
+                  "отказ на двух причинах назван парой");
+            Check(Counterfactual.Decisive(c, x => false) == Counterfactual.Factor.None
+                  && !Counterfactual.DecisivePair(c, x => false, out _, out _),
+                  "ничего не решило — ничего и не выдумано");
+            Check(Math.Abs(c.CommandVolume - 0.5f) < 0.001f && c.UnpaidMissions == 2,
+                  "пересчёт не трогает настоящее положение");
+
+            var order = new List<string>(Counterfactual.Voices(SinType.Greed));
+            Check(order.Count > 0 && order[0] == "Greed" && !order.Contains("Loyalty"),
+                  "свой грех проверяется первым, верность — никогда: она всегда за приказ");
+            Check(Counterfactual.DecisiveVoice(order, id => id == "Pride") == "Pride",
+                  "решил голос души — назван он");
+
+            foreach (Counterfactual.Factor f in Enum.GetValues(typeof(Counterfactual.Factor)))
+                Check(!Regex.IsMatch(Counterfactual.Phrase(f, c, SinType.Greed, Gender.Male), "[0-9]"),
+                      $"причина «{f}» — словами, без чисел");
+
+            // На настоящем голосовании: если отказ взвешен и причина названа,
+            // без неё (или без пары) воин и правда послушался бы.
+            bool was = Counterfactual.Enabled;
+            try
+            {
+                Counterfactual.Enabled = true;
+                var resolver = new BehaviourResolver();
+                var proud = MakeWarrior("Спесь далёкая", SinType.Pride, 90f);
+                var far = new DecisionContext
+                {
+                    HasCommand = true, CommandType = "Move", CommandVolume = 0.2f,
+                    CurrentHP = 30f, MaxHP = 30f, Fatigue = 0.5f,
+                };
+                var d = resolver.DecideDetailed(proud, far);
+                if (d.RefusedCommand)
+                {
+                    Check(d.Weighed, "отказ взвешен «от противного»");
+                    if (d.Decisive != Counterfactual.Factor.None)
+                    {
+                        var without = Counterfactual.Without(far, d.Decisive);
+                        if (d.DecisiveAlso != Counterfactual.Factor.None)
+                            without = Counterfactual.Without(without, d.DecisiveAlso);
+                        Check(resolver.WouldObey(proud, without),
+                              "без названной причины воин и правда послушался бы");
+                    }
+                }
+            }
+            finally
+            {
+                Counterfactual.Enabled = was;
+            }
         }
 
         /// <summary>

@@ -2001,6 +2001,136 @@ static class Bench
         Console.WriteLine("  (в бою: «с ходу» нарушают бегущие и спасающие своих, а не бьющие)");
     }
 
+    /// <summary>Исполнил бы воин приказ в таком положении — зеркало BehaviourResolver.WouldObey.</summary>
+    static bool Obeys(List<IPersonalityModule> modules, Warrior w, DecisionContext c, AOSConfig cfg)
+    {
+        var o = Vote(modules, w, c, cfg, SquadStrategy.Balanced);
+        return !o.Hesitated && c.SatisfiedBy(o.Action);
+    }
+
+    /// <summary>
+    /// Объяснение «от противного» (docs/35-CRITIQUE.md §3): прежнее
+    /// объяснение называет самый громкий голос за победителя; новое —
+    /// причину, без которой приказ был бы исполнен. Меряем, как часто
+    /// прежнее <b>называло не решившее</b> (игрок чинит не то) и как часто
+    /// <b>молчало о решившем</b> (игрок не знает, что чинить).
+    /// </summary>
+    static void ReasonCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ОБЪЯСНЕНИЕ ОТ ПРОТИВНОГО ===");
+        Console.WriteLine("  прежнее: громкий голос за победителя; новое: без чего приказ был бы исполнен\n");
+
+        var modules = Modules();
+        const int runs = 300;
+
+        var squad = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Карган", SinType.Pride,    MoralType.Neutral, 90f, 75f),
+            ("Вейн",   SinType.Sloth,    MoralType.Pious,   40f, 90f),
+            ("Марга",  SinType.Greed,    MoralType.Vicious, 65f, 70f),
+            ("Хальд",  SinType.Wrath,    MoralType.Pious,   35f, 95f),
+            ("Хорь",   SinType.Envy,     MoralType.Vicious, 45f, 65f),
+            ("Ю",      SinType.Gluttony, MoralType.Neutral, 55f, 80f),
+            ("Лиска",  SinType.Lust,     MoralType.Neutral, 30f, 85f),
+            ("Гурт",   SinType.Sloth,    MoralType.Vicious, 20f, 85f),
+            ("Ждан",   SinType.Pride,    MoralType.Neutral, 30f, 80f),
+        };
+
+        // Положения, где отказов много и причины разные.
+        var situations = new (string Name, int Unpaid, int Loot, float Volume, bool Battle, string Order, int Pocket)[]
+        {
+            ("бой, отходи",          0, 1, 1.0f, true,  null,     0),
+            ("бой, отходи издали",   0, 1, 0.5f, true,  null,     0),
+            ("лагерь, иди издали",   0, 0, 0.5f, false, null,     0),
+            ("лагерь, долг в три",   3, 0, 1.0f, false, null,     0),
+            ("бой, бей, с карманом", 0, 0, 1.0f, true,  "Attack", 40),
+        };
+
+        bool was = Counterfactual.Enabled;
+        int total = 0, fixable = 0, wrongOld = 0, silentOld = 0, byVoice = 0, allAtOnce = 0, wrongSin = 0, pairs = 0, hesitated = 0;
+        var byFactor = new Dictionary<Counterfactual.Factor, int>();
+        var voices = new Dictionary<string, int>();
+
+        foreach (var sit in situations)
+        {
+            int sitRefused = 0, sitWrong = 0, sitSilent = 0, sitFixable = 0;
+            foreach (var m in squad)
+            {
+                Counterfactual.Enabled = true;
+                OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, sit.Unpaid, runs,
+                    loot: sit.Loot, volume: sit.Volume, battle: sit.Battle, order: sit.Order, pocket: sit.Pocket,
+                    refusal: (w, ctx, decision) =>
+                    {
+                        // Колебание — не отказ: движок его так и не считает
+                        // (RefusedCommand), и объясняет его своя фраза —
+                        // «тянут почти поровну». Считаем отдельно.
+                        if (!decision.RefusedCommand) { hesitated++; return; }
+                        sitRefused++;
+                        var gender = w.Gender;
+                        var decisive = decision.Decisive;
+                        if (decisive != Counterfactual.Factor.None)
+                        {
+                            sitFixable++;
+                            if (decision.DecisiveAlso != Counterfactual.Factor.None) pairs++;
+                            else { byFactor.TryGetValue(decisive, out int k); byFactor[decisive] = k + 1; }
+                        }
+                        else if (!string.IsNullOrEmpty(decision.DecisiveVoice))
+                        {
+                            byVoice++;
+                            voices.TryGetValue(decision.DecisiveVoice, out int v); voices[decision.DecisiveVoice] = v + 1;
+
+                            // Прежнее назвало бы голос громкого за победителя.
+                            // Молчание того голоса приказа не вернуло бы — не тот грех.
+                            string loud = decision.TopModule;
+                            if (!string.IsNullOrEmpty(loud) && loud != decision.DecisiveVoice
+                                && !Obeys(modules.Where(x => x.ModuleID != loud).ToList(), w, ctx, cfg))
+                                wrongSin++;
+                        }
+                        else allAtOnce++;
+
+                        // Прежнее объяснение того же отказа.
+                        var old = decision;
+                        old.Weighed = false;
+                        old.Decisive = Counterfactual.Factor.None;
+                        string oldReason = PhraseGenerator.Reason(w, ctx, old);
+
+                        // Какую причину положения прежнее назвало (если назвало).
+                        var named = Counterfactual.Factor.None;
+                        foreach (Counterfactual.Factor f in Enum.GetValues(typeof(Counterfactual.Factor)))
+                        {
+                            if (f == Counterfactual.Factor.None || !Counterfactual.Present(ctx, f)) continue;
+                            string phrase = Grammar.For(gender, Counterfactual.Phrase(f, ctx, w.Soul.Sin, gender));
+                            if (phrase == oldReason) { named = f; break; }
+                        }
+
+                        bool namedHelps = named != Counterfactual.Factor.None
+                                       && Obeys(modules, w, Counterfactual.Without(ctx, named), cfg);
+                        if (named != Counterfactual.Factor.None && !namedHelps) sitWrong++;
+                        if (named == Counterfactual.Factor.None && decisive != Counterfactual.Factor.None) sitSilent++;
+                    });
+            }
+
+            total += sitRefused; fixable += sitFixable; wrongOld += sitWrong; silentOld += sitSilent;
+            double r = Math.Max(sitRefused, 1);
+            Console.WriteLine($"  {sit.Name,-22} отказов {sitRefused,5}   исправимых {sitFixable / r * 100,5:F1}%   "
+                            + $"прежнее: не то {sitWrong / r * 100,5:F1}%, промолчало {sitSilent / r * 100,5:F1}%");
+        }
+        Counterfactual.Enabled = was;
+
+        double all = Math.Max(total, 1);
+        Console.WriteLine($"\n  колебаний (не отказы, своя фраза «тянут почти поровну»): {hesitated}");
+        Console.WriteLine($"  всего отказов {total}: исправимых {fixable / all * 100:F1}% — у них названа причина, без которой приказ бы исполнили");
+        Console.WriteLine($"  из них парой причин: {pairs / all * 100:F1}%");
+        Console.WriteLine("  решившие поодиночке: " + string.Join(", ",
+            byFactor.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key} {kv.Value / all * 100:F1}%")));
+        Console.WriteLine($"  характер (второй круг): {byVoice / all * 100:F1}% — "
+            + string.Join(", ", voices.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key} {kv.Value / all * 100:F1}%")));
+        Console.WriteLine($"  всё разом, ни причина, ни голос поодиночке: {allAtOnce / all * 100:F1}%");
+        Console.WriteLine($"  прежнее объяснение: называло не решившее в {wrongOld / all * 100:F1}%, молчало о решившем в {silentOld / all * 100:F1}%, "
+                        + $"называло не тот грех в {wrongSin / all * 100:F1}%");
+        Console.WriteLine("  новое по построению не называет не решившее: причина названа, только если без неё приказ исполнили бы.");
+    }
+
     /// <summary>
     /// Личный карман (docs/34-GEAR.md §9.3): жадный, оставивший себе золото,
     /// бережёт себя. Карман обязан менять решения, а не только числа —
@@ -2148,7 +2278,8 @@ static class Bench
     static (double Rate, string Reason) OrderRun(List<IPersonalityModule> modules,
         AOSConfig cfg, SinType sin, MoralType moral, float intensity,
         float loyalty, int unpaid, int runs, int loot = 1, bool allyInDanger = true,
-        float volume = 1f, bool battle = true, string order = null, int pocket = 0, int seed = 7000)
+        float volume = 1f, bool battle = true, string order = null, int pocket = 0, int seed = 7000,
+        Action<Warrior, DecisionContext, Decision> refusal = null)
     {
         int refused = 0;
         var seen = new Dictionary<string, int>();
@@ -2236,6 +2367,25 @@ static class Bench
             // не послушались, а не почему послушались. Смешав их, мы бы
             // показывали объяснение послушания при половине отказов.
             if (obeyed) continue;
+
+            // «От противного» — тем же правилом, что в игре (Counterfactual),
+            // но пересчёт — своим голосованием стенда.
+            if (decision.RefusedCommand && Counterfactual.Enabled)
+            {
+                decision.Weighed = true;
+                decision.Decisive = Counterfactual.Decisive(ctx, c => Obeys(modules, w, c, cfg));
+                if (decision.Decisive == Counterfactual.Factor.None
+                    && Counterfactual.DecisivePair(ctx, c => Obeys(modules, w, c, cfg), out var first, out var second))
+                {
+                    decision.Decisive = first;
+                    decision.DecisiveAlso = second;
+                }
+                if (decision.Decisive == Counterfactual.Factor.None)
+                    decision.DecisiveVoice = Counterfactual.DecisiveVoice(Counterfactual.Voices(w.Soul.Sin),
+                        id => Obeys(modules.Where(x => x.ModuleID != id).ToList(), w, ctx, cfg));
+            }
+
+            refusal?.Invoke(w, ctx, decision);
 
             string phrase = PhraseGenerator.Explain(w, ctx, decision);
             if (!string.IsNullOrEmpty(phrase))
@@ -4334,6 +4484,7 @@ static class Bench
         CampCheck();
         CommandsCheck(cfg);
         PocketCheck(cfg);
+        ReasonCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

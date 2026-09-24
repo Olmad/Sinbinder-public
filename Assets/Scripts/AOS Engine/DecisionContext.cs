@@ -7,6 +7,13 @@ namespace Sinbinder.AOS
 {
     public class DecisionContext
     {
+        /// <summary>
+        /// Копия положения — для пересчёта «от противного» (<see cref="Counterfactual"/>).
+        /// Неглубокая: списки общие, и тот, кто меняет список, заменяет его,
+        /// а не правит на месте.
+        /// </summary>
+        public DecisionContext Copy() => (DecisionContext)MemberwiseClone();
+
         public float CurrentHP;
         public float MaxHP;
         public int NearbyEnemies;
