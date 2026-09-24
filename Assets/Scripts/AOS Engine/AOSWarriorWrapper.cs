@@ -28,6 +28,7 @@ namespace Sinbinder.AOS
         {
             _warrior = GetComponent<Warrior>();
             _self = GetComponent<Damageable>();
+            _hunt = GetComponent<HuntsSinbinder>();
             _resolver = new BehaviourResolver();
         }
 
@@ -64,6 +65,17 @@ namespace Sinbinder.AOS
         public void Execute(ActionType action)
         {
             if (_self != null && _self.IsDead) return;
+
+            // Охотник без врага рядом идёт к Греховоду, что бы ни выбрал голос
+            // (HuntsSinbinder). Рядом кто-то есть — решает голос, как у всех.
+            if (Hunting(action))
+            {
+                ShowDecisionIcon(ActionType.Attack);
+                var legs = GetComponent<UnitMover>();
+                if (legs != null) legs.CommandMove(SinbinderPlayer.Where);
+                return;
+            }
+
             ShowDecisionIcon(action);
             switch (action)
             {
@@ -191,6 +203,26 @@ namespace Sinbinder.AOS
                     OnKilledEnemy(target.Warrior);
                 }
             }
+        }
+
+        private HuntsSinbinder _hunt;
+
+        /// <summary>
+        /// Идёт ли охотник к Греховоду вместо выбранного. Только когда рядом
+        /// (десять метров, <see cref="DecisionContext.NearbyEnemies"/>) драться
+        /// не с кем, а голос выбрал стоять, грабить или бить кого-то вдали:
+        /// тогда он не стоит, не бредёт к трупам и не гонится за дальним
+        /// рядовым — он идёт туда, зачем пришёл. Бегство, спасение своего,
+        /// умения — остаются голосу: они случаются, только когда рядом кто-то есть.
+        /// </summary>
+        private bool Hunting(ActionType action)
+        {
+            if (_hunt == null || !HuntsSinbinder.QuarryAlive) return false;
+            if (LastContext != null && LastContext.NearbyEnemies > 0) return false;
+
+            return action == ActionType.Idle
+                || action == ActionType.Loot
+                || action == ActionType.Attack;
         }
 
         /// <summary> Публичный метод для поиска лучшей вражеской цели. </summary>

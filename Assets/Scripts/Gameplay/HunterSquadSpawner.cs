@@ -277,6 +277,12 @@ namespace Sinbinder.Gameplay
             go.transform.rotation = transform.rotation;
 
             var warrior = go.AddComponent<Warrior>();
+
+            // Охотник пришёл за Греховодом и не забывает этого (HuntsSinbinder).
+            // Метка ставится до движка решений: AOSWarriorWrapper читает её
+            // при появлении.
+            go.AddComponent<HuntsSinbinder>();
+
             var soul = new SoulData(name, kind.Sin, kind.Moral,
                                     _level + kind.Toughness, kind.Intensity);
             // Живое тело: охотники — люди. До 14 сентября здесь стоял зомби,
