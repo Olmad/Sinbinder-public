@@ -27,6 +27,18 @@ namespace Sinbinder.UI
     /// </summary>
     public class CommanderCouncilUI : MonoBehaviour
     {
+        /// <summary>
+        /// Греховод у стола, и совет ждёт F. Разговор с воином и сундук
+        /// (<see cref="GearPanel"/>) эту F не берут: совет — главная сцена
+        /// пролога, и F открывала бы оба экрана разом, одну паузу поверх другой.
+        /// </summary>
+        public static bool AtTable { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() => AtTable = false;
+
+        void OnDestroy() => AtTable = false;
+
         [SerializeField] private GameObject _panel;
         [SerializeField] private Text _title;
         [SerializeField] private RectTransform _rows;
@@ -184,9 +196,8 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            if (_done || _ball == null || !_summoned) return;
-
-            if (!_ball.PlayerIsClose()) return;
+            AtTable = !_done && _ball != null && _summoned && _ball.PlayerIsClose();
+            if (!AtTable) return;
 
             // Подойти — не значит согласиться. Раньше панель открывалась
             // в тот же кадр, в который игрок оказался рядом, и выбор из трёх
@@ -203,6 +214,7 @@ namespace Sinbinder.UI
 
             // F, набранная в консоли (~), — буква, а не «открыть совет».
             if (Dev.CheatConsole.Open) return;
+            if (GearPanel.Open) return;
 
             Open();
         }

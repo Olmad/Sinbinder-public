@@ -64,6 +64,11 @@ namespace Sinbinder.UI
         // о разговоре и о сундуке-складе игрок не узнает никогда.
         private Text _prompt;
         private float _nextLook;
+
+        // Отметка своей паузы (GamePauseController.Stamp). Закрываясь, экран
+        // снимает паузу, только если поверх никто не взял свою — церемония
+        // титула, разговор: снять чужую значило бы пустить бой под ней.
+        private int _stamp;
         private string _answer = "";
 
         private GameObject _root;
@@ -117,7 +122,7 @@ namespace Sinbinder.UI
             if (!_open)
             {
                 if (Input.GetKeyDown(_key)) TryOpen();
-                else if (Input.GetKeyDown(_talkKey) && !TryTalk()) TryChest();
+                else if (Input.GetKeyDown(_talkKey) && !CommanderCouncilUI.AtTable && !TryTalk()) TryChest();
                 return;
             }
 
@@ -201,7 +206,8 @@ namespace Sinbinder.UI
             _nextLook = Time.unscaledTime + 0.2f;
 
             var pause = Core.GamePauseController.Instance;
-            if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null) { _prompt.text = ""; return; }
+            if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null
+                || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
 
             var w = LookedAt();
             if (w != null) { _prompt.text = $"F — поговорить: {w.DisplayName}"; return; }
@@ -221,7 +227,7 @@ namespace Sinbinder.UI
             _answer = "";
             _open = true;
             _root.SetActive(true);
-            Core.GamePauseController.Instance?.Pause();
+            Hold();
             Redraw();
         }
 
@@ -254,7 +260,7 @@ namespace Sinbinder.UI
             panel._answer = "";
             panel._open = true;
             panel._root.SetActive(true);
-            Core.GamePauseController.Instance?.Pause();
+            panel.Hold();
             panel.Redraw();
         }
 
@@ -269,7 +275,7 @@ namespace Sinbinder.UI
             _answer = first;
             _open = true;
             _root.SetActive(true);
-            Core.GamePauseController.Instance?.Pause();
+            Hold();
             Redraw();
         }
 
@@ -279,7 +285,18 @@ namespace Sinbinder.UI
             _chest = null;
             _bagOnly = false;
             if (_root != null) _root.SetActive(false);
-            Core.GamePauseController.Instance?.Resume();
+
+            var pause = Core.GamePauseController.Instance;
+            if (pause != null && pause.Stamp == _stamp) pause.Resume();
+        }
+
+        /// <summary>Поставить свою паузу и запомнить её отметку.</summary>
+        private void Hold()
+        {
+            var pause = Core.GamePauseController.Instance;
+            if (pause == null) return;
+            pause.Pause();
+            _stamp = pause.Stamp;
         }
 
         /// <summary>Первый выделенный свой живой воин — не Греховод: у того свои руки.</summary>

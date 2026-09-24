@@ -160,6 +160,11 @@ namespace Sinbinder.Gameplay
                 AOS.TitleManager.UpdateTitle(nearest);
             }
 
+            // Экран сундука — когда мир снова идёт: за клад тут же даётся
+            // «Мародёр», и церемония титула ставит свою паузу. Панель поверх
+            // неё сняла бы паузу церемонии своим закрытием.
+            if (Store && _contents.Count > 0) StartCoroutine(OfferWhenFree());
+
             if (taken == 0)
                 log?.Write("В сундуке пусто. Марга объяснится, когда вернётся.");
         }
@@ -183,8 +188,19 @@ namespace Sinbinder.Gameplay
             if (_contents.Count > 0)
                 log?.Write($"В сундуке: {names}. Что не унесёте, останется в лагере.");
 
-            UI.GearPanel.OpenChest(this);
             return _contents.Count;
+        }
+
+        private IEnumerator OfferWhenFree()
+        {
+            // Два кадра: церемония титула встаёт не в тот же кадр, что деяние.
+            yield return null;
+            yield return null;
+
+            var pause = Core.GamePauseController.Instance;
+            while (pause != null && pause.IsPaused) yield return null;
+
+            UI.GearPanel.OpenChest(this);
         }
 
         /// <summary>Взять из сундука в мешок Греховода. Золото — в кошель.</summary>
