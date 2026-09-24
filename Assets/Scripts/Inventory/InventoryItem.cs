@@ -14,6 +14,22 @@ namespace Sinbinder.Inventory
         Provision
     }
 
+    /// <summary>
+    /// Место на воине (docs/34-GEAR.md, решение автора 24 сентября):
+    /// оружие, щит или второе оружие, шлем, броня, пояс. Одно место —
+    /// одна вещь: второй шлем не прибавляет второй головы, он встаёт
+    /// вместо первого.
+    /// </summary>
+    public enum GearSlot
+    {
+        None,       // не носится: золото, души, оболочки
+        Weapon,
+        Offhand,    // щит — или второе оружие
+        Head,
+        Body,
+        Belt        // трофей, оберег, припас
+    }
+
     [System.Serializable]
     public class InventoryItem
     {
@@ -32,6 +48,10 @@ namespace Sinbinder.Inventory
         [SerializeField] private float _attackBonus;
         [SerializeField] private float _defenseBonus;
 
+        // Куда вещь надевают. Ноль у старых записей — тогда место
+        // выводится из того, что вещь даёт (см. Slot).
+        [SerializeField] private GearSlot _slot;
+
         public string Id => _id;
         public string Name => _name;
         public string Description => _description;
@@ -42,9 +62,36 @@ namespace Sinbinder.Inventory
         public float AttackBonus => _attackBonus;
         public float DefenseBonus => _defenseBonus;
 
+        /// <summary>
+        /// Куда вещь надевают. Не названо — бьёт, значит оружие; держит
+        /// удар — броня; прочее — на пояс. Золото, души и оболочки
+        /// не надевают вовсе.
+        /// </summary>
+        public GearSlot Slot
+        {
+            get
+            {
+                if (_type == ItemType.Gold || _type == ItemType.Soul || _type == ItemType.Shell)
+                    return GearSlot.None;
+                if (_slot != GearSlot.None) return _slot;
+                if (_attackBonus > 0f) return GearSlot.Weapon;
+                if (_defenseBonus > 0f) return GearSlot.Body;
+                return GearSlot.Belt;
+            }
+        }
+
+        /// <summary>Встаёт ли вещь на это место. Оружие встаёт и во вторую руку.</summary>
+        public bool Fits(GearSlot place)
+        {
+            var own = Slot;
+            if (own == GearSlot.None || place == GearSlot.None) return false;
+            if (place == GearSlot.Offhand) return own == GearSlot.Offhand || own == GearSlot.Weapon;
+            return own == place;
+        }
+
         public InventoryItem(string name, string description, ItemType type, int quantity = 1,
             SinType temptationSin = SinType.Greed, float temptationValue = 0f,
-            float attack = 0f, float defense = 0f)
+            float attack = 0f, float defense = 0f, GearSlot slot = GearSlot.None)
         {
             _id = System.Guid.NewGuid().ToString();
             _name = name;
@@ -55,6 +102,7 @@ namespace Sinbinder.Inventory
             _temptationValue = temptationValue;
             _attackBonus = attack;
             _defenseBonus = defense;
+            _slot = slot;
         }
     }
 }

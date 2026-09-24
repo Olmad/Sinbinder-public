@@ -30,6 +30,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Защита, которая гасит ровно половину удара.</summary>
         public const float Scale = 10f;
 
+        /// <summary>
+        /// Какую долю удара даёт оружие во второй руке. Не целиком: два
+        /// топора — не два бойца, вторая рука слабее и занята защитой себя.
+        /// </summary>
+        public const float OffhandShare = 0.5f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Enabled = false;
 

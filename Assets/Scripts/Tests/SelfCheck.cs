@@ -174,7 +174,7 @@ namespace Sinbinder.Tests
 
         /// <summary>
         /// Обмен вещами (docs/34-GEAR.md): воин отвечает как душа — может
-        /// не взять и не отдать; руки не бездонны; всё словами.
+        /// не взять и не отдать; места, а не руки; всё словами.
         /// </summary>
         private static void Gear()
         {
@@ -195,11 +195,49 @@ namespace Sinbinder.Tests
             Check(!SquadGear.WillGive(greed, coin, out _), "жадный не отдаёт ценного");
             Check(greed.Drop(coin) && greed.Carried.Count == 0, "выпустить из рук можно");
 
+            // Места, а не руки (решение автора 24 сентября): одно место —
+            // одна вещь, на занятое — замена, и ничто не складывается.
             var calm = MakeWarrior("Покой", SinType.Envy, 30f);
-            for (int i = 0; i < SquadGear.Hands; i++)
-                calm.Give(new InventoryItem($"Вещь {i}", "", ItemType.Equipment));
-            Check(!SquadGear.WillTake(calm, axe, out string full) && full == "руки заняты",
-                  "в полные руки вещь не взять");
+            float bare = calm.Attack;
+            var first = new InventoryItem("Первый топор", "", ItemType.Equipment, attack: 2f);
+            var second = new InventoryItem("Второй топор", "", ItemType.Equipment, attack: 2f);
+            var third = new InventoryItem("Третий топор", "", ItemType.Equipment, attack: 4f);
+            Check(calm.Give(first) && calm.Worn(GearSlot.Weapon) == first, "первое оружие — в руку");
+            Check(calm.Give(second) && calm.Worn(GearSlot.Offhand) == second, "второе — во вторую руку");
+            Near(calm.Attack, bare + 2f + 2f * CombatMath.OffhandShare, "вторая рука бьёт слабее главной");
+            Check(!calm.Give(third), "третьему оружию места нет: три топора не бьют как три");
+            Check(SquadGear.Place(calm, third, out _, out var weaker) && weaker == second,
+                  "третье оружие сменяет слабейшее");
+            Check(SquadGear.WillTake(calm, third, out string swap) && swap.Contains("взамен"),
+                  "о замене сказано до передачи");
+
+            var store = NewObject("Запасы").AddComponent<PlayerInventory>();
+            store.AddItem(third);
+            Check(SquadGear.Hand(calm, third, store, out _)
+                  && calm.Worn(GearSlot.Weapon) == third && calm.Worn(GearSlot.Offhand) == first
+                  && store.GetAllItems().Contains(second) && !store.GetAllItems().Contains(third),
+                  "сменённое возвращается в запасы, лучшее — в главной руке");
+
+            var helm = new InventoryItem("Шлем", "", ItemType.Equipment, defense: 1f, slot: GearSlot.Head);
+            var helm2 = new InventoryItem("Второй шлем", "", ItemType.Equipment, defense: 3f, slot: GearSlot.Head);
+            Check(calm.Give(helm) && !calm.Give(helm2), "второй шлем поверх первого не надеть");
+            Check(SquadGear.Place(calm, helm2, out _, out var was) && was == helm, "второй шлем — замена первого");
+
+            var shield = new InventoryItem("Щит", "", ItemType.Equipment, defense: 2f, slot: GearSlot.Offhand);
+            Check(SquadGear.Place(calm, shield, out var where, out var gone)
+                  && where == GearSlot.Offhand && gone == first, "щит встаёт вместо второго оружия");
+            Check(!calm.Give(new InventoryItem("Монеты", "", ItemType.Gold, 5)), "золото не надевают");
+
+            // Кто своего не отдаёт, тот и не меняет. Унылому лишнего
+            // не надо, а сменить одно на другое — не лишнее.
+            var proud = MakeWarrior("Спесь", SinType.Pride, 80f);
+            proud.Give(new InventoryItem("Свой меч", "", ItemType.Equipment, attack: 1f));
+            proud.Give(new InventoryItem("Свой щит", "", ItemType.Equipment, defense: 1f, slot: GearSlot.Offhand));
+            Check(!SquadGear.WillTake(proud, new InventoryItem("Чужой меч", "", ItemType.Equipment, attack: 3f), out _),
+                  "гордец своего оружия не сменит");
+
+            sloth.Give(new InventoryItem("Старый ворот", "", ItemType.Equipment, defense: 1f));
+            Check(SquadGear.WillTake(sloth, collar, out _), "унылый сменить согласен — это не лишнее");
 
             Check(!Regex.IsMatch(SquadGear.GoldWord(57) + SquadGear.Effect(axe) + SquadGear.Effect(collar), "[0-9]"),
                   "казна и вещи — словами, без чисел");

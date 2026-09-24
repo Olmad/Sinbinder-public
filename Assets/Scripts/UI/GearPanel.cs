@@ -9,7 +9,8 @@ namespace Sinbinder.UI
 {
     /// <summary>
     /// Снаряжение воина и запасы отряда — клавиша I (docs/34-GEAR.md, шаг
-    /// сверху). Слева — руки выделенного воина, справа — запасы. Вещь
+    /// сверху). Слева — пять мест выделенного воина (оружие, щит или второе
+    /// оружие, шлем, броня, пояс), справа — запасы. Вещь
     /// переносится щелчком, а воин отвечает как душа (<see cref="SquadGear"/>):
     /// может не взять и может не отдать.
     ///
@@ -188,15 +189,16 @@ namespace Sinbinder.UI
             Clear(_hands);
             Clear(_store);
 
-            foreach (var item in new List<InventoryItem>(_warrior.Carried))
+            foreach (var slot in SquadGear.Slots)
             {
+                var item = _warrior.Worn(slot);
+                string place = SquadGear.SlotWord(slot);
+                if (item == null) { Row(_hands, $"{place}: — Пусто —", "", null); continue; }
+
                 bool gives = SquadGear.WillGive(_warrior, item, out string word);
-                Row(_hands, item.Name, Line(item, gives ? "отдаст" : $"не отдаст: {word}"),
+                Row(_hands, $"{place}: {item.Name}", Line(item, gives ? "отдаст" : $"не отдаст: {word}"),
                     () => TakeBack(item));
             }
-
-            for (int i = _warrior.Carried.Count; i < SquadGear.Hands; i++)
-                Row(_hands, "— Пусто —", "", null);
 
             if (store != null)
             {
@@ -206,7 +208,7 @@ namespace Sinbinder.UI
                     if (item == null || item.Type == ItemType.Gold) continue;
 
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
-                    Row(_store, item.Name, Line(item, takes ? $"возьмёт: {word}" : $"не возьмёт: {word}"),
+                    Row(_store, item.Name, Line(item, takes ? word : $"не возьмёт: {word}"),
                         () => HandOver(item));
                     shown++;
                 }
@@ -278,9 +280,9 @@ namespace Sinbinder.UI
             _title = Label(panel, "Заголовок", 30, TextAnchor.UpperLeft,
                            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(28f, -64f), new Vector2(-28f, -18f));
 
-            var left = Label(panel, "В руках", 20, TextAnchor.UpperLeft,
+            var left = Label(panel, "На воине", 20, TextAnchor.UpperLeft,
                              new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -100f), new Vector2(-12f, -70f));
-            left.text = "В руках";
+            left.text = "На воине";
             left.color = new Color(0.80f, 0.72f, 0.46f);
 
             var right = Label(panel, "Запасы", 20, TextAnchor.UpperLeft,
@@ -300,7 +302,7 @@ namespace Sinbinder.UI
 
             var hint = Label(panel, "Клавиши", 16, TextAnchor.LowerLeft,
                              new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 10f), new Vector2(-28f, 32f));
-            hint.text = "Щелчок по вещи в руках — забрать в запасы. I, F или Esc — закрыть.";
+            hint.text = "Щелчок по вещи на воине — забрать в запасы. Занятое место — замена. I, F или Esc — закрыть.";
             hint.color = new Color(0.55f, 0.52f, 0.48f);
 
             _root.SetActive(false);

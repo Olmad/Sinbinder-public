@@ -64,11 +64,12 @@ namespace Sinbinder.Gameplay
             {
                 var trophy = Trophy(what);
 
-                if (SquadGear.WillTake(who, trophy, out string word))
+                SquadGear.Place(who, trophy, out _, out var old);
+                if (SquadGear.Pick(who, trophy, store, out string word))
                 {
-                    who.Give(trophy);
+                    string swap = old == null ? "" : $" Прежнее — {old.Name.ToLowerInvariant()} — уходит в запасы.";
                     log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} забирает трофей: {what.ToLowerInvariant()}."));
+                        $"{who.DisplayName} забирает трофей: {what.ToLowerInvariant()}.{swap}"));
                 }
                 else
                 {

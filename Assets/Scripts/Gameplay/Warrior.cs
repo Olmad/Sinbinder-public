@@ -44,6 +44,13 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private readonly List<Inventory.InventoryItem> _carried = new();
 
+        /// <summary>
+        /// Те же вещи по местам (docs/34-GEAR.md): одно место — одна вещь.
+        /// Номер — <see cref="Inventory.GearSlot"/>. Список выше — они же
+        /// подряд, для движка: искушению всё равно, где вещь висит.
+        /// </summary>
+        private readonly Inventory.InventoryItem[] _worn = new Inventory.InventoryItem[6];
+
         public string Id => _id;
         public string DisplayName => _soul.Name;
 
@@ -97,14 +104,24 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public float Attack
         {
-            get { float sum = _attack; foreach (var i in _carried) if (i != null) sum += i.AttackBonus; return sum; }
+            get
+            {
+                float sum = _attack;
+                for (int s = 0; s < _worn.Length; s++)
+                {
+                    var i = _worn[s];
+                    if (i == null) continue;
+                    sum += s == (int)Inventory.GearSlot.Offhand ? i.AttackBonus * CombatMath.OffhandShare : i.AttackBonus;
+                }
+                return sum;
+            }
             set => _attack = value;
         }
 
-        /// <summary>Защита в бою: от оболочки плюс от вещей в руках. См. <see cref="CombatMath"/>.</summary>
+        /// <summary>Защита в бою: от оболочки плюс от надетого. См. <see cref="CombatMath"/>.</summary>
         public float Defense
         {
-            get { float sum = _defense; foreach (var i in _carried) if (i != null) sum += i.DefenseBonus; return sum; }
+            get { float sum = _defense; foreach (var i in _worn) if (i != null) sum += i.DefenseBonus; return sum; }
             set => _defense = value;
         }
         public Core.RelationshipSystem Relationships => _relationships;
@@ -374,21 +391,78 @@ namespace Sinbinder.Gameplay
 
         public IReadOnlyList<Inventory.InventoryItem> Carried => _carried;
 
-        /// <summary>Вложить предмет в руки. Один и тот же — только раз.</summary>
-        public bool Give(Inventory.InventoryItem item)
-        {
-            if (item == null) return false;
-            foreach (var carried in _carried)
-                if (carried.Name == item.Name) return false;
+        /// <summary>Что надето на этом месте. Пусто — null.</summary>
+        public Inventory.InventoryItem Worn(Inventory.GearSlot slot) => _worn[(int)slot];
 
-            _carried.Add(item);
+        /// <summary>
+        /// Свободное место, куда встанет вещь. Оружие — в руку, а если рука
+        /// занята, во вторую. None — всё, куда она встаёт, занято: тогда
+        /// это уже замена, и решает её не воин, а <see cref="SquadGear"/>.
+        /// </summary>
+        public Inventory.GearSlot FreePlaceFor(Inventory.InventoryItem item)
+        {
+            if (item == null) return Inventory.GearSlot.None;
+
+            var own = item.Slot;
+            if (own == Inventory.GearSlot.None) return own;
+            if (Worn(own) == null) return own;
+            if (own == Inventory.GearSlot.Weapon && Worn(Inventory.GearSlot.Offhand) == null)
+                return Inventory.GearSlot.Offhand;
+            return Inventory.GearSlot.None;
+        }
+
+        /// <summary>Надеть на свободное место. Ложь — места нет или вещь уже на нём.</summary>
+        public bool Give(Inventory.InventoryItem item) => Wear(item, FreePlaceFor(item));
+
+        /// <summary>Надеть на это место, если оно свободно и вещь на него встаёт.</summary>
+        public bool Wear(Inventory.InventoryItem item, Inventory.GearSlot slot)
+        {
+            if (item == null || !item.Fits(slot) || Worn(slot) != null) return false;
+            if (_carried.Contains(item)) return false;
+
+            _worn[(int)slot] = item;
+            Arrange();
             return true;
         }
 
-        /// <summary>Выпустить вещь из рук. Отдаёт ли — решает не здесь (SquadGear).</summary>
-        public bool Drop(Inventory.InventoryItem item) => item != null && _carried.Remove(item);
+        /// <summary>Снять вещь. Отдаёт ли — решает не здесь (SquadGear).</summary>
+        public bool Drop(Inventory.InventoryItem item)
+        {
+            if (item == null) return false;
+            for (int s = 0; s < _worn.Length; s++)
+            {
+                if (_worn[s] != item) continue;
+                _worn[s] = null;
+                Arrange();
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>Забрать всё. Искушение обратимо — в этом его смысл.</summary>
-        public void TakeAll() => _carried.Clear();
+        public void TakeAll()
+        {
+            System.Array.Clear(_worn, 0, _worn.Length);
+            _carried.Clear();
+        }
+
+        /// <summary>
+        /// Лучшее оружие — в главной руке. Опустела главная — вторая
+        /// перекладывает своё в неё; щит так и остаётся щитом.
+        /// </summary>
+        private void Arrange()
+        {
+            int main = (int)Inventory.GearSlot.Weapon, off = (int)Inventory.GearSlot.Offhand;
+            var second = _worn[off];
+            if (second != null && second.Slot == Inventory.GearSlot.Weapon
+                && (_worn[main] == null || second.AttackBonus > _worn[main].AttackBonus))
+            {
+                _worn[off] = _worn[main];
+                _worn[main] = second;
+            }
+
+            _carried.Clear();
+            foreach (var i in _worn) if (i != null) _carried.Add(i);
+        }
     }
 }

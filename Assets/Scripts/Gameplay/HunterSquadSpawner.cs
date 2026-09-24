@@ -328,7 +328,7 @@ namespace Sinbinder.Gameplay
                 warrior.Give(new Inventory.InventoryItem(
                     "Освящённый нагрудник",
                     "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили.",
-                    Inventory.ItemType.Equipment, defense: 2f));
+                    Inventory.ItemType.Equipment, defense: 2f, slot: Inventory.GearSlot.Body));
 
             // Та же оснастка, что и у своих: без агента охотники стояли
             // бы в двенадцати метрах при дальности удара в два, и бой
