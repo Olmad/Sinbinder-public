@@ -77,7 +77,11 @@ namespace Sinbinder.Gameplay
             // а инквизиторы»). Гордыня, а не Чревоугодие: он пришёл
             // не есть, а судить.
             new("Инквизитор",       SinType.Pride,    MoralType.Vicious, 55f,
-                height: 1.45f, girth: 0.62f, speed: 2.8f, toughness: 1),
+                height: 1.45f, girth: 0.62f, speed: 2.8f, toughness: 1,
+                // Во второй волне ищет Греховода магией (Scryer): замысел
+                // автора от 24 сентября. Самый медленный в стае — и потому
+                // колдует из-за спин, до него надо прорваться.
+                scries: true),
 
             // Средний во всём, и тем узнаваем.
             new("Ловчий",           SinType.Greed,    MoralType.Vicious, 50f,
@@ -98,9 +102,13 @@ namespace Sinbinder.Gameplay
             /// <summary>Прибавка к уровню: жизнь, удар и защита разом.</summary>
             public readonly int Toughness;
 
+            /// <summary>Ищет Греховода магией, если идёт во второй волне.</summary>
+            public readonly bool Scries;
+
             public Kind(string name, SinType sin, MoralType moral, float intensity,
-                float height, float girth, float speed, int toughness)
+                float height, float girth, float speed, int toughness, bool scries = false)
             {
+                Scries = scries;
                 Name = name;
                 Sin = sin;
                 Moral = moral;
@@ -220,6 +228,10 @@ namespace Sinbinder.Gameplay
 
             var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
 
+            // Новая охота — новый след: прежний, из прошлой партии или
+            // прошлой волны, ничего не значит.
+            if (_afterFieldClear) SinbinderTrail.Forget();
+
             for (int i = 0; i < _count; i++)
             {
                 var hunter = SpawnHunter(i);
@@ -266,6 +278,16 @@ namespace Sinbinder.Gameplay
             return transform.position + transform.right * Mathf.Lerp(-_lineWidth * 0.5f, _lineWidth * 0.5f, t);
         }
 
+        /// <summary>
+        /// Сердце лагеря — костёр, у которого стоит отряд. Нет его — середина
+        /// карты: цель первой волны обязана быть, иначе она встанет у края.
+        /// </summary>
+        private static Vector3 CampCentre()
+        {
+            var camp = Object.FindFirstObjectByType<PrologueCampSpawner>();
+            return camp != null ? camp.transform.position : Vector3.zero;
+        }
+
         private Warrior SpawnHunter(int index)
         {
             var kind = Kinds[index % Kinds.Length];
@@ -278,10 +300,15 @@ namespace Sinbinder.Gameplay
 
             var warrior = go.AddComponent<Warrior>();
 
-            // Охотник пришёл за Греховодом и не забывает этого (HuntsSinbinder).
-            // Метка ставится до движка решений: AOSWarriorWrapper читает её
+            // Куда идти, когда рядом драться не с кем (HunterGoal): первая
+            // волна — к костру, вторая — по следу, который находит Инквизитор.
+            // Ставится до движка решений: AOSWarriorWrapper читает цель
             // при появлении.
-            go.AddComponent<HuntsSinbinder>();
+            go.AddComponent<HunterGoal>().Configure(
+                _afterFieldClear ? HunterGoal.Aim.Trail : HunterGoal.Aim.CampCentre,
+                CampCentre());
+
+            if (_afterFieldClear && kind.Scries) go.AddComponent<Scryer>();
 
             var soul = new SoulData(name, kind.Sin, kind.Moral,
                                     _level + kind.Toughness, kind.Intensity);

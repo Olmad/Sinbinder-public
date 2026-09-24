@@ -28,7 +28,7 @@ namespace Sinbinder.AOS
         {
             _warrior = GetComponent<Warrior>();
             _self = GetComponent<Damageable>();
-            _hunt = GetComponent<HuntsSinbinder>();
+            _goal = GetComponent<HunterGoal>();
             _resolver = new BehaviourResolver();
         }
 
@@ -66,13 +66,14 @@ namespace Sinbinder.AOS
         {
             if (_self != null && _self.IsDead) return;
 
-            // Охотник без врага рядом идёт к Греховоду, что бы ни выбрал голос
-            // (HuntsSinbinder). Рядом кто-то есть — решает голос, как у всех.
-            if (Hunting(action))
+            // Охотник без врага рядом идёт к своей цели, что бы ни выбрал голос
+            // (HunterGoal): первая волна — к костру, вторая — по следу
+            // Инквизитора. Рядом кто-то есть — решает голос, как у всех.
+            if (Hunting(action, out var goal))
             {
                 ShowDecisionIcon(ActionType.Attack);
                 var legs = GetComponent<UnitMover>();
-                if (legs != null) legs.CommandMove(SinbinderPlayer.Where);
+                if (legs != null) legs.CommandMove(goal);
                 return;
             }
 
@@ -205,24 +206,27 @@ namespace Sinbinder.AOS
             }
         }
 
-        private HuntsSinbinder _hunt;
+        private HunterGoal _goal;
 
         /// <summary>
-        /// Идёт ли охотник к Греховоду вместо выбранного. Только когда рядом
+        /// Идёт ли охотник к цели вместо выбранного. Только когда рядом
         /// (десять метров, <see cref="DecisionContext.NearbyEnemies"/>) драться
         /// не с кем, а голос выбрал стоять, грабить или бить кого-то вдали:
         /// тогда он не стоит, не бредёт к трупам и не гонится за дальним
         /// рядовым — он идёт туда, зачем пришёл. Бегство, спасение своего,
         /// умения — остаются голосу: они случаются, только когда рядом кто-то есть.
         /// </summary>
-        private bool Hunting(ActionType action)
+        private bool Hunting(ActionType action, out Vector3 where)
         {
-            if (_hunt == null || !HuntsSinbinder.QuarryAlive) return false;
+            where = default;
+            if (_goal == null) return false;
             if (LastContext != null && LastContext.NearbyEnemies > 0) return false;
 
-            return action == ActionType.Idle
-                || action == ActionType.Loot
-                || action == ActionType.Attack;
+            if (action != ActionType.Idle
+             && action != ActionType.Loot
+             && action != ActionType.Attack) return false;
+
+            return _goal.TryGet(transform.position, out where);
         }
 
         /// <summary> Публичный метод для поиска лучшей вражеской цели. </summary>
