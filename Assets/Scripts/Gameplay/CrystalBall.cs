@@ -42,13 +42,14 @@ namespace Sinbinder.Gameplay
                + "заметил игрока. Мерится по земле, в метрах.")]
         [SerializeField] private float _reach = CampFocus.TableReach;
 
-        [Tooltip("Страховка: игрок так и не подошёл к сундуку. Тревогу ведёт "
-               + "разобранный сундук, а не секунды после совета; срок только "
-               + "не даёт доле зависнуть и, истекая, пишет предупреждение.")]
-        [SerializeField] private float _waitForChest = 120f;
+        [Tooltip("Как часто напоминать о сундуке, пока его не разобрали. "
+               + "Тревогу ведёт разобранный сундук, и только он: до 24 сентября "
+               + "через две минуты она приходила сама.")]
+        [SerializeField] private float _chestNudge = 60f;
 
-        [Tooltip("Страховка: игрок так и не вернулся к горящему шару.")]
-        [SerializeField] private float _waitForReturn = 90f;
+        [Tooltip("Как часто Карган зовёт к горящему шару, пока Греховод "
+               + "не подошёл. Отряды гаснут только у него на глазах.")]
+        [SerializeField] private float _returnNudge = 40f;
 
         [Tooltip("Сколько игрок смотрит в горящий шар, прежде чем лагерь "
                + "уходит в разгром.")]
@@ -197,8 +198,8 @@ namespace Sinbinder.Gameplay
             bool hasChest = Object.FindFirstObjectByType<TrophyChest>() != null;
 
             if (hasChest)
-                yield return Beat.Until(() => TrophyChest.Looted, _waitForChest,
-                    "Трофеи так и не разобрали — тревога приходит без них.");
+                yield return Beat.UntilPlayer(() => TrophyChest.Looted, _chestNudge,
+                    "Карган ждёт у сундука Марги.");
 
             Alarm();
 
@@ -226,8 +227,8 @@ namespace Sinbinder.Gameplay
             {
                 log?.Write("Карган: «Владыка, взгляните в шар. Скорее».");
 
-                yield return Beat.Until(PlayerIsClose, _waitForReturn,
-                    "Греховод не вернулся к шару — отряды гаснут без него.");
+                yield return Beat.UntilPlayer(PlayerIsClose, _returnNudge,
+                    "Карган: «Владыка, шар. Скорее».");
             }
 
             // «Игрок смотрит в шар — и видит, как его отряды гаснут один

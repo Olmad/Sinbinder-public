@@ -48,6 +48,14 @@ namespace Sinbinder.Gameplay
                + "прежде вёл именно конец боя.")]
         [SerializeField] private float _endsAfterSeconds;
 
+        [Tooltip("Последняя доля: насколько близко к алтарю подойти, чтобы "
+               + "отряд вошёл следом. Мерится по земле, в метрах.")]
+        [SerializeField] private float _altarReach = 3.5f;
+
+        [Tooltip("Последняя доля: как часто напоминать, что склеп ждёт, пока "
+               + "Греховод не вошёл в зал.")]
+        [SerializeField] private float _altarNudge = 60f;
+
         [Tooltip("Что сказать, входя в последнюю долю. Пусто — молча.")]
         [TextArea(1, 3)]
         [SerializeField] private string _arrivalLine = "";
@@ -62,6 +70,15 @@ namespace Sinbinder.Gameplay
         private bool _battleJoined;
         private bool _leaving;
         private float _sinceCommander;
+
+        /// <summary>
+        /// Куда войти в последней доле: алтарь зала. Нет алтаря — зал целиком;
+        /// нет и зала — доля идёт по времени, как до 24 сентября, и говорит
+        /// об этом в консоль.
+        /// </summary>
+        private Transform _altar;
+        private bool _entered;
+        private float _sinceNudge;
 
         /// <summary>
         /// Состав отряда статичен и переживает не только смену сцены,
@@ -111,6 +128,34 @@ namespace Sinbinder.Gameplay
 
             if (!string.IsNullOrEmpty(_arrivalLine))
                 Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_arrivalLine);
+
+            if (_endsAfterSeconds > 0f)
+            {
+                var altar = GameObject.Find("Altar");
+                if (altar == null) altar = GameObject.Find("Зал");
+
+                if (altar != null) _altar = altar.transform;
+                else Debug.LogWarning("[ПРОЛОГ] В последней доле нет ни алтаря, "
+                                    + "ни зала: эпилог придёт по времени, а не "
+                                    + "по шагу игрока. Пересоберите сцены.");
+            }
+        }
+
+        /// <summary>
+        /// Вошёл ли Греховод в зал. «Игрок входит в склеп. Пустой трон,
+        /// алтарь, замурованный гроб в нише. И тогда входит отряд»
+        /// (09-PROLOGUE §4, сцена 8). До 24 сентября эпилог приходил
+        /// через четырнадцать секунд после ответа о плате, где бы игрок
+        /// ни стоял, — автор: «можно просто стоять, а сюжет будет
+        /// двигаться».
+        /// </summary>
+        private bool EnteredHall()
+        {
+            if (_entered || _altar == null || !SinbinderPlayer.Exists) return true;
+
+            _entered = CampFocus.GroundDistance(SinbinderPlayer.Where, _altar.position)
+                    <= _altarReach;
+            return _entered;
         }
 
         void OnDestroy()
@@ -129,8 +174,9 @@ namespace Sinbinder.Gameplay
         {
             if (_leaving || _waitForBattle || _waitForEscape) return;
 
-            // Последняя доля кончается по времени: игрок входит в склеп,
-            // осматривается, и входит отряд. Ждать здесь нечего и некого.
+            // Последняя доля: игрок входит в зал, осматривается, и входит
+            // отряд. Ждём шага — дойти до алтаря, — а время отсчитываем
+            // только после него: на прочтение и на то, чтобы отряд вошёл.
             if (_endsAfterSeconds > 0f)
             {
                 // Спросили о плате — ждём ответа, сколько нужно. Эпилог
@@ -145,6 +191,21 @@ namespace Sinbinder.Gameplay
                 // которого доля есть, уже сделан.
                 if (Core.GamePauseController.Instance != null
                     && Core.GamePauseController.Instance.IsPaused) return;
+
+                // Шаг игрока: войти в зал. Пока он стоит у входа, отряд
+                // не входит — только склеп напоминает о себе.
+                if (!EnteredHall())
+                {
+                    _sinceCommander = 0f;
+                    _sinceNudge += Time.unscaledDeltaTime;
+                    if (_sinceNudge >= _altarNudge)
+                    {
+                        _sinceNudge = 0f;
+                        Object.FindFirstObjectByType<UI.BattleLogUI>()
+                              ?.Write("Зал впереди. Алтарь ждёт.");
+                    }
+                    return;
+                }
 
                 _sinceCommander += Time.unscaledDeltaTime;
                 if (_sinceCommander < _endsAfterSeconds) return;

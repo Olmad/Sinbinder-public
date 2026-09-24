@@ -270,6 +270,13 @@ namespace Sinbinder.EditorTools
                 S("склеп: заплатили", PaySalary,
                   () => UI.SalaryPanelUI.Answered, 5f),
 
+                // С 24 сентября эпилог ждёт шага: Греховод входит в зал.
+                // Раньше он приходил по часам, и прогон просто ждал.
+                S("склеп: Греховод у алтаря", () => HeroTo(Altar(), 1.5f),
+                  () => SinbinderPlayer.Exists && Altar() != null
+                     && CampFocus.GroundDistance(SinbinderPlayer.Where,
+                                                 Altar().position) <= 3.5f, 5f),
+
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
             };
@@ -561,6 +568,17 @@ namespace Sinbinder.EditorTools
         private static CrystalBall Ball() => UnityEngine.Object.FindFirstObjectByType<CrystalBall>();
 
         private static TrophyChest Chest() => UnityEngine.Object.FindFirstObjectByType<TrophyChest>();
+
+        /// <summary>
+        /// Алтарь зала склепа — туда входит Греховод перед эпилогом.
+        /// Нет алтаря — зал целиком: тем же порядком ищет PrologueDirector.
+        /// </summary>
+        private static Transform Altar()
+        {
+            var altar = GameObject.Find("Altar");
+            if (altar == null) altar = GameObject.Find("Зал");
+            return altar != null ? altar.transform : null;
+        }
 
         private static UI.CommanderCouncilUI Council()
             => UnityEngine.Object.FindFirstObjectByType<UI.CommanderCouncilUI>();

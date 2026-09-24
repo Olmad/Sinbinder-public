@@ -35,8 +35,9 @@ namespace Sinbinder.Gameplay
                + "провожатый заговорит, пока игрок ещё осматривается на пороге.")]
         [SerializeField] private float _leftTent = 2.5f;
 
-        [Tooltip("Страховка: если игрок так и не сошёл с места. Не переход, "
-               + "а защита от зависания — и истекая, она пишет предупреждение.")]
+        [Tooltip("Страховка: заставка так и не ушла. Это ведёт не игрок, "
+               + "и истекая, она пишет предупреждение. Шаг «отойти от палатки» "
+               + "страховки не имеет: его ждут, сколько потребуется.")]
         [SerializeField] private float _leaveSafety = 45f;
 
         [Tooltip("Насколько близко провожатый подходит к игроку.")]
@@ -82,10 +83,11 @@ namespace Sinbinder.Gameplay
 
             Vector3 start = SinbinderPlayer.Exists ? SinbinderPlayer.Where : Vector3.zero;
 
-            yield return Beat.Until(() => Free() && (!SinbinderPlayer.Exists
+            // Шаг игрока: пока он стоит на пороге, лагерь не идёт дальше.
+            // До 24 сентября через 45 секунд провожатый подходил сам.
+            yield return Beat.UntilPlayer(() => Free() && (!SinbinderPlayer.Exists
                     || CampFocus.GroundDistance(SinbinderPlayer.Where, start) >= _leftTent),
-                _leaveSafety,
-                "Греховод так и не отошёл от палатки — провожатый подходит сам.");
+                0f, null);
 
             var escort = Escort();
 
