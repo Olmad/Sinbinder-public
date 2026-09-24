@@ -121,7 +121,7 @@ namespace Sinbinder.UI
 
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
 
-            Say(SaveSystem.Restore(save)
+            Say(SaveSystem.ReturnTo(save)
                 ? $"Вернулись к «{slot}»."
                 : "Эта запись не от нынешней игры.");
         }

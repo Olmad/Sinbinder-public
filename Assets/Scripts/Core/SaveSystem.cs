@@ -125,6 +125,79 @@ namespace Sinbinder.Core
         // Возврат
         // ──────────────────────────────────
 
+        // ──────────────────────────────────
+        // Вернуться туда, где записался
+        // ──────────────────────────────────
+
+        /// <summary>
+        /// Пришли ли мы в эту сцену загрузкой, а не ходом истории.
+        ///
+        /// Живёт ровно одну смену сцены: <c>sceneLoaded</c> звучит после
+        /// <c>Awake</c> новой сцены и до её <c>Start</c>, так что директор
+        /// в своём <c>Awake</c> флаг видит, а следующая сцена — уже нет.
+        /// Иначе флаг пережил бы загрузку, и настоящая новая игра после
+        /// конца демо не сбросила бы отряд.
+        /// </summary>
+        public static bool Arriving { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Listen()
+        {
+            Arriving = false;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Arrived;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += Arrived;
+        }
+
+        private static void Arrived(UnityEngine.SceneManagement.Scene scene,
+                                    UnityEngine.SceneManagement.LoadSceneMode mode)
+            => Arriving = false;
+
+        /// <summary>
+        /// Восстановить запись <b>и вернуться туда, где записался</b>.
+        ///
+        /// До 24 сентября загрузка возвращала состояние, но не место:
+        /// <see cref="Restore"/> ставил отряд, золото и полку, а сцену
+        /// из записи не читал никто. Самый вероятный путь игрока был
+        /// худшим: запустил сборку, нажал «Продолжить» — и получил
+        /// состояние склепа, стоя в лагере.
+        ///
+        /// <b>Порядок — сперва состояние, потом сцена.</b> Всё, что
+        /// восстанавливается, смену сцены переживает (три одиночки
+        /// держатся через <c>DontDestroyOnLoad</c>, три статические),
+        /// и спавнеры новой сцены читают уже верный состав.
+        ///
+        /// <b>Ловушка, ради которой заведён <see cref="Arriving"/>.</b>
+        /// Директор лагеря в своём <c>Awake</c> забывает отряд — это
+        /// сброс новой игры. Загрузи лагерь без флага, и он молча
+        /// выбросит только что восстановленную запись.
+        ///
+        /// <b>Загрузка в той же сцене остаётся прежней</b> — состояние
+        /// на месте, без перезагрузки. Перезагружать сцену значило бы
+        /// заново проиграть её доли, а это уже решение, а не починка
+        /// (разбор — 14-HANDOFF §49).
+        /// </summary>
+        public static bool ReturnTo(SaveGame save)
+        {
+            if (!Restore(save)) return false;
+
+            string here = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (string.IsNullOrEmpty(save.Scene) || save.Scene == here) return true;
+
+            // Сцены нет в сборке — не падаем, а говорим. Состояние
+            // вернули, место вернуть не можем, и игрок должен это знать.
+            if (!Application.CanStreamedLevelBeLoaded(save.Scene))
+            {
+                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{save.Scene}» нет в сборке: "
+                               + "состояние возвращено, место — нет.");
+                return true;
+            }
+
+            Arriving = true;
+            GamePauseController.Instance?.Resume();
+            UnityEngine.SceneManagement.SceneManager.LoadScene(save.Scene);
+            return true;
+        }
+
         /// <summary>
         /// Вернуть состояние. Возвращает <c>false</c>, если снимок
         /// не от этой игры: молча прочитать половину хуже, чем не

@@ -103,7 +103,7 @@ namespace Sinbinder.UI
 
             // Режим лежит в самом файле, поэтому его здесь не спрашивают:
             // снимок ответственной игры не имеет права открыться свободной.
-            if (!SaveSystem.Restore(save))
+            if (!SaveSystem.ReturnTo(save))
             {
                 Say("Эта запись не от нынешней игры.");
                 return;

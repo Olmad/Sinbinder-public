@@ -161,7 +161,7 @@ namespace Sinbinder.UI
         {
             var save = SaveSystem.Read(SaveSystem.QuickPath);
 
-            if (!SaveSystem.Restore(save))
+            if (!SaveSystem.ReturnTo(save))
             {
                 Say("Эта запись не от нынешней игры.");
                 return;
