@@ -164,7 +164,23 @@ namespace Sinbinder.UI
             if (slot == _forecastFor && Time.unscaledTime - _forecastAt < 0.5f) return _forecast;
             _forecastFor = slot;
             _forecastAt = Time.unscaledTime;
+            _forecast = Predict(manager, slot.Kind);
+            return _forecast;
+        }
 
+        /// <summary>
+        /// Прогноз на приказ этого вида для нынешнего выделения — без
+        /// наведения и без счётчика. Открыт автопрогону: навести мышь он
+        /// не может, а прогноз обязан быть проверен в игре.
+        /// </summary>
+        public static string Predict(CommandKind kind)
+        {
+            var manager = SelectionManager.Instance;
+            return manager == null ? "" : Predict(manager, kind);
+        }
+
+        private static string Predict(SelectionManager manager, CommandKind kind)
+        {
             _resolver ??= new BehaviourResolverHolder();
             var willing = new List<string>();
             var doubtful = new List<string>();
@@ -176,7 +192,7 @@ namespace Sinbinder.UI
                 var w = unit.GetComponentInParent<Warrior>();
                 if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
 
-                var ctx = AOS.CombatDecisionContext.Imagine(w, slot.Kind, Voice.Enabled ? Voice.MuffleFor(w) : 0f);
+                var ctx = AOS.CombatDecisionContext.Imagine(w, kind, Voice.Enabled ? Voice.MuffleFor(w) : 0f);
                 if (_resolver.Value.WouldObey(w, ctx)) { willing.Add(w.DisplayName); continue; }
 
                 if (shown++ >= 3) { doubtful.Add(w.DisplayName); continue; }
@@ -187,8 +203,7 @@ namespace Sinbinder.UI
             var lines = new List<string>();
             if (willing.Count > 0) lines.Add("Скорее пойдут: " + string.Join(", ", willing) + ".");
             if (doubtful.Count > 0) lines.Add("Вряд ли — " + string.Join("; ", doubtful) + ".");
-            _forecast = string.Join("\n", lines);
-            return _forecast;
+            return string.Join("\n", lines);
         }
 
         /// <summary>Один резолвер на панель и причина отказа тем же правилом, что в бою.</summary>

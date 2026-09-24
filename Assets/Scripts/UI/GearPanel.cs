@@ -113,6 +113,22 @@ namespace Sinbinder.UI
             if (_instance != null && _instance._open) _instance.Close();
         }
 
+        /// <summary>
+        /// Разговор с этим воином вблизи — то же, что F от первого лица.
+        /// Автопрогону: ни клавиш, ни взгляда у него нет.
+        /// </summary>
+        public static void TalkTo(Warrior w)
+        {
+            if (_instance == null || _instance._open || w == null || PlayerInventory.Instance == null) return;
+            _instance.OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»", near: true);
+        }
+
+        /// <summary>Перерисовать открытый экран — после обмена мимо щелчка (автопрогон).</summary>
+        public static void Refresh()
+        {
+            if (_instance != null && _instance._open) _instance.Redraw();
+        }
+
         /// <summary>Кнопка «Вещи» на панели приказов: то же, что клавиша I.</summary>
         public static void Toggle()
         {

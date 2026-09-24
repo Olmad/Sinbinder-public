@@ -289,8 +289,32 @@ namespace Sinbinder.EditorTools
                     return true;
                 }, 10f),
 
+                // ── Вещи и прогноз (24 сентября): экраны, которые без рук
+                // автора не открывал никто. Автопилот зовёт их напрямую,
+                // клавиш и мыши у него нет. ──
+                S("вещи: I у выделенного — экран открылся", () =>
+                {
+                    SelectOneOwn();
+                    UI.GearPanel.Toggle();
+                }, () =>
+                {
+                    if (!UI.GearPanel.Open) return false;
+                    UI.GearPanel.Dismiss();
+                    SelectionManager.Instance?.Drop(_clicked);
+                    return true;
+                }, 5f),
+
+                S("вещи: разговор вблизи и обмен", TalkAndHand, () =>
+                {
+                    if (!UI.GearPanel.Open) return false;
+                    UI.GearPanel.Dismiss();
+                    return true;
+                }, 5f),
+
+                S("прогноз на панели приказов", ForecastSquad, () => _forecastOk, 5f),
+
                 S("тревога после сундука", null,
-                  () => Ball() != null && Ball().IsAlarmed, 10f),
+                  () => Ball() != null && Ball().IsAlarmed, 30f),
 
                 // С 24 сентября разгром — событие лагеря, а не новая сцена
                 // (RaidEvent); отдельной сцены набега нет вовсе.
@@ -681,6 +705,61 @@ namespace Sinbinder.EditorTools
             typeof(SelectionManager)
                 .GetMethod("SelectUnit", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.Invoke(manager, new object[] { _clicked });
+        }
+
+        /// <summary>
+        /// Подойти к своему, заговорить, отдать первую вещь мешка. Воин может
+        /// не взять — это ответ души, а не провал; в отчёт идёт, что сказал.
+        /// </summary>
+        private static void TalkAndHand()
+        {
+            Warrior w = null;
+            foreach (var x in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (x != null && !x.IsDead && x.Team == Team.Player && !(x is SinbinderPlayer)) { w = x; break; }
+            if (w == null) return;
+
+            HeroTo(w.transform, 1.5f);
+            UI.GearPanel.TalkTo(w);
+
+            var bag = Inventory.PlayerInventory.Instance;
+            if (bag == null) return;
+            foreach (var item in new List<Inventory.InventoryItem>(bag.GetAllItems()))
+            {
+                if (item == null || item.Slot == Inventory.GearSlot.None) continue;
+                bool took = SquadGear.Hand(w, item, bag, out string word);
+                Write($"  [ОБМЕН] {w.DisplayName} — {item.Name}: {(took ? "взял" : "не взял")} ({word})");
+                break;
+            }
+            UI.GearPanel.Refresh();
+        }
+
+        private static bool _forecastOk;
+
+        /// <summary>
+        /// Прогноз «кто пойдёт» на атаку для всего отряда. Без выключателя
+        /// «причина» прогноза нет, и шаг проходит сразу. Прогноз обязан
+        /// быть непустым и без цифр.
+        /// </summary>
+        private static void ForecastSquad()
+        {
+            _forecastOk = false;
+            if (!AOS.Counterfactual.Enabled) { _forecastOk = true; return; }
+
+            var manager = SelectionManager.Instance;
+            if (manager == null) return;
+            var select = typeof(SelectionManager).GetMethod("SelectUnit", BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) continue;
+                var unit = w.GetComponent<SelectionComponent>();
+                if (unit != null) select?.Invoke(manager, new object[] { unit });
+            }
+
+            string text = UI.CommandPanel.Predict(CommandKind.Attack);
+            Write("  [ПРОГНОЗ] " + text.Replace("\n", " | "));
+            _forecastOk = !string.IsNullOrEmpty(text) && !System.Text.RegularExpressions.Regex.IsMatch(text, "[0-9]");
+
+            foreach (var unit in new List<SelectionComponent>(manager.GetSelectedUnits())) manager.Drop(unit);
         }
 
         /// <summary>Выделен ли он и горит ли у ног круг. Проверив — снять выделение.</summary>
