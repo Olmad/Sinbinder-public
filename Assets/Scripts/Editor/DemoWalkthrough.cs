@@ -34,12 +34,22 @@ namespace Sinbinder.EditorTools
     ///
     /// Запуск: <c>-executeMethod Sinbinder.EditorTools.DemoWalkthrough.Run</c>
     /// без <c>-quit</c>. Итог — <c>Logs/demo-walkthrough.txt</c>.
+    ///
+    /// <b>Со всеми выключателями</b> — <c>RunAll</c> (24 сентября): те же
+    /// шаги, но после входа в Play включено всё, что ждёт прогона (голос,
+    /// причина, удар, добыча, лагерь, склад). Итог — отдельным файлом,
+    /// <c>Logs/demo-walkthrough-all.txt</c>, чтобы сравнить с обычным.
+    /// Провал здесь — не обязательно поломка: воин, не расслышавший приказ
+    /// издали, так и задуман. Читать, а не верить приговору.
     /// </summary>
     [InitializeOnLoad]
     public static class DemoWalkthrough
     {
         private const string Active = "Sinbinder.DemoWalkthrough.Active";
-        private const string Report = "Logs/demo-walkthrough.txt";
+        private const string AllOn = "Sinbinder.DemoWalkthrough.AllOn";
+
+        private static string Report => SessionState.GetBool(AllOn, false)
+            ? "Logs/demo-walkthrough-all.txt" : "Logs/demo-walkthrough.txt";
 
         private static readonly string NL = Environment.NewLine;
 
@@ -75,8 +85,14 @@ namespace Sinbinder.EditorTools
             EditorApplication.update += Tick;
         }
 
-        public static void Run()
+        public static void Run() => Begin(false);
+
+        /// <summary>То же прохождение со всеми выключателями дня.</summary>
+        public static void RunAll() => Begin(true);
+
+        private static void Begin(bool all)
         {
+            SessionState.SetBool(AllOn, all);
 
             // Проверки идут молча. Прогон и дымовая проверка входят
             // в Play и включают весь звук игры — рог отхода, голоса,
@@ -110,7 +126,21 @@ namespace Sinbinder.EditorTools
                 _failed = 0;
                 _errors = 0;
                 _late = 0;
-                Write("=== ПРОХОЖДЕНИЕ ===");
+
+                // Выключатели сбрасываются при входе в Play
+                // (SubsystemRegistration), поэтому включаются здесь,
+                // уже в игре, а не в Run.
+                if (SessionState.GetBool(AllOn, false))
+                {
+                    Gameplay.Voice.Enabled = true;
+                    AOS.Counterfactual.Enabled = true;
+                    Gameplay.CombatMath.Enabled = true;
+                    Gameplay.LootChain.Enabled = true;
+                    Gameplay.CampLife.Enabled = true;
+                    Gameplay.TrophyChest.Store = true;
+                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад ===");
+                }
+                else Write("=== ПРОХОЖДЕНИЕ ===");
             }
 
             if (_index >= _steps.Count)
@@ -247,6 +277,17 @@ namespace Sinbinder.EditorTools
 
                 S("Греховод у сундука", () => HeroTo(Chest()?.transform, 1.2f),
                   () => TrophyChest.Looted, 15f),
+
+                // Сундук-склад (выключатель «склад»): экран сундука обязан
+                // открыться сам и держит паузу — автопилот его закрывает.
+                // Без склада шаг проходит сразу.
+                S("склад: экран сундука открылся", null, () =>
+                {
+                    if (!TrophyChest.Store) return true;
+                    if (!UI.GearPanel.Open) return false;
+                    UI.GearPanel.Dismiss();
+                    return true;
+                }, 10f),
 
                 S("тревога после сундука", null,
                   () => Ball() != null && Ball().IsAlarmed, 10f),

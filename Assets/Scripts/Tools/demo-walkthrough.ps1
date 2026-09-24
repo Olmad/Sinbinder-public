@@ -21,14 +21,23 @@
     Сколько ждать. Прогон обязан заканчиваться сам; если не кончился,
     это провал, а не повод ждать дальше.
 
+.PARAMETER All
+    То же прохождение со всеми выключателями дня (голос, причина, удар,
+    добыча, лагерь, склад). Отчёт — отдельным файлом, *-all.txt.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File Tools\demo-walkthrough.ps1
+    powershell -ExecutionPolicy Bypass -File Tools\demo-walkthrough.ps1 -All
 #>
 
 param(
     [string]$Project = "",
-    [int]$TimeoutSeconds = 900
+    [int]$TimeoutSeconds = 900,
+    [switch]$All
 )
+
+$suffix = if ($All) { "-all" } else { "" }
+$method = if ($All) { "RunAll" } else { "Run" }
 
 $ErrorActionPreference = "Stop"
 
@@ -111,8 +120,8 @@ Write-Host "Редактор: $unity"
 # прогоном 18 сентября — та же ловушка, что уже решена в unity-check.ps1).
 $logDir = Join-Path $Project "Logs"
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
-$log    = Join-Path $logDir "demo-walkthrough.log"
-$report = Join-Path $Project "Logs\demo-walkthrough.txt"
+$log    = Join-Path $logDir "demo-walkthrough$suffix.log"
+$report = Join-Path $Project "Logs\demo-walkthrough$suffix.txt"
 Remove-Item $log, $report -ErrorAction SilentlyContinue
 
 # Графику не отключаем: прогон входит в Play, ведёт NavMeshAgent и жмёт
@@ -122,7 +131,7 @@ $proc = Start-Process -FilePath $unity -PassThru -ArgumentList @(
     "-batchmode",
     "-projectPath", $Project,
     "-logFile", $log,
-    "-executeMethod", "Sinbinder.EditorTools.DemoWalkthrough.Run"
+    "-executeMethod", "Sinbinder.EditorTools.DemoWalkthrough.$method"
 )
 
 if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Прогон демо целиком, без человека. macOS и Linux.
 #
-#   ./Tools/demo-walkthrough.sh [путь_к_проекту] [секунд_на_всё]
+#   ./Tools/demo-walkthrough.sh [путь_к_проекту] [секунд_на_всё] [all]
+#
+# Третий аргумент «all» — то же прохождение со всеми выключателями дня
+# (голос, причина, удар, добыча, лагерь, склад); отчёт — отдельным файлом.
 #
 # Брат unity-check.sh. Тот компилирует и гоняет самопроверку движка;
 # этот запускает демо и нажимает за игрока — от палатки до склепа.
@@ -13,6 +16,10 @@ set -uo pipefail
 
 project="${1:-}"
 limit="${2:-900}"
+mode="${3:-}"
+method="Run"
+suffix=""
+if [ "$mode" = "all" ]; then method="RunAll"; suffix="-all"; fi
 
 if [ -z "$project" ]; then
     project="$PWD"
@@ -53,8 +60,8 @@ done
 # Лог — в Logs/, а не рядом со скриптом: всё, что лежит в Assets,
 # редактор пытается импортировать, и растущий лог он импортирует
 # без конца — «infinite import loop» прямо посреди прогона.
-log="$project/Logs/demo-walkthrough.log"
-report="$project/Logs/demo-walkthrough.txt"
+log="$project/Logs/demo-walkthrough$suffix.log"
+report="$project/Logs/demo-walkthrough$suffix.txt"
 rm -f "$log" "$report"
 
 # Снимки шагов пересобираются каждым прогоном. Старые не чистить
@@ -68,7 +75,7 @@ rm -rf "$project/Docs/Образцы/прохождение"
 echo "Запускаю прогон. Срок — $limit сек, дальше считаем, что он завис."
 "$unity" -batchmode \
     -projectPath "$project" -logFile "$log" \
-    -executeMethod Sinbinder.EditorTools.DemoWalkthrough.Run &
+    -executeMethod "Sinbinder.EditorTools.DemoWalkthrough.$method" &
 pid=$!
 
 waited=0

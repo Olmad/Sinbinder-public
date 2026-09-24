@@ -107,6 +107,12 @@ namespace Sinbinder.UI
             if (_prompt != null) _prompt.text = "";
         }
 
+        /// <summary>Закрыть экран, если открыт. Автопрогону: клавиш у него нет.</summary>
+        public static void Dismiss()
+        {
+            if (_instance != null && _instance._open) _instance.Close();
+        }
+
         /// <summary>Кнопка «Вещи» на панели приказов: то же, что клавиша I.</summary>
         public static void Toggle()
         {
