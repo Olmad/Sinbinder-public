@@ -372,6 +372,9 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
+        /// <summary>Выпустить вещь из рук. Отдаёт ли — решает не здесь (SquadGear).</summary>
+        public bool Drop(Inventory.InventoryItem item) => item != null && _carried.Remove(item);
+
         /// <summary>Забрать всё. Искушение обратимо — в этом его смысл.</summary>
         public void TakeAll() => _carried.Clear();
     }

@@ -103,6 +103,7 @@ namespace Sinbinder.Dev
             foreach (var b in Find<UI.SquadStrategyUI>()) yield return b;
             foreach (var b in Find<UI.ClarityPanel>()) yield return b;
             foreach (var b in Find<UI.CheatSpawner>()) yield return b;
+            foreach (var b in Find<UI.GearPanel>()) yield return b;
             foreach (var b in Find<AOS.DebugAOS>()) yield return b;
             foreach (var b in Find<Crypt.CryptInteractable>()) yield return b;
         }

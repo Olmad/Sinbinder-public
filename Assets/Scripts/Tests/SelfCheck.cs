@@ -79,6 +79,7 @@ namespace Sinbinder.Tests
                 Saving();
                 Bodies();
                 Blows();
+                Gear();
                 Titles();
                 Pursuit();
                 Sides();
@@ -166,6 +167,39 @@ namespace Sinbinder.Tests
             {
                 CombatMath.Enabled = was;
             }
+        }
+
+        /// <summary>
+        /// Обмен вещами (docs/34-GEAR.md): воин отвечает как душа — может
+        /// не взять и не отдать; руки не бездонны; всё словами.
+        /// </summary>
+        private static void Gear()
+        {
+            var sloth = MakeWarrior("Лень", SinType.Sloth, 70f);
+            var wrath = MakeWarrior("Ярость", SinType.Wrath, 70f);
+            var greed = MakeWarrior("Скупость", SinType.Greed, 80f);
+
+            var axe = new InventoryItem("Топор", "", ItemType.Equipment, attack: 2f);
+            var collar = new InventoryItem("Ворот", "", ItemType.Equipment, defense: 2f);
+            var coin = new InventoryItem("Монета", "", ItemType.Artifact);
+
+            Check(!SquadGear.WillTake(sloth, collar, out _), "унылый не берёт лишнего");
+            Check(SquadGear.WillTake(wrath, axe, out string glad) && glad == "берёт охотно",
+                  "гневный рад оружию");
+            Check(!SquadGear.WillTake(wrath, collar, out _), "гневный не носит того, чем нельзя ударить");
+
+            greed.Give(coin);
+            Check(!SquadGear.WillGive(greed, coin, out _), "жадный не отдаёт ценного");
+            Check(greed.Drop(coin) && greed.Carried.Count == 0, "выпустить из рук можно");
+
+            var calm = MakeWarrior("Покой", SinType.Envy, 30f);
+            for (int i = 0; i < SquadGear.Hands; i++)
+                calm.Give(new InventoryItem($"Вещь {i}", "", ItemType.Equipment));
+            Check(!SquadGear.WillTake(calm, axe, out string full) && full == "руки заняты",
+                  "в полные руки вещь не взять");
+
+            Check(!Regex.IsMatch(SquadGear.GoldWord(57) + SquadGear.Effect(axe) + SquadGear.Effect(collar), "[0-9]"),
+                  "казна и вещи — словами, без чисел");
         }
 
         private static void Bodies()

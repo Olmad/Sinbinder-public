@@ -117,6 +117,10 @@ namespace Sinbinder.AOS
                 "AllySavedMe" => EmotionType.Joy,
                 "AllyBetrayedMe" => EmotionType.Anger,
                 "AllyKilledEnemy" => EmotionType.Hope,
+                // Обмен вещами с Греховодом (SquadGear): дать — радость,
+                // отнять — злость, и отношения к нему считаются и из этого.
+                "SinbinderGaveMe" => EmotionType.Joy,
+                "SinbinderTookFromMe" => EmotionType.Anger,
                 _ => EmotionType.Calm
             };
             CreateMemory(subject, eventType, target.Id, emotion, 0.8f);
