@@ -77,6 +77,14 @@ namespace Sinbinder.Tests
                 Ladder();
                 Spoils();
                 Saving();
+                Bodies();
+                Titles();
+                Pursuit();
+                Sides();
+                HunterGoals();
+                Roster();
+                Pausing();
+                Fog();
                 TextRules();
             }
             catch (Exception e)
@@ -91,6 +99,308 @@ namespace Sinbinder.Tests
             }
 
             return _report;
+        }
+
+        // ================= правки 24 сентября =================
+        //
+        // Одиннадцать правок одного дня по жалобам автора из живой игры
+        // (14-HANDOFF §56–67). Каждая проверка ниже ловит ровно ту беду,
+        // что была: верни старое поведение — и она провалится.
+        //
+        // Идёт в редакторе, не в игре: Awake у компонентов не зовётся,
+        // поэтому проверяется то, что от него не зависит, — свойства,
+        // прямые вызовы и закрытое через отражение.
+
+        /// <summary>
+        /// Одна правда о здоровье (§58, §60). У воина была своя полоса,
+        /// которую бой не трогал: убитый оставался жив для души, раненый —
+        /// цел, лечение уходило в пустоту.
+        /// </summary>
+        private static void Bodies()
+        {
+            var w = MakeWarrior("Тело", SinType.Wrath, 50f);
+            var body = w.gameObject.AddComponent<Damageable>();
+
+            Near(w.HP, body.HP, "здоровье воина — это здоровье тела");
+            Near(w.MaxHP, body.MaxHP, "запас воина — это запас тела");
+
+            float before = body.HP;
+            w.TakeDamage(5f);
+            Check(body.HP < before, "урон воину доходит до тела");
+
+            float wounded = body.HP;
+            w.Heal(2f);
+            Check(body.HP > wounded, "лечение воина доходит до тела");
+
+            body.TakeDamage(100000f, null);
+            Check(body.IsDead, "тело можно убить");
+            Check(w.IsDead, "убитый в бою мёртв и для души — вторая полоса здоровья (§58)");
+
+            w.Heal(100f);
+            Check(body.IsDead, "мёртвого не лечат");
+
+            // Запас — от оболочки, и только от неё (§60).
+            var bone = MakeWarrior("Кость", SinType.Wrath, 50f);
+            var man = NewObject("Человек").AddComponent<Warrior>();
+            man.Initialize(new SoulData("Человек", SinType.Wrath, MoralType.Neutral, 1, 50f),
+                ShellType.Living, new RelationshipSystem(null));
+
+            if (bone.ShellHP <= 0f || man.ShellHP <= 0f)
+            {
+                Fail("оболочки не загрузились — запасу тела не от чего считаться");
+            }
+            else
+            {
+                Near(bone.ShellHP, 29.7f, "скелет держит столько, сколько отряд держал в демо", 0.05f);
+                Near(man.ShellHP, 40f, "человек — как задумано для второй волны", 0.05f);
+            }
+
+            var veteran = NewObject("Ветеран").AddComponent<Warrior>();
+            veteran.Initialize(new SoulData("Ветеран", SinType.Wrath, MoralType.Neutral, 5, 50f),
+                ShellType.Skeleton, new RelationshipSystem(null));
+            Near(veteran.MaxHP, bone.MaxHP, "уровень здоровья не прибавляет — уровней нет");
+
+            var fresh = NewObject("Рана").AddComponent<Damageable>();
+            fresh.Wound(0.4f);
+            Near(fresh.HP, fresh.MaxHP * 0.4f, "побитый выходит с назначенной долей запаса");
+            Check(!fresh.IsDead, "побитый — не убитый");
+        }
+
+        /// <summary>
+        /// «Тень» за одно выживание получали все, Греховод и мёртвые — тоже
+        /// (§57, §58).
+        /// </summary>
+        private static void Titles()
+        {
+            var quiet = MakeWarrior("Тихоня", SinType.Sloth, 70f);
+            quiet.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
+            TitleManager.UpdateTitle(quiet);
+            Check(string.IsNullOrEmpty(TitleManager.TitleOf(quiet)),
+                "за одно выживание имени не дают");
+
+            quiet.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            quiet.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            TitleManager.UpdateTitle(quiet);
+            Same(TitleManager.TitleOf(quiet), "Тень", "два боя без удара — «Тень»");
+
+            var hero = NewObject("Греховод").AddComponent<SinbinderPlayer>();
+            hero.Initialize(new SoulData("Греховод", SinType.Pride, MoralType.Neutral, 1, 0f),
+                ShellType.Skeleton, null, isCommander: false, team: Team.Player);
+            hero.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            hero.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            TitleManager.UpdateTitle(hero);
+            Check(string.IsNullOrEmpty(TitleManager.TitleOf(hero)), "Греховод титулов не носит");
+
+            var fallen = MakeWarrior("Павший", SinType.Sloth, 70f);
+            var fallenBody = fallen.gameObject.AddComponent<Damageable>();
+            fallenBody.TakeDamage(100000f, null);
+            fallen.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            fallen.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
+            TitleManager.UpdateTitle(fallen);
+            Check(string.IsNullOrEmpty(TitleManager.TitleOf(fallen)), "павшему имени не присуждают");
+        }
+
+        /// <summary>
+        /// Погоня (§62): «атаковать» было кандидатом только при враге рядом,
+        /// и отбежавший на двенадцать метров переставал существовать.
+        /// </summary>
+        private static void Pursuit()
+        {
+            var fury = MakeWarrior("Ярый", SinType.Wrath, 95f);
+            var resolver = new BehaviourResolver();
+
+            var far = BaseContext(fury);
+            far.NearbyEnemies = 0;
+            far.EnemiesInSight = 1;
+            far.DangerLevel = 0f;
+
+            var d = resolver.DecideDetailed(fury, far);
+            Same(d.TopContender, ActionType.Attack,
+                "гневный гонится за видимым, но далёким врагом");
+
+            var hurt = BaseContext(fury);
+            hurt.NearbyEnemies = 0;
+            hurt.EnemiesInSight = 1;
+            hurt.CurrentHP = hurt.MaxHP * 0.2f;
+
+            d = resolver.DecideDetailed(fury, hurt);
+            Check(d.Action != ActionType.Flee && d.TopContender != ActionType.Flee,
+                "от далёкого врага не бегут — бежать можно только от того, кто рядом");
+        }
+
+        /// <summary>
+        /// Свои и чужие — с точки зрения спросившего (§62). Охотники считали
+        /// своими наш отряд, а врагами — товарищей.
+        /// </summary>
+        private static void Sides()
+        {
+            var combat = NewObject("Бой").AddComponent<CombatManager>();
+            var ours = NewObject("Наш").AddComponent<Damageable>();
+            var theirs = NewObject("Их").AddComponent<Damageable>();
+
+            combat.RegisterPlayerUnit(ours);
+            combat.RegisterEnemyUnit(theirs);
+
+            var theirAllies = combat.GetAllies(theirs.gameObject);
+            Check(theirAllies.Contains(theirs) && !theirAllies.Contains(ours),
+                "свои у охотника — охотники, а не наш отряд");
+            Check(combat.GetEnemies(theirs.gameObject).Contains(ours),
+                "враги у охотника — наш отряд");
+            Check(combat.GetAllies(ours.gameObject).Contains(ours)
+                  && !combat.GetAllies(ours.gameObject).Contains(theirs),
+                "свои у нашего — наши");
+        }
+
+        /// <summary>
+        /// Цели охотников (§66): первая волна — к костру, вторая — по следу
+        /// Инквизитора. Здесь Инквизиторов нет, поэтому след — остывший.
+        /// </summary>
+        private static void HunterGoals()
+        {
+            bool hadTrail = SinbinderTrail.Known;
+            var hadWhere = SinbinderTrail.Where;
+
+            try
+            {
+                var toFire = NewObject("К костру").AddComponent<HunterGoal>();
+                toFire.Configure(HunterGoal.Aim.CampCentre, Vector3.zero);
+
+                Check(toFire.TryGet(new Vector3(20f, 0f, 0f), out var where) && where == Vector3.zero,
+                    "первая волна идёт к костру");
+                Check(!toFire.TryGet(new Vector3(1f, 0f, 1f), out _),
+                    "дошла до костра — дальше решает голос");
+                Check(!toFire.TryGet(new Vector3(20f, 0f, 0f), out _),
+                    "дошедшая к костру не возвращается");
+
+                SinbinderTrail.Forget();
+                var tracker = NewObject("По следу").AddComponent<HunterGoal>();
+                tracker.Configure(HunterGoal.Aim.Trail, Vector3.zero);
+
+                Check(!tracker.TryGet(new Vector3(20f, 0f, 0f), out _),
+                    "пока Инквизитор не искал — следа нет, решает голос");
+
+                var found = new Vector3(10f, 0f, 10f);
+                SinbinderTrail.Mark(found);
+                Check(tracker.TryGet(new Vector3(-10f, 0f, -10f), out var trail) && trail == found,
+                    "стая идёт туда, где Греховода нашли в последний раз");
+                Check(!tracker.TryGet(found + new Vector3(1f, 0f, 0f), out _),
+                    "остывший след обрывается на последнем месте");
+            }
+            finally
+            {
+                if (hadTrail) SinbinderTrail.Mark(hadWhere);
+                else SinbinderTrail.Forget();
+            }
+        }
+
+        /// <summary>
+        /// Смена доли стирала пол, ремесло, братство и славу (§63): уникальная
+        /// женщина входила в склеп мужчиной.
+        /// </summary>
+        private static void Roster()
+        {
+            var saved = new List<SquadRoster.Member>(SquadRoster.Members);
+
+            try
+            {
+                const string name = "Проверка переноса";
+                SquadRoster.Set(new[]
+                {
+                    new SquadRoster.Member
+                    {
+                        Name = name, Sin = SinType.Greed, Moral = MoralType.Neutral,
+                        Gender = Gender.Female, Trade = Trade.Archer,
+                        Brother = true, Legend = true, Intensity = 40f, Loyalty = 60f,
+                        Unavailable = "",
+                    },
+                });
+
+                var her = MakeWarrior(name, SinType.Greed, 40f);
+                SquadRoster.Remember(new[] { her });
+
+                Check(SquadRoster.TryGet(name, out var m), "воин пережил смену доли");
+                Same(m.Gender, Gender.Female, "смена доли не меняет пол");
+                Same(m.Trade, Trade.Archer, "смена доли не отнимает ремесло");
+                Check(m.Brother, "братство переживает смену доли");
+                Check(m.Legend, "слава переживает смену доли");
+            }
+            finally
+            {
+                SquadRoster.Set(saved);
+            }
+        }
+
+        /// <summary>
+        /// Пауза без хозяина (§57, §61): наезд снимал чужую паузу, а церемония,
+        /// начатая рядом со смертью Греховода, снимала бы паузу конца игры.
+        /// </summary>
+        private static void Pausing()
+        {
+            var pause = NewObject("Пауза").AddComponent<GamePauseController>();
+            float was = Time.timeScale;
+
+            try
+            {
+                int before = pause.Stamp;
+                pause.Pause();
+                Check(pause.IsPaused && pause.Stamp == before + 1,
+                    "пауза считает, сколько раз её ставили");
+
+                int mine = pause.Stamp;
+                pause.Pause();
+                Check(pause.Stamp != mine,
+                    "чужая пауза поверх меняет счёт — наезд её уже не снимет");
+
+                pause.Resume();
+                Check(!pause.IsPaused, "пауза снимается");
+
+                pause.Halt();
+                pause.Resume();
+                Check(pause.IsPaused, "конец игры не снимается чужим Resume");
+
+                pause.Unhalt();
+                Check(!pause.IsPaused && !pause.Halted, "«начать сначала» снимает конец игры");
+            }
+            finally
+            {
+                Time.timeScale = was;
+            }
+        }
+
+        /// <summary>
+        /// Туман войны (§67): видно то, что видят свои; враг вне круга
+        /// зрения скрыт; свои туманом не скрываются.
+        /// </summary>
+        private static void Fog()
+        {
+            // Туман ищет глаза поиском по сцене, а он не видит объектов
+            // с HideAndDontSave — такими NewObject делает всё остальное.
+            // Здесь объекты обычные; удаляются они в конце, как и прочие.
+            var eye = Visible("Глаз").AddComponent<Warrior>();
+            eye.Initialize(new SoulData("Глаз", SinType.Wrath, MoralType.Neutral, 1, 50f),
+                ShellType.Skeleton, new RelationshipSystem(null));
+            eye.transform.position = Vector3.zero;
+
+            var near = Visible("Близкий").AddComponent<Warrior>();
+            near.Initialize(new SoulData("Близкий", SinType.Wrath, MoralType.Neutral, 1, 50f),
+                ShellType.Living, new RelationshipSystem(null), false, Team.Enemy);
+            near.transform.position = new Vector3(5f, 0f, 0f);
+
+            var far = Visible("Дальний").AddComponent<Warrior>();
+            far.Initialize(new SoulData("Дальний", SinType.Wrath, MoralType.Neutral, 1, 50f),
+                ShellType.Living, new RelationshipSystem(null), false, Team.Enemy);
+            far.transform.position = new Vector3(0f, 0f, 19f);
+
+            var fog = NewObject("Туман").AddComponent<FogOfWar>();
+            var build = typeof(FogOfWar).GetMethod("Build",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (build == null) { Fail("у тумана нет Build — проверка тумана недостоверна"); return; }
+
+            build.Invoke(fog, new object[] { new Bounds(Vector3.zero, new Vector3(40f, 1f, 40f)) });
+
+            Check(!FogOfWar.Hides(near), "враг в круге зрения виден");
+            Check(FogOfWar.Hides(far), "враг вне зрения скрыт туманом");
+            Check(!FogOfWar.Hides(eye), "свои туманом не скрываются");
         }
 
         // ================= добыча =================
@@ -681,6 +991,14 @@ namespace Sinbinder.Tests
             warrior.Initialize(new SoulData(name, sin, MoralType.Neutral, 1, intensity),
                 ShellType.Skeleton, new RelationshipSystem(null));
             return warrior;
+        }
+
+        /// <summary>Временный объект, который находит поиск по сцене.</summary>
+        private static GameObject Visible(string name)
+        {
+            var go = new GameObject("SelfCheck_" + name);
+            _temp.Add(go);
+            return go;
         }
 
         private static GameObject NewObject(string name)
