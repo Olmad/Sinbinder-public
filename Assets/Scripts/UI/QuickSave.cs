@@ -24,6 +24,16 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // Конец игры: записывать нечего, грузить — только через
+            // «Начать сначала». Запись после смерти в игре с обязательством
+            // воскресила бы стёртую партию, а загрузка звала бы Resume,
+            // которого конец не пускает, — и новая игра стояла бы замёрзшей.
+            if (GamePauseController.Instance != null && GamePauseController.Instance.Halted)
+            {
+                if (Input.GetKeyDown(_save) || Input.GetKeyDown(_load)) Say("Игра окончена. Начните сначала — там и запись.");
+                return;
+            }
+
             if (Input.GetKeyDown(_save)) Save();
             else if (Input.GetKeyDown(_load)) Load();
         }

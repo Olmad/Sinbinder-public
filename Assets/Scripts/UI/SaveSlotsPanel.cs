@@ -36,6 +36,13 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // Конец игры: гнёзда — через «Начать сначала» (QuickSave, там же почему).
+            if (GamePauseController.Instance != null && GamePauseController.Instance.Halted)
+            {
+                if (Input.GetKeyDown(_key)) Say("Игра окончена. Начните сначала — там и запись.");
+                return;
+            }
+
             if (Input.GetKeyDown(_key)) Toggle();
             else if (_open && Input.GetKeyDown(KeyCode.Escape)) Close();
         }

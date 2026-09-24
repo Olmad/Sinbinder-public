@@ -113,6 +113,12 @@ namespace Sinbinder.UI
         private static void Again()
         {
             Core.GamePauseController.Instance?.Unhalt();
+
+            // Стартовый вопрос — заново: в свободной игре там «Продолжить»
+            // с записью, в игре с обязательством запись уже стёрта, и выбор —
+            // только новая партия. Без этого лагерь начинался бы молча,
+            // а к записям свободной игры было бы не вернуться до перезапуска.
+            StartPanel.Forget();
             SceneManager.LoadScene(FirstScene);
         }
 
