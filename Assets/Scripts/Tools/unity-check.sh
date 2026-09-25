@@ -28,6 +28,11 @@ version="$(sed -n 's/^m_EditorVersion: *//p' "$version_file" | tr -d '\r')"
 echo "Проект: $project"
 echo "Версия Unity: $version"
 
+# Диск, на котором лежит сам проект. На другом ПК тот же носитель
+# получит другую букву, и путь, прибитый к «D», перестанет
+# работать молча. Ищем Unity рядом с проектом, а не по букве.
+here="$(echo "$project" | cut -d/ -f1-2)"
+
 unity=""
 for candidate in \
     "${UNITY:-}" \
@@ -37,7 +42,9 @@ for candidate in \
     "/c/Program Files/Unity/Hub/Editor/$version/Editor/Unity.exe" \
     "/c/Program Files/Unity $version/Editor/Unity.exe" \
     "/c/Program Files/Unity 6000.3.2f1/$version/Editor/Unity.exe" \
-    "/d/Unity 6000.3.2f1/$version/Editor/Unity.exe"
+    "/d/Unity 6000.3.2f1/$version/Editor/Unity.exe" \
+    "$here/Unity 6000.3.2f1/$version/Editor/Unity.exe" \
+    "$here/Unity/$version/Editor/Unity.exe"
 do
     [ -x "$candidate" ] && { unity="$candidate"; break; }
 done
