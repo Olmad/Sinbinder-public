@@ -134,6 +134,7 @@ namespace Sinbinder.EditorTools
                 _failed = 0;
                 _errors = 0;
                 _late = 0;
+                ResetHandChecks();
 
                 // Выключатели сбрасываются при входе в Play
                 // (SubsystemRegistration), поэтому включаются здесь,
@@ -233,7 +234,14 @@ namespace Sinbinder.EditorTools
 
         private static List<Step> Build()
         {
-            return new List<Step>
+            // Со всеми выключателями — ещё и то, что план 25 сентября
+            // оставлял рукам (28-ORDERS, этап 2): лагерь живёт, приказ
+            // издали с прогнозом, «Мародёр» до экрана сундука, смерть
+            // и «С начала доли». В обычном прогоне этих шагов нет: он
+            // остаётся тем, на который ссылается ПОКАЗ.md.
+            bool all = SessionState.GetBool(AllOn, false);
+
+            var steps = new List<Step>
             {
                 // ── Лагерь ──
                 // Вопрос о сохранении — первое, что видит игрок, и первое,
@@ -273,7 +281,19 @@ namespace Sinbinder.EditorTools
 
                 S("Карган позвал к шару", null,
                   () => Summoned(), 15f),
+            };
 
+            // Лагерь живёт только до совета: назначен старший — шар ведёт
+            // сцену (CrystalBall.Leading) до самого разгрома, и CampLife молчит.
+            // Значит, пять минут в лагере — здесь, пока Карган ждёт у стола.
+            if (all)
+            {
+                steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
+                steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
+            }
+
+            steps.AddRange(new[]
+            {
                 S("Греховод у стола", () => HeroTo(Ball()?.transform, 1.5f),
                   () => Ball() != null && Ball().PlayerIsClose(), 5f),
 
@@ -287,15 +307,27 @@ namespace Sinbinder.EditorTools
                   () => TrophyChest.Looted, 15f),
 
                 // Сундук-склад (выключатель «склад»): экран сундука обязан
-                // открыться сам и держит паузу — автопилот его закрывает.
-                // Без склада шаг проходит сразу.
+                // открыться сам и держит паузу — автопилот берёт одну вещь
+                // и закрывает его. Без вещи в мешке обмену ниже нечего было
+                // отдать, и шаг обмена при складе проходил впустую
+                // (14-HANDOFF §105.4). Без склада шаг проходит сразу.
                 S("склад: экран сундука открылся", null, () =>
                 {
                     if (!TrophyChest.Store) return true;
                     if (!UI.GearPanel.Open) return false;
+                    ChestOpened();
                     UI.GearPanel.Dismiss();
                     return true;
                 }, 10f),
+            });
+
+            // Стык §93: «Мародёр» за клад ставит свою паузу, и экран сундука
+            // обязан ждать её конца, а не лечь поверх.
+            if (all)
+                steps.Add(S("склад: «Мародёр» — до экрана сундука, не поверх", null, CeremonyVerdict, 30f));
+
+            steps.AddRange(new[]
+            {
 
                 // ── Вещи и прогноз (24 сентября): экраны, которые без рук
                 // автора не открывал никто. Автопилот зовёт их напрямую,
@@ -332,7 +364,21 @@ namespace Sinbinder.EditorTools
                 // ── Набег ──
                 S("набег: охотники вышли", null,
                   () => Enemies() > 0, 30f),
+            });
 
+            // Смерть Греховода посреди разгрома — и «С начала доли» (§101):
+            // разгром заново, отряд с теми же вещами. Дальше прогон идёт
+            // по перезапущенному разгрому, как игрок после кнопки.
+            if (all)
+            {
+                steps.Add(S("смерть: Греховод пал — экран конца", KillHero,
+                            () => UI.GameOverUI.Shown, 20f));
+                steps.Add(S("смерть: «С начала доли» — разгром заново, вещи те же", AgainPart,
+                            PartRestarted, 90f));
+            }
+
+            steps.AddRange(new[]
+            {
                 // Приказ «бить» — луч в охотника. Только в видимого: того,
                 // кто в тумане, щелчком не достать, и так задумано (§67).
                 S("мышь: луч попадает в видимого охотника", null,
@@ -372,7 +418,9 @@ namespace Sinbinder.EditorTools
 
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
-            };
+            });
+
+            return steps;
         }
 
         private static Step S(string name, Action action, Func<bool> done, float limit)
@@ -650,6 +698,519 @@ namespace Sinbinder.EditorTools
             }
         }
 
+        // ──────────── то, что план оставлял рукам (только со всеми выключателями) ────────────
+        //
+        // 28-ORDERS, 25 сентября, этап 2 — ручной проход. Здесь то из него,
+        // что проверяется без глаз: ходят ли и говорят ли в лагере, что
+        // отвечают на приказ издали и сходится ли это с прогнозом, ждёт ли
+        // сундук церемонию, возвращает ли «С начала доли» те же вещи.
+        // Глазам остаётся своё: живо это или суетливо, читается ли отказ
+        // как решение, а не как сломанный ИИ, не проседают ли кадры.
+
+        /// <summary>Свои живые, без Греховода.</summary>
+        private static List<Warrior> Own()
+        {
+            var own = new List<Warrior>();
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer)) own.Add(w);
+            return own;
+        }
+
+        /// <summary>Кадр вне шагов — реплики, отказ. Туда же, куда кадры шагов.</summary>
+        private static void Snap(string name)
+        {
+            try { Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение", name); }
+            catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message); }
+        }
+
+        // ── Лагерь живёт: пять минут игры ──
+
+        /// <summary>Сколько минут игры стоять в лагере — столько, сколько просил план.</summary>
+        private const float CampMinutes = 5f;
+
+        /// <summary>
+        /// Во сколько раз быстрее идёт игра, пока стоим. Места и разговоры
+        /// идут по игровым часам, а пять настоящих минут — больше, чем
+        /// весь остальной прогон.
+        /// </summary>
+        private const float CampFast = 6f;
+
+        private static float _campFrom;
+        private static readonly Dictionary<Warrior, string> _campWhere = new();
+        private static readonly HashSet<string> _campMovers = new();
+        private static readonly HashSet<string> _heardLines = new();
+        private static int _campMoves, _campLines, _campShots;
+
+        private static void WatchCamp()
+        {
+            _campFrom = Time.time;
+            EditorApplication.update -= Camp;
+            EditorApplication.update += Camp;
+        }
+
+        /// <summary>Каждый кадр: кто сменил место, кто что сказал.</summary>
+        private static void Camp()
+        {
+            if (!EditorApplication.isPlaying) { EditorApplication.update -= Camp; return; }
+            if (!Paused() && Time.timeScale > 0f && Time.timeScale < CampFast) Time.timeScale = CampFast;
+
+            foreach (var w in Own())
+            {
+                string now = CampLife.Now(w);
+                if (string.IsNullOrEmpty(now)) continue;
+
+                if (!_campWhere.TryGetValue(w, out string was))
+                {
+                    _campWhere[w] = now;
+                    Write($"  [МЕСТО] {CampClock()} {w.DisplayName} — {now}");
+                    continue;
+                }
+                if (was == now) continue;
+
+                _campWhere[w] = now;
+                _campMoves++;
+                _campMovers.Add(w.DisplayName);
+                Write($"  [МЕСТО] {CampClock()} {w.DisplayName}: {was} → {now}");
+            }
+
+            var live = Bubbles();
+            bool fresh = false;
+            foreach (var (who, line, until) in live)
+            {
+                if (!_heardLines.Add(who + "|" + line + "|" + until.ToString("F1"))) continue;
+                fresh = true;
+                _campLines++;
+                Write($"  [РЕПЛИКА] {CampClock()} {who}: «{line}»");
+            }
+
+            // Кадр, когда над головами двое: читается ли строка с высоты
+            // камеры, решают глаза, а не отчёт.
+            if (fresh && live.Count >= 2 && _campShots < 3)
+            {
+                _campShots++;
+                Snap("лагерь — реплики " + _campShots);
+            }
+        }
+
+        private static bool CampDone()
+        {
+            if (Time.time - _campFrom < CampMinutes * 60f) return false;
+
+            EditorApplication.update -= Camp;
+            if (Mathf.Approximately(Time.timeScale, CampFast)) Time.timeScale = 1f;
+
+            Write($"  [ЛАГЕРЬ] за {CampMinutes:0} минут игры: переходов {_campMoves} "
+                  + $"(ходили {_campMovers.Count} из {_campWhere.Count}), реплик {_campLines}");
+
+            // Ни шага или ни слова за пять минут — лагерь не живёт, а ради
+            // этого он и за выключателем (14-HANDOFF §102–103).
+            if (_campMoves == 0 || _campLines == 0)
+            {
+                _failed++;
+                Write("  [ЛАГЕРЬ НЕ ЖИВЁТ] " + (_campMoves == 0 ? "никто не сменил места. " : "")
+                      + (_campLines == 0 ? "Никто не заговорил." : ""));
+            }
+            return true;
+        }
+
+        private static string CampClock()
+        {
+            float t = Mathf.Max(0f, Time.time - _campFrom);
+            return $"{(int)(t / 60f)}:{(int)(t % 60f):00}";
+        }
+
+        /// <summary>
+        /// Строки, что сейчас над головами. У <see cref="UI.SpeechBubbles"/>
+        /// нет события — и ради прогона не нужно: список читается так же,
+        /// как прогон читает совет.
+        /// </summary>
+        private static List<(string Who, string Line, float Until)> Bubbles()
+        {
+            var found = new List<(string, string, float)>();
+
+            var instance = typeof(UI.SpeechBubbles)
+                .GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
+            if (instance == null) return found;
+
+            if (!(instance.GetType().GetField("_live", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(instance) is System.Collections.IList live)) return found;
+
+            foreach (var bubble in live)
+            {
+                if (bubble == null) continue;
+                var type = bubble.GetType();
+                var who = type.GetField("Who")?.GetValue(bubble) as Warrior;
+                var text = type.GetField("Line")?.GetValue(bubble) as Text;
+                float until = type.GetField("Until")?.GetValue(bubble) is float u ? u : 0f;
+                if (who == null || text == null || string.IsNullOrEmpty(text.text)) continue;
+                found.Add((who.DisplayName, text.text, until));
+            }
+            return found;
+        }
+
+        // ── Приказ издали: прогноз против того, что вышло ──
+
+        private const string Unheard = "не слышит";
+
+        private static readonly List<string> _refusedNames = new();
+        private static readonly Dictionary<string, string> _earshot = new();
+        private static float _orderAt = -1f;
+        private static string _farForecast = "";
+        private static float _refusalAt = -1f;
+        private static bool _refusalShot;
+
+        /// <summary>
+        /// Греховод отходит от костра, выделяет отряд, смотрит прогноз
+        /// на «иди» — и отдаёт приказ тем же путём, что ПКМ по земле
+        /// (<c>SelectionManager.OrderAt</c>): с голосом и его приглушённостью.
+        /// Остальные приказы прогона звучат в полную силу — голосу там
+        /// нечего проверять.
+        /// </summary>
+        private static void OrderFromAfar()
+        {
+            var hero = SinbinderPlayer.Instance;
+            var fire = UnityEngine.Object.FindFirstObjectByType<CampOpening>();
+            var manager = SelectionManager.Instance;
+            if (hero == null || fire == null || manager == null)
+            {
+                Write("  [ПРИКАЗ ИЗДАЛИ] нет Греховода, костра или выделения — проверять нечем");
+                return;
+            }
+
+            // Одиннадцать метров от костра: у огня приказ слышен тихо (голос
+            // гаснет с половины зрения Греховода), дальние места не слышат.
+            Warp(hero.gameObject, fire.transform.position + Vector3.right * 11f);
+
+            var select = typeof(SelectionManager).GetMethod("SelectUnit", BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var w in Own())
+            {
+                var unit = w.GetComponent<SelectionComponent>();
+                if (unit != null) select?.Invoke(manager, new object[] { unit });
+
+                float muffle = Voice.MuffleFor(w);
+                string heard = !Voice.Heard(muffle) ? Unheard : muffle > 0f ? "слышит тихо" : "слышит";
+                _earshot[w.DisplayName] = heard;
+                Write($"  [ГОЛОС] {w.DisplayName}: "
+                      + $"{CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position):0} м — {heard}");
+            }
+
+            _farForecast = UI.CommandPanel.Predict(CommandKind.Move) ?? "";
+            Write("  [ПРОГНОЗ ИЗДАЛИ] " + _farForecast.Replace("\n", " | "));
+
+            var hub = AOS.AOSEventHub.Instance;
+            if (hub != null) { hub.OnRefusal -= Refused; hub.OnRefusal += Refused; }
+
+            var toward = fire.transform.position - hero.transform.position;
+            toward.y = 0f;
+            if (!Ground(hero.transform.position + toward.normalized * 2f, out var ground))
+            {
+                Write("  [ПРИКАЗ ИЗДАЛИ] под точкой приказа нет земли");
+                return;
+            }
+
+            typeof(SelectionManager).GetMethod("OrderAt", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.Invoke(manager, new object[] { ground, false });
+            _orderAt = Time.time;
+            Write("  [ПРИКАЗ ИЗДАЛИ] «иди» — всему отряду, к Греховоду");
+        }
+
+        /// <summary>Земля под точкой — то, во что попал бы щелчок: не воин.</summary>
+        private static bool Ground(Vector3 at, out RaycastHit ground)
+        {
+            ground = default;
+            float best = float.MaxValue;
+            foreach (var hit in Physics.RaycastAll(new Ray(at + Vector3.up * 30f, Vector3.down), 60f))
+            {
+                if (hit.collider == null || hit.collider.GetComponentInParent<Warrior>() != null) continue;
+                if (hit.distance >= best) continue;
+                best = hit.distance;
+                ground = hit;
+            }
+            return best < float.MaxValue;
+        }
+
+        private static void Refused(Warrior w, AOS.Decision d, AOS.DecisionContext c)
+        {
+            if (w == null || _refusedNames.Contains(w.DisplayName)) return;
+            _refusedNames.Add(w.DisplayName);
+
+            string why;
+            try { why = AOS.PhraseGenerator.Reason(w, c, d); }
+            catch (Exception e) { why = "(причина не собралась: " + e.Message + ")"; }
+
+            Write($"  [ОТКАЗ] {w.DisplayName}: {(string.IsNullOrEmpty(why) ? "(без причины)" : why)}"
+                  + $" · решило: {d.Decisive}"
+                  + (d.DecisiveAlso != AOS.Counterfactual.Factor.None ? " и " + d.DecisiveAlso : "")
+                  + (string.IsNullOrEmpty(d.DecisiveVoice) ? "" : ", голос " + d.DecisiveVoice));
+
+            if (_refusalAt < 0f) _refusalAt = Time.realtimeSinceStartup;
+        }
+
+        private static bool FarOrderDone()
+        {
+            if (_orderAt < 0f) return true;   // проверять было нечем — сказано выше
+
+            // Кадр отказа — чуть позже самого отказа: подпись и наезд
+            // встают не в тот же кадр.
+            if (!_refusalShot && _refusalAt > 0f && Time.realtimeSinceStartup - _refusalAt > 0.8f)
+            {
+                _refusalShot = true;
+                Snap("приказ издали — отказ");
+            }
+
+            if (Time.time - _orderAt < 8f) return false;
+
+            var hub = AOS.AOSEventHub.Instance;
+            if (hub != null) hub.OnRefusal -= Refused;
+
+            int doubtAt = _farForecast.IndexOf("Вряд ли", StringComparison.Ordinal);
+            string doubtful = doubtAt >= 0 ? _farForecast.Substring(doubtAt) : "";
+            int agree = 0, differ = 0;
+
+            foreach (var w in Own())
+            {
+                string name = w.DisplayName;
+                if (_earshot.TryGetValue(name, out string heard) && heard == Unheard)
+                {
+                    Write($"  [СВЕРКА] {name}: не слышал — приказа не было");
+                    continue;
+                }
+
+                bool doubted = doubtful.Contains(name);
+                bool refused = _refusedNames.Contains(name);
+                if (doubted == refused) agree++; else differ++;
+                Write($"  [СВЕРКА] {name}: прогноз — {(doubted ? "вряд ли" : "пойдёт")}, "
+                      + $"вышло — {(refused ? "отказал" : "послушался")}"
+                      + (doubted == refused ? "" : "   ← разошлось"));
+            }
+
+            Write($"  [ПРИКАЗ ИЗДАЛИ] прогноз сошёлся у {agree}, разошёлся у {differ}; отказов {_refusedNames.Count}");
+
+            // Назад, к лагерю: приказ снят, выделение тоже.
+            foreach (var w in Own()) w.ClearCommand();
+            var manager = SelectionManager.Instance;
+            if (manager != null)
+                foreach (var unit in new List<SelectionComponent>(manager.GetSelectedUnits())) manager.Drop(unit);
+
+            return true;
+        }
+
+        // ── Сундук и «Мародёр» ──
+
+        private static readonly List<(float At, string Line)> _ceremonies = new();
+        private static float _chestOpenedAt = -1f;
+        private static bool _ceremonyAtOpen;
+
+        /// <summary>
+        /// Экран сундука открылся: запомнить миг и шла ли церемония; взять
+        /// одну вещь с местом на теле — «взять часть, остальное оставить».
+        /// </summary>
+        private static void ChestOpened()
+        {
+            _chestOpenedAt = Time.realtimeSinceStartup;
+            _ceremonyAtOpen = CeremonyPlaying();
+            Write("  [СУНДУК] экран открылся" + (_ceremonyAtOpen ? " — а церемония ещё идёт" : ""));
+
+            var chest = Chest();
+            var bag = Inventory.PlayerInventory.Instance;
+            if (chest == null || bag == null) return;
+
+            var left = TrophyChest.Remaining();
+            foreach (var item in left)
+            {
+                if (item == null || item.Slot == Inventory.GearSlot.None) continue;
+                bool took = chest.Take(item, bag, out string word);
+                Write($"  [СКЛАД] из сундука: {item.Name} — {(took ? word : "не взял: " + word)}; "
+                      + $"в сундуке осталось {TrophyChest.Remaining().Count} из {left.Count}");
+                return;
+            }
+            Write("  [СКЛАД] в сундуке нет вещи, которую можно надеть");
+        }
+
+        private static bool CeremonyPlaying()
+        {
+            var ceremony = UnityEngine.Object.FindFirstObjectByType<AOS.TitleCeremonyBehaviour>();
+            return ceremony != null && Field<bool>(ceremony, "_playing");
+        }
+
+        /// <summary>
+        /// Приговор стыку: церемония прозвучала до экрана сундука, и ни одна
+        /// не началась после — иначе она легла бы поверх открытого экрана.
+        /// Ждём, пока церемоний в очереди нет и прошло восемь секунд.
+        /// </summary>
+        private static bool CeremonyVerdict()
+        {
+            if (_chestOpenedAt < 0f)
+            {
+                Write("  [СУНДУК] экран сундука не открывался — сверять не с чем");
+                return true;
+            }
+            if (CeremonyPlaying() || Time.realtimeSinceStartup - _chestOpenedAt < 8f) return false;
+
+            int near = 0, after = 0;
+            foreach (var (at, line) in _ceremonies)
+            {
+                float gap = at - _chestOpenedAt;
+                if (gap > 0f) after++;
+                else if (gap > -30f) near++;
+                Write($"  [ЦЕРЕМОНИЯ] {(gap > 0f ? "через" : "за")} {Mathf.Abs(gap):0} с "
+                      + $"{(gap > 0f ? "ПОСЛЕ экрана сундука" : "до экрана")}: {line}");
+            }
+
+            if (_ceremonyAtOpen || after > 0)
+            {
+                _failed++;
+                Write("  [СУНДУК ПОВЕРХ ЦЕРЕМОНИИ] экран сундука открылся, пока церемония шла или ждала камеры");
+            }
+            else if (near == 0)
+                Write("  [СУНДУК] церемонии у сундука не было — «Мародёр» не вручён, стык не проверен");
+            else
+                Write("  [СУНДУК] экран — после церемонии, как задумано");
+            return true;
+        }
+
+        // ── Смерть и «С начала доли» ──
+
+        private static Dictionary<string, string> _gearBefore;
+        private static SinbinderPlayer _fallenHero;
+
+        /// <summary>
+        /// Сперва падает один из отряда, потом Греховод — от ближайшего
+        /// охотника, тем же уроном, что в бою (<see cref="Damageable.TakeDamage"/>);
+        /// конец игры Греховод замечает сам. Так и бывает в разгроме: свои
+        /// гибнут раньше. Отметка начала доли помнит павшего живым, и
+        /// «С начала доли» обязана его вернуть (SaveSystem.RestartPart:
+        /// «иначе мёртвые остались бы мёртвыми»). Состав, вещи, мешок,
+        /// сундук и ушедшие запоминаются до обеих смертей.
+        /// </summary>
+        private static void KillHero()
+        {
+            _gearBefore = GearNow();
+            foreach (var pair in _gearBefore)
+                Write($"  [ДОЛЯ] до смерти — {pair.Key}: {(string.IsNullOrEmpty(pair.Value) ? "пусто" : pair.Value)}");
+
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null) return;
+            _fallenHero = hero;
+
+            var own = Own();
+            if (own.Count > 0)
+            {
+                Write($"  [ДОЛЯ] перед Греховодом пал {own[0].DisplayName}");
+                Strike(own[0].gameObject);
+            }
+
+            Strike(hero.gameObject);
+        }
+
+        /// <summary>Смертельный удар от ближайшего живого охотника.</summary>
+        private static void Strike(GameObject victim)
+        {
+            GameObject killer = null;
+            float best = float.MaxValue;
+            var enemies = CombatManager.Instance != null ? CombatManager.Instance.GetAliveEnemies() : null;
+            if (enemies != null)
+                foreach (var e in enemies)
+                {
+                    if (e == null || e.IsDead) continue;
+                    float d = (e.transform.position - victim.transform.position).sqrMagnitude;
+                    if (d < best) { best = d; killer = e.gameObject; }
+                }
+
+            var body = victim.GetComponent<Damageable>();
+            if (body != null) body.TakeDamage(body.MaxHP * 100f + 1000f, killer);
+        }
+
+        /// <summary>Кнопка «С начала доли» — её же обработчиком.</summary>
+        private static void AgainPart()
+        {
+            Write("  [ДОЛЯ] экран конца: " + (Core.SaveSystem.CanRestartPart
+                ? "кнопка «С начала доли» есть"
+                : "КНОПКИ «С начала доли» НЕТ — будет полный перезапуск"));
+            typeof(UI.GameOverUI).GetMethod("AgainPart", BindingFlags.NonPublic | BindingFlags.Static)
+                ?.Invoke(null, null);
+        }
+
+        /// <summary>
+        /// Разгром заново: новый Греховод жив, экрана конца нет, охотники
+        /// на поле. И вещи те же, что были до смерти.
+        /// </summary>
+        private static bool PartRestarted()
+        {
+            var hero = SinbinderPlayer.Instance;
+            if (UI.GameOverUI.Shown || hero == null || hero == _fallenHero || hero.IsDead) return false;
+            if (!RaidEvent.Running || Enemies() == 0) return false;
+            if (_gearBefore == null) return true;
+
+            var now = GearNow();
+            int differ = 0;
+            foreach (var pair in _gearBefore)
+            {
+                now.TryGetValue(pair.Key, out string after);
+                if (after == pair.Value) continue;
+                differ++;
+                Write($"  [ДОЛЯ РАЗОШЛАСЬ] {pair.Key}: было «{pair.Value}», стало «{after ?? "(его нет)"}»");
+            }
+            foreach (var pair in now)
+                if (!_gearBefore.ContainsKey(pair.Key))
+                    Write($"  [ДОЛЯ] снова в строю: {pair.Key} — {pair.Value}");
+
+            if (differ > 0) _failed++;
+            else Write("  [ДОЛЯ] разгром заново; вещи отряда, мешок и сундук — те же, что до смерти");
+            return true;
+        }
+
+        /// <summary>Что на ком, что в мешке и в сундуке — словами, для сравнения.</summary>
+        private static Dictionary<string, string> GearNow()
+        {
+            var gear = new Dictionary<string, string>();
+            foreach (var w in Own()) gear[w.DisplayName] = SquadGear.Summary(w);
+
+            var bag = new List<string>();
+            var inventory = Inventory.PlayerInventory.Instance;
+            if (inventory != null)
+                foreach (var item in inventory.GetAllItems())
+                    if (item != null) bag.Add(item.Name);
+            bag.Sort(StringComparer.Ordinal);
+            gear["(мешок)"] = string.Join(", ", bag);
+
+            var chest = new List<string>();
+            foreach (var item in TrophyChest.Remaining())
+                if (item != null) chest.Add(item.Name);
+            chest.Sort(StringComparer.Ordinal);
+            gear["(сундук)"] = string.Join(", ", chest);
+
+            // Ушедших на вылазку нет ни в одной сцене — их правда живёт
+            // только в составе, и возвращаться им в эпилоге.
+            var away = new List<string>();
+            foreach (var m in SquadRoster.Away) away.Add(m.Name);
+            away.Sort(StringComparer.Ordinal);
+            gear["(ушли с вылазкой)"] = string.Join(", ", away);
+            gear["(старший)"] = SquadRoster.CommanderName;
+
+            return gear;
+        }
+
+        /// <summary>Сбросить память проверок этапа 2 — в начале прогона.</summary>
+        private static void ResetHandChecks()
+        {
+            _campWhere.Clear();
+            _campMovers.Clear();
+            _heardLines.Clear();
+            _campMoves = _campLines = _campShots = 0;
+            _refusedNames.Clear();
+            _earshot.Clear();
+            _orderAt = -1f;
+            _farForecast = "";
+            _refusalAt = -1f;
+            _refusalShot = false;
+            _ceremonies.Clear();
+            _chestOpenedAt = -1f;
+            _ceremonyAtOpen = false;
+            _gearBefore = null;
+            _fallenHero = null;
+        }
+
         // ─────────────────────────────── вопросы ───────────────────────────────
 
         private static bool Scene(string name)
@@ -844,9 +1405,15 @@ namespace Sinbinder.EditorTools
         private static void Catch(string message, string stack, LogType type)
         {
             if (!SessionState.GetBool(Active, false)) return;
-            if (type == LogType.Log) return;
 
             string first = (message ?? "").Split('\n')[0];
+
+            // Церемония титула пишет обычной строкой; стыку со сундуком
+            // нужно, когда именно она прозвучала.
+            if (first.StartsWith("[TITLE CEREMONY]"))
+                _ceremonies.Add((Time.realtimeSinceStartup, first));
+
+            if (type == LogType.Log) return;
 
             if (type == LogType.Warning)
             {
