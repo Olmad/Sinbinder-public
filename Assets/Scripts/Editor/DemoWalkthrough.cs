@@ -1188,6 +1188,14 @@ namespace Sinbinder.EditorTools
             gear["(ушли с вылазкой)"] = string.Join(", ", away);
             gear["(старший)"] = SquadRoster.CommanderName;
 
+            // Кем каждый был: ремесло, братство, слава — то, что живёт
+            // только в составе и в записи и глазом на поле не проверяется.
+            var who = new List<string>();
+            foreach (var m in SquadRoster.Members)
+                who.Add(m.Name + ": " + m.Trade + (m.Brother ? ", брат" : "") + (m.Legend ? ", слава" : ""));
+            who.Sort(StringComparer.Ordinal);
+            gear["(кто есть кто)"] = string.Join("; ", who);
+
             return gear;
         }
 

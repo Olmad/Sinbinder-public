@@ -113,6 +113,9 @@ namespace Sinbinder.Core
                                           : new List<Inventory.InventoryItem>(),
                     Pocket = m.Pocket,
                     IsAway = m.IsAway,
+                    Trade = (int)m.Trade,
+                    Brother = m.Brother,
+                    Legend = m.Legend,
                 });
             }
 
@@ -333,6 +336,9 @@ namespace Sinbinder.Core
                     Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear) : null,
                     Pocket = m.Pocket,
                     IsAway = m.IsAway,
+                    Trade = (Trade)m.Trade,
+                    Brother = m.Brother,
+                    Legend = m.Legend,
                 });
             }
 

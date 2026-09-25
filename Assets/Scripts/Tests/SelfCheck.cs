@@ -946,6 +946,7 @@ namespace Sinbinder.Tests
                         Name = "Проба", Sin = SinType.Greed, Moral = MoralType.Vicious,
                         Intensity = 60f, Loyalty = 42f, UnpaidMissions = 3,
                         Leadership = 5f, IsCommander = true,
+                        Trade = Trade.Hunter, Brother = true, Legend = true,
                         Gear = new List<InventoryItem>
                         {
                             new InventoryItem("Топор пробы", "", ItemType.Equipment, attack: 2f),
@@ -1003,6 +1004,12 @@ namespace Sinbinder.Tests
                 Check(second.IsAway, "уход на вылазку не пережил файл — «С начала доли» "
                                    + "в разгроме теряла ушедших и старшего (§105.7)");
                 Check(!first.IsAway, "оставшийся в лагере записан ушедшим");
+                Same(first.Trade, Trade.Hunter, "ремесло не пережило файл — лучник "
+                                              + "после «С начала доли» без колчана (§105.13)");
+                Check(first.Brother, "братство не пережило файл — братья после загрузки чужие");
+                Check(first.Legend, "слава не пережила файл");
+                Check(second.Trade == Trade.None && !second.Brother && !second.Legend,
+                      "ремесло, братство или слава приписаны тому, у кого их не было");
 
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");
