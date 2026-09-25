@@ -50,7 +50,8 @@ for candidate in \
     "/opt/unity/editors/$version/Editor/Unity" \
     "/c/Program Files/Unity/Hub/Editor/$version/Editor/Unity.exe" \
     "/c/Program Files/Unity $version/Editor/Unity.exe" \
-    "/c/Program Files/Unity 6000.3.2f1/$version/Editor/Unity.exe"
+    "/c/Program Files/Unity 6000.3.2f1/$version/Editor/Unity.exe" \
+    "/d/Unity 6000.3.2f1/$version/Editor/Unity.exe"
 do
     [ -x "$candidate" ] && { unity="$candidate"; break; }
 done
