@@ -85,6 +85,7 @@ namespace Sinbinder.Tests
                 ChestStore();
                 LootToHands();
                 CampSpots();
+                CampTalkLines();
                 PatrolAndRush();
                 Titles();
                 Pursuit();
@@ -402,6 +403,35 @@ namespace Sinbinder.Tests
             Check(trophy.AttackBonus > 0f && trophy.TemptationSin == SinType.Pride,
                   "трофей бьёт тяжелее и тешит гордыню");
             Check(SquadGear.WillTake(proud, trophy, out _), "гордый берёт трофей в руки");
+        }
+
+        /// <summary>
+        /// Разговоры у костра (docs/32-CAMP.md §6): положение говорит раньше
+        /// греха, одна пара — одни слова, немой отвечает жестом, чисел нет.
+        /// </summary>
+        private static void CampTalkLines()
+        {
+            var greedy = MakeWarrior("Скупец", SinType.Greed, 60f);
+            greedy.UnpaidMissions = 3;
+            var proud = MakeWarrior("Спесивец", SinType.Pride, 60f);
+            var mute = MakeWarrior("Немой Проба", SinType.Sloth, 30f);
+
+            var (first, answer) = Dialogue.CampLines.Exchange(greedy, proud);
+            Check(first.Contains("без платы") && !string.IsNullOrEmpty(answer),
+                  "долг звучит раньше греха: реплика предупреждает об отказе");
+            Check(Dialogue.CampLines.Exchange(greedy, proud) == (first, answer), "одна пара — одни слова");
+            Check(Dialogue.CampLines.Exchange(proud, mute).Answer == "(молча кивает)", "немой отвечает жестом");
+
+            var sins = new[] { SinType.Pride, SinType.Greed, SinType.Sloth };
+            foreach (var x in sins)
+                foreach (var y in sins)
+                {
+                    var (l1, l2) = Dialogue.CampLines.Exchange(MakeWarrior("Первый " + x, x, 50f),
+                                                               MakeWarrior("Второй " + y, y, 50f));
+                    Check(!string.IsNullOrEmpty(l1) && !string.IsNullOrEmpty(l2)
+                          && !Regex.IsMatch(l1 + l2, "[0-9]"),
+                          $"разговор {x} с {y} — есть и без чисел");
+                }
         }
 
         /// <summary>

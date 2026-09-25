@@ -86,6 +86,18 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
+        /// <summary>Живёт ли он сейчас лагерем: без приказа, вне сцен пролога.</summary>
+        public static bool Idle(Warrior w) => Alive(w);
+
+        /// <summary>Место, которое он выбрал сам. Ложь — не выбирал или лагерь не живёт.</summary>
+        public static bool SpotOf(Warrior w, out CampSpot spot)
+        {
+            spot = CampSpot.Fire;
+            if (!Alive(w) || !Chosen.TryGetValue(w, out var c)) return false;
+            spot = c.Spot;
+            return true;
+        }
+
         /// <summary>Словом — где воин сейчас по своей воле. Пусто — нигде.</summary>
         public static string Now(Warrior w)
             => Alive(w) && Chosen.TryGetValue(w, out var c) ? Word(c.Spot) : "";
