@@ -185,11 +185,21 @@ if (-not $NoSelfCheck) {
 
 Write-Host "Запускаю Unity в пакетном режиме. Первый раз это долго — "  -NoNewline
 Write-Host "он импортирует ассеты."
-$process = Start-Process -FilePath $unity -ArgumentList $arguments -Wait -PassThru -NoNewWindow
+# Без -Wait: в Windows PowerShell 5.1 он ждёт не Unity, а всё его
+# потомство, а Unity оставляет жить сервер компилятора (VBCSCompiler) —
+# тот выходит сам через десять минут простоя, и столько же молчал скрипт
+# (25 сентября, 14-HANDOFF §105.2). Ждём сам процесс. Handle — сразу:
+# без него 5.1 не отдаёт ExitCode процесса, запущенного без -Wait.
+$process = Start-Process -FilePath $unity -ArgumentList $arguments -PassThru -NoNewWindow
+$null = $process.Handle
+$process.WaitForExit()
 $code = $process.ExitCode
 
 if (-not (Test-Path $Log)) { Fail "Unity не создал лог $Log" }
-$lines = Get-Content $Log
+# Лог Unity — UTF-8. Без -Encoding 5.1 читает его как ANSI, и шаблоны
+# с кириллицей и «✗» ниже не находят ничего: при провале не видно,
+# что именно упало.
+$lines = Get-Content $Log -Encoding UTF8
 
 # ---------- прерванный запуск ----------
 

@@ -176,7 +176,9 @@ if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {
 
 Write-Host ""
 if (Test-Path $report) {
-    Get-Content $report | ForEach-Object { Write-Host $_ }
+    # Отчёт — UTF-8; без -Encoding Windows PowerShell 5.1 печатает его
+    # кракозябрами (14-HANDOFF §105.3).
+    Get-Content $report -Encoding UTF8 | ForEach-Object { Write-Host $_ }
 } else {
     Write-Host "ОТЧЁТА НЕТ: $report не создан."
     Write-Host "Значит, прогон не дошёл даже до первого шага — смотри ошибки компиляции ниже."
