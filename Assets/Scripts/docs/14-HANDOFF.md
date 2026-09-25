@@ -5967,3 +5967,74 @@ F по-прежнему открывает совет у стола и устр�
 `SINBINDER_UNITY`); путь к файлу — скрипт берёт его и доходит до
 запуска. Поиск по диску проекта на Windows не запускался — это первый
 шаг этапа 1.
+
+## 105. План 25 сентября, этап за этапом · 25 сентября, локальная сессия
+
+Новая сессия, **рабочий ПК автора** (не домашний), флешка D (exFAT,
+метка Ventoy). Раздел пополняется после каждого шага плана
+(`28-ORDERS.md`, «25 сентября»), каждый шаг — отдельный коммит.
+
+### 105.1 Этап 0: чужой ПК, всё своё — в `D:\Claude`
+
+Слово автора: ПК рабочий, лишнего на него не ставить, флешка — личная.
+Всё, что понадобилось сессии, лежит в **`D:\Claude`** — отдельная папка
+сессии; остальную флешку сессия не трогает (`D:\Tools` — авторский,
+там только `blender`).
+
+На ПК не было ни git, ни Python, ни Unity Hub; Unity здесь не
+запускался ни разу (ни `Editor.log`, ни лицензии). Первая же команда:
+
+```
+git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+```
+
+| Что | Где | Откуда |
+|---|---|---|
+| git 2.55.0.windows.3 | `D:\Claude\Git` | PortableGit, подпись Johannes Schindelin проверена |
+| Python 3.13.15 | `D:\Claude\Python` | пакет python.org на NuGet — папка, без установщика и реестра; подпись PSF |
+| `py`, `python3` | `D:\Claude\bin\*.cmd` | прослойки для хука `py -3 Tools/handoff.py` и команд из документации; `py` отбрасывает `-3` |
+
+Что споткнулось:
+
+* `winget install Git.Git --scope user` встал **в `C:\Program Files\Git`**
+  и прописался в системный PATH — флаг не сработал. Снят
+  `winget uninstall`, PATH чист, папки нет. Урок: на чужом ПК — только
+  переносное, winget не звать.
+* `post-install.bat` переносного git — код выхода 1, без сообщения.
+  Вероятно, exFAT без символических ссылок (`/etc/mtab` не создан);
+  не проверялось. `git` из `cmd\` работает целиком.
+* exFAT не хранит владельца — git отказался, как и предупреждал этап 0:
+
+  ```
+  fatal: detected dubious ownership in repository at 'D:/Sinbinder'
+  'D:/Sinbinder' is on a file system that does not record ownership
+  To add an exception for this directory, call:
+
+  	git config --global --add safe.directory D:/Sinbinder
+  ```
+
+  Не `--global` (это файл на C), а `--system`: у переносного git он
+  в `D:\Claude\Git\etc\gitconfig`. Там же вход в GitHub —
+  `credential.helper manager`, хранилище `dpapi` в `D:\Claude\gcm`:
+  токен на флешке, зашифрован ключом пользователя Windows этого ПК
+  (на другом ПК — войти заново).
+* Имя в git спрашивать не пришлось — оно в `.git/config` проекта.
+
+PATH на следующие сессии — `env` в `.claude/settings.local.json` (в git
+не идёт): `D:\Claude\bin`, `Git\cmd`, `Python` перед системным,
+и `UPM_CACHE_ROOT=D:\Claude\UnityCache\upm` — кэш пакетов Unity на
+флешке, а не в профиле на C. **Флешка под другой буквой — поправить
+там.**
+
+Unity нужной версии — `D:\Unity 6000.3.2f1\6000.3.22f1\Editor\Unity.exe`
+(`ProjectVersion.txt`: 6000.3.22f1). Рядом лежит и 6000.3.2f1
+(`D:\Unity 6000.3.2f1\Editor`) — скрипты различают их по версии внутри
+exe, а не по имени папки. Unity Hub — следующим шагом; решение автора:
+в `D:\Claude\UnityHub` и оставить. Лицензия и настройки Hub неизбежно
+ложатся на C.
+
+После `git pull` (`bba866e..24218cb`, перемотка, 17 файлов):
+
+* `handoff.py` — «Ввод настроен верно (activeInputHandler: 2)…
+  Расхождений с репозиторием нет.»
+* `check.py` — 279 файлов, 0 замечаний.
