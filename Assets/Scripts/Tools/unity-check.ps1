@@ -28,15 +28,23 @@
 .PARAMETER NoSelfCheck
     Только компиляция, без запуска самопроверки движка.
 
+.PARAMETER UnityExe
+    Путь к Unity.exe — когда редактор стоит не там, куда его ставит Hub:
+    на флешке, в своей папке. То же самое — переменная окружения
+    SINBINDER_UNITY. Без них редактор ищется сам: Program Files, папка
+    Hub в профиле и диск, на котором лежит проект.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File Tools\unity-check.ps1
     powershell -ExecutionPolicy Bypass -File Tools\unity-check.ps1 -Project "C:\Unity\Sinbinder"
+    powershell -ExecutionPolicy Bypass -File Tools\unity-check.ps1 -UnityExe "D:\Unity\6000.3.22f1\Editor\Unity.exe"
 #>
 
 param(
     [string]$Project = "",
     [string]$Log = "",
-    [switch]$NoSelfCheck
+    [switch]$NoSelfCheck,
+    [string]$UnityExe = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -87,17 +95,38 @@ function Get-UnityVersion($exe) {
     catch { return "" }
 }
 
+# Указанный путь — первым: папку, выбранную руками, обходом не угадать.
+$unity = ""
+if (-not $UnityExe -and $env:SINBINDER_UNITY) { $UnityExe = $env:SINBINDER_UNITY }
+if ($UnityExe) {
+    if (-not (Test-Path $UnityExe -PathType Leaf)) {
+        Fail "нет файла $UnityExe (-UnityExe или SINBINDER_UNITY)"
+    }
+    $unity = (Resolve-Path $UnityExe).Path
+    $given = Get-UnityVersion $unity
+    if ($given -and $given -ne $version) {
+        Write-Host "Указан Unity $given, проекту нужен $version — ошибки могут отличаться" -ForegroundColor Yellow
+    }
+}
+
 $scanDirs = @()
+
+# Диск проекта — тоже место поиска: 25 сентября Unity переехал вместе
+# с проектом на флешку, а обход одного Program Files флешку не видит.
+$projectDrive = [System.IO.Path]::GetPathRoot((Resolve-Path $Project).Path)
 
 foreach ($root in @("$env:ProgramFiles\Unity\Hub\Editor",
                     "${env:ProgramFiles(x86)}\Unity\Hub\Editor",
-                    "$env:LOCALAPPDATA\Unity\Hub\Editor")) {
+                    "$env:LOCALAPPDATA\Unity\Hub\Editor",
+                    (Join-Path $projectDrive "Unity\Hub\Editor"),
+                    (Join-Path $projectDrive "Program Files\Unity\Hub\Editor"))) {
     if (Test-Path $root) {
         $scanDirs += Get-ChildItem $root -Directory -ErrorAction SilentlyContinue
     }
 }
 
-foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)},
+                    $projectDrive, (Join-Path $projectDrive "Program Files"))) {
     if ($base -and (Test-Path $base)) {
         $scanDirs += Get-ChildItem $base -Directory -Filter "Unity*" -ErrorAction SilentlyContinue
     }
@@ -115,7 +144,9 @@ foreach ($dir in $scanDirs) {
         }
 }
 
-$unity = ($editors | Where-Object { $_.Version -eq $version } | Select-Object -First 1).Path
+if (-not $unity) {
+    $unity = ($editors | Where-Object { $_.Version -eq $version } | Select-Object -First 1).Path
+}
 
 if (-not $unity -and $editors.Count -gt 0) {
     # Нужной версии нет. Берём самую свежую и предупреждаем: чужая версия
@@ -125,7 +156,9 @@ if (-not $unity -and $editors.Count -gt 0) {
     Write-Host "Версия $version не установлена, беру $($fallback.Version) — ошибки могут отличаться" -ForegroundColor Yellow
 }
 
-if (-not $unity) { Fail "Unity не найден. Установи версию $version через Unity Hub" }
+if (-not $unity) {
+    Fail "Unity не найден. Установи версию $version через Unity Hub или укажи путь: -UnityExe ""X:\путь\Editor\Unity.exe"" (или переменная SINBINDER_UNITY)"
+}
 
 Write-Host "Редактор: $unity"
 

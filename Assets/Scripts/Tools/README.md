@@ -74,6 +74,15 @@ powershell -File Tools\unity-check.ps1 -Project "C:\Unity\Sinbinder"
 ./Tools/unity-check.sh /home/user/Unity/Sinbinder
 ```
 
+Unity ищется сам: Program Files, папка Hub в профиле и диск, на котором
+лежит проект (флешка: `X:\Unity…\<версия>\Editor\Unity.exe`, буква любая).
+Стоит где-то ещё — путь руками, то же и у `demo-walkthrough.ps1`:
+
+```
+powershell -File Tools\unity-check.ps1 -UnityExe "E:\Своя папка\Editor\Unity.exe"
+set SINBINDER_UNITY=E:\Своя папка\Editor\Unity.exe
+```
+
 Код выхода: 0 — самопроверка прошла, 1 — нет, 2 — не нашёл Unity
 или проект.
 

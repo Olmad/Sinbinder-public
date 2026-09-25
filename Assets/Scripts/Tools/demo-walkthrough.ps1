@@ -25,6 +25,11 @@
     То же прохождение со всеми выключателями дня (голос, причина, удар,
     добыча, лагерь, склад). Отчёт — отдельным файлом, *-all.txt.
 
+.PARAMETER UnityExe
+    Путь к Unity.exe, если редактор стоит не там, куда его ставит Hub
+    (флешка, своя папка). То же — переменная SINBINDER_UNITY. Как
+    в unity-check.ps1.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File Tools\demo-walkthrough.ps1
     powershell -ExecutionPolicy Bypass -File Tools\demo-walkthrough.ps1 -All
@@ -33,7 +38,8 @@
 param(
     [string]$Project = "",
     [int]$TimeoutSeconds = 900,
-    [switch]$All
+    [switch]$All,
+    [string]$UnityExe = ""
 )
 
 $suffix = if ($All) { "-all" } else { "" }
@@ -77,13 +83,35 @@ function Get-UnityVersion($exe) {
     catch { return "" }
 }
 
+# Указанный путь — первым: папку, выбранную руками, обходом не угадать.
+$unity = ""
+if (-not $UnityExe -and $env:SINBINDER_UNITY) { $UnityExe = $env:SINBINDER_UNITY }
+if ($UnityExe) {
+    if (-not (Test-Path $UnityExe -PathType Leaf)) {
+        Write-Error "Нет файла $UnityExe (-UnityExe или SINBINDER_UNITY)."
+        exit 2
+    }
+    $unity = (Resolve-Path $UnityExe).Path
+    $given = Get-UnityVersion $unity
+    if ($given -and $given -ne $version) {
+        Write-Host "Указан Unity $given, проекту нужен $version — прогон может отличаться" -ForegroundColor Yellow
+    }
+}
+
 $scanDirs = @()
+# Диск проекта — тоже место поиска: 25 сентября Unity переехал вместе
+# с проектом на флешку, а обход одного Program Files флешку не видит.
+$projectDrive = [System.IO.Path]::GetPathRoot((Resolve-Path $Project).Path)
+
 foreach ($root in @("$env:ProgramFiles\Unity\Hub\Editor",
                     "${env:ProgramFiles(x86)}\Unity\Hub\Editor",
-                    "$env:LOCALAPPDATA\Unity\Hub\Editor")) {
+                    "$env:LOCALAPPDATA\Unity\Hub\Editor",
+                    (Join-Path $projectDrive "Unity\Hub\Editor"),
+                    (Join-Path $projectDrive "Program Files\Unity\Hub\Editor"))) {
     if (Test-Path $root) { $scanDirs += Get-ChildItem $root -Directory -ErrorAction SilentlyContinue }
 }
-foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)},
+                    $projectDrive, (Join-Path $projectDrive "Program Files"))) {
     if ($base -and (Test-Path $base)) {
         $scanDirs += Get-ChildItem $base -Directory -Filter "Unity*" -ErrorAction SilentlyContinue
     }
@@ -101,7 +129,9 @@ foreach ($dir in $scanDirs) {
         }
 }
 
-$unity = ($editors | Where-Object { $_.Version -eq $version } | Select-Object -First 1).Path
+if (-not $unity) {
+    $unity = ($editors | Where-Object { $_.Version -eq $version } | Select-Object -First 1).Path
+}
 if (-not $unity -and $editors.Count -gt 0) {
     $fallback = $editors | Sort-Object Version -Descending | Select-Object -First 1
     $unity = $fallback.Path
@@ -109,7 +139,7 @@ if (-not $unity -and $editors.Count -gt 0) {
 }
 
 if (-not $unity) {
-    Write-Error "Unity $version не найден нигде из обычных мест."
+    Write-Error "Unity $version не найден нигде из обычных мест. Укажи путь: -UnityExe ""X:\путь\Editor\Unity.exe"" (или переменная SINBINDER_UNITY)."
     exit 2
 }
 Write-Host "Редактор: $unity"
