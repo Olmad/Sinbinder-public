@@ -692,7 +692,7 @@ namespace Sinbinder.Tests
                     },
                 });
 
-                var her = MakeWarrior(name, SinType.Greed, 40f);
+                var her = MakeWarrior(name, SinType.Greed, 40f, ShellType.Ghost);
                 var axe = new InventoryItem("Топор беглянки", "", ItemType.Equipment, attack: 2f);
                 her.Give(axe);
                 her.Pocket(7);
@@ -711,6 +711,11 @@ namespace Sinbinder.Tests
                 var again = Expedition.Summon(NewObject("Держатель"), m, new RelationshipSystem(null));
                 Check(again.Worn(GearSlot.Weapon) == axe && again.PocketGold == 7,
                       "воин из записи снова в своём и при своём золоте");
+
+                // Тело — тоже его (слово автора 25 сентября: отряд не одни
+                // скелеты). Призрак у костра обязан войти в склеп призраком.
+                Same(m.Shell, ShellType.Ghost, "смена доли меняет тело — призрак вошёл скелетом");
+                Same(again.Shell, ShellType.Ghost, "воин из записи вернулся не в своём теле");
             }
             finally
             {
@@ -947,6 +952,7 @@ namespace Sinbinder.Tests
                         Intensity = 60f, Loyalty = 42f, UnpaidMissions = 3,
                         Leadership = 5f, IsCommander = true,
                         Trade = Trade.Hunter, Brother = true, Legend = true,
+                        Shell = ShellType.Zombie,
                         Gear = new List<InventoryItem>
                         {
                             new InventoryItem("Топор пробы", "", ItemType.Equipment, attack: 2f),
@@ -1010,6 +1016,8 @@ namespace Sinbinder.Tests
                 Check(first.Legend, "слава не пережила файл");
                 Check(second.Trade == Trade.None && !second.Brother && !second.Legend,
                       "ремесло, братство или слава приписаны тому, у кого их не было");
+                Same(first.Shell, ShellType.Zombie, "тело не пережило файл — зомби вернулся скелетом");
+                Same(second.Shell, ShellType.Skeleton, "тело по умолчанию — не скелет");
 
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");
@@ -1480,12 +1488,13 @@ namespace Sinbinder.Tests
             };
         }
 
-        private static Warrior MakeWarrior(string name, SinType sin, float intensity)
+        private static Warrior MakeWarrior(string name, SinType sin, float intensity,
+                                           ShellType shell = ShellType.Skeleton)
         {
             var go = NewObject(name);
             var warrior = go.AddComponent<Warrior>();
             warrior.Initialize(new SoulData(name, sin, MoralType.Neutral, 1, intensity),
-                ShellType.Skeleton, new RelationshipSystem(null));
+                shell, new RelationshipSystem(null));
             return warrior;
         }
 

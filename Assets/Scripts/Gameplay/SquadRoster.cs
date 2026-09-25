@@ -59,6 +59,13 @@ namespace Sinbinder.Gameplay
             /// <summary>Слава, пришедшая с ним. Не заработанный титул.</summary>
             public bool Legend;
 
+            /// <summary>
+            /// Тело: скелет, зомби, призрак. Живёт в составе, а не в сцене:
+            /// зомби у костра обязан войти в склеп зомби и вернуться с вылазки
+            /// в своём теле. По умолчанию — скелет, каким отряд был до 25 сентября.
+            /// </summary>
+            public ShellType Shell;
+
             /// <summary>Один из трёх, кого можно поставить командиром на доле 3.</summary>
             public bool IsCandidate;
 
@@ -285,6 +292,7 @@ namespace Sinbinder.Gameplay
                 m.UnpaidMissions = w.UnpaidMissions;
                 m.IsCommander = w.IsCommander;
                 m.IsAway = false;
+                m.Shell = w.Shell;
                 m.Gear = new List<Inventory.InventoryItem>(w.Carried);
                 m.Pocket = w.PocketGold;
 

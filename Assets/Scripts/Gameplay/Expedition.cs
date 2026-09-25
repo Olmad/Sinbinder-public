@@ -104,7 +104,7 @@ namespace Sinbinder.Gameplay
                 {
                     var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
                                  m.Loyalty, m.IsCommander, Team.Player, relations,
-                                 m.Gender);
+                                 m.Gender, m.Shell);
                     w.UnpaidMissions = m.UnpaidMissions;
 
                     squad.Add(w);
@@ -169,7 +169,7 @@ namespace Sinbinder.Gameplay
                                      RelationshipSystem relations)
         {
             var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                         m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender);
+                         m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender, m.Shell);
             w.UnpaidMissions = m.UnpaidMissions;
 
             // Надетое и карман спорят в голове (искушение, Жадность) —
@@ -180,16 +180,22 @@ namespace Sinbinder.Gameplay
             return w;
         }
 
+        /// <summary>
+        /// Воин для счёта. Тело — его собственное (<see cref="SquadRoster.Member.Shell"/>):
+        /// вылазка — настоящий бой, и зомби в нём держит удар дольше
+        /// призрака. Чужие — скелеты, как были.
+        /// </summary>
         private static Warrior Make(GameObject holder, string name, SinType sin,
             MoralType moral, float intensity, float loyalty, bool isCommander,
-            Team team, RelationshipSystem relations, Gender gender = Gender.Male)
+            Team team, RelationshipSystem relations, Gender gender = Gender.Male,
+            ShellType shell = ShellType.Skeleton)
         {
             var go = new GameObject(name);
             go.transform.SetParent(holder.transform);
 
             var w = go.AddComponent<Warrior>();
             w.Initialize(new SoulData(name, sin, moral, 1, intensity, null, gender),
-                         ShellType.Skeleton, relations, isCommander, team);
+                         shell, relations, isCommander, team);
             // Верность задаётся сдвигом от полусотни: своего сеттера
             // у неё нет, и заводить его ради счётной вылазки незачем.
             w.ChangeLoyalty(loyalty - w.Loyalty);

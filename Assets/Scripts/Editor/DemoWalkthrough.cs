@@ -799,6 +799,15 @@ namespace Sinbinder.EditorTools
             EditorApplication.update -= Camp;
             if (Mathf.Approximately(Time.timeScale, CampFast)) Time.timeScale = 1f;
 
+            // Тела вблизи — по одному на оболочку: с высоты тактической
+            // камеры скелет, зомби и призрак неотличимы, а отряд с 25 сентября
+            // — все три (слово автора: «не хватает разнообразия»).
+            var bodies = new HashSet<Core.ShellType>();
+            foreach (var w in Own())
+                if (bodies.Add(w.Shell))
+                    Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
+                        "лагерь — " + w.Shell + " — " + w.DisplayName, w.transform);
+
             Write($"  [ЛАГЕРЬ] за {CampMinutes:0} минут игры: переходов {_campMoves} "
                   + $"(ходили {_campMovers.Count} из {_campWhere.Count}), реплик {_campLines}");
 
@@ -1192,7 +1201,8 @@ namespace Sinbinder.EditorTools
             // только в составе и в записи и глазом на поле не проверяется.
             var who = new List<string>();
             foreach (var m in SquadRoster.Members)
-                who.Add(m.Name + ": " + m.Trade + (m.Brother ? ", брат" : "") + (m.Legend ? ", слава" : ""));
+                who.Add(m.Name + ": " + m.Shell + ", " + m.Trade
+                        + (m.Brother ? ", брат" : "") + (m.Legend ? ", слава" : ""));
             who.Sort(StringComparer.Ordinal);
             gear["(кто есть кто)"] = string.Join("; ", who);
 

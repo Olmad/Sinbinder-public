@@ -116,6 +116,7 @@ namespace Sinbinder.Core
                     Trade = (int)m.Trade,
                     Brother = m.Brother,
                     Legend = m.Legend,
+                    Shell = (int)m.Shell,
                 });
             }
 
@@ -339,6 +340,7 @@ namespace Sinbinder.Core
                     Trade = (Trade)m.Trade,
                     Brother = m.Brother,
                     Legend = m.Legend,
+                    Shell = (ShellType)m.Shell,
                 });
             }
 

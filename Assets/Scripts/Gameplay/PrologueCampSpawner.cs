@@ -44,6 +44,15 @@ namespace Sinbinder.Gameplay
         /// и сбыться оно обязано голосованием Гордыни, а не сценарием.
         /// Поэтому спектр Гордыни у него выкручен, а Верность — нет.
         /// Остальные имена — заглушки, канон их не закрепляет.
+        ///
+        /// <b>Тела</b> — трое скелетов, трое зомби, трое призраков (слово
+        /// автора, 25 сентября: «очень сильно не хватает разнообразия, все
+        /// скелеты»). Тело тянет душу при каждом появлении (<see cref="ShellBinder"/>),
+        /// поэтому раздано так, чтобы не подъедать три греха демо: зомби
+        /// отнимает Гордыню — гордых зомби нет, на Гордыне Каргана держится
+        /// пророчество доли 6; призрак отнимает Жадность — жадных призраков
+        /// нет, на ней держится долг Марги. Трое кандидатов в старшие —
+        /// в трёх разных телах: совет выбирает и глазами.
         /// </summary>
         private static readonly CampMember[] Squad =
         {
@@ -66,7 +75,7 @@ namespace Sinbinder.Gameplay
             // Навыки разведены так, чтобы уводили по-разному, но все трое
             // проходили порог миссии доли 3 в пять человек.
             new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f,
-                trade: Trade.Mage),
+                trade: Trade.Mage, shell: ShellType.Ghost),
             // Долг в три вылазки — не случайность, а завязка. Строка, которой
             // игра продаётся дословно («ему не платили третью вылазку подряд»),
             // рождается только при долге больше двух, а демо заводило всех
@@ -74,7 +83,7 @@ namespace Sinbinder.Gameplay
             // Отряду задолжали до пробуждения — тем же приёмом, что и пять
             // пустых палаток: лагерь жил до того, как игрок открыл глаза.
             new("Марга Копатель",      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
-                unpaid: 3, trade: Trade.Peasant),
+                unpaid: 3, trade: Trade.Peasant, shell: ShellType.Zombie),
             new("Брат Хальд",          SinType.Pride,    MoralType.Pious,   35f, 95f, 25f,
                 trade: Trade.Alchemist),
 
@@ -86,13 +95,13 @@ namespace Sinbinder.Gameplay
             // нарочно: кандидаты в старшие уходят с отрядом, а братство
             // видно только пока оба на виду.
             new("Одноглазый Хорь",     SinType.Greed,    MoralType.Vicious, 45f, 65f, 0f,
-                brother: true, trade: Trade.Hunter),
+                brother: true, trade: Trade.Hunter, shell: ShellType.Zombie),
             // Уныние Ю — 25, а не прежние 55 от Чревоугодия: на 55 он не
             // исполнял и лагерного «иди» рядом (стенд: 78% отказов), и доля 2
             // ломалась бы об него, как прежде об Гурта. На 25 рядом слушается,
             // издали ленится, а патруль ему скучен — характер виден.
             new("Толстый Ю",           SinType.Sloth,    MoralType.Neutral, 25f, 80f, 0f,
-                trade: Trade.Peasant),
+                trade: Trade.Peasant, shell: ShellType.Zombie),
             new("Лиска",               SinType.Greed,    MoralType.Neutral, 30f, 85f, 0f,
                 trade: Trade.Archer),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
@@ -100,14 +109,14 @@ namespace Sinbinder.Gameplay
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
             // по унынию после Вейна, но лагерный приказ ему уже по силам.
             new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f,
-                brother: true, trade: Trade.Peasant),
+                brother: true, trade: Trade.Peasant, shell: ShellType.Ghost),
 
             // Девятый. Пролог обещает, что «воинов видно девять»
             // (docs/09-PROLOGUE.md §4, сцена 1), и число это не
             // произвольное: с доли 2 уходят пятеро, и в лагере обязаны
             // остаться Карган и трое. На восьмерых сходилось трое.
             new("Косой Ждан",          SinType.Pride,    MoralType.Neutral, 30f, 80f, 0f,
-                trade: Trade.Archer),
+                trade: Trade.Archer, shell: ShellType.Ghost),
         };
 
         private readonly struct CampMember
@@ -196,12 +205,17 @@ namespace Sinbinder.Gameplay
             /// </summary>
             public readonly bool Legend;
 
+            /// <summary>Тело: скелет, зомби или призрак.</summary>
+            public readonly ShellType Shell;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
                 string unavailable = "", int unpaid = 0,
                 Gender gender = Gender.Male, bool brother = false,
-                Trade trade = Trade.None, bool legend = false)
+                Trade trade = Trade.None, bool legend = false,
+                ShellType shell = ShellType.Skeleton)
             {
+                Shell = shell;
                 Name = name;
                 Sin = sin;
                 Moral = moral;
@@ -322,7 +336,8 @@ namespace Sinbinder.Gameplay
                     Unavailable = m.Unavailable,
                     Brother = m.Brother,
                     Trade = m.Trade,
-                    Legend = m.Legend
+                    Legend = m.Legend,
+                    Shell = m.Shell
                 };
         }
 
@@ -435,7 +450,7 @@ namespace Sinbinder.Gameplay
             // Слава не зарабатывается на месте: она пришла с ним.
             // Дальше её читают те, кто встречает его через строй.
             if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
-            warrior.Initialize(soul, ShellType.Skeleton, _relSystem, member.IsCommander, Team.Player);
+            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
 
@@ -472,7 +487,7 @@ namespace Sinbinder.Gameplay
             float tall = (seasoned ? 1.50f : 1.20f) * (0.95f + (stamp % 6) * 0.02f);
             float thick = 0.50f * (0.90f + ((stamp / 6) % 6) * 0.04f);
 
-            WarriorLook.Build(go, ShellType.Skeleton, tall, thick, tall * 0.5f);
+            WarriorLook.Build(go, member.Shell, tall, thick, tall * 0.5f);
 
             // Братьев видно без наведения: у обоих над головой одна
             // и та же бирюзовая метка. Подпись при взгляде — вторая

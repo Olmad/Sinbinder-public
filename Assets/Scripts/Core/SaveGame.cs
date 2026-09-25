@@ -79,6 +79,13 @@ namespace Sinbinder.Core
         public int Trade;
         public bool Brother;
         public bool Legend;
+
+        /// <summary>
+        /// Тело (<see cref="ShellType"/> числом). С 25 сентября отряд — не одни
+        /// скелеты (§107). Старые записи читаются нулём — скелетом, каким
+        /// тогда был весь отряд.
+        /// </summary>
+        public int Shell;
     }
 
     /// <summary>
