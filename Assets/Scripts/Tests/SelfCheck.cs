@@ -956,6 +956,7 @@ namespace Sinbinder.Tests
                     {
                         Name = "Вторая", Sin = SinType.Sloth, Moral = MoralType.Pious,
                         Intensity = -30f, Loyalty = 71f, Gender = Gender.Female,
+                        IsAway = true,
                     },
                 });
 
@@ -999,6 +1000,9 @@ namespace Sinbinder.Tests
                                            + "знак спектра потерян");
                 Same(second.Gender, Gender.Female, "пол не пережил файл — "
                                                  + "вернувшаяся женщина стала мужчиной");
+                Check(second.IsAway, "уход на вылазку не пережил файл — «С начала доли» "
+                                   + "в разгроме теряла ушедших и старшего (§105.7)");
+                Check(!first.IsAway, "оставшийся в лагере записан ушедшим");
 
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");

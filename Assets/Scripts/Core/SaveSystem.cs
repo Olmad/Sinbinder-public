@@ -112,6 +112,7 @@ namespace Sinbinder.Core
                     Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear)
                                           : new List<Inventory.InventoryItem>(),
                     Pocket = m.Pocket,
+                    IsAway = m.IsAway,
                 });
             }
 
@@ -331,6 +332,7 @@ namespace Sinbinder.Core
                     Unavailable = m.Unavailable,
                     Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear) : null,
                     Pocket = m.Pocket,
+                    IsAway = m.IsAway,
                 });
             }
 
