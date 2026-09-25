@@ -172,6 +172,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void OnUnitsChanged()
         {
+            // Сцену выгружают: тела первой волны уничтожаются вместе с ней,
+            // поле «пустеет», и волна, уже выключенная выгрузкой, пыталась
+            // выйти — StartCoroutine на выключенном объекте пишет ошибку.
+            // Так было на «С начала доли» посреди первой волны (14-HANDOFF §105.7).
+            if (!isActiveAndEnabled) return;
+
             if (_spawned) return;
 
             var combat = CombatManager.Instance;
