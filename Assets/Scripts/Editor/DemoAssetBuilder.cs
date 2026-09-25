@@ -248,8 +248,11 @@ namespace Sinbinder.Utilets
                 (SinType.Gluttony, 25f), (SinType.Pride, -20f));
 
             // Бесплотный не может взять — только смотреть, как берут другие.
+            // Запас 28, а не 24 (слово автора, 25 сентября): с тех пор как
+            // призраки встали в отряд, они бежали первыми и разгром срывался
+            // у края (14-HANDOFF §107–108). Всё ещё самый хрупкий — скелет 29.7.
             Shell(ShellType.Ghost, "Призрак",
-                hp: 24f, defense: 0f, attack: 4f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
+                hp: 28f, defense: 0f, attack: 4f, speed: 5.0f, revivable: false, wear: 0f, bind: 0.20f,
                 (SinType.Envy, 25f), (SinType.Greed, -30f));
 
             // Камень не завидует. Камень знает, что он камень.
