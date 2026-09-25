@@ -22,7 +22,10 @@ namespace Sinbinder.Gameplay
     /// решением; и первый отказ Марги случается у его сундука.
     ///
     /// По часам, без жребия: раз в полминуты воин пересматривает место,
-    /// у каждого свой сдвиг — не встают разом. Во время сцен пролога
+    /// у каждого свой сдвиг — не встают разом. Место приедается
+    /// (<see cref="CampChoice.Tired"/>): жадный постоит у сундука и пойдёт
+    /// погреться, гордый — от края к столу, где решают, и обратно; унылый
+    /// из палатки выходит редко — ему много не надо. Во время сцен пролога
     /// (провожатый, тревога шара, разгром) лагерь не живёт: сцена ведёт.
     ///
     /// Выключатель: до вечернего прогона выключено; «лагерь» в консоли (~).
@@ -39,7 +42,18 @@ namespace Sinbinder.Gameplay
             new LustModule(), new GluttonyModule(), new SlothModule(), new LoyaltyModule(),
         };
 
-        private struct Choice { public CampSpot Spot; public int Epoch; }
+        /// <summary>
+        /// Где стоит и с каких пор; откуда ушёл и когда. Из этого — ритм
+        /// (<see cref="CampChoice.Tired"/>): место приедается.
+        /// </summary>
+        private struct Choice
+        {
+            public CampSpot Spot;
+            public int Epoch;
+            public float Since;
+            public CampSpot? Left;
+            public float LeftAt;
+        }
         private static readonly Dictionary<Warrior, Choice> Chosen = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -117,8 +131,22 @@ namespace Sinbinder.Gameplay
             int epoch = Mathf.FloorToInt((Time.time + Stable(w.DisplayName) % 30) / Every);
             if (Chosen.TryGetValue(w, out var c) && c.Epoch == epoch) return c.Spot;
 
-            var spot = CampChoice.Choose(Voices, Soul.FromWarrior(w));
-            Chosen[w] = new Choice { Spot = spot, Epoch = epoch };
+            // Первый выбор — без ритма: пришёл в лагерь, встал к своему.
+            if (!Chosen.TryGetValue(w, out var was))
+            {
+                var first = CampChoice.Choose(Voices, Soul.FromWarrior(w));
+                Chosen[w] = new Choice { Spot = first, Epoch = epoch, Since = Time.time };
+                return first;
+            }
+
+            var soul = Soul.FromWarrior(w);
+            float here = (Time.time - was.Since) / 60f;
+            float gone = (Time.time - was.LeftAt) / 60f;
+            var spot = CampChoice.Next(Voices, soul, was.Spot, here, was.Left, gone);
+
+            Chosen[w] = spot == was.Spot
+                ? new Choice { Spot = spot, Epoch = epoch, Since = was.Since, Left = was.Left, LeftAt = was.LeftAt }
+                : new Choice { Spot = spot, Epoch = epoch, Since = Time.time, Left = was.Spot, LeftAt = Time.time };
             return spot;
         }
 

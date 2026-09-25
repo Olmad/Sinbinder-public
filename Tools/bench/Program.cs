@@ -2280,8 +2280,47 @@ static class Bench
             Console.WriteLine($"  {pair.Key,-10} {string.Join(", ", pair.Value)}");
 
         Console.WriteLine(where.Count >= 4
-            ? $"  ВЫВОД: отряд расходится по {where.Count} местам — лагерь живёт."
+            ? $"  ВЫВОД: отряд расходится по {where.Count} местам."
             : $"  ВЫВОД: мест всего {where.Count} — лагерь по-прежнему толпа у костра.");
+
+        // Ритм (автор, 25 сентября: «где жизнь?»): десять минут лагеря,
+        // пересмотр раз в полминуты, тем же шагом, что в игре (CampChoice.Next).
+        // Минуты — стенду; игрок видит только, кто куда пошёл.
+        Console.WriteLine("\n  ритм, десять минут: место и сколько там простоял");
+        int movers = 0, slothMoves = 0, othersMoves = 0, sloths = 0, others = 0;
+        foreach (var m in squad)
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData(m.Name, m.Sin, m.Moral, 1, m.Intensity),
+                Attack = 5f, Loyalty = m.Loyalty, Team = Team.Player,
+                Relationships = new RelationshipSystem(),
+            };
+            var soul = Soul.FromWarrior(w);
+
+            var here = CampChoice.Choose(voices, soul);
+            float since = 0f, leftAt = -99f;
+            CampSpot? left = null;
+            var path = new List<string>();
+            int moves = 0;
+            for (float t = 0.5f; t <= 10.001f; t += 0.5f)
+            {
+                var next = CampChoice.Next(voices, soul, here, t - since, left, t - leftAt);
+                if (next == here) continue;
+                path.Add($"{here} {t - since:F1}");
+                left = here; leftAt = t; here = next; since = t; moves++;
+            }
+            path.Add($"{here} {10f - since:F1}");
+            if (moves > 0) movers++;
+            if (m.Sin == SinType.Sloth) { sloths++; slothMoves += moves; } else { others++; othersMoves += moves; }
+            Console.WriteLine($"  {m.Name,-7} {m.Sin,-6} переходов {moves,2}:  {string.Join(" → ", path)}");
+        }
+        double slothAvg = sloths == 0 ? 0 : slothMoves / (double)sloths;
+        double otherAvg = others == 0 ? 0 : othersMoves / (double)others;
+        Console.WriteLine($"  ходят {movers} из {squad.Length}; унылые в среднем {slothAvg:F1} перехода, прочие {otherAvg:F1}");
+        Console.WriteLine(movers >= squad.Length - 2 && slothAvg < otherAvg
+            ? "  ВЫВОД: лагерь живёт — ходят почти все, унылые реже прочих."
+            : "  ВЫВОД: лагерь стоит — места не приедаются или унылые бегают наравне со всеми.");
     }
 
     /// <summary>Одна душа под приказом отходить: доля отказов и типичная причина.</summary>
