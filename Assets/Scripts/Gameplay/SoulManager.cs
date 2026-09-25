@@ -121,11 +121,20 @@ namespace Sinbinder.Gameplay
         {
             if (CombatManager.Instance != null)
                 CombatManager.Instance.OnAnyDeath -= OnAnyDeath;
+
+            if (Instance == this)
+                UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
         }
 
         private void OnAnyDeath(Damageable killed, GameObject killer)
         {
             if (killed == null || killed.Warrior == null) return;
+
+            // Греховод — не душа для жатвы: жнёт он сам, а его смерть —
+            // конец игры (SinbinderPlayer). Огонёк над ним после «С начала
+            // доли» переезжал в новый разгром, и в суме оказывалась банка
+            // «Греховод» (14-HANDOFF §109).
+            if (killed.Warrior is SinbinderPlayer) return;
 
             StartSoulFade(killed.Warrior, killed.transform.position);
         }
@@ -136,11 +145,31 @@ namespace Sinbinder.Gameplay
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
             }
             else
             {
                 Destroy(gameObject);
             }
+        }
+
+        /// <summary>
+        /// Сцена ушла — ушло и её поле. Гаснущая душа лежит там, где пал
+        /// воин, а менеджер переживает смену сцен: без этого души старого
+        /// поля переезжали в новое — после «С начала доли» в перезапущенный
+        /// разгром, после побега в склеп, — и собирались там, за сотни метров
+        /// от места смерти (14-HANDOFF §109). Запись середины боя не хранит
+        /// (<see cref="Core.SaveSystem"/>), значит и огоньков тоже.
+        /// </summary>
+        private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (_fadingSouls.Count == 0) return;
+
+            Debug.Log($"[ДУШИ] Поле ушло вместе со сценой {scene.name}: несобранных — {_fadingSouls.Count}.");
+            _fadingSouls.Clear();
+
+            // Огоньки — предметы сцены и ушли вместе с ней.
+            _indicators.RemoveAll(i => i == null);
         }
 
         void Update()

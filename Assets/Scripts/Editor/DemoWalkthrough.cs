@@ -684,6 +684,22 @@ namespace Sinbinder.EditorTools
                   + ", разговор " + (Dialogue.DialogueCameraController.Instance != null
                                      && Dialogue.DialogueCameraController.Instance.InDialogue));
 
+            // Кто держит паузу. «Пауза True» без имени оставила загадкой
+            // склеп 25 сентября (14-HANDOFF §108): мир стоял, а на экране
+            // не было ничего.
+            var open = new List<string>();
+            if (UI.StartPanel.Waiting) open.Add("вопрос о сохранении");
+            if (UI.PrologueTitleUI.Showing) open.Add("заставка");
+            if (UI.GameOverUI.Shown) open.Add("конец игры");
+            if (UI.GearPanel.Open) open.Add("вещи");
+            if (SalaryOpen()) open.Add("плата");
+            if (CouncilPanelOpen()) open.Add("совет");
+            if (DemoEndShown()) open.Add("конец демо");
+            Write("    · на экране: " + (open.Count == 0 ? "ничего" : string.Join(", ", open))
+                  + (pause == null ? ", паузы нет"
+                     : $", пауз поставлено {pause.Stamp}, насовсем {pause.Halted}, "
+                       + $"пауза из сцены {pause.gameObject.scene.name}"));
+
             foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null) continue;
@@ -1156,6 +1172,16 @@ namespace Sinbinder.EditorTools
 
             var now = GearNow();
             int differ = 0;
+
+            // Души старого поля в перезапущенный разгром не переезжают
+            // (14-HANDOFF §109): после кнопки гаснущих нет, пока никто не пал.
+            // Раньше собиралась и душа самого Греховода.
+            int stale = SoulManager.Instance != null ? SoulManager.Instance.FadingCount : 0;
+            if (stale > 0)
+            {
+                differ++;
+                Write($"  [ДОЛЯ РАЗОШЛАСЬ] гаснущих душ с прежнего поля: {stale}");
+            }
             foreach (var pair in _gearBefore)
             {
                 now.TryGetValue(pair.Key, out string after);
