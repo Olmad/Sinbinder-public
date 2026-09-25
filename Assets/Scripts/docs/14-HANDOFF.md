@@ -6061,3 +6061,40 @@ Technologies SF), тихо: `/S /D=D:\Claude\UnityHub`. На C от Hub оста
 вход через браузер). Автор вошёл и взял Personal, лицензия —
 `%LOCALAPPDATA%\Unity\licenses\UnityEntitlementLicense.xml`. Редакторов
 через Hub не ставили: нужный уже на флешке.
+
+### 105.2 Этап 1, шаг 1: `unity-check.ps1` — 348 из 348
+
+Первый запуск Unity на этом ПК (папка `Library` с домашнего была):
+редактор найден сам — `D:\Unity 6000.3.2f1\6000.3.22f1\Editor\Unity.exe`,
+обход диска проекта из §104 работает на Windows. Unity шёл четыре
+минуты.
+
+* **Ошибок компиляции нет.**
+* **Самопроверка: 348 из 348** (было 336; новые — `CampTalkLines` и
+  прочее §102–103). Исключений в логе нет, код выхода Unity — 0.
+* Лицензия — два предупреждения в логе, работе не мешали:
+
+  ```
+  [Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 8244, path: "D:/Claude/UnityHub/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+  [Licensing::Module] LicensingClient has failed validation; ignoring
+  [Licensing::Module] Error: Access token is unavailable; failed to update
+  ```
+
+Нашлись две поломки **в самом скрипте**, обе от Windows PowerShell 5.1:
+
+1. **Скрипт висит ~10 минут после выхода Unity.** `Start-Process -Wait`
+   ждёт не процесс, а всё его потомство. Unity оставляет жить сервер
+   компилятора — `dotnet exec …\DotNetSdkRoslyn\VBCSCompiler.dll
+   -pipename:…`; тот выходит сам после 10 минут простоя. Unity вышел
+   в 10:54:47, скрипт молчал. Проверено: сервер остановлен в 10:58:40,
+   сводка напечаталась в 10:58:42. `demo-walkthrough.ps1` этим не болеет:
+   там `-PassThru` и `WaitForExit`.
+2. **Список упавших проверок не показался бы никогда.** `Get-Content $Log`
+   без `-Encoding` читает лог (UTF-8) как ANSI, и шаблоны с кириллицей
+   и `✗` не находят ничего. Сводка печатает только строки BEGIN/END;
+   строки «ПРОВЕРКА ДВИЖКА: пройдено 348 из 348» в ней нет, хотя в логе
+   она есть. При провале было бы видно «FAIL», но не **что** упало
+   (`SelfCheck.cs:50` печатает упавшее как `  ✗ …`).
+
+Чиню отдельным шагом после автопрогонов (этап 1 важнее) и проверяю
+запуском.
