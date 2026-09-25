@@ -6038,3 +6038,26 @@ exe, а не по имени папки. Unity Hub — следующим шаг
 * `handoff.py` — «Ввод настроен верно (activeInputHandler: 2)…
   Расхождений с репозиторием нет.»
 * `check.py` — 279 файлов, 0 замечаний.
+
+Пуш из самой сессии не прошёл: Claude Code запускает команды
+с `GCM_INTERACTIVE=never` и `GIT_TERMINAL_PROMPT=0`, окну входа
+взяться неоткуда:
+
+```
+fatal: Cannot prompt because user interactivity has been disabled.
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+Первый пуш — из отдельного окна PowerShell без этих переменных, вход
+в GitHub сделал автор. Дальше токен читается с флешки без вопросов.
+
+**Unity Hub 3.21.3** — в `D:\Claude\UnityHub`. Не через winget: там
+он MSIX, а MSIX ставится только в `C:\Program Files\WindowsApps`.
+`hub/prod/UnityHubSetup.exe` на CDN Unity больше нет (404),
+а `3.21.3/UnityHubSetup-3.21.3-x64.zip` — сборка для macOS.
+Годится `hub/prod/3.21.3/UnityHubSetup-3.21.3-x64.exe` (подпись Unity
+Technologies SF), тихо: `/S /D=D:\Claude\UnityHub`. На C от Hub остались
+запись в списке программ и протокол `unityhub://` (без него не пройдёт
+вход через браузер). Автор вошёл и взял Personal, лицензия —
+`%LOCALAPPDATA%\Unity\licenses\UnityEntitlementLicense.xml`. Редакторов
+через Hub не ставили: нужный уже на флешке.
