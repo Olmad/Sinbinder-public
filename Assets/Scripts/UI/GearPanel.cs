@@ -230,6 +230,8 @@ namespace Sinbinder.UI
             if (Time.unscaledTime < _nextLook) return;
             _nextLook = Time.unscaledTime + 0.2f;
 
+            Rise();
+
             var pause = Core.GamePauseController.Instance;
             if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null
                 || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
@@ -238,6 +240,45 @@ namespace Sinbinder.UI
             if (w != null) { _prompt.text = $"F — поговорить: {w.DisplayName}"; return; }
 
             _prompt.text = TrophyChest.Reachable() != null ? "F — сундук Марги" : "";
+        }
+
+        /// <summary>Нижний край строки F, когда над панелью выделенного пусто.</summary>
+        private const float PromptFloor = 250f;
+
+        /// <summary>Имя стопки над панелью выделенного. Его же ставит сборщик сцен.</summary>
+        private const string StackName = "Над выделенным";
+
+        private RectTransform _stack;
+
+        /// <summary>
+        /// Встать над стопкой. Строка F живёт на своём холсте, а под ней, над
+        /// панелью выделенного, — стопка: подпись предмета и уроки. Стояла
+        /// строка на одной высоте с нижней строкой стопки, и «F — сундук
+        /// Марги» ложилась на подсказку ходьбы. Теперь встаёт над тем, что
+        /// в стопке сейчас видно; стопка пуста — на прежнее место.
+        ///
+        /// Стопку ищем по имени, как PlateSight свою строку: компонент
+        /// переживает смену сцен, а стопка умирает вместе со сценой.
+        /// </summary>
+        private void Rise()
+        {
+            if (_stack == null)
+                foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+                {
+                    var found = canvas.transform.Find(StackName);
+                    if (found == null) continue;
+                    _stack = (RectTransform)found;
+                    break;
+                }
+
+            float y = PromptFloor;
+            if (_stack != null && _stack.gameObject.activeInHierarchy)
+            {
+                float tall = _stack.rect.height;
+                if (tall > 0f) y = _stack.anchoredPosition.y + tall + 8f;
+            }
+
+            _prompt.rectTransform.anchoredPosition = new Vector2(0f, y);
         }
 
         /// <summary>Мешок Греховода сам по себе: что несёт он и как отдать это воину.</summary>
@@ -570,8 +611,12 @@ namespace Sinbinder.UI
                             new Color(0f, 0f, 0f, 0.55f));
             shade.offsetMin = shade.offsetMax = Vector2.zero;
 
+            // Чуть выше середины и ниже прежнего: при шестистах по центру
+            // низ панели ложился на журнал и панель выделенного (до 260
+            // от края) — строка клавиш наезжала на рамку журнала на кадрах
+            // сундука и обмена 26 сентября. Теперь низ на 280.
             var panel = Box("Панель", _root.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                            Vector2.zero, new Vector2(1000f, 600f), new Color(0.07f, 0.06f, 0.055f, 0.97f));
+                            new Vector2(0f, 30f), new Vector2(1000f, 580f), new Color(0.07f, 0.06f, 0.055f, 0.97f));
 
             _title = Label(panel, "Заголовок", 30, TextAnchor.UpperLeft,
                            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(28f, -64f), new Vector2(-28f, -18f));
@@ -704,7 +749,7 @@ namespace Sinbinder.UI
             var rt = (RectTransform)go.transform;
             rt.SetParent(canvasGo.transform, false);
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0f);
-            rt.anchoredPosition = new Vector2(0f, 250f);
+            rt.anchoredPosition = new Vector2(0f, PromptFloor);
             rt.sizeDelta = new Vector2(700f, 40f);
 
             _prompt = go.GetComponent<Text>();

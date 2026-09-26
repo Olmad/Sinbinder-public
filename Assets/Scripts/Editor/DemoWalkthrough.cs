@@ -311,10 +311,13 @@ namespace Sinbinder.EditorTools
                 // и закрывает его. Без вещи в мешке обмену ниже нечего было
                 // отдать, и шаг обмена при складе проходил впустую
                 // (14-HANDOFF §105.4). Без склада шаг проходит сразу.
+                // Кадр — до того, как экран закрыт: кадр шага снимается после
+                // проверки, и экранов сундука и вещей на них не было ни разу.
                 S("склад: экран сундука открылся", null, () =>
                 {
                     if (!TrophyChest.Store) return true;
-                    if (!UI.GearPanel.Open) return false;
+                    if (!GearSettled()) return false;
+                    Snap("склад — экран сундука");
                     ChestOpened();
                     UI.GearPanel.Dismiss();
                     return true;
@@ -338,7 +341,8 @@ namespace Sinbinder.EditorTools
                     UI.GearPanel.Toggle();
                 }, () =>
                 {
-                    if (!UI.GearPanel.Open) return false;
+                    if (!GearSettled()) return false;
+                    Snap("вещи — экран выделенного");
                     UI.GearPanel.Dismiss();
                     SelectionManager.Instance?.Drop(_clicked);
                     return true;
@@ -346,12 +350,13 @@ namespace Sinbinder.EditorTools
 
                 S("вещи: разговор вблизи и обмен", TalkAndHand, () =>
                 {
-                    if (!UI.GearPanel.Open) return false;
+                    if (!GearSettled()) return false;
+                    Snap("вещи — обмен вблизи");
                     UI.GearPanel.Dismiss();
                     return true;
                 }, 5f),
 
-                S("прогноз на панели приказов", ForecastSquad, () => _forecastOk, 5f),
+                S("прогноз на панели приказов", ForecastSquad, ForecastShown, 5f),
 
                 S("тревога после сундука", null,
                   () => Ball() != null && Ball().IsAlarmed, 30f),
@@ -1358,7 +1363,25 @@ namespace Sinbinder.EditorTools
             UI.GearPanel.Refresh();
         }
 
+        private static float _gearSince = -1f;
+
+        /// <summary>
+        /// Экран вещей открыт и простоял треть секунды. Кадр, снятый в тот же
+        /// тик, что экран открылся, ловил под ним непогашенную строку
+        /// «F — сундук Марги»: экран гасит её в своём Update, кадром позже.
+        /// </summary>
+        private static bool GearSettled()
+        {
+            if (!UI.GearPanel.Open) { _gearSince = -1f; return false; }
+            if (_gearSince < 0f) _gearSince = Time.realtimeSinceStartup;
+            if (Time.realtimeSinceStartup - _gearSince < 0.3f) return false;
+
+            _gearSince = -1f;
+            return true;
+        }
+
         private static bool _forecastOk;
+        private static int _forecastFrame = -1;
 
         /// <summary>
         /// Прогноз «кто пойдёт» на атаку для всего отряда. Без выключателя
@@ -1368,6 +1391,7 @@ namespace Sinbinder.EditorTools
         private static void ForecastSquad()
         {
             _forecastOk = false;
+            _forecastFrame = -1;
             if (!AOS.Counterfactual.Enabled) { _forecastOk = true; return; }
 
             var manager = SelectionManager.Instance;
@@ -1384,7 +1408,62 @@ namespace Sinbinder.EditorTools
             Write("  [ПРОГНОЗ] " + text.Replace("\n", " | "));
             _forecastOk = !string.IsNullOrEmpty(text) && !System.Text.RegularExpressions.Regex.IsMatch(text, "[0-9]");
 
-            foreach (var unit in new List<SelectionComponent>(manager.GetSelectedUnits())) manager.Drop(unit);
+            // Навести «мышь» на кнопку атаки: подсказка с прогнозом встаёт
+            // на панели только при наведении, а мыши у прогона нет. Выделение
+            // и наведение снимает ForecastShown, сняв кадр.
+            Hover(AttackButton);
+            _forecastFrame = Time.frameCount;
+            _forecastAt = Time.realtimeSinceStartup;
+        }
+
+        private static float _forecastAt;
+
+        /// <summary>Номер кнопки «Атака» на панели приказов — вторая в первом ряду.</summary>
+        private const int AttackButton = 1;
+
+        /// <summary>
+        /// Подсказка встала — снять кадр, убрать наведение и выделение.
+        /// До 26 сентября прогноз проверялся строкой отчёта, а на экране
+        /// его не видел никто: в показе лежал кадр «прогноз приказа»
+        /// без прогноза.
+        /// </summary>
+        private static bool ForecastShown()
+        {
+            if (_forecastFrame < 0) return _forecastOk;
+
+            // Панель приказов пишет подсказку в своём Update, а панель
+            // выделенного перечитывает выделение раз в четверть секунды:
+            // снятый через два кадра, кадр показывал четверых в кругах
+            // и «Никто не выделен» под ними.
+            if (Time.frameCount < _forecastFrame + 2
+                || Time.realtimeSinceStartup < _forecastAt + 0.35f) return false;
+
+            Snap("прогноз — подсказка на кнопке «Атака»");
+            Hover(-1);
+            _forecastFrame = -1;
+
+            var manager = SelectionManager.Instance;
+            if (manager != null)
+                foreach (var unit in new List<SelectionComponent>(manager.GetSelectedUnits())) manager.Drop(unit);
+
+            return _forecastOk;
+        }
+
+        /// <summary>
+        /// Навести на кнопку панели приказов по номеру; −1 — убрать. Наведение
+        /// панель узнаёт от EventTrigger, а событий мыши у прогона нет.
+        /// </summary>
+        private static void Hover(int index)
+        {
+            var type = typeof(UI.CommandPanel);
+            var panel = type.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null);
+            if (panel == null) return;
+
+            var slots = type.GetField("_slots", BindingFlags.NonPublic | BindingFlags.Instance)
+                            ?.GetValue(panel) as System.Collections.IList;
+            object slot = slots != null && index >= 0 && index < slots.Count ? slots[index] : null;
+
+            type.GetField("_hover", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(panel, slot);
         }
 
         /// <summary>Выделен ли он и горит ли у ног круг. Проверив — снять выделение.</summary>

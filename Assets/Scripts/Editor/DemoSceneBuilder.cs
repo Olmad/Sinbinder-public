@@ -1900,6 +1900,7 @@ namespace Sinbinder.Utilets
         private static RectTransform BuildStack(Transform parent)
         {
             // Нижний край — над панелью выделенного (130 + 112) с зазором.
+            // Имя читает GearPanel: строка «F — …» встаёт над стопкой.
             var stack = Panel("Над выделенным", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 0f),
