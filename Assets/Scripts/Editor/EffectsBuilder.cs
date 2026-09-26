@@ -78,16 +78,22 @@ namespace Sinbinder.Utilets
             // старое золото в светах, зерно, которое видно, и чёрные,
             // приподнятые, как у старой картины, а не провал в ноль.
 
+            // Подобрано по кадрам, а не по цифрам (26 сентября, проба в
+            // редакторе: лагерь сверху и от первого лица, четыре варианта).
+            // Цифры §9 под ACES давали почти чёрный кадр: тонирующая кривая
+            // ACES на ночной сцене с виньеткой и контрастом сажала лагерь
+            // в ноль. Нейтральная кривая держит тёмное читаемым.
+
             // Цвет. Насыщенность вниз, контраст вверх — «тёмные тона,
-            // высокая контрастность». Контраст сажает середину, поэтому
-            // экспозиция уже не в минусе.
+            // высокая контрастность». Экспозиция поднята под нейтральную
+            // кривую: с ней кадр не темнее, чем без обработки.
             var colour = Grab<ColorAdjustments>(profile);
             colour.saturation.overrideState = true;
-            colour.saturation.value = -30f;
+            colour.saturation.value = -28f;
             colour.contrast.overrideState = true;
-            colour.contrast.value = 30f;
+            colour.contrast.value = 22f;
             colour.postExposure.overrideState = true;
-            colour.postExposure.value = 0.05f;
+            colour.postExposure.value = 0.4f;
 
             var balance = Grab<WhiteBalance>(profile);
             balance.temperature.overrideState = true;
@@ -100,27 +106,33 @@ namespace Sinbinder.Utilets
             // и старого золота»). Огонь, шар и лица встают золотом на холоде,
             // и встреча тёплого с холодным, на которой держится свет лагеря,
             // становится видна. Перевес — к теням: холодного в кадре больше.
+            // Середина тона — серый 0,5: чем дальше цвет от него, тем сильнее
+            // сдвиг. Первый заход (0,30/0,42/0,55 с перевесом к теням
+            // и приподнятыми чёрными) залил кадр в игре ровной сине-серой
+            // мглой — лагерь не читался вовсе.
             var split = Grab<SplitToning>(profile);
             split.shadows.overrideState = true;
-            split.shadows.value = new Color(0.30f, 0.42f, 0.55f);
+            split.shadows.value = new Color(0.42f, 0.48f, 0.56f);
             split.highlights.overrideState = true;
-            split.highlights.value = new Color(0.80f, 0.63f, 0.38f);
+            split.highlights.value = new Color(0.63f, 0.54f, 0.41f);
             split.balance.overrideState = true;
-            split.balance.value = -20f;
+            split.balance.value = 0f;
 
-            // Чёрные приподняты и чуть в синеву — потёртая картина, а не
-            // провал в ноль: высокий контраст без этого съел бы ночной лагерь.
-            var levels = Grab<LiftGammaGain>(profile);
-            levels.lift.overrideState = true;
-            levels.lift.value = new Vector4(0.97f, 1.0f, 1.06f, 0.035f);
+            // Подъём чёрных из первого захода — выброшен: он и давал мглу.
+            if (profile.Has<LiftGammaGain>())
+            {
+                var lifted = (LiftGammaGain)profile.components.Find(c => c is LiftGammaGain);
+                profile.Remove<LiftGammaGain>();
+                Object.DestroyImmediate(lifted, true);
+            }
 
             // Виньетка держит взгляд в середине кадра. Край — не чёрный,
             // а цвета старого лака: так темнеет картина, а не объектив.
             var vignette = Grab<Vignette>(profile);
             vignette.intensity.overrideState = true;
-            vignette.intensity.value = 0.48f;
+            vignette.intensity.value = 0.36f;
             vignette.smoothness.overrideState = true;
-            vignette.smoothness.value = 0.42f;
+            vignette.smoothness.value = 0.45f;
             vignette.color.overrideState = true;
             vignette.color.value = new Color(0.06f, 0.04f, 0.025f);
 
@@ -131,17 +143,17 @@ namespace Sinbinder.Utilets
             grain.type.overrideState = true;
             grain.type.value = FilmGrainLookup.Medium5;
             grain.intensity.overrideState = true;
-            grain.intensity.value = 0.42f;
+            grain.intensity.value = 0.38f;
             grain.response.overrideState = true;
-            grain.response.value = 0.45f;
+            grain.response.value = 0.55f;
 
             // Свечение только у огня: порог высокий, чтобы светился
             // костёр и шар, а не вся картинка разом.
             var bloom = Grab<Bloom>(profile);
             bloom.threshold.overrideState = true;
-            bloom.threshold.value = 1.0f;
+            bloom.threshold.value = 0.9f;
             bloom.intensity.overrideState = true;
-            bloom.intensity.value = 0.75f;
+            bloom.intensity.value = 0.85f;
             bloom.scatter.overrideState = true;
             bloom.scatter.value = 0.7f;
 
@@ -151,11 +163,12 @@ namespace Sinbinder.Utilets
             // Сильная читается поломкой монитора — эта заметна у края.
             var glass = Grab<ChromaticAberration>(profile);
             glass.intensity.overrideState = true;
-            glass.intensity.value = 0.22f;
+            glass.intensity.value = 0.18f;
 
+            // Нейтральная, а не ACES: см. начало — ACES сажал ночь в ноль.
             var tone = Grab<Tonemapping>(profile);
             tone.mode.overrideState = true;
-            tone.mode.value = TonemappingMode.ACES;
+            tone.mode.value = TonemappingMode.Neutral;
 
             // Значения живут в самих компонентах, а не в профиле: помечаем
             // каждый, иначе в файл ушёл бы только список.

@@ -315,9 +315,13 @@ namespace Sinbinder.EditorTools
                   () => { Sinbinder.UI.StartPanel.ChooseFresh();
                           return !Sinbinder.UI.StartPanel.Waiting; }, 30f),
 
-                S("лагерь загрузился, заставка ушла", null,
-                  () => Scene("Prologue_Camp") && SinbinderPlayer.Exists
-                     && !Sinbinder.UI.PrologueTitleUI.Showing && !Paused(), 30f),
+                S("лагерь загрузился, заставка ушла", null, () =>
+                {
+                    if (!(Scene("Prologue_Camp") && SinbinderPlayer.Exists
+                          && !Sinbinder.UI.PrologueTitleUI.Showing && !Paused())) return false;
+                    LookWorks();
+                    return true;
+                }, 30f),
 
                 // Проверяем то, что должно было случиться, а не то, что
                 // мы попросили: Done = () => true означал шаг, который
@@ -546,6 +550,66 @@ namespace Sinbinder.EditorTools
 
         private static Step S(string name, Action action, Func<bool> done, float limit)
             => new Step { Name = name, Do = action, Done = done, Limit = limit };
+
+        /// <summary>
+        /// Действует ли взгляд игры — профиль «Knightcore» — в самой игре:
+        /// тот же кадр основной камерой с объёмом взгляда и без него.
+        /// Автор, 26 сентября: «Фильтр Knight-core вообще не чувствуется» —
+        /// профиль с 20 сентября лежал пустым, и ни одна проверка этого
+        /// не видела. Кадры не отличаются — шаг провален.
+        /// </summary>
+        private static void LookWorks()
+        {
+            var cam = Camera.main;
+            UnityEngine.Rendering.Volume look = null;
+            foreach (var v in UnityEngine.Object.FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsSortMode.None))
+                if (v.isGlobal && v.sharedProfile != null && v.sharedProfile.name == "Взгляд") look = v;
+
+            if (cam == null || look == null)
+            {
+                Write("  [ВЗГЛЯД] нет камеры или объёма взгляда — проверять нечего");
+                _failed++;
+                return;
+            }
+
+            var on = Mean(cam);
+            look.enabled = false;
+            var off = Mean(cam);
+            look.enabled = true;
+
+            float shift = Mathf.Abs(on.x - off.x) + Mathf.Abs(on.y - off.y) + Mathf.Abs(on.z - off.z);
+            Write($"  [ВЗГЛЯД] с фильтром R {on.x:F1} G {on.y:F1} B {on.z:F1}; без — R {off.x:F1} G {off.y:F1} B {off.z:F1}");
+            if (shift < 3f)
+            {
+                Write("  [ВЗГЛЯД] фильтр кадра не меняет — в игре его нет");
+                _failed++;
+            }
+        }
+
+        /// <summary>Средний цвет кадра камеры, маленьким кадром: сравнить, а не смотреть.</summary>
+        private static Vector3 Mean(Camera cam)
+        {
+            const int w = 160, h = 90;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            var was = cam.targetTexture;
+            cam.targetTexture = rt;
+            cam.Render();
+            cam.targetTexture = was;
+
+            var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            var active = RenderTexture.active;
+            RenderTexture.active = rt;
+            read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            read.Apply();
+            RenderTexture.active = active;
+
+            var sum = Vector3.zero;
+            foreach (var p in read.GetPixels32()) sum += new Vector3(p.r, p.g, p.b);
+            UnityEngine.Object.DestroyImmediate(read);
+            rt.Release();
+            UnityEngine.Object.DestroyImmediate(rt);
+            return sum / (w * h);
+        }
 
         /// <summary>Шаг, действие которого можно повторить после наезда (<see cref="Step.Retry"/>).</summary>
         private static Step Retried(Step step)

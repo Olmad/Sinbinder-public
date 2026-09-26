@@ -22,6 +22,7 @@ namespace UnityEngine.Rendering
         public List<VolumeComponent> components = new List<VolumeComponent>();
         public bool Has<T>() where T : VolumeComponent => false;
         public T Add<T>(bool overrides = false) where T : VolumeComponent => null;
+        public void Remove<T>() where T : VolumeComponent { }
     }
 
     public class Volume : MonoBehaviour
