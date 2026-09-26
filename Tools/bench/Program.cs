@@ -2475,7 +2475,7 @@ static class Bench
             return;
         }
 
-        var text = File.ReadAllText(path);
+        var text = ReadAsset(path);
         var fields = typeof(AOSConfig).GetFields(BindingFlags.Public | BindingFlags.Instance);
 
         int applied = 0, differs = 0;
@@ -2504,7 +2504,25 @@ static class Bench
 
         Console.WriteLine($"[СТЕНД] Взято из ассета полей: {applied}, "
                         + $"из них отличались от кода: {differs}.");
+
+        // Ассет на месте, а не взято ничего — значит, разбор ослеп,
+        // и дальше меряется конфиг из кода. Строкой выше это «0»,
+        // которое читается как «всё совпало».
+        if (applied == 0)
+            Console.WriteLine("[СТЕНД] ПРОВАЛ: ассет есть, а полей не взято ни одного — "
+                            + "всё ниже мерено на значениях из кода, не на игре.");
     }
+
+    /// <summary>
+    /// Ассет Unity текстом, строки через <c>\n</c>.
+    ///
+    /// На Windows git отдаёт рабочие файлы с CRLF (<c>core.autocrlf</c>),
+    /// и разбор по <c>$</c> и <c>\n</c> молча не находил ничего: конфиг
+    /// брался из кода («Взято из ассета полей: 0»), тяга тел читалась
+    /// нулями, и раздел оболочек проваливался за тела, которые исправны.
+    /// В облаке файлы с LF — там стенд видел игру, а на ПК автора нет.
+    /// </summary>
+    static string ReadAsset(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
     /// <summary>
     /// Подбор разумных чисел, а не идеального баланса.
@@ -2972,7 +2990,7 @@ static class Bench
 
         foreach (var path in Directory.GetFiles(dir, "*.asset").OrderBy(x => x))
         {
-            var text = File.ReadAllText(path);
+            var text = ReadAsset(path);
             var shell = ScriptableObject.CreateInstance<ShellData>();
 
             shell.shellName = Unescape(One(text, "shellName")).Trim('"');
