@@ -27,11 +27,18 @@ namespace Sinbinder.UI
         [SerializeField] private GameObject _panel;
         [SerializeField] private Text _text;
 
-        [TextArea(1, 3)]
-        [SerializeField] private string _line =
-            "Подойдите и нажмите E, чтобы забрать душу, потом R — чтобы "
-          + "вложить её в тело. Чем дольше она гаснет, тем меньше "
-          + "от неё останется.";
+        /// <summary>
+        /// Что говорит подсказка. Строка — в коде, а не в поле сцены: сцены
+        /// строит DemoSceneBuilder, и сериализованное поле запоминало текст
+        /// на миг сборки. Так подсказка обещала «потом R — чтобы вложить её
+        /// в тело» и после того, как R стала перекладывать между рукой
+        /// и сумой (<see cref="SatchelHands"/>), а связывание ушло
+        /// в мастерскую склепа, которой в демо нет. Жатва же кладёт душу
+        /// прямо в пустую банку (<see cref="SoulHarvester"/>) — это и сказано.
+        /// </summary>
+        public const string Line =
+            "Подойдите и нажмите E, чтобы забрать душу в банку. Чем дольше "
+          + "она гаснет, тем меньше от неё останется.";
 
         [Tooltip("Сколько держать подсказку на экране.")]
         [SerializeField] private float _holdSeconds = 8f;
@@ -47,7 +54,7 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
-            if (_text != null) _text.text = _line;
+            if (_text != null) _text.text = Line;
 
             if (SoulManager.Instance == null)
                 Debug.LogWarning("[ПОДСКАЗКА] SoulManager в сцене нет: "

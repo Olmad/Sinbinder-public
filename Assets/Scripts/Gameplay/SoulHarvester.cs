@@ -75,7 +75,13 @@ namespace Sinbinder.Gameplay
                 if (_lastFullFrame != Time.frameCount)
                 {
                     _lastFullFrame = Time.frameCount;
-                    Log("Все банки полны. Поставьте душу на полку или оставьте эту.");
+
+                    // Полка душ стоит в склепе, а не на поле боя, и в демо
+                    // её нет вовсе: совет «поставьте на полку» там звал
+                    // к тому, чего не найти.
+                    Log(Object.FindFirstObjectByType<Crypt.SoulShelf>() != null
+                        ? "Все банки полны. Поставьте душу на полку или оставьте эту."
+                        : "Все банки полны — эту душу унести не в чем.");
                 }
                 return;
             }
