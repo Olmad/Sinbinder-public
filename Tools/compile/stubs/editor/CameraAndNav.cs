@@ -8,5 +8,9 @@ namespace UnityEngine.Rendering.Universal
         public bool renderPostProcessing;
         public AntialiasingMode antialiasing;
     }
-}
 
+    public static class CameraExtensions
+    {
+        public static UniversalAdditionalCameraData GetUniversalAdditionalCameraData(this Camera camera) => null;
+    }
+}

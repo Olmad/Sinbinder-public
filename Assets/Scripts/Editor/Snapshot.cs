@@ -1,8 +1,10 @@
 // Assets/Scripts/Editor/Snapshot.cs
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Sinbinder.Utilets
 {
@@ -190,26 +192,15 @@ namespace Sinbinder.Utilets
                 camera.fieldOfView = folder == Out ? 42f : 30f;
             }
 
-            // Холст на время снимка переезжает на камеру. Экранный холст
-            // (Overlay) рисуется мимо камеры, прямо на экран, — а экрана
-            // в пакетном режиме нет, и снимок выходил без совета, подсказок
-            // и полос, то есть без игры. ScreenCapture тут тоже молчит:
-            // ему тоже нужен экран.
-            var canvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
-            var moved = new System.Collections.Generic.List<Canvas>();
-
-            foreach (var canvas in canvases)
-            {
-                if (!withUi) break;      // портрет снимают без подсказок и сумы
-                if (canvas.renderMode != RenderMode.ScreenSpaceOverlay) continue;
-
-                canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                canvas.worldCamera = camera;
-                canvas.planeDistance = camera.nearClipPlane + 0.05f;
-                moved.Add(canvas);
-            }
-
-            Canvas.ForceUpdateCanvases();
+            // Экранный холст (Overlay) рисуется мимо камеры, прямо на экран, —
+            // а экрана в пакетном режиме нет: в кадр мира он не попадает.
+            // Его снимаем отдельно и кладём сверху (Ui). ScreenCapture тут
+            // тоже молчит: ему тоже нужен экран.
+            var canvases = new List<Canvas>();
+            if (withUi)      // портрет снимают без подсказок и сумы
+                foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+                    if (canvas.isRootCanvas && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                        canvases.Add(canvas);
 
             // Частицы в редакторе стоят: искры над костром и лепестки
             // сакуры существуют, но на снимке сцены их не было ни одной.
@@ -220,29 +211,8 @@ namespace Sinbinder.Utilets
                              FindObjectsSortMode.None))
                     particles.Simulate(4f, true, true);
 
-            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32)
-            {
-                antiAliasing = 4
-            };
-
-            var shot = new Texture2D(Width, Height, TextureFormat.RGB24, false);
-
-            camera.targetTexture = texture;
-            camera.Render();
-
-            var previous = RenderTexture.active;
-            RenderTexture.active = texture;
-            shot.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
-            shot.Apply();
-            RenderTexture.active = previous;
-
-            camera.targetTexture = null;
-
-            foreach (var canvas in moved)
-            {
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.worldCamera = null;
-            }
+            var pixels = Grab(camera, 4);
+            string how = canvases.Count == 0 ? "" : Ui.Lay(camera, canvases, pixels);
 
             if (shifted)
             {
@@ -258,18 +228,19 @@ namespace Sinbinder.Utilets
             for (int y = 0; y < Height; y += 29)
             for (int x = 0; x < Width; x += 29)
             {
-                var c = shot.GetPixel(x, y);
-                light += (c.r + c.g + c.b) / 3f;
+                var c = pixels[y * Width + x];
+                light += (c.r + c.g + c.b) / (3f * 255f);
                 taken++;
             }
             light = taken == 0 ? 0f : light / taken;
 
+            var shot = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
+            shot.SetPixels32(pixels);
+            shot.Apply();
+
             string file = $"{folder}/{name}.png";
             File.WriteAllBytes(file, shot.EncodeToPNG());
-
             Object.DestroyImmediate(shot);
-            texture.Release();
-            Object.DestroyImmediate(texture);
 
             // Совсем чёрный снимок — это не «ночь», это провал рисования:
             // ради него всё и заведено, и промолчать о нём нельзя.
@@ -284,9 +255,166 @@ namespace Sinbinder.Utilets
                         + $"камера {camera.transform.position.x:0.0} "
                         + $"{camera.transform.position.y:0.0} "
                         + $"{camera.transform.position.z:0.0}, "
-                        + $"наклон {camera.transform.eulerAngles.x:0.} гр.");
+                        + $"наклон {camera.transform.eulerAngles.x:0.} гр."
+                        + (how.Length == 0 ? "" : ", " + how));
 
             return true;
+        }
+
+        /// <summary>Кадр камеры в точки: рисует в свою текстуру и читает её.</summary>
+        private static Color32[] Grab(Camera camera, int msaa)
+        {
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = msaa
+            };
+
+            camera.targetTexture = texture;
+            Canvas.ForceUpdateCanvases();
+            camera.Render();
+
+            var read = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
+            var previous = RenderTexture.active;
+            RenderTexture.active = texture;
+            read.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+
+            camera.targetTexture = null;
+
+            var pixels = read.GetPixels32();
+            Object.DestroyImmediate(read);
+            texture.Release();
+            Object.DestroyImmediate(texture);
+            return pixels;
+        }
+
+        /// <summary>
+        /// Интерфейс поверх кадра — своей камерой и мимо постобработки.
+        ///
+        /// В игре экранный холст рисуется после всей картинки, мимо зерна,
+        /// виньетки и цветных краёв. На снимке он до 26 сентября висел
+        /// на игровой камере и проходил через всё это: буквы двоились
+        /// краями, углы панелей темнели под виньеткой. Кадры, по которым
+        /// судили об интерфейсе и из которых отбирали показ, выходили хуже
+        /// самой игры.
+        ///
+        /// Теперь мир снимается основной камерой со всей обработкой, а холсты
+        /// — своей камерой, без неё, дважды: на чёрном и на белом. Разница
+        /// двух кадров — ровно то, сколько мира видно сквозь интерфейс
+        /// в каждой точке, так что прозрачные панели, края букв и тени
+        /// ложатся на мир точно так, как в игре. Смешивание — в линейном
+        /// пространстве, как смешивает сама игра (проект линейный).
+        ///
+        /// Стопкой камер URP не вышло: наложение в стопке, запущенной
+        /// из кода, рисуется, а холстов на нём нет (проба 26 сентября).
+        /// </summary>
+        private static class Ui
+        {
+            /// <summary>Снять холсты и положить их на кадр. Возвращает, как вышло.</summary>
+            public static string Lay(Camera main, List<Canvas> canvases, Color32[] world)
+            {
+                int layer = FreeLayer();
+                if (layer < 0) return "интерфейса нет: свободного слоя не нашлось";
+
+                var go = new GameObject("Снимок: интерфейс") { hideFlags = HideFlags.HideAndDontSave };
+                go.transform.SetPositionAndRotation(main.transform.position, main.transform.rotation);
+
+                var ui = go.AddComponent<Camera>();
+                ui.fieldOfView = main.fieldOfView;
+                ui.nearClipPlane = main.nearClipPlane;
+                ui.farClipPlane = main.nearClipPlane + 1f;
+                ui.cullingMask = 1 << layer;
+                ui.clearFlags = CameraClearFlags.SolidColor;
+                ui.allowHDR = false;
+                ui.allowMSAA = false;
+
+                var data = ui.GetUniversalAdditionalCameraData();
+                data.renderPostProcessing = false;
+                data.antialiasing = AntialiasingMode.None;
+
+                // Холсты — на свой слой, чтобы камера интерфейса не видела мира,
+                // и на эту камеру. Всё возвращается, как было.
+                var layers = new List<(GameObject Go, int Layer)>();
+                foreach (var canvas in canvases)
+                {
+                    foreach (var t in canvas.GetComponentsInChildren<Transform>(true))
+                    {
+                        layers.Add((t.gameObject, t.gameObject.layer));
+                        t.gameObject.layer = layer;
+                    }
+
+                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                    canvas.worldCamera = ui;
+                    canvas.planeDistance = ui.nearClipPlane + 0.05f;
+                }
+
+                ui.backgroundColor = Color.black;
+                var black = Grab(ui, 1);
+                ui.backgroundColor = Color.white;
+                var white = Grab(ui, 1);
+
+                foreach (var canvas in canvases)
+                {
+                    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    canvas.worldCamera = null;
+                }
+                foreach (var (g, l) in layers)
+                    if (g != null) g.layer = l;
+                Object.DestroyImmediate(go);
+
+                for (int i = 0; i < world.Length; i++)
+                {
+                    var s = world[i];
+                    var b = black[i];
+                    var w = white[i];
+                    world[i] = new Color32(Mix(s.r, b.r, w.r), Mix(s.g, b.g, w.g), Mix(s.b, b.b, w.b), 255);
+                }
+
+                return "интерфейс поверх";
+            }
+
+            /// <summary>
+            /// Точка кадра: интерфейс на чёрном плюс мир, насколько его видно
+            /// сквозь интерфейс (белое минус чёрное). В линейных величинах.
+            /// </summary>
+            private static byte Mix(byte world, byte black, byte white)
+            {
+                float b = Linear[black];
+                float through = Mathf.Clamp01(Linear[white] - b);
+                float c = Mathf.Clamp01(b + Linear[world] * through);
+                return Encoded[Mathf.RoundToInt(c * (Encoded.Length - 1))];
+            }
+
+            private static readonly float[] Linear = BuildLinear();
+            private static readonly byte[] Encoded = BuildEncoded();
+
+            private static float[] BuildLinear()
+            {
+                var table = new float[256];
+                for (int i = 0; i < 256; i++) table[i] = Mathf.GammaToLinearSpace(i / 255f);
+                return table;
+            }
+
+            private static byte[] BuildEncoded()
+            {
+                var table = new byte[4096];
+                for (int i = 0; i < table.Length; i++)
+                    table[i] = (byte)Mathf.RoundToInt(
+                        Mathf.Clamp01(Mathf.LinearToGammaSpace(i / (table.Length - 1f))) * 255f);
+                return table;
+            }
+
+            /// <summary>
+            /// Слой без имени — им в проекте не пользуется никто. С конца,
+            /// но не последний: им Unity рисует свои превью.
+            /// </summary>
+            private static int FreeLayer()
+            {
+                for (int i = 30; i >= 8; i--)
+                    if (string.IsNullOrEmpty(LayerMask.LayerToName(i))) return i;
+                return -1;
+            }
         }
     }
 }
