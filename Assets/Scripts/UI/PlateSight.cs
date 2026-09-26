@@ -83,8 +83,10 @@ namespace Sinbinder.UI
         /// связанных сборщиком, хватило бы ровно на первую сцену —
         /// дальше подписи молча пропали бы.
         ///
-        /// Через Transform.Find, а не GameObject.Find: панель выключена,
-        /// пока не на что смотреть, а выключенные объекты второй не находит.
+        /// Обходом детей, а не GameObject.Find: панель выключена, пока
+        /// не на что смотреть, а выключенные объекты второй не находит.
+        /// И в глубину, а не одним Transform.Find: строка лежит в стопке
+        /// над панелью выделенного, а не прямо на холсте.
         /// </summary>
         private void Reacquire()
         {
@@ -92,12 +94,14 @@ namespace Sinbinder.UI
 
             foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.InstanceID))
             {
-                var found = canvas.transform.Find(PanelName);
-                if (found == null) continue;
+                foreach (var found in canvas.GetComponentsInChildren<Transform>(true))
+                {
+                    if (found.name != PanelName) continue;
 
-                _panel = found.gameObject;
-                _line = found.GetComponentInChildren<Text>(true);
-                return;
+                    _panel = found.gameObject;
+                    _line = found.GetComponentInChildren<Text>(true);
+                    return;
+                }
             }
         }
 

@@ -37,8 +37,35 @@ namespace Sinbinder.UI
 
             if (_body != null) _body.text = wiped ? Epitaph() : Roll() + Comeback();
 
+            Fit();
             Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
+        }
+
+        /// <summary>Поле под текстом — то же, что над заголовком, с запасом.</summary>
+        private const float Bottom = 40f;
+
+        /// <summary>Ниже этого панель читается полоской, а не экраном.</summary>
+        private const float Shortest = 260f;
+
+        /// <summary>
+        /// Панель по тексту. Состав отряда бывает от трёх строк до десятка,
+        /// и панель, собранная под самый длинный случай, стояла наполовину
+        /// пустой: снимки прохождения 25 сентября показали пустую нижнюю
+        /// половину на обоих кадрах эпилога.
+        /// </summary>
+        private void Fit()
+        {
+            if (_body == null || !(_panel.transform is RectTransform panel)) return;
+
+            var body = _body.rectTransform;
+            float height = Mathf.Ceil(_body.preferredHeight);
+            body.sizeDelta = new Vector2(body.sizeDelta.x, height);
+
+            // Текст стоит от верха панели на своём месте, под заголовком.
+            float top = -body.anchoredPosition.y;
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x,
+                Mathf.Max(Shortest, top + height + Bottom));
         }
 
         /// <summary>Кто дошёл и кто их вёл.</summary>

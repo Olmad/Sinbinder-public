@@ -1479,12 +1479,17 @@ namespace Sinbinder.Utilets
             BuildSaveSlots(canvasGO.transform);
             BuildPause(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
-            BuildHint(canvasGO.transform);
-            BuildCommandHint(canvasGO.transform);
-            BuildHarvestHint(canvasGO.transform);
+
+            // Сверху вниз — в том порядке, в каком они лягут в стопке:
+            // подпись предмета у самой панели выделенного, выше — уроки.
+            var stack = BuildStack(canvasGO.transform);
+            BuildHarvestHint(canvasGO.transform, stack);
+            BuildCommandHint(canvasGO.transform, stack);
+            BuildHint(canvasGO.transform, stack);
+            BuildPlateLine(stack);
+
             BuildSelectedUnit(canvasGO.transform);
             BuildSatchel(canvasGO.transform);
-            BuildPlateLine(canvasGO.transform);
             BuildTooltip(canvasGO.transform);
 
             // «Сборку души» в сцены не ставим. Панель собрана, но
@@ -1879,12 +1884,55 @@ namespace Sinbinder.Utilets
         /// не крутит Update — и неподвижность отслеживать было бы нечем.
         /// На этом уже обожглись дважды, диалог и военный совет.
         /// </summary>
-        private static void BuildHint(Transform parent)
+        /// <summary>
+        /// Стопка над панелью выделенного: подпись предмета и три урока.
+        ///
+        /// Раньше у каждой строки было своё место на экране, отсчитанное
+        /// от старого места панели выделенного. Панель подняли над сумой —
+        /// а подсказку ходьбы и подпись предмета нет, и обе легли на неё:
+        /// «Щёлкните по Греховоду…» поверх «Греховод · Никто не выделен»
+        /// на всех кадрах лагеря 25 сентября.
+        ///
+        /// Стопка не даёт этому повториться: места считает она сама,
+        /// а погашенная строка места не занимает. Видимые ложатся впритык
+        /// к панели и друг к другу, сколько бы их ни было сразу.
+        /// </summary>
+        private static RectTransform BuildStack(Transform parent)
         {
-            var panel = Panel("Как ходить", parent,
+            // Нижний край — над панелью выделенного (130 + 112) с зазором.
+            var stack = Panel("Над выделенным", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 76f),
-                position: new Vector2(0f, 190f));
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 0f),
+                position: new Vector2(0f, 250f));
+
+            var layout = stack.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.LowerCenter;
+            layout.spacing = 8f;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            // Высота — по видимым строкам, и растёт стопка вверх: опора
+            // у нижнего края. Без этого высота нулевая, а раскладка при
+            // нехватке места ведёт строки от верхнего края вниз, мимо
+            // выравнивания, — подсказка снова легла на панель выделенного
+            // (первый прогон стопки, 26 сентября).
+            var fit = stack.gameObject.AddComponent<ContentSizeFitter>();
+            fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            return stack;
+        }
+
+        /// <summary>Строка стопки: место ей назначит стопка, здесь только размер.</summary>
+        private static RectTransform StackRow(string name, RectTransform stack, Vector2 size)
+            => Panel(name, stack,
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: size, position: Vector2.zero);
+
+        private static void BuildHint(Transform parent, RectTransform stack)
+        {
+            var panel = StackRow("Как ходить", stack, new Vector2(560f, 76f));
 
             var backdrop = Backdrop(panel, Weight.Strip);
 
@@ -2005,18 +2053,14 @@ namespace Sinbinder.Utilets
         ///
         /// Прямо над панелью выделенного воина, впритык: обе живут внизу
         /// по центру и вместе читаются как один блок, а не как две надписи,
-        /// не поделившие экран. Панель занимает по высоте 112 от края,
-        /// значит строка начинается со 128.
+        /// не поделившие экран. Нижняя строка стопки — место ей даёт она.
         ///
         /// Компонент, который её заполняет, стоит на Managers — там же,
         /// где и наблюдатель; здесь только связываем.
         /// </summary>
-        private static void BuildPlateLine(Transform parent)
+        private static void BuildPlateLine(RectTransform stack)
         {
-            var panel = Panel("Подпись предмета", parent,
-                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 48f),
-                position: new Vector2(0f, 132f));
+            var panel = StackRow("Подпись предмета", stack, new Vector2(760f, 48f));
 
             var backdrop = Backdrop(panel, Weight.Strip);
 
@@ -2057,12 +2101,9 @@ namespace Sinbinder.Utilets
         /// Строка своя, а не общая с движением: обе могут оказаться
         /// на экране разом, если игрок пошёл сам, не дождавшись первой.
         /// </summary>
-        private static void BuildCommandHint(Transform parent)
+        private static void BuildCommandHint(Transform parent, RectTransform stack)
         {
-            var panel = Panel("Как приказывать", parent,
-                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 76f),
-                position: new Vector2(0f, 276f));
+            var panel = StackRow("Как приказывать", stack, new Vector2(760f, 76f));
 
             var backdrop = Backdrop(panel, Weight.Strip);
 
@@ -2114,15 +2155,12 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
-        /// Подсказка о жатве. Отдельной строкой выше «как ходить»: обе
+        /// Подсказка о жатве. Верхней строкой стопки: обе с «как ходить»
         /// живут внизу по центру, и наложиться друг на друга им нельзя.
         /// </summary>
-        private static void BuildHarvestHint(Transform parent)
+        private static void BuildHarvestHint(Transform parent, RectTransform stack)
         {
-            var panel = Panel("Как жать души", parent,
-                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(720f, 76f),
-                position: new Vector2(0f, 366f));
+            var panel = StackRow("Как жать души", stack, new Vector2(720f, 76f));
 
             var backdrop = Backdrop(panel, Weight.Strip);
 
@@ -2653,13 +2691,16 @@ namespace Sinbinder.Utilets
             }
             else
             {
+                // Поле слева — в самой позиции. Стояло оно в offsetMin,
+                // а следующая строка ставила позицию заново и стирала его:
+                // текст всех панелей с заголовком лёг на левую рамку,
+                // а справа поле вышло двойным. Видно на снимках
+                // прохождения 25 сентября — эпилог, «Кто выделен», отряд.
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(0f, 1f);
-                rt.offsetMin = new Vector2(16f, 0f);
-                rt.offsetMax = new Vector2(-16f, 0f);
-                rt.sizeDelta = new Vector2(rt.sizeDelta.x, height);
-                rt.anchoredPosition = offset;
+                rt.sizeDelta = new Vector2(-32f, height);
+                rt.anchoredPosition = new Vector2(16f + offset.x, offset.y);
             }
 
             var text = go.AddComponent<Text>();
