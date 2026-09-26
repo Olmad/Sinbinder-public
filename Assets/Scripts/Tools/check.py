@@ -52,6 +52,8 @@ UNITY_TYPES = {
     'RenderTexture', 'RenderTextureFormat', 'Texture', 'Graphics', 'TextureFormat',
     'BuildPipeline', 'BuildPlayerOptions', 'BuildTarget', 'BuildOptions',
     'BuildReport', 'BuildSummary', 'BuildResult', 'EditorBuildSettings',
+    # Дорога к воротам в прогоне демо (26 сентября): путь по навмешу.
+    'NavMeshPath',
 }
 
 DOTNET_TYPES = {

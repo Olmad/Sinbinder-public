@@ -73,6 +73,15 @@ namespace Sinbinder.Gameplay
         private bool _warned;
         private float _sceneStarted;
 
+        /// <summary>
+        /// Греховод в круге. В отряд он не входит (<see cref="Recount"/>),
+        /// но уход начинает и он: встал у ворот — значит уходим.
+        /// </summary>
+        private bool _heroAtGate;
+
+        /// <summary>Сказано ли уже, почему ворота заперты. Один раз за сцену.</summary>
+        private bool _toldClosed;
+
         void Awake()
         {
             if (Active == null) Active = this;
@@ -118,6 +127,24 @@ namespace Sinbinder.Gameplay
             // Бежать надо туда, где игрок, может, ещё не бывал: в тумане
             // войны край открывается серым — дорога видна, врагов на ней нет.
             FogOfWar.Reveal(transform.position, _radius + 3f);
+
+            // Ворота зажигаются, и над ними встаёт метка: «нужно бежать»
+            // без «куда» оставляло игрока в лагере (автор, 26 сентября).
+            Lamps(true);
+            UI.ExitMarker.Show(this);
+        }
+
+        void Start()
+        {
+            // Запертые ворота стоят тёмными: свет — знак, что уходить пора.
+            Lamps(Open);
+            if (Open) UI.ExitMarker.Show(this);
+        }
+
+        /// <summary>Огни ворот, если они у края есть.</summary>
+        private void Lamps(bool on)
+        {
+            foreach (var l in GetComponentsInChildren<Light>(true)) l.enabled = on;
         }
 
         void OnDestroy()
@@ -149,6 +176,15 @@ namespace Sinbinder.Gameplay
                 {
                     Debug.LogWarning("[ПОБЕГ] Край никто не открыл — открываем сами.");
                     Arm();
+                    return;
+                }
+
+                // Пришёл к запертым воротам — сказать почему, а не молчать:
+                // тишина читается как «здесь не выход», и выход ищут дальше.
+                if (!_toldClosed && SinbinderPlayer.Exists && Within(SinbinderPlayer.Where))
+                {
+                    _toldClosed = true;
+                    Log("Уходить рано: лагерь ещё держится.");
                 }
                 return;
             }
@@ -158,7 +194,7 @@ namespace Sinbinder.Gameplay
 
             Recount();
 
-            if (_inside.Count == 0) { _leftAt = -1f; return; }
+            if (_inside.Count == 0 && !_heroAtGate) { _leftAt = -1f; return; }
 
             // Первый дошёл — пошёл отсчёт. Об этом говорим вслух: молчаливый
             // таймер игрок не поймёт и решит, что отряд бросили просто так.
@@ -175,25 +211,35 @@ namespace Sinbinder.Gameplay
         private void Recount()
         {
             _inside.Clear();
+            _heroAtGate = false;
 
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
+                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+
                 // Греховод — не отряд. Он тоже Warrior и тоже Team.Player,
                 // но «довести отряд до края карты» считается по тем, кого
                 // ведут, а не по тому, кто ведёт: иначе он попал бы
-                // и в список ушедших, и в счёт недождавшихся.
-                if (w == null || w.IsDead || w.Team != Team.Player) continue;
-                if (w is SinbinderPlayer) continue;
+                // и в список ушедших, и в счёт недождавшихся. Уход он
+                // при этом начинает — до 26 сентября Греховод, пришедший
+                // к краю первым, стоял там в тишине.
+                if (w is SinbinderPlayer)
+                {
+                    _heroAtGate = Within(w.transform.position);
+                    continue;
+                }
 
-                var here = transform.position;
-                var there = w.transform.position;
-
-                // По плоскости: высота к побегу отношения не имеет.
-                float dx = here.x - there.x;
-                float dz = here.z - there.z;
-
-                if (dx * dx + dz * dz <= _radius * _radius) _inside.Add(w);
+                if (Within(w.transform.position)) _inside.Add(w);
             }
+        }
+
+        /// <summary>В круге ли точка. По плоскости: высота к побегу отношения не имеет.</summary>
+        private bool Within(Vector3 there)
+        {
+            var here = transform.position;
+            float dx = here.x - there.x;
+            float dz = here.z - there.z;
+            return dx * dx + dz * dz <= _radius * _radius;
         }
 
         private void Depart()

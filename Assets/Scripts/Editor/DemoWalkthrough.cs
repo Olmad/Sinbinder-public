@@ -635,6 +635,12 @@ namespace Sinbinder.EditorTools
             var zone = EscapeZone.Active;
             if (zone == null) return;
 
+            // Отряд прогон переносит, а не ведёт — и дорогу к краю ногами
+            // до 26 сентября не проходил никто: автор «не смог выйти из
+            // лагеря», а прогон был зелёным. Поэтому сперва — дойдут ли
+            // пешком, по тому же навмешу, что у игрока.
+            Road(zone.transform.position);
+
             int i = 0;
             foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
@@ -644,6 +650,47 @@ namespace Sinbinder.EditorTools
                 Warp(w.gameObject, zone.transform.position + offset);
                 i++;
             }
+        }
+
+        /// <summary>
+        /// Дойдёт ли до ворот пешком каждый свой — отряд и Греховод. Путь
+        /// считается навмешем сцены от того места, где воин стоит; не дошёл
+        /// хоть один — шаг провален: ворота, до которых нет дороги, для
+        /// игрока то же, что их отсутствие.
+        /// </summary>
+        private static void Road(Vector3 gate)
+        {
+            if (!NavMesh.SamplePosition(gate, out var at, 2f, NavMesh.AllAreas))
+            {
+                Write("  [ДОРОГА] у ворот нет навмеша — до них не дойти никому");
+                _failed++;
+                return;
+            }
+
+            var path = new NavMeshPath();
+            var cut = new List<string>();
+            int walked = 0;
+
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+
+                bool ok = NavMesh.SamplePosition(w.transform.position, out var from, 2f, NavMesh.AllAreas)
+                       && NavMesh.CalculatePath(from.position, at.position, NavMesh.AllAreas, path)
+                       && path.status == NavMeshPathStatus.PathComplete;
+
+                if (ok) walked++;
+                else cut.Add(w.DisplayName);
+            }
+
+            if (cut.Count == 0)
+            {
+                Write($"  [ДОРОГА] до ворот дойдут пешком все: {walked}");
+                return;
+            }
+
+            Write("  [ДОРОГА] до ворот не дойти: " + string.Join(", ", cut));
+            _failed++;
         }
 
         /// <summary>

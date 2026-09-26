@@ -98,6 +98,7 @@ namespace Sinbinder.Tests
                 VoiceOfSinbinder();
                 Fog();
                 OverheadNearLens();
+                ExitMarkerPlace();
                 TextRules();
             }
             catch (Exception e)
@@ -920,6 +921,29 @@ namespace Sinbinder.Tests
 
             float half = UI.Billboard.Presence((UI.Billboard.Near + UI.Billboard.Far) / 2f);
             Check(half > 0f && half < 1f, "между ними полоса проявляется, а не выскакивает");
+        }
+
+        /// <summary>
+        /// Метка выхода (26 сентября, «я не смог выйти из лагеря»): ворота
+        /// в кадре — метка над ними; вне кадра — у края экрана со стрелкой
+        /// туда, куда поворачивать; за спиной — не в обратную сторону.
+        /// </summary>
+        private static void ExitMarkerPlace()
+        {
+            const float w = 1600f, h = 900f;
+
+            var at = UI.ExitMarker.Place(new Vector3(800f, 450f, 10f), w, h, out var text);
+            Check(text == "Выход" && Mathf.Abs(at.x - 800f) < 0.01f,
+                  "ворота в кадре — метка над ними, без стрелки");
+
+            at = UI.ExitMarker.Place(new Vector3(5000f, 450f, 10f), w, h, out text);
+            Check(text.EndsWith("→") && Mathf.Abs(at.x - (w - UI.ExitMarker.Margin)) < 0.5f,
+                  "ворота правее кадра — метка у правого края, стрелка вправо");
+
+            // За спиной камеры WorldToScreenPoint отражает точку: ворота
+            // сзади справа приходят слева. Стрелка обязана смотреть вправо.
+            UI.ExitMarker.Place(new Vector3(-3000f, 450f, -10f), w, h, out text);
+            Check(text.EndsWith("→"), "ворота за спиной справа — стрелка вправо, а не влево");
         }
 
         /// <summary>
