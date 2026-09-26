@@ -97,6 +97,7 @@ namespace Sinbinder.Tests
                 RaidPart();
                 VoiceOfSinbinder();
                 Fog();
+                OverheadNearLens();
                 TextRules();
             }
             catch (Exception e)
@@ -900,6 +901,25 @@ namespace Sinbinder.Tests
             {
                 Voice.Enabled = was;
             }
+        }
+
+        /// <summary>
+        /// Надголовное у объектива гаснет (26 сентября): наезд ставит камеру
+        /// в двух метрах от говорящего, и метровая полоса соседа закрывала
+        /// пол-кадра. С тактической высоты полоса видна целиком всегда.
+        /// </summary>
+        private static void OverheadNearLens()
+        {
+            // Камера наезда — в двух метрах перед лицом и чуть ниже полосы.
+            Near(UI.Billboard.Presence(2f), 0f, "полоса у камеры наезда не видна");
+
+            // Тактическая камера — двадцать два метра над землёй (RTS_Camera),
+            // полоса — на высоте OverheadBuilder.Height над ногами.
+            Near(UI.Billboard.Presence(22f - UI.OverheadBuilder.Height), 1f,
+                 "с тактической высоты полоса видна целиком");
+
+            float half = UI.Billboard.Presence((UI.Billboard.Near + UI.Billboard.Far) / 2f);
+            Check(half > 0f && half < 1f, "между ними полоса проявляется, а не выскакивает");
         }
 
         /// <summary>
