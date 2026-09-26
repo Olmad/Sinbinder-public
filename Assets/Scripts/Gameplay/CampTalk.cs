@@ -63,16 +63,52 @@ namespace Sinbinder.Gameplay
 
             var (line, answer) = Dialogue.CampLines.Exchange(first, second);
             UI.SpeechBubbles.Say(first, line);
+            Mouth(first);
             StartCoroutine(AnswerLater(second, answer));
 
             _spoke[first] = Time.time;
             _spoke[second] = Time.time;
+
+            // Пара, что говорит, — и сколько: пока обе строки над головами,
+            // двое стоят лицом друг к другу (CampLife.Facing).
+            _pairA = first;
+            _pairB = second;
+            _pairUntil = Time.time + AnswerAfter + 4.5f;
         }
 
         private static IEnumerator AnswerLater(Warrior who, string line)
         {
             yield return new WaitForSeconds(AnswerAfter);
-            if (who != null && !who.IsDead) UI.SpeechBubbles.Say(who, line);
+            if (who == null || who.IsDead) yield break;
+            UI.SpeechBubbles.Say(who, line);
+            Mouth(who);
+        }
+
+        /// <summary>Сколько секунд шевелится рот при строке лагеря.</summary>
+        private const float Speaking = 3f;
+
+        private static void Mouth(Warrior who)
+        {
+            var body = who != null ? who.GetComponent<WarriorAnimation>() : null;
+            if (body != null) body.TalkFor(Speaking);
+        }
+
+        private Warrior _pairA, _pairB;
+        private float _pairUntil = -1f;
+
+        /// <summary>
+        /// С кем воин говорит прямо сейчас. Ложь — ни с кем: разговора нет,
+        /// он кончился, или воин в нём не участвует.
+        /// </summary>
+        public static bool Partner(Warrior w, out Warrior other)
+        {
+            other = null;
+            var talk = _instance;
+            if (talk == null || w == null || Time.time >= talk._pairUntil) return false;
+
+            if (w == talk._pairA) other = talk._pairB;
+            else if (w == talk._pairB) other = talk._pairA;
+            return other != null && !other.IsDead;
         }
 
         /// <summary>Пара, что дольше всех молчала; первым — кто молчал дольше.</summary>

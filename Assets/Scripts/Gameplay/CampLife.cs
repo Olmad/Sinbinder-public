@@ -76,14 +76,93 @@ namespace Sinbinder.Gameplay
             if (!Alive(w)) return false;
 
             var spot = Pick(w);
-            if (!Place(spot, out point)) return false;
+            if (!Place(spot, w, out point)) return false;
+
+            // Шаг по месту. Автор, 26 сентября: «Живой лагерь всё ещё
+            // не живой — все становятся по своим точкам интереса и стоят».
+            // Место меняется раз в несколько минут, а в промежутке воин
+            // стоял как вкопанный. Теперь раз в девять — пятнадцать секунд
+            // он переходит на соседнюю точку своего же места: у огня и стола
+            // обходит круг, в дозоре ходит вдоль края, в стороне топчется.
+            // По часам и имени, без жребия: те же минуты — те же шаги.
+            int seed = Stable(w.DisplayName);
+            float beat = 9f + seed % 7;
+            int step = Mathf.FloorToInt((Time.time + seed % 11) / beat) % 3 - 1;   // −1, 0, 1
 
             // Кольцо вокруг места, у каждого своё: не толпятся в точке.
             // У огня кольцо шире — в костёр не встают.
-            float angle = Stable(w.DisplayName) % 12 * 30f * Mathf.Deg2Rad;
+            float angle = (seed % 12 * 30f + step * Stroll(spot)) * Mathf.Deg2Rad;
             point += new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Ring(spot);
+
+            // Дозор — не кольцо, а ход вдоль края, туда и обратно.
+            if (spot == CampSpot.Watch) point += new Vector3(step * 3f, 0f, 0f);
+
             word = Word(spot);
             return true;
+        }
+
+        /// <summary>На сколько градусов по кругу места уходит шаг.</summary>
+        private static float Stroll(CampSpot spot)
+        {
+            switch (spot)
+            {
+                case CampSpot.Fire:  return 28f;
+                case CampSpot.Table: return 35f;
+                case CampSpot.Chest: return 45f;
+                case CampSpot.Apart: return 60f;
+                case CampSpot.Tents: return 25f;
+                default:             return 0f;   // дозор ходит сам, у Греховода — не топчутся
+            }
+        }
+
+        /// <summary>
+        /// Куда смотреть, стоя на месте: на собеседника, пока говорят
+        /// (<see cref="CampTalk.Partner"/>); иначе — на то, ради чего пришёл:
+        /// на огонь, на стол, на сундук, в дозоре — наружу, откуда придут,
+        /// в стороне — прочь от костра, у палатки — на огонь, рядом
+        /// с Греховодом — на него. Ложь — лагерь не живёт.
+        /// </summary>
+        public static bool Facing(Warrior w, out Vector3 look)
+        {
+            look = default;
+            if (!Alive(w)) return false;
+
+            if (CampTalk.Partner(w, out var other))
+            {
+                look = other.transform.position;
+                return true;
+            }
+
+            if (!Chosen.TryGetValue(w, out var c)) return false;
+
+            var fire = Object.FindFirstObjectByType<CampOpening>();
+            if (fire == null) return false;
+            var centre = fire.transform.position;
+
+            switch (c.Spot)
+            {
+                case CampSpot.Watch:
+                    look = w.transform.position + new Vector3(0f, 0f, 20f);
+                    return true;
+
+                case CampSpot.Apart:
+                    var away = w.transform.position - centre;
+                    away.y = 0f;
+                    look = w.transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : Vector3.left) * 10f;
+                    return true;
+
+                case CampSpot.Tents:
+                    look = centre;
+                    return true;
+
+                case CampSpot.Sinbinder:
+                    if (!SinbinderPlayer.Exists) return false;
+                    look = SinbinderPlayer.Where;
+                    return true;
+
+                default:
+                    return Place(c.Spot, w, out look);
+            }
         }
 
         /// <summary>Живёт ли он сейчас лагерем: без приказа, вне сцен пролога.</summary>
@@ -168,12 +247,16 @@ namespace Sinbinder.Gameplay
         /// и палатки — от костра, как их ставит сборщик (холм на юге,
         /// охотники с севера).
         /// </summary>
-        private static bool Place(CampSpot spot, out Vector3 point)
+        private static bool Place(CampSpot spot, Warrior w, out Vector3 point)
         {
             point = default;
             var fire = Object.FindFirstObjectByType<CampOpening>();
             if (fire == null) return false;
             var c = fire.transform.position;
+
+            // У каждого своя палатка, а не одна точка на всех: до 26 сентября
+            // «дремлющие в палатке» толпились в одном месте на склоне холма.
+            if (spot == CampSpot.Tents && Tent(w, c, out point)) return true;
 
             switch (spot)
             {
@@ -201,6 +284,39 @@ namespace Sinbinder.Gameplay
                 default: point = c; return true;
             }
         }
+
+        /// <summary>
+        /// Своя палатка воина — у входа, лицом к огню. Палатки ставит сборщик
+        /// под «Палатки», брошенные — «Палатка павшего»: к павшим не ходят.
+        /// Какая чья — по имени, без жребия.
+        /// </summary>
+        private static bool Tent(Warrior w, Vector3 fire, out Vector3 point)
+        {
+            point = default;
+
+            if (_tents == null || _tentsScene != w.gameObject.scene.handle)
+            {
+                _tents = new List<Transform>();
+                _tentsScene = w.gameObject.scene.handle;
+
+                var camp = GameObject.Find("Палатки");
+                if (camp != null)
+                    foreach (Transform t in camp.transform)
+                        if (t.name.StartsWith("Палатка ") && !t.name.Contains("павшего")) _tents.Add(t);
+            }
+
+            _tents.RemoveAll(t => t == null);
+            if (_tents.Count == 0) return false;
+
+            var tent = _tents[Stable(w.DisplayName) % _tents.Count];
+            var toFire = fire - tent.position;
+            toFire.y = 0f;
+            point = tent.position + (toFire.sqrMagnitude > 0.01f ? toFire.normalized : Vector3.forward) * 1.4f;
+            return true;
+        }
+
+        private static List<Transform> _tents;
+        private static int _tentsScene = -1;
 
         /// <summary>Число из имени — одно и то же в каждом запуске, в отличие от GetHashCode.</summary>
         private static int Stable(string s)

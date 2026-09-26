@@ -996,9 +996,19 @@ namespace Sinbinder.EditorTools
         private static readonly HashSet<string> _heardLines = new();
         private static int _campMoves, _campLines, _campShots;
 
+        /// <summary>
+        /// Сколько прошёл каждый за пять минут. Переходы между местами считают
+        /// смену места; «стоят как вкопанные» (автор, 26 сентября) видно только
+        /// по шагам — по метрам.
+        /// </summary>
+        private static readonly Dictionary<Warrior, float> _campWalked = new();
+        private static readonly Dictionary<Warrior, Vector3> _campLast = new();
+
         private static void WatchCamp()
         {
             _campFrom = Time.time;
+            _campWalked.Clear();
+            _campLast.Clear();
             EditorApplication.update -= Camp;
             EditorApplication.update += Camp;
         }
@@ -1013,6 +1023,15 @@ namespace Sinbinder.EditorTools
             {
                 string now = CampLife.Now(w);
                 if (string.IsNullOrEmpty(now)) continue;
+
+                var at = w.transform.position;
+                if (_campLast.TryGetValue(w, out var before))
+                {
+                    var step = at - before;
+                    step.y = 0f;
+                    _campWalked[w] = (_campWalked.TryGetValue(w, out float sum) ? sum : 0f) + step.magnitude;
+                }
+                _campLast[w] = at;
 
                 if (!_campWhere.TryGetValue(w, out string was))
                 {
@@ -1065,6 +1084,18 @@ namespace Sinbinder.EditorTools
 
             Write($"  [ЛАГЕРЬ] за {CampMinutes:0} минут игры: переходов {_campMoves} "
                   + $"(ходили {_campMovers.Count} из {_campWhere.Count}), реплик {_campLines}");
+
+            if (_campWalked.Count > 0)
+            {
+                var walked = new List<(string Who, float Metres)>();
+                foreach (var pair in _campWalked) if (pair.Key != null) walked.Add((pair.Key.DisplayName, pair.Value));
+                walked.Sort((x, y) => x.Metres.CompareTo(y.Metres));
+
+                float total = 0f;
+                foreach (var (_, m) in walked) total += m;
+                Write($"  [ЛАГЕРЬ] прошли за {CampMinutes:0} минут: в среднем {total / walked.Count:F0} м; "
+                      + string.Join(", ", walked.ConvertAll(x => $"{x.Who} {x.Metres:F0}")));
+            }
 
             // Ни шага или ни слова за пять минут — лагерь не живёт, а ради
             // этого он и за выключателем (14-HANDOFF §102–103).

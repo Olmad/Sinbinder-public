@@ -109,6 +109,9 @@ namespace Sinbinder.Gameplay
             // на ноги, а не на бюллетень.
             if (Walking()) return BodyMotion.Walk;
 
+            // Реплика лагеря над головой — и рот при ней (TalkFor).
+            if (Time.time < _talkUntil) return BodyMotion.Talk;
+
             return _mind != null ? BodyMotion.For(_mind.LastDecision) : BodyMotion.Idle;
         }
 
@@ -136,6 +139,17 @@ namespace Sinbinder.Gameplay
         /// и это мы.
         /// </summary>
         public void Talk(bool on) => _talking = on;
+
+        private float _talkUntil = -1f;
+
+        /// <summary>
+        /// Говорить столько-то секунд вне разговора: строка лагеря над головой
+        /// (<see cref="CampTalk"/>). До 26 сентября реплики висели над теми,
+        /// кто стоял истуканом, — автор: «живой лагерь всё ещё не живой».
+        /// Своё время, а не флаг: разговору его гасит страховка, которой
+        /// у строки лагеря нет.
+        /// </summary>
+        public void TalkFor(float seconds) => _talkUntil = Time.time + seconds;
 
         /// <summary>
         /// Страховка от застрявшего рта: разговор мог оборваться

@@ -83,7 +83,13 @@ namespace Sinbinder.AOS
             {
                 ShowDecisionIcon(action);
                 var legs = GetComponent<UnitMover>();
-                if (legs != null) legs.CommandMove(spot);
+                if (legs != null)
+                {
+                    legs.CommandMove(spot);
+
+                    // Дошёл — лицом к делу: к огню, к столу, к собеседнику.
+                    if (CampLife.Facing(_warrior, out var look)) legs.Face(look);
+                }
                 return;
             }
 
