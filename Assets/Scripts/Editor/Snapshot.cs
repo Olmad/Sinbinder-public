@@ -271,6 +271,7 @@ namespace Sinbinder.Utilets
 
             camera.targetTexture = texture;
             Canvas.ForceUpdateCanvases();
+            Sharpen(camera);
             camera.Render();
 
             var read = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
@@ -287,6 +288,48 @@ namespace Sinbinder.Utilets
             texture.Release();
             Object.DestroyImmediate(texture);
             return pixels;
+        }
+
+        /// <summary>
+        /// Перестроить буквы под масштаб кадра.
+        ///
+        /// Холст меряет себя по экрану, а экран в пакетном режиме — 640 на 480:
+        /// масштаб 0,333, и буквы растрированы втрое мельче, чем нужно кадру
+        /// в 1600. Переезд на камеру снимка масштаб поправляет (0,833), а меши
+        /// текста сами не перестраиваются — буквы растягивались в два с половиной
+        /// раза и шли ореолом. Замерено 26 сентября: кадры сразу после загрузки
+        /// сцены, где текст строился впервые уже под кадр, выходили чистыми,
+        /// все прочие — мыльными.
+        /// </summary>
+        private static void Sharpen(Camera camera)
+        {
+            foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                if (!canvas.isRootCanvas || canvas.renderMode != RenderMode.ScreenSpaceCamera
+                    || canvas.worldCamera != camera) continue;
+
+                Dirty(canvas);
+            }
+        }
+
+        /// <summary>
+        /// Пометить всю графику холста к перестройке — и перестроить, оставив
+        /// прокрутку, где была. Строки под другим масштабом чуть иной высоты,
+        /// и журнал, прокрученный к последней записи, после перестройки
+        /// показывал её обрезанной снизу.
+        /// </summary>
+        private static void Dirty(Canvas canvas)
+        {
+            var scrolls = canvas.GetComponentsInChildren<UnityEngine.UI.ScrollRect>(true);
+            var were = new float[scrolls.Length];
+            for (int i = 0; i < scrolls.Length; i++) were[i] = scrolls[i].verticalNormalizedPosition;
+
+            foreach (var graphic in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+                graphic.SetAllDirty();
+
+            Canvas.ForceUpdateCanvases();
+
+            for (int i = 0; i < scrolls.Length; i++) scrolls[i].verticalNormalizedPosition = were[i];
         }
 
         /// <summary>
@@ -358,6 +401,10 @@ namespace Sinbinder.Utilets
                 {
                     canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                     canvas.worldCamera = null;
+
+                    // Буквы — обратно под экранный масштаб: перестроенные
+                    // под кадр, на экране редактора они стояли бы мыльными.
+                    Dirty(canvas);
                 }
                 foreach (var (g, l) in layers)
                     if (g != null) g.layer = l;
