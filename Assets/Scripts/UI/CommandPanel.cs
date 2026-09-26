@@ -184,6 +184,7 @@ namespace Sinbinder.UI
             _resolver ??= new BehaviourResolverHolder();
             var willing = new List<string>();
             var doubtful = new List<string>();
+            var deaf = new List<string>();
             int shown = 0;
 
             foreach (var unit in manager.GetSelectedUnits())
@@ -192,7 +193,13 @@ namespace Sinbinder.UI
                 var w = unit.GetComponentInParent<Warrior>();
                 if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
 
-                var ctx = AOS.CombatDecisionContext.Imagine(w, kind, Voice.Enabled ? Voice.MuffleFor(w) : 0f);
+                // Не услышит — приказа ему не будет вовсе, и гадать, пойдёт
+                // ли он, незачем. Прогон 25 сентября: Вейн в пятнадцати
+                // метрах числился в «скорее пойдут», а приказа не услышал.
+                float muffle = Voice.MuffleFor(w);
+                if (!Voice.Heard(muffle)) { deaf.Add(w.DisplayName); continue; }
+
+                var ctx = AOS.CombatDecisionContext.Imagine(w, kind, muffle);
                 if (_resolver.Value.WouldObey(w, ctx)) { willing.Add(w.DisplayName); continue; }
 
                 if (shown++ >= 3) { doubtful.Add(w.DisplayName); continue; }
@@ -203,6 +210,7 @@ namespace Sinbinder.UI
             var lines = new List<string>();
             if (willing.Count > 0) lines.Add("Скорее пойдут: " + string.Join(", ", willing) + ".");
             if (doubtful.Count > 0) lines.Add("Вряд ли — " + string.Join("; ", doubtful) + ".");
+            if (deaf.Count > 0) lines.Add("Не услышат: " + string.Join(", ", deaf) + ". Греховод далеко.");
             return string.Join("\n", lines);
         }
 

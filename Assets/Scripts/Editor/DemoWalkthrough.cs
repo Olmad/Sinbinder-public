@@ -991,8 +991,14 @@ namespace Sinbinder.EditorTools
             var hub = AOS.AOSEventHub.Instance;
             if (hub != null) hub.OnRefusal -= Refused;
 
+            // Прогноз — строками: «Скорее пойдут», «Вряд ли», «Не услышат».
+            // Последнюю он пишет с 26 сентября; до того неуслышавших
+            // числил среди идущих или сомневающихся.
             int doubtAt = _farForecast.IndexOf("Вряд ли", StringComparison.Ordinal);
-            string doubtful = doubtAt >= 0 ? _farForecast.Substring(doubtAt) : "";
+            int deafAt = _farForecast.IndexOf("Не услышат", StringComparison.Ordinal);
+            string doubtful = doubtAt < 0 ? ""
+                : _farForecast.Substring(doubtAt, (deafAt > doubtAt ? deafAt : _farForecast.Length) - doubtAt);
+            string deaf = deafAt >= 0 ? _farForecast.Substring(deafAt) : "";
             int agree = 0, differ = 0;
 
             foreach (var w in Own())
@@ -1000,7 +1006,10 @@ namespace Sinbinder.EditorTools
                 string name = w.DisplayName;
                 if (_earshot.TryGetValue(name, out string heard) && heard == Unheard)
                 {
-                    Write($"  [СВЕРКА] {name}: не слышал — приказа не было");
+                    bool told = deaf.Contains(name);
+                    if (told) agree++; else differ++;
+                    Write($"  [СВЕРКА] {name}: не слышал — приказа не было"
+                          + (told ? ", прогноз так и сказал" : "   ← прогноз этого не сказал"));
                     continue;
                 }
 
