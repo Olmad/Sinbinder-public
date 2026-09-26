@@ -12,6 +12,8 @@ namespace UnityEngine.Rendering
     public class FloatParameter : VolumeParameter<float> { }
     public class ClampedFloatParameter : VolumeParameter<float> { }
     public class MinFloatParameter : VolumeParameter<float> { }
+    public class ColorParameter : VolumeParameter<Color> { }
+    public class Vector4Parameter : VolumeParameter<Vector4> { }
 
     public class VolumeComponent : ScriptableObject { }
 
@@ -43,7 +45,10 @@ namespace UnityEngine.Rendering.Universal
     public class ColorAdjustments : VolumeComponent
     { public ClampedFloatParameter saturation, contrast, hueShift; public FloatParameter postExposure; }
     public class WhiteBalance : VolumeComponent { public ClampedFloatParameter temperature, tint; }
-    public class Vignette : VolumeComponent { public ClampedFloatParameter intensity, smoothness; }
+    public class Vignette : VolumeComponent { public ClampedFloatParameter intensity, smoothness; public ColorParameter color; }
+    public class SplitToning : VolumeComponent
+    { public ColorParameter shadows, highlights; public ClampedFloatParameter balance; }
+    public class LiftGammaGain : VolumeComponent { public Vector4Parameter lift, gamma, gain; }
     public class FilmGrain : VolumeComponent
     { public FilmGrainLookupParameter type; public ClampedFloatParameter intensity, response; }
     public class Bloom : VolumeComponent
