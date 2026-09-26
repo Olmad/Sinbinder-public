@@ -65,6 +65,66 @@ namespace Sinbinder.UI
             group.alpha = 0f;
         }
 
+        /// <summary>
+        /// Отказ и поступок без приказа — то, ради чего журнал заведён.
+        ///
+        /// Подписка пропала 11 сентября, когда журнал переделывали
+        /// в консоль (3e62bfc): с тех пор в него писали все, кроме воинов.
+        /// Строка «…не выполнил приказ: ему не платили третью вылазку
+        /// подряд» доходила до лога Unity и ни разу — до экрана, а на неё
+        /// ссылаются и 10-REFUSAL (ступень 3, «логика готова»), и наезд
+        /// камеры («слово пишется всегда — журналом»). Нашёл прогон
+        /// 25 сентября: отказ Марги в логе есть, на кадре — ни слова.
+        /// </summary>
+        void Start()
+        {
+            if (AOS.AOSEventHub.Instance == null) return;
+
+            AOS.AOSEventHub.Instance.OnRefusal += Told;
+            AOS.AOSEventHub.Instance.OnSelfWill += Told;
+        }
+
+        void OnDestroy()
+        {
+            if (AOS.AOSEventHub.Instance == null) return;
+
+            AOS.AOSEventHub.Instance.OnRefusal -= Told;
+            AOS.AOSEventHub.Instance.OnSelfWill -= Told;
+        }
+
+        /// <summary>
+        /// Одна строка на оба случая: воин и его причина описываются одними
+        /// словами, спорил он с игроком или тот просто молчал.
+        /// </summary>
+        private void Told(Gameplay.Warrior warrior, AOS.Decision decision, AOS.DecisionContext context)
+        {
+            // Врага в тумане не видно — не слышно и строки о нём:
+            // журнал выдал бы, где он и что задумал.
+            if (warrior == null || Gameplay.FogOfWar.Hides(warrior)) return;
+
+            string line = AOS.PhraseGenerator.LogLine(warrior, context, decision);
+
+            if (_last.TryGetValue(warrior, out var was)
+                && was.Line == line && Time.time - was.At < Repeat) return;
+            _last[warrior] = (line, Time.time);
+
+            Write(line);
+        }
+
+        /// <summary>
+        /// Сколько молчать о том же самом, секунды игры.
+        ///
+        /// Бегущий то бежит, то оборачивается, и каждый новый побег — смена
+        /// решения: «Охотник-следопыт сбежал: ему страшно» легло в журнал
+        /// трижды за десять секунд (первый прогон после починки подписки,
+        /// 26 сентября), и строку отказа Марги вытеснило за край. Новое
+        /// о воине пишется сразу, то же самое — не раньше, чем через
+        /// полминуты.
+        /// </summary>
+        private const float Repeat = 30f;
+
+        private readonly Dictionary<Gameplay.Warrior, (string Line, float At)> _last = new();
+
         public void Write(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
