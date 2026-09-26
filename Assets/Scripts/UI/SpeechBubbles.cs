@@ -25,9 +25,16 @@ namespace Sinbinder.UI
             public Warrior Who;
             public Text Line;
             public float Until;
+            public int Said;
         }
 
+        /// <summary>Зазор между разведёнными строками, в точках экрана.</summary>
+        private const float Gap = 4f;
+
         private readonly List<Bubble> _live = new();
+        private int _said;
+        private readonly List<Bubble> _order = new();
+        private readonly List<Rect> _taken = new();
         private Canvas _canvas;
         private Font _font;
 
@@ -85,6 +92,7 @@ namespace Sinbinder.UI
 
             bubble.Line.text = line;
             bubble.Until = Time.unscaledTime + seconds;
+            bubble.Said = ++_said;
         }
 
         void LateUpdate()
@@ -107,6 +115,65 @@ namespace Sinbinder.UI
                 var screen = cam.WorldToScreenPoint(b.Who.transform.position + Vector3.up * 2.3f);
                 b.Line.enabled = screen.z > 0f;
                 if (b.Line.enabled) b.Line.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+            }
+
+            Unstack();
+        }
+
+        /// <summary>
+        /// Развести строки, легшие одна на другую.
+        ///
+        /// Пару для разговора <see cref="CampTalk"/> берёт из тех, кто стоит
+        /// ближе трёх с половиной метров, а с высоты тактической камеры это
+        /// сотня точек при строке шириной в триста восемьдесят: реплика
+        /// и ответ рисовались в одном месте и не читались — два кадра
+        /// из трёх в прогоне 25 сентября.
+        ///
+        /// Последняя сказанная строка стоит над говорящим, раньше сказанные
+        /// поднимаются над ней: читается сверху вниз в том порядке,
+        /// в каком говорили. Места считаются заново каждый кадр от голов,
+        /// так что строка возвращается к своему, как только разошлись.
+        /// </summary>
+        private void Unstack()
+        {
+            _order.Clear();
+            foreach (var b in _live)
+                if (b.Line != null && b.Line.enabled) _order.Add(b);
+
+            if (_order.Count < 2) return;
+
+            // Свежие первыми. Счётчик, а не часы: двух одинаковых у него
+            // не бывает, и порядок не зависит от того, как легла сортировка.
+            _order.Sort((x, y) => y.Said.CompareTo(x.Said));
+
+            _taken.Clear();
+            foreach (var b in _order)
+            {
+                var rt = b.Line.rectTransform;
+                var at = rt.position;
+                float half = Mathf.Min(b.Line.preferredWidth, rt.rect.width) * 0.5f;
+                float tall = b.Line.preferredHeight;
+
+                // Подняли над одной — могли лечь на другую: проверяем, пока
+                // не встанет на свободное. Больше строк, чем есть, подъёмов
+                // не бывает.
+                for (int pass = 0; pass <= _taken.Count; pass++)
+                {
+                    bool moved = false;
+                    foreach (var r in _taken)
+                    {
+                        bool across = Mathf.Abs(at.x - r.center.x) < half + r.width * 0.5f;
+                        bool over = at.y < r.yMax && at.y + tall > r.yMin;
+                        if (!across || !over) continue;
+
+                        at.y = r.yMax + Gap;
+                        moved = true;
+                    }
+                    if (!moved) break;
+                }
+
+                rt.position = at;
+                _taken.Add(new Rect(at.x - half, at.y, half * 2f, tall));
             }
         }
 
