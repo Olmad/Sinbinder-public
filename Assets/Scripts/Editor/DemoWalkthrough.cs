@@ -426,10 +426,58 @@ namespace Sinbinder.EditorTools
 
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
+
+                // ── Второй показ ──
+                // «Начать сначала» с эпилога — путь, которым демо показывают
+                // второй раз. После полного прохождения статика могла остаться
+                // грязной (отряд, подсказки, отъезд камеры), а конец держит
+                // мир своей паузой: проверяем, что лагерь встаёт заново.
+                S("эпилог: «Начать сначала» — снова вопрос о сохранении", PressAgain,
+                  () => Scene("Prologue_Camp") && Sinbinder.UI.StartPanel.Waiting, 30f),
+
+                S("новая игра: лагерь встал заново, девять у костра", null, FreshCamp, 40f),
             });
 
             return steps;
         }
+
+        /// <summary>Нажать «Начать сначала» на эпилоге — её же обработчиком.</summary>
+        private static void PressAgain()
+        {
+            var end = UnityEngine.Object.FindFirstObjectByType<UI.DemoEndUI>();
+            var again = end != null ? Field<Button>(end, "_again") : null;
+            if (again != null) again.onClick.Invoke();
+            else Write("  [НОВАЯ ИГРА] кнопки «Начать сначала» нет — нажимать нечего");
+        }
+
+        /// <summary>
+        /// Ответить «начать заново» и дождаться лагеря: заставка ушла, мир
+        /// не стоит, конец игры снят, у костра девять — столько же, сколько
+        /// в первый раз. Меньше — значит отряд прошлой игры пережил новую.
+        /// </summary>
+        private static bool FreshCamp()
+        {
+            Sinbinder.UI.StartPanel.ChooseFresh();
+
+            if (!Scene("Prologue_Camp") || !SinbinderPlayer.Exists) return false;
+            if (Sinbinder.UI.StartPanel.Waiting || Sinbinder.UI.PrologueTitleUI.Showing) return false;
+
+            var pause = Core.GamePauseController.Instance;
+            if (pause != null && (pause.IsPaused || pause.Halted)) return false;
+
+            int own = Own().Count;
+            if (own != 9)
+            {
+                if (!_freshTold) Write($"  [НОВАЯ ИГРА] у костра {own}, а не девять");
+                _freshTold = true;
+                return false;
+            }
+
+            Write("  [НОВАЯ ИГРА] лагерь заново: девять у костра, мир идёт");
+            return true;
+        }
+
+        private static bool _freshTold;
 
         private static Step S(string name, Action action, Func<bool> done, float limit)
             => new Step { Name = name, Do = action, Done = done, Limit = limit };
@@ -699,7 +747,7 @@ namespace Sinbinder.EditorTools
             if (UI.GearPanel.Open) open.Add("вещи");
             if (SalaryOpen()) open.Add("плата");
             if (CouncilPanelOpen()) open.Add("совет");
-            if (DemoEndShown()) open.Add("конец демо");
+            if (DemoEndOpen()) open.Add("конец демо");
             Write("    · на экране: " + (open.Count == 0 ? "ничего" : string.Join(", ", open))
                   + (pause == null ? ", паузы нет"
                      : $", пауз поставлено {pause.Stamp}, насовсем {pause.Halted}, "
@@ -1524,7 +1572,33 @@ namespace Sinbinder.EditorTools
             if (salary != null) Field<Button>(salary, "_payButton")?.onClick.Invoke();
         }
 
+        /// <summary>
+        /// Эпилог на экране — и из него есть куда уйти. Без кнопок игрок
+        /// после «Демо окончено» стоял перед текстом: меню паузы, пока игра
+        /// стоит, не открывается (до 26 сентября так и было).
+        /// </summary>
         private static bool DemoEndShown()
+        {
+            if (!DemoEndOpen()) return false;
+
+            var end = UnityEngine.Object.FindFirstObjectByType<UI.DemoEndUI>();
+            var again = Field<Button>(end, "_again");
+            var quit = Field<Button>(end, "_quit");
+            if (again == null || quit == null)
+            {
+                if (!_endButtonsTold) Write("  [КОНЕЦ] у эпилога нет кнопок — сцены собраны до 26 сентября?");
+                _endButtonsTold = true;
+                return false;
+            }
+
+            Write("  [КОНЕЦ] кнопки эпилога: «Начать сначала», «Выйти из игры»");
+            return true;
+        }
+
+        private static bool _endButtonsTold;
+
+        /// <summary>Эпилог на экране — без проверки кнопок и без записи в отчёт.</summary>
+        private static bool DemoEndOpen()
         {
             var end = UnityEngine.Object.FindFirstObjectByType<UI.DemoEndUI>();
             var panel = end != null ? Field<GameObject>(end, "_panel") : null;

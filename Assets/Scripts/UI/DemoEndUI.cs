@@ -23,9 +23,20 @@ namespace Sinbinder.UI
         [SerializeField] private Text _title;
         [SerializeField] private Text _body;
 
+        /// <summary>
+        /// «Начать сначала» и «Выйти из игры». До 26 сентября эпилог был
+        /// без единой кнопки, а меню паузы на Esc не открывается, пока игра
+        /// стоит: из собранной игры после «Демо окончено» выходили Alt+F4.
+        /// Кнопки те же, что у экрана «Греховод пал», и ведут туда же.
+        /// </summary>
+        [SerializeField] private Button _again;
+        [SerializeField] private Button _quit;
+
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
+            if (_again != null) _again.onClick.AddListener(GameOverUI.NewGame);
+            if (_quit != null) _quit.onClick.AddListener(Application.Quit);
         }
 
         public void Show(bool wiped)
@@ -39,11 +50,20 @@ namespace Sinbinder.UI
 
             Fit();
             Modal.Open(_panel);
-            Core.GamePauseController.Instance?.Pause();
+
+            // Конец, а не пауза: обычную снял бы конец любого разговора
+            // или «Продолжить» в меню паузы, и мир пошёл бы дальше под
+            // эпилогом. Держит так же, как экран «Греховод пал»; снимает
+            // только новая игра или загрузка.
+            Object.FindFirstObjectByType<DialogueUI>()?.Cut();
+            Core.GamePauseController.Instance?.Halt();
         }
 
         /// <summary>Поле под текстом — то же, что над заголовком, с запасом.</summary>
         private const float Bottom = 40f;
+
+        /// <summary>Ряд кнопок снизу с полями: кнопка 84 на высоте 70 от края и зазор над ней.</summary>
+        private const float Buttons = 112f + 32f;
 
         /// <summary>Ниже этого панель читается полоской, а не экраном.</summary>
         private const float Shortest = 260f;
@@ -62,10 +82,12 @@ namespace Sinbinder.UI
             float height = Mathf.Ceil(_body.preferredHeight);
             body.sizeDelta = new Vector2(body.sizeDelta.x, height);
 
-            // Текст стоит от верха панели на своём месте, под заголовком.
+            // Текст стоит от верха панели на своём месте, под заголовком;
+            // под ним — ряд кнопок, если сцена их собрала.
             float top = -body.anchoredPosition.y;
+            float below = _again != null || _quit != null ? Buttons : Bottom;
             panel.sizeDelta = new Vector2(panel.sizeDelta.x,
-                Mathf.Max(Shortest, top + height + Bottom));
+                Mathf.Max(Shortest, top + height + below));
         }
 
         /// <summary>Кто дошёл и кто их вёл.</summary>

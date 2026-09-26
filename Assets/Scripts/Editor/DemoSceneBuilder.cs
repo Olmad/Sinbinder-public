@@ -1601,12 +1601,49 @@ namespace Sinbinder.Utilets
             var body = Label("Список", panel, 24, TextAnchor.UpperLeft,
                 new Vector2(0f, -100f), 480f);
 
+            // Как у экрана «Греховод пал»: без кнопок из эпилога некуда
+            // было уйти — меню паузы, пока игра стоит, не открывается.
+            var again = EndButton("Начать сначала", panel, -190f);
+            var quit = EndButton("Выйти из игры", panel, 190f);
+
             // На холст, а не на панель: панель выключается в Start, а
             // выключенный объект не находит FindFirstObjectByType — директор
             // склепа не видел конца демо и писал «Демо окончено» в консоль,
             // оставляя игрока в пустом склепе. Нашёл прогон DemoWalkthrough.
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.DemoEndUI>();
-            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_body", body));
+            Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_body", body),
+                     ("_again", again), ("_quit", quit));
+        }
+
+        /// <summary>
+        /// Кнопка у нижнего края панели конца — того же вида, что у экрана
+        /// «Греховод пал» (<c>GameOverUI</c>): 320 на 84, середина на 70
+        /// от края. Два экрана конца обязаны выглядеть одним.
+        /// </summary>
+        private static Button EndButton(string text, RectTransform panel, float x)
+        {
+            var go = new GameObject(text, typeof(RectTransform));
+            go.transform.SetParent(panel, false);
+
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0.5f, 0f);
+            rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(320f, 84f);
+            rt.anchoredPosition = new Vector2(x, 70f);
+
+            var plate = go.AddComponent<Image>();
+            plate.color = new Color(0.13f, 0.12f, 0.11f, 1f);
+
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = plate;
+
+            var label = Label("Подпись", rt, 26, TextAnchor.MiddleCenter);
+            label.color = new Color(0.94f, 0.90f, 0.80f);
+            label.raycastTarget = false;    // клик обязан доходить до кнопки
+            label.text = text;
+
+            return button;
         }
 
         /// <summary>
@@ -2161,7 +2198,9 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void BuildHarvestHint(Transform parent, RectTransform stack)
         {
-            var panel = StackRow("Как жать души", stack, new Vector2(720f, 76f));
+            // Шире прочих: строка о жатве длинная, и в семьсот двадцать она
+            // ложилась в три строки впритык к краям плашки.
+            var panel = StackRow("Как жать души", stack, new Vector2(960f, 76f));
 
             var backdrop = Backdrop(panel, Weight.Strip);
 

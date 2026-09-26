@@ -54,6 +54,10 @@ namespace Sinbinder.UI
             // ходить (PlayerWalk молчит, пока камера занята).
             Dialogue.DialogueCameraController.Instance?.StopSway();
 
+            // Разговор обрывается: иначе он допечатывал реплику под экраном
+            // конца, с голосом, и огрызок строки висел на нижней полосе.
+            Object.FindFirstObjectByType<DialogueUI>()?.Cut();
+
             var go = new GameObject("Конец игры");
             go.AddComponent<GameOverUI>().Build(title, body);
 
@@ -108,12 +112,12 @@ namespace Sinbinder.UI
             if (Core.SaveSystem.CanRestartPart)
             {
                 Choice("С начала доли", panel, font, new Vector2(-290f, 70f), AgainPart, 260f);
-                Choice("Начать сначала", panel, font, new Vector2(0f, 70f), Again, 260f);
+                Choice("Начать сначала", panel, font, new Vector2(0f, 70f), NewGame, 260f);
                 Choice("Выйти из игры", panel, font, new Vector2(290f, 70f), Application.Quit, 260f);
             }
             else
             {
-                Choice("Начать сначала", panel, font, new Vector2(-190f, 70f), Again);
+                Choice("Начать сначала", panel, font, new Vector2(-190f, 70f), NewGame);
                 Choice("Выйти из игры", panel, font, new Vector2(190f, 70f), Application.Quit);
             }
         }
@@ -121,14 +125,17 @@ namespace Sinbinder.UI
         /// <summary>Вернуться к началу нынешней доли (<see cref="Core.SaveSystem.RestartPart"/>).</summary>
         private static void AgainPart()
         {
-            if (!Core.SaveSystem.RestartPart()) Again();
+            if (!Core.SaveSystem.RestartPart()) NewGame();
         }
 
         /// <summary>
         /// Новая игра с лагеря. Сброс отряда и прочей статики делает ведущий
         /// первой доли — ровно тем путём, что и при первом запуске.
+        ///
+        /// Открыт: тем же путём уходит и эпилог демо (<see cref="DemoEndUI"/>).
+        /// Второй путь к новой игре разошёлся бы с этим на первой правке.
         /// </summary>
-        private static void Again()
+        public static void NewGame()
         {
             Core.GamePauseController.Instance?.Unhalt();
 

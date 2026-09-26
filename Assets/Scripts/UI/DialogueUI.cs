@@ -71,7 +71,7 @@ namespace Sinbinder.UI
                 _queue.Enqueue(line);
 
             if (!_isShowing)
-                StartCoroutine(ShowDialogue());
+                _running = StartCoroutine(ShowDialogue());
         }
 
         private void OnLineAdded(DialogueLine line)
@@ -80,7 +80,43 @@ namespace Sinbinder.UI
 
             _queue.Enqueue(line);
             if (!_isShowing)
-                StartCoroutine(ShowDialogue());
+                _running = StartCoroutine(ShowDialogue());
+        }
+
+        private Coroutine _running;
+
+        /// <summary>Идёт ли разговор сейчас.</summary>
+        public bool Showing => _isShowing;
+
+        /// <summary>
+        /// Оборвать разговор на полуслове — конец игры.
+        ///
+        /// Разговор, начатый рядом со смертью Греховода, допечатывал реплику
+        /// по букве с голосом уже под экраном «Греховод пал», потом сам
+        /// уводил камеру — а на кадре конца на нижней полосе висел огрызок
+        /// строки: «Ры» у облачной сессии 25 сентября, «М» у локальной
+        /// 26-го. Павший не договаривает, и живые под экраном конца —
+        /// тоже: мир остановлен, разговор вместе с ним.
+        ///
+        /// Паузу не снимает: её держит конец игры.
+        /// </summary>
+        public void Cut()
+        {
+            if (!_isShowing) return;
+
+            if (_running != null) StopCoroutine(_running);
+            _running = null;
+            _queue.Clear();
+            _isShowing = false;
+
+            if (_dialogueText != null) _dialogueText.text = "";
+            if (_speakerNameText != null) _speakerNameText.text = "";
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
+
+            // Камера и полосы — на место: за экраном конца виден мир таким,
+            // каким его оставили, а не крупный план на полуслове.
+            if (_cameraController != null)
+                _cameraController.StartCoroutine(_cameraController.RestoreCamera());
         }
 
         private IEnumerator ShowDialogue()
@@ -183,6 +219,7 @@ namespace Sinbinder.UI
                 _dialoguePanel.SetActive(false);
 
             _isShowing = false;
+            _running = null;
 
             Core.GamePauseController.Instance?.Resume();
         }
