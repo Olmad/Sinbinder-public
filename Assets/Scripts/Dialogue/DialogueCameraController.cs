@@ -190,12 +190,19 @@ namespace Sinbinder.Dialogue
             // Перед говорящим, а не за ним. Здесь стояло -target.forward,
             // то есть камера заходила со спины и наводилась на затылок:
             // весь разговор игрок смотрел людям в затылки.
-            Vector3 anchor = target.position;
+            //
+            // Мерка — рост говорящего, а не метры человека. Кадр подобран под
+            // рост в метр восемьдесят, а скелеты и зомби ниже — голова у них
+            // около метра, — и наезд смотрел поверх: в кадр попадала макушка
+            // у нижней полосы (прогон 26 сентября, кадр «реплика с наездом»).
+            // Все числа кадра умножаются на рост — композиция та же.
+            _scale = Scale(target, out float ground);
+            Vector3 anchor = new Vector3(target.position.x, ground, target.position.z);
             Vector3 face = Flat(target.forward);
             Vector3 side = Flat(target.right);
 
-            Vector3 lookTarget = anchor + Vector3.up * _lookHeight;
-            Vector3 baseCamPos = Frame(anchor, face, side, _cameraDistance, 0f);
+            Vector3 lookTarget = anchor + Vector3.up * (_lookHeight * _scale);
+            Vector3 baseCamPos = Frame(anchor, face, side, _cameraDistance * _scale, 0f);
 
             yield return MoveCamera(baseCamPos,
                 Quaternion.LookRotation((lookTarget - baseCamPos).normalized));
@@ -205,6 +212,33 @@ namespace Sinbinder.Dialogue
             // к уничтоженному transform, упал бы вместе с разговором.
             // На этом уже обожглись в DialogueUI.
             _swayCoroutine = StartCoroutine(PushIn(anchor, face, side, lookTarget));
+        }
+
+        /// <summary>Рост, под который подобран кадр: человек, метр восемьдесят.</summary>
+        public const float Reference = 1.8f;
+
+        /// <summary>Рост нынешнего говорящего в долях <see cref="Reference"/>.</summary>
+        private float _scale = 1f;
+
+        /// <summary>
+        /// Во сколько раз говорящий ниже или выше человека и где у него земля.
+        /// Тело — по сетке с костями, как у портрета (Snapshot.Portrait); нет
+        /// её — по обычной. Круг выбора (LineRenderer) не тело и не считается.
+        /// </summary>
+        public static float Scale(Transform target, out float ground)
+        {
+            ground = target != null ? target.position.y : 0f;
+            if (target == null) return 1f;
+
+            Renderer body = target.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (body == null) body = target.GetComponentInChildren<MeshRenderer>();
+            if (body == null) return 1f;
+
+            var bounds = body.bounds;
+            if (bounds.size.y < 0.3f) return 1f;
+
+            ground = bounds.min.y;
+            return Mathf.Clamp(bounds.size.y / Reference, 0.5f, 1.6f);
         }
 
         /// <summary>Направление по земле: наклон говорящего кадру не нужен.</summary>
@@ -220,8 +254,8 @@ namespace Sinbinder.Dialogue
         {
             return anchor
                  + face * distance
-                 + side * (_sideOffset + sway)
-                 + Vector3.up * _cameraHeight;
+                 + side * ((_sideOffset + sway) * _scale)
+                 + Vector3.up * (_cameraHeight * _scale);
         }
 
         /// <summary>
@@ -253,7 +287,7 @@ namespace Sinbinder.Dialogue
                 // как движение техники, сглаженный — как внимание.
                 k = k * k * (3f - 2f * k);
 
-                float distance = Mathf.Lerp(_cameraDistance, _cameraDistance - _pushIn, k);
+                float distance = Mathf.Lerp(_cameraDistance, _cameraDistance - _pushIn, k) * _scale;
                 float sway = Mathf.Sin(t) * _swayAmount * direction;
 
                 Vector3 pos = Frame(anchor, face, side, distance, sway);
