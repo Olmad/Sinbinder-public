@@ -149,7 +149,7 @@ namespace Sinbinder.Gameplay
                 if (warrior is SinbinderPlayer)
                 {
                     var legs = warrior.GetComponent<UnitMover>();
-                    if (legs != null) { legs.CommandMove(point); given++; }
+                    if (legs != null && !HeroWalksHimself()) { legs.CommandMove(point); given++; }
                     continue;
                 }
 
@@ -471,8 +471,18 @@ namespace Sinbinder.Gameplay
             if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                 DeselectAll();
 
-            Vector2 min = Vector2.Min(_selectionStart, Input.mousePosition);
-            Vector2 max = Vector2.Max(_selectionStart, Input.mousePosition);
+            SelectInRect(_selectionStart, Input.mousePosition);
+        }
+
+        /// <summary>
+        /// Выделить своих, кто стоит в прямоугольнике экрана между двумя
+        /// углами, — Греховода тоже. Рамка мыши зовёт это на отпускании;
+        /// прогон демо — чтобы проверить рамку без мыши.
+        /// </summary>
+        public void SelectInRect(Vector2 a, Vector2 b)
+        {
+            Vector2 min = Vector2.Min(a, b);
+            Vector2 max = Vector2.Max(a, b);
             Rect selectionRect = new Rect(min, max - min);
 
             // Убитых вычёркиваем на месте: воин мог погибнуть между
@@ -492,9 +502,6 @@ namespace Sinbinder.Gameplay
                                + "не зарегистрировался — смотреть его Start.");
             }
 
-            SelectionComponent hero = null;
-            int caught = 0;
-
             foreach (var unit in _allUnits)
             {
                 if (unit == null) continue;
@@ -508,21 +515,26 @@ namespace Sinbinder.Gameplay
                 Vector3 screenPos = Cam().WorldToScreenPoint(unit.transform.position);
                 if (screenPos.z < 0f || !selectionRect.Contains(screenPos)) continue;
 
-                // Греховод в рамку с отрядом не попадает. Он стоит посреди
-                // них, и «выделить всех» захватывало бы игрока вместе
-                // с ними: приказ идти уводил бы его самого, отбирая
-                // управление ровно в тот момент, когда игрок им пользуется.
-                if (warrior is SinbinderPlayer) { hero = unit; continue; }
-
+                // Греховод попадает в рамку вместе с отрядом. До 26 сентября
+                // его оттуда вынимали — боялись, что «иди» уведёт самого
+                // игрока. Автор, пройдя демо: «При выделении войск рамкой
+                // Греховод не выделяется» — он ведёт отряд и идёт с ним.
+                // От первого лица его ноги слушают клавиши, а не мышь
+                // (HeroWalksHimself).
                 SelectUnit(unit);
-                caught++;
             }
+        }
 
-            // А обведённый один — выделяется. До 24 сентября рамка
-            // вокруг одного Греховода не выделяла никого, а нижняя
-            // панель при пустом выделении показывает именно его —
-            // и игрок видел «выделен, но не слушается» (слово автора).
-            if (caught == 0 && hero != null) SelectUnit(hero);
+        /// <summary>
+        /// От первого лица Греховода ведут клавиши (<see cref="PlayerWalk"/>):
+        /// приказ мышью тогда ведёт отряд, а его самого — нет, иначе ноги
+        /// слушали бы двоих разом.
+        /// </summary>
+        private bool HeroWalksHimself()
+        {
+            var cam = Cam();
+            var view = cam != null ? cam.GetComponent<RTS_Camera>() : null;
+            return view != null && view.FirstPersonNow;
         }
 
         /// <summary>
@@ -638,7 +650,7 @@ namespace Sinbinder.Gameplay
                         if (warrior is SinbinderPlayer)
                         {
                             var legs = warrior.GetComponent<UnitMover>();
-                            if (legs != null)
+                            if (legs != null && !HeroWalksHimself())
                             {
                                 if (isAttackOrder) legs.CommandAttack(enemyUnit.gameObject);
                                 else legs.CommandMove(hit.point);

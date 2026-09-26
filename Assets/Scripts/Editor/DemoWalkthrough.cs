@@ -1572,8 +1572,41 @@ namespace Sinbinder.EditorTools
             bool shown = ring != null && ring.gameObject.activeSelf
                       && ring.GetComponent<LineRenderer>() != null;
 
-            if (selected && shown) manager.Drop(_clicked);
+            if (selected && shown)
+            {
+                manager.Drop(_clicked);
+                BoxTakesHero(manager);
+            }
             return selected && shown;
+        }
+
+        /// <summary>
+        /// Рамка на весь экран берёт и отряд, и Греховода — автор,
+        /// 26 сентября: «При выделении войск рамкой Греховод не выделяется».
+        /// Проверив — снять выделение: дальше прогон ждёт пустого.
+        /// </summary>
+        private static void BoxTakesHero(SelectionManager manager)
+        {
+            manager.SelectInRect(Vector2.zero, new Vector2(Screen.width, Screen.height));
+
+            bool hero = false;
+            int squad = 0;
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                var w = unit != null ? unit.GetComponentInParent<Warrior>() : null;
+                if (w is SinbinderPlayer) hero = true;
+                else if (w != null) squad++;
+            }
+
+            if (hero && squad > 0)
+                Write($"  [РАМКА] рамка на весь экран: Греховод и отряд ({squad})");
+            else
+            {
+                Write($"  [РАМКА] рамка на весь экран взяла {(hero ? "одного Греховода" : "отряд без Греховода")} ({squad})");
+                _failed++;
+            }
+
+            foreach (var unit in new List<SelectionComponent>(manager.GetSelectedUnits())) manager.Drop(unit);
         }
 
         /// <summary>

@@ -114,14 +114,21 @@ namespace Sinbinder.UI
             var manager = SelectionManager.Instance;
             if (manager != null)
             {
+                // Отряд вперёд Греховода: рамка теперь берёт и его
+                // (26 сентября), и панель выделенного отряда показывала бы
+                // героя — «приказывает, но не решает» — вместо воина.
+                Warrior hero = null;
                 var selected = manager.GetSelectedUnits();
                 for (int i = 0; i < selected.Count; i++)
                 {
                     if (selected[i] == null) continue;
 
                     var warrior = selected[i].GetComponentInParent<Warrior>();
-                    if (warrior != null) return warrior;
+                    if (warrior == null) continue;
+                    if (warrior is SinbinderPlayer) { hero = warrior; continue; }
+                    return warrior;
                 }
+                if (hero != null) return hero;
             }
 
             picked = false;
