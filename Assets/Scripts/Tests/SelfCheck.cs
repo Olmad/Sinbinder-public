@@ -82,6 +82,7 @@ namespace Sinbinder.Tests
                 Gear();
                 Pocket();
                 ReasonByContrast();
+                PrideHalves();
                 ChestStore();
                 LootToHands();
                 CampSpots();
@@ -356,6 +357,71 @@ namespace Sinbinder.Tests
             {
                 Counterfactual.Enabled = was;
             }
+        }
+
+        /// <summary>
+        /// Голос Гордыни говорит той половиной шкалы, что голосовала
+        /// (26 сентября). Смиренный — у зомби тело отнимает Гордыню — отходил,
+        /// а журнал писал «он скорее ляжет, чем побежит. Вместо этого
+        /// отступил». Стенд меряет то же на тысячах душ (ГОРДЫНЯ И СМИРЕНИЕ);
+        /// здесь — сами случаи.
+        /// </summary>
+        private static void PrideHalves()
+        {
+            var meek = MakeWarrior("Смиренный", SinType.Pride, -40f);
+            var proud = MakeWarrior("Гордый", SinType.Pride, 40f);
+
+            var told = BaseContext(meek);
+            told.HasCommand = true;
+            told.CommandType = "Move";
+            told.CommandLeavesFight = true;
+
+            var fled = new Decision
+            {
+                Action = ActionType.Flee, TopContender = ActionType.Flee, RunnerUp = ActionType.ObeyCommand,
+                TopModule = "Pride", Gap = 20f, RefusedCommand = true,
+            };
+            string line = PhraseGenerator.LogLine(meek, told, fled);
+            Check(!line.Contains("побеж"), $"смиренный отошёл, а журнал пишет, что он не побежит: «{line}»");
+            Check(PhraseGenerator.Reason(meek, told, fled) != PhraseGenerator.Reason(proud, told, fled),
+                  "смиренный объясняется словами гордеца");
+
+            // Гордецу велели уйти из схватки, а он бьётся — вот где эти слова правда.
+            var held = BaseContext(proud);
+            held.HasCommand = true;
+            held.CommandType = "FallBack";
+            held.CommandIsFallBack = true;
+            held.CommandLeavesFight = true;
+            held.IsEngaged = true;
+            held.EngagedWith = 1;
+            var stayed = new Decision
+            {
+                Action = ActionType.Attack, TopContender = ActionType.Attack, RunnerUp = ActionType.ObeyCommand,
+                TopModule = "Pride", Gap = 20f, RefusedCommand = true,
+            };
+            string stand = PhraseGenerator.LogLine(proud, held, stayed);
+            Check(stand.Contains("скорее ляжет"), $"гордец не ушёл из схватки, а причина другая: «{stand}»");
+
+            // Даль «от противного»: окрик задевает гордеца, смиренного — нет.
+            var far = BaseContext(meek);
+            far.HasCommand = true;
+            far.CommandType = "Move";
+            far.CommandVolume = 0.3f;
+            var distant = fled;
+            distant.Weighed = true;
+            distant.Decisive = Counterfactual.Factor.Distance;
+            string meekFar = PhraseGenerator.Reason(meek, far, distant);
+            Check(!meekFar.Contains("криком"), $"смиренного задел окрик издали: «{meekFar}»");
+
+            // Смирению нечего сказать о добыче — причины нет, и подсказка
+            // обходится без висящего тире.
+            var looted = new Decision
+            {
+                Action = ActionType.Loot, TopContender = ActionType.Loot, RunnerUp = ActionType.ObeyCommand,
+                TopModule = "Pride", Gap = 20f, RefusedCommand = true,
+            };
+            string hint = PhraseGenerator.Explain(meek, told, looted);
+            Check(!hint.Contains(" ."), $"пустая причина оставила висящий знак: «{hint}»");
         }
 
         /// <summary>

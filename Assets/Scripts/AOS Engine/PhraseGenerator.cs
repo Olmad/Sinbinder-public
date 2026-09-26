@@ -35,8 +35,10 @@ namespace Sinbinder.AOS
             {
                 // Колебание при приказе, взвешенное «от противного»: названа
                 // причина, без которой воин бы послушался, — её игрок и чинит.
-                if (Caused(decision))
-                    return $"{name} колеблется: {Reason(warrior, context, decision)}.";
+                // Голос бывает и без слов (смирение ниже) — тогда как без причины.
+                string cause = Caused(decision) ? Reason(warrior, context, decision) : "";
+                if (!string.IsNullOrEmpty(cause))
+                    return $"{name} колеблется: {cause}.";
 
                 // Когда кандидат один, BehaviourResolver кладёт его же
                 // и во второе поле (alone ? best : sorted[1]). Фраза
@@ -54,7 +56,9 @@ namespace Sinbinder.AOS
             string why = Reason(warrior, context, decision);
 
             if (decision.RefusedCommand)
-                return $"Приказ был. {name} {what} — {why}.";
+                return string.IsNullOrEmpty(why)
+                    ? $"Приказ был. {name} {what}."
+                    : $"Приказ был. {name} {what} — {why}.";
 
             return string.IsNullOrEmpty(why)
                 ? $"{name} {what}."
@@ -75,7 +79,8 @@ namespace Sinbinder.AOS
             {
                 string stuck = Core.Grammar.Pick(warrior.Gender,
                     $"{name} не сдвинулся с места", $"{name} не сдвинулась с места");
-                if (Caused(decision)) return $"{stuck}: {Reason(warrior, context, decision)}.";
+                string cause = Caused(decision) ? Reason(warrior, context, decision) : "";
+                if (!string.IsNullOrEmpty(cause)) return $"{stuck}: {cause}.";
                 return stuck + Core.Grammar.Pick(warrior.Gender, " — не смог выбрать.", " — не смогла выбрать.");
             }
 
@@ -133,7 +138,12 @@ namespace Sinbinder.AOS
             bool weighed = decision.Weighed;
             if (weighed && decision.Decisive != Counterfactual.Factor.None)
             {
-                var sin = warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null;
+                // Даль звучит словами греха — гордеца, лентяя, — только если
+                // шкала на стороне греха. Главный грех — шкала дальше всех
+                // от нуля, знак ему не важен; а смиренного окрик издали
+                // не задевает, и усердный глухим не прикидывается.
+                var own = warrior != null ? warrior.Soul : null;
+                var sin = own != null && own.Get(own.Sin) > 0f ? own.Sin : (SinType?)null;
                 string main = Counterfactual.Phrase(decision.Decisive, context, sin, gender);
                 return decision.DecisiveAlso == Counterfactual.Factor.None
                     ? main
@@ -149,7 +159,9 @@ namespace Sinbinder.AOS
             // на любой громкости), и «приказ пришёл издали» было бы враньём.
             if (!weighed && decision.RefusedCommand && context.CommandVolume < DistantOrder)
             {
-                if (decision.TopModule == "Pride")
+                // Смиренный слушает и далёкого: его Гордыня громче всех
+                // за то, что он сделал вместо приказа, — это ниже, её словами.
+                if (decision.TopModule == "Pride" && !Meek(warrior))
                     return "приказ крикнули издали, а он не из тех, кого зовут криком";
                 if (decision.TopModule == "Sloth")
                     return P("он сделал вид, что не расслышал",
@@ -199,7 +211,30 @@ namespace Sinbinder.AOS
                     return "ему страшно";
 
                 case "Pride":
-                    if (decision.Action == ActionType.Flee) return "он скорее ляжет, чем побежит";
+                    // Смирение — та же шкала со знаком минус, и голос у неё
+                    // обратный: гордыня держит в бою, смирение отпускает
+                    // (PrideModule). За отход, за раненого, за послушание
+                    // Гордыня громче всех бывает только у смиренного, и слова
+                    // гордеца врали за него наоборот: Марга-зомби (тело
+                    // отнимает Гордыню) отходил, а журнал писал «он скорее
+                    // ляжет, чем побежит. Вместо этого отступил» — стенд,
+                    // ГОРДЫНЯ И СМИРЕНИЕ.
+                    if (Meek(warrior))
+                        return Humility(decision.Hesitated ? decision.TopContender : decision.Action);
+
+                    // Гордец за отход не голосует. Назван он, когда решило
+                    // «от противного»: без гордыни приказ был бы исполнен —
+                    // задел приказ, а побежал он по другой причине.
+                    if (decision.Action == ActionType.Flee)
+                        return decision.RefusedCommand
+                            ? P("он не привык к чужим приказам", "она не привыкла к чужим приказам")
+                            : "";
+
+                    // Велели уйти из схватки — вот где эти слова правда:
+                    // унижает гордеца приказ отойти, когда враг уже в шаге.
+                    if (decision.RefusedCommand && context.IsEngaged && context.CommandLeavesFight)
+                        return "он скорее ляжет, чем побежит";
+
                     if (context.TargetBackExposed) return "он не бьёт в спину";
                     if (context.Fatigue > 0.3f && decision.Action != ActionType.Idle)
                         return "он не признаёт, что устал";
@@ -259,6 +294,29 @@ namespace Sinbinder.AOS
 
                 default:
                     return "";
+            }
+        }
+
+        /// <summary>
+        /// Гордыня у него со знаком минус — смирение, и голос Гордыни
+        /// за него голосует наоборот.
+        /// </summary>
+        private static bool Meek(Warrior warrior)
+            => warrior != null && warrior.Soul != null && warrior.Soul.Get(SinType.Pride) < 0f;
+
+        /// <summary>
+        /// Голос Гордыни у смиренного: гордость не держит его ни в бою,
+        /// ни над раненым, ни над приказом. Остального смирение не толкает —
+        /// там причины нет, и это ответ, а не сбой.
+        /// </summary>
+        private static string Humility(ActionType action)
+        {
+            switch (action)
+            {
+                case ActionType.Flee:        return "уйти из боя ему не стыдно";
+                case ActionType.SaveAlly:    return "чужая жизнь для него не дешевле своей";
+                case ActionType.ObeyCommand: return "подчиниться ему не зазорно";
+                default:                     return "";
             }
         }
 

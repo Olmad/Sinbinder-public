@@ -100,6 +100,8 @@ static class Bench
     {
         public ActionType Action; public string Module;
         public ActionType Runner;
+        /// <summary>Кто вёл до порога колебания — TopContender движка.</summary>
+        public ActionType Leader;
         public float Gap, Confidence; public bool Hesitated, Refused;
     }
 
@@ -171,6 +173,7 @@ static class Bench
             Action = best.Key,
             Module = loudest.TryGetValue(best.Key, out var t) ? t.m : "",
             Runner = sorted.Count > 1 ? sorted[1].Key : best.Key,
+            Leader = best.Key,
             Gap = gap, Confidence = confidence,
             Hesitated = confidence < cfg.HesitationShare
         };
@@ -2139,6 +2142,215 @@ static class Bench
         Console.WriteLine($"  прежнее объяснение: называло не решившее в {wrongOld / all * 100:F1}%, молчало о решившем в {silentOld / all * 100:F1}%, "
                         + $"называло не тот грех в {wrongSin / all * 100:F1}%");
         Console.WriteLine("  новое по построению не называет не решившее: причина названа, только если без неё приказ исполнили бы.");
+    }
+
+    /// <summary>
+    /// Голос Гордыни говорит за обе половины шкалы: гордыня держит в бою,
+    /// смирение — та же шкала со знаком минус — отпускает (PrideModule).
+    /// Причина обязана звучать той половиной, что голосовала.
+    ///
+    /// Нашёл прогон 25 сентября: Марга в теле зомби (тело отнимает
+    /// Гордыню, и она уходит в смирение) отходил, а журнал писал «не
+    /// выполнил приказ: он скорее ляжет, чем побежит. Вместо этого
+    /// отступил». Смиренному гордость уйти не мешает — его голос Гордыни
+    /// за отход и был громче всех.
+    ///
+    /// Души и положения — как в основном прогоне, с приказом и без,
+    /// «от противного» и без него; слова — настоящим PhraseGenerator.
+    /// Зеркало — та же душа с Гордыней другого знака: при том же решении
+    /// смиренный и гордец не могут объясняться одними словами.
+    /// </summary>
+    static void PrideVoiceCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ГОРДЫНЯ И СМИРЕНИЕ: причина не спорит с поступком ===");
+
+        var modules = Modules();
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var said = new Dictionary<(bool Humble, ActionType Action, string Why), int>();
+        int proud = 0, humble = 0, same = 0, runAway = 0, dangling = 0;
+        string sameExample = null, runExample = null, danglingExample = null;
+
+        bool was = Counterfactual.Enabled;
+        foreach (bool weigh in new[] { false, true })
+        {
+            Counterfactual.Enabled = weigh;
+            var r = new Random(2609);
+            for (int i = 0; i < 40000; i++)
+            {
+                var w = new Warrior { Soul = MakeSoul(r, "Воин"), Loyalty = (float)(r.NextDouble() * 100) };
+                var ctx = MakeContext(r, w, r.NextDouble() < 0.6);
+                if (ctx.HasCommand) Order(r, ctx);
+                w.UnpaidMissions = ctx.UnpaidMissions;
+
+                var d = Decide(modules, w, ctx, cfg);
+
+                // Всё, что игрок читает: подсказка, журнал, подпись.
+                string why = PhraseGenerator.Reason(w, ctx, d);
+                string told = PhraseGenerator.Explain(w, ctx, d);
+                string log = PhraseGenerator.LogLine(w, ctx, d);
+
+                bool toldDangles = told.Contains(" .") || told.Contains(": .");
+                if (toldDangles || log.Contains(": ."))
+                { dangling++; danglingExample ??= toldDangles ? told : log; }
+
+                // Отход, объяснённый отказом бежать, — чей бы голос ни говорил.
+                if (d.Action == ActionType.Flee && why.Contains("побеж"))
+                { runAway++; runExample ??= log; }
+
+                if (d.Hesitated || !PrideNames(w, ctx, d)) continue;
+
+                bool meek = w.Soul.Get(SinType.Pride) < 0f;
+                if (meek) humble++; else proud++;
+                var key = (meek, d.Action, why);
+                said[key] = said.TryGetValue(key, out int k) ? k + 1 : 1;
+
+                if (!meek) continue;
+                var mirror = new Warrior { Soul = new SoulData(w.Soul), Loyalty = w.Loyalty };
+                mirror.Soul.Set(SinType.Pride, -w.Soul.Get(SinType.Pride));
+                if (PhraseGenerator.Reason(mirror, ctx, d) == why)
+                { same++; sameExample ??= log; }
+            }
+        }
+        Counterfactual.Enabled = was;
+
+        Console.WriteLine($"  причину назвала Гордыня: у гордых {proud}, у смиренных {humble}\n");
+        Console.WriteLine($"  {"половина",-9} {"поступок",-12} {"раз",6}  причина");
+        foreach (var kv in said.OrderByDescending(x => x.Value).Take(14))
+            Console.WriteLine($"  {(kv.Key.Humble ? "смирение" : "гордыня"),-9} {kv.Key.Action,-12} {kv.Value,6}  "
+                            + (kv.Key.Why == "" ? "— (причины нет)" : $"«{kv.Key.Why}»"));
+
+        // Тот самый случай из прогона: Марга Копатель в теле зомби.
+        // Положения — сеткой, как в разгроме: тело крепкое (случайные
+        // положения стенда дают здоровье из тридцати и часто низкое —
+        // там Страх перекрикивает всех), враг рядом, приказ любой.
+        // Тело тянет душу при каждом появлении: после «С начала доли»
+        // смирения в Марге вдвое больше.
+        var zombie = LoadShells().FirstOrDefault(s => s.type == ShellType.Zombie);
+        for (int bound = 1; bound <= 2 && zombie != null; bound++)
+        {
+            var marga = new Warrior
+            {
+                Soul = new SoulData("Марга Копатель", SinType.Greed, MoralType.Vicious, 1, 65f),
+                Loyalty = 70f, UnpaidMissions = 3,
+            };
+            for (int b = 0; b < bound; b++) ShellBinder.Bind(marga.Soul, zombie);
+
+            Console.WriteLine($"\n  Марга Копатель, зомби, связан {bound} раз: Гордыня {marga.Soul.Get(SinType.Pride):F0}");
+            foreach (bool weigh in new[] { false, true })
+            {
+                Counterfactual.Enabled = weigh;
+                int refusals = 0, byPride = 0;
+                string example = null;
+                foreach (float hp in new[] { 1f, 0.8f, 0.6f })
+                foreach (int enemies in new[] { 1, 2, 3 })
+                foreach (bool engaged in new[] { false, true })
+                foreach (string order in new[] { "Move", "FallBack", "Attack" })
+                foreach (float volume in new[] { 1f, 0.5f })
+                foreach (int loot in new[] { 0, 1 })
+                {
+                    var ctx = new DecisionContext
+                    {
+                        MaxHP = 60f, CurrentHP = 60f * hp,
+                        NearbyEnemies = enemies, NearbyAllies = 3, NearbyLoot = loot,
+                        DangerLevel = Mathf.Clamp01((1f - hp) * 0.5f + enemies / 8f),
+                        UnpaidMissions = marga.UnpaidMissions, RelationshipWithCommander = 70f,
+                        IsEngaged = engaged, EngagedWith = engaged ? 1 : 0,
+                        HasCommand = true, CommandType = order, CommandVolume = volume,
+                        CommandIsFallBack = order == "FallBack",
+                        CommandLeavesFight = order != "Attack",
+                        CommandIntoFight = order == "Attack",
+                        RecentMemories = new List<MemoryRecord>(),
+                        CarriedItems = new List<InventoryItem>(),
+                    };
+
+                    var d = Decide(modules, marga, ctx, cfg);
+                    if (!d.RefusedCommand) continue;
+                    refusals++;
+                    if (!PrideNames(marga, ctx, d)) continue;
+                    byPride++;
+                    if (d.Action == ActionType.Flee) example ??= PhraseGenerator.LogLine(marga, ctx, d);
+                }
+                Console.WriteLine($"    {(weigh ? "с «причиной»" : "без «причины»"),-14} отказов {refusals,3} из 216, "
+                                + $"причину назвала Гордыня в {byPride}"
+                                + (example != null ? $"\n      «{example}»" : ""));
+            }
+        }
+        Counterfactual.Enabled = was;
+
+        Check(humble > 0, "смиренных, за кого говорит Гордыня, не нашлось — проверка пуста");
+        Check(proud > 0, "гордых, за кого говорит Гордыня, не нашлось — проверка пуста");
+        Check(same == 0, $"смиренный объясняется словами гордеца — {same} раз, например «{sameExample}»");
+        Check(runAway == 0, $"отход объяснён отказом бежать — {runAway} раз, например «{runExample}»");
+        Check(dangling == 0, $"пустая причина оставила висящий знак — {dangling} раз, например «{danglingExample}»");
+
+        Console.WriteLine(bad == 0 ? "  Гордыня: чисто." : $"  Гордыня: провалов {bad}.");
+    }
+
+    /// <summary>
+    /// Приказ с признаками, как их ставит CombatDecisionContext: «иди»
+    /// и «отходи» уводят из боя, «бей» ведёт в него; часть — издали.
+    /// </summary>
+    static void Order(Random r, DecisionContext c)
+    {
+        string[] kinds = { "Move", "FallBack", "Attack", "Hold", "Defend" };
+        c.HasCommand = true;
+        c.CommandType = kinds[r.Next(kinds.Length)];
+        c.CommandIsFallBack = c.CommandType == "FallBack";
+        c.CommandLeavesFight = c.CommandIsFallBack || c.CommandType == "Move";
+        c.CommandIntoFight = c.CommandType == "Attack";
+        c.CommandVolume = r.NextDouble() < 0.4 ? (float)(0.2 + r.NextDouble() * 0.5) : 1f;
+    }
+
+    /// <summary>
+    /// Решение, как его отдаёт движок: стендовое голосование и «от
+    /// противного» тем же правилом, что BehaviourResolver.Weigh.
+    /// </summary>
+    static Decision Decide(List<IPersonalityModule> modules, Warrior w, DecisionContext ctx, AOSConfig cfg)
+    {
+        var o = Vote(modules, w, ctx, cfg, SquadStrategy.Balanced);
+        var d = new Decision
+        {
+            Action = o.Action, TopModule = o.Module,
+            TopContender = o.Leader, RunnerUp = o.Runner,
+            Gap = o.Gap, Confidence = o.Confidence,
+            Hesitated = o.Hesitated, RefusedCommand = o.Refused,
+        };
+
+        bool balked = d.RefusedCommand || (d.Hesitated && ctx.HasCommand);
+        if (!balked || !Counterfactual.Enabled) return d;
+
+        d.Weighed = true;
+        d.Decisive = Counterfactual.Decisive(ctx, c => Obeys(modules, w, c, cfg));
+        if (d.Decisive == Counterfactual.Factor.None
+            && Counterfactual.DecisivePair(ctx, c => Obeys(modules, w, c, cfg), out var first, out var second))
+        {
+            d.Decisive = first;
+            d.DecisiveAlso = second;
+        }
+        if (d.Decisive == Counterfactual.Factor.None)
+            d.DecisiveVoice = Counterfactual.DecisiveVoice(Counterfactual.Voices(w.Soul.Sin),
+                id => Obeys(modules.Where(x => x.ModuleID != id).ToList(), w, ctx, cfg));
+        return d;
+    }
+
+    /// <summary>
+    /// Называет ли причину Гордыня: победил её голос, или даль звучит
+    /// её словами. Правило — то же, что в PhraseGenerator.Because.
+    /// </summary>
+    static bool PrideNames(Warrior w, DecisionContext c, Decision d)
+    {
+        if (d.Weighed && d.Decisive != Counterfactual.Factor.None)
+            return w.Soul.Sin == SinType.Pride
+                && (d.Decisive == Counterfactual.Factor.Distance
+                    || d.DecisiveAlso == Counterfactual.Factor.Distance);
+
+        string voice = d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
+        return voice == "Pride";
     }
 
     /// <summary>
@@ -4552,6 +4764,7 @@ static class Bench
         CommandsCheck(cfg);
         PocketCheck(cfg);
         ReasonCheck(cfg);
+        PrideVoiceCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);
