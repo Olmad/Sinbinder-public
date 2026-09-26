@@ -53,6 +53,12 @@ namespace Sinbinder.Dialogue
 
         private void OnUnitsChanged()
         {
+            // Сцену выгружают: тела уничтожаются вместе с ней, и каждое
+            // сообщает об этом сюда — разговор начинался посреди ухода,
+            // когда камеры уже нет (прогон 26 сентября, «отряд у края»).
+            // Та же строка, что у второй волны (HunterSquadSpawner, §105.12).
+            if (!isActiveAndEnabled) return;
+
             if (_battleDialogueTriggered) return;
             if (Time.time - _lastDialogueTime < _dialogueCooldown) return;
 

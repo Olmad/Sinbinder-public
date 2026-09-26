@@ -174,6 +174,12 @@ namespace Sinbinder.Dialogue
         {
             if (target == null) yield break;
 
+            // Камеры нет — сцена уходит, и SaveCameraPosition об этом уже
+            // сказал. Наводить нечего: без этой строки наезд падал здесь же
+            // на поле зрения (прогон 26 сентября — разговор, начатый смертью
+            // тела при выгрузке лагеря).
+            if (Cam() == null) yield break;
+
             _inDialogue = true;
             Cam().fieldOfView = _dialogueFOV;
 
@@ -252,8 +258,12 @@ namespace Sinbinder.Dialogue
 
                 Vector3 pos = Frame(anchor, face, side, distance, sway);
 
-                Cam().transform.position = pos;
-                Cam().transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
+                // Камера может уйти посреди плана вместе со сценой.
+                var cam = Cam();
+                if (cam == null) yield break;
+
+                cam.transform.position = pos;
+                cam.transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
 
                 yield return null;
             }
@@ -283,6 +293,9 @@ namespace Sinbinder.Dialogue
             // друг друга им незачем, и ожидание было бы видно паузой.
             UI.Letterbox.Instance?.Hide();
 
+            // Возвращать некого: камера ушла вместе со сценой.
+            if (Cam() == null) yield break;
+
             Cam().fieldOfView = _originalFOV;
             yield return MoveCamera(_originalPosition, _originalRotation);
         }
@@ -292,8 +305,11 @@ namespace Sinbinder.Dialogue
             float duration = 1f / _transitionSpeed;
             float elapsed = 0f;
 
-            Vector3 startPos = Cam().transform.position;
-            Quaternion startRot = Cam().transform.rotation;
+            var cam = Cam();
+            if (cam == null) yield break;
+
+            Vector3 startPos = cam.transform.position;
+            Quaternion startRot = cam.transform.rotation;
 
             while (elapsed < duration)
             {
@@ -301,13 +317,17 @@ namespace Sinbinder.Dialogue
                 float t = elapsed / duration;
                 t = t * t * (3f - 2f * t);
 
-                Cam().transform.position = Vector3.Lerp(startPos, targetPos, t);
-                Cam().transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
+                // Сцена может уйти посреди переезда — и камера с ней.
+                if (cam == null) yield break;
+
+                cam.transform.position = Vector3.Lerp(startPos, targetPos, t);
+                cam.transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
                 yield return null;
             }
 
-            Cam().transform.position = targetPos;
-            Cam().transform.rotation = targetRot;
+            if (cam == null) yield break;
+            cam.transform.position = targetPos;
+            cam.transform.rotation = targetRot;
         }
     }
 }
