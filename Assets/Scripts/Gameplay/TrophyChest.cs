@@ -147,7 +147,7 @@ namespace Sinbinder.Gameplay
             {
                 _invited = true;
                 if (!string.IsNullOrEmpty(_invite))
-                    Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_invite);
+                    Herald.Line(_invite);
             }
 
             // Тем же правилом, что и стол совета: есть тело — открывает

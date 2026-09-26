@@ -224,7 +224,7 @@ namespace Sinbinder.Gameplay
                 // в эпилоге решит, сколько их вернётся. Названия греха игрок
                 // не увидит: он увидит, что Карган узнаёт человека.
                 if (SquadRoster.TryGet(name, out var commander))
-                    log.Write($"Карган: «Похоже, что-то случилось. "
+                    Herald.Line($"Карган: «Похоже, что-то случилось. "
                             + $"Вероятно, {name} {Homecoming.Guess(commander.Sin)}».");
             }
 
@@ -234,7 +234,7 @@ namespace Sinbinder.Gameplay
             // Греховод подошёл.
             if (!PlayerIsClose())
             {
-                log?.Write("Карган: «Владыка, взгляните в шар. Скорее».");
+                Herald.Line("Карган: «Владыка, взгляните в шар. Скорее».");
 
                 yield return Beat.UntilPlayer(PlayerIsClose, _returnNudge,
                     "Карган: «Владыка, шар. Скорее».");
@@ -247,7 +247,7 @@ namespace Sinbinder.Gameplay
             // сколько отрядов было в поле.
             yield return Extinguish();
 
-            log?.Write("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
+            Herald.Line("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
                      + "ребят как косточки крысы».");
 
             yield return new WaitForSecondsRealtime(_watchSeconds);

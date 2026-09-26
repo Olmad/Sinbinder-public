@@ -138,7 +138,7 @@ namespace Sinbinder.Gameplay
             var keeper = Bodyguard();
             string who = keeper != null ? keeper : "Карган Старый Ворон";
 
-            Log($"{who}: «Владыка, покличьте их к столу. Совет любит, "
+            Herald.Line($"{who}: «Владыка, покличьте их к столу. Совет любит, "
               + "когда все на виду».");
         }
 
@@ -180,17 +180,17 @@ namespace Sinbinder.Gameplay
 
             if (stayed.Count == 0)
             {
-                Log($"{who}: «Все пришли, владыка. Это редкость».");
+                Herald.Line($"{who}: «Все пришли, владыка. Это редкость».");
                 return;
             }
 
             if (came.Count == 0)
             {
-                Log($"{who}: «Никто не подошёл, владыка. Они вас слышали».");
+                Herald.Line($"{who}: «Никто не подошёл, владыка. Они вас слышали».");
                 return;
             }
 
-            Log($"{who}: «{Join(stayed)} остались на месте. "
+            Herald.Line($"{who}: «{Join(stayed)} остались на месте. "
               + "Они вас слышали, владыка».");
         }
 
@@ -225,8 +225,5 @@ namespace Sinbinder.Gameplay
             }
             return sb.ToString();
         }
-
-        private static void Log(string line)
-            => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
     }
 }

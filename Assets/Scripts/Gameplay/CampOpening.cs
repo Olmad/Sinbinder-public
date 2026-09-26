@@ -157,7 +157,7 @@ namespace Sinbinder.Gameplay
                 return null;
             }
 
-            Log($"{best.DisplayName}: «Владыка, позвольте пройтись с вами. "
+            Herald.Line($"{best.DisplayName}: «Владыка, позвольте пройтись с вами. "
               + "Пусть видят, с кем я хожу».");
 
             // Подходит сам, настоящим приказом через настоящий конвейер:
@@ -224,7 +224,7 @@ namespace Sinbinder.Gameplay
             var bodyguard = Bodyguard();
             string who = bodyguard.HasValue ? bodyguard.Value.Name : "Карган Старый Ворон";
 
-            Log($"{who}: «Владыка, ваше наказание {Possessive(debtor.Name)} "
+            Herald.Line($"{who}: «Владыка, ваше наказание {Possessive(debtor.Name)} "
               + "затянулось. Подумайте о последствиях».");
         }
 
@@ -252,8 +252,5 @@ namespace Sinbinder.Gameplay
 
             return first + "а";
         }
-
-        private static void Log(string line)
-            => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
     }
 }

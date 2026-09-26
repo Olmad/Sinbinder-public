@@ -266,7 +266,7 @@ namespace Sinbinder.Gameplay
                                + "охотники выйдут без движка решений.");
 
             if (!string.IsNullOrEmpty(_announce))
-                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_announce);
+                Herald.Line(_announce);
 
             // Волна, вышедшая по опустевшему полю, — вторая. После неё
             // бежать уже пора, и край карты открывает она.

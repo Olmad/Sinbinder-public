@@ -99,6 +99,7 @@ namespace Sinbinder.Tests
                 Fog();
                 OverheadNearLens();
                 ExitMarkerPlace();
+                HeraldLines();
                 TextRules();
             }
             catch (Exception e)
@@ -944,6 +945,22 @@ namespace Sinbinder.Tests
             // сзади справа приходят слева. Стрелка обязана смотреть вправо.
             UI.ExitMarker.Place(new Vector3(-3000f, 450f, -10f), w, h, out text);
             Check(text.EndsWith("→"), "ворота за спиной справа — стрелка вправо, а не влево");
+        }
+
+        /// <summary>
+        /// Реплика с наездом (26 сентября, «почти все фразы Каргана требуют
+        /// камеры»): из строки журнала берутся говорящий и слова; ремарка
+        /// после кавычки — журналу, а не голосу; строка поступка — не реплика.
+        /// </summary>
+        private static void HeraldLines()
+        {
+            Check(Herald.Split("Карган: «Владыка, шар». Он ждёт у стола.", out var who, out var words)
+                  && who == "Карган" && words == "Владыка, шар",
+                  "реплика: говорящий и слова — без ремарки после кавычки");
+            Check(!Herald.Split("Одноглазый Хорь сбежал: ему страшно.", out _, out _),
+                  "строка поступка — не реплика, наезда нет");
+            Check(Herald.Hold("") >= 2f && Herald.Hold(new string('а', 400)) <= 7f,
+                  "кадр держится, чтобы прочесть, и не дольше семи секунд");
         }
 
         /// <summary>

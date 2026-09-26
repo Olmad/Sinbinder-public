@@ -59,7 +59,24 @@ namespace Sinbinder.EditorTools
             public Action Do;
             public Func<bool> Done;
             public float Limit;
+
+            /// <summary>
+            /// Действие можно повторить, если его съел наезд: оно не переносит
+            /// и не запускает, а только нажимает то, что игрок нажал бы снова.
+            /// </summary>
+            public bool Retry;
         }
+
+        /// <summary>С какого мига кадр занят подряд; −1 — свободен.</summary>
+        private static float _framedSince = -1f;
+
+        /// <summary>Шаг видел наезд — после него действие стоит повторить.</summary>
+        private static bool _framedInStep;
+
+        /// <summary>Снят ли кадр наезда на реплику. Один за прогон.</summary>
+        private static bool _heraldShot;
+
+        private static float _lastTick;
 
         private static List<Step> _steps;
         private static int _index;
@@ -134,6 +151,8 @@ namespace Sinbinder.EditorTools
                 _failed = 0;
                 _errors = 0;
                 _late = 0;
+                _framedSince = -1f;
+                _heraldShot = false;
                 ResetHandChecks();
 
                 // Выключатели сбрасываются при входе в Play
@@ -160,9 +179,42 @@ namespace Sinbinder.EditorTools
 
             var step = _steps[_index];
 
+            // Кадр занят — наезд разговора, поступка или реплики Каргана
+            // (Herald, 26 сентября). Игрок в этот миг тоже ждёт: мир стоит,
+            // щелчок и экран вещей не отвечают. Прогон ждёт с ним и срок
+            // шага на это не тратит. Не дольше полуминуты подряд: застрявший
+            // кадр иначе запер бы прогон молча.
+            float now = Time.realtimeSinceStartup;
+            float tick = Mathf.Max(0f, now - _lastTick);
+            _lastTick = now;
+
+            var frame = Dialogue.DialogueCameraController.Instance;
+            bool framed = (frame != null && frame.InDialogue) || Herald.Busy;
+            if (framed)
+            {
+                if (_framedSince < 0f) _framedSince = now;
+
+                // Кадр наезда на реплику — один за прогон, когда полосы уже
+                // выехали и строка легла: шаги снимаются после наезда,
+                // и без этого его не видел бы никто.
+                if (!_heraldShot && Herald.Busy && frame != null && frame.InDialogue
+                    && now - _framedSince > 1.2f)
+                {
+                    _heraldShot = true;
+                    Snap("реплика с наездом");
+                }
+                if (now - _framedSince < 30f)
+                {
+                    if (_entered) { _startedAt += tick; _framedInStep = true; }
+                    return;
+                }
+            }
+            else _framedSince = -1f;
+
             if (!_entered)
             {
                 _entered = true;
+                _framedInStep = false;
                 _startedAt = Time.realtimeSinceStartup;
 
                 try { step.Do?.Invoke(); }
@@ -172,6 +224,17 @@ namespace Sinbinder.EditorTools
             bool done;
             try { done = step.Done == null || step.Done(); }
             catch (Exception e) { Write("  [ОШИБКА ПРОВЕРКИ] " + step.Name + ": " + e.Message); done = false; }
+
+            if (!done && _framedInStep && step.Retry)
+            {
+                // Действие попало под наезд и не сработало — нажать ещё раз,
+                // как нажал бы игрок. Только если шаг ещё не сделан: второе
+                // нажатие по сделанному закрыло бы открытое.
+                _framedInStep = false;
+                try { step.Do?.Invoke(); }
+                catch (Exception e) { Write("  [ОШИБКА ШАГА] " + step.Name + ": " + e.Message); }
+                return;
+            }
 
             float spent = Time.realtimeSinceStartup - _startedAt;
 
@@ -335,7 +398,9 @@ namespace Sinbinder.EditorTools
                 // ── Вещи и прогноз (24 сентября): экраны, которые без рук
                 // автора не открывал никто. Автопилот зовёт их напрямую,
                 // клавиш и мыши у него нет. ──
-                S("вещи: I у выделенного — экран открылся", () =>
+                // Повторяемый: «выделить и нажать I» наезд тревоги мог съесть
+                // (прогон 26 сентября) — игрок нажал бы снова.
+                Retried(S("вещи: I у выделенного — экран открылся", () =>
                 {
                     SelectOneOwn();
                     UI.GearPanel.Toggle();
@@ -346,7 +411,7 @@ namespace Sinbinder.EditorTools
                     UI.GearPanel.Dismiss();
                     SelectionManager.Instance?.Drop(_clicked);
                     return true;
-                }, 5f),
+                }, 5f)),
 
                 S("вещи: разговор вблизи и обмен", TalkAndHand, () =>
                 {
@@ -481,6 +546,13 @@ namespace Sinbinder.EditorTools
 
         private static Step S(string name, Action action, Func<bool> done, float limit)
             => new Step { Name = name, Do = action, Done = done, Limit = limit };
+
+        /// <summary>Шаг, действие которого можно повторить после наезда (<see cref="Step.Retry"/>).</summary>
+        private static Step Retried(Step step)
+        {
+            step.Retry = true;
+            return step;
+        }
 
         // ─────────────────────────────── действия ───────────────────────────────
 
