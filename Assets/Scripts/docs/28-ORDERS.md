@@ -24,8 +24,12 @@ Unity в пакетном режиме запускается для каждо�
 
 ## Сессия игры — с чего начать
 
-1. `git pull` в `D:\Sinbinder`. Копия отстала на сутки с лишним:
-   всё 26–27 сентября — `14-HANDOFF.md` §111.
+1. `git pull` в `D:\Sinbinder` — сессия моделей уже подтянула копию
+   до этого раздела; всё 26–27 сентября — `14-HANDOFF.md` §111.
+   На D после `pull` git может написать, дословно, `fatal: renaming pack
+   to '.git/objects/pack/pack-….pack' failed: File exists` и `error: task
+   'geometric-repack' failed` — это его фоновая уборка на exFAT, сам
+   `pull` прошёл (проверить: `git log --oneline -1`, `git status`).
 2. Прочитать: `Assets/Scripts/CLAUDE.md`, этот раздел, «Правила диска D»
    и «Окружение» ниже (раздел 25 сентября), `14-HANDOFF.md` §111 целиком.
 3. Точка отсчёта — один раз, как было до тебя: `Tools\unity-check.ps1`
