@@ -34,8 +34,10 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import anatomy
 import bodies
 from bodies import BASE, Body, box, ring, sphere, tube
+from sdf import Ball, Bar, Egg, Field, chain
 
 P = BASE
 
@@ -332,13 +334,191 @@ ITEMS = [
 ]
 
 
+# ------------------------------------------------------------- скелет
+
+# С 27 сентября скелет стоит на своих суставах (`bodies.SKELETON`: уже
+# в плечах и бёдрах, длиннее в ноге) и носит череп по эталону
+# (`anatomy.skull_field`). Вещи, сшитые по общему телу, на нём висели бы:
+# наплечник — в двух сантиметрах от плеча, лук — в двух за спиной, обруч —
+# вокруг пустоты, тень Греховода — с зубами наружу. Для него — своя сборка
+# в `Wear/Skeleton`; `Wardrobe` ищет вещь сперва там, потом в общей папке.
+S = bodies.SKELETON
+
+# Середина черепа — откуда пускать лучи к его поверхности.
+SKULL_MIDDLE = (0.0, 0.006, 0.950)
+
+
+def hug(k, y0=0.0):
+    """Сжать к оси тела по горизонтали: одежда на узком теле."""
+    return lambda v: [(x * k, y0 + (y - y0) * k, z) for x, y, z in v]
+
+
+def shift(dy):
+    """Придвинуть к спине: вещь за спиной на узкой спине."""
+    return lambda v: [(x, y + dy, z) for x, y, z in v]
+
+
+def about(centre, k, dz=0.0):
+    """
+    Уменьшить вокруг точки и опустить на dz: наплечник на костлявом
+    плече. Уменьшенный, он висел над ним на полтора сантиметра —
+    у кости под ним нет мышцы, на которую он ложился.
+    """
+    cx, cy, cz = centre
+    return lambda v: [(cx + (x - cx) * k, cy + (y - cy) * k, cz + (z - cz) * k + dz)
+                      for x, y, z in v]
+
+
+def around_arm(k):
+    """Сжать вокруг оси плеча: лента на кости, а не на мышце."""
+    z0 = S["shoulder"]
+    return lambda v: [(x, y * k, z0 + (z - z0) * k) for x, y, z in v]
+
+
+def on_skull(field, origins, dirs):
+    """Точки на поверхности черепа и нормали в них — по лучам изнутри."""
+    pts, found = field.surface(origins, dirs, far=0.12)
+    if not found.all():
+        raise SystemExit("[ГАРДЕРОБ] луч не вышел из черепа — вещи не на чем лежать.")
+    normals, _ = field.normal(pts, 0.0008)
+    return pts, normals
+
+
+def circlet_skull(b):
+    """
+    Обруч по черепу скелета: по поверхности, над надбровьем, к затылку
+    чуть ниже — так его носят. Прежний, кольцом 0,061, на новом черепе
+    висел бы в сантиметре от висков.
+    """
+    skull, _ = anatomy.skull_field(S)
+    n = 36
+    turns = [2.0 * math.pi * i / n for i in range(n)]
+    # Спереди (−Y) выше, сзади ниже: лоб — 0,962, затылок — 0,952.
+    origins = [(0.0, 0.006, 0.957 - 0.005 * math.sin(t)) for t in turns]
+    dirs = [(math.cos(t), math.sin(t), 0.0) for t in turns]
+    pts, nrm = on_skull(skull, origins, dirs)
+
+    r = 0.0034
+    band = pts + nrm * (r + 0.0004)
+    f = Field()
+    for i in range(n):
+        f.add(Bar(band[i], band[(i + 1) % n], r), k=0.0015)
+
+    # Бляха на лбу — единственное, что отличает обруч от ремня.
+    front = int(n * 0.75)
+    f.add(Egg(tuple(band[front] + nrm[front] * 0.0012), (0.0055, 0.0030, 0.0075)), k=0.0015)
+    anatomy.part(b, f, 0.0007, "Head", keep=1400, reach=0.003)
+
+
+def crack_skull(b):
+    """
+    Скол черепа скелета: рваная тёмная трещина от лба через темя назад,
+    отросток к виску и выбоина там, где пришёлся удар. Лежит на кости —
+    по лучам к поверхности нового черепа, — и шире прежней: её обязаны
+    видеть сверху, иначе Кир не отличим от Ждана (22-LOOK.md §5).
+    """
+    skull, _ = anatomy.skull_field(S)
+
+    main = [(0.30, -0.62, 0.72), (0.36, -0.42, 0.84), (0.24, -0.22, 0.95), (0.31, 0.00, 0.95),
+            (0.20, 0.22, 0.95), (0.27, 0.44, 0.86), (0.18, 0.62, 0.74)]
+    branch = [(0.24, -0.22, 0.95), (0.50, -0.20, 0.84), (0.70, -0.06, 0.70)]
+
+    f = Field()
+    for path, r0, r1 in ((main, 0.0034, 0.0018), (branch, 0.0026, 0.0014)):
+        pts, nrm = on_skull(skull, [SKULL_MIDDLE] * len(path), path)
+        # Утоплена: наружу выходит на миллиметр — трещина, а не проволока.
+        line = pts - nrm * 0.0009
+        radii = [r0 + (r1 - r0) * i / (len(line) - 1) for i in range(len(line))]
+        f.add(chain([tuple(p) for p in line], radii), k=0.0012)
+
+    # Выбоина: тёмное пятно там, где трещина начинается от удара.
+    pts, nrm = on_skull(skull, [SKULL_MIDDLE], [main[1]])
+    f.add(Ball(tuple(pts[0] - nrm[0] * 0.0030), 0.0068), k=0.002)
+    anatomy.part(b, f, 0.0007, "Head", keep=900, reach=0.003, paint=False)
+
+
+def shade_skull(b):
+    """
+    Тень под капюшоном Греховода — по черепу скелета: тот же череп
+    без глазниц и ноздри, раздутый на четыре миллиметра, и два уголька
+    там, где глаза. Прежняя скорлупа была шаром под старый череп: новый,
+    вытянутый вперёд, выходил бы из неё зубами и носом.
+    """
+    skull, _ = anatomy.skull_field(S, cuts=False)
+    # Лицо — одной гладкой формой: тьма, а не череп из тьмы. Без неё
+    # скулы и челюсть читались из-под капюшона чёрной бородой.
+    skull.add(Egg((0, -0.034, 0.912), (0.036, 0.030, 0.052)), k=0.016)
+    skull.grow(0.004)
+    anatomy.part(b, skull, 0.0020, "Head", keep=1400, reach=0.010, paint=False)
+
+    for side in (1, -1):
+        pts, nrm = on_skull(skull, [(side * 0.0186, -0.030, 0.9335)], [(side * 0.25, -1.0, 0.0)])
+        at = pts[0] - nrm[0] * 0.0010
+        anatomy.pill(b, "Head", tuple(at), (0.0050, 0.0026, 0.0034), yaw=side * 14.0,
+                     mat=1, segs=10, rings=6)
+
+
+def raven_mantle_skeleton(b):
+    """
+    Плащ из вороньих перьев на скелете — сзади и с боков, спереди открыт.
+    Общий обнимает грудь по кругу: на живом перья лежат на теле, а на
+    скелете висели на пустоте клетки кольцом — бочкой вокруг рёбер.
+    """
+    sh = P["shoulder"]
+    k = 0.82
+    b.add(*ring((0, 0.008, sh + 0.024), 0.096 * k, 0.018, scale=(1.0, 0.95, 0.65), segs=22),
+          bone="Chest")
+    for i in range(18):
+        a = math.radians(14 + i * 19)
+        if math.sin(a) < -0.35:
+            continue
+        back = 0.5 + 0.5 * math.sin(a)
+        length = 0.055 + 0.135 * back
+        r = (0.090 + 0.012 * back) * k
+        x, y = math.cos(a) * r, math.sin(a) * r * 0.92
+        b.add(*box((x, y + 0.008, sh + 0.012 - length * 0.5), (0.022, 0.014, length)),
+              bone="Chest", mat=1)
+
+
+def flasks_skeleton(b):
+    """
+    Склянки алхимика на ремне. У скелета пояса нет, и склянки,
+    сжатые к узкому тазу, висели бы в воздухе перед ним — ремень
+    лежит на крыльях таза, склянки — на ремне.
+    """
+    tmp = Body()
+    flasks(tmp)
+    b.add(hug(0.80)(tmp.verts), tmp.faces, bone="Spine", mat=tmp.mats)
+    b.add(*ring((0, 0.006, P["hip"] + 0.048), 0.078, 0.006, scale=(1.0, 0.74, 1.0), segs=22),
+          bone="Spine", mat=0)
+
+
+# Что носит скелет своего: (имя, свой сборщик или None, подгонка общего).
+# Остального скелету шить не нужно — общая вещь на нём сидит.
+SKELETON_ITEMS = [
+    ("Circlet", circlet_skull, None),
+    ("Crack", crack_skull, None),
+    ("Shade", shade_skull, None),
+    ("Flasks", flasks_skeleton, None),
+    ("Hood", None, hug(0.86, y0=0.016)),
+    ("PauldronLeft", None, about((S["shoulder_x"] - 0.004, 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
+    ("PauldronRight", None, about((-(S["shoulder_x"] - 0.004), 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
+    ("BrotherBand", None, around_arm(0.55)),
+    ("Bow", None, shift(-0.022)),
+    ("Cloak", None, hug(0.74, y0=0.010)),
+    ("RavenMantle", raven_mantle_skeleton, None),
+]
+
+
 # ----------------------------------------------------------------- сборка
 
-def build(item):
+def build(item, fit=None):
     bodies.wipe()
 
     b = Body()
     item.build(b)
+    if fit is not None:
+        b.verts = fit(b.verts)
 
     mesh = bpy.data.meshes.new(item.name)
     mesh.from_pydata(b.verts, [], b.faces)
@@ -357,6 +537,7 @@ def build(item):
     for i, mat in enumerate(b.mats):
         if i < len(mesh.polygons):
             mesh.polygons[i].material_index = mat
+            mesh.polygons[i].use_smooth = b.smooth[i]
 
     obj = bpy.data.objects.new(item.name, mesh)
     bpy.context.scene.collection.objects.link(obj)
@@ -420,6 +601,21 @@ def preview(item, obj, folder):
     bpy.ops.render.render(write_still=True)
 
 
+def build_for_skeleton(entry):
+    """
+    Вещь скелета: общая, собранная на его суставах и подогнанная, или своя.
+    Сборщики читают пропорции из P — на время сборки это пропорции скелета.
+    """
+    global P
+    name, own, fit = entry
+    base = next(i for i in ITEMS if i.name == name)
+    P = S
+    try:
+        return build(Item(name, base.bone, own or base.build, base.materials), fit)
+    finally:
+        P = BASE
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
@@ -432,7 +628,7 @@ def main():
     out = bodies.unity_root() / "Assets" / "Resources" / "Wear"
 
     chosen = [i for i in ITEMS if only is None or i.name == only]
-    if not chosen:
+    if not chosen and not any(e[0] == only for e in SKELETON_ITEMS):
         raise SystemExit("Нет такой части: " + str(only)
                          + ". Есть: " + ", ".join(i.name for i in ITEMS))
 
@@ -444,6 +640,15 @@ def main():
         export(out / (item.name + ".fbx"))
         if shots:
             preview(item, obj, shots)
+
+    for entry in SKELETON_ITEMS:
+        if only is not None and entry[0] != only:
+            continue
+        obj = build_for_skeleton(entry)
+        print("[ГАРДЕРОБ] Skeleton/{}: граней {}".format(entry[0], len(obj.data.polygons)))
+        export(out / "Skeleton" / (entry[0] + ".fbx"))
+        if shots:
+            preview(Item("Skeleton-" + entry[0], None, None, None), obj, shots)
 
     print("[ГАРДЕРОБ] записано в " + str(out))
 

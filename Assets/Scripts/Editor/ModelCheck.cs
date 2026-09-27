@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Sinbinder.Gameplay;
 
 namespace Sinbinder.Utilets
 {
@@ -34,8 +35,47 @@ namespace Sinbinder.Utilets
             Folder("Assets/Resources/Bodies", 0.6f, 2.6f);
             Folder("Assets/Resources/Props", 0.05f, 20f);
             Folder("Assets/Resources/Wear", 0.01f, 2f);
+            ShellWear();
 
             foreach (var path in Scenes) Scene(path);
+        }
+
+        /// <summary>
+        /// Свои вещи оболочки (<c>Wear/Skeleton/…</c>) надеваются, только если
+        /// <see cref="Wardrobe"/> узнаёт оболочку тела по имени меша, а имя
+        /// вещи — из тех, что он умеет надевать. Иначе вещь молча берётся
+        /// общая, и на скелете повисает наплечник, сшитый по чужому телу:
+        /// сцена собирается, ошибок нет — ровно тот случай, ради которого
+        /// эта проверка заведена (заголовок класса).
+        /// </summary>
+        private static void ShellWear()
+        {
+            foreach (var dir in AssetDatabase.GetSubFolders("Assets/Resources/Wear"))
+            {
+                string shell = System.IO.Path.GetFileName(dir);
+                var body = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Resources/Bodies/{shell}.fbx");
+                var skin = body != null ? body.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+                string seen = Wardrobe.ShellOf(skin);
+
+                if (seen != shell)
+                {
+                    Debug.LogError($"[ГАРДЕРОБ] Wear/{shell}: тело узнаётся как «{seen}» — "
+                                 + "свои вещи этой оболочке не наденутся никогда.");
+                    continue;
+                }
+
+                int known = 0;
+                foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { dir }))
+                {
+                    string item = System.IO.Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+                    if (Wardrobe.Knows(item)) known++;
+                    else Debug.LogError($"[ГАРДЕРОБ] Wear/{shell}/{item}: такой вещи Wardrobe не знает — "
+                                      + "не наденется никогда.");
+                }
+
+                Debug.Log($"[ГАРДЕРОБ] Wear/{shell}: своих вещей {known}, тело узнаётся "
+                        + $"по мешу «{skin.sharedMesh.name}».");
+            }
         }
 
         /// <summary>

@@ -278,6 +278,16 @@ class Field:
 
     def __init__(self):
         self.ops = []
+        self.level = 0.0
+
+    def grow(self, d):
+        """
+        Раздуть поверхность на d наружу: вещь, облегающая кость, —
+        тень Греховода поверх черепа (`wear.py`). Поле — расстояние,
+        и его ноль, сдвинутый на d, — ровно оболочка на d толще.
+        """
+        self.level += d
+        return self
 
     def reach(self):
         """
@@ -310,15 +320,15 @@ class Field:
 
     def bounds(self, pad):
         adds = [s for op, s, _ in self.ops if op == ADD]
-        lo = np.min([s.lo for s in adds], axis=0) - pad
-        hi = np.max([s.hi for s in adds], axis=0) + pad
+        lo = np.min([s.lo for s in adds], axis=0) - pad - self.level
+        hi = np.max([s.hi for s in adds], axis=0) + pad + self.level
         return lo, hi
 
     def at(self, p):
         """Поле в произвольных точках (N×3)."""
         p = np.asarray(p, dtype=np.float64)
         d = np.full(len(p), FAR)
-        m = self.reach() + 1e-3
+        m = self.reach() + 1e-3 + self.level
 
         for op, shape, k in self.ops:
             lo, hi = shape.lo - m, shape.hi + m
@@ -333,7 +343,7 @@ class Field:
             else:
                 d[inside] = smax(d[inside], -s, k)
 
-        return d
+        return d - self.level
 
     # -------------------------------------------------------- решётка
 
@@ -351,7 +361,7 @@ class Field:
             i1 = min(n[axis], int(np.ceil((b - lo[axis]) / cell)) + 1)
             return i0, i1
 
-        m = self.reach() + 2.0 * cell
+        m = self.reach() + 2.0 * cell + self.level
         for op, shape, k in self.ops:
             (i0, i1), (j0, j1), (k0, k1) = (span(shape.lo[a] - m, shape.hi[a] + m, a)
                                             for a in range(3))
@@ -372,7 +382,7 @@ class Field:
             else:
                 grid[i0:i1, j0:j1, k0:k1] = smax(block, -s, k)
 
-        return grid, lo
+        return grid - self.level, lo
 
     def mesh(self, cell, settle=3):
         """
@@ -466,6 +476,35 @@ class Field:
             verts = self.settle(verts, cell)
 
         return verts, faces
+
+    def surface(self, origins, dirs, far, steps=48):
+        """
+        Где луч изнутри выходит на поверхность: грубо — шагами до первой
+        точки снаружи, точно — делением пополам. Вещь на кости (обруч,
+        скол) ставится по этим точкам и потому лежит на кости, какой бы
+        череп ни стал после следующей правки.
+
+        Возвращает точки и признак «нашлось» по каждому лучу.
+        """
+        o = np.asarray(origins, dtype=np.float64)
+        d = np.asarray(dirs, dtype=np.float64)
+        d = d / np.linalg.norm(d, axis=1)[:, None]
+
+        ts = np.linspace(0.0, far, steps)
+        vals = np.stack([self.at(o + d * t) for t in ts], axis=1)
+        outside = vals > 0.0
+        first = np.argmax(outside, axis=1)
+        found = outside[np.arange(len(o)), first] & (first > 0)
+
+        lo = ts[np.maximum(first - 1, 0)]
+        hi = ts[first]
+        for _ in range(28):
+            mid = (lo + hi) * 0.5
+            inside = self.at(o + d * mid[:, None]) < 0.0
+            lo = np.where(inside, mid, lo)
+            hi = np.where(inside, hi, mid)
+
+        return o + d * ((lo + hi) * 0.5)[:, None], found
 
     def normal(self, p, eps):
         """Направление наружу — разностями поля."""

@@ -24,6 +24,14 @@ namespace Sinbinder.Gameplay
     /// с матрицей привязки этой кости (<c>bindposes</c>): она и переводит
     /// «где это лежит на теле» в «где это лежит на кости». Дальше предмет
     /// едет вместе с костью через все движения, ничего не зная о них.
+    ///
+    /// <b>Своя вещь оболочки.</b> Раз предмет собран в координатах тела,
+    /// он садится только на то тело, по которому собран. С 27 сентября
+    /// скелет стоит на своих суставах и носит череп по эталону
+    /// (<c>Tools/blender/anatomy.py</c>) — наплечник, сшитый по общему телу,
+    /// висел бы на нём в двух сантиметрах от плеча, обруч — вокруг пустоты.
+    /// Поэтому вещь ищется сперва в <c>Wear/&lt;оболочка&gt;/</c>, и только
+    /// потом в общей <c>Wear/</c>.
     /// </summary>
     public static class Wardrobe
     {
@@ -77,8 +85,24 @@ namespace Sinbinder.Gameplay
             var binds = skin.sharedMesh.bindposes;
             if (bones == null || binds == null || bones.Length != binds.Length) return;
 
+            string shell = ShellOf(skin);
             foreach (var item in For(warrior))
-                Put(item, bones, binds, null);
+                Put(item, shell, bones, binds, null);
+        }
+
+        /// <summary>
+        /// Какой оболочке принадлежит тело — по имени его меша:
+        /// <c>bodies.py</c> называет меш «SkeletonMesh», «ZombieMesh».
+        /// По этому имени ищется папка своих вещей. Не то имя — вещи
+        /// берутся общие, как было до своих; проверяет соответствие
+        /// папок и тел <c>ModelCheck</c>.
+        /// </summary>
+        public static string ShellOf(SkinnedMeshRenderer skin)
+        {
+            if (skin == null || skin.sharedMesh == null) return "";
+
+            string name = skin.sharedMesh.name;
+            return name.EndsWith("Mesh") ? name.Substring(0, name.Length - 4) : name;
         }
 
         /// <summary>
@@ -100,7 +124,7 @@ namespace Sinbinder.Gameplay
             var binds = skin.sharedMesh.bindposes;
             if (bones == null || binds == null || bones.Length != binds.Length) return null;
 
-            return Put(item, bones, binds, tint);
+            return Put(item, ShellOf(skin), bones, binds, tint);
         }
 
         /// <summary>Перекрасить всё, что рендерится под этим объектом. Через
@@ -152,7 +176,8 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private static GameObject Put(string item, Transform[] bones, Matrix4x4[] binds, Color? tint)
+        private static GameObject Put(string item, string shell, Transform[] bones, Matrix4x4[] binds,
+                                      Color? tint)
         {
             if (!Worn.TryGetValue(item, out var boneName)) return null;
 
@@ -162,7 +187,11 @@ namespace Sinbinder.Gameplay
 
             if (index < 0) return null;
 
-            var prefab = Resources.Load<GameObject>(Folder + item);
+            // Своя вещь оболочки — прежде общей (см. заголовок класса).
+            var prefab = string.IsNullOrEmpty(shell)
+                ? null
+                : Resources.Load<GameObject>(Folder + shell + "/" + item);
+            if (prefab == null) prefab = Resources.Load<GameObject>(Folder + item);
             if (prefab == null)
             {
                 if (_toldAboutMissing) return null;
