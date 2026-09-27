@@ -24,9 +24,16 @@ namespace Sinbinder.UI
         {
             public Warrior Who;
             public Text Line;
+
+            /// <summary>Сама реплика, без имени и кавычек — её читает прогон.</summary>
+            public string Words;
+
             public float Until;
             public int Said;
         }
+
+        /// <summary>От края экрана строка не ближе стольких точек.</summary>
+        private const float Edge = 12f;
 
         /// <summary>Зазор между разведёнными строками, в точках экрана.</summary>
         private const float Gap = 4f;
@@ -90,7 +97,13 @@ namespace Sinbinder.UI
                 _live.Add(bubble);
             }
 
-            bubble.Line.text = line;
+            // Имя — над строкой, мельче и тише, реплика — в кавычках. Автор,
+            // 26 сентября: «Сейчас разговор выглядит как одна большая
+            // и странная реплика» — две строки пары, разведённые одна над
+            // другой, читались одним абзацем: кто что сказал, не видно.
+            // Так же, как на нижней полосе наезда: имя над репликой.
+            bubble.Words = line;
+            bubble.Line.text = $"<size=15><color=#B9AF99>{who.DisplayName}</color></size>\n«{line}»";
             bubble.Until = Time.unscaledTime + seconds;
             bubble.Said = ++_said;
         }
@@ -112,9 +125,9 @@ namespace Sinbinder.UI
 
                 if (cam == null) { b.Line.enabled = false; continue; }
 
-                var screen = cam.WorldToScreenPoint(b.Who.transform.position + Vector3.up * 2.3f);
+                var screen = cam.WorldToScreenPoint(Head(b.Who));
                 b.Line.enabled = screen.z > 0f;
-                if (b.Line.enabled) b.Line.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+                if (b.Line.enabled) b.Line.rectTransform.position = Inside(b.Line, screen);
             }
 
             Unstack();
@@ -175,6 +188,35 @@ namespace Sinbinder.UI
                 rt.position = at;
                 _taken.Add(new Rect(at.x - half, at.y, half * 2f, tall));
             }
+        }
+
+        /// <summary>
+        /// Над макушкой, а не на две трети метра выше неё: опора была
+        /// «2,3 м над ногами» — от первого лица у близкого собеседника эта
+        /// точка уходила выше кадра, и строки не было видно вовсе. Макушка —
+        /// по телу, как у портрета; тела нет — прежние 2,3 м.
+        /// </summary>
+        private static Vector3 Head(Warrior who)
+        {
+            var body = who.GetComponentInChildren<SkinnedMeshRenderer>();
+            return body != null
+                ? new Vector3(who.transform.position.x, body.bounds.max.y + 0.25f, who.transform.position.z)
+                : who.transform.position + Vector3.up * 2.3f;
+        }
+
+        /// <summary>
+        /// Где рисовать строку: над головой, но не за краем кадра. Близкий
+        /// собеседник от первого лица стоит головой у верхнего края — строка
+        /// прижимается к краю, а не уходит за него.
+        /// </summary>
+        private static Vector3 Inside(Text line, Vector3 screen)
+        {
+            float half = Mathf.Min(line.preferredWidth, line.rectTransform.rect.width) * 0.5f;
+            float tall = line.preferredHeight;
+
+            float x = Mathf.Clamp(screen.x, half + Edge, Mathf.Max(half + Edge, Screen.width - half - Edge));
+            float y = Mathf.Clamp(screen.y, Edge, Mathf.Max(Edge, Screen.height - tall - Edge));
+            return new Vector3(x, y, 0f);
         }
 
         private void Build()

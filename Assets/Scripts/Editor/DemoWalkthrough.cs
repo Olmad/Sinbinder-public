@@ -1136,9 +1136,10 @@ namespace Sinbinder.EditorTools
                 var type = bubble.GetType();
                 var who = type.GetField("Who")?.GetValue(bubble) as Warrior;
                 var text = type.GetField("Line")?.GetValue(bubble) as Text;
+                var words = type.GetField("Words")?.GetValue(bubble) as string;
                 float until = type.GetField("Until")?.GetValue(bubble) is float u ? u : 0f;
-                if (who == null || text == null || string.IsNullOrEmpty(text.text)) continue;
-                found.Add((who.DisplayName, text.text, until));
+                if (who == null || text == null || string.IsNullOrEmpty(words)) continue;
+                found.Add((who.DisplayName, words, until));
             }
             return found;
         }

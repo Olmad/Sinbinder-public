@@ -777,13 +777,9 @@ namespace Sinbinder.Utilets
             // Знамя у стола: место, где отряду объявляют решения.
             Prop("Banner", clutter.transform, new Vector3(4.6f, 0f, 3.4f), 210f);
 
-            // Частокол по дальнему краю — не ограда, а горизонт: лагерь
-            // обязан иметь край, иначе он не лагерь, а поле с палатками.
-            for (int i = 0; i < 9; i++)
-            {
-                float a = 200f + i * 18f;
-                Prop("Palisade", clutter.transform, Ring(a, hillRadius * 2.8f), a + 90f);
-            }
+            // Частокола больше нет. Автор, 26 сентября: «Забор в качестве
+            // декораций это здорово, но если подумать логически — забор нужен
+            // в полевом лагере?» Походный лагерь за ночь не обносят.
 
             // Валуны: два у холма, два на противоположной стороне.
             Prop("Rock", clutter.transform, Ring(160f, 8.2f), 20f, 1.2f);
@@ -1005,7 +1001,12 @@ namespace Sinbinder.Utilets
         {
             const int total = 25;
             const int inner = 11;
-            const float clearance = 1.2f;
+
+            // Два метра, а не метр двадцать: при прежнем запасе у подножия
+            // холма, на самом спуске, стояли две палатки внутреннего кольца —
+            // почти невидимые с высоты и поперёк дороги Греховода (автор,
+            // 26 сентября: «их почти не видно, но при этом они мешаются»).
+            const float clearance = 2.0f;
 
             var places = new List<Vector3>();
 
@@ -1860,13 +1861,19 @@ namespace Sinbinder.Utilets
 
             // Имя говорящего — над репликой и мельче её. У поступка
             // говорящего нет, и тогда строка прячется целиком.
+            //
+            // Доли высоты полосы, а не точки от её краёв: полоса выезжает
+            // и на большом экране выше расчётной, и отступы в точках ставили
+            // имя ПОД строку (кадр «реплика с наездом»; автор, 26 сентября:
+            // «имя должно писаться над репликой»). Верхняя треть — имя,
+            // остальное — реплика, при любой высоте.
             var speaker = Label("Говорящий", bottom, 22, TextAnchor.LowerCenter);
             speaker.color = new Color(0.72f, 0.68f, 0.60f);
-            Stretch(speaker.rectTransform, top: -12f, bottom: 46f);
+            Band(speaker.rectTransform, 0.64f, 0.95f);
 
             var line = Label("Строка", bottom, 30, TextAnchor.UpperCenter);
             line.color = new Color(0.94f, 0.92f, 0.86f);
-            Stretch(line.rectTransform, top: -44f, bottom: 10f);
+            Band(line.rectTransform, 0.04f, 0.62f);
 
             var letterbox = holder.AddComponent<Sinbinder.UI.Letterbox>();
             Wire(letterbox, ("_top", top), ("_bottom", bottom),
@@ -1903,6 +1910,19 @@ namespace Sinbinder.Utilets
             go.AddComponent<RectMask2D>();
 
             return rt;
+        }
+
+        /// <summary>
+        /// Полоска родителя по высоте — от доли <paramref name="from"/> до доли
+        /// <paramref name="to"/> снизу, во всю ширину с полями по бокам.
+        /// </summary>
+        private static void Band(RectTransform rt, float from, float to)
+        {
+            rt.anchorMin = new Vector2(0f, from);
+            rt.anchorMax = new Vector2(1f, to);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2(120f, 0f);
+            rt.offsetMax = new Vector2(-120f, 0f);
         }
 
         /// <summary>Растянуть по ширине родителя с отступами сверху и снизу.</summary>
@@ -2573,7 +2593,6 @@ namespace Sinbinder.Utilets
                 case "Barrel":
                 case "Crate":
                 case "LogBench":
-                case "Palisade":
                 case "TentPeg":
                 case "Torch":
                     return "Planks037A";

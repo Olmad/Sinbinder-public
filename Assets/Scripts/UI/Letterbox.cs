@@ -85,6 +85,20 @@ namespace Sinbinder.UI
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>
+        /// Держать погашенное погашенным, пока полосы подняты. У панелей бывает
+        /// своя прозрачность, и они ставят её каждый кадр: панель установок
+        /// отряда ставила себе единицу поверх наезда — на паузе её срок
+        /// не истекает (автор, 26 сентября: «при наезде камеры видны слева
+        /// сверху панели приказов»). После всех Update — последнее слово наше.
+        /// </summary>
+        void LateUpdate()
+        {
+            if (!_shown) return;
+            foreach (var d in _dimmed)
+                if (d.Group != null) d.Group.alpha = 0f;
+        }
+
         private static void Block(RectTransform bar)
         {
             if (bar == null) return;
