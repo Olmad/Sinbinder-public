@@ -29,6 +29,7 @@
 
     blender --background --python Tools/blender/reference.py
     blender --background --python Tools/blender/reference.py -- --shots <папка>
+    blender --background --python Tools/blender/reference.py -- --shots <папка> --only Skeleton02
 """
 
 import json
@@ -46,18 +47,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # Человекоподобные образцы. Оружие, мебель и города пропущены:
 # у них нет ни роста, ни плеч.
 #
-# Часть лежит в загрузках, часть — на диске D автора, в папках
+# Часть лежит в загрузках, часть — на флешке автора, в папках
 # `_inspect_*`. Скелет оттуда автор назвал образцовым, и это главный
 # образец для оболочки Skeleton: у него есть то, чего силуэт не даёт, —
 # как устроены рёбра, таз и кисть.
+#
+# Пути — от корня диска, без буквы: флешки у автора меняют букву
+# (26 сентября образцы переехали с D на F), и список с буквой молча
+# терял их все — «нет на месте». Ищем на каждом диске (elsewhere()).
 ELSEWHERE = [
-    r"D:\_inspect_skeleton\source\Skeleton02(SKETCHFAB).glb",
-    r"D:\_inspect_manthing\source\ManThing.fbx",
-    r"D:\_inspect_chibi\source\chibi body.obj",
-    r"D:/3d_scan_man_1.glb",
-    r"D:\military_soldier.glb",
-    r"D:\private_military_contractor.glb",
+    r"_inspect_skeleton\source\Skeleton02(SKETCHFAB).glb",
+    r"_inspect_manthing\source\ManThing.fbx",
+    r"_inspect_chibi\source\chibi body.obj",
+    r"3d_scan_man_1.glb",
+    r"military_soldier.glb",
+    r"private_military_contractor.glb",
 ]
+
+
+def elsewhere(relative):
+    """Образец с флешки — на том диске, где он есть; нет нигде — первая буква."""
+    for letter in "CDEFGHIJKLMNOPQRSTUVWXYZ":
+        path = Path(f"{letter}:\\") / relative
+        if path.exists():
+            return path
+    return Path("D:\\") / relative
 
 HUMANOIDS = [
     "armored_executioner_-_horned_helm__flail.glb",
@@ -431,10 +445,16 @@ def main():
         return argv[argv.index(key) + 1] if key in argv else None
 
     shots = opt("--shots")
+    only = opt("--only")
     rows = []
 
     paths = [downloads() / name for name in HUMANOIDS]
-    paths += [Path(p) for p in ELSEWHERE]
+    paths += [elsewhere(p) for p in ELSEWHERE]
+
+    # Один образец по части имени: скелет весит 64 МБ, а грузить ради
+    # него остальные одиннадцать — минуты впустую.
+    if only is not None:
+        paths = [p for p in paths if only.lower() in p.name.lower()]
 
     for path in paths:
         if not path.exists():
