@@ -102,61 +102,96 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        /// <summary>
+        /// Сколько держать кадр после реплики, ожидая следующую, секунд.
+        /// Реплики Каргана часто идут парой («что-то случилось» — «взгляните
+        /// в шар»), и вторая встаёт в очередь через миг после первой.
+        /// </summary>
+        private const float Linger = 0.8f;
+
+        /// <summary>
+        /// Реплики очереди — одним кадром. Автор, 26 сентября: «если несколько
+        /// фраз подряд — можно просто держать камеру». Прежде каждая реплика
+        /// уезжала домой и наезжала заново. Теперь камера возвращается только
+        /// после последней: тот же говорящий — меняется строка, другой —
+        /// камера переходит к нему, не заезжая домой.
+        /// </summary>
         private IEnumerator Speak()
         {
             _speaking = true;
 
+            var camera = Dialogue.DialogueCameraController.Instance;
+            var pause = Core.GamePauseController.Instance;
+            bool framed = false;
+            int mine = -1;
+            Warrior onScreen = null;
+
             while (_queue.Count > 0)
             {
-                var next = _queue.Dequeue();
-                yield return Frame(next.Label, next.Words, next.Speaker);
+                var (label, words, speaker) = _queue.Dequeue();
+
+                if (!framed)
+                {
+                    camera = Dialogue.DialogueCameraController.Instance;
+                    if (camera == null) continue;
+
+                    // Кадр занят разговором или поступком — подождём, но недолго:
+                    // реплика уже в журнале, и наезд через полминуты опоздал бы.
+                    float waited = 0f;
+                    while (camera != null && camera.InDialogue && waited < Patience)
+                    {
+                        waited += Time.unscaledDeltaTime;
+                        yield return null;
+                    }
+                    if (camera == null || camera.InDialogue) continue;
+
+                    // Игра уже стоит — руки у игрока заняты панелью, и отнимать
+                    // у панели кадр нельзя. Так решает и MomentCamera.
+                    pause = Core.GamePauseController.Instance;
+                    if (pause != null && pause.IsPaused) continue;
+                }
+
+                // Ждали в живой игре: говорящий мог пасть или уйти со сценой.
+                if (speaker == null || speaker.IsDead) continue;
+
+                if (!framed)
+                {
+                    framed = true;
+                    if (pause != null) { pause.Pause(); mine = pause.Stamp; }
+                    camera.SaveCameraPosition();
+                }
+
+                if (speaker != onScreen)
+                {
+                    // К другому говорящему — прямо из кадра в кадр.
+                    camera.StopSway();
+                    yield return camera.FocusOn(speaker.transform);
+                    onScreen = speaker;
+                }
+
+                UI.Letterbox.Instance?.Say(label, words);
+
+                // Реальное время: игровое стоит.
+                yield return new WaitForSecondsRealtime(Hold(words));
+
+                float lingered = 0f;
+                while (_queue.Count == 0 && lingered < Linger)
+                {
+                    lingered += Time.unscaledDeltaTime;
+                    yield return null;
+                }
             }
 
-            _speaking = false;
-        }
-
-        private static IEnumerator Frame(string label, string words, Warrior speaker)
-        {
-            var camera = Dialogue.DialogueCameraController.Instance;
-            if (camera == null) yield break;
-
-            // Кадр занят разговором или поступком — подождём, но недолго:
-            // реплика уже в журнале, и наезд через полминуты опоздал бы.
-            float waited = 0f;
-            while (camera != null && camera.InDialogue && waited < Patience)
-            {
-                waited += Time.unscaledDeltaTime;
-                yield return null;
-            }
-            if (camera == null || camera.InDialogue) yield break;
-
-            // Игра уже стоит — руки у игрока заняты панелью, и отнимать
-            // у панели кадр нельзя. Так решает и MomentCamera.
-            var pause = Core.GamePauseController.Instance;
-            if (pause != null && pause.IsPaused) yield break;
-
-            // Ждали в живой игре: говорящий мог пасть или уйти со сценой.
-            if (speaker == null || speaker.IsDead) yield break;
-
-            int mine = -1;
-            if (pause != null) { pause.Pause(); mine = pause.Stamp; }
-
-            camera.SaveCameraPosition();
-            yield return camera.FocusOn(speaker.transform);
-
-            UI.Letterbox.Instance?.Say(label, words);
-
-            // Реальное время: игровое стоит.
-            yield return new WaitForSecondsRealtime(Hold(words));
-
-            if (camera != null)
+            if (framed && camera != null)
             {
                 camera.StopSway();
                 yield return camera.RestoreCamera();
             }
 
-            if (pause != null && pause.IsPaused && pause.Stamp == mine)
+            if (framed && pause != null && pause.IsPaused && pause.Stamp == mine)
                 pause.Resume();
+
+            _speaking = false;
         }
     }
 }

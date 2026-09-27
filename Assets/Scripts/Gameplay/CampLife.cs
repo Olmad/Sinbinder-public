@@ -28,11 +28,13 @@ namespace Sinbinder.Gameplay
     /// из палатки выходит редко — ему много не надо. Во время сцен пролога
     /// (провожатый, тревога шара, разгром) лагерь не живёт: сцена ведёт.
     ///
-    /// Выключатель: до вечернего прогона выключено; «лагерь» в консоли (~).
+    /// Включено по умолчанию с 26 сентября: автор прошёл демо и просил
+    /// живой лагерь, а выключенный лагерь просто стоит у костра. В консоли
+    /// «лагерь» (~) по-прежнему переключает.
     /// </summary>
     public static class CampLife
     {
-        public static bool Enabled { get; set; }
+        public static bool Enabled { get; set; } = true;
 
         private const float Every = 30f;
 
@@ -59,7 +61,7 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm()
         {
-            Enabled = false;
+            Enabled = true;
             Chosen.Clear();
         }
 

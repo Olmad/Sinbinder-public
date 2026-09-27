@@ -94,13 +94,19 @@ namespace Sinbinder.Gameplay
             return chest != null ? new List<InventoryItem>(chest._contents) : new List<InventoryItem>();
         }
 
-        /// <summary>Сундук — склад, а не раздача. Выключено — всё сразу в мешок, как прежде.</summary>
-        public static bool Store { get; set; }
+        /// <summary>
+        /// Сундук — склад, а не раздача. Выключено — всё сразу в мешок.
+        ///
+        /// Включено по умолчанию с 26 сентября. Автор, пройдя демо: «Вещи
+        /// из сундука сами перенеслись в инвентарь» — это и есть раздача,
+        /// и её он принял за поломку. В консоли «склад» по-прежнему переключает.
+        /// </summary>
+        public static bool Store { get; set; } = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm()
         {
-            Store = false;
+            Store = true;
             _restoreLooted = null;
             _restoreContents = null;
         }

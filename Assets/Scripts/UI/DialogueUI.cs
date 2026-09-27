@@ -160,10 +160,17 @@ namespace Sinbinder.UI
                 // из трупа, с наездом на него.
                 if (speaker != null && speaker.IsDead) continue;
 
-                if (_speakerNameText != null)
-                    _speakerNameText.text = line.SpeakerName;
-                if (_dialogueText != null)
-                    _dialogueText.text = "";
+                // Имя — через полосы. Они прячут строку имени, когда говорящего
+                // нет (слово поступка «Сбегает», конец наезда), и включить её
+                // обратно может только их Say. Прямой записью имя ставилось
+                // в выключенную строку — автор, 26 сентября: «когда воины перед
+                // боем переговариваются, не всегда видно имена».
+                if (Letterbox.Instance != null) Letterbox.Instance.Say(line.SpeakerName, "");
+                else
+                {
+                    if (_speakerNameText != null) _speakerNameText.text = line.SpeakerName;
+                    if (_dialogueText != null) _dialogueText.text = "";
+                }
 
                 foreach (var w in _allWarriors)
                 {
