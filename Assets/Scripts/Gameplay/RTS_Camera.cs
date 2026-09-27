@@ -168,7 +168,7 @@ namespace Sinbinder.Gameplay
             _pitch = Mathf.Clamp(_pitch, -_pitchLimit, _pitchLimit);
 
             transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            transform.position = SinbinderPlayer.Where + Vector3.up * _eyeHeight;
+            transform.position = SinbinderPlayer.Where + Vector3.up * Eye();
 
             // Тело поворачивается туда, куда смотрит голова. Курс задаёт
             // камера, а не шаг: иначе шаг поворачивал бы героя, поворот
@@ -176,6 +176,40 @@ namespace Sinbinder.Gameplay
             var hero = SinbinderPlayer.Instance;
             if (hero != null)
                 hero.transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
+        }
+
+        /// <summary>Сколько оставлять между глазом и скатом.</summary>
+        private const float UnderRoof = 0.15f;
+
+        /// <summary>Ниже этого не пригибается: дальше он уже ползёт.</summary>
+        private const float Crouched = 0.9f;
+
+        /// <summary>Как быстро пригибается и выпрямляется, м/с.</summary>
+        private const float CrouchSpeed = 2.5f;
+
+        private float _eyeNow;
+
+        /// <summary>
+        /// Высота глаз с поправкой на крышу. В рядовой палатке конёк ниже
+        /// роста Греховода с запасом, и глаз на прежних 1,65 оказался бы
+        /// над скатом — снаружи палатки, в которой он стоит. Под крышей
+        /// он пригибается: глаза уходят под скат, но не ниже пояса.
+        /// Плавно — рывок взгляда на пороге читался бы как поломка.
+        /// </summary>
+        private float Eye()
+        {
+            var feet = SinbinderPlayer.Where;
+            float want = _eyeHeight;
+
+            var tent = TentInterior.Around(feet);
+            if (tent != null)
+                want = Mathf.Clamp(tent.Ceiling(feet) - feet.y - UnderRoof, Crouched, _eyeHeight);
+
+            _eyeNow = _eyeNow <= 0f
+                ? want
+                : Mathf.MoveTowards(_eyeNow, want, CrouchSpeed * Time.unscaledDeltaTime);
+
+            return _eyeNow;
         }
 
         // ---------- тактический ----------
