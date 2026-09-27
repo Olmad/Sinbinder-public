@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/EscapeZone.cs
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -128,7 +129,7 @@ namespace Sinbinder.Gameplay
             // войны край открывается серым — дорога видна, врагов на ней нет.
             FogOfWar.Reveal(transform.position, _radius + 3f);
 
-            // Ворота зажигаются, и над ними встаёт метка: «нужно бежать»
+            // Круг выхода загорается, и над ним встаёт метка: «нужно бежать»
             // без «куда» оставляло игрока в лагере (автор, 26 сентября).
             Lamps(true);
             UI.ExitMarker.Show(this);
@@ -136,7 +137,7 @@ namespace Sinbinder.Gameplay
 
         void Start()
         {
-            // Запертые ворота стоят тёмными: свет — знак, что уходить пора.
+            // Запертый круг тлеет без света: свет — знак, что уходить пора.
             Lamps(Open);
             if (Open) UI.ExitMarker.Show(this);
         }
@@ -277,7 +278,72 @@ namespace Sinbinder.Gameplay
 
             Debug.Log($"[ПОБЕГ] Ушли {_escapedNames.Count}, остались {left}.");
 
-            var director = Object.FindFirstObjectByType<PrologueDirector>();
+            StartCoroutine(Farewell(Object.FindFirstObjectByType<PrologueDirector>()));
+        }
+
+        /// <summary>Сколько камера отъезжает над кругом.</summary>
+        private const float ShotSeconds = 3.5f;
+
+        /// <summary>Строка на чёрном между лагерем и склепом.</summary>
+        private const string Dawn = "К рассвету они вышли к старому склепу.";
+
+        /// <summary>
+        /// Уход с поля — роликом, как в Warcraft 3. Слово автора, 27 сентября:
+        /// «сильно не хватает какого-то перехода от побега к склепу». До того
+        /// отсчёт кончался, и склеп открывался следующим же кадром.
+        ///
+        /// Мир встаёт стоп-кадром, поднимаются полосы, камера отъезжает над
+        /// кругом в сторону ночи; затем кадр гаснет строкой — и склеп, который
+        /// открывается своей: «Кто-то уже занял этот склеп». Стоп-кадр —
+        /// не для красоты: список ушедших уже снят, и смерть под роликом
+        /// разошлась бы с ним.
+        /// </summary>
+        private IEnumerator Farewell(PrologueDirector director)
+        {
+            // Греховод пал в тот же миг — конец игры главнее ухода. Иначе
+            // экран «Греховод пал» остановил бы мир насовсем, а склеп
+            // открылся бы под этой остановкой и стоял бы паузой вечно
+            // (прогон 27 сентября: «пауза True, насовсем True»).
+            if (SinbinderPlayer.Instance != null && SinbinderPlayer.Instance.IsDead) yield break;
+
+            Core.GamePauseController.Instance?.Pause();
+
+            var cam = Camera.main;
+            var rig = cam != null ? cam.GetComponent<RTS_Camera>() : null;
+            if (rig != null) rig.enabled = false;
+
+            var bars = UI.Letterbox.Instance;
+            if (bars != null)
+            {
+                bars.Show();
+                bars.Say(null, "Лагерь остаётся за спиной.");
+            }
+
+            if (cam != null)
+            {
+                var centre = transform.position;
+                var away = new Vector3(centre.x, 0f, centre.z);
+                away = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.right;
+
+                var from = cam.transform.position;
+                var turn = cam.transform.rotation;
+                var to = centre - away * 9f + Vector3.up * 7f;
+                var look = Quaternion.LookRotation(centre + away * 10f - to);
+
+                for (float t = 0f; t < ShotSeconds; t += Time.unscaledDeltaTime)
+                {
+                    float k = Mathf.SmoothStep(0f, 1f, t / ShotSeconds);
+                    cam.transform.SetPositionAndRotation(Vector3.Lerp(from, to, k),
+                                                         Quaternion.Slerp(turn, look, k));
+                    yield return null;
+                }
+            }
+
+            var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
+            if (title != null) yield return title.Darken(Dawn, 0.9f);
+
+            yield return new WaitForSecondsRealtime(2.2f);
+
             if (director != null) director.LeaveNow("Отряд ушёл с поля.");
         }
 

@@ -59,6 +59,41 @@ namespace Sinbinder.UI
             StartCoroutine(Show(text));
         }
 
+        /// <summary>
+        /// Затемнить кадр строкой и не возвращать его: так кончается доля
+        /// перед сменой сцены (<see cref="Gameplay.EscapeZone"/>, уход с поля).
+        /// Полотно уходит вместе со сценой, а строка следующей встаёт уже
+        /// на своём — чёрное переходит в чёрное, без мелькания лагеря.
+        /// Паузу не ставит и не снимает: её держит тот, кто уводит.
+        /// </summary>
+        public IEnumerator Darken(string text, float seconds)
+        {
+            if (_panel == null || _group == null) yield break;
+
+            _holding = true;
+            Showing = true;
+
+            if (_line != null) _line.text = text;
+            _group.alpha = 0f;
+            _panel.SetActive(true);
+
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                _group.alpha = t / seconds;
+                yield return null;
+            }
+
+            _group.alpha = 1f;
+        }
+
+        private bool _holding;
+
+        void OnDestroy()
+        {
+            // Держали кадр до смены сцены — отпускаем вместе со сценой.
+            if (_holding) Showing = false;
+        }
+
         private IEnumerator Show(string text)
         {
             if (_panel == null || _group == null) yield break;

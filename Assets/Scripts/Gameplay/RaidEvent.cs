@@ -50,12 +50,13 @@ namespace Sinbinder.Gameplay
         private const string SecondWaveLine =
             "Карган: «Владыка, они узнали, где наш лагерь. "
           + "Вероятно, от одного из наших. Тяжело это признавать, "
-          + "но нам нужно бежать. К восточным воротам — туда, где огни».";
+          + "но нам нужно бежать. К кругу на востоке — туда, где свет».";
 
         private static readonly Vector3 FirstWave = new Vector3(0f, 0f, 12f);
         private static readonly Vector3 SecondWave = new Vector3(0f, 0f, 15f);
 
-        // Ворота — на востоке, за внешним кольцом палаток (9.4 м), в проходе.
+        // Круг выхода (до 27 сентября — ворота) — на востоке, за внешним
+        // кольцом палаток (9.4 м), в проходе.
         // Прежде край стоял ровно на восток, на (16, 0, 0), — а на этой линии
         // во внешнем кольце палатка: из лагеря её было не видно за ней.
         // Восемьдесят градусов от севера — луч, что проходит в прорехи
@@ -216,81 +217,24 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Ворота наружу — конкретная точка, а не «край где-то на востоке».
+        /// Круг выхода — конкретная точка, а не «край где-то на востоке».
         ///
-        /// Автор, 26 сентября: «Я не смог выйти из лагеря». Здесь стояли
-        /// два тонких столба и холодный свет — за палаткой, в темноте;
-        /// с высоты их прятал туман, от первого лица — палатки. Теперь это
-        /// ворота: два высоких столба с перекладиной, на каждом факел,
-        /// между ними холодный свет дороги. Пока уходить рано, они тёмные;
-        /// открывая край, <see cref="EscapeZone.Arm"/> их зажигает и ставит
-        /// над ними метку «Выход» (<see cref="UI.ExitMarker"/>).
-        ///
-        /// Коллайдеров у ворот нет: навмеш уже испечён, обходить их некому,
-        /// а луч щелчка «иди сюда» упирался бы в столб, а не в землю.
+        /// Автор, 26 сентября: «Я не смог выйти из лагеря» — тогда здесь
+        /// встали ворота с факелами. 27 сентября: «хочется, чтобы были
+        /// не ворота, а круг типа „контрольная точка“ как в Warcraft 3».
+        /// Теперь это круг силы на земле (<see cref="ExitCircle"/>): пока
+        /// уходить рано, он тлеет; открывая край, <see cref="EscapeZone.Arm"/>
+        /// его зажигает и ставит над ним метку «Выход» (<see cref="UI.ExitMarker"/>).
+        /// Кто ушёл, по-прежнему считает зона — тем же радиусом.
         /// </summary>
         private static void Escape(Transform root)
         {
-            var go = new GameObject("Ворота");
+            var go = new GameObject("Круг выхода");
             go.transform.SetParent(root);
             go.transform.position = Edge;
 
-            // Лицом от лагеря: столбы встают поперёк дороги наружу.
-            go.transform.rotation = Quaternion.LookRotation(new Vector3(Edge.x, 0f, Edge.z).normalized);
-
             go.AddComponent<EscapeZone>().Configure(EdgeRadius, openAtStart: false);
-
-            const float half = 1.7f;     // полширины прохода
-            const float tall = 3.4f;     // высота столба
-
-            for (int side = -1; side <= 1; side += 2)
-            {
-                var post = Piece(go.transform, PrimitiveType.Cylinder, "Столб",
-                    new Vector3(half * side, tall * 0.5f, 0f), new Vector3(0.28f, tall * 0.5f, 0.28f));
-
-                // Факел — на столбе, тёплый: его видно от костра через прорехи
-                // палаток, и он не спорит с холодным светом дороги.
-                Piece(go.transform, PrimitiveType.Cylinder, "Факел",
-                    new Vector3(half * side, tall + 0.15f, 0f), new Vector3(0.14f, 0.18f, 0.14f));
-                Lamp(go.transform, "Огонь факела", new Vector3(half * side, tall + 0.45f, 0f),
-                    new Color(1f, 0.62f, 0.3f), 2.4f, 8f);
-
-                post.name = side < 0 ? "Столб левый" : "Столб правый";
-            }
-
-            Piece(go.transform, PrimitiveType.Cube, "Перекладина",
-                new Vector3(0f, tall - 0.2f, 0f), new Vector3(half * 2f + 0.5f, 0.24f, 0.24f));
-
-            Lamp(go.transform, "Свет дороги", new Vector3(0f, 2.4f, 0f),
-                new Color(0.58f, 0.72f, 0.95f), 2.2f, EdgeRadius * 2.4f);
-        }
-
-        /// <summary>Кусок ворот — примитив без коллайдера.</summary>
-        private static GameObject Piece(Transform parent, PrimitiveType type, string name,
-            Vector3 local, Vector3 scale)
-        {
-            var piece = GameObject.CreatePrimitive(type);
-            piece.name = name;
-            Object.Destroy(piece.GetComponent<Collider>());
-            piece.transform.SetParent(parent, false);
-            piece.transform.localPosition = local;
-            piece.transform.localScale = scale;
-            return piece;
-        }
-
-        /// <summary>Свет ворот. Зажигает его край, когда уходить пора.</summary>
-        private static void Lamp(Transform parent, string name, Vector3 local,
-            Color color, float intensity, float range)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = local;
-
-            var light = go.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.color = color;
-            light.intensity = intensity;
-            light.range = range;
+            ExitCircle.Dress(go.transform);
         }
     }
 }
