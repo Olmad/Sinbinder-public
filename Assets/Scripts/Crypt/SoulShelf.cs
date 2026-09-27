@@ -122,20 +122,61 @@ namespace Sinbinder.Crypt
             _place.Bind(this);
         }
 
+        /// <summary>
+        /// Во сколько раз банка на полке крупнее настоящей (0,21 м,
+        /// <c>props.py</c>): полка склепа — четыре метра, а цилиндр,
+        /// стоявший на месте банки, был полметра. Банка ростом с ладонь
+        /// на такой полке терялась бы.
+        /// </summary>
+        private const float JarScale = 1.8f;
+
         private SoulJar MakeJar(int slot, SoulManager.Kept kept)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            // С 27 сентября — банка души по образцу автора (Props/SoulJarFull),
+            // и душа в ней горит своими грехами (SoulJarGlow). Нет модели —
+            // прежний цилиндр: полка обязана работать и без неё.
+            var model = Resources.Load<GameObject>("Props/SoulJarFull");
+
+            var go = model != null ? new GameObject() : GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             go.name = $"Банка — {kept.Soul.Name}";
             go.transform.SetParent(transform);
-            go.transform.localPosition = new Vector3(slot * _step, 0.25f, 0f);
-            go.transform.localScale = new Vector3(0.22f, 0.25f, 0.22f);
+
+            // Подпись висит там же, где висела у цилиндра: у того был
+            // масштаб (0,22; 0,25; 0,22), и табличка под ним — вместе с ним.
+            var plateScale = new Vector3(0.22f, 0.25f, 0.22f);
+            float plateHeight = 0.8f;
+
+            if (model != null)
+            {
+                go.transform.localPosition = new Vector3(slot * _step, 0f, 0f);
+
+                // Корень модели несёт масштаб и поворот импорта (×100, 270°
+                // по X) — умножаем, а не затираем (HANDOFF §49).
+                var body = Object.Instantiate(model, go.transform, false);
+                body.name = "Банка";
+                body.transform.localScale = model.transform.localScale * JarScale;
+
+                var box = go.AddComponent<BoxCollider>();
+                box.center = new Vector3(0f, 0.105f * JarScale, 0f);
+                box.size = new Vector3(0.16f, 0.21f, 0.16f) * JarScale;
+
+                go.AddComponent<Gameplay.SoulJarGlow>().Show(kept.Soul);
+            }
+            else
+            {
+                go.transform.localPosition = new Vector3(slot * _step, 0.25f, 0f);
+                go.transform.localScale = plateScale;
+                plateScale = Vector3.one;
+                plateHeight = 2.2f;
+            }
 
             var jar = go.AddComponent<SoulJar>();
             jar.Fill(this, slot, kept.Soul, kept.Quality);
 
             var plate = new GameObject("Табличка");
             plate.transform.SetParent(go.transform);
-            plate.transform.localPosition = new Vector3(0f, 2.2f, 0f);
+            plate.transform.localPosition = new Vector3(0f, plateHeight, 0f);
+            plate.transform.localScale = plateScale;
 
             var text = plate.AddComponent<TextMesh>();
             text.font = PlateFont();

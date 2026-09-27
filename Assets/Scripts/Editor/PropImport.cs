@@ -57,5 +57,44 @@ namespace Sinbinder.EditorTools
             // может прочитать меш в собранной игре (см. заметку класса).
             im.isReadable = true;
         }
+
+        /// <summary>
+        /// Стекло банки души — прозрачное (27 сентября, <c>SoulJar</c>,
+        /// <c>SoulJarFull</c>). Импорт делает любой материал модели
+        /// непрозрачным Lit, и душу внутри банки не было бы видно вовсе:
+        /// банка читалась бы серой кружкой.
+        ///
+        /// Правится здесь, при импорте, а не в игре: материал уезжает
+        /// в сборку внутри модели уже прозрачным, и вариант шейдера
+        /// с прозрачностью сборка не выбросит — его использует материал,
+        /// который она видит. Переключи его кодом в игре — и в собранной
+        /// игре варианта могло бы не оказаться.
+        ///
+        /// Тени стекло не бросает: прозрачная банка с тенью сплошного
+        /// цилиндра выглядит поломкой.
+        /// </summary>
+        void OnPostprocessMaterial(UnityEngine.Material material)
+        {
+            if (!Ours(assetPath) || material == null || !material.name.StartsWith("Glass")) return;
+
+            var c = material.color;
+            material.color = new UnityEngine.Color(c.r, c.g, c.b, 0.24f);
+
+            material.SetFloat("_Surface", 1f);                 // прозрачная
+            material.SetFloat("_Blend", 0f);                   // по альфе
+            material.SetFloat("_ZWrite", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.88f);
+            material.SetShaderPassEnabled("ShadowCaster", false);
+            material.SetShaderPassEnabled("DepthOnly", false);
+        }
     }
 }

@@ -94,7 +94,8 @@ def soften(occ, faces, count):
     return np.array([per_vertex[f].mean() for f in faces])
 
 
-def part(b, field, cell, bone, keep, reach, deep=0.78, dim=0.42, dark=(), shade=(), paint=True):
+def part(b, field, cell, bone, keep, reach, deep=0.78, dim=0.42, dark=(), shade=(), paint=True,
+         recolor=None):
     """
     Снять поверхность с поля, прорядить до keep треугольников
     и повесить на кость.
@@ -110,6 +111,8 @@ def part(b, field, cell, bone, keep, reach, deep=0.78, dim=0.42, dark=(), shade=
     shade — формы, чьи грани красятся тенью: рёберные хрящи темнее
     кости, как у эталона. paint=False — один материал на всё: тень
     Греховода, где номер 1 — это глаз и гореть обязан только глаз.
+    recolor(середины граней) → номера материалов — своя раскраска
+    вместо зажатости: душа в банке, где ядро и вихри — разные грехи.
     """
     verts, faces = field.mesh(cell)
     if len(faces) == 0:
@@ -126,6 +129,9 @@ def part(b, field, cell, bone, keep, reach, deep=0.78, dim=0.42, dark=(), shade=
     mats = np.where(occ > deep, HOLLOW, np.where(occ > dim, SHADE, BONE))
     if not paint:
         mats[:] = BONE
+        shade, dark = (), ()
+    if recolor is not None:
+        mats = np.asarray(recolor(centres))
         shade, dark = (), ()
     for shape in shade:
         mats[(shape.dist(centres) < 0.0008) & (mats == BONE)] = SHADE

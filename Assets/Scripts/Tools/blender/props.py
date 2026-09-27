@@ -32,8 +32,12 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import numpy as np
+
+import anatomy
 import bodies
 from bodies import Body, box, ring, sphere, tube
+from sdf import Ball, Egg, Field, chain
 
 # Материалы. Смысл индексов тот же, что у тел и гардероба:
 # 0 — из чего сделано, 1 — чем отличается, 2 — тёмное.
@@ -391,7 +395,156 @@ def katana(b):
         b.add(*tube((0, y0, z0), (0, y1, z1), r0, r1, segs=4), bone="", mat=0)
 
 
+def lathe(profile, segs, ridges=0, band=None, depth=0.0):
+    """
+    Тело вращения: профиль (r, z) от оси до оси — замкнутая поверхность.
+    Банка, крышка, склянка — всё, что точат на станке, а не лепят.
+
+    ridges — насечка: столько рёбер по кругу в полосе band (z от, z до)
+    на глубину depth, только у внешней стороны (r не меньше крайнего
+    в полосе). Крышка без насечки читалась гладкой шайбой.
+
+    Точки с r = 0 — полюса: из них веер треугольников, а не кольцо
+    из нулевых граней.
+    """
+    outer = 0.0
+    if band is not None:
+        outer = max(r for r, z in profile if band[0] <= z <= band[1]) - 1e-6
+
+    verts, faces, rows = [], [], []
+    for r, z in profile:
+        if r <= 1e-9:
+            rows.append([len(verts)])
+            verts.append((0.0, 0.0, z))
+            continue
+        row = []
+        for j in range(segs):
+            a = 2.0 * math.pi * j / segs
+            rr = r
+            if ridges and band is not None and band[0] <= z <= band[1] and r >= outer:
+                rr = r - depth * (0.5 - 0.5 * math.cos(ridges * a))
+            row.append(len(verts))
+            verts.append((math.cos(a) * rr, math.sin(a) * rr, z))
+        rows.append(row)
+
+    for lo, hi in zip(rows, rows[1:]):
+        if len(lo) == 1 and len(hi) == 1:
+            continue
+        if len(lo) == 1:
+            for j in range(segs):
+                faces.append([lo[0], hi[j], hi[(j + 1) % segs]])
+        elif len(hi) == 1:
+            for j in range(segs):
+                faces.append([lo[j], hi[0], lo[(j + 1) % segs]])
+        else:
+            for j in range(segs):
+                k = (j + 1) % segs
+                faces.append([lo[j], lo[k], hi[k], hi[j]])
+
+    # Профиль может идти и так и эдак — намотку проверяем объёмом
+    # (`bodies.signed_volume`) и разворачиваем, если вышла внутрь.
+    if bodies.signed_volume(verts, faces) < 0.0:
+        faces = [f[::-1] for f in faces]
+    return verts, faces
+
+
+# Банка души. Образец — стеклянная банка из загрузок автора
+# (`glass_jar.glb`, 27 сентября): прямые стенки, скруглённые плечи,
+# короткое горло с резьбой, крышка шире горла. Наша — того же силуэта,
+# ростом 0,22 м, в метрах, как все предметы: на полке палатки она
+# стоит на месте цилиндра-заглушки того же роста.
+#
+# Стекло — двумя поверхностями, внешней и внутренней, с толстым дном:
+# у тонкой одной оно в Unity читалось бы плёнкой. Прозрачным его делает
+# импорт (`PropImport`, материал «Glass»).
+JAR_GLASS = [
+    (0.0, 0.000), (0.066, 0.000), (0.074, 0.003), (0.078, 0.009), (0.079, 0.020),
+    (0.079, 0.140), (0.078, 0.150), (0.075, 0.160), (0.069, 0.169), (0.061, 0.176),
+    (0.056, 0.180), (0.055, 0.184), (0.057, 0.187), (0.055, 0.190), (0.057, 0.193),
+    (0.055, 0.196), (0.054, 0.199), (0.052, 0.201),
+    (0.049, 0.201), (0.049, 0.190), (0.050, 0.181), (0.057, 0.175), (0.066, 0.167),
+    (0.073, 0.156), (0.075, 0.140), (0.075, 0.024), (0.073, 0.016), (0.066, 0.012),
+    (0.0, 0.012),
+]
+
+# Крышка — плоская закрутка шире горла, как у образца: тонкая шайба
+# с фаской, насечка по ободу. Первая, с валиком по краю, читалась
+# бубликом с ямой посередине.
+JAR_LID = [
+    (0.0, 0.2145), (0.0600, 0.2145), (0.0648, 0.2130), (0.0668, 0.2100), (0.0668, 0.1990),
+    (0.0655, 0.1965), (0.0630, 0.1958), (0.0612, 0.1972), (0.0612, 0.2065), (0.0560, 0.2080),
+    (0.0, 0.2080),
+]
+
+
+def jar(b, glass=0, lid=1, twine=2):
+    """Банка души пустая: стекло, крышка, бечёвка под крышкой."""
+    b.add(*lathe(JAR_GLASS, 48), bone="", mat=glass, smooth=True)
+    b.add(*lathe(JAR_LID, 72, ridges=36, band=(0.1990, 0.2100), depth=0.0014),
+          bone="", mat=lid, smooth=True)
+
+    # Бечёвка — два оборота под крышкой и узел сбоку с хвостами:
+    # банку с душой несут, а не ставят на стол.
+    for z in (0.1795, 0.1830):
+        b.add(*ring((0, 0, z), 0.0565, 0.0021, segs=40, rsegs=6), bone="", mat=twine, smooth=True)
+    b.add(*sphere((0.0590, -0.0060, 0.1812), 0.0042, segs=10, rings=6), bone="", mat=twine, smooth=True)
+    for dy, dz in ((-0.010, -0.020), (0.004, -0.024)):
+        b.add(*tube((0.0600, -0.0060, 0.1805), (0.0620, -0.0060 + dy, 0.1805 + dz), 0.0019, 0.0014, segs=6),
+              bone="", mat=twine, smooth=True)
+
+
+def soul_jar(b):
+    """
+    Банка с душой: та же банка, внутри — огонёк с вихрями.
+
+    Ядро — материал «Soul», вихри — «Soul Dim». Цвет им ставит игра
+    по грехам души (`SoulJarGlow`): ядро — громче всех звучащий спектр,
+    вихри — второй за ним. Здесь цвет — заглушка, бледный пепел: модель
+    без игры не врёт о грехе, которого у неё нет (как глаза у тел).
+    """
+    jar(b)
+
+    # Огонёк: ядро и язык пламени вверх, изгибом, сужаясь; вокруг —
+    # искры. Первый заход вихрями по спирали читался кренделем.
+    core = (0.0, 0.0, 0.074)
+    f = Field()
+    f.add(Egg(core, (0.025, 0.025, 0.029)))
+    tongue = [(0.000, 0.000, 0.086), (0.006, 0.002, 0.104), (-0.004, 0.001, 0.124),
+              (0.005, -0.002, 0.142), (-0.002, 0.000, 0.158)]
+    f.add(chain(tongue, [0.021, 0.015, 0.010, 0.0055, 0.0020]), k=0.012)
+    # Второй язык, меньше и в сторону: пламя, а не свеча.
+    f.add(chain([(0.010, 0.006, 0.090), (0.019, 0.008, 0.108), (0.015, 0.004, 0.124)],
+                [0.010, 0.0060, 0.0022]), k=0.010)
+    # Искры — вокруг, на разной высоте, по кругу через золотой угол:
+    # ни одна не стоит над другой.
+    motes = []
+    for i in range(7):
+        a = i * 2.39996
+        r = 0.036 + 0.016 * ((i * 0.618) % 1.0)
+        z = 0.040 + 0.016 * i
+        motes.append((math.cos(a) * r, math.sin(a) * r, z))
+        f.add(Ball(motes[-1], 0.0034 + 0.0012 * (i % 3)))
+
+    def colour(centres):
+        # Ядро — громкий грех, язык выше ядра и искры — второй.
+        d = np.linalg.norm(centres - np.asarray(core), axis=1)
+        return np.where(d < 0.032, 3, 4)
+
+    anatomy.part(b, f, 0.0012, "", keep=2600, reach=0.004, recolor=colour)
+
+
+# Стекло банки: зеленоватое, как старое бутылочное. Прозрачность —
+# у импорта (`PropImport`, по имени «Glass»), здесь только цвет.
+GLASS = ("Glass", (0.520, 0.600, 0.560, 1.0))
+TWINE = ("Twine", (0.330, 0.250, 0.170, 1.0))
+# Душа — пепел до того, как игра скажет, чья она (`SoulJarGlow`).
+SOUL = ("Soul", (0.800, 0.790, 0.760, 1.0))
+SOUL_DIM = ("Soul Dim", (0.600, 0.590, 0.570, 1.0))
+
+
 PROPS = [
+    Prop("SoulJar", jar, [GLASS, GOLD, TWINE]),
+    Prop("SoulJarFull", soul_jar, [GLASS, GOLD, TWINE, SOUL, SOUL_DIM]),
     Prop("Tent", tent, [CLOTH, WOOD, DARK]),
     Prop("TentPeg", tent_peg, [WOOD, BONE, DARK]),
     Prop("Campfire", campfire, [WOOD, STONE, EMBER]),
@@ -476,6 +629,7 @@ def build(prop):
     for i, mat in enumerate(b.mats):
         if i < len(mesh.polygons):
             mesh.polygons[i].material_index = mat
+            mesh.polygons[i].use_smooth = b.smooth[i]
 
     obj = bpy.data.objects.new(prop.name, mesh)
     bpy.context.scene.collection.objects.link(obj)

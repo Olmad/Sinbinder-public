@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 namespace Sinbinder.Utilets
@@ -145,6 +146,98 @@ namespace Sinbinder.Utilets
 
         /// <summary>Точка входа для пакетного режима.</summary>
         public static void AllBatch() => All();
+
+        /// <summary>
+        /// Банки души — кадром из самой Unity, а не из Блендера: стекло
+        /// прозрачным его делает импорт (<c>PropImport</c>), душу красит
+        /// игра (<see cref="SoulJarGlow"/>), и ни того ни другого превью
+        /// Блендера не покажет. Кадр — <c>Docs/Образцы/предметы/банки.png</c>.
+        ///
+        /// Пустая сцена: доска, ночной свет, пустая банка и три полные —
+        /// жадность с гордыней, гнев с унынием, добродетель гордыни.
+        /// Пакетный запуск — без <c>-nographics</c>: иначе рисовать нечем.
+        /// </summary>
+        public static void JarsBatch()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(
+                UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.10f, 0.10f, 0.13f);
+
+            var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            board.transform.position = new Vector3(0f, -0.02f, 0f);
+            board.transform.localScale = new Vector3(1.6f, 0.04f, 0.5f);
+            var wood = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            wood.color = new Color(0.20f, 0.14f, 0.09f);
+            board.GetComponent<Renderer>().sharedMaterial = wood;
+
+            var back = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            back.transform.position = new Vector3(0f, 0.4f, 0.26f);
+            back.transform.localScale = new Vector3(1.6f, 0.9f, 0.02f);
+            back.GetComponent<Renderer>().sharedMaterial = wood;
+
+            var moon = new GameObject("Луна").AddComponent<Light>();
+            moon.type = LightType.Directional;
+            moon.color = new Color(0.55f, 0.62f, 0.80f);
+            moon.intensity = 0.55f;
+            moon.transform.rotation = Quaternion.Euler(38f, -30f, 0f);
+
+            var empty = Resources.Load<GameObject>("Props/SoulJar");
+            var full = Resources.Load<GameObject>("Props/SoulJarFull");
+            if (empty == null || full == null)
+            {
+                Debug.LogError("[БАНКИ] Банок нет в Resources/Props — соберите Tools/blender/props.py.");
+                return;
+            }
+
+            Place(empty, -0.54f);
+            Place(full, -0.18f).AddComponent<SoulJarGlow>().Set(SinType.Greed, SinType.Pride, 0.75f);
+            Place(full, 0.18f).AddComponent<SoulJarGlow>().Set(SinType.Wrath, SinType.Sloth, 0.55f);
+            Place(full, 0.54f).AddComponent<SoulJarGlow>().Set(SinType.Pride, SinType.Envy, 0.60f, virtue: true);
+
+            var camera = new GameObject("Камера").AddComponent<Camera>();
+            camera.transform.position = new Vector3(0f, 0.34f, -1.25f);
+            camera.transform.rotation = Quaternion.LookRotation(new Vector3(0f, 0.12f, 0f) - camera.transform.position);
+            camera.fieldOfView = 34f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.03f, 0.03f, 0.04f);
+
+            const int w = 1600, h = 700;
+            var texture = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            camera.targetTexture = texture;
+            camera.Render();
+
+            var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            var previous = RenderTexture.active;
+            RenderTexture.active = texture;
+            read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+            camera.targetTexture = null;
+
+            const string folder = "Docs/Образцы/предметы";
+            System.IO.Directory.CreateDirectory(folder);
+            string file = folder + "/банки.png";
+            System.IO.File.WriteAllBytes(file, read.EncodeToPNG());
+
+            // Прозрачно ли стекло — числом: материал модели после импорта.
+            var glass = empty.GetComponentInChildren<Renderer>().sharedMaterials
+                             .FirstOrDefault(m => m != null && m.name.StartsWith("Glass"));
+            string said = glass == null
+                ? "материала «Glass» нет"
+                : $"стекло: очередь {glass.renderQueue}, альфа {glass.color.a:0.00}, "
+                + $"тип {glass.GetTag("RenderType", false)}";
+            Debug.Log($"[БАНКИ] кадр {file}; {said}");
+        }
+
+        private static GameObject Place(GameObject prefab, float x)
+        {
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            go.transform.position = new Vector3(x, 0f, 0f);
+            return go;
+        }
 
         private static void Folder(string path, float least, float most)
         {
