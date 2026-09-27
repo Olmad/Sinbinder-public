@@ -64,6 +64,10 @@ from pathlib import Path
 import bpy
 from mathutils import Vector, Quaternion
 
+# Соседние модули (`anatomy.py`, `sdf.py`) — из той же папки: Блендер
+# папку запущенного скрипта в путь поиска сам не кладёт.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 FPS = 30
 
 # --------------------------------------------------------------- пропорции
@@ -177,20 +181,29 @@ class Body:
     Материалов ровно три, и смысл у них один во всех оболочках:
     <b>0</b> — из чего она сделана, <b>1</b> — чем отличается,
     <b>2</b> — пустота, которую видно насквозь.
+
+    Материал можно дать и списком — по грани: так кость, снятая с поля
+    (`anatomy.py`), красит дно глазницы пустотой, не разрезая череп
+    на куски. <b>smooth</b> — гладкое затенение: у лепленой кости грани
+    мелкие, и плоское затенение рисовало бы каждую чешуйкой; у ящиков
+    голема — плоское, как было.
     """
 
     def __init__(self):
         self.verts = []
         self.faces = []
         self.mats = []
+        self.smooth = []
         self.groups = {}
 
-    def add(self, verts, faces, bone, mat=0):
+    def add(self, verts, faces, bone, mat=0, smooth=False):
         base = len(self.verts)
         self.verts.extend(verts)
-        for f in faces:
+        mats = mat if isinstance(mat, list) else [mat] * len(faces)
+        for f, m in zip(faces, mats):
             self.faces.append([i + base for i in f])
-            self.mats.append(mat)
+            self.mats.append(m)
+            self.smooth.append(smooth)
         self.groups.setdefault(bone, []).extend(range(base, base + len(verts)))
 
 
@@ -377,102 +390,16 @@ def sides():
 # ------------------------------------------------------------ скелет
 
 def build_skeleton(b, p):
-    """Кость и ничего кроме. Из оболочек она самая быстрая и самая
-    хрупкая, и выглядеть обязана соответственно."""
-    hip, knee, ankle = p["hip"], p["knee"], p["ankle"]
-    sh, sx, el, wr, fg = (p["shoulder"], p["shoulder_x"],
-                          p["elbow"], p["wrist"], p["finger"])
+    """
+    Кость и ничего кроме. Из оболочек она самая быстрая и самая
+    хрупкая, и выглядеть обязана соответственно.
 
-    # Таз по образцу с диска D: не скобка, а чаша. Снизу кольцо
-    # седалищных костей, сверху два крыла, развёрнутых наружу
-    # и назад, между ними — крестец. Прежние два кирпича по бокам
-    # читались кронштейном, и именно они делали из скелета вешалку.
-    b.add(*ring((0, 0.004, hip - 0.010), 0.082, 0.021, scale=(1.0, 0.80, 1.00)), bone="Hips")
-
-    for side, _ in sides():
-        wing, faces = box((side * 0.068, 0.004, hip + 0.022), (0.034, 0.074, 0.060))
-        wing = tilt(wing, (side * 0.044, 0.004, hip - 0.002), "y", side * -24.0)
-        wing = tilt(wing, (side * 0.044, 0.004, hip - 0.002), "x", 7.0)
-        b.add(wing, faces, bone="Hips")
-
-        # Вертлужная впадина: утолщение там, где в таз входит бедро.
-        b.add(*sphere((side * p["leg_x"], 0.004, hip + 0.002), 0.026,
-                      scale=(0.9, 0.8, 0.9), segs=10, rings=6), bone="Hips")
-
-    b.add(*box((0, 0.046, hip + 0.026), (0.036, 0.028, 0.078)), bone="Hips")
-
-    for i in range(3):
-        b.add(*box((0, 0.040, p["waist"] - 0.005 + i * 0.036), (0.036, 0.032, 0.024)),
-              bone="Spine")
-
-    # Рёбра, грудина и позвонки считаются от пропорций, а не заданы
-    # числами. Прежние высоты (0,673…0,771) были подогнаны под старую
-    # грудь, и стоило её поднять, как грудная клетка отстала от плеч:
-    # обручи повисли отдельно, руки крепились к пустоте.
-    low = p["waist"] + 0.004
-    span = (p["shoulder"] - 0.022) - low
-
-    # Семь пар, а не пять обручей: у образца клетка узкая под ключицей,
-    # самая широкая на две трети вниз и снова подбирается к поясу,
-    # а сами рёбра наклонены вперёд-вниз. Одинаковые горизонтальные
-    # кольца — главная примета игрушечного скелета.
-    for major, t, ahead in ((0.050, 1.00, -0.004), (0.062, 0.85, -0.002),
-                            (0.072, 0.70, 0.000), (0.080, 0.54, 0.002),
-                            (0.084, 0.38, 0.004), (0.083, 0.22, 0.006),
-                            (0.074, 0.06, 0.008)):
-        b.add(*ring((0, 0.006 - ahead, low + t * span), major, 0.0100,
-                    scale=(1.0, 0.80, 1.25)), bone="Chest")
-
-    b.add(*box((0, -0.052, low + span * 0.5), (0.030, 0.016, span + 0.030)),
-          bone="Chest")
-
-    for i in range(4):
-        b.add(*box((0, 0.048, low + 0.006 + i * (span / 3.4)),
-                   (0.036, 0.030, 0.022)), bone="Chest")
-
-    # Ключицы: от грудины к плечевому суставу. Без них плечо висит
-    # в воздухе — между верхним ребром и рукой была щель в полторы
-    # кости, и на превью это читалось поломкой скелета.
-    for side, _ in sides():
-        b.add(*tube((side * 0.016, -0.022, p["shoulder"] - 0.026),
-                    (side * (sx - 0.014), 0.004, p["shoulder"] - 0.004),
-                    0.011, 0.009, segs=7), bone="Chest")
-
-    for i in range(2):
-        b.add(*box((0, 0.008, p["neck"] + 0.012 + i * 0.024), (0.032, 0.032, 0.020)),
-              bone="Neck")
-
-    skull(b, p, r=0.062, socket=15.5, jaw=True)
-
-    for side, tag in sides():
-        b.add(*box((side * 0.070, 0.010, sh + 0.010), (0.106, 0.048, 0.019)),
-              bone=tag + "Shoulder")
-
-        limb(b, tag + "UpperArm", (side * sx, 0, sh), (side * el, 0, sh),
-             0.020, 0.016, joint=0.024)
-
-        # предплечье из двух костей: лучевая и локтевая читаются
-        # как скелет вернее любой другой детали.
-        for off in (-0.014, 0.014):
-            limb(b, tag + "LowerArm", (side * el, off, sh), (side * (wr - 0.005), off * 0.4, sh),
-                 0.0105, 0.0090)
-        b.add(*sphere((side * el, 0, sh), 0.021, segs=10, rings=6), bone=tag + "LowerArm")
-
-        hand(b, tag + "Hand", side, wr, fg, sh, thick=0.018)
-
-        kx = p.get("knee_x", p["leg_x"])
-
-        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * kx, 0, knee),
-             0.026, 0.020, joint=0.030)
-        for off in (-0.013, 0.013):
-            limb(b, tag + "LowerLeg",
-                 (side * kx + off, 0, knee), (side * kx + off * 0.5, 0, ankle),
-                 0.0135, 0.0105)
-        b.add(*sphere((side * kx, 0, knee), 0.026, segs=10, rings=6),
-              bone=tag + "LowerLeg")
-
-        foot(b, tag, side, kx)
-
+    С 27 сентября — по эталону автора, кость за костью (`anatomy.py`):
+    прежний скелет из ящиков, шаров и обручей автор назвал прямо —
+    «череп сейчас шар», «модели старые».
+    """
+    import anatomy
+    anatomy.skeleton(b, p)
 
 
 def eyes(b, centre, r, scale, dirs, size):
@@ -929,9 +856,18 @@ def build_mesh(arm, shell):
             bsdf.inputs["Roughness"].default_value = 0.62
         mesh.materials.append(m)
 
-    for i, mat in enumerate(b.mats):
-        if i < len(mesh.polygons):
-            mesh.polygons[i].material_index = mat
+    # validate() может выбросить вырожденную грань, и тогда номера
+    # разъедутся — пишем только пока их столько же.
+    if len(b.mats) == len(mesh.polygons):
+        mesh.polygons.foreach_set("material_index", b.mats)
+        mesh.polygons.foreach_set("use_smooth", b.smooth)
+    else:
+        print("[ТЕЛА] {}: validate выбросил {} граней — материалы по порядку"
+              .format(shell.name, len(b.mats) - len(mesh.polygons)))
+        for i, mat in enumerate(b.mats):
+            if i < len(mesh.polygons):
+                mesh.polygons[i].material_index = mat
+                mesh.polygons[i].use_smooth = b.smooth[i]
 
     obj = bpy.data.objects.new(shell.name + "Mesh", mesh)
     bpy.context.scene.collection.objects.link(obj)
