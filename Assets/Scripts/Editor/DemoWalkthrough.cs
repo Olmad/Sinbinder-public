@@ -327,12 +327,8 @@ namespace Sinbinder.EditorTools
                 // мы попросили: Done = () => true означал шаг, который
                 // не может провалиться, — а таких в списке проверок
                 // быть не должно вовсе.
-                // Проснулся он в палатке (с 27 сентября) и выходит из неё
-                // сам — ногами по навмешу, а не переносом: так прогон
-                // проверяет, что пол внутри есть и выход не заперт стенами
-                // (DemoSceneBuilder.Furnish).
-                S("Греховод вышел из палатки", WalkOutOfTent,
-                  () => OutOfTent() && !Paused(), 15f),
+                S("Греховод вышел из палатки", () => StepHero(4.5f),
+                  () => SinbinderPlayer.Exists && !Paused(), 4f),
 
                 // ── Мышь ──
                 // До 24 сентября прогон не касался мыши вовсе, и двенадцать
@@ -623,60 +619,6 @@ namespace Sinbinder.EditorTools
         }
 
         // ─────────────────────────────── действия ───────────────────────────────
-
-        /// <summary>Палатка, в которой Греховод проснулся. Нет — сцена собрана без нутра.</summary>
-        private static TentInterior _wokeIn;
-
-        /// <summary>
-        /// Выйти из палатки своими ногами: путь считается навмешем от постели
-        /// до порога и печатается, затем агент идёт по нему. Пола в палатке
-        /// нет — агент не на навмеше, и шаг застревает с объяснением.
-        /// </summary>
-        private static void WalkOutOfTent()
-        {
-            var hero = SinbinderPlayer.Instance;
-            if (hero == null) return;
-
-            _wokeIn = TentInterior.Around(hero.transform.position);
-            if (_wokeIn == null)
-            {
-                Write("  [ПАЛАТКА] Греховод проснулся не в палатке — у сцены нет нутра. "
-                    + "Шаг — переносом, как до 27 сентября.");
-                StepHero(4.5f);
-                return;
-            }
-
-            var agent = hero.GetComponent<NavMeshAgent>();
-            if (agent == null || !agent.isOnNavMesh)
-            {
-                Write($"  [ПАЛАТКА] {_wokeIn.name}: Греховод не на навмеше — пола в палатке нет");
-                return;
-            }
-
-            var door = _wokeIn.Doorstep(2.5f);
-            var path = new NavMeshPath();
-            agent.CalculatePath(door, path);
-
-            float length = 0f;
-            var corners = path.corners;
-            for (int i = 1; i < corners.Length; i++) length += Vector3.Distance(corners[i - 1], corners[i]);
-
-            Write($"  [ПАЛАТКА] {_wokeIn.name}: проснулся внутри, до порога {length:0.0} м пешком "
-                + $"({(path.status == NavMeshPathStatus.PathComplete ? "путь цел" : "путь оборван: " + path.status)})");
-
-            agent.SetDestination(door);
-        }
-
-        /// <summary>Вышел ли: за порогом и на метр дальше — как считает <see cref="CampOpening"/>.</summary>
-        private static bool OutOfTent()
-        {
-            if (!SinbinderPlayer.Exists) return false;
-            if (_wokeIn == null) return true;
-
-            var at = SinbinderPlayer.Where;
-            return !_wokeIn.Contains(at)
-                && CampFocus.GroundDistance(at, _wokeIn.Doorstep(0f)) >= 1f;
-        }
 
         private static void StepHero(float metres)
         {

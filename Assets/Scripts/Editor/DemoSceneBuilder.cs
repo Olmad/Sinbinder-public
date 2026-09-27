@@ -923,13 +923,9 @@ namespace Sinbinder.Utilets
             // а не возвышенностью. Форму ему теперь задаёт длинная тень.
             Cover(hill, "Ground048");
 
-            // Палатка Греховода наверху, входом к лагерю: в ней он просыпается,
-            // из неё и выходит (слово автора, 26 сентября). Крупнее прежней
-            // в полтора раза: внутри — стол с картой, полка с банками, стойка
-            // и постель, а между ними ему самому нужно пройти в рост. При
-            // прежних 1,25 над головой хватало крыши на полосу в ладонь.
+            // Палатка Греховода наверху, входом к лагерю: из неё он и выходит.
             Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
-                name: "Палатка Греховода", size: 1.9f, master: true);
+                name: "Палатка Греховода", size: 1.25f);
 
             Slope(position, radius, height);
         }
@@ -1065,7 +1061,7 @@ namespace Sinbinder.Utilets
 
                 var tent = Tent(position, yaw, abandoned,
                     abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", 1f,
-                    abandoned ? Fallen.NameFor(fallen - 1) : "", index: i);
+                    abandoned ? Fallen.NameFor(fallen - 1) : "");
                 tent.transform.SetParent(camp.transform);
             }
 
@@ -1074,32 +1070,25 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
-        /// Палатка — модель из <c>Props/Tent</c>, а если модели нет — куб,
-        /// повёрнутый на сорок пять градусов и наполовину ушедший в землю.
-        ///
-        /// <b>Корень — пустой объект</b> на земле посреди палатки, повёрнутый
-        /// входом вперёд и без масштаба; модель, нутро и стены — его дети.
-        /// Корнем палатку и ищут (спавнер Греховода, жизнь лагеря), и берут
-        /// у него одно — место. До 27 сентября корнем была сама модель,
-        /// а у неё в масштабе множитель единиц файла и поворот осей Blender:
-        /// мерить в ней метры пола было нельзя.
+        /// Палатка — куб, повёрнутый на сорок пять градусов и наполовину
+        /// ушедший в землю: над землёй остаётся треугольник. Один примитив
+        /// на палатку, двадцать шесть примитивов на весь лагерь.
         ///
         /// Брошенная просела и завалилась набок, и рядом торчит колышек.
-        /// Разница делается формой, а не цветом. В брошенную не входят:
-        /// нутро и пол — только у жилых (<see cref="Furnish"/>).
+        /// Разница делается формой, а не цветом: материалов сборщик сцен
+        /// не ставит нигде, и заводить их ради пяти палаток не стоит.
         /// </summary>
         private static GameObject Tent(Vector3 position, float yaw, bool abandoned,
-            string name, float size, string fallenName = "", bool master = false, int index = 0)
+            string name, float size, string fallenName = "")
         {
-            var tent = new GameObject(name);
-            tent.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
-
             // Модель, если она есть; куб — если нет. Тот же уговор, что
             // и у тел (WarriorLook): сцена собирается в любом случае.
-            var model = Prop("Tent", tent.transform, position, yaw, size);
+            var tent = Prop("Tent", null, position, yaw, size);
 
-            if (model != null)
+            if (tent != null)
             {
+                tent.name = name;
+
                 // Брошенная просела и накренилась: пять таких по кругу —
                 // вся предыстория, которая нужна (09-PROLOGUE.md §4).
                 if (abandoned)
@@ -1110,27 +1099,22 @@ namespace Sinbinder.Utilets
                     // Приседает по локальной Z: оси у модели блендеровские,
                     // и высота у неё — Z, а не Y. Сжатая по Y палатка
                     // просто стала бы уже, а не ниже.
-                    var was = model.transform.localScale;
-                    model.transform.localScale = new Vector3(was.x, was.y, was.z * 0.62f);
-                    model.transform.rotation = Quaternion.Euler(9f, yaw, 6f)
-                                             * Axis(Resources.Load<GameObject>("Props/Tent"));
-                }
-                else
-                {
-                    Furnish(tent, model, master, index);
+                    var was = tent.transform.localScale;
+                    tent.transform.localScale = new Vector3(was.x, was.y, was.z * 0.62f);
+                    tent.transform.rotation = Quaternion.Euler(9f, yaw, 6f)
+                                            * Axis(Resources.Load<GameObject>("Props/Tent"));
                 }
             }
             else
             {
-                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.name = "Заглушка";
-                cube.transform.SetParent(tent.transform);
-                cube.transform.position = position;
+                tent = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                tent.name = name;
+                tent.transform.position = position;
 
                 float height = abandoned ? 0.55f : 1.0f;
-                cube.transform.localScale = new Vector3(1.5f * size, 1.5f * size * height,
+                tent.transform.localScale = new Vector3(1.5f * size, 1.5f * size * height,
                                                         2.2f * size);
-                cube.transform.rotation = Quaternion.Euler(abandoned ? 14f : 0f, yaw, 45f);
+                tent.transform.rotation = Quaternion.Euler(abandoned ? 14f : 0f, yaw, 45f);
             }
 
             if (!abandoned) return tent;
@@ -1151,383 +1135,6 @@ namespace Sinbinder.Utilets
             PegName(tent.transform, pegAt + new Vector3(0f, 0.62f, 0f), fallenName);
 
             return tent;
-        }
-
-        /// <summary>
-        /// Сколько крыши нужно над ногами Греховода, чтобы он прошёл в рост:
-        /// сам он 1,6, и ещё ладонь, чтобы скат не чиркал по капюшону.
-        /// </summary>
-        private const float Headroom = 1.75f;
-
-        /// <summary>
-        /// Нутро жилой палатки: пол, стены и обстановка. Слово автора,
-        /// 26 сентября: «чтобы в палатки можно было войти, осмотреться,
-        /// увидеть внутренний интерьер».
-        ///
-        /// <b>Пол.</b> Навмеш печётся по видимой геометрии, а агент выпечки
-        /// ростом два метра: под скатами ниже этого пола не оставалось вовсе.
-        /// Поэтому сама модель в выпечку не идёт, а стены заданы невидимыми
-        /// объёмами «не пройти» вдоль скатов и полога. Между ними — полоса,
-        /// где над головой Греховода хватает крыши: в его палатке она
-        /// в два метра шириной, в прочих — тропка по коньку, куда входят
-        /// пригнувшись (первое лицо опускает взгляд под скат само,
-        /// <see cref="RTS_Camera"/>).
-        ///
-        /// <b>Обстановка</b> — из того, что есть в <c>Resources/Props</c>,
-        /// и из простых тел там, где предмета пока нет: постель, банки,
-        /// фонарь. Их модели — задача сессии моделей (28-ORDERS, её пункт 6);
-        /// места под них названы так, чтобы замена нашлась по имени.
-        /// </summary>
-        private static void Furnish(GameObject tent, GameObject model, bool master, int index)
-        {
-            var shape = Measure(tent.transform, model);
-            if (!shape.HasValue)
-            {
-                Debug.LogWarning($"[СБОРКА] {tent.name}: форму палатки не снять с модели — "
-                               + "нутра и пола у неё не будет.");
-                return;
-            }
-
-            var (half, top, front, back) = shape.Value;
-
-            var ignore = model.AddComponent<Unity.AI.Navigation.NavMeshModifier>();
-            ignore.ignoreFromBuild = true;
-
-            // Ширина пола — там, где крыши хватает над головой. В рядовой
-            // палатке её не хватает нигде, кроме линии конька: там тропка
-            // в три клетки навмеша, уже не бывает.
-            float path = Mathf.Max(0.25f, half * (1f - Headroom / top));
-            float radius = UnityEngine.AI.NavMesh.GetSettingsByID(0).agentRadius;
-            float inner = path + radius;
-            float outer = half + 0.35f;
-            int blocked = UnityEngine.AI.NavMesh.GetAreaFromName("Not Walkable");
-
-            foreach (float side in new[] { 1f, -1f })
-                Wall(tent.transform, "Скат", blocked,
-                     new Vector3(side * (inner + outer) * 0.5f, top * 0.5f, (front + back - 0.3f) * 0.5f),
-                     new Vector3(outer - inner, top + 1f, front - back + 0.3f));
-
-            Wall(tent.transform, "Полог", blocked,
-                 new Vector3(0f, top * 0.5f, back - 0.15f),
-                 new Vector3(outer * 2f, top + 1f, 0.3f));
-
-            var inside = tent.AddComponent<TentInterior>();
-            inside.Shape(half, top, front, back, model.GetComponentsInChildren<Renderer>());
-
-            if (master)
-            {
-                Headquarters(tent.transform, half, top, front, back, path);
-                Debug.Log($"[СБОРКА] {tent.name}: {half * 2f:0.00} × {front - back:0.00} м, "
-                        + $"конёк {top:0.00} м, пол в рост — {path * 2f:0.00} м шириной.");
-            }
-            else
-            {
-                Quarters(tent.transform, half, top, front, back, path, index);
-            }
-        }
-
-        /// <summary>
-        /// Форма палатки, снятая с модели: полуширина у земли, конёк, вход
-        /// и полог — в метрах, в осях корня. Меряется ткань — первый
-        /// материал модели (props.py: CLOTH), а не всё подряд: колышки
-        /// торчат за скаты, шесты — над коньком.
-        /// </summary>
-        private static (float Half, float Top, float Front, float Back)? Measure(
-            Transform root, GameObject model)
-        {
-            var filter = model.GetComponentInChildren<MeshFilter>();
-            var mesh = filter != null ? filter.sharedMesh : null;
-            if (mesh == null || mesh.subMeshCount == 0) return null;
-
-            var verts = mesh.vertices;
-            var cloth = mesh.GetTriangles(0);
-            if (verts.Length == 0 || cloth.Length == 0) return null;
-
-            var toWorld = filter.transform.localToWorldMatrix;
-            float half = 0f, top = 0f, front = float.MinValue, back = float.MaxValue;
-
-            foreach (int i in cloth)
-            {
-                var p = root.InverseTransformPoint(toWorld.MultiplyPoint3x4(verts[i]));
-
-                top = Mathf.Max(top, p.y);
-                front = Mathf.Max(front, p.z);
-                back = Mathf.Min(back, p.z);
-
-                if (p.y < 0.05f) half = Mathf.Max(half, Mathf.Abs(p.x));
-            }
-
-            // Палатка шире полуметра, выше метра и длиннее метра. Иначе
-            // первым материалом оказалось не то, и лучше сказать об этом,
-            // чем поставить стены по шесту.
-            if (half < 0.5f || top < 1f || front - back < 1f) return null;
-
-            return (half, top, front, back);
-        }
-
-        /// <summary>Невидимая стена для навмеша: объём «не пройти».</summary>
-        private static void Wall(Transform tent, string name, int area, Vector3 centre, Vector3 size)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(tent, false);
-
-            var volume = go.AddComponent<Unity.AI.Navigation.NavMeshModifierVolume>();
-            volume.center = centre;
-            volume.size = size;
-            volume.area = area;
-        }
-
-        /// <summary>
-        /// Рядовая палатка: постель вдоль ската, сундучок у полога, фонарь
-        /// под коньком. Сторона постели — по номеру палатки, без жребия:
-        /// лагерь обязан выглядеть одинаково при каждом запуске.
-        /// </summary>
-        private static void Quarters(Transform tent, float half, float top, float front, float back,
-                                     float path, int index)
-        {
-            float side = index % 2 == 0 ? 1f : -1f;
-            float length = Mathf.Min(1.7f, front - back - 0.5f);
-
-            Bedroll(tent, new Vector3(side * Mathf.Min(half - 0.25f, path + 0.35f), 0f,
-                                      back + 0.2f + length * 0.5f), 0.55f, length);
-
-            SmallChest(tent, new Vector3(-side * (path + 0.30f), 0f, back + 0.35f), side * 90f, 0.42f);
-
-            Lantern(tent, new Vector3(0f, top - 0.40f, back + 0.45f),
-                    range: 2.4f, intensity: 0.7f, shadows: false);
-        }
-
-        /// <summary>
-        /// Палатка Греховода — «ещё более наполненная» (слово автора): постель,
-        /// в которой он просыпается, стол с картой у полога, полка с банками
-        /// для душ, стойка с оружием, сундук. Всё вдоль скатов и у полога;
-        /// середина свободна — по ней он выходит к лагерю.
-        /// </summary>
-        private static void Headquarters(Transform tent, float half, float top, float front,
-                                         float back, float path)
-        {
-            // Коврик посередине: без него пол палатки — та же земля, что
-            // снаружи, и нутро не читается жильём.
-            Block(tent, "Коврик", "Fabric061", new Vector3(0f, 0.006f, (front + back) * 0.5f + 0.2f),
-                  new Vector3(Mathf.Min(1.8f, path * 1.7f), 0.012f, (front - back) * 0.62f));
-
-            // Постель у левого ската, изголовьем к пологу. Рядом — место,
-            // где он встаёт: спавнер находит его по имени.
-            float bedX = -(path + 0.35f);
-            Bedroll(tent, new Vector3(bedX, 0f, back + 1.3f), 0.8f, 2.0f);
-
-            var wake = new GameObject("Где проснулся");
-            wake.transform.SetParent(tent, false);
-            wake.transform.localPosition = new Vector3(bedX + 0.9f, 0f, back + 1.5f);
-
-            // Стол с картой у полога, правее середины: походный, ниже
-            // и уже стола совета. Карта — на коже, как и положено в поле.
-            var table = Prop("CouncilTable", tent, tent.TransformPoint(new Vector3(0.45f, 0f, back + 0.55f)),
-                             tent.eulerAngles.y);
-            if (table != null)
-            {
-                var s = table.transform.localScale;
-                table.transform.localScale = new Vector3(s.x * 0.55f, s.y * 0.50f, s.z * 0.85f);
-                table.name = "Стол с картой";
-            }
-
-            // Столешница стола совета — на 0,97 (props.py), здесь ×0,85.
-            Block(tent, "Карта", "Leather033A", new Vector3(0.45f, 0.831f, back + 0.55f),
-                  new Vector3(0.78f, 0.012f, 0.42f), yaw: 4f);
-
-            // Полка с банками для душ вдоль правого ската, лицом к середине.
-            var shelf = new GameObject("Полка с банками");
-            shelf.transform.SetParent(tent, false);
-            shelf.transform.localPosition = new Vector3(path + 0.27f, 0f, back + 1.9f);
-            shelf.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
-
-            var board = Prop("SoulShelf", shelf.transform, shelf.transform.position,
-                             shelf.transform.eulerAngles.y);
-            if (board != null)
-            {
-                var s = board.transform.localScale;
-                board.transform.localScale = new Vector3(s.x * 0.35f, s.y * 0.80f, s.z * 0.75f);
-            }
-
-            // Банки — простые тела, пока нет модели «банки души». Пустые
-            // все, кроме одной: в ней тлеет последняя, кого он не донёс.
-            var glass = Plain("Банка", new Color(0.20f, 0.25f, 0.24f));
-            var kept = Plain("Банка с душой", new Color(0.24f, 0.34f, 0.31f), new Color(0.22f, 0.52f, 0.44f));
-
-            for (int i = 0; i < 4; i++)
-            {
-                var jar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                jar.name = "Банка для души";
-                jar.transform.SetParent(shelf.transform, false);
-                // Доска полки — на 0,97 (props.py), здесь ×0,75; банка — 0,22.
-                jar.transform.localPosition = new Vector3(-0.55f + i * 0.36f, 0.84f, 0.02f);
-                jar.transform.localScale = new Vector3(0.16f, 0.11f, 0.16f);
-                Object.DestroyImmediate(jar.GetComponent<Collider>());
-                jar.GetComponent<Renderer>().sharedMaterial = i == 2 ? kept : glass;
-            }
-
-            // Стойка с оружием у правого ската, у входа. Оружие — дело
-            // сессии моделей (её пункт 2); пока на стойке — катана с витрины.
-            var rack = new GameObject("Стойка с оружием");
-            rack.transform.SetParent(tent, false);
-            rack.transform.localPosition = new Vector3(path + 0.22f, 0f, front - 1.05f);
-
-            foreach (float z in new[] { -0.40f, 0.40f })
-                Block(rack.transform, "Стояк", "Planks037A", new Vector3(0f, 0.62f, z),
-                      new Vector3(0.07f, 1.24f, 0.07f));
-
-            Block(rack.transform, "Перекладина", "Planks037A", new Vector3(0f, 1.08f, 0f),
-                  new Vector3(0.06f, 0.06f, 0.92f));
-            Block(rack.transform, "Упор", "Planks037A", new Vector3(0f, 0.22f, 0f),
-                  new Vector3(0.06f, 0.06f, 0.92f));
-
-            var blade = Prop("Katana", rack.transform, rack.transform.TransformPoint(new Vector3(-0.08f, 0.30f, 0.12f)),
-                             tent.eulerAngles.y + 90f);
-            if (blade != null)
-                blade.transform.rotation = Quaternion.AngleAxis(-10f, tent.right) * blade.transform.rotation;
-
-            // Сундук в ногах постели, крышкой к середине.
-            SmallChest(tent, new Vector3(bedX + 0.15f, 0f, back + 2.85f), 90f, 0.70f);
-
-            var crate = Prop("Crate", tent, tent.TransformPoint(new Vector3(bedX - 0.05f, 0f, front - 0.75f)),
-                             tent.eulerAngles.y + 20f, 0.6f);
-            if (crate != null) crate.name = "Ящик";
-
-            // Фонарь под коньком. С тенью: ткань держит свет внутри,
-            // и палатка светится входом, а не стенами.
-            Lantern(tent, new Vector3(0f, top - 0.80f, back + 1.9f),
-                    range: 5.5f, intensity: 1.5f, shadows: true);
-        }
-
-        /// <summary>Постель: кожаная подстилка и свёрнутое в изголовье одеяло.</summary>
-        private static void Bedroll(Transform tent, Vector3 at, float width, float length)
-        {
-            var bed = new GameObject("Постель");
-            bed.transform.SetParent(tent, false);
-            bed.transform.localPosition = at;
-
-            Block(bed.transform, "Подстилка", "Leather033A",
-                  new Vector3(0f, 0.05f, 0f), new Vector3(width, 0.10f, length));
-            Block(bed.transform, "Одеяло", "Fabric061",
-                  new Vector3(0f, 0.15f, -length * 0.5f + 0.22f), new Vector3(width * 0.9f, 0.10f, 0.34f));
-        }
-
-        /// <summary>
-        /// Сундучок: сундук Марги в меньшем размере, с крышкой на той же
-        /// петле у заднего края (<see cref="TrophyChestProp"/>).
-        /// </summary>
-        private static void SmallChest(Transform tent, Vector3 at, float yaw, float scale)
-        {
-            var box = new GameObject("Сундучок");
-            box.transform.SetParent(tent, false);
-            box.transform.localPosition = at;
-            box.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            box.transform.localScale = Vector3.one * scale;
-
-            float y = box.transform.eulerAngles.y;
-            if (Prop("Chest", box.transform, box.transform.position, y) == null)
-            {
-                Object.DestroyImmediate(box);
-                return;
-            }
-
-            Prop("ChestLid", box.transform, box.transform.TransformPoint(new Vector3(0f, 0.56f, -0.35f)), y);
-        }
-
-        /// <summary>
-        /// Фонарь под коньком: огонёк и тёплый свет. У рядовых — без тени
-        /// и на пару метров: двадцать огней с тенями стоили бы дороже всего
-        /// лагеря. У Греховода — с мягкой тенью.
-        /// </summary>
-        private static void Lantern(Transform tent, Vector3 at, float range, float intensity, bool shadows)
-        {
-            var lamp = new GameObject("Фонарь");
-            lamp.transform.SetParent(tent, false);
-            lamp.transform.localPosition = at;
-
-            // В выпечку навмеша не идёт: в рядовой палатке огонёк висит
-            // ниже роста агента выпечки и отрезал бы конец тропки под собой.
-            lamp.AddComponent<Unity.AI.Navigation.NavMeshModifier>().ignoreFromBuild = true;
-
-            var flame = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            flame.name = "Огонёк";
-            flame.transform.SetParent(lamp.transform, false);
-            flame.transform.localScale = new Vector3(0.09f, 0.13f, 0.09f);
-            Object.DestroyImmediate(flame.GetComponent<Collider>());
-
-            var renderer = flame.GetComponent<Renderer>();
-            renderer.sharedMaterial = Plain("Фонарь", new Color(0.95f, 0.62f, 0.30f),
-                                            new Color(1.25f, 0.72f, 0.32f));
-            // Огонёк не заслоняет собственный свет: свет сидит внутри него.
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-            var light = lamp.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.color = new Color(1f, 0.68f, 0.38f);
-            light.range = range;
-            light.intensity = intensity;
-            light.shadows = shadows ? LightShadows.Soft : LightShadows.None;
-        }
-
-        /// <summary>
-        /// Простое тело из куба под материалом-текстурой. Без коллайдера:
-        /// это обстановка, а не преграда щелчку по воину, который стоит рядом.
-        /// </summary>
-        private static GameObject Block(Transform parent, string name, string surface,
-                                        Vector3 at, Vector3 size, float yaw = 0f)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = name;
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = at;
-            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            go.transform.localScale = size;
-            Object.DestroyImmediate(go.GetComponent<Collider>());
-            Cover(go, surface);
-            return go;
-        }
-
-        private const string PlainDir = "Assets/Materials/Сцены";
-
-        /// <summary>
-        /// Материал одного цвета — для того, у чего нет текстуры: стекло
-        /// банок, огонёк фонаря. Лежит ассетом и пересобирается поверх себя,
-        /// как материалы из текстур (<see cref="MaterialBuilder"/>): иначе
-        /// ссылки из сцен рвались бы при каждой сборке.
-        /// </summary>
-        private static Material Plain(string name, Color colour, Color glow = default)
-        {
-            if (!AssetDatabase.IsValidFolder(PlainDir))
-                AssetDatabase.CreateFolder("Assets/Materials", "Сцены");
-
-            string path = $"{PlainDir}/{name}.mat";
-
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-                material = new Material(shader);
-                AssetDatabase.CreateAsset(material, path);
-            }
-
-            material.color = colour;
-            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", colour);
-            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.55f);
-
-            if (glow.maxColorComponent > 0f)
-            {
-                material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", glow);
-                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
-            }
-            else
-            {
-                material.DisableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", Color.black);
-            }
-
-            EditorUtility.SetDirty(material);
-            return material;
         }
 
         /// <summary>

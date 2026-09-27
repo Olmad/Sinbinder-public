@@ -90,16 +90,10 @@ namespace Sinbinder.Gameplay
 
             Vector3 start = SinbinderPlayer.Exists ? SinbinderPlayer.Where : Vector3.zero;
 
-            // Проснулся он в палатке (с 27 сентября) — и «вышел» значит
-            // вышел из неё, а не сделал пару шагов: палатка Греховода длиной
-            // в четыре с половиной метра, и от постели до входа дальше,
-            // чем прежние два с половиной.
-            var tent = SinbinderPlayer.Exists ? TentInterior.Around(start) : null;
-
             // Шаг игрока: пока он стоит на пороге, лагерь не идёт дальше.
             // До 24 сентября через 45 секунд провожатый подходил сам.
             yield return Beat.UntilPlayer(() => Free() && (!SinbinderPlayer.Exists
-                    || Left(tent, start)),
+                    || CampFocus.GroundDistance(SinbinderPlayer.Where, start) >= _leftTent),
                 0f, null);
 
             var escort = Escort();
@@ -117,22 +111,6 @@ namespace Sinbinder.Gameplay
         private static bool Free()
             => Core.GamePauseController.Instance == null
             || !Core.GamePauseController.Instance.IsPaused;
-
-        /// <summary>
-        /// Вышел ли он. Из палатки — за порог и ещё на метр: на самом
-        /// пороге он осматривается, и провожатый не должен заговорить
-        /// ему в спину. Без палатки — прежние шаги от места, где стоял.
-        /// </summary>
-        private bool Left(TentInterior tent, Vector3 start)
-        {
-            var at = SinbinderPlayer.Where;
-
-            if (tent != null)
-                return !tent.Contains(at)
-                    && CampFocus.GroundDistance(at, tent.Doorstep(0f)) >= 1f;
-
-            return CampFocus.GroundDistance(at, start) >= _leftTent;
-        }
 
         private bool Beside(Warrior w)
         {
