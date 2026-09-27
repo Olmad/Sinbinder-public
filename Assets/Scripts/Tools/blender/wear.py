@@ -36,8 +36,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import anatomy
 import bodies
-from bodies import BASE, Body, box, ring, sphere, tube
-from sdf import Ball, Bar, Egg, Field, chain
+from bodies import BASE, Body, box, ring, sphere, tilt, tube
+from sdf import Ball, Bar, Egg, Field, chain, turn
 
 P = BASE
 
@@ -451,11 +451,15 @@ def shade_skull(b):
     skull.grow(0.004)
     anatomy.part(b, skull, 0.0020, "Head", keep=1400, reach=0.010, paint=False)
 
+    # Глаза — щелями, чуть сведёнными к переносице, как у прежней тени:
+    # точки на её месте читались пуговицами, а не угольками.
     for side in (1, -1):
         pts, nrm = on_skull(skull, [(side * 0.0186, -0.030, 0.9335)], [(side * 0.25, -1.0, 0.0)])
-        at = pts[0] - nrm[0] * 0.0010
-        anatomy.pill(b, "Head", tuple(at), (0.0050, 0.0026, 0.0034), yaw=side * 14.0,
-                     mat=1, segs=10, rings=6)
+        at = pts[0] - nrm[0] * 0.0012
+        verts, faces = box(tuple(at), (0.0175, 0.0050, 0.0048))
+        verts = tilt(verts, tuple(at), "z", side * 16.0)
+        verts = tilt(verts, tuple(at), "y", side * 12.0)
+        b.add(verts, faces, bone="Head", mat=1)
 
 
 def raven_mantle_skeleton(b):
@@ -480,6 +484,37 @@ def raven_mantle_skeleton(b):
               bone="Chest", mat=1)
 
 
+def cowl_skeleton(b):
+    """
+    Капюшон скелета — куколь, а не шапка. Автор, 27 сентября: «почини
+    голову Греховода» — прежний, шаром с вырезом, сидел на голове шлемом,
+    и тень под ним читалась забралом.
+
+    Куколь больше головы и выдвинут вперёд: край выреза впереди лица,
+    лицо — в глубине, в тени. Сверху и сзади — лёгкий острый клюв,
+    снизу — воротник, лежащий на плечах. Изнанка красится тёмным сама:
+    она зажата — полость внутри, — а краска идёт по зажатости поля
+    (`anatomy.part`).
+    """
+    f = Field()
+    f.add(Egg((0.0, 0.004, 0.946), (0.069, 0.088, 0.080)))
+    f.add(Egg((0.0, 0.040, 0.992), (0.038, 0.058, 0.040)), k=0.022)
+    # Воротник — раструб на плечи, продолжение капюшона вниз.
+    f.add(Egg((0.0, 0.002, 0.866), (0.086, 0.090, 0.030)), k=0.024)
+
+    # Полость — голова с тенью и запасом на ткань.
+    f.cut(Egg((0.0, -0.002, 0.936), (0.058, 0.079, 0.071)), k=0.006)
+    f.cut(Egg((0.0, 0.004, 0.862), (0.070, 0.074, 0.034)), k=0.010)
+    # Вырез лица — высокий овал спереди; край — впереди лица.
+    f.cut(Egg((0.0, -0.096, 0.922), (0.037, 0.050, 0.054)), k=0.010)
+    # Снизу открыт — голова входит.
+    f.cut(Egg((0.0, 0.010, 0.824), (0.060, 0.060, 0.030)), k=0.004)
+
+    # Ткань или тьма, без полутени: полутень — материал «Кожа», и край
+    # выреза ложился бы светлыми заплатами.
+    anatomy.part(b, f, 0.0016, "Head", keep=2400, reach=0.020, deep=0.50, dim=0.50)
+
+
 def flasks_skeleton(b):
     """
     Склянки алхимика на ремне. У скелета пояса нет, и склянки,
@@ -500,7 +535,7 @@ SKELETON_ITEMS = [
     ("Crack", crack_skull, None),
     ("Shade", shade_skull, None),
     ("Flasks", flasks_skeleton, None),
-    ("Hood", None, hug(0.86, y0=0.016)),
+    ("Hood", cowl_skeleton, None),
     ("PauldronLeft", None, about((S["shoulder_x"] - 0.004, 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
     ("PauldronRight", None, about((-(S["shoulder_x"] - 0.004), 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
     ("BrotherBand", None, around_arm(0.55)),

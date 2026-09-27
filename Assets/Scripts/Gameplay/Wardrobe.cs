@@ -164,6 +164,46 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Сделать материал матовым: без блика и без отражения неба.
+        ///
+        /// Нужно тени Греховода. Тьма, которая блестит, читается не тьмой,
+        /// а чёрным лаком — шлемом: так и вышло 27 сентября, когда огонь
+        /// греха вынесли перед лицом (<see cref="SinEyes"/>), и он лёг
+        /// бликом на тень под капюшоном. Автор: «почини голову Греховода».
+        /// </summary>
+        public static void Matte(GameObject go, string slot)
+        {
+            if (go == null || string.IsNullOrEmpty(slot)) return;
+
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.materials;
+                bool touched = false;
+
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !mats[i].name.StartsWith(slot)) continue;
+
+                    if (mats[i].HasProperty("_Smoothness")) mats[i].SetFloat("_Smoothness", 0f);
+                    if (mats[i].HasProperty("_Glossiness")) mats[i].SetFloat("_Glossiness", 0f);
+                    if (mats[i].HasProperty("_Metallic")) mats[i].SetFloat("_Metallic", 0f);
+                    touched = true;
+                }
+
+                if (touched) r.materials = mats;
+            }
+        }
+
+        /// <summary>
+        /// Материалы пустоты — их общая покраска не трогает: дно глазниц
+        /// и ноздри («Hollow»), изнанка капюшона («Dark»), тень под ним
+        /// («Void»). Багровый Греховод до 27 сентября красился целиком,
+        /// с пустотой вместе, — и у нового черепа не осталось бы ни одной
+        /// глазницы, а капюшон светился бы изнутри.
+        /// </summary>
+        private static readonly string[] Hollows = { "Hollow", "Dark", "Void" };
+
         public static void Tint(GameObject go, Color color)
         {
             if (go == null) return;
@@ -171,7 +211,12 @@ namespace Sinbinder.Gameplay
             foreach (var r in go.GetComponentsInChildren<Renderer>())
             {
                 var mats = r.materials;
-                for (int i = 0; i < mats.Length; i++) mats[i].color = color;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || System.Array.Exists(Hollows, h => mats[i].name.StartsWith(h)))
+                        continue;
+                    mats[i].color = color;
+                }
                 r.materials = mats;
             }
         }

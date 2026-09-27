@@ -190,6 +190,8 @@ namespace Sinbinder.Gameplay
                 // перекрасилась бы в багрец вместе со всем прочим,
                 // и никакой темноты под капюшоном не осталось бы.
                 Wardrobe.Wear(model.gameObject, "Shade");
+                Wardrobe.Tint(model.gameObject, "Void", Color.black);
+                Wardrobe.Matte(model.gameObject, "Void");
                 // Единица, а не полторы: порог свечения в профиле «Взгляд»
                 // стоит на 1,05, и всё ярче него выбеливается добела.
                 // Угольку положено остаться красным.
