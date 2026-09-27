@@ -37,7 +37,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import anatomy
 import bodies
 from bodies import BASE, Body, box, ring, sphere, tilt, tube
-from sdf import Ball, Bar, Egg, Field, chain, turn
+from sdf import Ball, Bar, Brick, Disc, Egg, Field, Plate, chain, loop, turn
+
+import numpy as np
 
 P = BASE
 
@@ -311,6 +313,194 @@ def cloak(b):
           bone="Spine", mat=1)
 
 
+# ------------------------------------------------------------- оружие
+
+# Оружие — в руке, а не слотом-кубом (автор, 27 сентября: «займись
+# оружием»). Вещь висит на кости кисти и собрана в пространстве тела,
+# как всё в гардеробе, — вокруг точки хвата: там, где кулак скелета
+# сжат под рукоять (`anatomy.grip`). Рукоять идёт вперёд (−Y), костяшки
+# смотрят вверх (+Z) — туда же смотрит лезвие топора и лезвие меча.
+#
+# Размеры — в долях роста, как тело: меч в 0,62 роста — длинный меч
+# человека, у воина ростом 1,2 м он 0,74 м.
+STEEL = ("Steel", (0.470, 0.480, 0.500, 1.0))
+WOOD = ("Wood", (0.240, 0.170, 0.110, 1.0))
+
+
+def held(a, b=0.0, c=0.0):
+    """
+    Точка оружия в пространстве тела: a — вдоль рукояти к острию,
+    b — к костяшкам (вверх в Т-позе), c — вбок, наружу от тела.
+    Начало — середина рукояти в правом кулаке.
+    """
+    x, _, z = anatomy.grip(P, -1)
+    return (x - c, -a, z + b)
+
+
+def blade(b, bone, a0, a1, width, thick, tip, mat):
+    """
+    Клинок: ромб в сечении, от пяты (a0) к острию (a1), сужаясь; последние
+    `tip` — остриё. Гранями, а не гладко: сталь читается гранью.
+    """
+    stations = []
+    steps = 6
+    for i in range(steps + 1):
+        t = i / steps
+        a = a0 + (a1 - tip - a0) * t
+        w = width * (1.0 - 0.45 * t)
+        stations.append((a, w, thick * (1.0 - 0.35 * t)))
+
+    verts, faces = [], []
+    for a, w, th in stations:
+        verts += [held(a, w * 0.5, 0.0), held(a, 0.0, th * 0.5),
+                  held(a, -w * 0.5, 0.0), held(a, 0.0, -th * 0.5)]
+    point = len(verts)
+    verts.append(held(a1, 0.0, 0.0))
+    base = 0
+    # Пята закрыта.
+    faces.append([3, 2, 1, 0])
+    for s in range(steps):
+        r0, r1 = s * 4, (s + 1) * 4
+        for k in range(4):
+            faces.append([r0 + k, r0 + (k + 1) % 4, r1 + (k + 1) % 4, r1 + k])
+    last = steps * 4
+    for k in range(4):
+        faces.append([last + k, last + (k + 1) % 4, point])
+    if bodies.signed_volume(verts, faces) < 0.0:
+        faces = [f[::-1] for f in faces]
+    b.add(verts, faces, bone=bone, mat=mat)
+
+
+def grip_parts(b, bone, back, front, radius, wraps, leather, iron, pommel):
+    """Рукоять в коже с обмотками и навершие."""
+    b.add(*tube(held(-back), held(front), radius, radius * 0.95, segs=10), bone=bone, mat=leather,
+          smooth=True)
+    for i in range(wraps):
+        a = -back + (back + front) * (i + 0.5) / wraps
+        b.add(*tube(held(a - 0.004), held(a + 0.004), radius * 1.12, radius * 1.12, segs=10),
+              bone=bone, mat=leather, smooth=True)
+    if pommel > 0.0:
+        b.add(*sphere(held(-back - pommel * 0.6), pommel, scale=(1.0, 0.8, 1.0), segs=12, rings=8),
+              bone=bone, mat=iron, smooth=True)
+
+
+def sword(b):
+    """Меч: клинок с долом, гарда чуть вниз, рукоять в коже, навершие."""
+    bone = "RightHand"
+    grip_parts(b, bone, 0.048, 0.050, 0.0098, 4, 1, 2, 0.0150)
+    # Гарда — поперёк клинка, по линии лезвий (к костяшкам и от них).
+    guard = [held(0.056, -0.066, 0.0), held(0.054, -0.034, 0.0), held(0.053, 0.0, 0.0),
+             held(0.054, 0.034, 0.0), held(0.056, 0.066, 0.0)]
+    for p0, p1 in zip(guard, guard[1:]):
+        b.add(*tube(p0, p1, 0.0072, 0.0072, segs=8), bone=bone, mat=2, smooth=True)
+    for end in (guard[0], guard[-1]):
+        b.add(*sphere(end, 0.0092, segs=10, rings=6), bone=bone, mat=2, smooth=True)
+    blade(b, bone, 0.058, 0.520, 0.046, 0.0090, 0.070, 0)
+    # Дол — тёмная полоса по плоскости клинка, с обеих сторон.
+    for side in (1, -1):
+        a0, a1 = 0.070, 0.330
+        verts, faces = box(((held(a0)[0] + held(a1)[0]) * 0.5 - side * 0.0038,
+                            (held(a0)[1] + held(a1)[1]) * 0.5, held(0)[2]),
+                           (0.0016, a1 - a0, 0.0100))
+        b.add(verts, faces, bone=bone, mat=2)
+
+
+def dagger(b):
+    """Кинжал: короткий клинок, малая гарда."""
+    bone = "RightHand"
+    grip_parts(b, bone, 0.044, 0.046, 0.0090, 3, 1, 2, 0.0120)
+    b.add(*tube(held(0.052, -0.030), held(0.052, 0.030), 0.0062, 0.0062, segs=8),
+          bone=bone, mat=2, smooth=True)
+    blade(b, bone, 0.054, 0.215, 0.030, 0.0075, 0.040, 0)
+
+
+def axe(b):
+    """
+    Топор: длинное топорище с железными кольцами и бородатое лезвие
+    к костяшкам — как у образца `axe.glb`, но с одним лезвием: топор
+    рядового, а не палача.
+    """
+    bone = "RightHand"
+    b.add(*tube(held(-0.110), held(0.420), 0.0110, 0.0125, segs=10), bone=bone, mat=1, smooth=True)
+    for a in (-0.100, 0.060, 0.330):
+        b.add(*tube(held(a - 0.009), held(a + 0.009), 0.0138, 0.0138, segs=10), bone=bone, mat=2,
+              smooth=True)
+
+    f = Field()
+    # Обух вокруг топорища.
+    f.add(Egg(held(0.392, 0.0, 0.0), (0.0140, 0.030, 0.0160)))
+    # Лезвие — пластина к костяшкам, с бородой к рукояти.
+    edge = [held(0.360, 0.012), held(0.318, 0.070), held(0.296, 0.108), held(0.332, 0.121),
+            held(0.392, 0.122), held(0.432, 0.104), held(0.425, 0.060), held(0.410, 0.012)]
+    f.add(Plate(edge, 0.0036), k=0.010)
+    # Шип обуха — назад, от лезвия.
+    f.add(Bar(held(0.392, -0.012), held(0.392, -0.038), 0.0080, 0.0030), k=0.006)
+    anatomy.part(b, f, 0.0014, bone, keep=900, reach=0.004, recolor=lambda c: np.zeros(len(c), int))
+
+
+def club(b):
+    """
+    Дубина: суковатая, толстеющая к концу, с вбитыми гвоздями.
+    Оружие того, у кого оружия не было, — зомби-крестьянина, ловчего.
+    """
+    bone = "RightHand"
+    f = Field()
+    f.add(Bar(held(-0.080), held(0.300), 0.0120, 0.0300))
+    for a, b_, c, r in ((0.150, 0.016, 0.006, 0.010), (0.235, -0.020, -0.010, 0.012),
+                        (0.270, 0.018, 0.012, 0.011)):
+        f.add(Ball(held(a, b_, c), r), k=0.010)
+    nails = []
+    for i in range(7):
+        ang = i * 2.39996
+        a = 0.200 + 0.012 * i
+        r = 0.020 + 0.0012 * i
+        root = held(a, math.cos(ang) * r * 0.9, math.sin(ang) * r * 0.9)
+        tip = held(a + 0.004, math.cos(ang) * (r + 0.020), math.sin(ang) * (r + 0.020))
+        nail = Bar(root, tip, 0.0026, 0.0012)
+        nails.append(nail)
+        f.add(nail, k=0.0)
+
+    def colour(centres):
+        mats = np.zeros(len(centres), int)
+        for nail in nails:
+            mats[nail.dist(centres) < 0.0012] = 1
+        return mats
+
+    anatomy.part(b, f, 0.0016, bone, keep=1200, reach=0.006, recolor=colour)
+
+
+def shield(b):
+    """
+    Круглый щит на левом предплечье, лицом вперёд: доски, железный
+    обод и умбон. В Т-позе лицом к −Y — и в покое, с опущенной рукой,
+    он висит сбоку лицом вперёд, а не смотрит в землю.
+    """
+    bone = "LeftLowerArm"
+    el, wr, sh = P["elbow"], P["wrist"], P["shoulder"]
+    centre = np.array([(el + wr) * 0.5, -0.042, sh])
+    R = 0.150
+    f = Field()
+    f.add(Disc(tuple(centre), R, 0.0075, 0.0035, rot=turn(pitch=90.0)))
+    # Обод — кольцо по краю, умбон — посередине.
+    f.add(loop(tuple(centre + [0.0, -0.004, 0.0]), (R - 0.004, R - 0.004), turn(),
+               lambda t: 0.0068, count=28, power=2.0), k=0.004)
+    boss = centre + [0.0, -0.012, 0.0]
+    f.add(Egg(tuple(boss), (0.036, 0.020, 0.036)), k=0.006)
+    # Доски — швы тёмными прорезями.
+    for x in (-0.06, 0.0, 0.06):
+        f.cut(Brick(tuple(centre + [x + 0.03, -0.0075, 0.0]), (0.0014, 0.0020, R), 0.0), k=0.0)
+
+    def colour(centres):
+        rel = centres - centre
+        radial = np.hypot(rel[:, 0], rel[:, 2])
+        mats = np.zeros(len(centres), int)
+        mats[radial > R - 0.014] = 1
+        mats[(radial < 0.040) & (rel[:, 1] < -0.010)] = 1
+        return mats
+
+    anatomy.part(b, f, 0.0018, bone, keep=1600, reach=0.006, recolor=colour)
+
+
 ITEMS = [
     Item("Hood",           "Head",  hood,            [CLOTH, LEATHER, DARK]),
     Item("WideHat",        "Head",  wide_hat,        [LEATHER, DARK, DARK]),
@@ -331,6 +521,12 @@ ITEMS = [
     Item("Flasks",         "Spine", flasks,          [LEATHER, GLASS, DARK]),
     Item("Tabard",         "Spine", tabard,          [CLOTH, IRON, DARK]),
     Item("Cloak",          "Chest", cloak,           [CLOTH, CLOTH, DARK]),
+
+    Item("Sword",          "RightHand",    sword,    [STEEL, LEATHER, IRON]),
+    Item("Dagger",         "RightHand",    dagger,   [STEEL, LEATHER, IRON]),
+    Item("Axe",            "RightHand",    axe,      [STEEL, WOOD, IRON]),
+    Item("Club",           "RightHand",    club,     [WOOD, IRON, DARK]),
+    Item("Shield",         "LeftLowerArm", shield,   [WOOD, IRON, DARK]),
 ]
 
 
@@ -542,6 +738,12 @@ SKELETON_ITEMS = [
     ("Bow", None, shift(-0.022)),
     ("Cloak", None, hug(0.74, y0=0.010)),
     ("RavenMantle", raven_mantle_skeleton, None),
+    # Оружие — то же, но на суставах скелета: кулак у него свой.
+    ("Sword", None, None),
+    ("Dagger", None, None),
+    ("Axe", None, None),
+    ("Club", None, None),
+    ("Shield", None, None),
 ]
 
 

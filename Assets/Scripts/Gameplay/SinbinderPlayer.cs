@@ -192,6 +192,9 @@ namespace Sinbinder.Gameplay
                 Wardrobe.Wear(model.gameObject, "Shade");
                 Wardrobe.Tint(model.gameObject, "Void", Color.black);
                 Wardrobe.Matte(model.gameObject, "Void");
+                // Сукно не блестит: капюшон с бликом читался пластиком
+                // (портрет прогона 27 сентября, после куколя).
+                Wardrobe.Matte(model.gameObject, "Cloth");
                 // Единица, а не полторы: порог свечения в профиле «Взгляд»
                 // стоит на 1,05, и всё ярче него выбеливается добела.
                 // Угольку положено остаться красным.

@@ -64,7 +64,56 @@ namespace Sinbinder.Gameplay
 
             { "Flasks", "Spine" },
             { "Tabard", "Spine" },
+
+            // Оружие — в правом кулаке, щит — на левом предплечье
+            // (Tools/blender/wear.py, «оружие»).
+            { "Sword", "RightHand" },
+            { "Dagger", "RightHand" },
+            { "Axe", "RightHand" },
+            { "Club", "RightHand" },
+            { "Shield", "LeftLowerArm" },
         };
+
+        /// <summary>
+        /// Что у воина в руке — словом из снаряжения: надетое оружие
+        /// (<see cref="Warrior.Worn"/>) по имени вещи. Не узнали —
+        /// null, и в руке остаётся оружие его ремесла.
+        ///
+        /// По имени, а не по полю вещи: у вещи нет «вида оружия»,
+        /// а заводить его ради облика значило бы менять вещи, запись
+        /// и обмен ради того, что видно глазом. Трофей Марги —
+        /// «Топор с новым топорищем» — становится топором в руке.
+        /// </summary>
+        public static string WeaponOf(string itemName)
+        {
+            if (string.IsNullOrEmpty(itemName)) return null;
+            string n = itemName.ToLowerInvariant();
+
+            if (n.Contains("топор") || n.Contains("секир")) return "Axe";
+            if (n.Contains("меч") || n.Contains("клинок") || n.Contains("сабл")) return "Sword";
+            if (n.Contains("нож") || n.Contains("кинжал") || n.Contains("стилет")) return "Dagger";
+            if (n.Contains("дубин") || n.Contains("палиц") || n.Contains("булав") || n.Contains("молот"))
+                return "Club";
+            return null;
+        }
+
+        /// <summary>
+        /// Оружие по ремеслу — то, с чем воин пришёл, если в руке нет
+        /// ничего из снаряжения. Слово автора (`23-PROMPTS.md` §2):
+        /// оружие — слот класса, а не тела.
+        /// </summary>
+        private static string TradeWeapon(Trade trade)
+        {
+            switch (trade)
+            {
+                case Trade.Hunter:    return "Axe";
+                case Trade.Peasant:   return "Club";
+                case Trade.Archer:    return "Dagger";
+                case Trade.Alchemist: return "Dagger";
+                case Trade.Mage:      return null;        // руки для книги и огня
+                default:              return "Sword";
+            }
+        }
 
         /// <summary>Носит ли кто-нибудь такую часть. Спрашивает проверка.</summary>
         public static bool Knows(string item) => item != null && Worn.ContainsKey(item);
@@ -293,29 +342,38 @@ namespace Sinbinder.Gameplay
             {
                 string name = warrior.DisplayName ?? "";
 
+                // Оружие вида — последним: сверху его видно после головы
+                // и плеч, и так же его и перечисляем.
+                string held;
                 if (name.StartsWith("Инквизитор"))
                 {
                     yield return "InquisitorCap";
                     yield return "Tabard";
                     yield return "PauldronLeft";
                     yield return "PauldronRight";
+                    yield return "Shield";
+                    held = "Sword";
                 }
                 else if (name.StartsWith("Охотник-следопыт"))
                 {
                     yield return "Hood";
                     yield return "Cloak";
+                    held = "Dagger";
                 }
                 else if (name.StartsWith("Ловчий"))
                 {
                     yield return "WideHat";
                     yield return "Net";
+                    held = "Club";
                 }
                 else
                 {
                     yield return "Hood";
                     yield return "Quiver";
+                    held = "Axe";
                 }
 
+                yield return WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name) ?? held;
                 yield break;
             }
 
@@ -355,6 +413,21 @@ namespace Sinbinder.Gameplay
             // Берётся из имени: имя не меняется, и скол всегда на том же
             // месте у того же воина.
             if (Marked(warrior.DisplayName)) yield return "Crack";
+
+            // Оружие. Призрак не держит ничего: «бесплотный не может
+            // взять — только смотреть, как берут другие» (bodies.py).
+            // Остальные — надетое из снаряжения, а нет его — оружие
+            // ремесла; легенда без ремесла — меч.
+            if (warrior.Shell != ShellType.Ghost)
+            {
+                string weapon = WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name)
+                             ?? TradeWeapon(trade);
+                if (weapon != null) yield return weapon;
+
+                var off = warrior.Worn(Inventory.GearSlot.Offhand);
+                if (off != null && off.Name != null && off.Name.ToLowerInvariant().Contains("щит"))
+                    yield return "Shield";
+            }
         }
 
         private static bool Brother(Warrior warrior)
