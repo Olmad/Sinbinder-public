@@ -59,6 +59,15 @@ namespace Sinbinder.Core
 
         /// <summary>Голоса, веса, разрыв. Цифры. Только разработчику.</summary>
         Trace = 1 << 5,
+
+        /// <summary>
+        /// Уроки стоп-кадром (docs/36-LESSONS.md): мир замирает, пока игрок
+        /// впервые пробует глагол. Автор, 28 сентября: выключаются ступенью
+        /// ясности. Значение — после трассировки, а не по громкости: номера
+        /// флажков лежат в сохранённых настройках, и сдвинуть их — значит
+        /// перепутать чужие галочки.
+        /// </summary>
+        Lessons = 1 << 6,
     }
 
     /// <summary>
@@ -185,8 +194,10 @@ namespace Sinbinder.Core
 
                 // Намерения. Подпись поступка сюда же: она и есть
                 // намерение, названное вслух, а не объяснение.
+                // Уроки — со значками: кто хочет хоть какого-то объяснения,
+                // тому показывают и глаголы. «Молча» — значит без уроков.
                 case Clarity.Icons:
-                    return Detail.Icons | Detail.Moments;
+                    return Detail.Icons | Detail.Moments | Detail.Lessons;
 
                 // Причины. Подсказка при наведении — по требованию,
                 // причина под подписью — сама, в момент поступка.
@@ -292,6 +303,7 @@ namespace Sinbinder.Core
                 case Detail.MomentCause: return Loc.T("Причина под словом");
                 case Detail.Log:         return Loc.T("Журнал внизу");
                 case Detail.Trace:       return Loc.T("Внутренности — для разработчика");
+                case Detail.Lessons:     return Loc.T("Уроки: мир замирает, пока вы пробуете новое");
                 default:                 return Loc.T("Ничего");
             }
         }
@@ -302,7 +314,7 @@ namespace Sinbinder.Core
             return new[]
             {
                 Detail.Icons, Detail.Moments, Detail.Tooltips,
-                Detail.MomentCause, Detail.Log, Detail.Trace,
+                Detail.MomentCause, Detail.Log, Detail.Lessons, Detail.Trace,
             };
         }
 

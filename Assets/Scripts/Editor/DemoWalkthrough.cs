@@ -154,6 +154,8 @@ namespace Sinbinder.EditorTools
                 _framedSince = -1f;
                 _heraldShot = false;
                 ResetHandChecks();
+                _lessonSince = -1f;
+                _lessonStuckTold = false;
 
                 // Выключатели сбрасываются при входе в Play
                 // (SubsystemRegistration), поэтому включаются здесь,
@@ -166,7 +168,8 @@ namespace Sinbinder.EditorTools
                     Gameplay.LootChain.Enabled = true;
                     Gameplay.CampLife.Enabled = true;
                     Gameplay.TrophyChest.Store = true;
-                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад ===");
+                    Gameplay.Lesson.Switch = true;
+                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад, уроки ===");
                 }
                 else Write("=== ПРОХОЖДЕНИЕ ===");
             }
@@ -210,6 +213,38 @@ namespace Sinbinder.EditorTools
                 }
             }
             else _framedSince = -1f;
+
+            // Урок стоп-кадром (docs/36-LESSONS.md): мир стоит, пока игрок
+            // не сделает глагол урока. Прогон делает его сам, как игрок,
+            // и срок шага на это не тратит. Не дольше минуты: урок, который
+            // не кончается, — это застрявшее демо, и отчёт обязан это сказать.
+            if (Lesson.Holding)
+            {
+                if (_lessonSince < 0f)
+                {
+                    _lessonSince = now;
+                    _lessonWarped = false;
+                    Write("  [УРОК] " + Lesson.Now + ": мир стоит, кольцо по Греховоду");
+                }
+                if (now - _lessonSince < 60f)
+                {
+                    Learn(now - _lessonSince);
+                    if (_entered) _startedAt += tick;
+                    return;
+                }
+                if (!_lessonStuckTold)
+                {
+                    _lessonStuckTold = true;
+                    _failed++;
+                    Write("  [ЗАСТРЯЛО] урок " + Lesson.Now + " не кончился за минуту — мир стоит");
+                    Shot("ЗАСТРЯЛО урок");
+                }
+            }
+            else if (_lessonSince >= 0f)
+            {
+                Write("  [УРОК] кончился за " + (now - _lessonSince).ToString("F0") + " с — мир идёт");
+                _lessonSince = -1f;
+            }
 
             if (!_entered)
             {
@@ -776,6 +811,60 @@ namespace Sinbinder.EditorTools
                 if (nearest != null)
                     w.IssueCommand(CommandKind.Attack, nearest.transform.position, nearest.gameObject);
             }
+        }
+
+        private static float _lessonSince = -1f;
+        private static bool _lessonWarped;
+        private static bool _lessonStuckTold;
+        private static float _lessonNext;
+
+        /// <summary>
+        /// Пройти урок, как игрок: дойти до цели ногами по кольцу, сделать
+        /// глагол. Идёт через приказ мышью (<see cref="UnitMover.CommandMove"/>) —
+        /// то есть проверяет, что на замершем мире Греховод ходит и кольцо
+        /// его пускает. Не дошёл за пятнадцать секунд — перенести и сказать:
+        /// в игре так застрял бы игрок.
+        /// </summary>
+        private static void Learn(float spent)
+        {
+            if (Time.realtimeSinceStartup < _lessonNext) return;
+            _lessonNext = Time.realtimeSinceStartup + 0.5f;
+
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null) return;
+
+            float reach = Lesson.Now == LessonKind.Harvest ? 2f : 2.5f;
+            float left = CampFocus.GroundDistance(hero.transform.position, Lesson.Target);
+
+            if (left > reach)
+            {
+                if (spent < 15f)
+                {
+                    hero.GetComponent<UnitMover>()?.CommandMove(Lesson.Target);
+                    return;
+                }
+                if (!_lessonWarped)
+                {
+                    _lessonWarped = true;
+                    Write("  [УРОК] Греховод не дошёл по кольцу за пятнадцать секунд — переношу. "
+                        + "Кольцо сейчас — " + Lesson.Radius.ToString("F1") + " м");
+                }
+                Warp(hero.gameObject, Lesson.Target + Vector3.back * (reach * 0.5f));
+                return;
+            }
+
+            if (Lesson.Now == LessonKind.Harvest)
+            {
+                var harvester = hero.GetComponent<SoulHarvester>();
+                var m = typeof(SoulHarvester).GetMethod("TryHarvest",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (harvester != null) m?.Invoke(harvester, null);
+                return;
+            }
+
+            // Обмен: поговорить вблизи и закрыть экран — как игрок, F и Esc.
+            if (UI.GearPanel.Open) UI.GearPanel.Dismiss();
+            else if (Lesson.Partner != null) UI.GearPanel.TalkTo(Lesson.Partner);
         }
 
         private static bool _sawFirstWave;

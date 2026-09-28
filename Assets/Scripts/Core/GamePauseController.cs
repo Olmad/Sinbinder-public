@@ -44,7 +44,32 @@ namespace Sinbinder.Core
             if (Halted) return;
 
             IsPaused = false;
-            Time.timeScale = 1f;
+
+            // Урок держит мир своей остановкой: панель, открытая поверх
+            // урока, закрываясь, не пускает мир дальше.
+            Time.timeScale = Held ? 0f : 1f;
+        }
+
+        /// <summary>
+        /// Мир стоит, а игра — нет: урок стоп-кадром (<see cref="Gameplay.Lesson"/>,
+        /// docs/36-LESSONS.md). Время остановлено, как на паузе, но панели,
+        /// клавиши и сам Греховод работают — он идёт по реальному времени.
+        ///
+        /// Отдельно от <see cref="IsPaused"/>: пауза значит «руки у панели»,
+        /// и на ней не открывается обмен вещью, не водит камера, не ходит
+        /// Греховод. Урок же ровно ради того, чтобы игрок это сделал.
+        /// </summary>
+        public bool Held { get; private set; }
+
+        /// <summary>Мир стоит — на паузе или на уроке. Спрашивают часы пролога.</summary>
+        public static bool Stopped => Instance != null && (Instance.IsPaused || Instance.Held);
+
+        /// <summary>Остановить мир для урока или отпустить его.</summary>
+        public void Hold(bool on)
+        {
+            Held = on;
+            if (IsPaused) return;               // паузу снимет её хозяин
+            Time.timeScale = on ? 0f : 1f;
         }
 
         /// <summary>Игра окончена: пауза, которую никто, кроме конца, не снимет.</summary>

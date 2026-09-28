@@ -114,6 +114,10 @@ namespace Sinbinder.UI
                 // нельзя: игрок решит, что игра сломана.
                 if (piece == Detail.Trace && !Transparency.DeveloperUnlocked) continue;
 
+                // Уроки пока за выключателем консоли: галочка, которая
+                // ничего не включает, — та же поломка на вид.
+                if (piece == Detail.Lessons && !Gameplay.Lesson.Switch) continue;
+
                 var one = piece;
                 bool on = Transparency.Shows(piece);
 

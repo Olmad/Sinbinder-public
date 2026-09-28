@@ -32,6 +32,9 @@ namespace Sinbinder.Gameplay
 
         [SerializeField] private KeyCode _switchKey = KeyCode.V;
 
+        /// <summary>Клавиша смены взгляда. Плашке урока обмена: «V — глазами Греховода».</summary>
+        public KeyCode SwitchKey => _switchKey;
+
         [Header("Первое лицо")]
         [Tooltip("Высота глаз над ногами.")]
         [SerializeField] private float _eyeHeight = 1.65f;
@@ -249,7 +252,7 @@ namespace Sinbinder.Gameplay
             var right = Quaternion.Euler(0f, _yaw, 0f) * Vector3.right;
 
             _targetPosition += (forward * move.z + right * move.x).normalized
-                             * (_moveSpeed * Time.deltaTime);
+                             * (_moveSpeed * Lesson.Delta);   // на уроке мир стоит, а камера — нет
 
             _targetPosition = Fence(_targetPosition);
 
@@ -369,7 +372,7 @@ namespace Sinbinder.Gameplay
             if (FirstPersonNow) return;
 
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            _targetZoom -= scroll * _scrollSpeed * Time.deltaTime;
+            _targetZoom -= scroll * _scrollSpeed * Lesson.Delta;
             _targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
 
             _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, _targetZoom, 0.35f);

@@ -104,6 +104,7 @@ namespace Sinbinder.Tests
                 NamesAndCases();
                 VirtueHalves();
                 Translation();
+                Lessons();
             }
             catch (Exception e)
             {
@@ -1940,6 +1941,115 @@ namespace Sinbinder.Tests
             finally
             {
                 LocSetup.Apply(was, remember: false);
+            }
+        }
+
+        /// <summary>
+        /// Уроки стоп-кадром (docs/36-LESSONS.md). Кольцо встаёт по Греховоду
+        /// и только стягивается; наружу не выпускает, вдоль края пускает;
+        /// перенесённого не дёргает рывком. Урок держит время поверх чужой
+        /// паузы и не снимает её. «Молча» — без уроков. Запись помнит
+        /// пройденные, новая игра — нет.
+        /// </summary>
+        private static void Lessons()
+        {
+            // ── кольцо ──
+            var centre = new Vector3(10f, 0f, 10f);
+            var leash = new Lesson.Leash(centre, centre + new Vector3(20f, 3f, 0f));
+            Check(Mathf.Abs(leash.Radius - (20f + Lesson.Slack)) < 0.001f,
+                  "кольцо встало не по Греховоду: далёкий упёрся бы с первого шага");
+
+            var at = centre + new Vector3(20f, 0f, 0f);
+            at += leash.Rein(at, new Vector3(-10f, 0f, 0f));
+            Check(Mathf.Abs(leash.Radius - (10f + Lesson.Slack)) < 0.01f,
+                  "шаг к цели — а кольцо не подтянулось следом");
+
+            var away = leash.Rein(at, new Vector3(5f, 0f, 0f));
+            Check(leash.Flat(at + away) <= 10f + Lesson.Slack + 0.001f,
+                  "назад дальше запаса — кольцо не держит");
+
+            leash.Tighten(centre + new Vector3(1f, 0f, 0f));
+            Check(Mathf.Abs(leash.Radius - Lesson.Inner) < 0.001f,
+                  "у цели кольцо сжалось не до радиуса урока");
+
+            var edge = centre + new Vector3(Lesson.Inner, 0f, 0f);
+            var slide = leash.Rein(edge, new Vector3(1f, 0f, 1f));
+            Check(slide.z > 0.5f && leash.Flat(edge + slide) <= Lesson.Inner + 0.001f,
+                  "на краю Греховод встаёт как вкопанный, а не скользит вдоль");
+
+            var up = leash.Rein(centre, new Vector3(0f, 2f, 0f));
+            Check(Mathf.Abs(up.y - 2f) < 0.001f, "кольцо срезало подъём на холм: оно по земле, не по высоте");
+
+            var far = centre + new Vector3(30f, 0f, 0f);
+            var nudge = leash.Rein(far, new Vector3(0f, 0f, 0.1f));
+            Check(nudge.magnitude < 0.2f, "перенесённого за кольцо кольцо дёрнуло к себе рывком");
+
+            // ── мир стоит, а игра — нет ──
+            var pause = NewObject("Пауза урока").AddComponent<GamePauseController>();
+            float was = Time.timeScale;
+            try
+            {
+                pause.Hold(true);
+                Check(pause.Held && !pause.IsPaused && Time.timeScale == 0f,
+                      "урок не остановил время — или назвался паузой, и обмен вещью на нём закрыт");
+
+                pause.Pause();
+                pause.Resume();
+                Check(Time.timeScale == 0f, "панель поверх урока, закрываясь, пустила мир");
+
+                pause.Hold(false);
+                Check(Time.timeScale == 1f && !pause.Held, "конец урока не отпустил мир");
+
+                pause.Pause();
+                pause.Hold(true);
+                pause.Hold(false);
+                Check(pause.IsPaused && Time.timeScale == 0f, "урок, кончившись, снял чужую паузу");
+                pause.Resume();
+            }
+            finally
+            {
+                Time.timeScale = was;
+            }
+
+            // ── ступень ясности ──
+            Check((Transparency.Preset(Clarity.Silent) & Detail.Lessons) == 0, "«молча» — а уроки идут");
+            Check((Transparency.Preset(Clarity.Icons) & Detail.Lessons) != 0, "со значками уроков нет");
+            Check((Transparency.Preset(Clarity.Log) & Detail.Lessons) != 0, "по умолчанию уроков нет");
+            Check(Array.IndexOf(Transparency.Pieces(), Detail.Lessons) >= 0, "галочки «Уроки» нет на O");
+            Check(!HasDigit(Transparency.Describe(Detail.Lessons)), "в галочке уроков цифра");
+
+            // ── выключатель и запись ──
+            bool sw = Lesson.Switch;
+            var level = Transparency.Level;
+            var given = Lesson.Saved();
+            try
+            {
+                Lesson.Switch = false;
+                Check(!Lesson.Allowed, "урок идёт мимо выключателя");
+
+                Lesson.Switch = true;
+                Transparency.Set(Clarity.Silent);
+                Check(!Lesson.Allowed, "урок идёт на ступени «молча»");
+                Transparency.Set(Clarity.Log);
+                Check(Lesson.Allowed, "уроки включены и ступень с журналом — а урока нет");
+
+                Lesson.Restore(new List<string> { "Harvest", "Unknown" });
+                Check(Lesson.Given(LessonKind.Harvest) && !Lesson.Given(LessonKind.Exchange),
+                      "запись не вернула пройденный урок");
+                Same(string.Join(",", Lesson.Saved()), "Harvest", "незнакомый урок из записи прижился");
+
+                var back = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(new SaveGame { Lessons = Lesson.Saved() }));
+                Check(back.Lessons != null && back.Lessons.Contains("Harvest"), "уроки не пережили запись в файл");
+
+                Lesson.Forget();
+                Check(!Lesson.Given(LessonKind.Harvest), "новая игра помнит уроки прошлой");
+                Check(!Lesson.Holding, "урок идёт без повода");
+            }
+            finally
+            {
+                Lesson.Switch = sw;
+                Transparency.Set(level);
+                Lesson.Restore(given);
             }
         }
 

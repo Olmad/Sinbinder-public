@@ -97,6 +97,14 @@ namespace Sinbinder.Gameplay
             if (_self != null && _self.IsDead) return;
             if (!_agent.enabled) return;
 
+            // Урок стоп-кадром: агент стоит вместе с миром, и Греховода
+            // ведёт урок — по реальному времени и внутри кольца.
+            if (Lesson.Holding && GetComponent<SinbinderPlayer>() != null)
+            {
+                Lesson.WalkTo(destination);
+                return;
+            }
+
             _isAttacking = false;
             _attackTarget = null;
             _agent.SetDestination(destination);
@@ -106,6 +114,9 @@ namespace Sinbinder.Gameplay
         {
             if (_self != null && _self.IsDead) return;
             if (!_agent.enabled) return;
+
+            // Бить замерших на уроке — не урок, а даровой удар.
+            if (Lesson.Holding && GetComponent<SinbinderPlayer>() != null) return;
 
             _isAttacking = true;
             _attackTarget = target;

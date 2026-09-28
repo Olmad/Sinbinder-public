@@ -50,6 +50,9 @@ namespace Sinbinder.UI
         /// <summary>Открыт ли экран. Другие клавиши на это время не слушают.</summary>
         public static bool Open => _instance != null && _instance._open;
 
+        /// <summary>Открыт разговором вблизи — там, где вещи передают. Спрашивает урок обмена.</summary>
+        public static bool Talking => Open && _instance._near && _instance._warrior != null;
+
         private bool _open;
 
         /// <summary>Открыт вблизи, в разговоре: можно передавать. Иначе только смотреть.</summary>

@@ -108,10 +108,14 @@ namespace Sinbinder.Gameplay
             // одного агента. Клавиши главнее: игрок жмёт их прямо сейчас.
             if (_agent.hasPath) _agent.ResetPath();
 
+            // На уроке мир стоит, а Греховод идёт: шаг — по реальному
+            // времени и через кольцо урока (Lesson, docs/36-LESSONS.md).
+            var move = Lesson.Rein(transform.position, step * (_speed * Lesson.Delta));
+
             if (_agent.isOnNavMesh)
-                _agent.Move(step * (_speed * Time.deltaTime));
+                _agent.Move(move);
             else
-                transform.position += step * (_speed * Time.deltaTime);
+                transform.position += move;
 
             // Поворот тела не трогаем: в первом лице курс задаёт голова
             // (RTS_Camera), и шаг вбок не должен разворачивать героя туда,

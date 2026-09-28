@@ -95,8 +95,7 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private static bool Paused()
-            => Core.GamePauseController.Instance != null
-            && Core.GamePauseController.Instance.IsPaused;
+        // Урок стоп-кадром — тоже остановка: игрок учится, а не медлит.
+        private static bool Paused() => Core.GamePauseController.Stopped;
     }
 }

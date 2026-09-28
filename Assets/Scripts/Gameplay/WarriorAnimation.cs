@@ -118,6 +118,10 @@ namespace Sinbinder.Gameplay
 
         private bool Walking()
         {
+            // На уроке агент стоит вместе с миром, а Греховода ведёт урок:
+            // скорости у агента нет, а ноги идут.
+            if (_warrior is SinbinderPlayer && Lesson.HeroWalking) return true;
+
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (agent == null || !agent.isOnNavMesh) return false;
 

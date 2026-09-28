@@ -78,6 +78,10 @@ namespace Sinbinder.UI
             var souls = SoulManager.Instance;
             if (souls == null || souls.FadingCount == 0) return;
 
+            // Первую душу объясняет урок стоп-кадром (docs/36-LESSONS.md):
+            // подсказка ждёт второй — та уже гаснет, пока игрок идёт.
+            if (Lesson.Holding || Lesson.Owes(LessonKind.Harvest)) return;
+
             Show();
         }
 

@@ -1300,6 +1300,10 @@ msgid "Внутренности — для разработчика"
 msgstr "Internals — for the developer"
 
 #: Core/Transparency.cs
+msgid "Уроки: мир замирает, пока вы пробуете новое"
+msgstr "Lessons: the world holds still while you try something new"
+
+#: Core/Transparency.cs
 msgid "Ничего"
 msgstr "Nothing"
 
@@ -4182,6 +4186,26 @@ msgstr "nine"
 #: Gameplay/Leadership.cs
 msgid "десятерых"
 msgstr "ten"
+
+#: Gameplay/Lesson.cs
+msgid "Подойдите к душе и нажмите E — она ляжет в пустую банку."
+msgstr "Walk up to the soul and press E — it will go into an empty jar."
+
+#: Gameplay/Lesson.cs
+msgid "Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."
+msgstr "This soul will wait for you. The next ones will fade while you walk."
+
+#: Gameplay/Lesson.cs
+msgid "Подойдите к {0}, посмотрите на воина и нажмите F — поговорить."
+msgstr "Walk up to {0}, look at the warrior and press F to talk."
+
+#: Gameplay/Lesson.cs
+msgid "Щелчок по вещи в мешке — отдать. Возьмёт ли — решит воин."
+msgstr "Click an item in the bag to hand it over. Whether it's taken is the warrior's choice."
+
+#: Gameplay/Lesson.cs
+msgid "{0} — смотреть глазами Греховода."
+msgstr "{0} — see through the Sinbinder's eyes."
 
 #: Gameplay/LootChain.cs
 msgid " Прежнее — {0} — уходит в мешок Греховода."

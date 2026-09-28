@@ -112,6 +112,7 @@ namespace Sinbinder.Gameplay
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
             UI.CommandHintUI.Forget();
+            Lesson.Forget();
 
             // Сума своя, не чужая: статика переживает смену сцен,
             // и новая игра начиналась бы с добром прошлой.
@@ -191,8 +192,7 @@ namespace Sinbinder.Gameplay
                 // Дальше — время на то, чтобы отряд вошёл и строки
                 // прочитались. Длительность, а не переход: шаг, ради
                 // которого доля есть, уже сделан.
-                if (Core.GamePauseController.Instance != null
-                    && Core.GamePauseController.Instance.IsPaused) return;
+                if (Core.GamePauseController.Stopped) return;
 
                 // Шаг игрока: войти в зал. Пока он стоит у входа, отряд
                 // не входит — только склеп напоминает о себе.
@@ -226,7 +226,10 @@ namespace Sinbinder.Gameplay
             if (CrystalBall.Leading) { _sinceCommander = 0f; return; }
 
             // Реальное время: совет только что снял паузу, и растягивать
-            // страховку на чужие остановки незачем.
+            // страховку на чужие остановки незачем. Кроме урока: пока
+            // игрок учится отдавать вещь, лагерь не уходит у него из-под ног.
+            if (Core.GamePauseController.Instance != null
+                && Core.GamePauseController.Instance.Held) return;
             _sinceCommander += Time.unscaledDeltaTime;
             if (_sinceCommander < _campGrace) return;
 

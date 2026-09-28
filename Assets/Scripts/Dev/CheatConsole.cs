@@ -119,6 +119,7 @@ namespace Sinbinder.Dev
             ["лагерь"] = c => c.ToggleCamp(),
             ["склад"] = c => c.ToggleStore(),
             ["причина"] = c => c.ToggleReason(),
+            ["уроки"] = c => c.ToggleLessons(),
             // «всё» не набрать: ё на той же клавише, что закрывает консоль.
             ["все"] = c => c.AllOn(),
             ["all"] = c => c.AllOn(),
@@ -212,6 +213,15 @@ namespace Sinbinder.Dev
                 : "Причина отказа — самый громкий голос, как прежде.");
         }
 
+        /// <summary>Выключатель уроков стоп-кадром (<see cref="Gameplay.Lesson"/>).</summary>
+        private void ToggleLessons()
+        {
+            Gameplay.Lesson.Switch = !Gameplay.Lesson.Switch;
+            Write(Gameplay.Lesson.Switch
+                ? "Уроки: первая душа и первый обмен — мир замирает, кольцо, плашка. Выключаются и на O."
+                : "Уроки выключены: первую душу объясняет подсказка, как прежде.");
+        }
+
         /// <summary>
         /// Все выключатели дня разом — для общего прохода прогона: один проход
         /// со всем вместе быстрее шести поодиночке, а поодиночке включают
@@ -225,7 +235,8 @@ namespace Sinbinder.Dev
             Gameplay.LootChain.Enabled = true;
             Gameplay.CampLife.Enabled = true;
             Gameplay.TrophyChest.Store = true;
-            Write("Включено всё: голос, причина, удар, добыча, лагерь, склад.");
+            Gameplay.Lesson.Switch = true;
+            Write("Включено всё: голос, причина, удар, добыча, лагерь, склад, уроки.");
         }
 
         private void Help()
@@ -237,7 +248,8 @@ namespace Sinbinder.Dev
             Write("лагерь — включить или выключить жизнь в лагере.");
             Write("склад — сундук лагеря как склад: взять, сколько унесёте.");
             Write("причина — объяснять отказ тем, без чего приказ был бы исполнен.");
-            Write("все — включить все шесть разом.");
+            Write("уроки — уроки стоп-кадром: жатва и обмен вещью.");
+            Write("все — включить все семь разом.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

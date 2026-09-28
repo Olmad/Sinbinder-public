@@ -46,6 +46,12 @@ namespace Sinbinder.Gameplay
         void Update()
         {
             if (_self.IsDead) return;
+
+            // Мир стоит — пауза или урок, — и руки стоят с ним. Иначе
+            // готовый к удару бил бы в замершем мире один раз, а удар
+            // на уроке жатвы мог бы положить ещё одного.
+            if (Time.deltaTime <= 0f) return;
+
             _cooldownTimer -= Time.deltaTime;
 
             if (_currentTarget != null)
