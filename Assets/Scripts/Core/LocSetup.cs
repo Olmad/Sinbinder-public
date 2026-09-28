@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/LocSetup.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -25,7 +26,7 @@ namespace Sinbinder.Core
         /// </summary>
         public static readonly (string Code, string Name)[] Languages =
         {
-            ("ru", "Русский"),
+            ("ru", "Русский"),   // ключ: название языка — на нём самом
             ("en", "English"),
         };
 

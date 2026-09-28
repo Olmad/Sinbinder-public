@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/OverheadUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.UI

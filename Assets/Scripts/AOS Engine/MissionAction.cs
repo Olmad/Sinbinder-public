@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/MissionAction.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     /// <summary>

@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/ShellBinder.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core

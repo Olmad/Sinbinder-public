@@ -1,4 +1,5 @@
 // Assets/Scripts/Audio/VoiceModifier.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Audio
 {
     /// <summary>

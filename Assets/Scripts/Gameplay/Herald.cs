@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/Herald.cs
+// Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

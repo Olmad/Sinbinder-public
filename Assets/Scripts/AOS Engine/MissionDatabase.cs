@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/MissionDatabase.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS

@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/UnitFactory.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AI;

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/EmotionSystem.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;

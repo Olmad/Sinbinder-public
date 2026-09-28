@@ -1,4 +1,5 @@
 // Assets/Scripts/Audio/VoiceGenerator.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using System.Collections.Generic;
 using Sinbinder.AOS;

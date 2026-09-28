@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/SquadStrategy.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     public enum SquadStrategy

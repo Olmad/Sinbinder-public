@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/GroundNavMesh.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Unity.AI.Navigation;
 

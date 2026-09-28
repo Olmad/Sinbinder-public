@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/PerkEffect.cs
+// Перевод: текст через Loc
 using Sinbinder.AOS;
 
 namespace Sinbinder.Core

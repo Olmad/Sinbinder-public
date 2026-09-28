@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/Beat.cs
+// Перевод: текст через Loc
 using System;
 using System.Collections;
 using UnityEngine;

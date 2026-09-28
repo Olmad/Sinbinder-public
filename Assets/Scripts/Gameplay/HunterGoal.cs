@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/HunterGoal.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

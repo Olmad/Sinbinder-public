@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/ReputationData.cs
+// Перевод: текст через Loc
 using System;
 using System.Collections.Generic;
 

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/DeedType.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     /// <summary>

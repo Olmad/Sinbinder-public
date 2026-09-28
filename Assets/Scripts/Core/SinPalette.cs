@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/SinPalette.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core

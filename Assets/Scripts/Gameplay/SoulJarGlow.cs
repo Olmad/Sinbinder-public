@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SoulJarGlow.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 

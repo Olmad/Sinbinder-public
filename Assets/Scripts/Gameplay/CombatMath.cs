@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/CombatMath.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Gameplay

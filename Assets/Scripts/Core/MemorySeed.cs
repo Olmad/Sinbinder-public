@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/MemorySeed.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;

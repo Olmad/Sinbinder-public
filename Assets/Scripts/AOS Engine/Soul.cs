@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/Soul.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;

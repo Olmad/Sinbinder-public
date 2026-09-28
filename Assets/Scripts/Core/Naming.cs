@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Naming.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>

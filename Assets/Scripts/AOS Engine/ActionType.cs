@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/ActionType.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     public enum ActionType

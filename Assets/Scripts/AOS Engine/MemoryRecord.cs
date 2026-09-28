@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System;
 using UnityEngine;
 

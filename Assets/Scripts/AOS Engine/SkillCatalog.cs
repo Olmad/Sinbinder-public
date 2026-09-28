@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS

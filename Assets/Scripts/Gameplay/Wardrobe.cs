@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/Wardrobe.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;

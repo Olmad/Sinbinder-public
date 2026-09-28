@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/Raising.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 

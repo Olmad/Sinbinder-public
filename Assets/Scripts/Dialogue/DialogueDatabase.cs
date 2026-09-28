@@ -1,4 +1,5 @@
 // Assets/Scripts/Dialogue/DialogueDatabase.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 

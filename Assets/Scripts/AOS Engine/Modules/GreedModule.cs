@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/Modules/GreedModule.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 

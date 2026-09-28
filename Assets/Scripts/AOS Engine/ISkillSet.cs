@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/ISkillSet.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 
 namespace Sinbinder.AOS

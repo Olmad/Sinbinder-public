@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     /// <summary>Насколько громко объявлять поступок.</summary>

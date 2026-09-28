@@ -1,4 +1,5 @@
 // Assets/Scripts/Dialogue/DialogueSituation.cs
+// Перевод: текст через Loc
 using System;
 using System.Collections.Generic;
 using UnityEngine;

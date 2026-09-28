@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/NarrativePerk.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>

@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/WarriorRig.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.AI;
 

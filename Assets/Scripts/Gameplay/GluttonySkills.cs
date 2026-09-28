@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/GluttonySkills.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 

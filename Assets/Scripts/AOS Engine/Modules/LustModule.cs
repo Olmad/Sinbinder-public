@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/Modules/LustModule.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

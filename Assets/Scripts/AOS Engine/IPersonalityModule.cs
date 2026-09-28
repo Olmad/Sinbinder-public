@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/IPersonalityModule.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     public interface IPersonalityModule

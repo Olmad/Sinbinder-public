@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/RefusalPresenter.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using Sinbinder.Gameplay;

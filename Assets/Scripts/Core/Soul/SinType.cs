@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     public enum SinType

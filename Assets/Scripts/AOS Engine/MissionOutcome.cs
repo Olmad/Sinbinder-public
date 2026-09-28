@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/MissionOutcome.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     /// <summary>Чем закончилась миссия после решения командира.</summary>

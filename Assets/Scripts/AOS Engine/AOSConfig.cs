@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/AOSConfig.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.AOS

@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/UnitMover.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.AI;
 

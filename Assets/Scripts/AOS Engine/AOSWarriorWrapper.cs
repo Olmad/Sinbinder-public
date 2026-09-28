@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using System.Collections.Generic;
 using Sinbinder.Gameplay;

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/AOSEventHub.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
 

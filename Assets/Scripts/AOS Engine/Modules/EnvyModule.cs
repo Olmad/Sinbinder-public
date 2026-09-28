@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/Modules/EnvyModule.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.AOS.Modules

@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/PerkType.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>

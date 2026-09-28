@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/DialogueTestSpawner.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 

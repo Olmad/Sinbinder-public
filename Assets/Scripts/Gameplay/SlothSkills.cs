@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SlothSkills.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using Sinbinder.AOS;

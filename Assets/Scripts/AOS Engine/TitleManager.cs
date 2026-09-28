@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/TitleManager.cs
+// Перевод: текст через Loc
 using System.Linq;
 using UnityEngine;
 using Sinbinder.Gameplay;

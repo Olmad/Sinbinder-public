@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/Modal.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 

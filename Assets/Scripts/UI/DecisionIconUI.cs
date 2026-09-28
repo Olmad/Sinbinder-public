@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/DecisionIconUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/MissionID.cs
+// Перевод: текст через Loc
 namespace Sinbinder.AOS
 {
     /// <summary>Идентификатор сюжетной миссии.</summary>

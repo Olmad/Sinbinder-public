@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/DecisionContext.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using Sinbinder.Gameplay;
 using Sinbinder.Inventory;

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/TitleCeremony.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using Sinbinder.Gameplay;

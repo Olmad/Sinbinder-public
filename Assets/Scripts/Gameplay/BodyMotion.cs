@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using Sinbinder.AOS;
 
 namespace Sinbinder.Gameplay

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/MemoryProcessor.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
