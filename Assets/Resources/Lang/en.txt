@@ -5482,3 +5482,171 @@ msgstr "Indifferent"
 #: UI/UnitInfoPanel.cs
 msgid "Верность: {0}"
 msgstr "Loyalty: {0}"
+
+#: Resources/DialogueDatabase.asset
+msgid "У тебя есть кошель. Скоро он будет мой."
+msgstr "You have a purse. Soon it'll be mine."
+
+#: Resources/DialogueDatabase.asset
+msgid "Дай пройти — и я не стану тебя обыскивать."
+msgstr "Let me pass — and I won't search you."
+
+#: Resources/DialogueDatabase.asset
+msgid "Отдай, что взял не своё, и разойдёмся."
+msgstr "Give back what isn't yours, and we'll part ways."
+
+#: Resources/DialogueDatabase.asset
+msgid "Ты даже не запомнишь, кто тебя убил. А я запомню."
+msgstr "You won't even remember who killed you. But I will."
+
+#: Resources/DialogueDatabase.asset
+msgid "Назовись. Я не бью безымянных."
+msgstr "Name yourself. I don't strike the nameless."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я дам тебе первый удар. Он тебе не поможет."
+msgstr "I'll give you the first blow. It won't help you."
+
+#: Resources/DialogueDatabase.asset
+msgid "Наконец-то. Я устал ждать."
+msgstr "At last. I'm tired of waiting."
+
+#: Resources/DialogueDatabase.asset
+msgid "Отойди. Второй раз просить не буду."
+msgstr "Step aside. I won't ask twice."
+
+#: Resources/DialogueDatabase.asset
+msgid "Не заставляй меня. Прошу — не заставляй."
+msgstr "Don't make me. Please — don't make me."
+
+#: Resources/DialogueDatabase.asset
+msgid "Хороший клинок. Тебе он больше не понадобится."
+msgstr "A fine blade. You won't need it anymore."
+
+#: Resources/DialogueDatabase.asset
+msgid "Тебе везло дольше, чем мне. Это кончилось."
+msgstr "You've been lucky longer than me. That's over."
+
+#: Resources/DialogueDatabase.asset
+msgid "Тебе дали больше. Но не право этим бить."
+msgstr "You were given more. But not the right to strike with it."
+
+#: Resources/DialogueDatabase.asset
+msgid "Ты красивее, чем стоило бы для такого дела."
+msgstr "You're prettier than this line of work calls for."
+
+#: Resources/DialogueDatabase.asset
+msgid "Жаль. Мы могли встретиться иначе."
+msgstr "A pity. We could have met differently."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я запомню твоё лицо. И помолюсь за него."
+msgstr "I'll remember your face. And pray for it."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я не ел с утра. Ты очень вовремя."
+msgstr "I haven't eaten since morning. You're right on time."
+
+#: Resources/DialogueDatabase.asset
+msgid "Давай быстрее. У меня стынет."
+msgstr "Hurry up. My food is getting cold."
+
+#: Resources/DialogueDatabase.asset
+msgid "Сначала дело, потом хлеб. Так положено."
+msgstr "Work first, then bread. That's how it's done."
+
+#: Resources/DialogueDatabase.asset
+msgid "Опять. Каждый раз одно и то же."
+msgstr "Again. The same thing every time."
+
+#: Resources/DialogueDatabase.asset
+msgid "Может, разойдёмся? Нет? Ну ладно."
+msgstr "Maybe we just part ways? No? Oh well."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я не хотел этого дня. Но он пришёл."
+msgstr "I didn't want this day. But it came."
+
+#: Resources/DialogueDatabase.asset
+msgid "А делить будем на всех? Тогда я в деле."
+msgstr "And we'll share it among everyone? Then I'm in."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я услышал слово «кошель». Продолжайте."
+msgstr "I heard the word “purse”. Go on."
+
+#: Resources/DialogueDatabase.asset
+msgid "Хватит торговаться над живыми."
+msgstr "Enough haggling over the living."
+
+#: Resources/DialogueDatabase.asset
+msgid "Вы оба говорите слишком долго для мертвецов."
+msgstr "You both talk too much for dead men."
+
+#: Resources/DialogueDatabase.asset
+msgid "Договорите. Потом моя очередь."
+msgstr "Finish talking. Then it's my turn."
+
+#: Resources/DialogueDatabase.asset
+msgid "Дайте им сказать. Каждому положено слово."
+msgstr "Let them speak. Everyone is owed a word."
+
+#: Resources/DialogueDatabase.asset
+msgid "Хватит болтать. Начинайте уже."
+msgstr "Enough talk. Get on with it."
+
+#: Resources/DialogueDatabase.asset
+msgid "Ещё слово — и я начну без вас."
+msgstr "One more word and I'll start without you."
+
+#: Resources/DialogueDatabase.asset
+msgid "Замолчите оба. Кровь и так близко."
+msgstr "Both of you, be quiet. Blood is close enough already."
+
+#: Resources/DialogueDatabase.asset
+msgid "А почему говорят с ним, а не со мной?"
+msgstr "Why are they talking to him and not to me?"
+
+#: Resources/DialogueDatabase.asset
+msgid "Я тоже здесь. На случай, если забыли."
+msgstr "I'm here too. In case you forgot."
+
+#: Resources/DialogueDatabase.asset
+msgid "Не мне завидовать чужому слову. И всё же."
+msgstr "It's not for me to envy another's words. And yet."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я послушаю. Мне нравится, как он говорит."
+msgstr "I'll listen. I like the way he talks."
+
+#: Resources/DialogueDatabase.asset
+msgid "Продолжай. Ты хорошо говоришь."
+msgstr "Go on. You speak well."
+
+#: Resources/DialogueDatabase.asset
+msgid "Слова красивы. Дела будут хуже."
+msgstr "The words are pretty. The deeds will be uglier."
+
+#: Resources/DialogueDatabase.asset
+msgid "Пока вы спорите, я успею перекусить."
+msgstr "While you argue, I'll have time for a bite."
+
+#: Resources/DialogueDatabase.asset
+msgid "Долго ещё? Я голоден."
+msgstr "Much longer? I'm hungry."
+
+#: Resources/DialogueDatabase.asset
+msgid "Поспешите. Мёртвые не едят."
+msgstr "Hurry up. The dead don't eat."
+
+#: Resources/DialogueDatabase.asset
+msgid "Разбудите, когда закончите."
+msgstr "Wake me when you're done."
+
+#: Resources/DialogueDatabase.asset
+msgid "Я постою. Мне и отсюда слышно."
+msgstr "I'll stand here. I can hear fine from here."
+
+#: Resources/DialogueDatabase.asset
+msgid "Пусть говорят. Может, обойдётся."
+msgstr "Let them talk. Maybe it'll blow over."

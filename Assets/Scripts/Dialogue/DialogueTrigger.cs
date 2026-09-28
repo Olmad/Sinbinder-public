@@ -289,7 +289,7 @@ namespace Sinbinder.Dialogue
             if (!string.IsNullOrEmpty(said)) return said;
 
             if (DialogueLoader.TryGetLine(speaker, situation, out string text)) return text;
-            return $"[{speaker.DisplayName}]: ...";
+            return $"[{Loc.Name(speaker.DisplayName)}]: ...";
         }
     }
 }

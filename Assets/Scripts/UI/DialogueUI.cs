@@ -7,6 +7,7 @@ using Sinbinder.Dialogue;
 using Sinbinder.Gameplay;
 using Sinbinder.Audio;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     public class DialogueUI : MonoBehaviour
@@ -165,10 +166,10 @@ namespace Sinbinder.UI
                 // обратно может только их Say. Прямой записью имя ставилось
                 // в выключенную строку — автор, 26 сентября: «когда воины перед
                 // боем переговариваются, не всегда видно имена».
-                if (Letterbox.Instance != null) Letterbox.Instance.Say(line.SpeakerName, "");
+                if (Letterbox.Instance != null) Letterbox.Instance.Say(Loc.Name(line.SpeakerName), "");
                 else
                 {
-                    if (_speakerNameText != null) _speakerNameText.text = line.SpeakerName;
+                    if (_speakerNameText != null) _speakerNameText.text = Loc.Name(line.SpeakerName);
                     if (_dialogueText != null) _dialogueText.text = "";
                 }
 
@@ -188,7 +189,7 @@ namespace Sinbinder.UI
                         yield return _cameraController.FocusOn(speaker.transform);
 
                     // Печатаем текст с голосом
-                    foreach (char c in line.Text)
+                    foreach (char c in Loc.T(line.Text))
                     {
                         if (_dialogueText != null)
                             _dialogueText.text += c;
@@ -203,7 +204,7 @@ namespace Sinbinder.UI
                 }
                 else
                 {
-                    _dialogueText.text = line.Text;
+                    _dialogueText.text = Loc.T(line.Text);
                 }
 
                 yield return new WaitForSecondsRealtime(line.Duration);

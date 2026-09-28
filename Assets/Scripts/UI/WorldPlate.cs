@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -22,8 +23,18 @@ namespace Sinbinder.UI
     {
         private TextMesh _mesh;
 
-        /// <summary>Что здесь написано. Пусто — показывать нечего.</summary>
-        public string Text => _mesh != null ? _mesh.text : string.Empty;
+        /// <summary>
+        /// Что здесь написано — на языке игрока. Пусто — показывать нечего.
+        ///
+        /// Слова вписывает в сцену сборщик (DemoSceneBuilder), и лежат они
+        /// в ней по-русски, мимо Loc. Переводятся здесь, при каждом чтении:
+        /// сменил игрок язык — табличка уже на новом (docs/38-LANG.md §6).
+        /// Строки нет в таблице — это имя (павший на колышке): Loc.Name.
+        /// </summary>
+        public string Text => _mesh != null ? Shown(_mesh.text) : string.Empty;
+
+        private static string Shown(string baked)
+            => Loc.Has(baked) ? Loc.T(baked) : Loc.Name(baked);
 
         void Awake()
         {

@@ -102,6 +102,50 @@ def scan():
     return found
 
 
+ASSET_KEYS = ('Text',)   # поля ассетов с текстом игрока (DialogueDatabase: Lines[].Text)
+
+
+def scan_assets(found):
+    """
+    Текст игрока в ассетах Resources: реплики DialogueDatabase лежат
+    в ассете, а не в коде. Читается YAML Unity (теги документов снимаются),
+    берутся строковые поля из ASSET_KEYS с русскими буквами.
+    """
+    try:
+        import yaml
+    except ImportError:
+        print('  (нет PyYAML — ассеты не прочитаны)')
+        return
+    res = os.path.join(ROOT, 'Assets', 'Resources')
+    cyr = re.compile(r'[А-Яа-яЁё]')
+    for f in sorted(os.listdir(res)):
+        if not f.endswith('.asset'):
+            continue
+        text = open(os.path.join(res, f), encoding='utf-8').read()
+        docs = re.split(r'^--- !u!\d+ &-?\d+.*$', text, flags=re.M)
+        for doc in docs:
+            doc = '\n'.join(l for l in doc.split('\n') if not l.startswith('%'))
+            try:
+                data = yaml.safe_load(doc)
+            except yaml.YAMLError:
+                continue
+
+            def walk(x):
+                if isinstance(x, dict):
+                    for k, v in x.items():
+                        if k in ASSET_KEYS and isinstance(v, str) and cyr.search(v):
+                            found.setdefault(v, [])
+                            ref = 'Resources/' + f
+                            if ref not in found[v]:
+                                found[v].append(ref)
+                        else:
+                            walk(v)
+                elif isinstance(x, list):
+                    for v in x:
+                        walk(v)
+            walk(data)
+
+
 def read_table(path):
     """[(id, str)] в порядке файла."""
     if not os.path.isfile(path):
@@ -178,6 +222,7 @@ def main():
     path = os.path.join(LANG_DIR, lang + '.txt')
 
     found = scan()
+    scan_assets(found)
     old = read_table(path)
 
     if '--apply' in args:

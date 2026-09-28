@@ -2,6 +2,7 @@
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.Dialogue
 {
     public static class DialogueLoader
@@ -42,7 +43,7 @@ namespace Sinbinder.Dialogue
 
         public static bool TryGetLine(Warrior speaker, string situationName, out string text)
         {
-            text = $"[{speaker.DisplayName}]: ...";
+            text = $"[{Loc.Name(speaker.DisplayName)}]: ...";
 
             var database = Database;
             if (database == null) return false;
@@ -53,7 +54,9 @@ namespace Sinbinder.Dialogue
             string line = situation.GetLine(speaker.Soul.Sin, speaker.Soul.Moral);
             if (!string.IsNullOrEmpty(line))
             {
-                text = line;
+                // Реплика — из ассета, по-русски; перевод — при выдаче
+                // (таблица берёт её из ассета, Tools/lang/catalog.py).
+                text = Loc.T(line);
                 return true;
             }
 
