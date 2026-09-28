@@ -5,27 +5,27 @@
 
 #: AOS Engine/BattleNarrator.cs
 msgid "Бой прошёл без единого спора. Отряд слушался."
-msgstr ""
+msgstr "The fight went by without a single argument. The squad obeyed."
 
 #: AOS Engine/BattleNarrator.cs
 msgid "Как это было."
-msgstr ""
+msgstr "How it went."
 
 #: AOS Engine/BattleNarrator.cs
 msgid " И снова."
-msgstr ""
+msgstr " And again."
 
 #: AOS Engine/BattleNarrator.cs
 msgid " И так раз за разом."
-msgstr ""
+msgstr " And so, time after time."
 
 #: AOS Engine/BattleNarrator.cs
 msgid "Отряд, которым не столько командовали, сколько договаривались."
-msgstr ""
+msgstr "A squad that was not so much commanded as negotiated with."
 
 #: AOS Engine/BattleNarrator.cs
 msgid "В остальном приказы исполнялись."
-msgstr ""
+msgstr "Otherwise, orders were carried out."
 
 #: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
 msgid "приказ крикнули издали, а он не из тех, кого зовут криком"
@@ -109,35 +109,35 @@ msgstr "his strength is running out"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "Ложный Бог"
-msgstr ""
+msgstr "The False God"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "В деревне путешественник выдал себя за божество. Крестьяне забросили поля и молятся ложному идолу. Нужно навести порядок."
-msgstr ""
+msgstr "In a village, a traveller has passed himself off as a god. The peasants have abandoned their fields and pray to a false idol. Order must be restored."
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "«Твоя шутка зашла слишком далеко. Иди и сознайся»."
-msgstr ""
+msgstr "“Your joke has gone too far. Go and confess.”"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "«Продолжай. Это забавно. Но плати мне долю»."
-msgstr ""
+msgstr "“Carry on. It's amusing. But pay me my share.”"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "«Ты прав. Бог действительно здесь. Я — его посланник»."
-msgstr ""
+msgstr "“You're right. God is truly here. I am his messenger.”"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "«Убей его» (без слов)."
-msgstr ""
+msgstr "“Kill him” (without words)."
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "Бродяга"
-msgstr ""
+msgstr "Vagrant"
 
 #: AOS Engine/FalseGodQuest.cs
 msgid "Староста"
-msgstr ""
+msgstr "Village elder"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "{0} колеблется: {1}."
@@ -741,419 +741,419 @@ msgstr "Something else"
 
 #: AOS Engine/RumourManager.cs
 msgid "убийца"
-msgstr ""
+msgstr "a killer"
 
 #: AOS Engine/RumourManager.cs
 msgid "тот, кто свалил командира"
-msgstr ""
+msgstr "the one who brought down the commander"
 
 #: AOS Engine/RumourManager.cs
 msgid "вытащил своего"
-msgstr ""
+msgstr "pulled out one of his own"
 
 #: AOS Engine/RumourManager.cs
 msgid "прикрыл командира"
-msgstr ""
+msgstr "covered the commander"
 
 #: AOS Engine/RumourManager.cs
 msgid "унёс больше всех"
-msgstr ""
+msgstr "carried off the most"
 
 #: AOS Engine/RumourManager.cs
 msgid "нашёл клад"
-msgstr ""
+msgstr "found a hoard"
 
 #: AOS Engine/RumourManager.cs
 msgid "выкопал больше всех душ"
-msgstr ""
+msgstr "dug up the most souls"
 
 #: AOS Engine/RumourManager.cs
 msgid "вернулся живым"
-msgstr ""
+msgstr "came back alive"
 
 #: AOS Engine/RumourManager.cs
 msgid "стоял до последнего"
-msgstr ""
+msgstr "stood to the last"
 
 #: AOS Engine/RumourManager.cs
 msgid "не отступал ни разу"
-msgstr ""
+msgstr "never once retreated"
 
 #: AOS Engine/RumourManager.cs
 msgid "ушёл, когда все легли"
-msgstr ""
+msgstr "walked away when everyone else fell"
 
 #: AOS Engine/RumourManager.cs
 msgid "добил пленного"
-msgstr ""
+msgstr "finished off a prisoner"
 
 #: AOS Engine/RumourManager.cs
 msgid "привёл нового"
-msgstr ""
+msgstr "brought in someone new"
 
 #: AOS Engine/RumourManager.cs
 msgid "простоял бой в стороне"
-msgstr ""
+msgstr "stood aside through the fight"
 
 #: AOS Engine/RumourManager.cs
 msgid "чем-то отличился"
-msgstr ""
+msgstr "stood out somehow"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "Пока бой ровен"
-msgstr ""
+msgstr "While the fight is even"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "Когда падает друг"
-msgstr ""
+msgstr "When a friend falls"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "Когда рядом золото"
-msgstr ""
+msgstr "When gold is near"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "Когда велено отойти"
-msgstr ""
+msgstr "When ordered to fall back"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "заколеблется"
-msgstr ""
+msgstr "will hesitate"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "не отойдёт, а {0}"
-msgstr ""
+msgstr "won't fall back — will {0}"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "не послушает, а {0}"
-msgstr ""
+msgstr "won't obey — will {0}"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "скорее всего, {0}"
-msgstr ""
+msgstr "likely to {0}"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "может {0}, но не поручусь"
-msgstr ""
+msgstr "may {0}, but I wouldn't swear to it"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "колеблется; вероятнее, что {0}"
-msgstr ""
+msgstr "wavers; more likely to {0}"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "пойдёт в драку"
-msgstr ""
+msgstr "go into the fight"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "бросится к раненому"
-msgstr ""
+msgstr "rush to the wounded"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "сломает строй ради добычи"
-msgstr ""
+msgstr "break ranks for loot"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "отойдёт"
-msgstr ""
+msgstr "fall back"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "останется на месте"
-msgstr ""
+msgstr "stay put"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "сделает, как велено"
-msgstr ""
+msgstr "do as ordered"
 
 #: AOS Engine/TemperamentPredictor.cs
 msgid "поступит по-своему"
-msgstr ""
+msgstr "go a different way"
 
 #: AOS Engine/TitleCeremonyBehaviour.cs
 msgid "Отряд"
-msgstr ""
+msgstr "The squad"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Убийца Охотников"
-msgstr ""
+msgstr "Hunter-Slayer"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Гроза Охотников"
-msgstr ""
+msgstr "Terror of Hunters"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Мститель"
-msgstr ""
+msgstr "Avenger"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Мстительница"
-msgstr ""
+msgstr "Avenger"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Каратель"
-msgstr ""
+msgstr "Punisher"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Карательница"
-msgstr ""
+msgstr "Punisher"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Берсерк"
-msgstr ""
+msgstr "Berserker"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Одинокий Волк"
-msgstr ""
+msgstr "Lone Wolf"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Одинокая Волчица"
-msgstr ""
+msgstr "Lone Wolf"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Спаситель"
-msgstr ""
+msgstr "Saviour"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Спасительница"
-msgstr ""
+msgstr "Saviour"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Хранитель"
-msgstr ""
+msgstr "Guardian"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Хранительница"
-msgstr ""
+msgstr "Guardian"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Щит Отряда"
-msgstr ""
+msgstr "Shield of the Squad"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Телохранитель"
-msgstr ""
+msgstr "Bodyguard"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Телохранительница"
-msgstr ""
+msgstr "Bodyguard"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Защитник"
-msgstr ""
+msgstr "Defender"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Защитница"
-msgstr ""
+msgstr "Defender"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Наставник"
-msgstr ""
+msgstr "Mentor"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Наставница"
-msgstr ""
+msgstr "Mentor"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Костекоп"
-msgstr ""
+msgstr "Bonedigger"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Золотоискатель"
-msgstr ""
+msgstr "Gold-Seeker"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Золотоискательница"
-msgstr ""
+msgstr "Gold-Seeker"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Мародёр"
-msgstr ""
+msgstr "Looter"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Скупой"
-msgstr ""
+msgstr "Miser"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Скупая"
-msgstr ""
+msgstr "Miser"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Золотые Руки"
-msgstr ""
+msgstr "Golden Hands"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Везунчик"
-msgstr ""
+msgstr "Lucky"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Везунья"
-msgstr ""
+msgstr "Lucky"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Беглец"
-msgstr ""
+msgstr "Runaway"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Беглянка"
-msgstr ""
+msgstr "Runaway"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Несломленный"
-msgstr ""
+msgstr "Unbroken"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Несломленная"
-msgstr ""
+msgstr "Unbroken"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Тень"
-msgstr ""
+msgstr "Shadow"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Скиталец"
-msgstr ""
+msgstr "Wanderer"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Скиталица"
-msgstr ""
+msgstr "Wanderer"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Некромант"
-msgstr ""
+msgstr "Necromancer"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Некромантка"
-msgstr ""
+msgstr "Necromancer"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Заклинатель Костей"
-msgstr ""
+msgstr "Bonecaller"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Заклинательница Костей"
-msgstr ""
+msgstr "Bonecaller"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Последний Рубеж"
-msgstr ""
+msgstr "Last Stand"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Легенда"
-msgstr ""
+msgstr "Legend"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Страж Забытых Залов"
-msgstr ""
+msgstr "Warden of the Forgotten Halls"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Исполнитель"
-msgstr ""
+msgstr "Executioner"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Исполнительница"
-msgstr ""
+msgstr "Executioner"
 
 #: AOS Engine/TitleWords.cs
 msgid "Теперь я — {0}."
-msgstr ""
+msgstr "Now I am {0}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Наконец-то. Хотя такому, как я, и этого мало."
-msgstr ""
+msgstr "At last. Though for someone like me, even this is too little."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}? Наконец-то вслух. Отныне я — {1} {2}!"
-msgstr ""
+msgstr "{0}? Said aloud at last. From now on I am {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Я не просил этого имени. Но носить буду достойно."
-msgstr ""
+msgstr "I didn't ask for this name. But I'll wear it with dignity."
 
 #: AOS Engine/TitleWords.cs
 msgid "За такое имя платят больше. Запомните и это: {0} {1}."
-msgstr ""
+msgstr "A name like that pays more. Remember that too: {0}, {1}."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}... За такое имя и платят иначе. Запомните: {1} {2}!"
-msgstr ""
+msgstr "{0}... A name like that is paid differently. Remember: {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Имя дороже золота. Жаль, понял это поздно."
-msgstr ""
+msgstr "A name is worth more than gold. Pity I learned it too late."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}! Пусть знают, кого встретили!"
-msgstr ""
+msgstr "{0}! Let them know whom they've met!"
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}! Теперь идите за мной — я впереди. {1} {2}!"
-msgstr ""
+msgstr "{0}! Now follow me — I lead. {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Я не рад этому имени. Но заслужил его честно."
-msgstr ""
+msgstr "I'm not glad of this name. But I earned it honestly."
 
 #: AOS Engine/TitleWords.cs
 msgid "Наконец-то не им, а мне. {0} {1}."
-msgstr ""
+msgstr "At last it's mine, not theirs. {0}, {1}."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}. А ведь многие ждали дольше. Я — {1} {2}."
-msgstr ""
+msgstr "{0}. And many waited longer. I am {1}, {2}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Многие достойнее. Постараюсь не подвести."
-msgstr ""
+msgstr "Many are more worthy. I'll try not to let you down."
 
 #: AOS Engine/TitleWords.cs
 msgid "Смотрите. Все смотрите: {0} {1}!"
-msgstr ""
+msgstr "Look. Everyone look: {0}, {1}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}? Мне нравится, как это звучит. Я — {1} {2}."
-msgstr ""
+msgstr "{0}? I like the sound of that. I am {1}, {2}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Приятно. Слишком приятно — и это меня тревожит."
-msgstr ""
+msgstr "Pleasant. Too pleasant — and that worries me."
 
 #: AOS Engine/TitleWords.cs
 msgid "Заслужено до последней крохи. И ещё возьму."
-msgstr ""
+msgstr "Earned down to the last crumb. And I'll take more."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}. Заслужено до последней крохи. Я — {1} {2}!"
-msgstr ""
+msgstr "{0}. Earned down to the last crumb. I am {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Хватит с меня и этого. Больше не прошу."
-msgstr ""
+msgstr "This is enough for me. I ask for nothing more."
 
 #: AOS Engine/TitleWords.cs
 msgid "Теперь и спрос другой. Могли бы и не кричать."
-msgstr ""
+msgstr "Now more will be asked of me. You didn't have to shout."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}... Теперь с меня и спрос другой. Ладно. {1} {2}."
-msgstr ""
+msgstr "{0}... Now more will be asked of me. Fine. {1}, {2}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Имя дали — придётся соответствовать. Встаю."
-msgstr ""
+msgstr "They gave me a name — now I have to live up to it. I'm getting up."
 
 #: AOS Engine/TitleWords.cs
 msgid "{0}. Отныне я — {1} {2}."
-msgstr ""
+msgstr "{0}. From now on I am {1}, {2}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Меня будут помнить. Пусть боятся. {0} {1}."
-msgstr ""
+msgstr "They will remember me. Let them fear. {0}, {1}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Меня будут помнить дольше, чем я жил. {0} {1}."
-msgstr ""
+msgstr "They will remember me longer than I lived. {0}, {1}."
 
 #: AOS Engine/TitleWords.cs
 msgid "Помнить будут имя. Я бы хотел — дело."
-msgstr ""
+msgstr "They'll remember the name. I'd rather they remembered the deed."
 
 #: Core/Commitment.cs
 msgid "Вы взяли на себя обязательство. Переиграть нельзя — в этом и был уговор."
@@ -1229,51 +1229,51 @@ msgstr "body"
 
 #: Core/SaveSystem.cs
 msgid "первое"
-msgstr ""
+msgstr "first"
 
 #: Core/SaveSystem.cs
 msgid "второе"
-msgstr ""
+msgstr "second"
 
 #: Core/SaveSystem.cs
 msgid "третье"
-msgstr ""
+msgstr "third"
 
 #: Core/SaveSystem.cs
 msgid "быстрое"
-msgstr ""
+msgstr "quick"
 
 #: Core/SaveSystem.cs
 msgid "с обязательством"
-msgstr ""
+msgstr "committed"
 
 #: Core/SaveSystem.cs
 msgid "долгов нет"
-msgstr ""
+msgstr "no debts"
 
 #: Core/SaveSystem.cs
 msgid "{0} в долгу"
-msgstr ""
+msgstr "{0} are owed"
 
 #: Core/SaveSystem.cs
 msgid "Где-то"
-msgstr ""
+msgstr "Somewhere"
 
 #: Core/SaveSystem.cs
 msgid "Лагерь"
-msgstr ""
+msgstr "Camp"
 
 #: Core/SaveSystem.cs
 msgid "Набег"
-msgstr ""
+msgstr "Raid"
 
 #: Core/SaveSystem.cs
 msgid "Склеп"
-msgstr ""
+msgstr "Crypt"
 
 #: Core/SaveSystem.cs
 msgid "Полигон"
-msgstr ""
+msgstr "Proving ground"
 
 #: Core/Transparency.cs
 msgid "Значок над головой"
@@ -2357,1347 +2357,1347 @@ msgstr "Quiet, for now."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сдохнешь — обыщу. Не пропадать же добру."
-msgstr ""
+msgstr "When you drop dead, I'll search you. Shame to let good stuff go to waste."
 
 #: Dialogue/EncounterLines.cs
 msgid "С этого что-то будет? Или опять за спасибо?"
-msgstr ""
+msgstr "Is there anything in this for me? Or just a thank-you again?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Мне бы долю. Стыдно просить, а надо."
-msgstr ""
+msgstr "I'd like my share. Shameful to ask, but I must."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты никто. Меня запомнят, тебя закопают."
-msgstr ""
+msgstr "You're nobody. They'll remember me and bury you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Смотри и запоминай, как это делается."
-msgstr ""
+msgstr "Watch and learn how it's done."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я не отступлю. Не ради славы — ради своих."
-msgstr ""
+msgstr "I won't retreat. Not for glory — for my own."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я тебя порву и не замечу."
-msgstr ""
+msgstr "I'll tear you apart without noticing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Долго ещё стоять будем?"
-msgstr ""
+msgstr "How much longer are we going to stand here?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Прости. Я не умею иначе."
-msgstr ""
+msgstr "Forgive me. I don't know any other way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё, что у тебя есть, будет моим."
-msgstr ""
+msgstr "Everything you have will be mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Почему у них лучше, а у нас это?"
-msgstr ""
+msgstr "Why do they get better, and we get this?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Не надо мне чужого. Но смотреть больно."
-msgstr ""
+msgstr "I don't want what's theirs. But it hurts to look."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красивые дохнут так же, как остальные."
-msgstr ""
+msgstr "Pretty ones die just like the rest."
 
 #: Dialogue/EncounterLines.cs
 msgid "Живём один раз. И не факт, что этот — наш."
-msgstr ""
+msgstr "We only live once. And it's not certain this one's ours."
 
 #: Dialogue/EncounterLines.cs
 msgid "Держись поближе. Я своих не бросаю."
-msgstr ""
+msgstr "Stay close. I don't abandon my own."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сначала съем твоё, потом тебя."
-msgstr ""
+msgstr "First I'll eat your food, then you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сначала поедим, потом всё остальное."
-msgstr ""
+msgstr "First we eat, then everything else."
 
 #: Dialogue/EncounterLines.cs
 msgid "Голодным не воюют. Поешь, и ты тоже."
-msgstr ""
+msgstr "No one fights hungry. You eat too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё равно все сдохнем. Ты первый."
-msgstr ""
+msgstr "We'll all die anyway. You first."
 
 #: Dialogue/EncounterLines.cs
 msgid "И зачем всё это. Опять то же самое."
-msgstr ""
+msgstr "What's the point of it all. Same thing again."
 
 #: Dialogue/EncounterLines.cs
 msgid "Устал я. Но раз надо — постою."
-msgstr ""
+msgstr "I'm tired. But if I must, I'll stand."
 
 #: Dialogue/EncounterLines.cs
 msgid "Наше — только наше. Остальным ни монеты."
-msgstr ""
+msgstr "Ours is ours alone. Not a coin for the rest."
 
 #: Dialogue/EncounterLines.cs
 msgid "Делим пополам, как всегда. Без счёта."
-msgstr ""
+msgstr "We split it down the middle, as always. No counting."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе первому. Я перебьюсь."
-msgstr ""
+msgstr "You first. I'll manage."
 
 #: Dialogue/EncounterLines.cs
 msgid "Пусть видят, кто мы. Остальные — пыль."
-msgstr ""
+msgstr "Let them see who we are. The rest are dust."
 
 #: Dialogue/EncounterLines.cs
 msgid "При тебе я отступать не стану. Ты знаешь."
-msgstr ""
+msgstr "With you here, I won't retreat. You know that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Встань рядом. Вдвоём и стоять легче."
-msgstr ""
+msgstr "Stand beside me. It's easier to hold together."
 
 #: Dialogue/EncounterLines.cs
 msgid "Разорвём их. На обоих хватит."
-msgstr ""
+msgstr "We'll tear them apart. There's enough for both of us."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты слева. Я справа. Как тогда."
-msgstr ""
+msgstr "You take the left. I'll take the right. Like back then."
 
 #: Dialogue/EncounterLines.cs
 msgid "Живой останься. Об остальном потом."
-msgstr ""
+msgstr "Stay alive. We'll talk about the rest later."
 
 #: Dialogue/EncounterLines.cs
 msgid "Пусть завидуют нам. Давно пора."
-msgstr ""
+msgstr "Let them envy us for once. About time."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе я не завидую. Тебе — нет."
-msgstr ""
+msgstr "I don't envy you. Not you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты единственный, кого я не считаю."
-msgstr ""
+msgstr "You're the only one I don't keep count of."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты мой. Кто тронет — пожалеет."
-msgstr ""
+msgstr "You're mine. Whoever touches you will regret it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Без тебя мне тут делать нечего."
-msgstr ""
+msgstr "Without you there's nothing for me here."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я тебя отсюда вынесу. Хоть на себе."
-msgstr ""
+msgstr "I'll get you out of here. Carry you if I have to."
 
 #: Dialogue/EncounterLines.cs
 msgid "Их припасы поделим на двоих. Только на двоих."
-msgstr ""
+msgstr "We'll split their supplies between the two of us. Just the two of us."
 
 #: Dialogue/EncounterLines.cs
 msgid "Вернёмся — накрою стол. Не спорь."
-msgstr ""
+msgstr "When we get back, I'll lay the table. Don't argue."
 
 #: Dialogue/EncounterLines.cs
 msgid "Последний кусок тебе. Я потерплю."
-msgstr ""
+msgstr "The last bite is yours. I can wait."
 
 #: Dialogue/EncounterLines.cs
 msgid "Нам обоим всё равно. Хоть вместе."
-msgstr ""
+msgstr "Neither of us cares. At least we're together."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты один меня с места и сдвигаешь."
-msgstr ""
+msgstr "You're the only one who ever gets me moving."
 
 #: Dialogue/EncounterLines.cs
 msgid "С тобой ещё можно. Спасибо, что позвал."
-msgstr ""
+msgstr "With you it's bearable. Thanks for asking me along."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легенда. За твою голову дадут столько, что можно не воевать."
-msgstr ""
+msgstr "A legend. Your head is worth enough that I could stop fighting."
 
 #: Dialogue/EncounterLines.cs
 msgid "Так ты и есть тот самый? Значит, ты дорого стоишь."
-msgstr ""
+msgstr "So you're the one? Then you're worth a lot."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я слышал о тебе. Не хотел бы я тебя обирать."
-msgstr ""
+msgstr "I've heard of you. I wouldn't want to be the one robbing you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легенда? Пора списать тебя в предания."
-msgstr ""
+msgstr "A legend? Time to retire you into the old tales."
 
 #: Dialogue/EncounterLines.cs
 msgid "О тебе поют. Сегодня спою я."
-msgstr ""
+msgstr "They sing about you. Today I'll do the singing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Встретить тебя — уже честь. Жаль, что так."
-msgstr ""
+msgstr "Meeting you is an honour. A pity it's like this."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легендарный? Сейчас проверим, из чего ты сделан."
-msgstr ""
+msgstr "Legendary? Let's see what you're made of."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тот самый. Тем слаще будет."
-msgstr ""
+msgstr "The very one. All the sweeter."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я знаю, кто ты. И всё равно пойду."
-msgstr ""
+msgstr "I know who you are. And I'll come at you anyway."
 
 #: Dialogue/EncounterLines.cs
 msgid "Про тебя песни, про меня ничего. Сегодня поправим."
-msgstr ""
+msgstr "Songs about you, nothing about me. We'll fix that today."
 
 #: Dialogue/EncounterLines.cs
 msgid "Слава у тебя. Могла бы быть моя."
-msgstr ""
+msgstr "The glory is yours. It could have been mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты заслужил своё имя. Я своего — нет."
-msgstr ""
+msgstr "You earned your name. I didn't earn mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легенда. Красиво ляжешь, про это тоже споют."
-msgstr ""
+msgstr "A legend. You'll fall beautifully, and they'll sing about that too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Так вот ты какой. Живьём интереснее."
-msgstr ""
+msgstr "So that's what you look like. More interesting in the flesh."
 
 #: Dialogue/EncounterLines.cs
 msgid "О тебе рассказывают. Теперь понимаю почему."
-msgstr ""
+msgstr "They tell stories about you. Now I see why."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легенды тоже жрут и тоже дохнут."
-msgstr ""
+msgstr "Legends eat too, and die too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тот самый? Слышал, слышал."
-msgstr ""
+msgstr "The very one? Heard of you, heard of you."
 
 #: Dialogue/EncounterLines.cs
 msgid "О тебе говорят за столом. Хорошо говорят."
-msgstr ""
+msgstr "They talk about you at the table. Good things."
 
 #: Dialogue/EncounterLines.cs
 msgid "И легенды кончаются. Твоя — сегодня."
-msgstr ""
+msgstr "Legends end too. Yours ends today."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты тот самый. И что, помогло?"
-msgstr ""
+msgstr "You're the one. So, did it help?"
 
 #: Dialogue/EncounterLines.cs
 msgid "О тебе рассказывают. Хоть кому-то это осталось."
-msgstr ""
+msgstr "They tell stories about you. At least someone still has that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Шкуры твои продам. И тебя заодно."
-msgstr ""
+msgstr "I'll sell your pelts. And you along with them."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник? Значит, есть что снять."
-msgstr ""
+msgstr "A hunter? Then there's something to strip off you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты добытчик. Мы бы поладили в другой день."
-msgstr ""
+msgstr "You're a provider. We'd have got along on another day."
 
 #: Dialogue/EncounterLines.cs
 msgid "С земли взял — землёй и ляжешь."
-msgstr ""
+msgstr "You took from the earth — to the earth you'll go."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. С тебя и брать нечего."
-msgstr ""
+msgstr "A peasant. Nothing to take from you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты хоть работал. Это дороже монеты."
-msgstr ""
+msgstr "At least you worked. That's worth more than a coin."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лук отдай. Он дороже тебя."
-msgstr ""
+msgstr "Hand over the bow. It's worth more than you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Хорошая вещь, плохой хозяин."
-msgstr ""
+msgstr "An archer. Good weapon, poor owner."
 
 #: Dialogue/EncounterLines.cs
 msgid "Стрелы стоят денег. Не трать на меня."
-msgstr ""
+msgstr "Arrows cost money. Don't waste them on me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Склянки твои золота стоят. Мне и достанутся."
-msgstr ""
+msgstr "Your vials are worth gold. And they'll be mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. У таких всегда есть что взять."
-msgstr ""
+msgstr "An alchemist. That kind always has something to take."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты умеешь делать из ничего. Научи, а не дерись."
-msgstr ""
+msgstr "You can make something from nothing. Teach me, don't fight me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. За твою голову дадут больше, чем за десять."
-msgstr ""
+msgstr "A mage. Your head is worth more than ten others."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Дорогая добыча."
-msgstr ""
+msgstr "A mage. Costly prey."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе платят больше всех. Хоть кому-то везёт."
-msgstr ""
+msgstr "You're paid more than anyone. At least someone gets lucky."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. С тебя даже шкуры путной не выйдет."
-msgstr ""
+msgstr "A spider. Not even a decent hide to be had from you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук? Это вообще торгуется?"
-msgstr ""
+msgstr "A spider? Does that even sell?"
 
 #: Dialogue/EncounterLines.cs
 msgid "В тебе нет корысти. Завидую и не понимаю."
-msgstr ""
+msgstr "There's no greed in you. I envy it and don't understand it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Зверей бил? Теперь попробуй человека."
-msgstr ""
+msgstr "Hunted beasts? Now try a man."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Стреляешь в спину — тем и живёшь."
-msgstr ""
+msgstr "A hunter. You shoot people in the back — that's how you live."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты терпелив. Я это уважаю, но не уступлю."
-msgstr ""
+msgstr "You're patient. I respect that, but I won't give way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Землю рыл — в неё и вернёшься."
-msgstr ""
+msgstr "You dug the earth — into it you'll return."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин с копьём. Смешно."
-msgstr ""
+msgstr "A peasant with a spear. Funny."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты не воин. Уходи, я не ищу такой славы."
-msgstr ""
+msgstr "You're no warrior. Go away, I'm not after that kind of glory."
 
 #: Dialogue/EncounterLines.cs
 msgid "Издали смелый. Подойди ближе."
-msgstr ""
+msgstr "Brave from a distance. Come closer."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Стоять лицом к лицу не умеешь."
-msgstr ""
+msgstr "An archer. You can't stand face to face."
 
 #: Dialogue/EncounterLines.cs
 msgid "Твоё умение честное. Просто не моё."
-msgstr ""
+msgstr "Your skill is honest. It just isn't mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Отравитель. Даже убить сам не можешь."
-msgstr ""
+msgstr "A poisoner. You can't even kill with your own hands."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Воюешь склянками."
-msgstr ""
+msgstr "An alchemist. You fight with vials."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты знаешь то, чего не знаю я. Признаю."
-msgstr ""
+msgstr "You know things I don't. I admit it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Фокусник в мантии."
-msgstr ""
+msgstr "A mage. A conjurer in a robe."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Ставишь себя отдельно. Я тоже."
-msgstr ""
+msgstr "A mage. You hold yourself apart. So do I."
 
 #: Dialogue/EncounterLines.cs
 msgid "Нас обоих сторонятся. Может, оба неправы."
-msgstr ""
+msgstr "People avoid us both. Maybe we're both wrong."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Даже имени человеческого не заслужил."
-msgstr ""
+msgstr "A spider. You haven't even earned a human name."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Не человек и не зверь."
-msgstr ""
+msgstr "A spider. Neither man nor beast."
 
 #: Dialogue/EncounterLines.cs
 msgid "В тебе чужая душа. Не твоя вина."
-msgstr ""
+msgstr "There's someone else's soul in you. Not your fault."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник? Сейчас узнаешь, каково быть дичью."
-msgstr ""
+msgstr "A hunter? Now you'll learn what it's like to be prey."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Значит, бегать умеешь."
-msgstr ""
+msgstr "A hunter. So you know how to run."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты бил зверя ради мяса. Я — просто так. Хуже я."
-msgstr ""
+msgstr "You killed beasts for meat. I kill for nothing. I'm the worse one."
 
 #: Dialogue/EncounterLines.cs
 msgid "Мужик с вилами. Одно движение."
-msgstr ""
+msgstr "A peasant with a pitchfork. One move."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. Иди домой, пока цел."
-msgstr ""
+msgstr "A peasant. Go home while you're still in one piece."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя тут быть не должно. Уходи."
-msgstr ""
+msgstr "You shouldn't be here. Leave."
 
 #: Dialogue/EncounterLines.cs
 msgid "Стреляй. Промахнёшься — порву."
-msgstr ""
+msgstr "Shoot. Miss, and I'll tear you apart."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Стой где стоишь, мне дальше идти."
-msgstr ""
+msgstr "An archer. Stay where you are, I've got further to go."
 
 #: Dialogue/EncounterLines.cs
 msgid "Не тяни тетиву. Я не хочу тебя бить."
-msgstr ""
+msgstr "Don't draw the string. I don't want to hit you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Склянку разобью вместе с рукой."
-msgstr ""
+msgstr "I'll smash the vial along with your hand."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Порошки против кулака."
-msgstr ""
+msgstr "An alchemist. Powders against a fist."
 
 #: Dialogue/EncounterLines.cs
 msgid "Убери своё зелье. Не заставляй меня."
-msgstr ""
+msgstr "Put your potion away. Don't make me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Слова кончатся — кончишься и ты."
-msgstr ""
+msgstr "A mage. When your words run out, so will you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Договаривай и начнём."
-msgstr ""
+msgstr "A mage. Finish your spell and let's begin."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты сильнее меня. Отойди, и оба живы."
-msgstr ""
+msgstr "You're stronger than me. Step aside, and we both live."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Раздавлю и не замечу."
-msgstr ""
+msgstr "A spider. I'll crush you without noticing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Тварь в человечьей шкуре."
-msgstr ""
+msgstr "A spider. A creature in human skin."
 
 #: Dialogue/EncounterLines.cs
 msgid "В тебе зверь. Я его понимаю."
-msgstr ""
+msgstr "There's a beast in you. I understand it."
 
 #: Dialogue/EncounterLines.cs
 msgid "У тебя добыча, у меня ничего. Исправим."
-msgstr ""
+msgstr "You have spoils, I have nothing. Let's fix that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Всегда сытый, всегда с мясом."
-msgstr ""
+msgstr "A hunter. Always fed, always with meat."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты умеешь кормиться. Я — нет."
-msgstr ""
+msgstr "You know how to feed yourself. I don't."
 
 #: Dialogue/EncounterLines.cs
 msgid "Даже у тебя есть земля. У меня и того нет."
-msgstr ""
+msgstr "Even you have land. I don't even have that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. Хоть что-то своё имеешь."
-msgstr ""
+msgstr "A peasant. At least you own something."
 
 #: Dialogue/EncounterLines.cs
 msgid "У тебя дом. Тебе есть куда вернуться."
-msgstr ""
+msgstr "You have a home. You have somewhere to go back to."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лук у тебя. Будет мой."
-msgstr ""
+msgstr "You have a bow. It'll be mine."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Бьёшь, не подходя. Удобно устроился."
-msgstr ""
+msgstr "An archer. You strike without coming near. Comfortable, isn't it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе далеко видно. Мне бы так."
-msgstr ""
+msgstr "You can see far. I wish I could."
 
 #: Dialogue/EncounterLines.cs
 msgid "Знаешь больше — потому и ненавижу."
-msgstr ""
+msgstr "You know more — that's why I hate you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Учили тебя, не меня."
-msgstr ""
+msgstr "An alchemist. They taught you, not me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя учили. Меня никто."
-msgstr ""
+msgstr "Someone taught you. No one taught me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Всё тебе даром досталось."
-msgstr ""
+msgstr "A mage. You got it all for free."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Тебе дано, мне нет. Как обычно."
-msgstr ""
+msgstr "A mage. It was given to you, not to me. As usual."
 
 #: Dialogue/EncounterLines.cs
 msgid "У тебя дар. Я бы всё отдал за такой."
-msgstr ""
+msgstr "You have a gift. I'd give anything for one like it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. И тому больше досталось, чем мне."
-msgstr ""
+msgstr "A spider. Even that got more than I did."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Хоть кто-то ниже меня."
-msgstr ""
+msgstr "A spider. At least someone is beneath me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе тоже не досталось человечьего. Оба обделены."
-msgstr ""
+msgstr "You didn't get anything human either. We've both been cheated."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Люблю тех, кто гонится."
-msgstr ""
+msgstr "A hunter. I like those who give chase."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Терпеливый. Это редкость."
-msgstr ""
+msgstr "A hunter. Patient. That's rare."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты долго ждёшь в засаде. И я жду."
-msgstr ""
+msgstr "You wait a long time in ambush. So do I."
 
 #: Dialogue/EncounterLines.cs
 msgid "Мужлан. От тебя землёй пахнет."
-msgstr ""
+msgstr "A lout. You smell of soil."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. Простой и понятный."
-msgstr ""
+msgstr "A peasant. Simple and plain."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты работал руками. Это красиво по-своему."
-msgstr ""
+msgstr "You worked with your hands. That's beautiful in its own way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Держишься подальше — и от людей тоже."
-msgstr ""
+msgstr "An archer. You keep your distance — from people too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Точный. Мне нравится точность."
-msgstr ""
+msgstr "An archer. Precise. I like precision."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты не подпускаешь никого. Я знаю почему."
-msgstr ""
+msgstr "You let no one near. I know why."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Варишь зелья вместо того, чтобы жить."
-msgstr ""
+msgstr "An alchemist. You brew potions instead of living."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Мешаешь порошки, а надо бы людей."
-msgstr ""
+msgstr "An alchemist. You mix powders when you should mix with people."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты ищешь ответы. Я — только тепло."
-msgstr ""
+msgstr "You look for answers. I only look for warmth."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Холодный. Такие ломаются красиво."
-msgstr ""
+msgstr "A mage. Cold. Your kind break beautifully."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Один и всегда один."
-msgstr ""
+msgstr "A mage. Alone, always alone."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя боятся, а не любят. Это больно."
-msgstr ""
+msgstr "They fear you, not love you. That hurts."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Даже хотеть тебя противно."
-msgstr ""
+msgstr "A spider. Even wanting you is repulsive."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. В тебе нечего любить."
-msgstr ""
+msgstr "A spider. There's nothing in you to love."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты никого не полюбишь. Вот что страшно."
-msgstr ""
+msgstr "You'll never love anyone. That's what's frightening."
 
 #: Dialogue/EncounterLines.cs
 msgid "Мясо принёс? Отдавай и уходи."
-msgstr ""
+msgstr "Brought meat? Hand it over and leave."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. С тобой бы не голодали."
-msgstr ""
+msgstr "A hunter. With you around, no one would go hungry."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты умеешь добыть. Это честный хлеб."
-msgstr ""
+msgstr "You know how to hunt. That's honest bread."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хлеб твой съем. И поле твоё съем."
-msgstr ""
+msgstr "I'll eat your bread. And your field too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. Кормилец. Люблю таких."
-msgstr ""
+msgstr "A peasant. A provider. I like your kind."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты растишь еду. Уважаю без шуток."
-msgstr ""
+msgstr "You grow food. I respect that, no joke."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Худой. С тебя и навара нет."
-msgstr ""
+msgstr "An archer. Skinny. You wouldn't even make a broth."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Тощий, как своя стрела."
-msgstr ""
+msgstr "An archer. Thin as your own arrow."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты мало ешь. Оттого и злой."
-msgstr ""
+msgstr "You eat too little. That's why you're so bitter."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Твои склянки на вкус пробовал."
-msgstr ""
+msgstr "An alchemist. I've tasted your vials."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Варить умеешь, а готовить нет."
-msgstr ""
+msgstr "An alchemist. You can brew, but you can't cook."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты варишь не то. Дай я покажу."
-msgstr ""
+msgstr "You're brewing the wrong thing. Let me show you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Умные всегда голодные. И мёртвые."
-msgstr ""
+msgstr "A mage. The clever ones are always hungry. And dead."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Тебе бы поесть, а не думать."
-msgstr ""
+msgstr "A mage. You should eat, not think."
 
 #: Dialogue/EncounterLines.cs
 msgid "Голова полная, брюхо пустое. Так нельзя."
-msgstr ""
+msgstr "A full head and an empty belly. That won't do."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Ты жрёшь, и я жру. Один из нас лишний."
-msgstr ""
+msgstr "A spider. You devour, I devour. One of us is one too many."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Такой же ненасытный."
-msgstr ""
+msgstr "A spider. Just as insatiable."
 
 #: Dialogue/EncounterLines.cs
 msgid "В тебе зверь ест за двоих. Не твоя вина."
-msgstr ""
+msgstr "The beast in you eats for two. Not your fault."
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотишься. И что, помогло?"
-msgstr ""
+msgstr "You hunt. So, did it help?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Охотник. Ходишь, ищешь, убиваешь. По кругу."
-msgstr ""
+msgstr "A hunter. You walk, you search, you kill. Round and round."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты хоть умеешь что-то. Я уже нет."
-msgstr ""
+msgstr "At least you can do something. I can't anymore."
 
 #: Dialogue/EncounterLines.cs
 msgid "Пахал всю жизнь — и вот стоишь тут."
-msgstr ""
+msgstr "Ploughed all your life — and here you stand."
 
 #: Dialogue/EncounterLines.cs
 msgid "Крестьянин. И тебя сюда затащили."
-msgstr ""
+msgstr "A peasant. They dragged you here too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе бы домой. Правда, домой."
-msgstr ""
+msgstr "You should go home. Really, go home."
 
 #: Dialogue/EncounterLines.cs
 msgid "Стреляй уже. Хоть кончится быстрее."
-msgstr ""
+msgstr "Shoot already. At least it'll end sooner."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лучник. Далеко стоишь. Правильно делаешь."
-msgstr ""
+msgstr "An archer. You stand far away. Smart."
 
 #: Dialogue/EncounterLines.cs
 msgid "Не подходи. Не хочу, чтобы ты это видел."
-msgstr ""
+msgstr "Don't come closer. I don't want you to see this."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ищешь смысл в склянках? Его нигде нет."
-msgstr ""
+msgstr "Looking for meaning in your vials? It isn't anywhere."
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Столько знаний — и всё равно тут."
-msgstr ""
+msgstr "An alchemist. All that knowledge — and still here."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты ищешь. Я перестал. Не бросай."
-msgstr ""
+msgstr "You're still searching. I stopped. Don't give up."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. Всё знаешь и всё равно сдохнешь."
-msgstr ""
+msgstr "A mage. You know everything and you'll die all the same."
 
 #: Dialogue/EncounterLines.cs
 msgid "Маг. И тебе не помогло твоё умение."
-msgstr ""
+msgstr "A mage. Your skill didn't help you either."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты умеешь многое. Хоть кто-то умеет."
-msgstr ""
+msgstr "You can do a lot. At least someone can."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Тебе-то хоть всё равно по-честному."
-msgstr ""
+msgstr "A spider. At least you honestly don't care."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Не думаешь ни о чём. Везёт."
-msgstr ""
+msgstr "A spider. You don't think about anything. Lucky."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты не выбирал эту жизнь. Я тоже."
-msgstr ""
+msgstr "You didn't choose this life. Neither did I."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё твоё пересчитаю на твоём же трупе."
-msgstr ""
+msgstr "I'll count everything you own on your own corpse."
 
 #: Dialogue/EncounterLines.cs
 msgid "Считаешь, сколько с меня возьмёшь? Я тоже считаю."
-msgstr ""
+msgstr "Counting how much you'll get off me? I'm counting too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Двое считают одну монету. Разойдёмся по-хорошему?"
-msgstr ""
+msgstr "Two of us counting one coin. Shall we part on good terms?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Гордость твою продам за медяк."
-msgstr ""
+msgstr "I'll sell your pride for a copper."
 
 #: Dialogue/EncounterLines.cs
 msgid "Гордость в котёл не положишь."
-msgstr ""
+msgstr "You can't put pride in the pot."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты за честь, я за плату. Оба голодные."
-msgstr ""
+msgstr "You fight for honour, I fight for pay. We're both hungry."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ори громче. С покойника дешевле снимать."
-msgstr ""
+msgstr "Shout louder. It's cheaper to strip a corpse."
 
 #: Dialogue/EncounterLines.cs
 msgid "Злость бесплатная. Оттого её у тебя и много."
-msgstr ""
+msgstr "Anger is free. That's why you have so much of it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Побереги силы. Они тебе ещё пригодятся."
-msgstr ""
+msgstr "Save your strength. You'll need it yet."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуй. Больше тебе ничего не достанется."
-msgstr ""
+msgstr "Go on, envy. That's all you'll ever get."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуешь? Так заработай."
-msgstr ""
+msgstr "Envious? Then earn it."
 
 #: Dialogue/EncounterLines.cs
 msgid "У меня больше. Я бы поделился, да не могу."
-msgstr ""
+msgstr "I have more. I'd share, but I can't."
 
 #: Dialogue/EncounterLines.cs
 msgid "За такое лицо на рынке не дадут ничего."
-msgstr ""
+msgstr "That face wouldn't fetch a thing at market."
 
 #: Dialogue/EncounterLines.cs
 msgid "На тебя тратиться — гиблое дело."
-msgstr ""
+msgstr "Spending on you is money down the drain."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красивый. Жаль, что здесь это не спасает."
-msgstr ""
+msgstr "Handsome. Pity it won't save you here."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты дороже обходишься, чем стоишь. Исправим."
-msgstr ""
+msgstr "You cost more than you're worth. Let's fix that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё сожрал, что мог. Теперь что?"
-msgstr ""
+msgstr "You've devoured all you could. Now what?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Прокормить тебя — разориться. Но я бы попробовал."
-msgstr ""
+msgstr "Feeding you would ruin anyone. But I'd give it a try."
 
 #: Dialogue/EncounterLines.cs
 msgid "С тебя и взять нечего. Значит, и жалеть нечего."
-msgstr ""
+msgstr "Nothing to take from you. So nothing to regret."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лежачий убытка не приносит. И прибыли тоже."
-msgstr ""
+msgstr "A man lying down costs nothing. Earns nothing either."
 
 #: Dialogue/EncounterLines.cs
 msgid "Продать бы тебя, да кто возьмёт. Вставай уже."
-msgstr ""
+msgstr "I'd sell you, but who would buy. Get up already."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя купят и перепродадут. Меня — никогда."
-msgstr ""
+msgstr "You'll be bought and sold on. Never me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты считаешь монеты, когда я говорю о чести."
-msgstr ""
+msgstr "You count coins while I talk of honour."
 
 #: Dialogue/EncounterLines.cs
 msgid "Кошелёк у тебя тяжелее имени. Это лечится."
-msgstr ""
+msgstr "Your purse is heavier than your name. That can be cured."
 
 #: Dialogue/EncounterLines.cs
 msgid "Двоим здесь не разойтись. Уступишь ты."
-msgstr ""
+msgstr "There's no room for both of us here. You'll give way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты держишь голову высоко. Подержи ещё немного."
-msgstr ""
+msgstr "You hold your head high. Hold it a little longer."
 
 #: Dialogue/EncounterLines.cs
 msgid "Наконец-то равный. Давно не было."
-msgstr ""
+msgstr "An equal at last. It's been a while."
 
 #: Dialogue/EncounterLines.cs
 msgid "Злость — это когда нечего сказать. Тебе нечего."
-msgstr ""
+msgstr "Anger is what you have when you've nothing to say. You've nothing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Рычи. Я подожду, пока охрипнешь."
-msgstr ""
+msgstr "Growl. I'll wait until you're hoarse."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты дерёшься как обиженный. Тебя обидели?"
-msgstr ""
+msgstr "You fight like someone who's been wronged. Did someone wrong you?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Хотел бы ты быть мной. Сдохнешь собой."
-msgstr ""
+msgstr "You'd like to be me. You'll die as yourself."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуй молча, это тебе идёт."
-msgstr ""
+msgstr "Envy in silence, it suits you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Смотри как следует. Может, чему научишься."
-msgstr ""
+msgstr "Watch closely. You might learn something."
 
 #: Dialogue/EncounterLines.cs
 msgid "Собой торгуешь? Дешёвка."
-msgstr ""
+msgstr "Selling yourself? Cheap."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя хотят. Меня уважают. Разница есть."
-msgstr ""
+msgstr "They desire you. They respect me. There's a difference."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красота проходит. Имя остаётся. Наживи имя."
-msgstr ""
+msgstr "Beauty fades. A name remains. Earn a name."
 
 #: Dialogue/EncounterLines.cs
 msgid "Брюхо вперёд тебя пришло. Его и зарою первым."
-msgstr ""
+msgstr "Your belly got here before you. I'll bury it first."
 
 #: Dialogue/EncounterLines.cs
 msgid "Себя не держишь — как удержишь строй?"
-msgstr ""
+msgstr "You can't hold yourself — how will you hold the line?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Я бы постыдился. Но стыд — тоже труд."
-msgstr ""
+msgstr "I'd be ashamed. But shame is work too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты не побеждён. Ты просто лёг. Лежи."
-msgstr ""
+msgstr "You're not beaten. You just lay down. Stay down."
 
 #: Dialogue/EncounterLines.cs
 msgid "Встань хотя бы. Ради приличия."
-msgstr ""
+msgstr "At least stand up. For decency's sake."
 
 #: Dialogue/EncounterLines.cs
 msgid "Даже сдаться можно с достоинством. Попробуй."
-msgstr ""
+msgstr "Even surrender can be done with dignity. Try it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Твоё золото я тебе в глотку забью."
-msgstr ""
+msgstr "I'll ram your gold down your throat."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хватит считать. Дерись."
-msgstr ""
+msgstr "Stop counting. Fight."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё равно не унесёшь. Брось и уходи."
-msgstr ""
+msgstr "You can't carry it anyway. Drop it and go."
 
 #: Dialogue/EncounterLines.cs
 msgid "Голову пригни. Снесу вместе с гордостью."
-msgstr ""
+msgstr "Keep your head down. I'll take it off along with your pride."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красиво стоишь. Красиво и ляжешь."
-msgstr ""
+msgstr "You stand beautifully. You'll fall beautifully too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты храбрый. Жаль, что мы по разные стороны."
-msgstr ""
+msgstr "You're brave. A pity we're on opposite sides."
 
 #: Dialogue/EncounterLines.cs
 msgid "Наконец-то. Хоть кого-то не жалко."
-msgstr ""
+msgstr "At last. Someone I won't feel sorry for."
 
 #: Dialogue/EncounterLines.cs
 msgid "О. Наконец-то нормальный разговор."
-msgstr ""
+msgstr "Oh. A proper conversation at last."
 
 #: Dialogue/EncounterLines.cs
 msgid "Оба злые. Хоть один да успокоится."
-msgstr ""
+msgstr "Both of us angry. At least one of us will calm down."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хотел как у меня? Получай как у меня."
-msgstr ""
+msgstr "Wanted what I've got? Get what I've got."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуешь моей руке? Сейчас познакомишься."
-msgstr ""
+msgstr "Envy my arm? You're about to meet it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Меньше смотри по сторонам. Смотри сюда."
-msgstr ""
+msgstr "Stop looking around. Look here."
 
 #: Dialogue/EncounterLines.cs
 msgid "Улыбайся. Недолго осталось."
-msgstr ""
+msgstr "Smile. Not long left."
 
 #: Dialogue/EncounterLines.cs
 msgid "Нашёл где красоваться."
-msgstr ""
+msgstr "Picked a fine place to show off."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя жалко портить. Уйди по-хорошему."
-msgstr ""
+msgstr "It'd be a shame to spoil you. Leave while you can."
 
 #: Dialogue/EncounterLines.cs
 msgid "Разъелся. Бежать не сможешь. И не надо."
-msgstr ""
+msgstr "Grown fat. You won't be able to run. No need to."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя и бить-то удобно. Мимо не промахнёшься."
-msgstr ""
+msgstr "You're easy to hit. Impossible to miss."
 
 #: Dialogue/EncounterLines.cs
 msgid "Доедай. Это последнее, что я тебе дам."
-msgstr ""
+msgstr "Finish eating. That's the last thing I'll give you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Встань. Лежачих бью только по средам."
-msgstr ""
+msgstr "Get up. I only hit men lying down on Wednesdays."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хоть притворись, что сопротивляешься."
-msgstr ""
+msgstr "At least pretend to resist."
 
 #: Dialogue/EncounterLines.cs
 msgid "Скучно с тобой. Иди домой, а?"
-msgstr ""
+msgstr "You're boring. Go home, would you?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Отдай всё. Ты и так нажился."
-msgstr ""
+msgstr "Hand it all over. You've profited enough."
 
 #: Dialogue/EncounterLines.cs
 msgid "У тебя всегда больше. Почему?"
-msgstr ""
+msgstr "You always have more. Why?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Я видел, сколько ты припрятал. И промолчал."
-msgstr ""
+msgstr "I saw how much you stashed away. And I kept quiet."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сними это. Тебе не идёт. Мне пойдёт."
-msgstr ""
+msgstr "Take that off. It doesn't suit you. It'll suit me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя называют по имени. Меня — эй, ты."
-msgstr ""
+msgstr "They call you by name. Me — hey, you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Чем ты лучше? Скажи, я послушаю."
-msgstr ""
+msgstr "What makes you better? Tell me, I'm listening."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя боятся. Скоро перестанут."
-msgstr ""
+msgstr "They fear you. Soon they won't."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе можно злиться. Мне почему-то нет."
-msgstr ""
+msgstr "You're allowed to be angry. For some reason, I'm not."
 
 #: Dialogue/EncounterLines.cs
 msgid "Кричи громче. Всё равно слушают тебя."
-msgstr ""
+msgstr "Shout louder. They listen to you anyway."
 
 #: Dialogue/EncounterLines.cs
 msgid "Двое хотят одного. Останусь я."
-msgstr ""
+msgstr "Two of us want the same thing. I'll be the one left."
 
 #: Dialogue/EncounterLines.cs
 msgid "И ты туда же смотришь? Занято."
-msgstr ""
+msgstr "You're looking there too? Taken."
 
 #: Dialogue/EncounterLines.cs
 msgid "Не смотри. Это моё, я первый увидел."
-msgstr ""
+msgstr "Don't look. It's mine, I saw it first."
 
 #: Dialogue/EncounterLines.cs
 msgid "Испорчу лицо — и оборачиваться перестанут."
-msgstr ""
+msgstr "I'll ruin that face — and they'll stop turning to look."
 
 #: Dialogue/EncounterLines.cs
 msgid "На тебя оборачиваются. На меня — никогда."
-msgstr ""
+msgstr "People turn to look at you. Never at me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Что в тебе такого? Объясни, я пойму."
-msgstr ""
+msgstr "What's so special about you? Explain, I'll understand."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты ел всю жизнь. Теперь поголодаешь."
-msgstr ""
+msgstr "You've eaten all your life. Now you'll go hungry."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе досталось больше. Опять."
-msgstr ""
+msgstr "You got more. Again."
 
 #: Dialogue/EncounterLines.cs
 msgid "Поделись. Хоть раз поделись."
-msgstr ""
+msgstr "Share. Just once, share."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе можно ничего. Значит, и тебе не будет."
-msgstr ""
+msgstr "You're allowed nothing. So you'll get nothing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе можно ничего не делать. Везёт."
-msgstr ""
+msgstr "You're allowed to do nothing. Lucky."
 
 #: Dialogue/EncounterLines.cs
 msgid "Лежишь и ничего не хочешь. Научи."
-msgstr ""
+msgstr "You lie there wanting nothing. Teach me."
 
 #: Dialogue/EncounterLines.cs
 msgid "В гроб с собой положишь? Проверим сегодня."
-msgstr ""
+msgstr "Taking it to the grave? We'll find out today."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё считаешь. А жить когда?"
-msgstr ""
+msgstr "Always counting. When will you live?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Монеты холодные. Люди тёплые. Подумай."
-msgstr ""
+msgstr "Coins are cold. People are warm. Think about it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Кому ты нужен со своим именем?"
-msgstr ""
+msgstr "Who needs you and your name?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Гордый. Мне такие нравятся."
-msgstr ""
+msgstr "Proud. I like that kind."
 
 #: Dialogue/EncounterLines.cs
 msgid "Спустись ко мне. Не развалишься."
-msgstr ""
+msgstr "Come down to my level. You won't fall apart."
 
 #: Dialogue/EncounterLines.cs
 msgid "Такой горячий. Жаль, недолго."
-msgstr ""
+msgstr "So hot-blooded. A pity it won't last."
 
 #: Dialogue/EncounterLines.cs
 msgid "Злишься — значит живой. Уже неплохо."
-msgstr ""
+msgstr "You're angry — so you're alive. Not bad already."
 
 #: Dialogue/EncounterLines.cs
 msgid "Не трать себя на меня. Я не стою."
-msgstr ""
+msgstr "Don't waste yourself on me. I'm not worth it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Смотришь и не решаешься. Так и умрёшь."
-msgstr ""
+msgstr "You look and never dare. You'll die like that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хочешь как у меня? Так подойди и возьми."
-msgstr ""
+msgstr "Want what I have? Then come and take it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидовать легче, чем хотеть по-настоящему."
-msgstr ""
+msgstr "Envy is easier than truly wanting."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красивый. И потому ты мне мешаешь."
-msgstr ""
+msgstr "Handsome. And that's why you're in my way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Мы с тобой поняли бы друг друга. В другой день."
-msgstr ""
+msgstr "You and I would understand each other. On another day."
 
 #: Dialogue/EncounterLines.cs
 msgid "Жаль. В другой жизни — обязательно."
-msgstr ""
+msgstr "A pity. In another life — surely."
 
 #: Dialogue/EncounterLines.cs
 msgid "Набитое брюхо — единственное, что тебя обнимало."
-msgstr ""
+msgstr "A full belly is the only thing that ever held you."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты любишь еду. Я — всё остальное."
-msgstr ""
+msgstr "You love food. I love everything else."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хоть раз захоти того, что нельзя съесть."
-msgstr ""
+msgstr "For once, want something you can't eat."
 
 #: Dialogue/EncounterLines.cs
 msgid "Скучный. Даже убивать тебя неинтересно."
-msgstr ""
+msgstr "Boring. Even killing you isn't interesting."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе бы жить, а ты лежишь."
-msgstr ""
+msgstr "You should be living, and you're lying around."
 
 #: Dialogue/EncounterLines.cs
 msgid "Хоть чего-нибудь захоти. Я помогу."
-msgstr ""
+msgstr "Want something, anything. I'll help."
 
 #: Dialogue/EncounterLines.cs
 msgid "Отдай припасы. И руки тоже отдай."
-msgstr ""
+msgstr "Hand over the supplies. And your hands too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Золото не жуётся. Проверено."
-msgstr ""
+msgstr "Gold doesn't chew. I've checked."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты копишь, я ем. Оба не наелись."
-msgstr ""
+msgstr "You hoard, I eat. Neither of us is full."
 
 #: Dialogue/EncounterLines.cs
 msgid "Гордостью не наешься. Тобой — попробую."
-msgstr ""
+msgstr "Pride won't fill you up. You might — I'll try."
 
 #: Dialogue/EncounterLines.cs
 msgid "Гордостью не наешься."
-msgstr ""
+msgstr "Pride won't fill your belly."
 
 #: Dialogue/EncounterLines.cs
 msgid "Поел бы — подобрел. Садись."
-msgstr ""
+msgstr "Eat something and you'd soften. Sit down."
 
 #: Dialogue/EncounterLines.cs
 msgid "Злой, потому что голодный. Накормлю железом."
-msgstr ""
+msgstr "Angry because you're hungry. I'll feed you iron."
 
 #: Dialogue/EncounterLines.cs
 msgid "Злой, потому что голодный. Всегда так."
-msgstr ""
+msgstr "Angry because you're hungry. It's always like that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сядь, поешь. Потом решим, кто кого."
-msgstr ""
+msgstr "Sit down, eat. Then we'll decide who beats whom."
 
 #: Dialogue/EncounterLines.cs
 msgid "Смотришь в мою миску? Смотри в землю."
-msgstr ""
+msgstr "Looking into my bowl? Look at the ground."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуешь куску? Так возьми и отними."
-msgstr ""
+msgstr "Envy my bite? Then take it from me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Голодному завидовать легче всего. Держи."
-msgstr ""
+msgstr "Envy comes easiest to the hungry. Here."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тобой сыт не будешь. Но попробовать можно."
-msgstr ""
+msgstr "You won't fill me up. But it's worth a try."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты хочешь тел, я — мяса. Разница небольшая."
-msgstr ""
+msgstr "You want bodies, I want meat. Not much difference."
 
 #: Dialogue/EncounterLines.cs
 msgid "Красота — это когда густо. Ешь больше."
-msgstr ""
+msgstr "Beauty is abundance. Eat more."
 
 #: Dialogue/EncounterLines.cs
 msgid "На двоих не хватит. Значит, будет на одного."
-msgstr ""
+msgstr "There isn't enough for two. So there'll be enough for one."
 
 #: Dialogue/EncounterLines.cs
 msgid "Узнаю своего. Отойди от котла."
-msgstr ""
+msgstr "I know my own kind. Step away from the pot."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты доел моё? Ладно. Бывает."
-msgstr ""
+msgstr "You finished mine? Fine. It happens."
 
 #: Dialogue/EncounterLines.cs
 msgid "Оставь долю. Тебе она уже не пригодится."
-msgstr ""
+msgstr "Leave the share. You won't need it anymore."
 
 #: Dialogue/EncounterLines.cs
 msgid "Даже есть не хочешь? Тогда ты уже мёртвый."
-msgstr ""
+msgstr "Don't even want to eat? Then you're already dead."
 
 #: Dialogue/EncounterLines.cs
 msgid "Поел бы — глядишь, и захотелось бы жить."
-msgstr ""
+msgstr "Eat something — and maybe you'd want to live."
 
 #: Dialogue/EncounterLines.cs
 msgid "Копи. Всё равно заберут. Хоть бы и я."
-msgstr ""
+msgstr "Hoard away. Someone will take it anyway. Might as well be me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Бери всё. Мне не жалко."
-msgstr ""
+msgstr "Take it all. I don't mind."
 
 #: Dialogue/EncounterLines.cs
 msgid "И что ты со всем этим будешь делать."
-msgstr ""
+msgstr "And what will you do with all of that."
 
 #: Dialogue/EncounterLines.cs
 msgid "Имя, честь. Через год никто не вспомнит."
-msgstr ""
+msgstr "Name, honour. In a year, no one will remember."
 
 #: Dialogue/EncounterLines.cs
 msgid "Стой ровно. Тебе это важно, я понимаю."
-msgstr ""
+msgstr "Stand straight. It matters to you, I understand."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе-то есть ради чего. Повезло."
-msgstr ""
+msgstr "At least you have something to live for. Lucky."
 
 #: Dialogue/EncounterLines.cs
 msgid "Бей уже. Может, хоть что-то почувствую."
-msgstr ""
+msgstr "Strike already. Maybe I'll feel something."
 
 #: Dialogue/EncounterLines.cs
 msgid "Бей уже, чего тянешь."
-msgstr ""
+msgstr "Strike already, what are you waiting for."
 
 #: Dialogue/EncounterLines.cs
 msgid "Столько злости. И всё на ветер."
-msgstr ""
+msgstr "So much anger. And all of it wasted."
 
 #: Dialogue/EncounterLines.cs
 msgid "У меня ничего нет. Завидовать нечему."
-msgstr ""
+msgstr "I have nothing. Nothing to envy."
 
 #: Dialogue/EncounterLines.cs
 msgid "Завидуй, если хочешь. Мне нечего дать."
-msgstr ""
+msgstr "Envy me if you like. I have nothing to give."
 
 #: Dialogue/EncounterLines.cs
 msgid "Смотри на других. На меня незачем."
-msgstr ""
+msgstr "Look at the others. There's no reason to look at me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты живой. Это раздражает."
-msgstr ""
+msgstr "You're alive. That's irritating."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты живой. Это видно. Мне бы так."
-msgstr ""
+msgstr "You're alive. It shows. I wish I were."
 
 #: Dialogue/EncounterLines.cs
 msgid "Иди веселись. Без меня."
-msgstr ""
+msgstr "Go and have fun. Without me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Забирай мою долю. Подавись."
-msgstr ""
+msgstr "Take my share. Choke on it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Мне не надо. Не лезет."
-msgstr ""
+msgstr "I don't want it. Can't stomach it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ешь. Хоть кому-то в радость."
-msgstr ""
+msgstr "Eat. At least someone enjoys it."
 
 #: Dialogue/EncounterLines.cs
 msgid "Оба не хотим. Так давай оба и не будем."
-msgstr ""
+msgstr "Neither of us wants to. So let's neither of us bother."
 
 #: Dialogue/EncounterLines.cs
 msgid "Стоим друг напротив друга. Смешно ведь."
-msgstr ""
+msgstr "Standing face to face. It's funny, really."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты тоже устал? Тогда сядь рядом."
-msgstr ""
+msgstr "Tired too? Then sit next to me."
 
 #: Dialogue/TalkLines.cs
 msgid "Ты забрал моё. Я помню."
