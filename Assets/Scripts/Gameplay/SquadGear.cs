@@ -234,7 +234,7 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Отдаст ли воин золото из кармана — по тем же правилам, что вещь.</summary>
         public static bool WillGivePocket(Warrior w, out string word)
-            => WillGive(w, new InventoryItem(Loc.T("Монеты"), "", ItemType.Gold, w.PocketGold), out word);
+            => WillGive(w, new InventoryItem(Loc.N("Монеты"), "", ItemType.Gold, w.PocketGold), out word);
 
         /// <summary>
         /// Что на воине — одной строкой, для панели приказов: надетое и карман.

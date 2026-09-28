@@ -56,7 +56,6 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
-            if (_text != null) _text.text = Loc.T(Line);
 
             if (SoulManager.Instance == null)
                 Debug.LogWarning("[ПОДСКАЗКА] SoulManager в сцене нет: "
@@ -89,6 +88,9 @@ namespace Sinbinder.UI
         {
             Shown = true;
             _hideAt = Time.unscaledTime + _holdSeconds;
+
+            // Строка — в миг показа: язык могли сменить в меню после начала сцены.
+            if (_text != null) _text.text = Loc.T(Line);
             if (_panel != null) _panel.SetActive(true);
         }
 

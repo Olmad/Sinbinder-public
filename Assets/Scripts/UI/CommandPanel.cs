@@ -92,11 +92,29 @@ namespace Sinbinder.UI
         void Start()
         {
             Build();
+            Loc.Changed += Rebuild;
         }
 
         void OnDestroy()
         {
+            Loc.Changed -= Rebuild;
             if (_instance == this) _instance = null;
+        }
+
+        /// <summary>
+        /// Язык сменили в меню паузы. Панель живёт всю игру, и её слова
+        /// собраны один раз — без этого «Идти» и «Атака» остались бы
+        /// на прежнем языке до конца игры.
+        /// </summary>
+        private void Rebuild()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+                Destroy(transform.GetChild(i).gameObject);
+            _slots.Clear();
+            _hover = null;
+            _forecastFor = null;
+            _forecast = "";
+            Build();
         }
 
         void Update()

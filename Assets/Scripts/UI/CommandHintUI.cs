@@ -69,7 +69,6 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
-            if (_text != null) _text.text = Loc.T(_line);
 
             if (Shown || Ordered) { enabled = false; return; }
         }
@@ -105,6 +104,8 @@ namespace Sinbinder.UI
         {
             if (_showing || _panel == null) return;
 
+            // Строка — в миг показа: язык могли сменить в меню после начала сцены.
+            if (_text != null) _text.text = Loc.T(_line);
             _panel.SetActive(true);
             _showing = true;
             Shown = true;

@@ -107,7 +107,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static InventoryItem Trophy(string name)
             => new InventoryItem(name,
-                   Loc.T("Снято с павшего. Тому, кто взял, — знак, что победил он."),
+                   Loc.N("Снято с павшего. Тому, кто взял, — знак, что победил он."),
                    ItemType.Equipment, temptationSin: SinType.Pride, temptationValue: 20f,
                    attack: 1f);
     }
