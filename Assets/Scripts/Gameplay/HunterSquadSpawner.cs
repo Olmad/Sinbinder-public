@@ -298,10 +298,38 @@ namespace Sinbinder.Gameplay
             return camp != null ? camp.transform.position : Vector3.zero;
         }
 
+        /// <summary>
+        /// Прозвища для второго охотника того же вида. Раньше их нумеровали —
+        /// «Охотник-следопыт 6 пошёл за добычей» стояло в журнале, а игрок
+        /// чисел не видит. Прозвище — после имени, как у отряда («Вейн
+        /// Тихий»): тогда и <c>StartsWith("Ловчий")</c> гардероба,
+        /// и <c>Contains("Охотник")</c> движка узнают вид как прежде.
+        /// Все мужского рода: женщин генератор не выдаёт.
+        /// </summary>
+        private static readonly string[] Epithets =
+        {
+            "Рыжий", "Хромой", "Седой", "Рябой",
+            "Щербатый", "Долговязый", "Лысый", "Бородатый",
+        };
+
+        /// <summary>
+        /// Имя охотника по месту в строю. Первый каждого вида — просто вид,
+        /// следующие — вид и прозвище. До двенадцати (четыре вида и восемь
+        /// прозвищ) все разные; больше в прологе не выходит (вторая волна —
+        /// шестеро).
+        /// </summary>
+        public static string HunterName(int index)
+        {
+            if (index < 0) index = 0;
+            string kind = Kinds[index % Kinds.Length].Name;
+            if (index < Kinds.Length) return kind;
+            return $"{kind} {Epithets[(index - Kinds.Length) % Epithets.Length]}";
+        }
+
         private Warrior SpawnHunter(int index)
         {
             var kind = Kinds[index % Kinds.Length];
-            string name = _count > Kinds.Length ? $"{kind.Name} {index + 1}" : kind.Name;
+            string name = HunterName(index);
 
             var go = new GameObject(name);
             go.transform.SetParent(transform);

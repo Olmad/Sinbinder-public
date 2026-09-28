@@ -88,9 +88,13 @@ namespace Sinbinder.AOS
             string what = VerbPast(decision.Action, context, warrior.Gender);
 
             if (decision.RefusedCommand)
+            {
+                string failed = Core.Grammar.Pick(warrior.Gender,
+                    $"{name} не выполнил приказ", $"{name} не выполнила приказ");
                 return string.IsNullOrEmpty(why)
-                    ? $"{name} не выполнил приказ. Вместо этого {what}."
-                    : $"{name} не выполнил приказ: {why}. Вместо этого {what}.";
+                    ? $"{failed}. Вместо этого {what}."
+                    : $"{failed}: {why}. Вместо этого {what}.";
+            }
 
             return string.IsNullOrEmpty(why) ? $"{name} {what}." : $"{name} {what}: {why}.";
         }
@@ -329,7 +333,7 @@ namespace Sinbinder.AOS
             // его надо в одном месте: два списка слов для одних и тех же
             // действий разъезжаются молча.
             if (action == ActionType.SaveAlly && context.TargetWarrior != null)
-                return $"бросается к {context.TargetWarrior.DisplayName}";
+                return $"бросается к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}";
 
             return Doing(action);
         }
@@ -479,8 +483,8 @@ namespace Sinbinder.AOS
                 // там, куда ни один прогон до сих пор не заходил.
                 case ActionType.SaveAlly:
                     return context != null && context.TargetWarrior != null
-                        ? P($"бросился к {context.TargetWarrior.DisplayName}",
-                            $"бросилась к {context.TargetWarrior.DisplayName}")
+                        ? P($"бросился к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}",
+                            $"бросилась к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}")
                         : P("бросился к раненому", "бросилась к раненому");
 
                 case ActionType.Loot: return P("пошёл за добычей", "пошла за добычей");

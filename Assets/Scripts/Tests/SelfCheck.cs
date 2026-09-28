@@ -101,6 +101,7 @@ namespace Sinbinder.Tests
                 ExitMarkerPlace();
                 HeraldLines();
                 TextRules();
+                NamesAndCases();
             }
             catch (Exception e)
             {
@@ -1904,6 +1905,56 @@ namespace Sinbinder.Tests
             if (string.IsNullOrEmpty(text)) return false;
             foreach (char c in text) if (char.IsDigit(c)) return true;
             return false;
+        }
+
+        /// <summary>
+        /// Тексты, найденные прогоном 26 сентября (<c>14-HANDOFF.md</c> §111):
+        /// цифры в именах охотников, имя без падежа, «не выполнил приказ»
+        /// только в мужском роде. Верни любое — и проверка провалится.
+        /// </summary>
+        private static void NamesAndCases()
+        {
+            // Охотники: прозвище вместо номера, и вид узнаётся по началу имени.
+            var seen = new HashSet<string>();
+            for (int i = 0; i < 12; i++)
+            {
+                string hunter = HunterSquadSpawner.HunterName(i);
+                Check(!Digit.IsMatch(hunter), $"цифра в имени охотника: «{hunter}»");
+                Check(seen.Add(hunter), $"два охотника с одним именем: «{hunter}»");
+            }
+            Check(HunterSquadSpawner.HunterName(7).StartsWith("Ловчий"),
+                  "прозвище встало перед видом — гардероб не узнает Ловчего");
+
+            // Спасение: к кому бросились — в дательном.
+            var saver = MakeWarrior("Карган Старый Ворон", SinType.Pride, 70f);
+            var fallen = MakeWarrior("Косой Ждан", SinType.Pride, 30f);
+            if (saver == null || fallen == null) { Fail("не удалось собрать воинов для падежа"); return; }
+
+            var context = BaseContext(saver);
+            context.TargetWarrior = fallen;
+            var save = new Decision
+            {
+                Action = ActionType.SaveAlly, TopContender = ActionType.SaveAlly,
+                RunnerUp = ActionType.Idle, TopModule = "Loyalty", Gap = 30f
+            };
+            string log = PhraseGenerator.LogLine(saver, context, save);
+            Check(log.Contains("к Косому Ждану"), $"имя в журнале без падежа: «{log}»");
+            string hint = PhraseGenerator.Explain(saver, context, save);
+            Check(hint.Contains("к Косому Ждану"), $"имя в подсказке без падежа: «{hint}»");
+
+            // «Не выполнила» — у неё.
+            var go = NewObject("Лиска");
+            var liska = go.AddComponent<Warrior>();
+            liska.Initialize(new SoulData("Лиска", MoralType.Vicious, 1,
+                    new[] { 30f, 0f, 0f, 0f, 0f, 0f, 0f }, null, Gender.Female),
+                ShellType.Skeleton, new RelationshipSystem(null));
+            var refused = new Decision
+            {
+                Action = ActionType.Idle, TopContender = ActionType.Idle, RunnerUp = ActionType.Flee,
+                TopModule = "Greed", Gap = 30f, RefusedCommand = true
+            };
+            string her = PhraseGenerator.LogLine(liska, BaseContext(liska), refused);
+            Check(her.Contains("не выполнила приказ"), $"отказ у неё — в мужском роде: «{her}»");
         }
 
         private static void TextRules()
