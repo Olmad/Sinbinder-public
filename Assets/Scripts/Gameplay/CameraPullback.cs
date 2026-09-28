@@ -41,7 +41,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _afterRefusal = 1.6f;
 
         [Tooltip("Что пишет журнал. Пусто — не пишет.")]
-        [SerializeField] private string _line = Loc.T("Отсюда видно, как далеко до края.");
+        [SerializeField] private string _line = Loc.N("Отсюда видно, как далеко до края.");
 
         /// <summary>
         /// Был ли отъезд. Статично и переживает смену сцен: он один
@@ -110,7 +110,7 @@ namespace Sinbinder.Gameplay
             if (hadRts) _rts.enabled = false;
 
             if (!string.IsNullOrEmpty(_line))
-                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_line);
+                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T(_line));
 
             float elapsed = 0f;
             while (elapsed < _seconds)

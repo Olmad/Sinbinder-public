@@ -428,6 +428,21 @@ namespace N
 ''',
     }, 'в статической таблице'),
 
+    ('untranslated/Loc.T в сериализуемом поле', {
+        'UI/Hint.cs': '''// Перевод: текст через Loc
+using UnityEngine;
+namespace N
+{
+    public class Hint : MonoBehaviour
+    {
+        [TextArea(1, 3)]
+        [SerializeField] private string _line =
+            Loc.T("W, A, S, D — идти.");
+    }
+}
+''',
+    }, 'в сериализуемом поле'),
+
     ('dead_branches/ветка ждёт строку, которой не пишут', {
         'Gameplay/Waiting.cs': '''
 using UnityEngine;

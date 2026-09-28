@@ -35,7 +35,7 @@ namespace Sinbinder.UI
 
         [TextArea(1, 3)]
         [SerializeField] private string _line =
-            Loc.T("Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда.");
+            Loc.N("Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда.");
 
         /// <summary>
         /// Показывали ли уже. Как и у подсказки движения — одна на пролог,
@@ -69,7 +69,7 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
-            if (_text != null) _text.text = _line;
+            if (_text != null) _text.text = Loc.T(_line);
 
             if (Shown || Ordered) { enabled = false; return; }
         }

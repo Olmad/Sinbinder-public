@@ -38,13 +38,13 @@ namespace Sinbinder.UI
         [Tooltip("Подсказка, когда смотрят глазами Греховода: там W, A, S, D ведут его.")]
         [TextArea(1, 3)]
         [SerializeField] private string _line =
-            Loc.T("W, A, S, D — идти. Камера идёт за вами.");
+            Loc.N("W, A, S, D — идти. Камера идёт за вами.");
 
         [Tooltip("Подсказка, когда смотрят сверху: там W, A, S, D ведут камеру, "
                + "а Греховода — правая кнопка.")]
         [TextArea(1, 3)]
         [SerializeField] private string _fromAbove =
-            Loc.T("Щёлкните по Греховоду, затем правой кнопкой — куда идти.");
+            Loc.N("Щёлкните по Греховоду, затем правой кнопкой — куда идти.");
 
         /// <summary>
         /// Показывали ли уже. Статично и переживает смену сцен: подсказка
@@ -94,7 +94,7 @@ namespace Sinbinder.UI
             _eye = cam.transform;
             _wasAt = _eye.position;
 
-            if (_text != null) _text.text = _line;
+            if (_text != null) _text.text = Loc.T(_line);
         }
 
         void Update()
@@ -138,7 +138,7 @@ namespace Sinbinder.UI
         {
             var view = Object.FindFirstObjectByType<Gameplay.RTS_Camera>();
             bool fromAbove = Gameplay.SinbinderPlayer.Exists && view != null && !view.FirstPersonNow;
-            return fromAbove ? _fromAbove : _line;
+            return Loc.T(fromAbove ? _fromAbove : _line);
         }
 
         private void Show()

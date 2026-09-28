@@ -31,7 +31,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _fallbackPath = "Sounds/Horn";
 
         [Tooltip("Что пишет журнал, когда трубит рог. Пусто — не пишет.")]
-        [SerializeField] private string _line = Loc.T("Рог трубит отход.");
+        [SerializeField] private string _line = Loc.N("Рог трубит отход.");
 
         [Tooltip("Только первый приказ отходить. Снимать не советую.")]
         [SerializeField] private bool _onlyFirst = true;
@@ -80,7 +80,7 @@ namespace Sinbinder.Gameplay
             if (string.IsNullOrEmpty(_line)) return;
 
             var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
-            log?.Write(_line);
+            log?.Write(Loc.T(_line));
         }
     }
 }

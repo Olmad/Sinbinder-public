@@ -26,7 +26,7 @@ namespace Sinbinder.UI
         [SerializeField] private Text _line;
 
         [TextArea(1, 3)]
-        [SerializeField] private string _text = Loc.T("Греху всё равно, чьё это тело.");
+        [SerializeField] private string _text = Loc.N("Греху всё равно, чьё это тело.");
 
         [SerializeField] private float _holdSeconds = 3f;
         [SerializeField] private float _fadeSeconds = 1.2f;
@@ -47,7 +47,7 @@ namespace Sinbinder.UI
             // «Лагерь знали не только свои», и лагерной поверх неё не место.
             if (Gameplay.RaidEvent.Running) return;
 
-            StartCoroutine(Show(_text));
+            StartCoroutine(Show(Loc.T(_text)));
         }
 
         /// <summary>

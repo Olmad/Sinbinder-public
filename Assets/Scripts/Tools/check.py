@@ -591,11 +591,15 @@ class Checker:
             for k, m in enumerate(found):
                 glued = k > 0 and re.fullmatch(r'\s*\+\s*', body[found[k - 1].end():m.start()])
                 heads.append(heads[k - 1] if glued else m)
+            judged = set()
             for m, head in zip(found, heads):
                 if not cyr.search(m.group(2)):
                     continue
                 m = head
                 start = m.start()
+                if start in judged:
+                    continue          # цепочка судится один раз — по голове
+                judged.add(start)
                 line_start = body.rfind('\n', 0, start) + 1
                 before = body[line_start:start]
                 prev_start = body.rfind('\n', 0, max(0, line_start - 1)) + 1
@@ -603,11 +607,17 @@ class Checker:
 
                 loc = re.search(r'Loc\.(T|F|N|Name)\s*\(\s*$', before)
                 if loc:
-                    if loc.group(1) in ('T', 'F') and self._static_field(body, start):
+                    frozen = self._static_field(body, start) if loc.group(1) in ('T', 'F') else None
+                    if frozen == 'static':
                         self.report(p, line_of(body, start),
                                     f'Loc.{loc.group(1)} в статической таблице: строка переведётся '
                                     'один раз при загрузке, смена языка её не тронет — '
                                     'в таблице Loc.N, перевод при показе')
+                    elif frozen == 'serialized':
+                        self.report(p, line_of(body, start),
+                                    f'Loc.{loc.group(1)} в сериализуемом поле: сцена запомнит строку '
+                                    'по-русски на миг сборки, и игрок на другом языке прочтёт её '
+                                    'по-русски — в поле Loc.N, перевод при показе')
                     continue
                 line_end = s.find('\n', start)
                 if '// ключ' in s[line_start:line_end if line_end >= 0 else len(s)]:
@@ -624,13 +634,23 @@ class Checker:
                             f'русский текст мимо Loc: «{m.group(2)[:40]}» — игрок на другом '
                             'языке увидит его по-русски (Loc.T / Loc.F, docs/38-LANG.md)')
 
+    # Поле, которое Unity сохраняет в сцене: [SerializeField] или открытое.
+    SERIALIZED_FIELD = re.compile(r'(\[SerializeField\]|\bpublic\b)[^;(]*?\bstring\b(\[\])?\s+\w+\s*=(?!>)')
+
     @staticmethod
     def _static_field(body, start):
-        """Литерал — в инициализаторе поля static или const, а не в методе."""
+        """
+        Литерал — в инициализаторе поля, а не в методе. 'static' — поле
+        static или const: собирается один раз. 'serialized' — поле, которое
+        хранит сцена: её сборщик запишет туда строку на своём языке,
+        и в игре инициализатор уже не выполнится. None — не поле.
+        """
         clean = re.sub(r'"(?:[^"\\\n]|\\.)*"', lambda m: ' ' * len(m.group(0)), body)
         own = clean[clean.rfind('\n', 0, start) + 1:start]
         if re.search(r'\b(static|const)\b[^;(]*?=(?!>)', own):
-            return True
+            return 'static'
+        if Checker.SERIALIZED_FIELD.search(own):
+            return 'serialized'
         i, depth = start, 0
         while i > 0:
             i -= 1
@@ -641,18 +661,20 @@ class Checker:
                 if not (depth == 0 and c == '{'):
                     depth = max(0, depth - 1)
             elif c == ';' and depth == 0:
-                return False
+                return None
             elif c == '\n':
                 ls = clean.rfind('\n', 0, i) + 1
                 line = clean[ls:i].strip()
                 if not line:
                     continue
                 if re.search(r'\b(static|const)\b[^;(]*?=(?!>)', line):
-                    return True
+                    return 'static'
+                if Checker.SERIALIZED_FIELD.search(line):
+                    return 'serialized'
                 if re.search(r'\)\s*$', line) and \
                    re.search(r'\b(void|string|bool|int|float|IEnumerable|IEnumerator)\b', line):
-                    return False
-        return False
+                    return None
+        return None
 
     def constructor_arity(self):
         """

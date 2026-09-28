@@ -49,7 +49,7 @@ namespace Sinbinder.Gameplay
 
         [Tooltip("Что говорит Карган, ведя к сундуку.")]
         [SerializeField] private string _invite =
-            Loc.T("Карган: «Давайте осмотрим, что принёс Марга Копатель. "
+            Loc.N("Карган: «Давайте осмотрим, что принёс Марга Копатель. "
           + "Я уверен, он это всё просто выкопал возле лагеря».");
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Sinbinder.Gameplay
             {
                 _invited = true;
                 if (!string.IsNullOrEmpty(_invite))
-                    Herald.Line(_invite);
+                    Herald.Line(Loc.T(_invite));
             }
 
             // Тем же правилом, что и стол совета: есть тело — открывает
