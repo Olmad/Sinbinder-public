@@ -1,6 +1,8 @@
 // Assets/Scripts/Gameplay/Leadership.cs
+// Перевод: текст через Loc
 using System;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -71,13 +73,13 @@ namespace Sinbinder.Gameplay
         public static string Describe(float leadership)
         {
             int size = SquadSize(leadership);
-            if (!IsExperienced(leadership)) return $"водит впервые, уведёт {Count(size)}";
-            return $"уведёт {Count(size)}";
+            if (!IsExperienced(leadership)) return Loc.F("водит впервые, уведёт {0}", Count(size));
+            return Loc.F("уведёт {0}", Count(size));
         }
 
         /// <summary>Почему его навыка не хватит на отряд такого размера.</summary>
         public static string Shortfall(float leadership, int required)
-            => $"уведёт {Count(SquadSize(leadership))}, а нужно {Collective(required)}";
+            => Loc.F("уведёт {0}, а нужно {1}", Count(SquadSize(leadership)), Collective(required));
 
         /// <summary>
         /// «Двое», «девятеро» — счёт словами в именительном.
@@ -92,19 +94,19 @@ namespace Sinbinder.Gameplay
         {
             switch (n)
             {
-                case 0:  return "никого";
-                case 1:  return "один";
-                case 2:  return "двое";
-                case 3:  return "трое";
-                case 4:  return "четверо";
-                case 5:  return "пятеро";
-                case 6:  return "шестеро";
-                case 7:  return "семеро";
-                case 8:  return "восьмеро";
-                case 9:  return "девятеро";
-                case 10: return "десятеро";
-                case 11: return "одиннадцать";
-                default: return "двенадцать";
+                case 0:  return Loc.T("никого");
+                case 1:  return Loc.T("один");
+                case 2:  return Loc.T("двое");
+                case 3:  return Loc.T("трое");
+                case 4:  return Loc.T("четверо");
+                case 5:  return Loc.T("пятеро");
+                case 6:  return Loc.T("шестеро");
+                case 7:  return Loc.T("семеро");
+                case 8:  return Loc.T("восьмеро");
+                case 9:  return Loc.T("девятеро");
+                case 10: return Loc.T("десятеро");
+                case 11: return Loc.T("одиннадцать");
+                default: return Loc.T("двенадцать");
             }
         }
 
@@ -117,18 +119,18 @@ namespace Sinbinder.Gameplay
         {
             switch (n)
             {
-                case 1:  return "одного";
-                case 2:  return "двоих";
-                case 3:  return "троих";
-                case 4:  return "четверых";
-                case 5:  return "пятерых";
-                case 6:  return "шестерых";
-                case 7:  return "семерых";
-                case 8:  return "восьмерых";
-                case 9:  return "девятерых";
-                case 10: return "десятерых";
-                case 11: return "одиннадцать";
-                default: return "двенадцать";
+                case 1:  return Loc.T("одного");
+                case 2:  return Loc.T("двоих");
+                case 3:  return Loc.T("троих");
+                case 4:  return Loc.T("четверых");
+                case 5:  return Loc.T("пятерых");
+                case 6:  return Loc.T("шестерых");
+                case 7:  return Loc.T("семерых");
+                case 8:  return Loc.T("восьмерых");
+                case 9:  return Loc.T("девятерых");
+                case 10: return Loc.T("десятерых");
+                case 11: return Loc.T("одиннадцать");
+                default: return Loc.T("двенадцать");
             }
         }
     }

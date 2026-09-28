@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/BodyWorth.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -117,8 +118,8 @@ namespace Sinbinder.Gameplay
         {
             if (!HasEquipment(shell, soul)) return null;
             return soul.Get(SinType.Envy) > soul.Get(SinType.Pride)
-                 ? "Чужой клинок"
-                 : "Родовой клинок";
+                 ? Loc.T("Чужой клинок")
+                 : Loc.T("Родовой клинок");
         }
 
         // ──────────────────────────────────

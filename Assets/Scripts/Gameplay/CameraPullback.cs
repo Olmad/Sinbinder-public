@@ -1,8 +1,10 @@
 // Assets/Scripts/Gameplay/CameraPullback.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using Sinbinder.AOS;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -39,7 +41,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _afterRefusal = 1.6f;
 
         [Tooltip("Что пишет журнал. Пусто — не пишет.")]
-        [SerializeField] private string _line = "Отсюда видно, как далеко до края.";
+        [SerializeField] private string _line = Loc.T("Отсюда видно, как далеко до края.");
 
         /// <summary>
         /// Был ли отъезд. Статично и переживает смену сцен: он один

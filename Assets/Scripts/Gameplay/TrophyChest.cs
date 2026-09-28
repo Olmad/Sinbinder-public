@@ -1,9 +1,11 @@
 // Assets/Scripts/Gameplay/TrophyChest.cs
+// Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Inventory;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -47,8 +49,8 @@ namespace Sinbinder.Gameplay
 
         [Tooltip("Что говорит Карган, ведя к сундуку.")]
         [SerializeField] private string _invite =
-            "Карган: «Давайте осмотрим, что принёс Марга Копатель. "
-          + "Я уверен, он это всё просто выкопал возле лагеря».";
+            Loc.T("Карган: «Давайте осмотрим, что принёс Марга Копатель. "
+          + "Я уверен, он это всё просто выкопал возле лагеря».");
 
         /// <summary>
         /// Разобрали ли трофеи. Статично: сцена 3 идёт дальше только после
@@ -221,7 +223,7 @@ namespace Sinbinder.Gameplay
             if (Store && _contents.Count > 0) StartCoroutine(OfferWhenFree());
 
             if (taken == 0)
-                log?.Write("В сундуке пусто. Марга объяснится, когда вернётся.");
+                log?.Write(Loc.T("В сундуке пусто. Марга объяснится, когда вернётся."));
         }
 
         /// <summary>
@@ -241,7 +243,7 @@ namespace Sinbinder.Gameplay
             }
 
             if (_contents.Count > 0)
-                log?.Write($"В сундуке: {names}. Что не унесёте, останется в лагере.");
+                log?.Write(Loc.F("В сундуке: {0}. Что не унесёте, останется в лагере.", names));
 
             return _contents.Count;
         }
@@ -261,21 +263,21 @@ namespace Sinbinder.Gameplay
         /// <summary>Взять из сундука в мешок Греховода. Золото — в кошель.</summary>
         public bool Take(InventoryItem item, PlayerInventory bag, out string word)
         {
-            if (item == null || !_contents.Contains(item)) { word = "этого в сундуке уже нет"; return false; }
-            if (bag == null || !bag.AddItem(item)) { word = "в мешке нет места"; return false; }
+            if (item == null || !_contents.Contains(item)) { word = Loc.T("этого в сундуке уже нет"); return false; }
+            if (bag == null || !bag.AddItem(item)) { word = Loc.T("в мешке нет места"); return false; }
 
             _contents.Remove(item);
-            word = item.Type == ItemType.Gold ? "в кошель" : "в мешок";
+            word = item.Type == ItemType.Gold ? Loc.T("в кошель") : Loc.T("в мешок");
             return true;
         }
 
         /// <summary>Положить из мешка в сундук. Оставить можно всё, кроме золота.</summary>
         public bool Put(InventoryItem item, PlayerInventory bag, out string word)
         {
-            if (item == null || bag == null || !bag.RemoveItem(item.Id)) { word = "этого в мешке уже нет"; return false; }
+            if (item == null || bag == null || !bag.RemoveItem(item.Id)) { word = Loc.T("этого в мешке уже нет"); return false; }
 
             _contents.Add(item);
-            word = "в сундук";
+            word = Loc.T("в сундук");
             return true;
         }
 
@@ -316,7 +318,7 @@ namespace Sinbinder.Gameplay
             chest._contents.Clear();
 
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
-                $"Сундук Марги остался охотникам: {names}.");
+                Loc.F("Сундук Марги остался охотникам: {0}.", names));
         }
 
         /// <summary>
@@ -334,7 +336,7 @@ namespace Sinbinder.Gameplay
                 // а рычаг остался бы пустым, и никто бы не понял почему.
                 Debug.LogWarning("[СУНДУК] PlayerInventory в сцене нет — "
                                + "трофеи забирать некому.");
-                log?.Write("Забрать это некуда.");
+                log?.Write(Loc.T("Забрать это некуда."));
                 return 0;
             }
 
@@ -353,7 +355,7 @@ namespace Sinbinder.Gameplay
             // Одной строкой, а не по строке на вещь: четыре подряд —
             // это шесть секунд чтения посреди сцены, где игрок только
             // что научился ходить.
-            if (taken > 0) log?.Write($"Из сундука — в мешок Греховода: {names}.");
+            if (taken > 0) log?.Write(Loc.F("Из сундука — в мешок Греховода: {0}.", names));
 
             return taken;
         }

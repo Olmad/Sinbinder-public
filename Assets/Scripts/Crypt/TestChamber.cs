@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/TestChamber.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;
@@ -142,7 +143,7 @@ namespace Sinbinder.Crypt
             _recorded = true;
 
             bool obeyed = context.SatisfiedBy(decision.Action);
-            string what = obeyed ? "послушался" : "не послушался";
+            string what = obeyed ? Loc.T("послушался") : Loc.T("не послушался");
 
             // Объяснение считает настоящий PhraseGenerator, а не эта
             // площадка. Своя формулировка была бы второй правдой: игрок
@@ -176,7 +177,7 @@ namespace Sinbinder.Crypt
             // Конструктор с процессором, а не пустой: пустой существует
             // только у заглушки стенда, и однажды из-за этого не собралась
             // вся ветка. Урок записан в 14-HANDOFF §7.1.
-            warrior.Initialize(new SoulData("Подопытный", _sin, _moral, 1, _intensity),
+            warrior.Initialize(new SoulData(Loc.T("Подопытный"), _sin, _moral, 1, _intensity),
                                ShellType.Skeleton,
                                new RelationshipSystem(MemoryProcessor.Instance),
                                false, Team.Player);
@@ -210,7 +211,7 @@ namespace Sinbinder.Crypt
             // Золото постоянное, а не случайное. Случайность здесь
             // отменила бы весь смысл площадки: два одинаковых опыта
             // дали бы разные исходы, и игрок научился бы неверному.
-            body.Initialize(ShellType.Skeleton, 12, true, "Сломанный меч");
+            body.Initialize(ShellType.Skeleton, 12, true, Loc.T("Сломанный меч"));
 
             // Бюллетень видит добычу через CombatManager, а не через сцену.
             var combat = CombatManager.Instance;
@@ -236,7 +237,7 @@ namespace Sinbinder.Crypt
             var ally = go.AddComponent<Warrior>();
             // Гнев низкий и мораль благочестивая: раненому важно только
             // быть раненым, спорить за него никто не будет.
-            ally.Initialize(new SoulData("Раненый", SinType.Wrath, MoralType.Pious, 1, 20f),
+            ally.Initialize(new SoulData(Loc.T("Раненый"), SinType.Wrath, MoralType.Pious, 1, 20f),
                             ShellType.Skeleton,
                             new RelationshipSystem(MemoryProcessor.Instance),
                             false, Team.Player);
@@ -269,7 +270,7 @@ namespace Sinbinder.Crypt
                 body.transform.localScale = new Vector3(0.5f, 1.05f, 0.5f);
 
                 var foe = go.AddComponent<Warrior>();
-                foe.Initialize(new SoulData($"Чужой {i + 1}", SinType.Wrath, MoralType.Vicious, 1, 50f),
+                foe.Initialize(new SoulData(Loc.F("Чужой {0}", i + 1), SinType.Wrath, MoralType.Vicious, 1, 50f),
                                ShellType.Skeleton,
                                new RelationshipSystem(MemoryProcessor.Instance),
                                false, Team.Enemy);

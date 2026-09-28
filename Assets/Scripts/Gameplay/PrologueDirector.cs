@@ -1,7 +1,9 @@
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -202,7 +204,7 @@ namespace Sinbinder.Gameplay
                     {
                         _sinceNudge = 0f;
                         Object.FindFirstObjectByType<UI.BattleLogUI>()
-                              ?.Write("Зал впереди. Алтарь ждёт.");
+                              ?.Write(Loc.T("Зал впереди. Алтарь ждёт."));
                     }
                     return;
                 }
@@ -230,7 +232,7 @@ namespace Sinbinder.Gameplay
 
             Debug.LogWarning("[ПРОЛОГ] Тревоги не случилось: лагерь уходит "
                            + "без сцены 3.");
-            Leave("Отряд выступает.");
+            Leave(Loc.T("Отряд выступает."));
         }
 
         private void OnUnitsChanged()
@@ -245,7 +247,7 @@ namespace Sinbinder.Gameplay
             // некому, и демо заперлось бы на мёртвом поле.
             if (_battleJoined && combat.GetAlivePlayerCount() == 0)
             {
-                Leave("Отряд не вернулся.", wiped: true);
+                Leave(Loc.T("Отряд не вернулся."), wiped: true);
                 return;
             }
 
@@ -269,7 +271,7 @@ namespace Sinbinder.Gameplay
             if (!_waitForBattle) return;   // уходим не по концу боя
             if (!_battleJoined) return;
 
-            Leave("Поле осталось за отрядом.");
+            Leave(Loc.T("Поле осталось за отрядом."));
         }
 
         private void Leave(string line, bool wiped = false)
@@ -302,9 +304,9 @@ namespace Sinbinder.Gameplay
                 // на пустом поле без единой кнопки.
                 if (wiped)
                 {
-                    UI.GameOverUI.Show("Отряд не вернулся.",
-                        "Никто не дошёл до склепа. Души разойдутся Некроэфиром, "
-                      + "и помнить о них будет некому.\n\nИгра окончена.");
+                    UI.GameOverUI.Show(Loc.T("Отряд не вернулся."),
+                        Loc.T("Никто не дошёл до склепа. Души разойдутся Некроэфиром, "
+                      + "и помнить о них будет некому.\n\nИгра окончена."));
                     yield break;
                 }
 

@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/Warrior.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
@@ -309,19 +310,19 @@ namespace Sinbinder.Gameplay
         public string GetPersonality()
         {
             string desc = $"=== {DisplayName} ===\n";
-            desc += $"Оболочка: {_shell}\n";
-            desc += $"Грех: {_soul.GetSinName()}\n";
-            desc += $"Характер: {_virtue.GetDescription()}\n";
-            desc += $"Мораль: {_soul.GetMoralName()}\n";
-            desc += $"Роль: {(_isCommander ? "Командир" : "Рядовой")}\n";
-            desc += $"Команда: {_team}\n";
+            desc += Loc.F("Оболочка: {0}\n", _shell);
+            desc += Loc.F("Грех: {0}\n", _soul.GetSinName());
+            desc += Loc.F("Характер: {0}\n", _virtue.GetDescription());
+            desc += Loc.F("Мораль: {0}\n", _soul.GetMoralName());
+            desc += Loc.F("Роль: {0}\n", (_isCommander ? Loc.T("Командир") : Loc.T("Рядовой")));
+            desc += Loc.F("Команда: {0}\n", _team);
 
-            if (_loyalty > 70f) desc += "Верность: Предан вам\n";
-            else if (_loyalty < 30f) desc += "Верность: Готов предать\n";
-            else desc += "Верность: Нейтральна\n";
+            if (_loyalty > 70f) desc += Loc.T("Верность: Предан вам\n");
+            else if (_loyalty < 30f) desc += Loc.T("Верность: Готов предать\n");
+            else desc += Loc.T("Верность: Нейтральна\n");
 
-            if (_unpaidMissions > 0) desc += $"Не получал плату: {_unpaidMissions} миссий\n";
-            if (_soul.HasMemory) desc += $"Память: Дремлет...\n";
+            if (_unpaidMissions > 0) desc += Loc.F("Не получал плату: {0} миссий\n", _unpaidMissions);
+            if (_soul.HasMemory) desc += Loc.T("Память: Дремлет...\n");
 
             return desc;
         }

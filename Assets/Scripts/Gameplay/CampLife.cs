@@ -1,9 +1,11 @@
 // Assets/Scripts/Gameplay/CampLife.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;
 using Sinbinder.AOS.Modules;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -198,13 +200,13 @@ namespace Sinbinder.Gameplay
         {
             switch (spot)
             {
-                case CampSpot.Chest:     return "у сундука";
-                case CampSpot.Table:     return "у стола, где решают";
-                case CampSpot.Watch:     return "в дозоре";
-                case CampSpot.Apart:     return "сторонится";
-                case CampSpot.Tents:     return "дремлет в палатке";
-                case CampSpot.Sinbinder: return "держится рядом с Греховодом";
-                default:                 return "греется у огня";
+                case CampSpot.Chest:     return Loc.T("у сундука");
+                case CampSpot.Table:     return Loc.T("у стола, где решают");
+                case CampSpot.Watch:     return Loc.T("в дозоре");
+                case CampSpot.Apart:     return Loc.T("сторонится");
+                case CampSpot.Tents:     return Loc.T("дремлет в палатке");
+                case CampSpot.Sinbinder: return Loc.T("держится рядом с Греховодом");
+                default:                 return Loc.T("греется у огня");
             }
         }
 

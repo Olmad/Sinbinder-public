@@ -1,7 +1,9 @@
 // Assets/Scripts/Gameplay/CrystalBall.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -208,7 +210,7 @@ namespace Sinbinder.Gameplay
 
             if (hasChest)
                 yield return Beat.UntilPlayer(() => TrophyChest.Looted, _chestNudge,
-                    "Карган ждёт у сундука Марги.");
+                    Loc.T("Карган ждёт у сундука Марги."));
 
             Alarm();
 
@@ -224,8 +226,8 @@ namespace Sinbinder.Gameplay
                 // в эпилоге решит, сколько их вернётся. Названия греха игрок
                 // не увидит: он увидит, что Карган узнаёт человека.
                 if (SquadRoster.TryGet(name, out var commander))
-                    Herald.Line($"Карган: «Похоже, что-то случилось. "
-                            + $"Вероятно, {name} {Homecoming.Guess(commander.Sin)}».");
+                    Herald.Line(Loc.F("Карган: «Похоже, что-то случилось. "
+                            + "Вероятно, {0} {1}».", name, Homecoming.Guess(commander.Sin)));
             }
 
             // Зрелище — тому, кто смотрит. Игрок в этот миг у сундука,
@@ -234,10 +236,10 @@ namespace Sinbinder.Gameplay
             // Греховод подошёл.
             if (!PlayerIsClose())
             {
-                Herald.Line("Карган: «Владыка, взгляните в шар. Скорее».");
+                Herald.Line(Loc.T("Карган: «Владыка, взгляните в шар. Скорее»."));
 
                 yield return Beat.UntilPlayer(PlayerIsClose, _returnNudge,
-                    "Карган: «Владыка, шар. Скорее».");
+                    Loc.T("Карган: «Владыка, шар. Скорее»."));
             }
 
             // «Игрок смотрит в шар — и видит, как его отряды гаснут один
@@ -247,8 +249,8 @@ namespace Sinbinder.Gameplay
             // сколько отрядов было в поле.
             yield return Extinguish();
 
-            Herald.Line("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
-                     + "ребят как косточки крысы».");
+            Herald.Line(Loc.T("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
+                     + "ребят как косточки крысы»."));
 
             yield return new WaitForSecondsRealtime(_watchSeconds);
 

@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Transparency.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>
@@ -285,13 +286,13 @@ namespace Sinbinder.Core
         {
             switch (what)
             {
-                case Detail.Icons:       return "Значок над головой";
-                case Detail.Moments:     return "Слово о поступке";
-                case Detail.Tooltips:    return "Причина при наведении";
-                case Detail.MomentCause: return "Причина под словом";
-                case Detail.Log:         return "Журнал внизу";
-                case Detail.Trace:       return "Внутренности — для разработчика";
-                default:                 return "Ничего";
+                case Detail.Icons:       return Loc.T("Значок над головой");
+                case Detail.Moments:     return Loc.T("Слово о поступке");
+                case Detail.Tooltips:    return Loc.T("Причина при наведении");
+                case Detail.MomentCause: return Loc.T("Причина под словом");
+                case Detail.Log:         return Loc.T("Журнал внизу");
+                case Detail.Trace:       return Loc.T("Внутренности — для разработчика");
+                default:                 return Loc.T("Ничего");
             }
         }
 
@@ -314,17 +315,17 @@ namespace Sinbinder.Core
             switch (level)
             {
                 case Clarity.Silent:
-                    return "Молча";
+                    return Loc.T("Молча");
                 case Clarity.Icons:
-                    return "Только намерения";
+                    return Loc.T("Только намерения");
                 case Clarity.Tooltips:
-                    return "Намерения и причины";
+                    return Loc.T("Намерения и причины");
                 case Clarity.Log:
-                    return "Намерения, причины и рассказ";
+                    return Loc.T("Намерения, причины и рассказ");
                 case Clarity.Trace:
-                    return "Всё, включая внутренности — для разработчика";
+                    return Loc.T("Всё, включая внутренности — для разработчика");
                 default:
-                    return "Неизвестно";
+                    return Loc.T("Неизвестно");
             }
         }
 

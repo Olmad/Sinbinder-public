@@ -1,6 +1,8 @@
 // Assets/Scripts/Gameplay/ExitCircle.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -176,7 +178,7 @@ namespace Sinbinder.Gameplay
                 tris[i * 6 + 5] = i * 2 + 1;
             }
 
-            var mesh = new Mesh { name = "Кольцо", vertices = verts, normals = normals, triangles = tris };
+            var mesh = new Mesh { name = Loc.T("Кольцо"), vertices = verts, normals = normals, triangles = tris };
             mesh.RecalculateBounds();
             return mesh;
         }

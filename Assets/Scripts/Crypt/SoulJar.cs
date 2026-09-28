@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/SoulJar.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
@@ -32,7 +33,7 @@ namespace Sinbinder.Crypt
 
         public override string Label
             => Soul == null
-                ? "Пустая банка"
+                ? Loc.T("Пустая банка")
                 : $"{Soul.Name}\n{SoulData.GetSinName(Soul.Sin)}\n{Freshness(Quality)}";
 
         /// <summary>Занять банку душой. Зовёт полка, когда расставляет их.</summary>
@@ -48,8 +49,8 @@ namespace Sinbinder.Crypt
 
         protected override string Hint
             => CryptHands.Empty
-                ? $"{Flat(Label)} — взять на {_key}."
-                : $"{Flat(Label)}. В руках {CryptHands.What}.";
+                ? Loc.F("{0} — взять на {1}.", Flat(Label), _key)
+                : Loc.F("{0}. В руках {1}.", Flat(Label), CryptHands.What);
 
         protected override void Use()
         {
@@ -57,7 +58,7 @@ namespace Sinbinder.Crypt
 
             if (!CryptHands.Empty)
             {
-                Say($"Руки заняты: {CryptHands.What}.");
+                Say(Loc.F("Руки заняты: {0}.", CryptHands.What));
                 return;
             }
 
@@ -71,7 +72,7 @@ namespace Sinbinder.Crypt
             if (kept.Soul == null) { _shelf.Rebuild(); return; }
 
             CryptHands.TakeSoul(kept.Soul, kept.Quality);
-            Say($"Взято: {kept.Soul.Name}. {Freshness(kept.Quality)}");
+            Say(Loc.F("Взято: {0}. {1}", kept.Soul.Name, Freshness(kept.Quality)));
 
             _shelf.Rebuild();
         }
@@ -81,10 +82,10 @@ namespace Sinbinder.Crypt
         {
             switch (quality)
             {
-                case SoulQuality.Shock:      return "Она ещё вся здесь";
-                case SoulQuality.Acceptance: return "Крайности уже сгладились";
-                case SoulQuality.Fading:     return "Характер тускнеет";
-                default:                     return "Осталась одна воля";
+                case SoulQuality.Shock:      return Loc.T("Она ещё вся здесь");
+                case SoulQuality.Acceptance: return Loc.T("Крайности уже сгладились");
+                case SoulQuality.Fading:     return Loc.T("Характер тускнеет");
+                default:                     return Loc.T("Осталась одна воля");
             }
         }
     }

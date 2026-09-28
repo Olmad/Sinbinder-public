@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -254,19 +255,19 @@ namespace Sinbinder.Core
 
         public static string GetSinName(SinType sin)
         {
-            string[] names = { "Жадность", "Гордыня", "Гнев", "Зависть", "Похоть", "Чревоугодие", "Уныние" };
+            string[] names = { Loc.T("Жадность"), Loc.T("Гордыня"), Loc.T("Гнев"), Loc.T("Зависть"), Loc.T("Похоть"), Loc.T("Чревоугодие"), Loc.T("Уныние") };
             return names[(int)sin];
         }
 
         public static string GetVirtueName(SinType sin)
         {
-            string[] names = { "Щедрость", "Смирение", "Терпение", "Доброжелательность", "Целомудрие", "Умеренность", "Усердие" };
+            string[] names = { Loc.T("Щедрость"), Loc.T("Смирение"), Loc.T("Терпение"), Loc.T("Доброжелательность"), Loc.T("Целомудрие"), Loc.T("Умеренность"), Loc.T("Усердие") };
             return names[(int)sin];
         }
 
         public string GetMoralName()
         {
-            string[] names = { "Злобная", "Нейтральная", "Благочестивая" };
+            string[] names = { Loc.T("Злобная"), Loc.T("Нейтральная"), Loc.T("Благочестивая") };
             return names[_moralType];
         }
 
@@ -290,24 +291,24 @@ namespace Sinbinder.Core
         private string GetIntensityText(SinType sin, int tier)
         {
             string[][] descriptions = {
-                new[] { "Одержим золотом до безумия", "Любит золото", "Ценит золото", "Равнодушен к золоту", "Презирает богатство" },
-                new[] { "Считает себя богом", "Высокомерен", "Уверен в себе", "Признаёт других", "Скромен до самоуничижения" },
-                new[] { "Неудержим в ярости", "Вспыльчив", "Сдержан", "Терпелив", "Невозмутим как камень" },
-                new[] { "Завидует всему живому", "Завидует молча", "Нейтрален", "Рад за других", "Восхищается другими" },
-                new[] { "Ненасытен в желаниях", "Падок на соблазны", "Сдержан", "Верен", "Неприступен" },
-                new[] { "Готов сожрать всё", "Любит поесть", "Ест в меру", "Умерен", "Воздержан" },
-                new[] { "Апатичен ко всему", "Ленив", "Работает без огня", "Старателен", "Неутомим" }
+                new[] { Loc.T("Одержим золотом до безумия"), Loc.T("Любит золото"), Loc.T("Ценит золото"), Loc.T("Равнодушен к золоту"), Loc.T("Презирает богатство") },
+                new[] { Loc.T("Считает себя богом"), Loc.T("Высокомерен"), Loc.T("Уверен в себе"), Loc.T("Признаёт других"), Loc.T("Скромен до самоуничижения") },
+                new[] { Loc.T("Неудержим в ярости"), Loc.T("Вспыльчив"), Loc.T("Сдержан"), Loc.T("Терпелив"), Loc.T("Невозмутим как камень") },
+                new[] { Loc.T("Завидует всему живому"), Loc.T("Завидует молча"), Loc.T("Нейтрален"), Loc.T("Рад за других"), Loc.T("Восхищается другими") },
+                new[] { Loc.T("Ненасытен в желаниях"), Loc.T("Падок на соблазны"), Loc.T("Сдержан"), Loc.T("Верен"), Loc.T("Неприступен") },
+                new[] { Loc.T("Готов сожрать всё"), Loc.T("Любит поесть"), Loc.T("Ест в меру"), Loc.T("Умерен"), Loc.T("Воздержан") },
+                new[] { Loc.T("Апатичен ко всему"), Loc.T("Ленив"), Loc.T("Работает без огня"), Loc.T("Старателен"), Loc.T("Неутомим") }
             };
             return descriptions[(int)sin][tier + 2];
         }
 
         public string GetFullDescription()
         {
-            string desc = $"Душа: {Name}\n";
-            desc += $"Грех: {GetSinName()}\n";
-            desc += $"Степень: {GetIntensityDescription()}\n";
-            desc += $"Мораль: {GetMoralName()}\n";
-            desc += $"Уровень: {Level}";
+            string desc = Loc.F("Душа: {0}\n", Name);
+            desc += Loc.F("Грех: {0}\n", GetSinName());
+            desc += Loc.F("Степень: {0}\n", GetIntensityDescription());
+            desc += Loc.F("Мораль: {0}\n", GetMoralName());
+            desc += Loc.F("Уровень: {0}", Level);
             return desc;
         }
 
@@ -327,7 +328,7 @@ namespace Sinbinder.Core
                 string label = v > 0f ? GetSinName(sin) : GetVirtueName(sin);
                 sb.AppendLine($"{label}: {GetIntensityDescription(sin)}");
             }
-            if (sb.Length == 0) sb.AppendLine("Ничем не выделяется.");
+            if (sb.Length == 0) sb.AppendLine(Loc.T("Ничем не выделяется."));
             return sb.ToString().TrimEnd();
         }
     }

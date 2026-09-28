@@ -1,8 +1,10 @@
 // Assets/Scripts/Gameplay/RaidEvent.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -43,14 +45,14 @@ namespace Sinbinder.Gameplay
         /// <summary>Куда ведёт побег — та же следующая доля, что у сцены набега.</summary>
         private const string After = "Crypt_Entrance";
 
-        private const string Title = "Лагерь знали не только свои.";
+        private static readonly string Title = Loc.N("Лагерь знали не только свои.");
 
         // «Куда» — в самой реплике: без него игрок слышал «нужно бежать»
         // и искал выход по всему лагерю (автор, 26 сентября).
-        private const string SecondWaveLine =
-            "Карган: «Владыка, они узнали, где наш лагерь. "
+        private static readonly string SecondWaveLine =
+            Loc.N("Карган: «Владыка, они узнали, где наш лагерь. "
           + "Вероятно, от одного из наших. Тяжело это признавать, "
-          + "но нам нужно бежать. К кругу на востоке — туда, где свет».";
+          + "но нам нужно бежать. К кругу на востоке — туда, где свет».");
 
         private static readonly Vector3 FirstWave = new Vector3(0f, 0f, 12f);
         private static readonly Vector3 SecondWave = new Vector3(0f, 0f, 15f);
@@ -172,13 +174,13 @@ namespace Sinbinder.Gameplay
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
             if (title != null)
             {
-                title.Again(Title);
+                title.Again(Loc.T(Title));
                 yield return null;
                 while (UI.PrologueTitleUI.Showing) yield return null;
             }
             else
             {
-                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Title);
+                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T(Title));
             }
 
             // Отъезд камеры после отказа и рог на приказ «отходить» —
@@ -199,7 +201,7 @@ namespace Sinbinder.Gameplay
                  afterFieldClear: false, opensEscape: false, announce: "");
 
             Wave(root, "Охотники: вторая волна", SecondWave, count: 6, width: 10f,
-                 afterFieldClear: true, opensEscape: true, announce: SecondWaveLine);
+                 afterFieldClear: true, opensEscape: true, announce: Loc.T(SecondWaveLine));
 
             Debug.Log("[ПРОЛОГ] Разгром развёрнут в лагере.");
         }

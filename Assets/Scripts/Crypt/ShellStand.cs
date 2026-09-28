@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/ShellStand.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -28,26 +29,26 @@ namespace Sinbinder.Crypt
             get
             {
                 var data = ShellLibrary.Get(_shell);
-                string pull = data != null ? data.DescribeBias() : "Тело ничего не навязывает.";
+                string pull = data != null ? data.DescribeBias() : Loc.T("Тело ничего не навязывает.");
                 return $"{CryptHands.ShellName(_shell)}\n{pull}";
             }
         }
 
         protected override string Hint
             => CryptHands.Empty
-                ? $"{Flat(Label)} — взять на {_key}."
-                : $"{Flat(Label)}. В руках {CryptHands.What}.";
+                ? Loc.F("{0} — взять на {1}.", Flat(Label), _key)
+                : Loc.F("{0}. В руках {1}.", Flat(Label), CryptHands.What);
 
         protected override void Use()
         {
             if (!CryptHands.Empty)
             {
-                Say($"Руки заняты: {CryptHands.What}.");
+                Say(Loc.F("Руки заняты: {0}.", CryptHands.What));
                 return;
             }
 
             CryptHands.TakeShell(_shell);
-            Say($"Взято тело: {CryptHands.ShellName(_shell)}.");
+            Say(Loc.F("Взято тело: {0}.", CryptHands.ShellName(_shell)));
         }
 
         /// <summary>Настроить из сборщика сцены.</summary>

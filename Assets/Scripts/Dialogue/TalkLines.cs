@@ -1,4 +1,5 @@
 // Assets/Scripts/Dialogue/TalkLines.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
@@ -40,8 +41,8 @@ namespace Sinbinder.Dialogue
             if (best == null) return "";
 
             return best.EventType == "SinbinderTookFromMe"
-                ? "Ты забрал моё. Я помню."
-                : Grammar.Pick(w.Gender, "Ты дал мне — я не забыл.", "Ты дал мне — я не забыла.");
+                ? Loc.T("Ты забрал моё. Я помню.")
+                : Grammar.Pick(w.Gender, Loc.T("Ты дал мне — я не забыл."), Loc.T("Ты дал мне — я не забыла."));
         }
 
         public static string HowAreYou(Warrior w)
@@ -56,28 +57,28 @@ namespace Sinbinder.Dialogue
             {
                 switch (sin)
                 {
-                    case SinType.Greed:    return P("Жив. Была бы доля — был бы и весел.",
-                                                    "Жива. Была бы доля — была бы и весела.");
-                    case SinType.Pride:    return "Не хуже прочих. Лучше, если честно.";
-                    case SinType.Wrath:    return "Скучно. Когда дадут кого-нибудь ударить?";
-                    case SinType.Envy:     return "Как все. Только у других почему-то лучше.";
-                    case SinType.Lust:     return "Хорошо, пока есть на кого посмотреть.";
-                    case SinType.Gluttony: return P("Сыт был утром. Это было давно.",
-                                                    "Сыта была утром. Это было давно.");
-                    default:               return P("Устал. Можно я постою?",
-                                                    "Устала. Можно я постою?");
+                    case SinType.Greed:    return P(Loc.T("Жив. Была бы доля — был бы и весел."),
+                                                    Loc.T("Жива. Была бы доля — была бы и весела."));
+                    case SinType.Pride:    return Loc.T("Не хуже прочих. Лучше, если честно.");
+                    case SinType.Wrath:    return Loc.T("Скучно. Когда дадут кого-нибудь ударить?");
+                    case SinType.Envy:     return Loc.T("Как все. Только у других почему-то лучше.");
+                    case SinType.Lust:     return Loc.T("Хорошо, пока есть на кого посмотреть.");
+                    case SinType.Gluttony: return P(Loc.T("Сыт был утром. Это было давно."),
+                                                    Loc.T("Сыта была утром. Это было давно."));
+                    default:               return P(Loc.T("Устал. Можно я постою?"),
+                                                    Loc.T("Устала. Можно я постою?"));
                 }
             }
 
             switch (sin)
             {
-                case SinType.Greed:    return "Хорошо. Если кому-то нужнее — отдам своё.";
-                case SinType.Pride:    return "Как скажете, так и есть.";
-                case SinType.Wrath:    return "Спокойно. Подождём — увидим.";
-                case SinType.Envy:     return P("Хорошо. Рад, что мы вместе.", "Хорошо. Рада, что мы вместе.");
-                case SinType.Lust:     return "Держусь. Мысли в порядке.";
-                case SinType.Gluttony: return P("Сыт малым. Остальное — отряду.", "Сыта малым. Остальное — отряду.");
-                default:               return P("Готов. Скажите, что делать.", "Готова. Скажите, что делать.");
+                case SinType.Greed:    return Loc.T("Хорошо. Если кому-то нужнее — отдам своё.");
+                case SinType.Pride:    return Loc.T("Как скажете, так и есть.");
+                case SinType.Wrath:    return Loc.T("Спокойно. Подождём — увидим.");
+                case SinType.Envy:     return P(Loc.T("Хорошо. Рад, что мы вместе."), Loc.T("Хорошо. Рада, что мы вместе."));
+                case SinType.Lust:     return Loc.T("Держусь. Мысли в порядке.");
+                case SinType.Gluttony: return P(Loc.T("Сыт малым. Остальное — отряду."), Loc.T("Сыта малым. Остальное — отряду."));
+                default:               return P(Loc.T("Готов. Скажите, что делать."), Loc.T("Готова. Скажите, что делать."));
             }
         }
     }

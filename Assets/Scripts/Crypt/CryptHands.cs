@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/CryptHands.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.Crypt
@@ -32,9 +33,9 @@ namespace Sinbinder.Crypt
         {
             get
             {
-                if (HasSoul) return $"душа: {Soul.Name}";
-                if (HasShell) return $"тело: {ShellName(Shell)}";
-                return "руки пусты";
+                if (HasSoul) return Loc.F("душа: {0}", Loc.Name(CryptHands.Soul.Name));
+                if (HasShell) return Loc.F("тело: {0}", ShellName(Shell));
+                return Loc.T("руки пусты");
             }
         }
 
@@ -71,11 +72,11 @@ namespace Sinbinder.Crypt
 
             switch (type)
             {
-                case ShellType.Skeleton: return "Скелет";
-                case ShellType.Zombie:   return "Зомби";
-                case ShellType.Ghost:    return "Призрак";
-                case ShellType.Golem:    return "Голем";
-                case ShellType.Living:   return "Человек";
+                case ShellType.Skeleton: return Loc.T("Скелет");
+                case ShellType.Zombie:   return Loc.T("Зомби");
+                case ShellType.Ghost:    return Loc.T("Призрак");
+                case ShellType.Golem:    return Loc.T("Голем");
+                case ShellType.Living:   return Loc.T("Человек");
                 default:                 return type.ToString();
             }
         }

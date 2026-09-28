@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SinbinderPlayer.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -77,12 +78,12 @@ namespace Sinbinder.Gameplay
             bool bound = Core.Commitment.On;
             if (bound) Core.SaveSystem.EraseBound();
 
-            UI.GameOverUI.Show("Греховод пал.",
-                "Тот, кто связывал их, лежит среди них. Души разойдутся "
+            UI.GameOverUI.Show(Loc.T("Греховод пал."),
+                Loc.T("Тот, кто связывал их, лежит среди них. Души разойдутся "
               + "Некроэфиром, и приказа им больше не будет — ни услышанного, "
-              + "ни отвергнутого."
-              + (bound ? "\n\nОбязательство исполнено: этой игры больше нет."
-                       : "\n\nИгра окончена."));
+              + "ни отвергнутого.")
+              + (bound ? Loc.T("\n\nОбязательство исполнено: этой игры больше нет.")
+                       : Loc.T("\n\nИгра окончена.")));
         }
 
         /// <summary>
@@ -108,7 +109,7 @@ namespace Sinbinder.Gameplay
             // но она ничего не решает: голосования он не проходит.
             // Гордыня — не характеристика героя, а просто непустая шкала;
             // морали у него нет вовсе (её носит Морган, не он).
-            var soul = new SoulData("Греховод", SinType.Pride, MoralType.Neutral, 1, 0f);
+            var soul = new SoulData(Loc.T("Греховод"), SinType.Pride, MoralType.Neutral, 1, 0f);
 
             // isCommander: false — и это не описка. Признак читает
             // CombatDecisionContext.GetCommander: он берёт первого

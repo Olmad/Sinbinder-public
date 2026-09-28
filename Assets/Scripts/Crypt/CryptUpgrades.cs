@@ -1,3 +1,5 @@
+// Перевод: текст через Loc
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>Что можно поставить в склепе.</summary>
@@ -59,7 +61,7 @@ namespace Sinbinder.Crypt
 
         /// <summary>Почему нельзя — словами, для журнала и устройства.</summary>
         public static string WhyNot(Sinbinder.Core.ShellType shell)
-            => AllowsShell(shell) ? "" : "Устройство не выдержит камня. Нужны каменные оковы.";
+            => AllowsShell(shell) ? "" : Loc.T("Устройство не выдержит камня. Нужны каменные оковы.");
 
         /// <summary>Поставлено ли.</summary>
         public static bool Installed(Upgrade what) => _installed[(int)what];
@@ -120,9 +122,9 @@ namespace Sinbinder.Crypt
         {
             switch (what)
             {
-                case Upgrade.Cellar:   return "Ледник";
-                case Upgrade.Treasury: return "Казна";
-                default:               return "Каменные оковы";
+                case Upgrade.Cellar:   return Loc.T("Ледник");
+                case Upgrade.Treasury: return Loc.T("Казна");
+                default:               return Loc.T("Каменные оковы");
             }
         }
 
@@ -132,11 +134,11 @@ namespace Sinbinder.Crypt
             switch (what)
             {
                 case Upgrade.Cellar:
-                    return "Собранные души держатся дольше. Значит и тел им доступно больше.";
+                    return Loc.T("Собранные души держатся дольше. Значит и тел им доступно больше.");
                 case Upgrade.Treasury:
-                    return "С вылазок несут золото. Значит отряду есть чем заплатить.";
+                    return Loc.T("С вылазок несут золото. Значит отряду есть чем заплатить.");
                 default:
-                    return "Устройство выдерживает камень. Значит душу можно вселить в голема.";
+                    return Loc.T("Устройство выдерживает камень. Значит душу можно вселить в голема.");
             }
         }
 

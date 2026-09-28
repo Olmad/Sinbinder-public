@@ -1,3 +1,5 @@
+// Перевод: текст через Loc
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>Что можно принести с вылазки, кроме выживших и денег.</summary>
@@ -135,29 +137,29 @@ namespace Sinbinder.Crypt
                 // Единственная точка, где богатство и опасность разошлись,
                 // и оттого единственная прибыльная. Она же первое искушение:
                 // чтобы заплатить отряду, надо ограбить тех, кто не дерётся.
-                new Mission("Соляной обоз",
-                    "По старой соляной дороге ходит обоз. Охраны при нём двое, и те за деньги.",
+                new Mission(Loc.T("Соляной обоз"),
+                    Loc.T("По старой соляной дороге ходит обоз. Охраны при нём двое, и те за деньги."),
                     squad: 3, guards: 2, Prize.Silver, Spoils.None, Deed.Robbery,
                     Junction.Caravan),
 
-                new Mission("Придорожная часовня",
-                    "Говорят, там кто-то ходит по ночам. Немного, но ходит.",
+                new Mission(Loc.T("Придорожная часовня"),
+                    Loc.T("Говорят, там кто-то ходит по ночам. Немного, но ходит."),
                     squad: 3, guards: 2, Prize.None, Spoils.Souls, Deed.GraveRobbing),
 
-                new Mission("Затопленная каменоломня",
-                    "Вода поднялась и вынесла наверх то, что закапывали.",
+                new Mission(Loc.T("Затопленная каменоломня"),
+                    Loc.T("Вода поднялась и вынесла наверх то, что закапывали."),
                     squad: 4, guards: 4, Prize.None, Spoils.Shell, Deed.GraveRobbing),
 
-                new Mission("Сожжённая застава",
-                    "Охотники были здесь первыми. Кто-то из них остался.",
+                new Mission(Loc.T("Сожжённая застава"),
+                    Loc.T("Охотники были здесь первыми. Кто-то из них остался."),
                     squad: 5, guards: 5, Prize.Purses, Spoils.Souls, Deed.ArmedRaid),
 
-                new Mission("Старый гарнизон",
-                    "Место держали долго и держат до сих пор — по привычке.",
+                new Mission(Loc.T("Старый гарнизон"),
+                    Loc.T("Место держали долго и держат до сих пор — по привычке."),
                     squad: 5, guards: 7, Prize.Purses, Spoils.Upgrade, Deed.ArmedRaid),
 
-                new Mission("Костяная топь",
-                    "Туда уходят и не возвращаются. Причину никто не называет.",
+                new Mission(Loc.T("Костяная топь"),
+                    Loc.T("Туда уходят и не возвращаются. Причину никто не называет."),
                     squad: 6, guards: 8, Prize.None, Spoils.Upgrade, Deed.GraveRobbing),
             };
         }
@@ -165,10 +167,10 @@ namespace Sinbinder.Crypt
         /// <summary>Насколько там опасно — словами, для карты.</summary>
         public static string Danger(Mission mission)
         {
-            if (mission.Guards < mission.Squad) return "Их там меньше.";
-            if (mission.Guards == mission.Squad) return "Их там столько же.";
-            if (mission.Guards <= mission.Squad + 2) return "Их там больше.";
-            return "Их там намного больше.";
+            if (mission.Guards < mission.Squad) return Loc.T("Их там меньше.");
+            if (mission.Guards == mission.Squad) return Loc.T("Их там столько же.");
+            if (mission.Guards <= mission.Squad + 2) return Loc.T("Их там больше.");
+            return Loc.T("Их там намного больше.");
         }
 
         /// <summary>Что обещают принести — словами.</summary>
@@ -176,10 +178,10 @@ namespace Sinbinder.Crypt
         {
             switch (spoils)
             {
-                case Spoils.Souls:   return "Оттуда несут души.";
-                case Spoils.Shell:   return "Оттуда несут тело.";
-                case Spoils.Upgrade: return "Оттуда несут то, что ставят в склепе.";
-                default:             return "Оттуда несут только своих.";
+                case Spoils.Souls:   return Loc.T("Оттуда несут души.");
+                case Spoils.Shell:   return Loc.T("Оттуда несут тело.");
+                case Spoils.Upgrade: return Loc.T("Оттуда несут то, что ставят в склепе.");
+                default:             return Loc.T("Оттуда несут только своих.");
             }
         }
 
@@ -188,9 +190,9 @@ namespace Sinbinder.Crypt
         {
             switch (prize)
             {
-                case Prize.Purses: return "Кошели у пояса, не больше.";
-                case Prize.Silver: return "Там серебро.";
-                default:           return "Денег там нет.";
+                case Prize.Purses: return Loc.T("Кошели у пояса, не больше.");
+                case Prize.Silver: return Loc.T("Там серебро.");
+                default:           return Loc.T("Денег там нет.");
             }
         }
 
@@ -203,9 +205,9 @@ namespace Sinbinder.Crypt
         {
             switch (deed)
             {
-                case Deed.Robbery:      return "грабёж безоружных";
-                case Deed.GraveRobbing: return "разрытие могил";
-                default:                return "набег на вооружённых";
+                case Deed.Robbery:      return Loc.T("грабёж безоружных");
+                case Deed.GraveRobbing: return Loc.T("разрытие могил");
+                default:                return Loc.T("набег на вооружённых");
             }
         }
 

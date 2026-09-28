@@ -1,7 +1,9 @@
 // Assets/Scripts/Crypt/ShelfPlace.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -28,10 +30,10 @@ namespace Sinbinder.Crypt
         /// <summary>Слушается, только когда в руках душа и на полке есть место.</summary>
         protected override bool Ready => CryptHands.HasSoul && _shelf != null;
 
-        public override string Label => "Свободное место";
+        public override string Label => Loc.T("Свободное место");
 
         protected override string Hint
-            => $"Поставить сюда {CryptHands.Soul?.Name} — нажмите {_key}.";
+            => Loc.F("Поставить сюда {0} — нажмите {1}.", CryptHands.Soul?.Name, _key);
 
         protected override void Use()
         {
@@ -40,7 +42,7 @@ namespace Sinbinder.Crypt
             var souls = SoulManager.Instance;
             if (souls == null)
             {
-                Say("Класть некуда: душами в этой сцене никто не заведует.");
+                Say(Loc.T("Класть некуда: душами в этой сцене никто не заведует."));
                 return;
             }
 
@@ -52,7 +54,7 @@ namespace Sinbinder.Crypt
             souls.PutBack(new SoulManager.Kept(CryptHands.Soul, CryptHands.Quality));
             CryptHands.Drop();
 
-            Say($"{name} — на полке.");
+            Say(Loc.F("{0} — на полке.", name));
 
             _shelf.Rebuild();
         }

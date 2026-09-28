@@ -69,8 +69,15 @@ namespace Sinbinder.Gameplay
             label = words = null;
             if (string.IsNullOrEmpty(line)) return false;
 
+            // Кавычки — любого языка, на котором показана строка (Loc):
+            // «ёлочки» по-русски, “лапки” по-английски.
             int open = line.IndexOf(": «", System.StringComparison.Ordinal);
             int close = line.LastIndexOf('»');
+            if (open < 0)
+            {
+                open = line.IndexOf(": \u201C", System.StringComparison.Ordinal);
+                close = line.LastIndexOf('\u201D');
+            }
             if (open <= 0 || close <= open + 3) return false;
 
             label = line.Substring(0, open);
@@ -95,9 +102,10 @@ namespace Sinbinder.Gameplay
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
                 if (w == null || w.IsDead || w.Team != Team.Player) continue;
-                string name = w.DisplayName;
-                if (name == label || name.StartsWith(label + " ", System.StringComparison.Ordinal))
-                    return w;
+                // Строка могла прийти переведённой: имя в ней — показанное (Loc.Name).
+                foreach (string name in new[] { w.DisplayName, Core.Loc.Name(w.DisplayName) })
+                    if (name == label || name.StartsWith(label + " ", System.StringComparison.Ordinal))
+                        return w;
             }
             return null;
         }

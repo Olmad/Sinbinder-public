@@ -1,8 +1,10 @@
 // Assets/Scripts/Gameplay/Scryer.cs
+// Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -94,7 +96,7 @@ namespace Sinbinder.Gameplay
             SinbinderTrail.ToldFound = true;
 
             Object.FindFirstObjectByType<UI.BattleLogUI>()
-                  ?.Write("Инквизитор шепчет над ладонью — охотники повернули к Греховоду.");
+                  ?.Write(Loc.T("Инквизитор шепчет над ладонью — охотники повернули к Греховоду."));
         }
 
         /// <summary>
@@ -110,7 +112,7 @@ namespace Sinbinder.Gameplay
             SinbinderTrail.ToldLost = true;
 
             Object.FindFirstObjectByType<UI.BattleLogUI>()
-                  ?.Write("Инквизитор пал — охотники потеряли след.");
+                  ?.Write(Loc.T("Инквизитор пал — охотники потеряли след."));
         }
 
         /// <summary>

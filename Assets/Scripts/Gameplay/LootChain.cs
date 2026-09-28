@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/LootChain.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
@@ -68,16 +69,16 @@ namespace Sinbinder.Gameplay
                 SquadGear.Place(who, trophy, out _, out var old);
                 if (SquadGear.Pick(who, trophy, store, out string word))
                 {
-                    string swap = old == null ? "" : $" Прежнее — {old.Name.ToLowerInvariant()} — уходит в мешок Греховода.";
+                    string swap = old == null ? "" : Loc.F(" Прежнее — {0} — уходит в мешок Греховода.", old.Name.ToLowerInvariant());
                     log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} забирает трофей: {what.ToLowerInvariant()}.{swap}"));
+                        Loc.F("{0} забирает трофей: {1}.{2}", Loc.Name(who.DisplayName), what.ToLowerInvariant(), swap)));
                 }
                 else
                 {
                     store?.AddItem(trophy);
-                    string would = Grammar.Pick(who.Gender, "взял бы", "взяла бы");
+                    string would = Grammar.Pick(who.Gender, Loc.T("взял бы"), Loc.T("взяла бы"));
                     log?.Write(Grammar.For(who.Gender,
-                        $"{who.DisplayName} {would} трофей, но {word} — {what.ToLowerInvariant()} уходит в мешок Греховода."));
+                        Loc.F("{0} {1} трофей, но {2} — {3} уходит в мешок Греховода.", Loc.Name(who.DisplayName), would, word, what.ToLowerInvariant())));
                 }
             }
 
@@ -93,8 +94,8 @@ namespace Sinbinder.Gameplay
 
                     string found = SquadGear.GoldWord(gold);
                     log?.Write(Grammar.For(who.Gender, kept == 0
-                        ? $"{who.DisplayName} подбирает {found} и отдаёт всё в кошель Греховода."
-                        : $"{who.DisplayName} подбирает {found}: часть — в кошель Греховода, остальное — себе в карман."));
+                        ? Loc.F("{0} подбирает {1} и отдаёт всё в кошель Греховода.", Loc.Name(who.DisplayName), found)
+                        : Loc.F("{0} подбирает {1}: часть — в кошель Греховода, остальное — себе в карман.", Loc.Name(who.DisplayName), found)));
                 }
             }
         }
@@ -106,7 +107,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static InventoryItem Trophy(string name)
             => new InventoryItem(name,
-                   "Снято с павшего. Тому, кто взял, — знак, что победил он.",
+                   Loc.T("Снято с павшего. Тому, кто взял, — знак, что победил он."),
                    ItemType.Equipment, temptationSin: SinType.Pride, temptationValue: 20f,
                    attack: 1f);
     }

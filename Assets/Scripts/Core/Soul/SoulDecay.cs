@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/SoulDecay.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -75,10 +76,10 @@ namespace Sinbinder.Core
         {
             switch (quality)
             {
-                case SoulQuality.Shock:      return "Ещё не поняла, что мертва";
-                case SoulQuality.Acceptance: return "Смирилась. Помнит себя";
-                case SoulQuality.Fading:     return "Гаснет. Прошлое расплывается";
-                case SoulQuality.Dissolved:  return "Распалась. Осталась оболочка воли";
+                case SoulQuality.Shock:      return Loc.T("Ещё не поняла, что мертва");
+                case SoulQuality.Acceptance: return Loc.T("Смирилась. Помнит себя");
+                case SoulQuality.Fading:     return Loc.T("Гаснет. Прошлое расплывается");
+                case SoulQuality.Dissolved:  return Loc.T("Распалась. Осталась оболочка воли");
                 default:                     return "";
             }
         }

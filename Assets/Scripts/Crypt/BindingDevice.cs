@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/BindingDevice.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
@@ -41,9 +42,9 @@ namespace Sinbinder.Crypt
         {
             get
             {
-                if (!HasSoul && !HasShell) return "Устройство пусто.";
-                if (!HasSoul) return "Нет души.";
-                if (!HasShell) return "Нет тела.";
+                if (!HasSoul && !HasShell) return Loc.T("Устройство пусто.");
+                if (!HasSoul) return Loc.T("Нет души.");
+                if (!HasShell) return Loc.T("Нет тела.");
 
                 // Голем — только с оковами. Слово автора: големов в лагере
                 // нет, их получают улучшением устройства связывания.
@@ -113,8 +114,8 @@ namespace Sinbinder.Crypt
             if (after == null) return "";
 
             return after.Sin == _soul.Sin
-                ? $"Встанет прежним: {SoulData.GetSinName(after.Sin)}."
-                : $"Встанет другим: {SoulData.GetSinName(after.Sin)}. Тело перетянуло.";
+                ? Loc.F("Встанет прежним: {0}.", SoulData.GetSinName(after.Sin))
+                : Loc.F("Встанет другим: {0}. Тело перетянуло.", SoulData.GetSinName(after.Sin));
         }
 
         /// <summary>Дёрнуть рычаг.</summary>
@@ -131,10 +132,10 @@ namespace Sinbinder.Crypt
             var risen = Raising.Rise(_soul, _shell, at, transform.rotation, _relations);
             if (risen == null) return false;
 
-            Log($"{risen.DisplayName} поднялся и встал рядом.");
+            Log(Loc.F("{0} поднялся и встал рядом.", Loc.Name(risen.DisplayName)));
 
             if (_soul.Memory == null)
-                Log("Он не помнит, кем был. Слушается — и только.");
+                Log(Loc.T("Он не помнит, кем был. Слушается — и только."));
 
             _soul = null;
             _hasShell = false;

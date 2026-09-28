@@ -1,7 +1,9 @@
 // Assets/Scripts/Crypt/TestChamberEntry.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -37,8 +39,8 @@ namespace Sinbinder.Crypt
             // дали тело при тактическом виде, решает не «нажму V»,
             // а «управление кривое», — и он прав, пока не знает.
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
-                "W A S D — идти. F — взять или дёрнуть. V — сменить взгляд: "
-                + "за плечом или сверху.");
+                Loc.T("W A S D — идти. F — взять или дёрнуть. V — сменить взгляд: "
+                + "за плечом или сверху."));
         }
     }
 }

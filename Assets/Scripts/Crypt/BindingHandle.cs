@@ -1,6 +1,8 @@
 // Assets/Scripts/Crypt/BindingHandle.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -16,7 +18,7 @@ namespace Sinbinder.Crypt
     {
         [SerializeField] private BindingDevice _device;
 
-        public override string Label => "Рычаг связывания";
+        public override string Label => Loc.T("Рычаг связывания");
 
         protected override string Hint
         {
@@ -29,8 +31,8 @@ namespace Sinbinder.Crypt
 
                 string foretell = _device.Foretell();
                 return string.IsNullOrEmpty(foretell)
-                    ? $"{Label} — дёрнуть на {_key}."
-                    : $"{foretell} Дёрнуть на {_key}.";
+                    ? Loc.F("{0} — дёрнуть на {1}.", Label, _key)
+                    : Loc.F("{0} Дёрнуть на {1}.", foretell, _key);
             }
         }
 

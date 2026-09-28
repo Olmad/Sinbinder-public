@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.Crypt
@@ -40,11 +41,11 @@ namespace Sinbinder.Crypt
         {
             switch (trial)
             {
-                case Trial.Loot:       return "Положить добычу";
-                case Trial.Wounded:    return "Ранить своего";
-                case Trial.Surrounded: return "Выпустить врагов";
-                case Trial.Exhausted:  return "Вымотать его";
-                case Trial.Unpaid:     return "Не заплатить";
+                case Trial.Loot:       return Loc.T("Положить добычу");
+                case Trial.Wounded:    return Loc.T("Ранить своего");
+                case Trial.Surrounded: return Loc.T("Выпустить врагов");
+                case Trial.Exhausted:  return Loc.T("Вымотать его");
+                case Trial.Unpaid:     return Loc.T("Не заплатить");
                 default:               return "";
             }
         }
@@ -54,11 +55,11 @@ namespace Sinbinder.Crypt
         {
             switch (trial)
             {
-                case Trial.Loot:       return "Жадность";
-                case Trial.Wounded:    return "Добродетель";
-                case Trial.Surrounded: return "Страх";
-                case Trial.Exhausted:  return "Уныние";
-                case Trial.Unpaid:     return "Жадность — через долг";
+                case Trial.Loot:       return Loc.T("Жадность");
+                case Trial.Wounded:    return Loc.T("Добродетель");
+                case Trial.Surrounded: return Loc.T("Страх");
+                case Trial.Exhausted:  return Loc.T("Уныние");
+                case Trial.Unpaid:     return Loc.T("Жадность — через долг");
                 default:               return "";
             }
         }

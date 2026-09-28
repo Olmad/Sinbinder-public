@@ -1,6 +1,8 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     public class SelectionManager : MonoBehaviour
@@ -263,14 +265,14 @@ namespace Sinbinder.Gameplay
             {
                 var w = _unheard[0];
                 line = Core.Grammar.Pick(w.Gender,
-                    $"{w.DisplayName} не расслышал приказ: Греховод далеко.",
-                    $"{w.DisplayName} не расслышала приказ: Греховод далеко.");
+                    Loc.F("{0} не расслышал приказ: Греховод далеко.", Loc.Name(w.DisplayName)),
+                    Loc.F("{0} не расслышала приказ: Греховод далеко.", Loc.Name(w.DisplayName)));
             }
             else
             {
                 var names = new List<string>();
                 foreach (var w in _unheard) names.Add(w.DisplayName);
-                line = $"Не расслышали приказ: {string.Join(", ", names)}. Греховод далеко.";
+                line = Loc.F("Не расслышали приказ: {0}. Греховод далеко.", string.Join(", ", names));
             }
 
             _unheard.Clear();

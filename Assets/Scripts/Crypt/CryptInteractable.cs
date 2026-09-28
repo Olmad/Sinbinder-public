@@ -1,7 +1,9 @@
 // Assets/Scripts/Crypt/CryptInteractable.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -41,7 +43,7 @@ namespace Sinbinder.Crypt
         protected virtual bool Ready => true;
 
         /// <summary>Что сказать при подходе.</summary>
-        protected virtual string Hint => $"{Flat(Label)} — нажмите {_key}.";
+        protected virtual string Hint => Loc.F("{0} — нажмите {1}.", Flat(Label), _key);
 
         void Update()
         {

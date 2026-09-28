@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SquadOrders.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using Sinbinder.AOS;
 using Sinbinder.Core;
@@ -88,18 +89,18 @@ namespace Sinbinder.Gameplay
         {
             switch (s)
             {
-                case SquadStrategy.Balanced:     return "Без указаний";
-                case SquadStrategy.Aggressive:   return "В атаку";
-                case SquadStrategy.Defensive:    return "Прикрывать своих";
-                case SquadStrategy.Cautious:     return "Беречь себя";
-                case SquadStrategy.LootFocused:  return "Собирать добро";
-                case SquadStrategy.Focused:      return "Держаться приказа";
-                case SquadStrategy.Supportive:   return "Помогать раненым";
-                case SquadStrategy.Envious:      return "Каждый за себя";
-                case SquadStrategy.Attrition:    return "На измор";
-                case SquadStrategy.Conservative: return "Не рисковать";
-                case SquadStrategy.Relentless:   return "Без передышки";
-                default:                         return "Без указаний";
+                case SquadStrategy.Balanced:     return Loc.T("Без указаний");
+                case SquadStrategy.Aggressive:   return Loc.T("В атаку");
+                case SquadStrategy.Defensive:    return Loc.T("Прикрывать своих");
+                case SquadStrategy.Cautious:     return Loc.T("Беречь себя");
+                case SquadStrategy.LootFocused:  return Loc.T("Собирать добро");
+                case SquadStrategy.Focused:      return Loc.T("Держаться приказа");
+                case SquadStrategy.Supportive:   return Loc.T("Помогать раненым");
+                case SquadStrategy.Envious:      return Loc.T("Каждый за себя");
+                case SquadStrategy.Attrition:    return Loc.T("На измор");
+                case SquadStrategy.Conservative: return Loc.T("Не рисковать");
+                case SquadStrategy.Relentless:   return Loc.T("Без передышки");
+                default:                         return Loc.T("Без указаний");
             }
         }
 
@@ -108,27 +109,27 @@ namespace Sinbinder.Gameplay
             switch (s)
             {
                 case SquadStrategy.Balanced:
-                    return "Отряд полагается на себя. Ничего не навязано.";
+                    return Loc.T("Отряд полагается на себя. Ничего не навязано.");
                 case SquadStrategy.Aggressive:
-                    return "Охотнее лезут в драку и неохотно отходят.";
+                    return Loc.T("Охотнее лезут в драку и неохотно отходят.");
                 case SquadStrategy.Defensive:
-                    return "Тянутся к раненым своим, в драку идут неохотно.";
+                    return Loc.T("Тянутся к раненым своим, в драку идут неохотно.");
                 case SquadStrategy.Cautious:
-                    return "Отходят охотнее, чем дерутся.";
+                    return Loc.T("Отходят охотнее, чем дерутся.");
                 case SquadStrategy.LootFocused:
-                    return "Добыча заботит их больше, чем бой и товарищи.";
+                    return Loc.T("Добыча заботит их больше, чем бой и товарищи.");
                 case SquadStrategy.Focused:
-                    return "Держатся приказа и не отвлекаются на добычу.";
+                    return Loc.T("Держатся приказа и не отвлекаются на добычу.");
                 case SquadStrategy.Supportive:
-                    return "Помогают своим и не думают о добыче.";
+                    return Loc.T("Помогают своим и не думают о добыче.");
                 case SquadStrategy.Envious:
-                    return "Каждый тянет к себе; за товарищем не пойдут.";
+                    return Loc.T("Каждый тянет к себе; за товарищем не пойдут.");
                 case SquadStrategy.Attrition:
-                    return "Держат удар и отвечают, а не наступают.";
+                    return Loc.T("Держат удар и отвечают, а не наступают.");
                 case SquadStrategy.Conservative:
-                    return "Берегут своих и не рискуют.";
+                    return Loc.T("Берегут своих и не рискуют.");
                 case SquadStrategy.Relentless:
-                    return "Не останавливаются, даже когда стоило бы.";
+                    return Loc.T("Не останавливаются, даже когда стоило бы.");
                 default:
                     return "";
             }

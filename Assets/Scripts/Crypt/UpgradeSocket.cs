@@ -1,7 +1,9 @@
 // Assets/Scripts/Crypt/UpgradeSocket.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -28,10 +30,10 @@ namespace Sinbinder.Crypt
         {
             get
             {
-                if (!_filled) return "Пустое гнездо\nпринесите с вылазки";
+                if (!_filled) return Loc.T("Пустое гнездо\nпринесите с вылазки");
 
                 return _holds == Upgrade.Treasury
-                    ? $"{CryptUpgrades.Name(_holds)}\nзаплатить отряду"
+                    ? Loc.F("{0}\nзаплатить отряду", CryptUpgrades.Name(_holds))
                     : $"{CryptUpgrades.Name(_holds)}\n{CryptUpgrades.Does(_holds)}";
             }
         }
@@ -47,15 +49,15 @@ namespace Sinbinder.Crypt
                 {
                     int owed = Owed();
                     return owed == 0
-                        ? "Казна. Никому не должны."
-                        : $"Казна. Есть кому заплатить — {_key}.";
+                        ? Loc.T("Казна. Никому не должны.")
+                        : Loc.F("Казна. Есть кому заплатить — {0}.", _key);
                 }
 
                 if (_filled) return Flat(Label);
 
                 return CryptUpgrades.AnyBrought
-                    ? $"Пустое гнездо. Поставить {CryptUpgrades.Name(CryptUpgrades.FirstBrought())} — {_key}."
-                    : "Пустое гнездо. Ставить пока нечего.";
+                    ? Loc.F("Пустое гнездо. Поставить {0} — {1}.", CryptUpgrades.Name(CryptUpgrades.FirstBrought()), _key)
+                    : Loc.T("Пустое гнездо. Ставить пока нечего.");
             }
         }
 
@@ -78,7 +80,7 @@ namespace Sinbinder.Crypt
 
             if (!CryptUpgrades.AnyBrought)
             {
-                Say("Ставить нечего. Такое приносят с вылазки.");
+                Say(Loc.T("Ставить нечего. Такое приносят с вылазки."));
                 return;
             }
 
@@ -88,7 +90,7 @@ namespace Sinbinder.Crypt
             _filled = true;
             _holds = what;
 
-            Say($"{CryptUpgrades.Name(what)} поставлен. {CryptUpgrades.Does(what)}");
+            Say(Loc.F("{0} поставлен. {1}", CryptUpgrades.Name(what), CryptUpgrades.Does(what)));
         }
 
         /// <summary>Сколько всего невыплат по отряду.</summary>
@@ -110,19 +112,19 @@ namespace Sinbinder.Crypt
         {
             int owed = Owed();
 
-            if (owed == 0) { Say("Никому не должны."); return; }
+            if (owed == 0) { Say(Loc.T("Никому не должны.")); return; }
 
             var purse = Inventory.PlayerInventory.Instance;
             int cost = owed * CoinPerMission;
 
             if (purse != null && !purse.SpendGold(cost))
             {
-                Say("В казне столько не наберётся. Придётся идти должниками.");
+                Say(Loc.T("В казне столько не наберётся. Придётся идти должниками."));
                 return;
             }
 
             SquadRoster.PayEveryone();
-            Say("Отряду заплачено. Долгов за вами нет.");
+            Say(Loc.T("Отряду заплачено. Долгов за вами нет."));
         }
 
         /// <summary>Сколько стоит закрыть одну невыплату.</summary>

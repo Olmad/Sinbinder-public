@@ -1,6 +1,8 @@
 // Assets/Scripts/Gameplay/RetreatHorn.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -29,7 +31,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _fallbackPath = "Sounds/Horn";
 
         [Tooltip("Что пишет журнал, когда трубит рог. Пусто — не пишет.")]
-        [SerializeField] private string _line = "Рог трубит отход.";
+        [SerializeField] private string _line = Loc.T("Рог трубит отход.");
 
         [Tooltip("Только первый приказ отходить. Снимать не советую.")]
         [SerializeField] private bool _onlyFirst = true;

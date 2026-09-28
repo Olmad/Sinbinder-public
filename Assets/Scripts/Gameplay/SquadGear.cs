@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SquadGear.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 using Sinbinder.Inventory;
 
@@ -38,11 +39,11 @@ namespace Sinbinder.Gameplay
         {
             switch (slot)
             {
-                case GearSlot.Weapon:  return "Оружие";
-                case GearSlot.Offhand: return "Щит или второе оружие";
-                case GearSlot.Head:    return "Шлем";
-                case GearSlot.Body:    return "Броня";
-                case GearSlot.Belt:    return "Пояс";
+                case GearSlot.Weapon:  return Loc.T("Оружие");
+                case GearSlot.Offhand: return Loc.T("Щит или второе оружие");
+                case GearSlot.Head:    return Loc.T("Шлем");
+                case GearSlot.Body:    return Loc.T("Броня");
+                case GearSlot.Belt:    return Loc.T("Пояс");
                 default:               return "";
             }
         }
@@ -89,20 +90,20 @@ namespace Sinbinder.Gameplay
             bool weapon = item.AttackBonus > 0f;
 
             foreach (var carried in w.Carried)
-                if (carried == item) { word = "это уже на нём"; return false; }
+                if (carried == item) { word = Loc.T("это уже на нём"); return false; }
 
-            if (!Place(w, item, out _, out var old)) { word = "это не надевают"; return false; }
+            if (!Place(w, item, out _, out var old)) { word = Loc.T("это не надевают"); return false; }
 
             // Лишнего унылый не несёт, а сменить одно на другое — не лишнее.
             if (old == null && soul.Sin == SinType.Sloth && soul.Get(SinType.Sloth) > 40f)
             {
-                word = "не хочет нести лишнего";
+                word = Loc.T("не хочет нести лишнего");
                 return false;
             }
 
             if (soul.Sin == SinType.Wrath && soul.Get(SinType.Wrath) > 40f && !weapon)
             {
-                word = "не носит того, чем нельзя ударить";
+                word = Loc.T("не носит того, чем нельзя ударить");
                 return false;
             }
 
@@ -110,12 +111,12 @@ namespace Sinbinder.Gameplay
             // и не меняет: гордец не выпустит оружия, жадный — ценного.
             if (old != null && !WillGive(w, old, out string keeps))
             {
-                word = $"не сменит {Lower(old)}, {keeps}";
+                word = Loc.F("не сменит {0}, {1}", Lower(old), keeps);
                 return false;
             }
 
-            word = Glad(w, item) ? "берёт охотно" : "берёт";
-            if (old != null) word += $", взамен отдаёт {Lower(old)}";
+            word = Glad(w, item) ? Loc.T("берёт охотно") : Loc.T("берёт");
+            if (old != null) word += Loc.F(", взамен отдаёт {0}", Lower(old));
             return true;
         }
 
@@ -132,17 +133,17 @@ namespace Sinbinder.Gameplay
 
             if (soul.Sin == SinType.Greed && soul.Get(SinType.Greed) > 50f && valuable)
             {
-                word = "не отдаёт — теперь это его";
+                word = Loc.T("не отдаёт — теперь это его");
                 return false;
             }
 
             if (soul.Sin == SinType.Pride && soul.Get(SinType.Pride) > 60f && item.AttackBonus > 0f)
             {
-                word = "не отдаёт оружия — отнять его у него значит унизить";
+                word = Loc.T("не отдаёт оружия — отнять его у него значит унизить");
                 return false;
             }
 
-            word = "отдаёт";
+            word = Loc.T("отдаёт");
             return true;
         }
 
@@ -166,20 +167,20 @@ namespace Sinbinder.Gameplay
         {
             if (!Place(w, item, out var slot, out var old)) return "";
             if (old == null)
-                return slot == GearSlot.Offhand && item.Slot == GearSlot.Weapon ? "во второй руке — вполсилы" : "";
+                return slot == GearSlot.Offhand && item.Slot == GearSlot.Weapon ? Loc.T("во второй руке — вполсилы") : "";
 
             string what = Lower(old);
             if (item.AttackBonus > 0f || old.AttackBonus > 0f)
             {
-                if (item.AttackBonus > old.AttackBonus) return $"бьёт тяжелее, чем {what}";
-                if (item.AttackBonus < old.AttackBonus) return $"бьёт слабее, чем {what}";
-                return $"бьёт как {what}";
+                if (item.AttackBonus > old.AttackBonus) return Loc.F("бьёт тяжелее, чем {0}", what);
+                if (item.AttackBonus < old.AttackBonus) return Loc.F("бьёт слабее, чем {0}", what);
+                return Loc.F("бьёт как {0}", what);
             }
             if (item.DefenseBonus > 0f || old.DefenseBonus > 0f)
             {
-                if (item.DefenseBonus > old.DefenseBonus) return $"держит удар лучше, чем {what}";
-                if (item.DefenseBonus < old.DefenseBonus) return $"держит удар хуже, чем {what}";
-                return $"держит удар как {what}";
+                if (item.DefenseBonus > old.DefenseBonus) return Loc.F("держит удар лучше, чем {0}", what);
+                if (item.DefenseBonus < old.DefenseBonus) return Loc.F("держит удар хуже, чем {0}", what);
+                return Loc.F("держит удар как {0}", what);
             }
             return "";
         }
@@ -191,10 +192,10 @@ namespace Sinbinder.Gameplay
         public static string Effect(InventoryItem item)
         {
             var parts = new System.Collections.Generic.List<string>();
-            if (item.AttackBonus > 0f) parts.Add("бьёт тяжелее");
-            if (item.DefenseBonus > 0f) parts.Add("держит удар");
-            if (item.TemptationValue > 0f) parts.Add("искушает");
-            if (item.Type == ItemType.Provision) parts.Add("припас");
+            if (item.AttackBonus > 0f) parts.Add(Loc.T("бьёт тяжелее"));
+            if (item.DefenseBonus > 0f) parts.Add(Loc.T("держит удар"));
+            if (item.TemptationValue > 0f) parts.Add(Loc.T("искушает"));
+            if (item.Type == ItemType.Provision) parts.Add(Loc.T("припас"));
             return parts.Count == 0 ? "" : string.Join(", ", parts);
         }
 
@@ -222,7 +223,7 @@ namespace Sinbinder.Gameplay
         public static bool AskPocket(Warrior w, PlayerInventory store, out string word)
         {
             word = "";
-            if (w.PocketGold <= 0) { word = "карман пуст"; return false; }
+            if (w.PocketGold <= 0) { word = Loc.T("карман пуст"); return false; }
 
             if (!WillGivePocket(w, out word)) return false;
 
@@ -233,7 +234,7 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Отдаст ли воин золото из кармана — по тем же правилам, что вещь.</summary>
         public static bool WillGivePocket(Warrior w, out string word)
-            => WillGive(w, new InventoryItem("Монеты", "", ItemType.Gold, w.PocketGold), out word);
+            => WillGive(w, new InventoryItem(Loc.T("Монеты"), "", ItemType.Gold, w.PocketGold), out word);
 
         /// <summary>
         /// Что на воине — одной строкой, для панели приказов: надетое и карман.
@@ -244,18 +245,18 @@ namespace Sinbinder.Gameplay
             var names = new System.Collections.Generic.List<string>();
             foreach (var item in w.Carried) names.Add(item.Name.ToLowerInvariant());
 
-            string line = names.Count == 0 ? "Ничего не надето." : $"Надето: {string.Join(", ", names)}.";
-            if (w.PocketGold > 0) line += $" В кармане — {GoldWord(w.PocketGold)}.";
+            string line = names.Count == 0 ? Loc.T("Ничего не надето.") : Loc.F("Надето: {0}.", string.Join(", ", names));
+            if (w.PocketGold > 0) line += Loc.F(" В кармане — {0}.", GoldWord(w.PocketGold));
             return line;
         }
 
         /// <summary>Золото словом: игрок не видит чисел, и казны тоже.</summary>
         public static string GoldWord(int gold)
         {
-            if (gold <= 0) return "ни монеты";
-            if (gold < 30) return "горсть монет";
-            if (gold < 100) return "кошель";
-            return "сундук золота";
+            if (gold <= 0) return Loc.T("ни монеты");
+            if (gold < 30) return Loc.T("горсть монет");
+            if (gold < 100) return Loc.T("кошель");
+            return Loc.T("сундук золота");
         }
 
         /// <summary>
@@ -266,9 +267,9 @@ namespace Sinbinder.Gameplay
         public static bool Hand(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
             if (!WillTake(w, item, out word)) return false;
-            if (!store.RemoveItem(item.Id)) { word = "этого в мешке уже нет"; return false; }
+            if (!store.RemoveItem(item.Id)) { word = Loc.T("этого в мешке уже нет"); return false; }
 
-            if (!Wear(w, item, store)) { store.AddItem(item); word = "не взял"; return false; }
+            if (!Wear(w, item, store)) { store.AddItem(item); word = Loc.T("не взял"); return false; }
             Remember(w, "SinbinderGaveMe");
             return true;
         }
@@ -280,7 +281,7 @@ namespace Sinbinder.Gameplay
         public static bool Pick(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
             if (!WillTake(w, item, out word)) return false;
-            if (!Wear(w, item, store)) { word = "не взял"; return false; }
+            if (!Wear(w, item, store)) { word = Loc.T("не взял"); return false; }
             return true;
         }
 
@@ -312,7 +313,7 @@ namespace Sinbinder.Gameplay
         public static bool Take(Warrior w, InventoryItem item, PlayerInventory store, out string word)
         {
             if (!WillGive(w, item, out word)) return false;
-            if (!store.AddItem(item)) { word = "в мешке нет места"; return false; }
+            if (!store.AddItem(item)) { word = Loc.T("в мешке нет места"); return false; }
 
             w.Drop(item);
             Remember(w, "SinbinderTookFromMe");

@@ -1,8 +1,10 @@
 // Assets/Scripts/Gameplay/EscapeZone.cs
+// Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -185,7 +187,7 @@ namespace Sinbinder.Gameplay
                 if (!_toldClosed && SinbinderPlayer.Exists && Within(SinbinderPlayer.Where))
                 {
                     _toldClosed = true;
-                    Log("Уходить рано: лагерь ещё держится.");
+                    Log(Loc.T("Уходить рано: лагерь ещё держится."));
                 }
                 return;
             }
@@ -202,7 +204,7 @@ namespace Sinbinder.Gameplay
             if (_leftAt < 0f)
             {
                 _leftAt = Time.time;
-                Log("Отряд уходит. Кто не успеет — останется.");
+                Log(Loc.T("Отряд уходит. Кто не успеет — останется."), warning: true);
                 return;
             }
 
@@ -285,7 +287,7 @@ namespace Sinbinder.Gameplay
         private const float ShotSeconds = 3.5f;
 
         /// <summary>Строка на чёрном между лагерем и склепом.</summary>
-        private const string Dawn = "К рассвету они вышли к старому склепу.";
+        private static readonly string Dawn = Loc.N("К рассвету они вышли к старому склепу.");
 
         /// <summary>
         /// Уход с поля — роликом, как в Warcraft 3. Слово автора, 27 сентября:
@@ -316,7 +318,7 @@ namespace Sinbinder.Gameplay
             if (bars != null)
             {
                 bars.Show();
-                bars.Say(null, "Лагерь остаётся за спиной.");
+                bars.Say(null, Loc.T("Лагерь остаётся за спиной."));
             }
 
             if (cam != null)
@@ -340,29 +342,34 @@ namespace Sinbinder.Gameplay
             }
 
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
-            if (title != null) yield return title.Darken(Dawn, 0.9f);
+            if (title != null) yield return title.Darken(Loc.T(Dawn), 0.9f);
 
             yield return new WaitForSecondsRealtime(2.2f);
 
-            if (director != null) director.LeaveNow("Отряд ушёл с поля.");
+            if (director != null) director.LeaveNow(Loc.T("Отряд ушёл с поля."));
         }
 
         private static string Waited(int left)
         {
             switch (left)
             {
-                case 1:  return "Одного не дождались.";
-                case 2:  return "Двоих не дождались.";
-                case 3:  return "Троих не дождались.";
-                case 4:  return "Четверых не дождались.";
-                default: return "Многих не дождались.";
+                case 1:  return Loc.T("Одного не дождались.");
+                case 2:  return Loc.T("Двоих не дождались.");
+                case 3:  return Loc.T("Троих не дождались.");
+                case 4:  return Loc.T("Четверых не дождались.");
+                default: return Loc.T("Многих не дождались.");
             }
         }
 
-        private void Log(string line)
+        /// <summary>
+        /// Строка в журнал. Предупреждение «отряд уходит» — один раз: его
+        /// узнаём по флагу, а не по началу строки — переведённая строка
+        /// начиналась бы иначе (docs/38-LANG.md).
+        /// </summary>
+        private void Log(string line, bool warning = false)
         {
-            if (_warned && line.StartsWith("Отряд уходит")) return;
-            if (line.StartsWith("Отряд уходит")) _warned = true;
+            if (_warned && warning) return;
+            if (warning) _warned = true;
 
             var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
             if (log != null) log.Write(line);

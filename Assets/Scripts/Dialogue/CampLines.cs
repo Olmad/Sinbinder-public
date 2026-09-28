@@ -1,4 +1,5 @@
 // Assets/Scripts/Dialogue/CampLines.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
@@ -51,7 +52,7 @@ namespace Sinbinder.Dialogue
 
         private static bool IsLiska(Warrior w) => w.DisplayName == "Лиска";
 
-        private static string Gesture(Warrior w) => "(молча кивает)";
+        private static string Gesture(Warrior w) => Loc.T("(молча кивает)");
 
         // ──────────────────────────────────
         // Первая строка
@@ -62,38 +63,38 @@ namespace Sinbinder.Dialogue
             var sin = a.Soul.Sin;
 
             // 1. Что знает лагерь.
-            if (sin == SinType.Greed && a.UnpaidMissions >= 3) return "Третья вылазка без платы. Я запоминаю.";
-            if (sin == SinType.Greed && a.UnpaidMissions == 2) return "Вторая вылазка без платы. Я считаю.";
+            if (sin == SinType.Greed && a.UnpaidMissions >= 3) return Loc.T("Третья вылазка без платы. Я запоминаю.");
+            if (sin == SinType.Greed && a.UnpaidMissions == 2) return Loc.T("Вторая вылазка без платы. Я считаю.");
 
-            if (Remembers(a, "SinbinderTookFromMe")) return "Он забрал моё. Запомни, как это бывает.";
+            if (Remembers(a, "SinbinderTookFromMe")) return Loc.T("Он забрал моё. Запомни, как это бывает.");
             if (Remembers(a, "SinbinderGaveMe"))
             {
-                if (sin == SinType.Pride) return "Видел? Дали мне. Не тебе — мне.";
-                if (sin == SinType.Greed) return "Моё теперь. Даже не смотри.";
-                return "Дали вещь. Не просил, а несу.";
+                if (sin == SinType.Pride) return Loc.T("Видел? Дали мне. Не тебе — мне.");
+                if (sin == SinType.Greed) return Loc.T("Моё теперь. Даже не смотри.");
+                return Loc.T("Дали вещь. Не просил, а несу.");
             }
 
-            if (a.PocketGold > 0 && sin == SinType.Greed) return "Слышишь, звенит? Своё береги сам.";
+            if (a.PocketGold > 0 && sin == SinType.Greed) return Loc.T("Слышишь, звенит? Своё береги сам.");
 
             string commander = SquadRoster.CommanderName;
             if (!string.IsNullOrEmpty(commander))
             {
-                if (a.IsCommander && sin == SinType.Pride) return "Теперь слушать меня. Меня.";
-                if (a.IsCommander) return "Старший теперь я. Не радуйтесь раньше времени.";
-                if (sin == SinType.Pride) return $"Старший — {Short(commander)}. Посмотрим, куда заведёт.";
+                if (a.IsCommander && sin == SinType.Pride) return Loc.T("Теперь слушать меня. Меня.");
+                if (a.IsCommander) return Loc.T("Старший теперь я. Не радуйтесь раньше времени.");
+                if (sin == SinType.Pride) return Loc.F("Старший — {0}. Посмотрим, куда заведёт.", Short(commander));
             }
 
             // 2. Братья.
-            if (Brother(a) && Brother(b)) return "Держись рядом.";
+            if (Brother(a) && Brother(b)) return Loc.T("Держись рядом.");
 
             // 3. Лиска — своими словами.
             if (IsLiska(a))
             {
                 switch (b.Soul.Sin)
                 {
-                    case SinType.Pride: return "Гордость не греет. Кошель — греет.";
-                    case SinType.Sloth: return "Спи. Я посторожу твоё. Со всей заботой.";
-                    default:            return "Не смотри на мой пояс. Смотри на свой.";
+                    case SinType.Pride: return Loc.T("Гордость не греет. Кошель — греет.");
+                    case SinType.Sloth: return Loc.T("Спи. Я посторожу твоё. Со всей заботой.");
+                    default:            return Loc.T("Не смотри на мой пояс. Смотри на свой.");
                 }
             }
 
@@ -103,32 +104,32 @@ namespace Sinbinder.Dialogue
                 case SinType.Pride:
                     switch (b.Soul.Sin)
                     {
-                        case SinType.Pride: return "Стоишь, будто тебя поставили старшим.";
-                        case SinType.Greed: return "Опять у сундука? Бьются не монеты.";
-                        case SinType.Sloth: return "Встань, когда рядом стоит воин.";
+                        case SinType.Pride: return Loc.T("Стоишь, будто тебя поставили старшим.");
+                        case SinType.Greed: return Loc.T("Опять у сундука? Бьются не монеты.");
+                        case SinType.Sloth: return Loc.T("Встань, когда рядом стоит воин.");
                     }
                     break;
 
                 case SinType.Greed:
                     switch (b.Soul.Sin)
                     {
-                        case SinType.Pride: return "Гордость в карман не положишь.";
-                        case SinType.Greed: return "Сколько там у тебя?";
-                        case SinType.Sloth: return "Вставай — у сундука есть место.";
+                        case SinType.Pride: return Loc.T("Гордость в карман не положишь.");
+                        case SinType.Greed: return Loc.T("Сколько там у тебя?");
+                        case SinType.Sloth: return Loc.T("Вставай — у сундука есть место.");
                     }
                     break;
 
                 case SinType.Sloth:
                     switch (b.Soul.Sin)
                     {
-                        case SinType.Pride: return "Ты всегда так стоишь? Не устаёшь?";
-                        case SinType.Greed: return "Сядь. Монеты не убегут.";
-                        case SinType.Sloth: return "Разбуди, если что.";
+                        case SinType.Pride: return Loc.T("Ты всегда так стоишь? Не устаёшь?");
+                        case SinType.Greed: return Loc.T("Сядь. Монеты не убегут.");
+                        case SinType.Sloth: return Loc.T("Разбуди, если что.");
                     }
                     break;
             }
 
-            return "Тихо сегодня.";
+            return Loc.T("Тихо сегодня.");
         }
 
         // ──────────────────────────────────
@@ -145,47 +146,47 @@ namespace Sinbinder.Dialogue
             {
                 switch (asks)
                 {
-                    case SinType.Pride: return "Гордись. А считать буду я.";
-                    case SinType.Sloth: return "Лежи-лежи. Я посмотрю, что у тебя в мешке.";
-                    default:            return "Своё я уже посчитала.";
+                    case SinType.Pride: return Loc.T("Гордись. А считать буду я.");
+                    case SinType.Sloth: return Loc.T("Лежи-лежи. Я посмотрю, что у тебя в мешке.");
+                    default:            return Loc.T("Своё я уже посчитала.");
                 }
             }
 
             // На то, что знает лагерь.
             if (asks == SinType.Greed && a.UnpaidMissions >= 2)
             {
-                if (sin == SinType.Greed) return "И мне не платят. Считай за двоих.";
-                if (sin == SinType.Pride) return "Плату просят, а не считают.";
-                return "Мне бы и без платы полежать.";
+                if (sin == SinType.Greed) return Loc.T("И мне не платят. Считай за двоих.");
+                if (sin == SinType.Pride) return Loc.T("Плату просят, а не считают.");
+                return Loc.T("Мне бы и без платы полежать.");
             }
             if (Remembers(a, "SinbinderTookFromMe"))
             {
-                if (sin == SinType.Greed) return "Моё он не заберёт.";
-                if (sin == SinType.Pride) return "Значит, не заслужил держать.";
-                return "Меньше нести.";
+                if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
+                if (sin == SinType.Pride) return Loc.T("Значит, не заслужил держать.");
+                return Loc.T("Меньше нести.");
             }
-            if (Brother(a) && Brother(b)) return "А где ж мне ещё.";
+            if (Brother(a) && Brother(b)) return Loc.T("А где ж мне ещё.");
 
             // Грех на грех.
             switch (sin)
             {
                 case SinType.Pride:
-                    if (asks == SinType.Pride) return "Будто? Подожди.";
-                    if (asks == SinType.Greed) return "Зато её не отнимут.";
-                    return "Устают те, кому не для чего стоять.";
+                    if (asks == SinType.Pride) return Loc.T("Будто? Подожди.");
+                    if (asks == SinType.Greed) return Loc.T("Зато её не отнимут.");
+                    return Loc.T("Устают те, кому не для чего стоять.");
 
                 case SinType.Greed:
-                    if (asks == SinType.Pride) return "Зато монеты не хвастают.";
-                    if (asks == SinType.Greed) return "Столько, чтоб ты не спрашивал.";
-                    return "Убегут — если сяду.";
+                    if (asks == SinType.Pride) return Loc.T("Зато монеты не хвастают.");
+                    if (asks == SinType.Greed) return Loc.T("Столько, чтоб ты не спрашивал.");
+                    return Loc.T("Убегут — если сяду.");
 
                 case SinType.Sloth:
-                    if (asks == SinType.Pride) return "Стой, раз нравится. Я полежу.";
-                    if (asks == SinType.Greed) return "Сундук не денется. И я тоже.";
-                    return "Если что — сам проснусь. Может быть.";
+                    if (asks == SinType.Pride) return Loc.T("Стой, раз нравится. Я полежу.");
+                    if (asks == SinType.Greed) return Loc.T("Сундук не денется. И я тоже.");
+                    return Loc.T("Если что — сам проснусь. Может быть.");
             }
 
-            return "Пока тихо.";
+            return Loc.T("Пока тихо.");
         }
 
         // ──────────────────────────────────

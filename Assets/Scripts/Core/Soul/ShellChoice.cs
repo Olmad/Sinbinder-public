@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>
@@ -61,17 +62,17 @@ namespace Sinbinder.Core
         /// </summary>
         public static string Refusal(ShellData shell, SoulQuality quality)
         {
-            if (shell == null) return "Такого тела нет.";
+            if (shell == null) return Loc.T("Такого тела нет.");
             if (Allows(shell, quality)) return "";
 
             switch (quality)
             {
                 case SoulQuality.Dissolved:
-                    return "От неё осталась одна воля. Это тело её сотрёт.";
+                    return Loc.T("От неё осталась одна воля. Это тело её сотрёт.");
                 case SoulQuality.Fading:
-                    return "Она уже тускнеет. Такое тело перепишет её под себя.";
+                    return Loc.T("Она уже тускнеет. Такое тело перепишет её под себя.");
                 default:
-                    return "Ей не хватит себя, чтобы остаться собой в этом теле.";
+                    return Loc.T("Ей не хватит себя, чтобы остаться собой в этом теле.");
             }
         }
 

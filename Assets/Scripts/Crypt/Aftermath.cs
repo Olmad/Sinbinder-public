@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using Sinbinder.AOS;
 using Sinbinder.Core;
 
@@ -83,23 +84,23 @@ namespace Sinbinder.Crypt
             {
                 switch (moral)
                 {
-                    case MoralType.Pious:   return "не жалеет, что отпустили";
-                    case MoralType.Vicious: return "не понимает, зачем ходили";
-                    default:                return "молчит";
+                    case MoralType.Pious:   return Loc.T("не жалеет, что отпустили");
+                    case MoralType.Vicious: return Loc.T("не понимает, зачем ходили");
+                    default:                return Loc.T("молчит");
                 }
             }
 
             float filth = Filth(action);
 
             if (moral == MoralType.Pious)
-                return filth >= 1f ? "не смотрит на командира" : "старается не вспоминать";
+                return filth >= 1f ? Loc.T("не смотрит на командира") : Loc.T("старается не вспоминать");
 
             if (moral == MoralType.Vicious)
                 return filth >= 1f
-                    ? P("доволен и не скрывает", "довольна и не скрывает")
-                    : "считает, что можно было и больше";
+                    ? P(Loc.T("доволен и не скрывает"), Loc.T("довольна и не скрывает"))
+                    : Loc.T("считает, что можно было и больше");
 
-            return "молчит";
+            return Loc.T("молчит");
         }
 
         // Подобрано замером: Tools/bench → РАЗВИЛКА. Резня обязана

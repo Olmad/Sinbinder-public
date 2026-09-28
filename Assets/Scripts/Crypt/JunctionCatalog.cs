@@ -1,6 +1,8 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using Sinbinder.AOS;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -28,8 +30,8 @@ namespace Sinbinder.Crypt
             switch (junction)
             {
                 case Junction.Caravan:
-                    return "Обоз остановлен. Возчики бросили поводья и стоят. "
-                         + "Купец предлагает откуп и смотрит на командира.";
+                    return Loc.T("Обоз остановлен. Возчики бросили поводья и стоят. "
+                         + "Купец предлагает откуп и смотрит на командира.");
                 default:
                     return null;
             }
@@ -59,11 +61,11 @@ namespace Sinbinder.Crypt
         {
             switch (action)
             {
-                case MissionAction.TakeGoodsSparePeople: return "Возьмите товар. Людей не трогайте.";
-                case MissionAction.TakeEverything:       return "Возьмите всё.";
-                case MissionAction.LetThemPass:          return "Пропустите их.";
-                case MissionAction.TakePeople:           return "Людей — с собой.";
-                default:                                 return "Решайте сами.";
+                case MissionAction.TakeGoodsSparePeople: return Loc.T("Возьмите товар. Людей не трогайте.");
+                case MissionAction.TakeEverything:       return Loc.T("Возьмите всё.");
+                case MissionAction.LetThemPass:          return Loc.T("Пропустите их.");
+                case MissionAction.TakePeople:           return Loc.T("Людей — с собой.");
+                default:                                 return Loc.T("Решайте сами.");
             }
         }
 
@@ -77,15 +79,15 @@ namespace Sinbinder.Crypt
             switch (action)
             {
                 case MissionAction.TakeGoodsSparePeople:
-                    return "Обоз разгрузили и отпустили. Возчики шли пешком и оглядывались.";
+                    return Loc.T("Обоз разгрузили и отпустили. Возчики шли пешком и оглядывались.");
                 case MissionAction.TakeEverything:
-                    return "С дороги не ушёл никто. Серебро вынесли вместе с душами.";
+                    return Loc.T("С дороги не ушёл никто. Серебро вынесли вместе с душами.");
                 case MissionAction.LetThemPass:
-                    return "Обоз пропустили. Отряд вернулся ни с чем и молчал всю дорогу.";
+                    return Loc.T("Обоз пропустили. Отряд вернулся ни с чем и молчал всю дорогу.");
                 case MissionAction.TakePeople:
-                    return "Товар бросили. Привели людей — живых, связанных и целых.";
+                    return Loc.T("Товар бросили. Привели людей — живых, связанных и целых.");
                 default:
-                    return "На дороге что-то случилось, и рассказывать об этом не стали.";
+                    return Loc.T("На дороге что-то случилось, и рассказывать об этом не стали.");
             }
         }
 
@@ -94,11 +96,11 @@ namespace Sinbinder.Crypt
         {
             switch (action)
             {
-                case MissionAction.TakeGoodsSparePeople: return "ГрабёжБезКрови";
-                case MissionAction.TakeEverything:       return "РезняНаДороге";
-                case MissionAction.LetThemPass:          return "ОбозОтпущен";
-                case MissionAction.TakePeople:           return "ЛюдиУведены";
-                default:                                 return "Вылазка";
+                case MissionAction.TakeGoodsSparePeople: return Loc.T("ГрабёжБезКрови");
+                case MissionAction.TakeEverything:       return Loc.T("РезняНаДороге");
+                case MissionAction.LetThemPass:          return Loc.T("ОбозОтпущен");
+                case MissionAction.TakePeople:           return Loc.T("ЛюдиУведены");
+                default:                                 return Loc.T("Вылазка");
             }
         }
     }

@@ -1,6 +1,8 @@
 // Assets/Scripts/Gameplay/Fallen.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -22,11 +24,11 @@ namespace Sinbinder.Gameplay
     {
         private static readonly string[] _names =
         {
-            "Кир Бессонный",
-            "Тучан Хромой",
-            "Веля Косторез",
-            "Овсей Пустая Ладонь",
-            "Гуда Меньшой",
+            Loc.N("Кир Бессонный"),
+            Loc.N("Тучан Хромой"),
+            Loc.N("Веля Косторез"),
+            Loc.N("Овсей Пустая Ладонь"),
+            Loc.N("Гуда Меньшой"),
         };
 
         /// <summary>Имена павших, в неизменном порядке.</summary>

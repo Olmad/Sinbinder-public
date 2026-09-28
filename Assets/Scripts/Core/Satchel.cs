@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Satchel.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>Что лежит в ячейке сумы.</summary>
@@ -192,11 +193,11 @@ namespace Sinbinder.Core
             switch (slot.Kind)
             {
                 case CarryKind.Jar:
-                    return slot.Soul != null ? slot.Soul.Name : "пустая банка";
+                    return slot.Soul != null ? slot.Soul.Name : Loc.T("пустая банка");
                 case CarryKind.Shell:
                     return ShellWord(slot.Shell);
                 default:
-                    return "пусто";
+                    return Loc.T("пусто");
             }
         }
 
@@ -231,12 +232,12 @@ namespace Sinbinder.Core
         {
             switch (type)
             {
-                case ShellType.Skeleton: return "тело: скелет";
-                case ShellType.Zombie:   return "тело: зомби";
-                case ShellType.Ghost:    return "тело: призрак";
-                case ShellType.Golem:    return "тело: голем";
-                case ShellType.Living:   return "тело: человек";
-                default:                 return "тело";
+                case ShellType.Skeleton: return Loc.T("тело: скелет");
+                case ShellType.Zombie:   return Loc.T("тело: зомби");
+                case ShellType.Ghost:    return Loc.T("тело: призрак");
+                case ShellType.Golem:    return Loc.T("тело: голем");
+                case ShellType.Living:   return Loc.T("тело: человек");
+                default:                 return Loc.T("тело");
             }
         }
     }

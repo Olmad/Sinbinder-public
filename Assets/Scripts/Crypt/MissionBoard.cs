@@ -1,4 +1,5 @@
 // Assets/Scripts/Crypt/MissionBoard.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
@@ -79,7 +80,7 @@ namespace Sinbinder.Crypt
                            AOS.MissionAction? suggestion)
         {
             if (!EnoughPeople(mission))
-                return "Столько людей не наберётся.";
+                return Loc.T("Столько людей не наберётся.");
 
             SquadRoster.ChooseCommander(commanderName);
             SquadRoster.SendAway(commanderName, mission.Squad, keepExperienced: false);
@@ -87,7 +88,7 @@ namespace Sinbinder.Crypt
             var away = new List<SquadRoster.Member>();
             foreach (var m in SquadRoster.Away) away.Add(m);
 
-            if (away.Count == 0) return "Никто не пошёл.";
+            if (away.Count == 0) return Loc.T("Никто не пошёл.");
 
             // Развилка решается до боя: она решает, будет ли бой вообще.
             AOS.MissionAction? chosen = mission.Junction == Junction.None
@@ -132,7 +133,7 @@ namespace Sinbinder.Crypt
                     if (coin > 0)
                     {
                         Inventory.PlayerInventory.Instance?.AddGold(coin);
-                        Log("В казну прибыло.");
+                        Log(Loc.T("В казну прибыло."));
                     }
                 }
             }
@@ -249,7 +250,7 @@ namespace Sinbinder.Crypt
 
             if (survivors.Count == 0)
             {
-                sb.Append("Не вернулся никто.");
+                sb.Append(Loc.T("Не вернулся никто."));
 
                 foreach (var m in away)
                     if (m.Name == commanderName)
@@ -258,7 +259,7 @@ namespace Sinbinder.Crypt
                 return sb.ToString();
             }
 
-            sb.Append("Вернулись: ");
+            sb.Append(Loc.T("Вернулись: "));
             for (int i = 0; i < survivors.Count; i++)
             {
                 if (i > 0) sb.Append(", ");
@@ -271,7 +272,7 @@ namespace Sinbinder.Crypt
                     if (m.Name == commanderName)
                     { sb.Append(' ').Append(Homecoming.Story(m.Sin)); break; }
 
-            sb.Append(" Им теперь должны.");
+            sb.Append(Loc.T(" Им теперь должны."));
             return sb.ToString();
         }
 
@@ -286,7 +287,7 @@ namespace Sinbinder.Crypt
             // ничего, и это тоже исход.
             if (chosen == AOS.MissionAction.TakeEverything) BringSoul(mission.Name);
             if (chosen == AOS.MissionAction.TakePeople)
-                Log("Живых увели. Что с ними делать, склеп ещё не решил.");
+                Log(Loc.T("Живых увели. Что с ними делать, склеп ещё не решил."));
             if (chosen == AOS.MissionAction.LetThemPass) return;
 
             switch (mission.Spoils)
@@ -299,17 +300,17 @@ namespace Sinbinder.Crypt
                     if (CryptUpgrades.Bring(out var what))
                     {
                         Upgrades++;
-                        Log($"Оттуда принесли: {CryptUpgrades.Name(what)}. "
-                          + "Найдётся гнездо — поставите.");
+                        Log(Loc.F("Оттуда принесли: {0}. "
+                          + "Найдётся гнездо — поставите.", CryptUpgrades.Name(what)));
                     }
-                    else Log("Такое у вас уже есть, и второго места нет.");
+                    else Log(Loc.T("Такое у вас уже есть, и второго места нет."));
                     break;
 
                 case Spoils.Shell:
                     // Тела на столе не кончаются: подставка — витрина,
                     // а не склад. Считать оболочки имеет смысл там, где
                     // их добывают, и это работа основной игры.
-                    Log("Оттуда принесли тело. Оно на столе.");
+                    Log(Loc.T("Оттуда принесли тело. Оно на столе."));
                     break;
             }
         }
@@ -333,13 +334,13 @@ namespace Sinbinder.Crypt
             var sin = (SinType)(hash % 7);
             var moral = (MoralType)(hash / 7 % 3);
 
-            var soul = new SoulData("Безымянная душа", sin, moral, 1, 40f + hash % 40);
+            var soul = new SoulData(Loc.T("Безымянная душа"), sin, moral, 1, 40f + hash % 40);
             var kept = SoulDecay.Harvest(soul, SoulQuality.Acceptance);
 
             if (kept == null) return;
 
             souls.PutBack(new SoulManager.Kept(kept, SoulQuality.Acceptance));
-            Log("Оттуда принесли душу. Она на полке.");
+            Log(Loc.T("Оттуда принесли душу. Она на полке."));
         }
 
         /// <summary>Забыть добычу при новой игре.</summary>

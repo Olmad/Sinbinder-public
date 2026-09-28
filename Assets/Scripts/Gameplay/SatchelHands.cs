@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SatchelHands.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Crypt;
@@ -50,8 +51,8 @@ namespace Sinbinder.Gameplay
                 // Без номера ячейки: номер — тоже цифра на экране (автор,
                 // 24 сентября). Какая ячейка под рукой, видно по рамке сумы.
                 int now = Satchel.Selected;
-                Say(Satchel.At(now).Empty ? "Под рукой пустая ячейка."
-                                          : $"Под рукой: {Satchel.Describe(now)}.");
+                Say(Satchel.At(now).Empty ? Loc.T("Под рукой пустая ячейка.")
+                                          : Loc.F("Под рукой: {0}.", Satchel.Describe(now)));
             }
 
             if (Input.GetKeyDown(_swap)) Swap();
@@ -73,7 +74,7 @@ namespace Sinbinder.Gameplay
 
             if (slot.Empty)
             {
-                Say("Под рукой пусто — брать нечего.");
+                Say(Loc.T("Под рукой пусто — брать нечего."));
                 return;
             }
 
@@ -81,7 +82,7 @@ namespace Sinbinder.Gameplay
             {
                 // Не ошибка игрока, а разъяснение устройства: пустая банка
                 // работает из сумы, в руки её брать незачем.
-                Say("Пустая банка нужна в суме, а не в руках: душа наливается прямо туда.");
+                Say(Loc.T("Пустая банка нужна в суме, а не в руках: душа наливается прямо туда."));
                 return;
             }
 
@@ -99,7 +100,7 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            Say($"В руках: {CryptHands.What}.");
+            Say(Loc.F("В руках: {0}.", CryptHands.What));
         }
 
         /// <summary>Из руки в ячейку.</summary>
@@ -116,12 +117,12 @@ namespace Sinbinder.Gameplay
 
             if (!Satchel.PutAt(i, slot))
             {
-                Say($"Эта ячейка занята: {Satchel.Describe(i)}.");
+                Say(Loc.F("Эта ячейка занята: {0}.", Satchel.Describe(i)));
                 return;
             }
 
             CryptHands.Drop();
-            Say($"В суму: {Satchel.Describe(i)}.");
+            Say(Loc.F("В суму: {0}.", Satchel.Describe(i)));
         }
 
         private static void Say(string line)

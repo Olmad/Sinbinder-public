@@ -1,8 +1,10 @@
 // Assets/Scripts/Gameplay/CampMuster.cs
+// Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -91,7 +93,7 @@ namespace Sinbinder.Gameplay
         private IEnumerator Routine()
         {
             yield return Beat.Until(() => CampOpening.EscortArrived, _askSafety,
-                "Провожатый так и не пошёл рядом — Карган зовёт к столу без него.");
+                Loc.T("Провожатый так и не пошёл рядом — Карган зовёт к столу без него."));
 
             yield return new WaitForSecondsRealtime(_readPause);
             Ask();
@@ -136,10 +138,10 @@ namespace Sinbinder.Gameplay
                 }
 
             var keeper = Bodyguard();
-            string who = keeper != null ? keeper : "Карган Старый Ворон";
+            string who = keeper != null ? keeper : Loc.T("Карган Старый Ворон");
 
-            Herald.Line($"{who}: «Владыка, покличьте их к столу. Совет любит, "
-              + "когда все на виду».");
+            Herald.Line(Loc.F("{0}: «Владыка, покличьте их к столу. Совет любит, "
+              + "когда все на виду».", who));
         }
 
         /// <summary>
@@ -176,22 +178,22 @@ namespace Sinbinder.Gameplay
             if (came.Count == 0 && stayed.Count == 0) return;
 
             var keeper = Bodyguard();
-            string who = keeper != null ? keeper : "Карган Старый Ворон";
+            string who = keeper != null ? keeper : Loc.T("Карган Старый Ворон");
 
             if (stayed.Count == 0)
             {
-                Herald.Line($"{who}: «Все пришли, владыка. Это редкость».");
+                Herald.Line(Loc.F("{0}: «Все пришли, владыка. Это редкость».", who));
                 return;
             }
 
             if (came.Count == 0)
             {
-                Herald.Line($"{who}: «Никто не подошёл, владыка. Они вас слышали».");
+                Herald.Line(Loc.F("{0}: «Никто не подошёл, владыка. Они вас слышали».", who));
                 return;
             }
 
-            Herald.Line($"{who}: «{Join(stayed)} остались на месте. "
-              + "Они вас слышали, владыка».");
+            Herald.Line(Loc.F("{0}: «{1} остались на месте. "
+              + "Они вас слышали, владыка».", who, Join(stayed)));
         }
 
         private Transform Table()
@@ -220,7 +222,7 @@ namespace Sinbinder.Gameplay
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < names.Count; i++)
             {
-                if (i > 0) sb.Append(i == names.Count - 1 ? " и " : ", ");
+                if (i > 0) sb.Append(i == names.Count - 1 ? Loc.T(" и ") : ", ");
                 sb.Append(names[i]);
             }
             return sb.ToString();

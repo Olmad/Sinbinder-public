@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/SoulHarvester.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -80,8 +81,8 @@ namespace Sinbinder.Gameplay
                     // её нет вовсе: совет «поставьте на полку» там звал
                     // к тому, чего не найти.
                     Log(Object.FindFirstObjectByType<Crypt.SoulShelf>() != null
-                        ? "Все банки полны. Поставьте душу на полку или оставьте эту."
-                        : "Все банки полны — эту душу унести не в чем.");
+                        ? Loc.T("Все банки полны. Поставьте душу на полку или оставьте эту.")
+                        : Loc.T("Все банки полны — эту душу унести не в чем."));
                 }
                 return;
             }
@@ -115,11 +116,11 @@ namespace Sinbinder.Gameplay
                 AOS.TitleManager.UpdateTitle(mine);
             }
 
-            Log($"Душа собрана: {soul.Warrior.DisplayName}. "
-              + $"{SoulDecay.Describe(soul.SoulQuality)}.");
+            Log(Loc.F("Душа собрана: {0}. "
+              + "{1}.", Loc.Name(soul.Warrior.DisplayName), SoulDecay.Describe(soul.SoulQuality)));
 
             if (soul.SoulQuality == SoulQuality.Dissolved)
-                Log("От неё осталась одна воля. Такая поднимется зомби.");
+                Log(Loc.T("От неё осталась одна воля. Такая поднимется зомби."));
         }
 
         private static void Log(string line)

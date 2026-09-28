@@ -1,7 +1,9 @@
 // Assets/Scripts/Gameplay/CampOpening.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
@@ -86,7 +88,7 @@ namespace Sinbinder.Gameplay
             // где он стоит: Греховода ставит спавнер в своём Start,
             // и снятое раньше место могло оказаться нулём посреди карты.
             yield return Beat.Until(Free, _leaveSafety,
-                "Заставка так и не ушла — лагерь начинается без неё.");
+                Loc.T("Заставка так и не ушла — лагерь начинается без неё."));
 
             Vector3 start = SinbinderPlayer.Exists ? SinbinderPlayer.Where : Vector3.zero;
 
@@ -107,7 +109,7 @@ namespace Sinbinder.Gameplay
             if (escort != null)
                 yield return Beat.Until(() => escort == null || escort.IsDead || Beside(escort),
                     _escortSafety,
-                    "Провожатый не дошёл до Греховода — Карган заговорит без него.");
+                    Loc.T("Провожатый не дошёл до Греховода — Карган заговорит без него."));
 
             EscortArrived = true;
 
@@ -179,8 +181,8 @@ namespace Sinbinder.Gameplay
                 return null;
             }
 
-            Herald.Line($"{best.DisplayName}: «Владыка, позвольте пройтись с вами. "
-              + "Пусть видят, с кем я хожу».");
+            Herald.Line(Loc.F("{0}: «Владыка, позвольте пройтись с вами. "
+              + "Пусть видят, с кем я хожу».", Loc.Name(best.DisplayName)));
 
             // Подходит сам, настоящим приказом через настоящий конвейер:
             // это первое, что игрок видит исполненным, и подделывать его
@@ -244,10 +246,10 @@ namespace Sinbinder.Gameplay
             if (!found) return;
 
             var bodyguard = Bodyguard();
-            string who = bodyguard.HasValue ? bodyguard.Value.Name : "Карган Старый Ворон";
+            string who = bodyguard.HasValue ? bodyguard.Value.Name : Loc.T("Карган Старый Ворон");
 
-            Herald.Line($"{who}: «Владыка, ваше наказание {Possessive(debtor.Name)} "
-              + "затянулось. Подумайте о последствиях».");
+            Herald.Line(Loc.F("{0}: «Владыка, ваше наказание {1} "
+              + "затянулось. Подумайте о последствиях».", who, Possessive(debtor.Name)));
         }
 
         private static SquadRoster.Member? Bodyguard()
@@ -266,13 +268,16 @@ namespace Sinbinder.Gameplay
         {
             if (string.IsNullOrEmpty(name)) return name;
 
+            // Падеж — русский. В переводе — имя как есть, своим словом.
+            if (!Loc.IsSource) return Loc.Name(name).Split(' ')[0];
+
             int space = name.IndexOf(' ');
             string first = space > 0 ? name.Substring(0, space) : name;
 
-            if (first.EndsWith("а")) return first.Substring(0, first.Length - 1) + "и";
-            if (first.EndsWith("я")) return first.Substring(0, first.Length - 1) + "и";
+            if (first.EndsWith("а")) return first.Substring(0, first.Length - 1) + Loc.T("и");
+            if (first.EndsWith("я")) return first.Substring(0, first.Length - 1) + Loc.T("и");
 
-            return first + "а";
+            return first + Loc.T("а");
         }
     }
 }

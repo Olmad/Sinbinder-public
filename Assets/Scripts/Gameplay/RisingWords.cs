@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/RisingWords.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
@@ -97,15 +98,15 @@ namespace Sinbinder.Gameplay
             {
                 // Порочный носил имя как право и требует его обратно.
                 case MoralType.Vicious:
-                    return $"И звали меня — {title}. Зовите снова.";
+                    return Loc.F("И звали меня — {0}. Зовите снова.", title);
 
                 // Праведный помнит, чем имя было оплачено.
                 case MoralType.Pious:
-                    return $"Меня звали — {title}. За это ещё спросится.";
+                    return Loc.F("Меня звали — {0}. За это ещё спросится.", title);
 
                 // Остальные держатся за имя как за единственное, что цело.
                 default:
-                    return $"{title}. Это имя я помню лучше своего.";
+                    return Loc.F("{0}. Это имя я помню лучше своего.", title);
             }
         }
 
@@ -116,28 +117,28 @@ namespace Sinbinder.Gameplay
             {
                 case ShellType.Skeleton:
                     return remembers
-                        ? "Руки помнят больше, чем на них осталось."
-                        : "Легче. Всё стало легче.";
+                        ? Loc.T("Руки помнят больше, чем на них осталось.")
+                        : Loc.T("Легче. Всё стало легче.");
 
                 case ShellType.Zombie:
                     return remembers
-                        ? "Я помню, каким был. Не смотрите на меня."
-                        : "Голодно. С самого начала — голодно.";
+                        ? Loc.T("Я помню, каким был. Не смотрите на меня.")
+                        : Loc.T("Голодно. С самого начала — голодно.");
 
                 case ShellType.Ghost:
                     return remembers
-                        ? "Я тянусь — и прохожу насквозь. Всякий раз."
-                        : "Меня нет. Но я здесь.";
+                        ? Loc.T("Я тянусь — и прохожу насквозь. Всякий раз.")
+                        : Loc.T("Меня нет. Но я здесь.");
 
                 case ShellType.Golem:
                     return remembers
-                        ? "Мне было тесно и в том теле. В этом — просто тихо."
-                        : "Камень. Ну что же. Камень так камень.";
+                        ? Loc.T("Мне было тесно и в том теле. В этом — просто тихо.")
+                        : Loc.T("Камень. Ну что же. Камень так камень.");
 
                 default:
                     return remembers
-                        ? "Я вернулся. И я это помню."
-                        : "Я… кто-то. Пока этого хватит.";
+                        ? Loc.T("Я вернулся. И я это помню.")
+                        : Loc.T("Я… кто-то. Пока этого хватит.");
             }
         }
 
@@ -157,12 +158,12 @@ namespace Sinbinder.Gameplay
         {
             switch (trade)
             {
-                case Trade.Hunter:    return "Где мой лук?";
-                case Trade.Peasant:   return "Земля. Хоть земля на месте.";
-                case Trade.Archer:    return "Пальцы ищут тетиву. Нашли.";
-                case Trade.Alchemist: return "Склянки... Они ведь разбились, да?";
-                case Trade.Mage:      return "Слова ещё здесь. Значит, не всё потеряно.";
-                case Trade.Spider:    return "Углы, тени. Я знаю, куда уходить.";
+                case Trade.Hunter:    return Loc.T("Где мой лук?");
+                case Trade.Peasant:   return Loc.T("Земля. Хоть земля на месте.");
+                case Trade.Archer:    return Loc.T("Пальцы ищут тетиву. Нашли.");
+                case Trade.Alchemist: return Loc.T("Склянки... Они ведь разбились, да?");
+                case Trade.Mage:      return Loc.T("Слова ещё здесь. Значит, не всё потеряно.");
+                case Trade.Spider:    return Loc.T("Углы, тени. Я знаю, куда уходить.");
                 default:              return "";
             }
         }

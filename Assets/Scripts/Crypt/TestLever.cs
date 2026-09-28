@@ -1,6 +1,8 @@
 // Assets/Scripts/Crypt/TestLever.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -42,10 +44,10 @@ namespace Sinbinder.Crypt
 
                 switch (_kind)
                 {
-                    case LeverKind.Repeat:      return "Повторить\nтот же опыт";
-                    case LeverKind.NextSubject: return "Другая душа\nтот же опыт";
+                    case LeverKind.Repeat:      return Loc.T("Повторить\nтот же опыт");
+                    case LeverKind.NextSubject: return Loc.T("Другая душа\nтот же опыт");
                     default:
-                        return $"{TrialCatalog.Title(_trial)}\nбудит: {TrialCatalog.Wakes(_trial)}";
+                        return Loc.F("{0}\nбудит: {1}", TrialCatalog.Title(_trial), TrialCatalog.Wakes(_trial));
                 }
             }
         }
@@ -66,20 +68,20 @@ namespace Sinbinder.Crypt
             {
                 case LeverKind.Repeat:
                     _chamber.Repeat();
-                    Say("Тот же опыт заново. Если ничего не менялось — "
-                      + "и решение будет то же.");
+                    Say(Loc.T("Тот же опыт заново. Если ничего не менялось — "
+                      + "и решение будет то же."));
                     break;
 
                 case LeverKind.NextSubject:
                     _chamber.NextSubject();
-                    Say("Условия те же. Душа другая.");
+                    Say(Loc.T("Условия те же. Душа другая."));
                     break;
 
                 default:
                     _chamber.Toggle(_trial);
                     Say(_chamber.IsOn(_trial)
-                        ? $"{TrialCatalog.Title(_trial)}: теперь так."
-                        : $"{TrialCatalog.Title(_trial)}: убрано.");
+                        ? Loc.F("{0}: теперь так.", TrialCatalog.Title(_trial))
+                        : Loc.F("{0}: убрано.", TrialCatalog.Title(_trial)));
                     break;
             }
         }

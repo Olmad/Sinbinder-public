@@ -1,6 +1,8 @@
 // Assets/Scripts/Crypt/BindingSocket.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
+using Sinbinder.Core;
 namespace Sinbinder.Crypt
 {
     /// <summary>
@@ -15,7 +17,7 @@ namespace Sinbinder.Crypt
         [SerializeField] private BindingDevice _device;
 
         public override string Label
-            => _slot == Slot.Soul ? "Гнездо души" : "Ложе тела";
+            => _slot == Slot.Soul ? Loc.T("Гнездо души") : Loc.T("Ложе тела");
 
         protected override string Hint
         {
@@ -25,11 +27,11 @@ namespace Sinbinder.Crypt
                     ? _device != null && _device.HasSoul
                     : _device != null && _device.HasShell;
 
-                if (filled) return $"{Label} занято — забрать на {_key}.";
+                if (filled) return Loc.F("{0} занято — забрать на {1}.", Label, _key);
 
                 return CryptHands.Empty
-                    ? $"{Label} пусто. Принесите то, что сюда кладут."
-                    : $"{Label} — положить на {_key}.";
+                    ? Loc.F("{0} пусто. Принесите то, что сюда кладут.", Label)
+                    : Loc.F("{0} — положить на {1}.", Label, _key);
             }
         }
 
@@ -49,20 +51,20 @@ namespace Sinbinder.Crypt
             if (put) { Announce(); return; }
 
             bool took = _slot == Slot.Soul ? _device.TakeSoulBack() : _device.TakeShellBack();
-            if (took) { Say($"{Label}: забрано обратно."); return; }
+            if (took) { Say(Loc.F("{0}: забрано обратно.", Label)); return; }
 
             // Ни положить, ни забрать — значит в руках не то. Сказать
             // об этом надо словами: молчащий предмет читается как
             // сломанный.
             Say(CryptHands.Empty
-                ? $"{Label}: в руках пусто."
-                : $"{Label}: сюда это не кладут. В руках {CryptHands.What}.");
+                ? Loc.F("{0}: в руках пусто.", Label)
+                : Loc.F("{0}: сюда это не кладут. В руках {1}.", Label, CryptHands.What));
         }
 
         /// <summary>Что вышло и что теперь можно.</summary>
         private void Announce()
         {
-            Say($"{Label}: положено.");
+            Say(Loc.F("{0}: положено.", Label));
 
             string no = _device.NotReady;
 
