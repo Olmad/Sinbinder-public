@@ -102,6 +102,7 @@ namespace Sinbinder.Tests
                 HeraldLines();
                 TextRules();
                 NamesAndCases();
+                VirtueHalves();
             }
             catch (Exception e)
             {
@@ -1905,6 +1906,40 @@ namespace Sinbinder.Tests
             if (string.IsNullOrEmpty(text)) return false;
             foreach (char c in text) if (char.IsDigit(c)) return true;
             return false;
+        }
+
+        /// <summary>
+        /// Добродетельные половины (стенд, ДОБРОДЕТЕЛЬ): шкала греха со знаком
+        /// минус голосует наоборот, и слова порока за неё врут. Три случая,
+        /// которые стенд ловил чаще всего: щедрый у раненого, кроткий
+        /// в отходе, усердный в отходе.
+        /// </summary>
+        private static void VirtueHalves()
+        {
+            string Why(string name, SinType sin, float value, string voice, ActionType action)
+            {
+                var w = MakeWarrior(name, SinType.Pride, 40f);
+                if (w == null) return null;
+                w.Soul.Set(sin, value);
+                var context = BaseContext(w);
+                context.DangerLevel = 0.8f;
+                var d = new Decision
+                {
+                    Action = action, TopContender = action, RunnerUp = ActionType.Idle,
+                    TopModule = voice, Gap = 30f
+                };
+                return PhraseGenerator.Reason(w, context, d);
+            }
+
+            string generous = Why("Щедрый", SinType.Greed, -60f, "Greed", ActionType.SaveAlly);
+            Check(generous != null && !generous.Contains("доле"),
+                  $"щедрый у раненого «думает о своей доле»: «{generous}»");
+            string meek = Why("Кроткий", SinType.Wrath, -60f, "Wrath", ActionType.Flee);
+            Check(meek != null && !meek.Contains("ударить"),
+                  $"кроткий в отходе «не умеет стоять, когда есть кого ударить»: «{meek}»");
+            string diligent = Why("Усердный", SinType.Sloth, -60f, "Sloth", ActionType.Flee);
+            Check(diligent != null && !diligent.Contains("воли"),
+                  $"у усердного «не осталось воли»: «{diligent}»");
         }
 
         /// <summary>

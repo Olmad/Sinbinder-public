@@ -2373,6 +2373,93 @@ static class Bench
     /// Называет ли причину Гордыня: победил её голос, или даль звучит
     /// её словами. Правило — то же, что в PhraseGenerator.Because.
     /// </summary>
+    /// <summary>
+    /// Добродетельные половины остальных шести грехов (14-HANDOFF §111:
+    /// «раздел расширяется на все семь той же меркой — зеркалом»).
+    /// Шкала со знаком минус — добродетель: щедрость, кротость, радость
+    /// чужому, целомудрие, умеренность, усердие. Голос греха у такой души
+    /// голосует наоборот, и слова порока за неё врут. Мерка та же, что
+    /// у Гордыни: та же душа с тем же грехом другого знака при том же
+    /// решении не может объясняться теми же словами — кроме слов о самом
+    /// положении (долг, добыча), которые правдивы при любом знаке.
+    /// </summary>
+    static void VirtueHalvesCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ДОБРОДЕТЕЛЬ: причина не говорит словами порока ===");
+
+        var modules = Modules();
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var sins = new[] { SinType.Greed, SinType.Wrath, SinType.Envy, SinType.Lust, SinType.Gluttony, SinType.Sloth };
+        var said = new Dictionary<(SinType Sin, bool Virtue, ActionType Action, string Why), int>();
+        var same = new Dictionary<SinType, int>();
+        var sameExample = new Dictionary<SinType, string>();
+        var virtue = new Dictionary<SinType, int>();
+        var vice = new Dictionary<SinType, int>();
+        foreach (var x in sins) { same[x] = 0; virtue[x] = 0; vice[x] = 0; }
+
+        bool was = Counterfactual.Enabled;
+        foreach (bool weigh in new[] { false, true })
+        {
+            Counterfactual.Enabled = weigh;
+            var r = new Random(2809);
+            for (int i = 0; i < 60000; i++)
+            {
+                var w = new Warrior { Soul = MakeSoul(r, "Воин"), Loyalty = (float)(r.NextDouble() * 100) };
+                var ctx = MakeContext(r, w, r.NextDouble() < 0.6);
+                if (ctx.HasCommand) Order(r, ctx);
+                w.UnpaidMissions = ctx.UnpaidMissions;
+
+                var d = Decide(modules, w, ctx, cfg);
+                if (d.Hesitated) continue;
+                if (d.Weighed && d.Decisive != Counterfactual.Factor.None) continue;   // причина — положение
+
+                string voice = d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
+                if (!Enum.TryParse(voice, out SinType sin) || Array.IndexOf(sins, sin) < 0) continue;
+
+                string why = PhraseGenerator.Reason(w, ctx, d);
+                bool good = w.Soul.Get(sin) < 0f;
+                if (good) virtue[sin]++; else vice[sin]++;
+                var key = (sin, good, d.Action, why);
+                said[key] = said.TryGetValue(key, out int k) ? k + 1 : 1;
+
+                if (!good || why == "" || Situational(why)) continue;
+                var mirror = new Warrior { Soul = new SoulData(w.Soul), Loyalty = w.Loyalty };
+                mirror.Soul.Set(sin, -w.Soul.Get(sin));
+                if (PhraseGenerator.Reason(mirror, ctx, d) == why)
+                {
+                    same[sin]++;
+                    if (!sameExample.ContainsKey(sin)) sameExample[sin] = $"{d.Action}: «{why}»";
+                }
+            }
+        }
+        Counterfactual.Enabled = was;
+
+        Console.WriteLine($"  {"грех",-9} {"порок",7} {"добродетель",12} {"словами порока",15}");
+        foreach (var x in sins)
+            Console.WriteLine($"  {x,-9} {vice[x],7} {virtue[x],12} {same[x],15}");
+
+        Console.WriteLine($"\n  {"грех",-9} {"поступок",-12} {"раз",6}  причина у добродетели");
+        foreach (var kv in said.Where(x => x.Key.Virtue).OrderByDescending(x => x.Value).Take(24))
+            Console.WriteLine($"  {kv.Key.Sin,-9} {kv.Key.Action,-12} {kv.Value,6}  "
+                            + (kv.Key.Why == "" ? "— (причины нет)" : $"«{kv.Key.Why}»"));
+
+        foreach (var x in sins)
+            Check(same[x] == 0, $"{x}: добродетель объясняется словами порока — {same[x]} раз, например {(sameExample.TryGetValue(x, out var e) ? e : "")}");
+
+        Console.WriteLine(bad == 0 ? "  Добродетель: чисто." : $"  Добродетель: провалов {bad}.");
+    }
+
+    /// <summary>Слова о положении, а не о душе: правдивы при любом знаке шкалы.</summary>
+    static bool Situational(string why)
+        => why.Contains("не платили") || why.Contains("не заплатили")
+        || why.Contains("добыча лежала") || why.Contains("выдохся") || why.Contains("выдохлась")
+        || why.Contains("силы у него на исходе");
+
     static bool PrideNames(Warrior w, DecisionContext c, Decision d)
     {
         if (d.Weighed && d.Decisive != Counterfactual.Factor.None)
@@ -4796,6 +4883,7 @@ static class Bench
         PocketCheck(cfg);
         ReasonCheck(cfg);
         PrideVoiceCheck(cfg);
+        VirtueHalvesCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);

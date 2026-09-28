@@ -167,7 +167,7 @@ namespace Sinbinder.AOS
                 // за то, что он сделал вместо приказа, — это ниже, её словами.
                 if (decision.TopModule == "Pride" && !Meek(warrior))
                     return "приказ крикнули издали, а он не из тех, кого зовут криком";
-                if (decision.TopModule == "Sloth")
+                if (decision.TopModule == "Sloth" && !Virtuous(warrior, SinType.Sloth))
                     return P("он сделал вид, что не расслышал",
                              "она сделала вид, что не расслышала");
             }
@@ -186,9 +186,16 @@ namespace Sinbinder.AOS
             string voice = weighed && !string.IsNullOrEmpty(decision.DecisiveVoice)
                 ? decision.DecisiveVoice : decision.TopModule;
 
+            // Добродетель — та же шкала со знаком минус, и голос греха у неё
+            // голосует наоборот (стенд, ДОБРОДЕТЕЛЬ): щедрый бросается
+            // к раненому, а журнал писал «он думает о своей доле». Слова
+            // каждой половины — ниже, у Гордыни — Humility.
+            var did = decision.Hesitated ? decision.TopContender : decision.Action;
+
             switch (voice)
             {
                 case "Greed":
+                    if (Virtuous(warrior, SinType.Greed)) return Generosity(did, context);
                     // У долга теперь есть ступени, и у каждой свой голос.
                     // Пока Жадность отказывалась только на третьей невыплате,
                     // хватало двух строк; теперь воин может отказать и на
@@ -204,6 +211,7 @@ namespace Sinbinder.AOS
                     return "он думает о своей доле";
 
                 case "Wrath":
+                    if (Virtuous(warrior, SinType.Wrath)) return Meekness(did);
                     return "он не умеет стоять, когда есть кого ударить";
 
                 case "Fear":
@@ -254,18 +262,26 @@ namespace Sinbinder.AOS
                     return "он не может позволить себе выглядеть слабым";
 
                 case "Envy":
+                    // Доброжелательность голосует против того же, за что
+                    // зависть, — и ни за что сверх того: причины нет.
+                    if (Virtuous(warrior, SinType.Envy)) return "";
                     if (context.RelationshipWithCommander < 40f)
                         return "он не считает командира выше себя";
                     return "он не хочет, чтобы это досталось кому-то другому";
 
                 case "Lust":
                     if (context.BrotherNearby) return "он не бросит своего";
+                    if (Virtuous(warrior, SinType.Lust))
+                        return did == ActionType.ObeyCommand ? "чужое добро его не тянет" : "";
                     return "он видит то, чего хочет, и больше ничего не слышит";
 
                 case "Gluttony":
+                    if (Virtuous(warrior, SinType.Gluttony))
+                        return did == ActionType.Attack ? "лишнего ему не нужно — только дело" : "";
                     return "он тащит всё, до чего дотянется";
 
                 case "Sloth":
+                    if (Virtuous(warrior, SinType.Sloth)) return Diligence(did, context, P);
                     if (weighed) return "у него не осталось воли";
                     if (context.IsExhausted)
                         return P("он выдохся и больше не может",
@@ -298,6 +314,74 @@ namespace Sinbinder.AOS
 
                 default:
                     return "";
+            }
+        }
+
+        /// <summary>
+        /// Шкала греха у него со знаком минус — добродетель: щедрость,
+        /// кротость, доброжелательность, сдержанность, умеренность, усердие.
+        /// Голос греха за такую душу голосует наоборот, и слова порока за неё
+        /// врут. Гордыня со смирением — отдельно (<see cref="Meek"/>).
+        /// </summary>
+        private static bool Virtuous(Warrior warrior, SinType sin)
+            => warrior != null && warrior.Soul != null && warrior.Soul.Get(sin) < 0f;
+
+        /// <summary>
+        /// Голос Жадности у щедрого (GreedModule): за спасение своего и за
+        /// драку, не считая цены. Долг он всё равно слышит — меньше жадного,
+        /// но слышит, — и добыча рядом тянет любого: это слова о положении,
+        /// они правдивы при любом знаке.
+        /// </summary>
+        private static string Generosity(ActionType action, DecisionContext context)
+        {
+            if (context.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
+            if (context.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
+            if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
+            if (context.UnpaidMissions > 0) return "ему до сих пор не заплатили";
+
+            switch (action)
+            {
+                case ActionType.Loot:     return context.NearbyLoot > 0 ? "добыча лежала слишком близко" : "";
+                case ActionType.SaveAlly: return "ему для своих ничего не жалко";
+                case ActionType.Attack:   return "он не считает, чего ему это будет стоить";
+                default:                  return "";
+            }
+        }
+
+        /// <summary>Голос Гнева у кроткого (WrathModule): драки он не ищет.</summary>
+        private static string Meekness(ActionType action)
+        {
+            switch (action)
+            {
+                case ActionType.Flee: return "драться ему не по сердцу";
+                case ActionType.Idle: return "он не ищет драки";
+                default:              return "";
+            }
+        }
+
+        /// <summary>
+        /// Голос Уныния у усердного (SlothModule). За работу — за удар,
+        /// за приказ, за своего — он голосует сам. А стоять и отходить
+        /// его толкает не лень, а положение: усталость и опасность Уныние
+        /// читает при любом знаке. «Не осталось воли» у усердного — неправда.
+        /// </summary>
+        private static string Diligence(ActionType action, DecisionContext context,
+                                        System.Func<string, string, string> P)
+        {
+            switch (action)
+            {
+                case ActionType.Attack:      return P("он не привык сидеть без дела", "она не привыкла сидеть без дела");
+                case ActionType.ObeyCommand: return "работа его не пугает";
+                case ActionType.SaveAlly:    return "ему не лень помочь своим";
+                case ActionType.Idle:
+                    if (context.IsExhausted)
+                        return P("он выдохся и больше не может", "она выдохлась и больше не может");
+                    return context.Fatigue > 0.2f ? "силы у него на исходе" : "";
+                case ActionType.Flee:
+                    return context.DangerLevel > 0.6f
+                        || (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.4f)
+                        ? "здесь уже не выстоять" : "";
+                default: return "";
             }
         }
 
