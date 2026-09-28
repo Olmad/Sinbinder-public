@@ -177,7 +177,7 @@ namespace Sinbinder.AOS
 
                         evt.TargetId = target.Id;
                         evt.ResultDescription =
-                            $"{warrior.DisplayName} покупает {target.DisplayName} за {cost}";
+                            $"{warrior.DisplayName} покупает {target.DisplayName} золотом";
                     }
                     else
                     {
