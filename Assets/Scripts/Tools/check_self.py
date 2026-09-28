@@ -404,6 +404,30 @@ namespace N
 ''',
     }, 'женщины в этом мире уникальны'),
 
+    ('untranslated/русский текст мимо Loc', {
+        'UI/Menu.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Menu
+    {
+        string Title() => "Пауза";
+    }
+}
+''',
+    }, 'русский текст мимо Loc'),
+
+    ('untranslated/Loc.T в статической таблице', {
+        'UI/Steps.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public static class Steps
+    {
+        private static readonly string[] Names = { Loc.T("медленно"), Loc.T("быстро") };
+    }
+}
+''',
+    }, 'в статической таблице'),
+
     ('dead_branches/ветка ждёт строку, которой не пишут', {
         'Gameplay/Waiting.cs': '''
 using UnityEngine;

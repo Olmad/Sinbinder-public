@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Preferences.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -35,11 +36,11 @@ namespace Sinbinder.Core
         /// <summary>Ступени чувствительности. Цифр игрок не видит — только слова.</summary>
         private static readonly (float Scale, string Name)[] Steps =
         {
-            (0.5f,  "медленно"),
-            (0.75f, "неспешно"),
-            (1.0f,  "как задумано"),
-            (1.5f,  "быстро"),
-            (2.0f,  "очень быстро"),
+            (0.5f,  Loc.N("медленно")),
+            (0.75f, Loc.N("неспешно")),
+            (1.0f,  Loc.N("как задумано")),
+            (1.5f,  Loc.N("быстро")),
+            (2.0f,  Loc.N("очень быстро")),
         };
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace Sinbinder.Core
                 Screen.fullScreen = PlayerPrefs.GetInt(FullscreenKey, 1) != 0;
         }
 
-        public static string ScreenName() => Screen.fullScreen ? "полный экран" : "в окне";
+        public static string ScreenName() => Screen.fullScreen ? Loc.T("полный экран") : Loc.T("в окне");
 
         public static void ToggleScreen()
         {
@@ -69,10 +70,13 @@ namespace Sinbinder.Core
 
         public static string SensitivityName()
         {
+            // Имена ступеней в таблице — русские (Loc.N): статическая таблица
+            // собирается один раз, и переведённая при загрузке не сменила бы
+            // язык вслед за игроком. Переводятся при показе.
             foreach (var step in Steps)
-                if (Mathf.Approximately(step.Scale, SensitivityScale)) return step.Name;
+                if (Mathf.Approximately(step.Scale, SensitivityScale)) return Loc.T(step.Name);
 
-            return Steps[2].Name;
+            return Loc.T(Steps[2].Name);
         }
 
         /// <summary>

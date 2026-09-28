@@ -103,6 +103,7 @@ namespace Sinbinder.Tests
                 TextRules();
                 NamesAndCases();
                 VirtueHalves();
+                Translation();
             }
             catch (Exception e)
             {
@@ -1906,6 +1907,40 @@ namespace Sinbinder.Tests
             if (string.IsNullOrEmpty(text)) return false;
             foreach (char c in text) if (char.IsDigit(c)) return true;
             return false;
+        }
+
+        /// <summary>
+        /// Перевод (docs/38-LANG.md): таблица читается, перевод находится,
+        /// места подставляются, нет перевода — русская строка, а не пустота;
+        /// местоимения и падежи — языка, на котором показывают.
+        /// </summary>
+        private static void Translation()
+        {
+            string was = Loc.Language;
+            try
+            {
+                const string table =
+                    "# проба\n\nmsgid \"Пауза\"\nmsgstr \"Paused\"\n\n" +
+                    "msgid \"{0} не выполнил приказ\"\nmsgstr \"{0} disobeyed the order\"\n\n" +
+                    "msgid \"без перевода\"\nmsgstr \"\"\n";
+                Same(Loc.Use("en", table), 2, "в пробной таблице две переведённые строки");
+                Same(Loc.T("Пауза"), "Paused", "перевод не нашёлся");
+                Same(Loc.T("без перевода"), "без перевода", "пустой перевод — показать русскую строку");
+                Same(Loc.T("нет в таблице"), "нет в таблице", "строки нет в таблице — показать русскую");
+                Same(Loc.F("{0} не выполнил приказ", "Kargan"), "Kargan disobeyed the order", "место не подставилось");
+                Same(Grammar.For(Gender.Female, "he thinks of his share"), "she thinks of her share",
+                     "английские местоимения не сменили род");
+                Same(Grammar.Dative("Косой Ждан", Gender.Male), "Косой Ждан",
+                     "в переводе падеж русский — имя должно идти как есть");
+
+                Loc.Use(Loc.Source, null);
+                Same(Loc.T("Пауза"), "Пауза", "на русском строка обязана остаться собой");
+                Same(Grammar.Dative("Косой Ждан", Gender.Male), "Косому Ждану", "на русском падеж пропал");
+            }
+            finally
+            {
+                LocSetup.Apply(was, remember: false);
+            }
         }
 
         /// <summary>

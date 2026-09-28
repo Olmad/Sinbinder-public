@@ -429,6 +429,99 @@ class Checker:
                         'женщины в этом мире уникальны и не выдаются '
                         'ни жатвой, ни полкой, ни вылазкой')
 
+    LOC_MARK = '// Перевод: текст через Loc'
+
+    # Не текст игрока, а логика или служебное: сравнения, метки case,
+    # журнал разработчика, атрибуты редактора, имена объектов. Тот же
+    # список, что у Tools/lang/wrap.py — держать вместе.
+    LOC_SKIP = [re.compile(x) for x in (
+        r'Debug\.Log\w*\s*\(',
+        r'\bcase\s+$',
+        r'(==|!=)\s*$',
+        r'\.(StartsWith|EndsWith|Contains|IndexOf|LastIndexOf|Equals|Replace|Split|TrimEnd|TrimStart)\s*\(\s*$',
+        r'\[\s*(Tooltip|Header|MenuItem|Obsolete|InspectorName|ContextMenu|AddComponentMenu|CreateAssetMenu)\b[^\]]*$',
+        r'new\s+GameObject\s*\(\s*$',
+        r'\b(Find|FindWithTag|FindGameObjectWithTag|Instantiate|Load)\s*\(\s*$',
+        r'\.name\s*=\s*$',
+        r'PlayerPrefs\.\w+\s*\(\s*$',
+        r'nameof\s*\(\s*$',
+    )]
+
+    def untranslated(self):
+        """
+        Русский текст игрока мимо перевода (docs/38-LANG.md).
+
+        Файл, помеченный «// Перевод: текст через Loc», переведён целиком:
+        любая новая русская строка в нём обязана идти через Loc.T / Loc.F,
+        иначе игрок на другом языке увидит её по-русски — посреди чужого
+        языка, и никто этого не заметит, пока не прочтёт.
+
+        Второе: Loc.T в статической таблице. Таблица собирается один раз,
+        и строка переводится на язык запуска навсегда — смена языка в меню
+        её не тронет. В таблице — Loc.N, перевод — при показе.
+
+        Файлы без пометки не трогаются: перевод идёт файл за файлом.
+        """
+        cyr = re.compile(r'[А-Яа-яЁё]')
+        lit = re.compile(r'(\$@|@\$|\$|@)?"((?:[^"\\\n]|\\.)*)"')
+        for p, s in self.src.items():
+            if self.LOC_MARK not in s:
+                continue
+            body = decomment(s)
+            for m in lit.finditer(body):
+                if not cyr.search(m.group(2)):
+                    continue
+                start = m.start()
+                line_start = body.rfind('\n', 0, start) + 1
+                before = body[line_start:start]
+                prev_start = body.rfind('\n', 0, max(0, line_start - 1)) + 1
+                wide = body[prev_start:start]
+
+                loc = re.search(r'Loc\.(T|F|N|Name)\s*\(\s*$', before)
+                if loc:
+                    if loc.group(1) in ('T', 'F') and self._static_field(body, start):
+                        self.report(p, line_of(body, start),
+                                    f'Loc.{loc.group(1)} в статической таблице: строка переведётся '
+                                    'один раз при загрузке, смена языка её не тронет — '
+                                    'в таблице Loc.N, перевод при показе')
+                    continue
+                if any(r.search(before) for r in self.LOC_SKIP) or \
+                   self.LOC_SKIP[0].search(wide):
+                    continue
+                self.report(p, line_of(body, start),
+                            f'русский текст мимо Loc: «{m.group(2)[:40]}» — игрок на другом '
+                            'языке увидит его по-русски (Loc.T / Loc.F, docs/38-LANG.md)')
+
+    @staticmethod
+    def _static_field(body, start):
+        """Литерал — в инициализаторе поля static или const, а не в методе."""
+        clean = re.sub(r'"(?:[^"\\\n]|\\.)*"', lambda m: ' ' * len(m.group(0)), body)
+        own = clean[clean.rfind('\n', 0, start) + 1:start]
+        if re.search(r'\b(static|const)\b[^;(]*?=(?!>)', own):
+            return True
+        i, depth = start, 0
+        while i > 0:
+            i -= 1
+            c = clean[i]
+            if c in ')]}':
+                depth += 1
+            elif c in '([{':
+                if not (depth == 0 and c == '{'):
+                    depth = max(0, depth - 1)
+            elif c == ';' and depth == 0:
+                return False
+            elif c == '\n':
+                ls = clean.rfind('\n', 0, i) + 1
+                line = clean[ls:i].strip()
+                if not line:
+                    continue
+                if re.search(r'\b(static|const)\b[^;(]*?=(?!>)', line):
+                    return True
+                if re.search(r'\)\s*$', line) and \
+                   re.search(r'\b(void|string|bool|int|float|IEnumerable|IEnumerator)\b', line):
+                    return False
+        return False
+
     def constructor_arity(self):
         """
         CS1729: у типа нет конструктора с таким числом аргументов.
@@ -1334,6 +1427,7 @@ class Checker:
         self.struct_vs_null()
         self.scene_presence()
         self.unique_women()
+        self.untranslated()
         self.console_key()
         self.orphans()
         self.dead_branches()

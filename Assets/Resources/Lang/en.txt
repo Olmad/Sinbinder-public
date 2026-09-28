@@ -1,0 +1,112 @@
+# Sinbinder — перевод: en
+# Ключ (msgid) — русская строка из кода, msgstr — перевод. Пустой msgstr — перевода нет,
+# игра покажет русскую. Собирает Tools/lang/catalog.py; правила — docs/38-LANG.md.
+# Места {0}, {1} — то, что игра подставит (имя, причина…): порядок можно менять, число — нет.
+
+#: Core/Preferences.cs
+msgid "медленно"
+msgstr "slow"
+
+#: Core/Preferences.cs
+msgid "неспешно"
+msgstr "unhurried"
+
+#: Core/Preferences.cs
+msgid "как задумано"
+msgstr "as intended"
+
+#: Core/Preferences.cs
+msgid "быстро"
+msgstr "fast"
+
+#: Core/Preferences.cs
+msgid "очень быстро"
+msgstr "very fast"
+
+#: Core/Preferences.cs
+msgid "полный экран"
+msgstr "fullscreen"
+
+#: Core/Preferences.cs
+msgid "в окне"
+msgstr "windowed"
+
+#: UI/PauseMenu.cs
+msgid "Пауза.  Игра с обязательством — переиграть нельзя"
+msgstr "Paused.  A committed game — no second chances"
+
+#: UI/PauseMenu.cs
+msgid "Пауза"
+msgstr "Paused"
+
+#: UI/PauseMenu.cs
+msgid "Продолжить"
+msgstr "Continue"
+
+#: UI/PauseMenu.cs
+msgid "Записать"
+msgstr "Save"
+
+#: UI/PauseMenu.cs
+msgid "Записано."
+msgstr "Saved."
+
+#: UI/PauseMenu.cs
+msgid "Записать не вышло."
+msgstr "Could not save."
+
+#: UI/PauseMenu.cs
+msgid "Вернуться к записанному"
+msgstr "Return to the saved game"
+
+#: UI/PauseMenu.cs
+msgid "Записи нет"
+msgstr "No save"
+
+#: UI/PauseMenu.cs
+msgid "Гнёзда сохранений"
+msgstr "Save slots"
+
+#: UI/PauseMenu.cs
+msgid "Что игра объясняет"
+msgstr "What the game explains"
+
+#: UI/PauseMenu.cs
+msgid "Сменить взгляд"
+msgstr "Change view"
+
+#: UI/PauseMenu.cs
+msgid "Экран"
+msgstr "Screen"
+
+#: UI/PauseMenu.cs
+msgid "Поворот взгляда"
+msgstr "Look sensitivity"
+
+#: UI/PauseMenu.cs
+msgid "Язык"
+msgstr "Language"
+
+#: UI/PauseMenu.cs
+msgid "Выйти из игры"
+msgstr "Quit the game"
+
+#: UI/PauseMenu.cs
+msgid "Игра с обязательством — записывайте перед выходом"
+msgstr "A committed game — save before you quit"
+
+#: UI/PauseMenu.cs
+msgid "Эта запись не от нынешней игры."
+msgstr "This save is not from the current game."
+
+#: UI/PauseMenu.cs
+msgid "Вернулись к записанному."
+msgstr "Returned to the saved game."
+
+#: UI/PauseMenu.cs
+msgid "Гнездо пустое"
+msgstr "Empty slot"
+
+#: UI/PauseMenu.cs
+msgid "Запись"
+msgstr "Save"

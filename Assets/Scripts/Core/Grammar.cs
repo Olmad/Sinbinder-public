@@ -51,6 +51,13 @@ namespace Sinbinder.Core
         {
             if (string.IsNullOrEmpty(text)) return text;
 
+            // Текст уже переведён (Loc) — местоимения его языка.
+            // «His» здесь — только притяжательное перед словом («his share»):
+            // «his» как самостоятельное («it is his») фразы игры не пишут.
+            if (Loc.Language == "en")
+                return PronounEn.Replace(text, m =>
+                    HerEn.TryGetValue(m.Value.ToLowerInvariant(), out var she) ? Keep(m.Value, she) : m.Value);
+
             return Pronoun.Replace(text, m =>
             {
                 switch (m.Value.ToLowerInvariant())
@@ -100,6 +107,9 @@ namespace Sinbinder.Core
         public static string Dative(string name, Gender gender)
         {
             if (string.IsNullOrWhiteSpace(name)) return name;
+
+            // Падежи — русские. В переводе имя идёт как есть, своим словом.
+            if (!Loc.IsSource) return Loc.Name(name);
 
             var words = name.Split(' ');
             for (int i = 0; i < words.Length; i++)
@@ -153,6 +163,16 @@ namespace Sinbinder.Core
         {
             "из", "с", "со", "от", "у", "в", "во", "на", "под", "над", "за", "при", "до",
         };
+
+        private static readonly System.Collections.Generic.Dictionary<string, string> HerEn =
+            new System.Collections.Generic.Dictionary<string, string>
+            {
+                { "he", "she" }, { "him", "her" }, { "his", "her" }, { "himself", "herself" },
+            };
+
+        private static readonly Regex PronounEn =
+            new Regex(@"\b(he|him|his|himself)\b",
+                      RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly Regex Pronoun =
             new Regex(@"\b(он|его|ему|него|нему|нём|нем|ним)\b",

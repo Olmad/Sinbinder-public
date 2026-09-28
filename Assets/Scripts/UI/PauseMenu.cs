@@ -1,3 +1,5 @@
+// Assets/Scripts/UI/PauseMenu.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -79,17 +81,17 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = Commitment.On
-                    ? "Пауза.  Игра с обязательством — переиграть нельзя"
-                    : "Пауза";
+                    ? Loc.T("Пауза.  Игра с обязательством — переиграть нельзя")
+                    : Loc.T("Пауза");
 
             float y = 0f;
 
-            Add(ref y, "Продолжить", "", Close);
+            Add(ref y, Loc.T("Продолжить"), "", Close);
 
-            Add(ref y, "Записать", Where(), () =>
+            Add(ref y, Loc.T("Записать"), Where(), () =>
             {
                 bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.QuickPath);
-                Say(ok ? "Записано." : "Записать не вышло.");
+                Say(ok ? Loc.T("Записано.") : Loc.T("Записать не вышло."));
                 Draw();
             });
 
@@ -100,8 +102,8 @@ namespace Sinbinder.UI
             {
                 bool has = SaveSystem.Exists(SaveSystem.QuickPath);
 
-                Add(ref y, "Вернуться к записанному",
-                    has ? Where() : "Записи нет",
+                Add(ref y, Loc.T("Вернуться к записанному"),
+                    has ? Where() : Loc.T("Записи нет"),
                     has ? () => Load() : (System.Action)null);
             }
             else
@@ -111,9 +113,9 @@ namespace Sinbinder.UI
 
             y -= MenuRows.Height * 0.5f;
 
-            Add(ref y, "Гнёзда сохранений", "F9", null);
-            Add(ref y, "Что игра объясняет", "O", null);
-            Add(ref y, "Сменить взгляд", "V", null);
+            Add(ref y, Loc.T("Гнёзда сохранений"), "F9", null);
+            Add(ref y, Loc.T("Что игра объясняет"), "O", null);
+            Add(ref y, Loc.T("Сменить взгляд"), "V", null);
 
             // Настройки — только те, которых больше нигде нет. Ясность
             // живёт своей панелью (строка выше — дверь к ней), сохранения
@@ -121,15 +123,23 @@ namespace Sinbinder.UI
             // рычаг для несуществующего был бы мишурой.
             y -= MenuRows.Height * 0.5f;
 
-            Add(ref y, "Экран", Core.Preferences.ScreenName(), () =>
+            Add(ref y, Loc.T("Экран"), Core.Preferences.ScreenName(), () =>
             {
                 Core.Preferences.ToggleScreen();
                 Draw();
             });
 
-            Add(ref y, "Поворот взгляда", Core.Preferences.SensitivityName(), () =>
+            Add(ref y, Loc.T("Поворот взгляда"), Core.Preferences.SensitivityName(), () =>
             {
                 Core.Preferences.CycleSensitivity();
+                Draw();
+            });
+
+            // Язык — названием на самом языке (LocSetup.Languages): включивший
+            // чужой по ошибке узнает свой, не читая чужого.
+            Add(ref y, Loc.T("Язык"), Core.LocSetup.CurrentName(), () =>
+            {
+                Core.LocSetup.Cycle();
                 Draw();
             });
 
@@ -142,8 +152,8 @@ namespace Sinbinder.UI
             // Стоит последней и отделена пустой строкой: случайно
             // нажать выход — потерять проход.
             y -= MenuRows.Height * 0.5f;
-            Add(ref y, "Выйти из игры", Commitment.On
-                    ? "Игра с обязательством — записывайте перед выходом"
+            Add(ref y, Loc.T("Выйти из игры"), Commitment.On
+                    ? Loc.T("Игра с обязательством — записывайте перед выходом")
                     : "", Quit);
         }
 
@@ -166,11 +176,11 @@ namespace Sinbinder.UI
 
             if (!SaveSystem.ReturnTo(save))
             {
-                Say("Эта запись не от нынешней игры.");
+                Say(Loc.T("Эта запись не от нынешней игры."));
                 return;
             }
 
-            Say("Вернулись к записанному.");
+            Say(Loc.T("Вернулись к записанному."));
             Close();
         }
 
@@ -178,9 +188,9 @@ namespace Sinbinder.UI
         private static string Where()
         {
             var save = SaveSystem.Read(SaveSystem.QuickPath);
-            if (save == null) return "Гнездо пустое";
+            if (save == null) return Loc.T("Гнездо пустое");
 
-            return string.IsNullOrEmpty(save.Label) ? "Запись" : save.Label;
+            return string.IsNullOrEmpty(save.Label) ? Loc.T("Запись") : save.Label;
         }
 
         private static void Say(string line)
