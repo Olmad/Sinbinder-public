@@ -1,8 +1,10 @@
 // Assets/Scripts/UI/ExitMarker.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -20,7 +22,7 @@ namespace Sinbinder.UI
     /// </summary>
     public class ExitMarker : MonoBehaviour
     {
-        private const string Word = "Выход";
+        private static readonly string Word = Loc.N("Выход");
 
         /// <summary>Отступ метки от края экрана, в точках.</summary>
         public const float Margin = 70f;
@@ -72,7 +74,7 @@ namespace Sinbinder.UI
             bool inside = !behind
                        && at.x >= Margin && at.x <= width - Margin
                        && at.y >= Margin && at.y <= height - Margin;
-            if (inside) { text = Word; return at; }
+            if (inside) { text = Loc.T(Word); return at; }
 
             var ray = at - centre;
             if (behind) ray = -ray;
@@ -86,9 +88,9 @@ namespace Sinbinder.UI
             var edge = centre + ray * Mathf.Min(reachX, reachY);
 
             if (Mathf.Abs(ray.x) >= Mathf.Abs(ray.y))
-                text = ray.x > 0f ? Word + " →" : "← " + Word;
+                text = ray.x > 0f ? Loc.T(Word) + " →" : "← " + Loc.T(Word);
             else
-                text = ray.y > 0f ? "↑ " + Word : "↓ " + Word;
+                text = ray.y > 0f ? "↑ " + Loc.T(Word) : "↓ " + Loc.T(Word);
 
             return edge;
         }

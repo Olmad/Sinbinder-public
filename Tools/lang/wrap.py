@@ -193,7 +193,89 @@ def split_interpolated(lit):
     return '"' + ''.join(fmt) + '"', args
 
 
+SKIP_CALLS = {
+    'Debug.Log', 'Debug.LogWarning', 'Debug.LogError', 'Debug.LogFormat', 'Debug.LogWarningFormat', 'Debug.LogErrorFormat',
+    'Tooltip', 'Header', 'MenuItem', 'Obsolete', 'InspectorName', 'ContextMenu', 'AddComponentMenu', 'CreateAssetMenu',
+    'new GameObject', 'Find', 'FindWithTag', 'FindGameObjectWithTag', 'Instantiate', 'Load', 'LoadAll',
+    'StartsWith', 'EndsWith', 'Contains', 'IndexOf', 'LastIndexOf', 'Equals', 'Replace', 'Split', 'TrimEnd', 'TrimStart',
+    'GetString', 'SetString', 'GetInt', 'SetInt', 'GetFloat', 'SetFloat', 'HasKey', 'DeleteKey',
+    'StringToHash', 'nameof', 'Loc.T', 'Loc.F', 'Loc.N', 'Loc.Name', 'Shader.Find', 'LayerMask.NameToLayer',
+}
+NAME_PARAMS = {'name', 'objectName', 'id', 'key', 'tag', 'path', 'label_id'}
+
+
+def declared_params(clean):
+    """{метод: [имена параметров]} по объявлениям в файле (имя параметра — последнее слово)."""
+    out = {}
+    for m in re.finditer(r'\b[\w<>\[\],.?]+\s+(\w+)\s*\(([^()]*)\)\s*(?:\{|=>|where|$)', clean, re.M):
+        name, params = m.group(1), m.group(2).strip()
+        if name in ('if', 'while', 'for', 'foreach', 'switch', 'catch', 'using', 'return', 'new', 'lock'):
+            continue
+        names = []
+        for p in params.split(','):
+            p = p.split('=')[0].strip()
+            if not p:
+                continue
+            names.append(p.split()[-1])
+        out.setdefault(name, names)
+    return out
+
+
+def enclosing_call(clean, start):
+    """(вызов, номер аргумента) для литерала, или (None, None)."""
+    i, depth, commas = start, 0, 0
+    while i > 0:
+        i -= 1
+        c = clean[i]
+        if c in ')]}':
+            depth += 1
+        elif c in '([{':
+            if depth == 0:
+                if c != '(':
+                    return None, None
+                j = i
+                while j > 0 and clean[j - 1] in ' \t':
+                    j -= 1
+                k = j
+                while k > 0 and (clean[k - 1].isalnum() or clean[k - 1] in '_.'):
+                    k -= 1
+                callee = clean[k:j].strip('.')
+                before = clean[max(0, k - 5):k]
+                if before.rstrip().endswith('new'):
+                    callee = 'new ' + callee
+                return callee, commas
+            depth -= 1
+        elif c == ',' and depth == 0:
+            commas += 1
+        elif c == ';' and depth == 0:
+            return None, None
+    return None, None
+
+
+def call_skip(clean, start, params):
+    callee, arg = enclosing_call(clean, start)
+    if not callee:
+        return None
+    short = callee.split('.')[-1]
+    if callee in SKIP_CALLS or short in SKIP_CALLS or ('PlayerPrefs' in callee):
+        return f'вызов {callee}'
+    names = params.get(short)
+    if names and arg is not None and arg < len(names) and names[arg] in NAME_PARAMS:
+        return f'{short}: параметр «{names[arg]}» — имя объекта'
+    return None
+
+
+IDENT_FIELD = re.compile(r'\b(const|readonly)\s+string\s+\w*(Name|Key|Id|Tag|Path)\s*=\s*$')
+
+
 def skip_reason(src, start):
+    line_start0 = src.rfind('\n', 0, start) + 1
+    if IDENT_FIELD.search(src[line_start0:start]):
+        return 'поле-идентификатор (…Name, …Key): имя объекта, а не текст'
+    clean = blank_comments(src)
+    why = call_skip(clean, start, declared_params(clean))
+    if why:
+        return why
     line_start = src.rfind('\n', 0, start) + 1
     before = src[line_start:start]
     # многострочный вызов: взять и предыдущую строку
@@ -281,33 +363,82 @@ def in_static_table(src, start):
     return False
 
 
-def wrap(src):
-    changes, kept = [], []
-    for start, end, lit in literals(src):
-        text = lit
-        if not CYR.search(text):
-            continue
-        why = skip_reason(src, start)
-        if why:
-            kept.append((start, lit, why))
-            continue
-        if in_static_table(src, start):
-            if lit.startswith(('$', '@$')):
-                kept.append((start, lit, 'интерполяция в статической таблице — руками'))
-                continue
-            changes.append((start, end, lit, f'Loc.N({lit})'))
-            kept.append((start, lit, 'статическая таблица: Loc.N, перевести при показе — Loc.T(поле)'))
-            continue
+def chains(src, lits):
+    """Литералы, склеенные «+» (строка, разбитая по длине): одна фраза — один ключ."""
+    out, cur = [], []
+    for lit in lits:
+        if cur and re.fullmatch(r'\s*\+\s*', src[cur[-1][1]:lit[0]]):
+            cur.append(lit)
+        else:
+            if cur:
+                out.append(cur)
+            cur = [lit]
+    if cur:
+        out.append(cur)
+    return out
+
+
+def chain_call(src, chain):
+    """Цепочка → Loc.T(…) или Loc.F(…, места); None — руками."""
+    pieces, args, interp = [], [], False
+    for start, end, lit in chain:
         if lit.startswith(('$', '@$')):
             parts = split_interpolated(lit)
             if parts is None:
-                kept.append((start, lit, 'дословная интерполяция — руками'))
-                continue
-            fmt, args = parts
-            new = f'Loc.F({fmt}' + ''.join(', ' + a for a in args) + ')' if args else f'Loc.T({fmt})'
+                return None
+            fmt, a = parts
+            # номера мест продолжаются через куски
+            shift = len(args)
+            fmt = re.sub(r'\{(\d+)([^}]*)\}', lambda m: '{' + str(int(m.group(1)) + shift) + m.group(2) + '}', fmt)
+            pieces.append(fmt)
+            args.extend(a)
+            interp = True
         else:
-            new = f'Loc.T({lit})'
-        changes.append((start, end, lit, new))
+            pieces.append(lit)
+    if interp:
+        # в простых кусках фигурные скобки — буквальные: удвоить для string.Format
+        fixed = []
+        for (start, end, lit), piece in zip(chain, pieces):
+            if lit.startswith(('$', '@$')):
+                fixed.append(piece)
+            else:
+                fixed.append(piece.replace('{', '{{').replace('}', '}}'))
+        pieces = fixed
+    glue = [src[chain[k][1]:chain[k + 1][0]] for k in range(len(chain) - 1)]
+    body = pieces[0]
+    for g, piece in zip(glue, pieces[1:]):
+        body += g + piece
+    # имя души при показе — через Loc.Name: в записи и в логике оно русское
+    args = [f'Loc.Name({a})' if re.fullmatch(r'[\w.\[\]()?]+\.DisplayName', a) else a for a in args]
+    if args:
+        return f'Loc.F({body}' + ''.join(', ' + a for a in args) + ')'
+    return f'Loc.T({body})'
+
+
+def wrap(src):
+    changes, kept = [], []
+    for chain in chains(src, literals(src)):
+        if not any(CYR.search(lit) for _, _, lit in chain):
+            continue
+        start, end = chain[0][0], chain[-1][1]
+        first = chain[0][2]
+        why = skip_reason(src, start)
+        if why:
+            kept.append((start, first, why))
+            continue
+        if in_static_table(src, start):
+            if any(lit.startswith(('$', '@$')) for _, _, lit in chain):
+                kept.append((start, first, 'интерполяция в статической таблице — руками'))
+                continue
+            body = src[start:end]
+            changes.append((start, end, first, f'Loc.N({body})'))
+            kept.append((start, first, 'статическая таблица: Loc.N, перевести при показе — Loc.T(поле)'))
+            continue
+        new = chain_call(src, chain)
+        if new is None:
+            kept.append((start, first, 'дословная интерполяция — руками'))
+            continue
+        changes.append((start, end, first, new))
 
     out = src
     for start, end, lit, new in sorted(changes, reverse=True):

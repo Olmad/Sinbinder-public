@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/Letterbox.cs
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;

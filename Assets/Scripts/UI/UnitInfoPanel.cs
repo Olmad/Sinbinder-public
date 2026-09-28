@@ -1,6 +1,8 @@
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     public class UnitInfoPanel : MonoBehaviour
@@ -40,21 +42,21 @@ namespace Sinbinder.UI
                 _nameText.text = warrior.DisplayName;
 
             if (_sinText != null)
-                _sinText.text = $"Грех: {warrior.Soul.GetSinName()}";
+                _sinText.text = Loc.F("Грех: {0}", warrior.Soul.GetSinName());
 
             if (_intensityText != null)
-                _intensityText.text = $"Характер: {warrior.Virtue.GetDescription()}";
+                _intensityText.text = Loc.F("Характер: {0}", warrior.Virtue.GetDescription());
 
             if (_moralText != null)
-                _moralText.text = $"Мораль: {warrior.Soul.GetMoralName()}";
+                _moralText.text = Loc.F("Мораль: {0}", warrior.Soul.GetMoralName());
 
             if (_loyaltyText != null)
             {
                 string loyaltyDesc;
-                if (warrior.Loyalty > 70f) loyaltyDesc = "Предан вам";
-                else if (warrior.Loyalty < 30f) loyaltyDesc = "Готов предать";
-                else loyaltyDesc = "Нейтральна";
-                _loyaltyText.text = $"Верность: {loyaltyDesc}";
+                if (warrior.Loyalty > 70f) loyaltyDesc = Loc.T("Предан вам");
+                else if (warrior.Loyalty < 30f) loyaltyDesc = Loc.T("Готов предать");
+                else loyaltyDesc = Loc.T("Нейтральна");
+                _loyaltyText.text = Loc.F("Верность: {0}", loyaltyDesc);
             }
         }
     }

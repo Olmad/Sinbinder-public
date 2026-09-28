@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/WorldPlate.cs
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.UI

@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/SoulAssemblyUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;
@@ -44,7 +45,7 @@ namespace Sinbinder.UI
             if (_shell != null)
                 _shell.text = warrior.ShellData != null
                     ? $"{warrior.ShellData.shellName}\n{warrior.ShellData.DescribeBias()}"
-                    : "Оболочка не задана.";
+                    : Loc.T("Оболочка не задана.");
 
             // Сердце экрана. Прогоняются настоящие модули — движок
             // становится собственным интерфейсом, ни одной новой формулы.

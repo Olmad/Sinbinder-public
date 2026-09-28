@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -30,7 +31,7 @@ namespace Sinbinder.UI
             // которого конец не пускает, — и новая игра стояла бы замёрзшей.
             if (GamePauseController.Instance != null && GamePauseController.Instance.Halted)
             {
-                if (Input.GetKeyDown(_save) || Input.GetKeyDown(_load)) Say("Игра окончена. Начните сначала — там и запись.");
+                if (Input.GetKeyDown(_save) || Input.GetKeyDown(_load)) Say(Loc.T("Игра окончена. Начните сначала — там и запись."));
                 return;
             }
 
@@ -43,8 +44,8 @@ namespace Sinbinder.UI
             bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.QuickPath);
 
             Say(ok
-                ? "Записано."
-                : "Записать не вышло — некуда или не даёт.");
+                ? Loc.T("Записано.")
+                : Loc.T("Записать не вышло — некуда или не даёт."));
         }
 
         private void Load()
@@ -53,7 +54,7 @@ namespace Sinbinder.UI
 
             if (!SaveSystem.Exists(SaveSystem.QuickPath))
             {
-                Say("Возвращаться некуда: ничего не записано.");
+                Say(Loc.T("Возвращаться некуда: ничего не записано."));
                 return;
             }
 
@@ -62,8 +63,8 @@ namespace Sinbinder.UI
             // Прочитать половину хуже, чем не прочитать ничего: половина
             // выглядит целой, и игрок узнает о потере через час.
             Say(SaveSystem.ReturnTo(save)
-                ? "Вернулись к записанному."
-                : "Эта запись не от нынешней игры.");
+                ? Loc.T("Вернулись к записанному.")
+                : Loc.T("Эта запись не от нынешней игры."));
         }
 
         private static void Say(string line)

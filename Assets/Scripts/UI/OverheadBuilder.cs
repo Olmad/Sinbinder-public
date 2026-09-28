@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/OverheadBuilder.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;

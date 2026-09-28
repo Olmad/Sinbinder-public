@@ -1,8 +1,10 @@
 // Assets/Scripts/UI/HarvestHintUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -36,9 +38,9 @@ namespace Sinbinder.UI
         /// в мастерскую склепа, которой в демо нет. Жатва же кладёт душу
         /// прямо в пустую банку (<see cref="SoulHarvester"/>) — это и сказано.
         /// </summary>
-        public const string Line =
-            "Подойдите и нажмите E, чтобы забрать душу в банку. Чем дольше "
-          + "она гаснет, тем меньше от неё останется.";
+        public static readonly string Line =
+            Loc.N("Подойдите и нажмите E, чтобы забрать душу в банку. Чем дольше "
+          + "она гаснет, тем меньше от неё останется.");
 
         [Tooltip("Сколько держать подсказку на экране.")]
         [SerializeField] private float _holdSeconds = 8f;
@@ -54,7 +56,7 @@ namespace Sinbinder.UI
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
-            if (_text != null) _text.text = Line;
+            if (_text != null) _text.text = Loc.T(Line);
 
             if (SoulManager.Instance == null)
                 Debug.LogWarning("[ПОДСКАЗКА] SoulManager в сцене нет: "

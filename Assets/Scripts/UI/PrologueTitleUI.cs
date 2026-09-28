@@ -1,7 +1,9 @@
+// Перевод: текст через Loc
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -24,7 +26,7 @@ namespace Sinbinder.UI
         [SerializeField] private Text _line;
 
         [TextArea(1, 3)]
-        [SerializeField] private string _text = "Греху всё равно, чьё это тело.";
+        [SerializeField] private string _text = Loc.T("Греху всё равно, чьё это тело.");
 
         [SerializeField] private float _holdSeconds = 3f;
         [SerializeField] private float _fadeSeconds = 1.2f;

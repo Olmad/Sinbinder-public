@@ -1,9 +1,11 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -44,7 +46,7 @@ namespace Sinbinder.UI
             if (_panel == null) return;
 
             if (_title != null)
-                _title.text = wiped ? "Отряд не вернулся." : "Отряд вернулся.";
+                _title.text = wiped ? Loc.T("Отряд не вернулся.") : Loc.T("Отряд вернулся.");
 
             if (_body != null) _body.text = wiped ? Epitaph() : Roll() + Comeback();
 
@@ -97,7 +99,7 @@ namespace Sinbinder.UI
 
             string commander = SquadRoster.CommanderName;
             if (!string.IsNullOrEmpty(commander))
-                sb.AppendLine($"Отряд вёл {commander}.").AppendLine();
+                sb.AppendLine(Loc.F("Отряд вёл {0}.", commander)).AppendLine();
 
             foreach (var m in SquadRoster.Members)
             {
@@ -107,8 +109,8 @@ namespace Sinbinder.UI
 
                 // Долг — единственное, что отряд уносит с собой к следующей
                 // вылазке. Числа игрок не видит, только факт.
-                if (m.UnpaidMissions > 0) sb.Append(" — ему всё ещё должны");
-                else if (m.IsCommander) sb.Append(" — старший");
+                if (m.UnpaidMissions > 0) sb.Append(Loc.T(" — ему всё ещё должны"));
+                else if (m.IsCommander) sb.Append(Loc.T(" — старший"));
 
                 sb.AppendLine();
             }
@@ -134,7 +136,7 @@ namespace Sinbinder.UI
             var away = new List<SquadRoster.Member>();
             foreach (var m in SquadRoster.Away) away.Add(m);
 
-            if (away.Count == 0) return "\nДемо окончено.";
+            if (away.Count == 0) return Loc.T("\nДемо окончено.");
 
             // Командир идёт первым: он вернулся, если вернулся хоть кто-то.
             away.Sort((a, b) =>
@@ -154,20 +156,20 @@ namespace Sinbinder.UI
             // которого движок не давал.
             if (survivors.Count == 0)
             {
-                sb.AppendLine().AppendLine("Из ушедших не вернулся никто.");
+                sb.AppendLine().AppendLine(Loc.T("Из ушедших не вернулся никто."));
                 sb.AppendLine();
                 sb.AppendLine(Homecoming.Story(leader.Sin));
-                sb.AppendLine().Append("Демо окончено.");
+                sb.AppendLine().Append(Loc.T("Демо окончено."));
                 return sb.ToString();
             }
 
-            sb.AppendLine().AppendLine("В склеп входит отряд, ушедший из лагеря.");
+            sb.AppendLine().AppendLine(Loc.T("В склеп входит отряд, ушедший из лагеря."));
             sb.AppendLine();
 
             foreach (var name in survivors)
             {
                 sb.Append(name);
-                if (name == leader.Name && leader.IsCommander) sb.Append(" — вёл их");
+                if (name == leader.Name && leader.IsCommander) sb.Append(Loc.T(" — вёл их"));
                 sb.AppendLine();
             }
 
@@ -177,12 +179,12 @@ namespace Sinbinder.UI
                 sb.AppendLine(Homecoming.Story(leader.Sin));
             }
 
-            sb.AppendLine().Append("Демо окончено.");
+            sb.AppendLine().Append(Loc.T("Демо окончено."));
             return sb.ToString();
         }
 
         private string Epitaph()
-            => "Никто не дошёл до склепа.\n\nДуши разойдутся Некроэфиром,"
-             + " и помнить о них будет некому.\n\nДемо окончено.";
+            => Loc.T("Никто не дошёл до склепа.\n\nДуши разойдутся Некроэфиром,"
+             + " и помнить о них будет некому.\n\nДемо окончено.");
     }
 }

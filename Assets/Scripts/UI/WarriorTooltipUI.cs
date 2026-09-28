@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/WarriorTooltipUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;

@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -70,7 +71,7 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_title != null)
-                _title.text = "Что игра объясняет.  O или Esc — закрыть";
+                _title.text = Loc.T("Что игра объясняет.  O или Esc — закрыть");
 
             float y = 0f;
 
@@ -99,7 +100,7 @@ namespace Sinbinder.UI
             // но не нажимается: место под него видно заранее.
             _spawned.Add(Row(y,
                 Transparency.IsCustom ? "▸" : " ",
-                Transparency.HasCustom ? "Свой набор" : "Свой набор — соберите галочками ниже",
+                Transparency.HasCustom ? Loc.T("Свой набор") : Loc.T("Свой набор — соберите галочками ниже"),
                 Transparency.HasCustom && !Transparency.IsCustom
                     ? () => { Back(); Draw(); }
                     : (System.Action)null));

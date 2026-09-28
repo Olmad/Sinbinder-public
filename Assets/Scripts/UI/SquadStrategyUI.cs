@@ -1,9 +1,11 @@
 // Assets/Scripts/UI/SquadStrategyUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -74,7 +76,7 @@ namespace Sinbinder.UI
             if (_label == null) return;
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"Отряд: {SquadOrders.Name(current)}");
+            sb.AppendLine(Loc.F("Отряд: {0}", SquadOrders.Name(current)));
             sb.AppendLine(SquadOrders.Describe(current));
             sb.AppendLine();
 

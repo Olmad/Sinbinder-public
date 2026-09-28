@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/ShellPickerUI.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -100,10 +101,10 @@ namespace Sinbinder.UI
         {
             switch (quality)
             {
-                case SoulQuality.Shock:      return "Она ещё вся здесь.";
-                case SoulQuality.Acceptance: return "Крайности уже сгладились.";
-                case SoulQuality.Fading:     return "Характер тускнеет.";
-                default:                     return "От неё осталась одна воля.";
+                case SoulQuality.Shock:      return Loc.T("Она ещё вся здесь.");
+                case SoulQuality.Acceptance: return Loc.T("Крайности уже сгладились.");
+                case SoulQuality.Fading:     return Loc.T("Характер тускнеет.");
+                default:                     return Loc.T("От неё осталась одна воля.");
             }
         }
 
@@ -175,8 +176,8 @@ namespace Sinbinder.UI
             string now = SoulData.GetSinName(after.Sin);
 
             return after.Sin == soul.Sin
-                ? $"Встанет прежним: {now}."
-                : $"Встанет другим: {now}. Тело перетянуло.";
+                ? Loc.F("Встанет прежним: {0}.", now)
+                : Loc.F("Встанет другим: {0}. Тело перетянуло.", now);
         }
 
         private void Label(RectTransform parent, string text, int size,

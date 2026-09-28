@@ -175,6 +175,93 @@ def line_of(text, pos):
     return text[:pos].count('\n') + 1
 
 
+# ── Перевод: в каком вызове стоит строка (то же, что Tools/lang/wrap.py — держать вместе) ──
+
+def blank_keep(text, literals_too):
+    """Комментарии (и, если просят, строки) — пробелами; позиции и переводы строк целы."""
+    out = list(text)
+    pat = r'//[^\n]*|/\*.*?\*/'
+    if literals_too:
+        pat = r'(\$@|@\$|\$|@)?"(?:[^"\\\n]|\\.)*"|' + pat
+    for m in re.finditer(pat, text, re.S):
+        for k in range(m.start(), m.end()):
+            if out[k] != '\n':
+                out[k] = ' '
+    return ''.join(out)
+
+
+SKIP_CALLS = {
+    'Debug.Log', 'Debug.LogWarning', 'Debug.LogError', 'Debug.LogFormat', 'Debug.LogWarningFormat', 'Debug.LogErrorFormat',
+    'Tooltip', 'Header', 'MenuItem', 'Obsolete', 'InspectorName', 'ContextMenu', 'AddComponentMenu', 'CreateAssetMenu',
+    'new GameObject', 'Find', 'FindWithTag', 'FindGameObjectWithTag', 'Instantiate', 'Load', 'LoadAll',
+    'StartsWith', 'EndsWith', 'Contains', 'IndexOf', 'LastIndexOf', 'Equals', 'Replace', 'Split', 'TrimEnd', 'TrimStart',
+    'GetString', 'SetString', 'GetInt', 'SetInt', 'GetFloat', 'SetFloat', 'HasKey', 'DeleteKey',
+    'StringToHash', 'nameof', 'Loc.T', 'Loc.F', 'Loc.N', 'Loc.Name', 'Shader.Find', 'LayerMask.NameToLayer',
+}
+NAME_PARAMS = {'name', 'objectName', 'id', 'key', 'tag', 'path', 'label_id'}
+
+
+def declared_params(clean):
+    """{метод: [имена параметров]} по объявлениям в файле (имя параметра — последнее слово)."""
+    out = {}
+    for m in re.finditer(r'\b[\w<>\[\],.?]+\s+(\w+)\s*\(([^()]*)\)\s*(?:\{|=>|where|$)', clean, re.M):
+        name, params = m.group(1), m.group(2).strip()
+        if name in ('if', 'while', 'for', 'foreach', 'switch', 'catch', 'using', 'return', 'new', 'lock'):
+            continue
+        names = []
+        for p in params.split(','):
+            p = p.split('=')[0].strip()
+            if not p:
+                continue
+            names.append(p.split()[-1])
+        out.setdefault(name, names)
+    return out
+
+
+def enclosing_call(clean, start):
+    """(вызов, номер аргумента) для литерала, или (None, None)."""
+    i, depth, commas = start, 0, 0
+    while i > 0:
+        i -= 1
+        c = clean[i]
+        if c in ')]}':
+            depth += 1
+        elif c in '([{':
+            if depth == 0:
+                if c != '(':
+                    return None, None
+                j = i
+                while j > 0 and clean[j - 1] in ' \t':
+                    j -= 1
+                k = j
+                while k > 0 and (clean[k - 1].isalnum() or clean[k - 1] in '_.'):
+                    k -= 1
+                callee = clean[k:j].strip('.')
+                before = clean[max(0, k - 5):k]
+                if before.rstrip().endswith('new'):
+                    callee = 'new ' + callee
+                return callee, commas
+            depth -= 1
+        elif c == ',' and depth == 0:
+            commas += 1
+        elif c == ';' and depth == 0:
+            return None, None
+    return None, None
+
+
+def call_skip(clean, start, params):
+    callee, arg = enclosing_call(clean, start)
+    if not callee:
+        return None
+    short = callee.split('.')[-1]
+    if callee in SKIP_CALLS or short in SKIP_CALLS or ('PlayerPrefs' in callee):
+        return f'вызов {callee}'
+    names = params.get(short)
+    if names and arg is not None and arg < len(names) and names[arg] in NAME_PARAMS:
+        return f'{short}: параметр «{names[arg]}» — имя объекта'
+    return None
+
+
 class Checker:
     def __init__(self, files):
         self.files = files
@@ -467,7 +554,9 @@ class Checker:
         for p, s in self.src.items():
             if self.LOC_MARK not in s:
                 continue
-            body = decomment(s)
+            body = blank_keep(s, literals_too=False)      # позиции те же, что в файле
+            clean = blank_keep(s, literals_too=True)
+            params = declared_params(clean)
             for m in lit.finditer(body):
                 if not cyr.search(m.group(2)):
                     continue
@@ -485,8 +574,10 @@ class Checker:
                                     'один раз при загрузке, смена языка её не тронет — '
                                     'в таблице Loc.N, перевод при показе')
                     continue
+                if re.search(r'\b(const|readonly)\s+string\s+\w*(Name|Key|Id|Tag|Path)\s*=\s*$', before):
+                    continue          # поле-идентификатор: имя объекта для Find, а не текст
                 if any(r.search(before) for r in self.LOC_SKIP) or \
-                   self.LOC_SKIP[0].search(wide):
+                   self.LOC_SKIP[0].search(wide) or call_skip(clean, start, params):
                     continue
                 self.report(p, line_of(body, start),
                             f'русский текст мимо Loc: «{m.group(2)[:40]}» — игрок на другом '

@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/PlateSight.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 

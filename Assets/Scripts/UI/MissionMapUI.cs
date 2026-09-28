@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/MissionMapUI.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +7,7 @@ using Sinbinder.AOS;
 using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -127,7 +129,7 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = string.IsNullOrEmpty(_board.LastReport)
-                    ? "Куда пойти.  Esc — отойти от шара"
+                    ? Loc.T("Куда пойти.  Esc — отойти от шара")
                     : _board.LastReport;
 
             Rows(out float y);
@@ -143,7 +145,7 @@ namespace Sinbinder.UI
                     enough
                         ? $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
                           + MissionCatalog.Promise(m.Spoils)
-                        : "Столько людей не наберётся.",
+                        : Loc.T("Столько людей не наберётся."),
                     enough ? () => PickCommander(m) : (System.Action)null));
 
                 y -= 150f;
@@ -156,7 +158,7 @@ namespace Sinbinder.UI
             _pickingCommander = true;
 
             if (_title != null)
-                _title.text = $"{mission.Name}. Кого поставить старшим.  Esc — назад";
+                _title.text = Loc.F("{0}. Кого поставить старшим.  Esc — назад", mission.Name);
 
             Rows(out float y);
 
@@ -203,7 +205,7 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = JunctionCatalog.Situation(_chosen.Junction)
-                            + "  Что вы им скажете?  Esc — к карте";
+                            + Loc.T("  Что вы им скажете?  Esc — к карте");
 
             Rows(out float y);
 
@@ -212,7 +214,7 @@ namespace Sinbinder.UI
                 var offer = option;
                 _spawned.Add(Row(y, true,
                     JunctionCatalog.Offer(offer),
-                    "Это не приказ. Решать будет старший.",
+                    Loc.T("Это не приказ. Решать будет старший."),
                     "",
                     () => Send(commanderName, offer)));
 
@@ -222,8 +224,8 @@ namespace Sinbinder.UI
             // Промолчать — тоже ход: тогда за отряд не говорит никто,
             // и видно, чего он хочет сам.
             _spawned.Add(Row(y, true,
-                "Промолчать.",
-                "Пусть решают сами.",
+                Loc.T("Промолчать."),
+                Loc.T("Пусть решают сами."),
                 "",
                 () => Send(commanderName, null)));
         }

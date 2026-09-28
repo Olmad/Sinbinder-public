@@ -1,10 +1,12 @@
 // Assets/Scripts/UI/CommandPanel.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -131,17 +133,17 @@ namespace Sinbinder.UI
         private string Tip(SelectionManager manager, bool heroOnly)
         {
             if (manager.Aiming == CommandKind.Attack)
-                return "Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать.";
-            if (manager.Aiming == CommandKind.Patrol) return "Укажите, докуда ходить. ПКМ — передумать.";
-            if (manager.Aiming != CommandKind.None) return "Укажите место. ПКМ — передумать.";
+                return Loc.T("Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать.");
+            if (manager.Aiming == CommandKind.Patrol) return Loc.T("Укажите, докуда ходить. ПКМ — передумать.");
+            if (manager.Aiming != CommandKind.None) return Loc.T("Укажите место. ПКМ — передумать.");
             if (_hover == null) return Worn(manager);
 
             string tip = $"{_hover.Word} · {_hover.Key}\n";
             if (_hover.Act != null) return tip + _hover.Tip;   // экран, а не приказ
-            if (heroOnly) return tip + "Греховод слушается всегда.";
+            if (heroOnly) return tip + Loc.T("Греховод слушается всегда.");
 
             tip += _hover.Tip;
-            if (Voice.Enabled) tip += "\nПриказ слышен тем лучше, чем ближе Греховод.";
+            if (Voice.Enabled) tip += Loc.T("\nПриказ слышен тем лучше, чем ближе Греховод.");
 
             string forecast = Forecast(manager, _hover);
             if (!string.IsNullOrEmpty(forecast)) tip += "\n" + forecast;
@@ -208,9 +210,9 @@ namespace Sinbinder.UI
             }
 
             var lines = new List<string>();
-            if (willing.Count > 0) lines.Add("Скорее пойдут: " + string.Join(", ", willing) + ".");
-            if (doubtful.Count > 0) lines.Add("Вряд ли — " + string.Join("; ", doubtful) + ".");
-            if (deaf.Count > 0) lines.Add("Не услышат: " + string.Join(", ", deaf) + ". Греховод далеко.");
+            if (willing.Count > 0) lines.Add(Loc.T("Скорее пойдут: ") + string.Join(", ", willing) + ".");
+            if (doubtful.Count > 0) lines.Add(Loc.T("Вряд ли — ") + string.Join("; ", doubtful) + ".");
+            if (deaf.Count > 0) lines.Add(Loc.T("Не услышат: ") + string.Join(", ", deaf) + Loc.T(". Греховод далеко."));
             return string.Join("\n", lines);
         }
 
@@ -244,7 +246,7 @@ namespace Sinbinder.UI
                 if (only != null) return "";
                 only = w;
             }
-            return only == null ? "" : $"{SquadGear.Summary(only)} I — вещи.";
+            return only == null ? "" : Loc.F("{0} I — вещи.", SquadGear.Summary(only));
         }
 
         // ──────────────────────────────────
@@ -270,24 +272,24 @@ namespace Sinbinder.UI
             _grid = Rect("Сетка", canvasGo.transform, new Vector2(1f, 0f),
                          new Vector2(-40f, 150f), new Vector2(4 * Cell + 3 * Gap, 2 * Cell + Gap));
 
-            Add(font, 0, 0, "Идти", "M или ПКМ", CommandKind.Move, aims: true, heroToo: true,
-                "Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит.");
-            Add(font, 1, 0, "Атака", "T или ПКМ по врагу", CommandKind.Attack, aims: true, heroToo: true,
-                "По врагу — бить его. По земле — идти туда и бить всех по дороге. "
-              + "Гневный рад. Трус и раненый — нет.");
-            Add(font, 2, 0, "Отход", "X или Shift + ПКМ", CommandKind.FallBack, aims: true, heroToo: false,
-                "Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит.");
-            Add(font, 3, 0, "Патруль", "P", CommandKind.Patrol, aims: true, heroToo: false,
-                "Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, "
-              + "усердный идёт охотно. Гневный бросит маршрут, увидев врага.");
-            Add(font, 0, 1, "Держать", "H", CommandKind.Hold, aims: false, heroToo: false,
-                "Терпеливый стоит. Гневный рвётся.");
-            Add(font, 1, 1, "Оборона", "G", CommandKind.Defend, aims: false, heroToo: false,
-                "Стоять и защищаться. Кто рвётся в драку, стоять не любит.");
-            Add(font, 2, 1, "Отмена", "C", CommandKind.None, aims: false, heroToo: true,
-                "Снятый приказ — не приказ. Дальше решают сами.");
-            Add(font, 3, 1, "Вещи", "I", CommandKind.None, aims: false, heroToo: true,
-                "Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F.",
+            Add(font, 0, 0, Loc.T("Идти"), "M или ПКМ", CommandKind.Move, aims: true, heroToo: true,
+                Loc.T("Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит."));
+            Add(font, 1, 0, Loc.T("Атака"), "T или ПКМ по врагу", CommandKind.Attack, aims: true, heroToo: true,
+                Loc.T("По врагу — бить его. По земле — идти туда и бить всех по дороге. "
+              + "Гневный рад. Трус и раненый — нет."));
+            Add(font, 2, 0, Loc.T("Отход"), "X или Shift + ПКМ", CommandKind.FallBack, aims: true, heroToo: false,
+                Loc.T("Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит."));
+            Add(font, 3, 0, Loc.T("Патруль"), "P", CommandKind.Patrol, aims: true, heroToo: false,
+                Loc.T("Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, "
+              + "усердный идёт охотно. Гневный бросит маршрут, увидев врага."));
+            Add(font, 0, 1, Loc.T("Держать"), "H", CommandKind.Hold, aims: false, heroToo: false,
+                Loc.T("Терпеливый стоит. Гневный рвётся."));
+            Add(font, 1, 1, Loc.T("Оборона"), "G", CommandKind.Defend, aims: false, heroToo: false,
+                Loc.T("Стоять и защищаться. Кто рвётся в драку, стоять не любит."));
+            Add(font, 2, 1, Loc.T("Отмена"), "C", CommandKind.None, aims: false, heroToo: true,
+                Loc.T("Снятый приказ — не приказ. Дальше решают сами."));
+            Add(font, 3, 1, Loc.T("Вещи"), "I", CommandKind.None, aims: false, heroToo: true,
+                Loc.T("Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F."),
                 GearPanel.Toggle);
 
             var tipRect = Rect("Подсказка", canvasGo.transform, new Vector2(1f, 0f),

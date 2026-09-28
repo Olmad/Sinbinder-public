@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -105,7 +106,7 @@ namespace Sinbinder.UI
             // снимок ответственной игры не имеет права открыться свободной.
             if (!SaveSystem.ReturnTo(save))
             {
-                Say("Эта запись не от нынешней игры.");
+                Say(Loc.T("Эта запись не от нынешней игры."));
                 return;
             }
 
@@ -119,7 +120,7 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_title != null)
-                _title.text = "Греху всё равно, чьё это тело.";
+                _title.text = Loc.T("Греху всё равно, чьё это тело.");
 
             float y = 0f;
 
@@ -131,23 +132,23 @@ namespace Sinbinder.UI
                 if (save == null) continue;
 
                 var where = slot;
-                string what = string.IsNullOrEmpty(save.Label) ? "Запись" : save.Label;
+                string what = string.IsNullOrEmpty(save.Label) ? Loc.T("Запись") : save.Label;
                 string how = save.Commitment
-                    ? "с обязательством — переиграть нельзя"
-                    : "свободно";
+                    ? Loc.T("с обязательством — переиграть нельзя")
+                    : Loc.T("свободно");
 
-                _spawned.Add(Row(y, "Продолжить", $"{what} · {how}",
+                _spawned.Add(Row(y, Loc.T("Продолжить"), $"{what} · {how}",
                                  () => Continue(where)));
                 y -= RowHeight;
             }
 
             if (y < 0f) y -= RowHeight * 0.4f;
 
-            _spawned.Add(Row(y, "Начать заново",
+            _spawned.Add(Row(y, Loc.T("Начать заново"),
                 Commitment.Describe(false), () => Begin(false)));
             y -= RowHeight;
 
-            _spawned.Add(Row(y, "Начать заново, взяв обязательство",
+            _spawned.Add(Row(y, Loc.T("Начать заново, взяв обязательство"),
                 Commitment.Describe(true), () => Begin(true)));
             y -= RowHeight * 1.3f;
 
@@ -155,9 +156,9 @@ namespace Sinbinder.UI
             // не «сложнее», а тот, в котором игра работает как задумана,
             // и сказать это надо до выбора, а не после.
             _spawned.Add(Row(y, "",
-                "Воины здесь спорят и отказываются. Если отказ можно "
+                Loc.T("Воины здесь спорят и отказываются. Если отказ можно "
               + "переиграть, он ничего не стоит — и весь спор становится "
-              + "помехой, которую обходят клавишей.", null));
+              + "помехой, которую обходят клавишей."), null));
         }
 
         private static void Say(string line)

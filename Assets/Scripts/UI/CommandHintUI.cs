@@ -1,7 +1,9 @@
 // Assets/Scripts/UI/CommandHintUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -33,7 +35,7 @@ namespace Sinbinder.UI
 
         [TextArea(1, 3)]
         [SerializeField] private string _line =
-            "Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда.";
+            Loc.T("Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда.");
 
         /// <summary>
         /// Показывали ли уже. Как и у подсказки движения — одна на пролог,

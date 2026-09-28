@@ -1,7 +1,9 @@
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -81,7 +83,7 @@ namespace Sinbinder.UI
         {
             yield return Gameplay.Beat.Until(() => Core.GamePauseController.Instance == null
                                                  || !Core.GamePauseController.Instance.IsPaused,
-                30f, "Заставка склепа не ушла — о плате спрашиваем поверх неё.");
+                30f, Loc.T("Заставка склепа не ушла — о плате спрашиваем поверх неё."));
 
             // Отряд должен успеть появиться: платят живым, а их ставит
             // спавнер в своём Start.
@@ -115,9 +117,9 @@ namespace Sinbinder.UI
             if (_asked || _panel == null) return;
             _asked = true;
 
-            if (_title != null) _title.text = "Вылазка окончена. Отряд ждёт платы.";
-            if (_payLabel != null) _payLabel.text = "Заплатить\nзолото уйдёт из мешка";
-            if (_withholdLabel != null) _withholdLabel.text = "Придержать\nони запомнят";
+            if (_title != null) _title.text = Loc.T("Вылазка окончена. Отряд ждёт платы.");
+            if (_payLabel != null) _payLabel.text = Loc.T("Заплатить\nзолото уйдёт из мешка");
+            if (_withholdLabel != null) _withholdLabel.text = Loc.T("Придержать\nони запомнят");
 
             Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
@@ -144,8 +146,8 @@ namespace Sinbinder.UI
             // Честность важнее удобства: если платить было нечем, отряд
             // запомнит долг, а не намерение.
             Log(paid
-                ? "Отряду заплачено."
-                : "Платить было нечем. Отряд это запомнил.");
+                ? Loc.T("Отряду заплачено.")
+                : Loc.T("Платить было нечем. Отряд это запомнил."));
 
             Close();
         }
@@ -160,7 +162,7 @@ namespace Sinbinder.UI
                     w.PaySalary(0f);
                 }
 
-            Log("Золото осталось в мешке. Отряд это запомнил.");
+            Log(Loc.T("Золото осталось в мешке. Отряд это запомнил."));
             Close();
         }
 

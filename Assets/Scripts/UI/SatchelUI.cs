@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/SatchelUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Core;
@@ -46,7 +47,7 @@ namespace Sinbinder.UI
         /// </summary>
         private static readonly Color Ink = new(0.08f, 0.07f, 0.04f);
 
-        private const string EmptyCell = "— Пусто —";
+        private static readonly string EmptyCell = Loc.N("— Пусто —");
 
         private float _next;
 
@@ -93,7 +94,7 @@ namespace Sinbinder.UI
             text.alignment = TextAnchor.MiddleRight;
             text.color = Idle;
             text.raycastTarget = false;
-            text.text = "Tab — следующая ячейка · R — взять в руку или положить";
+            text.text = Loc.T("Tab — следующая ячейка · R — взять в руку или положить");
         }
 
         void Update()
@@ -137,7 +138,7 @@ namespace Sinbinder.UI
                 {
                     // Пустая ячейка — «— Пусто —» (автор, 24 сентября):
                     // одно слово «пусто» терялось среди названий душ.
-                    _cells[i].text = slot.Empty ? EmptyCell : Satchel.Describe(i);
+                    _cells[i].text = slot.Empty ? Loc.T(EmptyCell) : Satchel.Describe(i);
                     _cells[i].color = i == chosen
                         ? Ink
                         : (slot.Empty || slot.EmptyJar ? Idle : Full);

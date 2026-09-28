@@ -1,7 +1,9 @@
 // Assets/Scripts/UI/MovementHintUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -36,13 +38,13 @@ namespace Sinbinder.UI
         [Tooltip("Подсказка, когда смотрят глазами Греховода: там W, A, S, D ведут его.")]
         [TextArea(1, 3)]
         [SerializeField] private string _line =
-            "W, A, S, D — идти. Камера идёт за вами.";
+            Loc.T("W, A, S, D — идти. Камера идёт за вами.");
 
         [Tooltip("Подсказка, когда смотрят сверху: там W, A, S, D ведут камеру, "
                + "а Греховода — правая кнопка.")]
         [TextArea(1, 3)]
         [SerializeField] private string _fromAbove =
-            "Щёлкните по Греховоду, затем правой кнопкой — куда идти.";
+            Loc.T("Щёлкните по Греховоду, затем правой кнопкой — куда идти.");
 
         /// <summary>
         /// Показывали ли уже. Статично и переживает смену сцен: подсказка

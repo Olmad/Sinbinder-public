@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,7 +40,7 @@ namespace Sinbinder.UI
             // Конец игры: гнёзда — через «Начать сначала» (QuickSave, там же почему).
             if (GamePauseController.Instance != null && GamePauseController.Instance.Halted)
             {
-                if (Input.GetKeyDown(_key)) Say("Игра окончена. Начните сначала — там и запись.");
+                if (Input.GetKeyDown(_key)) Say(Loc.T("Игра окончена. Начните сначала — там и запись."));
                 return;
             }
 
@@ -75,8 +76,8 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = _loading
-                    ? "Вернуться к записанному.  F9 или Esc — закрыть"
-                    : "Куда записать.  F9 или Esc — закрыть";
+                    ? Loc.T("Вернуться к записанному.  F9 или Esc — закрыть")
+                    : Loc.T("Куда записать.  F9 или Esc — закрыть");
 
             float y = 0f;
 
@@ -85,7 +86,7 @@ namespace Sinbinder.UI
             if (Commitment.CanLoad)
             {
                 bool toLoad = !_loading;
-                _spawned.Add(Row(y, toLoad ? "Вернуться к записанному" : "Записать",
+                _spawned.Add(Row(y, toLoad ? Loc.T("Вернуться к записанному") : Loc.T("Записать"),
                     "", () => { _loading = toLoad; Draw(); }));
                 y -= RowHeight * 1.4f;
             }
@@ -102,8 +103,8 @@ namespace Sinbinder.UI
                 bool has = save != null;
 
                 string what = has
-                    ? (string.IsNullOrEmpty(save.Label) ? "Запись" : save.Label)
-                    : "Пусто";
+                    ? (string.IsNullOrEmpty(save.Label) ? Loc.T("Запись") : save.Label)
+                    : Loc.T("Пусто");
 
                 // Загружать нечего — строка есть, но не нажимается:
                 // пустое гнездо должно быть видно, чтобы в него записали.
@@ -119,7 +120,7 @@ namespace Sinbinder.UI
         private static void Save(string slot)
         {
             bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.PathOf(slot));
-            Say(ok ? $"Записано в «{slot}»." : "Записать не вышло.");
+            Say(ok ? Loc.F("Записано в «{0}».", slot) : Loc.T("Записать не вышло."));
         }
 
         private static void Load(string slot)
@@ -129,8 +130,8 @@ namespace Sinbinder.UI
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
 
             Say(SaveSystem.ReturnTo(save)
-                ? $"Вернулись к «{slot}»."
-                : "Эта запись не от нынешней игры.");
+                ? Loc.F("Вернулись к «{0}».", slot)
+                : Loc.T("Эта запись не от нынешней игры."));
         }
 
         private static void Say(string line)

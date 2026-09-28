@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/BattleLogUI.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;

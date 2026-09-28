@@ -1,9 +1,11 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.AOS;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -157,7 +159,7 @@ namespace Sinbinder.UI
         {
             yield return Gameplay.Beat.Until(() => Gameplay.CampOpening.EscortArrived,
                 _summonSafety,
-                "Провожатый так и не пошёл рядом — Карган зовёт к шару без него.");
+                Loc.T("Провожатый так и не пошёл рядом — Карган зовёт к шару без него."));
 
             Summon();
             _summoned = true;
@@ -172,7 +174,7 @@ namespace Sinbinder.UI
             }
 
             yield return Gameplay.Beat.UntilPlayer(() => _approached || _done,
-                _summonNudge, "Карган ждёт у стола с шаром.");
+                _summonNudge, Loc.T("Карган ждёт у стола с шаром."));
         }
 
         /// <summary>
@@ -189,9 +191,9 @@ namespace Sinbinder.UI
             // одиннадцать подряд — двадцать одна секунда сплошного текста
             // в сцене, где игрок ещё учится ходить. Он либо читает
             // и не играет, либо играет и не читает.
-            Gameplay.Herald.Line("Карган: «Владыка, отряд вернулся с трофеями. У нас "
+            Gameplay.Herald.Line(Loc.T("Карган: «Владыка, отряд вернулся с трофеями. У нас "
                     + "ещё осталась точка интереса — давайте кого-нибудь "
-                    + "отправим». Он ждёт у стола с шаром.");
+                    + "отправим». Он ждёт у стола с шаром."));
         }
 
         void Update()
@@ -229,9 +231,9 @@ namespace Sinbinder.UI
             var log = Object.FindFirstObjectByType<BattleLogUI>();
             if (log == null) return;
 
-            Gameplay.Herald.Line($"Карган: «Пришли. Нажмите {_openKey} — и решайте, владыка: "
+            Gameplay.Herald.Line(Loc.F("Карган: «Пришли. Нажмите {0} — и решайте, владыка: "
                     + "кого отправить, а кого при себе оставить. Я скажу, "
-                    + "чего от каждого ждать».");
+                    + "чего от каждого ждать».", _openKey));
         }
 
         /// <summary>
@@ -389,7 +391,7 @@ namespace Sinbinder.UI
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
 
-            if (_title != null) _title.text = "Кого поставить старшим";
+            if (_title != null) _title.text = Loc.T("Кого поставить старшим");
 
             // Шаг строки считаем по месту, а не берём готовым. Имён
             // в лагере двенадцать, а места в столбце — на семь строк;
@@ -516,17 +518,17 @@ namespace Sinbinder.UI
 
             if (_confirmLabel != null)
                 _confirmLabel.text = has
-                    ? $"Поставить старшим: {option.Value.Warrior.DisplayName}"
-                    : "Выберите, кого поставить";
+                    ? Loc.F("Поставить старшим: {0}", Loc.Name(option.Value.Warrior.DisplayName))
+                    : Loc.T("Выберите, кого поставить");
 
             if (_detail == null) return;
 
             if (!has)
             {
-                _detail.text = "Выберите имя слева." + Break
-                             + "Здесь Карган скажет, чего от него ждать: "
+                _detail.text = Loc.T("Выберите имя слева.") + Break
+                             + Loc.T("Здесь Карган скажет, чего от него ждать: "
                              + "сколько уведёт и как поведёт себя, "
-                             + "когда станет трудно.";
+                             + "когда станет трудно.");
                 return;
             }
 
@@ -549,15 +551,15 @@ namespace Sinbinder.UI
         /// </summary>
         private string QuestText()
         {
-            return "Точка интереса" + Break
-                 + "Разведка донесла: за холмами стоит брошенная застава. "
-                 + "Взять там есть что, и потому там небезопасно." + Break
-                 + "Карган: «Там довольно опасно, владыка. Нужен старший, "
-                 + $"который уведёт {Leadership.Count(_requiredSquad)}. "
+            return Loc.T("Точка интереса") + Break
+                 + Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
+                 + "Взять там есть что, и потому там небезопасно.") + Break
+                 + Loc.F("Карган: «Там довольно опасно, владыка. Нужен старший, "
+                 + "который уведёт {0}. "
                  + "Кто столько не уводит — в списке виден, но не годится, "
-                 + "и рядом написано почему»." + Break
-                 + "Отряд уйдёт сразу. Вернётся не весь и не таким, "
-                 + "каким уходил.";
+                 + "и рядом написано почему».", Leadership.Count(_requiredSquad)) + Break
+                 + Loc.T("Отряд уйдёт сразу. Вернётся не весь и не таким, "
+                 + "каким уходил.");
         }
 
         /// <summary>Назначить отмеченного. Отдельно от отметки: решение одно.</summary>
@@ -604,7 +606,7 @@ namespace Sinbinder.UI
             Core.GamePauseController.Instance?.Resume();
 
             var log = Object.FindFirstObjectByType<BattleLogUI>();
-            log?.Write($"{warrior.DisplayName} принял отряд.");
+            log?.Write(Loc.F("{0} принял отряд.", Loc.Name(warrior.DisplayName)));
         }
     }
 }

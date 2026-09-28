@@ -1,4 +1,5 @@
 // Assets/Scripts/UI/SelectedUnitPanelUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Core;
@@ -97,7 +98,7 @@ namespace Sinbinder.UI
                 _shown = who;
                 _shownPicked = picked;
                 _nameLine.text = who.ShownName;
-                _sinLine.text = picked ? SinLine(who) : "Никто не выделен";
+                _sinLine.text = picked ? SinLine(who) : Loc.T("Никто не выделен");
             }
 
             _actionLine.text = ActionLine(who);
@@ -142,18 +143,18 @@ namespace Sinbinder.UI
         /// </summary>
         private string SinLine(Warrior who)
         {
-            if (who is SinbinderPlayer) return "Греховод. Приказывает, но не решает";
+            if (who is SinbinderPlayer) return Loc.T("Греховод. Приказывает, но не решает");
 
             var soul = who.Soul;
-            if (soul == null) return "Душа неизвестна";
+            if (soul == null) return Loc.T("Душа неизвестна");
 
-            string line = $"Громче всего: {soul.GetSinName()}";
+            string line = Loc.F("Громче всего: {0}", soul.GetSinName());
 
             // Братство — не шкала, а связь, и в панели она стоит рядом
             // со шкалой не для красоты: движок читает её в бою
             // (CombatDecisionContext.BrotherNearby), и игрок обязан
             // видеть то же, что видит движок.
-            return Brother(soul) ? line + " · Брат по оружию" : line;
+            return Brother(soul) ? line + Loc.T(" · Брат по оружию") : line;
         }
 
         /// <summary>Носит ли душа перк братства.</summary>
@@ -179,7 +180,7 @@ namespace Sinbinder.UI
                 var legs = who.GetComponent<UnitMover>();
                 bool going = (walk != null && walk.Walking)
                           || (legs != null && legs.IsMoving);
-                return going ? "Идёт" : "Стоит";
+                return going ? Loc.T("Идёт") : Loc.T("Стоит");
             }
 
             if (!Transparency.Shows(Clarity.Icons)) return string.Empty;
@@ -192,10 +193,10 @@ namespace Sinbinder.UI
             if (wrapper.LastDecision == AOS.ActionType.Idle)
             {
                 string spot = CampLife.Now(who);
-                if (!string.IsNullOrEmpty(spot)) return "Сейчас: " + spot;
+                if (!string.IsNullOrEmpty(spot)) return Loc.T("Сейчас: ") + spot;
             }
 
-            return "Сейчас: " + AOS.PhraseGenerator.Doing(wrapper.LastDecision);
+            return Loc.T("Сейчас: ") + AOS.PhraseGenerator.Doing(wrapper.LastDecision);
         }
     }
 }

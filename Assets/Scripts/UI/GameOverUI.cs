@@ -1,9 +1,11 @@
 // Assets/Scripts/UI/GameOverUI.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -111,14 +113,14 @@ namespace Sinbinder.UI
             // автора, 24 сентября). В игре с обязательством кнопки нет.
             if (Core.SaveSystem.CanRestartPart)
             {
-                Choice("С начала доли", panel, font, new Vector2(-290f, 70f), AgainPart, 260f);
-                Choice("Начать сначала", panel, font, new Vector2(0f, 70f), NewGame, 260f);
-                Choice("Выйти из игры", panel, font, new Vector2(290f, 70f), Application.Quit, 260f);
+                Choice(Loc.T("С начала доли"), panel, font, new Vector2(-290f, 70f), AgainPart, 260f);
+                Choice(Loc.T("Начать сначала"), panel, font, new Vector2(0f, 70f), NewGame, 260f);
+                Choice(Loc.T("Выйти из игры"), panel, font, new Vector2(290f, 70f), Application.Quit, 260f);
             }
             else
             {
-                Choice("Начать сначала", panel, font, new Vector2(-190f, 70f), NewGame);
-                Choice("Выйти из игры", panel, font, new Vector2(190f, 70f), Application.Quit);
+                Choice(Loc.T("Начать сначала"), panel, font, new Vector2(-190f, 70f), NewGame);
+                Choice(Loc.T("Выйти из игры"), panel, font, new Vector2(190f, 70f), Application.Quit);
             }
         }
 

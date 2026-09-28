@@ -1,10 +1,12 @@
 // Assets/Scripts/UI/GearPanel.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
 using Sinbinder.Inventory;
 
+using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
@@ -167,7 +169,7 @@ namespace Sinbinder.UI
 
             if (PlayerInventory.Instance == null)
             {
-                Say("Мешка Греховода в этой сцене нет.");
+                Say(Loc.T("Мешка Греховода в этой сцене нет."));
                 return;
             }
 
@@ -237,9 +239,9 @@ namespace Sinbinder.UI
                 || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
 
             var w = LookedAt();
-            if (w != null) { _prompt.text = $"F — поговорить: {w.DisplayName}"; return; }
+            if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
-            _prompt.text = TrophyChest.Reachable() != null ? "F — сундук Марги" : "";
+            _prompt.text = TrophyChest.Reachable() != null ? Loc.T("F — сундук Марги") : "";
         }
 
         /// <summary>Нижний край строки F, когда над панелью выделенного пусто.</summary>
@@ -393,8 +395,8 @@ namespace Sinbinder.UI
             var store = PlayerInventory.Instance;
             string name = _warrior.DisplayName;
 
-            _title.text = $"Снаряжение: {name}";
-            _leftTitle.text = "На воине";
+            _title.text = Loc.F("Снаряжение: {0}", name);
+            _leftTitle.text = Loc.T("На воине");
             Clear(_hands);
             Clear(_store);
 
@@ -402,10 +404,10 @@ namespace Sinbinder.UI
             {
                 var item = _warrior.Worn(slot);
                 string place = SquadGear.SlotWord(slot);
-                if (item == null) { Row(_hands, $"{place}: — Пусто —", "", null); continue; }
+                if (item == null) { Row(_hands, Loc.F("{0}: — Пусто —", place), "", null); continue; }
 
                 bool gives = SquadGear.WillGive(_warrior, item, out string word);
-                Row(_hands, $"{place}: {item.Name}", Line(item, gives ? "отдаст" : $"не отдаст: {word}"),
+                Row(_hands, $"{place}: {item.Name}", Line(item, gives ? Loc.T("отдаст") : Loc.F("не отдаст: {0}", word)),
                     _near ? () => TakeBack(item) : (System.Action)null);
             }
 
@@ -414,9 +416,9 @@ namespace Sinbinder.UI
             if (_warrior.PocketGold > 0)
             {
                 bool gives = SquadGear.WillGivePocket(_warrior, out string word);
-                Row(_hands, $"Карман: {SquadGear.GoldWord(_warrior.PocketGold)}",
-                    Core.Grammar.For(_warrior.Gender, gives ? "своё золото · отдаст, если попросить"
-                                                            : $"своё золото · не отдаст: {word}"),
+                Row(_hands, Loc.F("Карман: {0}", SquadGear.GoldWord(_warrior.PocketGold)),
+                    Core.Grammar.For(_warrior.Gender, gives ? Loc.T("своё золото · отдаст, если попросить")
+                                                            : Loc.F("своё золото · не отдаст: {0}", word)),
                     _near ? AskPocket : (System.Action)null);
             }
 
@@ -430,20 +432,20 @@ namespace Sinbinder.UI
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
                     string than = SquadGear.Compare(_warrior, item);
                     if (!string.IsNullOrEmpty(than)) word = $"{than} · {word}";
-                    Row(_store, item.Name, Line(item, takes ? word : $"не возьмёт: {word}"),
+                    Row(_store, item.Name, Line(item, takes ? word : Loc.F("не возьмёт: {0}", word)),
                         _near ? () => HandOver(item) : (System.Action)null, height);
                     shown++;
                 }
 
-                if (shown == 0) Row(_store, "— Пусто —", "", null);
-                _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
+                if (shown == 0) Row(_store, Loc.T("— Пусто —"), "", null);
+                _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
             }
 
-            _bagTitle.text = _near ? "Мешок Греховода — щелчок: отдать"
-                                   : "Мешок Греховода";
+            _bagTitle.text = _near ? Loc.T("Мешок Греховода — щелчок: отдать")
+                                   : Loc.T("Мешок Греховода");
             _hint.text = _near
-                ? "Щелчок по вещи на воине — забрать в мешок. Занятое место — замена. I, F или Esc — закрыть."
-                : "Издали только смотрят. Отдать и забрать — подойдя: F от первого лица. I или Esc — закрыть.";
+                ? Loc.T("Щелчок по вещи на воине — забрать в мешок. Занятое место — замена. I, F или Esc — закрыть.")
+                : Loc.T("Издали только смотрят. Отдать и забрать — подойдя: F от первого лица. I или Esc — закрыть.");
 
             _reply.text = _answer;
         }
@@ -456,9 +458,9 @@ namespace Sinbinder.UI
         {
             var store = PlayerInventory.Instance;
 
-            _title.text = "Сундук Марги";
-            _leftTitle.text = "В сундуке — щелчок: взять в мешок";
-            _bagTitle.text = "Мешок Греховода — щелчок: положить в сундук";
+            _title.text = Loc.T("Сундук Марги");
+            _leftTitle.text = Loc.T("В сундуке — щелчок: взять в мешок");
+            _bagTitle.text = Loc.T("Мешок Греховода — щелчок: положить в сундук");
             Clear(_hands);
             Clear(_store);
 
@@ -466,22 +468,22 @@ namespace Sinbinder.UI
             float left = RowHeight(_hands, inside.Count);
             foreach (var item in inside)
             {
-                string how = item.Type == ItemType.Gold ? "в кошель" : "в мешок";
+                string how = item.Type == ItemType.Gold ? Loc.T("в кошель") : Loc.T("в мешок");
                 Row(_hands, item.Name, Plain(item, how), () => FromChest(item), left);
             }
-            if (inside.Count == 0) Row(_hands, "— Пусто —", "", null);
+            if (inside.Count == 0) Row(_hands, Loc.T("— Пусто —"), "", null);
 
             if (store != null)
             {
                 var bag = Bag(store);
                 float right = RowHeight(_store, bag.Count);
                 foreach (var item in bag)
-                    Row(_store, item.Name, Plain(item, "в сундук"), () => ToChest(item), right);
-                if (bag.Count == 0) Row(_store, "— Пусто —", "", null);
-                _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
+                    Row(_store, item.Name, Plain(item, Loc.T("в сундук")), () => ToChest(item), right);
+                if (bag.Count == 0) Row(_store, Loc.T("— Пусто —"), "", null);
+                _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
             }
 
-            _hint.text = "Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть.";
+            _hint.text = Loc.T("Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть.");
             _reply.text = _answer;
         }
 
@@ -493,37 +495,37 @@ namespace Sinbinder.UI
         {
             var store = PlayerInventory.Instance;
 
-            _title.text = "Мешок Греховода";
-            _leftTitle.text = "В мешке";
-            _bagTitle.text = "Как отдать";
+            _title.text = Loc.T("Мешок Греховода");
+            _leftTitle.text = Loc.T("В мешке");
+            _bagTitle.text = Loc.T("Как отдать");
             Clear(_hands);
             Clear(_store);
 
             var bag = store != null ? Bag(store) : new List<InventoryItem>();
             float height = RowHeight(_hands, bag.Count);
             foreach (var item in bag) Row(_hands, item.Name, Plain(item, item.Description), null, height);
-            if (bag.Count == 0) Row(_hands, "— Пусто —", "", null);
+            if (bag.Count == 0) Row(_hands, Loc.T("— Пусто —"), "", null);
 
-            Row(_store, "Воину", "подойти к нему и F от первого лица", null);
-            Row(_store, "Посмотреть, что на воине", "выделить его и I — или «Вещи»", null);
-            if (TrophyChest.Store) Row(_store, "В сундук лагеря", "подойти к сундуку и F", null);
+            Row(_store, Loc.T("Воину"), Loc.T("подойти к нему и F от первого лица"), null);
+            Row(_store, Loc.T("Посмотреть, что на воине"), Loc.T("выделить его и I — или «Вещи»"), null);
+            if (TrophyChest.Store) Row(_store, Loc.T("В сундук лагеря"), Loc.T("подойти к сундуку и F"), null);
 
-            if (store != null) _gold.text = $"Кошель Греховода: {SquadGear.GoldWord(store.Gold)}";
-            _hint.text = "I или Esc — закрыть.";
+            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+            _hint.text = Loc.T("I или Esc — закрыть.");
             _reply.text = "";
         }
 
         private void FromChest(InventoryItem item)
         {
             bool ok = _chest.Take(item, PlayerInventory.Instance, out string word);
-            _answer = ok ? $"{item.Name} — {word}." : $"Не взять: {word}.";
+            _answer = ok ? $"{item.Name} — {word}." : Loc.F("Не взять: {0}.", word);
             Redraw();
         }
 
         private void ToChest(InventoryItem item)
         {
             bool ok = _chest.Put(item, PlayerInventory.Instance, out string word);
-            _answer = ok ? $"{item.Name} — {word}." : $"Не положить: {word}.";
+            _answer = ok ? $"{item.Name} — {word}." : Loc.F("Не положить: {0}.", word);
             Redraw();
         }
 
@@ -575,7 +577,7 @@ namespace Sinbinder.UI
         private void AskPocket()
         {
             bool ok = SquadGear.AskPocket(_warrior, PlayerInventory.Instance, out string word);
-            Answer(ok ? $"{_warrior.DisplayName} отдаёт своё золото в кошель Греховода."
+            Answer(ok ? Loc.F("{0} отдаёт своё золото в кошель Греховода.", Loc.Name(_warrior.DisplayName))
                       : $"{_warrior.DisplayName} {word}.");
         }
 

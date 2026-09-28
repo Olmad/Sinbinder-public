@@ -29,7 +29,8 @@ SCRIPTS = os.path.join(ROOT, 'Assets', 'Scripts')
 LANG_DIR = os.path.join(ROOT, 'Assets', 'Resources', 'Lang')
 SKIP_DIRS = ('Editor', 'Tests', 'Tools')
 
-CALL = re.compile(r'\bLoc\.(T|F|N)\s*\(\s*(@?)"((?:[^"\\\n]|\\.|"")*)"')
+CALL = re.compile(r'\bLoc\.(T|F|N)\s*\(\s*((?:@?"(?:[^"\\\n]|\\.|"")*"\s*\+\s*)*@?"(?:[^"\\\n]|\\.|"")*")')
+PIECE = re.compile(r'(@?)"((?:[^"\\\n]|\\.|"")*)"')
 
 
 def unescape_cs(s, verbatim):
@@ -89,7 +90,7 @@ def scan():
             # строки-комментарии (/// <c>Loc.T("Пауза")</c> в описании) — не текст игры
             src = '\n'.join('' if l.lstrip().startswith('//') else l for l in src.split('\n'))
             for m in CALL.finditer(src):
-                key = unescape_cs(m.group(3), m.group(2) == '@')
+                key = ''.join(unescape_cs(p.group(2), p.group(1) == '@') for p in PIECE.finditer(m.group(2)))
                 found.setdefault(key, [])
                 if rel not in found[key]:
                     found[key].append(rel)
