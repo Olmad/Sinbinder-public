@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -60,7 +61,7 @@ namespace Sinbinder.Core
         /// <summary>Смещение словами — для экрана сборки, без чисел.</summary>
         public string DescribeBias(float threshold = 5f)
         {
-            if (spectrumBias == null) return "Тело ничего не навязывает.";
+            if (spectrumBias == null) return Loc.T("Тело ничего не навязывает.");
 
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < spectrumBias.Length && i < SoulData.SpectrumCount; i++)
@@ -70,11 +71,11 @@ namespace Sinbinder.Core
 
                 var sin = (SinType)i;
                 sb.AppendLine(v > 0f
-                    ? $"Тянет к: {SoulData.GetSinName(sin)}"
-                    : $"Отнимает: {SoulData.GetSinName(sin)}");
+                    ? Loc.F("Тянет к: {0}", SoulData.GetSinName(sin))
+                    : Loc.F("Отнимает: {0}", SoulData.GetSinName(sin)));
             }
 
-            return sb.Length == 0 ? "Тело ничего не навязывает." : sb.ToString().TrimEnd();
+            return sb.Length == 0 ? Loc.T("Тело ничего не навязывает.") : sb.ToString().TrimEnd();
         }
     }
 }

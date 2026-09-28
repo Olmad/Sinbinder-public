@@ -42,7 +42,7 @@ namespace Sinbinder.Crypt
         /// </summary>
         public string WhyNot(SquadRoster.Member member, Mission mission)
         {
-            if (!string.IsNullOrEmpty(member.Unavailable)) return member.Unavailable;
+            if (!string.IsNullOrEmpty(member.Unavailable)) return Loc.T(member.Unavailable);
 
             return Leadership.CanLead(member.Leadership, mission.Squad)
                 ? ""

@@ -91,16 +91,19 @@ namespace Sinbinder.Crypt
             }
         }
 
-        /// <summary>Одно слово для памяти: чем это было.</summary>
+        /// <summary>
+        /// Одно слово для памяти: чем это было. Это ключ, а не текст игрока —
+        /// не переводится (docs/38-LANG.md, пометка «// ключ»).
+        /// </summary>
         public static string Remembered(MissionAction action)
         {
             switch (action)
             {
-                case MissionAction.TakeGoodsSparePeople: return Loc.T("ГрабёжБезКрови");
-                case MissionAction.TakeEverything:       return Loc.T("РезняНаДороге");
-                case MissionAction.LetThemPass:          return Loc.T("ОбозОтпущен");
-                case MissionAction.TakePeople:           return Loc.T("ЛюдиУведены");
-                default:                                 return Loc.T("Вылазка");
+                case MissionAction.TakeGoodsSparePeople: return "ГрабёжБезКрови";   // ключ: слово для памяти, а не текст
+                case MissionAction.TakeEverything:       return "РезняНаДороге";   // ключ: слово для памяти, а не текст
+                case MissionAction.LetThemPass:          return "ОбозОтпущен";   // ключ: слово для памяти, а не текст
+                case MissionAction.TakePeople:           return "ЛюдиУведены";   // ключ: слово для памяти, а не текст
+                default:                                 return "Вылазка";   // ключ: слово для памяти, а не текст
             }
         }
     }

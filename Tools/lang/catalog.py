@@ -22,7 +22,12 @@
 import json
 import os
 import re
+import signal
 import sys
+
+# вывод в head — не ошибка
+if hasattr(signal, 'SIGPIPE'):
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPTS = os.path.join(ROOT, 'Assets', 'Scripts')

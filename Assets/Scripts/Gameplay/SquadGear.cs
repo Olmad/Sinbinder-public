@@ -120,7 +120,7 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
-        private static string Lower(InventoryItem item) => item.Name.ToLowerInvariant();
+        private static string Lower(InventoryItem item) => Loc.Name(item.Name).ToLowerInvariant();
 
         /// <summary>Отдаст ли воин вещь из рук — и что скажет.</summary>
         public static bool WillGive(Warrior w, InventoryItem item, out string word)
@@ -243,7 +243,7 @@ namespace Sinbinder.Gameplay
         public static string Summary(Warrior w)
         {
             var names = new System.Collections.Generic.List<string>();
-            foreach (var item in w.Carried) names.Add(item.Name.ToLowerInvariant());
+            foreach (var item in w.Carried) names.Add(Loc.Name(item.Name).ToLowerInvariant());
 
             string line = names.Count == 0 ? Loc.T("Ничего не надето.") : Loc.F("Надето: {0}.", string.Join(", ", names));
             if (w.PocketGold > 0) line += Loc.F(" В кармане — {0}.", GoldWord(w.PocketGold));

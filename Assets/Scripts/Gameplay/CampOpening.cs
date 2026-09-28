@@ -246,7 +246,7 @@ namespace Sinbinder.Gameplay
             if (!found) return;
 
             var bodyguard = Bodyguard();
-            string who = bodyguard.HasValue ? bodyguard.Value.Name : Loc.T("Карган Старый Ворон");
+            string who = Loc.Name(bodyguard.HasValue ? bodyguard.Value.Name : Loc.N("Карган Старый Ворон"));
 
             Herald.Line(Loc.F("{0}: «Владыка, ваше наказание {1} "
               + "затянулось. Подумайте о последствиях».", who, Possessive(debtor.Name)));
@@ -274,10 +274,10 @@ namespace Sinbinder.Gameplay
             int space = name.IndexOf(' ');
             string first = space > 0 ? name.Substring(0, space) : name;
 
-            if (first.EndsWith("а")) return first.Substring(0, first.Length - 1) + Loc.T("и");
-            if (first.EndsWith("я")) return first.Substring(0, first.Length - 1) + Loc.T("и");
+            if (first.EndsWith("а")) return first.Substring(0, first.Length - 1) + "и";   // ключ: окончание, не текст
+            if (first.EndsWith("я")) return first.Substring(0, first.Length - 1) + "и";   // ключ: окончание, не текст
 
-            return first + Loc.T("а");
+            return first + "а";   // ключ: окончание, не текст
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Sinbinder.UI
             gameObject.SetActive(true);
 
             if (_name != null)
-                _name.text = $"{warrior.DisplayName} — {warrior.Soul.GetSinName()}";
+                _name.text = $"{Loc.Name(warrior.DisplayName)} — {warrior.Soul.GetSinName()}";
 
             if (_spectra != null)
                 _spectra.text = warrior.Soul.GetSpectraDescription();

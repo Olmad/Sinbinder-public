@@ -1,6 +1,8 @@
 // Assets/Scripts/Inventory/TrophyCatalog.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 
+using Sinbinder.Core;
 namespace Sinbinder.Inventory
 {
     /// <summary>
@@ -21,23 +23,23 @@ namespace Sinbinder.Inventory
         public static IEnumerable<InventoryItem> Chest()
         {
             yield return new InventoryItem(
-                "Кольчужный ворот",
-                "Чужой, ушитый по чужой шее. Но шея у всех одна.",
+                Loc.N("Кольчужный ворот"),
+                Loc.N("Чужой, ушитый по чужой шее. Но шея у всех одна."),
                 ItemType.Equipment, defense: 2f, slot: GearSlot.Body);
 
             yield return new InventoryItem(
-                "Топор с новым топорищем",
-                "Лезвие старше топорища втрое. Кто-то очень не хотел его бросать.",
+                Loc.N("Топор с новым топорищем"),
+                Loc.N("Лезвие старше топорища втрое. Кто-то очень не хотел его бросать."),
                 ItemType.Equipment, attack: 2f, slot: GearSlot.Weapon);
 
             yield return new InventoryItem(
-                "Связка вяленого мяса",
-                "Перевязана бечёвкой дважды. Марга считал.",
+                Loc.N("Связка вяленого мяса"),
+                Loc.N("Перевязана бечёвкой дважды. Марга считал."),
                 ItemType.Provision, 3);
 
             yield return new InventoryItem(
-                "Горсть монет",
-                "Позеленевшие. Их выкапывали, а не зарабатывали.",
+                Loc.N("Горсть монет"),
+                Loc.N("Позеленевшие. Их выкапывали, а не зарабатывали."),
                 ItemType.Gold, 24);
         }
     }

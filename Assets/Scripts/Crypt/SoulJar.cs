@@ -72,7 +72,7 @@ namespace Sinbinder.Crypt
             if (kept.Soul == null) { _shelf.Rebuild(); return; }
 
             CryptHands.TakeSoul(kept.Soul, kept.Quality);
-            Say(Loc.F("Взято: {0}. {1}", kept.Soul.Name, Freshness(kept.Quality)));
+            Say(Loc.F("Взято: {0}. {1}", Loc.Name(kept.Soul.Name), Freshness(kept.Quality)));
 
             _shelf.Rebuild();
         }

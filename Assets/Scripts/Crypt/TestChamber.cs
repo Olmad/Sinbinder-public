@@ -151,8 +151,8 @@ namespace Sinbinder.Crypt
             string why = PhraseGenerator.Explain(_subject, context, decision);
 
             Current = string.IsNullOrEmpty(why)
-                ? $"{_subject.DisplayName} {what}."
-                : $"{_subject.DisplayName} {what}. {why}";
+                ? $"{Loc.Name(_subject.DisplayName)} {what}."
+                : $"{Loc.Name(_subject.DisplayName)} {what}. {why}";
 
             Log(Current);
         }

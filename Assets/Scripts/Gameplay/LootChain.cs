@@ -69,7 +69,7 @@ namespace Sinbinder.Gameplay
                 SquadGear.Place(who, trophy, out _, out var old);
                 if (SquadGear.Pick(who, trophy, store, out string word))
                 {
-                    string swap = old == null ? "" : Loc.F(" Прежнее — {0} — уходит в мешок Греховода.", old.Name.ToLowerInvariant());
+                    string swap = old == null ? "" : Loc.F(" Прежнее — {0} — уходит в мешок Греховода.", Loc.Name(old.Name).ToLowerInvariant());
                     log?.Write(Grammar.For(who.Gender,
                         Loc.F("{0} забирает трофей: {1}.{2}", Loc.Name(who.DisplayName), what.ToLowerInvariant(), swap)));
                 }

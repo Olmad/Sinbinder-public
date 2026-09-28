@@ -262,6 +262,33 @@ def call_skip(clean, start, params):
     return None
 
 
+def inside_debug(clean, start):
+    """Строка где-то внутри Debug.Log(…) — на любой глубине скобок: журнал разработчика."""
+    i, depth = start, 0
+    while i > 0:
+        i -= 1
+        c = clean[i]
+        if c in ')]}':
+            depth += 1
+        elif c in '([{':
+            if depth == 0:
+                if c == '{':
+                    return False
+                j = i
+                while j > 0 and clean[j - 1] in ' \t':
+                    j -= 1
+                k = j
+                while k > 0 and (clean[k - 1].isalnum() or clean[k - 1] in '_.'):
+                    k -= 1
+                if clean[k:j].startswith('Debug.Log'):
+                    return True
+            else:
+                depth -= 1
+        elif c == ';' and depth == 0:
+            return False
+    return False
+
+
 class Checker:
     def __init__(self, files):
         self.files = files
@@ -557,9 +584,17 @@ class Checker:
             body = blank_keep(s, literals_too=False)      # позиции те же, что в файле
             clean = blank_keep(s, literals_too=True)
             params = declared_params(clean)
-            for m in lit.finditer(body):
+            # Кусок фразы, приклеенный «+» к предыдущему, судится по голове
+            # цепочки: «[ВИД] …» + «…», Loc.T("…" + "…"), // ключ на первой строке.
+            found = list(lit.finditer(body))
+            heads = []
+            for k, m in enumerate(found):
+                glued = k > 0 and re.fullmatch(r'\s*\+\s*', body[found[k - 1].end():m.start()])
+                heads.append(heads[k - 1] if glued else m)
+            for m, head in zip(found, heads):
                 if not cyr.search(m.group(2)):
                     continue
+                m = head
                 start = m.start()
                 line_start = body.rfind('\n', 0, start) + 1
                 before = body[line_start:start]
@@ -574,10 +609,16 @@ class Checker:
                                     'один раз при загрузке, смена языка её не тронет — '
                                     'в таблице Loc.N, перевод при показе')
                     continue
+                line_end = s.find('\n', start)
+                if '// ключ' in s[line_start:line_end if line_end >= 0 else len(s)]:
+                    continue          # помечено руками: ключ, а не текст игрока
+                if re.match(r'\[[А-ЯЁ ]+\]', m.group(2)):
+                    continue          # «[ВИД] …» — служебная строка для разработчика
                 if re.search(r'\b(const|readonly)\s+string\s+\w*(Name|Key|Id|Tag|Path)\s*=\s*$', before):
                     continue          # поле-идентификатор: имя объекта для Find, а не текст
                 if any(r.search(before) for r in self.LOC_SKIP) or \
-                   self.LOC_SKIP[0].search(wide) or call_skip(clean, start, params):
+                   self.LOC_SKIP[0].search(wide) or call_skip(clean, start, params) or \
+                   inside_debug(clean, start):
                     continue
                 self.report(p, line_of(body, start),
                             f'русский текст мимо Loc: «{m.group(2)[:40]}» — игрок на другом '

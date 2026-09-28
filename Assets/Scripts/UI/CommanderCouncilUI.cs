@@ -330,7 +330,7 @@ namespace Sinbinder.UI
                 if (SquadRoster.TryGet(w.DisplayName, out var member))
                 {
                     skill = member.Leadership;
-                    blocked = member.Unavailable;
+                    blocked = Loc.T(member.Unavailable);
                 }
 
                 // Навыка не хватает на этот отряд — виден, но не выбирается.

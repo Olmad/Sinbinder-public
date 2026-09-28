@@ -1,4 +1,5 @@
 // Assets/Scripts/Core/Soul/Trade.cs
+// Перевод: текст через Loc
 namespace Sinbinder.Core
 {
     /// <summary>
@@ -76,7 +77,7 @@ namespace Sinbinder.Core
 
         private static readonly string[] Names =
         {
-            "", "Охотник", "Крестьянин", "Лучник", "Алхимик", "Маг", "Паук",
+            "", Loc.N("Охотник"), Loc.N("Крестьянин"), Loc.N("Лучник"), Loc.N("Алхимик"), Loc.N("Маг"), Loc.N("Паук"),
         };
 
         /// <summary>Как ремесло зовут. Пусто — ремесла нет.</summary>

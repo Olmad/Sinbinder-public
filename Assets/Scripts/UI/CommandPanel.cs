@@ -206,7 +206,7 @@ namespace Sinbinder.UI
 
                 if (shown++ >= 3) { doubtful.Add(w.DisplayName); continue; }
                 string why = _resolver.Why(w, ctx);
-                doubtful.Add(string.IsNullOrEmpty(why) ? w.DisplayName : $"{w.DisplayName}: {why}");
+                doubtful.Add(string.IsNullOrEmpty(why) ? Loc.Name(w.DisplayName) : $"{Loc.Name(w.DisplayName)}: {why}");
             }
 
             var lines = new List<string>();

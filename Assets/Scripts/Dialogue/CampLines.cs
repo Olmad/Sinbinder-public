@@ -211,16 +211,30 @@ namespace Sinbinder.Dialogue
             return false;
         }
 
-        /// <summary>«Вейн Тихий» → «Вейн»: у костра по имени, не по прозвищу.</summary>
+        /// <summary>
+        /// «Вейн Тихий» → «Вейн»: у костра по имени, не по прозвищу. Имя —
+        /// показанное (Loc.Name): в переводе и прозвища свои, и стоят они
+        /// там же — «Brother Hald», «Vein the Quiet».
+        /// </summary>
         private static string Short(string name)
         {
             if (string.IsNullOrEmpty(name)) return name;
+            name = Loc.Name(name);
             int space = name.IndexOf(' ');
             // «Брат Хальд», «Немой Гурт» — прозвище впереди, имя последним.
-            if (name.StartsWith("Брат ") || name.StartsWith("Немой ") || name.StartsWith("Толстый ")
-                || name.StartsWith("Одноглазый ") || name.StartsWith("Косой "))
-                return name.Substring(space + 1);
+            foreach (var epithet in Loc.IsSource ? EpithetFirst : EpithetFirstEn)
+                if (name.StartsWith(epithet)) return name.Substring(epithet.Length);
             return space > 0 ? name.Substring(0, space) : name;
         }
+
+        private static readonly string[] EpithetFirst =
+        {
+            "Брат ", "Немой ", "Толстый ", "Одноглазый ", "Косой ",   // ключ: начало имени
+        };
+
+        private static readonly string[] EpithetFirstEn =
+        {
+            "Brother ", "Mute ", "Fat ", "One-Eyed ", "Squint ",
+        };
     }
 }

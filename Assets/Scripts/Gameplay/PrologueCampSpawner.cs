@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/PrologueCampSpawner.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
@@ -64,8 +65,8 @@ namespace Sinbinder.Gameplay
             // Причина стоит здесь, а не в интерфейсе, потому что игрок
             // увидит её строкой в совете и не нажмёт кнопку, которая соврёт
             // (docs/09-PROLOGUE.md §6).
-            new("Карган Старый Ворон", SinType.Pride,    MoralType.Neutral, 90f, 75f, 90f,
-                "телохранитель, не отходит от вас", legend: true),
+            new(Loc.N("Карган Старый Ворон"), SinType.Pride,    MoralType.Neutral, 90f, 75f, 90f,
+                Loc.N("телохранитель, не отходит от вас"), legend: true),
             // Ремесла у него нет нарочно: «Старый Ворон» — уже прозвище,
             // и оно стоит в имени. «Карган Старый Ворон Охотник» —
             // это не три сведения о человеке, а одно, сказанное трижды.
@@ -78,7 +79,7 @@ namespace Sinbinder.Gameplay
             // толпой, а не характерами. Имена канон не закрепляет.
             // Навыки разведены так, чтобы уводили по-разному, но все трое
             // проходили порог миссии доли 3 в пять человек.
-            new("Вейн Тихий",          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f,
+            new(Loc.N("Вейн Тихий"),          SinType.Sloth,    MoralType.Pious,   40f, 90f, 55f,
                 trade: Trade.Mage),
             // Долг в три вылазки — не случайность, а завязка. Строка, которой
             // игра продаётся дословно («ему не платили третью вылазку подряд»),
@@ -86,9 +87,9 @@ namespace Sinbinder.Gameplay
             // с нулём: флагманская реплика была недостижима структурно.
             // Отряду задолжали до пробуждения — тем же приёмом, что и пять
             // пустых палаток: лагерь жил до того, как игрок открыл глаза.
-            new("Марга Копатель",      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
+            new(Loc.N("Марга Копатель"),      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
                 unpaid: 3, trade: Trade.Peasant, shell: ShellType.Zombie),
-            new("Брат Хальд",          SinType.Pride,    MoralType.Pious,   35f, 95f, 25f,
+            new(Loc.N("Брат Хальд"),          SinType.Pride,    MoralType.Pious,   35f, 95f, 25f,
                 trade: Trade.Alchemist),
 
             // Рядовые. Повести отряд могут, но уведут троих — на миссию
@@ -98,28 +99,28 @@ namespace Sinbinder.Gameplay
             // ни с кем — и оба держатся друг друга. Пара выбрана из рядовых
             // нарочно: кандидаты в старшие уходят с отрядом, а братство
             // видно только пока оба на виду.
-            new("Одноглазый Хорь",     SinType.Greed,    MoralType.Vicious, 45f, 65f, 0f,
+            new(Loc.N("Одноглазый Хорь"),     SinType.Greed,    MoralType.Vicious, 45f, 65f, 0f,
                 brother: true, trade: Trade.Hunter, shell: ShellType.Zombie),
             // Уныние Ю — 25, а не прежние 55 от Чревоугодия: на 55 он не
             // исполнял и лагерного «иди» рядом (стенд: 78% отказов), и доля 2
             // ломалась бы об него, как прежде об Гурта. На 25 рядом слушается,
             // издали ленится, а патруль ему скучен — характер виден.
-            new("Толстый Ю",           SinType.Sloth,    MoralType.Neutral, 25f, 80f, 0f,
+            new(Loc.N("Толстый Ю"),           SinType.Sloth,    MoralType.Neutral, 25f, 80f, 0f,
                 trade: Trade.Peasant, shell: ShellType.Zombie),
-            new("Лиска",               SinType.Greed,    MoralType.Neutral, 30f, 85f, 0f,
+            new(Loc.N("Лиска"),               SinType.Greed,    MoralType.Neutral, 30f, 85f, 0f,
                 trade: Trade.Archer, shell: ShellType.Ghost),
             // Уныние приспущено с сорока: на них Гурт не исполнял даже
             // первый безобидный приказ в лагере, и доля 2 — обучение
             // послушанием — ломалась об одного лентяя. Он остаётся вторым
             // по унынию после Вейна, но лагерный приказ ему уже по силам.
-            new("Немой Гурт",          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f,
+            new(Loc.N("Немой Гурт"),          SinType.Sloth,    MoralType.Vicious, 20f, 85f, 0f,
                 brother: true, trade: Trade.Peasant, shell: ShellType.Ghost),
 
             // Девятый. Пролог обещает, что «воинов видно девять»
             // (docs/09-PROLOGUE.md §4, сцена 1), и число это не
             // произвольное: с доли 2 уходят пятеро, и в лагере обязаны
             // остаться Карган и трое. На восьмерых сходилось трое.
-            new("Косой Ждан",          SinType.Pride,    MoralType.Neutral, 30f, 80f, 0f,
+            new(Loc.N("Косой Ждан"),          SinType.Pride,    MoralType.Neutral, 30f, 80f, 0f,
                 trade: Trade.Archer),
         };
 
@@ -433,14 +434,14 @@ namespace Sinbinder.Gameplay
 
             var seed = new MemorySeed
             {
-                Object = "брат по оружию",
-                Emotion = "Привязанность",
-                Story = "Они пришли в отряд вдвоём и с тех пор держатся рядом.",
+                Object = Loc.N("брат по оружию"),
+                Emotion = Loc.N("Привязанность"),
+                Story = Loc.N("Они пришли в отряд вдвоём и с тех пор держатся рядом."),
             };
 
             seed.NarrativePerks.Add(new NarrativePerk
             {
-                PerkName = "Брат по оружию",
+                PerkName = Loc.N("Брат по оружию"),
                 IsFound = true,
             });
 

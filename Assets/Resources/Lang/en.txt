@@ -685,15 +685,15 @@ msgstr "Something else"
 
 #: Core/Commitment.cs
 msgid "Вы взяли на себя обязательство. Переиграть нельзя — в этом и был уговор."
-msgstr ""
+msgstr "You took on a commitment. No second chances — that was the deal."
 
 #: Core/Commitment.cs
 msgid "С обязательством: одно сохранение, переиграть нельзя"
-msgstr ""
+msgstr "Committed: one save, no second chances"
 
 #: Core/Commitment.cs
 msgid "Свободно: сохраняйтесь и грузитесь когда угодно"
-msgstr ""
+msgstr "Free: save and load whenever you like"
 
 #: Core/Preferences.cs
 msgid "медленно"
@@ -725,346 +725,370 @@ msgstr "windowed"
 
 #: Core/Satchel.cs
 msgid "пустая банка"
-msgstr ""
+msgstr "an empty jar"
 
 #: Core/Satchel.cs
 msgid "пусто"
-msgstr ""
+msgstr "empty"
 
 #: Core/Satchel.cs
 msgid "тело: скелет"
-msgstr ""
+msgstr "body: skeleton"
 
 #: Core/Satchel.cs
 msgid "тело: зомби"
-msgstr ""
+msgstr "body: zombie"
 
 #: Core/Satchel.cs
 msgid "тело: призрак"
-msgstr ""
+msgstr "body: ghost"
 
 #: Core/Satchel.cs
 msgid "тело: голем"
-msgstr ""
+msgstr "body: golem"
 
 #: Core/Satchel.cs
 msgid "тело: человек"
-msgstr ""
+msgstr "body: human"
 
 #: Core/Satchel.cs
 msgid "тело"
-msgstr ""
+msgstr "body"
 
 #: Core/Transparency.cs
 msgid "Значок над головой"
-msgstr ""
+msgstr "Icon above the head"
 
 #: Core/Transparency.cs
 msgid "Слово о поступке"
-msgstr ""
+msgstr "A word about the deed"
 
 #: Core/Transparency.cs
 msgid "Причина при наведении"
-msgstr ""
+msgstr "Reason on hover"
 
 #: Core/Transparency.cs
 msgid "Причина под словом"
-msgstr ""
+msgstr "Reason under the word"
 
 #: Core/Transparency.cs
 msgid "Журнал внизу"
-msgstr ""
+msgstr "Log at the bottom"
 
 #: Core/Transparency.cs
 msgid "Внутренности — для разработчика"
-msgstr ""
+msgstr "Internals — for the developer"
 
 #: Core/Transparency.cs
 msgid "Ничего"
-msgstr ""
+msgstr "Nothing"
 
 #: Core/Transparency.cs
 msgid "Молча"
-msgstr ""
+msgstr "Silent"
 
 #: Core/Transparency.cs
 msgid "Только намерения"
-msgstr ""
+msgstr "Intentions only"
 
 #: Core/Transparency.cs
 msgid "Намерения и причины"
-msgstr ""
+msgstr "Intentions and reasons"
 
 #: Core/Transparency.cs
 msgid "Намерения, причины и рассказ"
-msgstr ""
+msgstr "Intentions, reasons and story"
 
 #: Core/Transparency.cs
 msgid "Всё, включая внутренности — для разработчика"
-msgstr ""
+msgstr "Everything, including internals — for the developer"
 
 #: Core/Transparency.cs
 msgid "Неизвестно"
-msgstr ""
+msgstr "Unknown"
 
 #: Core/Soul/ShellChoice.cs
 msgid "Такого тела нет."
-msgstr ""
+msgstr "There is no such body."
 
 #: Core/Soul/ShellChoice.cs
 msgid "От неё осталась одна воля. Это тело её сотрёт."
-msgstr ""
+msgstr "Only its will remains. This body will erase it."
 
 #: Core/Soul/ShellChoice.cs
 msgid "Она уже тускнеет. Такое тело перепишет её под себя."
-msgstr ""
+msgstr "It is already fading. A body like this will rewrite it to suit itself."
 
 #: Core/Soul/ShellChoice.cs
 msgid "Ей не хватит себя, чтобы остаться собой в этом теле."
-msgstr ""
+msgstr "There isn't enough of it left to stay itself in this body."
 
 #: Core/Soul/SoulData.cs Crypt/TrialCatalog.cs
 msgid "Жадность"
-msgstr ""
+msgstr "Greed"
 
 #: Core/Soul/SoulData.cs
 msgid "Гордыня"
-msgstr ""
+msgstr "Pride"
 
 #: Core/Soul/SoulData.cs
 msgid "Гнев"
-msgstr ""
+msgstr "Wrath"
 
 #: Core/Soul/SoulData.cs
 msgid "Зависть"
-msgstr ""
+msgstr "Envy"
 
 #: Core/Soul/SoulData.cs
 msgid "Похоть"
-msgstr ""
+msgstr "Lust"
 
 #: Core/Soul/SoulData.cs
 msgid "Чревоугодие"
-msgstr ""
+msgstr "Gluttony"
 
 #: Core/Soul/SoulData.cs Crypt/TrialCatalog.cs
 msgid "Уныние"
-msgstr ""
+msgstr "Sloth"
 
 #: Core/Soul/SoulData.cs
 msgid "Щедрость"
-msgstr ""
+msgstr "Generosity"
 
 #: Core/Soul/SoulData.cs
 msgid "Смирение"
-msgstr ""
+msgstr "Humility"
 
 #: Core/Soul/SoulData.cs
 msgid "Терпение"
-msgstr ""
+msgstr "Patience"
 
 #: Core/Soul/SoulData.cs
 msgid "Доброжелательность"
-msgstr ""
+msgstr "Goodwill"
 
 #: Core/Soul/SoulData.cs
 msgid "Целомудрие"
-msgstr ""
+msgstr "Chastity"
 
 #: Core/Soul/SoulData.cs
 msgid "Умеренность"
-msgstr ""
+msgstr "Temperance"
 
 #: Core/Soul/SoulData.cs
 msgid "Усердие"
-msgstr ""
+msgstr "Diligence"
 
 #: Core/Soul/SoulData.cs
 msgid "Злобная"
-msgstr ""
+msgstr "Vicious"
 
 #: Core/Soul/SoulData.cs
 msgid "Нейтральная"
-msgstr ""
+msgstr "Neutral"
 
 #: Core/Soul/SoulData.cs
 msgid "Благочестивая"
-msgstr ""
+msgstr "Pious"
 
 #: Core/Soul/SoulData.cs
 msgid "Одержим золотом до безумия"
-msgstr ""
+msgstr "Obsessed with gold to the point of madness"
 
 #: Core/Soul/SoulData.cs
 msgid "Любит золото"
-msgstr ""
+msgstr "Loves gold"
 
 #: Core/Soul/SoulData.cs
 msgid "Ценит золото"
-msgstr ""
+msgstr "Values gold"
 
 #: Core/Soul/SoulData.cs
 msgid "Равнодушен к золоту"
-msgstr ""
+msgstr "Indifferent to gold"
 
 #: Core/Soul/SoulData.cs
 msgid "Презирает богатство"
-msgstr ""
+msgstr "Despises wealth"
 
 #: Core/Soul/SoulData.cs
 msgid "Считает себя богом"
-msgstr ""
+msgstr "Thinks himself a god"
 
 #: Core/Soul/SoulData.cs
 msgid "Высокомерен"
-msgstr ""
+msgstr "Arrogant"
 
 #: Core/Soul/SoulData.cs
 msgid "Уверен в себе"
-msgstr ""
+msgstr "Self-assured"
 
 #: Core/Soul/SoulData.cs
 msgid "Признаёт других"
-msgstr ""
+msgstr "Acknowledges others"
 
 #: Core/Soul/SoulData.cs
 msgid "Скромен до самоуничижения"
-msgstr ""
+msgstr "Modest to the point of self-effacement"
 
 #: Core/Soul/SoulData.cs
 msgid "Неудержим в ярости"
-msgstr ""
+msgstr "Unstoppable in rage"
 
 #: Core/Soul/SoulData.cs
 msgid "Вспыльчив"
-msgstr ""
+msgstr "Hot-tempered"
 
 #: Core/Soul/SoulData.cs
 msgid "Сдержан"
-msgstr ""
+msgstr "Restrained"
 
 #: Core/Soul/SoulData.cs
 msgid "Терпелив"
-msgstr ""
+msgstr "Patient"
 
 #: Core/Soul/SoulData.cs
 msgid "Невозмутим как камень"
-msgstr ""
+msgstr "Calm as stone"
 
 #: Core/Soul/SoulData.cs
 msgid "Завидует всему живому"
-msgstr ""
+msgstr "Envies every living thing"
 
 #: Core/Soul/SoulData.cs
 msgid "Завидует молча"
-msgstr ""
+msgstr "Envies in silence"
 
 #: Core/Soul/SoulData.cs
 msgid "Нейтрален"
-msgstr ""
+msgstr "Neutral"
 
 #: Core/Soul/SoulData.cs
 msgid "Рад за других"
-msgstr ""
+msgstr "Glad for others"
 
 #: Core/Soul/SoulData.cs
 msgid "Восхищается другими"
-msgstr ""
+msgstr "Admires others"
 
 #: Core/Soul/SoulData.cs
 msgid "Ненасытен в желаниях"
-msgstr ""
+msgstr "Insatiable in his desires"
 
 #: Core/Soul/SoulData.cs
 msgid "Падок на соблазны"
-msgstr ""
+msgstr "Easily tempted"
 
 #: Core/Soul/SoulData.cs
 msgid "Верен"
-msgstr ""
+msgstr "Faithful"
 
 #: Core/Soul/SoulData.cs
 msgid "Неприступен"
-msgstr ""
+msgstr "Unassailable"
 
 #: Core/Soul/SoulData.cs
 msgid "Готов сожрать всё"
-msgstr ""
+msgstr "Ready to devour anything"
 
 #: Core/Soul/SoulData.cs
 msgid "Любит поесть"
-msgstr ""
+msgstr "Loves to eat"
 
 #: Core/Soul/SoulData.cs
 msgid "Ест в меру"
-msgstr ""
+msgstr "Eats in moderation"
 
 #: Core/Soul/SoulData.cs
 msgid "Умерен"
-msgstr ""
+msgstr "Temperate"
 
 #: Core/Soul/SoulData.cs
 msgid "Воздержан"
-msgstr ""
+msgstr "Abstinent"
 
 #: Core/Soul/SoulData.cs
 msgid "Апатичен ко всему"
-msgstr ""
+msgstr "Apathetic to everything"
 
 #: Core/Soul/SoulData.cs
 msgid "Ленив"
-msgstr ""
+msgstr "Lazy"
 
 #: Core/Soul/SoulData.cs
 msgid "Работает без огня"
-msgstr ""
+msgstr "Works without fire"
 
 #: Core/Soul/SoulData.cs
 msgid "Старателен"
-msgstr ""
+msgstr "Diligent"
 
 #: Core/Soul/SoulData.cs
 msgid "Неутомим"
-msgstr ""
+msgstr "Tireless"
 
 #: Core/Soul/SoulData.cs
 msgid "Душа: {0}\n"
-msgstr ""
+msgstr "Soul: {0}\n"
 
 #: Core/Soul/SoulData.cs Gameplay/Warrior.cs
 msgid "Грех: {0}\n"
-msgstr ""
+msgstr "Sin: {0}\n"
 
 #: Core/Soul/SoulData.cs
 msgid "Степень: {0}\n"
-msgstr ""
+msgstr "Degree: {0}\n"
 
 #: Core/Soul/SoulData.cs Gameplay/Warrior.cs
 msgid "Мораль: {0}\n"
-msgstr ""
+msgstr "Morals: {0}\n"
 
 #: Core/Soul/SoulData.cs
 msgid "Уровень: {0}"
-msgstr ""
+msgstr "Level: {0}"
 
 #: Core/Soul/SoulData.cs
 msgid "Ничем не выделяется."
-msgstr ""
+msgstr "Nothing stands out."
 
 #: Core/Soul/SoulDecay.cs
 msgid "Ещё не поняла, что мертва"
-msgstr ""
+msgstr "Has not yet realised it is dead"
 
 #: Core/Soul/SoulDecay.cs
 msgid "Смирилась. Помнит себя"
-msgstr ""
+msgstr "Resigned. Remembers itself"
 
 #: Core/Soul/SoulDecay.cs
 msgid "Гаснет. Прошлое расплывается"
-msgstr ""
+msgstr "Fading. The past is blurring"
 
 #: Core/Soul/SoulDecay.cs
 msgid "Распалась. Осталась оболочка воли"
+msgstr "Fallen apart. Only a husk of will remains"
+
+#: Core/Soul/Trade.cs Gameplay/HunterSquadSpawner.cs
+msgid "Охотник"
+msgstr ""
+
+#: Core/Soul/Trade.cs
+msgid "Крестьянин"
+msgstr ""
+
+#: Core/Soul/Trade.cs
+msgid "Лучник"
+msgstr ""
+
+#: Core/Soul/Trade.cs
+msgid "Алхимик"
+msgstr ""
+
+#: Core/Soul/Trade.cs
+msgid "Маг"
+msgstr ""
+
+#: Core/Soul/Trade.cs
+msgid "Паук"
 msgstr ""
 
 #: Crypt/Aftermath.cs
@@ -1241,67 +1265,47 @@ msgstr ""
 
 #: Crypt/JunctionCatalog.cs
 msgid "Обоз остановлен. Возчики бросили поводья и стоят. Купец предлагает откуп и смотрит на командира."
-msgstr ""
+msgstr "The caravan is stopped. The drivers have dropped the reins and stand still. The merchant offers a ransom and looks at the commander."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Возьмите товар. Людей не трогайте."
-msgstr ""
+msgstr "Take the goods. Leave the people alone."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Возьмите всё."
-msgstr ""
+msgstr "Take everything."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Пропустите их."
-msgstr ""
+msgstr "Let them pass."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Людей — с собой."
-msgstr ""
+msgstr "Take the people with us."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Решайте сами."
-msgstr ""
+msgstr "Decide for yourselves."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Обоз разгрузили и отпустили. Возчики шли пешком и оглядывались."
-msgstr ""
+msgstr "The caravan was unloaded and let go. The drivers walked on foot, looking back."
 
 #: Crypt/JunctionCatalog.cs
 msgid "С дороги не ушёл никто. Серебро вынесли вместе с душами."
-msgstr ""
+msgstr "No one left the road. The silver was carried off together with the souls."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Обоз пропустили. Отряд вернулся ни с чем и молчал всю дорогу."
-msgstr ""
+msgstr "The caravan was let through. The squad came back empty-handed and silent the whole way."
 
 #: Crypt/JunctionCatalog.cs
 msgid "Товар бросили. Привели людей — живых, связанных и целых."
-msgstr ""
+msgstr "The goods were left behind. They brought back people — alive, bound and unharmed."
 
 #: Crypt/JunctionCatalog.cs
 msgid "На дороге что-то случилось, и рассказывать об этом не стали."
-msgstr ""
-
-#: Crypt/JunctionCatalog.cs
-msgid "ГрабёжБезКрови"
-msgstr ""
-
-#: Crypt/JunctionCatalog.cs
-msgid "РезняНаДороге"
-msgstr ""
-
-#: Crypt/JunctionCatalog.cs
-msgid "ОбозОтпущен"
-msgstr ""
-
-#: Crypt/JunctionCatalog.cs
-msgid "ЛюдиУведены"
-msgstr ""
-
-#: Crypt/JunctionCatalog.cs
-msgid "Вылазка"
-msgstr ""
+msgstr "Something happened on the road, and no one would talk about it."
 
 #: Crypt/MissionBoard.cs UI/MissionMapUI.cs
 msgid "Столько людей не наберётся."
@@ -1353,107 +1357,107 @@ msgstr ""
 
 #: Crypt/MissionCatalog.cs
 msgid "Соляной обоз"
-msgstr ""
+msgstr "The Salt Caravan"
 
 #: Crypt/MissionCatalog.cs
 msgid "По старой соляной дороге ходит обоз. Охраны при нём двое, и те за деньги."
-msgstr ""
+msgstr "A caravan travels the old salt road. Two guards ride with it, and they're only in it for the money."
 
 #: Crypt/MissionCatalog.cs
 msgid "Придорожная часовня"
-msgstr ""
+msgstr "The Wayside Chapel"
 
 #: Crypt/MissionCatalog.cs
 msgid "Говорят, там кто-то ходит по ночам. Немного, но ходит."
-msgstr ""
+msgstr "They say someone walks there at night. Not much — but something walks."
 
 #: Crypt/MissionCatalog.cs
 msgid "Затопленная каменоломня"
-msgstr ""
+msgstr "The Flooded Quarry"
 
 #: Crypt/MissionCatalog.cs
 msgid "Вода поднялась и вынесла наверх то, что закапывали."
-msgstr ""
+msgstr "The water rose and brought up what had been buried."
 
 #: Crypt/MissionCatalog.cs
 msgid "Сожжённая застава"
-msgstr ""
+msgstr "The Burnt Outpost"
 
 #: Crypt/MissionCatalog.cs
 msgid "Охотники были здесь первыми. Кто-то из них остался."
-msgstr ""
+msgstr "The hunters got here first. Some of them stayed."
 
 #: Crypt/MissionCatalog.cs
 msgid "Старый гарнизон"
-msgstr ""
+msgstr "The Old Garrison"
 
 #: Crypt/MissionCatalog.cs
 msgid "Место держали долго и держат до сих пор — по привычке."
-msgstr ""
+msgstr "The place was held for a long time, and it still is — out of habit."
 
 #: Crypt/MissionCatalog.cs
 msgid "Костяная топь"
-msgstr ""
+msgstr "The Bone Marsh"
 
 #: Crypt/MissionCatalog.cs
 msgid "Туда уходят и не возвращаются. Причину никто не называет."
-msgstr ""
+msgstr "People go there and don't come back. No one says why."
 
 #: Crypt/MissionCatalog.cs
 msgid "Их там меньше."
-msgstr ""
+msgstr "There are fewer of them."
 
 #: Crypt/MissionCatalog.cs
 msgid "Их там столько же."
-msgstr ""
+msgstr "There are as many of them."
 
 #: Crypt/MissionCatalog.cs
 msgid "Их там больше."
-msgstr ""
+msgstr "There are more of them."
 
 #: Crypt/MissionCatalog.cs
 msgid "Их там намного больше."
-msgstr ""
+msgstr "There are far more of them."
 
 #: Crypt/MissionCatalog.cs
 msgid "Оттуда несут души."
-msgstr ""
+msgstr "Souls are brought back from there."
 
 #: Crypt/MissionCatalog.cs
 msgid "Оттуда несут тело."
-msgstr ""
+msgstr "A body is brought back from there."
 
 #: Crypt/MissionCatalog.cs
 msgid "Оттуда несут то, что ставят в склепе."
-msgstr ""
+msgstr "What they bring back from there is set up in the crypt."
 
 #: Crypt/MissionCatalog.cs
 msgid "Оттуда несут только своих."
-msgstr ""
+msgstr "The only thing brought back from there is our own."
 
 #: Crypt/MissionCatalog.cs
 msgid "Кошели у пояса, не больше."
-msgstr ""
+msgstr "Purses on belts, nothing more."
 
 #: Crypt/MissionCatalog.cs
 msgid "Там серебро."
-msgstr ""
+msgstr "There's silver."
 
 #: Crypt/MissionCatalog.cs
 msgid "Денег там нет."
-msgstr ""
+msgstr "There's no money there."
 
 #: Crypt/MissionCatalog.cs
 msgid "грабёж безоружных"
-msgstr ""
+msgstr "robbing the unarmed"
 
 #: Crypt/MissionCatalog.cs
 msgid "разрытие могил"
-msgstr ""
+msgstr "digging up graves"
 
 #: Crypt/MissionCatalog.cs
 msgid "набег на вооружённых"
-msgstr ""
+msgstr "a raid on armed men"
 
 #: Crypt/Retelling.cs
 msgid "Кто-то"
@@ -1475,7 +1479,7 @@ msgstr ""
 msgid "{0} — на полке."
 msgstr ""
 
-#: Crypt/ShellStand.cs
+#: Crypt/ShellStand.cs Gameplay/ShellData.cs
 msgid "Тело ничего не навязывает."
 msgstr ""
 
@@ -1833,95 +1837,95 @@ msgstr ""
 
 #: Dialogue/TalkLines.cs
 msgid "Ты забрал моё. Я помню."
-msgstr ""
+msgstr "You took what was mine. I remember."
 
 #: Dialogue/TalkLines.cs
 msgid "Ты дал мне — я не забыл."
-msgstr ""
+msgstr "You gave to me — I haven't forgotten."
 
 #: Dialogue/TalkLines.cs
 msgid "Ты дал мне — я не забыла."
-msgstr ""
+msgstr "You gave to me — I haven't forgotten."
 
 #: Dialogue/TalkLines.cs
 msgid "Жив. Была бы доля — был бы и весел."
-msgstr ""
+msgstr "Alive. Give me my share, and I'd be cheerful too."
 
 #: Dialogue/TalkLines.cs
 msgid "Жива. Была бы доля — была бы и весела."
-msgstr ""
+msgstr "Alive. Give me my share, and I'd be cheerful too."
 
 #: Dialogue/TalkLines.cs
 msgid "Не хуже прочих. Лучше, если честно."
-msgstr ""
+msgstr "No worse than the rest. Better, to be honest."
 
 #: Dialogue/TalkLines.cs
 msgid "Скучно. Когда дадут кого-нибудь ударить?"
-msgstr ""
+msgstr "Bored. When do I get to hit someone?"
 
 #: Dialogue/TalkLines.cs
 msgid "Как все. Только у других почему-то лучше."
-msgstr ""
+msgstr "Like everyone. Only the others somehow have it better."
 
 #: Dialogue/TalkLines.cs
 msgid "Хорошо, пока есть на кого посмотреть."
-msgstr ""
+msgstr "Fine, as long as there's someone to look at."
 
 #: Dialogue/TalkLines.cs
 msgid "Сыт был утром. Это было давно."
-msgstr ""
+msgstr "I was full this morning. That was a long time ago."
 
 #: Dialogue/TalkLines.cs
 msgid "Сыта была утром. Это было давно."
-msgstr ""
+msgstr "I was full this morning. That was a long time ago."
 
 #: Dialogue/TalkLines.cs
 msgid "Устал. Можно я постою?"
-msgstr ""
+msgstr "Tired. Can I just stand here?"
 
 #: Dialogue/TalkLines.cs
 msgid "Устала. Можно я постою?"
-msgstr ""
+msgstr "Tired. Can I just stand here?"
 
 #: Dialogue/TalkLines.cs
 msgid "Хорошо. Если кому-то нужнее — отдам своё."
-msgstr ""
+msgstr "Fine. If someone needs it more, they can have mine."
 
 #: Dialogue/TalkLines.cs
 msgid "Как скажете, так и есть."
-msgstr ""
+msgstr "As you say, so it is."
 
 #: Dialogue/TalkLines.cs
 msgid "Спокойно. Подождём — увидим."
-msgstr ""
+msgstr "Calm. We'll wait and see."
 
 #: Dialogue/TalkLines.cs
 msgid "Хорошо. Рад, что мы вместе."
-msgstr ""
+msgstr "Good. Glad we're together."
 
 #: Dialogue/TalkLines.cs
 msgid "Хорошо. Рада, что мы вместе."
-msgstr ""
+msgstr "Good. Glad we're together."
 
 #: Dialogue/TalkLines.cs
 msgid "Держусь. Мысли в порядке."
-msgstr ""
+msgstr "Holding on. My thoughts are in order."
 
 #: Dialogue/TalkLines.cs
 msgid "Сыт малым. Остальное — отряду."
-msgstr ""
+msgstr "A little keeps me fed. The rest goes to the squad."
 
 #: Dialogue/TalkLines.cs
 msgid "Сыта малым. Остальное — отряду."
-msgstr ""
+msgstr "A little keeps me fed. The rest goes to the squad."
 
 #: Dialogue/TalkLines.cs
 msgid "Готов. Скажите, что делать."
-msgstr ""
+msgstr "Ready. Tell me what to do."
 
 #: Dialogue/TalkLines.cs
 msgid "Готова. Скажите, что делать."
-msgstr ""
+msgstr "Ready. Tell me what to do."
 
 #: Gameplay/BodyWorth.cs
 msgid "Чужой клинок"
@@ -1967,7 +1971,7 @@ msgstr ""
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к столу без него."
 msgstr ""
 
-#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs
+#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs Gameplay/PrologueCampSpawner.cs
 msgid "Карган Старый Ворон"
 msgstr ""
 
@@ -2005,14 +2009,6 @@ msgstr ""
 
 #: Gameplay/CampOpening.cs
 msgid "{0}: «Владыка, ваше наказание {1} затянулось. Подумайте о последствиях»."
-msgstr ""
-
-#: Gameplay/CampOpening.cs
-msgid "и"
-msgstr ""
-
-#: Gameplay/CampOpening.cs
-msgid "а"
 msgstr ""
 
 #: Gameplay/CrystalBall.cs
@@ -2101,171 +2097,227 @@ msgstr ""
 
 #: Gameplay/Homecoming.cs
 msgid "опять берёг себя дольше всех"
-msgstr ""
+msgstr "again kept himself safe longer than anyone"
 
 #: Gameplay/Homecoming.cs
 msgid "гнал вперёд, не оглядываясь на отставших"
-msgstr ""
+msgstr "pushed ahead without looking back at the stragglers"
 
 #: Gameplay/Homecoming.cs
 msgid "не стал отходить, когда стоило"
-msgstr ""
+msgstr "wouldn't fall back when he should have"
 
 #: Gameplay/Homecoming.cs
 msgid "свернул за чем-то блестящим"
-msgstr ""
+msgstr "turned off after something shiny"
 
 #: Gameplay/Homecoming.cs
 msgid "не поделил добычу со своими"
-msgstr ""
+msgstr "wouldn't share the loot with his own"
 
 #: Gameplay/Homecoming.cs
 msgid "нашёл, на что отвлечься"
-msgstr ""
+msgstr "found something to distract him"
 
 #: Gameplay/Homecoming.cs
 msgid "встал есть не вовремя"
-msgstr ""
+msgstr "stopped to eat at the wrong time"
 
 #: Gameplay/Homecoming.cs
 msgid "сделал что-то по-своему"
-msgstr ""
+msgstr "did something his own way"
 
 #: Gameplay/Homecoming.cs
 msgid "Он берёг себя, и берёг долго. Ждать его перестали не все и не сразу."
-msgstr ""
+msgstr "He kept himself safe, and for a long time. Not everyone stopped waiting for him, and not at once."
 
 #: Gameplay/Homecoming.cs
 msgid "Он свернул за блеском. Свернули следом, и вернулись оттуда не все."
-msgstr ""
+msgstr "He turned off after a glint. Others followed, and not all of them came back."
 
 #: Gameplay/Homecoming.cs
 msgid "Он не отступил. Отступить пришлось бы первым — а он привык быть последним."
-msgstr ""
+msgstr "He didn't retreat. Retreating meant going first — and he was used to being last."
 
 #: Gameplay/Homecoming.cs
 msgid "Добычу делили дважды. Второй раз — уже без тех, кому она досталась в первый."
-msgstr ""
+msgstr "The loot was divided twice. The second time without those who got it the first time."
 
 #: Gameplay/Homecoming.cs
 msgid "Он шёл первым и не давал отстать никому. Отстали всё равно."
-msgstr ""
+msgstr "He went first and let no one fall behind. They fell behind anyway."
 
 #: Gameplay/Homecoming.cs
 msgid "Их задержали. Он не говорит кто."
-msgstr ""
+msgstr "They were held up. He won't say by whom."
 
 #: Gameplay/Homecoming.cs
 msgid "Припасы кончились раньше дороги."
-msgstr ""
+msgstr "The supplies ran out before the road did."
 
 #: Gameplay/Homecoming.cs
 msgid "Он не рассказывает, и никто не переспрашивает."
+msgstr "He doesn't tell, and no one asks again."
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Охотник-следопыт"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Инквизитор"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Ловчий"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь."
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Рыжий"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Хромой"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Седой"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Рябой"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Щербатый"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Долговязый"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Лысый"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Бородатый"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Освящённый нагрудник"
+msgstr ""
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили."
 msgstr ""
 
 #: Gameplay/Leadership.cs
 msgid "водит впервые, уведёт {0}"
-msgstr ""
+msgstr "leading for the first time, will take {0}"
 
 #: Gameplay/Leadership.cs
 msgid "уведёт {0}"
-msgstr ""
+msgstr "will take {0}"
 
 #: Gameplay/Leadership.cs
 msgid "уведёт {0}, а нужно {1}"
-msgstr ""
+msgstr "will take {0}, but {1} are needed"
 
 #: Gameplay/Leadership.cs
 msgid "никого"
-msgstr ""
+msgstr "no one"
 
 #: Gameplay/Leadership.cs
 msgid "один"
-msgstr ""
+msgstr "one"
 
 #: Gameplay/Leadership.cs
 msgid "двое"
-msgstr ""
+msgstr "two"
 
 #: Gameplay/Leadership.cs
 msgid "трое"
-msgstr ""
+msgstr "three"
 
 #: Gameplay/Leadership.cs
 msgid "четверо"
-msgstr ""
+msgstr "four"
 
 #: Gameplay/Leadership.cs
 msgid "пятеро"
-msgstr ""
+msgstr "five"
 
 #: Gameplay/Leadership.cs
 msgid "шестеро"
-msgstr ""
+msgstr "six"
 
 #: Gameplay/Leadership.cs
 msgid "семеро"
-msgstr ""
+msgstr "seven"
 
 #: Gameplay/Leadership.cs
 msgid "восьмеро"
-msgstr ""
+msgstr "eight"
 
 #: Gameplay/Leadership.cs
 msgid "девятеро"
-msgstr ""
+msgstr "nine"
 
 #: Gameplay/Leadership.cs
 msgid "десятеро"
-msgstr ""
+msgstr "ten"
 
 #: Gameplay/Leadership.cs
 msgid "одиннадцать"
-msgstr ""
+msgstr "eleven"
 
 #: Gameplay/Leadership.cs
 msgid "двенадцать"
-msgstr ""
+msgstr "twelve"
 
 #: Gameplay/Leadership.cs
 msgid "одного"
-msgstr ""
+msgstr "one"
 
 #: Gameplay/Leadership.cs
 msgid "двоих"
-msgstr ""
+msgstr "two"
 
 #: Gameplay/Leadership.cs
 msgid "троих"
-msgstr ""
+msgstr "three"
 
 #: Gameplay/Leadership.cs
 msgid "четверых"
-msgstr ""
+msgstr "four"
 
 #: Gameplay/Leadership.cs
 msgid "пятерых"
-msgstr ""
+msgstr "five"
 
 #: Gameplay/Leadership.cs
 msgid "шестерых"
-msgstr ""
+msgstr "six"
 
 #: Gameplay/Leadership.cs
 msgid "семерых"
-msgstr ""
+msgstr "seven"
 
 #: Gameplay/Leadership.cs
 msgid "восьмерых"
-msgstr ""
+msgstr "eight"
 
 #: Gameplay/Leadership.cs
 msgid "девятерых"
-msgstr ""
+msgstr "nine"
 
 #: Gameplay/Leadership.cs
 msgid "десятерых"
-msgstr ""
+msgstr "ten"
 
 #: Gameplay/LootChain.cs
 msgid " Прежнее — {0} — уходит в мешок Греховода."
@@ -2297,6 +2349,58 @@ msgstr ""
 
 #: Gameplay/LootChain.cs
 msgid "Снято с павшего. Тому, кто взял, — знак, что победил он."
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "телохранитель, не отходит от вас"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Вейн Тихий"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Марга Копатель"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Брат Хальд"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Одноглазый Хорь"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Толстый Ю"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Лиска"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Немой Гурт"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Косой Ждан"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "брат по оружию"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Привязанность"
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Они пришли в отряд вдвоём и с тех пор держатся рядом."
+msgstr ""
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Брат по оружию"
 msgstr ""
 
 #: Gameplay/PrologueDirector.cs
@@ -2333,79 +2437,79 @@ msgstr ""
 
 #: Gameplay/RisingWords.cs
 msgid "И звали меня — {0}. Зовите снова."
-msgstr ""
+msgstr "And my name was {0}. Call me by it again."
 
 #: Gameplay/RisingWords.cs
 msgid "Меня звали — {0}. За это ещё спросится."
-msgstr ""
+msgstr "My name was {0}. Someone will answer for that."
 
 #: Gameplay/RisingWords.cs
 msgid "{0}. Это имя я помню лучше своего."
-msgstr ""
+msgstr "{0}. I remember that name better than my own."
 
 #: Gameplay/RisingWords.cs
 msgid "Руки помнят больше, чем на них осталось."
-msgstr ""
+msgstr "The hands remember more than is left on them."
 
 #: Gameplay/RisingWords.cs
 msgid "Легче. Всё стало легче."
-msgstr ""
+msgstr "Lighter. Everything is lighter."
 
 #: Gameplay/RisingWords.cs
 msgid "Я помню, каким был. Не смотрите на меня."
-msgstr ""
+msgstr "I remember what I was. Don't look at me."
 
 #: Gameplay/RisingWords.cs
 msgid "Голодно. С самого начала — голодно."
-msgstr ""
+msgstr "Hungry. Hungry from the very start."
 
 #: Gameplay/RisingWords.cs
 msgid "Я тянусь — и прохожу насквозь. Всякий раз."
-msgstr ""
+msgstr "I reach out — and pass right through. Every time."
 
 #: Gameplay/RisingWords.cs
 msgid "Меня нет. Но я здесь."
-msgstr ""
+msgstr "I am gone. But I am here."
 
 #: Gameplay/RisingWords.cs
 msgid "Мне было тесно и в том теле. В этом — просто тихо."
-msgstr ""
+msgstr "That body was cramped too. This one is just quiet."
 
 #: Gameplay/RisingWords.cs
 msgid "Камень. Ну что же. Камень так камень."
-msgstr ""
+msgstr "Stone. Well then. Stone it is."
 
 #: Gameplay/RisingWords.cs
 msgid "Я вернулся. И я это помню."
-msgstr ""
+msgstr "I came back. And I remember it."
 
 #: Gameplay/RisingWords.cs
 msgid "Я… кто-то. Пока этого хватит."
-msgstr ""
+msgstr "I am… someone. That will do for now."
 
 #: Gameplay/RisingWords.cs
 msgid "Где мой лук?"
-msgstr ""
+msgstr "Where is my bow?"
 
 #: Gameplay/RisingWords.cs
 msgid "Земля. Хоть земля на месте."
-msgstr ""
+msgstr "The ground. At least the ground is still here."
 
 #: Gameplay/RisingWords.cs
 msgid "Пальцы ищут тетиву. Нашли."
-msgstr ""
+msgstr "The fingers search for the string. Found it."
 
 #: Gameplay/RisingWords.cs
 msgid "Склянки... Они ведь разбились, да?"
-msgstr ""
+msgstr "The vials... They broke, didn't they?"
 
 #: Gameplay/RisingWords.cs
 msgid "Слова ещё здесь. Значит, не всё потеряно."
-msgstr ""
+msgstr "The words are still here. So not everything is lost."
 
 #: Gameplay/RisingWords.cs
 msgid "Углы, тени. Я знаю, куда уходить."
-msgstr ""
+msgstr "Corners, shadows. I know where to slip away."
 
 #: Gameplay/SatchelHands.cs
 msgid "Под рукой пустая ячейка."
@@ -2455,6 +2559,14 @@ msgstr ""
 msgid "Не расслышали приказ: {0}. Греховод далеко."
 msgstr ""
 
+#: Gameplay/ShellData.cs
+msgid "Тянет к: {0}"
+msgstr ""
+
+#: Gameplay/ShellData.cs
+msgid "Отнимает: {0}"
+msgstr ""
+
 #: Gameplay/SinbinderPlayer.cs
 msgid "Греховод пал."
 msgstr ""
@@ -2493,247 +2605,247 @@ msgstr ""
 
 #: Gameplay/SquadGear.cs
 msgid "Оружие"
-msgstr ""
+msgstr "Weapon"
 
 #: Gameplay/SquadGear.cs
 msgid "Щит или второе оружие"
-msgstr ""
+msgstr "Shield or second weapon"
 
 #: Gameplay/SquadGear.cs
 msgid "Шлем"
-msgstr ""
+msgstr "Helmet"
 
 #: Gameplay/SquadGear.cs
 msgid "Броня"
-msgstr ""
+msgstr "Armour"
 
 #: Gameplay/SquadGear.cs
 msgid "Пояс"
-msgstr ""
+msgstr "Belt"
 
 #: Gameplay/SquadGear.cs
 msgid "это уже на нём"
-msgstr ""
+msgstr "he already has it on"
 
 #: Gameplay/SquadGear.cs
 msgid "это не надевают"
-msgstr ""
+msgstr "this isn't something you wear"
 
 #: Gameplay/SquadGear.cs
 msgid "не хочет нести лишнего"
-msgstr ""
+msgstr "doesn't want to carry anything extra"
 
 #: Gameplay/SquadGear.cs
 msgid "не носит того, чем нельзя ударить"
-msgstr ""
+msgstr "won't carry what can't strike"
 
 #: Gameplay/SquadGear.cs
 msgid "не сменит {0}, {1}"
-msgstr ""
+msgstr "won't swap {0}, {1}"
 
 #: Gameplay/SquadGear.cs
 msgid "берёт охотно"
-msgstr ""
+msgstr "takes it gladly"
 
 #: Gameplay/SquadGear.cs
 msgid "берёт"
-msgstr ""
+msgstr "takes it"
 
 #: Gameplay/SquadGear.cs
 msgid ", взамен отдаёт {0}"
-msgstr ""
+msgstr ", giving up {0} in exchange"
 
 #: Gameplay/SquadGear.cs
 msgid "не отдаёт — теперь это его"
-msgstr ""
+msgstr "won't give it — it's his now"
 
 #: Gameplay/SquadGear.cs
 msgid "не отдаёт оружия — отнять его у него значит унизить"
-msgstr ""
+msgstr "won't give up the weapon — taking it from him would humiliate him"
 
 #: Gameplay/SquadGear.cs
 msgid "отдаёт"
-msgstr ""
+msgstr "gives it"
 
 #: Gameplay/SquadGear.cs
 msgid "во второй руке — вполсилы"
-msgstr ""
+msgstr "in the off hand — at half strength"
 
 #: Gameplay/SquadGear.cs
 msgid "бьёт тяжелее, чем {0}"
-msgstr ""
+msgstr "hits harder than {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "бьёт слабее, чем {0}"
-msgstr ""
+msgstr "hits weaker than {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "бьёт как {0}"
-msgstr ""
+msgstr "hits like {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "держит удар лучше, чем {0}"
-msgstr ""
+msgstr "takes a blow better than {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "держит удар хуже, чем {0}"
-msgstr ""
+msgstr "takes a blow worse than {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "держит удар как {0}"
-msgstr ""
+msgstr "takes a blow like {0}"
 
 #: Gameplay/SquadGear.cs
 msgid "бьёт тяжелее"
-msgstr ""
+msgstr "hits harder"
 
 #: Gameplay/SquadGear.cs
 msgid "держит удар"
-msgstr ""
+msgstr "takes a blow"
 
 #: Gameplay/SquadGear.cs
 msgid "искушает"
-msgstr ""
+msgstr "tempts"
 
 #: Gameplay/SquadGear.cs
 msgid "припас"
-msgstr ""
+msgstr "supplies"
 
 #: Gameplay/SquadGear.cs
 msgid "карман пуст"
-msgstr ""
+msgstr "pocket empty"
 
 #: Gameplay/SquadGear.cs
 msgid "Монеты"
-msgstr ""
+msgstr "Coins"
 
 #: Gameplay/SquadGear.cs
 msgid "Ничего не надето."
-msgstr ""
+msgstr "Nothing equipped."
 
 #: Gameplay/SquadGear.cs
 msgid "Надето: {0}."
-msgstr ""
+msgstr "Equipped: {0}."
 
 #: Gameplay/SquadGear.cs
 msgid " В кармане — {0}."
-msgstr ""
+msgstr " In the pocket — {0}."
 
 #: Gameplay/SquadGear.cs
 msgid "ни монеты"
-msgstr ""
+msgstr "not a coin"
 
 #: Gameplay/SquadGear.cs
 msgid "горсть монет"
-msgstr ""
+msgstr "a handful of coins"
 
 #: Gameplay/SquadGear.cs
 msgid "кошель"
-msgstr ""
+msgstr "a purse"
 
 #: Gameplay/SquadGear.cs
 msgid "сундук золота"
-msgstr ""
+msgstr "a chest of gold"
 
 #: Gameplay/SquadGear.cs Gameplay/TrophyChest.cs
 msgid "этого в мешке уже нет"
-msgstr ""
+msgstr "it's no longer in the bag"
 
 #: Gameplay/SquadGear.cs
 msgid "не взял"
-msgstr ""
+msgstr "didn't take it"
 
 #: Gameplay/SquadGear.cs Gameplay/TrophyChest.cs
 msgid "в мешке нет места"
-msgstr ""
+msgstr "no room in the bag"
 
 #: Gameplay/SquadOrders.cs
 msgid "Без указаний"
-msgstr ""
+msgstr "No instructions"
 
 #: Gameplay/SquadOrders.cs
 msgid "В атаку"
-msgstr ""
+msgstr "Attack"
 
 #: Gameplay/SquadOrders.cs
 msgid "Прикрывать своих"
-msgstr ""
+msgstr "Cover our own"
 
 #: Gameplay/SquadOrders.cs
 msgid "Беречь себя"
-msgstr ""
+msgstr "Save yourselves"
 
 #: Gameplay/SquadOrders.cs
 msgid "Собирать добро"
-msgstr ""
+msgstr "Gather loot"
 
 #: Gameplay/SquadOrders.cs
 msgid "Держаться приказа"
-msgstr ""
+msgstr "Stick to orders"
 
 #: Gameplay/SquadOrders.cs
 msgid "Помогать раненым"
-msgstr ""
+msgstr "Help the wounded"
 
 #: Gameplay/SquadOrders.cs
 msgid "Каждый за себя"
-msgstr ""
+msgstr "Every man for himself"
 
 #: Gameplay/SquadOrders.cs
 msgid "На измор"
-msgstr ""
+msgstr "Wear them down"
 
 #: Gameplay/SquadOrders.cs
 msgid "Не рисковать"
-msgstr ""
+msgstr "No risks"
 
 #: Gameplay/SquadOrders.cs
 msgid "Без передышки"
-msgstr ""
+msgstr "No respite"
 
 #: Gameplay/SquadOrders.cs
 msgid "Отряд полагается на себя. Ничего не навязано."
-msgstr ""
+msgstr "The squad relies on itself. Nothing is imposed."
 
 #: Gameplay/SquadOrders.cs
 msgid "Охотнее лезут в драку и неохотно отходят."
-msgstr ""
+msgstr "More eager to fight, reluctant to fall back."
 
 #: Gameplay/SquadOrders.cs
 msgid "Тянутся к раненым своим, в драку идут неохотно."
-msgstr ""
+msgstr "Drawn to their wounded, reluctant to fight."
 
 #: Gameplay/SquadOrders.cs
 msgid "Отходят охотнее, чем дерутся."
-msgstr ""
+msgstr "Fall back more readily than they fight."
 
 #: Gameplay/SquadOrders.cs
 msgid "Добыча заботит их больше, чем бой и товарищи."
-msgstr ""
+msgstr "Loot matters more to them than the fight or their comrades."
 
 #: Gameplay/SquadOrders.cs
 msgid "Держатся приказа и не отвлекаются на добычу."
-msgstr ""
+msgstr "Stick to orders and ignore loot."
 
 #: Gameplay/SquadOrders.cs
 msgid "Помогают своим и не думают о добыче."
-msgstr ""
+msgstr "Help their own and don't think of loot."
 
 #: Gameplay/SquadOrders.cs
 msgid "Каждый тянет к себе; за товарищем не пойдут."
-msgstr ""
+msgstr "Each grabs for himself; none will go after a comrade."
 
 #: Gameplay/SquadOrders.cs
 msgid "Держат удар и отвечают, а не наступают."
-msgstr ""
+msgstr "Hold the line and strike back rather than advance."
 
 #: Gameplay/SquadOrders.cs
 msgid "Берегут своих и не рискуют."
-msgstr ""
+msgstr "Protect their own and take no risks."
 
 #: Gameplay/SquadOrders.cs
 msgid "Не останавливаются, даже когда стоило бы."
-msgstr ""
+msgstr "Don't stop, even when they should."
 
 #: Gameplay/TrophyChest.cs
 msgid "Карган: «Давайте осмотрим, что принёс Марга Копатель. Я уверен, он это всё просто выкопал возле лагеря»."
@@ -2777,54 +2889,78 @@ msgstr ""
 
 #: Gameplay/Warrior.cs
 msgid "Оболочка: {0}\n"
-msgstr ""
+msgstr "Shell: {0}\n"
 
 #: Gameplay/Warrior.cs
 msgid "Характер: {0}\n"
-msgstr ""
+msgstr "Character: {0}\n"
 
 #: Gameplay/Warrior.cs
 msgid "Роль: {0}\n"
-msgstr ""
+msgstr "Role: {0}\n"
 
 #: Gameplay/Warrior.cs
 msgid "Командир"
-msgstr ""
+msgstr "Commander"
 
 #: Gameplay/Warrior.cs
 msgid "Рядовой"
-msgstr ""
+msgstr "Rank and file"
 
 #: Gameplay/Warrior.cs
 msgid "Команда: {0}\n"
-msgstr ""
+msgstr "Team: {0}\n"
 
 #: Gameplay/Warrior.cs
 msgid "Верность: Предан вам\n"
-msgstr ""
+msgstr "Loyalty: Loyal to you\n"
 
 #: Gameplay/Warrior.cs
 msgid "Верность: Готов предать\n"
-msgstr ""
+msgstr "Loyalty: Ready to betray\n"
 
 #: Gameplay/Warrior.cs
 msgid "Верность: Нейтральна\n"
-msgstr ""
+msgstr "Loyalty: Indifferent\n"
 
 #: Gameplay/Warrior.cs
 msgid "Не получал плату: {0} миссий\n"
-msgstr ""
+msgstr "Unpaid: {0} missions\n"
 
 #: Gameplay/Warrior.cs
 msgid "Память: Дремлет...\n"
+msgstr "Memory: Dormant...\n"
+
+#: Inventory/TrophyCatalog.cs
+msgid "Кольчужный ворот"
 msgstr ""
 
-#: Gameplay/WarriorLook.cs
-msgid "[ВИД] На модели {0} нет Animator — двигаться нечем. Аватар не создан при импорте; переимпортируйте модель."
+#: Inventory/TrophyCatalog.cs
+msgid "Чужой, ушитый по чужой шее. Но шея у всех одна."
 msgstr ""
 
-#: Gameplay/WarriorLook.cs
-msgid "[ВИД] Движений нет ({0}{1}Motion) — тело останется в позе привязки. Переимпортируйте модель: контроллер собирается сам, при импорте."
+#: Inventory/TrophyCatalog.cs
+msgid "Топор с новым топорищем"
+msgstr ""
+
+#: Inventory/TrophyCatalog.cs
+msgid "Лезвие старше топорища втрое. Кто-то очень не хотел его бросать."
+msgstr ""
+
+#: Inventory/TrophyCatalog.cs
+msgid "Связка вяленого мяса"
+msgstr ""
+
+#: Inventory/TrophyCatalog.cs
+msgid "Перевязана бечёвкой дважды. Марга считал."
+msgstr ""
+
+#: Inventory/TrophyCatalog.cs
+msgid "Горсть монет"
+msgstr ""
+
+#: Inventory/TrophyCatalog.cs
+msgid "Позеленевшие. Их выкапывали, а не зарабатывали."
 msgstr ""
 
 #: UI/ClarityPanel.cs
@@ -3054,6 +3190,10 @@ msgstr "Start over"
 #: UI/GameOverUI.cs UI/PauseMenu.cs
 msgid "Выйти из игры"
 msgstr "Quit the game"
+
+#: UI/GearPanel.cs
+msgid "{0}: «{1}»"
+msgstr ""
 
 #: UI/GearPanel.cs
 msgid "Мешка Греховода в этой сцене нет."
@@ -3422,6 +3562,10 @@ msgstr "Only its will remains."
 #: UI/SoulAssemblyUI.cs
 msgid "Оболочка не задана."
 msgstr "No shell chosen."
+
+#: UI/SpeechBubbles.cs
+msgid "«{0}»"
+msgstr ""
 
 #: UI/SquadStrategyUI.cs
 msgid "Отряд: {0}"

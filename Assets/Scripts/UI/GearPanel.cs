@@ -122,7 +122,7 @@ namespace Sinbinder.UI
         public static void TalkTo(Warrior w)
         {
             if (_instance == null || _instance._open || w == null || PlayerInventory.Instance == null) return;
-            _instance.OpenFor(w, $"{w.DisplayName}: «{Dialogue.TalkLines.HowAreYou(w)}»", near: true);
+            _instance.OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), Dialogue.TalkLines.HowAreYou(w)), near: true);
         }
 
         /// <summary>Перерисовать открытый экран — после обмена мимо щелчка (автопрогон).</summary>
@@ -198,7 +198,7 @@ namespace Sinbinder.UI
             string said = Dialogue.TalkLines.HowAreYou(w);
             string memory = Dialogue.TalkLines.Remembers(w);
             if (!string.IsNullOrEmpty(memory)) said += " " + memory;
-            OpenFor(w, $"{w.DisplayName}: «{said}»", near: true);
+            OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), said), near: true);
             return true;
         }
 
@@ -432,7 +432,7 @@ namespace Sinbinder.UI
                     bool takes = SquadGear.WillTake(_warrior, item, out string word);
                     string than = SquadGear.Compare(_warrior, item);
                     if (!string.IsNullOrEmpty(than)) word = $"{than} · {word}";
-                    Row(_store, item.Name, Line(item, takes ? word : Loc.F("не возьмёт: {0}", word)),
+                    Row(_store, Loc.Name(item.Name), Line(item, takes ? word : Loc.F("не возьмёт: {0}", word)),
                         _near ? () => HandOver(item) : (System.Action)null, height);
                     shown++;
                 }
@@ -469,7 +469,7 @@ namespace Sinbinder.UI
             foreach (var item in inside)
             {
                 string how = item.Type == ItemType.Gold ? Loc.T("в кошель") : Loc.T("в мешок");
-                Row(_hands, item.Name, Plain(item, how), () => FromChest(item), left);
+                Row(_hands, Loc.Name(item.Name), Plain(item, how), () => FromChest(item), left);
             }
             if (inside.Count == 0) Row(_hands, Loc.T("— Пусто —"), "", null);
 
@@ -503,7 +503,7 @@ namespace Sinbinder.UI
 
             var bag = store != null ? Bag(store) : new List<InventoryItem>();
             float height = RowHeight(_hands, bag.Count);
-            foreach (var item in bag) Row(_hands, item.Name, Plain(item, item.Description), null, height);
+            foreach (var item in bag) Row(_hands, Loc.Name(item.Name), Plain(item, Loc.T(item.Description)), null, height);
             if (bag.Count == 0) Row(_hands, Loc.T("— Пусто —"), "", null);
 
             Row(_store, Loc.T("Воину"), Loc.T("подойти к нему и F от первого лица"), null);
@@ -518,14 +518,14 @@ namespace Sinbinder.UI
         private void FromChest(InventoryItem item)
         {
             bool ok = _chest.Take(item, PlayerInventory.Instance, out string word);
-            _answer = ok ? $"{item.Name} — {word}." : Loc.F("Не взять: {0}.", word);
+            _answer = ok ? $"{Loc.Name(item.Name)} — {word}." : Loc.F("Не взять: {0}.", word);
             Redraw();
         }
 
         private void ToChest(InventoryItem item)
         {
             bool ok = _chest.Put(item, PlayerInventory.Instance, out string word);
-            _answer = ok ? $"{item.Name} — {word}." : Loc.F("Не положить: {0}.", word);
+            _answer = ok ? $"{Loc.Name(item.Name)} — {word}." : Loc.F("Не положить: {0}.", word);
             Redraw();
         }
 
@@ -563,22 +563,22 @@ namespace Sinbinder.UI
         private void HandOver(InventoryItem item)
         {
             bool ok = SquadGear.Hand(_warrior, item, PlayerInventory.Instance, out string word);
-            Answer(ok ? $"{_warrior.DisplayName} {word}: {item.Name.ToLowerInvariant()}."
-                      : $"{_warrior.DisplayName} {word}.");
+            Answer(ok ? $"{Loc.Name(_warrior.DisplayName)} {word}: {Loc.Name(item.Name).ToLowerInvariant()}."
+                      : $"{Loc.Name(_warrior.DisplayName)} {word}.");
         }
 
         private void TakeBack(InventoryItem item)
         {
             bool ok = SquadGear.Take(_warrior, item, PlayerInventory.Instance, out string word);
-            Answer(ok ? $"{_warrior.DisplayName} {word}: {item.Name.ToLowerInvariant()}."
-                      : $"{_warrior.DisplayName} {word}.");
+            Answer(ok ? $"{Loc.Name(_warrior.DisplayName)} {word}: {Loc.Name(item.Name).ToLowerInvariant()}."
+                      : $"{Loc.Name(_warrior.DisplayName)} {word}.");
         }
 
         private void AskPocket()
         {
             bool ok = SquadGear.AskPocket(_warrior, PlayerInventory.Instance, out string word);
             Answer(ok ? Loc.F("{0} отдаёт своё золото в кошель Греховода.", Loc.Name(_warrior.DisplayName))
-                      : $"{_warrior.DisplayName} {word}.");
+                      : $"{Loc.Name(_warrior.DisplayName)} {word}.");
         }
 
         private void Answer(string line)

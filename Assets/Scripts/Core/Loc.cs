@@ -69,8 +69,48 @@ namespace Sinbinder.Core
         /// <summary>Пометка для сборщика каталога: строка остаётся как есть.</summary>
         public static string N(string ru) => ru;
 
-        /// <summary>Имя при показе игроку.</summary>
-        public static string Name(string ru) => T(ru);
+        /// <summary>
+        /// Имя при показе игроку. Целиком нет в таблице — по словам: имена
+        /// душ собираются из частей («Гертон» + ремесло «Крестьянин»,
+        /// «Ловчий» + прозвище «Рыжий»), и таблица знает части, а не все
+        /// сочетания. Слова, которого нет и в частях, — латиницей: русские
+        /// буквы посреди английского хуже, чем «Gerton».
+        /// </summary>
+        public static string Name(string ru)
+        {
+            if (string.IsNullOrEmpty(ru) || IsSource) return ru;
+            if (Table.TryGetValue(ru, out var whole) && !string.IsNullOrEmpty(whole)) return whole;
+
+            var words = ru.Split(' ');
+            for (int i = 0; i < words.Length; i++)
+                words[i] = Table.TryGetValue(words[i], out var w) && !string.IsNullOrEmpty(w) ? w : Latin(words[i]);
+            return string.Join(" ", words);
+        }
+
+        /// <summary>Русские буквы — латиницей, по-простому (Ждан → Zhdan).</summary>
+        public static string Latin(string ru)
+        {
+            if (string.IsNullOrEmpty(ru)) return ru;
+            var b = new StringBuilder(ru.Length + 4);
+            foreach (char c in ru)
+            {
+                int i = Cyrillic.IndexOf(char.ToLowerInvariant(c));
+                if (i < 0) { b.Append(c); continue; }
+                string lat = LatinOf[i];
+                if (lat.Length > 0 && char.IsUpper(c))
+                    lat = char.ToUpperInvariant(lat[0]) + lat.Substring(1);
+                b.Append(lat);
+            }
+            return b.ToString();
+        }
+
+        private const string Cyrillic = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+
+        private static readonly string[] LatinOf =
+        {
+            "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p",
+            "r", "s", "t", "u", "f", "kh", "ts", "ch", "sh", "shch", "", "y", "", "e", "yu", "ya",
+        };
 
         /// <summary>Есть ли у строки перевод на текущий язык.</summary>
         public static bool Has(string ru) => IsSource || (ru != null && Table.TryGetValue(ru, out var s) && !string.IsNullOrEmpty(s));

@@ -138,7 +138,7 @@ namespace Sinbinder.Gameplay
                 }
 
             var keeper = Bodyguard();
-            string who = keeper != null ? keeper : Loc.T("Карган Старый Ворон");
+            string who = Loc.Name(keeper ?? Loc.N("Карган Старый Ворон"));
 
             Herald.Line(Loc.F("{0}: «Владыка, покличьте их к столу. Совет любит, "
               + "когда все на виду».", who));
@@ -178,7 +178,7 @@ namespace Sinbinder.Gameplay
             if (came.Count == 0 && stayed.Count == 0) return;
 
             var keeper = Bodyguard();
-            string who = keeper != null ? keeper : Loc.T("Карган Старый Ворон");
+            string who = Loc.Name(keeper ?? Loc.N("Карган Старый Ворон"));
 
             if (stayed.Count == 0)
             {
@@ -217,13 +217,13 @@ namespace Sinbinder.Gameplay
 
         private static string Join(List<string> names)
         {
-            if (names.Count == 1) return names[0];
+            if (names.Count == 1) return Loc.Name(names[0]);
 
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < names.Count; i++)
             {
                 if (i > 0) sb.Append(i == names.Count - 1 ? Loc.T(" и ") : ", ");
-                sb.Append(names[i]);
+                sb.Append(Loc.Name(names[i]));
             }
             return sb.ToString();
         }

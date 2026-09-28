@@ -268,11 +268,45 @@ def call_skip(clean, start, params):
 IDENT_FIELD = re.compile(r'\b(const|readonly)\s+string\s+\w*(Name|Key|Id|Tag|Path)\s*=\s*$')
 
 
+def inside_debug(clean, start):
+    """Строка где-то внутри Debug.Log(…) — на любой глубине скобок: журнал разработчика."""
+    i, depth = start, 0
+    while i > 0:
+        i -= 1
+        c = clean[i]
+        if c in ')]}':
+            depth += 1
+        elif c in '([{':
+            if depth == 0:
+                if c == '{':
+                    return False
+                j = i
+                while j > 0 and clean[j - 1] in ' \t':
+                    j -= 1
+                k = j
+                while k > 0 and (clean[k - 1].isalnum() or clean[k - 1] in '_.'):
+                    k -= 1
+                if clean[k:j].startswith('Debug.Log'):
+                    return True
+            else:
+                depth -= 1
+        elif c == ';' and depth == 0:
+            return False
+    return False
+
+
 def skip_reason(src, start):
     line_start0 = src.rfind('\n', 0, start) + 1
+    line_end0 = src.find('\n', start)
+    if '// ключ' in src[line_start0:line_end0 if line_end0 >= 0 else len(src)]:
+        return 'помечено «// ключ»'
+    if re.match(r'\$?@?"\[[А-ЯЁ ]+\]', src[start:start + 40]):
+        return 'служебная строка с тегом [ВИД] — для разработчика'
     if IDENT_FIELD.search(src[line_start0:start]):
         return 'поле-идентификатор (…Name, …Key): имя объекта, а не текст'
     clean = blank_comments(src)
+    if inside_debug(clean, start):
+        return 'внутри Debug.Log'
     why = call_skip(clean, start, declared_params(clean))
     if why:
         return why

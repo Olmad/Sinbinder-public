@@ -239,7 +239,7 @@ namespace Sinbinder.Gameplay
             foreach (var item in _contents)
             {
                 if (names.Length > 0) names.Append(", ");
-                names.Append(item.Name.ToLowerInvariant());
+                names.Append(Loc.Name(item.Name).ToLowerInvariant());
             }
 
             if (_contents.Count > 0)
@@ -313,7 +313,7 @@ namespace Sinbinder.Gameplay
             foreach (var item in chest._contents)
             {
                 if (names.Length > 0) names.Append(", ");
-                names.Append(item.Name.ToLowerInvariant());
+                names.Append(Loc.Name(item.Name).ToLowerInvariant());
             }
             chest._contents.Clear();
 
@@ -348,7 +348,7 @@ namespace Sinbinder.Gameplay
                 if (!purse.AddItem(item)) break;
 
                 if (taken > 0) names.Append(", ");
-                names.Append(item.Name.ToLowerInvariant());
+                names.Append(Loc.Name(item.Name).ToLowerInvariant());
                 taken++;
             }
 

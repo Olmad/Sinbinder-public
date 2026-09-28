@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/HunterSquadSpawner.cs
+// Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
 
@@ -65,18 +66,18 @@ namespace Sinbinder.Gameplay
             // на поле, а не только в душе. Драться с четырьмя одинаковыми
             // кубами неинтересно, а виды уже были: не хватало того,
             // чем они отличаются на глаз.
-            new("Охотник",          SinType.Wrath,    MoralType.Vicious, 60f,
+            new(Loc.N("Охотник"),          SinType.Wrath,    MoralType.Vicious, 60f,
                 height: 1.30f, girth: 0.55f, speed: 3.5f, toughness: 0),
 
             // Лёгкий и быстрый: догоняет отставших.
-            new("Охотник-следопыт", SinType.Envy,     MoralType.Neutral, 45f,
+            new(Loc.N("Охотник-следопыт"), SinType.Envy,     MoralType.Neutral, 45f,
                 height: 1.15f, girth: 0.42f, speed: 4.8f, toughness: 0),
 
             // Инквизитор — рангом выше охотников, и видно это ростом
             // и крепостью (слово автора от 13 сентября: «не мясники,
             // а инквизиторы»). Гордыня, а не Чревоугодие: он пришёл
             // не есть, а судить.
-            new("Инквизитор",       SinType.Pride,    MoralType.Vicious, 55f,
+            new(Loc.N("Инквизитор"),       SinType.Pride,    MoralType.Vicious, 55f,
                 height: 1.45f, girth: 0.62f, speed: 2.8f, toughness: 1,
                 // Во второй волне ищет Греховода магией (Scryer): замысел
                 // автора от 24 сентября. Самый медленный в стае — и потому
@@ -84,7 +85,7 @@ namespace Sinbinder.Gameplay
                 scries: true),
 
             // Средний во всём, и тем узнаваем.
-            new("Ловчий",           SinType.Greed,    MoralType.Vicious, 50f,
+            new(Loc.N("Ловчий"),           SinType.Greed,    MoralType.Vicious, 50f,
                 height: 1.25f, girth: 0.60f, speed: 3.9f, toughness: 0),
         };
 
@@ -223,7 +224,7 @@ namespace Sinbinder.Gameplay
                 yield return Beat.Until(() => souls == null || souls.FadingCount == 0
                                               || Core.Satchel.FreeJar() < 0,
                     _harvestSafety,
-                    "Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь.");
+                    Loc.T("Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь."));
 
             SpawnHunters();
         }
@@ -308,8 +309,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static readonly string[] Epithets =
         {
-            "Рыжий", "Хромой", "Седой", "Рябой",
-            "Щербатый", "Долговязый", "Лысый", "Бородатый",
+            Loc.N("Рыжий"), Loc.N("Хромой"), Loc.N("Седой"), Loc.N("Рябой"),
+            Loc.N("Щербатый"), Loc.N("Долговязый"), Loc.N("Лысый"), Loc.N("Бородатый"),
         };
 
         /// <summary>
@@ -360,8 +361,8 @@ namespace Sinbinder.Gameplay
             // Warrior.Defense (CombatMath), пока удар и защита включены.
             if (kind.Scries)
                 warrior.Give(new Inventory.InventoryItem(
-                    "Освящённый нагрудник",
-                    "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили.",
+                    Loc.N("Освящённый нагрудник"),
+                    Loc.N("Железо с выжженным знаком Ордена. Святость — это железо, которому поверили."),
                     Inventory.ItemType.Equipment, defense: 2f, slot: Inventory.GearSlot.Body));
 
             // Та же оснастка, что и у своих: без агента охотники стояли
