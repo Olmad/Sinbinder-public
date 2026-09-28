@@ -3,6 +3,686 @@
 # игра покажет русскую. Собирает Tools/lang/catalog.py; правила — docs/38-LANG.md.
 # Места {0}, {1} — то, что игра подставит (имя, причина…): порядок можно менять, число — нет.
 
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "приказ крикнули издали, а он не из тех, кого зовут криком"
+msgstr "the order was shouted from afar, and he is not one to come when shouted for"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "он сделал вид, что не расслышал"
+msgstr "he pretended not to hear"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "она сделала вид, что не расслышала"
+msgstr "she pretended not to hear"
+
+#: AOS Engine/Counterfactual.cs
+msgid "Греховод был далеко — приказ еле долетел"
+msgstr "the Sinbinder was far away — the order barely reached him"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "ему не платили вылазку за вылазкой"
+msgstr "he has gone unpaid sortie after sortie"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "ему не платили третью вылазку подряд"
+msgstr "he has gone unpaid for the third sortie running"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "ему не платили вторую вылазку подряд"
+msgstr "he has gone unpaid for the second sortie running"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "ему до сих пор не заплатили"
+msgstr "he still hasn't been paid"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "ему есть что терять — карман не пустой"
+msgstr "he has something to lose — his pocket isn't empty"
+
+#: AOS Engine/Counterfactual.cs
+msgid "{0} тянет его сильнее приказа"
+msgstr "{0} pulls at him harder than the order"
+
+#: AOS Engine/Counterfactual.cs
+msgid "вещь при нём тянет сильнее приказа"
+msgstr "something he carries pulls harder than the order"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "добыча лежала слишком близко"
+msgstr "the loot lay too close"
+
+#: AOS Engine/Counterfactual.cs
+msgid "ходить туда-сюда ему скучно"
+msgstr "pacing back and forth bores him"
+
+#: AOS Engine/Counterfactual.cs
+msgid "рядом свой был в беде"
+msgstr "one of his own was in trouble nearby"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "на нём нет живого места"
+msgstr "he is wounded all over"
+
+#: AOS Engine/Counterfactual.cs
+msgid "он ранен и бережёт себя"
+msgstr "he is wounded and sparing himself"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "его обступили со всех сторон"
+msgstr "he is surrounded on all sides"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "он выдохся и больше не может"
+msgstr "he is spent and can't go on"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "она выдохлась и больше не может"
+msgstr "she is spent and can't go on"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "силы у него на исходе"
+msgstr "his strength is running out"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} колеблется: {1}."
+msgstr "{0} hesitates: {1}."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} медлит. {1} тянет его, но не настолько, чтобы решиться."
+msgstr "{0} lingers. {1} pulls at him, but not enough to decide."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} колеблется. {1} и {2} тянут его почти поровну."
+msgstr "{0} hesitates. {1} and {2} pull at him almost equally."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Приказ был. {0} {1}."
+msgstr "There was an order. {0} {1}."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Приказ был. {0} {1} — {2}."
+msgstr "There was an order. {0} {1} — {2}."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не сдвинулся с места"
+msgstr "{0} didn't move"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не сдвинулась с места"
+msgstr "{0} didn't move"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не сдвинулся с места — не смог выбрать."
+msgstr "{0} didn't move — couldn't decide."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не сдвинулась с места — не смогла выбрать."
+msgstr "{0} didn't move — couldn't decide."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не выполнил приказ"
+msgstr "{0} disobeyed the order"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0} не выполнила приказ"
+msgstr "{0} disobeyed the order"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0}. Вместо этого {1}."
+msgstr "{0} — and {1} instead."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0}: {1}. Вместо этого {2}."
+msgstr "{0} — {1} — and {2} instead."
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "{0}, и {1}"
+msgstr "{0}, and {1}"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он думает о своей доле"
+msgstr "he is thinking of his share"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не умеет стоять, когда есть кого ударить"
+msgstr "he can't stand still when there's someone to hit"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "их слишком много"
+msgstr "there are too many of them"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ему страшно"
+msgstr "he is afraid"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не привык к чужим приказам"
+msgstr "he isn't used to taking orders"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она не привыкла к чужим приказам"
+msgstr "she isn't used to taking orders"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он скорее ляжет, чем побежит"
+msgstr "he would sooner fall than run"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не бьёт в спину"
+msgstr "he doesn't strike from behind"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не признаёт, что устал"
+msgstr "he won't admit he's tired"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он остался один и не собирается уходить"
+msgstr "he is the last one standing and isn't going anywhere"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она осталась одна и не собирается уходить"
+msgstr "she is the last one standing and isn't going anywhere"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не может позволить себе выглядеть слабым"
+msgstr "he can't afford to look weak"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не считает командира выше себя"
+msgstr "he doesn't think the commander is above him"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не хочет, чтобы это досталось кому-то другому"
+msgstr "he doesn't want anyone else to have it"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не бросит своего"
+msgstr "he won't abandon one of his own"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "чужое добро его не тянет"
+msgstr "other people's goods don't tempt him"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он видит то, чего хочет, и больше ничего не слышит"
+msgstr "he sees what he wants and hears nothing else"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "лишнего ему не нужно — только дело"
+msgstr "he needs nothing extra — only the job"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он тащит всё, до чего дотянется"
+msgstr "he grabs everything within reach"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "у него не осталось воли"
+msgstr "he has no will left"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он ждёт удобной минуты"
+msgstr "he is waiting for the right moment"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он верит командиру"
+msgstr "he trusts the commander"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "приказ есть приказ"
+msgstr "an order is an order"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "уйти отсюда — значит подставить спину"
+msgstr "leaving now means turning his back on the enemy"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "иначе он не может"
+msgstr "he can't do otherwise"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "чужая беда его не касается"
+msgstr "other people's trouble is none of his concern"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он поступает как привык"
+msgstr "he does as he always does"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он помнит, чем это кончилось в прошлый раз"
+msgstr "he remembers how it ended last time"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не привык проходить мимо"
+msgstr "he isn't one to walk on by"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ему для своих ничего не жалко"
+msgstr "he would give anything for his own"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не считает, чего ему это будет стоить"
+msgstr "he doesn't count what it will cost him"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "драться ему не по сердцу"
+msgstr "fighting isn't to his liking"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не ищет драки"
+msgstr "he isn't looking for a fight"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он не привык сидеть без дела"
+msgstr "he isn't one to sit idle"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она не привыкла сидеть без дела"
+msgstr "she isn't one to sit idle"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "работа его не пугает"
+msgstr "work doesn't scare him"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ему не лень помочь своим"
+msgstr "he is never too lazy to help his own"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "здесь уже не выстоять"
+msgstr "there's no holding out here anymore"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "уйти из боя ему не стыдно"
+msgstr "he feels no shame in leaving the fight"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "чужая жизнь для него не дешевле своей"
+msgstr "another's life is worth no less to him than his own"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "подчиниться ему не зазорно"
+msgstr "he sees no shame in obeying"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросается к {0}"
+msgstr "rushes to {0}"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Отходит"
+msgstr "Falls back"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Сбегает"
+msgstr "Runs"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Спасает"
+msgstr "Rescues"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Грабит"
+msgstr "Loots"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Предаёт"
+msgstr "Betrays"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Торгуется"
+msgstr "Bargains"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Жрёт"
+msgstr "Devours"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Звереет"
+msgstr "Rages"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Насмерть"
+msgstr "To the death"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Вызывает"
+msgstr "Challenges"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Закрывает собой"
+msgstr "Shields"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Ворует"
+msgstr "Steals"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Морочит"
+msgstr "Beguiles"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Спит"
+msgstr "Sleeps"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "идёт в драку"
+msgstr "goes into the fight"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросается к раненому"
+msgstr "rushes to the wounded"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "идёт за добычей"
+msgstr "goes for the loot"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "отходит"
+msgstr "falls back"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "стоит на месте"
+msgstr "stays put"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "делает, как велено"
+msgstr "does as ordered"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "впадает в бешенство"
+msgstr "flies into a rage"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бьёт со всей силы"
+msgstr "strikes with full force"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "встаёт железной стойкой"
+msgstr "takes an iron stance"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ждёт удара, чтобы ответить"
+msgstr "waits for a blow to answer"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "переводит дыхание"
+msgstr "catches a breath"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "стоит несдвигаемо"
+msgstr "stands immovable"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "зевает"
+msgstr "yawns"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "лениво зализывает раны"
+msgstr "lazily licks the wounds"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "заражает всех безразличием"
+msgstr "infects everyone with indifference"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "засыпает намертво"
+msgstr "falls dead asleep"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "работает за троих"
+msgstr "works for three"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "подгоняет остальных"
+msgstr "drives the others on"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "не знает усталости"
+msgstr "knows no fatigue"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "очаровывает"
+msgstr "charms"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "целует насмерть"
+msgstr "kisses to death"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "переманивает на свою сторону"
+msgstr "wins a foe over"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сгорает от страсти"
+msgstr "burns with passion"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "пожирает"
+msgstr "devours"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "извергает съеденное"
+msgstr "vomits up what was eaten"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "не может насытиться"
+msgstr "can't get enough"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "торгуется с чужим"
+msgstr "bargains with a stranger"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "уходит к чужим"
+msgstr "goes over to the other side"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "зовёт на поединок"
+msgstr "calls for a duel"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "встаёт насмерть"
+msgstr "stands to the death"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "становится в позу"
+msgstr "strikes a pose"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "поднимает остальных"
+msgstr "rallies the others"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "закрывает собой"
+msgstr "shields a comrade"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "тянет чужое оружие"
+msgstr "grabs someone else's weapon"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "действует по-своему"
+msgstr "goes a different way"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "пошёл в драку"
+msgstr "went into the fight"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "пошла в драку"
+msgstr "went into the fight"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросился к {0}"
+msgstr "rushed to {0}"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросилась к {0}"
+msgstr "rushed to {0}"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросился к раненому"
+msgstr "rushed to the wounded"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "бросилась к раненому"
+msgstr "rushed to the wounded"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "пошёл за добычей"
+msgstr "went for the loot"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "пошла за добычей"
+msgstr "went for the loot"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "отступил"
+msgstr "fell back"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "отступила"
+msgstr "fell back"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сбежал"
+msgstr "fled"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сбежала"
+msgstr "fled"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "остался на месте"
+msgstr "stayed put"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "осталась на месте"
+msgstr "stayed put"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сделал, как велено"
+msgstr "did as ordered"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сделала, как велено"
+msgstr "did as ordered"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "торговался с чужим"
+msgstr "bargained with a stranger"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "торговалась с чужим"
+msgstr "bargained with a stranger"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ушёл к чужим"
+msgstr "went over to the other side"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "ушла к чужим"
+msgstr "went over to the other side"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "позвал на поединок"
+msgstr "called for a duel"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "позвала на поединок"
+msgstr "called for a duel"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "встал насмерть"
+msgstr "stood to the death"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "встала насмерть"
+msgstr "stood to the death"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "закрыл собой"
+msgstr "shielded a comrade with his body"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "закрыла собой"
+msgstr "shielded a comrade with her body"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "потянул чужое оружие"
+msgstr "grabbed someone else's weapon"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "потянула чужое оружие"
+msgstr "grabbed someone else's weapon"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "впал в бешенство"
+msgstr "flew into a rage"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "впала в бешенство"
+msgstr "flew into a rage"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сожрал"
+msgstr "devoured a body"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "сожрала"
+msgstr "devoured a body"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "очаровал"
+msgstr "cast a charm"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "очаровала"
+msgstr "cast a charm"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "уснул намертво"
+msgstr "fell dead asleep"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "уснула намертво"
+msgstr "fell dead asleep"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "поступил по-своему"
+msgstr "did it his own way"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "поступила по-своему"
+msgstr "did it her own way"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Драка"
+msgstr "Fighting"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Раненый товарищ"
+msgstr "A wounded comrade"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Добыча"
+msgstr "Loot"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Отход"
+msgstr "Retreat"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Покой"
+msgstr "Rest"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Приказ"
+msgstr "The order"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "Что-то ещё"
+msgstr "Something else"
+
 #: Core/Preferences.cs
 msgid "медленно"
 msgstr "slow"

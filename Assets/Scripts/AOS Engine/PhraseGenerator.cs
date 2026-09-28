@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/PhraseGenerator.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
@@ -29,7 +30,7 @@ namespace Sinbinder.AOS
         public static string Explain(Warrior warrior, DecisionContext context, Decision decision)
         {
             if (warrior == null) return "";
-            string name = warrior.DisplayName;
+            string name = Loc.Name(warrior.DisplayName);
 
             if (decision.Hesitated)
             {
@@ -38,18 +39,22 @@ namespace Sinbinder.AOS
                 // Голос бывает и без слов (смирение ниже) — тогда как без причины.
                 string cause = Caused(decision) ? Reason(warrior, context, decision) : "";
                 if (!string.IsNullOrEmpty(cause))
-                    return $"{name} колеблется: {cause}.";
+                    return Loc.F("{0} колеблется: {1}.", name, cause);
 
                 // Когда кандидат один, BehaviourResolver кладёт его же
                 // и во второе поле (alone ? best : sorted[1]). Фраза
                 // выходила «Покой и Покой тянут его почти поровну» —
                 // игрок видит бессмыслицу вместо объяснения.
+                // Фраза целиком, а не склейкой из кусков: переводчику нужен
+                // весь смысл, а «его» у неё — «её» (Grammar.For).
                 if (decision.RunnerUp == decision.TopContender)
-                    return $"{name} медлит. {Noun(decision.TopContender)} тянет его, "
-                         + "но не настолько, чтобы решиться.";
+                    return Core.Grammar.For(warrior.Gender,
+                        Loc.F("{0} медлит. {1} тянет его, но не настолько, чтобы решиться.",
+                              name, Noun(decision.TopContender)));
 
-                return $"{name} колеблется. {Noun(decision.TopContender)} и "
-                     + $"{Noun(decision.RunnerUp)} тянут его почти поровну.";
+                return Core.Grammar.For(warrior.Gender,
+                    Loc.F("{0} колеблется. {1} и {2} тянут его почти поровну.",
+                          name, Noun(decision.TopContender), Noun(decision.RunnerUp)));
             }
 
             string what = Verb(decision.Action, context);
@@ -57,8 +62,8 @@ namespace Sinbinder.AOS
 
             if (decision.RefusedCommand)
                 return string.IsNullOrEmpty(why)
-                    ? $"Приказ был. {name} {what}."
-                    : $"Приказ был. {name} {what} — {why}.";
+                    ? Loc.F("Приказ был. {0} {1}.", name, what)
+                    : Loc.F("Приказ был. {0} {1} — {2}.", name, what, why);
 
             return string.IsNullOrEmpty(why)
                 ? $"{name} {what}."
@@ -73,15 +78,17 @@ namespace Sinbinder.AOS
         public static string LogLine(Warrior warrior, DecisionContext context, Decision decision)
         {
             if (warrior == null) return "";
-            string name = warrior.DisplayName;
+            string name = Loc.Name(warrior.DisplayName);
 
             if (decision.Hesitated)
             {
                 string stuck = Core.Grammar.Pick(warrior.Gender,
-                    $"{name} не сдвинулся с места", $"{name} не сдвинулась с места");
+                    Loc.F("{0} не сдвинулся с места", name), Loc.F("{0} не сдвинулась с места", name));
                 string cause = Caused(decision) ? Reason(warrior, context, decision) : "";
                 if (!string.IsNullOrEmpty(cause)) return $"{stuck}: {cause}.";
-                return stuck + Core.Grammar.Pick(warrior.Gender, " — не смог выбрать.", " — не смогла выбрать.");
+                return Core.Grammar.Pick(warrior.Gender,
+                    Loc.F("{0} не сдвинулся с места — не смог выбрать.", name),
+                    Loc.F("{0} не сдвинулась с места — не смогла выбрать.", name));
             }
 
             string why = Reason(warrior, context, decision);
@@ -90,10 +97,10 @@ namespace Sinbinder.AOS
             if (decision.RefusedCommand)
             {
                 string failed = Core.Grammar.Pick(warrior.Gender,
-                    $"{name} не выполнил приказ", $"{name} не выполнила приказ");
+                    Loc.F("{0} не выполнил приказ", name), Loc.F("{0} не выполнила приказ", name));
                 return string.IsNullOrEmpty(why)
-                    ? $"{failed}. Вместо этого {what}."
-                    : $"{failed}: {why}. Вместо этого {what}.";
+                    ? Loc.F("{0}. Вместо этого {1}.", failed, what)
+                    : Loc.F("{0}: {1}. Вместо этого {2}.", failed, why, what);
             }
 
             return string.IsNullOrEmpty(why) ? $"{name} {what}." : $"{name} {what}: {why}.";
@@ -123,7 +130,7 @@ namespace Sinbinder.AOS
             return Core.Grammar.For(gender, Because(warrior, context, decision, gender));
         }
 
-        private const string Pocket = "ему есть что терять — карман не пустой";
+        private static readonly string Pocket = Loc.N("ему есть что терять — карман не пустой");
 
         private static string Because(Warrior warrior, DecisionContext context,
                                       Decision decision, Core.Gender gender)
@@ -151,7 +158,7 @@ namespace Sinbinder.AOS
                 string main = Counterfactual.Phrase(decision.Decisive, context, sin, gender);
                 return decision.DecisiveAlso == Counterfactual.Factor.None
                     ? main
-                    : $"{main}, и {Counterfactual.Phrase(decision.DecisiveAlso, context, sin, gender)}";
+                    : Loc.F("{0}, и {1}", main, Counterfactual.Phrase(decision.DecisiveAlso, context, sin, gender));
             }
 
             // Голос Греховода: отказ приказу, пришедшему издали. Причина —
@@ -166,10 +173,10 @@ namespace Sinbinder.AOS
                 // Смиренный слушает и далёкого: его Гордыня громче всех
                 // за то, что он сделал вместо приказа, — это ниже, её словами.
                 if (decision.TopModule == "Pride" && !Meek(warrior))
-                    return "приказ крикнули издали, а он не из тех, кого зовут криком";
+                    return Loc.T("приказ крикнули издали, а он не из тех, кого зовут криком");
                 if (decision.TopModule == "Sloth" && !Virtuous(warrior, SinType.Sloth))
-                    return P("он сделал вид, что не расслышал",
-                             "она сделала вид, что не расслышала");
+                    return P(Loc.T("он сделал вид, что не расслышал"),
+                             Loc.T("она сделала вид, что не расслышала"));
             }
 
             // Личный карман (docs/34-GEAR.md §9.3): жадный с непустым
@@ -180,7 +187,7 @@ namespace Sinbinder.AOS
             if (!weighed && decision.RefusedCommand && context.CommandIntoFight && context.PocketGold > 0
                 && decision.Action == ActionType.Idle
                 && warrior != null && warrior.Soul != null && warrior.Soul.Sin == SinType.Greed)
-                return Pocket;
+                return Loc.T(Pocket);
 
             // Второй круг «от противного»: решил голос души — его слова.
             string voice = weighed && !string.IsNullOrEmpty(decision.DecisiveVoice)
@@ -201,26 +208,26 @@ namespace Sinbinder.AOS
                     // хватало двух строк; теперь воин может отказать и на
                     // второй, и объяснение обязано это различать — иначе
                     // игрок услышит «третью» там, где задолжали две.
-                    if (weighed) return "он думает о своей доле";
-                    if (context.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
-                    if (context.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
-                    if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
-                    if (context.UnpaidMissions > 0) return "ему до сих пор не заплатили";
-                    if (context.NearbyLoot > 0) return "добыча лежала слишком близко";
-                    if (context.PocketGold > 0) return Pocket;
-                    return "он думает о своей доле";
+                    if (weighed) return Loc.T("он думает о своей доле");
+                    if (context.UnpaidMissions > 3) return Loc.T("ему не платили вылазку за вылазкой");
+                    if (context.UnpaidMissions == 3) return Loc.T("ему не платили третью вылазку подряд");
+                    if (context.UnpaidMissions == 2) return Loc.T("ему не платили вторую вылазку подряд");
+                    if (context.UnpaidMissions > 0) return Loc.T("ему до сих пор не заплатили");
+                    if (context.NearbyLoot > 0) return Loc.T("добыча лежала слишком близко");
+                    if (context.PocketGold > 0) return Loc.T(Pocket);
+                    return Loc.T("он думает о своей доле");
 
                 case "Wrath":
                     if (Virtuous(warrior, SinType.Wrath)) return Meekness(did);
-                    return "он не умеет стоять, когда есть кого ударить";
+                    return Loc.T("он не умеет стоять, когда есть кого ударить");
 
                 case "Fear":
-                    if (weighed) return context.NearbyEnemies >= 3 ? "их слишком много" : "ему страшно";
-                    if (context.Surrounded) return "его обступили со всех сторон";
+                    if (weighed) return context.NearbyEnemies >= 3 ? Loc.T("их слишком много") : Loc.T("ему страшно");
+                    if (context.Surrounded) return Loc.T("его обступили со всех сторон");
                     if (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.3f)
-                        return "на нём нет живого места";
-                    if (context.NearbyEnemies >= 3) return "их слишком много";
-                    return "ему страшно";
+                        return Loc.T("на нём нет живого места");
+                    if (context.NearbyEnemies >= 3) return Loc.T("их слишком много");
+                    return Loc.T("ему страшно");
 
                 case "Pride":
                     // Смирение — та же шкала со знаком минус, и голос у неё
@@ -239,78 +246,78 @@ namespace Sinbinder.AOS
                     // задел приказ, а побежал он по другой причине.
                     if (decision.Action == ActionType.Flee)
                         return decision.RefusedCommand
-                            ? P("он не привык к чужим приказам", "она не привыкла к чужим приказам")
+                            ? P(Loc.T("он не привык к чужим приказам"), Loc.T("она не привыкла к чужим приказам"))
                             : "";
 
                     // Велели уйти из схватки — вот где эти слова правда:
                     // унижает гордеца приказ отойти, когда враг уже в шаге.
                     if (decision.RefusedCommand && context.IsEngaged && context.CommandLeavesFight)
-                        return "он скорее ляжет, чем побежит";
+                        return Loc.T("он скорее ляжет, чем побежит");
 
-                    if (context.TargetBackExposed) return "он не бьёт в спину";
+                    if (context.TargetBackExposed) return Loc.T("он не бьёт в спину");
                     if (context.Fatigue > 0.3f && decision.Action != ActionType.Idle)
-                        return "он не признаёт, что устал";
+                        return Loc.T("он не признаёт, что устал");
                     // «Им» здесь было творительным от «он», а у этого
                     // слова два разных хозяина, и по строке их не различить.
                     // Фраза переписана так, чтобы его не было.
                     if (decision.RefusedCommand)
-                        return P("он не привык к чужим приказам",
-                                 "она не привыкла к чужим приказам");
+                        return P(Loc.T("он не привык к чужим приказам"),
+                                 Loc.T("она не привыкла к чужим приказам"));
                     if (context.LastAlive)
-                        return P("он остался один и не собирается уходить",
-                                 "она осталась одна и не собирается уходить");
-                    return "он не может позволить себе выглядеть слабым";
+                        return P(Loc.T("он остался один и не собирается уходить"),
+                                 Loc.T("она осталась одна и не собирается уходить"));
+                    return Loc.T("он не может позволить себе выглядеть слабым");
 
                 case "Envy":
                     // Доброжелательность голосует против того же, за что
                     // зависть, — и ни за что сверх того: причины нет.
                     if (Virtuous(warrior, SinType.Envy)) return "";
                     if (context.RelationshipWithCommander < 40f)
-                        return "он не считает командира выше себя";
-                    return "он не хочет, чтобы это досталось кому-то другому";
+                        return Loc.T("он не считает командира выше себя");
+                    return Loc.T("он не хочет, чтобы это досталось кому-то другому");
 
                 case "Lust":
-                    if (context.BrotherNearby) return "он не бросит своего";
+                    if (context.BrotherNearby) return Loc.T("он не бросит своего");
                     if (Virtuous(warrior, SinType.Lust))
-                        return did == ActionType.ObeyCommand ? "чужое добро его не тянет" : "";
-                    return "он видит то, чего хочет, и больше ничего не слышит";
+                        return did == ActionType.ObeyCommand ? Loc.T("чужое добро его не тянет") : "";
+                    return Loc.T("он видит то, чего хочет, и больше ничего не слышит");
 
                 case "Gluttony":
                     if (Virtuous(warrior, SinType.Gluttony))
-                        return did == ActionType.Attack ? "лишнего ему не нужно — только дело" : "";
-                    return "он тащит всё, до чего дотянется";
+                        return did == ActionType.Attack ? Loc.T("лишнего ему не нужно — только дело") : "";
+                    return Loc.T("он тащит всё, до чего дотянется");
 
                 case "Sloth":
                     if (Virtuous(warrior, SinType.Sloth)) return Diligence(did, context, P);
-                    if (weighed) return "у него не осталось воли";
+                    if (weighed) return Loc.T("у него не осталось воли");
                     if (context.IsExhausted)
-                        return P("он выдохся и больше не может",
-                                 "она выдохлась и больше не может");
-                    if (context.Fatigue > 0.4f) return "силы у него на исходе";
-                    return "у него не осталось воли";
+                        return P(Loc.T("он выдохся и больше не может"),
+                                 Loc.T("она выдохлась и больше не может"));
+                    if (context.Fatigue > 0.4f) return Loc.T("силы у него на исходе");
+                    return Loc.T("у него не осталось воли");
 
                 case "Patience":
-                    return "он ждёт удобной минуты";
+                    return Loc.T("он ждёт удобной минуты");
 
                 case "Loyalty":
-                    if (context.RelationshipWithCommander > 70f) return "он верит командиру";
-                    return "приказ есть приказ";
+                    if (context.RelationshipWithCommander > 70f) return Loc.T("он верит командиру");
+                    return Loc.T("приказ есть приказ");
 
                 case "Engagement":
-                    return "уйти отсюда — значит подставить спину";
+                    return Loc.T("уйти отсюда — значит подставить спину");
 
                 case "Morality":
                     if (warrior.Soul != null && warrior.Soul.Moral == MoralType.Pious)
-                        return "иначе он не может";
+                        return Loc.T("иначе он не может");
                     if (warrior.Soul != null && warrior.Soul.Moral == MoralType.Vicious)
-                        return "чужая беда его не касается";
-                    return "он поступает как привык";
+                        return Loc.T("чужая беда его не касается");
+                    return Loc.T("он поступает как привык");
 
                 case "Memory":
-                    return "он помнит, чем это кончилось в прошлый раз";
+                    return Loc.T("он помнит, чем это кончилось в прошлый раз");
 
                 case "Virtue":
-                    return "он не привык проходить мимо";
+                    return Loc.T("он не привык проходить мимо");
 
                 default:
                     return "";
@@ -334,16 +341,16 @@ namespace Sinbinder.AOS
         /// </summary>
         private static string Generosity(ActionType action, DecisionContext context)
         {
-            if (context.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
-            if (context.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
-            if (context.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
-            if (context.UnpaidMissions > 0) return "ему до сих пор не заплатили";
+            if (context.UnpaidMissions > 3) return Loc.T("ему не платили вылазку за вылазкой");
+            if (context.UnpaidMissions == 3) return Loc.T("ему не платили третью вылазку подряд");
+            if (context.UnpaidMissions == 2) return Loc.T("ему не платили вторую вылазку подряд");
+            if (context.UnpaidMissions > 0) return Loc.T("ему до сих пор не заплатили");
 
             switch (action)
             {
-                case ActionType.Loot:     return context.NearbyLoot > 0 ? "добыча лежала слишком близко" : "";
-                case ActionType.SaveAlly: return "ему для своих ничего не жалко";
-                case ActionType.Attack:   return "он не считает, чего ему это будет стоить";
+                case ActionType.Loot:     return context.NearbyLoot > 0 ? Loc.T("добыча лежала слишком близко") : "";
+                case ActionType.SaveAlly: return Loc.T("ему для своих ничего не жалко");
+                case ActionType.Attack:   return Loc.T("он не считает, чего ему это будет стоить");
                 default:                  return "";
             }
         }
@@ -353,8 +360,8 @@ namespace Sinbinder.AOS
         {
             switch (action)
             {
-                case ActionType.Flee: return "драться ему не по сердцу";
-                case ActionType.Idle: return "он не ищет драки";
+                case ActionType.Flee: return Loc.T("драться ему не по сердцу");
+                case ActionType.Idle: return Loc.T("он не ищет драки");
                 default:              return "";
             }
         }
@@ -370,17 +377,17 @@ namespace Sinbinder.AOS
         {
             switch (action)
             {
-                case ActionType.Attack:      return P("он не привык сидеть без дела", "она не привыкла сидеть без дела");
-                case ActionType.ObeyCommand: return "работа его не пугает";
-                case ActionType.SaveAlly:    return "ему не лень помочь своим";
+                case ActionType.Attack:      return P(Loc.T("он не привык сидеть без дела"), Loc.T("она не привыкла сидеть без дела"));
+                case ActionType.ObeyCommand: return Loc.T("работа его не пугает");
+                case ActionType.SaveAlly:    return Loc.T("ему не лень помочь своим");
                 case ActionType.Idle:
                     if (context.IsExhausted)
-                        return P("он выдохся и больше не может", "она выдохлась и больше не может");
-                    return context.Fatigue > 0.2f ? "силы у него на исходе" : "";
+                        return P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"));
+                    return context.Fatigue > 0.2f ? Loc.T("силы у него на исходе") : "";
                 case ActionType.Flee:
                     return context.DangerLevel > 0.6f
                         || (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.4f)
-                        ? "здесь уже не выстоять" : "";
+                        ? Loc.T("здесь уже не выстоять") : "";
                 default: return "";
             }
         }
@@ -401,9 +408,9 @@ namespace Sinbinder.AOS
         {
             switch (action)
             {
-                case ActionType.Flee:        return "уйти из боя ему не стыдно";
-                case ActionType.SaveAlly:    return "чужая жизнь для него не дешевле своей";
-                case ActionType.ObeyCommand: return "подчиниться ему не зазорно";
+                case ActionType.Flee:        return Loc.T("уйти из боя ему не стыдно");
+                case ActionType.SaveAlly:    return Loc.T("чужая жизнь для него не дешевле своей");
+                case ActionType.ObeyCommand: return Loc.T("подчиниться ему не зазорно");
                 default:                     return "";
             }
         }
@@ -417,7 +424,7 @@ namespace Sinbinder.AOS
             // его надо в одном месте: два списка слов для одних и тех же
             // действий разъезжаются молча.
             if (action == ActionType.SaveAlly && context.TargetWarrior != null)
-                return $"бросается к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}";
+                return Loc.F("бросается к {0}", Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender));
 
             return Doing(action);
         }
@@ -450,20 +457,20 @@ namespace Sinbinder.AOS
             switch (action)
             {
                 case ActionType.Flee:
-                    return context != null && context.HasCommand ? "Отходит" : "Сбегает";
+                    return context != null && context.HasCommand ? Loc.T("Отходит") : Loc.T("Сбегает");
 
-                case ActionType.SaveAlly:     return "Спасает";
-                case ActionType.Loot:         return "Грабит";
-                case ActionType.AcceptBribe:  return "Предаёт";
-                case ActionType.BribeEnemy:   return "Торгуется";
-                case ActionType.Devour:       return "Жрёт";
-                case ActionType.Berserk:      return "Звереет";
-                case ActionType.LastStand:    return "Насмерть";
-                case ActionType.DuelChallenge: return "Вызывает";
-                case ActionType.Sacrifice:    return "Закрывает собой";
-                case ActionType.StealWeapon:  return "Ворует";
-                case ActionType.Charm:        return "Морочит";
-                case ActionType.EternalSleep: return "Спит";
+                case ActionType.SaveAlly:     return Loc.T("Спасает");
+                case ActionType.Loot:         return Loc.T("Грабит");
+                case ActionType.AcceptBribe:  return Loc.T("Предаёт");
+                case ActionType.BribeEnemy:   return Loc.T("Торгуется");
+                case ActionType.Devour:       return Loc.T("Жрёт");
+                case ActionType.Berserk:      return Loc.T("Звереет");
+                case ActionType.LastStand:    return Loc.T("Насмерть");
+                case ActionType.DuelChallenge: return Loc.T("Вызывает");
+                case ActionType.Sacrifice:    return Loc.T("Закрывает собой");
+                case ActionType.StealWeapon:  return Loc.T("Ворует");
+                case ActionType.Charm:        return Loc.T("Морочит");
+                case ActionType.EternalSleep: return Loc.T("Спит");
 
                 // Рядовое подписи не получает: оно и не объявляется.
                 default: return null;
@@ -475,66 +482,66 @@ namespace Sinbinder.AOS
             switch (action)
             {
                 // Базовые
-                case ActionType.Attack: return "идёт в драку";
-                case ActionType.SaveAlly: return "бросается к раненому";
-                case ActionType.Loot: return "идёт за добычей";
-                case ActionType.Flee: return "отходит";
-                case ActionType.Idle: return "стоит на месте";
-                case ActionType.ObeyCommand: return "делает, как велено";
+                case ActionType.Attack: return Loc.T("идёт в драку");
+                case ActionType.SaveAlly: return Loc.T("бросается к раненому");
+                case ActionType.Loot: return Loc.T("идёт за добычей");
+                case ActionType.Flee: return Loc.T("отходит");
+                case ActionType.Idle: return Loc.T("стоит на месте");
+                case ActionType.ObeyCommand: return Loc.T("делает, как велено");
 
                 // Гнев
-                case ActionType.Berserk: return "впадает в бешенство";
-                case ActionType.PowerStrike: return "бьёт со всей силы";
+                case ActionType.Berserk: return Loc.T("впадает в бешенство");
+                case ActionType.PowerStrike: return Loc.T("бьёт со всей силы");
 
                 // Терпение
-                case ActionType.IronStance: return "встаёт железной стойкой";
-                case ActionType.CounterAttack: return "ждёт удара, чтобы ответить";
-                case ActionType.SecondWind: return "переводит дыхание";
-                case ActionType.Unshakable: return "стоит несдвигаемо";
+                case ActionType.IronStance: return Loc.T("встаёт железной стойкой");
+                case ActionType.CounterAttack: return Loc.T("ждёт удара, чтобы ответить");
+                case ActionType.SecondWind: return Loc.T("переводит дыхание");
+                case ActionType.Unshakable: return Loc.T("стоит несдвигаемо");
 
                 // Уныние
-                case ActionType.Yawn: return "зевает";
-                case ActionType.LazyHeal: return "лениво зализывает раны";
-                case ActionType.AuraOfApathy: return "заражает всех безразличием";
-                case ActionType.EternalSleep: return "засыпает намертво";
+                case ActionType.Yawn: return Loc.T("зевает");
+                case ActionType.LazyHeal: return Loc.T("лениво зализывает раны");
+                case ActionType.AuraOfApathy: return Loc.T("заражает всех безразличием");
+                case ActionType.EternalSleep: return Loc.T("засыпает намертво");
 
                 // Усердие
-                case ActionType.WorkSurge: return "работает за троих";
-                case ActionType.WorkInspiration: return "подгоняет остальных";
-                case ActionType.Tireless: return "не знает усталости";
+                case ActionType.WorkSurge: return Loc.T("работает за троих");
+                case ActionType.WorkInspiration: return Loc.T("подгоняет остальных");
+                case ActionType.Tireless: return Loc.T("не знает усталости");
 
                 // Похоть
-                case ActionType.Charm: return "очаровывает";
-                case ActionType.KissOfDeath: return "целует насмерть";
-                case ActionType.Seduce: return "переманивает на свою сторону";
-                case ActionType.FatalPassion: return "сгорает от страсти";
+                case ActionType.Charm: return Loc.T("очаровывает");
+                case ActionType.KissOfDeath: return Loc.T("целует насмерть");
+                case ActionType.Seduce: return Loc.T("переманивает на свою сторону");
+                case ActionType.FatalPassion: return Loc.T("сгорает от страсти");
 
                 // Чревоугодие
-                case ActionType.Devour: return "пожирает";
-                case ActionType.Vomit: return "извергает съеденное";
-                case ActionType.InsatiableHunger: return "не может насытиться";
+                case ActionType.Devour: return Loc.T("пожирает");
+                case ActionType.Vomit: return Loc.T("извергает съеденное");
+                case ActionType.InsatiableHunger: return Loc.T("не может насытиться");
 
                 // Подкуп и предательство. Дописано по следу замера
                 // (Tools/bench → МОМЕНТЫ): эти шесть объявляются как
                 // поступки, а слов у них не было — заглушка «действует
                 // по-своему» накрывала в том числе переход к врагу,
                 // самое громкое, что вообще умеет движок.
-                case ActionType.BribeEnemy: return "торгуется с чужим";
-                case ActionType.AcceptBribe: return "уходит к чужим";
+                case ActionType.BribeEnemy: return Loc.T("торгуется с чужим");
+                case ActionType.AcceptBribe: return Loc.T("уходит к чужим");
 
                 // Гордыня
-                case ActionType.DuelChallenge: return "зовёт на поединок";
-                case ActionType.LastStand: return "встаёт насмерть";
-                case ActionType.HeroicPose: return "становится в позу";
-                case ActionType.Inspiration: return "поднимает остальных";
+                case ActionType.DuelChallenge: return Loc.T("зовёт на поединок");
+                case ActionType.LastStand: return Loc.T("встаёт насмерть");
+                case ActionType.HeroicPose: return Loc.T("становится в позу");
+                case ActionType.Inspiration: return Loc.T("поднимает остальных");
 
                 // Смирение
-                case ActionType.Sacrifice: return "закрывает собой";
+                case ActionType.Sacrifice: return Loc.T("закрывает собой");
 
                 // Зависть
-                case ActionType.StealWeapon: return "тянет чужое оружие";
+                case ActionType.StealWeapon: return Loc.T("тянет чужое оружие");
 
-                default: return "действует по-своему";
+                default: return Loc.T("действует по-своему");
             }
         }
 
@@ -559,7 +566,7 @@ namespace Sinbinder.AOS
 
             switch (action)
             {
-                case ActionType.Attack: return P("пошёл в драку", "пошла в драку");
+                case ActionType.Attack: return P(Loc.T("пошёл в драку"), Loc.T("пошла в драку"));
 
                 // Положения может не быть вовсе: пересказ вылазки знает
                 // действие, но не знает, кого спасали, — бой уже кончился.
@@ -567,11 +574,11 @@ namespace Sinbinder.AOS
                 // там, куда ни один прогон до сих пор не заходил.
                 case ActionType.SaveAlly:
                     return context != null && context.TargetWarrior != null
-                        ? P($"бросился к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}",
-                            $"бросилась к {Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)}")
-                        : P("бросился к раненому", "бросилась к раненому");
+                        ? P(Loc.F("бросился к {0}", Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)),
+                            Loc.F("бросилась к {0}", Core.Grammar.Dative(context.TargetWarrior.DisplayName, context.TargetWarrior.Gender)))
+                        : P(Loc.T("бросился к раненому"), Loc.T("бросилась к раненому"));
 
-                case ActionType.Loot: return P("пошёл за добычей", "пошла за добычей");
+                case ActionType.Loot: return P(Loc.T("пошёл за добычей"), Loc.T("пошла за добычей"));
 
                 // Отход и побег — разные вещи, и разница ровно в том,
                 // просили его об этом или нет. Отступить по приказу —
@@ -580,26 +587,26 @@ namespace Sinbinder.AOS
                 // от игрока именно то, ради чего здесь движок решений.
                 case ActionType.Flee:
                     return context != null && context.HasCommand
-                         ? P("отступил", "отступила")
-                         : P("сбежал", "сбежала");
+                         ? P(Loc.T("отступил"), Loc.T("отступила"))
+                         : P(Loc.T("сбежал"), Loc.T("сбежала"));
 
-                case ActionType.Idle: return P("остался на месте", "осталась на месте");
-                case ActionType.ObeyCommand: return P("сделал, как велено", "сделала, как велено");
+                case ActionType.Idle: return P(Loc.T("остался на месте"), Loc.T("осталась на месте"));
+                case ActionType.ObeyCommand: return P(Loc.T("сделал, как велено"), Loc.T("сделала, как велено"));
 
                 // Дописано по следу замера (Tools/bench → МОМЕНТЫ):
                 // эти поступки объявляются, а слов у них не было.
-                case ActionType.BribeEnemy: return P("торговался с чужим", "торговалась с чужим");
-                case ActionType.AcceptBribe: return P("ушёл к чужим", "ушла к чужим");
-                case ActionType.DuelChallenge: return P("позвал на поединок", "позвала на поединок");
-                case ActionType.LastStand: return P("встал насмерть", "встала насмерть");
-                case ActionType.Sacrifice: return P("закрыл собой", "закрыла собой");
-                case ActionType.StealWeapon: return P("потянул чужое оружие", "потянула чужое оружие");
-                case ActionType.Berserk: return P("впал в бешенство", "впала в бешенство");
-                case ActionType.Devour: return P("сожрал", "сожрала");
-                case ActionType.Charm: return P("очаровал", "очаровала");
-                case ActionType.EternalSleep: return P("уснул намертво", "уснула намертво");
+                case ActionType.BribeEnemy: return P(Loc.T("торговался с чужим"), Loc.T("торговалась с чужим"));
+                case ActionType.AcceptBribe: return P(Loc.T("ушёл к чужим"), Loc.T("ушла к чужим"));
+                case ActionType.DuelChallenge: return P(Loc.T("позвал на поединок"), Loc.T("позвала на поединок"));
+                case ActionType.LastStand: return P(Loc.T("встал насмерть"), Loc.T("встала насмерть"));
+                case ActionType.Sacrifice: return P(Loc.T("закрыл собой"), Loc.T("закрыла собой"));
+                case ActionType.StealWeapon: return P(Loc.T("потянул чужое оружие"), Loc.T("потянула чужое оружие"));
+                case ActionType.Berserk: return P(Loc.T("впал в бешенство"), Loc.T("впала в бешенство"));
+                case ActionType.Devour: return P(Loc.T("сожрал"), Loc.T("сожрала"));
+                case ActionType.Charm: return P(Loc.T("очаровал"), Loc.T("очаровала"));
+                case ActionType.EternalSleep: return P(Loc.T("уснул намертво"), Loc.T("уснула намертво"));
 
-                default: return P("поступил по-своему", "поступила по-своему");
+                default: return P(Loc.T("поступил по-своему"), Loc.T("поступила по-своему"));
             }
         }
 
@@ -608,13 +615,13 @@ namespace Sinbinder.AOS
         {
             switch (action)
             {
-                case ActionType.Attack: return "Драка";
-                case ActionType.SaveAlly: return "Раненый товарищ";
-                case ActionType.Loot: return "Добыча";
-                case ActionType.Flee: return "Отход";
-                case ActionType.Idle: return "Покой";
-                case ActionType.ObeyCommand: return "Приказ";
-                default: return "Что-то ещё";
+                case ActionType.Attack: return Loc.T("Драка");
+                case ActionType.SaveAlly: return Loc.T("Раненый товарищ");
+                case ActionType.Loot: return Loc.T("Добыча");
+                case ActionType.Flee: return Loc.T("Отход");
+                case ActionType.Idle: return Loc.T("Покой");
+                case ActionType.ObeyCommand: return Loc.T("Приказ");
+                default: return Loc.T("Что-то ещё");
             }
         }
     }

@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/Counterfactual.cs
+// Перевод: текст через Loc
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -207,31 +208,31 @@ namespace Sinbinder.AOS
             {
                 case Factor.Distance:
                     // Как даль звучит для характера — прежние слова голоса.
-                    if (sin == SinType.Pride) return "приказ крикнули издали, а он не из тех, кого зовут криком";
-                    if (sin == SinType.Sloth) return P("он сделал вид, что не расслышал", "она сделала вид, что не расслышала");
-                    return "Греховод был далеко — приказ еле долетел";
+                    if (sin == SinType.Pride) return Loc.T("приказ крикнули издали, а он не из тех, кого зовут криком");
+                    if (sin == SinType.Sloth) return P(Loc.T("он сделал вид, что не расслышал"), Loc.T("она сделала вид, что не расслышала"));
+                    return Loc.T("Греховод был далеко — приказ еле долетел");
 
                 case Factor.Debt:
-                    if (c.UnpaidMissions > 3) return "ему не платили вылазку за вылазкой";
-                    if (c.UnpaidMissions == 3) return "ему не платили третью вылазку подряд";
-                    if (c.UnpaidMissions == 2) return "ему не платили вторую вылазку подряд";
-                    return "ему до сих пор не заплатили";
+                    if (c.UnpaidMissions > 3) return Loc.T("ему не платили вылазку за вылазкой");
+                    if (c.UnpaidMissions == 3) return Loc.T("ему не платили третью вылазку подряд");
+                    if (c.UnpaidMissions == 2) return Loc.T("ему не платили вторую вылазку подряд");
+                    return Loc.T("ему до сих пор не заплатили");
 
-                case Factor.Pocket:     return "ему есть что терять — карман не пустой";
+                case Factor.Pocket:     return Loc.T("ему есть что терять — карман не пустой");
                 case Factor.Temptation:
                     var item = Tempting(c);
-                    return item != null ? $"{item.Name.ToLowerInvariant()} тянет его сильнее приказа"
-                                        : "вещь при нём тянет сильнее приказа";
-                case Factor.Loot:       return "добыча лежала слишком близко";
-                case Factor.Patrol:     return "ходить туда-сюда ему скучно";
-                case Factor.AllyInDanger: return "рядом свой был в беде";
+                    return item != null ? Loc.F("{0} тянет его сильнее приказа", Loc.Name(item.Name).ToLowerInvariant())
+                                        : Loc.T("вещь при нём тянет сильнее приказа");
+                case Factor.Loot:       return Loc.T("добыча лежала слишком близко");
+                case Factor.Patrol:     return Loc.T("ходить туда-сюда ему скучно");
+                case Factor.AllyInDanger: return Loc.T("рядом свой был в беде");
                 case Factor.Wounds:
                     return c.MaxHP > 0f && c.CurrentHP < c.MaxHP * 0.3f
-                        ? "на нём нет живого места" : "он ранен и бережёт себя";
-                case Factor.Surrounded: return "его обступили со всех сторон";
+                        ? Loc.T("на нём нет живого места") : Loc.T("он ранен и бережёт себя");
+                case Factor.Surrounded: return Loc.T("его обступили со всех сторон");
                 case Factor.Fatigue:
-                    return c.IsExhausted ? P("он выдохся и больше не может", "она выдохлась и больше не может")
-                                         : "силы у него на исходе";
+                    return c.IsExhausted ? P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"))
+                                         : Loc.T("силы у него на исходе");
                 default: return "";
             }
         }

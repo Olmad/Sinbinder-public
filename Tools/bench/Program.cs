@@ -2460,6 +2460,77 @@ static class Bench
         || why.Contains("добыча лежала") || why.Contains("выдохся") || why.Contains("выдохлась")
         || why.Contains("силы у него на исходе");
 
+    /// <summary>
+    /// Перевод (docs/38-LANG.md): английская таблица грузится так же, как
+    /// в игре, и всё, что генератор фраз говорит игроку — подсказка, журнал,
+    /// причина, — на английском не содержит ни одной русской буквы. Имена
+    /// вычёркиваются: воины стенда зовутся по-русски, это данные, а не текст.
+    /// </summary>
+    static void EnglishCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== АНГЛИЙСКИЙ: генератор фраз без русских букв ===");
+
+        string path = Path.Combine(AppContext.BaseDirectory, "../../../../../Assets/Resources/Lang/en.txt");
+        if (!File.Exists(path))
+        {
+            Console.WriteLine($"  ПРОВАЛ: нет таблицы {path}");
+            return;
+        }
+        int loaded = Loc.Use("en", File.ReadAllText(path));
+        Console.WriteLine($"  строк в таблице с переводом: {loaded}");
+
+        var modules = Modules();
+        var cyr = new Regex("[А-Яа-яЁё]");
+        int total = 0, russian = 0, bad = 0;
+        string example = null;
+        var samples = new List<string>();
+        bool was = Counterfactual.Enabled;
+        try
+        {
+            foreach (bool weigh in new[] { false, true })
+            {
+                Counterfactual.Enabled = weigh;
+                var r = new Random(2810);
+                for (int i = 0; i < 30000; i++)
+                {
+                    var w = new Warrior { Soul = MakeSoul(r, "Воин"), Loyalty = (float)(r.NextDouble() * 100) };
+                    var ctx = MakeContext(r, w, r.NextDouble() < 0.6);
+                    if (ctx.HasCommand) Order(r, ctx);
+                    w.UnpaidMissions = ctx.UnpaidMissions;
+                    var d = Decide(modules, w, ctx, cfg);
+
+                    foreach (string said in new[]
+                    {
+                        PhraseGenerator.Explain(w, ctx, d),
+                        PhraseGenerator.LogLine(w, ctx, d),
+                        PhraseGenerator.Reason(w, ctx, d),
+                    })
+                    {
+                        total++;
+                        string plain = said.Replace("Воин", "");
+                        if (ctx.TargetWarrior != null) plain = plain.Replace(ctx.TargetWarrior.DisplayName, "");
+                        if (ctx.CarriedItems != null)     // название вещи — тоже данные
+                            foreach (var item in ctx.CarriedItems)
+                                if (item != null) plain = plain.Replace(item.Name.ToLowerInvariant(), "");
+                        if (cyr.IsMatch(plain)) { russian++; example ??= said; }
+                    }
+                    if (samples.Count < 8 && d.RefusedCommand && i % 97 == 0)
+                        samples.Add(PhraseGenerator.LogLine(w, ctx, d));
+                }
+            }
+        }
+        finally
+        {
+            Counterfactual.Enabled = was;
+            Loc.Use(Loc.Source, null);
+        }
+
+        Console.WriteLine($"  строк проверено: {total}, с русскими буквами: {russian}");
+        foreach (var line in samples) Console.WriteLine($"    {line}");
+        if (russian > 0) { bad++; Console.WriteLine($"  ПРОВАЛ: русский текст в английском — {russian} раз, например «{example}»"); }
+        Console.WriteLine(bad == 0 ? "  Английский: чисто." : $"  Английский: провалов {bad}.");
+    }
+
     static bool PrideNames(Warrior w, DecisionContext c, Decision d)
     {
         if (d.Weighed && d.Decisive != Counterfactual.Factor.None)
@@ -4884,6 +4955,7 @@ static class Bench
         ReasonCheck(cfg);
         PrideVoiceCheck(cfg);
         VirtueHalvesCheck(cfg);
+        EnglishCheck(cfg);
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);
