@@ -612,7 +612,7 @@ class Checker:
                 line_end = s.find('\n', start)
                 if '// ключ' in s[line_start:line_end if line_end >= 0 else len(s)]:
                     continue          # помечено руками: ключ, а не текст игрока
-                if re.match(r'\[[А-ЯЁ ]+\]', m.group(2)):
+                if re.match(r'\[[A-ZА-ЯЁ ]+\]', m.group(2)):
                     continue          # «[ВИД] …» — служебная строка для разработчика
                 if re.search(r'\b(const|readonly)\s+string\s+\w*(Name|Key|Id|Tag|Path)\s*=\s*$', before):
                     continue          # поле-идентификатор: имя объекта для Find, а не текст

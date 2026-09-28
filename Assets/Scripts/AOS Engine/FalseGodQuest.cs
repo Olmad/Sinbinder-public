@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Gameplay;
@@ -10,35 +11,35 @@ namespace Sinbinder.AOS
     {
         private void OnEnable()
         {
-            questName = "Ложный Бог";
-            description = "В деревне путешественник выдал себя за божество. Крестьяне забросили поля и молятся ложному идолу. Нужно навести порядок.";
+            questName = Loc.T("Ложный Бог");
+            description = Loc.T("В деревне путешественник выдал себя за божество. Крестьяне забросили поля и молятся ложному идолу. Нужно навести порядок.");
 
             playerOptions = new List<QuestOption>
             {
                 new QuestOption
                 {
-                    text = "«Твоя шутка зашла слишком далеко. Иди и сознайся».",
+                    text = Loc.T("«Твоя шутка зашла слишком далеко. Иди и сознайся»."),
                     outcome = MissionOutcome.VillageSaved,
                     respectChange = 10,
                     fearChange = -5
                 },
                 new QuestOption
                 {
-                    text = "«Продолжай. Это забавно. Но плати мне долю».",
+                    text = Loc.T("«Продолжай. Это забавно. Но плати мне долю»."),
                     outcome = MissionOutcome.NewCultEstablished,
                     goldChange = 50,
                     moralityChange = -1
                 },
                 new QuestOption
                 {
-                    text = "«Ты прав. Бог действительно здесь. Я — его посланник».",
+                    text = Loc.T("«Ты прав. Бог действительно здесь. Я — его посланник»."),
                     outcome = MissionOutcome.NewCultEstablished,
                     respectChange = 20,
                     moralityChange = 1
                 },
                 new QuestOption
                 {
-                    text = "«Убей его» (без слов).",
+                    text = Loc.T("«Убей его» (без слов)."),
                     outcome = MissionOutcome.TravelerKilled,
                     fearChange = 15
                 }
@@ -89,8 +90,8 @@ namespace Sinbinder.AOS
                 HasTreasure = true,
                 HasAltar = true,
                 IsVillageIntact = true,
-                Traveler = new NPCData { Id = "traveler", DisplayName = "Бродяга" },
-                VillageElder = new NPCData { Id = "village_elder", DisplayName = "Староста" }
+                Traveler = new NPCData { Id = "traveler", DisplayName = Loc.T("Бродяга") },
+                VillageElder = new NPCData { Id = "village_elder", DisplayName = Loc.T("Староста") }
             };
         }
 

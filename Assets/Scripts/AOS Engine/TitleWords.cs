@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/TitleWords.cs
+// Перевод: текст через Loc
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
@@ -46,7 +47,7 @@ namespace Sinbinder.AOS
         public static string Answer(Warrior warrior, string title, bool legendary)
         {
             if (warrior == null || warrior.Soul == null)
-                return $"Теперь я — {title}.";
+                return Loc.F("Теперь я — {0}.", Loc.T(title));
 
             string name = warrior.DisplayName;
             MoralType moral = warrior.Soul.Moral;
@@ -58,48 +59,48 @@ namespace Sinbinder.AOS
                 // Ждал признания. Порочный считает, что мало; праведного
                 // собственная гордость смущает.
                 case SinType.Pride: return Pick(moral,
-                    $"Наконец-то. Хотя такому, как я, и этого мало.",
-                    $"{title}? Наконец-то вслух. Отныне я — {name} {title}!",
-                    $"Я не просил этого имени. Но носить буду достойно.");
+                    Loc.T("Наконец-то. Хотя такому, как я, и этого мало."),
+                    Loc.F("{0}? Наконец-то вслух. Отныне я — {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Я не просил этого имени. Но носить буду достойно."));
 
                 // Меряет ценой. Праведный вдруг понимает, что не всё продаётся.
                 case SinType.Greed: return Pick(moral,
-                    $"За такое имя платят больше. Запомните и это: {name} {title}.",
-                    $"{title}... За такое имя и платят иначе. Запомните: {name} {title}!",
-                    $"Имя дороже золота. Жаль, понял это поздно.");
+                    Loc.F("За такое имя платят больше. Запомните и это: {0} {1}.", Loc.Name(name), Loc.T(title)),
+                    Loc.F("{0}... За такое имя и платят иначе. Запомните: {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Имя дороже золота. Жаль, понял это поздно."));
 
                 // Имя как разрешение. Праведный рад делу, не имени.
                 case SinType.Wrath: return Pick(moral,
-                    $"{title}! Пусть знают, кого встретили!",
-                    $"{title}! Теперь идите за мной — я впереди. {name} {title}!",
-                    $"Я не рад этому имени. Но заслужил его честно.");
+                    Loc.F("{0}! Пусть знают, кого встретили!", Loc.T(title)),
+                    Loc.F("{0}! Теперь идите за мной — я впереди. {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Я не рад этому имени. Но заслужил его честно."));
 
                 // Сравнивает. Порочный — со злорадством, праведный — со стыдом.
                 case SinType.Envy: return Pick(moral,
-                    $"Наконец-то не им, а мне. {name} {title}.",
-                    $"{title}. А ведь многие ждали дольше. Я — {name} {title}.",
-                    $"Многие достойнее. Постараюсь не подвести.");
+                    Loc.F("Наконец-то не им, а мне. {0} {1}.", Loc.Name(name), Loc.T(title)),
+                    Loc.F("{0}. А ведь многие ждали дольше. Я — {1} {2}.", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Многие достойнее. Постараюсь не подвести."));
 
                 // Хотел, чтобы смотрели. Образец автора — в середине.
                 case SinType.Lust: return Pick(moral,
-                    $"Смотрите. Все смотрите: {name} {title}!",
-                    $"{title}? Мне нравится, как это звучит. Я — {name} {title}.",
-                    $"Приятно. Слишком приятно — и это меня тревожит.");
+                    Loc.F("Смотрите. Все смотрите: {0} {1}!", Loc.Name(name), Loc.T(title)),
+                    Loc.F("{0}? Мне нравится, как это звучит. Я — {1} {2}.", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Приятно. Слишком приятно — и это меня тревожит."));
 
                 // Считает взятым. Праведному довольно и этого.
                 case SinType.Gluttony: return Pick(moral,
-                    $"Заслужено до последней крохи. И ещё возьму.",
-                    $"{title}. Заслужено до последней крохи. Я — {name} {title}!",
-                    $"Хватит с меня и этого. Больше не прошу.");
+                    Loc.T("Заслужено до последней крохи. И ещё возьму."),
+                    Loc.F("{0}. Заслужено до последней крохи. Я — {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Хватит с меня и этого. Больше не прошу."));
 
                 // Имя — это обязанность. Праведный всё же встаёт.
                 case SinType.Sloth: return Pick(moral,
-                    $"Теперь и спрос другой. Могли бы и не кричать.",
-                    $"{title}... Теперь с меня и спрос другой. Ладно. {name} {title}.",
-                    $"Имя дали — придётся соответствовать. Встаю.");
+                    Loc.T("Теперь и спрос другой. Могли бы и не кричать."),
+                    Loc.F("{0}... Теперь с меня и спрос другой. Ладно. {1} {2}.", Loc.T(title), Loc.Name(name), Loc.T(title)),
+                    Loc.T("Имя дали — придётся соответствовать. Встаю."));
 
                 default:
-                    return $"{title}. Отныне я — {name} {title}.";
+                    return Loc.F("{0}. Отныне я — {1} {2}.", Loc.T(title), Loc.Name(name), Loc.T(title));
             }
         }
 
@@ -109,9 +110,9 @@ namespace Sinbinder.AOS
         /// </summary>
         private static string Legend(MoralType moral, string name, string title)
             => Pick(moral,
-                $"Меня будут помнить. Пусть боятся. {name} {title}.",
-                $"Меня будут помнить дольше, чем я жил. {title} {name}.",
-                $"Помнить будут имя. Я бы хотел — дело.");
+                Loc.F("Меня будут помнить. Пусть боятся. {0} {1}.", Loc.Name(name), Loc.T(title)),
+                Loc.F("Меня будут помнить дольше, чем я жил. {0} {1}.", Loc.T(title), Loc.Name(name)),
+                Loc.T("Помнить будут имя. Я бы хотел — дело."));
 
         /// <summary>
         /// Выбор по морали. Это и есть <b>вторая ось вместо жребия</b>:

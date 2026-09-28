@@ -300,7 +300,7 @@ def skip_reason(src, start):
     line_end0 = src.find('\n', start)
     if '// ключ' in src[line_start0:line_end0 if line_end0 >= 0 else len(src)]:
         return 'помечено «// ключ»'
-    if re.match(r'\$?@?"\[[А-ЯЁ ]+\]', src[start:start + 40]):
+    if re.match(r'\$?@?"\[[A-ZА-ЯЁ ]+\]', src[start:start + 40]):
         return 'служебная строка с тегом [ВИД] — для разработчика'
     if IDENT_FIELD.search(src[line_start0:start]):
         return 'поле-идентификатор (…Name, …Key): имя объекта, а не текст'

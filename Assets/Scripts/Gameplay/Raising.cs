@@ -105,7 +105,7 @@ namespace Sinbinder.Gameplay
                 yield return camera.FocusOn(warrior.transform);
             }
 
-            UI.Letterbox.Instance?.Say(warrior.DisplayName, line);
+            UI.Letterbox.Instance?.Say(Core.Loc.Name(warrior.DisplayName), line);
             Debug.Log($"[ПОДНЯТИЕ] {warrior.DisplayName}: {line}");
 
             yield return new WaitForSecondsRealtime(2.6f);

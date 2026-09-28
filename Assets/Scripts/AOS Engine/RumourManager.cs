@@ -1,8 +1,10 @@
 // Assets/Scripts/AOS Engine/RumourManager.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.AOS
 {
     /// <summary>
@@ -112,21 +114,21 @@ namespace Sinbinder.AOS
         {
             switch (deed)
             {
-                case DeedType.Kill:             return "убийца";
-                case DeedType.KillCommander:    return "тот, кто свалил командира";
-                case DeedType.SaveAlly:         return "вытащил своего";
-                case DeedType.ProtectCommander: return "прикрыл командира";
-                case DeedType.CollectMostLoot:  return "унёс больше всех";
-                case DeedType.FindTreasure:     return "нашёл клад";
-                case DeedType.DigMostSouls:     return "выкопал больше всех душ";
-                case DeedType.SurviveMission:   return "вернулся живым";
-                case DeedType.LastStand:        return "стоял до последнего";
-                case DeedType.NeverRetreat:     return "не отступал ни разу";
-                case DeedType.Escape:           return "ушёл, когда все легли";
-                case DeedType.ExecuteEnemy:     return "добил пленного";
-                case DeedType.RecruitWarrior:   return "привёл нового";
-                case DeedType.StayedOut:        return "простоял бой в стороне";
-                default:                        return "чем-то отличился";
+                case DeedType.Kill:             return Loc.T("убийца");
+                case DeedType.KillCommander:    return Loc.T("тот, кто свалил командира");
+                case DeedType.SaveAlly:         return Loc.T("вытащил своего");
+                case DeedType.ProtectCommander: return Loc.T("прикрыл командира");
+                case DeedType.CollectMostLoot:  return Loc.T("унёс больше всех");
+                case DeedType.FindTreasure:     return Loc.T("нашёл клад");
+                case DeedType.DigMostSouls:     return Loc.T("выкопал больше всех душ");
+                case DeedType.SurviveMission:   return Loc.T("вернулся живым");
+                case DeedType.LastStand:        return Loc.T("стоял до последнего");
+                case DeedType.NeverRetreat:     return Loc.T("не отступал ни разу");
+                case DeedType.Escape:           return Loc.T("ушёл, когда все легли");
+                case DeedType.ExecuteEnemy:     return Loc.T("добил пленного");
+                case DeedType.RecruitWarrior:   return Loc.T("привёл нового");
+                case DeedType.StayedOut:        return Loc.T("простоял бой в стороне");
+                default:                        return Loc.T("чем-то отличился");
             }
         }
     }

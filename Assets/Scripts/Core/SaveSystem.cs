@@ -1,3 +1,4 @@
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -29,10 +30,10 @@ namespace Sinbinder.Core
         /// Гнёзда свободной игры. Их немного и они постоянные: список,
         /// который растёт без края, — это архив, а не сохранение.
         /// </summary>
-        public static readonly string[] Slots = { "первое", "второе", "третье", "быстрое" };
+        public static readonly string[] Slots = { Loc.N("первое"), Loc.N("второе"), Loc.N("третье"), Loc.N("быстрое") };
 
         /// <summary>Быстрое гнездо: в него пишет F5.</summary>
-        public const string Quick = "быстрое";
+        public static readonly string Quick = Loc.N("быстрое");   // имя файла; показ — Loc.T
 
         /// <summary>
         /// Единственное гнездо ответственной игры.
@@ -41,7 +42,7 @@ namespace Sinbinder.Core
         /// затирала бы записи другой, а вернуться к свободной игре
         /// после ответственной — законно.
         /// </summary>
-        public const string Bound = "с обязательством";
+        public static readonly string Bound = Loc.N("с обязательством");   // имя файла; показ — Loc.T
 
         private static string Folder =>
             Path.Combine(Application.persistentDataPath, "saves");
@@ -433,8 +434,8 @@ namespace Sinbinder.Core
             foreach (var m in save.Squad) if (m.UnpaidMissions > 0) owed++;
 
             string debt = owed == 0
-                ? "долгов нет"
-                : $"{Leadership.Collective(owed)} в долгу";
+                ? Loc.T("долгов нет")
+                : Loc.F("{0} в долгу", Leadership.Collective(owed));
 
             return $"{where} · {who} · {debt}";
         }
@@ -454,14 +455,14 @@ namespace Sinbinder.Core
         /// </summary>
         private static string Where(string scene)
         {
-            if (string.IsNullOrEmpty(scene)) return "Где-то";
+            if (string.IsNullOrEmpty(scene)) return Loc.T("Где-то");
 
             switch (scene)
             {
-                case "Prologue_Camp":  return "Лагерь";
-                case "Prologue_Raid":  return "Набег";
-                case "Crypt_Entrance": return "Склеп";
-                case "Crypt_Test":     return "Полигон";
+                case "Prologue_Camp":  return Loc.T("Лагерь");
+                case "Prologue_Raid":  return Loc.T("Набег");
+                case "Crypt_Entrance": return Loc.T("Склеп");
+                case "Crypt_Test":     return Loc.T("Полигон");
             }
 
             if (!_toldAboutPlace)
@@ -472,7 +473,7 @@ namespace Sinbinder.Core
                                + "«Где-то». Добавьте её в SaveSystem.Where.");
             }
 
-            return "Где-то";
+            return Loc.T("Где-то");
         }
 
         private static bool _toldAboutPlace;

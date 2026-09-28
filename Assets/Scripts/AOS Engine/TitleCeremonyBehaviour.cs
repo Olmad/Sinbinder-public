@@ -1,4 +1,5 @@
 // Assets/Scripts/AOS Engine/TitleCeremonyBehaviour.cs
+// Перевод: текст через Loc
 // Вынесен из TitleCeremony.cs: Unity требует, чтобы имя файла
 // совпадало с именем MonoBehaviour, иначе скрипт нельзя повесить на объект.
 using System.Collections;
@@ -140,10 +141,10 @@ namespace Sinbinder.AOS
                 // Сначала кричит отряд, потом отвечает он. Порядок важен:
                 // титул — приговор окружающих, и услышать его игрок должен
                 // от них, а не от самого получившего.
-                UI.Letterbox.Instance?.Say("Отряд", shout);
+                UI.Letterbox.Instance?.Say(Loc.T("Отряд"), shout);
                 yield return new WaitForSecondsRealtime(1.4f);
 
-                UI.Letterbox.Instance?.Say(warrior.DisplayName, line);
+                UI.Letterbox.Instance?.Say(Loc.Name(warrior.DisplayName), line);
             }
 
             Debug.Log($"[TITLE CEREMONY] [{warrior.DisplayName}]: {line}");

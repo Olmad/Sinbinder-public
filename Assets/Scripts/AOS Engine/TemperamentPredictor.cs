@@ -1,7 +1,9 @@
 // Assets/Scripts/AOS Engine/TemperamentPredictor.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using Sinbinder.Gameplay;
 
+using Sinbinder.Core;
 namespace Sinbinder.AOS
 {
     /// <summary>Одно предсказание: положение и то, как воин в нём поступит.</summary>
@@ -49,10 +51,10 @@ namespace Sinbinder.AOS
             var result = new List<Prophecy>();
             if (warrior == null) return result;
 
-            result.Add(Ask(warrior, "Пока бой ровен", Even(warrior)));
-            result.Add(Ask(warrior, "Когда падает друг", AllyDown(warrior)));
-            result.Add(Ask(warrior, "Когда рядом золото", LootNear(warrior)));
-            result.Add(Ask(warrior, "Когда велено отойти", OrderedBack(warrior)));
+            result.Add(Ask(warrior, Loc.T("Пока бой ровен"), Even(warrior)));
+            result.Add(Ask(warrior, Loc.T("Когда падает друг"), AllyDown(warrior)));
+            result.Add(Ask(warrior, Loc.T("Когда рядом золото"), LootNear(warrior)));
+            result.Add(Ask(warrior, Loc.T("Когда велено отойти"), OrderedBack(warrior)));
 
             return result;
         }
@@ -79,7 +81,7 @@ namespace Sinbinder.AOS
         /// </summary>
         private static string Describe(Decision decision, DecisionContext context)
         {
-            if (decision.Hesitated) return "заколеблется";
+            if (decision.Hesitated) return Loc.T("заколеблется");
 
             string what = Future(decision.Action, context);
 
@@ -91,8 +93,8 @@ namespace Sinbinder.AOS
             // и в доке она записана прямо: «когда пора отходить — не отходит».
             if (decision.RefusedCommand)
                 what = context.CommandIsFallBack
-                    ? $"не отойдёт, а {what}"
-                    : $"не послушает, а {what}";
+                    ? Loc.F("не отойдёт, а {0}", what)
+                    : Loc.F("не послушает, а {0}", what);
 
             // Панель НИКОГДА не обещает без оговорки — и вот почему.
             //
@@ -113,23 +115,23 @@ namespace Sinbinder.AOS
             // игроку в сорока пяти случаях из ста. Три ступени вместо
             // двух: обещание тем мягче, чем ближе голоса.
             if (decision.Confidence > BehaviourResolver.HesitationShare * 6f)
-                return $"скорее всего, {what}";
+                return Loc.F("скорее всего, {0}", what);
             if (decision.Confidence > BehaviourResolver.HesitationShare * 3f)
-                return $"может {what}, но не поручусь";
-            return $"колеблется; вероятнее, что {what}";
+                return Loc.F("может {0}, но не поручусь", what);
+            return Loc.F("колеблется; вероятнее, что {0}", what);
         }
 
         private static string Future(ActionType action, DecisionContext context)
         {
             switch (action)
             {
-                case ActionType.Attack:      return "пойдёт в драку";
-                case ActionType.SaveAlly:    return "бросится к раненому";
-                case ActionType.Loot:        return "сломает строй ради добычи";
-                case ActionType.Flee:        return "отойдёт";
-                case ActionType.Idle:        return "останется на месте";
-                case ActionType.ObeyCommand: return "сделает, как велено";
-                default:                     return "поступит по-своему";
+                case ActionType.Attack:      return Loc.T("пойдёт в драку");
+                case ActionType.SaveAlly:    return Loc.T("бросится к раненому");
+                case ActionType.Loot:        return Loc.T("сломает строй ради добычи");
+                case ActionType.Flee:        return Loc.T("отойдёт");
+                case ActionType.Idle:        return Loc.T("останется на месте");
+                case ActionType.ObeyCommand: return Loc.T("сделает, как велено");
+                default:                     return Loc.T("поступит по-своему");
             }
         }
 

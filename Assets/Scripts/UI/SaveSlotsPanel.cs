@@ -112,7 +112,7 @@ namespace Sinbinder.UI
                     ? (has ? () => { Load(name); Close(); } : (System.Action)null)
                     : () => { Save(name); Draw(); };
 
-                _spawned.Add(Row(y, name, what, act));
+                _spawned.Add(Row(y, Loc.T(name), what, act));   // имя гнезда — ключ файла, показ — переводом
                 y -= RowHeight * 1.6f;
             }
         }
@@ -120,7 +120,7 @@ namespace Sinbinder.UI
         private static void Save(string slot)
         {
             bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.PathOf(slot));
-            Say(ok ? Loc.F("Записано в «{0}».", slot) : Loc.T("Записать не вышло."));
+            Say(ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло."));
         }
 
         private static void Load(string slot)
@@ -130,7 +130,7 @@ namespace Sinbinder.UI
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
 
             Say(SaveSystem.ReturnTo(save)
-                ? Loc.F("Вернулись к «{0}».", slot)
+                ? Loc.F("Вернулись к «{0}».", Loc.T(slot))
                 : Loc.T("Эта запись не от нынешней игры."));
         }
 

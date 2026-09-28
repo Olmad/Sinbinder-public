@@ -1,7 +1,9 @@
 // Assets/Scripts/AOS Engine/BattleNarrator.cs
+// Перевод: текст через Loc
 using System.Collections.Generic;
 using System.Text;
 
+using Sinbinder.Core;
 namespace Sinbinder.AOS
 {
     /// <summary>
@@ -17,10 +19,10 @@ namespace Sinbinder.AOS
         public static string Build(IReadOnlyList<string> entries)
         {
             if (entries == null || entries.Count == 0)
-                return "Бой прошёл без единого спора. Отряд слушался.";
+                return Loc.T("Бой прошёл без единого спора. Отряд слушался.");
 
             var sb = new StringBuilder();
-            sb.AppendLine("Как это было.");
+            sb.AppendLine(Loc.T("Как это было."));
             sb.AppendLine();
 
             // Повтор одной и той же строки — не событие, а привычка.
@@ -36,7 +38,7 @@ namespace Sinbinder.AOS
                 if (previous != null)
                 {
                     sb.Append("— ").Append(previous);
-                    if (repeats > 0) sb.Append(repeats == 1 ? " И снова." : " И так раз за разом.");
+                    if (repeats > 0) sb.Append(repeats == 1 ? Loc.T(" И снова.") : Loc.T(" И так раз за разом."));
                     sb.AppendLine();
                 }
 
@@ -46,8 +48,8 @@ namespace Sinbinder.AOS
 
             sb.AppendLine();
             sb.Append(entries.Count > 4
-                ? "Отряд, которым не столько командовали, сколько договаривались."
-                : "В остальном приказы исполнялись.");
+                ? Loc.T("Отряд, которым не столько командовали, сколько договаривались.")
+                : Loc.T("В остальном приказы исполнялись."));
 
             return sb.ToString();
         }
