@@ -90,7 +90,7 @@ namespace Sinbinder.Gameplay
             bool weapon = item.AttackBonus > 0f;
 
             foreach (var carried in w.Carried)
-                if (carried == item) { word = Loc.T("это уже на нём"); return false; }
+                if (carried == item) { word = Grammar.For(w.Gender, Loc.T("это уже на нём")); return false; }
 
             if (!Place(w, item, out _, out var old)) { word = Loc.T("это не надевают"); return false; }
 
@@ -133,13 +133,15 @@ namespace Sinbinder.Gameplay
 
             if (soul.Sin == SinType.Greed && soul.Get(SinType.Greed) > 50f && valuable)
             {
-                word = Loc.T("не отдаёт — теперь это его");
+                word = Grammar.For(w.Gender, Loc.T("не отдаёт — теперь это его"));
                 return false;
             }
 
             if (soul.Sin == SinType.Pride && soul.Get(SinType.Pride) > 60f && item.AttackBonus > 0f)
             {
-                word = Loc.T("не отдаёт оружия — отнять его у него значит унизить");
+                // Без местоимений: «его» здесь — и оружие, и хозяин, и род
+                // хозяина правилом не поменять, не задев оружия.
+                word = Loc.T("не отдаёт оружия — отнять оружие значит унизить");
                 return false;
             }
 

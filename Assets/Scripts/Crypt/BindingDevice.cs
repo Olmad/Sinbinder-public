@@ -142,7 +142,9 @@ namespace Sinbinder.Crypt
             Log(Loc.F("{0} поднялся и встал рядом.", Loc.Name(risen.DisplayName)));
 
             if (_soul.Memory == null)
-                Log(Loc.T("Он не помнит, кем был. Слушается — и только."));
+                Log(Grammar.Pick(risen.Gender,
+                    Loc.T("Он не помнит, кем был. Слушается — и только."),
+                    Loc.T("Она не помнит, кем была. Слушается — и только.")));
 
             _soul = null;
             _hasShell = false;

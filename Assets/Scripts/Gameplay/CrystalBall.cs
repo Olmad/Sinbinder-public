@@ -227,7 +227,7 @@ namespace Sinbinder.Gameplay
                 // не увидит: он увидит, что Карган узнаёт человека.
                 if (SquadRoster.TryGet(name, out var commander))
                     Herald.Line(Loc.F("Карган: «Похоже, что-то случилось. "
-                            + "Вероятно, {0} {1}».", Loc.Name(name), Homecoming.Guess(commander.Sin)));
+                            + "Вероятно, {0} {1}».", Loc.Name(name), Homecoming.Guess(commander.Sin, commander.Gender)));
             }
 
             // Зрелище — тому, кто смотрит. Игрок в этот миг у сундука,

@@ -1060,11 +1060,19 @@ msgid "Наконец-то. Хотя такому, как я, и этого ма
 msgstr "At last. Though for someone like me, even this is too little."
 
 #: AOS Engine/TitleWords.cs
+msgid "Наконец-то. Хотя такой, как я, и этого мало."
+msgstr "At last. Though for someone like me, even this is too little."
+
+#: AOS Engine/TitleWords.cs
 msgid "{0}? Наконец-то вслух. Отныне я — {1} {2}!"
 msgstr "{0}? Said aloud at last. From now on I am {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Я не просил этого имени. Но носить буду достойно."
+msgstr "I didn't ask for this name. But I'll wear it with dignity."
+
+#: AOS Engine/TitleWords.cs
+msgid "Я не просила этого имени. Но носить буду достойно."
 msgstr "I didn't ask for this name. But I'll wear it with dignity."
 
 #: AOS Engine/TitleWords.cs
@@ -1080,6 +1088,10 @@ msgid "Имя дороже золота. Жаль, понял это поздн�
 msgstr "A name is worth more than gold. Pity I learned it too late."
 
 #: AOS Engine/TitleWords.cs
+msgid "Имя дороже золота. Жаль, поняла это поздно."
+msgstr "A name is worth more than gold. Pity I learned it too late."
+
+#: AOS Engine/TitleWords.cs
 msgid "{0}! Пусть знают, кого встретили!"
 msgstr "{0}! Let them know whom they've met!"
 
@@ -1089,6 +1101,10 @@ msgstr "{0}! Now follow me — I lead. {1}, {2}!"
 
 #: AOS Engine/TitleWords.cs
 msgid "Я не рад этому имени. Но заслужил его честно."
+msgstr "I'm not glad of this name. But I earned it honestly."
+
+#: AOS Engine/TitleWords.cs
+msgid "Я не рада этому имени. Но заслужила его честно."
 msgstr "I'm not glad of this name. But I earned it honestly."
 
 #: AOS Engine/TitleWords.cs
@@ -1152,7 +1168,15 @@ msgid "Меня будут помнить дольше, чем я жил. {0} {1
 msgstr "They will remember me longer than I lived. {0}, {1}."
 
 #: AOS Engine/TitleWords.cs
+msgid "Меня будут помнить дольше, чем я жила. {0} {1}."
+msgstr "They will remember me longer than I lived. {0}, {1}."
+
+#: AOS Engine/TitleWords.cs
 msgid "Помнить будут имя. Я бы хотел — дело."
+msgstr "They'll remember the name. I'd rather they remembered the deed."
+
+#: AOS Engine/TitleWords.cs
+msgid "Помнить будут имя. Я бы хотела — дело."
 msgstr "They'll remember the name. I'd rather they remembered the deed."
 
 #: Core/Commitment.cs
@@ -1674,6 +1698,10 @@ msgstr "{0} rose and stood beside you."
 #: Crypt/BindingDevice.cs
 msgid "Он не помнит, кем был. Слушается — и только."
 msgstr "He doesn't remember who he was. He obeys — and nothing more."
+
+#: Crypt/BindingDevice.cs
+msgid "Она не помнит, кем была. Слушается — и только."
+msgstr "She doesn't remember who she was. She obeys — and nothing more."
 
 #: Crypt/BindingHandle.cs
 msgid "Рычаг связывания"
@@ -3968,7 +3996,15 @@ msgid "опять берёг себя дольше всех"
 msgstr "again kept himself safe longer than anyone"
 
 #: Gameplay/Homecoming.cs
+msgid "опять берегла себя дольше всех"
+msgstr "again kept herself safe longer than anyone"
+
+#: Gameplay/Homecoming.cs
 msgid "гнал вперёд, не оглядываясь на отставших"
+msgstr "pushed ahead without looking back at the stragglers"
+
+#: Gameplay/Homecoming.cs
+msgid "гнала вперёд, не оглядываясь на отставших"
 msgstr "pushed ahead without looking back at the stragglers"
 
 #: Gameplay/Homecoming.cs
@@ -3976,7 +4012,15 @@ msgid "не стал отходить, когда стоило"
 msgstr "wouldn't fall back when he should have"
 
 #: Gameplay/Homecoming.cs
+msgid "не стала отходить, когда стоило"
+msgstr "wouldn't fall back when she should have"
+
+#: Gameplay/Homecoming.cs
 msgid "свернул за чем-то блестящим"
+msgstr "turned off after something shiny"
+
+#: Gameplay/Homecoming.cs
+msgid "свернула за чем-то блестящим"
 msgstr "turned off after something shiny"
 
 #: Gameplay/Homecoming.cs
@@ -3984,11 +4028,23 @@ msgid "не поделил добычу со своими"
 msgstr "wouldn't share the loot with his own"
 
 #: Gameplay/Homecoming.cs
+msgid "не поделила добычу со своими"
+msgstr "wouldn't share the loot with her own"
+
+#: Gameplay/Homecoming.cs
 msgid "нашёл, на что отвлечься"
 msgstr "found something to distract him"
 
 #: Gameplay/Homecoming.cs
+msgid "нашла, на что отвлечься"
+msgstr "found something to distract her"
+
+#: Gameplay/Homecoming.cs
 msgid "встал есть не вовремя"
+msgstr "stopped to eat at the wrong time"
+
+#: Gameplay/Homecoming.cs
+msgid "встала есть не вовремя"
 msgstr "stopped to eat at the wrong time"
 
 #: Gameplay/Homecoming.cs
@@ -3996,16 +4052,32 @@ msgid "сделал что-то по-своему"
 msgstr "did something his own way"
 
 #: Gameplay/Homecoming.cs
+msgid "сделала что-то по-своему"
+msgstr "did something her own way"
+
+#: Gameplay/Homecoming.cs
 msgid "Он берёг себя, и берёг долго. Ждать его перестали не все и не сразу."
 msgstr "He kept himself safe, and for a long time. Not everyone stopped waiting for him, and not at once."
+
+#: Gameplay/Homecoming.cs
+msgid "Она берегла себя, и берегла долго. Ждать её перестали не все и не сразу."
+msgstr "She kept herself safe, and for a long time. Not everyone stopped waiting for her, and not at once."
 
 #: Gameplay/Homecoming.cs
 msgid "Он свернул за блеском. Свернули следом, и вернулись оттуда не все."
 msgstr "He turned off after a glint. Others followed, and not all of them came back."
 
 #: Gameplay/Homecoming.cs
+msgid "Она свернула за блеском. Свернули следом, и вернулись оттуда не все."
+msgstr "She turned off after a glint. Others followed, and not all of them came back."
+
+#: Gameplay/Homecoming.cs
 msgid "Он не отступил. Отступить пришлось бы первым — а он привык быть последним."
 msgstr "He didn't retreat. Retreating meant going first — and he was used to being last."
+
+#: Gameplay/Homecoming.cs
+msgid "Она не отступила. Отступить пришлось бы первой — а она привыкла быть последней."
+msgstr "She didn't retreat. Retreating meant going first — and she was used to being last."
 
 #: Gameplay/Homecoming.cs
 msgid "Добычу делили дважды. Второй раз — уже без тех, кому она досталась в первый."
@@ -4016,8 +4088,16 @@ msgid "Он шёл первым и не давал отстать никому. 
 msgstr "He went first and let no one fall behind. They fell behind anyway."
 
 #: Gameplay/Homecoming.cs
+msgid "Она шла первой и не давала отстать никому. Отстали всё равно."
+msgstr "She went first and let no one fall behind. They fell behind anyway."
+
+#: Gameplay/Homecoming.cs
 msgid "Их задержали. Он не говорит кто."
 msgstr "They were held up. He won't say by whom."
+
+#: Gameplay/Homecoming.cs
+msgid "Их задержали. Она не говорит кто."
+msgstr "They were held up. She won't say by whom."
 
 #: Gameplay/Homecoming.cs
 msgid "Припасы кончились раньше дороги."
@@ -4026,6 +4106,10 @@ msgstr "The supplies ran out before the road did."
 #: Gameplay/Homecoming.cs
 msgid "Он не рассказывает, и никто не переспрашивает."
 msgstr "He doesn't tell, and no one asks again."
+
+#: Gameplay/Homecoming.cs
+msgid "Она не рассказывает, и никто не переспрашивает."
+msgstr "She doesn't tell, and no one asks again."
 
 #: Gameplay/HunterSquadSpawner.cs
 msgid "Охотник-следопыт"
@@ -4584,8 +4668,8 @@ msgid "не отдаёт — теперь это его"
 msgstr "won't give it — it's his now"
 
 #: Gameplay/SquadGear.cs
-msgid "не отдаёт оружия — отнять его у него значит унизить"
-msgstr "won't give up the weapon — taking it from him would humiliate him"
+msgid "не отдаёт оружия — отнять оружие значит унизить"
+msgstr "won't give up the weapon — taking it away would be a humiliation"
 
 #: Gameplay/SquadGear.cs
 msgid "отдаёт"
@@ -5097,6 +5181,10 @@ msgstr "The squad that left the camp enters the crypt."
 
 #: UI/DemoEndUI.cs
 msgid " — вёл их"
+msgstr " — led them"
+
+#: UI/DemoEndUI.cs
+msgid " — вела их"
 msgstr " — led them"
 
 #: UI/DemoEndUI.cs
@@ -5714,3 +5802,9 @@ msgstr "I'll stand here. I can hear fine from here."
 #: Resources/DialogueDatabase.asset
 msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
+
+# ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "не отдаёт оружия — отнять его у него значит унизить"
+msgstr "won't give up the weapon — taking it from him would humiliate him"

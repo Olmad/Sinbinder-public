@@ -160,7 +160,7 @@ namespace Sinbinder.UI
             {
                 sb.AppendLine().AppendLine(Loc.T("Из ушедших не вернулся никто."));
                 sb.AppendLine();
-                sb.AppendLine(Homecoming.Story(leader.Sin));
+                sb.AppendLine(Homecoming.Story(leader.Sin, leader.Gender));
                 sb.AppendLine().Append(Loc.T("Демо окончено."));
                 return sb.ToString();
             }
@@ -170,15 +170,16 @@ namespace Sinbinder.UI
 
             foreach (var name in survivors)
             {
-                sb.Append(name);
-                if (name == leader.Name && leader.IsCommander) sb.Append(Loc.T(" — вёл их"));
+                sb.Append(Loc.Name(name));
+                if (name == leader.Name && leader.IsCommander)
+                    sb.Append(Grammar.Pick(leader.Gender, Loc.T(" — вёл их"), Loc.T(" — вела их")));
                 sb.AppendLine();
             }
 
             if (survivors.Count < away.Count)
             {
                 sb.AppendLine();
-                sb.AppendLine(Homecoming.Story(leader.Sin));
+                sb.AppendLine(Homecoming.Story(leader.Sin, leader.Gender));
             }
 
             sb.AppendLine().Append(Loc.T("Демо окончено."));

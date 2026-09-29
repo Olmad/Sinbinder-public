@@ -54,28 +54,32 @@ namespace Sinbinder.AOS
             string name = warrior.DisplayName;
             MoralType moral = warrior.Soul.Moral;
 
-            if (legendary) return Legend(moral, name, title);
+            // Речь от первого лица: «не просил», «понял», «не рад» — по роду.
+            // Титулы получает и Лиска.
+            Gender gender = warrior.Gender;
+
+            if (legendary) return Legend(moral, name, title, gender);
 
             switch (warrior.Soul.Sin)
             {
                 // Ждал признания. Порочный считает, что мало; праведного
                 // собственная гордость смущает.
                 case SinType.Pride: return Pick(moral,
-                    Loc.T("Наконец-то. Хотя такому, как я, и этого мало."),
+                    Grammar.Pick(gender, Loc.T("Наконец-то. Хотя такому, как я, и этого мало."), Loc.T("Наконец-то. Хотя такой, как я, и этого мало.")),
                     Loc.F("{0}? Наконец-то вслух. Отныне я — {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
-                    Loc.T("Я не просил этого имени. Но носить буду достойно."));
+                    Grammar.Pick(gender, Loc.T("Я не просил этого имени. Но носить буду достойно."), Loc.T("Я не просила этого имени. Но носить буду достойно.")));
 
                 // Меряет ценой. Праведный вдруг понимает, что не всё продаётся.
                 case SinType.Greed: return Pick(moral,
                     Loc.F("За такое имя платят больше. Запомните и это: {0} {1}.", Loc.Name(name), Loc.T(title)),
                     Loc.F("{0}... За такое имя и платят иначе. Запомните: {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
-                    Loc.T("Имя дороже золота. Жаль, понял это поздно."));
+                    Grammar.Pick(gender, Loc.T("Имя дороже золота. Жаль, понял это поздно."), Loc.T("Имя дороже золота. Жаль, поняла это поздно.")));
 
                 // Имя как разрешение. Праведный рад делу, не имени.
                 case SinType.Wrath: return Pick(moral,
                     Loc.F("{0}! Пусть знают, кого встретили!", Loc.T(title)),
                     Loc.F("{0}! Теперь идите за мной — я впереди. {1} {2}!", Loc.T(title), Loc.Name(name), Loc.T(title)),
-                    Loc.T("Я не рад этому имени. Но заслужил его честно."));
+                    Grammar.Pick(gender, Loc.T("Я не рад этому имени. Но заслужил его честно."), Loc.T("Я не рада этому имени. Но заслужила его честно.")));
 
                 // Сравнивает. Порочный — со злорадством, праведный — со стыдом.
                 case SinType.Envy: return Pick(moral,
@@ -110,11 +114,15 @@ namespace Sinbinder.AOS
         /// Легендарное имя — тоже по морали: порочный хочет, чтобы
         /// боялись, праведный жалеет, что запомнят имя, а не дело.
         /// </summary>
-        private static string Legend(MoralType moral, string name, string title)
+        private static string Legend(MoralType moral, string name, string title, Gender gender)
             => Pick(moral,
                 Loc.F("Меня будут помнить. Пусть боятся. {0} {1}.", Loc.Name(name), Loc.T(title)),
-                Loc.F("Меня будут помнить дольше, чем я жил. {0} {1}.", Loc.T(title), Loc.Name(name)),
-                Loc.T("Помнить будут имя. Я бы хотел — дело."));
+                Grammar.Pick(gender,
+                    Loc.F("Меня будут помнить дольше, чем я жил. {0} {1}.", Loc.T(title), Loc.Name(name)),
+                    Loc.F("Меня будут помнить дольше, чем я жила. {0} {1}.", Loc.T(title), Loc.Name(name))),
+                Grammar.Pick(gender,
+                    Loc.T("Помнить будут имя. Я бы хотел — дело."),
+                    Loc.T("Помнить будут имя. Я бы хотела — дело.")));
 
         /// <summary>
         /// Выбор по морали. Это и есть <b>вторая ось вместо жребия</b>:

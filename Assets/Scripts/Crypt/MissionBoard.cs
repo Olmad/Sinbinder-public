@@ -254,7 +254,7 @@ namespace Sinbinder.Crypt
 
                 foreach (var m in away)
                     if (m.Name == commanderName)
-                    { sb.Append(' ').Append(Homecoming.Story(m.Sin)); break; }
+                    { sb.Append(' ').Append(Homecoming.Story(m.Sin, m.Gender)); break; }
 
                 return sb.ToString();
             }
@@ -270,7 +270,7 @@ namespace Sinbinder.Crypt
             if (survivors.Count < away.Count)
                 foreach (var m in away)
                     if (m.Name == commanderName)
-                    { sb.Append(' ').Append(Homecoming.Story(m.Sin)); break; }
+                    { sb.Append(' ').Append(Homecoming.Story(m.Sin, m.Gender)); break; }
 
             sb.Append(Loc.T(" Им теперь должны."));
             return sb.ToString();

@@ -1757,15 +1757,20 @@ namespace Sinbinder.Tests
                 // из одного греха. Разойдись они — доля 3 обещала бы исход,
                 // которого не будет.
                 foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+                foreach (Gender g in new[] { Gender.Male, Gender.Female })
                 {
-                    string guess = Homecoming.Guess(sin);
-                    Check(!string.IsNullOrEmpty(guess), $"{sin}: догадка есть");
-                    Check(!HasDigit(guess), $"{sin}: догадка без цифр");
+                    string guess = Homecoming.Guess(sin, g);
+                    Check(!string.IsNullOrEmpty(guess), $"{sin}/{g}: догадка есть");
+                    Check(!HasDigit(guess), $"{sin}/{g}: догадка без цифр");
                 }
 
-                Check(Homecoming.Guess(SinType.Sloth) != Homecoming.Guess(SinType.Wrath)
-                   && Homecoming.Guess(SinType.Wrath) != Homecoming.Guess(SinType.Greed),
+                Check(Homecoming.Guess(SinType.Sloth, Gender.Male) != Homecoming.Guess(SinType.Wrath, Gender.Male)
+                   && Homecoming.Guess(SinType.Wrath, Gender.Male) != Homecoming.Guess(SinType.Greed, Gender.Male),
                     "три канонных греха гадают по-разному");
+
+                // Старшей ставят и Лиску: «Лиска свернул» — описка на глазах у игрока.
+                Check(Homecoming.Guess(SinType.Greed, Gender.Female) != Homecoming.Guess(SinType.Greed, Gender.Male),
+                    "догадка о старшей — в мужском роде");
             }
             finally
             {

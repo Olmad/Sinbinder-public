@@ -766,12 +766,26 @@ static class Bench
             if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
         }
 
+        // Оба рода: старшим ставят и Лиску, и её слова обязаны быть
+        // не пустыми и без цифр так же, как его.
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+        foreach (Gender g in new[] { Gender.Male, Gender.Female })
+        {
+            Check(!string.IsNullOrEmpty(Homecoming.Story(sin, g)), $"{sin}/{g}: объяснение есть");
+            Check(!Homecoming.Story(sin, g).Any(char.IsDigit), $"{sin}/{g}: объяснение без цифр");
+            Check(!string.IsNullOrEmpty(Homecoming.Guess(sin, g)), $"{sin}/{g}: догадка есть");
+            Check(!Homecoming.Guess(sin, g).Any(char.IsDigit), $"{sin}/{g}: догадка без цифр");
+        }
+
+        // Женская форма — действительно женская. Догадка — всегда глагол
+        // прошедшего времени, и у старшей она обязана отличаться; в объяснении
+        // о старшей не должно остаться «он».
         foreach (SinType sin in Enum.GetValues(typeof(SinType)))
         {
-            Check(!string.IsNullOrEmpty(Homecoming.Story(sin)), $"{sin}: объяснение есть");
-            Check(!Homecoming.Story(sin).Any(char.IsDigit), $"{sin}: объяснение без цифр");
-            Check(!string.IsNullOrEmpty(Homecoming.Guess(sin)), $"{sin}: догадка есть");
-            Check(!Homecoming.Guess(sin).Any(char.IsDigit), $"{sin}: догадка без цифр");
+            Check(Homecoming.Guess(sin, Gender.Female) != Homecoming.Guess(sin, Gender.Male),
+                  $"{sin}: догадка о старшей — в мужском роде: {Homecoming.Guess(sin, Gender.Female)}");
+            Check(!System.Text.RegularExpressions.Regex.IsMatch(Homecoming.Story(sin, Gender.Female), @"\b[Оо]н\b"),
+                  $"{sin}: у старшей в объяснении «он»");
         }
 
         // Догадка обязана отличать командиров друг от друга — иначе
@@ -780,8 +794,8 @@ static class Bench
         var stories = new HashSet<string>();
         foreach (SinType sin in new[] { SinType.Sloth, SinType.Wrath, SinType.Greed })
         {
-            guesses.Add(Homecoming.Guess(sin));
-            stories.Add(Homecoming.Story(sin));
+            guesses.Add(Homecoming.Guess(sin, Gender.Male));
+            stories.Add(Homecoming.Story(sin, Gender.Male));
         }
         Check(guesses.Count == 3, "три канонных греха гадают по-разному");
         Check(stories.Count == 3, "три канонных греха объясняются по-разному");
@@ -791,8 +805,8 @@ static class Bench
         // с движком сильнее всего.
         foreach (SinType sin in Enum.GetValues(typeof(SinType)))
         {
-            Check(!Homecoming.Story(sin).Contains("засад"), $"{sin}: объяснение без засады");
-            Check(!Homecoming.Guess(sin).Contains("засад"), $"{sin}: догадка без засады");
+            Check(!Homecoming.Story(sin, Gender.Male).Contains("засад"), $"{sin}: объяснение без засады");
+            Check(!Homecoming.Guess(sin, Gender.Male).Contains("засад"), $"{sin}: догадка без засады");
         }
 
         // Главное: порядок. Слова написаны под движок — значит движок
