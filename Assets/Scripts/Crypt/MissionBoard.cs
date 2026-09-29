@@ -233,7 +233,7 @@ namespace Sinbinder.Crypt
                 float shift = Aftermath.LoyaltyShift(m.Moral, chosen);
                 if (shift != 0f) SquadRoster.ShiftLoyalty(m.Name, shift);
 
-                Log($"{m.Name}: {Aftermath.Judged(m.Moral, chosen, m.Gender)}.");
+                Log($"{Loc.Name(m.Name)}: {Aftermath.Judged(m.Moral, chosen, m.Gender)}.");
             }
         }
 
@@ -246,7 +246,7 @@ namespace Sinbinder.Crypt
             IReadOnlyList<string> survivors, string commanderName)
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append(mission.Name).Append(". ");
+            sb.Append(Loc.Name(mission.Name)).Append(". ");
 
             if (survivors.Count == 0)
             {
@@ -263,7 +263,7 @@ namespace Sinbinder.Crypt
             for (int i = 0; i < survivors.Count; i++)
             {
                 if (i > 0) sb.Append(", ");
-                sb.Append(survivors[i]);
+                sb.Append(Loc.Name(survivors[i]));
             }
             sb.Append('.');
 
@@ -334,7 +334,7 @@ namespace Sinbinder.Crypt
             var sin = (SinType)(hash % 7);
             var moral = (MoralType)(hash / 7 % 3);
 
-            var soul = new SoulData(Loc.T("Безымянная душа"), sin, moral, 1, 40f + hash % 40);
+            var soul = new SoulData(Loc.N("Безымянная душа"), sin, moral, 1, 40f + hash % 40);
             var kept = SoulDecay.Harvest(soul, SoulQuality.Acceptance);
 
             if (kept == null) return;

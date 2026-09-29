@@ -140,7 +140,7 @@ namespace Sinbinder.UI
                 var m = mission;
 
                 _spawned.Add(Row(y, enough,
-                    m.Name,
+                    Loc.Name(m.Name),
                     m.Rumour,
                     enough
                         ? $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
@@ -158,7 +158,7 @@ namespace Sinbinder.UI
             _pickingCommander = true;
 
             if (_title != null)
-                _title.text = Loc.F("{0}. Кого поставить старшим.  Esc — назад", mission.Name);
+                _title.text = Loc.F("{0}. Кого поставить старшим.  Esc — назад", Loc.Name(mission.Name));
 
             Rows(out float y);
 

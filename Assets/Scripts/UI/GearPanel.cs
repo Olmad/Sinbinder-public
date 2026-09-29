@@ -396,7 +396,7 @@ namespace Sinbinder.UI
             if (_bagOnly) { RedrawBag(); return; }
 
             var store = PlayerInventory.Instance;
-            string name = _warrior.DisplayName;
+            string name = Loc.Name(_warrior.DisplayName);
 
             _title.text = Loc.F("Снаряжение: {0}", name);
             _leftTitle.text = Loc.T("На воине");
@@ -410,7 +410,7 @@ namespace Sinbinder.UI
                 if (item == null) { Row(_hands, Loc.F("{0}: — Пусто —", place), "", null); continue; }
 
                 bool gives = SquadGear.WillGive(_warrior, item, out string word);
-                Row(_hands, $"{place}: {item.Name}", Line(item, gives ? Loc.T("отдаст") : Loc.F("не отдаст: {0}", word)),
+                Row(_hands, $"{place}: {Loc.Name(item.Name)}", Line(item, gives ? Loc.T("отдаст") : Loc.F("не отдаст: {0}", word)),
                     _near ? () => TakeBack(item) : (System.Action)null);
             }
 

@@ -33,11 +33,13 @@ namespace Sinbinder.AOS
         /// </summary>
         public static string Shout(Warrior warrior, string title, bool legendary)
         {
-            if (warrior == null) return title;
+            if (warrior == null) return Loc.T(title);
 
+            // Титул и имя — данные, по-русски; крик — на языке показа.
+            string t = Loc.T(title), n = Loc.Name(warrior.DisplayName);
             return legendary
-                ? $"{title.ToUpperInvariant()}! {warrior.DisplayName.ToUpperInvariant()}!"
-                : $"{title}! {warrior.DisplayName}!";
+                ? $"{t.ToUpperInvariant()}! {n.ToUpperInvariant()}!"
+                : $"{t}! {n}!";
         }
 
         /// <summary>

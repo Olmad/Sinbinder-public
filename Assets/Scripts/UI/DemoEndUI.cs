@@ -99,17 +99,19 @@ namespace Sinbinder.UI
 
             string commander = SquadRoster.CommanderName;
             if (!string.IsNullOrEmpty(commander))
-                sb.AppendLine(Loc.F("Отряд вёл {0}.", commander)).AppendLine();
+                sb.AppendLine(Loc.F("Отряд вёл {0}.", Loc.Name(commander))).AppendLine();
 
             foreach (var m in SquadRoster.Members)
             {
                 if (m.IsAway) continue;   // они возвращаются ниже, отдельно
 
-                sb.Append(m.Name);
+                sb.Append(Loc.Name(m.Name));
 
                 // Долг — единственное, что отряд уносит с собой к следующей
-                // вылазке. Числа игрок не видит, только факт.
-                if (m.UnpaidMissions > 0) sb.Append(Loc.T(" — ему всё ещё должны"));
+                // вылазке. Числа игрок не видит, только факт. «Ему» — по роду:
+                // Лиске и Ю должны так же.
+                if (m.UnpaidMissions > 0)
+                    sb.Append(Grammar.Pick(m.Gender, Loc.T(" — ему всё ещё должны"), Loc.T(" — ей всё ещё должны")));
                 else if (m.IsCommander) sb.Append(Loc.T(" — старший"));
 
                 sb.AppendLine();

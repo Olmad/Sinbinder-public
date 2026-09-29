@@ -73,7 +73,7 @@ namespace Sinbinder.Gameplay
 
             string tail = string.IsNullOrEmpty(soul.EarnedTitle)
                 ? Hands(soul.Trade)
-                : Named(soul.EarnedTitle, soul.Moral);
+                : Named(Loc.Name(soul.EarnedTitle), soul.Moral);
 
             return string.IsNullOrEmpty(tail) ? body : body + " " + tail;
         }

@@ -271,7 +271,7 @@ namespace Sinbinder.Gameplay
             else
             {
                 var names = new List<string>();
-                foreach (var w in _unheard) names.Add(w.DisplayName);
+                foreach (var w in _unheard) names.Add(Loc.Name(w.DisplayName));
                 line = Loc.F("Не расслышали приказ: {0}. Греховод далеко.", string.Join(", ", names));
             }
 

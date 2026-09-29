@@ -137,28 +137,28 @@ namespace Sinbinder.Crypt
                 // Единственная точка, где богатство и опасность разошлись,
                 // и оттого единственная прибыльная. Она же первое искушение:
                 // чтобы заплатить отряду, надо ограбить тех, кто не дерётся.
-                new Mission(Loc.T("Соляной обоз"),
+                new Mission(Loc.N("Соляной обоз"),
                     Loc.T("По старой соляной дороге ходит обоз. Охраны при нём двое, и те за деньги."),
                     squad: 3, guards: 2, Prize.Silver, Spoils.None, Deed.Robbery,
                     Junction.Caravan),
 
-                new Mission(Loc.T("Придорожная часовня"),
+                new Mission(Loc.N("Придорожная часовня"),
                     Loc.T("Говорят, там кто-то ходит по ночам. Немного, но ходит."),
                     squad: 3, guards: 2, Prize.None, Spoils.Souls, Deed.GraveRobbing),
 
-                new Mission(Loc.T("Затопленная каменоломня"),
+                new Mission(Loc.N("Затопленная каменоломня"),
                     Loc.T("Вода поднялась и вынесла наверх то, что закапывали."),
                     squad: 4, guards: 4, Prize.None, Spoils.Shell, Deed.GraveRobbing),
 
-                new Mission(Loc.T("Сожжённая застава"),
+                new Mission(Loc.N("Сожжённая застава"),
                     Loc.T("Охотники были здесь первыми. Кто-то из них остался."),
                     squad: 5, guards: 5, Prize.Purses, Spoils.Souls, Deed.ArmedRaid),
 
-                new Mission(Loc.T("Старый гарнизон"),
+                new Mission(Loc.N("Старый гарнизон"),
                     Loc.T("Место держали долго и держат до сих пор — по привычке."),
                     squad: 5, guards: 7, Prize.Purses, Spoils.Upgrade, Deed.ArmedRaid),
 
-                new Mission(Loc.T("Костяная топь"),
+                new Mission(Loc.N("Костяная топь"),
                     Loc.T("Туда уходят и не возвращаются. Причину никто не называет."),
                     squad: 6, guards: 8, Prize.None, Spoils.Upgrade, Deed.GraveRobbing),
             };

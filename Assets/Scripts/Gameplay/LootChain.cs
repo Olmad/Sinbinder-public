@@ -71,14 +71,14 @@ namespace Sinbinder.Gameplay
                 {
                     string swap = old == null ? "" : Loc.F(" Прежнее — {0} — уходит в мешок Греховода.", Loc.Name(old.Name).ToLowerInvariant());
                     log?.Write(Grammar.For(who.Gender,
-                        Loc.F("{0} забирает трофей: {1}.{2}", Loc.Name(who.DisplayName), what.ToLowerInvariant(), swap)));
+                        Loc.F("{0} забирает трофей: {1}.{2}", Loc.Name(who.DisplayName), Loc.Name(what).ToLowerInvariant(), swap)));
                 }
                 else
                 {
                     store?.AddItem(trophy);
                     string would = Grammar.Pick(who.Gender, Loc.T("взял бы"), Loc.T("взяла бы"));
                     log?.Write(Grammar.For(who.Gender,
-                        Loc.F("{0} {1} трофей, но {2} — {3} уходит в мешок Греховода.", Loc.Name(who.DisplayName), would, word, what.ToLowerInvariant())));
+                        Loc.F("{0} {1} трофей, но {2} — {3} уходит в мешок Греховода.", Loc.Name(who.DisplayName), would, word, Loc.Name(what).ToLowerInvariant())));
                 }
             }
 

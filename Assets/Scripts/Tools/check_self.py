@@ -443,6 +443,34 @@ namespace N
 ''',
     }, 'в сериализуемом поле'),
 
+    ('raw_names/имя мимо Loc.Name', {
+        'UI/Roll.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Roll
+    {
+        string Led(Warrior w)
+        {
+            string who = w.DisplayName;
+            return Loc.F("Отряд вёл {0}.", who);
+        }
+    }
+}
+''',
+    }, 'имя мимо Loc.Name'),
+
+    ('raw_names/имя души через Loc.T', {
+        'Gameplay/Stray.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Stray
+    {
+        SoulData Make() => new SoulData(Loc.T("Безымянная душа"), 0, 0, 1, 40f);
+    }
+}
+''',
+    }, 'через Loc.T: имя'),
+
     ('dead_branches/ветка ждёт строку, которой не пишут', {
         'Gameplay/Waiting.cs': '''
 using UnityEngine;

@@ -34,7 +34,7 @@ namespace Sinbinder.Crypt
         public override string Label
             => Soul == null
                 ? Loc.T("Пустая банка")
-                : $"{Soul.Name}\n{SoulData.GetSinName(Soul.Sin)}\n{Freshness(Quality)}";
+                : $"{Loc.Name(Soul.Name)}\n{SoulData.GetSinName(Soul.Sin)}\n{Freshness(Quality)}";
 
         /// <summary>Занять банку душой. Зовёт полка, когда расставляет их.</summary>
         public void Fill(SoulShelf shelf, int slot, SoulData soul, SoulQuality quality)

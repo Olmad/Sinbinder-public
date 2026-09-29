@@ -109,7 +109,7 @@ namespace Sinbinder.Gameplay
             // но она ничего не решает: голосования он не проходит.
             // Гордыня — не характеристика героя, а просто непустая шкала;
             // морали у него нет вовсе (её носит Морган, не он).
-            var soul = new SoulData(Loc.T("Греховод"), SinType.Pride, MoralType.Neutral, 1, 0f);
+            var soul = new SoulData(Loc.N("Греховод"), SinType.Pride, MoralType.Neutral, 1, 0f);
 
             // isCommander: false — и это не описка. Признак читает
             // CombatDecisionContext.GetCommander: он берёт первого

@@ -84,13 +84,13 @@ namespace Sinbinder.AOS
             var now = Current(warrior);
             if (now == null || Stronger(best, now))
             {
-                warrior.Reputation.CurrentName = $"{word} {warrior.DisplayName}";
+                warrior.Reputation.CurrentName = $"{word} {warrior.DisplayName}";   // ключ: имя в записи, по-русски
                 TitleCeremony.Start(warrior, word, false);
             }
 
             if (!warrior.Reputation.LegendaryUnlocked && Legendary(best))
             {
-                warrior.Reputation.CurrentLegendaryTitle = $"{word} {warrior.DisplayName}";
+                warrior.Reputation.CurrentLegendaryTitle = $"{word} {warrior.DisplayName}";   // ключ
                 warrior.Reputation.LegendaryUnlocked = true;
                 TitleCeremony.Start(warrior, word, true);
             }
@@ -211,7 +211,7 @@ namespace Sinbinder.AOS
             if (string.IsNullOrEmpty(name)) return null;
 
             return TitleDatabase.Rules
-                .FirstOrDefault(r => name == $"{r.For(warrior.Gender)} {warrior.DisplayName}");
+                .FirstOrDefault(r => name == $"{r.For(warrior.Gender)} {warrior.DisplayName}");   // ключ: сравнение
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Sinbinder.AOS
         {
             var all = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             return all.FirstOrDefault(
-                w => w.Reputation.CurrentName == $"{rule.For(w.Gender)} {w.DisplayName}");
+                w => w.Reputation.CurrentName == $"{rule.For(w.Gender)} {w.DisplayName}");   // ключ: сравнение
         }
     }
 }

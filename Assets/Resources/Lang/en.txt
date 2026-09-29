@@ -5036,6 +5036,10 @@ msgid " — ему всё ещё должны"
 msgstr " — still owed his pay"
 
 #: UI/DemoEndUI.cs
+msgid " — ей всё ещё должны"
+msgstr " — still owed her pay"
+
+#: UI/DemoEndUI.cs
 msgid " — старший"
 msgstr " — leader"
 

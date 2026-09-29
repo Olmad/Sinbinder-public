@@ -637,6 +637,98 @@ class Checker:
     # Поле, которое Unity сохраняет в сцене: [SerializeField] или открытое.
     SERIALIZED_FIELD = re.compile(r'(\[SerializeField\]|\bpublic\b)[^;(]*?\bstring\b(\[\])?\s+\w+\s*=(?!>)')
 
+    # Имя души, вещи, титула в конце выражения: w.DisplayName, item.Name,
+    # soul.EarnedTitle, SquadRoster.CommanderName (с .ToLowerInvariant() и без).
+    NAME_TAIL = re.compile(r'(?:\.\s*(?:Name|DisplayName|EarnedTitle)|\bCommanderName)'
+                           r'(?:\s*\.\s*(?:ToLowerInvariant|ToLower|Trim)\s*\(\s*\))?\s*$')
+    NAME_CHAIN = re.compile(r'[\w.?\[\]\s]+(?:\(\s*\))?')
+
+    def raw_names(self):
+        """
+        Имя мимо Loc.Name (docs/38-LANG.md §3.3). Имя души, вещи, титула —
+        данные: в записи и в логике по-русски, переводится только показ.
+        В файле, помеченном переводом, имя, вставленное в текст игрока, —
+        место Loc.F, кусок Append, дырка $"…{}…" — обязано идти через
+        Loc.Name, иначе в английской игре посреди английской фразы стоит
+        «Карган Старый Ворон». 29 сентября так нашлось десять мест разом:
+        экран конца демо, полка склепа, заголовок экрана вещей, отчёт
+        вылазки. Переменная, взятая из имени (string name = w.DisplayName),
+        прослеживается до конца файла.
+        """
+        for p, s in self.src.items():
+            if self.LOC_MARK not in s:
+                continue
+            clean = blank_keep(s, literals_too=True)
+            body = blank_keep(s, literals_too=False)
+
+            raw = set()
+            for m in re.finditer(r'\b(?:string|var)\s+(\w+)\s*=\s*([^;]+);', clean):
+                if self._bare_name(m.group(2)):
+                    raw.add(m.group(1))
+
+            def judge(expr, pos, where):
+                e = expr.strip()
+                if not (self._bare_name(e) or e in raw):
+                    return
+                line_start = s.rfind('\n', 0, pos) + 1
+                line_end = s.find('\n', pos)
+                line = s[line_start:line_end if line_end >= 0 else len(s)]
+                if '// ключ' in line or inside_debug(clean, pos):
+                    return
+                if re.search(r'new\s+GameObject|\.name\s*=|PlayerPrefs', line):
+                    return
+                self.report(p, line_of(s, pos),
+                            f'имя мимо Loc.Name: {where} «{e[:40]}» — в английской игре '
+                            'оно останется русским посреди английской фразы (docs/38-LANG.md §3.3)')
+
+            # места Loc.F после строки формата и Append
+            for m in re.finditer(r'\bLoc\.F\s*\(|\.Append(?:Line)?\s*\(', clean):
+                args = self._top_args(clean, m.end() - 1)
+                first = 1 if m.group(0).startswith('Loc') else 0
+                for a, at in args[first:]:
+                    judge(a, at, 'место Loc.F' if first else 'Append')
+
+            # дырки интерполяции
+            for m in re.finditer(r'(\$@|@\$|\$)"((?:[^"\\\n]|\\.)*)"', body):
+                for h in re.finditer(r'\{([^{}:]+)(?::[^{}]*)?\}', m.group(2)):
+                    judge(h.group(1).split(',')[0], m.start(2) + h.start(1), 'дырка $"…"')
+
+            # Имя, рождённое переведённым: душа, вещь, вылазка с Loc.T в имени
+            # записывается на языке игрока, и та же игра на другом языке —
+            # другие данные. Вылазка к тому же выбирает грех души по хэшу
+            # своего названия: перевод менял бы исход.
+            for m in re.finditer(r'new\s+(SoulData|InventoryItem|Inventory\.InventoryItem|Mission)\s*\(\s*Loc\.T\s*\(', body):
+                self.report(p, line_of(body, m.start()),
+                            f'имя {m.group(1)} через Loc.T: имя — данные, в записи и в логике по-русски — '
+                            'Loc.N, перевод при показе (Loc.Name, docs/38-LANG.md §3.3)')
+
+    def _bare_name(self, expr):
+        """Голое имя: цепочка доступа без обёртки, кончающаяся именем."""
+        e = expr.strip()
+        return bool(self.NAME_TAIL.search(e)) and bool(self.NAME_CHAIN.fullmatch(e)) \
+            and not re.search(r'\bnameof\b', e)
+
+    @staticmethod
+    def _top_args(clean, open_at):
+        """[(аргумент, позиция)] вызова, чья скобка — clean[open_at]."""
+        args, depth, cur_start, i = [], 0, open_at + 1, open_at
+        while i < len(clean):
+            c = clean[i]
+            if c in '([{':
+                depth += 1
+            elif c in ')]}':
+                depth -= 1
+                if depth == 0:
+                    args.append((clean[cur_start:i], cur_start))
+                    return args
+            elif c == ',' and depth == 1:
+                args.append((clean[cur_start:i], cur_start))
+                cur_start = i + 1
+            elif c == ';' and depth <= 1:
+                return args
+            i += 1
+        return args
+
     @staticmethod
     def _static_field(body, start):
         """
@@ -1582,6 +1674,7 @@ class Checker:
         self.scene_presence()
         self.unique_women()
         self.untranslated()
+        self.raw_names()
         self.console_key()
         self.orphans()
         self.dead_branches()

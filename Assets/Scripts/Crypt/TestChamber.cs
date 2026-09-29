@@ -177,7 +177,7 @@ namespace Sinbinder.Crypt
             // Конструктор с процессором, а не пустой: пустой существует
             // только у заглушки стенда, и однажды из-за этого не собралась
             // вся ветка. Урок записан в 14-HANDOFF §7.1.
-            warrior.Initialize(new SoulData(Loc.T("Подопытный"), _sin, _moral, 1, _intensity),
+            warrior.Initialize(new SoulData(Loc.N("Подопытный"), _sin, _moral, 1, _intensity),
                                ShellType.Skeleton,
                                new RelationshipSystem(MemoryProcessor.Instance),
                                false, Team.Player);
@@ -237,7 +237,7 @@ namespace Sinbinder.Crypt
             var ally = go.AddComponent<Warrior>();
             // Гнев низкий и мораль благочестивая: раненому важно только
             // быть раненым, спорить за него никто не будет.
-            ally.Initialize(new SoulData(Loc.T("Раненый"), SinType.Wrath, MoralType.Pious, 1, 20f),
+            ally.Initialize(new SoulData(Loc.N("Раненый"), SinType.Wrath, MoralType.Pious, 1, 20f),
                             ShellType.Skeleton,
                             new RelationshipSystem(MemoryProcessor.Instance),
                             false, Team.Player);

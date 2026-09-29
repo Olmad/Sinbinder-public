@@ -87,7 +87,7 @@ namespace Sinbinder.UI
             _then = then;
 
             if (_title != null)
-                _title.text = $"{soul.Name}. {Left(quality)}";
+                _title.text = $"{Loc.Name(soul.Name)}. {Left(quality)}";
 
             Build(soul, quality, shells);
 

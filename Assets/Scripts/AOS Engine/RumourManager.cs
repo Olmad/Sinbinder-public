@@ -64,7 +64,7 @@ namespace Sinbinder.AOS
                 _rumours[key] = rumour;
             }
 
-            rumour.Text = $"{hero.DisplayName} — {DeedName(deed)}";
+            rumour.Text = $"{Loc.Name(hero.DisplayName)} — {DeedName(deed)}";
             rumour.Progress += Mathf.Max(0f, value) * (relationship > 50f ? TrustBonus : 1f);
 
             if (rumour.Progress >= ConfirmAt) rumour.Confirmed = true;

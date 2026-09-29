@@ -33,7 +33,7 @@ namespace Sinbinder.Crypt
         public override string Label => Loc.T("Свободное место");
 
         protected override string Hint
-            => Loc.F("Поставить сюда {0} — нажмите {1}.", CryptHands.Soul?.Name, _key);
+            => Loc.F("Поставить сюда {0} — нажмите {1}.", Loc.Name(CryptHands.Soul?.Name), _key);
 
         protected override void Use()
         {
@@ -54,7 +54,7 @@ namespace Sinbinder.Crypt
             souls.PutBack(new SoulManager.Kept(CryptHands.Soul, CryptHands.Quality));
             CryptHands.Drop();
 
-            Say(Loc.F("{0} — на полке.", name));
+            Say(Loc.F("{0} — на полке.", Loc.Name(name)));
 
             _shelf.Rebuild();
         }
