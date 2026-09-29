@@ -4296,6 +4296,10 @@ msgid "Зал впереди. Алтарь ждёт."
 msgstr "The hall is ahead. The altar awaits."
 
 #: Gameplay/PrologueDirector.cs
+msgid "Устройство у стены ждёт души и тела. Душа — в суме."
+msgstr "The device by the wall is waiting for a soul and a body. The soul is in your satchel."
+
+#: Gameplay/PrologueDirector.cs
 msgid "Отряд выступает."
 msgstr "The squad moves out."
 

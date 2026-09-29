@@ -209,6 +209,23 @@ namespace Sinbinder.Gameplay
                     return;
                 }
 
+                // Шаг игрока: поднять воина (docs/37-DEMO.md §4, шаг 2). Пока
+                // в суме есть душа, а мастерская не подняла никого, эпилог
+                // ждёт — создание воина и есть эта часть демо. Душ нет —
+                // ждать нечего. Мастерская — за выключателем «связывание».
+                if (Crypt.CryptWorkshop.Waiting)
+                {
+                    _sinceCommander = 0f;
+                    _sinceNudge += Time.unscaledDeltaTime;
+                    if (_sinceNudge >= _altarNudge)
+                    {
+                        _sinceNudge = 0f;
+                        Object.FindFirstObjectByType<UI.BattleLogUI>()
+                              ?.Write(Loc.T("Устройство у стены ждёт души и тела. Душа — в суме."));
+                    }
+                    return;
+                }
+
                 _sinceCommander += Time.unscaledDeltaTime;
                 if (_sinceCommander < _endsAfterSeconds) return;
 

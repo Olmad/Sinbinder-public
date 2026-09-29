@@ -37,6 +37,12 @@ namespace Sinbinder.Crypt
         public bool HasSoul => _soul != null;
         public bool HasShell => _hasShell;
 
+        /// <summary>Свежесть души в гнезде — примет ли её какое-нибудь тело.</summary>
+        public SoulQuality Quality => _quality;
+
+        /// <summary>Сколько подняло это устройство. Спрашивает мастерская склепа демо (<see cref="CryptWorkshop"/>).</summary>
+        public int Raised { get; private set; }
+
         /// <summary>Готово ли к рывку рычага — и если нет, то почему.</summary>
         public string NotReady
         {
@@ -131,6 +137,7 @@ namespace Sinbinder.Crypt
 
             var risen = Raising.Rise(_soul, _shell, at, transform.rotation, _relations);
             if (risen == null) return false;
+            Raised++;
 
             Log(Loc.F("{0} поднялся и встал рядом.", Loc.Name(risen.DisplayName)));
 

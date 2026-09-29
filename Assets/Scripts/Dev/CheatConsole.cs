@@ -120,6 +120,7 @@ namespace Sinbinder.Dev
             ["склад"] = c => c.ToggleStore(),
             ["причина"] = c => c.ToggleReason(),
             ["уроки"] = c => c.ToggleLessons(),
+            ["связывание"] = c => c.ToggleWorkshop(),
             // «всё» не набрать: ё на той же клавише, что закрывает консоль.
             ["все"] = c => c.AllOn(),
             ["all"] = c => c.AllOn(),
@@ -222,6 +223,15 @@ namespace Sinbinder.Dev
                 : "Уроки выключены: первую душу объясняет подсказка, как прежде.");
         }
 
+        /// <summary>Выключатель мастерской связывания в склепе демо (<see cref="Crypt.CryptWorkshop"/>).</summary>
+        private void ToggleWorkshop()
+        {
+            Crypt.CryptWorkshop.Switch = !Crypt.CryptWorkshop.Switch;
+            Write(Crypt.CryptWorkshop.Switch
+                ? "Связывание в склепе: мастерская у левой стены; пока в суме душа, эпилог ждёт поднятого."
+                : "Связывание в склепе выключено: склеп как прежде, мастерская только на полигоне.");
+        }
+
         /// <summary>
         /// Все выключатели дня разом — для общего прохода прогона: один проход
         /// со всем вместе быстрее шести поодиночке, а поодиночке включают
@@ -236,7 +246,8 @@ namespace Sinbinder.Dev
             Gameplay.CampLife.Enabled = true;
             Gameplay.TrophyChest.Store = true;
             Gameplay.Lesson.Switch = true;
-            Write("Включено всё: голос, причина, удар, добыча, лагерь, склад, уроки.");
+            Crypt.CryptWorkshop.Switch = true;
+            Write("Включено всё: голос, причина, удар, добыча, лагерь, склад, уроки, связывание.");
         }
 
         private void Help()
@@ -249,7 +260,8 @@ namespace Sinbinder.Dev
             Write("склад — сундук лагеря как склад: взять, сколько унесёте.");
             Write("причина — объяснять отказ тем, без чего приказ был бы исполнен.");
             Write("уроки — уроки стоп-кадром: жатва и обмен вещью.");
-            Write("все — включить все семь разом.");
+            Write("связывание — мастерская в склепе: поднять воина из души набега.");
+            Write("все — включить все восемь разом.");
             Write("помощь — этот список. ~ или Esc — закрыть.");
         }
 

@@ -179,6 +179,16 @@ namespace Sinbinder.Utilets
             CryptGate(new Vector3(0f, 0f, 8f));
             CryptHall();
 
+            // Мастерская связывания (docs/37-DEMO.md §4, шаг 2): автор —
+            // «в самом склепе создание воина». У левой стены, лицом к залу:
+            // полка и стол тел — к стене, место поднятого — к середине.
+            // Полка не засевает чужих душ: здесь связывают собранных в набеге.
+            // Пока за выключателем «связывание» — спрятана (CryptWorkshop).
+            var zone = BindingZone(new Vector3(-8f, 0f, 0f), seed: false);
+            zone.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+            var workshop = new GameObject("Мастерская");
+            Wire(workshop.AddComponent<Sinbinder.Crypt.CryptWorkshop>(), ("_zone", zone));
+
             var squad = new GameObject("Отряд");
             squad.transform.position = new Vector3(0f, 0f, -2f);
             squad.AddComponent<PrologueCampSpawner>();
@@ -295,7 +305,7 @@ namespace Sinbinder.Utilets
         /// не примет, и узнает игрок об этом у гнезда, а не из серой
         /// строки списка.
         /// </summary>
-        private static void BindingZone(Vector3 origin)
+        private static GameObject BindingZone(Vector3 origin, bool seed = true)
         {
             var zone = new GameObject("Связывание");
             zone.transform.position = origin;
@@ -343,7 +353,16 @@ namespace Sinbinder.Utilets
             var jars = new GameObject("Банки");
             jars.transform.SetParent(zone.transform);
             jars.transform.localPosition = new Vector3(-4.8f, 1f, 1.6f);
-            jars.AddComponent<Sinbinder.Crypt.SoulShelf>();
+            var shelfOf = jars.AddComponent<Sinbinder.Crypt.SoulShelf>();
+
+            // Засев — удобство полигона: там никто не умирал. В склепе демо
+            // полка показывает только собранное игроком.
+            if (!seed)
+            {
+                var so = new SerializedObject(shelfOf);
+                so.FindProperty("_seedWhenEmpty").boolValue = false;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             // --- стол с телами ---
             var table = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -370,6 +389,8 @@ namespace Sinbinder.Utilets
                 Plate(stand.transform, CryptHandsName(type), 1.8f);
                 x += 0.9f;
             }
+
+            return zone;
         }
 
         /// <summary>

@@ -169,7 +169,8 @@ namespace Sinbinder.EditorTools
                     Gameplay.CampLife.Enabled = true;
                     Gameplay.TrophyChest.Store = true;
                     Gameplay.Lesson.Switch = true;
-                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад, уроки ===");
+                    Crypt.CryptWorkshop.Switch = true;
+                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад, уроки, связывание ===");
                 }
                 else Write("=== ПРОХОЖДЕНИЕ ===");
             }
@@ -532,6 +533,11 @@ namespace Sinbinder.EditorTools
                      && CampFocus.GroundDistance(SinbinderPlayer.Where,
                                                  Altar().position) <= 3.5f, 5f),
 
+                // Мастерская (выключатель «связывание»): пока в суме душа,
+                // эпилог ждёт поднятого. Без выключателя шаг сделан сразу.
+                S("склеп: мастерская — воин поднят", BindInCrypt,
+                  () => !Crypt.CryptWorkshop.Waiting, 20f),
+
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
 
@@ -547,6 +553,45 @@ namespace Sinbinder.EditorTools
             });
 
             return steps;
+        }
+
+        /// <summary>
+        /// Поднять воина в мастерской склепа — той же дорогой, что игрок:
+        /// душа из сумы в руки, в гнездо; тело со стола — в ложе; рычаг.
+        /// Душа — первая, которую примет хоть одно тело; тело — первое,
+        /// которое её примет, — как игрок понял бы по отказу у рычага.
+        /// </summary>
+        private static void BindInCrypt()
+        {
+            var device = Crypt.CryptWorkshop.Device;
+            if (!Crypt.CryptWorkshop.Waiting || device == null) return;
+
+            if (!device.HasSoul)
+            {
+                if (!Crypt.CryptHands.HasSoul)
+                    for (int i = 0; i < Core.Satchel.Size; i++)
+                    {
+                        var slot = Core.Satchel.At(i);
+                        if (!slot.FullJar || !Crypt.CryptWorkshop.Bindable(slot.Quality)) continue;
+                        Core.Satchel.Take(i);
+                        Crypt.CryptHands.TakeSoul(slot.Soul, slot.Quality);
+                        break;
+                    }
+                device.PutSoul();
+            }
+
+            foreach (Core.ShellType type in Enum.GetValues(typeof(Core.ShellType)))
+            {
+                if (!Core.ShellKinds.Bindable(type)) continue;
+                if (device.HasShell && string.IsNullOrEmpty(device.NotReady)) break;
+                if (device.HasShell) { device.TakeShellBack(); Crypt.CryptHands.Drop(); }
+                if (Crypt.CryptHands.Empty) Crypt.CryptHands.TakeShell(type);
+                device.PutShell();
+            }
+
+            string no = device.NotReady;
+            if (!string.IsNullOrEmpty(no)) Write("  [СВЯЗЫВАНИЕ] не готово: " + no);
+            else if (device.Bind()) Write("  [СВЯЗЫВАНИЕ] воин поднят в склепе");
         }
 
         /// <summary>Нажать «Начать сначала» на эпилоге — её же обработчиком.</summary>
