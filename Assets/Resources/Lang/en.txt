@@ -4460,6 +4460,10 @@ msgid "Устройство у стены ждёт души и тела. Душ�
 msgstr "The device by the wall is waiting for a soul and a body. The soul is in your satchel."
 
 #: Gameplay/PrologueDirector.cs
+msgid "Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."
+msgstr "The crystal ball by the right wall shows the roads. The squad is waiting to be sent."
+
+#: Gameplay/PrologueDirector.cs
 msgid "Отряд выступает."
 msgstr "The squad moves out."
 

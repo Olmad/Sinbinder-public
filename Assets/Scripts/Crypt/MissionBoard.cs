@@ -27,6 +27,9 @@ namespace Sinbinder.Crypt
         /// <summary>Что вышло из последней вылазки. Читает карта.</summary>
         public string LastReport { get; private set; } = "";
 
+        /// <summary>Сколько вылазок ушло с этой доски. Спрашивает склеп демо (<see cref="CryptMap"/>).</summary>
+        public int Sent { get; private set; }
+
         /// <summary>Сколько улучшений склепа уже принесено. Их всего два.</summary>
         public static int Upgrades { get; private set; }
 
@@ -111,6 +114,7 @@ namespace Sinbinder.Crypt
             }
 
             if (away.Count == 0) return Loc.T("Никто не пошёл.");
+            Sent++;
 
             // Развилка решается до боя: она решает, будет ли бой вообще.
             AOS.MissionAction? chosen = mission.Junction == Junction.None

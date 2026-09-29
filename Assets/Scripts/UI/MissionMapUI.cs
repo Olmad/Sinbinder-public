@@ -60,15 +60,30 @@ namespace Sinbinder.UI
             _ball = Object.FindFirstObjectByType<CrystalBall>();
             _board = Object.FindFirstObjectByType<MissionBoard>();
 
+            // Стол в склепе демо спрятан без выключателя «вылазки» (CryptMap):
+            // тогда его нет не по ошибке, и найдём, когда появится.
+            if (Object.FindFirstObjectByType<CryptMap>() != null) return;
+
             if (_ball == null)
                 Debug.LogWarning("[КАРТА] Шара в сцене нет: открывать нечем.");
             if (_board == null)
                 Debug.LogError("[КАРТА] Доски вылазок нет: отправлять некому.");
         }
 
+        private float _lookAgain;
+
         void Update()
         {
             if (_panel == null) return;
+
+            // Карту включили на ходу (консоль «вылазки») — стол появился
+            // после старта. Искать раз в секунду, а не каждый кадр.
+            if ((_ball == null || _board == null) && Time.unscaledTime >= _lookAgain)
+            {
+                _lookAgain = Time.unscaledTime + 1f;
+                if (_ball == null) _ball = Object.FindFirstObjectByType<CrystalBall>();
+                if (_board == null) _board = Object.FindFirstObjectByType<MissionBoard>();
+            }
 
             if (_panel.activeSelf)
             {

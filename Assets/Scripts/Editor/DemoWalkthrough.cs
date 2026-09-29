@@ -170,7 +170,8 @@ namespace Sinbinder.EditorTools
                     Gameplay.TrophyChest.Store = true;
                     Gameplay.Lesson.Switch = true;
                     Crypt.CryptWorkshop.Switch = true;
-                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад, уроки, связывание ===");
+                    Crypt.CryptMap.Switch = true;
+                    Write("=== ПРОХОЖДЕНИЕ СО ВСЕМИ ВЫКЛЮЧАТЕЛЯМИ: голос, причина, удар, добыча, лагерь, склад, уроки, связывание, вылазки ===");
                 }
                 else Write("=== ПРОХОЖДЕНИЕ ===");
             }
@@ -538,6 +539,12 @@ namespace Sinbinder.EditorTools
                 S("склеп: мастерская — воин поднят", BindInCrypt,
                   () => !Crypt.CryptWorkshop.Waiting, 20f),
 
+                // Карта (выключатель «вылазки»): обоз, если хватает людей,
+                // иначе первая точка, на которую хватает. Без выключателя —
+                // сделан сразу.
+                S("склеп: вылазка отправлена", SendFromCrypt,
+                  () => !Crypt.CryptMap.Waiting, 20f),
+
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
 
@@ -592,6 +599,32 @@ namespace Sinbinder.EditorTools
             string no = device.NotReady;
             if (!string.IsNullOrEmpty(no)) Write("  [СВЯЗЫВАНИЕ] не готово: " + no);
             else if (device.Bind()) Write("  [СВЯЗЫВАНИЕ] воин поднят в склепе");
+        }
+
+        /// <summary>
+        /// Отправить вылазку с карты склепа — тем же вызовом, что кнопка
+        /// карты. Обоз первым: ради него карта и встала в склеп.
+        /// </summary>
+        private static void SendFromCrypt()
+        {
+            var board = Crypt.CryptMap.Board;
+            if (!Crypt.CryptMap.Waiting || board == null) return;
+
+            var missions = new List<Crypt.Mission>(board.Missions);
+            missions.Sort((a, b) => (b.Junction == Crypt.Junction.Caravan).CompareTo(a.Junction == Crypt.Junction.Caravan));
+
+            foreach (var mission in missions)
+            {
+                if (!board.EnoughPeople(mission)) continue;
+                foreach (var m in SquadRoster.Members)
+                {
+                    if (!string.IsNullOrEmpty(board.WhyNot(m, mission))) continue;
+                    Write("  [ВЫЛАЗКА] " + mission.Name + ", старший — " + m.Name + ": "
+                        + board.Send(mission, m.Name, null));
+                    return;
+                }
+            }
+            Write("  [ВЫЛАЗКА] послать не на что: людей не хватает ни на одну точку");
         }
 
         /// <summary>Нажать «Начать сначала» на эпилоге — её же обработчиком.</summary>

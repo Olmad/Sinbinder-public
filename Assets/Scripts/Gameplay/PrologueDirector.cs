@@ -226,6 +226,22 @@ namespace Sinbinder.Gameplay
                     return;
                 }
 
+                // Шаг игрока: выбрать дорогу (docs/39-PLACES.md §2). Пока
+                // с карты у правой стены не ушло ни одной вылазки, а людей
+                // хватает, эпилог ждёт. Карта — за выключателем «вылазки».
+                if (Crypt.CryptMap.Waiting)
+                {
+                    _sinceCommander = 0f;
+                    _sinceNudge += Time.unscaledDeltaTime;
+                    if (_sinceNudge >= _altarNudge)
+                    {
+                        _sinceNudge = 0f;
+                        Object.FindFirstObjectByType<UI.BattleLogUI>()
+                              ?.Write(Loc.T("Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."));
+                    }
+                    return;
+                }
+
                 _sinceCommander += Time.unscaledDeltaTime;
                 if (_sinceCommander < _endsAfterSeconds) return;
 

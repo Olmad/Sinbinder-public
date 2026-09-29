@@ -189,6 +189,14 @@ namespace Sinbinder.Utilets
             var workshop = new GameObject("Мастерская");
             Wire(workshop.AddComponent<Sinbinder.Crypt.CryptWorkshop>(), ("_zone", zone));
 
+            // Карта вылазок (docs/39-PLACES.md §2): у правой стены, напротив
+            // мастерской, — тот же стол с шаром, что на полигоне. Автор:
+            // «было бы хорошо, если бы была миссия с караваном» — обоз
+            // на ней есть. Пока за выключателем «вылазки» — спрятана (CryptMap).
+            var map = MapZone(new Vector3(8f, 0f, 0f), canvas);
+            var mapKeeper = new GameObject("Карта");
+            Wire(mapKeeper.AddComponent<Sinbinder.Crypt.CryptMap>(), ("_zone", map));
+
             var squad = new GameObject("Отряд");
             squad.transform.position = new Vector3(0f, 0f, -2f);
             squad.AddComponent<PrologueCampSpawner>();
@@ -403,17 +411,23 @@ namespace Sinbinder.Utilets
         /// Карта открывается подходом к шару, как и совет: подойти
         /// значит дойти ногами.
         /// </summary>
-        private static void MapZone(Vector3 origin, Transform canvas)
+        private static GameObject MapZone(Vector3 origin, Transform canvas)
         {
-            CouncilTable(origin, Sinbinder.Core.Loc.N("Карта вылазок"));
+            var zone = new GameObject("Карта вылазок");
+            zone.transform.position = origin;
+
+            var table = CouncilTable(origin, Sinbinder.Core.Loc.N("Карта вылазок"));
+            table.transform.SetParent(zone.transform, true);
 
             // Доска вылазок — счёт, а не предмет: ей незачем стоять
             // на видном месте, но она обязана быть в сцене.
             var board = new GameObject("Вылазки");
             board.transform.position = origin;
+            board.transform.SetParent(zone.transform, true);
             board.AddComponent<Sinbinder.Crypt.MissionBoard>();
 
             BuildMissionMap(canvas);
+            return zone;
         }
 
         /// <summary>
@@ -1707,7 +1721,7 @@ namespace Sinbinder.Utilets
         /// шар открывает совет (F), в склепе и на полигоне — карту вылазок,
         /// подходом. Одна табличка на оба стола врала в одном из них.
         /// </summary>
-        private static void CouncilTable(Vector3 position, string plate = null)
+        private static GameObject CouncilTable(Vector3 position, string plate = null)
         {
             var table = new GameObject("Стол совета");
             table.transform.position = position;
@@ -1749,6 +1763,7 @@ namespace Sinbinder.Utilets
             light.range = 7f;
 
             ball.AddComponent<CrystalBall>();
+            return table;
         }
 
         /// <summary>
