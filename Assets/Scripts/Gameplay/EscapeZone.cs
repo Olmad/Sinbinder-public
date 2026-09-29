@@ -155,17 +155,6 @@ namespace Sinbinder.Gameplay
             if (Active == this) Active = null;
         }
 
-        /// <summary>Успел ли этот воин к краю.</summary>
-        public bool Holds(Warrior warrior)
-            => warrior != null && _inside.Contains(warrior);
-
-        /// <summary>Те, кто пойдёт дальше.</summary>
-        public IEnumerable<Warrior> Escaped()
-        {
-            foreach (var w in _inside)
-                if (w != null && !w.IsDead) yield return w;
-        }
-
         void Update()
         {
             if (Departing) return;

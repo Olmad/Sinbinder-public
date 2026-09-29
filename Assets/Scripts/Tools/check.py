@@ -1428,7 +1428,14 @@ class Checker:
         # Сколько раз каждое слово встречается во всём коде — один раз,
         # а не поиском по всему коду на каждый метод (было пятнадцать секунд).
         from collections import Counter
-        uses = Counter(_re.findall(r'\w+', blob))
+        # Дырки интерполяции — тоже код: $"{Aftermath.Judged(…)}". strip()
+        # вырезает строку целиком, и метод, который зовут только оттуда,
+        # числился сиротой (MissionCatalog.Danger, Aftermath.Judged).
+        holes = []
+        for text in self.src.values():
+            for m in _re.finditer(r'(?:\$@|@\$|\$)"((?:[^"\\\n]|\\.)*)"', text):
+                holes.extend(_re.findall(r'\{([^{}]+)\}', m.group(1)))
+        uses = Counter(_re.findall(r'\w+', blob + '\n' + '\n'.join(holes)))
 
         # Сцены и префабы зовут метод строкой: m_MethodName: Имя.
         wired = set()

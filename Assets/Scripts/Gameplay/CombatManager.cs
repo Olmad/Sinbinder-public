@@ -130,21 +130,6 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>
-        /// Раздать добычу отряду: грех решает, кто что понесёт
-        /// (<see cref="LootCarrySystem.DistributeLoot"/>).
-        ///
-        /// Конец боя зовёт не это, а <see cref="LootChain.Share"/>: та берёт
-        /// только тела врагов и доводит раздачу до рук (14-HANDOFF §83).
-        ///
-        /// Здесь же стояла жатва душ прямо на поле, и только воинами
-        /// с грехом Гордыня или Уныние. Снята вместе со второй системой
-        /// душ (§43): души в этой игре жнёт Греховод, а не отряд,
-        /// и жнёт он их через <see cref="SoulManager"/>.
-        /// </summary>
-        public CarriedLoot CollectLootWithSquad(List<Warrior> squad)
-            => LootCarrySystem.DistributeLoot(squad, _bodiesOnField);
-
         public int GetAlivePlayerCount() { _playerUnits.RemoveAll(u => u == null || u.IsDead); return _playerUnits.Count; }
         public int GetAliveEnemyCount() { _enemyUnits.RemoveAll(u => u == null || u.IsDead); return _enemyUnits.Count; }
         public List<Damageable> GetAliveAllies() => new List<Damageable>(_playerUnits);

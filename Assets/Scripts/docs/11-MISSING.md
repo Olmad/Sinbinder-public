@@ -352,6 +352,11 @@
 
 ### 7.2 Не гапы: живой путь делает то же самое
 
+> **29 сентября — сняты** (`14-HANDOFF.md` §120): `EscapeZone.Holds`,
+> `Escaped`, `AutoAttack.SetTarget`, `ClearTarget`, `MissionDatabase`
+> целиком; из §7.4 — `CollectLootWithSquad` (конец боя зовёт
+> `LootChain.Share`). Остаток таблицы — `HasCoreMemory` — зарезервирован.
+
 | Сирота | Кто делает работу |
 |---|---|
 | `EscapeZone.Holds`, `Escaped` | отбор идёт через статические `SelectionMade` и `EscapedNames`, их читает `PrologueCampSpawner` |

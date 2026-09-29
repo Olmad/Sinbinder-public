@@ -302,16 +302,6 @@ namespace Sinbinder.Core
             return descriptions[(int)sin][tier + 2];
         }
 
-        public string GetFullDescription()
-        {
-            string desc = Loc.F("Душа: {0}\n", Name);
-            desc += Loc.F("Грех: {0}\n", GetSinName());
-            desc += Loc.F("Степень: {0}\n", GetIntensityDescription());
-            desc += Loc.F("Мораль: {0}\n", GetMoralName());
-            desc += Loc.F("Уровень: {0}", Level);
-            return desc;
-        }
-
         /// <summary>
         /// Все семь спектров словами — для экрана сборки и осмотра души.
         /// Показываются только выраженные: пустые строки читателю не нужны.

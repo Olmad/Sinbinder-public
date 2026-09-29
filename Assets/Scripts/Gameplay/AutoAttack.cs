@@ -67,8 +67,6 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        public void SetTarget(Damageable target) { _currentTarget = target; _isPlayerControlled = true; }
-        public void ClearTarget() { _currentTarget = null; _isPlayerControlled = false; }
 
         private void Attack(Damageable target)
         {
