@@ -907,6 +907,9 @@ namespace Sinbinder.EditorTools
                 return;
             }
 
+            // Вселение: та же цепочка, что шаг склепа, — сума, гнездо, тело, рычаг.
+            if (Lesson.Now == LessonKind.Raising) { BindInCrypt(); return; }
+
             // Обмен: поговорить вблизи и закрыть экран — как игрок, F и Esc.
             if (UI.GearPanel.Open) UI.GearPanel.Dismiss();
             else if (Lesson.Partner != null) UI.GearPanel.TalkTo(Lesson.Partner);

@@ -1991,6 +1991,12 @@ namespace Sinbinder.Tests
             var nudge = leash.Rein(far, new Vector3(0f, 0f, 0.1f));
             Check(nudge.magnitude < 0.2f, "перенесённого за кольцо кольцо дёрнуло к себе рывком");
 
+            // Мастерская шире: тело со стола у стены должно быть досягаемо изнутри.
+            var wide = new Lesson.Leash(centre, centre + new Vector3(20f, 0f, 0f), Lesson.WorkshopInner);
+            wide.Tighten(centre);
+            Check(Mathf.Abs(wide.Radius - Lesson.WorkshopInner) < 0.001f && Lesson.WorkshopInner > Lesson.Inner,
+                  "кольцо урока вселения сжалось уже мастерской — стол тел за краем");
+
             // ── мир стоит, а игра — нет ──
             var pause = NewObject("Пауза урока").AddComponent<GamePauseController>();
             float was = Time.timeScale;

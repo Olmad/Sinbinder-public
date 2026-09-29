@@ -4207,6 +4207,38 @@ msgstr "Click an item in the bag to hand it over. Whether it's taken is the warr
 msgid "{0} — смотреть глазами Греховода."
 msgstr "{0} — see through the Sinbinder's eyes."
 
+#: Gameplay/Lesson.cs
+msgid "F у ложа тела — забрать тело и взять со стола другое."
+msgstr "F at the body cradle — take the body back and pick another from the table."
+
+#: Gameplay/Lesson.cs
+msgid "F у рычага связывания — поднять."
+msgstr "F at the binding lever — raise."
+
+#: Gameplay/Lesson.cs
+msgid "Подойдите к гнезду души на устройстве и нажмите F — вложить."
+msgstr "Walk up to the soul socket on the device and press F to place the soul."
+
+#: Gameplay/Lesson.cs
+msgid "Подойдите к ложу тела на устройстве и нажмите F — положить."
+msgstr "Walk up to the body cradle on the device and press F to lay the body down."
+
+#: Gameplay/Lesson.cs
+msgid "R — душа из сумы в руки. Tab — выбрать другую банку."
+msgstr "R — take a soul from the satchel into your hands. Tab — pick another jar."
+
+#: Gameplay/Lesson.cs
+msgid "Душа встанет в теле, которое вы ей дадите."
+msgstr "The soul will rise in the body you give it."
+
+#: Gameplay/Lesson.cs
+msgid "Тела — на столе у стены. Подойдите и нажмите F — взять."
+msgstr "The bodies are on the table by the wall. Walk up and press F to take one."
+
+#: Gameplay/Lesson.cs
+msgid "Тело тянет душу к своему греху — прочтите табличку."
+msgstr "A body pulls the soul toward its own sin — read the plate."
+
 #: Gameplay/LootChain.cs
 msgid " Прежнее — {0} — уходит в мешок Греховода."
 msgstr " The old one — {0} — goes into the Sinbinder's bag."

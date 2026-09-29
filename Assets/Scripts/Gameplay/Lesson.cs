@@ -17,6 +17,13 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Обмен вещью: F у своего воина. Первый раз после сундука.</summary>
         Exchange,
+
+        /// <summary>
+        /// Вселение: душа из сумы — в гнездо, тело со стола — в ложе, рычаг.
+        /// Мастерская склепа демо (<see cref="Crypt.CryptWorkshop"/>), первый раз,
+        /// когда поднять есть из кого. Отдельный урок — ответ автора 28.09.
+        /// </summary>
+        Raising,
     }
 
     /// <summary>
@@ -64,6 +71,13 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Урок обмена: свой воин ближе этого, м.</summary>
         private const float Invite = 6f;
+
+        /// <summary>
+        /// Кольцо урока вселения у цели, м. Шире обычного: мастерская —
+        /// устройство, полка и стол тел вдоль стены, — и тело со стола
+        /// должно быть досягаемо изнутри кольца.
+        /// </summary>
+        public const float WorkshopInner = 5.5f;
 
         private static readonly Color SoulColor = new(0.66f, 0.82f, 1f, 0.75f);
         private static readonly Color WarriorColor = new(0.96f, 0.86f, 0.56f, 0.7f);
@@ -165,10 +179,14 @@ namespace Sinbinder.Gameplay
             public Vector3 Center { get; }
             public float Radius { get; private set; }
 
-            public Leash(Vector3 center, Vector3 hero)
+            /// <summary>Радиус у цели: ниже него кольцо не сжимается.</summary>
+            public float Floor { get; }
+
+            public Leash(Vector3 center, Vector3 hero, float floor = Inner)
             {
                 Center = center;
-                Radius = Mathf.Max(Inner, Flat(hero) + Slack);
+                Floor = floor;
+                Radius = Mathf.Max(Floor, Flat(hero) + Slack);
             }
 
             /// <summary>Расстояние до середины по земле.</summary>
@@ -204,7 +222,7 @@ namespace Sinbinder.Gameplay
 
             /// <summary>Подтянуть край за Греховодом. Назад кольцо не расходится.</summary>
             public void Tighten(Vector3 at)
-                => Radius = Mathf.Max(Inner, Mathf.Min(Radius, Flat(at) + Slack));
+                => Radius = Mathf.Max(Floor, Mathf.Min(Radius, Flat(at) + Slack));
         }
 
         /// <summary>
@@ -237,6 +255,7 @@ namespace Sinbinder.Gameplay
         private Leash _leash;
         private FadingSoul _soul;
         private Warrior _partner;
+        private Crypt.BindingDevice _device;
         private bool _talked;
 
         private readonly List<Vector3> _road = new();
@@ -292,6 +311,7 @@ namespace Sinbinder.Gameplay
 
             if (!_given.Contains(LessonKind.Harvest)) TryHarvest();
             if (!_now.HasValue && !_given.Contains(LessonKind.Exchange)) TryExchange();
+            if (!_now.HasValue && !_given.Contains(LessonKind.Raising)) TryRaising();
         }
 
         /// <summary>
@@ -376,6 +396,22 @@ namespace Sinbinder.Gameplay
             Begin(LessonKind.Exchange, best.transform.position);
         }
 
+        /// <summary>
+        /// Вселение: мастерская склепа открыта и ждёт — в суме есть душа,
+        /// которую примет хоть одно тело (<see cref="Crypt.CryptWorkshop.Waiting"/>).
+        /// Цепочка длинная — пять шагов, — и без урока игрок видит стол
+        /// с телами и не знает, с какого конца браться.
+        /// </summary>
+        private void TryRaising()
+        {
+            var device = Crypt.CryptWorkshop.Device;
+            if (!Crypt.CryptWorkshop.Waiting || device == null) return;
+            if (!Reachable(device.transform.position)) return;
+
+            _device = device;
+            Begin(LessonKind.Raising, device.transform.position, WorkshopInner);
+        }
+
         /// <summary>Дойдёт ли Греховод ногами. Урок без дороги — ловушка.</summary>
         private static bool Reachable(Vector3 point)
         {
@@ -385,7 +421,7 @@ namespace Sinbinder.Gameplay
                 && path.status == NavMeshPathStatus.PathComplete;
         }
 
-        private void Begin(LessonKind kind, Vector3 centre)
+        private void Begin(LessonKind kind, Vector3 centre, float floor = Inner)
         {
             var hero = SinbinderPlayer.Instance;
 
@@ -393,7 +429,7 @@ namespace Sinbinder.Gameplay
             // прерванный сменой сцены, не должен начинаться снова и снова.
             _given.Add(kind);
             _now = kind;
-            _leash = new Leash(centre, hero.transform.position);
+            _leash = new Leash(centre, hero.transform.position, floor);
             _road.Clear();
             _walking = false;
 
@@ -416,7 +452,7 @@ namespace Sinbinder.Gameplay
 
             GamePauseController.Instance.Hold(true);
 
-            ShowRing(kind == LessonKind.Harvest ? SoulColor : WarriorColor);
+            ShowRing(kind == LessonKind.Exchange ? WarriorColor : SoulColor);
             ShowPlate(true);
             Debug.Log("[УРОК] " + kind + ": мир стоит, кольцо по Греховоду.");
         }
@@ -431,13 +467,23 @@ namespace Sinbinder.Gameplay
             // значит остановить игру насовсем.
             if (!Allowed || hero == null || hero.IsDead
                 || (_now == LessonKind.Exchange && (_partner == null || _partner.IsDead || RaidEvent.Running))
-                || (_now == LessonKind.Harvest && !SoulStillThere()))
+                || (_now == LessonKind.Harvest && !SoulStillThere())
+                || (_now == LessonKind.Raising && _device == null))
             {
                 End();
                 return;
             }
 
             if (_now == LessonKind.Exchange && Exchanged()) { End(); return; }
+
+            // Поднял — выучил. И страховка: поднимать стало не из кого
+            // (выключили мастерскую, душу вернули на полку, где её не примет
+            // ни одно тело) — урок, ждущий невозможного, остановил бы игру.
+            if (_now == LessonKind.Raising && (_device.Raised > 0 || !Crypt.CryptWorkshop.Waiting))
+            {
+                End();
+                return;
+            }
 
             // Панель поверх урока — руки у неё: ни шага, ни плашки поверх экрана.
             if (Paused) { ShowPlate(false); return; }
@@ -474,6 +520,7 @@ namespace Sinbinder.Gameplay
             _now = null;
             _leash = null;
             _partner = null;
+            _device = null;
             _road.Clear();
             _walking = false;
 
@@ -647,6 +694,8 @@ namespace Sinbinder.Gameplay
                 return ("E", Loc.T("Подойдите к душе и нажмите E — она ляжет в пустую банку.")
                            + "\n" + Loc.T("Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."));
 
+            if (_now == LessonKind.Raising) return RaisingStep();
+
             // Обмен — только от первого лица, вблизи и глядя на воина.
             // Сверху плашка сперва говорит, как посмотреть его глазами.
             var view = Object.FindFirstObjectByType<RTS_Camera>();
@@ -659,6 +708,41 @@ namespace Sinbinder.Gameplay
                         Loc.F("{0} — смотреть глазами Греховода.", view.SwitchKey) + "\n" + approach);
 
             return ("F", approach + "\n" + give);
+        }
+
+        /// <summary>
+        /// Вселение — пять шагов, и плашка говорит только нынешний: пять
+        /// строк разом — это инструкция, а не урок. Шаг читается по тому,
+        /// что лежит в руках и в устройстве, — сделал шаг, плашка сменилась.
+        /// </summary>
+        private (string key, string words) RaisingStep()
+        {
+            var d = _device;
+
+            if (d.HasSoul && d.HasShell)
+            {
+                // Всё на месте, но устройство отказывает — сказать почему
+                // (истлевшая в тяжёлом теле, голем без оков) и что делать.
+                string no = d.NotReady;
+                if (!string.IsNullOrEmpty(no))
+                    return ("F", no + "\n" + Loc.T("F у ложа тела — забрать тело и взять со стола другое."));
+
+                return ("F", Loc.T("F у рычага связывания — поднять.")
+                           + "\n" + d.Foretell());
+            }
+
+            if (Crypt.CryptHands.HasSoul)
+                return ("F", Loc.T("Подойдите к гнезду души на устройстве и нажмите F — вложить."));
+
+            if (Crypt.CryptHands.HasShell)
+                return ("F", Loc.T("Подойдите к ложу тела на устройстве и нажмите F — положить."));
+
+            if (!d.HasSoul)
+                return ("R", Loc.T("R — душа из сумы в руки. Tab — выбрать другую банку.")
+                           + "\n" + Loc.T("Душа встанет в теле, которое вы ей дадите."));
+
+            return ("F", Loc.T("Тела — на столе у стены. Подойдите и нажмите F — взять.")
+                       + "\n" + Loc.T("Тело тянет душу к своему греху — прочтите табличку."));
         }
 
         private void BuildPlate()
