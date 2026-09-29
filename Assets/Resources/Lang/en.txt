@@ -2228,6 +2228,10 @@ msgid "Видел? Дали мне. Не тебе — мне."
 msgstr "See that? They gave it to me. Not you — me."
 
 #: Dialogue/CampLines.cs
+msgid "Видела? Дали мне. Не тебе — мне."
+msgstr "See that? They gave it to me. Not you — me."
+
+#: Dialogue/CampLines.cs
 msgid "Моё теперь. Даже не смотри."
 msgstr "Mine now. Don't even look."
 
@@ -2236,7 +2240,15 @@ msgid "Дали вещь. Не просил, а несу."
 msgstr "They gave me a thing. Didn't ask for it, but I carry it."
 
 #: Dialogue/CampLines.cs
+msgid "Дали вещь. Не просила, а несу."
+msgstr "They gave me a thing. Didn't ask for it, but I carry it."
+
+#: Dialogue/CampLines.cs
 msgid "Слышишь, звенит? Своё береги сам."
+msgstr "Hear that jingle? Guard your own."
+
+#: Dialogue/CampLines.cs
+msgid "Слышишь, звенит? Своё береги сама."
 msgstr "Hear that jingle? Guard your own."
 
 #: Dialogue/CampLines.cs
@@ -2340,6 +2352,10 @@ msgid "Значит, не заслужил держать."
 msgstr "Then you didn't deserve to keep it."
 
 #: Dialogue/CampLines.cs
+msgid "Значит, не заслужила держать."
+msgstr "Then you didn't deserve to keep it."
+
+#: Dialogue/CampLines.cs
 msgid "Меньше нести."
 msgstr "Less to carry."
 
@@ -2368,6 +2384,10 @@ msgid "Столько, чтоб ты не спрашивал."
 msgstr "Enough that you'd stop asking."
 
 #: Dialogue/CampLines.cs
+msgid "Столько, чтоб ты не спрашивала."
+msgstr "Enough that you'd stop asking."
+
+#: Dialogue/CampLines.cs
 msgid "Убегут — если сяду."
 msgstr "They will — if I sit."
 
@@ -2381,6 +2401,10 @@ msgstr "The chest isn't going anywhere. Neither am I."
 
 #: Dialogue/CampLines.cs
 msgid "Если что — сам проснусь. Может быть."
+msgstr "If anything happens, I'll wake up myself. Maybe."
+
+#: Dialogue/CampLines.cs
+msgid "Если что — сама проснусь. Может быть."
 msgstr "If anything happens, I'll wake up myself. Maybe."
 
 #: Dialogue/CampLines.cs

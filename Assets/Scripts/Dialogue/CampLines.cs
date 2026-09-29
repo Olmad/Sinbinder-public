@@ -69,12 +69,13 @@ namespace Sinbinder.Dialogue
             if (Remembers(a, "SinbinderTookFromMe")) return Loc.T("Он забрал моё. Запомни, как это бывает.");
             if (Remembers(a, "SinbinderGaveMe"))
             {
-                if (sin == SinType.Pride) return Loc.T("Видел? Дали мне. Не тебе — мне.");
+                if (sin == SinType.Pride) return Grammar.Pick(b.Gender, Loc.T("Видел? Дали мне. Не тебе — мне."), Loc.T("Видела? Дали мне. Не тебе — мне."));
                 if (sin == SinType.Greed) return Loc.T("Моё теперь. Даже не смотри.");
-                return Loc.T("Дали вещь. Не просил, а несу.");
+                return Grammar.Pick(a.Gender, Loc.T("Дали вещь. Не просил, а несу."), Loc.T("Дали вещь. Не просила, а несу."));
             }
 
-            if (a.PocketGold > 0 && sin == SinType.Greed) return Loc.T("Слышишь, звенит? Своё береги сам.");
+            if (a.PocketGold > 0 && sin == SinType.Greed)
+                return Grammar.Pick(b.Gender, Loc.T("Слышишь, звенит? Своё береги сам."), Loc.T("Слышишь, звенит? Своё береги сама."));
 
             string commander = SquadRoster.CommanderName;
             if (!string.IsNullOrEmpty(commander))
@@ -162,7 +163,7 @@ namespace Sinbinder.Dialogue
             if (Remembers(a, "SinbinderTookFromMe"))
             {
                 if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
-                if (sin == SinType.Pride) return Loc.T("Значит, не заслужил держать.");
+                if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Значит, не заслужил держать."), Loc.T("Значит, не заслужила держать."));
                 return Loc.T("Меньше нести.");
             }
             if (Brother(a) && Brother(b)) return Loc.T("А где ж мне ещё.");
@@ -177,13 +178,13 @@ namespace Sinbinder.Dialogue
 
                 case SinType.Greed:
                     if (asks == SinType.Pride) return Loc.T("Зато монеты не хвастают.");
-                    if (asks == SinType.Greed) return Loc.T("Столько, чтоб ты не спрашивал.");
+                    if (asks == SinType.Greed) return Grammar.Pick(a.Gender, Loc.T("Столько, чтоб ты не спрашивал."), Loc.T("Столько, чтоб ты не спрашивала."));
                     return Loc.T("Убегут — если сяду.");
 
                 case SinType.Sloth:
                     if (asks == SinType.Pride) return Loc.T("Стой, раз нравится. Я полежу.");
                     if (asks == SinType.Greed) return Loc.T("Сундук не денется. И я тоже.");
-                    return Loc.T("Если что — сам проснусь. Может быть.");
+                    return Grammar.Pick(b.Gender, Loc.T("Если что — сам проснусь. Может быть."), Loc.T("Если что — сама проснусь. Может быть."));
             }
 
             return Loc.T("Пока тихо.");
