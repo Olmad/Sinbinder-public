@@ -1061,7 +1061,14 @@ class Checker:
             as_type = re.compile(
                 r'(?:^|[\s(<,\[])({name})(?:\s+\w|\s*[<>\)\.,\[]|\s*\{{)')
 
+            # Имя, которого в файле нет словом, не найдёт ни один из четырёх
+            # поисков ниже: все они требуют его целиком. Отсев по словам
+            # файла — до регулярок: без него правило шло полминуты.
+            words = set(re.findall(r'\w+', body))
+
             for t, nss in self.owner.items():
+                if t not in words:
+                    continue
                 if t in declared_here or not nss or any(n in visible for n in nss):
                     continue
                 pat = re.compile(r'(?<![\w.])' + re.escape(t) + r'\s+(?:\w+\s*[;=,)]|\w+\s*\()')
@@ -1076,6 +1083,7 @@ class Checker:
     def string_for_enum(self):
         for p, s in self.src.items():
             body = strip(s)
+            declared_in_file = set(RE_ANY_TYPE_DECL.findall(s))
             for m in RE_CALL.finditer(s):
                 name, args = m.group(1), m.group(2)
                 if name not in self.methods or '"' not in args:
@@ -1084,14 +1092,17 @@ class Checker:
                 # Вызов вида Тип.Метод(...) сверяем только с методами
                 # этого типа. Иначе тёзка из чужого класса даёт ложное
                 # срабатывание — и оно тем вреднее, что выглядит настоящим.
+                # Хвост строки перед вызовом, а не весь файл до него: поиск
+                # с якорем в конце по всему началу файла на каждый вызов
+                # делал правило квадратичным.
                 q = re.search(r'(\w+)\s*\.\s*' + re.escape(name) + r'\s*\($',
-                              s[:m.end(1) + 1])
+                              s[max(0, m.end(1) + 1 - 300):m.end(1) + 1])
                 qualifier = q.group(1) if q else None
 
                 # Вызов без хозяина — это метод своего же класса. Сверять
                 # его с тёзкой из другого файла нельзя: компилятор туда
                 # даже не смотрит, а проверка выдавала ошибку на ровном месте.
-                here = set(RE_ANY_TYPE_DECL.findall(s))
+                here = declared_in_file
                 signatures = self.methods[name]
                 if not qualifier:
                     mine = [x for x in signatures if set(x[1]) & here]
@@ -1414,6 +1425,11 @@ class Checker:
         bodies = {p: strip(s) for p, s in self.src.items()}
         blob = '\n'.join(bodies.values())
 
+        # Сколько раз каждое слово встречается во всём коде — один раз,
+        # а не поиском по всему коду на каждый метод (было пятнадцать секунд).
+        from collections import Counter
+        uses = Counter(_re.findall(r'\w+', blob))
+
         # Сцены и префабы зовут метод строкой: m_MethodName: Имя.
         wired = set()
         for root, _dirs, names in os.walk('.'):
@@ -1457,7 +1473,7 @@ class Checker:
                 if any(('[' + mark) in head for mark in self.CALLED_BY_MARK):
                     continue
 
-                if len(_re.findall(r'\b' + _re.escape(name) + r'\b', blob)) > 1:
+                if uses[name] > 1:
                     continue
 
                 self.orphan_list.append((p, line_of(body, m.start()), name))
