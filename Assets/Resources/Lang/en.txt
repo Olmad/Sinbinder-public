@@ -1576,26 +1576,6 @@ msgid "Неутомим"
 msgstr "Tireless"
 
 #: Core/Soul/SoulData.cs
-msgid "Душа: {0}\n"
-msgstr "Soul: {0}\n"
-
-#: Core/Soul/SoulData.cs Gameplay/Warrior.cs
-msgid "Грех: {0}\n"
-msgstr "Sin: {0}\n"
-
-#: Core/Soul/SoulData.cs
-msgid "Степень: {0}\n"
-msgstr "Degree: {0}\n"
-
-#: Core/Soul/SoulData.cs Gameplay/Warrior.cs
-msgid "Мораль: {0}\n"
-msgstr "Morals: {0}\n"
-
-#: Core/Soul/SoulData.cs
-msgid "Уровень: {0}"
-msgstr "Level: {0}"
-
-#: Core/Soul/SoulData.cs
 msgid "Ничем не выделяется."
 msgstr "Nothing stands out."
 
@@ -1859,9 +1839,17 @@ msgstr "The goods were left behind. They brought back people — alive, bound an
 msgid "На дороге что-то случилось, и рассказывать об этом не стали."
 msgstr "Something happened on the road, and no one would talk about it."
 
+#: Crypt/MissionBoard.cs
+msgid "В пути с другим отрядом."
+msgstr "On the road with another party."
+
 #: Crypt/MissionBoard.cs UI/MissionMapUI.cs
 msgid "Столько людей не наберётся."
 msgstr "There aren't that many people."
+
+#: Crypt/MissionBoard.cs
+msgid "{0} уже в пути."
+msgstr "{0} is already on the road."
 
 #: Crypt/MissionBoard.cs
 msgid "Никто не пошёл."
@@ -3847,6 +3835,38 @@ msgstr "Ready. Tell me what to do."
 msgid "Готова. Скажите, что делать."
 msgstr "Ready. Tell me what to do."
 
+#: Editor/DemoSceneBuilder.cs
+msgid "Кто-то уже занял этот склеп."
+msgstr "Someone has already taken this crypt."
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Пустой трон. Алтарь. Замурованный гроб в нише."
+msgstr "An empty throne. An altar. A walled-up coffin in a niche."
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Полигон. Поставьте условие — и повторите."
+msgstr "The proving ground. Set a condition — and repeat."
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Карта вылазок"
+msgstr "Sortie map"
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Пустое гнездо"
+msgstr "Empty socket"
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Военный совет — F"
+msgstr "War council — F"
+
+#: Editor/DemoSceneBuilder.cs UI/DemoEndUI.cs UI/GameOverUI.cs
+msgid "Начать сначала"
+msgstr "Start over"
+
+#: Editor/DemoSceneBuilder.cs UI/DemoEndUI.cs UI/GameOverUI.cs UI/PauseMenu.cs
+msgid "Выйти из игры"
+msgstr "Quit the game"
+
 #: Gameplay/BodyWorth.cs
 msgid "Чужой клинок"
 msgstr "A stranger's blade"
@@ -4919,50 +4939,6 @@ msgstr "Nowhere to put it."
 msgid "Из сундука — в мешок Греховода: {0}."
 msgstr "From the chest into the Sinbinder's bag: {0}."
 
-#: Gameplay/Warrior.cs
-msgid "Оболочка: {0}\n"
-msgstr "Shell: {0}\n"
-
-#: Gameplay/Warrior.cs
-msgid "Характер: {0}\n"
-msgstr "Character: {0}\n"
-
-#: Gameplay/Warrior.cs
-msgid "Роль: {0}\n"
-msgstr "Role: {0}\n"
-
-#: Gameplay/Warrior.cs
-msgid "Командир"
-msgstr "Commander"
-
-#: Gameplay/Warrior.cs
-msgid "Рядовой"
-msgstr "Rank and file"
-
-#: Gameplay/Warrior.cs
-msgid "Команда: {0}\n"
-msgstr "Team: {0}\n"
-
-#: Gameplay/Warrior.cs
-msgid "Верность: Предан вам\n"
-msgstr "Loyalty: Loyal to you\n"
-
-#: Gameplay/Warrior.cs
-msgid "Верность: Готов предать\n"
-msgstr "Loyalty: Ready to betray\n"
-
-#: Gameplay/Warrior.cs
-msgid "Верность: Нейтральна\n"
-msgstr "Loyalty: Indifferent\n"
-
-#: Gameplay/Warrior.cs
-msgid "Не получал плату: {0} миссий\n"
-msgstr "Unpaid: {0} missions\n"
-
-#: Gameplay/Warrior.cs
-msgid "Память: Дремлет...\n"
-msgstr "Memory: Dormant...\n"
-
 #: Inventory/TrophyCatalog.cs
 msgid "Кольчужный ворот"
 msgstr "Mail collar"
@@ -5222,14 +5198,6 @@ msgstr "Exit"
 #: UI/GameOverUI.cs
 msgid "С начала доли"
 msgstr "Restart the act"
-
-#: UI/GameOverUI.cs
-msgid "Начать сначала"
-msgstr "Start over"
-
-#: UI/GameOverUI.cs UI/PauseMenu.cs
-msgid "Выйти из игры"
-msgstr "Quit the game"
 
 #: UI/GearPanel.cs
 msgid "{0}: «{1}»"
@@ -5631,34 +5599,6 @@ msgstr "Start anew, with commitment"
 msgid "Воины здесь спорят и отказываются. Если отказ можно переиграть, он ничего не стоит — и весь спор становится помехой, которую обходят клавишей."
 msgstr "Warriors here argue and refuse. If a refusal can be replayed, it costs nothing — and the whole argument becomes a nuisance to skip with a keypress."
 
-#: UI/UnitInfoPanel.cs
-msgid "Грех: {0}"
-msgstr "Sin: {0}"
-
-#: UI/UnitInfoPanel.cs
-msgid "Характер: {0}"
-msgstr "Character: {0}"
-
-#: UI/UnitInfoPanel.cs
-msgid "Мораль: {0}"
-msgstr "Morals: {0}"
-
-#: UI/UnitInfoPanel.cs
-msgid "Предан вам"
-msgstr "Loyal to you"
-
-#: UI/UnitInfoPanel.cs
-msgid "Готов предать"
-msgstr "Ready to betray"
-
-#: UI/UnitInfoPanel.cs
-msgid "Нейтральна"
-msgstr "Indifferent"
-
-#: UI/UnitInfoPanel.cs
-msgid "Верность: {0}"
-msgstr "Loyalty: {0}"
-
 #: Resources/DialogueDatabase.asset
 msgid "У тебя есть кошель. Скоро он будет мой."
 msgstr "You have a purse. Soon it'll be mine."
@@ -5828,6 +5768,98 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Душа: {0}\n"
+msgstr "Soul: {0}\n"
+
+#. нет в коде
+msgid "Грех: {0}\n"
+msgstr "Sin: {0}\n"
+
+#. нет в коде
+msgid "Степень: {0}\n"
+msgstr "Degree: {0}\n"
+
+#. нет в коде
+msgid "Мораль: {0}\n"
+msgstr "Morals: {0}\n"
+
+#. нет в коде
+msgid "Уровень: {0}"
+msgstr "Level: {0}"
+
+#. нет в коде
+msgid "Оболочка: {0}\n"
+msgstr "Shell: {0}\n"
+
+#. нет в коде
+msgid "Характер: {0}\n"
+msgstr "Character: {0}\n"
+
+#. нет в коде
+msgid "Роль: {0}\n"
+msgstr "Role: {0}\n"
+
+#. нет в коде
+msgid "Командир"
+msgstr "Commander"
+
+#. нет в коде
+msgid "Рядовой"
+msgstr "Rank and file"
+
+#. нет в коде
+msgid "Команда: {0}\n"
+msgstr "Team: {0}\n"
+
+#. нет в коде
+msgid "Верность: Предан вам\n"
+msgstr "Loyalty: Loyal to you\n"
+
+#. нет в коде
+msgid "Верность: Готов предать\n"
+msgstr "Loyalty: Ready to betray\n"
+
+#. нет в коде
+msgid "Верность: Нейтральна\n"
+msgstr "Loyalty: Indifferent\n"
+
+#. нет в коде
+msgid "Не получал плату: {0} миссий\n"
+msgstr "Unpaid: {0} missions\n"
+
+#. нет в коде
+msgid "Память: Дремлет...\n"
+msgstr "Memory: Dormant...\n"
+
+#. нет в коде
+msgid "Грех: {0}"
+msgstr "Sin: {0}"
+
+#. нет в коде
+msgid "Характер: {0}"
+msgstr "Character: {0}"
+
+#. нет в коде
+msgid "Мораль: {0}"
+msgstr "Morals: {0}"
+
+#. нет в коде
+msgid "Предан вам"
+msgstr "Loyal to you"
+
+#. нет в коде
+msgid "Готов предать"
+msgstr "Ready to betray"
+
+#. нет в коде
+msgid "Нейтральна"
+msgstr "Indifferent"
+
+#. нет в коде
+msgid "Верность: {0}"
+msgstr "Loyalty: {0}"
 
 #. нет в коде
 msgid "Своё я уже посчитала."

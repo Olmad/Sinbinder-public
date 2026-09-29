@@ -32,7 +32,10 @@ if hasattr(signal, 'SIGPIPE'):
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPTS = os.path.join(ROOT, 'Assets', 'Scripts')
 LANG_DIR = os.path.join(ROOT, 'Assets', 'Resources', 'Lang')
-SKIP_DIRS = ('Editor', 'Tests', 'Tools')
+# Editor читается: сборщик сцен вписывает в сцену заставки и таблички
+# (Loc.N), а показывают их компоненты игры через Loc.T. Прочее в Editor —
+# меню и журнал разработчика — через Loc не идёт и в таблицу не попадёт.
+SKIP_DIRS = ('Tests', 'Tools')
 
 CALL = re.compile(r'\bLoc\.(T|F|N)\s*\(\s*((?:@?"(?:[^"\\\n]|\\.|"")*"\s*\+\s*)*@?"(?:[^"\\\n]|\\.|"")*")')
 PIECE = re.compile(r'(@?)"((?:[^"\\\n]|\\.|"")*)"')

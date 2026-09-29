@@ -179,6 +179,35 @@ namespace Sinbinder.Gameplay
         /// рычага не было; теперь после каждой ему должны, и заплатить
         /// или нет — решение.
         /// </summary>
+        /// <summary>
+        /// Вернуть одну вылазку, а не всех ушедших: из склепа уходят, пока
+        /// отряд, посланный из лагеря, ещё в пути. Прежний <see cref="ComeBack(IReadOnlyList{string})"/>
+        /// снимал всех ушедших разом — и тех, кто на эту вылазку не ходил,
+        /// не найдя их среди вернувшихся, вычёркивал из отряда как павших.
+        /// </summary>
+        public static void ComeBack(IReadOnlyList<string> party, IReadOnlyList<string> survivors)
+        {
+            for (int i = _members.Count - 1; i >= 0; i--)
+            {
+                var m = _members[i];
+                if (!m.IsAway || !Contains(party, m.Name)) continue;
+
+                if (!Contains(survivors, m.Name)) { _members.RemoveAt(i); continue; }
+
+                m.IsAway = false;
+                m.UnpaidMissions++;
+                _members[i] = m;
+            }
+        }
+
+        private static bool Contains(IReadOnlyList<string> names, string name)
+        {
+            if (names == null) return false;
+            for (int j = 0; j < names.Count; j++)
+                if (names[j] == name) return true;
+            return false;
+        }
+
         public static void ComeBack(IReadOnlyList<string> survivors)
         {
             for (int i = _members.Count - 1; i >= 0; i--)

@@ -130,7 +130,7 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
 
             if (!string.IsNullOrEmpty(_arrivalLine))
-                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_arrivalLine);
+                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T(_arrivalLine));
 
             if (_endsAfterSeconds > 0f)
             {

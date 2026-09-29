@@ -168,7 +168,7 @@ namespace Sinbinder.Utilets
             var canvas = Interface();
             BuildSalary(canvas, askOnArrival: true);
             BuildDemoEnd(canvas);
-            BuildTitle(canvas, "Кто-то уже занял этот склеп.");
+            BuildTitle(canvas, Sinbinder.Core.Loc.N("Кто-то уже занял этот склеп."));
 
             // Подвижная, как и в трёх других сценах: управление, которое
             // работает везде кроме одного места, читается как поломка,
@@ -201,7 +201,7 @@ namespace Sinbinder.Utilets
             // Врагов нет, значит и ждать конца боя нечего: доля кончается
             // по времени, и следом показывается эпилог — кто вернулся.
             Director(null, waitForBattle: false, endsAfterSeconds: 14f,
-                arrivalLine: "Пустой трон. Алтарь. Замурованный гроб в нише.");
+                arrivalLine: Sinbinder.Core.Loc.N("Пустой трон. Алтарь. Замурованный гроб в нише."));
 
             Save(scene, "Crypt_Entrance");
         }
@@ -232,7 +232,7 @@ namespace Sinbinder.Utilets
 
             var canvas = Interface();
             BuildStartPanel(canvas);
-            BuildTitle(canvas, "Полигон. Поставьте условие — и повторите.");
+            BuildTitle(canvas, Sinbinder.Core.Loc.N("Полигон. Поставьте условие — и повторите."));
 
             // Склеп начинается от первого лица: здесь ходят между зонами
             // и читают таблички, а тактический вид годится для поля,
@@ -405,7 +405,7 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void MapZone(Vector3 origin, Transform canvas)
         {
-            CouncilTable(origin);
+            CouncilTable(origin, Sinbinder.Core.Loc.N("Карта вылазок"));
 
             // Доска вылазок — счёт, а не предмет: ей незачем стоять
             // на видном месте, но она обязана быть в сцене.
@@ -442,7 +442,7 @@ namespace Sinbinder.Utilets
 
                 plinth.AddComponent<Sinbinder.Crypt.UpgradeSocket>().SetEmpty();
 
-                Plate(plinth.transform, "Пустое гнездо", 1.6f);
+                Plate(plinth.transform, Sinbinder.Core.Loc.N("Пустое гнездо"), 1.6f);
             }
         }
 
@@ -1702,7 +1702,12 @@ namespace Sinbinder.Utilets
                         + $"при радиусе {CampFocus.TableReach:0.0}.");
         }
 
-        private static void CouncilTable(Vector3 position)
+        /// <summary>
+        /// Стол с шаром. <paramref name="plate"/> — табличка над шаром: в лагере
+        /// шар открывает совет (F), в склепе и на полигоне — карту вылазок,
+        /// подходом. Одна табличка на оба стола врала в одном из них.
+        /// </summary>
+        private static void CouncilTable(Vector3 position, string plate = null)
         {
             var table = new GameObject("Стол совета");
             table.transform.position = position;
@@ -1731,7 +1736,7 @@ namespace Sinbinder.Utilets
             // Подпись с клавишей. Совет открывается нажатием, и об этом
             // надо сказать там, где нажимают, — а не строкой в журнале,
             // которую к тому времени уже пролистали.
-            Plate(ball.transform, "Военный совет — F", 1.4f);
+            Plate(ball.transform, plate ?? Sinbinder.Core.Loc.N("Военный совет — F"), 1.4f);
 
             var glow = new GameObject("Свечение");
             glow.transform.SetParent(ball.transform);
@@ -2028,8 +2033,8 @@ namespace Sinbinder.Utilets
 
             // Как у экрана «Греховод пал»: без кнопок из эпилога некуда
             // было уйти — меню паузы, пока игра стоит, не открывается.
-            var again = EndButton("Начать сначала", panel, -190f);
-            var quit = EndButton("Выйти из игры", panel, 190f);
+            var again = EndButton(Sinbinder.Core.Loc.N("Начать сначала"), panel, -190f);
+            var quit = EndButton(Sinbinder.Core.Loc.N("Выйти из игры"), panel, 190f);
 
             // На холст, а не на панель: панель выключается в Start, а
             // выключенный объект не находит FindFirstObjectByType — директор

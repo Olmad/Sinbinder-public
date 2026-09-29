@@ -41,6 +41,12 @@ namespace Sinbinder.UI
             if (_quit != null) _quit.onClick.AddListener(Application.Quit);
         }
 
+        private static void Caption(Button button, string text)
+        {
+            var label = button != null ? button.GetComponentInChildren<Text>(true) : null;
+            if (label != null) label.text = text;
+        }
+
         public void Show(bool wiped)
         {
             if (_panel == null) return;
@@ -49,6 +55,11 @@ namespace Sinbinder.UI
                 _title.text = wiped ? Loc.T("Отряд не вернулся.") : Loc.T("Отряд вернулся.");
 
             if (_body != null) _body.text = wiped ? Epitaph() : Roll() + Comeback();
+
+            // Подписи кнопок вписал сборщик сцены — по-русски, на миг сборки.
+            // Язык могли сменить; подписываем при показе.
+            Caption(_again, Loc.T("Начать сначала"));
+            Caption(_quit, Loc.T("Выйти из игры"));
 
             Fit();
             Modal.Open(_panel);

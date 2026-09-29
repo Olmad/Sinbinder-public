@@ -43,6 +43,7 @@ namespace Sinbinder.Crypt
         public string WhyNot(SquadRoster.Member member, Mission mission)
         {
             if (!string.IsNullOrEmpty(member.Unavailable)) return Loc.T(member.Unavailable);
+            if (member.IsAway) return Loc.T("В пути с другим отрядом.");
 
             return Leadership.CanLead(member.Leadership, mission.Squad)
                 ? ""
@@ -52,9 +53,11 @@ namespace Sinbinder.Crypt
         /// <summary>Хватит ли вообще людей на эту точку.</summary>
         public bool EnoughPeople(Mission mission)
         {
+            // Ушедшие с другим отрядом — не здесь: из склепа посылают,
+            // пока отряд из лагеря ещё в пути.
             int ready = 0;
             foreach (var m in SquadRoster.Members)
-                if (string.IsNullOrEmpty(m.Unavailable)) ready++;
+                if (string.IsNullOrEmpty(m.Unavailable) && !m.IsAway) ready++;
 
             return ready >= mission.Squad;
         }
@@ -82,11 +85,30 @@ namespace Sinbinder.Crypt
             if (!EnoughPeople(mission))
                 return Loc.T("Столько людей не наберётся.");
 
-            SquadRoster.ChooseCommander(commanderName);
+            // Вылазка — только те, кого послали сейчас. Отряд, ушедший
+            // из лагеря, ещё в пути и вернётся в эпилоге: до 29 сентября
+            // вылазка забирала в бой всех ушедших разом, а вернувшись,
+            // вычёркивала из отряда тех, кто на неё не ходил, и снимала
+            // старшего с того отряда (SquadRoster.ChooseCommander).
+            var before = new HashSet<string>();
+            foreach (var m in SquadRoster.Away) before.Add(m.Name);
+            if (before.Contains(commanderName))
+                return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
+
             SquadRoster.SendAway(commanderName, mission.Squad, keepExperienced: false);
 
+            // Старший — на копиях: бой (Expedition) и развилка его видят,
+            // а общий отряд своего старшего не меняет.
             var away = new List<SquadRoster.Member>();
-            foreach (var m in SquadRoster.Away) away.Add(m);
+            var party = new List<string>();
+            foreach (var m in SquadRoster.Away)
+            {
+                if (before.Contains(m.Name)) continue;
+                var copy = m;
+                copy.IsCommander = m.Name == commanderName;
+                away.Add(copy);
+                party.Add(m.Name);
+            }
 
             if (away.Count == 0) return Loc.T("Никто не пошёл.");
 
@@ -105,7 +127,7 @@ namespace Sinbinder.Crypt
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
-            SquadRoster.ComeBack(survivors);
+            SquadRoster.ComeBack(party, survivors);
 
             LastReport = Report(mission, away, survivors, commanderName);
 

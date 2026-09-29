@@ -1724,6 +1724,20 @@ namespace Sinbinder.Tests
                 foreach (var m in SquadRoster.Away) stillAway++;
                 Same(stillAway, 5, "ушедшие пережили смену сцены");
 
+                // Вылазка из склепа, пока отряд из лагеря в пути
+                // (14-HANDOFF §121): вернуть только свою. Прежний ComeBack
+                // вычёркивал всех ушедших, кого не было среди вернувшихся,
+                // а ChooseCommander снимал старшего с отряда из лагеря.
+                SquadRoster.SendAway("Опытный Б", 1, keepExperienced: false);
+                SquadRoster.ComeBack(new[] { "Опытный Б" }, new string[0]);
+                int stillFromCamp = 0;
+                bool bGone = true;
+                foreach (var m in SquadRoster.Away) stillFromCamp++;
+                foreach (var m in SquadRoster.Members) if (m.Name == "Опытный Б") bGone = false;
+                Same(stillFromCamp, 5, "вылазка из склепа вычеркнула отряд, ушедший из лагеря");
+                Same(SquadRoster.CommanderName, "Опытный А", "вылазка из склепа сняла старшего с отряда из лагеря");
+                Check(bGone, "павший на вылазке из склепа остался в отряде");
+
                 // Исход вылазки больше не таблица, а настоящий бой
                 // (Gameplay/Expedition). Значит и проверять надо не число
                 // из таблицы, а свойства боя.
