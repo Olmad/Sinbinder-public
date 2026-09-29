@@ -2328,7 +2328,7 @@ msgid "Лежи-лежи. Я посмотрю, что у тебя в мешке.
 msgstr "Lie there, lie there. I'll see what's in your bag."
 
 #: Dialogue/CampLines.cs
-msgid "Своё я уже посчитала."
+msgid "Своё я уже посчитал."
 msgstr "I've already counted mine."
 
 #: Dialogue/CampLines.cs
@@ -5828,6 +5828,10 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Своё я уже посчитала."
+msgstr "I've already counted mine."
 
 #. нет в коде
 msgid "не отдаёт оружия — отнять его у него значит унизить"

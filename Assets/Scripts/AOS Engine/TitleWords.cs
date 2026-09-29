@@ -55,7 +55,8 @@ namespace Sinbinder.AOS
             MoralType moral = warrior.Soul.Moral;
 
             // Речь от первого лица: «не просил», «понял», «не рад» — по роду.
-            // Титулы получает и Лиска.
+            // В демо женщин нет (решение автора 11.09), но род у воина есть,
+            // и первая женщина основной игры получит титул своими словами.
             Gender gender = warrior.Gender;
 
             if (legendary) return Legend(moral, name, title, gender);

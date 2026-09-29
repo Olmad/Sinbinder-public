@@ -1768,7 +1768,7 @@ namespace Sinbinder.Tests
                    && Homecoming.Guess(SinType.Wrath, Gender.Male) != Homecoming.Guess(SinType.Greed, Gender.Male),
                     "три канонных греха гадают по-разному");
 
-                // Старшей ставят и Лиску: «Лиска свернул» — описка на глазах у игрока.
+                // Старшей в основной игре может стать женщина: «она свернул» — описка.
                 Check(Homecoming.Guess(SinType.Greed, Gender.Female) != Homecoming.Guess(SinType.Greed, Gender.Male),
                     "догадка о старшей — в мужском роде");
             }

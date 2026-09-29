@@ -766,8 +766,8 @@ static class Bench
             if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
         }
 
-        // Оба рода: старшим ставят и Лиску, и её слова обязаны быть
-        // не пустыми и без цифр так же, как его.
+        // Оба рода: в демо женщин нет, но род у старшего есть, и женские
+        // слова обязаны быть не пустыми и без цифр так же, как мужские.
         foreach (SinType sin in Enum.GetValues(typeof(SinType)))
         foreach (Gender g in new[] { Gender.Male, Gender.Female })
         {

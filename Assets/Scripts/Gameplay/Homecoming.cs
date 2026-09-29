@@ -35,8 +35,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static string Guess(SinType sin, Gender gender)
         {
-            // Глаголы прошедшего времени — по роду старшего: Лиску тоже
-            // ставят старшей, и «Лиска свернул» читалось бы опиской.
+            // Глаголы прошедшего времени — по роду старшего. В демо женщин
+            // нет, но старшей в основной игре может стать женщина, и «она
+            // свернул» читалось бы опиской.
             string P(string he, string she) => Grammar.Pick(gender, he, she);
 
             switch (sin)
