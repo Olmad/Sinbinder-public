@@ -27,7 +27,6 @@ namespace Sinbinder.AOS
         public ActionType Action;
         public float DamageDealt;
         public float HealDealt;
-        public string ResultDescription;
     }
 
     /// <summary>

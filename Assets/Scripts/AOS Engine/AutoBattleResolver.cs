@@ -125,8 +125,6 @@ namespace Sinbinder.AOS
                         target.TakeDamage(dmg);
                         evt.TargetId = target.Id;
                         evt.DamageDealt = dmg;
-                        evt.ResultDescription =
-                            $"{warrior.DisplayName} бьёт {target.DisplayName}";
                     }
                     break;
                 }
@@ -141,8 +139,6 @@ namespace Sinbinder.AOS
                         ally.Heal(5f);
                         evt.TargetId = ally.Id;
                         evt.HealDealt = 5f;
-                        evt.ResultDescription =
-                            $"{warrior.DisplayName} вытаскивает {ally.DisplayName}";
                     }
                     break;
                 }
@@ -176,41 +172,26 @@ namespace Sinbinder.AOS
                         allies.Add(target);
 
                         evt.TargetId = target.Id;
-                        evt.ResultDescription =
-                            $"{warrior.DisplayName} покупает {target.DisplayName} золотом";
-                    }
-                    else
-                    {
-                        evt.ResultDescription = target == null
-                            ? $"{warrior.DisplayName} некого подкупать"
-                            : $"{warrior.DisplayName} предлагает золото, но {target.DisplayName} не берёт";
                     }
                     break;
                 }
 
                 case ActionType.Flee:
-                    evt.ResultDescription = $"{warrior.DisplayName} отходит";
-                    break;
-
                 case ActionType.Loot:
-                    evt.ResultDescription = $"{warrior.DisplayName} обирает павших";
-                    break;
-
                 case ActionType.Idle:
-                    evt.ResultDescription = $"{warrior.DisplayName} медлит";
+                    // Ход записан действием: пересказ (Crypt/Retelling)
+                    // строит фразу сам, словами игрока и по роду.
                     break;
 
                 default:
                     // Умения сюда не доходят: вылазка строит своих воинов
                     // без наборов умений (см. Gameplay/Expedition), и в
                     // бюллетене остаются шесть базовых действий. Если
-                    // когда-нибудь дойдут — ход обязан быть записан как
-                    // непроведённый, а не молча пропасть. Молчаливая
+                    // когда-нибудь дойдут — ход всё равно записан ниже,
+                    // со своим действием, и не пропадёт молча. Молчаливая
                     // потеря хода — это ровно тот класс ошибок, из-за
                     // которого весь автобой когда-то проходил в
                     // неподвижности и назывался победой.
-                    evt.ResultDescription =
-                        $"{warrior.DisplayName}: {action} — автобой этого не умеет";
                     break;
             }
 
