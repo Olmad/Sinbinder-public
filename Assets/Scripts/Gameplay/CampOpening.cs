@@ -20,6 +20,11 @@ namespace Sinbinder.Gameplay
     /// это и есть третье требование к демо: «отказ можно было
     /// предотвратить, и игрок это видит» (00-GDD.md §8).
     ///
+    /// С 30 сентября строка звучит не здесь, а после сундука
+    /// (<see cref="WarnAboutDebt"/> зовёт <see cref="CrystalBall"/>):
+    /// у Греховода появились деньги, и долг можно отдать лично, в разговоре.
+    /// Напоминание без рычага было угрозой; с рычагом — выбором.
+    ///
     /// <b>Вторая: до совета игроку некому приказывать.</b> Продукт демо —
     /// отказ, а отказ работает только на фоне послушания. Полторы минуты
     /// лагеря игрок до сих пор просто ходил. Теперь с ним вызывается
@@ -59,7 +64,19 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static bool EscortArrived { get; private set; }
 
-        void Awake() => EscortArrived = false;
+        /// <summary>
+        /// Карган сказал о долге. С 30 сентября — после сундука, когда у
+        /// Греховода появились деньги (<see cref="CrystalBall"/>): тогда
+        /// напоминание — это уже рычаг, а не угроза. Урок разговора
+        /// (<see cref="Lesson"/>) ведёт к должнику только после этой строки.
+        /// </summary>
+        public static bool DebtWarned { get; private set; }
+
+        void Awake()
+        {
+            EscortArrived = false;
+            DebtWarned = false;
+        }
 
         void Start()
         {
@@ -112,8 +129,6 @@ namespace Sinbinder.Gameplay
                     Loc.T("Провожатый не дошёл до Греховода — Карган заговорит без него."));
 
             EscortArrived = true;
-
-            WarnAboutDebt();
         }
 
         private static bool Free()
@@ -216,12 +231,36 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Предупреждение о долге. Говорится только если долг правда есть:
+        /// Должник в сцене — тот, о ком говорит Карган: живой, свой, долг
+        /// с двух невыплат. Нет такого — null. Тем же правилом, что строка
+        /// о долге: больший долг, при равном — по имени.
+        /// </summary>
+        public static Warrior Debtor()
+        {
+            Warrior best = null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) continue;
+                if (w.UnpaidMissions < 2) continue;
+                if (best == null || w.UnpaidMissions > best.UnpaidMissions
+                    || (w.UnpaidMissions == best.UnpaidMissions
+                        && string.CompareOrdinal(w.DisplayName, best.DisplayName) < 0))
+                    best = w;
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Напоминание о долге. Говорится только если долг правда есть:
         /// реплика про «затянувшееся наказание» при нулевом долге была бы
         /// ложью, а игра, которая продаёт честные причины, врать не может
         /// даже в мелочи.
+        ///
+        /// С 30 сентября — после сундука, и с рычагом в самой строке: деньги
+        /// теперь есть, долг отдают лично, в разговоре. Деньги остались
+        /// в сундуке — так и сказано: обещать то, чего нет в кошеле, нельзя.
         /// </summary>
-        private void WarnAboutDebt()
+        public static void WarnAboutDebt()
         {
             SquadRoster.Member debtor = default;
             bool found = false;
@@ -248,8 +287,16 @@ namespace Sinbinder.Gameplay
             var bodyguard = Bodyguard();
             string who = Loc.Name(bodyguard.HasValue ? bodyguard.Value.Name : Loc.N("Карган Старый Ворон"));
 
-            Herald.Line(Loc.F("{0}: «Владыка, ваше наказание {1} "
-              + "затянулось. Подумайте о последствиях».", who, Possessive(debtor.Name)));
+            var purse = Inventory.PlayerInventory.Instance;
+            var owed = Debtor();
+            bool coins = purse != null && owed != null && purse.Gold >= SquadGear.Wage(owed);
+
+            DebtWarned = true;
+            Herald.Line(coins
+                ? Loc.F("{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты у вас "
+                      + "теперь есть — отдайте долг сами, из рук в руки».", who, Possessive(debtor.Name))
+                : Loc.F("{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — "
+                      + "в сундуке. Отдайте долг сами, из рук в руки».", who, Possessive(debtor.Name)));
         }
 
         private static SquadRoster.Member? Bodyguard()

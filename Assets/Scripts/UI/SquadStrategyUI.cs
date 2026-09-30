@@ -49,7 +49,9 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            var choices = SquadOrders.InDemo;
+            // Цифры разговора (меню у GearPanel) — не установка отряда: «1 —
+            // как ты?» не должно заодно менять, как отряд ведёт бой.
+            var choices = GearPanel.Open ? System.Array.Empty<SquadStrategy>() : SquadOrders.InDemo;
             for (int i = 0; i < Keys.Length && i < choices.Length; i++)
             {
                 if (!Input.GetKeyDown(Keys[i])) continue;

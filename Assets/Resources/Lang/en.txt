@@ -3756,6 +3756,94 @@ msgid "Ты дал мне — я не забыла."
 msgstr "You gave to me — I haven't forgotten."
 
 #: Dialogue/TalkLines.cs
+msgid "Владыка. Если о монетах — я слушаю."
+msgstr "My lord. If it's about the coin — I'm listening."
+
+#: Dialogue/TalkLines.cs
+msgid "Слушаю."
+msgstr "I'm listening."
+
+#: Dialogue/TalkLines.cs
+msgid "Что? Кого бить?"
+msgstr "What? Who do I hit?"
+
+#: Dialogue/TalkLines.cs
+msgid "М? Я тут."
+msgstr "Hm? I'm here."
+
+#: Dialogue/TalkLines.cs
+msgid "Владыка?"
+msgstr "My lord?"
+
+#: Dialogue/TalkLines.cs
+msgid "Давно без платы, владыка. Сами считайте, как я к вам."
+msgstr "No pay for a long time now, my lord. Work out for yourself how I feel about you."
+
+#: Dialogue/TalkLines.cs
+msgid "Третью вылазку без платы, владыка. Сами считайте, как я к вам."
+msgstr "Third sortie without pay, my lord. Work out for yourself how I feel about you."
+
+#: Dialogue/TalkLines.cs
+msgid "Две вылазки без платы. Я пока молчу."
+msgstr "Two sorties without pay. I'm keeping quiet — for now."
+
+#: Dialogue/TalkLines.cs
+msgid "За прошлую вылазку не заплачено. Помню."
+msgstr "The last sortie went unpaid. I remember."
+
+#: Dialogue/TalkLines.cs
+msgid "За вами — куда скажете."
+msgstr "I'll follow you wherever you say."
+
+#: Dialogue/TalkLines.cs
+msgid "Служу. Пока дело идёт — служу."
+msgstr "I serve. As long as the work goes on, I serve."
+
+#: Dialogue/TalkLines.cs
+msgid "Служу, пока есть за что."
+msgstr "I serve while there's something to serve for."
+
+#: Dialogue/TalkLines.cs
+msgid "Спасибо. Если кому-то нужнее — скажите, отдам."
+msgstr "Thank you. If someone needs it more — say so, and I'll give it."
+
+#: Dialogue/TalkLines.cs
+msgid "Спасибо, владыка. Я запомню."
+msgstr "Thank you, my lord. I'll remember this."
+
+#: Dialogue/TalkLines.cs
+msgid "Пересчитал. Сходится. Теперь мы в расчёте."
+msgstr "Counted it. It adds up. Now we're square."
+
+#: Dialogue/TalkLines.cs
+msgid "Пересчитала. Сходится. Теперь мы в расчёте."
+msgstr "Counted it. It adds up. Now we're square."
+
+#: Dialogue/TalkLines.cs
+msgid "Служу не за деньги. Но раз положено — возьму."
+msgstr "I don't serve for money. But since it's owed — I'll take it."
+
+#: Dialogue/TalkLines.cs
+msgid "Монеты. Лучше бы дали кого ударить. Но спасибо."
+msgstr "Coins. I'd rather you gave me someone to hit. But thanks."
+
+#: Dialogue/TalkLines.cs
+msgid "Мне? Раньше других? …Спасибо."
+msgstr "Me? Before the others? …Thank you."
+
+#: Dialogue/TalkLines.cs
+msgid "Потрачу на приятное. Спасибо, владыка."
+msgstr "I'll spend it on something pleasant. Thank you, my lord."
+
+#: Dialogue/TalkLines.cs
+msgid "Вечером будет мясо. Спасибо, владыка."
+msgstr "There'll be meat tonight. Thank you, my lord."
+
+#: Dialogue/TalkLines.cs
+msgid "Спасибо. Можно я их просто подержу?"
+msgstr "Thanks. Can I just hold on to them for a bit?"
+
+#: Dialogue/TalkLines.cs
 msgid "Жив. Была бы доля — был бы и весел."
 msgstr "Alive. Give me my share, and I'd be cheerful too."
 
@@ -3948,8 +4036,12 @@ msgid "{0}: «Владыка, позвольте пройтись с вами. �
 msgstr "{0}: “My lord, let me walk with you. Let them see whom I walk with.”"
 
 #: Gameplay/CampOpening.cs
-msgid "{0}: «Владыка, ваше наказание {1} затянулось. Подумайте о последствиях»."
-msgstr "{0}: “My lord, your punishment of {1} has dragged on. Think of the consequences.”"
+msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты у вас теперь есть — отдайте долг сами, из рук в руки»."
+msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. You have coin now — pay the debt yourself, hand to hand.”"
+
+#: Gameplay/CampOpening.cs
+msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — в сундуке. Отдайте долг сами, из рук в руки»."
+msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. The coin is in the chest. Pay the debt yourself, hand to hand.”"
 
 #: Gameplay/CrystalBall.cs
 msgid "Карган ждёт у сундука Марги."
@@ -4324,12 +4416,24 @@ msgid "Эта душа ждёт вас. Следующие будут гасну
 msgstr "This soul will wait for you. The next ones will fade while you walk."
 
 #: Gameplay/Lesson.cs
+msgid "1 — как воин и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."
+msgstr "1 — how the warrior is and feels about you. 2 — pay a debt, if there is one. 3 — gear."
+
+#: Gameplay/Lesson.cs
+msgid "F или Esc — закончить разговор."
+msgstr "F or Esc — end the conversation."
+
+#: Gameplay/Lesson.cs
 msgid "Подойдите к {0}, посмотрите на воина и нажмите F — поговорить."
 msgstr "Walk up to {0}, look at the warrior and press F to talk."
 
 #: Gameplay/Lesson.cs
-msgid "Щелчок по вещи в мешке — отдать. Возьмёт ли — решит воин."
-msgstr "Click an item in the bag to hand it over. Whether it's taken is the warrior's choice."
+msgid "Воину задолжали. В разговоре долг отдают из рук в руки."
+msgstr "This warrior is owed pay. In a conversation, debts are paid hand to hand."
+
+#: Gameplay/Lesson.cs
+msgid "В разговоре — как воин, и вещи из рук в руки."
+msgstr "In a conversation — how the warrior is, and gear hand to hand."
 
 #: Gameplay/Lesson.cs
 msgid "{0} — смотреть глазами Греховода."
@@ -4815,6 +4919,18 @@ msgstr "didn't take it"
 msgid "в мешке нет места"
 msgstr "no room in the bag"
 
+#: Gameplay/SquadGear.cs
+msgid "долга нет"
+msgstr "no debt"
+
+#: Gameplay/SquadGear.cs UI/GearPanel.cs
+msgid "в кошеле не хватает"
+msgstr "not enough in the purse"
+
+#: Gameplay/SquadGear.cs
+msgid "долг отдан"
+msgstr "debt paid"
+
 #: Gameplay/SquadOrders.cs
 msgid "Без указаний"
 msgstr "No instructions"
@@ -5204,12 +5320,24 @@ msgid "С начала доли"
 msgstr "Restart the act"
 
 #: UI/GearPanel.cs
+msgid "Мешка Греховода в этой сцене нет."
+msgstr "There is no Sinbinder's bag in this scene."
+
+#: UI/GearPanel.cs
 msgid "{0}: «{1}»"
 msgstr "{0}: “{1}”"
 
 #: UI/GearPanel.cs
-msgid "Мешка Греховода в этой сцене нет."
-msgstr "There is no Sinbinder's bag in this scene."
+msgid "Долг отдан из рук в руки: {0}."
+msgstr "Debt paid hand to hand: {0}."
+
+#: UI/GearPanel.cs
+msgid "{0} — {1}."
+msgstr "{0} — {1}."
+
+#: UI/GearPanel.cs
+msgid "Отдать долг"
+msgstr "Pay the debt"
 
 #: UI/GearPanel.cs
 msgid "F — поговорить: {0}"
@@ -5294,6 +5422,74 @@ msgstr "The Sinbinder's bag — click: put in the chest"
 #: UI/GearPanel.cs
 msgid "Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть."
 msgstr "Whatever stays in the chest stays in the camp: if you have to flee, the hunters get it. F or Esc — close."
+
+#: UI/GearPanel.cs
+msgid "Разговор: {0}"
+msgstr "Talking to {0}"
+
+#: UI/GearPanel.cs
+msgid "Что сказать"
+msgstr "What to say"
+
+#: UI/GearPanel.cs
+msgid "Что вы знаете"
+msgstr "What you know"
+
+#: UI/GearPanel.cs
+msgid "1 · Как ты? Как ко мне?"
+msgstr "1 · How are you? How do you feel about me?"
+
+#: UI/GearPanel.cs
+msgid "узнать отношение"
+msgstr "learn where he stands"
+
+#: UI/GearPanel.cs
+msgid "2 · Вот твой долг"
+msgstr "2 · Here's what you're owed"
+
+#: UI/GearPanel.cs
+msgid "одна плата из кошеля — долг снят целиком"
+msgstr "one wage from the purse — the whole debt is cleared"
+
+#: UI/GearPanel.cs
+msgid "2 · Долга нет"
+msgstr "2 · Nothing is owed"
+
+#: UI/GearPanel.cs
+msgid "3 · Покажи снаряжение"
+msgstr "3 · Show me your gear"
+
+#: UI/GearPanel.cs
+msgid "вещи на воине и в мешке — обмен из рук в руки"
+msgstr "what the warrior wears and what's in the bag — hand to hand"
+
+#: UI/GearPanel.cs
+msgid "Долг"
+msgstr "Debt"
+
+#: UI/GearPanel.cs
+msgid "1, 2, 3 или щелчок — сказать. F или Esc — уйти."
+msgstr "1, 2, 3 or click — say it. F or Esc — leave."
+
+#: UI/GearPanel.cs
+msgid "нет"
+msgstr "none"
+
+#: UI/GearPanel.cs
+msgid "одна вылазка без платы"
+msgstr "one sortie unpaid"
+
+#: UI/GearPanel.cs
+msgid "две вылазки без платы"
+msgstr "two sorties unpaid"
+
+#: UI/GearPanel.cs
+msgid "три вылазки без платы"
+msgstr "three sorties unpaid"
+
+#: UI/GearPanel.cs
+msgid "давно без платы"
+msgstr "unpaid for a long time"
 
 #: UI/GearPanel.cs
 msgid "В мешке"
@@ -5772,6 +5968,38 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "1 — как он и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."
+msgstr "1 — how he is and how he feels about you. 2 — pay a debt, if there is one. 3 — gear."
+
+#. нет в коде
+msgid "Ему задолжали. В разговоре долг отдают из рук в руки."
+msgstr "He's owed pay. In a conversation, debts are paid hand to hand."
+
+#. нет в коде
+msgid "В разговоре — как он, и вещи из рук в руки."
+msgstr "In a conversation — how he is, and gear hand to hand."
+
+#. нет в коде
+msgid "Что вы о нём знаете"
+msgstr "What you know of him"
+
+#. нет в коде
+msgid "2 · Долга перед ним нет"
+msgstr "2 · Nothing is owed to him"
+
+#. нет в коде
+msgid "вещи на нём и в мешке — обмен из рук в руки"
+msgstr "what he wears and what's in the bag — hand to hand"
+
+#. нет в коде
+msgid "{0}: «Владыка, ваше наказание {1} затянулось. Подумайте о последствиях»."
+msgstr "{0}: “My lord, your punishment of {1} has dragged on. Think of the consequences.”"
+
+#. нет в коде
+msgid "Щелчок по вещи в мешке — отдать. Возьмёт ли — решит воин."
+msgstr "Click an item in the bag to hand it over. Whether it's taken is the warrior's choice."
 
 #. нет в коде
 msgid "Душа: {0}\n"

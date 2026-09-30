@@ -322,6 +322,32 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
+        /// <summary>
+        /// Одна плата воину — та же, что у алтаря склепа (<see cref="UI.SalaryPanelUI"/>):
+        /// <see cref="Warrior.PaySalary"/> снимает весь долг, если заплачено
+        /// не меньше неё. Игрок числа не видит.
+        /// </summary>
+        public static int Wage(Warrior w) => System.Math.Max(1, w.Soul.Level) * 10;
+
+        /// <summary>
+        /// Отдать долг лично, в разговоре (решение автора, 30 сентября: «в разговоре
+        /// с Маргой можно отдать ему долг лично»). Золото — из кошеля Греховода;
+        /// не хватает — долг остаётся, и воин не узнаёт о намерении: честность
+        /// та же, что у платы в склепе. Отданное помнится, как подарок.
+        /// </summary>
+        public static bool PayDebt(Warrior w, PlayerInventory purse, out string word)
+        {
+            if (w == null || w.UnpaidMissions <= 0) { word = Loc.T("долга нет"); return false; }
+
+            int wage = Wage(w);
+            if (purse == null || !purse.SpendGold(wage)) { word = Loc.T("в кошеле не хватает"); return false; }
+
+            w.PaySalary(wage);
+            Remember(w, "SinbinderGaveMe");
+            word = Loc.T("долг отдан");
+            return true;
+        }
+
         private static void Remember(Warrior w, string what)
         {
             if (AOS.MemoryProcessor.Instance == null || !SinbinderPlayer.Exists) return;

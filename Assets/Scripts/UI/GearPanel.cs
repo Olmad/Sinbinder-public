@@ -57,6 +57,13 @@ namespace Sinbinder.UI
 
         /// <summary>Открыт вблизи, в разговоре: можно передавать. Иначе только смотреть.</summary>
         private bool _near;
+
+        /// <summary>
+        /// Меню разговора (решение автора, 30 сентября: «как в Skyrim или
+        /// Fallout 4»): узнать отношение, отдать долг, снаряжение. Третий
+        /// пункт открывает прежний экран обмена.
+        /// </summary>
+        private bool _menu;
         private Warrior _warrior;
 
         /// <summary>Открыт у сундука: слева сундук, а не воин.</summary>
@@ -125,7 +132,18 @@ namespace Sinbinder.UI
         public static void TalkTo(Warrior w)
         {
             if (_instance == null || _instance._open || w == null || PlayerInventory.Instance == null) return;
-            _instance.OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), Dialogue.TalkLines.HowAreYou(w)), near: true);
+            _instance.OpenMenu(w);
+        }
+
+        /// <summary>
+        /// Пункт меню разговора — то же, что цифра или щелчок. Автопрогону:
+        /// 1 — отношение, 2 — отдать долг, 3 — снаряжение. Ложь — меню не открыто.
+        /// </summary>
+        public static bool Say(int option)
+        {
+            if (_instance == null || !_instance._open || !_instance._menu) return false;
+            _instance.Choose(option);
+            return true;
         }
 
         /// <summary>Перерисовать открытый экран — после обмена мимо щелчка (автопрогон).</summary>
@@ -155,6 +173,13 @@ namespace Sinbinder.UI
 
             // Воин мог пасть или исчезнуть, пока экран был открыт.
             if (_chest == null && !_bagOnly && (_warrior == null || _warrior.IsDead)) { Close(); return; }
+
+            if (_menu)
+            {
+                if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) Choose(1);
+                else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) Choose(2);
+                else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) Choose(3);
+            }
 
             if (Input.GetKeyDown(_key) || Input.GetKeyDown(_talkKey) || Input.GetKeyDown(KeyCode.Escape))
                 Close();
@@ -198,11 +223,50 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w == null) return false;
 
-            string said = Dialogue.TalkLines.HowAreYou(w);
-            string memory = Dialogue.TalkLines.Remembers(w);
-            if (!string.IsNullOrEmpty(memory)) said += " " + memory;
-            OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), said), near: true);
+            OpenMenu(w);
             return true;
+        }
+
+        /// <summary>Разговор вблизи: воин здоровается, игрок выбирает, что сказать.</summary>
+        private void OpenMenu(Warrior w)
+        {
+            OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), Dialogue.TalkLines.Greet(w)), near: true);
+            _menu = true;
+            Redraw();
+        }
+
+        /// <summary>Пункт меню разговора.</summary>
+        private void Choose(int option)
+        {
+            if (!_menu || _warrior == null) return;
+            string name = Loc.Name(_warrior.DisplayName);
+
+            switch (option)
+            {
+                case 1:
+                    _answer = Loc.F("{0}: «{1}»", name, Dialogue.TalkLines.Attitude(_warrior));
+                    break;
+
+                case 2:
+                    if (_warrior.UnpaidMissions <= 0) return;
+                    if (SquadGear.PayDebt(_warrior, PlayerInventory.Instance, out string word))
+                    {
+                        _answer = Loc.F("{0}: «{1}»", name, Dialogue.TalkLines.Paid(_warrior));
+                        FindFirstObjectByType<BattleLogUI>()?.Write(Loc.F("Долг отдан из рук в руки: {0}.", name));
+                    }
+                    else _answer = Loc.F("{0} — {1}.", Loc.T("Отдать долг"), word);
+                    break;
+
+                case 3:
+                    _menu = false;
+                    _answer = "";
+                    break;
+
+                default:
+                    return;
+            }
+
+            Redraw();
         }
 
         /// <summary>Свой воин, на которого Греховод смотрит вблизи от первого лица. Нет — null.</summary>
@@ -343,6 +407,7 @@ namespace Sinbinder.UI
             _chest = null;
             _bagOnly = false;
             _near = near;
+            _menu = false;
             _answer = first;
             _open = true;
             _root.SetActive(true);
@@ -353,6 +418,7 @@ namespace Sinbinder.UI
         private void Close()
         {
             _open = false;
+            _menu = false;
             _chest = null;
             _bagOnly = false;
             if (_root != null) _root.SetActive(false);
@@ -394,6 +460,7 @@ namespace Sinbinder.UI
         {
             if (_chest != null) { RedrawChest(); return; }
             if (_bagOnly) { RedrawBag(); return; }
+            if (_menu) { RedrawMenu(); return; }
 
             var store = PlayerInventory.Instance;
             string name = Loc.Name(_warrior.DisplayName);
@@ -488,6 +555,54 @@ namespace Sinbinder.UI
 
             _hint.text = Loc.T("Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть.");
             _reply.text = _answer;
+        }
+
+        /// <summary>
+        /// Меню разговора: слева — что сказать, справа — что Греховод знает
+        /// о нём. Долг назван словами; плата — одна, как у алтаря склепа.
+        /// </summary>
+        private void RedrawMenu()
+        {
+            var store = PlayerInventory.Instance;
+            string name = Loc.Name(_warrior.DisplayName);
+
+            _title.text = Loc.F("Разговор: {0}", name);
+            _leftTitle.text = Loc.T("Что сказать");
+            _bagTitle.text = Loc.T("Что вы знаете");
+            Clear(_hands);
+            Clear(_store);
+
+            Row(_hands, Loc.T("1 · Как ты? Как ко мне?"), Loc.T("узнать отношение"), () => Choose(1));
+
+            if (_warrior.UnpaidMissions > 0)
+            {
+                bool can = store != null && store.Gold >= SquadGear.Wage(_warrior);
+                Row(_hands, Loc.T("2 · Вот твой долг"),
+                    can ? Loc.T("одна плата из кошеля — долг снят целиком") : Loc.T("в кошеле не хватает"),
+                    can ? () => Choose(2) : (System.Action)null);
+            }
+            else Row(_hands, Loc.T("2 · Долга нет"), "", null);
+
+            Row(_hands, Loc.T("3 · Покажи снаряжение"), Loc.T("вещи на воине и в мешке — обмен из рук в руки"), () => Choose(3));
+
+            Row(_store, Loc.T("Долг"), Debt(_warrior.UnpaidMissions), null);
+            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+
+            _hint.text = Loc.T("1, 2, 3 или щелчок — сказать. F или Esc — уйти.");
+            _reply.text = _answer;
+        }
+
+        /// <summary>Долг словами. Без чисел: «три вылазки без платы», а не «3».</summary>
+        private static string Debt(int unpaid)
+        {
+            switch (unpaid)
+            {
+                case 0:  return Loc.T("нет");
+                case 1:  return Loc.T("одна вылазка без платы");
+                case 2:  return Loc.T("две вылазки без платы");
+                case 3:  return Loc.T("три вылазки без платы");
+                default: return Loc.T("давно без платы");
+            }
         }
 
         /// <summary>

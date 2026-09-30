@@ -45,6 +45,73 @@ namespace Sinbinder.Dialogue
                 : Grammar.Pick(w.Gender, Loc.T("Ты дал мне — я не забыл."), Loc.T("Ты дал мне — я не забыла."));
         }
 
+        /// <summary>
+        /// Первая строка разговора — пока игрок выбирает, что сказать (меню
+        /// разговора, решение автора 30 сентября: «как в Skyrim или Fallout 4»).
+        /// Должник начинает с долга: о чём он думает, то и говорит первым.
+        /// </summary>
+        public static string Greet(Warrior w)
+        {
+            if (w.UnpaidMissions >= 2) return Loc.T("Владыка. Если о монетах — я слушаю.");
+
+            switch (w.Soul.Sin)
+            {
+                case SinType.Pride:    return Loc.T("Слушаю.");
+                case SinType.Wrath:    return Loc.T("Что? Кого бить?");
+                case SinType.Sloth:    return Loc.T("М? Я тут.");
+                default:               return Loc.T("Владыка?");
+            }
+        }
+
+        /// <summary>
+        /// «Как ты? Как ко мне?» — как он и как он к Греховоду. Отношение не
+        /// хранится, а вычисляется (правило проекта): из верности, долга
+        /// и того, что он помнит. Словами, без чисел.
+        /// </summary>
+        public static string Attitude(Warrior w)
+        {
+            string toMe;
+            if (w.UnpaidMissions >= 4) toMe = Loc.T("Давно без платы, владыка. Сами считайте, как я к вам.");
+            else if (w.UnpaidMissions == 3) toMe = Loc.T("Третью вылазку без платы, владыка. Сами считайте, как я к вам.");
+            else if (w.UnpaidMissions == 2) toMe = Loc.T("Две вылазки без платы. Я пока молчу.");
+            else if (w.UnpaidMissions == 1) toMe = Loc.T("За прошлую вылазку не заплачено. Помню.");
+            else if (w.Loyalty >= 80f) toMe = Loc.T("За вами — куда скажете.");
+            else if (w.Loyalty >= 50f) toMe = Loc.T("Служу. Пока дело идёт — служу.");
+            else toMe = Loc.T("Служу, пока есть за что.");
+
+            string said = HowAreYou(w) + " " + toMe;
+            string memory = Remembers(w);
+            return string.IsNullOrEmpty(memory) ? said : said + " " + memory;
+        }
+
+        /// <summary>
+        /// Что говорит воин, когда Греховод отдал долг из рук в руки. По греху:
+        /// жадный считает, гордый делает вид, что не ради денег.
+        /// </summary>
+        public static string Paid(Warrior w)
+        {
+            var soul = w.Soul;
+            bool virtue = soul.Get(soul.Sin) < 0f;
+            string P(string he, string she) => Grammar.Pick(w.Gender, he, she);
+
+            if (virtue)
+                return soul.Sin == SinType.Greed
+                    ? Loc.T("Спасибо. Если кому-то нужнее — скажите, отдам.")
+                    : Loc.T("Спасибо, владыка. Я запомню.");
+
+            switch (soul.Sin)
+            {
+                case SinType.Greed:    return P(Loc.T("Пересчитал. Сходится. Теперь мы в расчёте."),
+                                                Loc.T("Пересчитала. Сходится. Теперь мы в расчёте."));
+                case SinType.Pride:    return Loc.T("Служу не за деньги. Но раз положено — возьму.");
+                case SinType.Wrath:    return Loc.T("Монеты. Лучше бы дали кого ударить. Но спасибо.");
+                case SinType.Envy:     return Loc.T("Мне? Раньше других? …Спасибо.");
+                case SinType.Lust:     return Loc.T("Потрачу на приятное. Спасибо, владыка.");
+                case SinType.Gluttony: return Loc.T("Вечером будет мясо. Спасибо, владыка.");
+                default:               return Loc.T("Спасибо. Можно я их просто подержу?");
+            }
+        }
+
         public static string HowAreYou(Warrior w)
         {
             var soul = w.Soul;

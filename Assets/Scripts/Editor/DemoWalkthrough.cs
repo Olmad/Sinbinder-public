@@ -466,6 +466,17 @@ namespace Sinbinder.EditorTools
                     return true;
                 }, 5f),
 
+                // Сценарий 30 сентября: после сундука Карган напоминает о долге,
+                // и долг отдают лично — меню разговора, пункт 2.
+                S("лагерь: долг отдан из рук в руки", PayDebtInCamp, () =>
+                {
+                    var w = CampOpening.Debtor();
+                    if (w != null && w.UnpaidMissions > 0) return false;
+                    if (UI.GearPanel.Open && !GearSettled()) return false;
+                    if (UI.GearPanel.Open) { Snap("разговор — долг отдан"); UI.GearPanel.Dismiss(); }
+                    return true;
+                }, 5f),
+
                 S("прогноз на панели приказов", ForecastSquad, ForecastShown, 5f),
 
                 S("тревога после сундука", null,
@@ -1549,6 +1560,17 @@ namespace Sinbinder.EditorTools
             if (chest == null || bag == null) return;
 
             var left = TrophyChest.Remaining();
+
+            // Монеты — как игрок: «идёт собирать, тут у него появляются деньги»
+            // (сценарий 30 сентября). Без них долг Марге отдать нечем.
+            foreach (var item in left)
+            {
+                if (item == null || item.Type != Inventory.ItemType.Gold) continue;
+                bool took = chest.Take(item, bag, out string word);
+                Write($"  [СКЛАД] из сундука: {item.Name} — {(took ? word : "не взял: " + word)}");
+                break;
+            }
+
             foreach (var item in left)
             {
                 if (item == null || item.Slot == Inventory.GearSlot.None) continue;
@@ -1558,6 +1580,26 @@ namespace Sinbinder.EditorTools
                 return;
             }
             Write("  [СКЛАД] в сундуке нет вещи, которую можно надеть");
+        }
+
+        /// <summary>
+        /// Долг должнику — лично, в разговоре (решение автора, 30 сентября):
+        /// подойти, заговорить, пункт 2. В отчёт — сказал ли Карган о долге,
+        /// сколько было и что стало.
+        /// </summary>
+        private static void PayDebtInCamp()
+        {
+            var w = CampOpening.Debtor();
+            Write($"  [ДОЛГ] Карган сказал о долге: {(CampOpening.DebtWarned ? "да" : "НЕТ")}");
+            if (w == null) { Write("  [ДОЛГ] должника в лагере нет — отдавать некому"); return; }
+
+            var purse = Inventory.PlayerInventory.Instance;
+            int before = w.UnpaidMissions;
+            HeroTo(w.transform, 1.5f);
+            UI.GearPanel.TalkTo(w);
+            UI.GearPanel.Say(2);
+            Write($"  [ДОЛГ] {w.DisplayName}: невыплат было {before}, стало {w.UnpaidMissions}; "
+                  + $"в кошеле {(purse != null ? purse.Gold : 0)}");
         }
 
         private static bool CeremonyPlaying()
@@ -1841,6 +1883,7 @@ namespace Sinbinder.EditorTools
 
             HeroTo(w.transform, 1.5f);
             UI.GearPanel.TalkTo(w);
+            UI.GearPanel.Say(3);   // меню разговора → снаряжение
 
             var bag = Inventory.PlayerInventory.Instance;
             if (bag == null) return;

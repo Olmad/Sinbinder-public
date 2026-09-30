@@ -58,10 +58,19 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static bool Looted { get; private set; }
 
+        /// <summary>
+        /// Сундук разобран и экран его закрыт: у Греховода появилось, чем
+        /// платить (сценарий автора, 30 сентября: «игрок идёт собирать, тут
+        /// у него появляются деньги. Кстати, наказание затянулось»). Без склада
+        /// и в пустом сундуке — сразу вместе с <see cref="Looted"/>.
+        /// </summary>
+        public static bool Browsed { get; private set; }
+
         /// <summary>Забыть трофеи. Начало пролога.</summary>
         public static void Forget()
         {
             Looted = false;
+            Browsed = false;
             _restoreLooted = null;
             _restoreContents = null;
         }
@@ -131,6 +140,7 @@ namespace Sinbinder.Gameplay
                 if (_restoreContents != null) _contents.AddRange(_restoreContents);
             }
             else Looted = false;
+            Browsed = Looted;
             _restoreLooted = null;
             _restoreContents = null;
 
@@ -221,6 +231,7 @@ namespace Sinbinder.Gameplay
             // «Мародёр», и церемония титула ставит свою паузу. Панель поверх
             // неё сняла бы паузу церемонии своим закрытием.
             if (Store && _contents.Count > 0) StartCoroutine(OfferWhenFree());
+            else Browsed = true;
 
             if (taken == 0)
                 log?.Write(Loc.T("В сундуке пусто. Марга объяснится, когда вернётся."));
@@ -258,6 +269,11 @@ namespace Sinbinder.Gameplay
             while (pause != null && pause.IsPaused) yield return null;
 
             UI.GearPanel.OpenChest(this);
+
+            // Кадр на то, чтобы экран встал, — и ждём, пока его закроют.
+            yield return null;
+            while (UI.GearPanel.Open) yield return null;
+            Browsed = true;
         }
 
         /// <summary>Взять из сундука в мешок Греховода. Золото — в кошель.</summary>

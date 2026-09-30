@@ -81,6 +81,7 @@ namespace Sinbinder.Tests
                 Blows();
                 Gear();
                 Pocket();
+                DebtInHand();
                 ReasonByContrast();
                 PrideHalves();
                 ChestStore();
@@ -295,6 +296,38 @@ namespace Sinbinder.Tests
             modest.Pocket(10);
             Check(SquadGear.AskPocket(modest, store, out _) && modest.PocketGold == 0 && store.Gold == 10,
                   "умеренный отдаёт, если попросить, — золото уходит в кошель Греховода");
+        }
+
+        /// <summary>
+        /// Долг из рук в руки (решение автора, 30 сентября): одна плата из
+        /// кошеля снимает весь долг и поднимает верность; не хватает — долг
+        /// остаётся, золото не тронуто. Меню разговора говорит о долге
+        /// словами, без чисел.
+        /// </summary>
+        private static void DebtInHand()
+        {
+            var greedy = MakeWarrior("Должник", SinType.Greed, 65f);
+            greedy.UnpaidMissions = 3;
+            float was = greedy.Loyalty;
+
+            var purse = NewObject("Кошель").AddComponent<PlayerInventory>();
+            purse.AddGold(SquadGear.Wage(greedy) - 1);
+            Check(!SquadGear.PayDebt(greedy, purse, out _) && greedy.UnpaidMissions == 3
+                  && purse.Gold == SquadGear.Wage(greedy) - 1,
+                  "не хватает на плату — долг остаётся, кошель не тронут");
+
+            purse.AddGold(5);
+            int before = purse.Gold;
+            Check(SquadGear.PayDebt(greedy, purse, out _) && greedy.UnpaidMissions == 0,
+                  "одна плата снимает весь долг");
+            Check(purse.Gold == before - SquadGear.Wage(greedy), "плата уходит из кошеля Греховода");
+            Check(greedy.Loyalty > was, "отданный долг поднимает верность");
+            Check(!SquadGear.PayDebt(greedy, purse, out _), "второй раз отдавать нечего");
+
+            foreach (var line in new[] { Dialogue.TalkLines.Greet(greedy), Dialogue.TalkLines.Attitude(greedy),
+                                         Dialogue.TalkLines.Paid(greedy) })
+                Check(!string.IsNullOrEmpty(line) && line.IndexOfAny("0123456789".ToCharArray()) < 0,
+                      $"строка разговора без цифр: «{line}»");
         }
 
         /// <summary>

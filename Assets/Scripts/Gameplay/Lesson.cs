@@ -15,7 +15,11 @@ namespace Sinbinder.Gameplay
         /// <summary>Жатва: E у угасающей души. Первая душа первой волны.</summary>
         Harvest,
 
-        /// <summary>Обмен вещью: F у своего воина. Первый раз после сундука.</summary>
+        /// <summary>
+        /// Разговор: F у своего воина — меню «как ты / долг / снаряжение».
+        /// Первый раз после сундука; когда Карган сказал о долге — у должника
+        /// (решение автора, 30 сентября). Имя прежнее: так урок записан в сохранениях.
+        /// </summary>
         Exchange,
 
         /// <summary>
@@ -374,13 +378,31 @@ namespace Sinbinder.Gameplay
         {
             if (!TrophyChest.Looted || RaidEvent.Running) return;
 
-            var bag = Inventory.PlayerInventory.Instance;
-            if (bag == null || bag.Count == 0) return;
-
             var souls = SoulManager.Instance;
             if (souls != null && souls.FadingCount > 0) return;
 
             var hero = SinbinderPlayer.Where;
+
+            // Карган сказал о долге — урок у должника: «игрок подходит, и тут
+            // обучение диалогу» (автор, 30 сентября). Подошёл к другому — урок
+            // подождёт; побежал к шару — не будет вовсе, пока не подойдёт.
+            if (CampOpening.DebtWarned)
+            {
+                var debtor = CampOpening.Debtor();
+                if (debtor != null)
+                {
+                    if (Vector3.Distance(hero, debtor.transform.position) > Invite
+                        || !Reachable(debtor.transform.position)) return;
+                    _partner = debtor;
+                    _talked = false;
+                    Begin(LessonKind.Exchange, debtor.transform.position);
+                    return;
+                }
+            }
+
+            var bag = Inventory.PlayerInventory.Instance;
+            if (bag == null || bag.Count == 0) return;
+
             Warrior best = null;
             float bestDist = Invite;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
@@ -696,18 +718,25 @@ namespace Sinbinder.Gameplay
 
             if (_now == LessonKind.Raising) return RaisingStep();
 
-            // Обмен — только от первого лица, вблизи и глядя на воина.
-            // Сверху плашка сперва говорит, как посмотреть его глазами.
+            // Разговор — только от первого лица, вблизи и глядя на воина.
+            // Сверху плашка сперва говорит, как посмотреть его глазами;
+            // в разговоре — что можно сказать.
+            if (UI.GearPanel.Talking)
+                return ("1 2 3", Loc.T("1 — как воин и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение.")
+                               + "\n" + Loc.T("F или Esc — закончить разговор."));
+
             var view = Object.FindFirstObjectByType<RTS_Camera>();
             string name = _partner != null ? Grammar.Dative(_partner.DisplayName, _partner.Gender) : "";
             string approach = Loc.F("Подойдите к {0}, посмотрите на воина и нажмите F — поговорить.", name);
-            string give = Loc.T("Щелчок по вещи в мешке — отдать. Возьмёт ли — решит воин.");
+            string why = _partner != null && _partner.UnpaidMissions > 0
+                ? Loc.T("Воину задолжали. В разговоре долг отдают из рук в руки.")
+                : Loc.T("В разговоре — как воин, и вещи из рук в руки.");
 
             if (view != null && !view.FirstPersonNow)
                 return (view.SwitchKey.ToString(),
                         Loc.F("{0} — смотреть глазами Греховода.", view.SwitchKey) + "\n" + approach);
 
-            return ("F", approach + "\n" + give);
+            return ("F", approach + "\n" + why);
         }
 
         /// <summary>

@@ -209,8 +209,18 @@ namespace Sinbinder.Gameplay
             bool hasChest = Object.FindFirstObjectByType<TrophyChest>() != null;
 
             if (hasChest)
+            {
                 yield return Beat.UntilPlayer(() => TrophyChest.Looted, _chestNudge,
                     Loc.T("Карган ждёт у сундука Марги."));
+
+                // Сценарий автора, 30 сентября: «Марга принёс добычу. Игрок идёт
+                // собирать, тут у него появляются деньги. Кстати, наказание
+                // затянулось. Игрок может подойти к Марге и отдать долг или
+                // побежать по тревоге к шару». Строка — когда экран сундука
+                // закрыт: деньги уже в кошеле, и выбор настоящий.
+                yield return Beat.UntilPlayer(() => TrophyChest.Browsed, 0f, null);
+                CampOpening.WarnAboutDebt();
+            }
 
             Alarm();
 
