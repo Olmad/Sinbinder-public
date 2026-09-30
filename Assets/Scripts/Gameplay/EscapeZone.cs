@@ -63,6 +63,19 @@ namespace Sinbinder.Gameplay
         public static bool SelectionMade { get; private set; }
 
         public static IReadOnlyList<string> EscapedNames => _escapedNames;
+
+        /// <summary>
+        /// Кто остался прикрывать отход — пусто, если никто (решение автора,
+        /// 30 сентября: «сделать задумкой»; `docs/09-PROLOGUE.md` сцена 5:
+        /// «Семеро уходят. Карган остаётся»).
+        ///
+        /// Телохранитель, отказавший приказу уходить, пока круг открыт, говорит,
+        /// что остаётся и выиграет время. Не постановка: реплика идёт только
+        /// за настоящим отказом движка (правило пролога, §2), и какой отказ —
+        /// такая реплика: позвали издали — «криком не уведёте», вблизи —
+        /// «я не бегу». Дошёл до него игрок и он послушался — уходит со всеми.
+        /// </summary>
+        public static string Rearguard { get; private set; }
         private static readonly List<string> _escapedNames = new();
 
         public bool Departing { get; private set; }
@@ -93,6 +106,7 @@ namespace Sinbinder.Gameplay
             // в следующую долю и увёл не тех.
             SelectionMade = false;
             _escapedNames.Clear();
+            Rearguard = null;
 
             Open = _openAtStart;
 
@@ -142,6 +156,30 @@ namespace Sinbinder.Gameplay
             // Запертый круг тлеет без света: свет — знак, что уходить пора.
             Lamps(Open);
             if (Open) UI.ExitMarker.Show(this);
+
+            if (AOS.AOSEventHub.Instance != null) AOS.AOSEventHub.Instance.OnRefusal += Refused;
+        }
+
+        /// <summary>
+        /// Отказ приказу уходить, пока круг открыт. Телохранитель (в составе —
+        /// «не отходит от вас», по нему находят, а не по имени) остаётся
+        /// и говорит об этом — один раз за побег.
+        /// </summary>
+        private void Refused(Warrior w, AOS.Decision decision, AOS.DecisionContext context)
+        {
+            if (!Open || Departing || !string.IsNullOrEmpty(Rearguard)) return;
+            if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) return;
+            if (context == null || !(context.CommandIsFallBack || context.CommandType == "Move")) return;
+            if (!SquadRoster.TryGet(w.DisplayName, out var m) || string.IsNullOrEmpty(m.Unavailable)) return;
+            if (Within(w.transform.position)) return;
+
+            Rearguard = w.DisplayName;
+            Debug.Log($"[ПОБЕГ] Прикрывать отход остался {w.DisplayName} (приказ {(context.CommandVolume < 1f ? "издали" : "вблизи")}).");
+
+            string name = Loc.Name(w.DisplayName);
+            Herald.Line(context.CommandVolume < 1f
+                ? Loc.F("{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время».", name)
+                : Loc.F("{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время».", name));
         }
 
         /// <summary>Огни ворот, если они у края есть.</summary>
@@ -152,6 +190,8 @@ namespace Sinbinder.Gameplay
 
         void OnDestroy()
         {
+            if (AOS.AOSEventHub.Instance != null) AOS.AOSEventHub.Instance.OnRefusal -= Refused;
+
             if (Active == this) Active = null;
         }
 
@@ -243,6 +283,19 @@ namespace Sinbinder.Gameplay
                 if (w != null && !w.IsDead && w.Team == Team.Player
                     && !(w is SinbinderPlayer) && !_inside.Contains(w)) left++;
 
+            // Оставшийся прикрывать — не «не дождались»: он сам остался,
+            // и журнал называет его, а не считает.
+            bool covering = false;
+            if (!string.IsNullOrEmpty(Rearguard))
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                    if (w != null && !w.IsDead && w.DisplayName == Rearguard && !_inside.Contains(w)) { covering = true; break; }
+            if (!covering) Rearguard = null;
+            if (covering)
+            {
+                left--;
+                Log(Loc.F("{0} остался прикрывать отход.", Loc.Name(Rearguard)));
+            }
+
             // Словами, а не числом: игрок чисел не видит. До 24 сентября
             // здесь было «Не дождались: 3.» — единственная цифра в журнале.
             if (left > 0) Log(Waited(left));
@@ -331,7 +384,10 @@ namespace Sinbinder.Gameplay
             }
 
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
-            if (title != null) yield return title.Darken(Loc.T(Dawn), 0.9f);
+            string dawn = Loc.T(Dawn);
+            if (!string.IsNullOrEmpty(Rearguard))
+                dawn += "\n" + Loc.F("{0} остался у лагеря.", Loc.Name(Rearguard));
+            if (title != null) yield return title.Darken(dawn, 0.9f);
 
             yield return new WaitForSecondsRealtime(2.2f);
 

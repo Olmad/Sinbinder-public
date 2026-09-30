@@ -4064,6 +4064,14 @@ msgid "Карган: «Дело плохо, Владыка. Кто-то щёлк
 msgstr "Kargan: “Things are bad, my lord. Someone is snapping our lads like rat bones.”"
 
 #: Gameplay/EscapeZone.cs
+msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
+msgstr "{0}: “You won't call me off with shouting, my lord. Go — I'll stay here and buy you time.”"
+
+#: Gameplay/EscapeZone.cs
+msgid "{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время»."
+msgstr "{0}: “I don't run from them, my lord. Go — I'll buy you time.”"
+
+#: Gameplay/EscapeZone.cs
 msgid "Уходить рано: лагерь ещё держится."
 msgstr "Too early to leave: the camp is still holding."
 
@@ -4072,12 +4080,20 @@ msgid "Отряд уходит. Кто не успеет — останется.
 msgstr "The squad is leaving. Whoever doesn't make it stays behind."
 
 #: Gameplay/EscapeZone.cs
+msgid "{0} остался прикрывать отход."
+msgstr "{0} stayed behind to cover the retreat."
+
+#: Gameplay/EscapeZone.cs
 msgid "К рассвету они вышли к старому склепу."
 msgstr "By dawn they reached the old crypt."
 
 #: Gameplay/EscapeZone.cs
 msgid "Лагерь остаётся за спиной."
 msgstr "The camp is left behind."
+
+#: Gameplay/EscapeZone.cs
+msgid "{0} остался у лагеря."
+msgstr "{0} stayed behind at the camp."
 
 #: Gameplay/EscapeZone.cs
 msgid "Отряд ушёл с поля."
