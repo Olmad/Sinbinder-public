@@ -97,7 +97,7 @@ namespace Sinbinder.UI
             {
                 _shown = who;
                 _shownPicked = picked;
-                _nameLine.text = who.ShownName;
+                _nameLine.text = Loc.Name(who.ShownName);
                 _sinLine.text = picked ? SinLine(who) : Loc.T("Никто не выделен");
             }
 

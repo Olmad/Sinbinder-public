@@ -639,7 +639,10 @@ class Checker:
 
     # Имя души, вещи, титула в конце выражения: w.DisplayName, item.Name,
     # soul.EarnedTitle, SquadRoster.CommanderName (с .ToLowerInvariant() и без).
-    NAME_TAIL = re.compile(r'(?:\.\s*(?:Name|DisplayName|EarnedTitle)|\bCommanderName)'
+    # ShownName — имя с ремеслом или титулом (Naming.Full), ActorName — имя
+    # в записи боя: оба по-русски, как всякое имя (30 сентября — панель
+    # выделенного, совет и пересказ вылазки показывали их голыми).
+    NAME_TAIL = re.compile(r'(?:\.\s*(?:Name|DisplayName|EarnedTitle|ShownName|ActorName)|\bCommanderName)'
                            r'(?:\s*\.\s*(?:ToLowerInvariant|ToLower|Trim)\s*\(\s*\))?\s*$')
     NAME_CHAIN = re.compile(r'[\w.?\[\]\s]+(?:\(\s*\))?')
 
@@ -663,10 +666,14 @@ class Checker:
 
             raw = set()
             for m in re.finditer(r'\b(?:string|var)\s+(\w+)\s*=\s*([^;]+);', clean):
-                if self._bare_name(m.group(2)):
+                if any(self._bare_name(piece) for piece, _ in self._pieces(m.group(2), 0)):
                     raw.add(m.group(1))
 
             def judge(expr, pos, where):
+                for piece, at in self._pieces(expr, pos):
+                    judge_one(piece, at, where)
+
+            def judge_one(expr, pos, where):
                 e = expr.strip()
                 if not (self._bare_name(e) or e in raw):
                     return
@@ -716,6 +723,33 @@ class Checker:
                 self.report(p, line_of(body, m.start()),
                             f'имя {m.group(1)} через Loc.T: имя — данные, в записи и в логике по-русски — '
                             'Loc.N, перевод при показе (Loc.Name, docs/38-LANG.md §3.3)')
+
+    @staticmethod
+    def _pieces(expr, pos):
+        """
+        [(часть, позиция)] выражения: склейка через + и ветки ?: — каждая
+        часть показывается игроку сама по себе. «a.ShownName + Break + …»
+        и «пусто ? Loc.T(…) : ev.ActorName» — имя в одной из частей.
+        """
+        parts, depth, start = [], 0, 0
+        cut = []
+        i = 0
+        while i < len(expr):
+            c = expr[i]
+            if c in '([{':
+                depth += 1
+            elif c in ')]}':
+                depth -= 1
+            elif depth == 0 and c == '?' and i + 1 < len(expr) and expr[i + 1] in '?.':
+                i += 2
+                continue
+            elif depth == 0 and c in '+?:':
+                cut.append(i)
+            i += 1
+        for end in cut + [len(expr)]:
+            parts.append((expr[start:end], pos + start))
+            start = end + 1
+        return parts
 
     @staticmethod
     def _text_params(clean):

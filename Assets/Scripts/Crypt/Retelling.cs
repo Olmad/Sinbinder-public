@@ -100,7 +100,7 @@ namespace Sinbinder.Crypt
         /// </summary>
         private static string Line(BattleEvent ev)
         {
-            string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : ev.ActorName;
+            string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : Loc.Name(ev.ActorName);
             return $"{who} {PhraseGenerator.Did(ev.Action, null, ev.ActorGender)}.";
         }
     }

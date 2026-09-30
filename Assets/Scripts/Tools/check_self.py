@@ -477,6 +477,35 @@ namespace N
 ''',
     }, 'надпись через Row()'),
 
+    ('raw_names/имя в склейке надписи', {
+        'UI/Card.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Card
+    {
+        Text _detail;
+        void Show(Warrior w) => _detail.text = w.ShownName + "\\n" + Loc.T("готов");
+    }
+}
+''',
+    }, 'надпись .text «w.ShownName»'),
+
+    ('raw_names/имя в ветке ?:', {
+        'Crypt/Told.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Told
+    {
+        string Line(BattleEvent ev)
+        {
+            string who = ev.ActorName == null ? Loc.T("Кто-то") : ev.ActorName;
+            return $"{who} ушёл.";
+        }
+    }
+}
+''',
+    }, 'дырка $"…" «who»'),
+
     ('raw_names/имя души через Loc.T', {
         'Gameplay/Stray.cs': '''// Перевод: текст через Loc
 namespace N
