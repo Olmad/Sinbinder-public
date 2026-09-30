@@ -459,6 +459,24 @@ namespace N
 ''',
     }, 'имя мимо Loc.Name'),
 
+    ('raw_names/имя в надпись через помощника', {
+        'UI/Shelf.cs': '''// Перевод: текст через Loc
+namespace N
+{
+    public class Shelf
+    {
+        void Draw(InventoryItem item) => Row(item.Name, Loc.T("в мешок"));
+
+        void Row(string title, string line)
+        {
+            var label = new Text();
+            label.text = title;
+        }
+    }
+}
+''',
+    }, 'надпись через Row()'),
+
     ('raw_names/имя души через Loc.T', {
         'Gameplay/Stray.cs': '''// Перевод: текст через Loc
 namespace N

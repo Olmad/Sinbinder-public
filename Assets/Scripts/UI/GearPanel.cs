@@ -481,7 +481,7 @@ namespace Sinbinder.UI
                 var bag = Bag(store);
                 float right = RowHeight(_store, bag.Count);
                 foreach (var item in bag)
-                    Row(_store, item.Name, Plain(item, Loc.T("в сундук")), () => ToChest(item), right);
+                    Row(_store, Loc.Name(item.Name), Plain(item, Loc.T("в сундук")), () => ToChest(item), right);
                 if (bag.Count == 0) Row(_store, Loc.T("— Пусто —"), "", null);
                 _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
             }

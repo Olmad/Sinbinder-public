@@ -693,6 +693,21 @@ class Checker:
                 for h in re.finditer(r'\{([^{}:]+)(?::[^{}]*)?\}', m.group(2)):
                     judge(h.group(1).split(',')[0], m.start(2) + h.start(1), 'дырка $"…"')
 
+            # прямо в надпись: label.text = w.DisplayName;
+            for m in re.finditer(r'\.text\s*\+?=\s*([^;]+);', clean):
+                judge(m.group(1), m.start(1), 'надпись .text')
+
+            # Через помощника файла: метод кладёт свой параметр в надпись,
+            # и имя, переданное ему, видит игрок. 30 сентября так нашлось
+            # Row(_store, item.Name, …) — у сундука вещи мешка шли
+            # по-русски посреди английского экрана.
+            for method, places in self._text_params(clean).items():
+                for m in re.finditer(r'\b' + re.escape(method) + r'\s*\(', clean):
+                    args = self._top_args(clean, m.end() - 1)
+                    for i in places:
+                        if i < len(args):
+                            judge(args[i][0], args[i][1], f'надпись через {method}()')
+
             # Имя, рождённое переведённым: душа, вещь, вылазка с Loc.T в имени
             # записывается на языке игрока, и та же игра на другом языке —
             # другие данные. Вылазка к тому же выбирает грех души по хэшу
@@ -701,6 +716,37 @@ class Checker:
                 self.report(p, line_of(body, m.start()),
                             f'имя {m.group(1)} через Loc.T: имя — данные, в записи и в логике по-русски — '
                             'Loc.N, перевод при показе (Loc.Name, docs/38-LANG.md §3.3)')
+
+    @staticmethod
+    def _text_params(clean):
+        """
+        {метод: [номера параметров]} — строковые параметры, которые метод
+        этого файла кладёт в надпись целиком (x.text = параметр;).
+        """
+        found = {}
+        decl = re.compile(r'\b(?:void|string|Text|\w+)\s+(\w+)\s*\(([^()]*)\)\s*\{')
+        for m in decl.finditer(clean):
+            body_start = m.end() - 1
+            depth, i = 0, body_start
+            while i < len(clean):
+                if clean[i] == '{':
+                    depth += 1
+                elif clean[i] == '}':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                i += 1
+            body = clean[body_start:i]
+            places = []
+            for n, param in enumerate(p for p in m.group(2).split(',') if p.strip()):
+                words = param.split('=')[0].split()
+                if len(words) < 2 or words[-2] != 'string':
+                    continue
+                if re.search(r'\.text\s*\+?=\s*' + re.escape(words[-1]) + r'\s*;', body):
+                    places.append(n)
+            if places:
+                found[m.group(1)] = places
+        return found
 
     def _bare_name(self, expr):
         """Голое имя: цепочка доступа без обёртки, кончающаяся именем."""
