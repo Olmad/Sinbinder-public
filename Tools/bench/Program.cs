@@ -4304,6 +4304,52 @@ static class Bench
         Console.WriteLine(worst > 0.5
             ? "  ВНИМАНИЕ: обучающий персонаж отказывает чаще, чем слушается (35-CRITIQUE п. 2)"
             : "  обучающий персонаж слушается чаще, чем отказывает");
+
+        // Варианты решений автора (docs/40-SWITCHES.md §4): что дала бы
+        // подстройка. Ничего не меняет в игре — только меряет. Марга
+        // начинает пролог с долгом за три вылазки (PrologueCampSpawner),
+        // плата — у алтаря склепа, то есть весь набег он в долгу.
+        Console.WriteLine("\n  --- варианты для Марги: «бей» в бою ---");
+        Console.WriteLine($"  {"вариант",-30} {"в долгу: тихо",14} {"в долгу: голос+карман",22} {"оплачен: голос+карман",22}");
+        foreach (var (label, intensity, loyalty, moral) in new[]
+        {
+            ("как сейчас: 65, верность 70", 65f, 70f, MoralType.Vicious),
+            ("жадность 50",                 50f, 70f, MoralType.Vicious),
+            ("верность 85",                 65f, 85f, MoralType.Vicious),
+            ("жадность 50, верность 85",    50f, 85f, MoralType.Vicious),
+            ("обычный, а не порочный",      65f, 70f, MoralType.Neutral),
+        })
+        {
+            double R(int unpaid, float volume, int pocket) => OrderRun(modules, cfg, SinType.Greed, moral,
+                intensity, loyalty, unpaid, runs, loot: 0, allyInDanger: false, volume: volume,
+                order: "Attack", pocket: pocket).Rate * 100;
+            Console.WriteLine($"  {label,-30} {R(3, 1f, 0),13:F0}% {R(3, 0.7f, full),21:F0}% {R(0, 0.7f, full),21:F0}%");
+        }
+        double camp = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, 65f, 70f, 3, runs,
+            loot: 0, allyInDanger: false, battle: false).Rate * 100;
+        double campFar = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, 65f, 70f, 3, runs,
+            loot: 0, allyInDanger: false, battle: false, volume: 0.7f).Rate * 100;
+        Console.WriteLine($"  лагерь, «иди», как сейчас в долгу: рядом {camp:F0}%, издали {campFar:F0}%"
+                        + " (платы в лагере нет — только у алтаря склепа)");
+
+        // Карган. Даль бьёт по нему не через гордость, а через верность:
+        // далёкий приказ слышен тише (LoyaltyModule), а вблизи на «отходи»
+        // в бою он стоит ровно на грани — половина положений туда, половина
+        // сюда. Любая тишина перекидывает все.
+        Console.WriteLine("\n  --- варианты для Каргана: «отходи» в бою (рядом / издали / край) ---");
+        foreach (var (label, intensity, loyalty) in new[]
+        {
+            ("как сейчас: гордыня 90, верность 75", 90f, 75f),
+            ("верность 85",                         90f, 85f),
+            ("верность 95",                         90f, 95f),
+            ("гордыня 75",                          75f, 75f),
+        })
+        {
+            var rates = new List<string>();
+            foreach (float v in new[] { 1f, 0.7f, 0.35f })
+                rates.Add($"{OrderRun(modules, cfg, SinType.Pride, MoralType.Neutral, intensity, loyalty, 0, runs, loot: 0, allyInDanger: true, volume: v).Rate * 100,4:F0}%");
+            Console.WriteLine($"  {label,-38} {string.Join(" /", rates)}");
+        }
     }
 
     static void LootCheck()
