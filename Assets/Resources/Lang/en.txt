@@ -3804,6 +3804,22 @@ msgid "Служу, пока есть за что."
 msgstr "I serve while there's something to serve for."
 
 #: Dialogue/TalkLines.cs
+msgid "Одна за две? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for two? …Fine. The punishment's over — that's something."
+
+#: Dialogue/TalkLines.cs
+msgid "Одна за три? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for three? …Fine. The punishment's over — that's something."
+
+#: Dialogue/TalkLines.cs
+msgid "Одна за все? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for all of them? …Fine. The punishment's over — that's something."
+
+#: Dialogue/TalkLines.cs
+msgid "Наказание кончилось. Этого довольно, владыка."
+msgstr "The punishment's over. That's enough, my lord."
+
+#: Dialogue/TalkLines.cs
 msgid "Спасибо. Если кому-то нужнее — скажите, отдам."
 msgstr "Thank you. If someone needs it more — say so, and I'll give it."
 
@@ -5074,6 +5090,10 @@ msgstr "Nowhere to put it."
 #: Gameplay/TrophyChest.cs
 msgid "Из сундука — в мешок Греховода: {0}."
 msgstr "From the chest into the Sinbinder's bag: {0}."
+
+#: Gameplay/TrophyChest.cs
+msgid "{0}: «Выкопал, не выкопал — а плату за вылазки мне так никто и не выкопал»."
+msgstr "{0}: “Dug it up or not — nobody's dug up my pay for the sorties yet.”"
 
 #: Inventory/TrophyCatalog.cs
 msgid "Кольчужный ворот"

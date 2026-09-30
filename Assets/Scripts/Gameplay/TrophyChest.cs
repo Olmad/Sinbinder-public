@@ -165,7 +165,11 @@ namespace Sinbinder.Gameplay
             {
                 _invited = true;
                 if (!string.IsNullOrEmpty(_invite))
-                    Herald.Line(Loc.T(_invite));
+                {
+                    string invite = Loc.T(_invite);
+                    Herald.Line(invite);
+                    Grumble(invite);
+                }
             }
 
             // Тем же правилом, что и стол совета: есть тело — открывает
@@ -374,6 +378,30 @@ namespace Sinbinder.Gameplay
             if (taken > 0) log?.Write(Loc.F("Из сундука — в мешок Греховода: {0}.", names));
 
             return taken;
+        }
+
+        /// <summary>
+        /// Должник отвечает на шутку Каргана — о плате. Решение 30 сентября
+        /// (автор: «сам реши»): без этой строки «наказание затянулось»
+        /// после сундука приходило из ниоткуда — игрок впервые слышал о долге
+        /// из уст третьего. Теперь долг сначала заявляет сам должник, а
+        /// напоминание Каргана его подхватывает. Разговоры лагеря этого
+        /// не сделают: в сценах пролога лагерь молчит (<see cref="CampLife.Idle"/>).
+        ///
+        /// Говорит только тот, кого Карган назвал: строка — ответ на
+        /// «выкопал», а чужой долг в ответ на чужую шутку был бы бессмыслицей.
+        /// Долга нет — молчит: жаловаться не на что.
+        /// </summary>
+        private static void Grumble(string invite)
+        {
+            var debtor = CampOpening.Debtor();
+            if (debtor == null) return;
+
+            string name = Loc.Name(debtor.DisplayName);
+            if (!invite.Contains(name)) return;
+
+            Herald.Line(Loc.F("{0}: «Выкопал, не выкопал — а плату за вылазки мне "
+                            + "так никто и не выкопал».", name));
         }
 
         /// <summary>

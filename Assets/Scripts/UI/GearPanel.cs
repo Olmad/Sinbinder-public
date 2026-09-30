@@ -249,9 +249,10 @@ namespace Sinbinder.UI
 
                 case 2:
                     if (_warrior.UnpaidMissions <= 0) return;
+                    int owed = _warrior.UnpaidMissions;
                     if (SquadGear.PayDebt(_warrior, PlayerInventory.Instance, out string word))
                     {
-                        _answer = Loc.F("{0}: «{1}»", name, Dialogue.TalkLines.Paid(_warrior));
+                        _answer = Loc.F("{0}: «{1}»", name, Dialogue.TalkLines.Paid(_warrior, owed));
                         FindFirstObjectByType<BattleLogUI>()?.Write(Loc.F("Долг отдан из рук в руки: {0}.", name));
                     }
                     else _answer = Loc.F("{0} — {1}.", Loc.T("Отдать долг"), word);

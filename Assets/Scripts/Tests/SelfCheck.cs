@@ -325,7 +325,8 @@ namespace Sinbinder.Tests
             Check(!SquadGear.PayDebt(greedy, purse, out _), "второй раз отдавать нечего");
 
             foreach (var line in new[] { Dialogue.TalkLines.Greet(greedy), Dialogue.TalkLines.Attitude(greedy),
-                                         Dialogue.TalkLines.Paid(greedy) })
+                                         Dialogue.TalkLines.Paid(greedy), Dialogue.TalkLines.Paid(greedy, 2),
+                                         Dialogue.TalkLines.Paid(greedy, 3), Dialogue.TalkLines.Paid(greedy, 4) })
                 Check(!string.IsNullOrEmpty(line) && line.IndexOfAny("0123456789".ToCharArray()) < 0,
                       $"строка разговора без цифр: «{line}»");
         }

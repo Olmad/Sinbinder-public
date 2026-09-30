@@ -88,11 +88,26 @@ namespace Sinbinder.Dialogue
         /// Что говорит воин, когда Греховод отдал долг из рук в руки. По греху:
         /// жадный считает, гордый делает вид, что не ради денег.
         /// </summary>
-        public static string Paid(Warrior w)
+        public static string Paid(Warrior w, int owed = 1)
         {
             var soul = w.Soul;
             bool virtue = soul.Get(soul.Sin) < 0f;
             string P(string he, string she) => Grammar.Pick(w.Gender, he, she);
+
+            // Одна плата снимает долг за несколько вылазок: Греховод удерживал
+            // плату в наказание, и отдать одну — снять наказание (решение
+            // автора, 30 сентября). Должник говорит это сам — иначе «третью
+            // вылазку без платы» закрывала бы молча одна монета.
+            if (owed >= 2)
+            {
+                if (!virtue && soul.Sin == SinType.Greed)
+                {
+                    if (owed == 2) return Loc.T("Одна за две? …Ладно. Наказание кончилось — и то хлеб.");
+                    if (owed == 3) return Loc.T("Одна за три? …Ладно. Наказание кончилось — и то хлеб.");
+                    return Loc.T("Одна за все? …Ладно. Наказание кончилось — и то хлеб.");
+                }
+                return Loc.T("Наказание кончилось. Этого довольно, владыка.");
+            }
 
             if (virtue)
                 return soul.Sin == SinType.Greed
