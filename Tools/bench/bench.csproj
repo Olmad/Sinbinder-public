@@ -111,6 +111,11 @@
          и оболочка — значит, стенд может её проговорить, а не поверить
          на слово, что связь души с именем работает. -->
     <Compile Include="../../Assets/Scripts/Gameplay/RisingWords.cs" />
+    <!-- Удар и защита (выключатель «удар»): формула живая, числа оболочек —
+         из ассетов, вещи сундука — из каталога. Стенд меряет, что меняет
+         выключатель, а не верит описанию. -->
+    <Compile Include="../../Assets/Scripts/Gameplay/CombatMath.cs" />
+    <Compile Include="../../Assets/Scripts/Inventory/TrophyCatalog.cs" />
   </ItemGroup>
 
 </Project>

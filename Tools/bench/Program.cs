@@ -3412,6 +3412,7 @@ static class Bench
             shell.type = (ShellType)(int)Num(text, "type");
             shell.baseHP = Num(text, "baseHP");
             shell.baseDefense = Num(text, "baseDefense");
+            shell.baseAttack = Num(text, "baseAttack");
             shell.movementSpeed = Num(text, "movementSpeed");
             shell.canBeRevived = Num(text, "canBeRevived") > 0.5f;
             shell.wear = Num(text, "wear");
@@ -4117,6 +4118,192 @@ static class Bench
         Console.WriteLine(bad == 0
             ? "  Имя переживает тело ровно настолько, насколько память."
             : $"  ПРОВАЛОВ: {bad}");
+    }
+
+    /// <summary>
+    /// Выключатель «удар» (CombatMath): что он меняет в бою один на один.
+    ///
+    /// Выключено — у всех удар одного числа (AutoAttack) и защиты нет;
+    /// включено — удар и защита от оболочки плюс вещи в руках, защита гасит
+    /// долю (CombatMath.Absorb). Числа оболочек — из ассетов, вещи — из
+    /// сундука Марги и трофея добычи, нагрудник Инквизитора и прежний удар
+    /// читаются из кода игры: стенд не держит своих копий чисел.
+    ///
+    /// Меряем «ударов до смерти» без положения (спина, окружение) и без
+    /// первой побитой волны: это одинаково в обоих режимах.
+    /// </summary>
+    static void CombatCheck()
+    {
+        Console.WriteLine("\n=== УДАР: что меняет выключатель ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var shells = LoadShells();
+        if (shells.Count == 0) return;
+
+        string scripts = AssetsRoot() == null ? null : Path.Combine(AssetsRoot(), "Scripts");
+        float Read(string file, string pattern, string what)
+        {
+            string path = scripts == null ? null : Path.Combine(scripts, file);
+            var m = path != null && File.Exists(path)
+                ? Regex.Match(File.ReadAllText(path), pattern) : Match.Empty;
+            Check(m.Success, $"{what}: не прочитал из {file} — число поменяли или переименовали");
+            return m.Success ? float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : 0f;
+        }
+
+        float flat = Read("Gameplay/AutoAttack.cs", @"_attackDamage\s*=\s*([\d.]+)f", "удар при выключенном");
+        float breast = Read("Gameplay/HunterSquadSpawner.cs",
+            @"Освящённый нагрудник""[\s\S]*?defense:\s*([\d.]+)f", "нагрудник Инквизитора");
+        float trophy = Read("Gameplay/LootChain.cs",
+            @"public static InventoryItem Trophy[\s\S]*?attack:\s*([\d.]+)f", "трофей добычи");
+
+        var chest = TrophyCatalog.Chest().ToList();
+        var axe = chest.FirstOrDefault(i => i.AttackBonus > 0f);
+        var mail = chest.FirstOrDefault(i => i.DefenseBonus > 0f);
+        Check(axe != null && mail != null, "в сундуке нет оружия или брони — сравнивать нечем");
+        if (axe == null || mail == null || flat <= 0f) return;
+
+        var man = shells.FirstOrDefault(x => x.type == ShellType.Living);
+        Check(man != null, "нет оболочки «Человек» — охотники без тела");
+        if (man == null) return;
+
+        int Hits(ShellData target, float armour, float blow, bool on)
+        {
+            float hurt = on ? CombatMath.Absorb(blow, target.baseDefense + armour) : blow;
+            return (int)Math.Ceiling(target.EffectiveHP / Math.Max(0.01f, hurt));
+        }
+
+        Console.WriteLine($"  ударов до смерти: выключено → включено; прежний удар {flat:F0}, защиты нет\n");
+        Console.WriteLine($"  {"свой",-9} {"бьёт охотника",14} {"Инквизитора",12} {"с топором",10}"
+                        + $" {"охотник бьёт его",17} {"в вороте",9}");
+
+        foreach (var own in shells.Where(x => x.type != ShellType.Living).OrderBy(x => x.baseHP))
+        {
+            string Pair(int off, int on) => $"{off,2} → {on,-2}";
+            int hOff = Hits(man, 0f, flat, false), hOn = Hits(man, 0f, own.baseAttack, true);
+            int iOn = Hits(man, breast, own.baseAttack, true);
+            int aOn = Hits(man, 0f, own.baseAttack + axe.AttackBonus, true);
+            int tOff = Hits(own, 0f, flat, false), tOn = Hits(own, 0f, man.baseAttack, true);
+            int mOn = Hits(own, mail.DefenseBonus, man.baseAttack, true);
+
+            Console.WriteLine($"  {own.shellName,-9} {Pair(hOff, hOn),14} {Pair(hOff, iOn),12} {Pair(hOff, aOn),10}"
+                            + $" {Pair(tOff, tOn),17} {Pair(tOff, mOn),9}");
+
+            // Выключено вещи в поле не значат ничего — это и есть довод.
+            Check(Hits(man, 0f, flat, false) == Hits(man, 0f, flat, false), "повторяемость");
+            // Включено вещь обязана что-то менять: иначе «бьёт тяжелее» — ложь и тут.
+            Check(aOn < hOn || own.baseAttack + axe.AttackBonus <= own.baseAttack,
+                  $"{own.shellName}: топор не сокращает бой — «бьёт тяжелее» ничего не значит");
+            Check(mOn >= tOn, $"{own.shellName}: ворот делает слабее");
+            // Ни одна защита не делает неуязвимым (решение §80: доля, не вычитание).
+            Check(tOn < 1000, $"{own.shellName}: неуязвим при включённом ударе");
+        }
+
+        // Трофей добычи: гордый надевает всё, что снял, — главная рука
+        // и вторая, дальше только замена. Потолок прибавки — полтора трофея.
+        var skel = shells.FirstOrDefault(x => x.type == ShellType.Skeleton);
+        if (skel != null)
+        {
+            float cap = trophy + trophy * CombatMath.OffhandShare;
+            int bare = Hits(man, 0f, skel.baseAttack, true);
+            int one = Hits(man, 0f, skel.baseAttack + trophy, true);
+            int two = Hits(man, 0f, skel.baseAttack + cap, true);
+            Console.WriteLine($"\n  трофей добычи у гордого скелета: без него {bare}, с одним {one},"
+                            + $" с двумя (вторая рука вполсилы) {two} — дальше только замена");
+            Check(two <= one && one <= bare, "трофей делает гордого слабее");
+            Check(cap <= 2f * trophy, "прибавка трофеев без потолка — снежный ком");
+        }
+
+        // Вылазка считается без сцены (Warrior.TakeDamage без тела): удар —
+        // Warrior.Attack с вещами всегда, а защита при выключенном — вычитание
+        // голой оболочки, max(1, удар − защита). Та самая формула, от которой
+        // отказались 24 сентября: при малом ударе броня всесильна.
+        var foe = shells.FirstOrDefault(x => x.type == ShellType.Skeleton);
+        if (foe != null)
+        {
+            Console.WriteLine($"\n  вылазка: сколько ударов вражеского скелета выдержит свой"
+                            + $" (выключено — вычитание, включено — доля)");
+            foreach (var own in shells.Where(x => x.type != ShellType.Living).OrderBy(x => x.baseDefense))
+            {
+                float sub = Math.Max(1f, foe.baseAttack - own.baseDefense);
+                int off = (int)Math.Ceiling(own.EffectiveHP / sub);
+                int on = (int)Math.Ceiling(own.EffectiveHP / CombatMath.Absorb(foe.baseAttack, own.baseDefense));
+                Console.WriteLine($"  {own.shellName,-9} {off,4} → {on,-4}"
+                                + (sub <= 1f ? "  ← при выключенном почти неуязвим" : ""));
+            }
+            Console.WriteLine("  (вещи в вылазке при выключенном бьют, но не защищают:"
+                            + " удар берёт вещи, вычитание — голую оболочку)");
+        }
+
+        Console.WriteLine("\n  выключено: у всех удар одного числа, вещи в поле не значат ничего —");
+        Console.WriteLine("  а экран вещей пишет «бьёт тяжелее» и «держит удар»");
+        Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
+    }
+
+    /// <summary>
+    /// Выключатели вместе: «голос» и «добыча» (через карман) складываются
+    /// у одного человека. Прежний разбор (docs/35-CRITIQUE.md п. 2) просил
+    /// бюджет отказов и узкий характер у обучающего Марги; здесь видно,
+    /// сколько отказов даёт каждое сочетание. Голос выключен — приказ
+    /// слышен в полную силу; добыча выключена — карман пуст (в прологе
+    /// его наполняет только она).
+    /// </summary>
+    static void SwitchesTogetherCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ВЫКЛЮЧАТЕЛИ ВМЕСТЕ: ГОЛОС И КАРМАН У ОДНОГО ЧЕЛОВЕКА ===");
+
+        var modules = Modules();
+        const int runs = 400;
+        int full = (int)cfg.GreedPocketFull;
+
+        var who = new (string Name, SinType Sin, MoralType Moral, float Intensity, float Loyalty)[]
+        {
+            ("Марга",  SinType.Greed, MoralType.Vicious, 65f, 70f),
+            ("Карган", SinType.Pride, MoralType.Neutral, 90f, 75f),
+            ("Ю",      SinType.Sloth, MoralType.Neutral, 25f, 80f),
+        };
+
+        var cases = new (string Label, float Volume, int Pocket)[]
+        {
+            ("всё выключено",          1f,    0),
+            ("добыча (карман полон)",  1f,    full),
+            ("голос, издали",          0.7f,  0),
+            ("голос, издали + карман", 0.7f,  full),
+            ("голос, край + карман",   0.35f, full),
+        };
+
+        foreach (var (order, label) in new[] { ("Attack", "бой, приказ «бей»"), (null, "бой, приказ «отходи»") })
+        {
+            Console.WriteLine($"\n  --- {label} ---");
+            Console.Write($"  {"сочетание",-24}");
+            foreach (var m in who) Console.Write($" {m.Name,8}");
+            Console.WriteLine();
+
+            foreach (var c in cases)
+            {
+                Console.Write($"  {c.Label,-24}");
+                foreach (var m in who)
+                {
+                    var (rate, _) = OrderRun(modules, cfg, m.Sin, m.Moral, m.Intensity, m.Loyalty, 0, runs,
+                        loot: 0, allyInDanger: order == null, volume: c.Volume, order: order, pocket: c.Pocket);
+                    Console.Write($" {rate * 100,7:F1}%");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        var (worst, _) = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, 65f, 70f, 0, runs,
+            loot: 0, allyInDanger: false, volume: 0.7f, order: "Attack", pocket: full);
+        var (calm, _) = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, 65f, 70f, 0, runs,
+            loot: 0, allyInDanger: false, volume: 1f, order: "Attack", pocket: 0);
+        Console.WriteLine($"\n  Марга, «бей» издали с полным карманом: {worst * 100:F0}% отказов против {calm * 100:F0}% без обоих");
+        Console.WriteLine(worst > 0.5
+            ? "  ВНИМАНИЕ: обучающий персонаж отказывает чаще, чем слушается (35-CRITIQUE п. 2)"
+            : "  обучающий персонаж слушается чаще, чем отказывает");
     }
 
     static void LootCheck()
@@ -4966,6 +5153,7 @@ static class Bench
         CampCheck();
         CommandsCheck(cfg);
         PocketCheck(cfg);
+        SwitchesTogetherCheck(cfg);
         ReasonCheck(cfg);
         PrideVoiceCheck(cfg);
         VirtueHalvesCheck(cfg);
@@ -4976,6 +5164,7 @@ static class Bench
         DisobeyDragSweep(cfg);
         SkillsCheck(cfg);
         ShellsCheck();
+        CombatCheck();
         LootCheck();
         TitleCheck();
         RaisedAgainCheck();
