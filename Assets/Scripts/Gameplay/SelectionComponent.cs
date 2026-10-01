@@ -35,6 +35,11 @@ namespace Sinbinder.Gameplay
         /// </summary>
         void Start()
         {
+            // Кольцо отношения — у всех и всегда (docs/42-INTERFACE.md §4):
+            // в покое тусклое, у выбранного — в полную силу.
+            if (_selectionCircle == null) _selectionCircle = BuildCircle();
+            Paint();
+
             if (SelectionManager.Instance != null)
             {
                 SelectionManager.Instance.RegisterUnit(this);
@@ -65,13 +70,37 @@ namespace Sinbinder.Gameplay
             // круг у выбранных воинов, у врага — красный. Ну, по классике».
             if (_selectionCircle == null) _selectionCircle = BuildCircle();
             Paint();
-
-            if (_selectionCircle != null)
-                _selectionCircle.SetActive(true);
         }
 
+        /// <summary>
+        /// Кольцо видно, пока воин жив и не спрятан туманом: туман выключает
+        /// отрисовку врага на смене видимости (<see cref="FogOfWar"/>), а кольцо,
+        /// построенное позже, об этом не знало бы — и выдавало бы охотника
+        /// в темноте. Конец страху набега (42-INTERFACE §5).
+        /// </summary>
+        void Update()
+        {
+            if (_selectionCircle == null) return;
+
+            bool show = _warrior != null && !_warrior.IsDead && !FogOfWar.Hides(_warrior);
+            if (_selectionCircle.activeSelf != show) _selectionCircle.SetActive(show);
+
+            // Подкуп меняет сторону — кольцо обязано сказать правду о нынешней.
+            if (show && _warrior.Team != _paintedTeam) Paint();
+        }
+
+        // Ярче и чище болотной Зависти и тёмно-красного Гнева (Core/SinPalette):
+        // кольцо — сторона, а не грех, и путать их нельзя (42-INTERFACE §4).
         private static readonly Color Ours = new Color(0.35f, 0.92f, 0.38f);
         private static readonly Color Theirs = new Color(0.95f, 0.24f, 0.18f);
+
+        /// <summary>В покое — тускло: десять ярких красных колец в бою перекричали бы отказы.</summary>
+        private const float RestAlpha = 0.30f;
+
+        /// <summary>Зубцы противника — для дальтонизма: красный с зелёным путают чаще всего.</summary>
+        private const float Teeth = 1.14f;
+
+        private Team _paintedTeam;
 
         private const float CircleRadius = 0.75f;
         private const int CircleSegments = 48;
@@ -80,18 +109,34 @@ namespace Sinbinder.Gameplay
         private static bool _toldAboutCircle;
 
         /// <summary>
-        /// Свой — зелёный, чужой — красный. Цвет берётся в миг выделения:
-        /// перебежчик меняет сторону, и круг обязан сказать правду о нынешней.
+        /// Свой — ровное зелёное кольцо, противник — красное с зубцами
+        /// (решение автора 1 октября, 42-INTERFACE §4). У выбранного — в полную
+        /// силу и толще, в покое — тускло. Нейтральных (пунктир цвета кости)
+        /// в игре пока нет: <see cref="Team"/> знает только две стороны.
         /// </summary>
         private void Paint()
         {
             if (_selectionCircle == null) return;
 
             if (_warrior == null) _warrior = GetComponent<Warrior>();
-            var color = _warrior != null && _warrior.Team == Team.Enemy ? Theirs : Ours;
+            bool enemy = _warrior != null && _warrior.Team == Team.Enemy;
+            _paintedTeam = enemy ? Team.Enemy : Team.Player;
+
+            var color = enemy ? Theirs : Ours;
+            if (!_isSelected) color.a = RestAlpha;
 
             var line = _selectionCircle.GetComponent<LineRenderer>();
-            if (line != null) line.startColor = line.endColor = color;
+            if (line == null) return;
+
+            line.startColor = line.endColor = color;
+            line.widthMultiplier = _isSelected ? 0.07f : 0.045f;
+
+            for (int i = 0; i < CircleSegments; i++)
+            {
+                float a = i / (float)CircleSegments * Mathf.PI * 2f;
+                float r = CircleRadius * (enemy && i % 2 == 1 ? Teeth : 1f);
+                line.SetPosition(i, new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f));
+            }
         }
 
         /// <summary>
@@ -150,8 +195,7 @@ namespace Sinbinder.Gameplay
         public void Deselect()
         {
             _isSelected = false;
-            if (_selectionCircle != null)
-                _selectionCircle.SetActive(false);
+            Paint();    // кольцо остаётся — тусклым
         }
     }
 }
