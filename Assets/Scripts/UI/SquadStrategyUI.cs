@@ -68,7 +68,11 @@ namespace Sinbinder.UI
                 break;
             }
 
-            if (_group == null || _showSeconds <= 0f || !Popup) return;
+            // Держать погашенной каждый кадр, а не один раз в Start: в кадре
+            // прогона 1 октября табличка всё равно стояла видимой — кто-то
+            // поднимал её после старта, а искать его дороже, чем держать.
+            if (_group != null && !Popup) { _group.alpha = 0f; return; }
+            if (_group == null || _showSeconds <= 0f) return;
             _group.alpha = Time.time < _hideAt ? 1f : Mathf.MoveTowards(_group.alpha, 0f, Time.deltaTime * 2f);
         }
 
