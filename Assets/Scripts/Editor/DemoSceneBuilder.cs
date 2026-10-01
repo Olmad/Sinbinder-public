@@ -2719,6 +2719,16 @@ namespace Sinbinder.Utilets
             var order = Line("Строка", plateRect, new Rect(16f, 8f, 540f, 32f), 22, FontStyle.Bold);
             var orderWhy = Line("Почему", plateRect, new Rect(16f, 40f, 540f, 28f), 19);
 
+            // Группа: «Лиска медлит · ещё трое — в строю» (42-INTERFACE §3).
+            var group = Line("Остальные", voices, new Rect(20f, 210f, 560f, 24f), 17);
+
+            // Греховод: на месте голосов — сума и кошель. Прячет и показывает панель.
+            var satchel = Line("Сума", voices, new Rect(20f, 50f, 360f, 180f), 19);
+            satchel.alignment = TextAnchor.UpperLeft;
+            satchel.lineSpacing = 1.15f;
+            var purse = Line("Кошель", voices, new Rect(392f, 50f, 196f, 180f), 18);
+            purse.alignment = TextAnchor.UpperLeft;
+
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.SelectedUnitPanelUI>();
             Wire(ui, ("_panel", panel.gameObject),
                      ("_flameOuter", outer), ("_flameInner", inner),
@@ -2726,7 +2736,8 @@ namespace Sinbinder.Utilets
                      ("_handsTitle", handsTitle), ("_talkPlate", talkPlate), ("_talkText", talkText),
                      ("_harvestPlate", harvestPlate), ("_harvestText", harvestText), ("_handsHint", handsHint),
                      ("_voicesTitle", title), ("_voiceDot", dot), ("_voiceLine", voice), ("_reasonLine", reason),
-                     ("_orderPlate", plate), ("_orderLine", order), ("_orderWhy", orderWhy));
+                     ("_orderPlate", plate), ("_orderLine", order), ("_orderWhy", orderWhy),
+                     ("_groupLine", group), ("_satchelText", satchel), ("_purseText", purse));
         }
 
         /// <summary>

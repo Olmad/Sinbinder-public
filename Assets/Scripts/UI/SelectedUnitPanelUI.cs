@@ -60,6 +60,11 @@ namespace Sinbinder.UI
         [SerializeField] private Image _orderPlate;
         [SerializeField] private Text _orderLine;
         [SerializeField] private Text _orderWhy;
+        [SerializeField] private Text _groupLine;
+
+        [Header("Греховод: вместо голосов")]
+        [SerializeField] private Text _satchelText;
+        [SerializeField] private Text _purseText;
 
         /// <summary>
         /// Как часто перечитывать. Решение живёт заметно дольше кадра,
@@ -77,10 +82,13 @@ namespace Sinbinder.UI
         private static SelectedUnitPanelUI _instance;
 
         /// <summary>
-        /// Полоса показывает воина, а не Греховода. Спрашивает сума: её место —
-        /// вид Греховода, а при воине на её месте его голоса.
+        /// Полоса видна — кто-то выбран. Спрашивает полоса сумы: при выборе
+        /// на её месте голоса или зона приказов, а сама сума — в виде
+        /// Греховода на полосе. Считается на месте, а не берётся из прошлого
+        /// обновления полосы: у сумы и полосы свои часы, и кадр между ними
+        /// показывал обе сразу (прогон -All 1 октября, кадр прогноза).
         /// </summary>
-        public static bool ShowsWarrior { get; private set; }
+        public static bool ShowsAnyone => Current() != null;
 
         /// <summary>
         /// Лежит ли точка экрана на полосе. Спрашивает выделение, как
@@ -98,7 +106,7 @@ namespace Sinbinder.UI
 
         void OnDestroy()
         {
-            if (_instance == this) { _instance = null; ShowsWarrior = false; }
+            if (_instance == this) _instance = null;
         }
 
         void Start()
@@ -125,7 +133,6 @@ namespace Sinbinder.UI
         private void Refresh()
         {
             var who = Current();
-            ShowsWarrior = who != null && !(who is SinbinderPlayer);
 
             if (who == null)
             {
@@ -135,10 +142,88 @@ namespace Sinbinder.UI
 
             _panel.SetActive(true);
 
-            if (who is SinbinderPlayer) ShowSinbinder(who);
-            else ShowWarrior(who);
+            bool hero = who is SinbinderPlayer;
+            Shown(!hero);
+
+            if (hero) ShowSinbinder(who);
+            else { ShowWarrior(who); Group(who); }
 
             Hands(who);
+        }
+
+        /// <summary>Голоса воина или сума Греховода — одно из двух на том же месте.</summary>
+        private void Shown(bool voices)
+        {
+            foreach (var g in new Graphic[] { _voiceDot, _voiceLine, _reasonLine, _orderPlate, _orderLine, _orderWhy, _groupLine })
+                if (g != null) g.gameObject.SetActive(voices);
+            foreach (var g in new Graphic[] { _satchelText, _purseText })
+                if (g != null) g.gameObject.SetActive(!voices);
+        }
+
+        // ---------- группа ----------
+
+        /// <summary>
+        /// Выбрано несколько (42-INTERFACE §3, «Группа»): в портрете тот, кто
+        /// громче всех не согласен, — его покажет <see cref="Current"/>; здесь —
+        /// заголовок «Выбрано пятеро · что тянет его» и строка про остальных:
+        /// «Лиска медлит · ещё трое — в строю». Числа — словами.
+        /// </summary>
+        private void Group(Warrior shown)
+        {
+            var all = Picked();
+            if (_groupLine != null) _groupLine.text = "";
+            if (all.Count < 2) return;
+
+            Set(_voicesTitle, Grammar.For(shown.Gender,
+                Loc.F("Выбрано {0} · что тянет его", Many(all.Count))), Bone);
+            if (_craftLine != null && Disagrees(shown))
+                _craftLine.text = Grammar.For(shown.Gender, Loc.T("громче всех не согласен"));
+
+            var odd = new System.Collections.Generic.List<string>();
+            int calm = 0;
+            foreach (var w in all)
+            {
+                if (w == shown) continue;
+                var d = w.GetComponent<AOSWarriorWrapper>();
+                if (d != null && d.LastContext != null && Disagrees(w))
+                    odd.Add(Loc.F("{0} {1}", Loc.Name(w.DisplayName),
+                        d.LastDecisionDetail.Hesitated ? Grammar.For(w.Gender, Loc.T("медлит"))
+                                                       : PhraseGenerator.Doing(d.LastDecisionDetail.Action).ToLowerInvariant()));
+                else calm++;
+            }
+
+            if (calm > 0) odd.Add(Loc.F("ещё {0} — в строю", Many(calm)));
+            if (_groupLine != null)
+            {
+                _groupLine.text = string.Join(" · ", odd);
+                _groupLine.color = Muted;
+            }
+        }
+
+        /// <summary>Отказал или колеблется — не согласен с приказом.</summary>
+        private static bool Disagrees(Warrior w)
+        {
+            var d = w.GetComponent<AOSWarriorWrapper>();
+            if (d == null || d.LastContext == null) return false;
+            return d.LastDecisionDetail.RefusedCommand || d.LastDecisionDetail.Hesitated;
+        }
+
+        /// <summary>Сколько — словом: «пятеро», «один». Чисел о душах нет (42-INTERFACE §2).</summary>
+        private static string Many(int n)
+        {
+            switch (n)
+            {
+                case 1: return Loc.T("один");
+                case 2: return Loc.T("двое");
+                case 3: return Loc.T("трое");
+                case 4: return Loc.T("четверо");
+                case 5: return Loc.T("пятеро");
+                case 6: return Loc.T("шестеро");
+                case 7: return Loc.T("семеро");
+                case 8: return Loc.T("восьмеро");
+                case 9: return Loc.T("девятеро");
+                default: return Loc.T("многие");
+            }
         }
 
         // ---------- руки Греховода ----------
@@ -186,27 +271,54 @@ namespace Sinbinder.UI
         }
 
         /// <summary>
-        /// Кого показывать: первого выделенного воина; Греховода — только
-        /// если выделен он один. Рамка берёт и его (26 сентября), и панель
-        /// с героем вместо воина врала бы, о ком речь.
+        /// Кого показывать. Из выделенных воинов — того, кто громче всех
+        /// не согласен (42-INTERFACE §3, «Группа»): сперва отказавшего, потом
+        /// колеблющегося, иначе первого. Греховода — только если выделен он
+        /// один: рамка берёт и его (26 сентября), и панель с героем вместо
+        /// воина врала бы, о ком речь.
         /// </summary>
         private static Warrior Current()
         {
+            Warrior first = null, hesitant = null;
+            foreach (var w in Picked())
+            {
+                var d = w.GetComponent<AOSWarriorWrapper>();
+                if (d != null && d.LastContext != null)
+                {
+                    if (d.LastDecisionDetail.RefusedCommand) return w;
+                    if (hesitant == null && d.LastDecisionDetail.Hesitated) hesitant = w;
+                }
+                if (first == null) first = w;
+            }
+            if (hesitant != null) return hesitant;
+            if (first != null) return first;
+
             var manager = SelectionManager.Instance;
             if (manager == null) return null;
-
-            Warrior hero = null;
-            var selected = manager.GetSelectedUnits();
-            for (int i = 0; i < selected.Count; i++)
+            foreach (var unit in manager.GetSelectedUnits())
             {
-                if (selected[i] == null) continue;
-
-                var warrior = selected[i].GetComponentInParent<Warrior>();
-                if (warrior == null) continue;
-                if (warrior is SinbinderPlayer) { hero = warrior; continue; }
-                return warrior;
+                if (unit == null) continue;
+                var hero = unit.GetComponentInParent<Warrior>();
+                if (hero is SinbinderPlayer) return hero;
             }
-            return hero;
+            return null;
+        }
+
+        /// <summary>Выделенные воины, без Греховода, по порядку выделения.</summary>
+        private static System.Collections.Generic.List<Warrior> Picked()
+        {
+            var list = new System.Collections.Generic.List<Warrior>();
+            var manager = SelectionManager.Instance;
+            if (manager == null) return list;
+
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                if (unit == null) continue;
+                var w = unit.GetComponentInParent<Warrior>();
+                if (w == null || w is SinbinderPlayer || list.Contains(w)) continue;
+                list.Add(w);
+            }
+            return list;
         }
 
         // ---------- воин ----------
@@ -353,14 +465,33 @@ namespace Sinbinder.UI
             if (_flameOuter != null) _flameOuter.color = Faint;
             if (_flameInner != null) _flameInner.color = new Color(0.10f, 0.08f, 0.07f, 1f);
 
-            Set(_voicesTitle, Loc.T("Голосов у него нет"), Faint);
+            // Голосов у него нет — есть вещи (42-INTERFACE §3, «Греховод»):
+            // сума по банкам словами и кошель числом (§2: числом — только то,
+            // чем Греховод владеет и что тратит).
+            Set(_voicesTitle, Loc.T("Сума и кошель"), Bone);
 
-            var walk = who.GetComponent<PlayerWalk>();
-            var legs = who.GetComponent<UnitMover>();
-            bool going = (walk != null && walk.Walking) || (legs != null && legs.IsMoving);
+            if (_satchelText != null)
+            {
+                var lines = new System.Text.StringBuilder();
+                for (int i = 0; i < Satchel.Size; i++)
+                {
+                    var slot = Satchel.At(i);
+                    if (slot.Empty) continue;
+                    if (lines.Length > 0) lines.Append('\n');
+                    lines.Append(i == Satchel.Selected ? "▸ " : "   ").Append(Satchel.Describe(i));
+                }
+                _satchelText.text = lines.Length > 0 ? lines.ToString() : Loc.T("Сума пуста");
+                _satchelText.color = Bone;
+            }
 
-            Voice(null, going ? Loc.T("Идёт") : Loc.T("Стоит"), "", Muted, 26);
-            Order(Loc.T("Приказ — всему отряду"), Loc.T("Отряд слышит вас тем хуже, чем вы дальше"), false);
+            if (_purseText != null)
+            {
+                var purse = Inventory.PlayerInventory.Instance;
+                _purseText.text = purse != null
+                    ? Loc.F("Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка", purse.Gold)
+                    : Loc.T("R — в руку и обратно\nTab — следующая банка");
+                _purseText.color = Muted;
+            }
         }
 
         // ---------- голоса ----------

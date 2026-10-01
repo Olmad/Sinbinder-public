@@ -6464,3 +6464,39 @@ msgstr "In talk: how he feels about you · pay the debt · gear"
 #: UI/SelectedUnitPanelUI.cs
 msgid "Подойдите ближе, чтобы говорить"
 msgstr "Come closer to talk"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Выбрано {0} · что тянет его"
+msgstr "{0} selected · what pulls him"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "громче всех не согласен"
+msgstr "disagrees the loudest"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "медлит"
+msgstr "lingers"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "ещё {0} — в строю"
+msgstr "{0} more — in line"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "многие"
+msgstr "many"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Сума и кошель"
+msgstr "Satchel and purse"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Сума пуста"
+msgstr "The satchel is empty"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка"
+msgstr "Purse: {0}\n\nR — to hand and back\nTab — next jar"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "R — в руку и обратно\nTab — следующая банка"
+msgstr "R — to hand and back\nTab — next jar"
