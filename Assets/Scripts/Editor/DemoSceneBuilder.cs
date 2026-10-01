@@ -2674,14 +2674,14 @@ namespace Sinbinder.Utilets
             wellImage.color = new Color(0.05f, 0.04f, 0.03f, 1f);
             wellImage.raycastTarget = false;
 
-            var outer = At("Снаружи", well, new Rect(14f, 16f, 84f, 92f)).gameObject.AddComponent<Image>();
-            outer.sprite = knob;
+            // Капля пламени (UiStyle.Drop) — ставит панель при запуске; здесь места.
+            var outer = At("Снаружи", well, new Rect(14f, 8f, 84f, 105f)).gameObject.AddComponent<Image>();
             outer.raycastTarget = false;
-            var inner = At("Внутри", well, new Rect(32f, 46f, 48f, 52f)).gameObject.AddComponent<Image>();
-            inner.sprite = knob;
+            var inner = At("Внутри", well, new Rect(30f, 46f, 52f, 64f)).gameObject.AddComponent<Image>();
             inner.raycastTarget = false;
 
-            var name = Line("Имя", panel, new Rect(158f, 30f, 400f, 40f), 32, FontStyle.Bold);
+            var name = Line("Имя", panel, new Rect(158f, 26f, 400f, 44f), 36);
+            name.font = Sinbinder.UI.UiStyle.Title;     // имена — заглавными с засечками
             var craft = Line("Ремесло", panel, new Rect(158f, 74f, 400f, 28f), 20);
             var sins = Line("Грехи", panel, new Rect(158f, 102f, 400f, 28f), 20);
             var body = Line("Тело", panel, new Rect(158f, 130f, 400f, 28f), 20);
@@ -2704,7 +2704,8 @@ namespace Sinbinder.Utilets
             // в макете так вылезали голоса в колонку отряда (разбор, круг 2).
             voices.gameObject.AddComponent<RectMask2D>();
 
-            var title = Line("Заголовок", voices, new Rect(20f, 12f, 560f, 32f), 24, FontStyle.Bold);
+            var title = Line("Заголовок", voices, new Rect(20f, 10f, 560f, 34f), 27);
+            title.font = Sinbinder.UI.UiStyle.Title;
 
             var dot = At("Знак голоса", voices, new Rect(20f, 60f, 18f, 18f)).gameObject.AddComponent<Image>();
             dot.sprite = knob;
@@ -2748,9 +2749,7 @@ namespace Sinbinder.Utilets
         {
             var rt = At("Рука " + key, parent, r);
             var plate = rt.gameObject.AddComponent<Image>();
-            plate.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            plate.type = Image.Type.Sliced;
-            plate.raycastTarget = false;
+            plate.raycastTarget = false;     // овал ставит панель при запуске: рисованный кодом спрайт в сцену не сохранится
 
             var keyRect = At("Клавиша", rt, new Rect(14f, 11f, 26f, 24f));
             keyRect.gameObject.AddComponent<Image>().color = new Color(0.54f, 0.51f, 0.47f, 1f);
@@ -2777,9 +2776,10 @@ namespace Sinbinder.Utilets
                                  FontStyle style = FontStyle.Normal)
         {
             var text = At(name, parent, r).gameObject.AddComponent<Text>();
-            text.font = UIFont();
+            // Жирный — своим файлом (PT Serif Bold), а не дорисованный Unity.
+            text.font = style == FontStyle.Bold ? Sinbinder.UI.UiStyle.BodyBold : UIFont();
             text.fontSize = size;
-            text.fontStyle = style;
+            text.fontStyle = style == FontStyle.Bold ? FontStyle.Normal : style;
             text.alignment = TextAnchor.MiddleLeft;
             text.color = new Color(0.90f, 0.86f, 0.78f);
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -3360,6 +3360,11 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static Font UIFont()
         {
+            // Книжная антиква макета (42-INTERFACE §1, п. 9) — на всех панелях
+            // сразу: «один шрифт» (41-SHOWCASE п. 8). Нет файла — встроенный.
+            var style = Sinbinder.UI.UiStyle.Body;
+            if (style != null) return style;
+
             foreach (var name in new[] { "LegacyRuntime.ttf", "Arial.ttf" })
             {
                 try

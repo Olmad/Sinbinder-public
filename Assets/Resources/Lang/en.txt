@@ -6504,3 +6504,11 @@ msgstr "R — to hand and back\nTab — next jar"
 #: UI/OverheadWord.cs
 msgid "Колеблется…"
 msgstr "Hesitates…"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "ничто в нём сейчас не спорит с приказом"
+msgstr "nothing in him argues with the order right now"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "громче всех его голосов"
+msgstr "louder than all his voices"

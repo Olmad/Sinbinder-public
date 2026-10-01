@@ -293,7 +293,7 @@ namespace Sinbinder.UI
 
             _grid = Rect("Приказы", canvasGo.transform, new Vector2(1f, 0f), ZoneAt, ZoneSize);
 
-            _header = Label(_grid, font, "", 16, TextAnchor.UpperLeft);
+            _header = Label(_grid, UiStyle.Title, "", 20, TextAnchor.UpperLeft);
             _header.color = Muted;
             Place(_header.rectTransform, 0f, 0f, ZoneSize.x, 24f);
 
@@ -353,6 +353,9 @@ namespace Sinbinder.UI
 
             var face = button.gameObject.AddComponent<Image>();
             face.color = Leather;
+            face.sprite = UiStyle.Pill;            // установка — овалом, как в макете
+            face.type = Image.Type.Sliced;
+            face.pixelsPerUnitMultiplier = 1.3f;
             var b = button.gameObject.AddComponent<Button>();
             b.targetGraphic = face;
             b.onClick.AddListener(() => _stanceList.gameObject.SetActive(!_stanceList.gameObject.activeSelf));
@@ -381,13 +384,15 @@ namespace Sinbinder.UI
 
                 var plate = line.gameObject.AddComponent<Image>();
                 plate.color = Leather;
+                plate.sprite = UiStyle.Pill;
+                plate.type = Image.Type.Sliced;
+                plate.pixelsPerUnitMultiplier = 2.2f;
                 var press = line.gameObject.AddComponent<Button>();
                 press.targetGraphic = plate;
                 press.onClick.AddListener(() => { SquadOrders.Set(strategy); _stanceList.gameObject.SetActive(false); });
 
                 Key(line, font, (i + 1).ToString(), 12f);
-                var name = Label(line, font, SquadOrders.Name(strategy), 18, TextAnchor.UpperLeft);
-                name.fontStyle = FontStyle.Bold;
+                var name = Label(line, UiStyle.BodyBold, SquadOrders.Name(strategy), 18, TextAnchor.UpperLeft);
                 name.rectTransform.offsetMin = new Vector2(52f, 0f);
                 name.rectTransform.offsetMax = new Vector2(-10f, -6f);
                 var about = Label(line, font, SquadOrders.Describe(strategy), 14, TextAnchor.LowerLeft);
@@ -408,7 +413,7 @@ namespace Sinbinder.UI
             plate.anchoredPosition = new Vector2(left, 0f);
             plate.gameObject.AddComponent<Image>().color = new Color(0.54f, 0.51f, 0.47f, 1f);
             var t = Label(plate, font, key, 14, TextAnchor.MiddleCenter);
-            t.fontStyle = FontStyle.Bold;
+            t.font = UiStyle.BodyBold;
             t.color = new Color(0.08f, 0.06f, 0.05f);
         }
 
@@ -437,8 +442,7 @@ namespace Sinbinder.UI
             slot.Button.onClick.AddListener(() => Press(slot));
 
             Key(cell, font, key, 14f);
-            var label = Label(cell, font, word, 20, TextAnchor.MiddleLeft);
-            label.fontStyle = FontStyle.Bold;
+            var label = Label(cell, UiStyle.BodyBold, word, 20, TextAnchor.MiddleLeft);
             label.rectTransform.offsetMin = new Vector2(48f, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
@@ -496,6 +500,9 @@ namespace Sinbinder.UI
 
         private static Font UIFont()
         {
+            // Шрифт макета (UiStyle) — тот же, что на полосе.
+            if (UiStyle.Body != null) return UiStyle.Body;
+
             var any = FindFirstObjectByType<Text>(FindObjectsInactive.Include);
             if (any != null && any.font != null) return any.font;
             return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

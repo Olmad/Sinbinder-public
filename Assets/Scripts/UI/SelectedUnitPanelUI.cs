@@ -119,7 +119,37 @@ namespace Sinbinder.UI
                 return;
             }
 
+            Dress();
             Refresh();
+        }
+
+        /// <summary>
+        /// Облик макета (<see cref="UiStyle"/>): капля огня души и овалы рук.
+        /// Спрайты рисуются кодом и в сцену не сохраняются — ставятся здесь.
+        /// </summary>
+        private void Dress()
+        {
+            foreach (var flame in new[] { _flameOuter, _flameInner })
+            {
+                if (flame == null) continue;
+                flame.sprite = UiStyle.Drop;
+                flame.preserveAspect = true;
+            }
+
+            foreach (var plate in new[] { _talkPlate, _harvestPlate })
+            {
+                if (plate == null) continue;
+                plate.sprite = UiStyle.Pill;
+                plate.type = Image.Type.Sliced;
+                plate.pixelsPerUnitMultiplier = 1.4f;
+            }
+
+            if (_orderPlate != null)
+            {
+                _orderPlate.sprite = UiStyle.Pill;
+                _orderPlate.type = Image.Type.Sliced;
+                _orderPlate.pixelsPerUnitMultiplier = 3.5f;   // почти прямой угол: плашка, а не таблетка
+            }
         }
 
         void Update()
@@ -354,9 +384,13 @@ namespace Sinbinder.UI
             // строки «Верность кричит» и «Ваш приказ громче» — одна правда дважды.
             if (ordered && !decision.Hesitated && decision.Action == ActionType.ObeyCommand)
             {
-                Voice(null, "", "", Faint, 22);
+                // Середина зоны не пустует (разбор кадра 1 октября): крупно —
+                // что он делает, тише — что в нём сейчас никто не спорит.
+                string doing = PhraseGenerator.Doing(decision.Action);
+                Voice(null, string.IsNullOrEmpty(doing) ? "" : char.ToUpper(doing[0]) + doing.Substring(1),
+                      Grammar.For(who.Gender, Loc.T("ничто в нём сейчас не спорит с приказом")), Muted, 30);
                 Order(Loc.T("Ваш приказ — громче всех"),
-                      Loc.T("Сейчас: ") + PhraseGenerator.Doing(decision.Action), true);
+                      Grammar.For(who.Gender, Loc.T("громче всех его голосов")), true);
                 return;
             }
 

@@ -175,9 +175,8 @@ namespace Sinbinder.UI
             rect.anchoredPosition = new Vector2(0f, 34f);
 
             var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 38;
-            text.fontStyle = FontStyle.Bold;
+            text.font = UiStyle.Title;      // слово — заглавными с засечками, как имена (42-INTERFACE §1, п. 9)
+            text.fontSize = 44;
             text.alignment = TextAnchor.LowerCenter;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
