@@ -992,9 +992,23 @@ LIVING_ITEMS = [(name, None, None) for name in ARMS] + [
 ZOMBIE = next(sh.parts for sh in bodies.SHELLS if sh.name == "Zombie")
 ZOMBIE_ITEMS = [("StrawHat", None, hat_fit()), ("Hood", None, hat_fit(0.92, -0.004))]
 
+# Призрак — капюшон из савана (`flesh.ghost`) шире и выше головы: шляпа
+# поверх него — шире и с высокой тульей, иначе висит на макушке
+# капюшона, а капюшон пробивает тулью.
+GHOST = next(sh.parts for sh in bodies.SHELLS if sh.name == "Ghost")
+GHOST_BRIM = BASE["skull"] + 0.046
+
+
+def over_hood(v):
+    return [(x * 1.12, 0.012 + (y - 0.012) * 1.12, GHOST_BRIM - 0.014 + (z - GHOST_BRIM) * 1.4)
+            for x, y, z in v]
+
+
+GHOST_ITEMS = [("StrawHat", None, over_hood), ("WideHat", None, over_hood)]
+
 # Оболочка → (её пропорции, её вещи).
 SHELL_ITEMS = {"Skeleton": (S, SKELETON_ITEMS), "Living": (LIVING, LIVING_ITEMS),
-               "Zombie": (ZOMBIE, ZOMBIE_ITEMS)}
+               "Zombie": (ZOMBIE, ZOMBIE_ITEMS), "Ghost": (GHOST, GHOST_ITEMS)}
 
 
 def build_for_shell(parts, entry):
