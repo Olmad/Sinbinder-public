@@ -74,9 +74,8 @@ namespace Sinbinder.Gameplay
             { "Club", "RightHand" },
             { "Shield", "LeftLowerArm" },
 
-            // Убранное оружие и ножны — на тазу (wear.py, «в ножнах»).
-            // Собираются, но пока не надеваются: показ «в руке или
-            // в ножнах» — следующий шаг (HANDOFF §112.7).
+            // Убранное оружие и ножны — на тазу (wear.py, «в ножнах»);
+            // в руке или в ножнах — показывает Armament.
             { "SwordStowed", "Hips" },
             { "DaggerStowed", "Hips" },
             { "AxeStowed", "Hips" },
@@ -146,8 +145,38 @@ namespace Sinbinder.Gameplay
             if (bones == null || binds == null || bones.Length != binds.Length) return;
 
             string shell = ShellOf(skin);
+            GameObject inHand = null, stowed = null;
             foreach (var item in For(warrior))
-                Put(item, shell, bones, binds, null);
+            {
+                var worn = Put(item, shell, bones, binds, null);
+                if (worn == null) continue;
+                if (Hands.Contains(item)) inHand = worn;
+                else if (item.EndsWith(StowedSuffix)) stowed = worn;
+            }
+
+            // Оружие есть — его можно доставать и убирать. В начале оно
+            // в ножнах: лагерь не воюет (решает дальше WarriorAnimation).
+            if (inHand != null)
+                model.AddComponent<Armament>().Bind(inHand, stowed, drawn: false);
+        }
+
+        /// <summary>Оружие в руке — то, что уходит в ножны (<see cref="Armament"/>).</summary>
+        private static readonly HashSet<string> Hands = new() { "Sword", "Dagger", "Axe", "Club" };
+
+        /// <summary>Та же вещь в ножнах — имя оружия с этим хвостом.</summary>
+        private const string StowedSuffix = "Stowed";
+
+        /// <summary>
+        /// К оружию в руке — оно же в ножнах на тазу и сами ножны
+        /// (меч и кинжал; топор и дубина висят на поясе без ножен).
+        /// </summary>
+        private static IEnumerable<string> Carried(string weapon)
+        {
+            if (weapon == null) yield break;
+            yield return weapon;
+            yield return weapon + StowedSuffix;
+            if (weapon == "Sword") yield return "Scabbard";
+            else if (weapon == "Dagger") yield return "DaggerSheath";
         }
 
         /// <summary>
@@ -384,7 +413,8 @@ namespace Sinbinder.Gameplay
                     held = "Axe";
                 }
 
-                yield return WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name) ?? held;
+                foreach (var part in Carried(WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name) ?? held))
+                    yield return part;
                 yield break;
             }
 
@@ -429,11 +459,13 @@ namespace Sinbinder.Gameplay
             // взять — только смотреть, как берут другие» (bodies.py).
             // Остальные — надетое из снаряжения, а нет его — оружие
             // ремесла; легенда без ремесла — меч.
-            if (warrior.Shell != ShellType.Ghost)
+            // Голем — тоже: каменный кулак сам себе оружие, а его кисть
+            // стоит не там, где кисть, по которой собрано оружие (wear.py).
+            if (warrior.Shell != ShellType.Ghost && warrior.Shell != ShellType.Golem)
             {
                 string weapon = WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name)
                              ?? TradeWeapon(trade);
-                if (weapon != null) yield return weapon;
+                foreach (var part in Carried(weapon)) yield return part;
 
                 var off = warrior.Worn(Inventory.GearSlot.Offhand);
                 if (off != null && off.Name != null && off.Name.ToLowerInvariant().Contains("щит"))

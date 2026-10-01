@@ -90,6 +90,7 @@ namespace Sinbinder.Gameplay
             if (_animator == null) return;
 
             HushIfSilent();
+            Arms();
             Play(State());
         }
 
@@ -101,6 +102,9 @@ namespace Sinbinder.Gameplay
             if (_fell) return BodyMotion.Die;
 
             if (_posed != null) return _posed;
+
+            // Достаёт или убирает оружие — стоя; клип короткий и доигрывается.
+            if (_armsClip != null) return _armsClip;
 
             if (_talking) return BodyMotion.Talk;
 
@@ -169,12 +173,187 @@ namespace Sinbinder.Gameplay
             if (camera == null || !camera.InDialogue) _talking = false;
         }
 
+        /// <summary>
+        /// Переход между состояниями — смешиванием, а не скачком. Клипы
+        /// «достать» и «убрать» перенесены с Mixamo и начинаются не с нашей
+        /// позы покоя: скачком тело дёргалось бы на входе и на выходе.
+        /// Сотня с лишним миллисекунд — меньше шага, глазу не заметно.
+        /// </summary>
+        private const float Blend = 0.12f;
+
         private void Play(string state)
         {
             if (state == _now) return;
 
             _now = state;
-            _animator.Play(state);
+            _animator.CrossFadeInFixedTime(state, Blend);
+        }
+
+        // ---------------------------------------------------------- оружие
+
+        /// <summary>Длина клипов — 25 и 39 кадров при 30 в секунду (motion/*.json).</summary>
+        private const float DrawLength = 0.80f;
+        private const float SheatheLength = 1.27f;
+
+        /// <summary>
+        /// На этом кадре «убрать» кисть отпускает рукоять (31-й из 39, `settle`):
+        /// там оружие в руке и в ножнах стоят в одном месте, и подмена не видна.
+        /// </summary>
+        private const float SheatheRelease = 1.03f;
+
+        /// <summary>Враг ближе этого — оружие наголо.</summary>
+        private const float NearEnemy = 12f;
+
+        /// <summary>Сколько секунд без врага рядом, прежде чем убрать оружие.</summary>
+        private const float CalmBeforeSheathe = 6f;
+
+        private Armament _arms;
+        private string _armsClip;
+        private float _armsStart;
+        private bool _armsSwapped;
+        private float _calmSince = -1f;
+        private float _nextLook;
+        private bool _enemyNear;
+
+        /// <summary>Слово игрока: true — наголо, false — убрать, null — как велит бой.</summary>
+        private bool? _ordered;
+
+        /// <summary>
+        /// Приказ о мече — клавиша B у Греховода (<see cref="Arms"/>). Бой
+        /// сильнее приказа «убрать»: при враге рядом оружие всё равно наголо.
+        /// </summary>
+        public void OrderArms(bool drawn) => _ordered = drawn;
+
+        /// <summary>
+        /// Доставать и убирать оружие. Автор, 29 сентября: «сделай
+        /// возможность доставать и убирать оружие». Рядом враг — наголо;
+        /// шесть секунд спокойно — в ножны; в лагере в начале — в ножнах
+        /// (<see cref="Wardrobe.Dress"/>). Стоя — клипом, на ходу — сменой:
+        /// клип играет всё тело, и ноги на ходу скользили бы.
+        /// </summary>
+        private void Arms()
+        {
+            if (_warrior is SinbinderPlayer) ArmsKey();
+
+            if (_arms == null) _arms = GetComponentInChildren<Armament>();
+            if (_arms == null || !_arms.CanSheathe) return;
+            if (_self != null && _self.IsDead) { _armsClip = null; return; }
+
+            if (_armsClip != null)
+            {
+                float t = Time.time - _armsStart;
+                bool drawing = _armsClip == BodyMotion.Draw;
+
+                // «Достать» — когда смешивание кончилось и кисть уже у ножен;
+                // раньше меч мелькнул бы у руки, ещё стоящей в покое.
+                if (!_armsSwapped && t >= (drawing ? Blend + 0.02f : SheatheRelease))
+                {
+                    _arms.Show(drawing);
+                    _armsSwapped = true;
+                }
+
+                if (t >= (drawing ? DrawLength : SheatheLength) || Walking())
+                {
+                    if (!_armsSwapped) _arms.Show(drawing);
+                    _armsClip = null;
+                }
+                return;
+            }
+
+            bool want = WantsDrawn();
+            if (want == _arms.Drawn) return;
+
+            if (Walking() || _talking || _posed != null)
+            {
+                _arms.Show(want);
+                return;
+            }
+
+            _armsClip = want ? BodyMotion.Draw : BodyMotion.Sheathe;
+            _armsStart = Time.time;
+            _armsSwapped = false;
+        }
+
+        private bool WantsDrawn()
+        {
+            if (Time.time >= _nextLook)
+            {
+                _nextLook = Time.time + 0.5f;
+                _enemyNear = EnemyNear();
+            }
+
+            if (_enemyNear)
+            {
+                _calmSince = -1f;
+                return true;
+            }
+
+            if (_ordered.HasValue) return _ordered.Value;
+            if (!_arms.Drawn) return false;
+
+            if (_calmSince < 0f) _calmSince = Time.time;
+            return Time.time - _calmSince < CalmBeforeSheathe;
+        }
+
+        private bool EnemyNear()
+        {
+            if (_warrior == null) return false;
+            var at = transform.position;
+            foreach (var other in Everyone())
+            {
+                if (other == null || other.IsDead || other.Team == _warrior.Team) continue;
+                if ((other.transform.position - at).sqrMagnitude < NearEnemy * NearEnemy) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Все воины сцены — общим списком на полсекунды: искать их каждому
+        /// заново значило бы двадцать поисков по сцене дважды в секунду.
+        /// </summary>
+        private static Warrior[] Everyone()
+        {
+            if (Time.time - _everyoneAt > 0.5f || _everyoneAt < 0f)
+            {
+                _everyone = FindObjectsByType<Warrior>(FindObjectsSortMode.None);
+                _everyoneAt = Time.time;
+            }
+            return _everyone;
+        }
+
+        private static Warrior[] _everyone = new Warrior[0];
+        private static float _everyoneAt = -1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm()
+        {
+            _everyone = new Warrior[0];
+            _everyoneAt = -1f;
+        }
+
+        /// <summary>
+        /// Клавиша B — меч наголо или в ножны: Греховоду и выделенным своим.
+        /// B свободна (Z и Q заняты съёмкой, `Dev/Shooting`). В разговоре
+        /// и на паузе руки заняты, как у сумы (<see cref="SatchelHands"/>).
+        /// </summary>
+        private void ArmsKey()
+        {
+            if (!Input.GetKeyDown(KeyCode.B)) return;
+            if (Dialogue.DialogueCameraController.Instance != null
+                && Dialogue.DialogueCameraController.Instance.InDialogue) return;
+            if (Core.GamePauseController.Instance != null && Core.GamePauseController.Instance.IsPaused) return;
+
+            var own = GetComponentInChildren<Armament>();
+            bool drawn = !(own != null && own.Drawn);
+            OrderArms(drawn);
+
+            var selection = SelectionManager.Instance;
+            if (selection == null) return;
+            foreach (var unit in selection.GetSelectedUnits())
+            {
+                var body = unit != null ? unit.GetComponent<WarriorAnimation>() : null;
+                if (body != null && body != this) body.OrderArms(drawn);
+            }
         }
     }
 }

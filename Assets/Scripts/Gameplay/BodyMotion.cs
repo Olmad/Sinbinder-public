@@ -45,9 +45,21 @@ namespace Sinbinder.Gameplay
         /// <summary>Говорит. Не решение движка — состояние разговора.</summary>
         public const string Talk = "Talk";
 
+        /// <summary>
+        /// Достаёт оружие из ножен. Как и <see cref="Talk"/>, не решение
+        /// движка, а облик: в бою оружие наголо, в покое — в ножнах
+        /// (<see cref="Armament"/>, <see cref="WarriorAnimation"/>). Клип —
+        /// набор Mixamo «Sword and Shield», перенесённый на нашу арматуру
+        /// (<c>Tools/blender/retarget.py</c>).
+        /// </summary>
+        public const string Draw = "Draw";
+
+        /// <summary>Убирает оружие в ножны.</summary>
+        public const string Sheathe = "Sheathe";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe };
 
         /// <summary>
         /// Во что превращается решение.
