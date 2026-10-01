@@ -102,7 +102,7 @@ namespace Sinbinder.Gameplay
             if (!Input.GetMouseButtonDown(0)) return;
 
             // Щелчок по самой панели — это выбор другой кнопки, а не точка.
-            if (UI.CommandPanel.Covers(Input.mousePosition)) return;
+            if (OverPanels(Input.mousePosition)) return;
 
             _swallowUp = true;
 
@@ -283,6 +283,14 @@ namespace Sinbinder.Gameplay
         private const string BoxName = "Рамка выделения";
 
         /// <summary>
+        /// Щелчок пришёлся на панель, а не на землю: панель приказов или нижняя
+        /// полоса выбранного. Полоса во всю ширину, и щелчок по ней снимал бы
+        /// выделение — она пропадала бы прямо из-под мыши.
+        /// </summary>
+        private static bool OverPanels(Vector2 screen)
+            => UI.CommandPanel.Covers(screen) || UI.SelectedUnitPanelUI.Covers(screen);
+
+        /// <summary>
         /// Камера, найденная заново, если прежней не стало.
         ///
         /// Та же беда, что у рамки: менеджер переживает смену сцен,
@@ -365,7 +373,7 @@ namespace Sinbinder.Gameplay
         {
             // Нажатие по панели приказов: кнопка своё сделала, выделение
             // и рамка его не видят — вплоть до отпускания.
-            if (Input.GetMouseButtonDown(0) && UI.CommandPanel.Covers(Input.mousePosition))
+            if (Input.GetMouseButtonDown(0) && OverPanels(Input.mousePosition))
             {
                 _swallowUp = true;
                 return;
@@ -596,7 +604,7 @@ namespace Sinbinder.Gameplay
             if (Input.GetMouseButtonDown(1) && _selectedUnits.Count > 0)
             {
                 // ПКМ по панели приказов — не приказ в землю за ней.
-                if (UI.CommandPanel.Covers(Input.mousePosition)) return;
+                if (OverPanels(Input.mousePosition)) return;
 
                 Ray ray = Cam().ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out RaycastHit hit, 100f))

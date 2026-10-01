@@ -126,7 +126,9 @@ namespace Sinbinder.UI
 
         private void Refresh()
         {
-            Fade(Satchel.Anything());
+            // При выбранном воине на месте сумы — его голоса (docs/42-INTERFACE.md
+            // §3): сума — вещь Греховода, и видна она без выбора или при нём.
+            Fade(Satchel.Anything() && !SelectedUnitPanelUI.ShowsWarrior);
 
             int chosen = Satchel.Selected;
 

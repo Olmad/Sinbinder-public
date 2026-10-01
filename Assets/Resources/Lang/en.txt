@@ -6260,3 +6260,159 @@ msgstr "I've already counted mine."
 #. нет в коде
 msgid "не отдаёт оружия — отнять его у него значит унизить"
 msgstr "won't give up the weapon — taking it from him would humiliate him"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Что тянет его сейчас"
+msgstr "What pulls him now"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Пока молчит"
+msgstr "Silent for now"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Приказа нет"
+msgstr "No order"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Ваш приказ — громче всех"
+msgstr "Your order — loudest of all"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} {1}"
+msgstr "{0} {1}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Он решает сам"
+msgstr "He decides for himself"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Ваш приказ — почти так же громко"
+msgstr "Your order — almost as loud"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Ваш приказ — тише"
+msgstr "Your order — quieter"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0}, {1}"
+msgstr "{0}, {1}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} жжёт"
+msgstr "{0} burns"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} тлеет"
+msgstr "{0} smoulders"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} дремлет"
+msgstr "{0} dozes"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: цело"
+msgstr "Body: whole"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: задето"
+msgstr "Body: grazed"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: ранено"
+msgstr "Body: wounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: едва держится"
+msgstr "Body: barely holding"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "это вы: слушается всегда"
+msgstr "this is you: always obeys"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Голосов у него нет"
+msgstr "He has no voices"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Приказ — всему отряду"
+msgstr "Order — to the whole squad"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Отряд слышит вас тем хуже, чем вы дальше"
+msgstr "The farther you are, the worse the squad hears you"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "звучит почти вровень с другим"
+msgstr "sounds almost level with another"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "кричит"
+msgstr "shouts"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "говорит громко"
+msgstr "speaks loudly"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "говорит чуть громче прочих"
+msgstr "speaks a little louder than the rest"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "вы далеко: подойдите ближе"
+msgstr "you are far away: come closer"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "не верит вам: отдайте долг"
+msgstr "doesn't trust you: pay the debt"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "ему есть что терять"
+msgstr "he has something to lose"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "вещь в руках тянет его в другую сторону"
+msgstr "the thing in hand pulls him the other way"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "добыча лежит слишком близко"
+msgstr "the loot lies too close"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "приказ ему скучен"
+msgstr "the order bores him"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "свой в беде"
+msgstr "one of his own is in trouble"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "он ранен"
+msgstr "he is wounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "его обступили"
+msgstr "he is surrounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "силы на исходе"
+msgstr "strength is running out"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "тише, чем его душа"
+msgstr "quieter than his soul"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Память"
+msgstr "Memory"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Верность"
+msgstr "Loyalty"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Совесть"
+msgstr "Conscience"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Его душа"
+msgstr "His soul"

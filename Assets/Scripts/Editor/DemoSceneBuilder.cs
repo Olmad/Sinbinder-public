@@ -2417,12 +2417,12 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static RectTransform BuildStack(Transform parent)
         {
-            // Нижний край — над панелью выделенного (130 + 112) с зазором.
+            // Нижний край — над полосой выделенного с зазором.
             // Имя читает GearPanel: строка «F — …» встаёт над стопкой.
             var stack = Panel("Над выделенным", parent,
                 anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(760f, 0f),
-                position: new Vector2(0f, 250f));
+                position: new Vector2(0f, ConsoleHeight + 20f));
 
             var layout = stack.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.LowerCenter;
@@ -2646,31 +2646,102 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void BuildSelectedUnit(Transform parent)
         {
+            // Полоса во всю ширину у нижнего края — макет лагеря
+            // (docs/42-INTERFACE.md §3). Тёмная кожа и железная кромка
+            // сверху; видна только при выборе — гасит её сам компонент.
+            // Слева две зоны: душа и голоса. Правая часть — отряд и приказы —
+            // следующим шагом; пока там прежние сетка приказов и сума.
             var panel = Panel("Кто выделен", parent,
-                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
-                pivot: new Vector2(0.5f, 0f), size: new Vector2(560f, 112f),
-                // Над сумой, а не на ней: у самого низа подпись выделенного
-                // ложилась поверх банок, и на снимке набега читались обе
-                // сразу — «Греховод. Приказывает, но не реша…пустая банка».
-                position: new Vector2(0f, 130f));
+                anchorMin: Vector2.zero, anchorMax: new Vector2(1f, 0f),
+                pivot: new Vector2(0.5f, 0f), size: new Vector2(0f, ConsoleHeight),
+                position: Vector2.zero);
 
-            var backdrop = Backdrop(panel, Weight.Board);
+            var leather = panel.gameObject.AddComponent<Image>();
+            leather.color = new Color(0.114f, 0.086f, 0.071f, 0.97f);
 
-            var name = Label("Имя", panel, 30, TextAnchor.MiddleLeft,
-                new Vector2(0f, -10f), 38f);
-            name.color = new Color(0.94f, 0.92f, 0.88f);
+            var edge = Panel("Кромка", panel,
+                anchorMin: new Vector2(0f, 1f), anchorMax: Vector2.one,
+                pivot: new Vector2(0.5f, 1f), size: new Vector2(0f, 5f), position: Vector2.zero);
+            var iron = edge.gameObject.AddComponent<Image>();
+            iron.color = new Color(0.29f, 0.28f, 0.26f, 1f);
+            iron.raycastTarget = false;
 
-            var sin = Label("Шкала", panel, 22, TextAnchor.MiddleLeft,
-                new Vector2(0f, -48f), 30f);
-            sin.color = new Color(0.78f, 0.66f, 0.62f);
+            // ---- душа ----
+            var knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 
-            var action = Label("Действие", panel, 22, TextAnchor.MiddleLeft,
-                new Vector2(0f, -78f), 30f);
-            action.color = new Color(0.72f, 0.76f, 0.80f);
+            var well = At("Огонь души", panel, new Rect(28f, 30f, 112f, 124f));
+            var wellImage = well.gameObject.AddComponent<Image>();
+            wellImage.color = new Color(0.05f, 0.04f, 0.03f, 1f);
+            wellImage.raycastTarget = false;
+
+            var outer = At("Снаружи", well, new Rect(14f, 16f, 84f, 92f)).gameObject.AddComponent<Image>();
+            outer.sprite = knob;
+            outer.raycastTarget = false;
+            var inner = At("Внутри", well, new Rect(32f, 46f, 48f, 52f)).gameObject.AddComponent<Image>();
+            inner.sprite = knob;
+            inner.raycastTarget = false;
+
+            var name = Line("Имя", panel, new Rect(158f, 30f, 400f, 40f), 32, FontStyle.Bold);
+            var craft = Line("Ремесло", panel, new Rect(158f, 74f, 400f, 28f), 20);
+            var sins = Line("Грехи", panel, new Rect(158f, 102f, 400f, 28f), 20);
+            var body = Line("Тело", panel, new Rect(158f, 130f, 400f, 28f), 20);
+
+            // ---- голоса ----
+            var voices = At("Голоса", panel, new Rect(576f, 22f, 600f, 236f));
+            var voicesBack = voices.gameObject.AddComponent<Image>();
+            voicesBack.color = new Color(0.149f, 0.114f, 0.090f, 1f);
+            voicesBack.raycastTarget = false;
+            // Длинная причина обрезается краем зоны, а не лезет в соседнюю:
+            // в макете так вылезали голоса в колонку отряда (разбор, круг 2).
+            voices.gameObject.AddComponent<RectMask2D>();
+
+            var title = Line("Заголовок", voices, new Rect(20f, 12f, 560f, 32f), 24, FontStyle.Bold);
+
+            var dot = At("Знак голоса", voices, new Rect(20f, 60f, 18f, 18f)).gameObject.AddComponent<Image>();
+            dot.sprite = knob;
+            dot.raycastTarget = false;
+            var voice = Line("Голос", voices, new Rect(48f, 48f, 532f, 42f), 34, FontStyle.Bold);
+            var reason = Line("Причина", voices, new Rect(48f, 92f, 532f, 28f), 20);
+
+            var plateRect = At("Ваш приказ", voices, new Rect(14f, 132f, 572f, 76f));
+            var plate = plateRect.gameObject.AddComponent<Image>();
+            plate.color = new Color(0.227f, 0.173f, 0.133f, 1f);
+            plate.raycastTarget = false;
+            var order = Line("Строка", plateRect, new Rect(16f, 8f, 540f, 32f), 22, FontStyle.Bold);
+            var orderWhy = Line("Почему", plateRect, new Rect(16f, 40f, 540f, 28f), 19);
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.SelectedUnitPanelUI>();
-            Wire(ui, ("_panel", panel.gameObject), ("_nameLine", name),
-                     ("_sinLine", sin), ("_actionLine", action));
+            Wire(ui, ("_panel", panel.gameObject),
+                     ("_flameOuter", outer), ("_flameInner", inner),
+                     ("_nameLine", name), ("_craftLine", craft), ("_sinLine", sins), ("_bodyLine", body),
+                     ("_voicesTitle", title), ("_voiceDot", dot), ("_voiceLine", voice), ("_reasonLine", reason),
+                     ("_orderPlate", plate), ("_orderLine", order), ("_orderWhy", orderWhy));
+        }
+
+        /// <summary>Высота нижней полосы выбранного, точки холста 1920×1080.</summary>
+        private const float ConsoleHeight = 280f;
+
+        /// <summary>Прямоугольник от левого верхнего угла родителя: x вправо, y вниз.</summary>
+        private static RectTransform At(string name, RectTransform parent, Rect r)
+            => Panel(name, parent,
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+                pivot: new Vector2(0f, 1f), size: r.size, position: new Vector2(r.x, -r.y));
+
+        /// <summary>Строка текста в прямоугольнике: одна строка, без переноса (макет: переносов нет).</summary>
+        private static Text Line(string name, RectTransform parent, Rect r, int size,
+                                 FontStyle style = FontStyle.Normal)
+        {
+            var text = At(name, parent, r).gameObject.AddComponent<Text>();
+            text.font = UIFont();
+            text.fontSize = size;
+            text.fontStyle = style;
+            text.alignment = TextAnchor.MiddleLeft;
+            text.color = new Color(0.90f, 0.86f, 0.78f);
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.raycastTarget = false;
+            text.text = "";
+            return text;
         }
 
         /// <summary>
@@ -2743,8 +2814,11 @@ namespace Sinbinder.Utilets
                 // Уже прежнего: девятьсот точек журнала доходили
                 // до середины экрана и лезли под подпись выделенного,
                 // а записей в нём редко больше пяти.
-                pivot: new Vector2(0f, 0f), size: new Vector2(620f, 220f),
-                position: new Vector2(40f, 40f));
+                // Над нижней полосой выбранного (макет лагеря): та выезжает
+                // во всю ширину и закрыла бы журнал. Уже стопки подсказок
+                // по центру — им не пересечься.
+                pivot: new Vector2(0f, 0f), size: new Vector2(520f, 220f),
+                position: new Vector2(40f, ConsoleHeight + 20f));
 
             var backdrop = Backdrop(panel, Weight.Board);
 
