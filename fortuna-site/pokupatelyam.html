@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фортуна – полезная информация для покупателей матрасов</title>
+    <meta name="description" content="Информация для покупателей: как оформить заказ, доставка и оплата, гарантия, обмен и возврат, сроки изготовления.">
+    <link rel="icon" href="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" type="image/webp">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'GothamPro-Regular', Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            color: #2d3435;
+            background: #ffffff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 1296px; margin: 0 auto; padding: 0 20px; }
+        a { color: #13a5db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        img { max-width: 100%; height: auto; }
+
+        /* ===== ШАПКА (HEADER) ===== */
+        .header {
+            padding: 15px 0;
+            background: #ffffff;
+            position: relative;
+            z-index: 10;
+        }
+        .header__wrapper {
+            display: flex;
+            align-items: stretch;
+            gap: 30px;
+        }
+        .header__logo {
+            display: flex;
+            flex-shrink: 0;
+            width: 70px;
+            height: auto;
+            align-items: center;
+        }
+        .header__logo img { width: 100%; height: auto; display: block; }
+        .header__right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            gap: 8px;
+        }
+        .header__row-top {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header__phone {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 18px;
+            font-weight: bold;
+            color: #13a5db;
+        }
+        .header__phone:hover { text-decoration: underline; }
+        .header__phone svg { flex: 0 0 20px; height: 20px; display: block; }
+        .header__menu {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header__menu a {
+            color: #010304;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .header__menu a:hover { color: #13a5db; text-decoration: underline; }
+        .header__location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #010304;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .header__location:hover { color: #13a5db; text-decoration: underline; }
+        .header__location svg { flex: 0 0 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__row-bottom {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header__burger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            flex: 0 0 24px;
+            height: 24px;
+        }
+        .header__burger svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__burger:hover svg { stroke: #0e8ab8; }
+        .header__catalog-link {
+            font-size: 16px;
+            font-weight: bold;
+            color: #010304;
+        }
+        .header__catalog-link:hover { color: #13a5db; text-decoration: none; }
+        .header__search {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            max-width: 400px;
+            border: 2px solid #e8f0f8;
+            border-radius: 7px;
+            background: #fff;
+            transition: border-color 0.3s;
+        }
+        .header__search:focus-within { border-color: #13a5db; }
+        .header__search input {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 7px 0 0 7px;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+        .header__search button {
+            background: transparent;
+            border: none;
+            padding: 8px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .header__search button svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__search button:hover svg { stroke: #0e8ab8; }
+        .header__cart {
+            display: flex;
+            align-items: center;
+            color: #010304;
+            flex: 0 0 24px;
+            height: 24px;
+            position: relative;
+        }
+        .header__cart:hover { color: #13a5db; }
+        .header__cart svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__cart:hover svg { stroke: #0e8ab8; }
+
+        .header__divider {
+            width: 100%;
+            height: 1px;
+            background: #d1d5db;
+            margin: 10px 0;
+            border: none;
+        }
+        .header__categories {
+            display: flex;
+            justify-content: space-between; /* 4 элемента равномерно */
+            padding: 5px 0;
+            flex-wrap: wrap;
+        }
+        .header__categories a {
+            color: #010304;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .header__categories a:hover { color: #13a5db; text-decoration: underline; }
+        .header__categories a.active {
+            color: #13a5db;
+            font-weight: bold;
+            border-bottom: 2px solid #13a5db;
+            padding-bottom: 3px;
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+        .b-page { position: relative; z-index: 1; }
+        .page__content { position: relative; z-index: 1; }
+        .inside-page { padding: 20px 0 40px; }
+        .inside-page__title {
+            font-size: 30px;
+            font-weight: bold;
+            color: #010304;
+            margin-bottom: 10px;
+        }
+        .breadcrumbs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .breadcrumbs__item { color: #13a5db; text-decoration: none; }
+        .breadcrumbs__item--active { color: #010304; }
+        .breadcrumbs__separator { margin: 0 5px; color: #13a5db; }
+
+        /* ===== КАРТОЧКИ ===== */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .card-item {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px 8px;
+            box-shadow: 0px 8px 24px hsla(0,0%,79.1%,0.25), 0px 16px 32px hsla(0,0%,79.1%,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+        .card-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 12px 32px rgba(0,0,0,0.15);
+        }
+        .card-item a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            color: #010304;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .card-item a:hover { text-decoration: none; color: #13a5db; }
+
+        /* ===== ФУТЕР ===== */
+        .footer {
+            padding: 40px 0;
+            background: #ffffff;
+            color: #2d3435;
+            position: relative;
+            z-index: 10;
+            border-top: 2px solid #13a5db;
+        }
+        .footer__body {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .footer__logo img { height: 40px; width: auto; display: block; }
+        .footer__menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer__menu a {
+            color: #555;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer__menu a:hover { color: #13a5db; text-decoration: underline; }
+        .footer__copy {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            padding-top: 20px;
+            border-top: 1px solid #e8f0f8;
+            margin-top: 20px;
+        }
+
+        /* ===== ВИДЖЕТ LEADBACK ===== */
+        .widget-fixed {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99998;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .chat-widget-wrapper {
+            display: block;
+            text-align: right;
+            transition: all 0.3s ease;
+        }
+        .chat-widget-wrapper.hidden { display: none; }
+        .chat-widget {
+            position: relative;
+            background: #3498db;
+            border-radius: 12px 12px 0 12px;
+            padding: 20px 20px 15px 20px;
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            width: 320px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: inline-block;
+        }
+        .chat-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 20px;
+            border-width: 10px 10px 0 10px;
+            border-style: solid;
+            border-color: #3498db transparent transparent transparent;
+        }
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        .operator-name { font-size: 16px; font-weight: normal; opacity: 0.9; }
+        .close-btn {
+            cursor: pointer;
+            color: #ffffff;
+            opacity: 0.7;
+            font-size: 20px;
+            line-height: 1;
+            margin-top: -3px;
+            background: none;
+            border: none;
+            padding: 0 4px;
+        }
+        .close-btn:hover { opacity: 1; }
+        .message-text { font-size: 17px; line-height: 1.5; margin-bottom: 16px; }
+        .input-group { display: flex; gap: 10px; }
+        .input-field {
+            flex-grow: 1;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            color: #555;
+            font-family: 'Open Sans', Arial, sans-serif;
+        }
+        .input-field::placeholder { color: #b0bccb; }
+        .send-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            font-family: 'Open Sans', Arial, sans-serif;
+        }
+        .send-btn:hover { background: #1a252f; }
+        .footer-brand {
+            text-align: right;
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 12px;
+            padding-right: 5px;
+        }
+        .buttons-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 20px;
+        }
+        .lb-call-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #2a7fc9;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .lb-call-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .lb-call-btn:active { transform: scale(0.94); }
+        .lb-call-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: #ffffff;
+            display: block;
+            transform-origin: 60% 40%;
+            animation: phone-ring 0.7s ease-in-out infinite alternate;
+        }
+        @keyframes phone-ring {
+            0% { transform: rotate(-12deg) scale(1); }
+            100% { transform: rotate(12deg) scale(1.05); }
+        }
+        .lb-chat-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            flex-shrink: 0;
+            overflow: visible;
+            padding: 0;
+        }
+        .lb-chat-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .lb-chat-btn:active { transform: scale(0.94); }
+        .lb-chat-btn .operator-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+        .lb-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .lb-badge__item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 7px;
+            background: #e74c3c;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 13px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35);
+            animation: badge-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes badge-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 1024px) {
+            .header__row-top { gap: 12px; }
+            .header__menu { gap: 12px; }
+            .header__menu a { font-size: 13px; }
+            .header__phone { font-size: 16px; }
+            .header__categories { gap: 20px; }
+            .header__wrapper { gap: 20px; }
+        }
+        @media (max-width: 768px) {
+            .header__wrapper { flex-wrap: wrap; gap: 15px; }
+            .header__logo { width: 60px; }
+            .header__row-top { gap: 10px; }
+            .header__menu a { font-size: 12px; }
+            .header__phone { font-size: 14px; }
+            .header__location { font-size: 12px; white-space: normal; }
+            .header__row-bottom { gap: 12px; }
+            .header__categories { gap: 15px; }
+            .header__categories a { font-size: 13px; }
+            .inside-page__title { font-size: 24px; }
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer__body { flex-direction: column; align-items: center; text-align: center; }
+            .footer__menu { justify-content: center; }
+            .widget-fixed { bottom: 20px; right: 16px; }
+            .chat-widget { width: 290px; }
+            .lb-call-btn, .lb-chat-btn { width: 56px; height: 56px; }
+            .lb-call-btn svg { width: 28px; height: 28px; }
+            .lb-badge__item { min-width: 22px; height: 22px; font-size: 10px; padding: 0 5px; }
+        }
+        @media (max-width: 480px) {
+            .header__row-top { gap: 8px; }
+            .header__menu { gap: 8px; }
+            .header__menu a { font-size: 11px; }
+            .header__phone { font-size: 13px; }
+            .header__logo { width: 50px; }
+            .header__search input { display: none; }
+            .header__search { border: none; max-width: 44px; flex: 0 0 44px; justify-content: center; }
+            .header__search button { padding: 8px; }
+            .header__search button svg { width: 28px; height: 28px; }
+            .header__categories { gap: 10px; }
+            .header__categories a { font-size: 12px; }
+            .inside-page__title { font-size: 20px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .footer__menu a { font-size: 13px; }
+            .widget-fixed { bottom: 16px; right: 12px; }
+            .chat-widget { width: 260px; padding: 16px 16px 12px 16px; }
+            .lb-call-btn, .lb-chat-btn { width: 48px; height: 48px; }
+            .lb-call-btn svg { width: 24px; height: 24px; }
+            .lb-badge { top: -5px; right: -5px; }
+            .lb-badge__item { min-width: 20px; height: 20px; font-size: 9px; padding: 0 4px; border-width: 1.5px; }
+            .message-text { font-size: 15px; }
+            .input-field { font-size: 13px; padding: 8px 12px; }
+            .send-btn { font-size: 13px; padding: 8px 14px; }
+            .buttons-row { gap: 12px; }
+        }
+        @media (max-width: 380px) {
+            .chat-widget { width: 220px; padding: 14px 14px 10px 14px; }
+            .lb-call-btn, .lb-chat-btn { width: 44px; height: 44px; }
+            .lb-call-btn svg { width: 22px; height: 22px; }
+            .buttons-row { gap: 10px; }
+            .lb-badge { top: -4px; right: -4px; }
+            .lb-badge__item { min-width: 18px; height: 18px; font-size: 8px; padding: 0 3px; border-width: 1.5px; }
+        }
+    </style>
+    <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+
+<!-- ===== ШАПКА ===== -->
+<header class="header">
+    <div class="container">
+        <div class="header__wrapper">
+            <a href="index.html" class="header__logo">
+                <img src="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" alt="Фортуна">
+            </a>
+            <div class="header__right">
+                <div class="header__row-top">
+                    <a href="tel:88001012999" class="header__phone">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#13a5db"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <span>8 (800) 101-29-99</span>
+                    </a>
+                    <nav class="header__menu">
+                        <a href="contacts.html">Контакты</a>
+                        <a href="blog.html">Блог</a>
+                        <a href="pokupatelyam.html">Покупателям</a>
+                        <a href="about.html">О компании</a>
+                    </nav>
+                    <a href="https://yandex.ru/maps/-/CDqJYY8k" class="header__location" target="_blank" rel="noopener">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span>Отрадная, ул.Братская 164 б</span>
+                    </a>
+                </div>
+                <div class="header__row-bottom">
+                    <button class="header__burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="catalogMenu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <a href="catalog.html" class="header__catalog-link">Каталог</a>
+                    <form action="search.html" class="header__search" method="GET" role="search">
+                        <input type="search" name="query" placeholder="Поиск" minlength="2" aria-label="Поиск по сайту">
+                        <button type="submit" aria-label="Найти">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                    </form>
+                    <a href="cart.html" class="header__cart" aria-label="Корзина">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        <span class="header__cart-count" data-cart-count hidden>0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="header__divider"></div>
+
+        <nav class="header__categories">
+            <a href="premium.html">Премиум</a>
+            <a href="lider.html">Лидер</a>
+            <a href="admiral.html">Адмирал</a>
+            <a href="fortuna.html">Фортуна</a>
+        </nav>
+
+        <div class="header__divider"></div>
+    </div>
+
+    <!-- Выпадающее меню каталога (кнопка-бургер) -->
+    <div class="catalog-menu" id="catalogMenu" hidden>
+        <div class="container">
+            <div class="catalog-menu__cols">
+                <div>
+                    <div class="catalog-menu__title">Каталог</div>
+                    <nav class="catalog-menu__links">
+                        <a href="premium.html">Премиум</a>
+                        <a href="lider.html">Лидер</a>
+                        <a href="admiral.html">Адмирал</a>
+                        <a href="fortuna.html">Фортуна</a>
+                        <a href="kroha.html">Кроха</a>
+                        <a href="ideal.html">Идеал</a>
+                        <a href="bio.html">Био</a>
+                        <a href="eko.html">Эко</a>
+                        <a href="toppery.html">Топперы</a>
+                        <a href="podushki.html">Подушки</a>
+                        <a href="namatrasniki.html">Наматрасники</a>
+                    </nav>
+                </div>
+                <div>
+                    <div class="catalog-menu__title">Покупателям</div>
+                    <nav class="catalog-menu__links catalog-menu__links--single">
+                        <a href="kak-oformit-zakaz.html">Как оформить заказ</a>
+                        <a href="dostavka-i-oplata.html">Доставка и оплата</a>
+                        <a href="garantiya.html">Гарантия</a>
+                        <a href="obmen-i-vozvrat.html">Обмен и возврат товара</a>
+                        <a href="sroki-izgotovleniya.html">Сроки изготовления</a>
+                        <a href="contacts.html">Контакты</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+<main>
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="index.html" class="breadcrumbs__item">Главная</a>
+            <span class="breadcrumbs__separator">/</span>
+            <span class="breadcrumbs__item breadcrumbs__item--active">Покупателям</span>
+        </div>
+
+        <div class="inside-page">
+            <h1 class="inside-page__title">Покупателям</h1>
+
+            <div class="cards-grid">
+                <div class="card-item">
+                    <a href="kak-oformit-zakaz.html">Как оформить заказ</a>
+                </div>
+                <div class="card-item">
+                    <a href="dostavka-i-oplata.html">Доставка и оплата</a>
+                </div>
+                <div class="card-item">
+                    <a href="garantiya.html">Гарантия</a>
+                </div>
+                <div class="card-item">
+                    <a href="obmen-i-vozvrat.html">Обмен и возврат товара</a>
+                </div>
+                <div class="card-item">
+                    <a href="sroki-izgotovleniya.html">Сроки изготовления</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ===== ФУТЕР ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer__body">
+            <a href="index.html" class="footer__logo">
+                <img src="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" alt="Фортуна" width="180" height="40" loading="lazy">
+            </a>
+            <nav class="footer__menu">
+                <a href="index.html">Главная</a>
+                <a href="catalog.html">Каталог</a>
+                <a href="about.html">О компании</a>
+                <a href="pokupatelyam.html">Покупателям</a>
+                <a href="blog.html">Блог</a>
+                <a href="contacts.html">Контакты</a>
+                <a href="privacy.html">Политика конфиденциальности</a>
+            </nav>
+        </div>
+        <div class="footer__copy"><span data-year>2026</span> © Фортуна. Все права защищены.</div>
+    </div>
+</footer>
+
+<!-- ===== ВИДЖЕТ ===== -->
+<div class="widget-fixed">
+    <div class="chat-widget-wrapper hidden" id="chatWrapper" data-default-open="0">
+        <div class="chat-widget" id="chatWidget">
+            <div class="chat-header">
+                <span class="operator-name">Анна:</span>
+                <button class="close-btn" id="closeChatBtn" type="button" aria-label="Закрыть">×</button>
+            </div>
+            <div class="message-text" id="chatMessage">Здравствуйте!<br>Вас что-то заинтересовало?<br>Напишите, и я вам обязательно помогу.</div>
+            <form class="input-group" id="chatForm" novalidate>
+                <input type="text" class="input-field" id="chatInput" placeholder="Написать сообщение..." autocomplete="off" aria-label="Сообщение">
+                <button class="send-btn" type="submit">Отпр.</button>
+            </form>
+        </div>
+    </div>
+    <div class="buttons-row">
+        <a href="tel:88001012999" class="lb-call-btn" aria-label="Позвонить">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </a>
+        <button class="lb-chat-btn" id="chatToggleBtn" type="button" aria-label="Открыть чат">
+            <img class="operator-avatar" src="https://cdn.leadback.ru/images/portraits/4.jpg" alt="Оператор">
+            <div class="lb-badge"><div class="lb-badge__item lb-badge__item--is-new">3</div></div>
+        </button>
+    </div>
+</div>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/site.js"></script>
+
+</body>
+</html>

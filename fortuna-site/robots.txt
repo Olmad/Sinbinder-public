@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /send.php
+Disallow: /cart.html
+Disallow: /search.html

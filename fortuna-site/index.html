@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фортуна — японские матрасы-футоны</title>
+    <meta name="description" content="Фортуна — производитель ортопедических матрасов, японских футонов, топперов, подушек и наматрасников. Собственное производство, бесплатная доставка, гарантия 10 лет.">
+    <link rel="icon" href="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" type="image/webp">
+    <link rel="stylesheet" href="assets/vendor/swiper/swiper-bundle.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ================================================ */
+        /* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
+        /* ================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'GothamPro-Regular', Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            color: #2d3435;
+            background: #ffffff;
+            line-height: 1.6;
+        }
+        .container { max-width: 1296px; margin: 0 auto; padding: 0 20px; }
+        a { color: #13a5db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        img { max-width: 100%; height: auto; }
+
+        /* ===== ШАПКА ===== */
+        .header {
+            padding: 15px 0;
+            background: #ffffff;
+            position: relative;
+            z-index: 10;
+        }
+        .header__wrapper {
+            display: flex;
+            align-items: stretch;
+            gap: 30px;
+        }
+        .header__logo {
+            display: flex;
+            flex-shrink: 0;
+            width: 70px;
+            height: auto;
+            align-items: center;
+        }
+        .header__logo img { width: 100%; height: auto; display: block; }
+        .header__right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            gap: 8px;
+        }
+        .header__row-top {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header__phone {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 18px;
+            font-weight: bold;
+            color: #13a5db;
+        }
+        .header__phone:hover { text-decoration: underline; }
+        .header__phone svg { flex: 0 0 20px; height: 20px; display: block; }
+        .header__menu {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header__menu a {
+            color: #010304;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .header__menu a:hover { color: #13a5db; text-decoration: underline; }
+        .header__location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #010304;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .header__location:hover { color: #13a5db; text-decoration: underline; }
+        .header__location svg { flex: 0 0 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__row-bottom {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header__burger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            flex: 0 0 24px;
+            height: 24px;
+        }
+        .header__burger svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__burger:hover svg { stroke: #0e8ab8; }
+        .header__catalog-link {
+            font-size: 16px;
+            font-weight: bold;
+            color: #010304;
+        }
+        .header__catalog-link:hover { color: #13a5db; text-decoration: none; }
+        .header__search {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            max-width: 400px;
+            border: 2px solid #e8f0f8;
+            border-radius: 7px;
+            background: #fff;
+            transition: border-color 0.3s;
+        }
+        .header__search:focus-within { border-color: #13a5db; }
+        .header__search input {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 7px 0 0 7px;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+        .header__search button {
+            background: transparent;
+            border: none;
+            padding: 8px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .header__search button svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__search button:hover svg { stroke: #0e8ab8; }
+        .header__cart {
+            display: flex;
+            align-items: center;
+            color: #010304;
+            flex: 0 0 24px;
+            height: 24px;
+        }
+        .header__cart:hover { color: #13a5db; }
+        .header__cart svg { width: 24px; height: 24px; display: block; stroke: #13a5db; }
+        .header__cart:hover svg { stroke: #0e8ab8; }
+
+        .header__divider {
+            width: 100%;
+            height: 1px;
+            background: #d1d5db;
+            margin: 10px 0;
+            border: none;
+        }
+        .header__categories {
+            display: flex;
+            justify-content: space-between;  /* ← 4 элемента равномерно по ширине */
+            padding: 5px 0;
+            flex-wrap: wrap;
+        }
+        .header__categories a {
+            color: #010304;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .header__categories a:hover { color: #13a5db; text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .header__search input { display: none; }
+            .header__search {
+                border: none;
+                max-width: 44px;
+                flex: 0 0 44px;
+                justify-content: center;
+            }
+            .header__search button { padding: 8px; }
+            .header__search button svg { width: 28px; height: 28px; }
+        }
+
+        /* ===== СЛАЙДЕР ===== */
+        .section-1 { padding-top: 40px; }
+        .section-1__body-inner { position: relative; }
+        .section-1__slider {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            background: #f8fcff;
+        }
+        .section-1__slider-wrapper {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+        .section-1__slide {
+            min-width: 100%;
+            position: relative;
+            height: 480px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .section-1__slide-body {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 40px 60px;
+        }
+        .section-1__background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .section-1__background-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .section-1__slide::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .section-1__slide-content {
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
+            color: #fff;
+        }
+        .section-1__number { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 5px; }
+        .section-1__title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #13a5db;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+        .section-1__text {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 25px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .section-1__text p { margin: 0; }
+        .section-1__button {
+            display: inline-block;
+            padding: 14px 40px;
+            background: transparent;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 7px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .section-1__button:hover { background: #fff; color: #13a5db; text-decoration: none; }
+        .section-1__button-text { color: #fff; }
+        .section-1__button:hover .section-1__button-text { color: #13a5db; }
+
+        .slider-arrow {
+            background: transparent;
+            border: 2px solid #13a5db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            padding: 0;
+            flex-shrink: 0;
+            z-index: 11;
+        }
+        .slider-arrow:hover { background: #13a5db; }
+        .slider-arrow:hover svg { stroke: #fff; }
+        .slider-arrow svg { width: 30px; height: 30px; stroke: #13a5db; fill: none; transition: 0.3s; }
+
+        .section-1__navigation {
+            position: absolute;
+            top: 50%;
+            left: -30px;
+            right: -30px;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            padding: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .section-1__navigation button { pointer-events: auto; margin: 0; }
+
+        .section-1__pagination-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 20px 0 10px;
+        }
+        .custom-dots { display: flex; gap: 12px; align-items: center; }
+        .custom-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid #13a5db;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-block;
+            flex-shrink: 0;
+            opacity: 0.25;
+        }
+        .custom-dot:hover { opacity: 0.6; }
+        .custom-dot.active {
+            opacity: 1;
+            background: transparent;
+            border-color: #13a5db;
+            width: 22px;
+            height: 22px;
+            border-width: 2px;
+        }
+
+        /* ===== ХЛЕБНЫЕ КРОШКИ ===== */
+        .breadcrumb {
+            padding: 15px 0 10px 0;
+            font-size: 13px;
+            color: #888;
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            position: relative;
+            z-index: 10;
+            border-bottom: none !important;
+            margin-bottom: 0;
+        }
+        .breadcrumb li { display: inline; }
+        .breadcrumb li + li::before {
+            content: "›";
+            margin: 0 8px;
+            color: #13a5db;
+        }
+        .breadcrumb a { color: #13a5db; }
+        .breadcrumb .current { color: #010304; }
+
+        /* ===== ПРЕИМУЩЕСТВА ===== */
+        .advantages {
+            padding: 50px 0;
+            background: #f8fcff;
+            position: relative;
+            z-index: 10;
+        }
+        .advantages__title {
+            font-size: 30px;
+            font-weight: bold;
+            color: #010304;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .advantages__grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 25px;
+        }
+        .advantages__item {
+            text-align: center;
+            padding: 25px 15px 20px;
+            border-radius: 12px;
+            border: 3px solid #13a5db;
+            background: #13a5db;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+        }
+        .advantages__item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(19, 165, 219, 0.35);
+            background: #0e8ab8;
+            border-color: #0e8ab8;
+        }
+        .advantages__item img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 12px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            filter: brightness(0) invert(1);
+            transition: transform 0.3s;
+        }
+        .advantages__item:hover img { transform: scale(1.08); }
+        .advantages__item p { font-size: 15px; font-weight: bold; color: #ffffff; line-height: 1.3; margin: 0; }
+
+        .section-2__categories {
+            display: flex;
+            justify-content: flex-start;
+            margin-top: 40px;
+        }
+        .section-2__category {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px 35px;
+            background: #13a5db;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+            border: 3px solid #13a5db;
+        }
+        .section-2__category:hover {
+            background: #0e8ab8;
+            border-color: #0e8ab8;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(19, 165, 219, 0.35);
+            text-decoration: none;
+        }
+        .section-2__category-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+        }
+        .section-2__category-img img {
+            width: 48px;
+            height: 48px;
+            display: block;
+            filter: brightness(0) invert(1);
+            transition: transform 0.3s;
+        }
+        .section-2__category:hover .section-2__category-img img { transform: scale(1.08); }
+        .section-2__category-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* ===== О КОМПАНИИ ===== */
+        .about {
+            padding: 50px 0;
+            position: relative;
+            z-index: 10;
+        }
+        .about__title { font-size: 30px; font-weight: bold; color: #010304; margin-bottom: 20px; }
+        .about__media { margin: 20px 0; }
+        .about__media img {
+            border-radius: 13px;
+            box-shadow: 0px 8px 24px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        .about__text { font-size: 16px; color: #2d3435; max-width: 800px; margin-bottom: 25px; }
+        .about__button {
+            display: inline-block;
+            padding: 12px 35px;
+            background: #13a5db;
+            color: #fff;
+            border-radius: 7px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .about__button:hover {
+            background: #0e8ab8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(19, 165, 219, 0.3);
+            text-decoration: none;
+        }
+
+        /* ===== СЕКЦИЯ КАТАЛОГ ===== */
+        .catalog-section { padding: 50px 0; position: relative; z-index: 10; }
+        .section-wrapper { max-width: 1300px; margin: 0 auto; position: relative; padding: 0 20px; }
+        .section-title {
+            font-size: 36px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            position: relative;
+            display: inline-block;
+        }
+        .section-bg-text {
+            position: absolute;
+            top: -30px;
+            left: -10px;
+            font-size: 80px;
+            font-weight: bold;
+            color: rgba(0,0,0,0.03);
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .slider-container { position: relative; overflow: hidden; padding: 10px 40px; }
+        .cards-track { display: flex; gap: 25px; transition: transform 0.4s ease-in-out; }
+        .product-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px 20px 25px;
+            min-width: 280px;
+            width: 280px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border: 1px solid #f0f0f0;
+            transition: 0.3s;
+        }
+        .product-card:hover {
+            box-shadow: 0px 8px 30px rgba(19, 165, 219, 0.12);
+            transform: translateY(-3px);
+            border-color: #13a5db;
+        }
+        .product-card img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; }
+        .product-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #222;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #13a5db;
+            padding-bottom: 15px;
+            width: 100%;
+        }
+        .product-name:hover { color: #13a5db; }
+        .price-label { font-size: 13px; color: #888; margin-bottom: 5px; align-self: flex-start; width: 100%; text-align: left; }
+        .product-price { font-size: 18px; font-weight: 600; color: #13a5db; margin-bottom: 20px; align-self: flex-start; width: 100%; text-align: left; }
+        .product-price .old { font-size: 14px; font-weight: normal; color: #999; text-decoration: line-through; margin-right: 10px; }
+        .buy-btn {
+            background-color: #13a5db;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+        .buy-btn:hover { background-color: #0e8ab8; }
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 1px solid #cceeff;
+            background: white;
+            color: #13a5db;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 20px;
+            transition: 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-arrow span { transform: translateY(-2px); }
+        .nav-arrow:hover { background: #13a5db; color: white; border-color: #13a5db; }
+        .nav-arrow.prev { left: 15px; }
+        .nav-arrow.next { right: 15px; }
+
+        /* ===== ФИЛЬТРЫ ===== */
+        .filters { display: flex; gap: 30px; margin-bottom: 30px; flex-wrap: nowrap; justify-content: center; }
+        .filter-tab {
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            color: #010304;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            font-family: inherit;
+            white-space: nowrap;
+            padding-bottom: 4px;
+            position: relative;
+        }
+        .filter-tab.active { color: #13a5db; background: transparent; }
+        .filter-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #13a5db;
+        }
+        .filter-tab:hover { color: #13a5db; text-decoration: underline; }
+
+        .btn-wrapper { text-align: center; margin-top: 40px; }
+        .blue-btn-outline {
+            display: inline-block;
+            padding: 14px 35px;
+            background: transparent;
+            color: #13a5db;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            border: 2px solid #13a5db;
+            font-family: inherit;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .blue-btn-outline:hover { background: #13a5db; color: white; text-decoration: none; }
+
+        /* ===== ЛУЧШИЕ ТОВАРЫ ===== */
+        .block-1-layout { display: flex; gap: 40px; align-items: flex-start; }
+        .block-1-left { min-width: 300px; max-width: 350px; padding-top: 60px; flex-shrink: 0; }
+        .block-1-text { font-size: 15px; line-height: 1.6; color: #666; margin-bottom: 30px; margin-top: 15px; }
+        .block-1-right { flex: 1; min-width: 0; }
+
+        /* ===== ФОРМА ===== */
+        .callback { padding: 50px 0; background: #f8fcff; position: relative; z-index: 10; }
+        .callback__body { display: flex; align-items: center; gap: 50px; flex-wrap: wrap; }
+        .callback__image img { max-width: 400px; width: 100%; border-radius: 13px; box-shadow: 0px 8px 24px rgba(0,0,0,0.1); }
+        .callback__content { flex: 1; }
+        .callback__title { font-size: 28px; font-weight: bold; color: #010304; margin-bottom: 15px; }
+        .callback__text { font-size: 16px; color: #2d3435; margin-bottom: 25px; }
+        .callback__form { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .callback__input {
+            padding: 14px 20px;
+            border: 2px solid #e8f0f8;
+            border-radius: 7px;
+            font-size: 16px;
+            flex: 1;
+            min-width: 200px;
+            background: #fff;
+            transition: 0.3s;
+        }
+        .callback__input:focus { border-color: #13a5db; outline: none; box-shadow: 0 0 0 3px rgba(19, 165, 219, 0.15); }
+        .callback__button {
+            padding: 14px 40px;
+            background: #13a5db;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .callback__button:hover { background: #0e8ab8; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(19, 165, 219, 0.3); }
+
+        /* ===== ФУТЕР ===== */
+        .footer {
+            padding: 40px 0;
+            background: #ffffff;
+            color: #2d3435;
+            position: relative;
+            z-index: 10;
+            border-top: 2px solid #13a5db;
+        }
+        .footer__body { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; }
+        .footer__logo img { height: 40px; width: auto; filter: none; }
+        .footer__menu { display: flex; flex-wrap: wrap; gap: 20px; }
+        .footer__menu a { color: #555; text-decoration: none; font-size: 14px; }
+        .footer__menu a:hover { color: #13a5db; text-decoration: underline; }
+        .footer__copy {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            padding-top: 20px;
+            border-top: 1px solid #e8f0f8;
+            margin-top: 20px;
+        }
+
+        /* ===== ВИДЖЕТ LEADBACK ===== */
+        .widget-fixed {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .chat-widget-wrapper { display: block; text-align: right; }
+        .chat-widget-wrapper.hidden { display: none; }
+        .chat-widget {
+            position: relative;
+            background: #3498db;
+            border-radius: 12px 12px 0 12px;
+            padding: 20px 20px 15px 20px;
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            width: 320px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: inline-block;
+        }
+        .chat-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 20px;
+            border-width: 10px 10px 0 10px;
+            border-style: solid;
+            border-color: #3498db transparent transparent transparent;
+        }
+        .chat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+        .operator-name { font-size: 16px; font-weight: normal; opacity: 0.9; }
+        .close-btn {
+            cursor: pointer;
+            color: #ffffff;
+            opacity: 0.7;
+            font-size: 20px;
+            line-height: 1;
+            margin-top: -3px;
+            background: none;
+            border: none;
+            padding: 0 4px;
+        }
+        .close-btn:hover { opacity: 1; }
+        .message-text { font-size: 17px; line-height: 1.5; margin-bottom: 16px; }
+        .input-group { display: flex; gap: 10px; }
+        .input-field {
+            flex-grow: 1;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            color: #555;
+            font-family: 'Open Sans', Arial, sans-serif;
+        }
+        .input-field::placeholder { color: #b0bccb; }
+        .send-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            font-family: 'Open Sans', Arial, sans-serif;
+        }
+        .send-btn:hover { background: #1a252f; }
+        .footer-brand { text-align: right; font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 12px; padding-right: 5px; }
+        .buttons-row { display: flex; align-items: center; justify-content: flex-end; gap: 20px; }
+        .lb-call-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #2a7fc9;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .lb-call-btn:hover { transform: scale(1.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+        .lb-call-btn:active { transform: scale(0.94); }
+        .lb-call-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: #ffffff;
+            display: block;
+            transform-origin: 60% 40%;
+            animation: phone-ring 0.7s ease-in-out infinite alternate;
+        }
+        @keyframes phone-ring {
+            0% { transform: rotate(-12deg) scale(1); }
+            100% { transform: rotate(12deg) scale(1.05); }
+        }
+        .lb-chat-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            flex-shrink: 0;
+            overflow: visible;
+            padding: 0;
+        }
+        .lb-chat-btn:hover { transform: scale(1.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
+        .lb-chat-btn:active { transform: scale(0.94); }
+        .lb-chat-btn .operator-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+        .lb-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .lb-badge__item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 7px;
+            background: #e74c3c;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 13px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35);
+            animation: badge-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes badge-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+        .lb-widget-container { display: none !important; }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 1024px) {
+            .header__row-top { gap: 12px; }
+            .header__menu { gap: 12px; }
+            .header__menu a { font-size: 13px; }
+            .header__phone { font-size: 16px; }
+            .header__wrapper { gap: 20px; }
+            .section-1__title { font-size: 28px; }
+            .advantages__grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+            .advantages__item img { width: 50px; height: 50px; }
+            .advantages__item p { font-size: 14px; }
+            .section-1__navigation { left: -20px; right: -20px; }
+        }
+        @media (max-width: 992px) {
+            .block-1-layout { flex-direction: column; align-items: stretch; }
+            .block-1-left { max-width: 100%; padding-top: 0; min-width: auto; }
+            .block-1-right { width: 100%; }
+        }
+        @media (max-width: 768px) {
+            .header__wrapper { flex-wrap: wrap; gap: 15px; }
+            .header__logo { width: 60px; }
+            .header__row-top { gap: 10px; }
+            .header__menu a { font-size: 12px; }
+            .header__phone { font-size: 14px; }
+            .header__location { font-size: 12px; white-space: normal; }
+            .header__row-bottom { gap: 12px; }
+            .section-1__slide { height: 400px; }
+            .section-1__slide-body { padding: 30px; align-items: flex-end; }
+            .section-1__title { font-size: 28px; }
+            .section-1__text { font-size: 16px; }
+            .section-1__slide::after { background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%); }
+            .slider-arrow { width: 50px; height: 50px; }
+            .slider-arrow svg { width: 24px; height: 24px; }
+            .section-1__navigation { left: -15px; right: -15px; }
+            .advantages__grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
+            .advantages__item { padding: 18px 10px 15px; }
+            .advantages__item img { width: 45px; height: 45px; }
+            .advantages__item p { font-size: 13px; }
+            .advantages__title { font-size: 24px; }
+            .section-2__categories { justify-content: center; }
+            .callback__body { flex-direction: column; text-align: center; }
+            .callback__form { justify-content: center; }
+            .footer__body { flex-direction: column; align-items: center; text-align: center; }
+            .footer__menu { justify-content: center; }
+            .section-title { font-size: 28px; }
+            .section-bg-text { font-size: 50px; top: -15px; }
+            .slider-container { padding: 10px 30px; }
+            .product-card { min-width: 220px; width: 220px; padding: 15px; }
+            .product-card img { height: 120px; }
+            .product-name { font-size: 14px; }
+            .product-price { font-size: 16px; }
+            .nav-arrow { width: 36px; height: 36px; font-size: 16px; }
+            .nav-arrow.prev { left: 8px; }
+            .nav-arrow.next { right: 8px; }
+            .filters { gap: 15px; }
+            .filter-tab { font-size: 13px; }
+            .widget-fixed { bottom: 20px; right: 16px; }
+            .chat-widget { width: 290px; }
+        }
+        @media (max-width: 480px) {
+            .header__row-top { gap: 8px; }
+            .header__menu { gap: 8px; }
+            .header__menu a { font-size: 11px; }
+            .header__phone { font-size: 13px; }
+            .header__logo { width: 50px; }
+            .section-1__slide { height: 340px; }
+            .section-1__slide-body { padding: 20px; }
+            .section-1__title { font-size: 22px; }
+            .section-1__text { font-size: 14px; margin-bottom: 15px; }
+            .section-1__button { padding: 10px 24px; font-size: 14px; }
+            .slider-arrow { width: 40px; height: 40px; }
+            .slider-arrow svg { width: 20px; height: 20px; }
+            .section-1__navigation { left: -8px; right: -8px; }
+            .custom-dot { width: 14px; height: 14px; }
+            .custom-dot.active { width: 18px; height: 18px; }
+            .advantages__grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .advantages__item { padding: 15px 8px 12px; }
+            .advantages__item img { width: 40px; height: 40px; }
+            .advantages__item p { font-size: 12px; }
+            .section-2__category { padding: 15px 25px; }
+            .section-2__category-img { width: 36px; height: 36px; }
+            .section-2__category-img img { width: 36px; height: 36px; }
+            .section-2__category-text { font-size: 14px; }
+            .about__title { font-size: 22px; }
+            .callback__title { font-size: 22px; }
+            .section-title { font-size: 22px; }
+            .section-bg-text { font-size: 36px; top: -10px; }
+            .slider-container { padding: 10px 20px; }
+            .product-card { min-width: 180px; width: 180px; padding: 12px; }
+            .product-card img { height: 100px; }
+            .product-name { font-size: 13px; padding-bottom: 10px; margin-bottom: 10px; }
+            .product-price { font-size: 14px; margin-bottom: 12px; }
+            .buy-btn { padding: 10px 0; font-size: 13px; }
+            .nav-arrow { width: 30px; height: 30px; font-size: 14px; }
+            .nav-arrow.prev { left: 5px; }
+            .nav-arrow.next { right: 5px; }
+            .filters { gap: 10px; flex-wrap: wrap; }
+            .filter-tab { font-size: 12px; }
+            .blue-btn-outline { padding: 10px 24px; font-size: 13px; }
+            .block-1-left { padding-top: 0; }
+            .widget-fixed { bottom: 16px; right: 12px; }
+            .chat-widget { width: 260px; padding: 16px 16px 12px 16px; }
+            .lb-call-btn, .lb-chat-btn { width: 56px; height: 56px; }
+            .lb-call-btn svg { width: 28px; height: 28px; }
+            .lb-badge { top: -5px; right: -5px; }
+            .lb-badge__item { min-width: 22px; height: 22px; font-size: 10px; padding: 0 5px; }
+            .message-text { font-size: 15px; }
+            .input-field { font-size: 13px; padding: 8px 12px; }
+            .send-btn { font-size: 13px; padding: 8px 14px; }
+            .buttons-row { gap: 16px; }
+        }
+        @media (max-width: 380px) {
+            .chat-widget { width: 220px; padding: 14px 14px 10px 14px; }
+            .lb-call-btn, .lb-chat-btn { width: 48px; height: 48px; }
+            .lb-call-btn svg { width: 24px; height: 24px; }
+            .buttons-row { gap: 12px; }
+            .lb-badge { top: -4px; right: -4px; }
+            .lb-badge__item { min-width: 18px; height: 18px; font-size: 9px; padding: 0 4px; border-width: 1.5px; }
+        }
+    </style>
+    <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+
+<!-- ===== ШАПКА ===== -->
+<header class="header">
+    <div class="container">
+        <div class="header__wrapper">
+            <a href="index.html" class="header__logo">
+                <img src="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" alt="Фортуна">
+            </a>
+            <div class="header__right">
+                <div class="header__row-top">
+                    <a href="tel:88001012999" class="header__phone">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#13a5db"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <span>8 (800) 101-29-99</span>
+                    </a>
+                    <nav class="header__menu">
+                        <a href="contacts.html">Контакты</a>
+                        <a href="blog.html">Блог</a>
+                        <a href="pokupatelyam.html">Покупателям</a>
+                        <a href="about.html">О компании</a>
+                    </nav>
+                    <a href="https://yandex.ru/maps/-/CDqJYY8k" class="header__location" target="_blank" rel="noopener">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span>Отрадная, ул.Братская 164 б</span>
+                    </a>
+                </div>
+                <div class="header__row-bottom">
+                    <button class="header__burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="catalogMenu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <a href="catalog.html" class="header__catalog-link">Каталог</a>
+                    <form action="search.html" class="header__search" method="GET" role="search">
+                        <input type="search" name="query" placeholder="Поиск" minlength="2" aria-label="Поиск по сайту">
+                        <button type="submit" aria-label="Найти">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                    </form>
+                    <a href="cart.html" class="header__cart" aria-label="Корзина">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        <span class="header__cart-count" data-cart-count hidden>0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="header__divider"></div>
+
+        <nav class="header__categories">
+            <a href="premium.html">Премиум</a>
+            <a href="lider.html">Лидер</a>
+            <a href="admiral.html">Адмирал</a>
+            <a href="fortuna.html">Фортуна</a>
+        </nav>
+
+        <div class="header__divider"></div>
+    </div>
+
+    <!-- Выпадающее меню каталога (кнопка-бургер) -->
+    <div class="catalog-menu" id="catalogMenu" hidden>
+        <div class="container">
+            <div class="catalog-menu__cols">
+                <div>
+                    <div class="catalog-menu__title">Каталог</div>
+                    <nav class="catalog-menu__links">
+                        <a href="premium.html">Премиум</a>
+                        <a href="lider.html">Лидер</a>
+                        <a href="admiral.html">Адмирал</a>
+                        <a href="fortuna.html">Фортуна</a>
+                        <a href="kroha.html">Кроха</a>
+                        <a href="ideal.html">Идеал</a>
+                        <a href="bio.html">Био</a>
+                        <a href="eko.html">Эко</a>
+                        <a href="toppery.html">Топперы</a>
+                        <a href="podushki.html">Подушки</a>
+                        <a href="namatrasniki.html">Наматрасники</a>
+                    </nav>
+                </div>
+                <div>
+                    <div class="catalog-menu__title">Покупателям</div>
+                    <nav class="catalog-menu__links catalog-menu__links--single">
+                        <a href="kak-oformit-zakaz.html">Как оформить заказ</a>
+                        <a href="dostavka-i-oplata.html">Доставка и оплата</a>
+                        <a href="garantiya.html">Гарантия</a>
+                        <a href="obmen-i-vozvrat.html">Обмен и возврат товара</a>
+                        <a href="sroki-izgotovleniya.html">Сроки изготовления</a>
+                        <a href="contacts.html">Контакты</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+<main>
+    <nav class="container" aria-label="Хлебные крошки">
+        <ol class="breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList">
+            <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                <a href="index.html" itemprop="item"><span itemprop="name">Главная</span></a>
+                <meta itemprop="position" content="1">
+            </li>
+        </ol>
+    </nav>
+
+    <!-- ===== СЛАЙДЕР ===== -->
+    <section class="section-1">
+        <div class="container">
+            <div class="section-1__body">
+                <div class="section-1__body-inner">
+                    <div class="section-1__slider swiper">
+                        <div class="section-1__slider-wrapper swiper-wrapper">
+                            <div class="section-1__slide swiper-slide">
+                                <div class="section-1__slide-body">
+                                    <div class="section-1__background">
+                                        <img class="section-1__background-img" src="https://fortuna-futon.ru/upload/disk/files/main-blocks-slider/image_desktop/2025/01/30/f0ae8a032693ce486a8390c92e86f443.webp" alt="Акция">
+                                    </div>
+                                    <div class="section-1__slide-content">
+                                        <div class="section-1__number">1/3</div>
+                                        <h2 class="section-1__title">Акция 1+1=3</h2>
+                                        <div class="section-1__text"><p>При покупке кровати с матрасом анатомическая подушка в подарок!</p></div>
+                                        <a href="catalog.html" class="section-1__button"><span class="section-1__button-text">В каталог</span></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-1__slide swiper-slide">
+                                <div class="section-1__slide-body">
+                                    <div class="section-1__background">
+                                        <img class="section-1__background-img" src="https://fortuna-futon.ru/upload/disk/files/main-blocks-slider/image_desktop/2024/05/29/547378fb41b755fb98474963488bf165.webp" alt="Матрасы">
+                                    </div>
+                                    <div class="section-1__slide-content">
+                                        <div class="section-1__number">2/3</div>
+                                        <h2 class="section-1__title">Матрасы и аксессуары для сна</h2>
+                                        <div class="section-1__text"></div>
+                                        <a href="catalog.html" class="section-1__button"><span class="section-1__button-text">В каталог</span></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-1__slide swiper-slide">
+                                <div class="section-1__slide-body">
+                                    <div class="section-1__background">
+                                        <img class="section-1__background-img" src="https://fortuna-futon.ru/upload/disk/files/main-blocks-slider/image_desktop/2024/05/29/84439e8bd2136f3c1b91f2f332d865e3.webp" alt="Кровати">
+                                    </div>
+                                    <div class="section-1__slide-content">
+                                        <div class="section-1__number">3/3</div>
+                                        <h2 class="section-1__title">Интерьерные кровати</h2>
+                                        <div class="section-1__text"></div>
+                                        <a href="catalog.html" class="section-1__button"><span class="section-1__button-text">В каталог</span></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-1__navigation">
+                        <button type="button" class="slider-arrow" id="customPrev" aria-label="Предыдущий слайд">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button type="button" class="slider-arrow" id="customNext" aria-label="Следующий слайд">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="section-1__pagination-wrap">
+                        <button type="button" class="slider-arrow" id="customPrevSmall" aria-label="Предыдущий слайд">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <div class="custom-dots" id="customDots">
+                            <span class="custom-dot active" data-index="0"></span>
+                            <span class="custom-dot" data-index="1"></span>
+                            <span class="custom-dot" data-index="2"></span>
+                        </div>
+                        <button type="button" class="slider-arrow" id="customNextSmall" aria-label="Следующий слайд">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#13a5db" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== О КОМПАНИИ ===== -->
+    <section class="about">
+        <div class="container">
+            <h1 class="about__title">Комфорт в каждом сантиметре</h1>
+            <div class="about__media">
+                <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-about-company/image/2023/12/11/1a2194410aafa04b40a4b044a28542b1-middle.webp" alt="Компания Фортуна" width="600" height="350" loading="lazy">
+            </div>
+            <div class="about__text">
+                <p>С момента основания, компания "Фортуна" посвятила себя созданию и производству высококачественных матрасов, обеспечивающих полноценный сон и отдых. Мы используем только лучшие комплектующие, применяем в работе новейшие технологии, тщательно продумываем конструкцию каждого матраса. Результат — десятки видов, сотни модификаций матрасов, созданных с учетом пожеланий наших клиентов.</p>
+            </div>
+            <a href="about.html" class="about__button">Читать о компании</a>
+            <div class="section-2__categories">
+                <a href="catalog.html" class="section-2__category">
+                    <div class="section-2__category-img">
+                        <img src="https://fortuna-futon.ru/app/interface/site/v1/img/main/section-2/05.svg" alt="Каталог">
+                    </div>
+                    <div class="section-2__category-text">КАТАЛОГ</div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ПРЕИМУЩЕСТВА ===== -->
+    <section class="advantages">
+        <div class="container">
+            <h2 class="advantages__title">Наши преимущества</h2>
+            <div class="advantages__grid">
+                <div class="advantages__item">
+                    <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-advantages/image/2023/12/11/fa94a5b770476e4cf75f22da57656a6f.svg" alt="Собственное производство" loading="lazy">
+                    <p>Собственное производство</p>
+                </div>
+                <div class="advantages__item">
+                    <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-advantages/image/2023/12/11/1710ee693fab52809865abc75e429b80.svg" alt="Индивидуальные заказы" loading="lazy">
+                    <p>Индивидуальные заказы</p>
+                </div>
+                <div class="advantages__item">
+                    <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-advantages/image/2023/12/11/f17bcdcaf44312f15fb8d13345231a3d.svg" alt="Бесплатная доставка" loading="lazy">
+                    <p>Бесплатная доставка</p>
+                </div>
+                <div class="advantages__item">
+                    <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-advantages/image/2023/12/11/d018408bb90e37dba0241cb0c11a4f04.svg" alt="Гарантия качества" loading="lazy">
+                    <p>Гарантия 10 лет</p>
+                </div>
+                <div class="advantages__item">
+                    <img src="https://fortuna-futon.ru/upload/disk/files/main-blocks-advantages/image/2023/12/11/f3a529494aa39d0a6b8032395b2805e4.svg" alt="Индивидуальный подход" loading="lazy">
+                    <p>Индивидуальный подход</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== СЕКЦИЯ КАТАЛОГ ===== -->
+    <section class="catalog-section">
+        <div class="container">
+            <div class="section-wrapper">
+                <div class="section-bg-text">Каталог</div>
+                <h2 class="section-title">Каталог</h2>
+                <div class="filters">
+                    <button class="filter-tab" data-filter="premium">Премиум</button>
+                    <button class="filter-tab" data-filter="leader">Лидер</button>
+                    <button class="filter-tab" data-filter="admiral">Адмирал</button>
+                    <button class="filter-tab active" data-filter="fortuna">Фортуна</button>
+                </div>
+                <div class="slider-container">
+                    <div class="cards-track" id="trackCatalog">
+                        <div class="product-card" data-category="premium" data-id="laksheri-strutto"><a href="product.html?id=laksheri-strutto" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/1ЛакшериСтрутто.png" alt="Лакшери Струтто"></a><a href="product.html?id=laksheri-strutto" class="product-name">Лакшери Струтто</a><div class="price-label">Цена от</div><div class="product-price">15 539 ₽</div><button class="buy-btn" type="button" data-add-to-cart="laksheri-strutto">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="mul-ti-hard"><a href="product.html?id=mul-ti-hard" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/2МультиХард.png" alt="Мульти Хард"></a><a href="product.html?id=mul-ti-hard" class="product-name">Мульти Хард</a><div class="price-label">Цена от</div><div class="product-price">15 904.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="mul-ti-hard">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="drim-zon"><a href="product.html?id=drim-zon" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/3ДримЗон.png" alt="Дрим Зон"></a><a href="product.html?id=drim-zon" class="product-name">Дрим Зон</a><div class="price-label">Цена от</div><div class="product-price">12 963.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="drim-zon">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="tu-zon"><a href="product.html?id=tu-zon" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/4ТуЗон.png" alt="Ту Зон"></a><a href="product.html?id=tu-zon" class="product-name">Ту Зон</a><div class="price-label">Цена от</div><div class="product-price">13 566 ₽</div><button class="buy-btn" type="button" data-add-to-cart="tu-zon">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="edem"><a href="product.html?id=edem" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/4Эдем.png" alt="Эдем"></a><a href="product.html?id=edem" class="product-name">Эдем</a><div class="price-label">Цена от</div><div class="product-price">18 884.2 ₽</div><button class="buy-btn" type="button" data-add-to-cart="edem">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="slip-memori"><a href="product.html?id=slip-memori" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/5СлипМемори.png" alt="Слип Мемори"></a><a href="product.html?id=slip-memori" class="product-name">Слип Мемори</a><div class="price-label">Цена от</div><div class="product-price">15 346.8 ₽</div><button class="buy-btn" type="button" data-add-to-cart="slip-memori">Купить</button></div>
+                        <div class="product-card" data-category="premium" data-id="imperator"><a href="product.html?id=imperator" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/6Император.png" alt="Император"></a><a href="product.html?id=imperator" class="product-name">Император</a><div class="price-label">Цена от</div><div class="product-price">27 574.1 ₽</div><button class="buy-btn" type="button" data-add-to-cart="imperator">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="korolevskiy-lyuks"><a href="product.html?id=korolevskiy-lyuks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/11КоролевскийЛюкс.png" alt="Королевский Люкс"></a><a href="product.html?id=korolevskiy-lyuks" class="product-name">Королевский Люкс</a><div class="price-label">Цена от</div><div class="product-price">12 315.5 ₽</div><button class="buy-btn" type="button" data-add-to-cart="korolevskiy-lyuks">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="korolevskiy-strutto"><a href="product.html?id=korolevskiy-strutto" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/12КоролевскийСтрутто.png" alt="Королевский Струтто"></a><a href="product.html?id=korolevskiy-strutto" class="product-name">Королевский Струтто</a><div class="price-label">Цена от</div><div class="product-price">12 387 ₽</div><button class="buy-btn" type="button" data-add-to-cart="korolevskiy-strutto">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="cezar"><a href="product.html?id=cezar" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/13Цезарь.png" alt="Цезарь"></a><a href="product.html?id=cezar" class="product-name">Цезарь</a><div class="price-label">Цена от</div><div class="product-price">13 774.4 ₽</div><button class="buy-btn" type="button" data-add-to-cart="cezar">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="lotos"><a href="product.html?id=lotos" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/8Лотос.png" alt="Лотос"></a><a href="product.html?id=lotos" class="product-name">Лотос</a><div class="price-label">Цена от</div><div class="product-price">23 410.9 ₽</div><button class="buy-btn" type="button" data-add-to-cart="lotos">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="lotos-sezon"><a href="product.html?id=lotos-sezon" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/9ЛотосСезон.png" alt="Лотос Сезон"></a><a href="product.html?id=lotos-sezon" class="product-name">Лотос Сезон</a><div class="price-label">Цена от</div><div class="product-price">13 703 ₽</div><button class="buy-btn" type="button" data-add-to-cart="lotos-sezon">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="edmon"><a href="product.html?id=edmon" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/14Эдмон.png" alt="Эдмон"></a><a href="product.html?id=edmon" class="product-name">Эдмон</a><div class="price-label">Цена от</div><div class="product-price">30 542.6 ₽</div><button class="buy-btn" type="button" data-add-to-cart="edmon">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="edmon-sezon"><a href="product.html?id=edmon-sezon" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/15ЭдмонСезон.png" alt="Эдмон Сезон"></a><a href="product.html?id=edmon-sezon" class="product-name">Эдмон Сезон</a><div class="price-label">Цена от</div><div class="product-price">16 444.1 ₽</div><button class="buy-btn" type="button" data-add-to-cart="edmon-sezon">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="baron"><a href="product.html?id=baron" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/7Барон.png" alt="Барон"></a><a href="product.html?id=baron" class="product-name">Барон</a><div class="price-label">Цена от</div><div class="product-price">10 547.6 ₽</div><button class="buy-btn" type="button" data-add-to-cart="baron">Купить</button></div>
+                        <div class="product-card" data-category="leader" data-id="korolevskiy"><a href="product.html?id=korolevskiy" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/10Королевский.png" alt="Королевский"></a><a href="product.html?id=korolevskiy" class="product-name">Королевский</a><div class="price-label">Цена от</div><div class="product-price">10 729.4 ₽</div><button class="buy-btn" type="button" data-add-to-cart="korolevskiy">Купить</button></div>
+                        <div class="product-card" data-category="admiral" data-id="kardinal"><a href="product.html?id=kardinal" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/16Кардинал.png" alt="Кардинал"></a><a href="product.html?id=kardinal" class="product-name">Кардинал</a><div class="price-label">Цена от</div><div class="product-price">12 667.2 ₽</div><button class="buy-btn" type="button" data-add-to-cart="kardinal">Купить</button></div>
+                        <div class="product-card" data-category="admiral" data-id="admiral"><a href="product.html?id=admiral" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/17Адмирал.png" alt="Адмирал"></a><a href="product.html?id=admiral" class="product-name">Адмирал</a><div class="price-label">Цена от</div><div class="product-price">23 701.2 ₽</div><button class="buy-btn" type="button" data-add-to-cart="admiral">Купить</button></div>
+                        <div class="product-card" data-category="admiral" data-id="admiral-lateks"><a href="product.html?id=admiral-lateks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/18АдмиралЛатекс.png" alt="Адмирал Латекс"></a><a href="product.html?id=admiral-lateks" class="product-name">Адмирал Латекс</a><div class="price-label">Цена от</div><div class="product-price">30 575.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="admiral-lateks">Купить</button></div>
+                        <div class="product-card" data-category="admiral" data-id="gektor"><a href="product.html?id=gektor" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/19Гектор.png" alt="Гектор"></a><a href="product.html?id=gektor" class="product-name">Гектор</a><div class="price-label">Цена от</div><div class="product-price">21 148.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="gektor">Купить</button></div>
+                        <div class="product-card" data-category="admiral" data-id="gektor-lateks"><a href="product.html?id=gektor-lateks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/20ГекторЛатекс.png" alt="Гектор Латекс"></a><a href="product.html?id=gektor-lateks" class="product-name">Гектор Латекс</a><div class="price-label">Цена от</div><div class="product-price">26 671.1 ₽</div><button class="buy-btn" type="button" data-add-to-cart="gektor-lateks">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-premium"><a href="product.html?id=fortuna-premium" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/21ФортунаПремиум.png" alt="Фортуна Премиум"></a><a href="product.html?id=fortuna-premium" class="product-name">Фортуна Премиум</a><div class="price-label">Цена от</div><div class="product-price">14 595 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-premium">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-lyuks"><a href="product.html?id=fortuna-lyuks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/22ФортунаЛюкс.png" alt="Фортуна Люкс"></a><a href="product.html?id=fortuna-lyuks" class="product-name">Фортуна Люкс</a><div class="price-label">Цена от</div><div class="product-price">12 677.7 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-lyuks">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-oridzhinal"><a href="product.html?id=fortuna-oridzhinal" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/23ФортунаОриджинал.png" alt="Фортуна Ориджинал"></a><a href="product.html?id=fortuna-oridzhinal" class="product-name">Фортуна Ориджинал</a><div class="price-label">Цена от</div><div class="product-price">11 178.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-oridzhinal">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-ideal"><a href="product.html?id=fortuna-ideal" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/24ФортунаИдеал.png" alt="Фортуна Идеал"></a><a href="product.html?id=fortuna-ideal" class="product-name">Фортуна Идеал</a><div class="price-label">Цена от</div><div class="product-price">10 633.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-ideal">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-drim"><a href="product.html?id=fortuna-drim" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/25ФортунаДрим.png" alt="Фортуна Дрим"></a><a href="product.html?id=fortuna-drim" class="product-name">Фортуна Дрим</a><div class="price-label">Цена от</div><div class="product-price">9 294.6 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-drim">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-klassik"><a href="product.html?id=fortuna-klassik" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/26ФортунаКлассик.png" alt="Фортуна Классик"></a><a href="product.html?id=fortuna-klassik" class="product-name">Фортуна Классик</a><div class="price-label">Цена от</div><div class="product-price">7 926.45 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-klassik">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-relaks"><a href="product.html?id=fortuna-relaks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/27ФортунаРелакс.png" alt="Фортуна Релакс"></a><a href="product.html?id=fortuna-relaks" class="product-name">Фортуна Релакс</a><div class="price-label">Цена от</div><div class="product-price">10 201.8 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-relaks">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-slip"><a href="product.html?id=fortuna-slip" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/28ФортунаСлип.png" alt="Фортуна Слип"></a><a href="product.html?id=fortuna-slip" class="product-name">Фортуна Слип</a><div class="price-label">Цена от</div><div class="product-price">10 507.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-slip">Купить</button></div>
+                        <div class="product-card" data-category="fortuna" data-id="fortuna-nekst"><a href="product.html?id=fortuna-nekst" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/29ФортунаНекст.png" alt="Фортуна Некст"></a><a href="product.html?id=fortuna-nekst" class="product-name">Фортуна Некст</a><div class="price-label">Цена от</div><div class="product-price">10 511.5 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-nekst">Купить</button></div>
+                    </div>
+                    <div class="nav-arrow prev" role="button" tabindex="0" aria-label="Назад" onclick="slideCatalog(-1)"><span>&#10094;</span></div>
+                    <div class="nav-arrow next" role="button" tabindex="0" aria-label="Вперёд" onclick="slideCatalog(1)"><span>&#10095;</span></div>
+                </div>
+                <div class="btn-wrapper">
+                    <a href="catalog.html" class="blue-btn-outline">Перейти в каталог</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ЛУЧШИЕ ТОВАРЫ ===== -->
+    <section class="catalog-section">
+        <div class="container">
+            <div class="section-wrapper">
+                <div class="section-bg-text">Выгодное предложение</div>
+                <div class="block-1-layout">
+                    <div class="block-1-left">
+                        <h2 class="section-title" style="margin-bottom: 5px;">Лучшие товары</h2>
+                        <p class="block-1-text">Матрасы – это важный элемент комфортного сна и здорового позвоночника. Они обеспечивают поддержку тела во время сна, предотвращают боли в спине и шее.</p>
+                        <a href="catalog.html" class="blue-btn-outline">Перейти в раздел</a>
+                    </div>
+                    <div class="slider-container block-1-right">
+                        <div class="cards-track" id="trackBest">
+                            <div class="product-card" data-id="laksheri-strutto"><a href="product.html?id=laksheri-strutto" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/1ЛакшериСтрутто.png" alt="Лакшери Струтто"></a><a href="product.html?id=laksheri-strutto" class="product-name">Лакшери Струтто</a><div class="price-label">Цена от</div><div class="product-price">15 539 ₽</div><button class="buy-btn" type="button" data-add-to-cart="laksheri-strutto">Купить</button></div>
+                            <div class="product-card" data-id="kardinal"><a href="product.html?id=kardinal" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/16Кардинал.png" alt="Кардинал"></a><a href="product.html?id=kardinal" class="product-name">Кардинал</a><div class="price-label">Цена от</div><div class="product-price">12 667.2 ₽</div><button class="buy-btn" type="button" data-add-to-cart="kardinal">Купить</button></div>
+                            <div class="product-card" data-id="admiral-lateks"><a href="product.html?id=admiral-lateks" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/18АдмиралЛатекс.png" alt="Адмирал Латекс"></a><a href="product.html?id=admiral-lateks" class="product-name">Адмирал Латекс</a><div class="price-label">Цена от</div><div class="product-price">30 575.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="admiral-lateks">Купить</button></div>
+                            <div class="product-card" data-id="fortuna-oridzhinal"><a href="product.html?id=fortuna-oridzhinal" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/23ФортунаОриджинал.png" alt="Фортуна Ориджинал"></a><a href="product.html?id=fortuna-oridzhinal" class="product-name">Фортуна Ориджинал</a><div class="price-label">Цена от</div><div class="product-price">11 178.3 ₽</div><button class="buy-btn" type="button" data-add-to-cart="fortuna-oridzhinal">Купить</button></div>
+                            <div class="product-card" data-id="kroha-strutto"><a href="product.html?id=kroha-strutto" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/34КрохаСтрутто.png" alt="Кроха Струтто"></a><a href="product.html?id=kroha-strutto" class="product-name">Кроха Струтто</a><div class="price-label">Цена от</div><div class="product-price">4 891.95 ₽</div><button class="buy-btn" type="button" data-add-to-cart="kroha-strutto">Купить</button></div>
+                            <div class="product-card" data-id="akva-stop"><a href="product.html?id=akva-stop" class="product-card__img"><img src="https://fortuna-futon.ru/upload/exchange/block_catalog_products/BVADYTZGWPUCHGKJCCGI/upload/files/67НаматрасникАкваСтоп.png" alt="Аква Стоп"></a><a href="product.html?id=akva-stop" class="product-name">Аква Стоп</a><div class="price-label">Цена от</div><div class="product-price">1 981 ₽</div><button class="buy-btn" type="button" data-add-to-cart="akva-stop">Купить</button></div>
+                        </div>
+                        <div class="nav-arrow prev" role="button" tabindex="0" aria-label="Назад" onclick="slideBest(-1)"><span>&#10094;</span></div>
+                        <div class="nav-arrow next" role="button" tabindex="0" aria-label="Вперёд" onclick="slideBest(1)"><span>&#10095;</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ФОРМА ОБРАТНОЙ СВЯЗИ ===== -->
+    <section class="callback">
+        <div class="container">
+            <div class="callback__body">
+                <div class="callback__content">
+                    <h2 class="callback__title">Всегда на связи!</h2>
+                    <div class="callback__text"><p>Звоните! На все обращения оперативно реагируют квалифицированные специалисты.</p></div>
+                    <a href="tel:88001012999" class="callback__button" style="display:inline-block; text-decoration:none; margin-bottom:15px;">8 (800) 101-29-99</a>
+                    <form class="callback__form" data-form="callback" novalidate>
+                        <input type="tel" name="phone" class="callback__input" placeholder="+7 (___) ___-__-__" required aria-label="Телефон">
+                        <input type="text" name="website" class="form-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                        <button type="submit" class="callback__button">Заказать звонок</button>
+                    </form>
+                    <p class="form-consent">Нажимая кнопку, вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>.</p>
+                    <div class="form-status" role="status" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ===== ФУТЕР ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer__body">
+            <a href="index.html" class="footer__logo">
+                <img src="https://fortuna-futon.ru/upload/disk/files/settings-personalization/logo/2026/02/09/37789b7243189c1bdb83cefa59ba8efb.webp" alt="Фортуна" width="180" height="40" loading="lazy">
+            </a>
+            <nav class="footer__menu">
+                <a href="index.html">Главная</a>
+                <a href="catalog.html">Каталог</a>
+                <a href="about.html">О компании</a>
+                <a href="pokupatelyam.html">Покупателям</a>
+                <a href="blog.html">Блог</a>
+                <a href="contacts.html">Контакты</a>
+                <a href="privacy.html">Политика конфиденциальности</a>
+            </nav>
+        </div>
+        <div class="footer__copy"><span data-year>2026</span> © Фортуна. Все права защищены.</div>
+    </div>
+</footer>
+
+<!-- ===== ВИДЖЕТ ===== -->
+<div class="widget-fixed">
+    <div class="chat-widget-wrapper" id="chatWrapper" data-default-open="1">
+        <div class="chat-widget" id="chatWidget">
+            <div class="chat-header">
+                <span class="operator-name">Анна:</span>
+                <button class="close-btn" id="closeChatBtn" type="button" aria-label="Закрыть">×</button>
+            </div>
+            <div class="message-text" id="chatMessage">Здравствуйте!<br>Вас что-то заинтересовало?<br>Напишите, и я вам обязательно помогу.</div>
+            <form class="input-group" id="chatForm" novalidate>
+                <input type="text" class="input-field" id="chatInput" placeholder="Написать сообщение..." autocomplete="off" aria-label="Сообщение">
+                <button class="send-btn" type="submit">Отпр.</button>
+            </form>
+        </div>
+    </div>
+    <div class="buttons-row">
+        <a href="tel:88001012999" class="lb-call-btn" aria-label="Позвонить">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </a>
+        <button class="lb-chat-btn" id="chatToggleBtn" type="button" aria-label="Открыть чат">
+            <img class="operator-avatar" src="https://cdn.leadback.ru/images/portraits/4.jpg" alt="Оператор">
+            <div class="lb-badge"><div class="lb-badge__item lb-badge__item--is-new">3</div></div>
+        </button>
+    </div>
+</div>
+
+<script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+<script src="assets/js/products.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+    // ===== СЛАЙДЕР =====
+    const swiper = new Swiper('.section-1__slider', {
+        loop: true,
+        slidesPerView: 1,
+        spaceBetween: 0,
+        autoplay: { delay: 5000, disableOnInteraction: true },
+    });
+    const dots = document.querySelectorAll('.custom-dot');
+    swiper.on('slideChange', function () {
+        const realIndex = swiper.realIndex;
+        dots.forEach((dot, i) => { dot.classList.toggle('active', i === realIndex); });
+    });
+    dots.forEach((dot) => {
+        dot.addEventListener('click', function () {
+            const index = parseInt(this.dataset.index);
+            swiper.slideToLoop(index);
+        });
+    });
+    document.getElementById('customPrev').addEventListener('click', () => swiper.slidePrev());
+    document.getElementById('customNext').addEventListener('click', () => swiper.slideNext());
+    document.getElementById('customPrevSmall').addEventListener('click', () => swiper.slidePrev());
+    document.getElementById('customNextSmall').addEventListener('click', () => swiper.slideNext());
+
+    // ===== СЛАЙДЕРЫ КАРТОЧЕК (каталог и лучшие товары) =====
+    const GAP = 25;
+    function visibleCards(track) {
+        return Array.from(track.children).filter(card => card.style.display !== 'none');
+    }
+    function cardStep(track) {
+        const card = visibleCards(track)[0];
+        return card ? card.offsetWidth + GAP : 305;
+    }
+    function maxIndexFor(track) {
+        const containerWidth = track.parentElement.offsetWidth - 80;
+        const perView = Math.max(1, Math.floor(containerWidth / cardStep(track)));
+        return Math.max(0, visibleCards(track).length - perView);
+    }
+    function moveTrack(track, index) {
+        const clamped = Math.min(Math.max(index, 0), maxIndexFor(track));
+        track.style.transform = `translateX(-${clamped * cardStep(track)}px)`;
+        return clamped;
+    }
+
+    let catalogIndex = 0;
+    const trackCatalog = document.getElementById('trackCatalog');
+    function slideCatalog(direction) { catalogIndex = moveTrack(trackCatalog, catalogIndex + direction); }
+
+    let bestIndex = 0;
+    const trackBest = document.getElementById('trackBest');
+    function slideBest(direction) { bestIndex = moveTrack(trackBest, bestIndex + direction); }
+
+    // ===== ФИЛЬТРЫ =====
+    const filterButtons = document.querySelectorAll('.filter-tab');
+    const allCards = document.querySelectorAll('#trackCatalog .product-card');
+    allCards.forEach(card => { card.style.display = card.dataset.category === 'fortuna' ? 'flex' : 'none'; });
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            allCards.forEach(card => { card.style.display = (filter === 'all' || card.dataset.category === filter) ? 'flex' : 'none'; });
+            catalogIndex = moveTrack(trackCatalog, 0);
+        });
+    });
+
+    // ===== РЕСАЙЗ =====
+    window.addEventListener('resize', function() {
+        catalogIndex = moveTrack(trackCatalog, catalogIndex);
+        bestIndex = moveTrack(trackBest, bestIndex);
+    });
+</script>
+
+</body>
+</html>
