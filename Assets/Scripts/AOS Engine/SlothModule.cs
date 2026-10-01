@@ -35,6 +35,9 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float sin = soul.Get(SinType.Sloth);
 
+            // Зов на себя: ленивому за ним бегать — лишний труд.
+            if (action == ActionType.TakeBait) return -Mathf.Max(0f, sin) * _config.TauntResist * Weight;
+
             if (action == ActionType.Idle)
             {
                 score += sin * _config.SlothIdleSinMultiplier;

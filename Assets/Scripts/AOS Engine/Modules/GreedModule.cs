@@ -36,6 +36,9 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float sin = soul.Get(SinType.Greed);
 
+            // Зов на себя: жадный считает — за этого не платят.
+            if (action == ActionType.TakeBait) return -Mathf.Max(0f, sin) * _config.TauntResist * Weight;
+
             switch (action)
             {
                 case ActionType.Loot:

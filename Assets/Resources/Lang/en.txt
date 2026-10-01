@@ -4088,6 +4088,14 @@ msgid "{0}: «Я не бегу от них, владыка. Уходите — �
 msgstr "{0}: “I don't run from them, my lord. Go — I'll buy you time.”"
 
 #: Gameplay/EscapeZone.cs
+msgid "{0} поднимает щит и зовёт их на себя."
+msgstr "{0} raises his shield and calls them onto himself."
+
+#: Gameplay/EscapeZone.cs
+msgid "{0} зовёт их на себя."
+msgstr "{0} calls them onto himself."
+
+#: Gameplay/EscapeZone.cs
 msgid "Уходить рано: лагерь ещё держится."
 msgstr "Too early to leave: the camp is still holding."
 
@@ -4098,6 +4106,10 @@ msgstr "The squad is leaving. Whoever doesn't make it stays behind."
 #: Gameplay/EscapeZone.cs
 msgid "{0} остался прикрывать отход."
 msgstr "{0} stayed behind to cover the retreat."
+
+#: Gameplay/EscapeZone.cs
+msgid "{0} пал, прикрывая отход."
+msgstr "{0} fell covering the retreat."
 
 #: Gameplay/EscapeZone.cs
 msgid "К рассвету они вышли к старому склепу."
@@ -4572,6 +4584,30 @@ msgid "Косой Ждан"
 msgstr "Squint Zhdan"
 
 #: Gameplay/PrologueCampSpawner.cs
+msgid "Щит Старого Ворона"
+msgstr "Old Raven's Shield"
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Дуб, обитый железом. По краю — зарубки: по одной на каждого, кто не прошёл."
+msgstr "Oak bound in iron. Notches along the rim: one for each who did not get past."
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Старая кольчуга"
+msgstr "Old Mail"
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Латаная, но своя. Снимать её он не станет."
+msgstr "Patched, but his own. He will not take it off."
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Шлем с вороньим пером"
+msgstr "Helm with a Raven Feather"
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Помятый, с чёрным пером за ремнём. Откуда прозвище — видно издали."
+msgstr "Dented, a black feather under the strap. You can tell where the nickname came from at a glance."
+
+#: Gameplay/PrologueCampSpawner.cs
 msgid "брат по оружию"
 msgstr "brother-in-arms"
 
@@ -4614,6 +4650,34 @@ msgstr "The field belongs to the squad."
 #: Gameplay/PrologueDirector.cs
 msgid "Никто не дошёл до склепа. Души разойдутся Некроэфиром, и помнить о них будет некому.\n\nИгра окончена."
 msgstr "No one reached the crypt. The souls will dissolve into the Necroether, and there will be no one left to remember them.\n\nGame over."
+
+#: Gameplay/Provocation.cs
+msgid "Ну держись!"
+msgstr "Brace yourself!"
+
+#: Gameplay/Provocation.cs
+msgid "Ты? Против меня? Изволь."
+msgstr "You? Against me? As you wish."
+
+#: Gameplay/Provocation.cs
+msgid "Сам напросился."
+msgstr "You asked for it."
+
+#: Gameplay/Provocation.cs
+msgid "За тебя не платят. Мне нужен Греховод."
+msgstr "Nobody pays for you. I want the Sinbinder."
+
+#: Gameplay/Provocation.cs
+msgid "Кричи, кричи. Мне нужен тот, что с банками."
+msgstr "Shout all you like. I want the one with the jars."
+
+#: Gameplay/Provocation.cs
+msgid "Гоняться за ним? Вот ещё."
+msgstr "Chase him? Not likely."
+
+#: Gameplay/Provocation.cs
+msgid "Не поведусь."
+msgstr "Not falling for it."
 
 #: Gameplay/RaidEvent.cs
 msgid "Лагерь знали не только свои."

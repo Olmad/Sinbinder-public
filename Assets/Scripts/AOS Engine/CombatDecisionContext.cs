@@ -89,6 +89,11 @@ namespace Sinbinder.AOS
                 context.Surrounded = engagement.IsSurrounded;
             }
 
+            // Зовёт ли кто-то из врагов на себя (Provocation): читают модули
+            // грехов и вопрос «кого бить» (BehaviourResolver.TakesBait).
+            context.Provoker = Provocation.Nearest(warrior);
+            context.Provoked = context.Provoker != null;
+
             // Разбор приказа один раз здесь, чтобы модули личности читали
             // готовые признаки, а не сравнивали название приказа со строкой.
             var command = warrior.Command;

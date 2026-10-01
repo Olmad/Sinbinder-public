@@ -44,6 +44,10 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float envy = soul.Get(SinType.Envy);
 
+            // Зов на себя: завистливый смотрит не на того, кто кричит,
+            // а на того, у кого есть, — на Греховода с банками.
+            if (action == ActionType.TakeBait) return -System.Math.Max(0f, envy) * _config.TauntResist * Weight;
+
             switch (action)
             {
                 case ActionType.Loot:

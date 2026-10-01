@@ -212,6 +212,17 @@ namespace Sinbinder.AOS
         public float PrideDistantOrder = 0.5f;
         public float PrideSaveAllySinMultiplier = 0.2f;
 
+        [Header("Провокация")]
+        [Tooltip("Насколько Гнев и Гордыня ведутся на зов: голос «бить того, "
+               + "кто зовёт» за единицу шкалы. Терпение и Смирение — против.")]
+        public float TauntPull = 1f;
+        [Tooltip("Насколько Жадность, Зависть и Уныние не ведутся: голос "
+               + "против за единицу шкалы.")]
+        public float TauntResist = 1f;
+        [Tooltip("Прибавка к драке у гневного и гордого, когда враг зовёт "
+               + "на себя: не уйти от того, кто тебя оскорбил.")]
+        public float TauntAttackBonus = 0.5f;
+
         [Header("Зависть")]
         public float EnvyLootSinMultiplier = 0.4f;
         public float EnvySaveAllySinMultiplier = 0.5f;

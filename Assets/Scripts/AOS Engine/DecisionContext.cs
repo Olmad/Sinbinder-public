@@ -38,6 +38,17 @@ namespace Sinbinder.AOS
         public int UnpaidMissions;
         public Warrior TargetWarrior;
         public Warrior Commander;
+
+        /// <summary>
+        /// Враг рядом зовёт на себя (<see cref="Gameplay.Provocation"/>).
+        /// Читают модули грехов: гневный и гордый ведутся, жадный,
+        /// завистливый и ленивый — нет. Отдельно от <see cref="Provoker"/>,
+        /// чтобы стенд мог ставить его без тела.
+        /// </summary>
+        public bool Provoked;
+
+        /// <summary>Кто зовёт. Пусто — никто.</summary>
+        public Warrior Provoker;
         public float RelationshipWithCommander;
         public List<MemoryRecord> RecentMemories;
         public bool EnemyIsUndead;

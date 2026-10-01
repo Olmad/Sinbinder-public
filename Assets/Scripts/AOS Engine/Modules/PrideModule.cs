@@ -45,10 +45,15 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float pride = soul.Get(SinType.Pride);
 
+            // Зов на себя — вызов: гордый не может не ответить, смиренный
+            // (шкала со знаком минус) пропускает мимо ушей.
+            if (action == ActionType.TakeBait) return pride * _config.TauntPull * Weight;
+
             switch (action)
             {
                 case ActionType.Attack:
                     score += pride * _config.PrideAttackSinMultiplier;
+                    if (context.Provoked && pride > 0f) score += pride * _config.TauntAttackBonus;
 
                     // Не бьёт в спину — и теряет на этом урон.
                     // Добродетель, за которую платят.

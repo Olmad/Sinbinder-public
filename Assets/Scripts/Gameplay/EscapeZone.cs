@@ -76,6 +76,16 @@ namespace Sinbinder.Gameplay
         /// «я не бегу». Дошёл до него игрок и он послушался — уходит со всеми.
         /// </summary>
         public static string Rearguard { get; private set; }
+
+        /// <summary>
+        /// Оставшийся прикрывать пал до ухода. Тогда и журнал, и чёрный экран
+        /// говорят «пал, прикрывая отход», а не молчат: до 1 октября смерть
+        /// стирала <see cref="Rearguard"/>, и «выиграю вам время» пропадало
+        /// бесследно (docs/41-SHOWCASE.md, п. 11).
+        /// </summary>
+        public static bool RearguardFell { get; private set; }
+
+        private Warrior _rearguard;
         private static readonly List<string> _escapedNames = new();
 
         public bool Departing { get; private set; }
@@ -107,6 +117,7 @@ namespace Sinbinder.Gameplay
             SelectionMade = false;
             _escapedNames.Clear();
             Rearguard = null;
+            RearguardFell = false;
 
             Open = _openAtStart;
 
@@ -174,12 +185,20 @@ namespace Sinbinder.Gameplay
             if (Within(w.transform.position)) return;
 
             Rearguard = w.DisplayName;
+            _rearguard = w;
             Debug.Log($"[ПОБЕГ] Прикрывать отход остался {w.DisplayName} (приказ {(context.CommandVolume < 1f ? "издали" : "вблизи")}).");
 
             string name = Loc.Name(w.DisplayName);
             Herald.Line(context.CommandVolume < 1f
                 ? Loc.F("{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время».", name)
                 : Loc.F("{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время».", name));
+
+            // «Выиграю время» — делом, а не словом: он зовёт охотников на себя
+            // (Provocation, решение автора 30 сентября). Со щитом — закрывается.
+            Provocation.Begin(w);
+            Log(Provocation.HasShield(w)
+                ? Loc.F("{0} поднимает щит и зовёт их на себя.", name)
+                : Loc.F("{0} зовёт их на себя.", name));
         }
 
         /// <summary>Огни ворот, если они у края есть.</summary>
@@ -191,6 +210,9 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             if (AOS.AOSEventHub.Instance != null) AOS.AOSEventHub.Instance.OnRefusal -= Refused;
+
+            // Сцена кончилась — зов кончился с ней.
+            Provocation.Clear();
 
             if (Active == this) Active = null;
         }
@@ -289,12 +311,18 @@ namespace Sinbinder.Gameplay
             if (!string.IsNullOrEmpty(Rearguard))
                 foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
                     if (w != null && !w.IsDead && w.DisplayName == Rearguard && !_inside.Contains(w)) { covering = true; break; }
-            if (!covering) Rearguard = null;
+            // Пал, пока прикрывал: это тоже ответ на «выиграю вам время», и он
+            // звучит. Оставшийся прикрывать, но вошедший в круг, — ушёл со всеми.
+            RearguardFell = !covering && !string.IsNullOrEmpty(Rearguard)
+                         && (_rearguard == null || _rearguard.IsDead);
+            if (!covering && !RearguardFell) Rearguard = null;
             if (covering)
             {
                 left--;
                 Log(Loc.F("{0} остался прикрывать отход.", Loc.Name(Rearguard)));
             }
+            else if (RearguardFell)
+                Log(Loc.F("{0} пал, прикрывая отход.", Loc.Name(Rearguard)));
 
             // Словами, а не числом: игрок чисел не видит. До 24 сентября
             // здесь было «Не дождались: 3.» — единственная цифра в журнале.
@@ -386,7 +414,9 @@ namespace Sinbinder.Gameplay
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
             string dawn = Loc.T(Dawn);
             if (!string.IsNullOrEmpty(Rearguard))
-                dawn += "\n" + Loc.F("{0} остался у лагеря.", Loc.Name(Rearguard));
+                dawn += "\n" + (RearguardFell
+                    ? Loc.F("{0} пал, прикрывая отход.", Loc.Name(Rearguard))
+                    : Loc.F("{0} остался у лагеря.", Loc.Name(Rearguard)));
             if (title != null) yield return title.Darken(dawn, 0.9f);
 
             yield return new WaitForSecondsRealtime(2.2f);

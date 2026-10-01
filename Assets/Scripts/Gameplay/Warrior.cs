@@ -119,10 +119,18 @@ namespace Sinbinder.Gameplay
             set => _attack = value;
         }
 
-        /// <summary>Защита в бою: от оболочки плюс от надетого. См. <see cref="CombatMath"/>.</summary>
+        /// <summary>
+        /// Защита в бою: от оболочки плюс от надетого, плюс стойка, пока зовёт
+        /// врагов на себя со щитом (<see cref="Provocation"/>). См. <see cref="CombatMath"/>.
+        /// </summary>
         public float Defense
         {
-            get { float sum = _defense; foreach (var i in _worn) if (i != null) sum += i.DefenseBonus; return sum; }
+            get
+            {
+                float sum = _defense;
+                foreach (var i in _worn) if (i != null) sum += i.DefenseBonus;
+                return sum + Provocation.StanceBonus(this);
+            }
             set => _defense = value;
         }
         public Core.RelationshipSystem Relationships => _relationships;

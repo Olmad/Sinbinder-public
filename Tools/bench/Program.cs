@@ -4252,6 +4252,144 @@ static class Bench
     /// слышен в полную силу; добыча выключена — карман пуст (в прологе
     /// его наполняет только она).
     /// </summary>
+    // Провокация (решение автора 30 сентября): «у Каргана будет навык
+    // „провокация“, из-за которого враги не могут от него отойти и атакуют
+    // только его; сопротивляемость — через грехи». Кто ведётся — тот же сбор
+    // голосов, что BehaviourResolver.TakesBait: модули, потолок голоса,
+    // за громче против. И сколько он стоит под ними — со стойкой и без.
+    static void ProvocationCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ПРОВОКАЦИЯ: КТО ВЕДЁТСЯ НА ЗОВ И СКОЛЬКО ОН СТОИТ ===");
+
+        int bad = 0;
+        void Check(bool ok, string what)
+        {
+            if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
+        }
+
+        var modules = Modules();
+
+        // Охотники — как в HunterSquadSpawner.Kinds.
+        var hunters = new (string Name, SinType Sin, MoralType Moral, float I, bool Want)[]
+        {
+            ("Охотник",          SinType.Wrath, MoralType.Vicious, 60f, true),
+            ("Охотник-следопыт", SinType.Envy,  MoralType.Neutral, 45f, false),
+            ("Инквизитор",       SinType.Pride, MoralType.Vicious, 55f, true),
+            ("Ловчий",           SinType.Greed, MoralType.Vicious, 50f, false),
+        };
+
+        Console.WriteLine($"\n  {"кто",-18} {"за",7} {"против",8}  {"ведётся?",-9} громче всех   бьёт: без зова → с зовом");
+        foreach (var h in hunters)
+        {
+            var w = new Warrior
+            {
+                Soul = new SoulData(h.Name, h.Sin, h.Moral, 1, h.I),
+                Attack = 5f, Loyalty = 50f, Team = Team.Enemy,
+                Relationships = new RelationshipSystem(),
+            };
+            var soul = Soul.FromWarrior(w);
+            var calm = new DecisionContext
+            {
+                CurrentHP = 40f, MaxHP = 40f, NearbyEnemies = 3, EnemiesInSight = 3, NearbyAllies = 3,
+            };
+            var taunted = calm.Copy();
+            taunted.Provoked = true;
+
+            float pro = 0f, con = 0f, top = 0f;
+            string loud = "";
+            foreach (var m in modules)
+            {
+                float v = Math.Clamp(m.Evaluate(soul, taunted, ActionType.TakeBait), -cfg.MaxVoice, cfg.MaxVoice);
+                if (v > 0f) pro += v; else con += v;
+                if (Math.Abs(v) > Math.Abs(top)) { top = v; loud = m.ModuleID; }
+            }
+            bool takes = pro + con > 0f;
+
+            var before = Vote(modules, w, calm, cfg, SquadStrategy.Balanced).Action;
+            var after = Vote(modules, w, taunted, cfg, SquadStrategy.Balanced).Action;
+
+            Console.WriteLine($"  {h.Name,-18} {pro,7:F1} {con,8:F1}  {(takes ? "да" : "нет"),-9} {loud,-12} {before} → {after}");
+            Check(takes == h.Want, $"{h.Name}: ведётся «{(takes ? "да" : "нет")}», а по замыслу — «{(h.Want ? "да" : "нет")}»");
+            Check(!(h.Want && after != ActionType.Attack), $"{h.Name}: ведётся, а под зовом выбрал {after}, не драку");
+        }
+
+        // Чужие голоса: о зове говорят только Гнев, Гордыня, Жадность,
+        // Зависть и Уныние. Любой другой модуль, давший голос, — утечка:
+        // он говорит о зове, не зная о нём.
+        var speaks = new HashSet<string> { "Wrath", "Pride", "Greed", "Envy", "Sloth" };
+        var leaks = new HashSet<string>();
+        var r = new Random(30);
+        for (int i = 0; i < 3000; i++)
+        {
+            var w = new Warrior { Soul = MakeSoul(r, "Т"), Attack = 5f, Loyalty = r.Next(0, 101),
+                                  Team = Team.Enemy, Relationships = new RelationshipSystem() };
+            var c = MakeContext(r, w, r.NextDouble() < 0.5);
+            c.Provoked = true;
+            var soul = Soul.FromWarrior(w);
+            foreach (var m in modules)
+                if (!speaks.Contains(m.ModuleID) && Math.Abs(m.Evaluate(soul, c, ActionType.TakeBait)) > 0.0001f)
+                    leaks.Add(m.ModuleID);
+        }
+        Console.WriteLine($"\n  чужие голоса о зове (3000 случайных душ): {(leaks.Count == 0 ? "нет" : string.Join(", ", leaks))}");
+        Check(leaks.Count == 0, $"о зове говорят модули, которые о нём не знают: {string.Join(", ", leaks)}");
+
+        // Сколько он стоит. Тело — скелет с износом, защита — оболочка, вещи
+        // легенды и стойка; удар охотника — оболочка «Человек». Каждый бьёт
+        // раз в секунду (AutoAttack), окружённый получает на 15% больше
+        // за каждого лишнего (Engagement), треть ударов — в спину, вполтора
+        // (Facing). Секунды — до последнего удара, первый залп — нулевая.
+        var shells = LoadShells();
+        var bone = shells.FirstOrDefault(x => x.type == ShellType.Skeleton);
+        var man = shells.FirstOrDefault(x => x.type == ShellType.Living);
+        Check(bone != null && man != null, "нет оболочек скелета или человека — считать не на чем");
+        if (bone != null && man != null)
+        {
+            string scripts = AssetsRoot() == null ? null : Path.Combine(AssetsRoot(), "Scripts");
+            string spawner = scripts == null ? "" : File.ReadAllText(Path.Combine(scripts, "Gameplay/PrologueCampSpawner.cs"));
+            string prov = scripts == null ? "" : File.ReadAllText(Path.Combine(scripts, "Gameplay/Provocation.cs"));
+
+            var own = Regex.Match(spawner, @"OwnGear\(CampMember m\)[\s\S]*?\n        \}");
+            float gear = 0f;
+            foreach (Match d in Regex.Matches(own.Value, @"defense:\s*([\d.]+)f"))
+                gear += float.Parse(d.Groups[1].Value, CultureInfo.InvariantCulture);
+            var st = Regex.Match(prov, @"public const float Stance\s*=\s*([\d.]+)f");
+            float stance = st.Success ? float.Parse(st.Groups[1].Value, CultureInfo.InvariantCulture) : 0f;
+            Check(gear > 0f, "вещи легенды не прочитаны из PrologueCampSpawner.OwnGear");
+            Check(stance > 0f, "стойка не прочитана из Provocation.Stance");
+
+            int Seconds(float defense, int n)
+            {
+                int behind = n / 3;
+                float crowd = 1f + 0.15f * Math.Max(0, n - 1);
+                float volley = 0f;
+                for (int i = 0; i < n; i++)
+                    volley += CombatMath.Absorb(man.baseAttack * (i < behind ? 1.5f : 1f) * crowd, defense);
+                float hp = bone.EffectiveHP;
+                for (int t = 0; t < 120; t++) { hp -= volley; if (hp <= 0f) return t; }
+                return 120;
+            }
+
+            Console.WriteLine($"\n  Карган (скелет, {bone.EffectiveHP:F0} с износом) — секунд под ударами, охотников: 2 / 3 / 6");
+            var rows = new (string Label, float D)[]
+            {
+                ("без вещей",                bone.baseDefense),
+                ("свои вещи",                bone.baseDefense + gear),
+                ("свои вещи + стойка",       bone.baseDefense + gear + stance),
+            };
+            foreach (var row in rows)
+                Console.WriteLine($"  {row.Label,-24} {Seconds(row.D, 2),3} {Seconds(row.D, 3),4} {Seconds(row.D, 6),4}");
+
+            // Зов делит волну: ведутся двое из каждых четырёх (Гнев, Гордыня).
+            // Вторая волна — шестеро: Охотник, Следопыт, Инквизитор, Ловчий,
+            // Охотник, Следопыт — на зов идут трое.
+            int held = Seconds(bone.baseDefense + gear + stance, 3);
+            Console.WriteLine($"  вторая волна: на зов идут трое — держит {held} с; отсчёт круга выхода — 9 с");
+            Check(held >= 4, $"со стойкой против троих — {held} с: «выиграю вам время» снова неправда");
+        }
+
+        Console.WriteLine(bad == 0 ? "\n  все проверки прошли" : $"\n  ПРОВАЛОВ: {bad}");
+    }
+
     static void SwitchesTogetherCheck(AOSConfig cfg)
     {
         Console.WriteLine("\n=== ВЫКЛЮЧАТЕЛИ ВМЕСТЕ: ГОЛОС И КАРМАН У ОДНОГО ЧЕЛОВЕКА ===");
@@ -5200,6 +5338,7 @@ static class Bench
         CommandsCheck(cfg);
         PocketCheck(cfg);
         SwitchesTogetherCheck(cfg);
+        ProvocationCheck(cfg);
         ReasonCheck(cfg);
         PrideVoiceCheck(cfg);
         VirtueHalvesCheck(cfg);

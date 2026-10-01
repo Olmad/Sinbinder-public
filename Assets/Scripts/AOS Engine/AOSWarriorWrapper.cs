@@ -55,6 +55,16 @@ namespace Sinbinder.AOS
             LastDecisionDetail = decision;
             LastDecision = decision.Action;
 
+            // Зовут на себя, а решено бить — кого? Решают те же голоса
+            // (BehaviourResolver.TakesBait): ведётся — бьёт зовущего.
+            _bait = null;
+            if (context.Provoked && decision.Action == ActionType.Attack)
+            {
+                bool takes = _resolver.TakesBait(_warrior, context, out _);
+                if (takes) _bait = context.Provoker;
+                Provocation.Answer(_warrior, takes);
+            }
+
             if (decision.RefusedCommand)
                 AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
             else if (changed)
@@ -216,9 +226,16 @@ namespace Sinbinder.AOS
             }
         }
 
+        /// <summary>Кто позвал на себя и на чей зов этот воин повёлся. Пусто — никто.</summary>
+        private Warrior _bait;
+
         private void ExecuteAttack()
         {
-            var target = FindBestTarget();
+            // Повёлся на зов — бьёт зовущего, пока тот жив: «враги не могут
+            // от него отойти и атакуют только его» (автор, 30 сентября).
+            Damageable target = null;
+            if (_bait != null && !_bait.IsDead) target = _bait.GetComponent<Damageable>();
+            if (target == null) target = FindBestTarget();
             if (target == null || target.IsDead) { ExecuteLoot(); return; }
             var mover = GetComponent<UnitMover>();
             if (mover != null) mover.CommandMove(target.transform.position);

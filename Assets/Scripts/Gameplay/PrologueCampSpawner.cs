@@ -342,8 +342,37 @@ namespace Sinbinder.Gameplay
                     Brother = m.Brother,
                     Trade = m.Trade,
                     Legend = m.Legend,
-                    Shell = m.Shell
+                    Shell = m.Shell,
+                    Gear = OwnGear(m)
                 };
+        }
+
+        /// <summary>
+        /// Своё железо легенды: слава пришла с ним — и щит с кольчугой тоже.
+        /// Автор, 30 сентября: «Каргану нужна изначально броня, чтобы он правда
+        /// смог потянуть время хоть чуть-чуть». Одной бронёй время не тянется
+        /// (защита гасит удар по 10/(10+D), а толпа бьёт окружённого и в спину):
+        /// щит нужен ради стойки — пока он зовёт охотников на себя, он
+        /// закрывается (<see cref="Provocation"/>). Замер — docs/41-SHOWCASE.md,
+        /// п. 11, и стенд, раздел «ПРОВОКАЦИЯ».
+        /// Остальные приходят с пустыми руками: снаряжает их игрок.
+        /// </summary>
+        private static List<Inventory.InventoryItem> OwnGear(CampMember m)
+        {
+            if (!m.Legend) return null;
+
+            return new List<Inventory.InventoryItem>
+            {
+                new Inventory.InventoryItem(Loc.N("Щит Старого Ворона"),
+                    Loc.N("Дуб, обитый железом. По краю — зарубки: по одной на каждого, кто не прошёл."),
+                    Inventory.ItemType.Equipment, defense: 2f, slot: Inventory.GearSlot.Offhand),
+                new Inventory.InventoryItem(Loc.N("Старая кольчуга"),
+                    Loc.N("Латаная, но своя. Снимать её он не станет."),
+                    Inventory.ItemType.Equipment, defense: 2f, slot: Inventory.GearSlot.Body),
+                new Inventory.InventoryItem(Loc.N("Шлем с вороньим пером"),
+                    Loc.N("Помятый, с чёрным пером за ремнём. Откуда прозвище — видно издали."),
+                    Inventory.ItemType.Equipment, defense: 1f, slot: Inventory.GearSlot.Head),
+            };
         }
 
         /// <summary>

@@ -36,6 +36,10 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             float sin = soul.Get(SinType.Wrath);
 
+            // Зов на себя: гневный ведётся, терпеливый (шкала со знаком
+            // минус) — нет. Вопрос внутри удара, а не действие бюллетеня.
+            if (action == ActionType.TakeBait) return sin * _config.TauntPull * Weight;
+
             // Атака с ходу гневному — праздник: идти туда, где будут бить.
             if (action == ActionType.ObeyCommand && context.CommandIsAttackMove)
                 score += Mathf.Max(0f, sin) * _config.WrathAttackMove;
@@ -59,6 +63,8 @@ namespace Sinbinder.AOS.Modules
                              * Mathf.Clamp01(sin / 100f);
                     score += sin * _config.WrathSinMultiplier;
                     if (context.AllyInDanger && sin > 30f) score += _config.WrathAllyInDangerBonus;
+                    // Зовут на себя — от такого гневный не уходит.
+                    if (context.Provoked && sin > 0f) score += sin * _config.TauntAttackBonus;
                     break;
                 case ActionType.Flee:
                     score -= sin * _config.WrathFleeSinMultiplier;

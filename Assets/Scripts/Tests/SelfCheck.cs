@@ -83,6 +83,7 @@ namespace Sinbinder.Tests
                 Pocket();
                 DebtInHand();
                 PaydayInPerson();
+                Provoke();
                 ReasonByContrast();
                 PrideHalves();
                 ChestStore();
@@ -361,6 +362,50 @@ namespace Sinbinder.Tests
                   && left.UnpaidMissions == before + 1,
                   "у алтаря плата кончена: кому не заплачено — запомнил");
             Check(!SquadGear.PayDebt(paid, purse, out _), "после платы платить нечего");
+        }
+
+        /// <summary>
+        /// Провокация (решение автора, 30 сентября): зов слышен в радиусе
+        /// и только врагам; со щитом зовущий закрывается; кто ведётся —
+        /// решают грехи: гневный — да, жадный — нет (Gameplay/Provocation,
+        /// BehaviourResolver.TakesBait).
+        /// </summary>
+        private static void Provoke()
+        {
+            Provocation.Clear();
+
+            var raven = MakeWarrior("Зовущий", SinType.Pride, 90f);
+            raven.Give(new InventoryItem("Щит", "", ItemType.Equipment, defense: 2f, slot: GearSlot.Offhand));
+            var wrathful = MakeWarrior("Гневный враг", SinType.Wrath, 60f);
+            var greedy = MakeWarrior("Жадный враг", SinType.Greed, 50f);
+            var far = MakeWarrior("Дальний враг", SinType.Wrath, 60f);
+            var friend = MakeWarrior("Свой", SinType.Wrath, 60f);
+            wrathful.Team = greedy.Team = far.Team = Team.Enemy;
+            far.transform.position = new Vector3(Provocation.Radius * 3f, 0f, 0f);
+
+            float before = raven.Defense;
+            Provocation.Begin(raven);
+            Check(raven.Defense >= before + Provocation.Stance - 0.01f, "зовёт со щитом — закрывается стойкой");
+            Check(Provocation.Nearest(wrathful) == raven, "враг рядом слышит зов");
+            Check(Provocation.Nearest(far) == null, "дальше радиуса зов не слышен");
+            Check(Provocation.Nearest(friend) == null, "свой на зов своего не идёт");
+
+            var resolver = new BehaviourResolver();
+            var c1 = BaseContext(wrathful);
+            c1.Provoker = raven;
+            c1.Provoked = true;
+            Check(resolver.TakesBait(wrathful, c1, out _), "гневный ведётся на зов");
+
+            var c2 = BaseContext(greedy);
+            c2.Provoker = raven;
+            c2.Provoked = true;
+            Check(!resolver.TakesBait(greedy, c2, out _), "жадный не ведётся: за этого не платят");
+
+            var c3 = BaseContext(wrathful);
+            Check(!resolver.TakesBait(wrathful, c3, out _), "никто не зовёт — и вестись не на что");
+
+            Provocation.Clear();
+            Check(Mathf.Abs(raven.Defense - before) < 0.01f, "зов кончился — стойки нет");
         }
 
         /// <summary>

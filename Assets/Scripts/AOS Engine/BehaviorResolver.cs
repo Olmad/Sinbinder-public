@@ -269,6 +269,42 @@ namespace Sinbinder.AOS
         }
 
         /// <summary>
+        /// Ведётся ли воин на зов (<see cref="Gameplay.Provocation"/>): бить
+        /// того, кто зовёт на себя, или того, кого выбрал бы сам. Решено
+        /// уже, что бить, — вопрос только кого. Поэтому не кандидат
+        /// бюллетеня: «бить зовущего» рядом с «бить» давало бы ничью
+        /// с самим собой и колебание на ровном месте.
+        ///
+        /// Голосуют те же модули тем же потолком голоса (решение автора
+        /// 30 сентября: «сопротивляемость — через грехи»): Гнев и Гордыня
+        /// за, Жадность, Зависть и Уныние против, Терпение и Смирение —
+        /// против со знаком шкалы. Ведётся — если за громче, чем против.
+        /// <paramref name="loudest"/> — чей голос громче всех, для журнала.
+        /// </summary>
+        public bool TakesBait(Warrior warrior, DecisionContext context, out string loudest)
+        {
+            loudest = "";
+            if (warrior == null || context == null || !context.Provoked) return false;
+
+            var soul = Soul.FromWarrior(warrior);
+            float maxVoice = AOSConfig.Load().MaxVoice;
+            float sum = 0f, top = 0f;
+
+            foreach (var module in _modules)
+            {
+                float weight = EmotionSystem.Instance != null
+                    ? EmotionSystem.Instance.GetEmotionWeight(warrior, module.ModuleID) : 1.0f;
+                float voice = module.Evaluate(soul, context, ActionType.TakeBait) * weight;
+                if (maxVoice > 0f) voice = Mathf.Clamp(voice, -maxVoice, maxVoice);
+
+                sum += voice;
+                if (Mathf.Abs(voice) > Mathf.Abs(top)) { top = voice; loudest = module.ModuleID; }
+            }
+
+            return sum > 0f;
+        }
+
+        /// <summary>
         /// Очки кандидатов: голоса модулей, вещи, перки, установка отряда.
         /// Один подсчёт на решение и на пересчёт «от противного» — две копии
         /// разошлись бы, и объяснение считало бы не ту игру.
