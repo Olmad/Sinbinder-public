@@ -155,6 +155,19 @@ def main():
                 row[bone] = [round(c, 5) for c in a.slerp(b, w)]
             hips[i] = [round(shift[k] + (hips[i][k] - shift[k]) * w, 5) for k in range(3)]
 
+    # На месте: ходьбу и бег ведёт навигация (NavMeshAgent), а не клип.
+    # Таз Mixamo за цикл уходит вперёд на полтора-три метра, и тело
+    # убегало бы от собственной тени и прыгало назад на стыке цикла.
+    # Снимаем линейный уход по горизонтали; покачивание — отклонения
+    # от прямой — и высоту оставляем.
+    if "--in-place" in argv:
+        n = len(hips) - 1
+        x0, y0 = hips[0][0], hips[0][1]
+        dx = (hips[-1][0] - x0) / max(n, 1)
+        dy = (hips[-1][1] - y0) / max(n, 1)
+        hips = [[round(h[0] - x0 - dx * i, 5), round(h[1] - y0 - dy * i, 5), h[2]]
+                for i, h in enumerate(hips)]
+
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({
         "source": clip.name, "fps": 30, "frames": frames, "hips": hips,

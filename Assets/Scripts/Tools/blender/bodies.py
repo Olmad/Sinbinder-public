@@ -812,7 +812,7 @@ def action(arm, name, keys):
     return act
 
 
-def make_actions(arm, g):
+def make_actions(arm, g, shell_name=""):
     def s(legs, arms, torso, bob):
         return stance(legs, arms, torso, bob, g)
 
@@ -913,19 +913,22 @@ def make_actions(arm, g):
     # Имена обязаны совпасть буква в букву с BodyMotion: Animator.Play
     # по чужому имени молча ничего не делает — худший вид поломки,
     # потому что выглядит как «анимация просто не сделана».
-    made = [action(arm, "Idle", idle),
-            action(arm, "Walk", walk),
-            action(arm, "Flee", flee),
-            action(arm, "Die", die),
-            action(arm, "Attack", attack),
-            action(arm, "Talk", talk)]
+    # Свои клипы — там, где оболочке не дали перенесённого (`RETARGETED`):
+    # у зомби хромота, у призрака полёт, у голема тяжесть — их Mixamo
+    # не знает. Падение — всегда своё: его выравнивает по земле ground().
+    own = dict(ALWAYS)
+    own.update(RETARGETED.get(shell_name, {}))
+    have = {clip: name for clip, name in own.items() if (MOTION / (name + ".json")).exists()}
+    for clip, name in own.items():
+        if clip not in have:
+            print("[ТЕЛА] движения «{}» нет в {} — {}: свой клип".format(name, MOTION, clip))
 
-    # Перенесённые с Mixamo (`retarget.py`): достать и убрать оружие.
-    for name in MOTIONS:
-        if (MOTION / (name + ".json")).exists():
-            made.append(retargeted(arm, name))
-        else:
-            print("[ТЕЛА] движения «{}» нет в {} — соберите retarget.py".format(name, MOTION))
+    handmade = {"Idle": idle, "Walk": walk, "Flee": flee, "Die": die, "Attack": attack, "Talk": talk}
+    made = [action(arm, clip, keys) for clip, keys in handmade.items() if clip not in have]
+
+    # Перенесённые с Mixamo (`retarget.py`).
+    for clip, name in have.items():
+        made.append(retargeted(arm, name, clip))
 
     # Поза — обратно в покой. Перенесённые клипы ставят все кости,
     # а свои — не все (кисти, плечи, пальцы ног в них не ключуются).
@@ -939,17 +942,38 @@ def make_actions(arm, g):
     return made
 
 
-# Движения, перенесённые с Mixamo: имя клипа = имя файла в motion/.
+# Движения, перенесённые с Mixamo (`retarget.py`): клип → файл в motion/.
 MOTION = Path(__file__).resolve().parent / "motion"
-MOTIONS = ("Draw", "Sheathe")
+
+# У всех: достать и убрать оружие (набор «Sword and Shield»).
+ALWAYS = {"Draw": "Draw", "Sheathe": "Sheathe"}
+
+# По оболочкам. Автор, 29 сентября: «займись оружием и анимациями» —
+# удар был взмахом пустой руки, а в руке теперь оружие. Из наборов Mixamo
+# (папка автора `D:\Claude\Модели`), перенесённых `retarget.py`:
+#
+# * Stand — «weight shift»: переминается, а не стоит истуканом;
+# * Walking, Running — «Male Locomotion»: обычные ходьба и бег, на месте.
+#   Ходьба из набора меча шла в боевой стойке с поднятым кулаком — в лагере,
+#   где меч в ножнах, кулак был бы пустым;
+# * SwordSlash — удар мечом «Sword and Shield»; Gesture — жест к реплике;
+# * Mutant… — «Creature»: зомби дышит тяжело, бьёт наотмашь и шатается
+#   (Shamble — «пьяная» ходьба); голем ступает тяжело и бьёт кулаком.
+#
+# Призраку — свои клипы: полёт Mixamo не знает.
+HUMANLIKE = {"Idle": "Stand", "Walk": "Walking", "Flee": "Running",
+             "Attack": "SwordSlash", "Talk": "Gesture"}
+RETARGETED = {
+    "Skeleton": HUMANLIKE,
+    "Living": HUMANLIKE,
+    "Zombie": {"Idle": "MutantBreath", "Walk": "Shamble", "Flee": "MutantRun",
+               "Attack": "MutantSwipe", "Talk": "Gesture"},
+    "Golem": {"Idle": "MutantIdle", "Walk": "MutantWalk", "Flee": "MutantRun",
+              "Attack": "MutantPunch"},
+}
 
 
-def motion(name):
-    """Кадры перенесённого движения (`retarget.py`)."""
-    return json.loads((MOTION / (name + ".json")).read_text(encoding="utf-8"))
-
-
-def retargeted(arm, name):
+def retargeted(arm, name, clip=None):
     """
     Клип из перенесённого движения — на суставы этой оболочки.
 
@@ -968,7 +992,7 @@ def retargeted(arm, name):
     parent = {b.name: (b.parent.name if b.parent else None) for b in bones}
     hip = bones["Hips"].head_local.z
 
-    act = bpy.data.actions.new(name)
+    act = bpy.data.actions.new(clip or name)
     act.use_fake_user = True
     arm.animation_data.action = act
     slots = getattr(act, "slots", None)
@@ -1323,7 +1347,7 @@ def make(shell, out_dir, shots):
 
     arm = build_armature(shell.name, shell.parts)
     mesh = build_mesh(arm, shell)
-    acts = make_actions(arm, shell.gait)
+    acts = make_actions(arm, shell.gait, shell.name)
 
     heights = [v.co.z for v in mesh.data.vertices]
     print("[ТЕЛА] {}: костей {}, вершин {}, граней {}, опора {:.3f}, макушка {:.3f}, клипы {}"
