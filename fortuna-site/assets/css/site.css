@@ -7,6 +7,18 @@
 
 [hidden] { display: none !important; }
 
+/* ===== ЗАГЛУШКИ, ЕСЛИ КАРТИНКА НЕ ЗАГРУЗИЛАСЬ ===== */
+.logo-fallback {
+    display: inline-block;
+    font-size: 17px;
+    font-weight: 700;
+    color: #13a5db;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+.footer__logo .logo-fallback { font-size: 22px; }
+img.img-placeholder { object-fit: contain; }
+
 /* ===== СЧЁТЧИК КОРЗИНЫ В ШАПКЕ ===== */
 .header__cart { position: relative; }
 .header__cart-count {

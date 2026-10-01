@@ -29,7 +29,7 @@ ErrorDocument 404 /404.html
 </IfModule>
 
 # Служебные файлы не отдаём посетителям
-<FilesMatch "^(README\.md|\.htaccess)$">
+<FilesMatch "^(README\.md|\.htaccess|download-images\.(bat|ps1)|images\.txt)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

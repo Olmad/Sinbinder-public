@@ -55,6 +55,9 @@
         for (var i = 0; i < categories.length; i++) if (categories[i].id === id) return categories[i];
         return null;
     }
+    function imgAttrs(p) {
+        return 'src="' + esc(p.image) + '"' + (p.remote ? ' data-remote="' + esc(p.remote) + '"' : '') + ' data-fallback="product"';
+    }
     function productUrl(p) { return 'product.html?id=' + encodeURIComponent(p.id); }
 
     function normalize(text) {
@@ -64,6 +67,58 @@
     function getParam(name) {
         try { return new URLSearchParams(window.location.search).get(name) || ''; } catch (e) { return ''; }
     }
+
+    // ------------------------------------------------------------ картинки
+    // Картинки лежат в assets/img/. Если файла нет — пробуем адрес на старом сайте
+    // (data-remote), если и он недоступен — показываем заглушку (data-fallback).
+    var PRODUCT_PLACEHOLDER = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150">' +
+        '<rect x="30" y="58" width="180" height="44" rx="12" fill="#eef7fc" stroke="#13a5db" stroke-opacity=".35" stroke-width="3"/>' +
+        '<rect x="42" y="44" width="62" height="20" rx="9" fill="#eef7fc" stroke="#13a5db" stroke-opacity=".35" stroke-width="3"/>' +
+        '<path d="M44 80h152" stroke="#13a5db" stroke-opacity=".25" stroke-width="3" stroke-dasharray="6 8"/></svg>');
+    var REMOTE_TIMEOUT = 8000;
+
+    function imageFallback(img) {
+        var kind = img.getAttribute('data-fallback') || 'hide';
+        img.setAttribute('data-img-state', 'placeholder');
+        if (kind === 'product') {
+            img.src = PRODUCT_PLACEHOLDER;
+            img.classList.add('img-placeholder');
+        } else if (kind === 'logo') {
+            var text = document.createElement('span');
+            text.className = 'logo-fallback';
+            text.textContent = 'Фортуна';
+            img.parentNode.replaceChild(text, img);
+        } else {
+            img.hidden = true;
+        }
+    }
+    function handleImageError(img) {
+        var state = img.getAttribute('data-img-state');
+        var remote = img.getAttribute('data-remote');
+        if (state === 'placeholder') return;
+        if (!state && remote) {
+            img.setAttribute('data-img-state', 'remote');
+            img.setAttribute('data-remote-since', String(Date.now()));
+            img.src = remote;
+            // старый сайт может не ответить вовсе — не ждём бесконечно.
+            // Проверяем все такие картинки: слайдер создаёт копии слайдов, у них своего таймера нет.
+            setTimeout(function () {
+                var now = Date.now();
+                $all('img[data-img-state="remote"]').forEach(function (pending) {
+                    var since = parseInt(pending.getAttribute('data-remote-since'), 10) || 0;
+                    if (now - since >= REMOTE_TIMEOUT - 100 && !(pending.complete && pending.naturalWidth > 0)) {
+                        imageFallback(pending);
+                    }
+                });
+            }, REMOTE_TIMEOUT);
+            return;
+        }
+        if (img.hasAttribute('data-fallback')) imageFallback(img);
+    }
+    window.fortunaImgError = handleImageError;
+    (window.__imgErrors || []).forEach(handleImageError);
+    window.__imgErrors = [];
 
     // ------------------------------------------------------------ уведомление
     var toastTimer = null;
@@ -182,7 +237,7 @@
     function productCardHTML(p) {
         var url = productUrl(p);
         return '<div class="catalog-products__item" data-id="' + esc(p.id) + '">' +
-            '<a href="' + url + '" class="catalog-products__item-top"><img src="' + esc(p.image) + '" class="catalog-products__item-image" loading="lazy" alt="' + esc(p.name) + '"></a>' +
+            '<a href="' + url + '" class="catalog-products__item-top"><img ' + imgAttrs(p) + ' class="catalog-products__item-image" loading="lazy" alt="' + esc(p.name) + '"></a>' +
             '<a href="' + url + '" class="catalog-products__item-name">' + esc(p.name) + '</a>' +
             '<div class="catalog-products__item-row">' +
                 '<div class="catalog-products__item-row-left"><div class="catalog-products__item-price">' +
@@ -485,7 +540,7 @@
         var related = products.filter(function (x) { return x.category === p.category && x.id !== p.id; });
         root.innerHTML =
             '<div class="product" data-id="' + esc(p.id) + '">' +
-                '<div class="product__gallery"><img src="' + esc(p.image) + '" alt="' + esc(p.name) + '"></div>' +
+                '<div class="product__gallery"><img ' + imgAttrs(p) + ' alt="' + esc(p.name) + '"></div>' +
                 '<div class="product__info">' +
                     (cat ? '<div class="product__category">Линейка: <a href="' + cat.url + '">' + esc(cat.name) + '</a></div>' : '') +
                     '<div class="product__price-label">Цена от</div>' +
@@ -548,7 +603,7 @@
             var p = findProduct(it.id);
             var cat = findCategory(p.category);
             return '<div class="cart-item" data-cart-id="' + esc(p.id) + '">' +
-                '<a class="cart-item__img" href="' + productUrl(p) + '"><img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" loading="lazy"></a>' +
+                '<a class="cart-item__img" href="' + productUrl(p) + '"><img ' + imgAttrs(p) + ' alt="' + esc(p.name) + '" loading="lazy"></a>' +
                 '<div class="cart-item__info">' +
                     '<a class="cart-item__name" href="' + productUrl(p) + '">' + esc(p.name) + '</a>' +
                     '<div class="cart-item__cat">' + (cat ? 'Линейка «' + esc(cat.name) + '» · ' : '') + 'от ' + formatPrice(p.price) + ' ₽</div>' +
