@@ -38,11 +38,20 @@ namespace Sinbinder.UI
 
         private float _hideAt;
 
+        /// <summary>
+        /// Табличка слева вверху больше не всплывает: установка видна
+        /// на полосе выбранного — «Установка: … ▾» со списком и описаниями
+        /// (<see cref="CommandPanel"/>, 42-INTERFACE §3). Две таблички одного
+        /// и того же — шум. Клавиши 1–6 остаются здесь.
+        /// </summary>
+        private const bool Popup = false;
+
         void Start()
         {
             SquadOrders.Changed += OnChanged;
             Refresh();
-            if (_showSeconds > 0f) _hideAt = Time.time + _showSeconds;
+            if (_group != null && !Popup) _group.alpha = 0f;
+            if (_showSeconds > 0f && Popup) _hideAt = Time.time + _showSeconds;
         }
 
         void OnDestroy() => SquadOrders.Changed -= OnChanged;
@@ -59,13 +68,14 @@ namespace Sinbinder.UI
                 break;
             }
 
-            if (_group == null || _showSeconds <= 0f) return;
+            if (_group == null || _showSeconds <= 0f || !Popup) return;
             _group.alpha = Time.time < _hideAt ? 1f : Mathf.MoveTowards(_group.alpha, 0f, Time.deltaTime * 2f);
         }
 
         private void OnChanged(SquadStrategy strategy)
         {
             Refresh();
+            if (!Popup) return;
             if (_showSeconds > 0f) _hideAt = Time.time + _showSeconds;
             if (_group != null) _group.alpha = 1f;
         }

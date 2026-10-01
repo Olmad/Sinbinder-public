@@ -95,6 +95,10 @@ namespace Sinbinder.UI
         {
             if (_line == null || warrior == null || warrior.IsDead) return;
 
+            // Слова над головами (OverheadWord, 42-INTERFACE §1): второе слово
+            // над тем же воином — каша, а причина над головой не пишется.
+            if (OverheadWord.Active) return;
+
             // Врага в тумане не видно — не видно и слова над ним.
             if (Gameplay.FogOfWar.Hides(warrior)) return;
 

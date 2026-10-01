@@ -6500,3 +6500,7 @@ msgstr "Purse: {0}\n\nR — to hand and back\nTab — next jar"
 #: UI/SelectedUnitPanelUI.cs
 msgid "R — в руку и обратно\nTab — следующая банка"
 msgstr "R — to hand and back\nTab — next jar"
+
+#: UI/OverheadWord.cs
+msgid "Колеблется…"
+msgstr "Hesitates…"

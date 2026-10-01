@@ -61,6 +61,9 @@ namespace Sinbinder.UI
             var billboard = root.GetComponent<Billboard>();
             if (billboard != null) billboard.Retarget();
 
+            // Набор из пула мог быть собран до слова над головой.
+            if (root.GetComponent<OverheadWord>() == null) Word(root.transform);
+
             return root;
         }
 
@@ -90,6 +93,7 @@ namespace Sinbinder.UI
             var bar = HealthBar(root.transform, damageable, out var slider,
                                 out var fill);
             var icon = Icon(root.transform);
+            Word(root.transform);
 
             var ui = root.AddComponent<OverheadUI>();
             ui.HealthBar = bar;
@@ -153,6 +157,39 @@ namespace Sinbinder.UI
             image.raycastTarget = false;
 
             return image;
+        }
+
+        /// <summary>
+        /// Слово над отступившим (<see cref="OverheadWord"/>) — выше значка,
+        /// без фона, с обводкой: рамка, летающая по полю, была бы тяжела.
+        /// </summary>
+        private static void Word(Transform parent)
+        {
+            var go = new GameObject("Слово", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(600f, 64f);
+            rect.anchoredPosition = new Vector2(0f, 34f);
+
+            var text = go.AddComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 38;
+            text.fontStyle = FontStyle.Bold;
+            text.alignment = TextAnchor.LowerCenter;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.supportRichText = true;
+            text.raycastTarget = false;
+            text.text = "";
+
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            parent.gameObject.AddComponent<OverheadWord>().SetText(text);
         }
 
         private static DecisionIconUI Icon(Transform parent)
