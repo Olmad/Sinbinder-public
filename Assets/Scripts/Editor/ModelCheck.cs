@@ -37,8 +37,43 @@ namespace Sinbinder.Utilets
             Folder("Assets/Resources/Props", 0.05f, 20f);
             Folder("Assets/Resources/Wear", 0.01f, 2f);
             ShellWear();
+            Matte("Assets/Resources/Bodies");
+            Matte("Assets/Resources/Wear");
 
             foreach (var path in Scenes) Scene(path);
+        }
+
+        /// <summary>
+        /// Тела и вещи — матовые (<c>BodyImport.Surface</c>): глянец на ткани
+        /// и коже ловит огонь греха соседа резким белым кругом. Блестеть
+        /// позволено железу, стеклу, духу и глазам. Ловит импорт, который
+        /// перестал вызывать правило, — снаружи это видно только в кадре.
+        /// </summary>
+        private static void Matte(string folder)
+        {
+            int all = 0, glossy = 0;
+            float most = 0f;
+            string mostName = "—";
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { folder }))
+            {
+                string file = AssetDatabase.GUIDToAssetPath(guid);
+                foreach (var m in AssetDatabase.LoadAllAssetsAtPath(file).OfType<Material>())
+                {
+                    if (m.name.StartsWith("Eye") || m.name.StartsWith("Iron") || m.name.StartsWith("Steel")
+                        || m.name.StartsWith("Old Gold") || m.name.StartsWith("Glass") || m.name.StartsWith("Spirit"))
+                        continue;
+                    all++;
+                    float s = m.HasProperty("_Smoothness") ? m.GetFloat("_Smoothness")
+                            : m.HasProperty("_Glossiness") ? m.GetFloat("_Glossiness") : 0f;
+                    if (s > most) { most = s; mostName = m.name; }
+                    if (s <= 0.3f) continue;
+                    glossy++;
+                    Debug.LogError($"[МОДЕЛИ] {System.IO.Path.GetFileNameWithoutExtension(file)}/{m.name}: "
+                                 + $"гладкость {s:0.00} — блестит лаком. Переимпортируйте модель.");
+                }
+            }
+            Debug.Log($"[МОДЕЛИ] {folder}: материалов {all}, блестящих {glossy}; "
+                    + $"самый гладкий — {mostName} {most:0.00}.");
         }
 
         /// <summary>

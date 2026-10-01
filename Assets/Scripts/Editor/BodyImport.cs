@@ -114,6 +114,49 @@ namespace Sinbinder.EditorTools
             im.clipAnimations = clips;
         }
 
+        /// <summary>
+        /// Поверхность тела — матовая, кроме металла, стекла и глаз.
+        ///
+        /// Импорт переводит шероховатость Блендера в гладкость Unity
+        /// так, что ткань и кожа выходили лаковыми: огонь греха соседа
+        /// (<c>SinEyes</c>) ложился на спину охотника резким белым кругом —
+        /// портрет прогона 1 октября. Ночь Knightcore держится на матовых
+        /// телах и редком блеске железа (<c>00-GDD.md</c> §9), а не на глянце.
+        ///
+        /// Версия ниже — чтобы Unity переимпортировал модели с этим правилом.
+        /// </summary>
+        void OnPostprocessMaterial(Material material)
+        {
+            if (Ours(assetPath)) Surface(material);
+        }
+
+        public override uint GetVersion() => 2;
+
+        /// <summary>Гладкость по имени материала (имена — из Tools/blender).</summary>
+        private static readonly (string Prefix, float Smoothness)[] Smoothness =
+        {
+            ("Iron", 0.42f), ("Steel", 0.42f), ("Old Gold", 0.42f), ("Glass", 0.75f),
+            ("Spirit", 0.35f), ("Leather", 0.26f), ("Skin", 0.22f), ("Flesh", 0.22f),
+            ("Bone", 0.20f), ("Stone", 0.06f),
+        };
+
+        /// <summary>
+        /// Сделать материал матовым по его имени. Общее для тел и гардероба
+        /// (<see cref="WearImport"/>): вещь на теле не должна блестеть иначе,
+        /// чем тело. Глаз не трогаем — он горит (<c>SinEyes</c>).
+        /// </summary>
+        internal static void Surface(Material material)
+        {
+            if (material == null || material.name.StartsWith("Eye")) return;
+
+            float value = 0.08f;                   // сукно, дерево, солома, тьма
+            foreach (var (prefix, smoothness) in Smoothness)
+                if (material.name.StartsWith(prefix)) { value = smoothness; break; }
+
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", value);
+            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", value);
+        }
+
         /// <summary>«Skeleton|Flee» → «Flee».</summary>
         private static string Bare(string take)
         {

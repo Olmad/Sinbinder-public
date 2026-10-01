@@ -47,5 +47,13 @@ namespace Sinbinder.EditorTools
             im.optimizeMeshPolygons = true;
             im.optimizeMeshVertices = true;
         }
+
+        /// <summary>Вещь на теле — той же гладкости, что тело (<see cref="BodyImport.Surface"/>).</summary>
+        void OnPostprocessMaterial(UnityEngine.Material material)
+        {
+            if (Ours(assetPath)) BodyImport.Surface(material);
+        }
+
+        public override uint GetVersion() => 2;
     }
 }
