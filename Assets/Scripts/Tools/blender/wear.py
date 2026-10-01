@@ -964,18 +964,37 @@ def cowl_living(b):
     anatomy.part(b, f, 0.0016, "Head", keep=2400, reach=0.020, deep=0.50, dim=0.50)
 
 
+def hat_fit(k=0.86, dz=-0.006):
+    """
+    Головной убор, сшитый по прежней голове (полуширина 0,06), — на голову
+    из `flesh.py` (0,05): уже по ширине, на той же высоте, чуть ниже.
+    Сжимать и по высоте нельзя: тулья тогда кончается ниже макушки,
+    и голова пробивает шляпу. Без подгонки шляпа висела с зазором вокруг
+    головы — нимбом.
+    """
+    return lambda v: [(x * k, 0.012 + (y - 0.012) * k, z + dz) for x, y, z in v]
+
+
 LIVING_ITEMS = [(name, None, None) for name in ARMS] + [
+    ("InquisitorCap", None, hat_fit()),
+    ("WideHat", None, hat_fit()),
     ("Hood", cowl_living, None),
     # Плащ шире в плечах; обод спереди прижат к груди — иначе он стоял
     # полкой перед курткой.
     ("Cloak", None, lambda v: [(x * 1.22, y if y >= 0.0 else y * 0.78, z) for x, y, z in v]),
     ("Tabard", None, shift(0.016)),
-    ("PauldronLeft", None, about((LIVING["shoulder_x"] - 0.004, 0.004, LIVING["shoulder"] + 0.008), 1.15, 0.022)),
-    ("PauldronRight", None, about((-(LIVING["shoulder_x"] - 0.004), 0.004, LIVING["shoulder"] + 0.008), 1.15, 0.022)),
+    ("PauldronLeft", None, about((LIVING["shoulder_x"] - 0.004, 0.004, LIVING["shoulder"] + 0.008), 1.04, 0.008)),
+    ("PauldronRight", None, about((-(LIVING["shoulder_x"] - 0.004), 0.004, LIVING["shoulder"] + 0.008), 1.04, 0.008)),
 ]
 
+# Зомби — голова из `flesh.py` на общих плечах и руках: подгоняем только
+# то, что сидит на голове. Оружие и прочее — общее.
+ZOMBIE = next(sh.parts for sh in bodies.SHELLS if sh.name == "Zombie")
+ZOMBIE_ITEMS = [("StrawHat", None, hat_fit()), ("Hood", None, hat_fit(0.92, -0.004))]
+
 # Оболочка → (её пропорции, её вещи).
-SHELL_ITEMS = {"Skeleton": (S, SKELETON_ITEMS), "Living": (LIVING, LIVING_ITEMS)}
+SHELL_ITEMS = {"Skeleton": (S, SKELETON_ITEMS), "Living": (LIVING, LIVING_ITEMS),
+               "Zombie": (ZOMBIE, ZOMBIE_ITEMS)}
 
 
 def build_for_shell(parts, entry):

@@ -499,72 +499,13 @@ def build_zombie(b, p):
     Плоть поверх той же кости. Три вещи говорят «зомби» раньше цвета:
     раздутый живот (голод +25), обнажённая правая рука (гниёт) и то,
     что видно уже в движении, — хромота.
+
+    С 1 октября — полем расстояний, плотью с мягкой привязкой и лохмотьями
+    (`flesh.zombie`): прежний зомби из трубок и шаров на портретах читался
+    жёлтым роботом.
     """
-    hip, knee, ankle = p["hip"], p["knee"], p["ankle"]
-    sh, sx, el, wr, fg = (p["shoulder"], p["shoulder_x"],
-                          p["elbow"], p["wrist"], p["finger"])
-
-    # Весь столб — на одной кости. Жёсткие веса рвут поверхность
-    # на границе костей, и на наклоне в двадцать восемь градусов шов
-    # по поясу разошёлся открытой щелью (замечено на превью бегства).
-    # Гнуться зомби нечем: он не сгибается, он тащится.
-    b.add(*tube((0, 0.004, hip - 0.030), (0, 0.004, p["waist"]), 0.098, 0.101, segs=16),
-          bone="Spine")
-
-    # Туловище — столб, а не шары друг на друге: два шара подряд читаются
-    # снеговиком, и, что хуже, верхний из них читается грудью. Пол в этой
-    # игре назначается поимённо и только в авторских списках (CLAUDE.md),
-    # и порода зомби такого права не имеет.
-    b.add(*tube((0, 0.004, p["waist"]), (0, 0.004, p["chest"]), 0.101, 0.104, segs=16),
-          bone="Spine")
-    b.add(*tube((0, 0.004, p["chest"]), (0, 0.006, p["neck"] + 0.010), 0.104, 0.092, segs=16),
-          bone="Spine")
-
-    # Живот висит вперёд, а не раздувается кругом. «Гниющее тело помнит
-    # голод» — помнит именно так: брюхом, а не объёмом.
-    b.add(*sphere((0, -0.052, p["waist"] + 0.010), 0.074, scale=(1.10, 0.80, 0.86),
-                  segs=20, rings=12), bone="Spine")
-
-    # Рёбра наружу, и только слева: гниёт не симметрично, а симметрия
-    # здесь читалась бы как броня.
-    for z in (p["chest"] - 0.014, p["chest"] + 0.014, p["chest"] + 0.042):
-        b.add(*tube((0.010, -0.082, z), (0.098, -0.028, z), 0.011, 0.008, segs=6),
-              bone="Spine", mat=1)
-
-    b.add(*tube((0, 0.010, p["neck"]), (0, 0.014, p["skull"] - 0.050), 0.036, 0.030),
-          bone="Spine")
-
-    skull(b, p, r=0.064, socket=10.0, jaw=True, hair=True)
-
-    for side, tag in sides():
-        bare = side < 0          # правая рука обнажена до кости
-
-        b.add(*sphere((side * (sx - 0.010), 0.004, sh + 0.004), 0.052,
-                      scale=(1.0, 0.86, 0.80), segs=14, rings=10), bone="Spine")
-
-        if bare:
-            limb(b, tag + "UpperArm", (side * sx, 0, sh), (side * el, 0, sh),
-                 0.021, 0.017, joint=0.025, mat=1)
-            for off in (-0.014, 0.014):
-                limb(b, tag + "LowerArm", (side * el, off, sh),
-                     (side * (wr - 0.005), off * 0.4, sh), 0.0105, 0.0090, mat=1)
-            b.add(*sphere((side * el, 0, sh), 0.021, segs=10, rings=6),
-                  bone=tag + "LowerArm", mat=1)
-            hand(b, tag + "Hand", side, wr, fg, sh, thick=0.018, mat=1)
-        else:
-            limb(b, tag + "UpperArm", (side * sx, 0, sh), (side * el, 0, sh),
-                 0.040, 0.032, joint=0.042)
-            limb(b, tag + "LowerArm", (side * el, 0, sh), (side * (wr - 0.005), 0, sh),
-                 0.031, 0.024, joint=0.032)
-            hand(b, tag + "Hand", side, wr, fg, sh, thick=0.030)
-
-        kx = p.get("knee_x", p["leg_x"])
-
-        limb(b, tag + "UpperLeg", (side * p["leg_x"], 0, hip), (side * kx, 0, knee),
-             0.052, 0.038, joint=0.054)
-        limb(b, tag + "LowerLeg", (side * kx, 0, knee), (side * kx, 0, ankle),
-             0.038, 0.028, joint=0.040)
-        foot(b, tag, side, kx, wide=1.15)
+    import flesh
+    flesh.zombie(b, p)
 
 
 # ------------------------------------------------------------ призрак
@@ -756,9 +697,35 @@ def audit_primitives():
 
 # ------------------------------------------------------------------ меш
 
+def clean(b):
+    """
+    Выбросить вырожденные грани (вершина повторена) и повторы граней
+    до того, как их увидит Блендер. Иначе их выбросит `validate()` —
+    и номера граней сдвинутся, а материалы, заданные по номерам, лягут
+    не на свои грани. 1 октября так зомби вышел одного цвета: лохмотья
+    красились плотью. Сколько выброшено — печатаем.
+    """
+    seen = set()
+    faces, mats, smooth = [], [], []
+    for f, m, sm in zip(b.faces, b.mats, b.smooth):
+        key = frozenset(f)
+        if len(key) < 3 or key in seen:
+            continue
+        seen.add(key)
+        faces.append(f)
+        mats.append(m)
+        smooth.append(sm)
+    dropped = len(b.faces) - len(faces)
+    b.faces, b.mats, b.smooth = faces, mats, smooth
+    return dropped
+
+
 def build_mesh(arm, shell):
     b = Body()
     shell.build(b, shell.parts)
+    dropped = clean(b)
+    if dropped:
+        print("[ТЕЛА] {}: вырожденных граней выброшено {}".format(shell.name, dropped))
 
     mesh = bpy.data.meshes.new(shell.name + "Mesh")
     mesh.from_pydata(b.verts, [], b.faces)
@@ -1180,9 +1147,15 @@ SHELLS = [
     ),
     Shell(
         name="Zombie",
-        parts=proportions(shoulder_x=0.124),
+        # Ноги ближе и щиколотка ниже, чем в общем BASE (1 октября):
+        # враскоряку на 0,082 зомби стоял куклой. Плечи, руки и голова —
+        # общие: на них сшиты шляпа, капюшон, колчан и оружие гардероба.
+        parts=proportions(shoulder_x=0.124, leg_x=0.066, knee_x=0.058, ankle=0.045),
         materials=[("Flesh", (0.415, 0.455, 0.345, 1.0)), ("Bone", BONE),
-                   ("Hollow", HOLLOW), ("Eye", EYE)],
+                   ("Hollow", HOLLOW), ("Eye", EYE),
+                   # Лохмотья — грязное сукно, темнее плоти: тряпьё
+                   # читается одеждой, а не второй кожей.
+                   ("Rags", (0.190, 0.170, 0.140, 1.0))],
         build=build_zombie,
         # Тащит правую ногу и держит руки перед собой. Скорость 2.4
         # против 3.6 у скелета — и это видно ногами, а не только

@@ -382,3 +382,255 @@ def glove(b, p, s, tag):
     S.add(chain(thumb, [0.0072, 0.0068, 0.0062, 0.0056]), k=0.003, mat=DARK)
 
     region(b, S, 0.0012, 700, p, rigid=tag + "Hand")
+
+
+# --------------------------------------------------------------- зомби
+
+# Материалы зомби — номера из `bodies.SHELLS`: плоть, кость, пустота,
+# глаз и пятым — лохмотья.
+FLESH, ZBONE, ZHOLLOW, ZEYE, RAGS = 0, 1, 2, 3, 4
+
+
+def borrowed(b, build, remap):
+    """
+    Деталь, собранная чужим сборщиком (рука скелета из `anatomy.py`),
+    с материалами, переложенными на номера этой оболочки: у скелета
+    кость — нулевой материал, у зомби нулевой — плоть.
+    """
+    tmp = bodies.Body()
+    build(tmp)
+    base = len(b.verts)
+    b.verts.extend(tmp.verts)
+    for f, m, sm in zip(tmp.faces, tmp.mats, tmp.smooth):
+        b.faces.append([i + base for i in f])
+        b.mats.append(remap.get(m, m))
+        b.smooth.append(sm)
+    for bone, idx in tmp.groups.items():
+        b.groups.setdefault(bone, []).extend(i + base for i in idx)
+
+
+def zombie(b, p):
+    """
+    Зомби: «гниющее тело помнит голод» (`DemoAssetBuilder.BuildShells`).
+    Видно три вещи раньше цвета: раздутый живот, обглоданная до кости
+    правая рука и рёбра наружу слева. Хромоту даёт походка (`bodies.Gait`).
+
+    Тело — плотью, мягкой привязкой, как у живого (`human`): зомби был
+    человеком. Поверх — лохмотья рубахи и штанов: те же формы, раздутые
+    на семь миллиметров (`Field.grow`). Отдельными формами «чуть больше
+    плоти» (первый заход) лохмотья после прореживания тонули в ней,
+    и рубахи не было видно вовсе. Ноги босые. Лицо — полусгнившее.
+    """
+    hip, knee, ankle = p["hip"], p["knee"], p["ankle"]
+    waist, chest, sh, neck = p["waist"], p["chest"], p["shoulder"], p["neck"]
+    sx, el, wr = p["shoulder_x"], p["elbow"], p["wrist"]
+    lx, kx = p["leg_x"], p.get("knee_x", p["leg_x"])
+    TORSO = {"Hips": 1.0, "Spine": 1.0, "Chest": 1.0}
+
+    hole = Egg((0.074, -0.026, chest - 0.010), (0.034, 0.050, 0.050))
+    stump = Egg((-(sx + 0.030), 0.006, sh), (0.034, 0.050, 0.050))
+
+    def torso(S, mat):
+        """Корпус и левое плечо — одни формы для плоти и рубахи."""
+        S.add(Egg((0, 0.008, hip + 0.020), (0.086, 0.064, 0.070)), mat=mat,
+              rig={"Hips": 1.0, "Spine": 0.5, "LeftUpperLeg": 0.4, "RightUpperLeg": 0.4})
+        # Живот висит вперёд и вниз — голод, а не сытость.
+        S.add(Egg((0, -0.034, waist - 0.006), (0.090, 0.082, 0.088)), k=0.03, mat=mat, rig=TORSO)
+        S.add(Brick((0, 0.008, chest + 0.020), (0.064, 0.032, 0.066), 0.032), k=0.035, mat=mat, rig=TORSO)
+        S.add(Egg((0, 0.014, sh - 0.030), (0.120, 0.060, 0.046)), k=0.035, mat=mat,
+              rig={"Chest": 1.0, "LeftShoulder": 0.6, "RightShoulder": 0.6, "Neck": 0.3})
+        S.add(Egg((sx - 0.008, 0.008, sh + 0.002), (0.044, 0.042, 0.042)), k=0.03, mat=mat,
+              rig={"Chest": 0.5, "LeftShoulder": 1.0, "LeftUpperArm": 1.0})
+        S.add(Egg((-(sx - 0.012), 0.008, sh + 0.004), (0.040, 0.040, 0.040)), k=0.03, mat=mat,
+              rig={"Chest": 0.5, "RightShoulder": 1.0})
+
+    def thighs(S, mat):
+        """Бёдра и колени — одни формы для плоти и штанов."""
+        for s, tag in ((1, "Left"), (-1, "Right")):
+            THIGH = {"Hips": 0.5, tag + "UpperLeg": 1.0, tag + "LowerLeg": 1.0}
+            S.add(Bar((s * lx, 0.004, hip + 0.01), (s * kx, 0.0, knee + 0.03), 0.050, 0.036), k=0.02,
+                  mat=mat, rig=THIGH)
+            S.add(Ball((s * kx, -0.004, knee), 0.034), k=0.015, mat=mat,
+                  rig={tag + "UpperLeg": 1.0, tag + "LowerLeg": 1.0, tag + "Foot": 0.5})
+
+    # ============================================================ плоть
+    F = Sculpt()
+    torso(F, FLESH)
+    F.add(Bar((0, 0.012, sh - 0.010), (0, 0.016, neck + 0.045), 0.032, 0.028), k=0.02, mat=FLESH,
+          rig={"Chest": 0.7, "Neck": 1.0, "Head": 1.0})
+
+    # Рёбра слева — в прорехе плоти, кость поверх тьмы.
+    F.cut(hole, k=0.010)
+    for dz in (-0.034, -0.012, 0.010, 0.032):
+        z = chest - 0.010 + dz
+        F.add(chain([(0.040, -0.058, z - 0.006), (0.066, -0.052, z - 0.002), (0.090, -0.028, z),
+                     (0.098, 0.004, z + 0.002)], [0.0052, 0.0050, 0.0050, 0.0048]), k=0.004,
+              mat=ZBONE, rig=TORSO)
+
+    # Левая рука — во плоти; правая — культя, дальше кость.
+    F.add(Bar((sx, 0.004, sh), (el - 0.01, 0.002, sh), 0.036, 0.030), k=0.02, mat=FLESH,
+          rig={"LeftShoulder": 0.6, "LeftUpperArm": 1.0, "LeftLowerArm": 1.0})
+    F.add(Ball((el, 0.004, sh), 0.029), k=0.015, mat=FLESH,
+          rig={"LeftUpperArm": 1.0, "LeftLowerArm": 1.0})
+    F.add(Bar((el, 0.002, sh), (wr - 0.006, 0.0, sh), 0.029, 0.022), k=0.015, mat=FLESH,
+          rig={"LeftUpperArm": 0.6, "LeftLowerArm": 1.0, "LeftHand": 0.5})
+    F.cut(stump, k=0.006)
+
+    # Ноги: бёдра под штанами, голени и ступни — голые.
+    thighs(F, FLESH)
+    for s, tag in ((1, "Left"), (-1, "Right")):
+        SHIN = {tag + "UpperLeg": 1.0, tag + "LowerLeg": 1.0, tag + "Foot": 0.5}
+        FOOT = {tag + "LowerLeg": 0.4, tag + "Foot": 1.0, tag + "Toes": 1.0}
+        F.add(Bar((s * kx, 0.0, knee), (s * kx, 0.004, ankle + 0.02), 0.030, 0.021), k=0.015,
+              mat=FLESH, rig=SHIN)
+        F.add(Egg((s * kx, 0.014, knee - 0.070), (0.028, 0.030, 0.060)), k=0.015, mat=FLESH, rig=SHIN)
+        F.add(Egg((s * kx, -0.032, 0.020), (0.030, 0.062, 0.020)), k=0.012, mat=FLESH, rig=FOOT)
+        F.add(Egg((s * kx, 0.016, 0.026), (0.024, 0.026, 0.026)), k=0.010, mat=FLESH,
+              rig={tag + "LowerLeg": 1.0, tag + "Foot": 1.0})
+        for i, off in enumerate((-0.016, -0.007, 0.002, 0.010, 0.017)):
+            F.add(Ball((s * kx + s * off, -0.090 + abs(off) * 0.6, 0.010), 0.0075 - 0.0006 * i), k=0.004,
+                  mat=FLESH, rig={tag + "Toes": 1.0, tag + "Foot": 0.4})
+
+    inside = Egg(hole.c, (0.040, 0.056, 0.056))
+
+    def flesh_paint(c, mats):
+        # Тьма в прорехе: стенки ямы — пустота, кость — кость.
+        mats = mats.copy()
+        mats[(inside.dist(c) < 0.0) & (mats == FLESH)] = ZHOLLOW
+        return mats
+
+    region(b, F, 0.0040, 5600, p, paint=flesh_paint)
+
+    # Правая рука — кость скелета (`anatomy.arm`), толще скелетной:
+    # тонкая кость на теле в полтора раза шире скелета читалась прутом.
+    # Кисть не толстим — её кулак держит рукоять оружия.
+    def bone_arm(tmp):
+        anatomy.arm(tmp, p, -1, "Right")
+        for bone in ("RightUpperArm", "RightLowerArm"):
+            for i in tmp.groups.get(bone, []):
+                x, y, z = tmp.verts[i]
+                tmp.verts[i] = (x, y * 1.45, sh + (z - sh) * 1.45)
+
+    borrowed(b, bone_arm, {0: ZBONE, 1: ZBONE, 2: ZHOLLOW, 3: ZEYE})
+
+    # Левая кисть — скрюченная, сжатая под рукоять, как у всех.
+    claw = Sculpt()
+    gx, gz = wr + anatomy.GRIP_AHEAD, sh - anatomy.GRIP_BELOW
+    wrap = anatomy.GRIP_R + 0.0060
+    claw.add(Egg((wr + 0.018, 0.0, sh - 0.002), (0.020, 0.024, 0.012)), mat=FLESH)
+    for y, r in ((-0.0125, 0.0050), (-0.0042, 0.0052), (0.0042, 0.0050), (0.0118, 0.0045)):
+        knuckle = (gx, y, gz + wrap)
+        claw.add(Bar((wr + 0.020, y * 0.5, sh), knuckle, r * 1.1, r * 1.15), k=0.004, mat=FLESH)
+        angle, at = math.pi / 2.0, knuckle
+        for n, length in enumerate((0.022, 0.016, 0.012)):
+            angle -= length / wrap
+            nxt = (gx + math.cos(angle) * wrap, y, gz + math.sin(angle) * wrap)
+            claw.add(Bar(at, nxt, r * (1.0 - 0.1 * n), r * (0.9 - 0.12 * n)), k=0.003, mat=FLESH)
+            at = nxt
+    claw.add(chain([(wr + 0.012, -0.013, sh - 0.002), (wr + 0.030, -0.022, sh - 0.010),
+                    (gx - 0.006, -0.022, gz - 0.006), (gx + 0.004, -0.018, gz - wrap + 0.002)],
+                   [0.0060, 0.0056, 0.0050, 0.0042]), k=0.003, mat=FLESH)
+    region(b, claw, 0.0012, 600, p, rigid="LeftHand")
+
+    # ========================================================= рубаха
+    R = Sculpt()
+    torso(R, RAGS)
+    R.add(Bar((sx, 0.004, sh), (sx + 0.075, 0.002, sh), 0.036, 0.033), k=0.02, mat=RAGS,
+          rig={"LeftShoulder": 0.6, "LeftUpperArm": 1.0})
+    R.field.grow(0.007)
+    # Без ворота у шеи, прорехи, рваный подол. Вырезы — с запасом на рост.
+    R.cut(Egg((0, 0.012, neck - 0.006), (0.058, 0.058, 0.046)), k=0.006)
+    R.cut(Egg(hole.c, (0.048, 0.068, 0.066)), k=0.006)
+    R.cut(Egg(stump.c, (0.044, 0.062, 0.062)), k=0.006)
+    R.cut(Brick((sx + 0.110, 0.0, sh), (0.040, 0.10, 0.10), 0.0), k=0.0)
+    for x, y, z, r in ((-0.040, -0.110, chest - 0.040, 0.026), (0.030, 0.082, chest + 0.030, 0.024),
+                       (-0.088, 0.050, waist + 0.020, 0.026)):
+        R.cut(Ball((x, y, z), r), k=0.004)
+    # Подол рубахи — над пупом: живот вываливается из-под неё. Рубаха
+    # до пояса (первый заход) сливалась со штанами в комбинезон и прятала
+    # главную примету зомби.
+    # Зубцы — на самой кромке, а не над ней: над кромкой вырезы
+    # выходили рядом круглых дыр.
+    hem = waist - 0.020
+    for i in range(11):
+        a = 2.0 * math.pi * i / 11 + 0.3
+        R.cut(Egg((math.sin(a) * 0.104, -0.030 + math.cos(a) * 0.094, hem + 0.010 + 0.008 * (i % 3)),
+                  (0.020, 0.024, 0.022)), k=0.004)
+    R.cut(Brick((0, 0, hem - 0.10), (0.30, 0.30, 0.10), 0.0), k=0.0)
+    region(b, R, 0.0036, 2600, p)
+
+    # ========================================================= штаны
+    T = Sculpt()
+    thighs(T, RAGS)
+    T.add(Egg((0, 0.008, hip + 0.020), (0.086, 0.064, 0.070)), k=0.02, mat=RAGS,
+          rig={"Hips": 1.0, "LeftUpperLeg": 0.4, "RightUpperLeg": 0.4})
+    T.field.grow(0.007)
+    for s in (1, -1):
+        for i in range(5):
+            a = 2.0 * math.pi * i / 5 + s * 0.5
+            T.cut(Egg((s * kx + math.sin(a) * 0.044, math.cos(a) * 0.044, knee - 0.040 + 0.010 * (i % 2)),
+                      (0.018, 0.018, 0.024)), k=0.004)
+        T.cut(Brick((s * kx, 0.0, knee - 0.140), (0.08, 0.08, 0.10), 0.0), k=0.0)
+    # Пояс штанов — под животом, на бёдрах.
+    T.cut(Brick((0, 0, hip + 0.012 + 0.10), (0.30, 0.30, 0.10), 0.0), k=0.0)
+    region(b, T, 0.0036, 2200, p)
+
+    zombie_head(b, p)
+
+
+def zombie_head(b, p):
+    """
+    Голова зомби: человеческая (`head`), но носа нет — дыра, глазницы
+    запали, губ нет — зубы наружу, справа щека прорвана до кости,
+    волосы клочьями — шапкой с проплешинами (шарики клочьев читались
+    ушами). Жёстко на кости головы.
+    """
+    z = p["skull"]
+    S = Sculpt()
+    S.add(Egg((0, 0.012, z + 0.010), (0.050, 0.060, 0.056)), mat=FLESH)
+    S.add(Egg((0, -0.018, z - 0.030), (0.042, 0.043, 0.040)), k=0.02, mat=FLESH)
+    S.add(Egg((0, -0.040, z - 0.058), (0.020, 0.016, 0.015)), k=0.012, mat=FLESH)
+    for s in (1, -1):
+        S.add(Egg((s * 0.031, -0.040, z - 0.010), (0.014, 0.012, 0.010)), k=0.010, mat=FLESH)
+        S.add(Egg((s * 0.048, 0.012, z - 0.010), (0.006, 0.011, 0.016)), k=0.004, mat=FLESH)
+    S.add(Bar((-0.034, -0.050, z + 0.016), (0.034, -0.050, z + 0.016), 0.008, 0.008), k=0.012, mat=FLESH)
+    # Волосы — шапка чуть больше черепа сверху и сзади…
+    S.add(Egg((0, 0.020, z + 0.020), (0.053, 0.064, 0.052)), k=0.004, mat=ZHOLLOW)
+
+    # …с проплешинами: темя и висок — до кожи.
+    hair_holes = [Ball((0.018, 0.000, z + 0.066), 0.024), Ball((-0.036, 0.030, z + 0.040), 0.020),
+                  Ball((0.030, 0.050, z + 0.030), 0.018)]
+
+    # Нос — дыра; глазницы — глубокие; рот — без губ; щека справа — до кости.
+    S.cut(Egg((0, -0.060, z - 0.010), (0.010, 0.020, 0.012)), k=0.004)
+    for s in (1, -1):
+        S.cut(Egg((s * 0.021, -0.056, z + 0.002), (0.016, 0.018, 0.012)), k=0.006)
+        S.add(Egg((s * 0.021, -0.042, z + 0.002), (0.0085, 0.004, 0.006)), k=0.0, mat=ZEYE)
+    S.cut(Brick((0, -0.060, z - 0.040), (0.020, 0.016, 0.008), 0.004), k=0.004)
+    S.cut(Egg((-0.034, -0.040, z - 0.034), (0.016, 0.022, 0.014)), k=0.004)
+
+    mouth = Brick((0, -0.050, z - 0.040), (0.026, 0.016, 0.010), 0.004)
+    cheek = Egg((-0.034, -0.036, z - 0.034), (0.019, 0.025, 0.017))
+    socket = [Egg((s * 0.021, -0.050, z + 0.002), (0.017, 0.016, 0.013)) for s in (1, -1)]
+    nose = Egg((0, -0.054, z - 0.010), (0.012, 0.020, 0.014))
+
+    def paint(c, mats):
+        mats = mats.copy()
+        dark = (nose.dist(c) < 0.0) | (mouth.dist(c) < 0.0) | (cheek.dist(c) < 0.0)
+        for e in socket:
+            dark |= e.dist(c) < 0.0
+        mats[dark & (mats == FLESH)] = ZHOLLOW
+        bald = np.zeros(len(c), dtype=bool)
+        for h in hair_holes:
+            bald |= h.dist(c) < 0.0
+        mats[bald & (mats == ZHOLLOW) & ~dark] = FLESH
+        return mats
+
+    region(b, S, 0.0016, 2600, p, rigid="Head", paint=paint)
+
+    # Зубы — наружу, как у черепа: в прорехе рта и щеки.
+    for x in (-0.026, -0.018, -0.010, -0.003, 0.004, 0.011, 0.018):
+        anatomy.pill(b, "Head", (x, -0.058 + abs(x) * 0.35, z - 0.036), (0.0030, 0.0022, 0.0042),
+                     yaw=x * 900.0, mat=ZBONE, square=0.55)
+        anatomy.pill(b, "Head", (x * 0.95, -0.056 + abs(x) * 0.35, z - 0.045), (0.0028, 0.0022, 0.0038),
+                     yaw=x * 900.0, mat=ZBONE, square=0.55)
