@@ -30,7 +30,7 @@ from collections import namedtuple
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -501,6 +501,87 @@ def shield(b):
     anatomy.part(b, f, 0.0018, bone, keep=1600, reach=0.006, recolor=colour)
 
 
+# ------------------------------------------------------------- в ножнах
+
+# Оружие убрано — висит на тазу, там, где кисть его отпускает в клипе
+# «убрать» (`retarget.py`, кадр посадки). Вещь «в ножнах» — то же оружие,
+# переведённое из позы привязки кисти в позу кисти на этом кадре и оттуда
+# в позу привязки таза: на кость таза она садится ровно туда, где её
+# отпустила рука, и подмена в игре не видна (`Armament`).
+
+
+def settled():
+    """
+    Перевод точки, привязанной к правой кисти, в точку, привязанную
+    к тазу, — на кадре, где кисть отпускает рукоять. Считается по тем же
+    поворотам, что и клип (`bodies.retargeted`), прямой кинематикой.
+    """
+    data = bodies.motion("Sheathe")
+    i = data["settle"]
+    row = data["frames"][i]
+    made = bodies.bones(P)
+    head = {n: Vector(h) for n, _, h, _ in made}
+    turn_ = {n: Quaternion(row[n]) for n, _, _, _ in made}
+    pos = {}
+    for n, up, _, _ in made:
+        if up is None:
+            pos[n] = head[n] + Vector(data["hips"][i]) * P["hip"]
+        else:
+            pos[n] = pos[up] + turn_[up] @ (head[n] - head[up])
+
+    def move(p):
+        world = pos["RightHand"] + turn_["RightHand"] @ (Vector(p) - head["RightHand"])
+        return tuple(head["Hips"] + turn_["Hips"].inverted() @ (world - pos["Hips"]))
+
+    return move
+
+
+def stowed(build):
+    """Сборщик вещи «в ножнах»: то же оружие, переведённое на таз."""
+    def made(b):
+        tmp = Body()
+        build(tmp)
+        stowed_mesh(b, tmp)
+    return made
+
+
+def scabbard(b):
+    """
+    Ножны меча: кожа по клинку, железное устье и наконечник. Стоят
+    на тазу всегда, пока у воина меч, — пустые, когда меч в руке.
+    Строятся вокруг клинка в руке и переводятся на таз тем же ходом,
+    что и меч: клинок входит в них без зазора.
+    """
+    tmp = Body()
+    blade(tmp, "RightHand", 0.056, 0.500, 0.060, 0.020, 0.030, 0)
+    tmp.add(*tube(held(0.050), held(0.080), 0.0170, 0.0165, segs=12), bone="RightHand", mat=1, smooth=True)
+    tmp.add(*sphere(held(0.496), 0.0100, scale=(0.7, 1.0, 1.4), segs=10, rings=6), bone="RightHand", mat=1,
+            smooth=True)
+    # Ремень к поясу — от устья вверх, к тазу.
+    tmp.add(*box(held(0.060, 0.0, -0.016), (0.012, 0.030, 0.050)), bone="RightHand", mat=2)
+    stowed_mesh(b, tmp)
+
+
+def dagger_sheath(b):
+    """Ножны кинжала — короткие, кожа и железное устье."""
+    tmp = Body()
+    blade(tmp, "RightHand", 0.052, 0.200, 0.042, 0.017, 0.022, 0)
+    tmp.add(*tube(held(0.048), held(0.070), 0.0140, 0.0135, segs=12), bone="RightHand", mat=1, smooth=True)
+    stowed_mesh(b, tmp)
+
+
+def stowed_mesh(b, tmp):
+    """Перевести собранное у кисти на таз и сложить в b."""
+    move = settled()
+    base = len(b.verts)
+    b.verts.extend(move(v) for v in tmp.verts)
+    for f, m, sm in zip(tmp.faces, tmp.mats, tmp.smooth):
+        b.faces.append([i + base for i in f])
+        b.mats.append(m)
+        b.smooth.append(sm)
+    b.groups.setdefault("Hips", []).extend(range(base, base + len(tmp.verts)))
+
+
 ITEMS = [
     Item("Hood",           "Head",  hood,            [CLOTH, LEATHER, DARK]),
     Item("WideHat",        "Head",  wide_hat,        [LEATHER, DARK, DARK]),
@@ -527,6 +608,15 @@ ITEMS = [
     Item("Axe",            "RightHand",    axe,      [STEEL, WOOD, IRON]),
     Item("Club",           "RightHand",    club,     [WOOD, IRON, DARK]),
     Item("Shield",         "LeftLowerArm", shield,   [WOOD, IRON, DARK]),
+
+    # Убранное оружие и ножны — на тазу (`Armament` показывает одно
+    # из двух: в руке или в ножнах).
+    Item("SwordStowed",    "Hips", stowed(sword),    [STEEL, LEATHER, IRON]),
+    Item("DaggerStowed",   "Hips", stowed(dagger),   [STEEL, LEATHER, IRON]),
+    Item("AxeStowed",      "Hips", stowed(axe),      [STEEL, WOOD, IRON]),
+    Item("ClubStowed",     "Hips", stowed(club),     [WOOD, IRON, DARK]),
+    Item("Scabbard",       "Hips", scabbard,         [LEATHER, IRON, DARK]),
+    Item("DaggerSheath",   "Hips", dagger_sheath,    [LEATHER, IRON, DARK]),
 ]
 
 
@@ -744,6 +834,12 @@ SKELETON_ITEMS = [
     ("Axe", None, None),
     ("Club", None, None),
     ("Shield", None, None),
+    ("SwordStowed", None, None),
+    ("DaggerStowed", None, None),
+    ("AxeStowed", None, None),
+    ("ClubStowed", None, None),
+    ("Scabbard", None, None),
+    ("DaggerSheath", None, None),
 ]
 
 
@@ -838,15 +934,26 @@ def preview(item, obj, folder):
     bpy.ops.render.render(write_still=True)
 
 
-def build_for_skeleton(entry):
+# Живое тело (охотники) — длиннее в руке, чем общее: кисть на сантиметр
+# дальше. Оружие для него — своё, иначе рукоять висит мимо кулака.
+LIVING = next(sh.parts for sh in bodies.SHELLS if sh.name == "Living")
+ARMS = ["Sword", "Dagger", "Axe", "Club", "Shield", "SwordStowed", "DaggerStowed", "AxeStowed",
+        "ClubStowed", "Scabbard", "DaggerSheath"]
+LIVING_ITEMS = [(name, None, None) for name in ARMS]
+
+# Оболочка → (её пропорции, её вещи).
+SHELL_ITEMS = {"Skeleton": (S, SKELETON_ITEMS), "Living": (LIVING, LIVING_ITEMS)}
+
+
+def build_for_shell(parts, entry):
     """
-    Вещь скелета: общая, собранная на его суставах и подогнанная, или своя.
-    Сборщики читают пропорции из P — на время сборки это пропорции скелета.
+    Вещь оболочки: общая, собранная на её суставах и подогнанная, или своя.
+    Сборщики читают пропорции из P — на время сборки это пропорции оболочки.
     """
     global P
     name, own, fit = entry
     base = next(i for i in ITEMS if i.name == name)
-    P = S
+    P = parts
     try:
         return build(Item(name, base.bone, own or base.build, base.materials), fit)
     finally:
@@ -865,7 +972,7 @@ def main():
     out = bodies.unity_root() / "Assets" / "Resources" / "Wear"
 
     chosen = [i for i in ITEMS if only is None or i.name == only]
-    if not chosen and not any(e[0] == only for e in SKELETON_ITEMS):
+    if not chosen and not any(e[0] == only for _, es in SHELL_ITEMS.values() for e in es):
         raise SystemExit("Нет такой части: " + str(only)
                          + ". Есть: " + ", ".join(i.name for i in ITEMS))
 
@@ -878,14 +985,15 @@ def main():
         if shots:
             preview(item, obj, shots)
 
-    for entry in SKELETON_ITEMS:
-        if only is not None and entry[0] != only:
-            continue
-        obj = build_for_skeleton(entry)
-        print("[ГАРДЕРОБ] Skeleton/{}: граней {}".format(entry[0], len(obj.data.polygons)))
-        export(out / "Skeleton" / (entry[0] + ".fbx"))
-        if shots:
-            preview(Item("Skeleton-" + entry[0], None, None, None), obj, shots)
+    for shell, (parts, entries) in SHELL_ITEMS.items():
+        for entry in entries:
+            if only is not None and entry[0] != only:
+                continue
+            obj = build_for_shell(parts, entry)
+            print("[ГАРДЕРОБ] {}/{}: граней {}".format(shell, entry[0], len(obj.data.polygons)))
+            export(out / shell / (entry[0] + ".fbx"))
+            if shots:
+                preview(Item(shell + "-" + entry[0], None, None, None), obj, shots)
 
     print("[ГАРДЕРОБ] записано в " + str(out))
 

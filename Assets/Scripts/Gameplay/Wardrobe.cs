@@ -73,6 +73,16 @@ namespace Sinbinder.Gameplay
             { "Axe", "RightHand" },
             { "Club", "RightHand" },
             { "Shield", "LeftLowerArm" },
+
+            // Убранное оружие и ножны — на тазу (wear.py, «в ножнах»).
+            // Собираются, но пока не надеваются: показ «в руке или
+            // в ножнах» — следующий шаг (HANDOFF §112.7).
+            { "SwordStowed", "Hips" },
+            { "DaggerStowed", "Hips" },
+            { "AxeStowed", "Hips" },
+            { "ClubStowed", "Hips" },
+            { "Scabbard", "Hips" },
+            { "DaggerSheath", "Hips" },
         };
 
         /// <summary>

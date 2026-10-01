@@ -56,6 +56,7 @@
 полтора мегабайта шума, в котором настоящая правка не видна.
 """
 
+import json
 import math
 import sys
 from collections import namedtuple
@@ -1115,12 +1116,99 @@ def make_actions(arm, g):
     # Имена обязаны совпасть буква в букву с BodyMotion: Animator.Play
     # по чужому имени молча ничего не делает — худший вид поломки,
     # потому что выглядит как «анимация просто не сделана».
-    return [action(arm, "Idle", idle),
+    made = [action(arm, "Idle", idle),
             action(arm, "Walk", walk),
             action(arm, "Flee", flee),
             action(arm, "Die", die),
             action(arm, "Attack", attack),
             action(arm, "Talk", talk)]
+
+    # Перенесённые с Mixamo (`retarget.py`): достать и убрать оружие.
+    for name in MOTIONS:
+        if (MOTION / (name + ".json")).exists():
+            made.append(retargeted(arm, name))
+        else:
+            print("[ТЕЛА] движения «{}» нет в {} — соберите retarget.py".format(name, MOTION))
+
+    # Поза — обратно в покой. Перенесённые клипы ставят все кости,
+    # а свои — не все (кисти, плечи, пальцы ног в них не ключуются).
+    # Поза, оставшаяся от последнего кадра «убрать», запекалась бы
+    # экспортом в каждый чужой клип: 29 сентября так поднялся лежачий —
+    # верх падения 0,333 вместо 0,208.
+    for pb in arm.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        pb.location = (0.0, 0.0, 0.0)
+    return made
+
+
+# Движения, перенесённые с Mixamo: имя клипа = имя файла в motion/.
+MOTION = Path(__file__).resolve().parent / "motion"
+MOTIONS = ("Draw", "Sheathe")
+
+
+def motion(name):
+    """Кадры перенесённого движения (`retarget.py`)."""
+    return json.loads((MOTION / (name + ".json")).read_text(encoding="utf-8"))
+
+
+def retargeted(arm, name):
+    """
+    Клип из перенесённого движения — на суставы этой оболочки.
+
+    В файле на каждую кость — поворот от позы привязки в мировых осях.
+    Кость поворачивается относительно родителя на то, на что её поворот
+    отличается от родительского, — в осях её собственной позы привязки:
+
+        основа = покой⁻¹ · (Δродителя⁻¹ · Δкости) · покой
+
+    Таз ещё и сдвигается: в файле сдвиг в долях высоты таза, а высота
+    таза у каждой оболочки своя. Одно движение — пять тел.
+    """
+    data = motion(name)
+    bones = arm.data.bones
+    rest = {b.name: b.matrix_local.to_quaternion() for b in bones}
+    parent = {b.name: (b.parent.name if b.parent else None) for b in bones}
+    hip = bones["Hips"].head_local.z
+
+    act = bpy.data.actions.new(name)
+    act.use_fake_user = True
+    arm.animation_data.action = act
+    slots = getattr(act, "slots", None)
+    if slots is not None and hasattr(arm.animation_data, "action_slot"):
+        try:
+            slot = slots[0] if len(slots) else slots.new(id_type="OBJECT", name="Object")
+            arm.animation_data.action_slot = slot
+        except Exception as err:
+            print("[ТЕЛА] слот действия не задан: " + str(err))
+
+    last = {}
+    for i, row in enumerate(data["frames"]):
+        frame = i + 1
+        for bone, q in row.items():
+            if bone not in bones:
+                continue
+            delta = Quaternion(q)
+            up = parent[bone]
+            rel = delta if up is None else Quaternion(row[up]).inverted() @ delta
+            basis = rest[bone].inverted() @ rel @ rest[bone]
+            # Без скачков знака: q и −q — один поворот, но между ними
+            # интерполяция идёт через полный оборот.
+            if bone in last and last[bone].dot(basis) < 0.0:
+                basis.negate()
+            last[bone] = basis.copy()
+
+            pb = arm.pose.bones[bone]
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = basis
+            pb.keyframe_insert("rotation_quaternion", frame=frame)
+
+        hips = arm.pose.bones["Hips"]
+        shift = Vector(data["hips"][i]) * hip
+        hips.location = hips.bone.matrix_local.to_3x3().inverted() @ shift
+        hips.keyframe_insert("location", frame=frame)
+
+    return act
 
 
 # ------------------------------------------------------------- оболочки
@@ -1347,6 +1435,11 @@ def preview(shell, folder):
     shot("8-attack-wind", "Attack", 7, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("9-attack-hit", "Attack", 12, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("a-talk-front", "Talk", 14, (0.0, -2.2, 0.62), (0.0, 0.0, 0.52))
+    if "Draw" in bpy.data.actions:
+        shot("b-draw-mid", "Draw", 12, (1.5, -1.7, 0.72), (0.0, 0.0, 0.52))
+    if "Sheathe" in bpy.data.actions:
+        shot("c-sheathe-high", "Sheathe", 16, (1.5, -1.7, 0.72), (0.0, 0.0, 0.52))
+        shot("d-sheathe-settle", "Sheathe", 32, (1.5, -1.7, 0.72), (0.0, 0.0, 0.52))
 
     print(f"[ТЕЛА] {shell.name}: превью в {folder}")
 
