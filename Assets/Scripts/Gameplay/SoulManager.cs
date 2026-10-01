@@ -239,6 +239,19 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[SOUL] Душа {warrior.DisplayName} покинула тело. Угаснет через {FadeTime} сек.");
         }
 
+        /// <summary>
+        /// Есть ли гаснущая душа в досягаемости жатвы — без жатвы. Спрашивает
+        /// кнопка «Забрать душу» на полосе: недоступное — тусклое
+        /// (docs/42-INTERFACE.md §1, п. 6). Радиус тот же, что у самой жатвы,
+        /// иначе кнопка и клавиша E разошлись бы.
+        /// </summary>
+        public bool InReach(Vector3 harvesterPosition)
+        {
+            foreach (var soul in _fadingSouls)
+                if (Vector3.Distance(harvesterPosition, soul.Position) < _harvestRadius) return true;
+            return false;
+        }
+
         public FadingSoul TryHarvestSoul(Vector3 harvesterPosition)
         {
             FadingSoul closest = null;

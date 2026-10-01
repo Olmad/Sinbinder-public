@@ -19,11 +19,12 @@ namespace Sinbinder.UI
     /// в WarCraft 3». Сам он не нашёл, как листать суму, — с приказами было
     /// то же самое: клавиши знал только `УПРАВЛЕНИЕ.md`.
     ///
-    /// Кнопки зовут то же, что клавиши (<see cref="SelectionManager.Stance"/>,
-    /// <see cref="SelectionManager.Aim"/>). Восьмая — «Вещи» (I): не приказ,
-    /// а экран снаряжения (docs/34-GEAR.md); без наведения подсказка
-    /// говорит, что на выделенном воине. Шаг второй — патруль (P) и атака
-    /// с ходу («Атака» по земле) — новые голоса в движке, через модули.
+    /// С 1 октября — правая зона нижней полосы по макету лагеря
+    /// (docs/42-INTERFACE.md §3): кнопками только «Строй» (H) и «Оборона» (G),
+    /// мышиные приказы и прочие клавиши (P, C, I, V) — строкой подсказки,
+    /// установка отряда — одной кнопкой со списком. Прогноз — только при
+    /// наведении: для отданного приказа его уже говорят голоса на полосе.
+    /// Кнопки зовут то же, что клавиши (<see cref="SelectionManager.Stance"/>).
     ///
     /// Ставит себя сама и живёт между сценами, как <see cref="SelectionManager"/>.
     /// </summary>
@@ -31,12 +32,14 @@ namespace Sinbinder.UI
     {
         private static CommandPanel _instance;
 
-        private const float Cell = 76f;
-        private const float Gap = 6f;
-
-        private static readonly Color Plain = new(0.10f, 0.09f, 0.09f, 0.88f);
-        private static readonly Color Lit = new(0.62f, 0.54f, 0.30f, 0.95f);
-        private static readonly Color Dim = new(0.10f, 0.09f, 0.09f, 0.40f);
+        // Цвета макета лагеря (docs/42-INTERFACE.md §1, п. 8): тёмная кожа,
+        // текст цвета кости. Наведённое и нажатое — заливкой, не рамкой;
+        // недоступное — приглушено (§1, п. 6).
+        private static readonly Color Plain = new(0.227f, 0.173f, 0.133f, 1f);
+        private static readonly Color Lit = new(0.35f, 0.27f, 0.20f, 1f);
+        private static readonly Color Dim = new(0.13f, 0.10f, 0.08f, 1f);
+        private static readonly Color Leather = new(0.169f, 0.129f, 0.102f, 1f);
+        private static readonly Color Muted = new(0.70f, 0.65f, 0.55f, 1f);
 
         private sealed class Slot
         {
@@ -84,7 +87,12 @@ namespace Sinbinder.UI
         public static bool Covers(Vector2 screen)
         {
             if (_instance == null || _instance._grid == null || !_instance.Shown) return false;
-            return RectTransformUtility.RectangleContainsScreenPoint(_instance._grid, screen, null);
+            if (RectTransformUtility.RectangleContainsScreenPoint(_instance._grid, screen, null)) return true;
+
+            // Раскрытый список установок висит над зоной — и он тоже не земля.
+            var list = _instance._stanceList;
+            return list != null && list.gameObject.activeSelf
+                && RectTransformUtility.RectangleContainsScreenPoint(list, screen, null);
         }
 
         private bool Shown => _group != null && _group.alpha > 0.5f;
@@ -132,20 +140,28 @@ namespace Sinbinder.UI
             _group.alpha = show ? 1f : 0f;
             _group.interactable = show;
             _group.blocksRaycasts = show;
-            if (!show) { _tip.text = ""; return; }
+            if (!show)
+            {
+                _tip.text = "";
+                if (_stanceList != null) _stanceList.gameObject.SetActive(false);
+                return;
+            }
 
             bool heroOnly = picked == SelectionManager.Picked.HeroOnly;
+
+            // Один Греховод: приказывать некому — кнопки приглушены и сказано
+            // почему (разбор макета, круг 5: «приказ — кому?»).
+            _header.text = heroOnly ? Loc.T("Приказы — сначала выберите воинов") : Loc.T("Приказы");
+            _stanceLine.text = Loc.F("Установка: {0}  ▾", SquadOrders.Name(SquadOrders.Current));
 
             foreach (var s in _slots)
             {
                 bool usable = !heroOnly || s.HeroToo;
                 s.Button.interactable = usable;
-                s.Face.color = !usable ? Dim
-                             : s.Aims && manager.Aiming == s.Kind ? Lit
-                             : Plain;
+                s.Face.color = !usable ? Dim : _hover == s ? Lit : Plain;
             }
 
-            _tip.text = Tip(manager, heroOnly);
+            _tip.text = _stanceList.gameObject.activeSelf ? "" : Tip(manager, heroOnly);
         }
 
         private string Tip(SelectionManager manager, bool heroOnly)
@@ -154,7 +170,9 @@ namespace Sinbinder.UI
                 return Loc.T("Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать.");
             if (manager.Aiming == CommandKind.Patrol) return Loc.T("Укажите, докуда ходить. ПКМ — передумать.");
             if (manager.Aiming != CommandKind.None) return Loc.T("Укажите место. ПКМ — передумать.");
-            if (_hover == null) return Worn(manager);
+            // Без наведения — ничего: прогноз отданного приказа уже говорят
+            // голоса на полосе (42-INTERFACE §3, «Прогноз»).
+            if (_hover == null) return "";
 
             string tip = $"{_hover.Word} · {_hover.Key}\n";
             if (_hover.Act != null) return tip + _hover.Tip;   // экран, а не приказ
@@ -248,28 +266,15 @@ namespace Sinbinder.UI
             }
         }
 
-        /// <summary>
-        /// Без наведения — что на выделенном воине (docs/34-GEAR.md): надетое
-        /// и карман словами. Только для одного своего: у отряда сводка
-        /// была бы стеной текста.
-        /// </summary>
-        private static string Worn(SelectionManager manager)
-        {
-            Warrior only = null;
-            foreach (var unit in manager.GetSelectedUnits())
-            {
-                if (unit == null) continue;
-                var w = unit.GetComponentInParent<Warrior>();
-                if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
-                if (only != null) return "";
-                only = w;
-            }
-            return only == null ? "" : Loc.F("{0} I — вещи.", SquadGear.Summary(only));
-        }
-
         // ──────────────────────────────────
         // Сборка
         // ──────────────────────────────────
+
+        // Место на нижней полосе (docs/42-INTERFACE.md §3, зона «отряд
+        // и приказы»): справа, точки холста 1920×1080. Полоса — 280 в высоту
+        // (сборщик сцен, ConsoleHeight); зона стоит внутри неё.
+        private static readonly Vector2 ZoneSize = new(420f, 236f);
+        private static readonly Vector2 ZoneAt = new(-24f, 22f);
 
         private void Build()
         {
@@ -286,32 +291,34 @@ namespace Sinbinder.UI
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             _group = canvasGo.GetComponent<CanvasGroup>();
 
-            // Справа внизу, над сумой и её строкой клавиш.
-            _grid = Rect("Сетка", canvasGo.transform, new Vector2(1f, 0f),
-                         new Vector2(-40f, 150f), new Vector2(4 * Cell + 3 * Gap, 2 * Cell + Gap));
+            _grid = Rect("Приказы", canvasGo.transform, new Vector2(1f, 0f), ZoneAt, ZoneSize);
 
-            Add(font, 0, 0, Loc.T("Идти"), "M или ПКМ", CommandKind.Move, aims: true, heroToo: true,
-                Loc.T("Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит."));
-            Add(font, 1, 0, Loc.T("Атака"), "T или ПКМ по врагу", CommandKind.Attack, aims: true, heroToo: true,
-                Loc.T("По врагу — бить его. По земле — идти туда и бить всех по дороге. "
-              + "Гневный рад. Трус и раненый — нет."));
-            Add(font, 2, 0, Loc.T("Отход"), "X или Shift + ПКМ", CommandKind.FallBack, aims: true, heroToo: false,
-                Loc.T("Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит."));
-            Add(font, 3, 0, Loc.T("Патруль"), "P", CommandKind.Patrol, aims: true, heroToo: false,
-                Loc.T("Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, "
-              + "усердный идёт охотно. Гневный бросит маршрут, увидев врага."));
-            Add(font, 0, 1, Loc.T("Держать"), "H", CommandKind.Hold, aims: false, heroToo: false,
+            _header = Label(_grid, font, "", 16, TextAnchor.UpperLeft);
+            _header.color = Muted;
+            Place(_header.rectTransform, 0f, 0f, ZoneSize.x, 24f);
+
+            // Кнопками — только то, что мышью не сделать (разбор макета,
+            // круг 3): «Идти», «Бить», «Отход» — правая кнопка мыши,
+            // и строкой подсказки ниже.
+            Add(font, 0, Loc.T("Строй"), "H", CommandKind.Hold,
                 Loc.T("Терпеливый стоит. Гневный рвётся."));
-            Add(font, 1, 1, Loc.T("Оборона"), "G", CommandKind.Defend, aims: false, heroToo: false,
+            Add(font, 1, Loc.T("Оборона"), "G", CommandKind.Defend,
                 Loc.T("Стоять и защищаться. Кто рвётся в драку, стоять не любит."));
-            Add(font, 2, 1, Loc.T("Отмена"), "C", CommandKind.None, aims: false, heroToo: true,
-                Loc.T("Снятый приказ — не приказ. Дальше решают сами."));
-            Add(font, 3, 1, Loc.T("Вещи"), "I", CommandKind.None, aims: false, heroToo: true,
-                Loc.T("Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F."),
-                GearPanel.Toggle);
+
+            var mouse = Label(_grid, font, Loc.T("ПКМ — идти · по врагу — бить · Shift+ПКМ — отход"),
+                              16, TextAnchor.MiddleLeft);
+            mouse.color = Muted;
+            Place(mouse.rectTransform, 0f, 98f, ZoneSize.x, 22f);
+
+            var keys = Label(_grid, font, Loc.T("P — патруль · C — отмена · I — вещи · V — вид"),
+                             16, TextAnchor.MiddleLeft);
+            keys.color = Muted;
+            Place(keys.rectTransform, 0f, 122f, ZoneSize.x, 22f);
+
+            BuildStance(font);
 
             var tipRect = Rect("Подсказка", canvasGo.transform, new Vector2(1f, 0f),
-                               new Vector2(-40f, 150f + 2 * Cell + Gap + 10f), new Vector2(520f, 96f));
+                               new Vector2(ZoneAt.x, ZoneAt.y + 280f), new Vector2(520f, 110f));
             _tip = tipRect.gameObject.AddComponent<Text>();
             _tip.font = font;
             _tip.fontSize = 19;
@@ -325,16 +332,102 @@ namespace Sinbinder.UI
             _group.alpha = 0f;
         }
 
-        private void Add(Font font, int col, int row, string word, string key, CommandKind kind,
-                         bool aims, bool heroToo, string tip, System.Action act = null)
-        {
-            var slot = new Slot { Word = word, Key = key, Kind = kind, Aims = aims, HeroToo = heroToo, Tip = tip, Act = act };
+        // ---------- установка отряда: одна кнопка и список ----------
 
-            // Ряды сверху вниз: верхний ряд — приказы с точкой.
-            var cell = Rect(word, _grid, new Vector2(0f, 1f),
-                            new Vector2(col * (Cell + Gap), -row * (Cell + Gap)), new Vector2(Cell, Cell));
+        private Text _header;
+        private Text _stanceLine;
+        private RectTransform _stanceList;
+
+        /// <summary>
+        /// Установка отряда — одной кнопкой со списком (разбор макета, круг 3:
+        /// шесть кнопок на действие, которое меняют раз в бой). В списке
+        /// у каждой — её описание: по одним названиям «Без указаний»
+        /// и «Держаться приказа» не различить. Клавиши 1–6 по-прежнему
+        /// у <see cref="SquadStrategyUI"/>.
+        /// </summary>
+        private void BuildStance(Font font)
+        {
+            var button = Rect("Установка", _grid, new Vector2(0f, 1f), Vector2.zero, new Vector2(ZoneSize.x, 48f));
+            button.pivot = new Vector2(0f, 1f);
+            button.anchoredPosition = new Vector2(0f, -(ZoneSize.y - 48f));
+
+            var face = button.gameObject.AddComponent<Image>();
+            face.color = Leather;
+            var b = button.gameObject.AddComponent<Button>();
+            b.targetGraphic = face;
+            b.onClick.AddListener(() => _stanceList.gameObject.SetActive(!_stanceList.gameObject.activeSelf));
+
+            Key(button, font, "1–6", 12f);
+            _stanceLine = Label(button, font, "", 18, TextAnchor.MiddleLeft);
+            _stanceLine.rectTransform.offsetMin = new Vector2(64f, 0f);
+            _stanceLine.rectTransform.offsetMax = new Vector2(-12f, 0f);
+
+            // Список раскрывается вверх, над зоной: снизу экрана места нет.
+            var choices = SquadOrders.InDemo;
+            const float row = 58f;
+            _stanceList = Rect("Список установок", _grid, new Vector2(0f, 1f), Vector2.zero,
+                               new Vector2(ZoneSize.x, choices.Length * row));
+            _stanceList.pivot = new Vector2(0f, 0f);
+            _stanceList.anchoredPosition = new Vector2(0f, -(ZoneSize.y - 48f) + 4f);
+            _stanceList.gameObject.AddComponent<Image>().color = new Color(0.114f, 0.086f, 0.071f, 0.98f);
+
+            for (int i = 0; i < choices.Length; i++)
+            {
+                var strategy = choices[i];
+                var line = Rect(SquadOrders.Name(strategy), _stanceList, new Vector2(0f, 1f), Vector2.zero,
+                                new Vector2(ZoneSize.x, row - 4f));
+                line.pivot = new Vector2(0f, 1f);
+                line.anchoredPosition = new Vector2(0f, -i * row);
+
+                var plate = line.gameObject.AddComponent<Image>();
+                plate.color = Leather;
+                var press = line.gameObject.AddComponent<Button>();
+                press.targetGraphic = plate;
+                press.onClick.AddListener(() => { SquadOrders.Set(strategy); _stanceList.gameObject.SetActive(false); });
+
+                Key(line, font, (i + 1).ToString(), 12f);
+                var name = Label(line, font, SquadOrders.Name(strategy), 18, TextAnchor.UpperLeft);
+                name.fontStyle = FontStyle.Bold;
+                name.rectTransform.offsetMin = new Vector2(52f, 0f);
+                name.rectTransform.offsetMax = new Vector2(-10f, -6f);
+                var about = Label(line, font, SquadOrders.Describe(strategy), 14, TextAnchor.LowerLeft);
+                about.color = Muted;
+                about.rectTransform.offsetMin = new Vector2(52f, 6f);
+                about.rectTransform.offsetMax = new Vector2(-10f, 0f);
+            }
+
+            _stanceList.gameObject.SetActive(false);
+        }
+
+        /// <summary>Плашка клавиши: светлая кость, тёмная буква (макет: клавиши не мелкие и не бледные).</summary>
+        private static void Key(RectTransform parent, Font font, string key, float left)
+        {
+            var plate = Rect("Клавиша", parent, new Vector2(0f, 0.5f), new Vector2(left, 0f),
+                             new Vector2(key.Length > 1 ? 40f : 24f, 22f));
+            plate.pivot = new Vector2(0f, 0.5f);
+            plate.anchoredPosition = new Vector2(left, 0f);
+            plate.gameObject.AddComponent<Image>().color = new Color(0.54f, 0.51f, 0.47f, 1f);
+            var t = Label(plate, font, key, 14, TextAnchor.MiddleCenter);
+            t.fontStyle = FontStyle.Bold;
+            t.color = new Color(0.08f, 0.06f, 0.05f);
+        }
+
+        private static void Place(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(x, -y);
+            rt.sizeDelta = new Vector2(w, h);
+        }
+
+        private void Add(Font font, int col, string word, string key, CommandKind kind, string tip)
+        {
+            var slot = new Slot { Word = word, Key = key, Kind = kind, Aims = false, HeroToo = false, Tip = tip };
+
+            const float w = 200f, h = 56f, gap = 20f;
+            var cell = Rect(word, _grid, new Vector2(0f, 1f), Vector2.zero, new Vector2(w, h));
             cell.pivot = new Vector2(0f, 1f);
-            cell.anchoredPosition = new Vector2(col * (Cell + Gap), -row * (Cell + Gap));
+            cell.anchoredPosition = new Vector2(col * (w + gap), -32f);
 
             slot.Face = cell.gameObject.AddComponent<Image>();
             slot.Face.color = Plain;
@@ -343,14 +436,11 @@ namespace Sinbinder.UI
             slot.Button.targetGraphic = slot.Face;
             slot.Button.onClick.AddListener(() => Press(slot));
 
-            var label = Label(cell, font, word, 17, TextAnchor.MiddleCenter);
-            label.rectTransform.offsetMin = new Vector2(2f, 4f);
-            label.rectTransform.offsetMax = new Vector2(-2f, -4f);
-
-            var letter = Label(cell, font, key.Substring(0, 1), 14, TextAnchor.UpperLeft);
-            letter.color = new Color(0.80f, 0.72f, 0.46f);
-            letter.rectTransform.offsetMin = new Vector2(6f, 4f);
-            letter.rectTransform.offsetMax = new Vector2(-4f, -4f);
+            Key(cell, font, key, 14f);
+            var label = Label(cell, font, word, 20, TextAnchor.MiddleLeft);
+            label.fontStyle = FontStyle.Bold;
+            label.rectTransform.offsetMin = new Vector2(48f, 0f);
+            label.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
             var trigger = cell.gameObject.AddComponent<EventTrigger>();
             var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };

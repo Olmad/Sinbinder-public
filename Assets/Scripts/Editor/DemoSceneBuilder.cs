@@ -2686,6 +2686,15 @@ namespace Sinbinder.Utilets
             var sins = Line("Грехи", panel, new Rect(158f, 102f, 400f, 28f), 20);
             var body = Line("Тело", panel, new Rect(158f, 130f, 400f, 28f), 20);
 
+            // Руки Греховода: F «Говорить», E «Забрать душу» (42-INTERFACE §3).
+            // Плашки, а не кнопки: делают их клавиши; тусклая — недоступно.
+            // Слова ставит панель при показе (Loc.T): вписанное здесь осталось бы
+            // русским в английской игре.
+            var handsTitle = Line("Руки Греховода", panel, new Rect(28f, 166f, 400f, 20f), 15);
+            var (talkPlate, talkText) = Hand(panel, new Rect(28f, 190f, 220f, 46f), "F");
+            var (harvestPlate, harvestText) = Hand(panel, new Rect(260f, 190f, 272f, 46f), "E");
+            var handsHint = Line("Подсказка рук", panel, new Rect(28f, 242f, 520f, 24f), 16);
+
             // ---- голоса ----
             var voices = At("Голоса", panel, new Rect(576f, 22f, 600f, 236f));
             var voicesBack = voices.gameObject.AddComponent<Image>();
@@ -2714,8 +2723,33 @@ namespace Sinbinder.Utilets
             Wire(ui, ("_panel", panel.gameObject),
                      ("_flameOuter", outer), ("_flameInner", inner),
                      ("_nameLine", name), ("_craftLine", craft), ("_sinLine", sins), ("_bodyLine", body),
+                     ("_handsTitle", handsTitle), ("_talkPlate", talkPlate), ("_talkText", talkText),
+                     ("_harvestPlate", harvestPlate), ("_harvestText", harvestText), ("_handsHint", handsHint),
                      ("_voicesTitle", title), ("_voiceDot", dot), ("_voiceLine", voice), ("_reasonLine", reason),
                      ("_orderPlate", plate), ("_orderLine", order), ("_orderWhy", orderWhy));
+        }
+
+        /// <summary>
+        /// Плашка руки Греховода: овал кожи, светлая плашка клавиши слева, слово.
+        /// Цвет плашки и слова ставит панель — горит или приглушена.
+        /// </summary>
+        private static (Image, Text) Hand(RectTransform parent, Rect r, string key)
+        {
+            var rt = At("Рука " + key, parent, r);
+            var plate = rt.gameObject.AddComponent<Image>();
+            plate.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            plate.type = Image.Type.Sliced;
+            plate.raycastTarget = false;
+
+            var keyRect = At("Клавиша", rt, new Rect(14f, 11f, 26f, 24f));
+            keyRect.gameObject.AddComponent<Image>().color = new Color(0.54f, 0.51f, 0.47f, 1f);
+            var letter = Line("Буква", keyRect, new Rect(0f, 0f, 26f, 24f), 16, FontStyle.Bold);
+            letter.alignment = TextAnchor.MiddleCenter;
+            letter.color = new Color(0.08f, 0.06f, 0.05f);
+            letter.text = key;
+
+            var word = Line("Слово", rt, new Rect(50f, 0f, r.width - 58f, r.height), 19, FontStyle.Bold);
+            return (plate, word);
         }
 
         /// <summary>Высота нижней полосы выбранного, точки холста 1920×1080.</summary>

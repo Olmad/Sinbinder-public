@@ -44,6 +44,14 @@ namespace Sinbinder.UI
         [SerializeField] private Text _sinLine;
         [SerializeField] private Text _bodyLine;
 
+        [Header("Руки Греховода")]
+        [SerializeField] private Text _handsTitle;
+        [SerializeField] private Image _talkPlate;
+        [SerializeField] private Text _talkText;
+        [SerializeField] private Image _harvestPlate;
+        [SerializeField] private Text _harvestText;
+        [SerializeField] private Text _handsHint;
+
         [Header("Голоса")]
         [SerializeField] private Text _voicesTitle;
         [SerializeField] private Image _voiceDot;
@@ -129,6 +137,52 @@ namespace Sinbinder.UI
 
             if (who is SinbinderPlayer) ShowSinbinder(who);
             else ShowWarrior(who);
+
+            Hands(who);
+        }
+
+        // ---------- руки Греховода ----------
+
+        private static readonly Color HandOn = new Color(0.227f, 0.173f, 0.133f, 1f);
+        private static readonly Color HandOff = new Color(0.13f, 0.10f, 0.08f, 1f);
+
+        /// <summary>
+        /// Две кнопки рук — F «Говорить», E «Забрать душу» (42-INTERFACE §3).
+        /// Недоступное — тусклое (§1, п. 6): иначе игрок жмёт и ничего
+        /// не происходит. «Говорить» горит, когда F заговорит с этим воином;
+        /// «Забрать душу» — когда душа в досягаемости жатвы и есть пустая банка.
+        /// </summary>
+        private void Hands(Warrior who)
+        {
+            var me = SinbinderPlayer.Instance;
+            bool hero = who is SinbinderPlayer;
+
+            bool talk = !hero && me != null
+                     && CampFocus.GroundDistance(SinbinderPlayer.Where, who.transform.position) <= GearPanel.TalkReach;
+
+            var souls = SoulManager.Instance;
+            bool harvest = me != null && souls != null && souls.InReach(SinbinderPlayer.Where)
+                        && Satchel.FreeJar() >= 0;
+
+            // Слова — при показе: язык меняют в меню паузы.
+            Set(_handsTitle, Loc.T("РУКИ ГРЕХОВОДА"), Muted);
+            if (_talkText != null) _talkText.text = Loc.T("Говорить");
+            if (_harvestText != null) _harvestText.text = Loc.T("Забрать душу");
+
+            Hand(_talkPlate, _talkText, talk);
+            Hand(_harvestPlate, _harvestText, harvest);
+
+            if (_handsHint == null) return;
+            _handsHint.color = Faint;
+            _handsHint.text = hero ? Loc.T("Подойдите к воину, чтобы говорить")
+                            : talk ? Loc.T("В разговоре: как он к вам · отдать долг · снаряжение")
+                            : Loc.T("Подойдите ближе, чтобы говорить");
+        }
+
+        private static void Hand(Image plate, Text text, bool on)
+        {
+            if (plate != null) plate.color = on ? HandOn : HandOff;
+            if (text != null) text.color = on ? Bone : Faint;
         }
 
         /// <summary>

@@ -1959,18 +1959,21 @@ namespace Sinbinder.EditorTools
             Write("  [ПРОГНОЗ] " + text.Replace("\n", " | "));
             _forecastOk = !string.IsNullOrEmpty(text) && !System.Text.RegularExpressions.Regex.IsMatch(text, "[0-9]");
 
-            // Навести «мышь» на кнопку атаки: подсказка с прогнозом встаёт
+            // Навести «мышь» на кнопку обороны: подсказка с прогнозом встаёт
             // на панели только при наведении, а мыши у прогона нет. Выделение
             // и наведение снимает ForecastShown, сняв кадр.
-            Hover(AttackButton);
+            Hover(DefendButton);
             _forecastFrame = Time.frameCount;
             _forecastAt = Time.realtimeSinceStartup;
         }
 
         private static float _forecastAt;
 
-        /// <summary>Номер кнопки «Атака» на панели приказов — вторая в первом ряду.</summary>
-        private const int AttackButton = 1;
+        /// <summary>
+        /// Номер кнопки «Оборона» на панели приказов — вторая из двух (с 1 октября
+        /// кнопками только «Строй» и «Оборона», 42-INTERFACE §3; «Атака» — мышью).
+        /// </summary>
+        private const int DefendButton = 1;
 
         /// <summary>
         /// Подсказка встала — снять кадр, убрать наведение и выделение.
@@ -1989,7 +1992,7 @@ namespace Sinbinder.EditorTools
             if (Time.frameCount < _forecastFrame + 2
                 || Time.realtimeSinceStartup < _forecastAt + 0.35f) return false;
 
-            Snap("прогноз — подсказка на кнопке «Атака»");
+            Snap("прогноз — подсказка на кнопке «Оборона»");
             Hover(-1);
             _forecastFrame = -1;
 

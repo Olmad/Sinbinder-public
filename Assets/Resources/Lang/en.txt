@@ -6416,3 +6416,51 @@ msgstr "Conscience"
 #: UI/SelectedUnitPanelUI.cs
 msgid "Его душа"
 msgstr "His soul"
+
+#: UI/CommandPanel.cs
+msgid "Строй"
+msgstr "Formation"
+
+#: UI/CommandPanel.cs
+msgid "Приказы"
+msgstr "Orders"
+
+#: UI/CommandPanel.cs
+msgid "Приказы — сначала выберите воинов"
+msgstr "Orders — select warriors first"
+
+#: UI/CommandPanel.cs
+msgid "Установка: {0}  ▾"
+msgstr "Stance: {0}  ▾"
+
+#: UI/CommandPanel.cs
+msgid "ПКМ — идти · по врагу — бить · Shift+ПКМ — отход"
+msgstr "RMB — go · on an enemy — strike · Shift+RMB — fall back"
+
+#: UI/CommandPanel.cs
+msgid "P — патруль · C — отмена · I — вещи · V — вид"
+msgstr "P — patrol · C — cancel · I — gear · V — view"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "РУКИ ГРЕХОВОДА"
+msgstr "SINBINDER'S HANDS"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Говорить"
+msgstr "Talk"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Забрать душу"
+msgstr "Take the soul"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Подойдите к воину, чтобы говорить"
+msgstr "Walk up to a warrior to talk"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "В разговоре: как он к вам · отдать долг · снаряжение"
+msgstr "In talk: how he feels about you · pay the debt · gear"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Подойдите ближе, чтобы говорить"
+msgstr "Come closer to talk"

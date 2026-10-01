@@ -53,6 +53,12 @@ namespace Sinbinder.UI
         /// <summary>Открыт разговором вблизи — там, где вещи передают. Спрашивает урок обмена.</summary>
         public static bool Talking => Open && _instance._near && _instance._warrior != null;
 
+        /// <summary>
+        /// Дальность разговора. Спрашивает кнопка «Говорить» на полосе
+        /// выбранного: горит она ровно тогда, когда F заговорит.
+        /// </summary>
+        public static float TalkReach => _instance != null ? _instance._talkReach : 3.5f;
+
         private bool _open;
 
         /// <summary>Открыт вблизи, в разговоре: можно передавать. Иначе только смотреть.</summary>
