@@ -248,14 +248,17 @@ namespace Sinbinder.UI
                     break;
 
                 case 2:
-                    if (_warrior.UnpaidMissions <= 0) return;
+                    bool sortie = SalaryPanelUI.Owes(_warrior);
+                    if (!sortie && _warrior.UnpaidMissions <= 0) return;
                     int owed = _warrior.UnpaidMissions;
                     if (SquadGear.PayDebt(_warrior, PlayerInventory.Instance, out string word))
                     {
                         _answer = Loc.F("{0}: «{1}»", name, Dialogue.TalkLines.Paid(_warrior, owed));
-                        FindFirstObjectByType<BattleLogUI>()?.Write(Loc.F("Долг отдан из рук в руки: {0}.", name));
+                        FindFirstObjectByType<BattleLogUI>()?.Write(sortie
+                            ? Loc.F("Плата за вылазку — из рук в руки: {0}.", name)
+                            : Loc.F("Долг отдан из рук в руки: {0}.", name));
                     }
-                    else _answer = Loc.F("{0} — {1}.", Loc.T("Отдать долг"), word);
+                    else _answer = Loc.F("{0} — {1}.", sortie ? Loc.T("Заплатить") : Loc.T("Отдать долг"), word);
                     break;
 
                 case 3:
@@ -575,11 +578,18 @@ namespace Sinbinder.UI
 
             Row(_hands, Loc.T("1 · Как ты? Как ко мне?"), Loc.T("узнать отношение"), () => Choose(1));
 
-            if (_warrior.UnpaidMissions > 0)
+            // В склепе, пока идёт плата лично, второй пункт — плата за вылазку:
+            // платят тем же, что и долг в лагере (SalaryPanelUI, решение
+            // автора 30 сентября).
+            bool sortie = SalaryPanelUI.Owes(_warrior);
+            if (sortie || _warrior.UnpaidMissions > 0)
             {
                 bool can = store != null && store.Gold >= SquadGear.Wage(_warrior);
-                Row(_hands, Loc.T("2 · Вот твой долг"),
-                    can ? Loc.T("одна плата из кошеля — долг снят целиком") : Loc.T("в кошеле не хватает"),
+                string what = !sortie ? Loc.T("одна плата из кошеля — долг снят целиком")
+                            : _warrior.UnpaidMissions > 0 ? Loc.T("одна плата из кошеля — и за вылазку, и за старый долг")
+                            : Loc.T("одна плата из кошеля");
+                Row(_hands, sortie ? Loc.T("2 · Плата за вылазку") : Loc.T("2 · Вот твой долг"),
+                    can ? what : Loc.T("в кошеле не хватает"),
                     can ? () => Choose(2) : (System.Action)null);
             }
             else Row(_hands, Loc.T("2 · Долга нет"), "", null);
@@ -587,6 +597,7 @@ namespace Sinbinder.UI
             Row(_hands, Loc.T("3 · Покажи снаряжение"), Loc.T("вещи на воине и в мешке — обмен из рук в руки"), () => Choose(3));
 
             Row(_store, Loc.T("Долг"), Debt(_warrior.UnpaidMissions), null);
+            if (sortie) Row(_store, Loc.T("За вылазку"), Loc.T("ещё не заплачено"), null);
             if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
 
             _hint.text = Loc.T("1, 2, 3 или щелчок — сказать. F или Esc — уйти.");

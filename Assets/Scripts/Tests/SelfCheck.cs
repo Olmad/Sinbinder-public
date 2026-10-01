@@ -82,6 +82,7 @@ namespace Sinbinder.Tests
                 Gear();
                 Pocket();
                 DebtInHand();
+                PaydayInPerson();
                 ReasonByContrast();
                 PrideHalves();
                 ChestStore();
@@ -329,6 +330,37 @@ namespace Sinbinder.Tests
                                          Dialogue.TalkLines.Paid(greedy, 3), Dialogue.TalkLines.Paid(greedy, 4) })
                 Check(!string.IsNullOrEmpty(line) && line.IndexOfAny("0123456789".ToCharArray()) < 0,
                       $"строка разговора без цифр: «{line}»");
+        }
+
+        /// <summary>
+        /// Плата лично в склепе (решение автора, 30 сентября): платят тому,
+        /// кому хватит монет, пунктом разговора; у алтаря остальным —
+        /// не заплачено, и они это запомнят (UI/SalaryPanelUI).
+        /// </summary>
+        private static void PaydayInPerson()
+        {
+            var paid = MakeWarrior("Плачено", SinType.Pride, 40f);
+            var left = MakeWarrior("Неплачено", SinType.Greed, 40f);
+            var purse = NewObject("Кошель склепа").AddComponent<PlayerInventory>();
+            purse.AddGold(SquadGear.Wage(paid));
+
+            UI.SalaryPanelUI.BeginPayday(new[] { paid, left });
+            Check(UI.SalaryPanelUI.Payday && UI.SalaryPanelUI.Owes(paid) && UI.SalaryPanelUI.Owes(left),
+                  "плата лично: должны всем живым своим");
+
+            float was = paid.Loyalty;
+            Check(SquadGear.PayDebt(paid, purse, out _) && !UI.SalaryPanelUI.Owes(paid)
+                  && paid.UnpaidMissions == 0 && paid.Loyalty > was,
+                  "заплачено лично — с платы снят, верность растёт");
+            Check(!SquadGear.PayDebt(left, purse, out _) && UI.SalaryPanelUI.Owes(left),
+                  "на второго монет не хватило — он всё ещё ждёт");
+
+            int before = left.UnpaidMissions;
+            UI.SalaryPanelUI.FinishPayday();
+            Check(!UI.SalaryPanelUI.Payday && UI.SalaryPanelUI.Answered
+                  && left.UnpaidMissions == before + 1,
+                  "у алтаря плата кончена: кому не заплачено — запомнил");
+            Check(!SquadGear.PayDebt(paid, purse, out _), "после платы платить нечего");
         }
 
         /// <summary>

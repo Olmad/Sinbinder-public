@@ -4960,6 +4960,10 @@ msgid "в кошеле не хватает"
 msgstr "not enough in the purse"
 
 #: Gameplay/SquadGear.cs
+msgid "за вылазку заплачено"
+msgstr "paid for the sortie"
+
+#: Gameplay/SquadGear.cs
 msgid "долг отдан"
 msgstr "debt paid"
 
@@ -5364,12 +5368,20 @@ msgid "{0}: «{1}»"
 msgstr "{0}: “{1}”"
 
 #: UI/GearPanel.cs
+msgid "Плата за вылазку — из рук в руки: {0}."
+msgstr "Paid for the sortie, hand to hand: {0}."
+
+#: UI/GearPanel.cs
 msgid "Долг отдан из рук в руки: {0}."
 msgstr "Debt paid hand to hand: {0}."
 
 #: UI/GearPanel.cs
 msgid "{0} — {1}."
 msgstr "{0} — {1}."
+
+#: UI/GearPanel.cs
+msgid "Заплатить"
+msgstr "Pay"
 
 #: UI/GearPanel.cs
 msgid "Отдать долг"
@@ -5480,12 +5492,24 @@ msgid "узнать отношение"
 msgstr "learn where he stands"
 
 #: UI/GearPanel.cs
-msgid "2 · Вот твой долг"
-msgstr "2 · Here's what you're owed"
-
-#: UI/GearPanel.cs
 msgid "одна плата из кошеля — долг снят целиком"
 msgstr "one wage from the purse — the whole debt is cleared"
+
+#: UI/GearPanel.cs
+msgid "одна плата из кошеля — и за вылазку, и за старый долг"
+msgstr "one wage from the purse covers the sortie and the old debt"
+
+#: UI/GearPanel.cs
+msgid "одна плата из кошеля"
+msgstr "one wage from the purse"
+
+#: UI/GearPanel.cs
+msgid "2 · Плата за вылазку"
+msgstr "2 · Pay for the sortie"
+
+#: UI/GearPanel.cs
+msgid "2 · Вот твой долг"
+msgstr "2 · Here's what you're owed"
 
 #: UI/GearPanel.cs
 msgid "2 · Долга нет"
@@ -5502,6 +5526,14 @@ msgstr "what the warrior wears and what's in the bag — hand to hand"
 #: UI/GearPanel.cs
 msgid "Долг"
 msgstr "Debt"
+
+#: UI/GearPanel.cs
+msgid "За вылазку"
+msgstr "For the sortie"
+
+#: UI/GearPanel.cs
+msgid "ещё не заплачено"
+msgstr "not paid yet"
 
 #: UI/GearPanel.cs
 msgid "1, 2, 3 или щелчок — сказать. F или Esc — уйти."
@@ -5712,20 +5744,32 @@ msgid "Вылазка окончена. Отряд ждёт платы."
 msgstr "The sortie is over. The squad awaits payment."
 
 #: UI/SalaryPanelUI.cs
-msgid "Заплатить\nзолото уйдёт из мешка"
-msgstr "Pay\nthe gold leaves the bag"
+msgid "Платить лично\nкому хватит монет"
+msgstr "Pay in person\nwhoever the coins will cover"
 
 #: UI/SalaryPanelUI.cs
-msgid "Придержать\nони запомнят"
-msgstr "Hold back\nthey will remember"
+msgid "Придержать всем\nони запомнят"
+msgstr "Withhold from all\nthey will remember"
 
 #: UI/SalaryPanelUI.cs
-msgid "Отряду заплачено."
-msgstr "The squad has been paid."
+msgid "Плата — из рук в руки: подойдите к воину, F, второй пункт. Кому не заплатите до алтаря — тот запомнит."
+msgstr "Pay hand to hand: walk up to a warrior, F, second option. Whoever is unpaid when you reach the altar will remember."
 
 #: UI/SalaryPanelUI.cs
-msgid "Платить было нечем. Отряд это запомнил."
-msgstr "There was nothing to pay with. The squad will remember."
+msgid "Платить некому."
+msgstr "There is no one to pay."
+
+#: UI/SalaryPanelUI.cs
+msgid "Отряду заплачено — каждому из рук в руки."
+msgstr "The squad is paid, each one hand to hand."
+
+#: UI/SalaryPanelUI.cs
+msgid "Никому не заплачено. Отряд это запомнил."
+msgstr "No one was paid. The squad will remember."
+
+#: UI/SalaryPanelUI.cs
+msgid "Остальным не заплачено. Они это запомнили."
+msgstr "The rest went unpaid. They will remember."
 
 #: UI/SalaryPanelUI.cs
 msgid "Золото осталось в мешке. Отряд это запомнил."
@@ -6004,6 +6048,22 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Заплатить\nзолото уйдёт из мешка"
+msgstr "Pay\nthe gold leaves the bag"
+
+#. нет в коде
+msgid "Придержать\nони запомнят"
+msgstr "Hold back\nthey will remember"
+
+#. нет в коде
+msgid "Отряду заплачено."
+msgstr "The squad has been paid."
+
+#. нет в коде
+msgid "Платить было нечем. Отряд это запомнил."
+msgstr "There was nothing to pay with. The squad will remember."
 
 #. нет в коде
 msgid "1 — как он и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."

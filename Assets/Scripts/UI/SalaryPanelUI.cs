@@ -1,4 +1,5 @@
 // Перевод: текст через Loc
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Gameplay;
@@ -22,6 +23,14 @@ namespace Sinbinder.UI
     ///
     /// Чисел на панели нет: ни суммы, ни остатка. Только слова —
     /// правило проекта одно для всех экранов.
+    ///
+    /// <b>Плата лично</b> (решение автора, 30 сентября; docs/40-SWITCHES.md
+    /// §8.1). Прежде «Заплатить» брало плату за всех разом — пять–восемь
+    /// плат при кошеле меньше трёх, и «платить было нечем» выходило всегда:
+    /// выбора не было. Теперь платят из рук в руки, в разговоре (F, пункт 2,
+    /// <see cref="GearPanel"/>), кому хватит монет, — и вопрос становится
+    /// «кому». Кончается плата у алтаря: кому не заплачено до него, тот
+    /// запомнит. Заплатили всем — кончается сразу.
     /// </summary>
     public class SalaryPanelUI : MonoBehaviour
     {
@@ -32,9 +41,7 @@ namespace Sinbinder.UI
         [SerializeField] private Button _withholdButton;
         [SerializeField] private Text _withholdLabel;
 
-        [Tooltip("Сколько стоит вылазка одного воина. Игрок этого числа "
-               + "не видит — оно только для кошелька.")]
-        [SerializeField] private int _costPerWarrior = 10;
+        // Плата одному — SquadGear.Wage: та же, что в разговоре в лагере.
 
         [Tooltip("Спросить о плате, как только отряд пришёл в сцену, а не "
                + "по концу боя. Ставится склепу: вылазка кончается побегом, "
@@ -51,13 +58,42 @@ namespace Sinbinder.UI
         /// </summary>
         public static bool Answered { get; private set; }
 
-        void Awake() => Answered = false;
+        /// <summary>Идёт плата лично: от выбора «платить лично» до алтаря.</summary>
+        public static bool Payday { get; private set; }
+
+        /// <summary>Кому ещё не заплачено за эту вылазку.</summary>
+        private static readonly HashSet<Warrior> Owed = new();
+
+        /// <summary>Скольким заплачено лично за эту вылазку.</summary>
+        private static int _paidInPerson;
+
+        /// <summary>Ближе этого к алтарю — плата кончена (как у эпилога, PrologueDirector).</summary>
+        private const float AltarReach = 3.5f;
+
+        private Transform _altar;
+
+        /// <summary>Ждёт ли этот воин платы за вылазку.</summary>
+        public static bool Owes(Warrior w) => Payday && w != null && Owed.Contains(w);
+
+        /// <summary>Воину заплачено лично (<see cref="SquadGear.PayDebt"/>).</summary>
+        public static void Settle(Warrior w)
+        {
+            if (w != null && Owed.Remove(w)) _paidInPerson++;
+        }
+
+        void Awake()
+        {
+            Answered = false;
+            Payday = false;
+            Owed.Clear();
+            _paidInPerson = 0;
+        }
 
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
 
-            if (_payButton != null) _payButton.onClick.AddListener(Pay);
+            if (_payButton != null) _payButton.onClick.AddListener(PayInPerson);
             if (_withholdButton != null) _withholdButton.onClick.AddListener(Withhold);
 
             // До 14 сентября панель стояла в набеге и открывалась, когда
@@ -118,38 +154,96 @@ namespace Sinbinder.UI
             _asked = true;
 
             if (_title != null) _title.text = Loc.T("Вылазка окончена. Отряд ждёт платы.");
-            if (_payLabel != null) _payLabel.text = Loc.T("Заплатить\nзолото уйдёт из мешка");
-            if (_withholdLabel != null) _withholdLabel.text = Loc.T("Придержать\nони запомнят");
+            if (_payLabel != null) _payLabel.text = Loc.T("Платить лично\nкому хватит монет");
+            if (_withholdLabel != null) _withholdLabel.text = Loc.T("Придержать всем\nони запомнят");
 
             Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
         }
 
-        private void Pay()
+        /// <summary>
+        /// Платить лично: панель уходит, мир идёт, игрок подходит к воинам
+        /// и платит в разговоре. Кому — решает он: монет на всех не хватит.
+        /// </summary>
+        private void PayInPerson()
         {
-            var squad = CombatManager.Instance?.GetAllWarriors();
-            if (squad == null) { Close(); return; }
+            BeginPayday(CombatManager.Instance?.GetAllWarriors());
+            Modal.Close(_panel);
+            Core.GamePauseController.Instance?.Resume();
 
-            int owed = 0;
-            foreach (var w in squad)
-                if (w != null && !w.IsDead && w.Team == Team.Player) owed += _costPerWarrior;
+            if (!Payday) { Answered = true; return; }
 
-            var purse = Inventory.PlayerInventory.Instance;
-            bool paid = owed <= 0 || (purse != null && purse.SpendGold(owed));
+            var altar = GameObject.Find("Altar");
+            if (altar == null) altar = GameObject.Find("Зал");
+            _altar = altar != null ? altar.transform : null;
 
-            foreach (var w in squad)
+            Log(Loc.T("Плата — из рук в руки: подойдите к воину, F, второй пункт. "
+                    + "Кому не заплатите до алтаря — тот запомнит."));
+        }
+
+        /// <summary>
+        /// Начать плату лично: должны все живые свои, кроме Греховода.
+        /// Отдельно от кнопки — самопроверке (Tests/SelfCheck, PaydayInPerson).
+        /// Платить некому — плата сразу кончена.
+        /// </summary>
+        public static void BeginPayday(IEnumerable<Warrior> squad)
+        {
+            Owed.Clear();
+            _paidInPerson = 0;
+            if (squad != null)
+                foreach (var w in squad)
+                    if (Due(w)) Owed.Add(w);
+
+            Payday = Owed.Count > 0;
+            if (!Payday)
             {
-                if (w == null || w.IsDead || w.Team != Team.Player) continue;
-                w.PaySalary(paid ? _costPerWarrior : 0f);
+                Answered = true;
+                Log(Loc.T("Платить некому."));
             }
+        }
 
-            // Честность важнее удобства: если платить было нечем, отряд
-            // запомнит долг, а не намерение.
-            Log(paid
-                ? Loc.T("Отряду заплачено.")
-                : Loc.T("Платить было нечем. Отряд это запомнил."));
+        /// <summary>
+        /// Плата кончена: кому не заплачено — не заплачено, и он это
+        /// запомнит (<see cref="Warrior.PaySalary"/> с нулём — тот же,
+        /// что «придержать»). Честность та же: намерение не в счёт.
+        /// </summary>
+        public static void FinishPayday()
+        {
+            if (!Payday) return;
+            Payday = false;
 
-            Close();
+            int left = 0;
+            foreach (var w in Owed)
+            {
+                if (w == null || w.IsDead) continue;
+                w.PaySalary(0f);
+                left++;
+            }
+            Owed.Clear();
+
+            if (left == 0) Log(Loc.T("Отряду заплачено — каждому из рук в руки."));
+            else if (_paidInPerson == 0) Log(Loc.T("Никому не заплачено. Отряд это запомнил."));
+            else Log(Loc.T("Остальным не заплачено. Они это запомнили."));
+
+            Answered = true;
+        }
+
+        /// <summary>Платят своим живым воинам. Греховод себе не платит.</summary>
+        private static bool Due(Warrior w)
+            => w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer);
+
+        void Update()
+        {
+            if (!Payday) return;
+
+            // Заплатили всем — кончено: ждать алтаря незачем.
+            Owed.RemoveWhere(w => w == null || w.IsDead);
+            if (Owed.Count == 0) { FinishPayday(); return; }
+
+            // Алтарь — конец платы: дальше эпилог, и кто вернулся, тот вернулся.
+            if (_altar != null && SinbinderPlayer.Exists
+                && CampFocus.GroundDistance(SinbinderPlayer.Where, _altar.position) <= AltarReach)
+                FinishPayday();
         }
 
         private void Withhold()
@@ -157,10 +251,7 @@ namespace Sinbinder.UI
             var squad = CombatManager.Instance?.GetAllWarriors();
             if (squad != null)
                 foreach (var w in squad)
-                {
-                    if (w == null || w.IsDead || w.Team != Team.Player) continue;
-                    w.PaySalary(0f);
-                }
+                    if (Due(w)) w.PaySalary(0f);
 
             Log(Loc.T("Золото осталось в мешке. Отряд это запомнил."));
             Close();
@@ -173,7 +264,7 @@ namespace Sinbinder.UI
             Core.GamePauseController.Instance?.Resume();
         }
 
-        private void Log(string text)
+        private static void Log(string text)
         {
             var log = Object.FindFirstObjectByType<BattleLogUI>();
             if (log != null) log.Write(text);

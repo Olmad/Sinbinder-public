@@ -535,8 +535,17 @@ namespace Sinbinder.EditorTools
                 S("склеп: спросили о плате", null,
                   () => SalaryOpen(), 20f),
 
-                S("склеп: заплатили", PaySalary,
-                  () => UI.SalaryPanelUI.Answered, 5f),
+                // Плата лично (решение автора 30 сентября): панель открывает
+                // плату из рук в руки, платят в разговоре, кончается у алтаря.
+                S("склеп: плата — лично", PaySalary,
+                  () => UI.SalaryPanelUI.Payday || UI.SalaryPanelUI.Answered, 5f),
+
+                S("склеп: заплачено из рук в руки", PayInCrypt, () =>
+                {
+                    if (UI.GearPanel.Open && !GearSettled()) return false;
+                    if (UI.GearPanel.Open) { Snap("склеп — плата за вылазку"); UI.GearPanel.Dismiss(); }
+                    return true;
+                }, 5f),
 
                 // С 24 сентября эпилог ждёт шага: Греховод входит в зал.
                 // Раньше он приходил по часам, и прогон просто ждал.
@@ -544,6 +553,14 @@ namespace Sinbinder.EditorTools
                   () => SinbinderPlayer.Exists && Altar() != null
                      && CampFocus.GroundDistance(SinbinderPlayer.Where,
                                                  Altar().position) <= 3.5f, 5f),
+
+                // У алтаря плата кончена: кому не заплачено — запомнит.
+                S("склеп: плата кончена у алтаря", null, () =>
+                {
+                    if (!UI.SalaryPanelUI.Answered) return false;
+                    Write($"  [ПЛАТА] плата кончена; идёт ли ещё: {(UI.SalaryPanelUI.Payday ? "ДА" : "нет")}");
+                    return true;
+                }, 5f),
 
                 // Мастерская (выключатель «связывание»): пока в суме душа,
                 // эпилог ждёт поднятого. Без выключателя шаг сделан сразу.
@@ -2089,6 +2106,32 @@ namespace Sinbinder.EditorTools
         {
             var salary = UnityEngine.Object.FindFirstObjectByType<UI.SalaryPanelUI>();
             if (salary != null) Field<Button>(salary, "_payButton")?.onClick.Invoke();
+        }
+
+        /// <summary>
+        /// Заплатить за вылазку тому, кому должны, — лично, пунктом 2 разговора.
+        /// Первый по порядку сцены из тех, кто ждёт: прогону важно, что плата
+        /// идёт из рук в руки, а не кому именно.
+        /// </summary>
+        private static void PayInCrypt()
+        {
+            Warrior due = null;
+            int waiting = 0;
+            var squad = CombatManager.Instance?.GetAllWarriors();
+            if (squad != null)
+                foreach (var w in squad)
+                    if (UI.SalaryPanelUI.Owes(w)) { waiting++; if (due == null) due = w; }
+
+            var purse = Inventory.PlayerInventory.Instance;
+            if (due == null) { Write($"  [ПЛАТА] платить некому; плата идёт: {(UI.SalaryPanelUI.Payday ? "да" : "нет")}"); return; }
+
+            int before = purse != null ? purse.Gold : 0;
+            HeroTo(due.transform, 1.5f);
+            UI.GearPanel.TalkTo(due);
+            UI.GearPanel.Say(2);
+            int after = purse != null ? purse.Gold : 0;
+            Write($"  [ПЛАТА] {due.DisplayName}: {(UI.SalaryPanelUI.Owes(due) ? "НЕ заплачено" : "заплачено лично")}; "
+                  + $"ждали платы {waiting}; в кошеле было {before}, стало {after}");
         }
 
         /// <summary>

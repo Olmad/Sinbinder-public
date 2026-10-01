@@ -334,17 +334,24 @@ namespace Sinbinder.Gameplay
         /// с Маргой можно отдать ему долг лично»). Золото — из кошеля Греховода;
         /// не хватает — долг остаётся, и воин не узнаёт о намерении: честность
         /// та же, что у платы в склепе. Отданное помнится, как подарок.
+        ///
+        /// В склепе, пока идёт плата лично (<see cref="UI.SalaryPanelUI.Payday"/>),
+        /// тем же пунктом платят и за эту вылазку — даже тому, у кого старого
+        /// долга нет. Одна плата снимает и вылазку, и старый долг: та же
+        /// <see cref="Warrior.PaySalary"/>.
         /// </summary>
         public static bool PayDebt(Warrior w, PlayerInventory purse, out string word)
         {
-            if (w == null || w.UnpaidMissions <= 0) { word = Loc.T("долга нет"); return false; }
+            bool sortie = UI.SalaryPanelUI.Owes(w);
+            if (w == null || (!sortie && w.UnpaidMissions <= 0)) { word = Loc.T("долга нет"); return false; }
 
             int wage = Wage(w);
             if (purse == null || !purse.SpendGold(wage)) { word = Loc.T("в кошеле не хватает"); return false; }
 
             w.PaySalary(wage);
+            UI.SalaryPanelUI.Settle(w);
             Remember(w, "SinbinderGaveMe");
-            word = Loc.T("долг отдан");
+            word = sortie ? Loc.T("за вылазку заплачено") : Loc.T("долг отдан");
             return true;
         }
 
