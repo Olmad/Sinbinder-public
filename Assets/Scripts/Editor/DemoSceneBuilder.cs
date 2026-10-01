@@ -932,9 +932,15 @@ namespace Sinbinder.Utilets
             var l = light.AddComponent<Light>();
             l.type = LightType.Point;
             l.color = new Color(1f, 0.62f, 0.28f);
-            l.intensity = 3.2f;
-            l.range = 14f;
+            // Ярче и шире прежних 3,2 и 14 м (41-SHOWCASE п. 2): на кадрах
+            // 1 октября костёр был оранжевой точкой, свет не ложился ни на землю,
+            // ни на палатки — встречи тёплого с холодным не было видно.
+            l.intensity = 4.6f;
+            l.range = 17f;
             l.shadows = LightShadows.Soft;
+
+            // Живой огонь: дышит и пляшет, тени палаток шевелятся.
+            light.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.22f, 2.6f, 0.06f);
 
             return campfire;
         }
@@ -1528,6 +1534,9 @@ namespace Sinbinder.Utilets
             light.range = range;
             light.intensity = intensity;
             light.shadows = shadows ? LightShadows.Soft : LightShadows.None;
+
+            // Фонарь — огонь под стеклом: дышит едва, на месте.
+            lamp.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.08f, 1.8f, 0f);
         }
 
         /// <summary>
@@ -1904,6 +1913,7 @@ namespace Sinbinder.Utilets
                 fire.color = new Color(1f, 0.58f, 0.26f);
                 fire.intensity = 2.4f;
                 fire.range = 9f;
+                glow.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.25f, 3f, 0.05f);
 
                 Embers(gate.transform, at + new Vector3(0f, 0.72f, -0.2f), 0.5f, 14f);
             }
