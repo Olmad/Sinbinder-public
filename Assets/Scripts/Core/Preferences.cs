@@ -25,6 +25,14 @@ namespace Sinbinder.Core
     {
         private const string FullscreenKey = "sinbinder.fullscreen";
         private const string SensitivityKey = "sinbinder.sensitivity";
+        private const string GraphicsKey = "sinbinder.graphics.light";
+
+        /// <summary>
+        /// Облегчённая графика: без теней и без затенения углов
+        /// (<see cref="FrameBudget"/>). Пока игрок не выбрал сам — по
+        /// видеокарте: на встроенной облегчённая (<see cref="Integrated"/>).
+        /// </summary>
+        public static bool LightGraphics { get; private set; }
 
         /// <summary>
         /// Во сколько раз игрок просит быстрее или медленнее. Множитель,
@@ -52,6 +60,10 @@ namespace Sinbinder.Core
         private static void Load()
         {
             SensitivityScale = PlayerPrefs.GetFloat(SensitivityKey, 1f);
+
+            LightGraphics = PlayerPrefs.HasKey(GraphicsKey)
+                ? PlayerPrefs.GetInt(GraphicsKey, 0) != 0
+                : Integrated();
 
             // Отсутствие выбора — событие, а не ноль: не трогаем полный
             // экран вовсе, пока игрок не сказал своего.
@@ -92,6 +104,41 @@ namespace Sinbinder.Core
             SensitivityScale = Steps[(at + 1) % Steps.Length].Scale;
             PlayerPrefs.SetFloat(SensitivityKey, SensitivityScale);
             PlayerPrefs.Save();
+        }
+
+        public static string GraphicsName() => LightGraphics
+            ? Loc.T("облегчённая — без теней")
+            : Loc.T("полная");
+
+        /// <summary>Полная или облегчённая — и сразу в игру, без перезапуска.</summary>
+        public static void ToggleGraphics()
+        {
+            LightGraphics = !LightGraphics;
+            PlayerPrefs.SetInt(GraphicsKey, LightGraphics ? 1 : 0);
+            PlayerPrefs.Save();
+            FrameBudget.Apply();
+        }
+
+        /// <summary>
+        /// Встроенная ли видеокарта — по производителю и имени. Память
+        /// не подсказка: встроенная Intel UHD 630 показывает 4 ГБ, общие
+        /// с процессором. У Intel встроенные все, кроме Arc (UHD, HD Graphics,
+        /// Iris); у AMD встроенные зовутся «Radeon Graphics», «Vega 8
+        /// Graphics», а отдельные несут серию — RX.
+        ///
+        /// Прогон в пакетном режиме — всегда полная: его снимки смотрит автор.
+        /// </summary>
+        private static bool Integrated()
+        {
+            if (Application.isBatchMode) return false;
+
+            string name = SystemInfo.graphicsDeviceName ?? "";
+            switch (SystemInfo.graphicsDeviceVendorID)
+            {
+                case 0x8086: return !name.Contains("Arc");
+                case 0x1002: return name.Contains("Graphics") && !name.Contains("RX");
+                default: return false;
+            }
         }
     }
 }

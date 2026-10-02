@@ -94,6 +94,36 @@ namespace Sinbinder.EditorTools
         /// </summary>
         private static int _late;
 
+        // ── Замер кадра (автор, 2 октября: «Игра очень нагружает ПК») ──
+        //
+        // Два замера, потому что редактор в пакетном режиме кадров сам
+        // не рисует: камера рисует только по снимку. Кадр прогона — это
+        // счёт игры (души, туман, ходьба, бой) без отрисовки; отрисовку
+        // меряет Bench — тем же конвейером, кадром 1920×1080.
+
+        /// <summary>Кадр, с которого идёт шаг, и время его начала.</summary>
+        private static int _frameFrom;
+        private static int _frameSeen;
+
+        /// <summary>Сколько кадров шага сосчитано и сколько они заняли, мс.</summary>
+        private static int _stepFrames;
+        private static double _stepMs;
+
+        /// <summary>Все кадры прогона, мс — для перцентилей.</summary>
+        private static readonly List<float> _frameMs = new();
+
+        /// <summary>
+        /// Время скриптов кадра — всех Update игры. Не промежуток между
+        /// кадрами и не весь игровой цикл: редактор в пакетном режиме сам
+        /// держит кадр около 8 мс, ожидание сидит внутри цикла, и оба замера
+        /// показывали его, а не игру (2 октября: 8,4 и 8,2 мс ровно у всех
+        /// шагов).
+        /// </summary>
+        private static Unity.Profiling.ProfilerRecorder _loop;
+
+        /// <summary>Шаги и их средний кадр, мс.</summary>
+        private static readonly List<(string Step, double Ms)> _stepCost = new();
+
         static DemoWalkthrough()
         {
             if (!SessionState.GetBool(Active, false)) return;
@@ -156,6 +186,10 @@ namespace Sinbinder.EditorTools
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
+                _frameMs.Clear();
+                _stepCost.Clear();
+                if (_loop.Valid) _loop.Dispose();
+                _loop = Unity.Profiling.ProfilerRecorder.StartNew(Unity.Profiling.ProfilerCategory.Scripts, "BehaviourUpdate");
 
                 // Выключатели сбрасываются при входе в Play
                 // (SubsystemRegistration), поэтому включаются здесь,
@@ -181,6 +215,8 @@ namespace Sinbinder.EditorTools
                 Finish();
                 return;
             }
+
+            Sample();
 
             var step = _steps[_index];
 
@@ -253,6 +289,9 @@ namespace Sinbinder.EditorTools
                 _entered = true;
                 _framedInStep = false;
                 _startedAt = Time.realtimeSinceStartup;
+                _frameFrom = Time.frameCount;
+                _stepFrames = 0;
+                _stepMs = 0;
 
                 try { step.Do?.Invoke(); }
                 catch (Exception e) { Write("  [ОШИБКА ШАГА] " + step.Name + ": " + e.Message); }
@@ -277,6 +316,7 @@ namespace Sinbinder.EditorTools
 
             if (done)
             {
+                Cost(step.Name);
                 Write("  [ГОТОВО] " + step.Name + " — за " + spent.ToString("F0") + " с");
                 Shot(step.Name);
                 Next();
@@ -285,6 +325,7 @@ namespace Sinbinder.EditorTools
 
             if (spent >= step.Limit)
             {
+                Cost(step.Name);
                 _failed++;
                 Write("  [ЗАСТРЯЛО] " + step.Name + " — не дождались за " + step.Limit.ToString("F0") + " с");
                 Shot("ЗАСТРЯЛО " + step.Name);
@@ -313,6 +354,8 @@ namespace Sinbinder.EditorTools
             // игра не развалилась. Но и не чистота: игрок на этом месте
             // не сделал того, ради чего шаг существует, и назвать это
             // «пройдено целиком» — соврать.
+            Frames();
+
             if (_failed == 0 && _errors == 0 && _late == 0)
                 Write("=== ПРОЙДЕНО ЦЕЛИКОМ ===");
             else if (_failed == 0 && _errors == 0)
@@ -1120,6 +1163,13 @@ namespace Sinbinder.EditorTools
                 // свои, и набег, где охотники. Гардероб виден только так.
                 if (step == "старший назначен") Portraits("лагерь");
                 if (step == "набег: первая волна положена") Portraits("набег");
+
+                // Отрисовка — в трёх местах, где свет разный: костёр
+                // с тенями, поле набега с отрядом и охотниками, склеп
+                // с факелами.
+                if (step == "Греховод вышел из палатки") Bench("лагерь у костра", parts: true);
+                if (step == "набег: охотники вышли") Bench("набег", parts: false);
+                if (step == "склеп: Греховод у алтаря") Bench("склеп", parts: false);
             }
             catch (Exception e)
             {
@@ -1128,6 +1178,150 @@ namespace Sinbinder.EditorTools
         }
 
         private static int _shot;
+
+        // ── Замер кадра ──
+
+        /// <summary>
+        /// Кадр прогона — в замер, по разу на кадр. Первые кадры шага несут
+        /// его действие (загрузку сцены, снимок прошлого шага): это не цена
+        /// игры, их не считаем.
+        /// </summary>
+        private static void Sample()
+        {
+            int frame = Time.frameCount;
+            if (frame == _frameSeen) return;
+            _frameSeen = frame;
+
+            if (!_entered || frame <= _frameFrom + 2) return;
+
+            // Нет счётчика скриптов — нечего и мерить: промежуток кадров
+            // показал бы ожидание редактора, а не игру.
+            if (!_loop.Valid) return;
+            float ms = _loop.LastValue * 1e-6f;
+            _frameMs.Add(ms);
+            _stepFrames++;
+            _stepMs += ms;
+        }
+
+        /// <summary>Шаг кончился — его средний кадр в список.</summary>
+        private static void Cost(string step)
+        {
+            if (_stepFrames >= 10) _stepCost.Add((step, _stepMs / _stepFrames));
+            _stepFrames = 0;
+            _stepMs = 0;
+        }
+
+        /// <summary>Итог замера: средний кадр, перцентили, три самых тяжёлых шага.</summary>
+        private static void Frames()
+        {
+            if (_frameMs.Count == 0) return;
+
+            var sorted = new List<float>(_frameMs);
+            sorted.Sort();
+            double sum = 0;
+            foreach (var ms in sorted) sum += ms;
+            float At(float q) => sorted[Mathf.Clamp(Mathf.CeilToInt(q * sorted.Count) - 1, 0, sorted.Count - 1)];
+
+            Write($"[КАДРЫ] скрипты игры (все Update), без отрисовки: "
+                + $"кадров {sorted.Count}, среднее {sum / sorted.Count:F2} мс, "
+                + $"95% кадров — не дольше {At(0.95f):F1} мс, 99% — {At(0.99f):F1} мс");
+            if (_loop.Valid) _loop.Dispose();
+
+            _stepCost.Sort((a, b) => b.Ms.CompareTo(a.Ms));
+            var top = new List<string>();
+            for (int i = 0; i < Mathf.Min(3, _stepCost.Count); i++)
+                top.Add($"«{_stepCost[i].Step}» {_stepCost[i].Ms:F1} мс");
+            if (top.Count > 0) Write("[КАДРЫ] тяжелее всего: " + string.Join(" · ", top));
+        }
+
+        /// <summary>
+        /// Сколько стоит отрисовка кадра: основная камера, тот же конвейер,
+        /// что в игре, кадр 1920×1080 тридцать раз подряд, видеокарту
+        /// дожидаемся. С <paramref name="parts"/> — ещё без затенения углов
+        /// (SSAO), без теней и без взгляда (постобработки): видно, что
+        /// из них сколько стоит. Мир на время замера стоит — всё в одном
+        /// кадре редактора.
+        /// </summary>
+        private static void Bench(string where, bool parts)
+        {
+            var cam = Camera.main;
+            if (cam == null) { Write("  [КАДР] " + where + ": нет камеры — мерить нечем"); return; }
+
+            try
+            {
+                string line = $"  [КАДР] {where}: отрисовка {Render(cam):F1} мс на кадр 1920×1080";
+
+                if (parts)
+                {
+                    foreach (var f in Resources.FindObjectsOfTypeAll<UnityEngine.Rendering.Universal.ScriptableRendererFeature>())
+                    {
+                        // Класс затенения в URP закрыт — узнаём его по имени типа.
+                        if (!f.GetType().Name.Contains("AmbientOcclusion") || !f.isActive) continue;
+                        f.SetActive(false);
+                        try { line += $"; без затенения углов {Render(cam):F1}"; }
+                        finally { f.SetActive(true); }
+                        break;
+                    }
+
+                    var extra = cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+                    if (extra != null)
+                    {
+                        bool shadows = extra.renderShadows;
+                        extra.renderShadows = false;
+                        try { line += $"; без теней {Render(cam):F1}"; }
+                        finally { extra.renderShadows = shadows; }
+
+                        bool post = extra.renderPostProcessing;
+                        extra.renderPostProcessing = false;
+                        try { line += $"; без взгляда {Render(cam):F1}"; }
+                        finally { extra.renderPostProcessing = post; }
+                    }
+                }
+
+                Write(line);
+            }
+            catch (Exception e)
+            {
+                Write("  [КАДР] " + where + ": замер не вышел — " + e.Message);
+            }
+        }
+
+        /// <summary>Тридцать кадров камеры в свою текстуру; среднее на кадр, мс.</summary>
+        private static double Render(Camera cam)
+        {
+            const int w = 1920, h = 1080, n = 30;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            var probe = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            var was = cam.targetTexture;
+            var active = RenderTexture.active;
+            try
+            {
+                cam.targetTexture = rt;
+                cam.Render();               // прогрев: шейдеры, цели рендера
+                Wait(rt, probe);
+
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                for (int i = 0; i < n; i++) cam.Render();
+                Wait(rt, probe);
+                return clock.Elapsed.TotalMilliseconds / n;
+            }
+            finally
+            {
+                cam.targetTexture = was;
+                RenderTexture.active = active;
+                UnityEngine.Object.DestroyImmediate(probe);
+                rt.Release();
+                UnityEngine.Object.DestroyImmediate(rt);
+            }
+        }
+
+        /// <summary>Дождаться видеокарты: чтение точки ждёт, пока кадр дорисован.</summary>
+        private static void Wait(RenderTexture rt, Texture2D probe)
+        {
+            RenderTexture.active = rt;
+            probe.ReadPixels(new Rect(0, 0, 1, 1), 0, 0);
+            probe.Apply(false);
+        }
 
         /// <summary>
         /// Портреты: по одному от каждой стороны. Не все подряд — двадцать

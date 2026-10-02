@@ -135,6 +135,15 @@ namespace Sinbinder.UI
                 Draw();
             });
 
+            // Графика (Core.FrameBudget): на встроенной видеокарте тени
+            // и затенение углов съедают больше половины кадра. Пока игрок
+            // не выбрал сам, выбор — по видеокарте.
+            Add(ref y, Loc.T("Графика"), Core.Preferences.GraphicsName(), () =>
+            {
+                Core.Preferences.ToggleGraphics();
+                Draw();
+            });
+
             // Язык — названием на самом языке (LocSetup.Languages): включивший
             // чужой по ошибке узнает свой, не читая чужого.
             Add(ref y, Loc.T("Язык"), Core.LocSetup.CurrentName(), () =>
@@ -155,6 +164,29 @@ namespace Sinbinder.UI
             Add(ref y, Loc.T("Выйти из игры"), Commitment.On
                     ? Loc.T("Игра с обязательством — записывайте перед выходом")
                     : "", Quit);
+
+            Fit(y);
+        }
+
+        /// <summary>
+        /// Панель — по строкам. Собрана на 600 точек, а строк давно больше,
+        /// чем в неё входит: по счёту строк «Выйти из игры» на экране
+        /// 1920×1080 уходило под нижний край (найдено 2 октября, когда
+        /// добавлялась «Графика»; глазами не проверено).
+        /// Растягиваем под нарисованное; не влезает в экран — уменьшаем.
+        /// </summary>
+        private void Fit(float y)
+        {
+            if (_panel == null || _rows == null) return;
+
+            var panel = (RectTransform)_panel.transform;
+            float need = -_rows.anchoredPosition.y - y + 24f;
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, Mathf.Max(panel.sizeDelta.y, need));
+            _rows.sizeDelta = new Vector2(_rows.sizeDelta.x, -y);
+
+            float room = panel.parent is RectTransform screen ? screen.rect.height - 40f : 0f;
+            float height = panel.sizeDelta.y;
+            panel.localScale = room > 0f && height > room ? Vector3.one * (room / height) : Vector3.one;
         }
 
         /// <summary>

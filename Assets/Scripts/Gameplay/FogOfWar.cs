@@ -24,6 +24,14 @@ namespace Sinbinder.Gameplay
     /// по текстуре, которую эта работа обновляет: он темнит всё — землю,
     /// палатки, реквизит, — как в образце, а не одну землю.
     ///
+    /// <b>Цена (2 октября).</b> До этого дня туман перерисовывал всю карту
+    /// каждый кадр: девяносто тысяч клеток лагеря, два прохода и отправка
+    /// текстуры на видеокарту — и в тихом лагере, где не шевелится никто,
+    /// и сотни раз в секунду без потолка кадров. Автор: «Игра очень
+    /// нагружает ПК». Теперь перерисовывается только место, где туман
+    /// сдвинулся, не чаще тридцати раз в секунду; устоялся — не рисуется
+    /// вовсе.
+    ///
     /// Ставится сам в каждую сцену с землёй (<see cref="GroundNavMesh"/>):
     /// сцены не пересобирать. Границы карты — границы земли.
     /// </summary>
@@ -48,6 +56,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Как часто пересчитывать, кто что видит. Каждый кадр не нужно.</summary>
         private const float TickSeconds = 0.1f;
 
+        /// <summary>
+        /// Как часто перерисовывать, пока туман движется. Край тумана
+        /// мягкий и плывёт треть секунды — тридцати раз хватает глазу.
+        /// </summary>
+        private const float PaintSeconds = 1f / 30f;
+
         /// <summary>За сколько секунд клетка светлеет или гаснет — чтобы край зрения не мигал.</summary>
         private const float FadeSeconds = 0.3f;
 
@@ -66,12 +80,50 @@ namespace Sinbinder.Gameplay
 
         private bool[] _explored;
         private bool[] _seen;
+        private bool[] _seenBefore;
         private float[] _shownSeen;
         private float[] _shownKnown;
         private Color32[] _pixels;
         private Texture2D _texture;
 
         private float _nextTick;
+        private float _paintedAt;
+
+        /// <summary>
+        /// Прямоугольник клеток, края включительно. Пустой — когда начало
+        /// больше конца.
+        /// </summary>
+        private struct Area
+        {
+            public int X0, Z0, X1, Z1;
+
+            public static Area None => new Area
+            {
+                X0 = int.MaxValue, Z0 = int.MaxValue, X1 = int.MinValue, Z1 = int.MinValue,
+            };
+
+            public bool Empty => X0 > X1 || Z0 > Z1;
+
+            public void Add(int x0, int z0, int x1, int z1)
+            {
+                if (x0 < X0) X0 = x0;
+                if (z0 < Z0) Z0 = z0;
+                if (x1 > X1) X1 = x1;
+                if (z1 > Z1) Z1 = z1;
+            }
+
+            public void Add(Area other)
+            {
+                if (!other.Empty) Add(other.X0, other.Z0, other.X1, other.Z1);
+            }
+        }
+
+        /// <summary>Где глаза смотрели в этот такт и в прошлый: туман мог сдвинуться только там.</summary>
+        private Area _looked = Area.None;
+        private Area _lookedBefore = Area.None;
+
+        /// <summary>Что перерисовать: знание сменилось, а показ его ещё не догнал.</summary>
+        private Area _dirty = Area.None;
 
         /// <summary>Кто из врагов сейчас показан. Прятать заново каждый такт незачем.</summary>
         private readonly Dictionary<Damageable, bool> _shown = new();
@@ -127,6 +179,7 @@ namespace Sinbinder.Gameplay
             int n = _w * _h;
             _explored = new bool[n];
             _seen = new bool[n];
+            _seenBefore = new bool[n];
             _shownSeen = new float[n];
             _shownKnown = new float[n];
             _pixels = new Color32[n];
@@ -141,15 +194,14 @@ namespace Sinbinder.Gameplay
             Shader.SetGlobalTexture(TexId, _texture);
             Shader.SetGlobalVector(RectId, new Vector4(_min.x, _min.y, _size.x, _size.y));
 
-            // Первый пересчёт сразу и без плавности: сцена не должна
-            // открываться чернотой, которая за треть секунды отступает.
-            Recount();
-            for (int i = 0; i < n; i++)
-            {
-                _shownSeen[i] = _seen[i] ? 1f : 0f;
-                _shownKnown[i] = _explored[i] ? 1f : 0f;
-            }
+            // Первый пересчёт сразу и без плавности, всей картой: сцена
+            // не должна открываться чернотой, которая за треть секунды
+            // отступает.
+            Recount(Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None));
+            _dirty = Area.None;
+            _dirty.Add(0, 0, _w - 1, _h - 1);
             Paint(0f);
+            _paintedAt = Time.unscaledTime;
         }
 
         void OnDestroy()
@@ -164,36 +216,62 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
-            if (Time.unscaledTime >= _nextTick)
+            float now = Time.unscaledTime;
+
+            if (now >= _nextTick)
             {
-                _nextTick = Time.unscaledTime + TickSeconds;
-                Recount();
-                HideEnemies();
+                _nextTick = now + TickSeconds;
+
+                // Один поиск на такт — и глазам, и врагам.
+                var all = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None);
+                Recount(all);
+                HideEnemies(all);
             }
 
-            Paint(Time.unscaledDeltaTime);
-        }
-
-        /// <summary>Кто что видит сейчас. Разведанное не забывается.</summary>
-        private void Recount()
-        {
-            System.Array.Clear(_seen, 0, _seen.Length);
-
-            foreach (var eye in Eyes())
+            // Рисовать — только когда есть что, и не чаще тридцати раз
+            // в секунду. Шаг плавности — по времени с прошлого рисунка,
+            // но не больше такта: после долгой тишины свежий край
+            // не прыгает, а плывёт, как прежде.
+            if (!_dirty.Empty && now - _paintedAt >= PaintSeconds)
             {
-                float r = eye is SinbinderPlayer ? HeroSight : Sight;
-                Stamp(eye.transform.position, r, seen: true);
+                Paint(Mathf.Min(now - _paintedAt, TickSeconds));
+                _paintedAt = now;
             }
         }
 
         /// <summary>
-        /// Глаза игрока: свои живые, Греховод в их числе. Перебежчик
-        /// перестаёт быть глазами в тот же такт, когда меняет сторону.
+        /// Кто что видит сейчас. Разведанное не забывается. Где видимое
+        /// сменилось — туда и перерисовка; не сменилось нигде — рисовать
+        /// нечего.
         /// </summary>
-        private static IEnumerable<Warrior> Eyes()
+        private void Recount(Warrior[] all)
         {
-            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
-                if (w != null && !w.IsDead && w.Team == Team.Player) yield return w;
+            (_seen, _seenBefore) = (_seenBefore, _seen);
+            System.Array.Clear(_seen, 0, _seen.Length);
+
+            _lookedBefore = _looked;
+            _looked = Area.None;
+
+            // Глаза игрока: свои живые, Греховод в их числе. Перебежчик
+            // перестаёт быть глазами в тот же такт, когда меняет сторону.
+            foreach (var w in all)
+            {
+                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+                float r = w is SinbinderPlayer ? HeroSight : Sight;
+                Stamp(w.transform.position, r, seen: true);
+            }
+
+            // Сменилось только там, куда смотрели сейчас или прошлым тактом.
+            var where = _looked;
+            where.Add(_lookedBefore);
+            if (where.Empty) return;
+
+            for (int z = where.Z0; z <= where.Z1; z++)
+            for (int x = where.X0; x <= where.X1; x++)
+            {
+                int i = z * _w + x;
+                if (_seen[i] != _seenBefore[i]) _dirty.Add(x, z, x, z);
+            }
         }
 
         private void Stamp(Vector3 at, float radius, bool seen)
@@ -203,10 +281,19 @@ namespace Sinbinder.Gameplay
             int cr = Mathf.CeilToInt(radius / Cell);
             float r2 = (radius / Cell) * (radius / Cell);
 
-            for (int z = Mathf.Max(0, cz - cr); z <= Mathf.Min(_h - 1, cz + cr); z++)
+            int x0 = Mathf.Max(0, cx - cr), x1 = Mathf.Min(_w - 1, cx + cr);
+            int z0 = Mathf.Max(0, cz - cr), z1 = Mathf.Min(_h - 1, cz + cr);
+            if (x0 > x1 || z0 > z1) return;
+
+            // Глаз отмечает, куда смотрел (сравнят потом); открытое серым
+            // сразу идёт в перерисовку — видимое оно не меняет.
+            if (seen) _looked.Add(x0, z0, x1, z1);
+            else _dirty.Add(x0, z0, x1, z1);
+
+            for (int z = z0; z <= z1; z++)
             {
                 int dz = z - cz;
-                for (int x = Mathf.Max(0, cx - cr); x <= Mathf.Min(_w - 1, cx + cr); x++)
+                for (int x = x0; x <= x1; x++)
                 {
                     int dx = x - cx;
                     if (dx * dx + dz * dz > r2) continue;
@@ -218,26 +305,43 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>Плавно подвести показанное к знанию и отдать текстуре.</summary>
+        /// <summary>
+        /// Плавно подвести показанное к знанию и отдать текстуре — только
+        /// там, где туман сдвинулся. Клетка, не дошедшая до своего,
+        /// остаётся в перерисовке на следующий раз.
+        /// </summary>
         private void Paint(float dt)
         {
+            var area = _dirty;
+            _dirty = Area.None;
+            if (area.Empty) return;
+
             float step = FadeSeconds <= 0f ? 1f : dt / FadeSeconds;
             bool instant = dt <= 0f;
 
-            for (int i = 0; i < _pixels.Length; i++)
+            for (int z = area.Z0; z <= area.Z1; z++)
+            for (int x = area.X0; x <= area.X1; x++)
             {
+                int i = z * _w + x;
                 float seen = _seen[i] ? 1f : 0f;
                 float known = _explored[i] ? 1f : 0f;
 
-                _shownSeen[i] = instant ? seen : Mathf.MoveTowards(_shownSeen[i], seen, step);
-                _shownKnown[i] = instant ? known : Mathf.MoveTowards(_shownKnown[i], known, step);
+                float s = instant ? seen : Mathf.MoveTowards(_shownSeen[i], seen, step);
+                float k = instant ? known : Mathf.MoveTowards(_shownKnown[i], known, step);
+                _shownSeen[i] = s;
+                _shownKnown[i] = k;
+
+                if (s != seen || k != known) _dirty.Add(x, z, x, z);
             }
 
             // Вторым проходом, а не в том же: сглаживание смотрит
             // на соседей, а они в первом проходе ещё не досчитаны —
             // половина клетки была бы из этого кадра, половина из прошлого.
-            for (int z = 0; z < _h; z++)
-            for (int x = 0; x < _w; x++)
+            // На клетку шире: сдвинутая клетка меняет и соседей.
+            int px0 = Mathf.Max(0, area.X0 - 1), px1 = Mathf.Min(_w - 1, area.X1 + 1);
+            int pz0 = Mathf.Max(0, area.Z0 - 1), pz1 = Mathf.Min(_h - 1, area.Z1 + 1);
+            for (int z = pz0; z <= pz1; z++)
+            for (int x = px0; x <= px1; x++)
             {
                 int i = z * _w + x;
                 _pixels[i] = new Color32((byte)(Smooth(_shownSeen, x, z) * 255f),
@@ -292,9 +396,9 @@ namespace Sinbinder.Gameplay
         /// ни вспышки над ним; и не выделить, и не навести подсказку:
         /// коллайдер спрятан вместе с ним. Выделенный — теряет выделение.
         /// </summary>
-        private void HideEnemies()
+        private void HideEnemies(Warrior[] all)
         {
-            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            foreach (var w in all)
             {
                 if (w == null || w.Team != Team.Enemy) continue;
 

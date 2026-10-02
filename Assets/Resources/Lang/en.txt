@@ -6624,3 +6624,15 @@ msgstr "My conscience won't allow it."
 #: AOS Engine/RefusalPresenter.cs
 msgid "Нет."
 msgstr "No."
+
+#: Core/Preferences.cs
+msgid "полная"
+msgstr "full"
+
+#: Core/Preferences.cs
+msgid "облегчённая — без теней"
+msgstr "light — no shadows"
+
+#: UI/PauseMenu.cs
+msgid "Графика"
+msgstr "Graphics"
