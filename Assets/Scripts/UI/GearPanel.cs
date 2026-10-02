@@ -899,11 +899,7 @@ namespace Sinbinder.UI
             go.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.85f);
         }
 
-        private static Font UIFont()
-        {
-            var any = FindFirstObjectByType<Text>(FindObjectsInactive.Include);
-            if (any != null && any.font != null) return any.font;
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
+        /// <summary>Шрифт макета (<see cref="UiStyle"/>) — тот же, что на полосе и в журнале.</summary>
+        private static Font UIFont() => UiStyle.Body;
     }
 }

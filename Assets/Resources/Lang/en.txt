@@ -6512,3 +6512,115 @@ msgstr "nothing in him argues with the order right now"
 #: UI/SelectedUnitPanelUI.cs
 msgid "громче всех его голосов"
 msgstr "louder than all his voices"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не слышно отсюда, владыка!"
+msgstr "Can't hear you from here, master!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сначала заплатите."
+msgstr "Pay me first."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Мне есть что терять."
+msgstr "I've got something to lose."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Это теперь моё."
+msgstr "This is mine now."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Добро само себя не соберёт."
+msgstr "The loot won't pick itself up."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Опять ходить взад-вперёд?"
+msgstr "Back and forth again?"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Своих не брошу!"
+msgstr "I won't leave my own!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я ранен!"
+msgstr "I'm wounded!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я ранена!"
+msgstr "I'm wounded!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Их слишком много!"
+msgstr "There are too many of them!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сил нет…"
+msgstr "No strength left…"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Кому-то нужнее, чем мне."
+msgstr "Someone needs it more than I do."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сначала моя доля."
+msgstr "My share first."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Простите, владыка, не могу."
+msgstr "Forgive me, master, I can't."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я не пёс, чтобы бегать по свисту."
+msgstr "I'm no dog to come at a whistle."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сам решу, кого бить!"
+msgstr "I'll pick who to hit myself!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не время."
+msgstr "Not now."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Пусть другой сходит."
+msgstr "Let someone else go."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "А почему опять я?"
+msgstr "Why me again?"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Позже, владыка."
+msgstr "Later, master."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не на пустой желудок."
+msgstr "Not on an empty stomach."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "У меня тут дело."
+msgstr "I've got work here."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Потом…"
+msgstr "Later…"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не пойду туда!"
+msgstr "I'm not going there!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Этого я делать не стану."
+msgstr "I won't do that."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Помню, чем это кончилось."
+msgstr "I remember how that ended."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Совесть не велит."
+msgstr "My conscience won't allow it."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Нет."
+msgstr "No."

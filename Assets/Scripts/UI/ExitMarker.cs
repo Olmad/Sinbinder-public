@@ -128,9 +128,7 @@ namespace Sinbinder.UI
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 19;
 
-            var any = FindFirstObjectByType<Text>(FindObjectsInactive.Include);
-            var font = any != null && any.font != null
-                ? any.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var font = UiStyle.Body;    // шрифт макета, как у всего интерфейса
 
             var go = new GameObject("Выход", typeof(RectTransform));
             go.transform.SetParent(canvasGo.transform, false);

@@ -234,8 +234,10 @@ namespace Sinbinder.UI
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 20;
 
-            var any = FindFirstObjectByType<Text>(FindObjectsInactive.Include);
-            _font = any != null && any.font != null ? any.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // Шрифт макета (UiStyle), а не первого попавшегося текста сцены:
+            // тот бывал встроенным Arial, и облачко отказа в кадре 2 октября
+            // стояло чужим шрифтом посреди книжной антиквы.
+            _font = UiStyle.Body;
         }
     }
 }

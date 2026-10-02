@@ -394,7 +394,7 @@ namespace Sinbinder.UI
                 return;
             }
 
-            string module = decision.TopModule;
+            string module = Speaker(decision);
             var sin = SinOf(module);
 
             Voice(sin.HasValue ? SinPalette.Of(sin.Value) : (Color?)null,
@@ -600,6 +600,40 @@ namespace Sinbinder.UI
                 case Counterfactual.Factor.Surrounded:   return Loc.T("его обступили");
                 case Counterfactual.Factor.Fatigue:      return Loc.T("силы на исходе");
                 default:                                 return Loc.T("тише, чем его душа");
+            }
+        }
+
+        /// <summary>
+        /// Чей голос назвать — тот, чьи слова стоят строкой ниже
+        /// (<see cref="PhraseGenerator.Reason"/>): одно решение — одни слова.
+        ///
+        /// Громче всех за поступок голосует <see cref="Decision.TopModule"/> —
+        /// за «остаться на месте» это обычно уныние. Но приказ проиграл не ему,
+        /// а причине «от противного» (<see cref="Counterfactual"/>), и строка
+        /// ниже — её. В кадре прогона 2 октября так и вышло: «Уныние говорит
+        /// громко — ему не платили третью вылазку подряд». Поэтому: решил голос
+        /// души — он; решила причина — голос, которому она принадлежит
+        /// (долг, карман, добыча, вещь — жадность; усталость, скучный обход —
+        /// уныние; раны, обступили — страх; свой в беде — совесть); даль —
+        /// тот, кто её слышит, то есть громкий.
+        /// </summary>
+        private static string Speaker(Decision d)
+        {
+            if (!d.Weighed) return d.TopModule;
+            if (!string.IsNullOrEmpty(d.DecisiveVoice)) return d.DecisiveVoice;
+
+            switch (d.Decisive)
+            {
+                case Counterfactual.Factor.Debt:
+                case Counterfactual.Factor.Pocket:
+                case Counterfactual.Factor.Loot:
+                case Counterfactual.Factor.Temptation:   return "Greed";
+                case Counterfactual.Factor.Fatigue:
+                case Counterfactual.Factor.Patrol:       return "Sloth";
+                case Counterfactual.Factor.Wounds:
+                case Counterfactual.Factor.Surrounded:   return "Fear";
+                case Counterfactual.Factor.AllyInDanger: return "Morality";
+                default:                                 return d.TopModule;
             }
         }
 

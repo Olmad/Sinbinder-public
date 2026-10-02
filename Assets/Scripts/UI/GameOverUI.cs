@@ -270,8 +270,8 @@ namespace Sinbinder.UI
         /// </summary>
         private static Font UIFont()
         {
-            var any = Object.FindFirstObjectByType<Text>(FindObjectsInactive.Include);
-            if (any != null && any.font != null) return any.font;
+            // Шрифт макета (UiStyle): экран конца — тоже интерфейс игры.
+            if (UiStyle.Body != null) return UiStyle.Body;
 
             var builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (builtin == null)
