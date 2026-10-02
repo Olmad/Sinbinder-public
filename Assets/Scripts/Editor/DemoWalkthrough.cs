@@ -76,6 +76,9 @@ namespace Sinbinder.EditorTools
         /// <summary>Снят ли кадр наезда на реплику. Один за прогон.</summary>
         private static bool _heraldShot;
 
+        /// <summary>Снят ли кадр шара, где гаснут отряды. Один за прогон.</summary>
+        private static bool _ballShot;
+
         private static float _lastTick;
 
         private static List<Step> _steps;
@@ -183,6 +186,7 @@ namespace Sinbinder.EditorTools
                 _late = 0;
                 _framedSince = -1f;
                 _heraldShot = false;
+                _ballShot = false;
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
@@ -243,6 +247,15 @@ namespace Sinbinder.EditorTools
                 {
                     _heraldShot = true;
                     Snap("реплика с наездом");
+                }
+
+                // Кадр шара — один за прогон, на вспышке второго огня
+                // (CrystalBall.Gaze): первый уже погас, третий ещё горит.
+                // Гибель отрядов шаги не снимают — она идёт внутри шага.
+                if (!_ballShot && CrystalBall.Gazing && now - CrystalBall.GazeSince > 3.95f)
+                {
+                    _ballShot = true;
+                    Snap("шар — отряды гаснут");
                 }
                 if (now - _framedSince < 30f)
                 {
@@ -1238,9 +1251,13 @@ namespace Sinbinder.EditorTools
         /// Сколько стоит отрисовка кадра: основная камера, тот же конвейер,
         /// что в игре, кадр 1920×1080 тридцать раз подряд, видеокарту
         /// дожидаемся. С <paramref name="parts"/> — ещё без затенения углов
-        /// (SSAO), без теней и без взгляда (постобработки): видно, что
-        /// из них сколько стоит. Мир на время замера стоит — всё в одном
-        /// кадре редактора.
+        /// (SSAO), без теней, без взгляда (постобработки) и облегчённая —
+        /// та, что у игрока со встроенной видеокартой (<see cref="Core.FrameBudget"/>).
+        ///
+        /// Варианты идут вперемешку, кругами, и берётся лучший из кругов:
+        /// встроенная видеокарта гуляет частотой, и один заход давал одному
+        /// и тому же кадру то 26, то 20 мс (2 октября). Мир на время замера
+        /// стоит — всё в одном кадре редактора.
         /// </summary>
         private static void Bench(string where, bool parts)
         {
@@ -1249,36 +1266,56 @@ namespace Sinbinder.EditorTools
 
             try
             {
-                string line = $"  [КАДР] {where}: отрисовка {Render(cam):F1} мс на кадр 1920×1080";
+                var configs = new List<(string Name, Action On, Action Off)> { ("", null, null) };
 
                 if (parts)
                 {
+                    UnityEngine.Rendering.Universal.ScriptableRendererFeature ao = null;
                     foreach (var f in Resources.FindObjectsOfTypeAll<UnityEngine.Rendering.Universal.ScriptableRendererFeature>())
-                    {
                         // Класс затенения в URP закрыт — узнаём его по имени типа.
-                        if (!f.GetType().Name.Contains("AmbientOcclusion") || !f.isActive) continue;
-                        f.SetActive(false);
-                        try { line += $"; без затенения углов {Render(cam):F1}"; }
-                        finally { f.SetActive(true); }
-                        break;
-                    }
+                        if (f.isActive && f.GetType().Name.Contains("AmbientOcclusion")) { ao = f; break; }
 
                     var extra = cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+                    bool shadows = extra != null && extra.renderShadows;
+                    bool post = extra != null && extra.renderPostProcessing;
+
+                    if (ao != null)
+                        configs.Add(("без затенения углов", () => ao.SetActive(false), () => ao.SetActive(true)));
                     if (extra != null)
                     {
-                        bool shadows = extra.renderShadows;
-                        extra.renderShadows = false;
-                        try { line += $"; без теней {Render(cam):F1}"; }
-                        finally { extra.renderShadows = shadows; }
-
-                        bool post = extra.renderPostProcessing;
-                        extra.renderPostProcessing = false;
-                        try { line += $"; без взгляда {Render(cam):F1}"; }
-                        finally { extra.renderPostProcessing = post; }
+                        configs.Add(("без теней", () => extra.renderShadows = false, () => extra.renderShadows = shadows));
+                        configs.Add(("без взгляда", () => extra.renderPostProcessing = false, () => extra.renderPostProcessing = post));
                     }
+                    // Облегчённая (Core.FrameBudget): без теней и без затенения углов.
+                    if (extra != null)
+                        configs.Add(("облегчённая",
+                            () =>
+                            {
+                                extra.renderShadows = false;
+                                if (ao != null) ao.SetActive(false);
+                            },
+                            () =>
+                            {
+                                extra.renderShadows = shadows;
+                                if (ao != null) ao.SetActive(true);
+                            }));
                 }
 
-                Write(line);
+                int rounds = parts ? 3 : 2;
+                var best = new double[configs.Count];
+                for (int i = 0; i < best.Length; i++) best[i] = double.MaxValue;
+
+                for (int r = 0; r < rounds; r++)
+                for (int i = 0; i < configs.Count; i++)
+                {
+                    configs[i].On?.Invoke();
+                    try { best[i] = Math.Min(best[i], Render(cam)); }
+                    finally { configs[i].Off?.Invoke(); }
+                }
+
+                string line = $"  [КАДР] {where}: отрисовка {best[0]:F1} мс на кадр 1920×1080";
+                for (int i = 1; i < configs.Count; i++) line += $"; {configs[i].Name} {best[i]:F1}";
+                Write(line + $" (лучшее из {rounds} кругов)");
             }
             catch (Exception e)
             {

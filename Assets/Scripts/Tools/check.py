@@ -46,7 +46,9 @@ UNITY_TYPES = {
     'ParticleSystem', 'ParticleSystemRenderer', 'MinMaxCurve', 'MinMaxGradient',
     # Вложенный ParticleSystem.EmitParams — выброс частиц в точку
     # (Gameplay/HitBurst, SoulFlight, 2 октября); как и Entry выше.
-    'EmitParams',
+    # ParticleSystem.Particle — частицы, поставленные рукой (огни
+    # отрядов в шаре, Gameplay/CrystalBall, 2 октября).
+    'EmitParams', 'Particle',
     'Gradient', 'GradientColorKey', 'GradientAlphaKey', 'Volume', 'VolumeProfile',
     'VolumeComponent', 'Bounds', 'Matrix4x4', 'Mesh', 'SkinnedMeshRenderer',
     'MeshRenderer', 'MeshFilter', 'Animator', 'RuntimeAnimatorController',

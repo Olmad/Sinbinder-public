@@ -107,12 +107,29 @@ namespace Sinbinder.Utilets
             var eye = new Vector3(0f, 3.5f, -12.5f);
             var look = new Vector3(13f, 0f, 0f);
 
+            // ── Раскладка лагеря (2 октября; автор: «Побудь немного дизайнером.
+            // Расставь осмысленно объекты лагеря, потому что например сундук
+            // находится в спуске с холма») ──
+            //
+            // Север — откуда придут охотники, юг — холм вожака. У подножия
+            // холма — двор: спуск Греховода посередине, справа от спуска
+            // стол совета под знаменем (там отряду объявляют решения), слева
+            // склад — сундук Марги, бочки, ящики (добыча — под присмотром
+            // вожака, на ровной земле). Впереди очаг, открытый к спуску:
+            // вожак сходит прямо в круг. Дороги свободны: на восток — к кругу
+            // выхода, на север — к дозору. План сверху до и после —
+            // Docs/Образцы/план (Editor/CampPlan).
+            //
+            // До этого сундук стоял на самом спуске, бочка и два ящика — внутри
+            // спуска и холма, ещё два ящика, бочка и два валуна — под палатками:
+            // всё ставилось формулами, которые друг о друге не знали.
+            //
             // Стол стоит в стороне от того, куда смотрит открывающий кадр.
             // Взгляд с холма ложится у костра, и стол, поставленный туда же,
             // открыл бы совет на первом же кадре — игрок бы не подошёл
             // к нему, а оказался. Сходится это или нет, считает CheckCamp,
             // а не глаз.
-            var table = new Vector3(3.0f, 0f, 2.2f);
+            var table = new Vector3(4.4f, 0f, -2.9f);
 
             Hill(hill, radius: 5f, height: 2.6f);
 
@@ -135,15 +152,15 @@ namespace Sinbinder.Utilets
             campfire.AddComponent<CampMuster>();
 
             Tents(hill, hillRadius: 5f);
-            CouncilTable(table);
-            CampClutter(hillRadius: 5f);
+            CouncilTable(table, yaw: TowardFire(table));
+            CampClutter(table);
 
             // Сцена 3, первая половина: сундук с трофеями Марги. Стоит
-            // по другую сторону от костра, чем стол, — чтобы к нему
-            // пришлось идти отдельно, а не задеть взглядом заодно
-            // с советом. Сходится это или нет, считает CheckCamp.
-            var chest = new Vector3(-1.7f, 0f, -2.6f);
-            TrophyChestProp(chest);
+            // по другую сторону спуска, чем стол, — чтобы к нему пришлось
+            // идти отдельно, а не задеть взглядом заодно с советом.
+            // Передом к огню. Сходится это или нет, считает CheckCamp.
+            var chest = new Vector3(-4.0f, 0f, -3.2f);
+            TrophyChestProp(chest, yaw: TowardFire(chest));
 
             CheckCamp(table, chest, eye, look, TentPlaces(hill, hillRadius: 5f));
 
@@ -776,51 +793,60 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
-        /// Обстановка лагеря: брёвна у огня, бочки и ящики у палаток,
-        /// знамя и частокол по краю.
+        /// Обстановка лагеря: брёвна у огня, склад у сундука, знамя
+        /// над столом совета, валуны у подножия холма и на краю.
         ///
         /// Лагерь без этого — девять фигур и костёр посреди пустоты.
-        /// Расставлено формулой, а не на глаз: одинаковый вход даёт
+        /// Места названы числами, без жребия: одинаковый вход даёт
         /// одинаковый выход, и лагерь узнаётся со второго запуска.
+        ///
+        /// Каждая вещь стоит там, где ей есть дело (2 октября): до этого
+        /// припасы ставились формулой вокруг костра и уходили под палатки
+        /// и внутрь холма. Ни одна не стоит на спуске, в палатке или
+        /// на дороге — к кругу выхода (восток) и к дозору (север).
         ///
         /// Никаких компонентов: это мир, а не предметы, с которыми
         /// говорят. Предмет, который обещает взаимодействие и молчит,
         /// хуже отсутствующего.
         /// </summary>
-        private static void CampClutter(float hillRadius)
+        private static void CampClutter(Vector3 table)
         {
             var clutter = new GameObject("Обстановка");
 
             // Брёвна вокруг костра: на них сидят, и они задают круг,
-            // в котором стоит отряд.
-            for (int i = 0; i < 4; i++)
-            {
-                float a = 40f + i * 90f;
-                var at = Ring(a, 2.6f);
-                Prop("LogBench", clutter.transform, at, a + 90f);
-            }
+            // в котором стоит отряд. Круг открыт на юг — к спуску: вожак
+            // сходит с холма прямо к огню, а не в спину сидящим. Прежние
+            // два южных бревна лежали на самом спуске.
+            foreach (float a in new[] { 40f, 130f, 190f, 350f })
+                Prop("LogBench", clutter.transform, Ring(a, 2.6f), a + 90f);
 
-            // Припасы: бочки и ящики парами, у трёх сторон лагеря.
-            for (int i = 0; i < 3; i++)
-            {
-                float a = 25f + i * 115f;
-                Prop("Barrel", clutter.transform, Ring(a, 6.4f), a);
-                Prop("Crate", clutter.transform, Ring(a + 8f, 7.1f), a + 30f);
-                Prop("Crate", clutter.transform, Ring(a + 13f, 6.7f) + Vector3.up * 0.6f, a - 15f);
-            }
+            // Склад — слева от спуска, за сундуком Марги: бочки и ящики,
+            // один ящик на другом. Добыча и припасы — в одном углу, у холма
+            // вожака, а не по кругу лагеря.
+            Prop("Barrel", clutter.transform, new Vector3(-5.8f, 0f, -3.9f), 20f);
+            Prop("Barrel", clutter.transform, new Vector3(-5.1f, 0f, -5.0f), 75f);
+            Prop("Crate", clutter.transform, new Vector3(-6.0f, 0f, -4.9f), 12f);
+            Prop("Crate", clutter.transform, new Vector3(-6.0f, 0.6f, -4.9f), 35f);
+            Prop("Crate", clutter.transform, new Vector3(-3.4f, 0f, -5.4f), -8f);
 
-            // Знамя у стола: место, где отряду объявляют решения.
-            Prop("Banner", clutter.transform, new Vector3(4.6f, 0f, 3.4f), 210f);
+            // Знамя — за столом совета, со стороны холма: место, где отряду
+            // объявляют решения, видно от огня.
+            var banner = table + new Vector3(1.0f, 0f, -1.3f);
+            Prop("Banner", clutter.transform, banner, TowardFire(banner));
 
             // Частокола больше нет. Автор, 26 сентября: «Забор в качестве
             // декораций это здорово, но если подумать логически — забор нужен
             // в полевом лагере?» Походный лагерь за ночь не обносят.
 
-            // Валуны: два у холма, два на противоположной стороне.
-            Prop("Rock", clutter.transform, Ring(160f, 8.2f), 20f, 1.2f);
-            Prop("Rock", clutter.transform, Ring(178f, 9.0f), 140f, 0.8f);
-            Prop("Rock", clutter.transform, Ring(340f, 8.6f), 70f, 1.0f);
+            // Валуны: два у подножия холма — холм из них и вырос, —
+            // один на северо-западном краю, за палатками.
+            Prop("Rock", clutter.transform, new Vector3(-5.7f, 0f, -10.4f), 20f, 1.2f);
+            Prop("Rock", clutter.transform, new Vector3(6.0f, 0f, -10.9f), 140f, 0.9f);
+            Prop("Rock", clutter.transform, new Vector3(-12.2f, 0f, 5.6f), 70f, 1.0f);
         }
+
+        /// <summary>Поворот «передом к костру» для вещи в этой точке, в градусах.</summary>
+        private static float TowardFire(Vector3 at) => Mathf.Atan2(-at.x, -at.z) * Mathf.Rad2Deg;
 
         /// <summary>Точка на круге вокруг костра. Угол в градусах.</summary>
         private static Vector3 Ring(float degrees, float radius)
@@ -1070,6 +1096,12 @@ namespace Sinbinder.Utilets
 
                 // Под холмом палаток нет: там стоит одна, наверху.
                 if (Vector3.Distance(position, hillCentre) < hillRadius + clearance)
+                    continue;
+
+                // И во дворе у подножия — тоже: там спуск вожака, стол
+                // совета и склад (BuildCamp). Двор — между холмом и очагом,
+                // по шесть с половиной метров в обе стороны от спуска.
+                if (Mathf.Abs(position.x) < 6.5f && position.z < -2f && position.z > -6f)
                     continue;
 
                 places.Add(position);
@@ -1747,7 +1779,7 @@ namespace Sinbinder.Utilets
         /// шар открывает совет (F), в склепе и на полигоне — карту вылазок,
         /// подходом. Одна табличка на оба стола врала в одном из них.
         /// </summary>
-        private static GameObject CouncilTable(Vector3 position, string plate = null)
+        private static GameObject CouncilTable(Vector3 position, string plate = null, float yaw = 0f)
         {
             var table = new GameObject("Стол совета");
             table.transform.position = position;
@@ -1789,6 +1821,10 @@ namespace Sinbinder.Utilets
             light.range = 7f;
 
             ball.AddComponent<CrystalBall>();
+
+            // Поворот — в конце, корнем: дети ставились по миру, и повернуть
+            // их вместе можно только так. Шар — на оси, ему всё равно.
+            table.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             return table;
         }
 
@@ -1797,7 +1833,7 @@ namespace Sinbinder.Utilets
         /// объект с собственной точкой поворота, иначе она открывалась бы
         /// вокруг собственной середины и въезжала бы в ящик.
         /// </summary>
-        private static void TrophyChestProp(Vector3 position)
+        private static void TrophyChestProp(Vector3 position, float yaw = 0f)
         {
             var chest = new GameObject("Сундук Марги");
             chest.transform.position = position;
@@ -1829,6 +1865,10 @@ namespace Sinbinder.Utilets
 
             var trophy = chest.AddComponent<TrophyChest>();
             Wire(trophy, ("_lid", hinge.transform));
+
+            // Передом к тем, кто подходит: поворот корнем, вместе с крышкой
+            // и её петлёй — так крышка и открывается от себя.
+            chest.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
         /// <summary>Вход в склеп: две опоры и перемычка. Больше и не нужно.</summary>

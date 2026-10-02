@@ -215,6 +215,55 @@ namespace Sinbinder.Dialogue
             _swayCoroutine = StartCoroutine(PushIn(anchor, face, side, lookTarget));
         }
 
+        /// <summary>
+        /// Навести камеру на вещь, а не на говорящего: кадр шара
+        /// (41-SHOWCASE п. 9 — «кадры шара»). Мерки говорящего — рост,
+        /// лицо, плечо — к вещи не подходят: шар на столе ниже пояса
+        /// и смотрит во все стороны сразу. Здесь кадр задаёт вызывающий:
+        /// откуда смотреть и куда.
+        ///
+        /// Дальше — как у говорящего: полосы, узкое поле зрения, медленный
+        /// подъезд (за <paramref name="push"/> секунд); дом и возврат — те же
+        /// (<see cref="SaveCameraPosition"/>, <see cref="RestoreCamera"/>).
+        /// </summary>
+        public IEnumerator FocusOnPoint(Vector3 look, Vector3 from, string caption = null,
+                                        float push = 0f)
+        {
+            if (Cam() == null) yield break;
+
+            _inDialogue = true;
+            Cam().fieldOfView = _dialogueFOV;
+            UI.Letterbox.Instance?.Show(caption);
+
+            yield return MoveCamera(from, Quaternion.LookRotation((look - from).normalized));
+
+            _swayCoroutine = StartCoroutine(PushTowards(look, from,
+                push > 0f ? push : _pushSeconds));
+        }
+
+        /// <summary>Подъезд к вещи: на пятую часть пути, плавно, и стоять.</summary>
+        private IEnumerator PushTowards(Vector3 look, Vector3 from, float seconds)
+        {
+            Vector3 to = Vector3.Lerp(from, look, 0.2f);
+            float elapsed = 0f;
+
+            while (_inDialogue)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(elapsed / seconds);
+                k = k * k * (3f - 2f * k);
+
+                var cam = Cam();
+                if (cam == null) yield break;
+
+                Vector3 pos = Vector3.Lerp(from, to, k);
+                cam.transform.position = pos;
+                cam.transform.rotation = Quaternion.LookRotation((look - pos).normalized);
+
+                yield return null;
+            }
+        }
+
         /// <summary>Рост, под который подобран кадр: человек, метр восемьдесят.</summary>
         public const float Reference = 1.8f;
 

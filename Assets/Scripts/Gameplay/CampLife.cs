@@ -281,7 +281,10 @@ namespace Sinbinder.Gameplay
                     point = SinbinderPlayer.Where - SinbinderPlayer.Instance.transform.forward * 2f;
                     return true;
 
-                case CampSpot.Watch: point = c + new Vector3(0f, 0f, 9f); return true;
+                // Дозор — за внешним кольцом палаток, на северном краю: оттуда
+                // придут охотники. До 2 октября он стоял на девяти метрах —
+                // в ряду палаток, и ход вдоль края упирался в две из них.
+                case CampSpot.Watch: point = c + new Vector3(0f, 0f, 11.6f); return true;
                 case CampSpot.Apart: point = c + new Vector3(-7f, 0f, 1f); return true;
                 case CampSpot.Tents: point = c + new Vector3(0f, 0f, -9.5f); return true;
 
