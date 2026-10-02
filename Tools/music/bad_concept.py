@@ -28,17 +28,25 @@
 # Ми-бемоль — нота отказа из «Возвращения лорда»: та же нота, тот же смысл.
 #
 # Темп 60: доля — секунда, такт — четыре. Без жребия.
-#   python3 Tools/music/bad_concept.py выход.mid [--loop]
+#   python3 Tools/music/bad_concept.py выход.mid [--loop] [--less-celesta]
 import sys
 from orchestra import (Orchestra, CHORD, bar, lord_theme, HORN, STR, PAD, CELLO, BASS, BONE,
-                       CHOIR, TIMP, ORGAN, HARP, OOHS, CEL)
+                       CHOIR, TIMP, ORGAN, HARP, OOHS, CEL, PICC)
 
 # Сведение — как у «Возвращения лорда», по замеру голосов (levels.py):
 # ведущий голос части громче всех, хор — шёпотом; стон хора в «Разочаровании»
 # и арфа «Надежды» подняты: по первому замеру их было не слышно (−57 и −56).
 VOLUME = {HORN: 100, STR: 105, PAD: 80, CELLO: 105, BASS: 100, BONE: 60, CHOIR: 62,
-          TIMP: 120, ORGAN: 70, HARP: 90, OOHS: 95, CEL: 127}
+          TIMP: 120, ORGAN: 70, HARP: 90, OOHS: 95, CEL: 127, PICC: 96}
 s = Orchestra(VOLUME)
+
+# --less-celesta — автор, 2 октября: «местами колокольчик кажется не сильно
+# уместным. Но в конце он очень актуален». Челеста остаётся ночи склепа
+# и коде; блеск «Надежды» и обрывки «Разочарования» — арфе, хрусталь над
+# оркестром в «Шаге вперёд» — пикколо: она прорезает тутти, а не звенит.
+less = '--less-celesta' in sys.argv
+SHINE = HARP if less else CEL      # блеск и обрывки
+ABOVE = PICC if less else CEL      # хрусталь над оркестром
 
 CRYSTAL = [(81, 0, 2), (79, 2, 2), (86, 4, 2), (89, 6, 2), (88, 8, 4)]   # ля–соль–ре–фа–ми
 
@@ -67,7 +75,7 @@ for i, name in enumerate(HOPE):
     s.add(CELLO, CHORD[name]['cello'], at + i * 4, 4, 60)
 s.roots(at, HOPE, 48)
 for st in (0, 24):                                               # арпеджио ре мажора, как у автора
-    s.line(CEL, [(74, 0, 1), (78, 0.5, 1), (81, 1, 1), (86, 1.5, 3)], at + st, 70)
+    s.line(SHINE, [(74, 0, 1), (78, 0.5, 1), (81, 1, 1), (86, 1.5, 3)], at + st, 70)
 s.line(HORN, [(59, 16, 4), (61, 20, 4), (62, 24, 8)], at, 70)   # валторна поднимается к ре
 for p in (50, 54, 57):
     s.add(CHOIR, p, at + 24, 8, 50)                              # сияние
@@ -90,7 +98,7 @@ for i, (cello, bass, mid) in enumerate(LAMENT):
     s.add(CELLO, cello, t, 4, 58); s.add(BASS, bass, t, 4, 46)
     for p in mid: s.add(PAD, p, t, 4, 52)
 s.line(OOHS, [(64, 0, 4), (63, 4, 4), (62, 8, 8), (61, 16, 4)], bar(18), 70)     # ми — ми-бемоль — ре — до-диез
-s.line(CEL, [(81, 0, 2), (79, 2, 2), (86, 8, 2), (89, 10, 2), (88, 16, 4)], bar(18), 66)  # хрусталь — врозь
+s.line(SHINE, [(81, 0, 2), (79, 2, 2), (86, 8, 2), (89, 10, 2), (88, 16, 4)], bar(18), 66)  # хрусталь — врозь
 s.roll(45, bar(22), 4, 35, 70)
 
 # 4. Собирание сил — такты 23–30: хрусталь внизу, у валторн; шаг растёт
@@ -124,7 +132,7 @@ at = bar(31)
 for ch in (STR, ORGAN): s.expression(ch, at, 100)
 s.line(STR, lord_theme(63), at, 104, shift=12, hold=4)
 s.line(HORN, lord_theme(63), at, 98, hold=4)
-s.line(CEL, CRYSTAL[:4] + [(87, 8, 4), (86, 12, 4), (82, 16, 2), (85, 18, 2), (86, 20, 12)], at, 100)
+s.line(ABOVE, CRYSTAL[:4] + [(87, 8, 4), (86, 12, 4), (82, 16, 2), (85, 18, 2), (86, 20, 12)], at, 100 if ABOVE == CEL else 60)
 s.brass(at, STEP, 84)
 s.pads(ORGAN, at, STEP, 60)
 s.pads(CHOIR, at, STEP, 62)
