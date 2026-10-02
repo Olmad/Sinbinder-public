@@ -1,5 +1,7 @@
 # Последний шаг после FluidSynth: мягкий эквалайзер, громкость, OGG — и замер.
-#   python3 Tools/music/master.py сырой.wav выход.ogg [--cut с:по]
+#   python3 Tools/music/master.py сырой.wav выход.ogg [--cut с:по] [--trim]
+# --trim — для коротких сигналов: срезать тихий хвост (FluidSynth пишет,
+# пока не замолкнет последний голос зала) — с мягким затуханием 0,3 с.
 # --cut — вырезать кусок (секунды) после обработки. Для петли без шва:
 # тема отрисована дважды подряд, берётся второй проход — хвост зала от его
 # конца уже лежит в его начале, и стык не слышен.
@@ -48,6 +50,19 @@ def limit(y, sr):
     return y * (10 ** (-gain_db / 20))[:, None]
 
 
+def trim(y, sr, floor_db=-60.0, fade=0.3):
+    """Хвост тише floor_db (по 50 мс) — прочь; конец гаснет за fade секунд."""
+    hop = int(0.05 * sr)
+    mono = np.abs(y).max(axis=1)
+    n = len(mono) // hop
+    loud = [i for i in range(n) if 20 * np.log10(mono[i * hop:(i + 1) * hop].max() + 1e-9) > floor_db]
+    end = min(len(y), ((loud[-1] + 1) * hop if loud else len(y)) + int(fade * sr))
+    y = y[:end].copy()
+    k = min(len(y), int(fade * sr))
+    y[-k:] *= np.linspace(1, 0, k)[:, None]
+    return y
+
+
 def measure(y, sr):
     mono = y.mean(axis=1)
     secs = len(mono) // sr
@@ -82,6 +97,8 @@ if __name__ == '__main__':
     if '--cut' in sys.argv:
         a, b = (float(v) for v in sys.argv[sys.argv.index('--cut') + 1].split(':'))
         y = y[int(round(a * sr)):int(round(b * sr))]
+    if '--trim' in sys.argv:
+        y = trim(y, sr)
     with sf.SoundFile(sys.argv[2], 'w', sr, y.shape[1], format='OGG', subtype='VORBIS') as out:
         for i in range(0, len(y), sr):          # кусками: libsndfile не любит длинный Vorbis разом
             out.write(y[i:i + sr])

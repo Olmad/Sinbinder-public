@@ -86,6 +86,9 @@ namespace Sinbinder.Gameplay
         public static bool RearguardFell { get; private set; }
 
         private Warrior _rearguard;
+
+        /// <summary>Сигнал по павшему уже прозвучал — второй раз не звучит.</summary>
+        private bool _mourned;
         private static readonly List<string> _escapedNames = new();
 
         public bool Departing { get; private set; }
@@ -118,6 +121,7 @@ namespace Sinbinder.Gameplay
             _escapedNames.Clear();
             Rearguard = null;
             RearguardFell = false;
+            _mourned = false;
 
             Open = _openAtStart;
 
@@ -219,6 +223,15 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            // Пал, пока прикрывал: миг, а не строка при уходе. Журнал скажет
+            // «пал, прикрывая отход» в конце, а музыка — сейчас: «Whisper
+            // of the Fallen» автора (docs/43-SOUND.md §6). Один раз.
+            if (_rearguard != null && !_mourned && _rearguard.IsDead)
+            {
+                _mourned = true;
+                Audio.Music.Play(Audio.Cue.Fallen);
+            }
+
             if (Departing) return;
 
             if (!Open)

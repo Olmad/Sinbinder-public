@@ -139,6 +139,9 @@ namespace Sinbinder.Crypt
             if (risen == null) return false;
             Raised++;
 
+            // «Spark of Eternity» автора — «Новая душа»: душа получила тело.
+            Audio.Music.Play(Audio.Cue.Spark);
+
             Log(Loc.F("{0} поднялся и встал рядом.", Loc.Name(risen.DisplayName)));
 
             if (_soul.Memory == null)

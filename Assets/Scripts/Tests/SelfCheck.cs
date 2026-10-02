@@ -1000,6 +1000,14 @@ namespace Sinbinder.Tests
                 Check(!string.IsNullOrEmpty(file) && Resources.Load<AudioClip>("Music/" + file) != null,
                     $"запись темы «{track}» лежит в Resources/Music");
             }
+
+            // Сигналы — поверх темы: новая душа в склепе, павший в арьергарде.
+            foreach (Sinbinder.Audio.Cue cue in System.Enum.GetValues(typeof(Sinbinder.Audio.Cue)))
+            {
+                string file = Sinbinder.Audio.Music.FileOf(cue);
+                Check(Resources.Load<AudioClip>("Music/" + file) != null,
+                    $"запись сигнала «{cue}» лежит в Resources/Music");
+            }
         }
 
         /// <summary>

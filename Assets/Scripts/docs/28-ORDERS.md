@@ -41,11 +41,12 @@
 `43-SOUND.md` §6, `14-HANDOFF.md` §135.7. Код: новый `Audio/Music.cs`
 (ставит себя сам, сцен не трогает), по строке в `CrystalBall.Alarm`,
 `RaidEvent.Unfold`, `PrologueDirector.Leave`, `DemoEndUI.Show`,
-`GameOverUI.Show`; строка «Музыка» в паузе. Записи — `Assets/Resources/Music`
-(четыре `.ogg`, 11 МБ, `.meta` уже есть — загрузка потоком).
+`GameOverUI.Show`, `BindingDevice.Bind`, `EscapeZone.Update` (сигналы);
+строка «Музыка» в паузе. Записи — `Assets/Resources/Music` (четыре темы
+и два сигнала, 11,4 МБ, `.meta` уже есть — темы потоком).
 
-1. `unity-check.ps1` — самопроверка выросла на 8 (`MusicMap`: у каждой
-   доли своя тема, каждая запись на месте); `demo-walkthrough.ps1`
+1. `unity-check.ps1` — самопроверка выросла на 10 (`MusicMap`: у каждой
+   доли своя тема, каждая запись темы и сигнала на месте); `demo-walkthrough.ps1`
    и `-All` — в логе строки `[МУЗЫКА] …` на лагере, разгроме, склепе
    и конце.
 2. Закоммитить `.meta` для `Audio/Music.cs` (Unity заведёт).

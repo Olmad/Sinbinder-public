@@ -10,6 +10,13 @@ namespace Sinbinder.Audio
     public enum Track { None, Camp, Raid, Crypt, Epilogue }
 
     /// <summary>
+    /// Короткий сигнал поверх темы: событие, а не место. Из архива автора:
+    /// «Spark of Eternity» («Новая душа») — воин встал в мастерской склепа;
+    /// «Whisper of the Fallen» («Смерть союзника») — Карган пал, прикрывая отход.
+    /// </summary>
+    public enum Cue { Spark, Fallen }
+
+    /// <summary>
     /// Музыка пролога (курс п. 3, docs/41-SHOWCASE.md: «музыка лагеря
     /// и набега»). Автор, 2 октября: «думаю ты можешь начать интегрировать
     /// эти мелодии». Темы — его, версии «по задумке»; ноты, отрисовка
@@ -89,6 +96,15 @@ namespace Sinbinder.Audio
             }
         }
 
+        /// <summary>Файл сигнала в <c>Assets/Resources/Music</c>.</summary>
+        public static string FileOf(Cue cue) => cue == Cue.Spark ? "Spark" : "Fallen";
+
+        /// <summary>Громкость сигнала: громче темы — это миг, — но ниже ударов.</summary>
+        private const float CueLevel = 0.5f;
+
+        /// <summary>Во сколько раз тише тема, пока звучит сигнал.</summary>
+        private const float UnderCue = 0.3f;
+
         /// <summary>Во сколько раз тише, пока кадр в рамке кино.</summary>
         private const float Duck = 0.45f;
 
@@ -108,6 +124,9 @@ namespace Sinbinder.Audio
         private readonly float[] _speed = new float[2];
         private readonly Track[] _on = new Track[2];
         private float _duck = 1f;
+        private AudioSource _cue;
+        private float _cueUntil;
+        private float _under = 1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm()
@@ -142,6 +161,13 @@ namespace Sinbinder.Audio
                 _decks[i] = src;
             }
 
+            var cue = new GameObject("Сигнал");
+            cue.transform.SetParent(transform, false);
+            _cue = cue.AddComponent<AudioSource>();
+            _cue.playOnAwake = false;
+            _cue.spatialBlend = 0f;
+            _cue.dopplerLevel = 0f;
+
             SceneManager.sceneLoaded += OnScene;
             Play(ForScene(SceneManager.GetActiveScene().name), 2f);
         }
@@ -172,6 +198,26 @@ namespace Sinbinder.Audio
 
         /// <summary>Затихнуть к тишине за <paramref name="fade"/> секунд.</summary>
         public static void Stop(float fade = 2f) => Play(Track.None, fade);
+
+        /// <summary>
+        /// Сыграть сигнал поверх темы. Тема на это время приседает
+        /// (<see cref="UnderCue"/>) и встаёт, когда сигнал кончился. Новый
+        /// сигнал обрывает прежний: два разом — каша.
+        /// </summary>
+        public static void Play(Cue cue)
+        {
+            if (_instance == null) return;
+            var clip = Load(FileOf(cue));
+            if (clip == null) return;
+
+            var src = _instance._cue;
+            src.Stop();
+            src.clip = clip;
+            src.volume = CueLevel * Core.Preferences.MusicScale;
+            src.Play();
+            _instance._cueUntil = Time.unscaledTime + clip.length;
+            Debug.Log($"[МУЗЫКА] Сигнал {FileOf(cue)}.");
+        }
 
         private void Switch(Track track, float fade)
         {
@@ -220,12 +266,16 @@ namespace Sinbinder.Audio
             bool framed = UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown;
             _duck = Mathf.MoveTowards(_duck, framed ? Duck : 1f, DuckSpeed * dt);
 
+            bool cueing = Time.unscaledTime < _cueUntil;
+            _under = Mathf.MoveTowards(_under, cueing ? UnderCue : 1f, DuckSpeed * dt);
+
             float pref = Core.Preferences.MusicScale;
+            _cue.volume = CueLevel * pref;
             for (int i = 0; i < _decks.Length; i++)
             {
                 _level[i] = Mathf.MoveTowards(_level[i], _target[i], _speed[i] * dt);
                 var deck = _decks[i];
-                deck.volume = _level[i] * LevelOf(_on[i]) * _duck * pref;
+                deck.volume = _level[i] * LevelOf(_on[i]) * _duck * _under * pref;
 
                 if (_level[i] <= 0f && _target[i] <= 0f && deck.isPlaying)
                 {
