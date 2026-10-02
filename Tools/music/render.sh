@@ -1,6 +1,8 @@
 #!/bin/sh
 # Отрисовать MIDI живыми инструментами: FluidSynth и банк SoundFont.
 #   sh Tools/music/render.sh вход.mid выход.wav [банк.sf2|sf3]
+# Потом — эквалайзер, громкость, OGG и замер:
+#   python3 Tools/music/master.py выход.wav выход.ogg
 # Банк по умолчанию — FluidR3_GM (MIT; в Ubuntu — пакет fluid-soundfont-gm).
 # Второй — MuseScore_General.sf3 (MIT):
 #   https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf3

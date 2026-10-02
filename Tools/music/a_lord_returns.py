@@ -1,20 +1,31 @@
 # «A Lord Returns — ровно 3 минуты»: та же партитура, но инструментами,
 # а не волнами. Пишет MIDI: рояль, виолончель (и контрабас октавой ниже —
-# как страница подкладывала пол-частоты), хор «а», литавры.
-import mido, sys
-TPB = 480
-q = 1.0  # в долях (четвертях); время — в четвертях, темп 50
-events = {}   # канал -> список (начало, длина, нота, сила)
-def add(ch, pitch, start, dur, vel):
-    events.setdefault(ch, []).append((start, dur, pitch, max(1, min(127, int(vel)))))
+# как страница подкладывала пол-частоты), хор «а», литавры. Темп 50.
+#   python3 Tools/music/a_lord_returns.py выход.mid [--octave]
+# --octave — вторая версия: мелодия рояля удвоена октавой выше, чуть тише
+# основной (тема лежит низко, ре–ля первой октавы). Ноты страницы не тронуты.
+import sys
+from score import Score
 
-PIANO, CELLO, BASS, CHOIR, TIMP = 0, 1, 2, 3, 4
-PROGRAM = {PIANO: 0, CELLO: 42, BASS: 43, CHOIR: 52, TIMP: 47}
-def piano(p, s, d, v=0.4, chord=False): add(PIANO, p, s, d, (28 + v * 95) if chord else (45 + v * 115))
-def cello(p, s, d, v=0.35):
-    add(CELLO, p, s, d, 45 + v * 110); add(BASS, p - 12, s, d, 22 + v * 70)
-def choir(p, s, d, v=0.2): add(CHOIR, p, s, d, 45 + v * 160)
-def timpani(p, s, d, v=0.5): add(TIMP, p, s, min(d, 4), 55 + v * 75)
+PIANO, CELLO, BASS, CHOIR, TIMP, HIGH = 0, 1, 2, 3, 4, 5
+PROGRAM = {PIANO: 0, CELLO: 42, BASS: 43, CHOIR: 52, TIMP: 47, HIGH: 0}
+REVERB = {PIANO: 55, CELLO: 70, BASS: 60, CHOIR: 85, TIMP: 60, HIGH: 75}
+PAN = {PIANO: 58, CELLO: 44, BASS: 54, CHOIR: 78, TIMP: 64, HIGH: 70}
+VOLUME = {PIANO: 104, CELLO: 92, BASS: 64, CHOIR: 96, TIMP: 96, HIGH: 100}
+
+octave = '--octave' in sys.argv
+s = Score()
+add = s.add
+
+
+def piano(p, st, d, v=0.4, chord=False):
+    add(PIANO, p, st, d, (28 + v * 95) if chord else (45 + v * 115))
+    if octave and not chord:
+        add(HIGH, p + 12, st, d, 45 + v * 115)
+def cello(p, st, d, v=0.35):
+    add(CELLO, p, st, d, 45 + v * 110); add(BASS, p - 12, st, d, 22 + v * 70)
+def choir(p, st, d, v=0.2): add(CHOIR, p, st, d, 45 + v * 160)
+def timpani(p, st, d, v=0.5): add(TIMP, p, st, min(d, 4), 55 + v * 75)
 
 def notes(lst, fn, shift=0.0, vol=None):
     for n in lst:
@@ -48,28 +59,6 @@ notes([[[50,53,57],0,12],[[46,50,53],12,12],[[43,46,50],24,12],[[50,53,57],36,18
 notes([[38,0,24],[34,24,12],[38,36,18]], cello, t4, .3)
 notes([[38,36,12,.5]], timpani, t4)
 
-mid = mido.MidiFile(ticks_per_beat=TPB)
-meta = mido.MidiTrack(); mid.tracks.append(meta)
-meta.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(50), time=0))
-meta.append(mido.MetaMessage('time_signature', numerator=4, denominator=4, time=0))
-REVERB = {PIANO: 55, CELLO: 70, BASS: 60, CHOIR: 85, TIMP: 60}
-PAN = {PIANO: 58, CELLO: 44, BASS: 54, CHOIR: 78, TIMP: 64}
-VOLUME = {PIANO: 104, CELLO: 92, BASS: 64, CHOIR: 96, TIMP: 96}
-for ch, lst in events.items():
-    tr = mido.MidiTrack(); mid.tracks.append(tr)
-    tr.append(mido.Message('program_change', channel=ch, program=PROGRAM[ch], time=0))
-    tr.append(mido.Message('control_change', channel=ch, control=7, value=VOLUME[ch], time=0))
-    tr.append(mido.Message('control_change', channel=ch, control=10, value=PAN[ch], time=0))
-    tr.append(mido.Message('control_change', channel=ch, control=91, value=REVERB[ch], time=0))
-    ev = []
-    for s, d, p, v in lst:
-        ev.append((int(round(s * TPB)), 1, p, v))                 # включение
-        ev.append((int(round((s + d) * TPB)) - 1, 0, p, 0))       # выключение — на тик раньше
-    ev.sort(key=lambda e: (e[0], e[1]))
-    now = 0
-    for t, on, p, v in ev:
-        tr.append(mido.Message('note_on' if on else 'note_off', channel=ch, note=p, velocity=v, time=t - now))
-        now = t
-mid.save(sys.argv[1])
-end = max(s + d for lst in events.values() for s, d, p, v in lst)
-print(f'{sys.argv[1]}: нот {sum(len(l) for l in events.values())}, конец на {end} долях = {end * 1.2:.1f} с')
+s.write(sys.argv[1], 50, PROGRAM, VOLUME, PAN, REVERB)
+print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end() * 1.2:.1f} с'
+      + (', мелодия удвоена октавой выше' if octave else ''))
