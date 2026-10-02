@@ -44,6 +44,9 @@ UNITY_TYPES = {
     'GUIStyle', 'GUIContent', 'GUILayout', 'GUI', 'EditorGUILayout', 'EditorGUI', 'EditorStyles',
     'Handles', 'SceneView', 'PrefabUtility', 'EditorSceneManager', 'SceneManager', 'Undo',
     'ParticleSystem', 'ParticleSystemRenderer', 'MinMaxCurve', 'MinMaxGradient',
+    # Вложенный ParticleSystem.EmitParams — выброс частиц в точку
+    # (Gameplay/HitBurst, SoulFlight, 2 октября); как и Entry выше.
+    'EmitParams',
     'Gradient', 'GradientColorKey', 'GradientAlphaKey', 'Volume', 'VolumeProfile',
     'VolumeComponent', 'Bounds', 'Matrix4x4', 'Mesh', 'SkinnedMeshRenderer',
     'MeshRenderer', 'MeshFilter', 'Animator', 'RuntimeAnimatorController',

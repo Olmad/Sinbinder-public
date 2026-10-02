@@ -78,6 +78,8 @@ namespace Sinbinder.Gameplay
             // Удар слышно — по телу того, кого ударили (Audio.Sfx).
             if (_warrior == null) _warrior = GetComponent<Warrior>();
             Audio.Sfx.Hit(_warrior, transform.position);
+            // И видно — вспышка и пыль по телу ударенного (41-SHOWCASE п. 7).
+            HitBurst.At(_warrior, transform.position);
 
             if (_hp <= 0f)
             {
