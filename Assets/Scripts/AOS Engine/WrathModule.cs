@@ -21,12 +21,14 @@ namespace Sinbinder.AOS.Modules
         {
             // Гнев не сидит: меряет шагами дозор, лицом туда, откуда придут.
             // Терпение (гнев со знаком минус) сидит у огня спокойно.
+            // За картами гневному не сидится — до первого чужого туза.
             float w = soul.Get(SinType.Wrath) / 100f;
             switch (spot)
             {
                 case CampSpot.Watch: return w > 0f ? 9f * w : 0f;
                 case CampSpot.Tents: return w > 0f ? -5f * w : 0f;
                 case CampSpot.Fire:  return w < 0f ? 5f * -w : 0f;
+                case CampSpot.Cards: return w > 0f ? -3f * w : 0f;
                 default:             return 0f;
             }
         }

@@ -113,6 +113,7 @@ namespace Sinbinder.Gameplay
                 case CampSpot.Fire:  return 28f;
                 case CampSpot.Table: return 35f;
                 case CampSpot.Chest: return 45f;
+                case CampSpot.Cards: return 0f;    // за картами сидят на своём месте
                 case CampSpot.Apart: return 60f;
                 case CampSpot.Tents: return 25f;
                 default:             return 0f;   // дозор ходит сам, у Греховода — не топчутся
@@ -192,6 +193,7 @@ namespace Sinbinder.Gameplay
                 case CampSpot.Fire:  return 2.6f;
                 case CampSpot.Table: return 1.8f;
                 case CampSpot.Chest: return 1.4f;
+                case CampSpot.Cards: return 1.0f;   // вокруг ящика, на расстоянии руки
                 default:             return 1.2f;
             }
         }
@@ -206,6 +208,7 @@ namespace Sinbinder.Gameplay
                 case CampSpot.Apart:     return Loc.T("сторонится");
                 case CampSpot.Tents:     return Loc.T("дремлет в палатке");
                 case CampSpot.Sinbinder: return Loc.T("держится рядом с Греховодом");
+                case CampSpot.Cards:     return Loc.T("играет в карты");
                 default:                 return Loc.T("греется у огня");
             }
         }
@@ -274,6 +277,11 @@ namespace Sinbinder.Gameplay
                     var ball = Object.FindFirstObjectByType<CrystalBall>();
                     if (ball == null) return false;
                     point = ball.transform.position;
+                    return true;
+
+                case CampSpot.Cards:
+                    if (CardTable.Instance == null) return false;
+                    point = CardTable.Instance.transform.position;
                     return true;
 
                 case CampSpot.Sinbinder:

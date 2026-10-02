@@ -20,12 +20,14 @@ namespace Sinbinder.AOS.Modules
         public float EvaluateSpot(Soul soul, CampSpot spot)
         {
             // Уныние — в палатку, прочь от дозора; усердие (уныние со знаком
-            // минус) — в дозор, и в палатке ему не лежится.
+            // минус) — в дозор, и в палатке ему не лежится. Карты — убить
+            // время: унылого тянет и к ним, но палатка ближе к сердцу.
             float s = soul.Get(SinType.Sloth) / 100f;
             switch (spot)
             {
                 case CampSpot.Tents: return s > 0f ? 10f * s : 4f * s;
                 case CampSpot.Watch: return s > 0f ? -6f * s : 9f * -s;
+                case CampSpot.Cards: return s > 0f ? 5f * s : 0f;
                 default:             return 0f;
             }
         }

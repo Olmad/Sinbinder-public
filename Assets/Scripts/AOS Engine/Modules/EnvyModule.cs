@@ -29,12 +29,14 @@ namespace Sinbinder.AOS.Modules
         public float EvaluateSpot(Soul soul, CampSpot spot)
         {
             // Зависть смотрит на стол, где назначают старшего;
-            // доброжелательность — к огню, к своим.
+            // доброжелательность — к огню, к своим. За картами — смотреть,
+            // как везёт другим.
             float e = soul.Get(SinType.Envy) / 100f;
             switch (spot)
             {
                 case CampSpot.Table: return e > 0f ? 8f * e : 0f;
                 case CampSpot.Fire:  return e < 0f ? 5f * -e : 0f;
+                case CampSpot.Cards: return e > 0f ? 4f * e : 0f;
                 default:             return 0f;
             }
         }

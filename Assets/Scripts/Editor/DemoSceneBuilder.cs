@@ -155,6 +155,10 @@ namespace Sinbinder.Utilets
             CouncilTable(table, yaw: TowardFire(table));
             CampClutter(table);
 
+            // Стол с картами (автор, 2 октября): у огня, но не в кругу —
+            // на свету костра, к северо-западу, между очагом и палатками.
+            CardTableProp(new Vector3(-1.0f, 0f, 3.9f));
+
             // Сцена 3, первая половина: сундук с трофеями Марги. Стоит
             // по другую сторону спуска, чем стол, — чтобы к нему пришлось
             // идти отдельно, а не задеть взглядом заодно с советом.
@@ -847,6 +851,83 @@ namespace Sinbinder.Utilets
 
         /// <summary>Поворот «передом к костру» для вещи в этой точке, в градусах.</summary>
         private static float TowardFire(Vector3 at) => Mathf.Atan2(-at.x, -at.z) * Mathf.Rad2Deg;
+
+        /// <summary>
+        /// Стол с картами. Автор, 2 октября: «не хватает стола с картами, чтобы
+        /// воины хоть как-то развлекались, и возможность к ним подсесть».
+        ///
+        /// Ящик вместо стола — в походе скатертей нет; вокруг две бочки
+        /// и ящик поменьше — сиденья; на ящике колода, раскрытые карты
+        /// и горсть монет — кон; свеча в фонаре: в темноте не сыграешь.
+        /// Сторона к огню открыта — оттуда подсаживается Греховод.
+        /// Кто играет — решают души (<see cref="Sinbinder.Gameplay.CardTable"/>).
+        /// </summary>
+        private static void CardTableProp(Vector3 position)
+        {
+            float yaw = TowardFire(position);
+            var root = new GameObject("Стол с картами");
+            root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+
+            var crate = Prop("Crate", root.transform, position, yaw + 8f);
+            Prop("Barrel", root.transform, root.transform.TransformPoint(new Vector3(-0.95f, 0f, 0.1f)), yaw + 30f);
+            Prop("Barrel", root.transform, root.transform.TransformPoint(new Vector3(0.95f, 0f, 0.1f)), yaw - 20f);
+            Prop("Crate", root.transform, root.transform.TransformPoint(new Vector3(0f, 0f, -0.95f)), yaw + 45f, 0.8f);
+
+            // Верх ящика — по самой модели: карты должны лечь, а не висеть.
+            float top = 0.6f;
+            if (crate != null)
+            {
+                float max = float.MinValue;
+                foreach (var r in crate.GetComponentsInChildren<Renderer>()) max = Mathf.Max(max, r.bounds.max.y);
+                if (max > float.MinValue) top = max - position.y;
+            }
+
+            var card = Plain("Карты", new Color(0.86f, 0.81f, 0.70f), smoothness: 0.2f);
+            var coin = Plain("Монеты", new Color(0.83f, 0.66f, 0.28f), smoothness: 0.75f);
+
+            Piece(root.transform, "Колода", card, new Vector3(0.04f, top + 0.012f, 0.02f),
+                  new Vector3(0.065f, 0.024f, 0.095f), 8f);
+            for (int i = 0; i < 4; i++)
+                Piece(root.transform, "Карта", card, new Vector3(-0.20f + i * 0.045f, top + 0.002f, 0.13f),
+                      new Vector3(0.065f, 0.003f, 0.095f), -20f + i * 12f);
+            for (int i = 0; i < 3; i++)
+                Piece(root.transform, "Карта", card, new Vector3(0.16f + i * 0.04f, top + 0.002f, -0.12f),
+                      new Vector3(0.065f, 0.003f, 0.095f), 160f + i * 14f);
+
+            for (int i = 0; i < 5; i++)
+            {
+                var c = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                c.name = "Монета";
+                c.transform.SetParent(root.transform, false);
+                c.transform.localPosition = new Vector3(-0.05f + (i % 3) * 0.03f, top + 0.003f + (i / 3) * 0.006f,
+                                                        -0.02f + (i % 2) * 0.02f);
+                c.transform.localScale = new Vector3(0.03f, 0.003f, 0.03f);
+                Object.DestroyImmediate(c.GetComponent<Collider>());
+                var r = c.GetComponent<Renderer>();
+                r.sharedMaterial = coin;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
+            Lantern(root.transform, new Vector3(0.24f, top + 0.09f, 0.22f), range: 2.8f, intensity: 0.9f, shadows: false);
+
+            root.AddComponent<Sinbinder.Gameplay.CardTable>();
+            Plate(root.transform, Sinbinder.Core.Loc.N("Карты — F"), 1.5f);
+        }
+
+        /// <summary>Плоская мелочь на столе: карта, колода. Без коллайдера и тени.</summary>
+        private static void Piece(Transform parent, string name, Material material, Vector3 at, Vector3 size, float yaw)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = at;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localScale = size;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            var r = go.GetComponent<Renderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
 
         /// <summary>Точка на круге вокруг костра. Угол в градусах.</summary>
         private static Vector3 Ring(float degrees, float radius)

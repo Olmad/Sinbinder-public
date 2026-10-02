@@ -21,12 +21,14 @@ namespace Sinbinder.AOS.Modules
         public float EvaluateSpot(Soul soul, CampSpot spot)
         {
             // Жадность — к сундуку; щедрость (жадность со знаком минус) —
-            // к огню, где раздают, и прочь от сундука.
+            // к огню, где раздают, и прочь от сундука. За картами — кон:
+            // жадного тянет и туда, но слабее, чем к сундуку.
             float g = soul.Get(SinType.Greed) / 100f;
             switch (spot)
             {
                 case CampSpot.Chest: return g > 0f ? 10f * g : 4f * g;
                 case CampSpot.Fire:  return g < 0f ? 6f * -g : 0f;
+                case CampSpot.Cards: return g > 0f ? 6f * g : 0f;
                 default:             return 0f;
             }
         }

@@ -29,13 +29,15 @@ namespace Sinbinder.AOS.Modules
         public float EvaluateSpot(Soul soul, CampSpot spot)
         {
             // Гордыня — в сторону от толпы или к столу, где решают;
-            // смирение — к огню, прислуживать, и прочь от стола.
+            // смирение — к огню, прислуживать, и прочь от стола. За картами
+            // с чернью гордому не сидится.
             float p = soul.Get(SinType.Pride) / 100f;
             switch (spot)
             {
                 case CampSpot.Apart: return p > 0f ? 8f * p : 0f;
                 case CampSpot.Table: return p > 0f ? 5f * p : 3f * p;
                 case CampSpot.Fire:  return p > 0f ? -4f * p : 7f * -p;
+                case CampSpot.Cards: return p > 0f ? -3f * p : 0f;
                 default:             return 0f;
             }
         }

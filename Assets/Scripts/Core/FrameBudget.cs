@@ -24,15 +24,18 @@ namespace Sinbinder.Core
     /// (<c>[КАДР]</c>) на Intel UHD 630, лагерь у костра, кадр 1920×1080:
     /// 61 мс — шестнадцать кадров в секунду; без затенения углов (SSAO) —
     /// 40, без теней — 44. Облегчённая графика (<see cref="Preferences.LightGraphics"/>,
-    /// строка «Графика» в паузе) снимает тени и затенение углов: по замеру
-    /// «лучшее из трёх кругов» лагерь — 20 мс вместо 38. Взгляд (зерно,
+    /// строка «Графика» в паузе) снимает тени и затенение углов и рисует
+    /// мир в 85% разрешения экрана (<see cref="LightScale"/>; интерфейс —
+    /// в полном). По замеру «лучшее из трёх кругов» лагерь — 16 мс вместо 38:
+    /// шестьдесят кадров на встроенной видеокарте; без доли разрешения
+    /// было 20 — она упирается в заливку точек, а не в счёт. Взгляд (зерно,
     /// радугу краёв, свечение) не трогает: облегчённый он давал 0,6 мс —
     /// не цена за подпись стиля. Пока игрок не выбрал сам, выбор —
     /// по видеокарте: на встроенной облегчённая.
     ///
-    /// <b>В редакторе</b> затенение углов не трогаем: признак живёт в файле
-    /// настроек рендера, и выключенный в игре остался бы выключенным
-    /// в проекте. Тени — свойство камеры сцены, их можно и там.
+    /// <b>В редакторе</b> затенение углов и долю разрешения не трогаем:
+    /// они живут в файлах настроек рендера, и тронутые в игре остались бы
+    /// такими в проекте. Тени — свойство камеры сцены, их можно и там.
     ///
     /// <b>Прогон в пакетном режиме — без всего этого</b>: ему нужна скорость
     /// и полная картинка для снимков, а его замеры должны показывать работу,
@@ -48,7 +51,13 @@ namespace Sinbinder.Core
         /// <summary>Кадров в секунду, пока окно не в фокусе.</summary>
         public const int Background = 15;
 
+        /// <summary>Доля разрешения мира в облегчённой графике.</summary>
+        public const float LightScale = 0.85f;
+
         private static FrameBudget _instance;
+
+        /// <summary>Какая доля стояла до облегчённой; −1 — не трогали.</summary>
+        private float _scaleWas = -1f;
 
         /// <summary>Камеры, которым мы выключили тени, — им и вернуть.</summary>
         private readonly List<UniversalAdditionalCameraData> _unshadowed = new();
@@ -133,11 +142,23 @@ namespace Sinbinder.Core
             }
         }
 
-        /// <summary>Затенение углов (SSAO) — признак рендера; только в собранной игре.</summary>
+        /// <summary>
+        /// Затенение углов (SSAO) и доля разрешения — настройки рендера;
+        /// только в собранной игре.
+        /// </summary>
         private void Occlusion(bool light)
         {
             if (Application.isEditor) return;
             if (!light) { Wake(); return; }
+
+            var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                       as UniversalRenderPipelineAsset;
+            if (pipe != null && _scaleWas < 0f)
+            {
+                _scaleWas = pipe.renderScale;
+                pipe.renderScale = LightScale;
+            }
+
             if (_dimmed.Count > 0) return;
 
             // Класс затенения в URP закрыт — узнаём его по имени типа.
@@ -153,6 +174,12 @@ namespace Sinbinder.Core
         {
             foreach (var f in _dimmed) if (f != null) f.SetActive(true);
             _dimmed.Clear();
+
+            if (_scaleWas < 0f) return;
+            var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                       as UniversalRenderPipelineAsset;
+            if (pipe != null) pipe.renderScale = _scaleWas;
+            _scaleWas = -1f;
         }
     }
 }

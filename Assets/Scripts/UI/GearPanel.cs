@@ -173,7 +173,11 @@ namespace Sinbinder.UI
             if (!_open)
             {
                 if (Input.GetKeyDown(_key)) TryOpen();
-                else if (Input.GetKeyDown(_talkKey) && !CommanderCouncilUI.AtTable && !TryTalk()) TryChest();
+                // У стола совета и у стола с картами F — их (Gameplay.CardTable):
+                // за картами стоят люди, и без этой оговорки F заговаривал бы
+                // с тем, на кого смотришь, вместо того чтобы подсесть.
+                else if (Input.GetKeyDown(_talkKey) && !CommanderCouncilUI.AtTable
+                         && !Gameplay.CardTable.Near && !TryTalk()) TryChest();
                 return;
             }
 

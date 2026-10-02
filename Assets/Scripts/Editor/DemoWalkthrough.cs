@@ -257,6 +257,15 @@ namespace Sinbinder.EditorTools
                     _ballShot = true;
                     Snap("шар — отряды гаснут");
                 }
+
+                // За картами (CardTable): кадр, когда камера доехала и прозвучала
+                // первая реплика, — и встать: шаг ждёт именно этого.
+                if (!_cardsShot && CardTable.Watching && now - _framedSince > 2.6f)
+                {
+                    _cardsShot = true;
+                    Snap("за картами");
+                    CardTable.Instance?.StandUp();
+                }
                 if (now - _framedSince < 30f)
                 {
                     if (_entered) { _startedAt += tick; _framedInStep = true; }
@@ -453,6 +462,7 @@ namespace Sinbinder.EditorTools
             if (all)
             {
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
+                steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
             }
 
@@ -1286,6 +1296,36 @@ namespace Sinbinder.EditorTools
                         configs.Add(("без теней", () => extra.renderShadows = false, () => extra.renderShadows = shadows));
                         configs.Add(("без взгляда", () => extra.renderPostProcessing = false, () => extra.renderPostProcessing = post));
                     }
+                    // Точечные огни с тенями — по одному: каждый рисует шесть
+                    // карт теней на кадр, и знать надо, какой сколько стоит.
+                    foreach (var l in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+                    {
+                        if (l.type != LightType.Point || l.shadows == LightShadows.None || !l.isActiveAndEnabled) continue;
+                        var lamp = l;
+                        var was = l.shadows;
+                        string who = lamp.transform.parent != null ? lamp.transform.parent.name : lamp.name;
+                        configs.Add(($"без теней огня «{who}»", () => lamp.shadows = LightShadows.None, () => lamp.shadows = was));
+                        if (was == LightShadows.Soft)
+                            configs.Add(($"«{who}» с жёсткими тенями", () => lamp.shadows = LightShadows.Hard, () => lamp.shadows = was));
+                    }
+
+                    // Тени луны (направленный свет) — по замеру 2 октября главная
+                    // доля теней: один каскад вместо двух, дальность 40 м вместо 50,
+                    // жёсткие вместо мягких. Правится настройка рендера в памяти
+                    // и сразу возвращается.
+                    var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                               as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+                    if (pipe != null)
+                    {
+                        int cascades = pipe.shadowCascadeCount;
+                        float reach = pipe.shadowDistance;
+                        configs.Add(("луна: один каскад", () => pipe.shadowCascadeCount = 1, () => pipe.shadowCascadeCount = cascades));
+                        configs.Add(("луна: тени до 40 м", () => pipe.shadowDistance = 40f, () => pipe.shadowDistance = reach));
+                    }
+                    var moon = RenderSettings.sun;
+                    if (moon != null && moon.shadows == LightShadows.Soft)
+                        configs.Add(("луна с жёсткими тенями", () => moon.shadows = LightShadows.Hard, () => moon.shadows = LightShadows.Soft));
+
                     // Облегчённая (Core.FrameBudget): без теней и без затенения углов.
                     if (extra != null)
                         configs.Add(("облегчённая",
@@ -1299,6 +1339,26 @@ namespace Sinbinder.EditorTools
                                 extra.renderShadows = shadows;
                                 if (ao != null) ao.SetActive(true);
                             }));
+
+                    // Облегчённая с кадром в 85%: встроенная видеокарта упирается
+                    // в заливку точек, а не в счёт.
+                    if (extra != null && pipe != null)
+                    {
+                        float scale = pipe.renderScale;
+                        configs.Add(("облегчённая, кадр 85%",
+                            () =>
+                            {
+                                extra.renderShadows = false;
+                                if (ao != null) ao.SetActive(false);
+                                pipe.renderScale = 0.85f;
+                            },
+                            () =>
+                            {
+                                extra.renderShadows = shadows;
+                                if (ao != null) ao.SetActive(true);
+                                pipe.renderScale = scale;
+                            }));
+                    }
                 }
 
                 int rounds = parts ? 3 : 2;
@@ -1463,6 +1523,50 @@ namespace Sinbinder.EditorTools
         {
             try { Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение", name); }
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message); }
+        }
+
+        // ── Стол с картами (автор, 2 октября) ──
+
+        private static bool _cardsShot, _cardsTold;
+
+        private static void GoToCards()
+        {
+            _cardsShot = false;
+            _cardsTold = false;
+            var table = CardTable.Instance;
+            if (table != null) HeroTo(table.transform, 1.2f);
+        }
+
+        /// <summary>
+        /// Подсесть к картам: дойти, F — камера смотрит на игру; кадр снимает
+        /// ветка «кадр занят» в Tick и там же встаёт. Никого за картами — шаг
+        /// проходит с записью: место выбирают души, а не прогон.
+        /// </summary>
+        private static bool AtCards()
+        {
+            var table = CardTable.Instance;
+            if (table == null)
+            {
+                if (!_cardsTold) Write("  [КАРТЫ] стола с картами в сцене нет");
+                _cardsTold = true;
+                return true;
+            }
+            if (_cardsShot) return true;
+            if (!CardTable.Near || CardTable.Watching) return false;
+
+            var players = table.Players();
+            if (players.Count == 0)
+            {
+                if (!_cardsTold) Write("  [КАРТЫ] за картами никого — подсесть не к кому");
+                _cardsTold = true;
+                return true;
+            }
+
+            var names = new List<string>();
+            foreach (var p in players) names.Add(p.DisplayName);
+            Write("  [КАРТЫ] за картами: " + string.Join(", ", names));
+            table.SitDown();
+            return false;
         }
 
         // ── Лагерь живёт: пять минут игры ──

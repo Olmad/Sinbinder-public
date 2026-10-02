@@ -6636,3 +6636,79 @@ msgstr "light — no shadows"
 #: UI/PauseMenu.cs
 msgid "Графика"
 msgstr "Graphics"
+
+#: Gameplay/CardTable.cs
+msgid "играет в карты"
+msgstr "playing cards"
+
+#: Gameplay/CardTable.cs
+msgid "За картами никого: играть не с кем."
+msgstr "Nobody at the cards: no one to play with."
+
+#: Gameplay/CardTable.cs
+msgid "За картами: {0}"
+msgstr "At the cards: {0}"
+
+#: Gameplay/CardTable.cs
+msgid "Владыка? Садитесь. Смотреть — не возбраняется."
+msgstr "My lord? Sit down. Watching is no sin."
+
+#: Gameplay/CardTable.cs
+msgid "Ставлю медяк. Нет — два."
+msgstr "One copper on it. No — two."
+
+#: Gameplay/CardTable.cs
+msgid "Не трогай кон, это моё."
+msgstr "Hands off the pot, it's mine."
+
+#: Gameplay/CardTable.cs
+msgid "Опять ему везёт."
+msgstr "Lucky again, that one."
+
+#: Gameplay/CardTable.cs
+msgid "Покажи руку. Не верю я твоим тузам."
+msgstr "Show your hand. I don't trust your aces."
+
+#: Gameplay/CardTable.cs
+msgid "Сдавай. Я подожду."
+msgstr "Deal. I'll wait."
+
+#: Gameplay/CardTable.cs
+msgid "Мой ход? Пропущу."
+msgstr "My turn? I'll pass."
+
+#: Gameplay/CardTable.cs
+msgid "Кто проиграл — тот наливает."
+msgstr "Loser pours."
+
+#: Gameplay/CardTable.cs
+msgid "Садись ближе, веселее будет."
+msgstr "Sit closer, it's merrier."
+
+#: Gameplay/CardTable.cs
+msgid "На кон — вяленое мясо."
+msgstr "Jerky in the pot."
+
+#: Gameplay/CardTable.cs
+msgid "Играем на последний сухарь."
+msgstr "Playing for the last rusk."
+
+#: Gameplay/CardTable.cs
+msgid "Ещё раз туз — переверну ящик."
+msgstr "One more ace and I flip the crate."
+
+#: Gameplay/CardTable.cs
+msgid "Кто сдавал? Ты сдавал?!"
+msgstr "Who dealt? Did you deal?!"
+
+#: Gameplay/CardTable.cs
+msgid "Твой ход."
+msgstr "Your move."
+
+#: Gameplay/CardTable.cs
+msgid "Пас."
+msgstr "Pass."
+
+#: Scenes/Prologue_Camp.unity
+msgid "Карты — F"
+msgstr "Cards — F"

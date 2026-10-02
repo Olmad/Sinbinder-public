@@ -646,6 +646,12 @@ namespace Sinbinder.Tests
             Check(CampChoice.Choose(voices, One(SinType.Wrath, 10f, 100f)) == CampSpot.Sinbinder,
                   "верный держится рядом с Греховодом");
             Check(CampChoice.Choose(voices, new Soul()) == CampSpot.Fire, "кому всё равно — греется у огня");
+
+            // Стол с картами (2 октября): одному греху ближе своё место,
+            // а жадному лентяю — кон и безделье разом.
+            var gambler = One(SinType.Greed, 50f);
+            gambler.Spectra[(int)SinType.Sloth] = 50f;
+            Check(CampChoice.Choose(voices, gambler) == CampSpot.Cards, "жадный и унылый разом — за картами");
             Check(CampChoice.Choose(voices, One(SinType.Greed, 80f)) == CampChoice.Choose(voices, One(SinType.Greed, 80f)),
                   "одна душа — одно место, без жребия");
         }

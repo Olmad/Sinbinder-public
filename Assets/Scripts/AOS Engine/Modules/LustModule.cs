@@ -29,11 +29,13 @@ namespace Sinbinder.AOS.Modules
         public float EvaluateSpot(Soul soul, CampSpot spot)
         {
             // Похоть — всегда в компании, у огня; целомудрие — в стороне.
+            // За картами тоже компания.
             float l = soul.Get(SinType.Lust) / 100f;
             switch (spot)
             {
                 case CampSpot.Fire:  return l > 0f ? 8f * l : 0f;
                 case CampSpot.Apart: return l > 0f ? -6f * l : 6f * -l;
+                case CampSpot.Cards: return l > 0f ? 4f * l : 0f;
                 default:             return 0f;
             }
         }
