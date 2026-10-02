@@ -1,5 +1,8 @@
 # Последний шаг после FluidSynth: мягкий эквалайзер, громкость, OGG — и замер.
-#   python3 Tools/music/master.py сырой.wav выход.ogg
+#   python3 Tools/music/master.py сырой.wav выход.ogg [--cut с:по]
+# --cut — вырезать кусок (секунды) после обработки. Для петли без шва:
+# тема отрисована дважды подряд, берётся второй проход — хвост зала от его
+# конца уже лежит в его начале, и стык не слышен.
 # Эквалайзер: низ ниже 160 Гц тише на 3 дБ (виолончель с контрабасом
 # и зал копят гул), 1–4 кГц громче на 2 дБ (там различимость челесты,
 # рояля и согласных хора). Потом ограничитель: удар молоточка рояля или
@@ -76,6 +79,9 @@ def measure(y, sr):
 if __name__ == '__main__':
     x, sr = sf.read(sys.argv[1], always_2d=True)
     y = master(x, sr)
+    if '--cut' in sys.argv:
+        a, b = (float(v) for v in sys.argv[sys.argv.index('--cut') + 1].split(':'))
+        y = y[int(round(a * sr)):int(round(b * sr))]
     with sf.SoundFile(sys.argv[2], 'w', sr, y.shape[1], format='OGG', subtype='VORBIS') as out:
         for i in range(0, len(y), sr):          # кусками: libsndfile не любит длинный Vorbis разом
             out.write(y[i:i + sr])

@@ -3,15 +3,15 @@
 # нотами в своём файле, а как звучит оркестр — здесь, один раз на все.
 from score import Score
 
-PIANO, HORN, STR, PAD, CELLO, BASS, BONE, CHOIR, TIMP, ORGAN, HARP, OOHS, CEL = \
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13      # девятый — ударные по стандарту, не занимать
+PIANO, HORN, STR, PAD, CELLO, BASS, BONE, CHOIR, TIMP, ORGAN, HARP, OOHS, CEL, HARPSI, PICC = \
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15      # девятый — ударные по стандарту, не занимать
 PROGRAM = {PIANO: 0, HORN: 60, STR: 48, PAD: 49, CELLO: 42, BASS: 43, BONE: 57, CHOIR: 52,
-           TIMP: 47, ORGAN: 19, HARP: 46, OOHS: 53, CEL: 8}
+           TIMP: 47, ORGAN: 19, HARP: 46, OOHS: 53, CEL: 8, HARPSI: 6, PICC: 72}
 # рассадка оркестра: скрипки слева, виолончели и басы справа, медь в глубине
 PAN = {PIANO: 64, HORN: 54, STR: 40, PAD: 50, CELLO: 82, BASS: 90, BONE: 80, CHOIR: 64,
-       TIMP: 64, ORGAN: 64, HARP: 34, OOHS: 70, CEL: 46}
+       TIMP: 64, ORGAN: 64, HARP: 34, OOHS: 70, CEL: 46, HARPSI: 30, PICC: 76}
 REVERB = {PIANO: 60, HORN: 80, STR: 75, PAD: 85, CELLO: 70, BASS: 60, BONE: 80, CHOIR: 95,
-          TIMP: 70, ORGAN: 90, HARP: 80, OOHS: 95, CEL: 85}
+          TIMP: 70, ORGAN: 90, HARP: 80, OOHS: 95, CEL: 85, HARPSI: 55, PICC: 75}
 
 # Аккорды: корень у виолончели, у контрабаса октавой ниже, три голоса
 # середины, медь (корень и квинта), литавры (настроены на ре и ля).
