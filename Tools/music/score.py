@@ -11,9 +11,21 @@ TPB = 480
 class Score:
     def __init__(self):
         self.events = {}   # канал -> [(начало, длина, нота, сила)]
+        self.controls = {}  # канал -> [(время, контроллер, значение)]
 
     def add(self, ch, pitch, start, dur, vel):
         self.events.setdefault(ch, []).append((start, dur, pitch, max(1, min(127, int(vel)))))
+
+    def swell(self, ch, start, end, v0, v1, steps=None):
+        """Плавно от v0 до v1 (контроллер 11, «выразительность»): нарастание
+        и затихание внутри долгой ноты — сила удара этого не умеет."""
+        steps = steps or max(2, int((end - start) * 8))
+        lst = self.controls.setdefault(ch, [])
+        for i in range(steps + 1):
+            lst.append((start + (end - start) * i / steps, 11, int(round(v0 + (v1 - v0) * i / steps))))
+
+    def expression(self, ch, at, value):
+        self.controls.setdefault(ch, []).append((at, 11, int(value)))
 
     def end(self):
         return max(s + d for lst in self.events.values() for s, d, p, v in lst)
@@ -34,12 +46,17 @@ class Score:
             tr.append(mido.Message('control_change', channel=ch, control=91, value=reverb[ch], time=0))
             ev = []
             for s, d, p, v in restrike(lst):
-                ev.append((int(round(s * TPB)), 1, p, v))                 # включение
+                ev.append((int(round(s * TPB)), 2, p, v))                 # включение
                 ev.append((int(round((s + d) * TPB)) - 1, 0, p, 0))       # выключение — на тик раньше
+            for s, c, v in self.controls.get(ch, []):
+                ev.append((int(round(s * TPB)), 1, c, v))                 # контроллер — до нот того же мига
             ev.sort(key=lambda e: (e[0], e[1]))
             now = 0
-            for t, on, p, v in ev:
-                tr.append(mido.Message('note_on' if on else 'note_off', channel=ch, note=p, velocity=v, time=t - now))
+            for t, kind, p, v in ev:
+                if kind == 1:
+                    tr.append(mido.Message('control_change', channel=ch, control=p, value=max(0, min(127, v)), time=t - now))
+                else:
+                    tr.append(mido.Message('note_on' if kind else 'note_off', channel=ch, note=p, velocity=v, time=t - now))
                 now = t
         mid.save(path)
 

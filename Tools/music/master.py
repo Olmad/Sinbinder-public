@@ -2,15 +2,20 @@
 #   python3 Tools/music/master.py сырой.wav выход.ogg
 # Эквалайзер: низ ниже 160 Гц тише на 3 дБ (виолончель с контрабасом
 # и зал копят гул), 1–4 кГц громче на 2 дБ (там различимость челесты,
-# рояля и согласных хора). Пик — 0,89: запас, чтобы OGG не хрипел.
+# рояля и согласных хора). Потом ограничитель: удар молоточка рояля или
+# литавры выше остального на 10–15 дБ, и по пику вся тема выходит тихой.
+# Пики придавлены не больше чем на 6 дБ, плавно (5 мс вперёд, отпуск
+# 150 мс) — без хрипа. Пик — 0,89: запас, чтобы OGG не хрипел.
 # Замер печатается: длина, пик, тихие секунды и самая длинная тишина,
 # доля энергии по полосам — я не слышу, я меряю.
 import sys
 import numpy as np
 import soundfile as sf
+from scipy.ndimage import maximum_filter1d
 from scipy.signal import butter, sosfiltfilt
 
 PEAK = 0.89
+SQUEEZE_DB = 6.0   # насколько ограничитель вправе придавить пик
 QUIET_DB = -45.0   # секунда тише этого — «тишина» на слух в игре
 
 
@@ -18,7 +23,26 @@ def master(x, sr):
     low = sosfiltfilt(butter(2, 160, 'low', fs=sr, output='sos'), x, axis=0)
     mid = sosfiltfilt(butter(2, [1000, 4000], 'band', fs=sr, output='sos'), x, axis=0)
     y = x - low * (1 - 10 ** (-3 / 20)) + mid * (10 ** (2 / 20) - 1)
+    y = limit(y / np.abs(y).max(), sr)
     return y * (PEAK / np.abs(y).max())
+
+
+def limit(y, sr):
+    """Пики выше порога — тише, остальное как есть. Огибающая берётся
+    с заглядыванием вперёд, глушит сразу, отпускает медленно: усиление
+    не дрожит. Считается по миллисекундам, потом плавно на каждый отсчёт."""
+    thr = 10 ** (-SQUEEZE_DB / 20)
+    env = maximum_filter1d(np.abs(y).max(axis=1), size=int(0.010 * sr))   # ±5 мс
+    hop = sr // 1000
+    blocks = env[:len(env) // hop * hop].reshape(-1, hop).max(axis=1)
+    need = np.maximum(0.0, 20 * np.log10(np.maximum(blocks, 1e-9) / thr))   # дБ, сколько придавить
+    fall = 20 * np.log10(np.e) / 150.0     # отпуск: ~150 мс на 8,7 дБ
+    held = np.empty_like(need); cur = 0.0
+    for i, n in enumerate(need):
+        cur = max(n, cur - fall)
+        held[i] = cur
+    gain_db = np.interp(np.arange(len(y)), np.arange(len(held)) * hop + hop / 2, held)
+    return y * (10 ** (-gain_db / 20))[:, None]
 
 
 def measure(y, sr):
