@@ -180,6 +180,11 @@ namespace Sinbinder.Gameplay
 
                 UI.Letterbox.Instance?.Say(label, words);
 
+                // Голосом говорящего — тем же, что у окна диалога: строка
+                // показана целиком, голос проговаривает её, пока кадр стоит.
+                if (speaker.TryGetComponent<Audio.VoiceGenerator>(out var voice))
+                    voice.Babble(words, Hold(words) - 0.4f);
+
                 // Реальное время: игровое стоит.
                 yield return new WaitForSecondsRealtime(Hold(words));
 

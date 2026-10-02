@@ -151,6 +151,10 @@ namespace Sinbinder.Gameplay
             IsAlarmed = true;
             Raised = true;
             Apply();
+
+            // Свет краснеет — и бьёт колокол: тревогу слышно, даже стоя
+            // спиной к шару у сундука.
+            Audio.Sfx.Bell();
             Debug.Log("[ШАР] Тревога: отряды гаснут.");
         }
 

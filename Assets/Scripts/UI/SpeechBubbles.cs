@@ -108,6 +108,11 @@ namespace Sinbinder.UI
             bubble.Line.text = $"<size=15><color=#B9AF99>{Loc.Name(who.DisplayName)}</color></size>\n" + Loc.F("«{0}»", line);
             bubble.Until = Time.unscaledTime + seconds;
             bubble.Said = ++_said;
+
+            // Реплика над головой — и голосом (разговоры лагеря, слова
+            // охотников на зов Каргана): до 2 октября облачка шли молча.
+            if (who.TryGetComponent<Sinbinder.Audio.VoiceGenerator>(out var voice))
+                voice.Babble(line, seconds - 1f);
         }
 
         void LateUpdate()

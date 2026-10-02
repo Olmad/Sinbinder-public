@@ -1,6 +1,7 @@
 // Assets/Scripts/Audio/VoiceGenerator.cs
 // Перевод: текст через Loc
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using Sinbinder.AOS;
 using Sinbinder.Core;
@@ -109,6 +110,59 @@ namespace Sinbinder.Audio
             float finalPitch = pitch * (1f + variation * Wobble(letter));
             AudioClip clip = Clip(voiceType, finalPitch, duration);
             _audioSource.PlayOneShot(clip);
+        }
+
+        /// <summary>Сколько букв в секунду проговаривает голос строку, показанную целиком.</summary>
+        private const float LettersPerSecond = 13f;
+
+        /// <summary>Больше бипов на одну реплику не надо: дальше — уже шум, а не речь.</summary>
+        private const int MostBips = 46;
+
+        private Coroutine _babble;
+
+        /// <summary>
+        /// Проговорить строку, которая показана целиком: на нижней полосе
+        /// наезда (<see cref="Gameplay.Herald"/>) и в облачке над головой
+        /// (<see cref="UI.SpeechBubbles"/>). Бип на букву, короткая пауза
+        /// на пробеле, длинная — на знаке препинания; не дольше, чем строка
+        /// на экране. Реальное время: на наезде мир стоит.
+        ///
+        /// До 2 октября эти строки шли молча — голос был только у окна
+        /// диалога и у отказа, а Карган, говорящий больше всех в демо,
+        /// не издавал ни звука (docs/41-SHOWCASE.md, п. 3).
+        ///
+        /// Новая строка того же голоса обрывает прежнюю: говорить разом
+        /// могут двое, но не один дважды.
+        /// </summary>
+        public void Babble(string words, float seconds)
+        {
+            if (string.IsNullOrEmpty(words) || seconds <= 0f || !isActiveAndEnabled) return;
+            if (_babble != null) StopCoroutine(_babble);
+            _babble = StartCoroutine(BabbleRoutine(words, seconds));
+        }
+
+        private IEnumerator BabbleRoutine(string words, float seconds)
+        {
+            float step = 1f / LettersPerSecond;
+            float spent = 0f;
+            int bips = 0;
+
+            foreach (char c in words)
+            {
+                if (spent >= seconds || bips >= MostBips) break;
+
+                float wait;
+                if (char.IsLetterOrDigit(c)) { Speak(c); bips++; wait = step; }
+                else if (c == ' ') wait = step * 0.5f;
+                else if (".!?…".IndexOf(c) >= 0) wait = step * 4f;
+                else if (",;:—–".IndexOf(c) >= 0) wait = step * 2f;
+                else continue;
+
+                spent += wait;
+                yield return new WaitForSecondsRealtime(wait);
+            }
+
+            _babble = null;
         }
 
         /// <summary>

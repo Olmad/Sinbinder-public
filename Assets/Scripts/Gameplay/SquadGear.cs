@@ -350,6 +350,7 @@ namespace Sinbinder.Gameplay
 
             w.PaySalary(wage);
             UI.SalaryPanelUI.Settle(w);
+            Audio.Sfx.Coins(w.transform.position);
             Remember(w, "SinbinderGaveMe");
             word = sortie ? Loc.T("за вылазку заплачено") : Loc.T("долг отдан");
             return true;

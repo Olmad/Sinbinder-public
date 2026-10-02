@@ -75,6 +75,10 @@ namespace Sinbinder.Gameplay
 
             _hp -= damage;
 
+            // Удар слышно — по телу того, кого ударили (Audio.Sfx).
+            if (_warrior == null) _warrior = GetComponent<Warrior>();
+            Audio.Sfx.Hit(_warrior, transform.position);
+
             if (_hp <= 0f)
             {
                 _hp = 0f;
