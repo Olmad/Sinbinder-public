@@ -318,6 +318,10 @@ namespace Sinbinder.Gameplay
             var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
             if (log != null && !string.IsNullOrEmpty(line)) log.Write(line);
 
+            // Музыка доли гаснет, пока длится задержка: следующая доля
+            // начнёт свою, а не оборвёт эту на полуфразе.
+            Audio.Music.Stop(_delaySeconds);
+
             StartCoroutine(LeaveRoutine(wiped));
         }
 

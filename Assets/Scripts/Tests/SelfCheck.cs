@@ -98,6 +98,7 @@ namespace Sinbinder.Tests
                 Roster();
                 Pausing();
                 RaidPart();
+                MusicMap();
                 VoiceOfSinbinder();
                 Fog();
                 OverheadNearLens();
@@ -973,6 +974,31 @@ namespace Sinbinder.Tests
             finally
             {
                 SaveSystem.StagedScene = was;
+            }
+        }
+
+        /// <summary>
+        /// Музыка пролога (Audio.Music, docs/43-SOUND.md §4): у каждой доли
+        /// своя тема, и каждая запись лежит на месте. Пропавший файл в игре
+        /// молчит — только строкой в консоли, которую в показе не читают.
+        /// </summary>
+        private static void MusicMap()
+        {
+            Check(Sinbinder.Audio.Music.ForScene("Prologue_Camp") == Sinbinder.Audio.Track.Camp,
+                "лагерь начинается своей темой");
+            Check(Sinbinder.Audio.Music.ForScene("Crypt_Entrance") == Sinbinder.Audio.Track.Crypt,
+                "склеп начинается своей темой");
+            Check(Sinbinder.Audio.Music.ForScene(RaidEvent.SceneName) == Sinbinder.Audio.Track.None,
+                "у набега нет своей сцены — его тему включает разгром, а не загрузка");
+            Check(Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.None) == null,
+                "у тишины нет файла");
+
+            foreach (Sinbinder.Audio.Track track in System.Enum.GetValues(typeof(Sinbinder.Audio.Track)))
+            {
+                if (track == Sinbinder.Audio.Track.None) continue;
+                string file = Sinbinder.Audio.Music.FileOf(track);
+                Check(!string.IsNullOrEmpty(file) && Resources.Load<AudioClip>("Music/" + file) != null,
+                    $"запись темы «{track}» лежит в Resources/Music");
             }
         }
 

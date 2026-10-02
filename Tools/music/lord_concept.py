@@ -24,7 +24,7 @@
 #   кода            (2:40) — удар, и рояль один, как в начале: тема вернулась.
 #
 # Темп 60: доля — секунда, такт — четыре. Без жребия.
-#   python3 Tools/music/lord_concept.py выход.mid
+#   python3 Tools/music/lord_concept.py выход.mid [--loop]
 import sys
 from orchestra import (Orchestra, CHORD, bar, lord_theme, PIANO, HORN, STR, PAD, CELLO, BASS, BONE,
                        CHOIR, TIMP, ORGAN, HARP, OOHS)
@@ -154,5 +154,7 @@ s.swell(PAD, at + 2, at + 6, 40, 80); s.swell(PAD, at + 14, at + 22, 80, 0)
 for p, st, d in [(62, 4, 2), (69, 6, 2), (67, 8, 2), (65, 10, 2), (64, 12, 4), (62, 16, 6)]:
     s.add(PIANO, p, at + st, d, 88)
 
+if '--loop' in sys.argv:
+    s.repeat(bar(46))                       # петля: 45 тактов, второй проход вырезается
 s.save(sys.argv[1], 60)
 print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end():.0f} с')

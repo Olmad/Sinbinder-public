@@ -28,7 +28,7 @@
 # Ми-бемоль — нота отказа из «Возвращения лорда»: та же нота, тот же смысл.
 #
 # Темп 60: доля — секунда, такт — четыре. Без жребия.
-#   python3 Tools/music/bad_concept.py выход.mid
+#   python3 Tools/music/bad_concept.py выход.mid [--loop]
 import sys
 from orchestra import (Orchestra, CHORD, bar, lord_theme, HORN, STR, PAD, CELLO, BASS, BONE,
                        CHOIR, TIMP, ORGAN, HARP, OOHS, CEL)
@@ -163,5 +163,7 @@ s.add(OOHS, 50, bar(42), 12, 50)
 s.add(CELLO, 38, bar(41), 18, 45)
 s.add(TIMP, 38, bar(44), 3, 55)
 
+if '--loop' in sys.argv:
+    s.repeat(bar(46))                       # петля: 45 тактов, второй проход вырезается
 s.save(sys.argv[1], 60)
 print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end():.0f} с')

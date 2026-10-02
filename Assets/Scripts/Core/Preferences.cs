@@ -15,8 +15,11 @@ namespace Sinbinder.Core
     /// <b>Здесь только то, чего больше нигде нет.</b> Ясность настраивается
     /// своей панелью (клавиша O), сохранения — своими гнёздами, и заводить
     /// им вторую настройку значило бы развести две правды при первой же
-    /// правке. Громкости здесь нет по другой причине: **звука в игре
-    /// ноль файлов**, и рычаг для несуществующего — это мишура.
+    /// правке. Громкости до 2 октября здесь не было: звука в игре не было
+    /// ни файла, а рычаг для несуществующего — мишура. Теперь есть музыка
+    /// (<see cref="Audio.Music"/>) — и рычаг ей: «как задумано / тише /
+    /// выключена». Звукам мира рычага нет: удар и колокол — часть игры,
+    /// а музыку человек вправе выключить ради своей.
     ///
     /// Значения помнятся между запусками тем же <c>PlayerPrefs</c>,
     /// что и выбор прозрачности.
@@ -26,6 +29,7 @@ namespace Sinbinder.Core
         private const string FullscreenKey = "sinbinder.fullscreen";
         private const string SensitivityKey = "sinbinder.sensitivity";
         private const string GraphicsKey = "sinbinder.graphics.light";
+        private const string MusicKey = "sinbinder.music";
 
         /// <summary>
         /// Облегчённая графика: без теней и без затенения углов
@@ -40,6 +44,17 @@ namespace Sinbinder.Core
         /// автор.
         /// </summary>
         public static float SensitivityScale { get; private set; } = 1f;
+
+        /// <summary>Громкость музыки — множитель громкости темы (<see cref="Audio.Music"/>).</summary>
+        public static float MusicScale { get; private set; } = 1f;
+
+        /// <summary>Ступени музыки. Цифр игрок не видит — только слова.</summary>
+        private static readonly (float Scale, string Name)[] MusicSteps =
+        {
+            (1.0f, Loc.N("как задумано")),
+            (0.5f, Loc.N("тише")),
+            (0f,   Loc.N("выключена")),
+        };
 
         /// <summary>Ступени чувствительности. Цифр игрок не видит — только слова.</summary>
         private static readonly (float Scale, string Name)[] Steps =
@@ -60,6 +75,7 @@ namespace Sinbinder.Core
         private static void Load()
         {
             SensitivityScale = PlayerPrefs.GetFloat(SensitivityKey, 1f);
+            MusicScale = PlayerPrefs.GetFloat(MusicKey, 1f);
 
             LightGraphics = PlayerPrefs.HasKey(GraphicsKey)
                 ? PlayerPrefs.GetInt(GraphicsKey, 0) != 0
@@ -103,6 +119,26 @@ namespace Sinbinder.Core
 
             SensitivityScale = Steps[(at + 1) % Steps.Length].Scale;
             PlayerPrefs.SetFloat(SensitivityKey, SensitivityScale);
+            PlayerPrefs.Save();
+        }
+
+        public static string MusicName()
+        {
+            foreach (var step in MusicSteps)
+                if (Mathf.Approximately(step.Scale, MusicScale)) return Loc.T(step.Name);
+
+            return Loc.T(MusicSteps[0].Name);
+        }
+
+        /// <summary>Следующая ступень по кругу — и сразу в игру: музыка слушает каждый кадр.</summary>
+        public static void CycleMusic()
+        {
+            int at = 0;
+            for (int i = 0; i < MusicSteps.Length; i++)
+                if (Mathf.Approximately(MusicSteps[i].Scale, MusicScale)) { at = i; break; }
+
+            MusicScale = MusicSteps[(at + 1) % MusicSteps.Length].Scale;
+            PlayerPrefs.SetFloat(MusicKey, MusicScale);
             PlayerPrefs.Save();
         }
 

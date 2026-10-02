@@ -27,6 +27,14 @@ class Score:
     def expression(self, ch, at, value):
         self.controls.setdefault(ch, []).append((at, 11, int(value)))
 
+    def repeat(self, length):
+        """Тот же круг ещё раз, через length долей: для петли без шва
+        (второй проход вырезается — хвост зала от конца уже лежит в начале)."""
+        for lst in self.events.values():
+            lst.extend([(st + length, d, p, v) for st, d, p, v in list(lst)])
+        for lst in self.controls.values():
+            lst.extend([(t + length, c, v) for t, c, v in list(lst)])
+
     def end(self):
         return max(s + d for lst in self.events.values() for s, d, p, v in lst)
 

@@ -25,6 +25,10 @@ CHORD = {
     'G':  dict(cello=43, bass=31, mid=[50, 55, 59], bone=[43, 50], timp=38),
     'Bm': dict(cello=47, bass=35, mid=[50, 54, 59], bone=[47, 54], timp=None),
     'Em': dict(cello=40, bass=28, mid=[52, 55, 59], bone=[40, 47], timp=None),
+    'F':  dict(cello=41, bass=29, mid=[53, 57, 60], bone=[41, 48], timp=None),
+    'C':  dict(cello=48, bass=36, mid=[52, 55, 60], bone=[48, 55], timp=None),
+    'Am': dict(cello=45, bass=33, mid=[52, 57, 60], bone=[45, 52], timp=45),
+    'Asus': dict(cello=45, bass=33, mid=[50, 52, 57], bone=[45, 52], timp=45),
 }
 
 

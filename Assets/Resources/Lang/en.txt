@@ -723,7 +723,7 @@ msgstr "A wounded comrade"
 msgid "Добыча"
 msgstr "Loot"
 
-#: AOS Engine/PhraseGenerator.cs UI/CommandPanel.cs
+#: AOS Engine/PhraseGenerator.cs
 msgid "Отход"
 msgstr "Retreat"
 
@@ -738,6 +738,118 @@ msgstr "The order"
 #: AOS Engine/PhraseGenerator.cs
 msgid "Что-то ещё"
 msgstr "Something else"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не слышно отсюда, владыка!"
+msgstr "Can't hear you from here, master!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сначала заплатите."
+msgstr "Pay me first."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Мне есть что терять."
+msgstr "I've got something to lose."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Это теперь моё."
+msgstr "This is mine now."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Добро само себя не соберёт."
+msgstr "The loot won't pick itself up."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Опять ходить взад-вперёд?"
+msgstr "Back and forth again?"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Своих не брошу!"
+msgstr "I won't leave my own!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я ранен!"
+msgstr "I'm wounded!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я ранена!"
+msgstr "I'm wounded!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Их слишком много!"
+msgstr "There are too many of them!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сил нет…"
+msgstr "No strength left…"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Кому-то нужнее, чем мне."
+msgstr "Someone needs it more than I do."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сначала моя доля."
+msgstr "My share first."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Простите, владыка, не могу."
+msgstr "Forgive me, master, I can't."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Я не пёс, чтобы бегать по свисту."
+msgstr "I'm no dog to come at a whistle."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Сам решу, кого бить!"
+msgstr "I'll pick who to hit myself!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не время."
+msgstr "Not now."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Пусть другой сходит."
+msgstr "Let someone else go."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "А почему опять я?"
+msgstr "Why me again?"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Позже, владыка."
+msgstr "Later, master."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не на пустой желудок."
+msgstr "Not on an empty stomach."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "У меня тут дело."
+msgstr "I've got work here."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Потом…"
+msgstr "Later…"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Не пойду туда!"
+msgstr "I'm not going there!"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Этого я делать не стану."
+msgstr "I won't do that."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Помню, чем это кончилось."
+msgstr "I remember how that ended."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Совесть не велит."
+msgstr "My conscience won't allow it."
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Нет."
+msgstr "No."
 
 #: AOS Engine/RumourManager.cs
 msgid "убийца"
@@ -1192,16 +1304,24 @@ msgid "Свободно: сохраняйтесь и грузитесь когд
 msgstr "Free: save and load whenever you like"
 
 #: Core/Preferences.cs
+msgid "как задумано"
+msgstr "as intended"
+
+#: Core/Preferences.cs
+msgid "тише"
+msgstr "quieter"
+
+#: Core/Preferences.cs
+msgid "выключена"
+msgstr "off"
+
+#: Core/Preferences.cs
 msgid "медленно"
 msgstr "slow"
 
 #: Core/Preferences.cs
 msgid "неспешно"
 msgstr "unhurried"
-
-#: Core/Preferences.cs
-msgid "как задумано"
-msgstr "as intended"
 
 #: Core/Preferences.cs
 msgid "быстро"
@@ -1218,6 +1338,14 @@ msgstr "fullscreen"
 #: Core/Preferences.cs
 msgid "в окне"
 msgstr "windowed"
+
+#: Core/Preferences.cs
+msgid "облегчённая — без теней"
+msgstr "light — no shadows"
+
+#: Core/Preferences.cs
+msgid "полная"
+msgstr "full"
 
 #: Core/Satchel.cs
 msgid "пустая банка"
@@ -2139,11 +2267,11 @@ msgstr "Wear him out"
 msgid "Не заплатить"
 msgstr "Withhold pay"
 
-#: Crypt/TrialCatalog.cs
+#: Crypt/TrialCatalog.cs UI/SelectedUnitPanelUI.cs
 msgid "Добродетель"
 msgstr "Virtue"
 
-#: Crypt/TrialCatalog.cs
+#: Crypt/TrialCatalog.cs UI/SelectedUnitPanelUI.cs
 msgid "Страх"
 msgstr "Fear"
 
@@ -3960,6 +4088,10 @@ msgid "Пустое гнездо"
 msgstr "Empty socket"
 
 #: Editor/DemoSceneBuilder.cs
+msgid "Карты — F"
+msgstr "Cards — F"
+
+#: Editor/DemoSceneBuilder.cs
 msgid "Военный совет — F"
 msgstr "War council — F"
 
@@ -4006,6 +4138,10 @@ msgstr "dozes in the tent"
 #: Gameplay/CampLife.cs
 msgid "держится рядом с Греховодом"
 msgstr "stays close to the Sinbinder"
+
+#: Gameplay/CampLife.cs
+msgid "играет в карты"
+msgstr "playing cards"
 
 #: Gameplay/CampLife.cs
 msgid "греется у огня"
@@ -4058,6 +4194,74 @@ msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. You 
 #: Gameplay/CampOpening.cs
 msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — в сундуке. Отдайте долг сами, из рук в руки»."
 msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. The coin is in the chest. Pay the debt yourself, hand to hand.”"
+
+#: Gameplay/CardTable.cs
+msgid "За картами никого: играть не с кем."
+msgstr "Nobody at the cards: no one to play with."
+
+#: Gameplay/CardTable.cs
+msgid "За картами: {0}"
+msgstr "At the cards: {0}"
+
+#: Gameplay/CardTable.cs
+msgid "Владыка? Садитесь. Смотреть — не возбраняется."
+msgstr "My lord? Sit down. Watching is no sin."
+
+#: Gameplay/CardTable.cs
+msgid "Ставлю медяк. Нет — два."
+msgstr "One copper on it. No — two."
+
+#: Gameplay/CardTable.cs
+msgid "Не трогай кон, это моё."
+msgstr "Hands off the pot, it's mine."
+
+#: Gameplay/CardTable.cs
+msgid "Опять ему везёт."
+msgstr "Lucky again, that one."
+
+#: Gameplay/CardTable.cs
+msgid "Покажи руку. Не верю я твоим тузам."
+msgstr "Show your hand. I don't trust your aces."
+
+#: Gameplay/CardTable.cs
+msgid "Сдавай. Я подожду."
+msgstr "Deal. I'll wait."
+
+#: Gameplay/CardTable.cs
+msgid "Мой ход? Пропущу."
+msgstr "My turn? I'll pass."
+
+#: Gameplay/CardTable.cs
+msgid "Кто проиграл — тот наливает."
+msgstr "Loser pours."
+
+#: Gameplay/CardTable.cs
+msgid "Садись ближе, веселее будет."
+msgstr "Sit closer, it's merrier."
+
+#: Gameplay/CardTable.cs
+msgid "На кон — вяленое мясо."
+msgstr "Jerky in the pot."
+
+#: Gameplay/CardTable.cs
+msgid "Играем на последний сухарь."
+msgstr "Playing for the last rusk."
+
+#: Gameplay/CardTable.cs
+msgid "Ещё раз туз — переверну ящик."
+msgstr "One more ace and I flip the crate."
+
+#: Gameplay/CardTable.cs
+msgid "Кто сдавал? Ты сдавал?!"
+msgstr "Who dealt? Did you deal?!"
+
+#: Gameplay/CardTable.cs
+msgid "Твой ход."
+msgstr "Your move."
+
+#: Gameplay/CardTable.cs
+msgid "Пас."
+msgstr "Pass."
 
 #: Gameplay/CrystalBall.cs
 msgid "Карган ждёт у сундука Марги."
@@ -4363,39 +4567,39 @@ msgstr "will take {0}, but {1} are needed"
 msgid "никого"
 msgstr "no one"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "один"
 msgstr "one"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "двое"
 msgstr "two"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "трое"
 msgstr "three"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "четверо"
 msgstr "four"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "пятеро"
 msgstr "five"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "шестеро"
 msgstr "six"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "семеро"
 msgstr "seven"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "восьмеро"
 msgstr "eight"
 
-#: Gameplay/Leadership.cs
+#: Gameplay/Leadership.cs UI/SelectedUnitPanelUI.cs
 msgid "девятеро"
 msgstr "nine"
 
@@ -4839,7 +5043,7 @@ msgstr "\n\nThe commitment is fulfilled: this game is no more."
 msgid "\n\nИгра окончена."
 msgstr "\n\nGame over."
 
-#: Gameplay/SinbinderPlayer.cs
+#: Gameplay/SinbinderPlayer.cs UI/SelectedUnitPanelUI.cs
 msgid "Греховод"
 msgstr "Sinbinder"
 
@@ -5212,6 +5416,18 @@ msgid "Щёлкните по воину — выделить. Правой кн�
 msgstr "Click a warrior to select. Right-click the ground to go there."
 
 #: UI/CommandPanel.cs
+msgid "Приказы — сначала выберите воинов"
+msgstr "Orders — select warriors first"
+
+#: UI/CommandPanel.cs
+msgid "Приказы"
+msgstr "Orders"
+
+#: UI/CommandPanel.cs
+msgid "Установка: {0}  ▾"
+msgstr "Stance: {0}  ▾"
+
+#: UI/CommandPanel.cs
 msgid "Укажите врага — или место: пойдут и будут бить всех по дороге. ПКМ — передумать."
 msgstr "Point at an enemy — or a place: they will go and strike everyone on the way. RMB — change your mind."
 
@@ -5248,40 +5464,8 @@ msgid ". Греховод далеко."
 msgstr ". The Sinbinder is too far."
 
 #: UI/CommandPanel.cs
-msgid "{0} I — вещи."
-msgstr "{0} I — gear."
-
-#: UI/CommandPanel.cs
-msgid "Идти"
-msgstr "Move"
-
-#: UI/CommandPanel.cs
-msgid "Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит."
-msgstr "Most will go. Whoever is holding on to something — a chest, a wounded friend, an enemy close by — will argue."
-
-#: UI/CommandPanel.cs
-msgid "Атака"
-msgstr "Attack"
-
-#: UI/CommandPanel.cs
-msgid "По врагу — бить его. По земле — идти туда и бить всех по дороге. Гневный рад. Трус и раненый — нет."
-msgstr "On an enemy — strike it. On the ground — go there and strike everyone on the way. The wrathful are glad. The coward and the wounded are not."
-
-#: UI/CommandPanel.cs
-msgid "Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит."
-msgstr "The coward will obey gladly and in his own way — he'll run. The proud don't like to fall back."
-
-#: UI/CommandPanel.cs
-msgid "Патруль"
-msgstr "Patrol"
-
-#: UI/CommandPanel.cs
-msgid "Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, усердный идёт охотно. Гневный бросит маршрут, увидев врага."
-msgstr "Walk from here to there and back until relieved. The slothful find it dull, the diligent go willingly. The wrathful will drop the route on sight of an enemy."
-
-#: UI/CommandPanel.cs
-msgid "Держать"
-msgstr "Hold"
+msgid "Строй"
+msgstr "Formation"
 
 #: UI/CommandPanel.cs
 msgid "Терпеливый стоит. Гневный рвётся."
@@ -5296,20 +5480,12 @@ msgid "Стоять и защищаться. Кто рвётся в драку, 
 msgstr "Stand and defend. Those eager for a fight don't like standing still."
 
 #: UI/CommandPanel.cs
-msgid "Отмена"
-msgstr "Cancel"
+msgid "ПКМ — идти · по врагу — бить · Shift+ПКМ — отход"
+msgstr "RMB — go · on an enemy — strike · Shift+RMB — fall back"
 
 #: UI/CommandPanel.cs
-msgid "Снятый приказ — не приказ. Дальше решают сами."
-msgstr "A cancelled order is no order. From here, they decide for themselves."
-
-#: UI/CommandPanel.cs
-msgid "Вещи"
-msgstr "Gear"
-
-#: UI/CommandPanel.cs
-msgid "Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F."
-msgstr "What the warrior carries and what is in the Sinbinder's bag. To give or take — walk up to the warrior: F."
+msgid "P — патруль · C — отмена · I — вещи · V — вид"
+msgstr "P — patrol · C — cancel · I — gear · V — view"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к шару без него."
@@ -5707,6 +5883,10 @@ msgstr "W, A, S, D — walk. The camera follows you."
 msgid "Щёлкните по Греховоду, затем правой кнопкой — куда идти."
 msgstr "Click the Sinbinder, then right-click where to go."
 
+#: UI/OverheadWord.cs
+msgid "Колеблется…"
+msgstr "Hesitates…"
+
 #: UI/PauseMenu.cs
 msgid "Пауза.  Игра с обязательством — переиграть нельзя"
 msgstr "Paused.  A committed game — no second chances"
@@ -5758,6 +5938,14 @@ msgstr "Screen"
 #: UI/PauseMenu.cs
 msgid "Поворот взгляда"
 msgstr "Look sensitivity"
+
+#: UI/PauseMenu.cs
+msgid "Графика"
+msgstr "Graphics"
+
+#: UI/PauseMenu.cs
+msgid "Музыка"
+msgstr "Music"
 
 #: UI/PauseMenu.cs
 msgid "Язык"
@@ -5864,36 +6052,220 @@ msgid "Вернулись к «{0}»."
 msgstr "Returned to “{0}”."
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Никто не выделен"
-msgstr "No one selected"
+msgid "Выбрано {0} · что тянет его"
+msgstr "{0} selected · what pulls him"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Греховод. Приказывает, но не решает"
-msgstr "The Sinbinder. Gives orders, but doesn't decide"
+msgid "громче всех не согласен"
+msgstr "disagrees the loudest"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} {1}"
+msgstr "{0} {1}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "медлит"
+msgstr "lingers"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "ещё {0} — в строю"
+msgstr "{0} more — in line"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "многие"
+msgstr "many"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "РУКИ ГРЕХОВОДА"
+msgstr "SINBINDER'S HANDS"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Говорить"
+msgstr "Talk"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Забрать душу"
+msgstr "Take the soul"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Подойдите к воину, чтобы говорить"
+msgstr "Walk up to a warrior to talk"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "В разговоре: как он к вам · отдать долг · снаряжение"
+msgstr "In talk: how he feels about you · pay the debt · gear"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Подойдите ближе, чтобы говорить"
+msgstr "Come closer to talk"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "Душа неизвестна"
 msgstr "Soul unknown"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Громче всего: {0}"
-msgstr "Loudest: {0}"
+msgid "Что тянет его сейчас"
+msgstr "What pulls him now"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid " · Брат по оружию"
-msgstr " · Brother-in-arms"
+msgid "Пока молчит"
+msgstr "Silent for now"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Идёт"
-msgstr "Moving"
+msgid "Приказа нет"
+msgstr "No order"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Стоит"
-msgstr "Standing"
+msgid "ничто в нём сейчас не спорит с приказом"
+msgstr "nothing in him argues with the order right now"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Сейчас: "
-msgstr "Now: "
+msgid "Ваш приказ — громче всех"
+msgstr "Your order — loudest of all"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "громче всех его голосов"
+msgstr "louder than all his voices"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Он решает сам"
+msgstr "He decides for himself"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Ваш приказ — почти так же громко"
+msgstr "Your order — almost as loud"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Ваш приказ — тише"
+msgstr "Your order — quieter"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0}, {1}"
+msgstr "{0}, {1}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} жжёт"
+msgstr "{0} burns"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} тлеет"
+msgstr "{0} smoulders"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "{0} дремлет"
+msgstr "{0} dozes"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: цело"
+msgstr "Body: whole"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: задето"
+msgstr "Body: grazed"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: ранено"
+msgstr "Body: wounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Тело: едва держится"
+msgstr "Body: barely holding"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "это вы: слушается всегда"
+msgstr "this is you: always obeys"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Сума и кошель"
+msgstr "Satchel and purse"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Сума пуста"
+msgstr "The satchel is empty"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка"
+msgstr "Purse: {0}\n\nR — to hand and back\nTab — next jar"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "R — в руку и обратно\nTab — следующая банка"
+msgstr "R — to hand and back\nTab — next jar"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "звучит почти вровень с другим"
+msgstr "sounds almost level with another"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "кричит"
+msgstr "shouts"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "говорит громко"
+msgstr "speaks loudly"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "говорит чуть громче прочих"
+msgstr "speaks a little louder than the rest"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "вы далеко: подойдите ближе"
+msgstr "you are far away: come closer"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "не верит вам: отдайте долг"
+msgstr "doesn't trust you: pay the debt"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "ему есть что терять"
+msgstr "he has something to lose"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "вещь в руках тянет его в другую сторону"
+msgstr "the thing in hand pulls him the other way"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "добыча лежит слишком близко"
+msgstr "the loot lies too close"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "приказ ему скучен"
+msgstr "the order bores him"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "свой в беде"
+msgstr "one of his own is in trouble"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "он ранен"
+msgstr "he is wounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "его обступили"
+msgstr "he is surrounded"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "силы на исходе"
+msgstr "strength is running out"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "тише, чем его душа"
+msgstr "quieter than his soul"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Память"
+msgstr "Memory"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Верность"
+msgstr "Loyalty"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Совесть"
+msgstr "Conscience"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "Его душа"
+msgstr "His soul"
 
 #: UI/ShellPickerUI.cs
 msgid "Она ещё вся здесь."
@@ -6114,6 +6486,86 @@ msgstr "Let them talk. Maybe it'll blow over."
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
 
 #. нет в коде
+msgid "{0} I — вещи."
+msgstr "{0} I — gear."
+
+#. нет в коде
+msgid "Идти"
+msgstr "Move"
+
+#. нет в коде
+msgid "Большинство пойдёт. Кто держит своё — сундук, раненого, врага рядом, — поспорит."
+msgstr "Most will go. Whoever is holding on to something — a chest, a wounded friend, an enemy close by — will argue."
+
+#. нет в коде
+msgid "Атака"
+msgstr "Attack"
+
+#. нет в коде
+msgid "По врагу — бить его. По земле — идти туда и бить всех по дороге. Гневный рад. Трус и раненый — нет."
+msgstr "On an enemy — strike it. On the ground — go there and strike everyone on the way. The wrathful are glad. The coward and the wounded are not."
+
+#. нет в коде
+msgid "Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит."
+msgstr "The coward will obey gladly and in his own way — he'll run. The proud don't like to fall back."
+
+#. нет в коде
+msgid "Патруль"
+msgstr "Patrol"
+
+#. нет в коде
+msgid "Ходить отсюда туда и обратно, пока не снимут. Унылому скучно, усердный идёт охотно. Гневный бросит маршрут, увидев врага."
+msgstr "Walk from here to there and back until relieved. The slothful find it dull, the diligent go willingly. The wrathful will drop the route on sight of an enemy."
+
+#. нет в коде
+msgid "Держать"
+msgstr "Hold"
+
+#. нет в коде
+msgid "Отмена"
+msgstr "Cancel"
+
+#. нет в коде
+msgid "Снятый приказ — не приказ. Дальше решают сами."
+msgstr "A cancelled order is no order. From here, they decide for themselves."
+
+#. нет в коде
+msgid "Вещи"
+msgstr "Gear"
+
+#. нет в коде
+msgid "Что на воине и что в мешке Греховода. Отдать и забрать — подойдя к воину: F."
+msgstr "What the warrior carries and what is in the Sinbinder's bag. To give or take — walk up to the warrior: F."
+
+#. нет в коде
+msgid "Никто не выделен"
+msgstr "No one selected"
+
+#. нет в коде
+msgid "Греховод. Приказывает, но не решает"
+msgstr "The Sinbinder. Gives orders, but doesn't decide"
+
+#. нет в коде
+msgid "Громче всего: {0}"
+msgstr "Loudest: {0}"
+
+#. нет в коде
+msgid " · Брат по оружию"
+msgstr " · Brother-in-arms"
+
+#. нет в коде
+msgid "Идёт"
+msgstr "Moving"
+
+#. нет в коде
+msgid "Стоит"
+msgstr "Standing"
+
+#. нет в коде
+msgid "Сейчас: "
+msgstr "Now: "
+
+#. нет в коде
 msgid "Заплатить\nзолото уйдёт из мешка"
 msgstr "Pay\nthe gold leaves the bag"
 
@@ -6261,454 +6713,14 @@ msgstr "I've already counted mine."
 msgid "не отдаёт оружия — отнять его у него значит унизить"
 msgstr "won't give up the weapon — taking it from him would humiliate him"
 
-#: UI/SelectedUnitPanelUI.cs
-msgid "Что тянет его сейчас"
-msgstr "What pulls him now"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Пока молчит"
-msgstr "Silent for now"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Приказа нет"
-msgstr "No order"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Ваш приказ — громче всех"
-msgstr "Your order — loudest of all"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "{0} {1}"
-msgstr "{0} {1}"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Он решает сам"
-msgstr "He decides for himself"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Ваш приказ — почти так же громко"
-msgstr "Your order — almost as loud"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Ваш приказ — тише"
-msgstr "Your order — quieter"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "{0}, {1}"
-msgstr "{0}, {1}"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "{0} жжёт"
-msgstr "{0} burns"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "{0} тлеет"
-msgstr "{0} smoulders"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "{0} дремлет"
-msgstr "{0} dozes"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Тело: цело"
-msgstr "Body: whole"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Тело: задето"
-msgstr "Body: grazed"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Тело: ранено"
-msgstr "Body: wounded"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Тело: едва держится"
-msgstr "Body: barely holding"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "это вы: слушается всегда"
-msgstr "this is you: always obeys"
-
-#: UI/SelectedUnitPanelUI.cs
+#. нет в коде
 msgid "Голосов у него нет"
 msgstr "He has no voices"
 
-#: UI/SelectedUnitPanelUI.cs
+#. нет в коде
 msgid "Приказ — всему отряду"
 msgstr "Order — to the whole squad"
 
-#: UI/SelectedUnitPanelUI.cs
+#. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "звучит почти вровень с другим"
-msgstr "sounds almost level with another"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "кричит"
-msgstr "shouts"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "говорит громко"
-msgstr "speaks loudly"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "говорит чуть громче прочих"
-msgstr "speaks a little louder than the rest"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "вы далеко: подойдите ближе"
-msgstr "you are far away: come closer"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "не верит вам: отдайте долг"
-msgstr "doesn't trust you: pay the debt"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "ему есть что терять"
-msgstr "he has something to lose"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "вещь в руках тянет его в другую сторону"
-msgstr "the thing in hand pulls him the other way"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "добыча лежит слишком близко"
-msgstr "the loot lies too close"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "приказ ему скучен"
-msgstr "the order bores him"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "свой в беде"
-msgstr "one of his own is in trouble"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "он ранен"
-msgstr "he is wounded"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "его обступили"
-msgstr "he is surrounded"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "силы на исходе"
-msgstr "strength is running out"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "тише, чем его душа"
-msgstr "quieter than his soul"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Память"
-msgstr "Memory"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Верность"
-msgstr "Loyalty"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Совесть"
-msgstr "Conscience"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Его душа"
-msgstr "His soul"
-
-#: UI/CommandPanel.cs
-msgid "Строй"
-msgstr "Formation"
-
-#: UI/CommandPanel.cs
-msgid "Приказы"
-msgstr "Orders"
-
-#: UI/CommandPanel.cs
-msgid "Приказы — сначала выберите воинов"
-msgstr "Orders — select warriors first"
-
-#: UI/CommandPanel.cs
-msgid "Установка: {0}  ▾"
-msgstr "Stance: {0}  ▾"
-
-#: UI/CommandPanel.cs
-msgid "ПКМ — идти · по врагу — бить · Shift+ПКМ — отход"
-msgstr "RMB — go · on an enemy — strike · Shift+RMB — fall back"
-
-#: UI/CommandPanel.cs
-msgid "P — патруль · C — отмена · I — вещи · V — вид"
-msgstr "P — patrol · C — cancel · I — gear · V — view"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "РУКИ ГРЕХОВОДА"
-msgstr "SINBINDER'S HANDS"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Говорить"
-msgstr "Talk"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Забрать душу"
-msgstr "Take the soul"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Подойдите к воину, чтобы говорить"
-msgstr "Walk up to a warrior to talk"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "В разговоре: как он к вам · отдать долг · снаряжение"
-msgstr "In talk: how he feels about you · pay the debt · gear"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Подойдите ближе, чтобы говорить"
-msgstr "Come closer to talk"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Выбрано {0} · что тянет его"
-msgstr "{0} selected · what pulls him"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "громче всех не согласен"
-msgstr "disagrees the loudest"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "медлит"
-msgstr "lingers"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "ещё {0} — в строю"
-msgstr "{0} more — in line"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "многие"
-msgstr "many"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Сума и кошель"
-msgstr "Satchel and purse"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Сума пуста"
-msgstr "The satchel is empty"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка"
-msgstr "Purse: {0}\n\nR — to hand and back\nTab — next jar"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "R — в руку и обратно\nTab — следующая банка"
-msgstr "R — to hand and back\nTab — next jar"
-
-#: UI/OverheadWord.cs
-msgid "Колеблется…"
-msgstr "Hesitates…"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "ничто в нём сейчас не спорит с приказом"
-msgstr "nothing in him argues with the order right now"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "громче всех его голосов"
-msgstr "louder than all his voices"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Не слышно отсюда, владыка!"
-msgstr "Can't hear you from here, master!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Сначала заплатите."
-msgstr "Pay me first."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Мне есть что терять."
-msgstr "I've got something to lose."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Это теперь моё."
-msgstr "This is mine now."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Добро само себя не соберёт."
-msgstr "The loot won't pick itself up."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Опять ходить взад-вперёд?"
-msgstr "Back and forth again?"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Своих не брошу!"
-msgstr "I won't leave my own!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Я ранен!"
-msgstr "I'm wounded!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Я ранена!"
-msgstr "I'm wounded!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Их слишком много!"
-msgstr "There are too many of them!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Сил нет…"
-msgstr "No strength left…"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Кому-то нужнее, чем мне."
-msgstr "Someone needs it more than I do."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Сначала моя доля."
-msgstr "My share first."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Простите, владыка, не могу."
-msgstr "Forgive me, master, I can't."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Я не пёс, чтобы бегать по свисту."
-msgstr "I'm no dog to come at a whistle."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Сам решу, кого бить!"
-msgstr "I'll pick who to hit myself!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Не время."
-msgstr "Not now."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Пусть другой сходит."
-msgstr "Let someone else go."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "А почему опять я?"
-msgstr "Why me again?"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Позже, владыка."
-msgstr "Later, master."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Не на пустой желудок."
-msgstr "Not on an empty stomach."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "У меня тут дело."
-msgstr "I've got work here."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Потом…"
-msgstr "Later…"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Не пойду туда!"
-msgstr "I'm not going there!"
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Этого я делать не стану."
-msgstr "I won't do that."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Помню, чем это кончилось."
-msgstr "I remember how that ended."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Совесть не велит."
-msgstr "My conscience won't allow it."
-
-#: AOS Engine/RefusalPresenter.cs
-msgid "Нет."
-msgstr "No."
-
-#: Core/Preferences.cs
-msgid "полная"
-msgstr "full"
-
-#: Core/Preferences.cs
-msgid "облегчённая — без теней"
-msgstr "light — no shadows"
-
-#: UI/PauseMenu.cs
-msgid "Графика"
-msgstr "Graphics"
-
-#: Gameplay/CardTable.cs
-msgid "играет в карты"
-msgstr "playing cards"
-
-#: Gameplay/CardTable.cs
-msgid "За картами никого: играть не с кем."
-msgstr "Nobody at the cards: no one to play with."
-
-#: Gameplay/CardTable.cs
-msgid "За картами: {0}"
-msgstr "At the cards: {0}"
-
-#: Gameplay/CardTable.cs
-msgid "Владыка? Садитесь. Смотреть — не возбраняется."
-msgstr "My lord? Sit down. Watching is no sin."
-
-#: Gameplay/CardTable.cs
-msgid "Ставлю медяк. Нет — два."
-msgstr "One copper on it. No — two."
-
-#: Gameplay/CardTable.cs
-msgid "Не трогай кон, это моё."
-msgstr "Hands off the pot, it's mine."
-
-#: Gameplay/CardTable.cs
-msgid "Опять ему везёт."
-msgstr "Lucky again, that one."
-
-#: Gameplay/CardTable.cs
-msgid "Покажи руку. Не верю я твоим тузам."
-msgstr "Show your hand. I don't trust your aces."
-
-#: Gameplay/CardTable.cs
-msgid "Сдавай. Я подожду."
-msgstr "Deal. I'll wait."
-
-#: Gameplay/CardTable.cs
-msgid "Мой ход? Пропущу."
-msgstr "My turn? I'll pass."
-
-#: Gameplay/CardTable.cs
-msgid "Кто проиграл — тот наливает."
-msgstr "Loser pours."
-
-#: Gameplay/CardTable.cs
-msgid "Садись ближе, веселее будет."
-msgstr "Sit closer, it's merrier."
-
-#: Gameplay/CardTable.cs
-msgid "На кон — вяленое мясо."
-msgstr "Jerky in the pot."
-
-#: Gameplay/CardTable.cs
-msgid "Играем на последний сухарь."
-msgstr "Playing for the last rusk."
-
-#: Gameplay/CardTable.cs
-msgid "Ещё раз туз — переверну ящик."
-msgstr "One more ace and I flip the crate."
-
-#: Gameplay/CardTable.cs
-msgid "Кто сдавал? Ты сдавал?!"
-msgstr "Who dealt? Did you deal?!"
-
-#: Gameplay/CardTable.cs
-msgid "Твой ход."
-msgstr "Your move."
-
-#: Gameplay/CardTable.cs
-msgid "Пас."
-msgstr "Pass."
-
-#: Scenes/Prologue_Camp.unity
-msgid "Карты — F"
-msgstr "Cards — F"

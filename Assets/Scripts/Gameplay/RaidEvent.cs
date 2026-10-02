@@ -169,6 +169,10 @@ namespace Sinbinder.Gameplay
             // уничтоженная посреди показа, заперла бы разгром до конца игры.
             yield return null;
 
+            // «Grind» встаёт под строкой на чёрном: начало темы — клавесин
+            // один, транс начинается раньше боя (docs/43-SOUND.md §4).
+            Audio.Music.Play(Audio.Track.Raid, 2f);
+
             // Строка на чёрном — та же, что открывала сцену набега.
             // Пока она на экране, мир стоит, и охотники выходят после.
             var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();

@@ -119,8 +119,8 @@ namespace Sinbinder.UI
 
             // Настройки — только те, которых больше нигде нет. Ясность
             // живёт своей панелью (строка выше — дверь к ней), сохранения
-            // своими гнёздами. Громкости нет потому, что нет звука:
-            // рычаг для несуществующего был бы мишурой.
+            // своими гнёздами. Громкость — одна, музыки (Core.Preferences):
+            // до 2 октября звука не было, и рычаг был бы мишурой.
             y -= MenuRows.Height * 0.5f;
 
             Add(ref y, Loc.T("Экран"), Core.Preferences.ScreenName(), () =>
@@ -141,6 +141,14 @@ namespace Sinbinder.UI
             Add(ref y, Loc.T("Графика"), Core.Preferences.GraphicsName(), () =>
             {
                 Core.Preferences.ToggleGraphics();
+                Draw();
+            });
+
+            // Музыка (Audio.Music): как задумано / тише / выключена — сразу,
+            // без перезапуска.
+            Add(ref y, Loc.T("Музыка"), Core.Preferences.MusicName(), () =>
+            {
+                Core.Preferences.CycleMusic();
                 Draw();
             });
 

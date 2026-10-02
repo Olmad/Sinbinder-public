@@ -88,8 +88,34 @@ namespace UnityEngine.Rendering.Universal
 
     public abstract class ScriptableRenderer { public void EnqueuePass(ScriptableRenderPass pass) { } }
 
+    // Настройки рендера: доля разрешения (Core/FrameBudget — облегчённая графика).
+    public class UniversalRenderPipelineAsset : RenderPipelineAsset
+    {
+        public float renderScale { get; set; }
+        public int shadowCascadeCount { get; set; }
+        public float shadowDistance { get; set; }
+        public override RenderPipeline CreatePipeline() => null;
+    }
+
+    public enum AntialiasingMode { None, FastApproximateAntialiasing, SubpixelMorphologicalAntiAliasing, TemporalAntiAliasing }
+
+    // Данные камеры: тени и постобработка (Core/FrameBudget, редакторные сборщики сцен).
+    public class UniversalAdditionalCameraData : MonoBehaviour
+    {
+        public bool renderShadows;
+        public bool renderPostProcessing;
+        public AntialiasingMode antialiasing;
+    }
+
+    public static class CameraExtensions
+    {
+        public static UniversalAdditionalCameraData GetUniversalAdditionalCameraData(this Camera camera) => null;
+    }
+
     public abstract class ScriptableRendererFeature : ScriptableObject, IDisposable
     {
+        public bool isActive => true;
+        public void SetActive(bool active) { }
         public abstract void Create();
         public abstract void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData);
         protected virtual void Dispose(bool disposing) { }

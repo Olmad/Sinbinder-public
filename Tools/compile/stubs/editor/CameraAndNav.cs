@@ -1,16 +1,4 @@
 // Заглушки: данные камеры URP и сбор объектов навигации.
-namespace UnityEngine.Rendering.Universal
-{
-    public enum AntialiasingMode { None, FastApproximateAntialiasing, SubpixelMorphologicalAntiAliasing, TemporalAntiAliasing }
-
-    public class UniversalAdditionalCameraData : MonoBehaviour
-    {
-        public bool renderPostProcessing;
-        public AntialiasingMode antialiasing;
-    }
-
-    public static class CameraExtensions
-    {
-        public static UniversalAdditionalCameraData GetUniversalAdditionalCameraData(this Camera camera) => null;
-    }
-}
+// Данные камеры URP переехали в заглушки игрока (stubs/player/URP.cs):
+// с 2 октября их зовёт и сама игра (Core/FrameBudget — тени камеры),
+// а редакторные скрипты видят их через собранную сборку игры.
