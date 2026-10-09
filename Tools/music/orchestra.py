@@ -4,14 +4,19 @@
 from score import Score
 
 PIANO, HORN, STR, PAD, CELLO, BASS, BONE, CHOIR, TIMP, ORGAN, HARP, OOHS, CEL, HARPSI, PICC = \
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15      # девятый — ударные по стандарту, не занимать
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15
+# Девятый канал — ударные по стандарту MIDI; набор 48 — оркестровый:
+# 35/36 — концертный большой барабан, 38/40 — малый, 57/59 — тарелки,
+# 76/77 — деревянные коробочки (41–53 там — литавры, не путать).
+DRUMS = 9
+BD, SD, CYM, CYM2, WOOD_HI, WOOD_LO = 36, 38, 57, 59, 76, 77
 PROGRAM = {PIANO: 0, HORN: 60, STR: 48, PAD: 49, CELLO: 42, BASS: 43, BONE: 57, CHOIR: 52,
-           TIMP: 47, ORGAN: 19, HARP: 46, OOHS: 53, CEL: 8, HARPSI: 6, PICC: 72}
+           TIMP: 47, ORGAN: 19, HARP: 46, OOHS: 53, CEL: 8, HARPSI: 6, PICC: 72, DRUMS: 48}
 # рассадка оркестра: скрипки слева, виолончели и басы справа, медь в глубине
 PAN = {PIANO: 64, HORN: 54, STR: 40, PAD: 50, CELLO: 82, BASS: 90, BONE: 80, CHOIR: 64,
-       TIMP: 64, ORGAN: 64, HARP: 34, OOHS: 70, CEL: 46, HARPSI: 30, PICC: 76}
+       TIMP: 64, ORGAN: 64, HARP: 34, OOHS: 70, CEL: 46, HARPSI: 30, PICC: 76, DRUMS: 64}
 REVERB = {PIANO: 60, HORN: 80, STR: 75, PAD: 85, CELLO: 70, BASS: 60, BONE: 80, CHOIR: 95,
-          TIMP: 70, ORGAN: 90, HARP: 80, OOHS: 95, CEL: 85, HARPSI: 55, PICC: 75}
+          TIMP: 70, ORGAN: 90, HARP: 80, OOHS: 95, CEL: 85, HARPSI: 55, PICC: 75, DRUMS: 60}
 
 # Аккорды: корень у виолончели, у контрабаса октавой ниже, три голоса
 # середины, медь (корень и квинта), литавры (настроены на ре и ля).
@@ -34,6 +39,11 @@ CHORD = {
     'G#m': dict(cello=44, bass=32, mid=[47, 51, 56], bone=[44, 51], timp=None),
     'E':   dict(cello=40, bass=28, mid=[52, 56, 59], bone=[40, 47], timp=None),
     'C#m': dict(cello=49, bass=37, mid=[49, 52, 56], bone=[49, 56], timp=None),
+    # уменьшённые — для боёв
+    'Edim':  dict(cello=40, bass=28, mid=[52, 55, 58], bone=[40, 46], timp=None),
+    'C#dim': dict(cello=49, bass=37, mid=[49, 52, 55], bone=[49, 55], timp=None),
+    'G#dim': dict(cello=44, bass=32, mid=[47, 50, 56], bone=[44, 50], timp=None),
+    'Fm':    dict(cello=41, bass=29, mid=[53, 56, 60], bone=[41, 48], timp=None),
 }
 
 

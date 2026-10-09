@@ -244,13 +244,16 @@ piece(0)
 if loop:
     piece(bar(BARS + 1))                     # второй круг: из него вырезается петля
 else:
-    at = bar(BARS + 1)                       # последний удар — для слушания
-    for p in (50, 57): s.add(BONE, p, at, 3, 110)
-    for p in (62, 65, 69): s.add(HORN, p, at, 3, 106)
-    for p in (62, 65, 69, 74): s.add(STR, p, at, 3, 108)
-    for p in (50, 57): s.add(CHOIR, p, at, 2, 84)
-    s.add(BASS, 26, at, 4, 110); s.add(CELLO, 38, at, 4, 100); s.add(TIMP, 38, at, 3, 124)
-    s.add(HARPSI, 62, at, 2, 96); s.add(HARPSI, 57, at, 2, 96)
+    # Конец для слушания — выдох, а не удар. Был удар всем оркестром после
+    # тихого «Снова»: на 15,6 дБ громче десяти секунд перед ним, пик впятеро —
+    # автор: «этот удар в конце немного пугает». Транс так не кончается:
+    # низкое ре, последнее ре–ля клавесина, тихие литавры — не громче, чем было.
+    at = bar(BARS + 1)
+    s.add(HARPSI, 62, at, 1, 60); s.add(HARPSI, 57, at + 0.5, 3, 52)
+    s.add(BASS, 26, at, 8, 64); s.add(CELLO, 38, at, 8, 58)
+    s.add(TIMP, 38, at, 2, 60)
+    for p in (50, 57): s.add(OOHS, p, at, 8, 50)
+    s.swell(OOHS, at + 2, at + 8, 90, 0)
 s.save(sys.argv[1], 100)
 sec = 0.6
 print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end() * sec:.1f} с'
