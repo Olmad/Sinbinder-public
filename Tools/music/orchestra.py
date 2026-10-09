@@ -50,14 +50,17 @@ def lord_theme(e=64):
 
 
 class Orchestra(Score):
-    def __init__(self, volume):
+    def __init__(self, volume, program=None):
+        """program — заменить инструмент канала в этой теме (каналов
+        пятнадцать, и все заняты): например, пиццикато на канале челесты."""
         super().__init__()
         self.volume = volume
+        self.program = {**PROGRAM, **(program or {})}
         for ch in PROGRAM:
             self.expression(ch, 0, 100)
 
     def save(self, path, bpm):
-        self.write(path, bpm, PROGRAM, self.volume, PAN, REVERB)
+        self.write(path, bpm, self.program, self.volume, PAN, REVERB)
 
     def line(self, ch, notes, at, vel, shift=0, hold=0, last=None):
         """Мелодия списком (нота, начало, длина); hold продлевает ноту,
