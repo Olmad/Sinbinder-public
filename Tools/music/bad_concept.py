@@ -30,6 +30,7 @@
 # Темп 60: доля — секунда, такт — четыре. Без жребия.
 #   python3 Tools/music/bad_concept.py выход.mid [--loop] [--less-celesta]
 import sys
+from score import loop_tempo
 from orchestra import (Orchestra, CHORD, bar, lord_theme, HORN, STR, PAD, CELLO, BASS, BONE,
                        CHOIR, TIMP, ORGAN, HARP, OOHS, CEL, PICC)
 
@@ -171,7 +172,10 @@ s.add(OOHS, 50, bar(42), 12, 50)
 s.add(CELLO, 38, bar(41), 18, 45)
 s.add(TIMP, 38, bar(44), 3, 55)
 
+tempo = 1_000_000                           # мкс на долю: темп 60
 if '--loop' in sys.argv:
     s.repeat(bar(46))                       # петля: 45 тактов, второй проход вырезается
-s.save(sys.argv[1], 60)
-print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end():.0f} с')
+    tempo = loop_tempo(60, bar(46))         # 60,48: круг кратен блоку синтезатора (43-SOUND, «Шов петли»)
+s.save(sys.argv[1], 60e6 / tempo)
+print(f'{sys.argv[1]}: нот {s.count()}, конец на {s.end()} долях = {s.end() * tempo / 1e6:.0f} с'
+      + (f'; петля — с {bar(46) * tempo / 1e6:.6f} по {2 * bar(46) * tempo / 1e6:.6f} с' if '--loop' in sys.argv else ''))

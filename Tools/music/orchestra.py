@@ -44,6 +44,7 @@ CHORD = {
     'C#dim': dict(cello=49, bass=37, mid=[49, 52, 55], bone=[49, 55], timp=None),
     'G#dim': dict(cello=44, bass=32, mid=[47, 50, 56], bone=[44, 50], timp=None),
     'Fm':    dict(cello=41, bass=29, mid=[53, 56, 60], bone=[41, 48], timp=None),
+    'Cm':    dict(cello=48, bass=36, mid=[51, 55, 60], bone=[48, 55], timp=None),   # тема Магистра
 }
 
 
