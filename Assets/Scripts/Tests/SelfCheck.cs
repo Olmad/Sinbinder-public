@@ -1001,6 +1001,14 @@ namespace Sinbinder.Tests
                     $"запись темы «{track}» лежит в Resources/Music");
             }
 
+            // Звуки мира, которые ищутся по сцене: шаги и ночь лагеря.
+            Check(Sinbinder.Audio.Sfx.Surface("Prologue_Camp") == "Step/Grass", "в лагере Греховод идёт по траве");
+            Check(Sinbinder.Audio.Sfx.Surface("Crypt_Entrance") == "Step/Stone", "в склепе — по камню");
+            Check(Sinbinder.Audio.Sfx.Surface("SampleScene") == null, "в чужой сцене шаги молчат, а не звучат травой");
+            foreach (string set in new[] { "Step/Grass", "Step/Stone" })
+                Check(Resources.Load<AudioClip>("Sounds/" + set + "0") != null, $"запись шагов «{set}» лежит в Resources/Sounds");
+            Check(Resources.Load<AudioClip>("Sounds/Night") != null, "запись ночи лагеря лежит в Resources/Sounds");
+
             // Сигналы — поверх темы: новая душа в склепе, павший в арьергарде.
             foreach (Sinbinder.Audio.Cue cue in System.Enum.GetValues(typeof(Sinbinder.Audio.Cue)))
             {

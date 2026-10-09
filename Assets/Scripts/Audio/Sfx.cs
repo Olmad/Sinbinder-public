@@ -10,7 +10,8 @@ using Sinbinder.Gameplay;
 namespace Sinbinder.Audio
 {
     /// <summary>
-    /// Звуки мира: удары, колокол тревоги, монеты, треск огня (курс п. 3,
+    /// Звуки мира: удары, колокол тревоги, монеты, треск огня, шаги
+    /// Греховода, ночь лагеря (курс п. 3,
     /// docs/41-SHOWCASE.md). Записи — <c>Assets/Resources/Sounds</c>, все
     /// CC0, откуда каждая — docs/43-SOUND.md. Автор, 2 октября: «можешь
     /// искать и скачивать подходящие звуки».
@@ -31,6 +32,24 @@ namespace Sinbinder.Audio
         /// <summary>Больше ударов за кадр не слышно — только каша.</summary>
         private const int PerFrame = 4;
 
+        /// <summary>
+        /// Шаг Греховода, метры. Бежит он 4,2 м/с (<c>SinbinderPlayer.Spawn</c>),
+        /// бегущий делает около 2,7 шага в секунду — шаг полтора метра.
+        /// </summary>
+        private const float Stride = 1.5f;
+
+        /// <summary>Сдвиг больше этого за кадр — его перенесли, а не он прошёл: не шаг.</summary>
+        private const float Teleport = 3f;
+
+        /// <summary>
+        /// Громкость ночи лагеря. Сверчки — высокий повтор на все десять минут
+        /// лагеря: громче — и они станут клавесином «Grind», который «вечно
+        /// звучит в ушах» (docs/43-SOUND.md §6). Здесь — воздух, а не звук.
+        /// </summary>
+        private const float NightVolume = 0.08f;
+
+        private const string CampScene = "Prologue_Camp";
+
         private static Sfx _instance;
         private static readonly Dictionary<string, AudioClip[]> Clips = new();
         private static readonly HashSet<string> Told = new();
@@ -40,6 +59,12 @@ namespace Sinbinder.Audio
         private int _next;
         private int _frame = -1;
         private int _thisFrame;
+
+        private AudioSource _night;
+        private Coroutine _nightFade;
+        private Vector3 _lastStep;
+        private bool _stepArmed;
+        private float _walked;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm()
@@ -76,6 +101,7 @@ namespace Sinbinder.Audio
 
             SceneManager.sceneLoaded += OnScene;
             Fires();
+            Night(SceneManager.GetActiveScene().name);
         }
 
         void OnDestroy()
@@ -84,7 +110,14 @@ namespace Sinbinder.Audio
             if (_instance == this) _instance = null;
         }
 
-        private void OnScene(Scene scene, LoadSceneMode mode) => Fires();
+        private void OnScene(Scene scene, LoadSceneMode mode)
+        {
+            Fires();
+            Night(scene.name);
+            _stepArmed = false;
+        }
+
+        void Update() => Steps();
 
         // ---------- что звучит ----------
 
@@ -126,6 +159,18 @@ namespace Sinbinder.Audio
         {
             if (_instance == null) return;
             _instance.Play(Pick("Coins"), where, 0.6f, 0.3f, 1f);
+        }
+
+        /// <summary>
+        /// Ночь замолкает: перед бедой сверчки затихают — мир затаил дыхание,
+        /// и колокол тревоги бьёт уже в настоящей тишине. Зовёт
+        /// <see cref="CrystalBall"/> на тревоге. До новой загрузки лагеря
+        /// ночь не вернётся: после разгрома ей петь не о чем.
+        /// </summary>
+        public static void Hush(float fade = 1.5f)
+        {
+            if (_instance == null || _instance._night == null || !_instance._night.isPlaying) return;
+            _instance.FadeNight(0f, fade);
         }
 
         private IEnumerator Strikes()
@@ -172,6 +217,99 @@ namespace Sinbinder.Audio
                 src.time = Mathf.Repeat(p.x * 3.7f + p.z * 5.3f, fire[0].length * 0.9f);
                 src.Play();
             }
+        }
+
+        /// <summary>
+        /// Шаги Греховода — только его: он тело, которым ходит игрок
+        /// (00-GDD.md §4, «тело — микро»). Шаги всего отряда и охотников
+        /// слились бы в кашу под голосами. Считаются по пройденному пути,
+        /// а не по анимации: шаг — каждые <see cref="Stride"/> метров, идёт
+        /// медленнее — шагает реже. Трава в лагере, камень в склепе.
+        /// </summary>
+        private void Steps()
+        {
+            var me = SinbinderPlayer.Instance;
+            if (me == null || me.IsDead) { _stepArmed = false; return; }
+
+            var p = me.transform.position;
+            p.y = 0f;
+            if (!_stepArmed) { _lastStep = p; _walked = 0f; _stepArmed = true; return; }
+
+            float d = Vector3.Distance(p, _lastStep);
+            _lastStep = p;
+            if (d > Teleport) { _walked = 0f; return; }
+
+            _walked += d;
+            if (_walked < Stride) return;
+            _walked -= Stride;
+
+            string set = Surface(SceneManager.GetActiveScene().name);
+            if (set == null) return;
+            Play(Pick(set), me.transform.position, set == "Step/Grass" ? 0.4f : 0.3f, 0.6f, Pitch());
+        }
+
+        /// <summary>По чему идёт Греховод: в лагере — трава, в склепе — камень, в прочих сценах — тихо.</summary>
+        public static string Surface(string scene)
+        {
+            switch (scene)
+            {
+                case CampScene:        return "Step/Grass";
+                case "Crypt_Entrance":
+                case "Crypt_Test":     return "Step/Stone";
+                default:               return null;
+            }
+        }
+
+        /// <summary>
+        /// Ночь лагеря — сверчки, тихо, без пространства. Только в лагере:
+        /// в склепе своя музыка звучит всё время, а гул подземелья спорил бы
+        /// с ней (docs/43-SOUND.md §3).
+        /// </summary>
+        private void Night(string scene)
+        {
+            if (scene != CampScene)
+            {
+                if (_night != null) { if (_nightFade != null) StopCoroutine(_nightFade); _night.Stop(); }
+                return;
+            }
+
+            var night = Load("Night");
+            if (night.Length == 0) return;
+
+            if (_night == null)
+            {
+                var go = new GameObject("Ночь");
+                go.transform.SetParent(transform, false);
+                _night = go.AddComponent<AudioSource>();
+                _night.loop = true;
+                _night.playOnAwake = false;
+                _night.spatialBlend = 0f;
+                _night.dopplerLevel = 0f;
+            }
+
+            _night.clip = night[0];
+            _night.volume = 0f;
+            _night.Play();
+            FadeNight(NightVolume, 3f);
+        }
+
+        private void FadeNight(float to, float seconds)
+        {
+            if (_nightFade != null) StopCoroutine(_nightFade);
+            _nightFade = StartCoroutine(NightFade(to, seconds));
+        }
+
+        private IEnumerator NightFade(float to, float seconds)
+        {
+            float from = _night.volume;
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                _night.volume = Mathf.Lerp(from, to, t / seconds);
+                yield return null;
+            }
+            _night.volume = to;
+            if (to <= 0f) _night.Stop();
+            _nightFade = null;
         }
 
         // ---------- как звучит ----------
