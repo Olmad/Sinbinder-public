@@ -29,6 +29,11 @@ CHORD = {
     'C':  dict(cello=48, bass=36, mid=[52, 55, 60], bone=[48, 55], timp=None),
     'Am': dict(cello=45, bass=33, mid=[52, 57, 60], bone=[45, 52], timp=45),
     'Asus': dict(cello=45, bass=33, mid=[50, 52, 57], bone=[45, 52], timp=45),
+    # тритоном дальше от ре — для «Ultimatum»
+    'Ab':  dict(cello=44, bass=32, mid=[48, 51, 56], bone=[44, 51], timp=None),
+    'G#m': dict(cello=44, bass=32, mid=[47, 51, 56], bone=[44, 51], timp=None),
+    'E':   dict(cello=40, bass=28, mid=[52, 56, 59], bone=[40, 47], timp=None),
+    'C#m': dict(cello=49, bass=37, mid=[49, 52, 56], bone=[49, 56], timp=None),
 }
 
 
