@@ -51,6 +51,11 @@ namespace Sinbinder.Gameplay
                + "до неё бежать не полагается.")]
         [SerializeField] private bool _opensEscape;
 
+        [Tooltip("Тема, которой волна сменяет музыку, выходя. Пусто (None) — "
+               + "звучит прежняя. Вторая волна набега ставит «The Hunted»: "
+               + "бой кончился, началось бегство (автор, 10 октября).")]
+        [SerializeField] private Audio.Track _music = Audio.Track.None;
+
         private Core.RelationshipSystem _relSystem;
         private bool _spawned;
         private bool _sawEnemies;
@@ -131,13 +136,15 @@ namespace Sinbinder.Gameplay
         /// Start ещё впереди.
         /// </summary>
         public void Configure(int count, float width, bool afterFieldClear,
-                              bool opensEscape, string announce)
+                              bool opensEscape, string announce,
+                              Audio.Track music = Audio.Track.None)
         {
             _count = count;
             _lineWidth = width;
             _afterFieldClear = afterFieldClear;
             _opensEscape = opensEscape;
             _announce = announce ?? "";
+            _music = music;
             _spawnOnStart = true;
         }
 
@@ -265,6 +272,11 @@ namespace Sinbinder.Gameplay
             if (setup == null)
                 Debug.LogWarning("[ПРОЛОГ] AOSSceneSetup в сцене нет: "
                                + "охотники выйдут без движка решений.");
+
+            // Музыка меняется вместе с выходом волны, под первую реплику:
+            // под рамкой кино тема приседает (Music.Duck), и слово звучит
+            // первым, а жуть встаёт за ним.
+            if (_music != Audio.Track.None) Audio.Music.Play(_music, 2.5f);
 
             if (!string.IsNullOrEmpty(_announce))
                 Herald.Line(_announce);

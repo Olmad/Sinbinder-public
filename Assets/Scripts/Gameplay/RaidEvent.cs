@@ -54,6 +54,14 @@ namespace Sinbinder.Gameplay
           + "Вероятно, от одного из наших. Тяжело это признавать, "
           + "но нам нужно бежать. К кругу на востоке — туда, где свет».");
 
+        /// <summary>
+        /// Чем звучит вторая волна. Автор, 10 октября: «сделать 2 волну более
+        /// страшной и с музыкальной стороны». Первая волна — бой под «Grind»;
+        /// вторая — бегство: лагерь потерян, видец идёт по следу, и тема
+        /// меняется на тёмную редакцию «The Hunt Begins» (docs/43-SOUND.md §6).
+        /// </summary>
+        public const Audio.Track SecondWaveMusic = Audio.Track.Hunted;
+
         private static readonly Vector3 FirstWave = new Vector3(0f, 0f, 12f);
         private static readonly Vector3 SecondWave = new Vector3(0f, 0f, 15f);
 
@@ -205,13 +213,15 @@ namespace Sinbinder.Gameplay
                  afterFieldClear: false, opensEscape: false, announce: "");
 
             Wave(root, "Охотники: вторая волна", SecondWave, count: 6, width: 10f,
-                 afterFieldClear: true, opensEscape: true, announce: Loc.T(SecondWaveLine));
+                 afterFieldClear: true, opensEscape: true, announce: Loc.T(SecondWaveLine),
+                 music: SecondWaveMusic);
 
             Debug.Log("[ПРОЛОГ] Разгром развёрнут в лагере.");
         }
 
         private static void Wave(Transform root, string name, Vector3 at, int count,
-            float width, bool afterFieldClear, bool opensEscape, string announce)
+            float width, bool afterFieldClear, bool opensEscape, string announce,
+            Audio.Track music = Audio.Track.None)
         {
             var go = new GameObject(name);
             go.transform.SetParent(root);
@@ -219,7 +229,7 @@ namespace Sinbinder.Gameplay
             go.transform.LookAt(new Vector3(0f, at.y, 0f));
 
             go.AddComponent<HunterSquadSpawner>()
-              .Configure(count, width, afterFieldClear, opensEscape, announce);
+              .Configure(count, width, afterFieldClear, opensEscape, announce, music);
         }
 
         /// <summary>

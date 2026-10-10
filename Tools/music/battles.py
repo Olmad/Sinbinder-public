@@ -1,7 +1,7 @@
 # Боевые темы архива автора — по задумке. Автор, 9 октября: «давай доделаем
 # музыку». Шесть боёв полной игры, каждый — петля без шва (--loop).
 #   python3 Tools/music/battles.py <тема> выход.mid [--loop]
-#   темы: rat raid hunt gate war final
+#   темы: rat raid hunt gate war final hunted (вторая волна набега — в игре)
 #
 # Урок «Grind» (автор: повторяющийся звук «вечно звучит в ушах и
 # раздражает») — во всех шести:
@@ -516,7 +516,132 @@ def final():
     return s, 90, bar(61)
 
 
-THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final}
+# ---------- The Hunted — вторая волна набега ----------
+
+def hunted():
+    """Автор, 10 октября: «сделать 2 волну более страшной и с музыкальной
+    стороны». Вторая волна — не бой, а бегство: лагерь потерян, «вероятно,
+    от одного из наших», видец находит Греховода раз в семь секунд. Значит,
+    не подмигивание Overlord, а жуть (ориентир: «смех ломает жуть» — потеря
+    звучит всерьёз). Тёмная редакция «The Hunt Begins»: охотились — теперь
+    охотятся на нас.
+
+    Из «Hunt» — мотив автора (валторна ре–ми–фа–соль) и часы пиццикато.
+    Своё: сердце (большой барабан и литавры «тук-тук»); крадущийся полутон
+    в басах — корень и полутон выше, у ре это ми-бемоль, нота отказа; дрожь
+    струнных малой секундой; хор шёпотом тритоном (ре и ля-бемоль); тема
+    Владыки у тромбонов с ми-бемолем вместо ми и обрывом — хозяина гонят.
+    Урок «Grind» — и здесь: басы дышат (такт тишины через три), гармония
+    ходит, высокого повтора нет. 40 тактов, около 1:26."""
+    TREM, PIZZ = PAD, CEL
+    s = Orchestra({HORN: 100, STR: 92, TREM: 72, CELLO: 96, BASS: 104, BONE: 86, OOHS: 84,
+                   TIMP: 112, PIZZ: 86, PIANO: 84, DRUMS: 104}, program={TREM: 44, PIZZ: 45})
+    MOTIF = [(62, 0, 4), (64, 4, 4), (65, 8, 4), (67, 12, 4)]          # у автора — ре–ми–фа–соль
+    RISE = MOTIF + [(69, 16, 4), (70, 20, 4), (73, 24, 4), (74, 28, 4)]  # до октавы, как в «Hunt»
+
+    def heart(at, bars, vel, double=False, skip=4):
+        """Сердце: «тук» — барабан с литаврой ре, «тук» тише — на полдоли
+        позже. Бегом — дважды в такт. Каждый skip-й такт оно замирает."""
+        for b in range(bars):
+            if skip and b % skip == skip - 1: continue
+            for beat in ((0, 2) if double else (0,)):
+                t = at + b * 4 + beat
+                drum(s, BD, t, vel); drum(s, BD, t + 0.5, vel - 16)
+                s.add(TIMP, 38, t, 0.5, vel - 10)
+
+    def stalk(at, chords, vel, eighths=False):
+        """Крадётся: корень и полутон выше, внизу. Такт тишины через три."""
+        step = 0.5 if eighths else 1.0
+        for b, name in enumerate(chords):
+            if b % 4 == 3: continue
+            r = CHORD[name]['bass']
+            for k in range(int(4 / step)):
+                p = r + (1 if k % 2 else 0)
+                v = vel + (8 if k == 0 else 0)
+                s.add(BASS, p, at + b * 4 + k * step, step * 0.9, v)
+                s.add(CELLO, p + 12, at + b * 4 + k * step, step * 0.9, v - 10)
+
+    def ticks(at, bars, vel, fast=False):
+        """Часы охоты из «Hunt»: пиццикато на два и четыре; бегом — восьмыми."""
+        for b in range(bars):
+            for k in (range(8) if fast else (2, 6)):
+                s.add(PIZZ, 62 if k % 4 < 2 else 63, at + b * 4 + k * 0.5, 0.3, vel - (6 if k % 2 else 0))
+
+    def shiver(at, bars, v0, v1):
+        """Дрожь: тремоло струнных малой секундой — ре и ми-бемоль, с нарастанием."""
+        for p in (62, 63):
+            s.add(TREM, p, at, bars * 4, 64)
+        s.swell(TREM, at, at + bars * 4, v0, v1)
+
+    def whisper(at, bars, vel, notes=(62, 68)):
+        """Хор шёпотом — тритон ре и ля-бемоль."""
+        for p in notes:
+            s.add(OOHS, p, at, bars * 4, vel)
+
+    def hits(at, bars, vel):
+        """Удары тритоном: тромбоны ре и ля-бемоль с литаврой на «три-и»."""
+        for b in range(bars):
+            t = at + b * 4 + 2.5
+            s.add(BONE, 50, t, 1.2, vel); s.add(BONE, 56, t, 1.2, vel)
+            s.add(TIMP, 38, t, 0.8, vel + 4)
+
+    A = ['Dm', 'Eb', 'Dm', 'Eb', 'Gm', 'Edim', 'Fm', 'A']
+    # A — такты 1–8, «След»: сердце, басы крадутся, дрожь, шёпот; мотив автора
+    heart(bar(1), 8, 82)
+    stalk(bar(1), A, 60)
+    shiver(bar(1), 8, 40, 80)
+    whisper(bar(1), 8, 40)
+    s.pads(STR, bar(1), A, 40)
+    s.line(HORN, MOTIF, bar(5), 84)
+    # B — такты 9–16, «Гонят»: сердце бегом, басы восьмыми, часы; тема Владыки
+    # с нотой отказа у тромбонов и обрыв — хозяина гонят; валторна отвечает
+    B = ['Dm', 'Gm', 'Eb', 'Dm', 'Gm', 'Dm', 'Eb', 'A']
+    heart(bar(9), 8, 80, double=True)
+    stalk(bar(9), B, 64, eighths=True)
+    ticks(bar(9), 8, 60)
+    shiver(bar(9), 8, 60, 90)
+    s.pads(STR, bar(9), B, 44)
+    s.line(BONE, [n for n in lord_theme(e=63) if n[1] < 20], bar(9), 92, shift=-12)
+    s.line(HORN, MOTIF, bar(13), 90)
+    s.roll(38, bar(16), 4, 56, 92)
+    # C — такты 17–24, «Загнаны»: подъём до октавы у валторны и струнных,
+    # удары тритоном, литавры восьмыми, часы бегут
+    C = ['Dm', 'Edim', 'Fm', 'Gm', 'A', 'Bb', 'C#dim', 'Dm']
+    s.line(HORN, RISE, bar(17), 100)
+    s.line(STR, RISE, bar(17) + 2, 88, shift=-12)
+    heart(bar(17), 8, 86, double=True, skip=0)
+    stalk(bar(17), C, 70, eighths=True)
+    ticks(bar(17), 8, 64, fast=True)
+    hits(bar(17), 8, 80)
+    whisper(bar(17), 8, 60)
+    shiver(bar(17), 8, 80, 100)
+    cymbal(s, bar(17), 60); cymbal(s, bar(21), 70); cymbal(s, bar(24), 78)
+    # D — такты 25–32, «Затаились»: сердце медленно и замирает, колокол
+    # рояля — ре, потом ля-бемоль; валторна держит ре, потом ми-бемоль отказа
+    heart(bar(25), 8, 64, skip=2)
+    stalk(bar(29), ['Eb', 'Eb', 'C#dim', 'A'], 52)
+    whisper(bar(25), 8, 52)
+    shiver(bar(25), 8, 70, 36)
+    s.add(PIANO, 26, bar(25), 8, 80); s.add(PIANO, 38, bar(25), 8, 74)
+    s.add(PIANO, 32, bar(29), 8, 80); s.add(PIANO, 44, bar(29), 8, 74)
+    s.add(HORN, 50, bar(25), 16, 66); s.add(HORN, 51, bar(29), 8, 70); s.add(HORN, 49, bar(31), 8, 72)
+    # E — такты 33–40, «Снова след»: мотив у валторны, канон струнных,
+    # сердце бегом — и в начало
+    heart(bar(33), 8, 80, double=True)
+    stalk(bar(33), A, 66, eighths=True)
+    ticks(bar(33), 8, 62)
+    shiver(bar(33), 8, 50, 86)
+    whisper(bar(33), 8, 50)
+    s.pads(STR, bar(33), A, 42)
+    s.line(HORN, MOTIF, bar(33), 88)
+    s.line(HORN, MOTIF, bar(37), 94)
+    s.line(STR, MOTIF, bar(37) + 2, 82, shift=12)
+    s.roll(38, bar(40), 4, 60, 88)
+    return s, 112, bar(41)
+
+
+THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final,
+          'hunted': hunted}
 
 if __name__ == '__main__':
     name, out = sys.argv[1], sys.argv[2]

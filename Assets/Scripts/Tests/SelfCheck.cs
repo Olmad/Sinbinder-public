@@ -990,6 +990,12 @@ namespace Sinbinder.Tests
                 "склеп начинается своей темой");
             Check(Sinbinder.Audio.Music.ForScene(RaidEvent.SceneName) == Sinbinder.Audio.Track.None,
                 "у набега нет своей сцены — его тему включает разгром, а не загрузка");
+            // Вторая волна набега звучит своей темой, не «Grind» (автор, 10 октября):
+            // бой кончился, начинается бегство.
+            Check(RaidEvent.SecondWaveMusic != Sinbinder.Audio.Track.None
+                  && Sinbinder.Audio.Music.FileOf(RaidEvent.SecondWaveMusic)
+                     != Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.Raid),
+                "вторая волна набега меняет тему, а не продолжает «Grind»");
             Check(Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.None) == null,
                 "у тишины нет файла");
 

@@ -7,7 +7,8 @@ using UnityEngine.SceneManagement;
 namespace Sinbinder.Audio
 {
     /// <summary>Что звучит: место пролога, а не имя файла.</summary>
-    public enum Track { None, Camp, Raid, Crypt, Epilogue }
+    /// <remarks>Новое место — в конец: номера прежних не сдвигаются.</remarks>
+    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted }
 
     /// <summary>
     /// Короткий сигнал поверх темы: событие, а не место. Из архива автора:
@@ -26,6 +27,7 @@ namespace Sinbinder.Audio
     /// |-------------------|-------------------------------|------------------------|
     /// | лагерь            | Daydream of the Architect     | Daydream               |
     /// | набег             | The Eternal Grind             | EternalGrind           |
+    /// | вторая волна      | The Hunted                    | Hunted                 |
     /// | склеп             | Bad is good, but Evil is better | BadIsGood            |
     /// | конец демо        | A Lord Returns                | LordReturns            |
     ///
@@ -35,6 +37,8 @@ namespace Sinbinder.Audio
     /// Поворотные места пролога говорят сами: тревога шара гасит лагерь —
     /// бьёт один колокол (<see cref="Gameplay.CrystalBall.Alarm"/>); набег
     /// включает «Grind» под строкой на чёрном (<see cref="Gameplay.RaidEvent"/>);
+    /// вторая волна, выходя, меняет его на «The Hunted» — бой кончился,
+    /// начинается бегство (<see cref="Gameplay.HunterSquadSpawner"/>);
     /// уход из доли гасит, пока длится задержка (<see cref="Gameplay.PrologueDirector"/>);
     /// экран конца — «Возвращение лорда», «Отряд не вернулся» — тишина.
     /// Тишину первого отказа делать не нужно: <see cref="UI.RefusalSilence"/>
@@ -61,6 +65,7 @@ namespace Sinbinder.Audio
             {
                 case Track.Camp:     return 0.28f;
                 case Track.Raid:     return 0.38f;
+                case Track.Hunted:   return 0.38f;   // сама запись на 2–3 дБ плотнее «Grind» — громче и так
                 case Track.Crypt:    return 0.30f;
                 case Track.Epilogue: return 0.50f;
                 default:             return 0f;
@@ -74,6 +79,7 @@ namespace Sinbinder.Audio
             {
                 case Track.Camp:     return "Daydream";
                 case Track.Raid:     return "EternalGrind";
+                case Track.Hunted:   return "Hunted";
                 case Track.Crypt:    return "BadIsGood";
                 case Track.Epilogue: return "LordReturns";
                 default:             return null;
