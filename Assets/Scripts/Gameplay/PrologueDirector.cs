@@ -54,8 +54,8 @@ namespace Sinbinder.Gameplay
                + "отряд вошёл следом. Мерится по земле, в метрах.")]
         [SerializeField] private float _altarReach = 3.5f;
 
-        [Tooltip("Последняя доля: как часто напоминать, что склеп ждёт, пока "
-               + "Греховод не вошёл в зал.")]
+        [Tooltip("Последняя доля: как часто напоминать о шаге, которого склеп "
+               + "ждёт от игрока: поднять воина, дойти до алтаря, послать отряд.")]
         [SerializeField] private float _altarNudge = 60f;
 
         [Tooltip("Что сказать, входя в последнюю долю. Пусто — молча.")]
@@ -168,6 +168,20 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Напомнить о шаге игрока раз в <see cref="_altarNudge"/> секунд
+        /// игры не на паузе. Строка — что сделать, целиком, а не намёк:
+        /// напоминание читает тот, кто уже не понял.
+        /// </summary>
+        private void Nudge(string line)
+        {
+            _sinceNudge += Time.unscaledDeltaTime;
+            if (_sinceNudge < _altarNudge) return;
+
+            _sinceNudge = 0f;
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
+        }
+
+        /// <summary>
         /// Уйти немедленно. Зовёт <see cref="EscapeZone"/>, когда отсчёт
         /// вышел: кто в круге — тот идёт дальше.
         /// </summary>
@@ -182,49 +196,50 @@ namespace Sinbinder.Gameplay
             // только после него: на прочтение и на то, чтобы отряд вошёл.
             if (_endsAfterSeconds > 0f)
             {
-                // Спросили о плате — ждём ответа, сколько нужно. Эпилог
-                // поверх неотвеченной панели запер бы выбор под собой:
-                // до 14 сентября счётчик шёл и на паузе, и через
-                // четырнадцать секунд конец демо ложился поверх вопроса.
-                var salary = Object.FindFirstObjectByType<UI.SalaryPanelUI>();
-                if (salary != null && !UI.SalaryPanelUI.Answered) { _sinceCommander = 0f; return; }
+                // Склеп встречает отряд: потеря Каргана, «нас мало»
+                // (CryptArrival). Пока идёт — ничего не считаем.
+                if (CryptArrival.Running) { _sinceCommander = 0f; return; }
 
-                // Дальше — время на то, чтобы отряд вошёл и строки
-                // прочитались. Длительность, а не переход: шаг, ради
-                // которого доля есть, уже сделан.
+                // На паузе не считаем и не напоминаем: игрок читает панель,
+                // а не медлит.
                 if (Core.GamePauseController.Stopped) return;
-
-                // Шаг игрока: войти в зал. Пока он стоит у входа, отряд
-                // не входит — только склеп напоминает о себе.
-                if (!EnteredHall())
-                {
-                    _sinceCommander = 0f;
-                    _sinceNudge += Time.unscaledDeltaTime;
-                    if (_sinceNudge >= _altarNudge)
-                    {
-                        _sinceNudge = 0f;
-                        Object.FindFirstObjectByType<UI.BattleLogUI>()
-                              ?.Write(Loc.T("Зал впереди. Алтарь ждёт."));
-                    }
-                    return;
-                }
 
                 // Шаг игрока: поднять воина (docs/37-DEMO.md §4, шаг 2). Пока
                 // в суме есть душа, а мастерская не подняла никого, эпилог
                 // ждёт — создание воина и есть эта часть демо. Душ нет —
                 // ждать нечего. Мастерская — за выключателем «связывание».
+                // Раньше платы: связывание отвечает на «нас мало», сказанное
+                // только что, а плата — уже следующая беда (§0, 10 октября).
                 if (Crypt.CryptWorkshop.Waiting)
                 {
                     _sinceCommander = 0f;
-                    _sinceNudge += Time.unscaledDeltaTime;
-                    if (_sinceNudge >= _altarNudge)
-                    {
-                        _sinceNudge = 0f;
-                        Object.FindFirstObjectByType<UI.BattleLogUI>()
-                              ?.Write(Loc.T("Устройство у стены ждёт души и тела. Душа — в суме."));
-                    }
+                    Nudge(Loc.T("Чтобы поднять воина, возьмите душу из сумы, положите её "
+                              + "в устройство у левой стены, добавьте тело со стола "
+                              + "и потяните рычаг."));
                     return;
                 }
+
+                // Спросили о плате — ждём ответа, сколько нужно. Эпилог
+                // поверх неотвеченной панели запер бы выбор под собой:
+                // до 14 сентября счётчик шёл и на паузе, и через
+                // четырнадцать секунд конец демо ложился поверх вопроса.
+                var salary = Object.FindFirstObjectByType<UI.SalaryPanelUI>();
+                if (salary != null && !UI.SalaryPanelUI.Answered && !UI.SalaryPanelUI.Payday)
+                { _sinceCommander = 0f; return; }
+
+                // Шаг игрока: войти в зал. Пока он стоит у входа, отряд
+                // не входит — только склеп напоминает о себе. Плата лично
+                // кончается там же, у алтаря.
+                if (!EnteredHall())
+                {
+                    _sinceCommander = 0f;
+                    Nudge(UI.SalaryPanelUI.Payday
+                        ? Loc.T("Когда заплатите, кому решили, подойдите к алтарю в глубине зала.")
+                        : Loc.T("Подойдите к алтарю в глубине зала."));
+                    return;
+                }
+
+                if (salary != null && !UI.SalaryPanelUI.Answered) { _sinceCommander = 0f; return; }
 
                 // Шаг игрока: выбрать дорогу (docs/39-PLACES.md §2). Пока
                 // с карты у правой стены не ушло ни одной вылазки, а людей
@@ -232,13 +247,7 @@ namespace Sinbinder.Gameplay
                 if (Crypt.CryptMap.Waiting)
                 {
                     _sinceCommander = 0f;
-                    _sinceNudge += Time.unscaledDeltaTime;
-                    if (_sinceNudge >= _altarNudge)
-                    {
-                        _sinceNudge = 0f;
-                        Object.FindFirstObjectByType<UI.BattleLogUI>()
-                              ?.Write(Loc.T("Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."));
-                    }
+                    Nudge(Loc.T("Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."));
                     return;
                 }
 

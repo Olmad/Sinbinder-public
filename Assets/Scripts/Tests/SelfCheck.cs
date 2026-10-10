@@ -104,6 +104,7 @@ namespace Sinbinder.Tests
                 OverheadNearLens();
                 ExitMarkerPlace();
                 HeraldLines();
+                CryptWelcome();
                 TextRules();
                 NamesAndCases();
                 VirtueHalves();
@@ -1130,6 +1131,51 @@ namespace Sinbinder.Tests
                   "строка поступка — не реплика, наезда нет");
             Check(Herald.Hold("") >= 2f && Herald.Hold(new string('а', 400)) <= 7f,
                   "кадр держится, чтобы прочесть, и не дольше семи секунд");
+        }
+
+        /// <summary>
+        /// Склеп встречает отряд (docs/37-DEMO.md §0, 10 октября): сперва
+        /// потеря, потом дело. Каргана нет — о нём говорят, и говорят так,
+        /// как его не стало; дошёл — потери нет, «нас мало» говорит он сам.
+        /// Каждая строка — реплика, на которую Herald даёт наезд: строка,
+        /// которую он не разберёт, ушла бы журналом мимо глаз — та беда,
+        /// из-за которой реплики Каргана и стали кадром (26 сентября).
+        /// </summary>
+        private static void CryptWelcome()
+        {
+            var F = CryptArrival.Fate.FellCovering;
+            var S = CryptArrival.Fate.StayedCovering;
+            var M = CryptArrival.Fate.Missing;
+            var H = CryptArrival.Fate.Here;
+
+            Check(CryptArrival.FateOf(true, true, true) == H
+                  && CryptArrival.FateOf(false, true, true) == F
+                  && CryptArrival.FateOf(false, true, false) == S
+                  && CryptArrival.FateOf(false, false, false) == M,
+                  "склеп: судьба Каргана — дошёл, пал прикрывая, остался прикрывать, не дошёл");
+
+            Check(CryptArrival.Loss(H).Count == 0, "склеп: Карган дошёл — о потере ни слова");
+
+            var loss = new HashSet<string>();
+            foreach (var fate in new[] { F, S, M })
+                if (CryptArrival.Loss(fate).Count == 1) loss.Add(CryptArrival.Loss(fate)[0]);
+            Check(loss.Count == 3, "склеп: как Каргана не стало — три разных слова, а не одно на всё");
+
+            Check(CryptArrival.Few(M, workshop: true).Count == 2
+                  && CryptArrival.Few(M, workshop: false).Count == 1
+                  && CryptArrival.Few(H, false)[0] != CryptArrival.Few(M, false)[0],
+                  "склеп: «нас мало» — с мастерской следом, куда идти; Карган говорит своими словами");
+
+            bool spoken = true;
+            foreach (var fate in new[] { F, S, M, H })
+            {
+                var lines = new List<string>(CryptArrival.Loss(fate));
+                lines.AddRange(CryptArrival.Few(fate, true));
+                foreach (var line in lines)
+                    if (!Herald.Split(Loc.F(line, "Вейн Тихий"), out var who, out _) || who != "Вейн Тихий")
+                        spoken = false;
+            }
+            Check(spoken, "склеп: каждая строка встречи — реплика с наездом на говорящего");
         }
 
         /// <summary>

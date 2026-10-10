@@ -189,7 +189,11 @@ namespace Sinbinder.Utilets
             var canvas = Interface();
             BuildSalary(canvas, askOnArrival: true);
             BuildDemoEnd(canvas);
-            BuildTitle(canvas, Sinbinder.Core.Loc.N("Кто-то уже занял этот склеп."));
+            // Заставка говорит, зачем здесь склеп. Прежняя — «Кто-то уже занял
+            // этот склеп» — осталась от боя у входа, вырезанного со сценой 7:
+            // обещала хозяев, а в склепе пусто (автор, 10 октября: «фразы
+            // нередко бессмысленные»).
+            BuildTitle(canvas, Sinbinder.Core.Loc.N("Склеп давно заброшен. Здесь можно укрыться от Охотников."));
 
             // Подвижная, как и в трёх других сценах: управление, которое
             // работает везде кроме одного места, читается как поломка,
@@ -222,6 +226,11 @@ namespace Sinbinder.Utilets
             squad.transform.position = new Vector3(0f, 0f, -2f);
             squad.AddComponent<PrologueCampSpawner>();
 
+            // Сперва потеря, потом дело (docs/37-DEMO.md §0): кто-то из отряда
+            // говорит, что Каргана нет, и только потом — «нас мало», связывание
+            // и плата. Плата и ведущий ждут, пока склеп встречает.
+            new GameObject("Прибытие").AddComponent<CryptArrival>();
+
             // Боя здесь больше нет: сцена 7 сценария вырезана вместе
             // со сценой 6. Склеп остался ради того единственного, ради чего
             // он в демо и был, — эпилога: игрок входит, и следом входит
@@ -230,7 +239,7 @@ namespace Sinbinder.Utilets
             // Врагов нет, значит и ждать конца боя нечего: доля кончается
             // по времени, и следом показывается эпилог — кто вернулся.
             Director(null, waitForBattle: false, endsAfterSeconds: 14f,
-                arrivalLine: Sinbinder.Core.Loc.N("Пустой трон. Алтарь. Замурованный гроб в нише."));
+                arrivalLine: Sinbinder.Core.Loc.N("В глубине зала — пустой трон и алтарь, а в нише замурован гроб."));
 
             Save(scene, "Crypt_Entrance");
         }

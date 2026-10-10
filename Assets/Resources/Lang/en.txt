@@ -4068,12 +4068,12 @@ msgid "Готова. Скажите, что делать."
 msgstr "Ready. Tell me what to do."
 
 #: Editor/DemoSceneBuilder.cs
-msgid "Кто-то уже занял этот склеп."
-msgstr "Someone has already taken this crypt."
+msgid "Склеп давно заброшен. Здесь можно укрыться от Охотников."
+msgstr "The crypt has long been abandoned. Here you can hide from the hunters."
 
 #: Editor/DemoSceneBuilder.cs
-msgid "Пустой трон. Алтарь. Замурованный гроб в нише."
-msgstr "An empty throne. An altar. A walled-up coffin in a niche."
+msgid "В глубине зала — пустой трон и алтарь, а в нише замурован гроб."
+msgstr "At the far end of the hall stand an empty throne and an altar, and a coffin is walled up in a niche."
 
 #: Editor/DemoSceneBuilder.cs
 msgid "Полигон. Поставьте условие — и повторите."
@@ -4151,7 +4151,7 @@ msgstr "warms up by the fire"
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к столу без него."
 msgstr "The guide never came along — Kargan calls you to the table without him."
 
-#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs Gameplay/PrologueCampSpawner.cs
+#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs Gameplay/CryptArrival.cs Gameplay/PrologueCampSpawner.cs
 msgid "Карган Старый Ворон"
 msgstr "Kargan Old Raven"
 
@@ -4262,6 +4262,38 @@ msgstr "Your move."
 #: Gameplay/CardTable.cs
 msgid "Пас."
 msgstr "Pass."
+
+#: Gameplay/CryptArrival.cs
+msgid "Заставка склепа не ушла — склеп встречает поверх неё."
+msgstr "The crypt title did not go away — the crypt greets the squad over it."
+
+#: Gameplay/CryptArrival.cs
+msgid "Устройство, которое вселяет душу в тело, стоит у левой стены. Души — в суме."
+msgstr "The device that puts a soul into a body stands by the left wall. The souls are in your satchel."
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Карган пал у лагеря, владыка. Он держал их на себе, пока мы уходили»."
+msgstr "{0}: “Kargan fell at the camp, my lord. He held them on himself while we got away.”"
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Карган остался у лагеря, чтобы мы успели уйти. Один против них он не выстоит»."
+msgstr "{0}: “Kargan stayed at the camp so that we could get away. Alone against them, he won't last.”"
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Карган не дошёл с нами, владыка. Он был при вас дольше всех нас»."
+msgstr "{0}: “Kargan didn't make it here with us, my lord. He served you longer than any of us.”"
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Нас осталось мало, владыка, а Охотники вернутся»."
+msgstr "{0}: “There are few of us left, my lord, and the hunters will come back.”"
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Мы ушли, владыка, но нас осталось мало. Охотники вернутся, и в другой раз уйти не дадут»."
+msgstr "{0}: “We got away, my lord, but there are few of us left. The hunters will come back, and next time they won't let us go.”"
+
+#: Gameplay/CryptArrival.cs
+msgid "{0}: «Души, что вы собрали в лагере, при вас. Вложите их в пустые тела — и они будут драться за нас»."
+msgstr "{0}: “You carry the souls you gathered at the camp. Put them into empty bodies, and they will fight for us.”"
 
 #: Gameplay/CrystalBall.cs
 msgid "Карган ждёт у сундука Марги."
@@ -4828,12 +4860,16 @@ msgid "Брат по оружию"
 msgstr "Brother-in-arms"
 
 #: Gameplay/PrologueDirector.cs
-msgid "Зал впереди. Алтарь ждёт."
-msgstr "The hall is ahead. The altar awaits."
+msgid "Чтобы поднять воина, возьмите душу из сумы, положите её в устройство у левой стены, добавьте тело со стола и потяните рычаг."
+msgstr "To raise a warrior, take a soul from your satchel, put it into the device by the left wall, add a body from the table and pull the lever."
 
 #: Gameplay/PrologueDirector.cs
-msgid "Устройство у стены ждёт души и тела. Душа — в суме."
-msgstr "The device by the wall is waiting for a soul and a body. The soul is in your satchel."
+msgid "Когда заплатите, кому решили, подойдите к алтарю в глубине зала."
+msgstr "Once you have paid whoever you chose to, walk up to the altar at the far end of the hall."
+
+#: Gameplay/PrologueDirector.cs
+msgid "Подойдите к алтарю в глубине зала."
+msgstr "Walk up to the altar at the far end of the hall."
 
 #: Gameplay/PrologueDirector.cs
 msgid "Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."
@@ -5992,8 +6028,8 @@ msgid "Заставка склепа не ушла — о плате спраш�
 msgstr "The crypt title card is still up — asking about pay on top of it."
 
 #: UI/SalaryPanelUI.cs
-msgid "Вылазка окончена. Отряд ждёт платы."
-msgstr "The sortie is over. The squad awaits payment."
+msgid "Отряд пережил эту ночь и ждёт платы."
+msgstr "The squad has survived this night and awaits payment."
 
 #: UI/SalaryPanelUI.cs
 msgid "Платить лично\nкому хватит монет"
@@ -6004,8 +6040,8 @@ msgid "Придержать всем\nони запомнят"
 msgstr "Withhold from all\nthey will remember"
 
 #: UI/SalaryPanelUI.cs
-msgid "Плата — из рук в руки: подойдите к воину, F, второй пункт. Кому не заплатите до алтаря — тот запомнит."
-msgstr "Pay hand to hand: walk up to a warrior, F, second option. Whoever is unpaid when you reach the altar will remember."
+msgid "Платите каждому из рук в руки: подойдите к воину, нажмите F и выберите второй пункт. Кому не заплатите, пока не дойдёте до алтаря, тот это запомнит."
+msgstr "Pay each warrior hand to hand: walk up to them, press F and choose the second option. Whoever is still unpaid when you reach the altar will remember it."
 
 #: UI/SalaryPanelUI.cs
 msgid "Платить некому."
@@ -6484,6 +6520,30 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Кто-то уже занял этот склеп."
+msgstr "Someone has already taken this crypt."
+
+#. нет в коде
+msgid "Пустой трон. Алтарь. Замурованный гроб в нише."
+msgstr "An empty throne. An altar. A walled-up coffin in a niche."
+
+#. нет в коде
+msgid "Зал впереди. Алтарь ждёт."
+msgstr "The hall is ahead. The altar awaits."
+
+#. нет в коде
+msgid "Устройство у стены ждёт души и тела. Душа — в суме."
+msgstr "The device by the wall is waiting for a soul and a body. The soul is in your satchel."
+
+#. нет в коде
+msgid "Вылазка окончена. Отряд ждёт платы."
+msgstr "The sortie is over. The squad awaits payment."
+
+#. нет в коде
+msgid "Плата — из рук в руки: подойдите к воину, F, второй пункт. Кому не заплатите до алтаря — тот запомнит."
+msgstr "Pay hand to hand: walk up to a warrior, F, second option. Whoever is unpaid when you reach the altar will remember."
 
 #. нет в коде
 msgid "{0} I — вещи."

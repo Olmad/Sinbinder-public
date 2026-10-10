@@ -114,6 +114,12 @@ namespace Sinbinder.UI
         /// <summary>
         /// Спросить, когда уйдёт заставка сцены: панель поверх чёрного
         /// полотна никто не прочтёт.
+        ///
+        /// <b>И не раньше, чем склеп встретил отряд, а мастерская подняла
+        /// воина</b> (docs/37-DEMO.md §0, 10 октября): сперва потеря Каргана,
+        /// потом «нас мало» и ответ на это — связывание, и только потом
+        /// плата. До того панель вставала сразу после заставки — первым,
+        /// что игрок видел в склепе после бегства, было «Отряд ждёт платы».
         /// </summary>
         private System.Collections.IEnumerator AskWhenArrived()
         {
@@ -125,7 +131,32 @@ namespace Sinbinder.UI
             // спавнер в своём Start.
             yield return null;
 
+            while (Gameplay.CryptArrival.Running) yield return null;
+
+            // Связывание — шаг игрока, ждём сколько нужно: напоминает
+            // о нём ведущий (PrologueDirector). Поднял — миг поднятому:
+            // панель поверх «Spark of Eternity» отняла бы его.
+            if (Crypt.CryptWorkshop.Waiting)
+            {
+                while (Crypt.CryptWorkshop.Waiting) yield return null;
+                yield return Moment(RaisedMoment);
+            }
+
             Open();
+        }
+
+        /// <summary>Сколько дать поднятому постоять, прежде чем спросить о плате, секунд.</summary>
+        private const float RaisedMoment = 5f;
+
+        /// <summary>Подождать столько секунд игры не на паузе.</summary>
+        private static System.Collections.IEnumerator Moment(float seconds)
+        {
+            float t = 0f;
+            while (t < seconds)
+            {
+                if (!Core.GamePauseController.Stopped) t += Time.unscaledDeltaTime;
+                yield return null;
+            }
         }
 
         void OnDestroy()
@@ -153,7 +184,7 @@ namespace Sinbinder.UI
             if (_asked || _panel == null) return;
             _asked = true;
 
-            if (_title != null) _title.text = Loc.T("Вылазка окончена. Отряд ждёт платы.");
+            if (_title != null) _title.text = Loc.T("Отряд пережил эту ночь и ждёт платы.");
             if (_payLabel != null) _payLabel.text = Loc.T("Платить лично\nкому хватит монет");
             if (_withholdLabel != null) _withholdLabel.text = Loc.T("Придержать всем\nони запомнят");
 
@@ -167,7 +198,7 @@ namespace Sinbinder.UI
         /// </summary>
         private void PayInPerson()
         {
-            BeginPayday(CombatManager.Instance?.GetAllWarriors());
+            BeginPayday(Squad());
             Modal.Close(_panel);
             Core.GamePauseController.Instance?.Resume();
 
@@ -177,8 +208,9 @@ namespace Sinbinder.UI
             if (altar == null) altar = GameObject.Find("Зал");
             _altar = altar != null ? altar.transform : null;
 
-            Log(Loc.T("Плата — из рук в руки: подойдите к воину, F, второй пункт. "
-                    + "Кому не заплатите до алтаря — тот запомнит."));
+            Log(Loc.T("Платите каждому из рук в руки: подойдите к воину, нажмите F "
+                    + "и выберите второй пункт. Кому не заплатите, пока не дойдёте "
+                    + "до алтаря, тот это запомнит."));
         }
 
         /// <summary>
@@ -228,6 +260,22 @@ namespace Sinbinder.UI
             Answered = true;
         }
 
+        /// <summary>
+        /// Кому платят за эту ночь: кто её пережил. Поднятый в мастерской
+        /// склепа её не переживал — этой ночью он охотился на вас, — и плата
+        /// ему, как и обида за неё, была бы ложью. Его нет в составе отряда:
+        /// состав пишется при уходе со сцены.
+        /// </summary>
+        private static IEnumerable<Warrior> Squad()
+        {
+            var all = CombatManager.Instance?.GetAllWarriors();
+            if (all == null) yield break;
+
+            foreach (var w in all)
+                if (w != null && (!SquadRoster.HasSquad || SquadRoster.TryGet(w.DisplayName, out _)))
+                    yield return w;
+        }
+
         /// <summary>Платят своим живым воинам. Греховод себе не платит.</summary>
         private static bool Due(Warrior w)
             => w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer);
@@ -248,10 +296,8 @@ namespace Sinbinder.UI
 
         private void Withhold()
         {
-            var squad = CombatManager.Instance?.GetAllWarriors();
-            if (squad != null)
-                foreach (var w in squad)
-                    if (Due(w)) w.PaySalary(0f);
+            foreach (var w in Squad())
+                if (Due(w)) w.PaySalary(0f);
 
             Log(Loc.T("Золото осталось в мешке. Отряд это запомнил."));
             Close();
