@@ -1984,8 +1984,8 @@ msgid "Никто не пошёл."
 msgstr "No one went."
 
 #: Crypt/MissionBoard.cs
-msgid "В казну прибыло."
-msgstr "The treasury has grown."
+msgid "Добычу ссыпали в ваш кошель: +{0}."
+msgstr "The spoils were poured into your purse: +{0}."
 
 #: Crypt/MissionBoard.cs
 msgid "Не вернулся никто."
@@ -4099,6 +4099,10 @@ msgstr "War council — F"
 msgid "Начать сначала"
 msgstr "Start over"
 
+#: Editor/DemoSceneBuilder.cs UI/DemoEndUI.cs
+msgid "Остаться в склепе"
+msgstr "Stay in the crypt"
+
 #: Editor/DemoSceneBuilder.cs UI/DemoEndUI.cs UI/GameOverUI.cs UI/PauseMenu.cs
 msgid "Выйти из игры"
 msgstr "Quit the game"
@@ -4872,10 +4876,6 @@ msgid "Подойдите к алтарю в глубине зала."
 msgstr "Walk up to the altar at the far end of the hall."
 
 #: Gameplay/PrologueDirector.cs
-msgid "Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."
-msgstr "The crystal ball by the right wall shows the roads. The squad is waiting to be sent."
-
-#: Gameplay/PrologueDirector.cs
 msgid "Отряд выступает."
 msgstr "The squad moves out."
 
@@ -5584,6 +5584,14 @@ msgid "Отряд вернулся."
 msgstr "The squad has returned."
 
 #: UI/DemoEndUI.cs
+msgid "Здесь история демо кончается. Склеп остаётся вашим: можно остаться и посылать отряды на вылазки."
+msgstr "This is where the demo's story ends. The crypt remains yours: you can stay and send squads on sorties."
+
+#: UI/DemoEndUI.cs
+msgid "Демо окончено."
+msgstr "End of the demo."
+
+#: UI/DemoEndUI.cs
 msgid "Отряд вёл {0}."
 msgstr "{0} led the squad."
 
@@ -5600,16 +5608,8 @@ msgid " — старший"
 msgstr " — leader"
 
 #: UI/DemoEndUI.cs
-msgid "\nДемо окончено."
-msgstr "\nEnd of the demo."
-
-#: UI/DemoEndUI.cs
 msgid "Из ушедших не вернулся никто."
 msgstr "None of those who left came back."
-
-#: UI/DemoEndUI.cs
-msgid "Демо окончено."
-msgstr "End of the demo."
 
 #: UI/DemoEndUI.cs
 msgid "В склеп входит отряд, ушедший из лагеря."
@@ -5622,6 +5622,10 @@ msgstr " — led them"
 #: UI/DemoEndUI.cs
 msgid " — вела их"
 msgstr " — led them"
+
+#: UI/DemoEndUI.cs
+msgid "Склеп ваш. Шар у правой стены показывает дороги. Первая ведёт к соляному обозу: охраны при нём двое, а везут серебро."
+msgstr "The crypt is yours. The crystal ball by the right wall shows the roads. The first leads to the salt caravan: it has two guards, and it carries silver."
 
 #: UI/DemoEndUI.cs
 msgid "Никто не дошёл до склепа.\n\nДуши разойдутся Некроэфиром, и помнить о них будет некому.\n\nДемо окончено."
@@ -6520,6 +6524,18 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "В казну прибыло."
+msgstr "The treasury has grown."
+
+#. нет в коде
+msgid "Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."
+msgstr "The crystal ball by the right wall shows the roads. The squad is waiting to be sent."
+
+#. нет в коде
+msgid "\nДемо окончено."
+msgstr "\nEnd of the demo."
 
 #. нет в коде
 msgid "Кто-то уже занял этот склеп."

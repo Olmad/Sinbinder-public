@@ -639,14 +639,19 @@ namespace Sinbinder.EditorTools
                     return true;
                 }, 5f),
 
-                // Карта (выключатель «вылазки»): обоз, если хватает людей,
-                // иначе первая точка, на которую хватает. Без выключателя —
-                // сделан сразу.
-                S("склеп: вылазка отправлена", SendFromCrypt,
-                  () => !Crypt.CryptMap.Waiting, 20f),
-
                 S("склеп: конец демо показан", null,
                   () => DemoEndShown(), 60f),
+
+                // Песочница после истории (docs/37-DEMO.md §0): «Остаться
+                // в склепе», вернувшиеся входят, стол встаёт. Без выключателя
+                // «вылазки» кнопки нет — оба шага сделаны сразу.
+                S("песочница: остались в склепе", PressStay,
+                  () => !Crypt.CryptMap.Switch || (!DemoEndOpen() && Crypt.CryptMap.Opened), 10f),
+
+                // Карта: обоз, если хватает людей, иначе первая точка,
+                // на которую хватает.
+                S("песочница: вылазка отправлена", SendFromCrypt,
+                  () => !Crypt.CryptMap.Waiting, 20f),
 
                 // ── Второй показ ──
                 // «Начать сначала» с эпилога — путь, которым демо показывают
@@ -725,6 +730,17 @@ namespace Sinbinder.EditorTools
                 }
             }
             Write("  [ВЫЛАЗКА] послать не на что: людей не хватает ни на одну точку");
+        }
+
+        /// <summary>Нажать «Остаться в склепе» на эпилоге — её же обработчиком.</summary>
+        private static void PressStay()
+        {
+            if (!Crypt.CryptMap.Switch || !DemoEndOpen()) return;
+
+            var end = UnityEngine.Object.FindFirstObjectByType<UI.DemoEndUI>();
+            var stay = end != null ? Field<Button>(end, "_stay") : null;
+            if (stay != null && stay.gameObject.activeInHierarchy) stay.onClick.Invoke();
+            else Write("  [ПЕСОЧНИЦА] кнопки «Остаться в склепе» нет — сцены собраны до 10 октября?");
         }
 
         /// <summary>Нажать «Начать сначала» на эпилоге — её же обработчиком.</summary>

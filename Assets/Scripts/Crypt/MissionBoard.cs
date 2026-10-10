@@ -146,21 +146,27 @@ namespace Sinbinder.Crypt
                 Judge(away, survivors, chosen.Value);
             }
 
+            // Ушедших видно в склепе — сцена догоняет состав: не вернувшихся
+            // в ней больше нет, вернувшимся должны.
+            Settle(party, survivors);
+
             if (survivors.Count > 0)
             {
                 TakeSpoils(mission, chosen);
 
-                // Золото несут с любой вылазки, но взять его некуда,
-                // пока нет Казны. Поэтому улучшение — не прибавка
-                // к числу, а разрешение числу вообще существовать.
-                if (CryptUpgrades.Installed(Upgrade.Treasury))
+                // Добыча — в кошель Греховода, числом (монеты — то, чем он
+                // владеет и что тратит; решение автора 30 сентября). До
+                // 10 октября она шла только в Казну, а Казны в склепе демо
+                // нет: ограбленный обоз не приносил ни монеты, и «хочу игру,
+                // где нужно грабить караваны» (автор) кончалось пустыми
+                // руками. Правило «серебро закроет долг разом» записано
+                // в 39-PLACES §2.1; Казна была нужна, пока платить было
+                // нечем, — теперь кошель есть и плата лично тоже.
+                int coin = fight.Taken + Carried(mission, chosen);
+                if (coin > 0)
                 {
-                    int coin = fight.Taken + Carried(mission, chosen);
-                    if (coin > 0)
-                    {
-                        Inventory.PlayerInventory.Instance?.AddGold(coin);
-                        Log(Loc.T("В казну прибыло."));
-                    }
+                    Inventory.PlayerInventory.Instance?.AddGold(coin);
+                    Log(Loc.F("Добычу ссыпали в ваш кошель: +{0}.", coin));
                 }
             }
 
@@ -170,6 +176,46 @@ namespace Sinbinder.Crypt
             Core.SaveSystem.AutoSave();
 
             return LastReport;
+        }
+
+        /// <summary>
+        /// Свои живые воины в сцене, кроме Греховода, — те, кого можно послать.
+        /// Состав отряда снимается с них (<see cref="SquadRoster.Remember"/>):
+        /// поднятые в склепе попадают в него только так.
+        /// </summary>
+        public static IEnumerable<Warrior> Squad()
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer))
+                    yield return w;
+        }
+
+        /// <summary>
+        /// Сцена — по составу после вылазки. Вылазка считается разом, без
+        /// сцены, а ушедшие стоят в склепе: не вернувшийся оставался бы
+        /// стоять, а вернувшийся — без долга, который записан в составе,
+        /// и при следующем снятии состава долг стёрся бы.
+        /// </summary>
+        private static void Settle(List<string> party, IReadOnlyList<string> survivors)
+        {
+            var stay = new HashSet<string>(survivors);
+            var gone = new List<Warrior>();
+
+            foreach (var w in Squad())
+            {
+                if (!party.Contains(w.DisplayName)) continue;
+                if (!stay.Contains(w.DisplayName)) { gone.Add(w); continue; }
+                if (!SquadRoster.TryGet(w.DisplayName, out var m)) continue;
+
+                w.UnpaidMissions = m.UnpaidMissions;
+                w.ChangeLoyalty(m.Loyalty - w.Loyalty);
+            }
+
+            foreach (var w in gone)
+            {
+                if (Application.isPlaying) Destroy(w.gameObject);
+                else DestroyImmediate(w.gameObject);
+            }
         }
 
         private static List<string> Names(List<SquadRoster.Member> away)

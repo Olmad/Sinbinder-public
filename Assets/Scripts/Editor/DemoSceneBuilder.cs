@@ -2205,8 +2205,11 @@ namespace Sinbinder.Utilets
 
             // Как у экрана «Греховод пал»: без кнопок из эпилога некуда
             // было уйти — меню паузы, пока игра стоит, не открывается.
-            var again = EndButton(Sinbinder.Core.Loc.N("Начать сначала"), panel, -190f);
-            var quit = EndButton(Sinbinder.Core.Loc.N("Выйти из игры"), panel, 190f);
+            // Посередине — «Остаться в склепе»: песочница после истории
+            // (docs/37-DEMO.md §0); без выключателя «вылазки» её прячет DemoEndUI.
+            var again = EndButton(Sinbinder.Core.Loc.N("Начать сначала"), panel, -300f, 280f);
+            var stay = EndButton(Sinbinder.Core.Loc.N("Остаться в склепе"), panel, 0f, 280f);
+            var quit = EndButton(Sinbinder.Core.Loc.N("Выйти из игры"), panel, 300f, 280f);
 
             // На холст, а не на панель: панель выключается в Start, а
             // выключенный объект не находит FindFirstObjectByType — директор
@@ -2214,7 +2217,7 @@ namespace Sinbinder.Utilets
             // оставляя игрока в пустом склепе. Нашёл прогон DemoWalkthrough.
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.DemoEndUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_title", title), ("_body", body),
-                     ("_again", again), ("_quit", quit));
+                     ("_again", again), ("_quit", quit), ("_stay", stay));
         }
 
         /// <summary>
@@ -2222,7 +2225,7 @@ namespace Sinbinder.Utilets
         /// «Греховод пал» (<c>GameOverUI</c>): 320 на 84, середина на 70
         /// от края. Два экрана конца обязаны выглядеть одним.
         /// </summary>
-        private static Button EndButton(string text, RectTransform panel, float x)
+        private static Button EndButton(string text, RectTransform panel, float x, float width = 320f)
         {
             var go = new GameObject(text, typeof(RectTransform));
             go.transform.SetParent(panel, false);
@@ -2231,7 +2234,7 @@ namespace Sinbinder.Utilets
             rt.anchorMin = new Vector2(0.5f, 0f);
             rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(320f, 84f);
+            rt.sizeDelta = new Vector2(width, 84f);
             rt.anchoredPosition = new Vector2(x, 70f);
 
             var plate = go.AddComponent<Image>();

@@ -125,6 +125,11 @@ namespace Sinbinder.UI
         {
             if (_panel == null || _board == null) return;
 
+            // Склеп-песочница: состав — с тех, кто стоит в склепе. Поднятые
+            // в мастерской иначе в нём не значились бы до смены сцены,
+            // а плата лично меняет долг на живых, а не в составе.
+            if (CryptMap.Opened) SquadRoster.Remember(MissionBoard.Squad());
+
             _pickingCommander = false;
             ShowMissions();
 

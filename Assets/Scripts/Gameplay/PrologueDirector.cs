@@ -55,7 +55,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _altarReach = 3.5f;
 
         [Tooltip("Последняя доля: как часто напоминать о шаге, которого склеп "
-               + "ждёт от игрока: поднять воина, дойти до алтаря, послать отряд.")]
+               + "ждёт от игрока: поднять воина, дойти до алтаря.")]
         [SerializeField] private float _altarNudge = 60f;
 
         [Tooltip("Что сказать, входя в последнюю долю. Пусто — молча.")]
@@ -241,15 +241,9 @@ namespace Sinbinder.Gameplay
 
                 if (salary != null && !UI.SalaryPanelUI.Answered) { _sinceCommander = 0f; return; }
 
-                // Шаг игрока: выбрать дорогу (docs/39-PLACES.md §2). Пока
-                // с карты у правой стены не ушло ни одной вылазки, а людей
-                // хватает, эпилог ждёт. Карта — за выключателем «вылазки».
-                if (Crypt.CryptMap.Waiting)
-                {
-                    _sinceCommander = 0f;
-                    Nudge(Loc.T("Шар у правой стены показывает дороги. Отряд ждёт, куда его послать."));
-                    return;
-                }
+                // Вылазки — не шаг истории, а песочница после неё
+                // (docs/37-DEMO.md §0): стол встаёт, когда игрок решит
+                // остаться в склепе на экране эпилога (Crypt.CryptMap.Open).
 
                 _sinceCommander += Time.unscaledDeltaTime;
                 if (_sinceCommander < _endsAfterSeconds) return;

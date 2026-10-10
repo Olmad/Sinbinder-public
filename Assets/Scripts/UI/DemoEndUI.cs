@@ -34,11 +34,23 @@ namespace Sinbinder.UI
         [SerializeField] private Button _again;
         [SerializeField] private Button _quit;
 
+        /// <summary>
+        /// «Остаться в склепе» — песочница после истории (docs/37-DEMO.md §0,
+        /// автор 10 октября: «нужны вылазки после основной игры»). Есть,
+        /// только когда отряд вернулся и стол вылазок включён (выключатель
+        /// «вылазки»); иначе эпилог — конец демо, как прежде.
+        /// </summary>
+        [SerializeField] private Button _stay;
+
+        /// <summary>Кто вернулся с вылазки из лагеря: им входить в склеп, если игрок останется.</summary>
+        private readonly List<string> _returned = new();
+
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
             if (_again != null) _again.onClick.AddListener(GameOverUI.NewGame);
             if (_quit != null) _quit.onClick.AddListener(Application.Quit);
+            if (_stay != null) _stay.onClick.AddListener(Stay);
         }
 
         private static void Caption(Button button, string text)
@@ -54,12 +66,21 @@ namespace Sinbinder.UI
             if (_title != null)
                 _title.text = wiped ? Loc.T("Отряд не вернулся.") : Loc.T("Отряд вернулся.");
 
-            if (_body != null) _body.text = wiped ? Epitaph() : Roll() + Comeback();
+            bool sandbox = !wiped && _stay != null && Crypt.CryptMap.Switch;
+            if (_stay != null) _stay.gameObject.SetActive(sandbox);
+
+            if (_body != null)
+                _body.text = wiped ? Epitaph()
+                    : (Roll() + Comeback()).TrimEnd() + "\n\n"
+                      + (sandbox ? Loc.T("Здесь история демо кончается. Склеп остаётся вашим: "
+                                       + "можно остаться и посылать отряды на вылазки.")
+                                 : Loc.T("Демо окончено."));
 
             // Подписи кнопок вписал сборщик сцены — по-русски, на миг сборки.
             // Язык могли сменить; подписываем при показе.
             Caption(_again, Loc.T("Начать сначала"));
             Caption(_quit, Loc.T("Выйти из игры"));
+            Caption(_stay, Loc.T("Остаться в склепе"));
 
             Fit();
             Modal.Open(_panel);
@@ -154,7 +175,8 @@ namespace Sinbinder.UI
             var away = new List<SquadRoster.Member>();
             foreach (var m in SquadRoster.Away) away.Add(m);
 
-            if (away.Count == 0) return Loc.T("\nДемо окончено.");
+            _returned.Clear();
+            if (away.Count == 0) return "";
 
             // Командир идёт первым: он вернулся, если вернулся хоть кто-то.
             away.Sort((a, b) =>
@@ -166,6 +188,12 @@ namespace Sinbinder.UI
             var leader = away[0];
             var survivors = Expedition.Resolve(away);
 
+            // Вернувшиеся — снова в составе: им платить и их посылать, если
+            // игрок останется в склепе. Не вернувшиеся из него вычеркнуты;
+            // старший вылазки больше не старший — вылазка кончилась.
+            SquadRoster.ComeBack(survivors);
+            _returned.AddRange(survivors);
+
             var sb = new StringBuilder();
 
             // Не вернулся никто — это законный исход настоящего боя,
@@ -176,8 +204,7 @@ namespace Sinbinder.UI
             {
                 sb.AppendLine().AppendLine(Loc.T("Из ушедших не вернулся никто."));
                 sb.AppendLine();
-                sb.AppendLine(Homecoming.Story(leader.Sin, leader.Gender));
-                sb.AppendLine().Append(Loc.T("Демо окончено."));
+                sb.Append(Homecoming.Story(leader.Sin, leader.Gender));
                 return sb.ToString();
             }
 
@@ -195,11 +222,31 @@ namespace Sinbinder.UI
             if (survivors.Count < away.Count)
             {
                 sb.AppendLine();
-                sb.AppendLine(Homecoming.Story(leader.Sin, leader.Gender));
+                sb.Append(Homecoming.Story(leader.Sin, leader.Gender));
             }
 
-            sb.AppendLine().Append(Loc.T("Демо окончено."));
-            return sb.ToString();
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Остаться в склепе: эпилог уходит, мир идёт, вернувшиеся входят,
+        /// стол вылазок встаёт. Состав снимается со сцены заново — поднятые
+        /// в мастерской попадают в него только так, а без этого их нельзя
+        /// было бы послать.
+        /// </summary>
+        private void Stay()
+        {
+            Modal.Close(_panel);
+            Core.GamePauseController.Instance?.Unhalt();
+            Audio.Music.Play(Audio.Track.Crypt, 3f);
+
+            Object.FindFirstObjectByType<PrologueCampSpawner>()?.Arrive(_returned);
+            SquadRoster.Remember(Crypt.MissionBoard.Squad());
+            Crypt.CryptMap.Open();
+
+            Object.FindFirstObjectByType<BattleLogUI>()?.Write(Loc.T(
+                "Склеп ваш. Шар у правой стены показывает дороги. Первая ведёт "
+              + "к соляному обозу: охраны при нём двое, а везут серебро."));
         }
 
         private string Epitaph()

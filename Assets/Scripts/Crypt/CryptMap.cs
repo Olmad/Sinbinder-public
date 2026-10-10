@@ -14,9 +14,14 @@ namespace Sinbinder.Crypt
     /// игрок не попадает. Здесь стол с шаром встаёт в склеп — у правой
     /// стены, напротив мастерской (<see cref="CryptWorkshop"/>).
     ///
-    /// <b>Шаг игрока.</b> Пока с доски не ушло ни одной вылазки, а людей
-    /// хватает хоть на одну, эпилог ждёт (<see cref="Waiting"/>, спрашивает
-    /// <see cref="PrologueDirector"/>): выбор дороги — рычаг этой части.
+    /// <b>Песочница — после истории</b> (docs/37-DEMO.md §0, автор 10 октября:
+    /// «нужны вылазки после основной игры — это песочница, где игрок может
+    /// получить улучшения, посмотреть на своих воинов вне скриптовых боёв
+    /// и в спокойной обстановке потыкать кнопки сам»). Стол появляется,
+    /// когда история кончилась и игрок решил остаться в склепе
+    /// (<see cref="Open"/>, кнопка эпилога <see cref="UI.DemoEndUI"/>).
+    /// До 10 октября вылазка была шагом перед эпилогом: отряд из лагеря
+    /// ещё не вернулся, а склеп уже работал как база.
     ///
     /// Пока не проверено в игре — за выключателем консоли «вылазки»: без
     /// него стол спрятан, и склеп тот же. Карта сама на отдельном объекте:
@@ -30,6 +35,9 @@ namespace Sinbinder.Crypt
         /// <summary>Выключатель консоли «вылазки».</summary>
         public static bool Switch { get; set; }
 
+        /// <summary>История кончилась, склеп — песочница: стол на месте.</summary>
+        public static bool Opened { get; private set; }
+
         private static CryptMap _here;
         private MissionBoard _board;
         private bool _shown;
@@ -39,18 +47,22 @@ namespace Sinbinder.Crypt
         {
             _here = null;
             Switch = false;
+            Opened = false;
         }
+
+        /// <summary>Открыть песочницу: стол встаёт, если выключатель включён.</summary>
+        public static void Open() => Opened = true;
 
         /// <summary>Доска вылазок склепа. Автопрогону: куда посылать.</summary>
         public static MissionBoard Board => _here != null ? _here._board : null;
 
         /// <summary>
-        /// Эпилогу ждать: карта открыта, с доски не ушло ни одной вылазки,
-        /// а людей хватает хоть на одну и есть кому её вести. Не на что
-        /// идти — ждать нечего: иначе эпилог не пришёл бы никогда.
+        /// Песочница открыта, с доски не ушло ни одной вылазки, а людей
+        /// хватает хоть на одну и есть кому её вести. Спрашивает автопрогон:
+        /// послать первую.
         /// </summary>
         public static bool Waiting
-            => _here != null && Switch && _here._board != null
+            => _here != null && Switch && Opened && _here._board != null
             && _here._board.Sent == 0 && Possible(_here._board);
 
         private static bool Possible(MissionBoard board)
@@ -67,12 +79,13 @@ namespace Sinbinder.Crypt
         void Awake()
         {
             _here = this;
+            Opened = false;   // новая сцена склепа — история сначала
             if (_zone != null) _board = _zone.GetComponentInChildren<MissionBoard>(true);
 
             if (_zone == null || _board == null)
                 Debug.LogWarning("[СКЛЕП] Карта без стола или без доски вылазок: "
                                + "посылать из склепа будет некуда.");
-            Show(Switch);
+            Show(Switch && Opened);
         }
 
         void OnDestroy()
@@ -82,7 +95,8 @@ namespace Sinbinder.Crypt
 
         void Update()
         {
-            if (_shown != Switch) Show(Switch);
+            bool on = Switch && Opened;
+            if (_shown != on) Show(on);
         }
 
         private void Show(bool on)

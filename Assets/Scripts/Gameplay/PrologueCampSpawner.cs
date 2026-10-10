@@ -476,14 +476,46 @@ namespace Sinbinder.Gameplay
 
             return seed;
         }
+        /// <summary>Место в круге, лицом к костру: в лагере смотрят на огонь, а не наружу.</summary>
         private Warrior SpawnMember(SquadRoster.Member member, int index, int total)
+            => SpawnMember(member, PlaceInCircle(index, total), transform.position);
+
+        /// <summary>
+        /// Вернувшиеся с вылазки входят в склеп (docs/37-DEMO.md §0, часть 6):
+        /// встают рядом в ряд позади отряда, лицом в зал. До 10 октября они
+        /// были только строкой эпилога — в склепе их не было, и после конца
+        /// истории ни заплатить им, ни послать их было нельзя.
+        /// </summary>
+        public void Arrive(IReadOnlyList<string> names)
+        {
+            if (names == null || names.Count == 0) return;
+
+            // Спавнер мог не собирать отряд в этой сцене сам.
+            _relSystem ??= new Core.RelationshipSystem(AOS.MemoryProcessor.Instance);
+
+            var party = new List<SquadRoster.Member>();
+            foreach (var name in names)
+                if (SquadRoster.TryGet(name, out var m) && !m.IsAway) party.Add(m);
+
+            for (int i = 0; i < party.Count; i++)
+            {
+                var at = transform.position
+                       + new Vector3((i - (party.Count - 1) * 0.5f) * ArriveGap, 0f, -ArriveBehind);
+                SpawnMember(party[i], at, at + Vector3.forward * 10f);
+            }
+
+            Debug.Log($"[ПРОЛОГ] Вернулись с вылазки и вошли: {party.Count}.");
+        }
+
+        /// <summary>Шаг между вернувшимися в ряду и насколько ряд позади отряда, метров.</summary>
+        private const float ArriveGap = 1.6f, ArriveBehind = 3f;
+
+        private Warrior SpawnMember(SquadRoster.Member member, Vector3 at, Vector3 look)
         {
             var go = new GameObject(member.Name);
             go.transform.SetParent(transform);
-            go.transform.position = PlaceInCircle(index, total);
-
-            // Лицом к костру: в лагере смотрят на огонь, а не наружу.
-            go.transform.LookAt(new Vector3(transform.position.x, go.transform.position.y, transform.position.z));
+            go.transform.position = at;
+            go.transform.LookAt(new Vector3(look.x, at.y, look.z));
 
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(member.Name, member.Sin, member.Moral, 1,
