@@ -187,6 +187,9 @@ namespace Sinbinder.EditorTools
                 _framedSince = -1f;
                 _heraldShot = false;
                 _ballShot = false;
+                _startSeen = -1f;
+                _startShot = false;
+                _lessonShot = false;
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
@@ -285,6 +288,12 @@ namespace Sinbinder.EditorTools
                     _lessonSince = now;
                     _lessonWarped = false;
                     Write("  [УРОК] " + Lesson.Now + ": мир стоит, кольцо по Греховоду");
+                }
+                // Опись (46-UI §1): плашка урока — один кадр за прогон.
+                if (!_lessonShot && now - _lessonSince > 1.0f)
+                {
+                    _lessonShot = true;
+                    Snap("опись — плашка урока " + Lesson.Now);
                 }
                 if (now - _lessonSince < 60f)
                 {
@@ -413,9 +422,7 @@ namespace Sinbinder.EditorTools
                 // на что отвечает прогон. Нажимаем каждый кадр, пока он
                 // висит: сцена грузится не мгновенно, и одного нажатия
                 // в начале шага могло бы не хватить.
-                S("ответили на вопрос о сохранении", null,
-                  () => { Sinbinder.UI.StartPanel.ChooseFresh();
-                          return !Sinbinder.UI.StartPanel.Waiting; }, 30f),
+                S("ответили на вопрос о сохранении", null, StartAnswered, 30f),
 
                 S("лагерь загрузился, заставка ушла", null, () =>
                 {
@@ -461,6 +468,8 @@ namespace Sinbinder.EditorTools
             // Значит, пять минут в лагере — здесь, пока Карган ждёт у стола.
             if (all)
             {
+                // Опись экранов (46-UI §1): состояния, которых шаги не снимают.
+                steps.Add(S("опись: группа, Греховод, пауза", InventoryStart, InventoryDone, 20f));
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
                 steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
@@ -1556,6 +1565,105 @@ namespace Sinbinder.EditorTools
         {
             try { Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/прохождение", name); }
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message); }
+        }
+
+        // ── Опись экранов (46-UI §1, 15 октября) ──
+        //
+        // Кадры «до» для работы над интерфейсом: состояния, которых шаги
+        // прогона не снимают. Только в -All — обычный прогон тот, на который
+        // ссылается ПОКАЗ.md. Каждое состояние — через кадр-другой после
+        // того, как его поставили: панели обновляются в своём Update.
+
+        private static bool _lessonShot;
+        private static float _startSeen = -1f;
+        private static bool _startShot;
+
+        /// <summary>
+        /// Вопрос о сохранении: с -All — сперва кадр, когда панель провисела
+        /// полторы секунды (раньше кадр шага выходил чёрным: затемнение);
+        /// потом «начать заново», как и прежде.
+        /// </summary>
+        private static bool StartAnswered()
+        {
+            if (SessionState.GetBool(AllOn, false) && !_startShot && Sinbinder.UI.StartPanel.Waiting)
+            {
+                float now = Time.realtimeSinceStartup;
+                if (_startSeen < 0f) _startSeen = now;
+                if (now - _startSeen < 1.5f) return false;
+                _startShot = true;
+                Snap("опись — вопрос о сохранении");
+            }
+            Sinbinder.UI.StartPanel.ChooseFresh();
+            return !Sinbinder.UI.StartPanel.Waiting;
+        }
+
+        private static int _invStage;
+        private static float _invAt;
+
+        private static void InventoryStart()
+        {
+            _invStage = 0;
+            _invAt = Time.realtimeSinceStartup;
+        }
+
+        /// <summary>Группа из троих → один Греховод → пауза; по кадру на каждое.</summary>
+        private static bool InventoryDone()
+        {
+            float now = Time.realtimeSinceStartup;
+            if (now < _invAt) return false;
+
+            switch (_invStage)
+            {
+                case 0:
+                    Deselect();
+                    var own = Own();
+                    for (int i = 0; i < Mathf.Min(3, own.Count); i++) Select(own[i]);
+                    break;
+                case 1:
+                    Snap("опись — выбрана группа");
+                    Deselect();
+                    Select(SinbinderPlayer.Instance);
+                    break;
+                case 2:
+                    Snap("опись — выбран Греховод");
+                    Deselect();
+                    Pause("Open");
+                    break;
+                case 3:
+                    Snap("опись — пауза");
+                    Pause("Close");
+                    return true;
+            }
+
+            _invStage++;
+            _invAt = now + 0.8f;
+            return false;
+        }
+
+        private static void Select(Warrior w)
+        {
+            var unit = w != null ? w.GetComponent<SelectionComponent>() : null;
+            var manager = SelectionManager.Instance;
+            if (unit == null || manager == null) return;
+            typeof(SelectionManager).GetMethod("SelectUnit", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.Invoke(manager, new object[] { unit });
+        }
+
+        private static void Deselect()
+        {
+            var manager = SelectionManager.Instance;
+            if (manager == null) return;
+            typeof(SelectionManager).GetMethod("DeselectAll", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.Invoke(manager, null);
+        }
+
+        /// <summary>Открыть или закрыть меню паузы тем же методом, что Esc.</summary>
+        private static void Pause(string method)
+        {
+            var menu = UnityEngine.Object.FindFirstObjectByType<UI.PauseMenu>();
+            if (menu == null) { Write("  [ОПИСЬ] меню паузы в сцене нет"); return; }
+            typeof(UI.PauseMenu).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.Invoke(menu, null);
         }
 
         // ── Стол с картами (автор, 2 октября) ──
