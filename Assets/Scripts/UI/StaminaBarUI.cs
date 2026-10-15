@@ -15,8 +15,10 @@ namespace Sinbinder.UI
     /// из причины отказа: «силы на исходе». Механикой, которую не видно,
     /// нельзя играть: по ней можно только проиграть, не поняв почему.
     ///
-    /// Без чисел — полоса, как у здоровья. Видна, пока силы не полны, и всегда
-    /// у выделенного: десять полных полос над отдыхающим отрядом — шум.
+    /// Без чисел — полоса, как у здоровья. Видна у выделенного и у вымотанного
+    /// всегда, у прочих — пока силы не полны и в сцене идёт бой. Ходьба тоже
+    /// тратит силы, и без последнего условия полоса вставала бы над каждым,
+    /// кто прошёлся по лагерю, и над Греховодом на каждом шаге — шум, а не знание.
     /// Черта на трёх десятых — порог измождения: ниже неё воин слабеет,
     /// и полоса тускнеет и мерцает.
     /// </summary>
@@ -81,7 +83,9 @@ namespace Sinbinder.UI
             }
 
             float ratio = _fatigue.Ratio;
-            bool want = ratio < Full || (_selection != null && _selection.IsSelected);
+            bool want = (_selection != null && _selection.IsSelected)
+                     || _fatigue.IsExhausted
+                     || (ratio < Full && Fighting());
 
             // Реальное время: на паузе полоса выделенного не застывает полупрозрачной.
             _shown = Mathf.MoveTowards(_shown, want ? 1f : 0f, FadeSpeed * Time.unscaledDeltaTime);
@@ -97,6 +101,18 @@ namespace Sinbinder.UI
             var c = Spent;
             c.a = pulse;
             _fillImage.color = c;
+        }
+
+        private static int _fightFrame = -1;
+        private static bool _fight;
+
+        /// <summary>Идёт ли в сцене бой — есть ли живые враги. Раз за кадр на все полосы.</summary>
+        private static bool Fighting()
+        {
+            if (_fightFrame == Time.frameCount) return _fight;
+            _fightFrame = Time.frameCount;
+            _fight = CombatManager.Instance != null && CombatManager.Instance.GetAliveEnemyCount() > 0;
+            return _fight;
         }
 
         /// <summary>
