@@ -119,7 +119,13 @@ namespace Sinbinder.Gameplay
         private float ApplyPosition(float damage, GameObject attacker)
         {
             if (attacker != null)
+            {
                 damage *= Facing.DamageMultiplier(transform, attacker.transform.position);
+
+                // Первый удар сзади своим — назвать: глагол сработал (Lesson, урок спины).
+                if (Facing.IsFromBehind(transform, attacker.transform.position))
+                    Lesson.BackStruck(attacker);
+            }
 
             var engagement = GetComponent<Engagement>();
             if (engagement != null)

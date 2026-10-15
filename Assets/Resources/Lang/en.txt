@@ -4692,6 +4692,10 @@ msgid "десятерых"
 msgstr "ten"
 
 #: Gameplay/Lesson.cs
+msgid "{0} заходит сзади и бьёт в спину — такой удар сильнее обычного."
+msgstr "{0} comes in from behind and strikes the back — such a blow hits harder than usual."
+
+#: Gameplay/Lesson.cs
 msgid "Подойдите к душе и нажмите E — она ляжет в пустую банку."
 msgstr "Walk up to the soul and press E — it will go into an empty jar."
 
@@ -4722,6 +4726,34 @@ msgstr "In a conversation — how the warrior is, and gear hand to hand."
 #: Gameplay/Lesson.cs
 msgid "{0} — смотреть глазами Греховода."
 msgstr "{0} — see through the Sinbinder's eyes."
+
+#: Gameplay/Lesson.cs
+msgid "ЛКМ"
+msgstr "LMB"
+
+#: Gameplay/Lesson.cs
+msgid "{0} держит врага, и враг стоит к остальным спиной."
+msgstr "{0} is holding the enemy, and the enemy has its back to everyone else."
+
+#: Gameplay/Lesson.cs
+msgid "Щёлкните по {0} — выделить."
+msgstr "Click {0} to select."
+
+#: Gameplay/Lesson.cs
+msgid "ПКМ"
+msgstr "RMB"
+
+#: Gameplay/Lesson.cs
+msgid "Правой кнопкой — по светлой отметке за спиной врага: воин зайдёт сзади."
+msgstr "Right-click the pale mark behind the enemy: the warrior will come in from behind."
+
+#: Gameplay/Lesson.cs
+msgid "Это приказ бить в лоб. Чтобы ударить в спину, пошлите его на отметку."
+msgstr "That is an order to strike head-on. To strike the back, send them to the mark."
+
+#: Gameplay/Lesson.cs
+msgid "Удар в спину сильнее обычного."
+msgstr "A blow to the back hits harder than usual."
 
 #: Gameplay/Lesson.cs
 msgid "F у ложа тела — забрать тело и взять со стола другое."
@@ -6354,6 +6386,14 @@ msgstr "Start anew, with commitment"
 #: UI/StartPanel.cs
 msgid "Воины здесь спорят и отказываются. Если отказ можно переиграть, он ничего не стоит — и весь спор становится помехой, которую обходят клавишей."
 msgstr "Warriors here argue and refuse. If a refusal can be replayed, it costs nothing — and the whole argument becomes a nuisance to skip with a keypress."
+
+#: UI/SurroundedMarkUI.cs
+msgid "{0} окружён — у полосы здоровья встал знак. Когда рядом двое врагов и больше, каждый лишний делает удары по нему больнее."
+msgstr "{0} is surrounded — a sign has appeared by the health bar. With two or more enemies close by, each extra one makes the blows on him hurt more."
+
+#: UI/SurroundedMarkUI.cs
+msgid "{0} окружена — у полосы здоровья встал знак. Когда рядом двое врагов и больше, каждый лишний делает удары по ней больнее."
+msgstr "{0} is surrounded — a sign has appeared by the health bar. With two or more enemies close by, each extra one makes the blows on her hurt more."
 
 #: Resources/DialogueDatabase.asset
 msgid "У тебя есть кошель. Скоро он будет мой."

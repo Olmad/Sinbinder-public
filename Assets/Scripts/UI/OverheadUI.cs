@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Sinbinder.UI
 {
     /// <summary>
-    /// Корень надголовного интерфейса воина: полоска здоровья и значок намерения.
+    /// Корень надголовного интерфейса воина: полоска здоровья, полоса сил,
+    /// знак окружения и значок намерения.
     /// Собирается в UnitFactory, переиспользуется через OverheadUIPool.
     /// </summary>
     public class OverheadUI : MonoBehaviour
@@ -24,5 +25,11 @@ namespace Sinbinder.UI
             get => _decisionIcon;
             set => _decisionIcon = value;
         }
+
+        /// <summary>Полоса сил под здоровьем (<see cref="StaminaBarUI"/>).</summary>
+        public StaminaBarUI Stamina { get; set; }
+
+        /// <summary>Знак «окружён» слева от здоровья (<see cref="SurroundedMarkUI"/>).</summary>
+        public SurroundedMarkUI Surrounded { get; set; }
     }
 }

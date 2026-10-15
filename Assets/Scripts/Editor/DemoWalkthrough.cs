@@ -1027,6 +1027,17 @@ namespace Sinbinder.EditorTools
             var hero = SinbinderPlayer.Instance;
             if (hero == null) return;
 
+            // Спина: глагол — приказ, а не шаг Греховода. Послать обходящего
+            // на отметку тем же вызовом, что правая кнопка по земле.
+            if (Lesson.Now == LessonKind.Backstab)
+            {
+                var flanker = Lesson.Flanker;
+                if (flanker == null) return;
+                flanker.IssueCommand(CommandKind.Move, Lesson.Mark);
+                Write("  [УРОК] спина: " + flanker.DisplayName + " послан за спину врага");
+                return;
+            }
+
             float reach = Lesson.Now == LessonKind.Harvest ? 2f : 2.5f;
             float left = CampFocus.GroundDistance(hero.transform.position, Lesson.Target);
 

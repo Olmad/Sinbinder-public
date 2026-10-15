@@ -50,6 +50,9 @@ namespace Sinbinder.Gameplay
 
         public bool IsExhausted => Ratio < _exhaustedBelow;
 
+        /// <summary>Порог измождения, доля сил. Черта на полосе сил (<see cref="UI.StaminaBarUI"/>).</summary>
+        public float ExhaustedBelow => _exhaustedBelow;
+
         /// <summary>Множитель урона и точности от усталости, 0.5…1.</summary>
         public float Effectiveness => Mathf.Lerp(0.5f, 1f, Mathf.InverseLerp(0f, _exhaustedBelow, Ratio));
 

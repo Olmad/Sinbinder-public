@@ -7,7 +7,8 @@ using Sinbinder.Gameplay;
 namespace Sinbinder.UI
 {
     /// <summary>
-    /// Надголовный интерфейс воина: полоса здоровья и значок намерения.
+    /// Надголовный интерфейс воина: полоса здоровья, полоса сил, знак
+    /// окружения и значок намерения.
     ///
     /// <b>Первая ступень прозрачности</b> — «значок над головой, всегда,
     /// в момент решения» (00-GDD.md §7). И одновременно первый из четырёх
@@ -64,6 +65,9 @@ namespace Sinbinder.UI
             // Набор из пула мог быть собран до слова над головой.
             if (root.GetComponent<OverheadWord>() == null) Word(root.transform);
 
+            // И до полосы сил и знака окружения (15 октября) — тогда доложить.
+            Floor(ui, root.transform, warrior);
+
             return root;
         }
 
@@ -100,8 +104,23 @@ namespace Sinbinder.UI
             ui.DecisionIcon = icon;
 
             bar.ManualInit(damageable, slider, fill, root);
+            Floor(ui, root.transform, warrior);
 
             return root;
+        }
+
+        /// <summary>
+        /// Пол боя на виду (docs/08-FLOOR.md §8, решение автора 15 октября):
+        /// полоса сил под здоровьем и знак «окружён» слева от него. Строятся
+        /// один раз на набор и переназначаются, когда набор достаётся из пула.
+        /// </summary>
+        private static void Floor(OverheadUI ui, Transform root, GameObject warrior)
+        {
+            if (ui == null) return;
+            if (ui.Stamina == null) ui.Stamina = StaminaBarUI.Attach(root);
+            if (ui.Surrounded == null) ui.Surrounded = SurroundedMarkUI.Attach(root);
+            ui.Stamina.Init(warrior);
+            ui.Surrounded.Init(warrior);
         }
 
         private static HealthBarUI HealthBar(Transform parent, Damageable damageable,

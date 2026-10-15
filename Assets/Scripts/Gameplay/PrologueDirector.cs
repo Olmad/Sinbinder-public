@@ -112,6 +112,7 @@ namespace Sinbinder.Gameplay
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
             UI.CommandHintUI.Forget();
+            UI.SurroundedMarkUI.Forget();
             Lesson.Forget();
 
             // Сума своя, не чужая: статика переживает смену сцен,

@@ -105,6 +105,7 @@ namespace Sinbinder.Tests
                 ExitMarkerPlace();
                 HeraldLines();
                 CryptWelcome();
+                FloorOnSight();
                 TextRules();
                 NamesAndCases();
                 VirtueHalves();
@@ -1131,6 +1132,34 @@ namespace Sinbinder.Tests
                   "строка поступка — не реплика, наезда нет");
             Check(Herald.Hold("") >= 2f && Herald.Hold(new string('а', 400)) <= 7f,
                   "кадр держится, чтобы прочесть, и не дольше семи секунд");
+        }
+
+        /// <summary>
+        /// Пол на виду (решение автора 15 октября, docs/08-FLOOR.md §8): над
+        /// воином — полоса сил с чертой порога измождения и знак «окружён».
+        /// До того усталость и окружение решали бой, а игрок видел их только
+        /// причиной отказа. Набор из пула, собранный раньше, обязан их получить.
+        /// </summary>
+        private static void FloorOnSight()
+        {
+            var w = MakeWarrior("Пол на виду", SinType.Sloth, 30f);
+            if (w == null) { Fail("не удалось собрать воина для полосы сил"); return; }
+
+            var damageable = w.gameObject.AddComponent<Damageable>();
+            var fatigue = w.gameObject.AddComponent<Fatigue>();
+            w.gameObject.AddComponent<Engagement>();
+
+            var root = UI.OverheadBuilder.Attach(w.gameObject, damageable);
+            var ui = root != null ? root.GetComponent<UI.OverheadUI>() : null;
+            Check(ui != null && ui.Stamina != null && ui.Surrounded != null,
+                  "над воином нет полосы сил или знака окружения — пол снова невидим");
+
+            var tick = root != null ? root.transform.Find("Полоса сил/Порог") as RectTransform : null;
+            Check(tick != null && Mathf.Abs(tick.anchorMin.x - fatigue.ExhaustedBelow) < 0.001f,
+                  "черта на полосе сил не на пороге измождения: игрок не увидит, где воин слабеет");
+
+            Check(fatigue.ExhaustedBelow > 0f && fatigue.ExhaustedBelow < 1f,
+                  "порог измождения вне полосы");
         }
 
         /// <summary>
@@ -2285,6 +2314,11 @@ namespace Sinbinder.Tests
 
                 var back = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(new SaveGame { Lessons = Lesson.Saved() }));
                 Check(back.Lessons != null && back.Lessons.Contains("Harvest"), "уроки не пережили запись в файл");
+
+                // Урок спины (15 октября) — в записи по имени, как прочие.
+                Lesson.Restore(new List<string> { "Backstab" });
+                Check(Lesson.Given(LessonKind.Backstab) && Lesson.Saved().Contains("Backstab"),
+                      "урок спины не пережил запись: в новой игре он встал бы снова");
 
                 Lesson.Forget();
                 Check(!Lesson.Given(LessonKind.Harvest), "новая игра помнит уроки прошлой");

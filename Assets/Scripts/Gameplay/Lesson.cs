@@ -28,6 +28,15 @@ namespace Sinbinder.Gameplay
         /// когда поднять есть из кого. Отдельный урок — ответ автора 28.09.
         /// </summary>
         Raising,
+
+        /// <summary>
+        /// Спина: один свой держит врага лицом к себе, второй свободен — его
+        /// посылают за спину врага, на отметку. Решение автора, 15 октября:
+        /// «Спину показать в обучении» (docs/08-FLOOR.md §8). Удар в спину
+        /// с 28 августа бил в полтора раза сильнее, а игрок не знал, что так
+        /// можно: это первый тактический глагол — «одним сковать, вторым обойти».
+        /// </summary>
+        Backstab,
     }
 
     /// <summary>
@@ -85,6 +94,24 @@ namespace Sinbinder.Gameplay
 
         private static readonly Color SoulColor = new(0.66f, 0.82f, 1f, 0.75f);
         private static readonly Color WarriorColor = new(0.96f, 0.86f, 0.56f, 0.7f);
+        private static readonly Color FoeColor = new(0.96f, 0.58f, 0.22f, 0.75f);
+        private static readonly Color MarkColor = new(0.96f, 0.94f, 0.88f, 0.95f);
+
+        /// <summary>Урок спины: насколько за спиной врага отметка, м.</summary>
+        private const float Behind = 1.6f;
+
+        /// <summary>Урок спины: свободный свой не дальше этого от врага, м.</summary>
+        private const float FlankReach = 12f;
+
+        /// <summary>Урок спины: приказ идти ближе этого к отметке — «за спину», м.</summary>
+        private const float MarkReach = 2.5f;
+
+        /// <summary>
+        /// Урок спины не встаёт раньше этого после конца прошлого урока, секунд
+        /// реального времени: два стоп-кадра подряд — та самая «ядерная физика
+        /// за пять секунд» (автор, 10 октября).
+        /// </summary>
+        private const float Gap = 10f;
 
         // ──────────────────────────────────
         // Кому и когда
@@ -140,6 +167,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Воин урока обмена. Автопрогону: с кем говорить.</summary>
         public static Warrior Partner => _instance != null ? _instance._partner : null;
 
+        /// <summary>Урок спины: кого послать за спину. Автопрогону.</summary>
+        public static Warrior Flanker => _instance != null ? _instance._flanker : null;
+
+        /// <summary>Урок спины: отметка за спиной врага. Автопрогону: куда послать.</summary>
+        public static Vector3 Mark => _instance != null ? _instance._mark : Vector3.zero;
+
         /// <summary>Радиус кольца сейчас. Самопроверке и автопрогону.</summary>
         public static float Radius => _instance != null && _instance._leash != null
             ? _instance._leash.Radius : 0f;
@@ -148,6 +181,7 @@ namespace Sinbinder.Gameplay
         public static void Forget()
         {
             _given.Clear();
+            _backTold = false;
             if (_instance != null) _instance.End();
         }
 
@@ -262,6 +296,13 @@ namespace Sinbinder.Gameplay
         private Crypt.BindingDevice _device;
         private bool _talked;
 
+        // Урок спины: кто держит врага, кто его обходит, куда идти.
+        private Warrior _foe, _pinner, _flanker;
+        private Vector3 _mark;
+        private PendingCommand _flankerWas;
+        private bool _frontal;
+        private float _endedAt = -999f;
+
         private readonly List<Vector3> _road = new();
         private int _roadAt;
         private bool _walking;
@@ -276,6 +317,7 @@ namespace Sinbinder.Gameplay
         {
             _instance = null;
             _given.Clear();
+            _backTold = false;
             Switch = false;
         }
 
@@ -314,6 +356,7 @@ namespace Sinbinder.Gameplay
             if (!Allowed || !Calm()) return;
 
             if (!_given.Contains(LessonKind.Harvest)) TryHarvest();
+            if (!_now.HasValue && !_given.Contains(LessonKind.Backstab)) TryBackstab();
             if (!_now.HasValue && !_given.Contains(LessonKind.Exchange)) TryExchange();
             if (!_now.HasValue && !_given.Contains(LessonKind.Raising)) TryRaising();
         }
@@ -434,6 +477,145 @@ namespace Sinbinder.Gameplay
             Begin(LessonKind.Raising, device.transform.position, WorkshopInner);
         }
 
+        /// <summary>
+        /// Спина: враг дерётся с одним своим лицом к лицу, а второй свой свободен,
+        /// стоит недалеко и спереди или сбоку — показать, что его можно послать
+        /// за спину. Враг — первый по порядку сцены, обходящий — самый негордый
+        /// из свободных (гордый в спину не бьёт: <c>PrideModule</c>, и урок
+        /// кончился бы отказом), при равных — ближний. Ничего случайного.
+        /// </summary>
+        private void TryBackstab()
+        {
+            if (Time.unscaledTime - _endedAt < Gap) return;
+
+            foreach (var foe in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (foe == null || foe.IsDead || foe.Team != Team.Enemy || FogOfWar.Hides(foe)) continue;
+
+                var pinner = Pinner(foe);
+                if (pinner == null) continue;
+
+                var behind = foe.transform.position - foe.transform.forward * Behind;
+                if (!NavMesh.SamplePosition(behind, out var spot, 1.5f, NavMesh.AllAreas)) continue;
+                if (!Facing.IsFromBehind(foe.transform, spot.position)) continue;
+
+                var flanker = Free(foe, pinner, spot.position);
+                if (flanker == null) continue;
+
+                _foe = foe;
+                _pinner = pinner;
+                _flanker = flanker;
+                _mark = spot.position;
+                _flankerWas = flanker.Command;
+                _frontal = false;
+
+                Begin(LessonKind.Backstab, foe.transform.position);
+                ShowMark();
+                return;
+            }
+        }
+
+        /// <summary>Свой, который дерётся с врагом спереди или сбоку — держит его.</summary>
+        private static Warrior Pinner(Warrior foe)
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (!Ours(w)) continue;
+                var engagement = w.GetComponent<Engagement>();
+                if (engagement == null || !engagement.IsEngaged) continue;
+                if (Vector3.Distance(w.transform.position, foe.transform.position) > 2.5f) continue;
+                if (Facing.IsFromBehind(foe.transform, w.transform.position)) continue;
+                return w;
+            }
+            return null;
+        }
+
+        /// <summary>Свободный свой, который дойдёт до отметки: не в бою, не за спиной уже.</summary>
+        private static Warrior Free(Warrior foe, Warrior pinner, Vector3 mark)
+        {
+            Warrior best = null;
+            float bestPride = float.MaxValue, bestDist = float.MaxValue;
+
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (!Ours(w) || w == pinner || w.Soul == null) continue;
+
+                var engagement = w.GetComponent<Engagement>();
+                if (engagement != null && engagement.IsEngaged) continue;
+
+                float d = Vector3.Distance(w.transform.position, foe.transform.position);
+                if (d > FlankReach) continue;
+                if (Facing.IsFromBehind(foe.transform, w.transform.position)) continue;
+
+                float pride = w.Soul.Get(SinType.Pride);
+                if (pride > bestPride || (Mathf.Approximately(pride, bestPride) && d >= bestDist)) continue;
+                if (!Path(w.transform.position, mark)) continue;
+
+                best = w;
+                bestPride = pride;
+                bestDist = d;
+            }
+            return best;
+        }
+
+        private static bool Ours(Warrior w)
+            => w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer);
+
+        /// <summary>Есть ли дорога ногами от одной точки до другой.</summary>
+        private static bool Path(Vector3 from, Vector3 to)
+        {
+            var path = new NavMeshPath();
+            return NavMesh.CalculatePath(from, to, NavMesh.AllAreas, path)
+                && path.status == NavMeshPathStatus.PathComplete;
+        }
+
+        /// <summary>
+        /// Урок спины кончается приказом: обходящему велели идти к отметке.
+        /// Послушается ли он — решит его душа, как всегда: урок учит глаголу,
+        /// а не обещает исполнение. Велели бить врага в лоб — урок не кончен,
+        /// плашка говорит, чем это отличается.
+        /// </summary>
+        private bool Flanked()
+        {
+            var c = _flanker.Command;
+            if (c.Kind == _flankerWas.Kind && c.Point == _flankerWas.Point && c.Target == _flankerWas.Target)
+                return false;
+            _flankerWas = c;
+
+            bool toMark = (c.Kind == CommandKind.Move || c.Kind == CommandKind.AttackMove)
+                       && Flat(c.Point, _mark) <= MarkReach;
+            if (toMark) return true;
+
+            _frontal = c.Kind == CommandKind.Attack && c.Target == _foe.gameObject;
+            return false;
+        }
+
+        private static float Flat(Vector3 a, Vector3 b)
+        {
+            a.y = b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
+
+        /// <summary>Первый настоящий удар в спину своим — названа ли уже.</summary>
+        private static bool _backTold;
+
+        /// <summary>
+        /// Удар сзади попал (<see cref="Damageable"/>). Первый раз за игру, когда
+        /// бьёт свой, журнал называет, что случилось: урок показал глагол,
+        /// а эта строка — что глагол сработал. Работает и без уроков.
+        /// </summary>
+        public static void BackStruck(GameObject attacker)
+        {
+            if (_backTold || attacker == null) return;
+            var w = attacker.GetComponent<Warrior>();
+            if (!Ours(w)) return;
+
+            _backTold = true;
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F(
+                "{0} заходит сзади и бьёт в спину — такой удар сильнее обычного.",
+                Loc.Name(w.DisplayName)));
+        }
+
         /// <summary>Дойдёт ли Греховод ногами. Урок без дороги — ловушка.</summary>
         private static bool Reachable(Vector3 point)
         {
@@ -474,7 +656,8 @@ namespace Sinbinder.Gameplay
 
             GamePauseController.Instance.Hold(true);
 
-            ShowRing(kind == LessonKind.Exchange ? WarriorColor : SoulColor);
+            ShowRing(kind == LessonKind.Exchange ? WarriorColor
+                   : kind == LessonKind.Backstab ? FoeColor : SoulColor);
             ShowPlate(true);
             Debug.Log("[УРОК] " + kind + ": мир стоит, кольцо по Греховоду.");
         }
@@ -490,13 +673,16 @@ namespace Sinbinder.Gameplay
             if (!Allowed || hero == null || hero.IsDead
                 || (_now == LessonKind.Exchange && (_partner == null || _partner.IsDead || RaidEvent.Running))
                 || (_now == LessonKind.Harvest && !SoulStillThere())
-                || (_now == LessonKind.Raising && _device == null))
+                || (_now == LessonKind.Raising && _device == null)
+                || (_now == LessonKind.Backstab && (_foe == null || _foe.IsDead
+                                                    || _flanker == null || _flanker.IsDead)))
             {
                 End();
                 return;
             }
 
             if (_now == LessonKind.Exchange && Exchanged()) { End(); return; }
+            if (_now == LessonKind.Backstab && Flanked()) { End(); return; }
 
             // Поднял — выучил. И страховка: поднимать стало не из кого
             // (выключили мастерскую, душу вернули на полку, где её не примет
@@ -543,6 +729,9 @@ namespace Sinbinder.Gameplay
             _leash = null;
             _partner = null;
             _device = null;
+            _foe = _pinner = _flanker = null;
+            _frontal = false;
+            _endedAt = Time.unscaledTime;
             _road.Clear();
             _walking = false;
 
@@ -555,6 +744,7 @@ namespace Sinbinder.Gameplay
             GamePauseController.Instance?.Hold(false);
 
             if (_ring != null) _ring.enabled = false;
+            if (_markRing != null) _markRing.enabled = false;
             ShowPlate(false);
             Debug.Log("[УРОК] конец: мир идёт.");
         }
@@ -669,6 +859,36 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        private LineRenderer _markRing;
+
+        /// <summary>Отметка за спиной врага: светлое кольцо, куда посылать.</summary>
+        private void ShowMark()
+        {
+            if (_material == null) return;   // ShowRing сказал, почему
+
+            if (_markRing == null)
+            {
+                var go = new GameObject("Отметка урока");
+                go.transform.SetParent(transform, false);
+                _markRing = go.AddComponent<LineRenderer>();
+                _markRing.sharedMaterial = _material;
+                _markRing.useWorldSpace = true;
+                _markRing.loop = true;
+                _markRing.widthMultiplier = 0.08f;
+                _markRing.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _markRing.receiveShadows = false;
+                _markRing.positionCount = 32;
+            }
+
+            _markRing.startColor = _markRing.endColor = MarkColor;
+            for (int i = 0; i < 32; i++)
+            {
+                float a = i / 32f * Mathf.PI * 2f;
+                _markRing.SetPosition(i, OnGround(_mark + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 0.7f));
+            }
+            _markRing.enabled = true;
+        }
+
         /// <summary>Точка на том, что под ней: земля, холм, реквизит. Воинов пропускаем.</summary>
         private static Vector3 OnGround(Vector3 p)
         {
@@ -717,6 +937,7 @@ namespace Sinbinder.Gameplay
                            + "\n" + Loc.T("Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."));
 
             if (_now == LessonKind.Raising) return RaisingStep();
+            if (_now == LessonKind.Backstab) return BackstabStep();
 
             // Разговор — только от первого лица, вблизи и глядя на воина.
             // Сверху плашка сперва говорит, как посмотреть его глазами;
@@ -737,6 +958,31 @@ namespace Sinbinder.Gameplay
                         Loc.F("{0} — смотреть глазами Греховода.", view.SwitchKey) + "\n" + approach);
 
             return ("F", approach + "\n" + why);
+        }
+
+        /// <summary>
+        /// Спина — два шага: выделить того, кто свободен, и послать его на
+        /// отметку. Сказано, зачем: держащий стоит к врагу лицом, значит враг
+        /// стоит спиной ко всем остальным.
+        /// </summary>
+        private (string key, string words) BackstabStep()
+        {
+            string pinner = _pinner != null ? Loc.Name(_pinner.DisplayName) : "";
+            var selection = _flanker != null ? _flanker.GetComponent<SelectionComponent>() : null;
+
+            if (selection == null || !selection.IsSelected)
+            {
+                string flanker = _flanker != null ? Grammar.Dative(_flanker.DisplayName, _flanker.Gender) : "";
+                return (Loc.T("ЛКМ"),
+                        Loc.F("{0} держит врага, и враг стоит к остальным спиной.", pinner)
+                      + "\n" + Loc.F("Щёлкните по {0} — выделить.", flanker));
+            }
+
+            return (Loc.T("ПКМ"),
+                    Loc.T("Правой кнопкой — по светлой отметке за спиной врага: воин зайдёт сзади.")
+                  + "\n" + (_frontal
+                        ? Loc.T("Это приказ бить в лоб. Чтобы ударить в спину, пошлите его на отметку.")
+                        : Loc.T("Удар в спину сильнее обычного.")));
         }
 
         /// <summary>
