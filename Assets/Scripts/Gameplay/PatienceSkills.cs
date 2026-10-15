@@ -8,7 +8,11 @@ namespace Sinbinder.Gameplay
     [RequireComponent(typeof(AOS.AOSWarriorWrapper))]
     public class PatienceSkills : MonoBehaviour, AOS.ISkillSet
     {
-        public float IronStanceDefBonus = 40f;
+        // Десять — ровно половина удара при доле CombatMath (Scale 10).
+        // Было 40 — под вычитание: при доле это пятая часть удара на восемь
+        // секунд из пятнадцати, почти неуязвимость (docs/37-DEMO.md §7:
+        // «после удара — пересмотреть силу «Железной стойки»»).
+        public float IronStanceDefBonus = 10f;
         public float IronStanceDuration = 8f;
         public float IronStanceCooldown = 15f;
 

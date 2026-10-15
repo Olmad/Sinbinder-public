@@ -19,14 +19,18 @@ namespace Sinbinder.Gameplay
     /// <c>K / (K + защита)</c> плавная: защита 1 гасит около десятой части,
     /// 4 — около трёх десятых, и ни одна защита не гасит удар целиком.
     ///
-    /// <b>Выключатель.</b> До вечернего прогона 24 сентября выключен: бой
-    /// прежний, удар 5 без защиты. Включается командой «удар» в консоли (~),
-    /// третьим проходом прогона.
+    /// <b>Выключатель.</b> С 15 октября включён по умолчанию (решение автора:
+    /// «да»; docs/37-DEMO.md §7, docs/08-FLOOR.md §8): выключенным экран вещей
+    /// обещал «бьёт тяжелее» и «держит удар», а бой этого не читал. Команда
+    /// «удар» в консоли (~) выключает его — бой прежний, удар 5 без защиты —
+    /// пока автор не сыграл с ним; после его «понятно» выключатель и ветка
+    /// «как прежде» выбрасываются (§7: выключатель, который не выключают, —
+    /// мёртвый код).
     /// </summary>
     public static class CombatMath
     {
         /// <summary>Считать ли удар и защиту. Выключено — бой как до 24 сентября.</summary>
-        public static bool Enabled { get; set; }
+        public static bool Enabled { get; set; } = true;
 
         /// <summary>Защита, которая гасит ровно половину удара.</summary>
         public const float Scale = 10f;
@@ -38,7 +42,7 @@ namespace Sinbinder.Gameplay
         public const float OffhandShare = 0.5f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => Enabled = false;
+        private static void Rearm() => Enabled = true;
 
         /// <summary>Сколько удара дойдёт до тела через такую защиту.</summary>
         public static float Absorb(float damage, float defense)

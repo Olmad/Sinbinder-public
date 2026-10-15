@@ -21,8 +21,10 @@ namespace Sinbinder.Crypt
     /// <see cref="PrologueDirector"/>): создание воина и есть эта часть
     /// демо. Душ нет — ждать нечего, эпилог идёт как прежде.
     ///
-    /// Пока не проверено в игре — за выключателем консоли «связывание»:
-    /// без него мастерская спрятана, и склеп тот же, что был.
+    /// С 15 октября включена по умолчанию (решение автора: «да»; docs/37-DEMO.md
+    /// §0 — связывание часть демо). Консоль «связывание» прячет её — склеп
+    /// тот же, что был, — пока автор не сыграл с ней; потом выключатель
+    /// выбрасывается.
     ///
     /// Сама мастерская — дочерний объект (<see cref="_zone"/>): выключенный
     /// объект не получает Update и не включил бы себя сам.
@@ -32,8 +34,8 @@ namespace Sinbinder.Crypt
         [Tooltip("Зона связывания: устройство, полка, стол тел.")]
         [SerializeField] private GameObject _zone;
 
-        /// <summary>Выключатель консоли «связывание».</summary>
-        public static bool Switch { get; set; }
+        /// <summary>Выключатель консоли «связывание». С 15 октября включён по умолчанию.</summary>
+        public static bool Switch { get; set; } = true;
 
         private static CryptWorkshop _here;
         private BindingDevice _device;
@@ -43,7 +45,7 @@ namespace Sinbinder.Crypt
         private static void Rearm()
         {
             _here = null;
-            Switch = false;
+            Switch = true;
         }
 
         /// <summary>Устройство мастерской. Автопрогону: что нажимать.</summary>
