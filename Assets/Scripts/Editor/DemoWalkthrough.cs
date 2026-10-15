@@ -190,6 +190,10 @@ namespace Sinbinder.EditorTools
                 _startSeen = -1f;
                 _startShot = false;
                 _lessonShot = false;
+                _mapSeen = -1f;
+                _mapShot = false;
+                _flapShot = false;
+                _logoShot = false;
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
@@ -224,6 +228,7 @@ namespace Sinbinder.EditorTools
             }
 
             Sample();
+            Opening();
 
             var step = _steps[_index];
 
@@ -469,7 +474,7 @@ namespace Sinbinder.EditorTools
             if (all)
             {
                 // Опись экранов (46-UI §1): состояния, которых шаги не снимают.
-                steps.Add(S("опись: группа, Греховод, пауза", InventoryStart, InventoryDone, 20f));
+                steps.Add(S("опись: воин, группа, Греховод, пауза", InventoryStart, InventoryDone, 20f));
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
                 steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
@@ -659,8 +664,7 @@ namespace Sinbinder.EditorTools
 
                 // Карта: обоз, если хватает людей, иначе первая точка,
                 // на которую хватает.
-                S("песочница: вылазка отправлена", SendFromCrypt,
-                  () => !Crypt.CryptMap.Waiting, 20f),
+                S("песочница: вылазка отправлена", null, MapThenSend, 20f),
 
                 // ── Второй показ ──
                 // «Начать сначала» с эпилога — путь, которым демо показывают
@@ -719,6 +723,49 @@ namespace Sinbinder.EditorTools
         /// Отправить вылазку с карты склепа — тем же вызовом, что кнопка
         /// карты. Обоз первым: ради него карта и встала в склеп.
         /// </summary>
+        private static float _mapSeen = -1f;
+        private static bool _mapShot;
+
+        /// <summary>
+        /// Карта вылазок: с -All — сперва кадр открытой карты (опись, 46-UI §1;
+        /// раньше вылазка уходила в тот же миг, и карты не видел ни один кадр),
+        /// потом отправка. Без -All — отправка сразу, как прежде.
+        /// </summary>
+        private static bool MapThenSend()
+        {
+            if (!Crypt.CryptMap.Waiting) return true;
+
+            if (SessionState.GetBool(AllOn, false) && !_mapShot)
+            {
+                // Карту открывает шар у правой стены; прогон открывает её
+                // тем же методом, снимает и закрывает — потом посылает.
+                var map = UnityEngine.Object.FindFirstObjectByType<UI.MissionMapUI>();
+                float now = Time.realtimeSinceStartup;
+                if (_mapSeen < 0f)
+                {
+                    _mapSeen = now;
+                    if (map != null)
+                    {
+                        // Доску карта ищет сама раз в секунду и могла ещё
+                        // не найти: отдаём ей доску склепа.
+                        var board = typeof(UI.MissionMapUI).GetField("_board", BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (board != null && board.GetValue(map) == null) board.SetValue(map, Crypt.CryptMap.Board);
+                        map.Open();
+                    }
+                    else Write("  [ОПИСЬ] карты вылазок в сцене нет");
+                }
+                if (now - _mapSeen < 1.2f) return false;
+                _mapShot = true;
+                Snap("опись — карта вылазок");
+                if (map != null)
+                    typeof(UI.MissionMapUI).GetMethod("Close", BindingFlags.NonPublic | BindingFlags.Instance)
+                        ?.Invoke(map, null);
+            }
+
+            SendFromCrypt();
+            return !Crypt.CryptMap.Waiting;
+        }
+
         private static void SendFromCrypt()
         {
             var board = Crypt.CryptMap.Board;
@@ -883,6 +930,10 @@ namespace Sinbinder.EditorTools
                 StepHero(4.5f);
                 return;
             }
+
+            // Открытие (15 октября): проснулся — глазами Греховода, вход
+            // закрыт пологом. Кадр — до первого шага.
+            Snap("открытие — проснулся в шатре");
 
             var agent = hero.GetComponent<NavMeshAgent>();
             if (agent == null || !agent.isOnNavMesh)
@@ -1232,7 +1283,10 @@ namespace Sinbinder.EditorTools
                 // Отрисовка — в трёх местах, где свет разный: костёр
                 // с тенями, поле набега с отрядом и охотниками, склеп
                 // с факелами.
-                if (step == "Греховод вышел из палатки") Bench("лагерь у костра", parts: true);
+                // С 15 октября выход из шатра — от первого лица, с надписью
+                // и краном (OpeningReveal): лагерь меряем, когда камера уже
+                // сверху — к приходу провожатого.
+                if (step == "провожатый дошёл, лагерь пошёл дальше") Bench("лагерь у костра", parts: true);
                 if (step == "набег: охотники вышли") Bench("набег", parts: false);
                 if (step == "склеп: Греховод у алтаря") Bench("склеп", parts: false);
             }
@@ -1567,6 +1621,37 @@ namespace Sinbinder.EditorTools
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] " + e.Message); }
         }
 
+        // ── Открытие игры (15 октября): полог и надпись ──
+
+        private static bool _flapShot, _logoShot;
+
+        /// <summary>
+        /// Кадры открытия: полог откинут (Греховод у порога, от первого лица)
+        /// и надпись над лагерем — через полсекунды после того, как проявилась
+        /// целиком. По одному за прогон.
+        /// </summary>
+        private static void Opening()
+        {
+            float now = Time.realtimeSinceStartup;
+
+            if (!_flapShot)
+            {
+                var flap = UnityEngine.Object.FindFirstObjectByType<TentFlap>();
+                if (flap != null && flap.IsOpen)
+                {
+                    _flapShot = true;
+                    Snap("открытие — полог откинут");
+                }
+            }
+
+            if (!_logoShot && OpeningReveal.Showing && now - OpeningReveal.ShownSince > 0.5f)
+            {
+                _logoShot = true;
+                Snap("открытие — надпись над лагерем");
+                Write("  [ОТКРЫТИЕ] надпись над лагерем — кадр снят");
+            }
+        }
+
         // ── Опись экранов (46-UI §1, 15 октября) ──
         //
         // Кадры «до» для работы над интерфейсом: состояния, которых шаги
@@ -1606,30 +1691,39 @@ namespace Sinbinder.EditorTools
             _invAt = Time.realtimeSinceStartup;
         }
 
-        /// <summary>Группа из троих → один Греховод → пауза; по кадру на каждое.</summary>
+        /// <summary>
+        /// Один воин → группа из троих → один Греховод → пауза; по кадру
+        /// на каждое. Одиночный — здесь же: кадр шага «выделенный получает
+        /// круг» снят в миг выделения, когда полоса ещё не выехала.
+        /// </summary>
         private static bool InventoryDone()
         {
             float now = Time.realtimeSinceStartup;
             if (now < _invAt) return false;
 
+            var own = Own();
             switch (_invStage)
             {
                 case 0:
                     Deselect();
-                    var own = Own();
-                    for (int i = 0; i < Mathf.Min(3, own.Count); i++) Select(own[i]);
+                    if (own.Count > 0) Select(own[0]);
                     break;
                 case 1:
+                    Snap("опись — выбран один воин");
+                    Deselect();
+                    for (int i = 0; i < Mathf.Min(3, own.Count); i++) Select(own[i]);
+                    break;
+                case 2:
                     Snap("опись — выбрана группа");
                     Deselect();
                     Select(SinbinderPlayer.Instance);
                     break;
-                case 2:
+                case 3:
                     Snap("опись — выбран Греховод");
                     Deselect();
                     Pause("Open");
                     break;
-                case 3:
+                case 4:
                     Snap("опись — пауза");
                     Pause("Close");
                     return true;

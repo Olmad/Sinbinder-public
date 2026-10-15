@@ -151,6 +151,11 @@ namespace Sinbinder.Utilets
             // за сбором не заперт — это повод, а не ворота.
             campfire.AddComponent<CampMuster>();
 
+            // Открытие (автор, 15 октября: «наведи красоту»): проснулся
+            // в шатре — глазами Греховода; вышел — над лагерем надпись
+            // «Sinbinder», камера краном поднимается в вид сверху.
+            new GameObject("Открытие").AddComponent<OpeningReveal>();
+
             Tents(hill, hillRadius: 5f);
             CouncilTable(table, yaw: TowardFire(table));
             CampClutter(table);
@@ -1467,6 +1472,24 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
+        /// Полог входа в шатёр Греховода. Автор, 15 октября: «палатка закрыта
+        /// тканью, при выходе Греховод должен отодвинуть ткань от первого лица».
+        /// Два полотнища тёмно-багровой ткани на петлях вдоль скатов; строит
+        /// и откидывает их <see cref="Sinbinder.Gameplay.TentFlap"/>, здесь —
+        /// только форма и ткань. В выпечку навмеша не идёт: закрытый полог
+        /// перегородил бы выход.
+        /// </summary>
+        private static void EntranceFlap(Transform tent, float half, float top, float front)
+        {
+            var go = new GameObject("Полог входа");
+            go.transform.SetParent(tent, false);
+            go.AddComponent<Unity.AI.Navigation.NavMeshModifier>().ignoreFromBuild = true;
+
+            var flap = go.AddComponent<Sinbinder.Gameplay.TentFlap>();
+            flap.Shape(half, top, front, Plain("Полог", new Color(0.30f, 0.06f, 0.07f), smoothness: 0.15f));
+        }
+
+        /// <summary>
         /// Палатка Греховода — «ещё более наполненная» (слово автора): постель,
         /// в которой он просыпается, стол с картой у полога, полка с банками
         /// для душ, стойка с оружием, сундук. Всё вдоль скатов и у полога;
@@ -1491,6 +1514,9 @@ namespace Sinbinder.Utilets
             var wake = new GameObject("Где проснулся");
             wake.transform.SetParent(tent, false);
             wake.transform.localPosition = new Vector3(bedX + 0.9f, 0f, back + 1.5f);
+
+            // Вход закрыт пологом (автор, 15 октября): откидывает его TentFlap.
+            EntranceFlap(tent, half, top, front);
 
             // Стол с картой у полога, правее середины: походный, ниже
             // и уже стола совета. Карта — на коже, как и положено в поле.

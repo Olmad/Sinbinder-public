@@ -1,4 +1,5 @@
 // Перевод: текст через Loc
+using System.Collections;
 using UnityEngine;
 
 namespace Sinbinder.Gameplay
@@ -66,6 +67,12 @@ namespace Sinbinder.Gameplay
         private float _yaw;
         private float _pitch;
 
+        /// <summary>Поворот, которым сцена поставила камеру: север сверху. Кран возвращает к нему.</summary>
+        private float _homeYaw;
+
+        /// <summary>Идёт кран (<see cref="Crane"/>): клавиши и мышь камеру не водят.</summary>
+        private bool _craning;
+
         /// <summary>Виден ли сейчас взгляд от первого лица. Спрашивают другие.</summary>
         public bool FirstPersonNow => _mode == CameraView.FirstPerson && Following;
 
@@ -78,6 +85,7 @@ namespace Sinbinder.Gameplay
             _targetPosition = transform.position;
             _targetZoom = _cam.fieldOfView;
             _yaw = transform.eulerAngles.y;
+            _homeYaw = _yaw;
             _pitch = transform.eulerAngles.x;
 
             // Кадр, поставленный в сцене, — решение постановщика, и зум
@@ -105,6 +113,8 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            if (_craning) return;
+
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue)
                 return;
@@ -150,6 +160,53 @@ namespace Sinbinder.Gameplay
         {
             _mode = view;
             if (view == CameraView.Tactical) LookDown();
+        }
+
+        /// <summary>
+        /// Из глаз Греховода — в вид сверху, краном: камера поднимается
+        /// за <paramref name="seconds"/> секунд, поворачиваясь на север
+        /// (как сцена её поставила) и опуская взгляд, а не прыгает. Зовёт
+        /// открытие игры (<see cref="OpeningReveal"/>): вышел из шатра —
+        /// надпись над лагерем — и лагерь сверху.
+        ///
+        /// Пока кран идёт, клавиши и мышь камеру не водят. Начался разговор
+        /// или наезд — кран уступает: дом наезда — там, где камера была,
+        /// а вид сверху доедет сам, когда кадр освободится.
+        /// </summary>
+        public IEnumerator Crane(float seconds)
+        {
+            if (!FirstPersonNow) yield break;
+
+            _craning = true;
+            _mode = CameraView.Tactical;
+            ShowHero(true);
+            Release();
+
+            Vector3 fromPos = transform.position;
+            Quaternion fromRot = transform.rotation;
+
+            _yaw = _homeYaw;
+            _pitch = _tacticalPitch;
+            var ground = SinbinderPlayer.Where;
+            ground.y = 0f;
+            Vector3 toPos = ground + Vector3.up * _tacticalHeight;
+            Quaternion toRot = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
+            _targetPosition = toPos;
+
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                var talk = Dialogue.DialogueCameraController.Instance;
+                if (talk != null && talk.InDialogue) { _craning = false; yield break; }
+
+                float k = Mathf.SmoothStep(0f, 1f, t / seconds);
+                transform.position = Vector3.Lerp(fromPos, toPos, k);
+                transform.rotation = Quaternion.Slerp(fromRot, toRot, k);
+                yield return null;
+            }
+
+            transform.position = toPos;
+            transform.rotation = toRot;
+            _craning = false;
         }
 
         // ---------- первое лицо ----------

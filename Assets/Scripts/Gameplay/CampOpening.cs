@@ -117,8 +117,10 @@ namespace Sinbinder.Gameplay
 
             // Шаг игрока: пока он стоит на пороге, лагерь не идёт дальше.
             // До 24 сентября через 45 секунд провожатый подходил сам.
-            yield return Beat.UntilPlayer(() => Free() && (!SinbinderPlayer.Exists
-                    || Left(tent, start)),
+            // И пока идёт открытие — надпись над лагерем и кран
+            // (OpeningReveal, 15 октября): провожатый заговорит после.
+            yield return Beat.UntilPlayer(() => Free() && !OpeningReveal.Busy
+                    && (!SinbinderPlayer.Exists || Left(tent, start)),
                 0f, null);
 
             var escort = Escort();

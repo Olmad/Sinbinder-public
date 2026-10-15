@@ -6840,3 +6840,7 @@ msgstr "Order — to the whole squad"
 #. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
+
+#: Gameplay/OpeningReveal.cs
+msgid "Не командуй. Искушай."
+msgstr "Don't command. Tempt."
