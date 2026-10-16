@@ -4038,6 +4038,45 @@ static class Bench
         Same(Naming.Full("Гертон", Trade.Peasant, "", "Костекоп Гертон"), "Костекоп Гертон", "титул вытесняет ремесло");
         Same(Naming.Full("Гертон", Trade.Peasant, "Легенда Гертон", "Тень Гертон"), "Легенда Гертон", "легенда старше титула");
         Same(Naming.Full("Сквип", Trade.None, "", ""), "Сквип", "ни титула, ни ремесла");
+        Same(Naming.Full("Ульрих", Trade.Inquisitor, "", ""), "Ульрих Инквизитор", "охотник — имя и чин");
+
+        // Чин Ордена — тоже ремесло: имя и первые слова поднятого.
+        Console.WriteLine();
+        for (var t = Trade.OrderHunter; t <= Trade.Catcher; t++)
+        {
+            var hunter = new SoulData("Ансельм", SinType.Wrath, MoralType.Vicious, 1, 60f);
+            hunter.SetTrade(t);
+            string words = RisingWords.OnRising(hunter, ShellType.Skeleton);
+            Console.WriteLine($"  {Trades.Name(t),-12} {words}");
+            if (!Trades.OfOrder(t)) { bad++; Console.WriteLine($"  ПРОВАЛ: {t} — не чин Ордена"); }
+            if (string.IsNullOrEmpty(Trades.Name(t))) { bad++; Console.WriteLine($"  ПРОВАЛ: у чина {t} нет имени"); }
+            if (words == RisingWords.OnRising(new SoulData("Ансельм", SinType.Wrath, MoralType.Vicious, 1, 60f), ShellType.Skeleton))
+            { bad++; Console.WriteLine($"  ПРОВАЛ: поднятый {t} молчит о чине"); }
+        }
+        for (var t = Trade.None; t <= Trade.Spider; t++)
+            if (Trades.OfOrder(t)) { bad++; Console.WriteLine($"  ПРОВАЛ: {t} — мирное ремесло записано в Орден"); }
+
+        // Имена Ордена склоняются, как свои: журнал пишет «бросился к Хагену».
+        // Склоняется голое имя (DisplayName) — титул и чин в журнал не идут.
+        var order = new[] { "Ансельм", "Бертрам", "Ульрих", "Готфрид", "Кунрад", "Ортвин",
+                            "Вольфрам", "Лотар", "Эберхард", "Рупрехт", "Хаген", "Дитмар",
+                            "Гунтрам", "Адальберт", "Фолькмар", "Зигфрид" };
+        var wrong = order.Where(n => Grammar.Dative(n, Gender.Male) != n + "у").ToList();
+        Console.WriteLine($"  к кому: {Grammar.Dative("Хаген", Gender.Male)}, {Grammar.Dative("Адальберт", Gender.Male)}…");
+        if (wrong.Count > 0)
+        { bad++; Console.WriteLine($"  ПРОВАЛ: в дательном не так: {string.Join(", ", wrong)}"); }
+
+        // Пожалованные имена Ордена — не заслуживаемые: среди правил с условиями
+        // их нет, иначе с пустыми условиями их получал бы любой.
+        foreach (var g in TitleDatabase.Granted)
+            if (TitleDatabase.Rules.Exists(r => r.Title == g.Title))
+            { bad++; Console.WriteLine($"  ПРОВАЛ: «{g.Title}» и пожаловано, и заслуживается"); }
+        if (!TitleDatabase.WitchHammer.Legend) { bad++; Console.WriteLine("  ПРОВАЛ: Молот Ведьм — не легенда"); }
+
+        // Слово Ордена — только у правил, что называют другую сторону.
+        foreach (var r in TitleDatabase.Rules)
+            if (!string.IsNullOrEmpty(r.Order))
+                Console.WriteLine($"  {r.Title,-20} у Ордена — {r.For(Gender.Male, true)}");
 
         Console.WriteLine(bad == 0 ? "  Порядок старшинства держится." : $"  ПРОВАЛОВ: {bad}");
     }

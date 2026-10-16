@@ -554,7 +554,7 @@ namespace Sinbinder.AOS
                 {
                     if (perk.PerkName == "Мститель" && enemy.DisplayName.Contains("Бандит"))
                         _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
-                    if (perk.PerkName == "Бывший Охотник (ненавидит)" && enemy.DisplayName.Contains("Охотник"))
+                    if (perk.PerkName == "Бывший Охотник (ненавидит)" && enemy.Soul != null && Trades.OfOrder(enemy.Soul.Trade))
                         _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
                 }
             }

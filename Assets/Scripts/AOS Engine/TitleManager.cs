@@ -79,7 +79,9 @@ namespace Sinbinder.AOS
             // заслуженном имени навсегда.
             // Слово берётся у правила по полу носителя: «Защитник Марга»
             // и «Защитница Сквип» — одно правило, один порог, две формы.
-            string word = best.For(warrior.Gender);
+            // И по стороне: охотник, положивший семерых, — «Убийца
+            // Мертвецов», а не «Убийца Охотников» (TitleRule.Order).
+            string word = best.For(warrior.Gender, OfOrder(warrior));
 
             var now = Current(warrior);
             if (now == null || Stronger(best, now))
@@ -168,8 +170,16 @@ namespace Sinbinder.AOS
         }
 
         private static bool Legendary(TitleRule rule)
-            => rule.RequiresCoreMemory || rule.RequiresLastAlive
+            => rule.Legend || rule.RequiresCoreMemory || rule.RequiresLastAlive
             || rule.RequiresNearAltar || rule.RequiresSoulCollector;
+
+        /// <summary>
+        /// Носит ли воин слова Ордена. Враг и чин Ордена — оба: поднятый
+        /// из охотника служит Греховоду, и убитые им охотники делают его
+        /// «Убийцей Охотников», как любого в отряде.
+        /// </summary>
+        private static bool OfOrder(Warrior warrior)
+            => warrior.Team == Team.Enemy && warrior.Soul != null && Trades.OfOrder(warrior.Soul.Trade);
 
         private static float Sum(System.Collections.Generic.List<DeedRecord> deeds, DeedType type)
             => deeds.Where(d => d.Type == type).Sum(d => d.Importance);
@@ -193,25 +203,70 @@ namespace Sinbinder.AOS
         ///
         /// Легендарное имя старше обычного: если воин дорос до него,
         /// помнить он будет его.
+        ///
+        /// С 16 октября слово берётся тем, что стоит перед именем, а не
+        /// поиском по базе: имя, пожалованное Орденом, и слово Ордена тоже
+        /// титулы, и душа обязана их помнить. «Молот Ведьм», поднятый
+        /// в скелете, говорит «И звали меня — Молот Ведьм» — это тот кадр,
+        /// ради которого титул переносится в душу.
         /// </summary>
         public static string TitleOf(Warrior warrior)
         {
             if (warrior == null || warrior.Reputation == null) return "";
 
-            var legend = RuleFor(warrior, warrior.Reputation.CurrentLegendaryTitle);
-            if (legend != null) return legend.For(warrior.Gender);
-
-            var now = RuleFor(warrior, warrior.Reputation.CurrentName);
-            return now != null ? now.For(warrior.Gender) : "";
+            string legend = WordOf(warrior, warrior.Reputation.CurrentLegendaryTitle);
+            return legend != "" ? legend : WordOf(warrior, warrior.Reputation.CurrentName);
         }
+
+        /// <summary>
+        /// «Костекоп Гертон» → «Костекоп». Чужое имя или голое — пусто:
+        /// у снятого спорного титула в <c>CurrentName</c> остаётся просто
+        /// «Гертон».
+        /// </summary>
+        private static string WordOf(Warrior warrior, string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+
+            string tail = " " + warrior.DisplayName;
+            return name.Length > tail.Length && name.EndsWith(tail, System.StringComparison.Ordinal)
+                ? name.Substring(0, name.Length - tail.Length) : "";
+        }
+
+        /// <summary>
+        /// Повесить имя, которое у воина уже есть, а не заслужено сейчас: пришло
+        /// с ним из прошлой сцены, донесено душой через смерть или пожаловано
+        /// Орденом. Без церемонии — её уже играли или ей не место.
+        ///
+        /// До 16 октября такого не было вовсе, и имя терялось дважды: состав
+        /// отряда титула не хранил, и заслуживший его в набеге входил в склеп
+        /// без него; а поднятый в новом теле получал пустую славу, хотя душа
+        /// имя помнила и говорила «Зовите снова». Теперь зовут.
+        /// </summary>
+        public static void Bestow(Warrior warrior, string word)
+        {
+            if (warrior == null || warrior.Reputation == null || string.IsNullOrEmpty(word)) return;
+
+            string name = $"{word} {warrior.DisplayName}";   // ключ: имя в записи, по-русски
+            warrior.Reputation.CurrentName = name;
+
+            var rule = Rule(warrior, word);
+            if (rule != null && Legendary(rule))
+            {
+                warrior.Reputation.CurrentLegendaryTitle = name;
+                warrior.Reputation.LegendaryUnlocked = true;
+            }
+        }
+
+        /// <summary>Правило по слову: заслуживаемое или пожалованное, любой формы.</summary>
+        private static TitleRule Rule(Warrior warrior, string word)
+            => TitleDatabase.Rules.Concat(TitleDatabase.Granted).FirstOrDefault(
+                r => word == r.For(warrior.Gender) || word == r.For(warrior.Gender, true));
 
         /// <summary>Правило, сложившее данное имя. Пусто или чужое — null.</summary>
         private static TitleRule RuleFor(Warrior warrior, string name)
         {
-            if (string.IsNullOrEmpty(name)) return null;
-
-            return TitleDatabase.Rules
-                .FirstOrDefault(r => name == $"{r.For(warrior.Gender)} {warrior.DisplayName}");   // ключ: сравнение
+            string word = WordOf(warrior, name);
+            return word != "" ? Rule(warrior, word) : null;
         }
 
         /// <summary>
@@ -222,8 +277,7 @@ namespace Sinbinder.AOS
         private static Warrior FindWarriorWithTitle(TitleRule rule)
         {
             var all = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
-            return all.FirstOrDefault(
-                w => w.Reputation.CurrentName == $"{rule.For(w.Gender)} {w.DisplayName}");   // ключ: сравнение
+            return all.FirstOrDefault(w => RuleFor(w, w.Reputation.CurrentName) == rule);
         }
     }
 }

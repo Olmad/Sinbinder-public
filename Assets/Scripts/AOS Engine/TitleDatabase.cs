@@ -24,8 +24,8 @@ namespace Sinbinder.AOS
             // ──────────────────────────────────
             // Боевые титулы (действие Kill)
             // ──────────────────────────────────
-            new TitleRule { Title = Loc.N("Убийца Охотников"), Female = Loc.N("Убийца Охотников"), MainDeed = DeedType.Kill, RequiredCount = 7, RequiredImportance = 3.5f },
-            new TitleRule { Title = Loc.N("Гроза Охотников"), Female = Loc.N("Гроза Охотников"), MainDeed = DeedType.Kill, RequiredCount = 15, RequiredImportance = 7.5f },
+            new TitleRule { Title = Loc.N("Убийца Охотников"), Female = Loc.N("Убийца Охотников"), Order = Loc.N("Убийца Мертвецов"), MainDeed = DeedType.Kill, RequiredCount = 7, RequiredImportance = 3.5f },
+            new TitleRule { Title = Loc.N("Гроза Охотников"), Female = Loc.N("Гроза Охотников"), Order = Loc.N("Гроза Нежити"), MainDeed = DeedType.Kill, RequiredCount = 15, RequiredImportance = 7.5f },
             new TitleRule { Title = Loc.N("Мститель"), Female = Loc.N("Мстительница"), MainDeed = DeedType.Kill, RequiredCount = 10, RequiredImportance = 5f },
             new TitleRule { Title = Loc.N("Каратель"), Female = Loc.N("Карательница"), MainDeed = DeedType.KillCommander, RequiredCount = 5, RequiredImportance = 2.5f },
             new TitleRule { Title = Loc.N("Берсерк"), Female = Loc.N("Берсерк"), MainDeed = DeedType.NeverRetreat, RequiredCount = 8, RequiredImportance = 4f },
@@ -36,7 +36,7 @@ namespace Sinbinder.AOS
             // ──────────────────────────────────
             new TitleRule { Title = Loc.N("Спаситель"), Female = Loc.N("Спасительница"), MainDeed = DeedType.SaveAlly, RequiredCount = 7, RequiredImportance = 4.9f },
             new TitleRule { Title = Loc.N("Хранитель"), Female = Loc.N("Хранительница"), MainDeed = DeedType.SaveAlly, RequiredCount = 15, RequiredImportance = 10.5f },
-            new TitleRule { Title = Loc.N("Щит Отряда"), Female = Loc.N("Щит Отряда"), MainDeed = DeedType.ProtectCommander, RequiredCount = 5, RequiredImportance = 3.5f },
+            new TitleRule { Title = Loc.N("Щит Отряда"), Female = Loc.N("Щит Отряда"), Order = Loc.N("Щит Ордена"), MainDeed = DeedType.ProtectCommander, RequiredCount = 5, RequiredImportance = 3.5f },
             new TitleRule { Title = Loc.N("Телохранитель"), Female = Loc.N("Телохранительница"), MainDeed = DeedType.ProtectCommander, RequiredCount = 8, RequiredImportance = 5.6f },
             new TitleRule { Title = Loc.N("Защитник"), Female = Loc.N("Защитница"), MainDeed = DeedType.SaveAlly, RequiredCount = 12, RequiredImportance = 8.4f },
             new TitleRule { Title = Loc.N("Наставник"), Female = Loc.N("Наставница"), MainDeed = DeedType.SaveAlly, RequiredCount = 10, RequiredImportance = 7f },
@@ -93,5 +93,28 @@ namespace Sinbinder.AOS
             new TitleRule { Title = Loc.N("Страж Забытых Залов"), Female = Loc.N("Страж Забытых Залов"), MainDeed = DeedType.Kill, RequiredCount = 20, RequiredImportance = 10f, RequiresNearAltar = true },
             new TitleRule { Title = Loc.N("Исполнитель"), Female = Loc.N("Исполнительница"), MainDeed = DeedType.ExecuteEnemy, RequiredCount = 10, RequiredImportance = 5f },
         };
+
+        /// <summary>
+        /// Имена, которые жалует Орден, а не поле: охотник приходит с ними
+        /// (решение автора 16 октября: «у второй волны можно 1–2 титулованных
+        /// или даже 1 легенду, чтобы выглядело ещё страшнее»). Деяниями их
+        /// не заслужить — условий нет, и среди <see cref="Rules"/> им не место:
+        /// с пустыми условиями их получал бы любой.
+        ///
+        /// Список нужен, чтобы имя узнавалось как титул: душа запоминает его
+        /// на смерти, поднятый носит его снова, легенду видно по флагу.
+        /// Носят их только мужчины — Орден женщин не выдаёт, — и пары нет.
+        /// </summary>
+        public static List<TitleRule> Granted = new() { OrderHound, WitchHammer };
+
+        /// <summary>Следопыт: идёт по следу бегущих, как пёс. Орден так и зовёт.</summary>
+        public static TitleRule OrderHound => _orderHound ??= new TitleRule
+            { Title = Loc.N("Пёс Ордена"), Female = Loc.N("Пёс Ордена") };
+
+        /// <summary>Легенда Ордена — по книге, с которой охотились на ведьм.</summary>
+        public static TitleRule WitchHammer => _witchHammer ??= new TitleRule
+            { Title = Loc.N("Молот Ведьм"), Female = Loc.N("Молот Ведьм"), Legend = true };
+
+        private static TitleRule _orderHound, _witchHammer;
     }
 }

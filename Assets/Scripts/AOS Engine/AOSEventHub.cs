@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Gameplay;
+using Sinbinder.Core;
 
 namespace Sinbinder.AOS
 {
@@ -51,10 +52,9 @@ namespace Sinbinder.AOS
                 // свой: «Каратель». До этого KillCommander не писал никто,
                 // и титул был недостижим по данным, а не по цене.
                 //
-                // Опознаётся по имени: своего звания у врагов в коде нет,
-                // а заводить ради одной проверки поле в Warrior — дороже,
-                // чем польза. Появится звание — переписать сюда.
-                if (victim.DisplayName != null && victim.DisplayName.Contains("Инквизитор"))
+                // Опознаётся по чину (ремеслу души) — с 16 октября он есть:
+                // имя у инквизитора своё («Ульрих»), и по строке его не узнать.
+                if (victim.Soul != null && victim.Soul.Trade == Trade.Inquisitor)
                     killerWarrior.Reputation.Deeds.Add(new DeedRecord
                         { Type = DeedType.KillCommander, Importance = 0.5f });
 
@@ -65,7 +65,7 @@ namespace Sinbinder.AOS
                     {
                         if (perk.PerkName == "Мститель" && victim.DisplayName.Contains("Бандит"))
                             killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
-                        if (perk.PerkName == "Бывший Охотник (ненавидит)" && victim.DisplayName.Contains("Охотник"))
+                        if (perk.PerkName == "Бывший Охотник (ненавидит)" && victim.Soul != null && Trades.OfOrder(victim.Soul.Trade))
                             killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
                     }
                 }

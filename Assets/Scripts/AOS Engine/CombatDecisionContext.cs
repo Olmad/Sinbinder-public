@@ -122,7 +122,11 @@ namespace Sinbinder.AOS
             context.EnemyIsPlant = enemies.Any(e => e.Shell == ShellType.Golem);
             context.EnemyIsBeast = enemies.Any(e => e.Shell == ShellType.Ghost);
             context.EnemyIsBandit = enemies.Any(e => e.DisplayName.Contains("Бандит"));
-            context.EnemyIsHunter = enemies.Any(e => e.DisplayName.Contains("Охотник"));
+            // Охотник — любой чин Ордена (Trades.OfOrder), а не имя: с 16 октября
+            // у охотников свои имена («Ансельм»), и по строке их не узнать.
+            // До того «Охотником» по имени были двое из четырёх видов —
+            // ловчий и инквизитор под проверку не попадали.
+            context.EnemyIsHunter = enemies.Any(e => e.Soul != null && Trades.OfOrder(e.Soul.Trade));
             context.EnemyIsMagister = enemies.Any(e => e.DisplayName.Contains("Магистр"));
             context.EnemyIsPrisoner = enemies.Any(e => e.DisplayName.Contains("Заключённый"));
 

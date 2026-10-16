@@ -36,6 +36,10 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             warrior.Initialize(soul, shell, relations, false, Team.Player);
 
+            // Душа донесла имя через смерть (SoulData.EarnedTitle) — и в новом
+            // теле его носят снова. Первая фраза так и просит: «Зовите снова».
+            AOS.TitleManager.Bestow(warrior, soul.EarnedTitle);
+
             // Оснастка та же, что у отряда: ноги, руки, выделение, показ
             // отказа. Поднятый, собранный иначе, вёл бы себя иначе — и это
             // читалось бы как поломка движка, а не как разная сборка.

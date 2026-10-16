@@ -769,6 +769,34 @@ namespace Sinbinder.Tests
             fallen.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.StayedOut, Importance = 0.3f });
             TitleManager.UpdateTitle(fallen);
             Check(string.IsNullOrEmpty(TitleManager.TitleOf(fallen)), "павшему имени не присуждают");
+
+            // Старшинство имён (16 октября): титул впереди, ремесла нет.
+            Same(quiet.ShownName, "Тень Тихоня", "титул стоит в имени впереди");
+
+            // Имя возвращается без церемонии — новое тело, прежняя слава:
+            // так его несут состав между долями и поднятие.
+            var again = MakeWarrior("Тихоня", SinType.Sloth, 70f);
+            TitleManager.Bestow(again, TitleManager.TitleOf(quiet));
+            Same(TitleManager.TitleOf(again), "Тень", "новое тело носит прежнее имя");
+
+            // Пожалованная легенда Ордена: титул, хоть деяниями его не заслужить,
+            // и легенда по флагу — её узнают отряд и гардероб.
+            var hagen = MakeWarrior("Хаген", SinType.Pride, 55f);
+            hagen.Team = Team.Enemy;
+            hagen.Soul.SetTrade(Trade.Inquisitor);
+            TitleManager.Bestow(hagen, TitleDatabase.WitchHammer.Title);
+            Same(TitleManager.TitleOf(hagen), "Молот Ведьм", "душа запомнит пожалованное имя");
+            Check(hagen.Reputation.LegendaryUnlocked, "легенду Ордена видно как легенду");
+            Same(hagen.ShownName, "Молот Ведьм Хаген", "легенда стоит в имени впереди");
+
+            // Враг заслуживает имя по тем же правилам, но словом своей стороны.
+            var killer = MakeWarrior("Готфрид", SinType.Wrath, 60f);
+            killer.Team = Team.Enemy;
+            killer.Soul.SetTrade(Trade.OrderHunter);
+            for (int i = 0; i < 7; i++)
+                killer.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 0.5f });
+            TitleManager.UpdateTitle(killer);
+            Same(TitleManager.TitleOf(killer), "Убийца Мертвецов", "охотник за семерых — не «Убийца Охотников»");
         }
 
         /// <summary>
@@ -2394,16 +2422,21 @@ namespace Sinbinder.Tests
         /// </summary>
         private static void NamesAndCases()
         {
-            // Охотники: прозвище вместо номера, и вид узнаётся по началу имени.
+            // Охотники: имя Ордена вместо номера, все разные; вид — чин в душе,
+            // а не начало имени (16 октября). Обе волны вместе — тоже разные:
+            // вторая выходит, пока первая лежит на поле.
             var seen = new HashSet<string>();
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 40; i++)
             {
                 string hunter = HunterSquadSpawner.HunterName(i);
                 Check(!Digit.IsMatch(hunter), $"цифра в имени охотника: «{hunter}»");
                 Check(seen.Add(hunter), $"два охотника с одним именем: «{hunter}»");
             }
-            Check(HunterSquadSpawner.HunterName(7).StartsWith("Ловчий"),
-                  "прозвище встало перед видом — гардероб не узнает Ловчего");
+            Check(HunterSquadSpawner.HunterTrade(2) == Trade.Inquisitor
+               && HunterSquadSpawner.HunterTrade(3) == Trade.Catcher,
+                  "виды охотников сбились с круга: инквизитор третий, ловчий четвёртый");
+            Same(Naming.Full(HunterSquadSpawner.HunterName(3), HunterSquadSpawner.HunterTrade(3), "", ""),
+                 "Готфрид Ловчий", "охотник показывается именем и чином");
 
             // Спасение: к кому бросились — в дательном.
             var saver = MakeWarrior("Карган Старый Ворон", SinType.Pride, 70f);

@@ -531,6 +531,9 @@ namespace Sinbinder.Gameplay
             // Дальше её читают те, кто встречает его через строй.
             if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
             warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player);
+
+            // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
+            AOS.TitleManager.Bestow(warrior, member.Title);
             warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
             warrior.UnpaidMissions = member.UnpaidMissions;
 

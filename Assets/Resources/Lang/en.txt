@@ -987,6 +987,10 @@ msgstr "do as ordered"
 msgid "поступит по-своему"
 msgstr "go a different way"
 
+#: AOS Engine/TitleCeremony.cs
+msgid "Враг заслужил имя: {0}."
+msgstr "An enemy has earned a name: {0}."
+
 #: AOS Engine/TitleCeremonyBehaviour.cs
 msgid "Отряд"
 msgstr "The squad"
@@ -996,8 +1000,16 @@ msgid "Убийца Охотников"
 msgstr "Hunter-Slayer"
 
 #: AOS Engine/TitleDatabase.cs
+msgid "Убийца Мертвецов"
+msgstr "Slayer of the Dead"
+
+#: AOS Engine/TitleDatabase.cs
 msgid "Гроза Охотников"
 msgstr "Terror of Hunters"
+
+#: AOS Engine/TitleDatabase.cs
+msgid "Гроза Нежити"
+msgstr "Bane of the Undead"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Мститель"
@@ -1046,6 +1058,10 @@ msgstr "Guardian"
 #: AOS Engine/TitleDatabase.cs
 msgid "Щит Отряда"
 msgstr "Shield of the Squad"
+
+#: AOS Engine/TitleDatabase.cs
+msgid "Щит Ордена"
+msgstr "Shield of the Order"
 
 #: AOS Engine/TitleDatabase.cs
 msgid "Телохранитель"
@@ -1170,6 +1186,14 @@ msgstr "Executioner"
 #: AOS Engine/TitleDatabase.cs
 msgid "Исполнительница"
 msgstr "Executioner"
+
+#: AOS Engine/TitleDatabase.cs
+msgid "Пёс Ордена"
+msgstr "Hound of the Order"
+
+#: AOS Engine/TitleDatabase.cs
+msgid "Молот Ведьм"
+msgstr "Hammer of Witches"
 
 #: AOS Engine/TitleWords.cs
 msgid "Теперь я — {0}."
@@ -1731,7 +1755,7 @@ msgstr "Fading. The past is blurring"
 msgid "Распалась. Осталась оболочка воли"
 msgstr "Fallen apart. Only a husk of will remains"
 
-#: Core/Soul/Trade.cs Gameplay/HunterSquadSpawner.cs
+#: Core/Soul/Trade.cs
 msgid "Охотник"
 msgstr "Hunter"
 
@@ -1754,6 +1778,18 @@ msgstr "Mage"
 #: Core/Soul/Trade.cs
 msgid "Паук"
 msgstr "Spider"
+
+#: Core/Soul/Trade.cs
+msgid "Следопыт"
+msgstr "Tracker"
+
+#: Core/Soul/Trade.cs
+msgid "Инквизитор"
+msgstr "Inquisitor"
+
+#: Core/Soul/Trade.cs
+msgid "Ловчий"
+msgstr "Trapper"
 
 #: Crypt/Aftermath.cs
 msgid "не жалеет, что отпустили"
@@ -4540,20 +4576,76 @@ msgid "Она не рассказывает, и никто не переспра
 msgstr "She doesn't tell, and no one asks again."
 
 #: Gameplay/HunterSquadSpawner.cs
-msgid "Охотник-следопыт"
-msgstr "Tracker"
-
-#: Gameplay/HunterSquadSpawner.cs
-msgid "Инквизитор"
-msgstr "Inquisitor"
-
-#: Gameplay/HunterSquadSpawner.cs
-msgid "Ловчий"
-msgstr "Trapper"
-
-#: Gameplay/HunterSquadSpawner.cs
 msgid "Души на поле не собраны и не истлели — подкрепление выходит, не дожидаясь."
 msgstr "The souls on the field are neither gathered nor gone — reinforcements move out without waiting."
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Карган: «Их ведёт {0}. Я видел, что после него остаётся»."
+msgstr "Kargan: “{0} leads them. I have seen what he leaves behind.”"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Ансельм"
+msgstr "Anselm"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Бертрам"
+msgstr "Bertram"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Ульрих"
+msgstr "Ulrich"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Готфрид"
+msgstr "Gottfried"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Кунрад"
+msgstr "Kunrad"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Ортвин"
+msgstr "Ortwin"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Вольфрам"
+msgstr "Wolfram"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Лотар"
+msgstr "Lothar"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Эберхард"
+msgstr "Eberhard"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Рупрехт"
+msgstr "Ruprecht"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Хаген"
+msgstr "Hagen"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Дитмар"
+msgstr "Dietmar"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Гунтрам"
+msgstr "Guntram"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Адальберт"
+msgstr "Adalbert"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Фолькмар"
+msgstr "Volkmar"
+
+#: Gameplay/HunterSquadSpawner.cs
+msgid "Зигфрид"
+msgstr "Siegfried"
 
 #: Gameplay/HunterSquadSpawner.cs
 msgid "Рыжий"
@@ -5050,6 +5142,22 @@ msgstr "The words are still here. So not everything is lost."
 #: Gameplay/RisingWords.cs
 msgid "Углы, тени. Я знаю, куда уходить."
 msgstr "Corners, shadows. I know where to slip away."
+
+#: Gameplay/RisingWords.cs
+msgid "Я охотился на таких, как вы. Теперь я такой же."
+msgstr "I hunted your kind. Now I am one of you."
+
+#: Gameplay/RisingWords.cs
+msgid "Я шёл по вашему следу. Теперь иду за вами."
+msgstr "I followed your trail. Now I follow you."
+
+#: Gameplay/RisingWords.cs
+msgid "Я судил таких, как вы. Кто теперь судит меня?"
+msgstr "I judged your kind. Who judges me now?"
+
+#: Gameplay/RisingWords.cs
+msgid "Сеть... Я ловил вас. Поймали меня."
+msgstr "The net... I caught your kind. Now I am the one caught."
 
 #: Gameplay/SatchelHands.cs
 msgid "Под рукой пустая ячейка."
@@ -6588,6 +6696,10 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Охотник-следопыт"
+msgstr "Tracker"
 
 #. нет в коде
 msgid "Отряд вернулся."

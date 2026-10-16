@@ -71,32 +71,45 @@ namespace Sinbinder.Gameplay
             // на поле, а не только в душе. Драться с четырьмя одинаковыми
             // кубами неинтересно, а виды уже были: не хватало того,
             // чем они отличаются на глаз.
-            new(Loc.N("Охотник"),          SinType.Wrath,    MoralType.Vicious, 60f,
+            new(Trade.OrderHunter, SinType.Wrath,    MoralType.Vicious, 60f,
                 height: 1.30f, girth: 0.55f, speed: 3.5f, toughness: 0),
 
-            // Лёгкий и быстрый: догоняет отставших.
-            new(Loc.N("Охотник-следопыт"), SinType.Envy,     MoralType.Neutral, 45f,
-                height: 1.15f, girth: 0.42f, speed: 4.8f, toughness: 0),
+            // Лёгкий и быстрый: догоняет отставших. До 16 октября — «Охотник-
+            // следопыт»: вид был именем, а «Бертрам Охотник-следопыт» — три слова
+            // там, где хватит двух. Охотник он и так: все они — Орден.
+            // Во второй волне ведёт погоню — и Орден зовёт его псом.
+            new(Trade.Tracker,     SinType.Envy,     MoralType.Neutral, 45f,
+                height: 1.15f, girth: 0.42f, speed: 4.8f, toughness: 0,
+                granted: AOS.TitleDatabase.OrderHound),
 
             // Инквизитор — рангом выше охотников, и видно это ростом
             // и крепостью (слово автора от 13 сентября: «не мясники,
             // а инквизиторы»). Гордыня, а не Чревоугодие: он пришёл
             // не есть, а судить.
-            new(Loc.N("Инквизитор"),       SinType.Pride,    MoralType.Vicious, 55f,
+            new(Trade.Inquisitor,  SinType.Pride,    MoralType.Vicious, 55f,
                 height: 1.45f, girth: 0.62f, speed: 2.8f, toughness: 1,
                 // Во второй волне ищет Греховода магией (Scryer): замысел
                 // автора от 24 сентября. Самый медленный в стае — и потому
                 // колдует из-за спин, до него надо прорваться.
-                scries: true),
+                scries: true,
+                // И во второй волне это легенда Ордена: за Греховодом
+                // прислали того, о ком знают. Убить его — и охотники
+                // теряют след (Scryer), и легенда ложится в банку.
+                granted: AOS.TitleDatabase.WitchHammer),
 
             // Средний во всём, и тем узнаваем.
-            new(Loc.N("Ловчий"),           SinType.Greed,    MoralType.Vicious, 50f,
+            new(Trade.Catcher,     SinType.Greed,    MoralType.Vicious, 50f,
                 height: 1.25f, girth: 0.60f, speed: 3.9f, toughness: 0),
         };
 
         private readonly struct Kind
         {
-            public readonly string Name;
+            /// <summary>
+            /// Чин Ордена — ремесло души (<see cref="Trade"/>). До 16 октября
+            /// вид был именем целиком («Ловчий»), и по строке имени его узнавали
+            /// гардероб и движок. Теперь имя своё, а вид — в душе.
+            /// </summary>
+            public readonly Trade Trade;
             public readonly SinType Sin;
             public readonly MoralType Moral;
             public readonly float Intensity;
@@ -115,11 +128,19 @@ namespace Sinbinder.Gameplay
             /// <summary>Ищет Греховода магией, если идёт во второй волне.</summary>
             public readonly bool Scries;
 
-            public Kind(string name, SinType sin, MoralType moral, float intensity,
-                float height, float girth, float speed, int toughness, bool scries = false)
+            /// <summary>
+            /// Имя, которое Орден жалует первому этого вида во второй волне.
+            /// Пусто — приходит без имени.
+            /// </summary>
+            public readonly AOS.TitleRule Granted;
+
+            public Kind(Trade trade, SinType sin, MoralType moral, float intensity,
+                float height, float girth, float speed, int toughness, bool scries = false,
+                AOS.TitleRule granted = null)
             {
                 Scries = scries;
-                Name = name;
+                Granted = granted;
+                Trade = trade;
                 Sin = sin;
                 Moral = moral;
                 Intensity = intensity;
@@ -250,9 +271,11 @@ namespace Sinbinder.Gameplay
             // прошлой волны, ничего не значит.
             if (_afterFieldClear) SinbinderTrail.Forget();
 
+            Warrior legend = null;
             for (int i = 0; i < _count; i++)
             {
                 var hunter = SpawnHunter(i);
+                if (legend == null && hunter != null && hunter.Reputation.LegendaryUnlocked) legend = hunter;
 
                 // Первая волна — побитая. До 24 сентября лёгкость первого
                 // боя держалась на том, что здоровье у всех было 30: запас
@@ -280,6 +303,13 @@ namespace Sinbinder.Gameplay
 
             if (!string.IsNullOrEmpty(_announce))
                 Herald.Line(_announce);
+
+            // Легенду называют вслух — следом, в ту же очередь. Без этого игрок
+            // увидит лишь, что один выше прочих и в плаще, а страшно не росту,
+            // а имени, о котором знают.
+            if (legend != null)
+                Herald.Line(Loc.F("Карган: «Их ведёт {0}. Я видел, что после него остаётся».",
+                                  Loc.Name(legend.ShownName)));
 
             // Волна, вышедшая по опустевшему полю, — вторая. После неё
             // бежать уже пора, и край карты открывает она.
@@ -312,11 +342,34 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Прозвища для второго охотника того же вида. Раньше их нумеровали —
-        /// «Охотник-следопыт 6 пошёл за добычей» стояло в журнале, а игрок
-        /// чисел не видит. Прозвище — после имени, как у отряда («Вейн
-        /// Тихий»): тогда и <c>StartsWith("Ловчий")</c> гардероба,
-        /// и <c>Contains("Охотник")</c> движка узнают вид как прежде.
+        /// Имена Ордена. Германские — своя культура, чужая отряду (решение
+        /// автора 16 октября: «ДА! ЭТО ВЕЛИКОЛЕПНО!»): у отряда Марга, Хорь
+        /// и Ждан, и охотник с первого имени читается пришлым. Показ —
+        /// с чином после имени, как ремесло у своих: «Ансельм Охотник»,
+        /// «Ульрих Инквизитор» (Core/Naming).
+        ///
+        /// Список и порядок фиксированы — жребия нет. Все мужские: Орден
+        /// женщин не выдаёт (правило «женщины уникальны»).
+        /// </summary>
+        private static readonly string[] Names =
+        {
+            Loc.N("Ансельм"), Loc.N("Бертрам"), Loc.N("Ульрих"), Loc.N("Готфрид"),
+            Loc.N("Кунрад"), Loc.N("Ортвин"), Loc.N("Вольфрам"), Loc.N("Лотар"),
+            Loc.N("Эберхард"), Loc.N("Рупрехт"), Loc.N("Хаген"), Loc.N("Дитмар"),
+            Loc.N("Гунтрам"), Loc.N("Адальберт"), Loc.N("Фолькмар"), Loc.N("Зигфрид"),
+        };
+
+        /// <summary>
+        /// С какого имени начинается вторая волна. Первая к её выходу лежит
+        /// на поле, и «Ансельм» второй раз читался бы тем же человеком.
+        /// Восемь — с запасом на первую волну любого размера в прологе (три).
+        /// </summary>
+        public const int SecondWaveFrom = 8;
+
+        /// <summary>
+        /// Прозвища — когда имена кончились: шестнадцатый охотник и дальше.
+        /// В прологе столько не выходит. Раньше охотников нумеровали —
+        /// «Охотник-следопыт 6 пошёл за добычей», — а игрок чисел не видит.
         /// Все мужского рода: женщин генератор не выдаёт.
         /// </summary>
         private static readonly string[] Epithets =
@@ -326,23 +379,26 @@ namespace Sinbinder.Gameplay
         };
 
         /// <summary>
-        /// Имя охотника по месту в строю. Первый каждого вида — просто вид,
-        /// следующие — вид и прозвище. До двенадцати (четыре вида и восемь
-        /// прозвищ) все разные; больше в прологе не выходит (вторая волна —
-        /// шестеро).
+        /// Имя охотника по месту: первая волна — с нуля, вторая —
+        /// с <see cref="SecondWaveFrom"/>. Шестнадцать имён, затем те же
+        /// с прозвищем — все разные до ста сорока четырёх.
         /// </summary>
-        public static string HunterName(int index)
+        public static string HunterName(int place)
         {
-            if (index < 0) index = 0;
-            string kind = Kinds[index % Kinds.Length].Name;
-            if (index < Kinds.Length) return kind;
-            return $"{kind} {Epithets[(index - Kinds.Length) % Epithets.Length]}";
+            if (place < 0) place = 0;
+            string name = Names[place % Names.Length];
+            int round = place / Names.Length;
+            return round == 0 ? name : $"{name} {Epithets[(round - 1) % Epithets.Length]}";
         }
+
+        /// <summary>Чин охотника на этом месте строя: виды идут по кругу.</summary>
+        public static Trade HunterTrade(int index)
+            => Kinds[(index < 0 ? 0 : index) % Kinds.Length].Trade;
 
         private Warrior SpawnHunter(int index)
         {
             var kind = Kinds[index % Kinds.Length];
-            string name = HunterName(index);
+            string name = HunterName(index + (_afterFieldClear ? SecondWaveFrom : 0));
 
             var go = new GameObject(name);
             go.transform.SetParent(transform);
@@ -363,10 +419,23 @@ namespace Sinbinder.Gameplay
 
             var soul = new SoulData(name, kind.Sin, kind.Moral,
                                     _level + kind.Toughness, kind.Intensity);
+
+            // Чин — ремесло: им вид узнают гардероб и движок, его помнит душа.
+            // Без Trades.Apply: наклон души уже сложен видом (Kinds), а второй
+            // сдвинул бы выверенный бой.
+            soul.SetTrade(kind.Trade);
+
             // Живое тело: охотники — люди. До 14 сентября здесь стоял зомби,
             // и оболочка тянула их души в Чревоугодие, а движок считал
             // людей нежитью.
             warrior.Initialize(soul, ShellType.Living, _relSystem, index == 0, Team.Enemy);
+
+            // Вторая волна страшнее и тем, что в ней есть имена: первому своего
+            // вида Орден жалует титул — следопыт ведёт погоню, инквизитор —
+            // легенда (решение автора 16 октября: «1–2 титулованных или даже
+            // 1 легенду»). Двое на шестерых: больше — и имя перестаёт отличать.
+            bool named = _afterFieldClear && index < Kinds.Length && kind.Granted != null;
+            if (named) AOS.TitleManager.Bestow(warrior, kind.Granted.Title);
 
             // Инквизитор крепче прочих не уровнем — уровней в игре нет, —
             // а тем, что на нём надето. Защита вещи идёт в бой через
@@ -382,9 +451,12 @@ namespace Sinbinder.Gameplay
             // доли 4 не начался бы вовсе.
             WarriorRig.Attach(go, kind.Speed);
 
+            // Легенду видно ростом раньше, чем плащом: так в лагере видно
+            // опытных (PrologueCampSpawner, «seasoned»).
+            float height = warrior.Reputation.LegendaryUnlocked ? kind.Height * 1.12f : kind.Height;
             WarriorLook.Build(go, ShellType.Living,
-                                         kind.Height, kind.Girth,
-                                         kind.Height * 0.62f);
+                                         height, kind.Girth,
+                                         height * 0.62f);
 
             return warrior;
         }

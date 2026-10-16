@@ -119,6 +119,7 @@ namespace Sinbinder.Core
                     Brother = m.Brother,
                     Legend = m.Legend,
                     Shell = (int)m.Shell,
+                    Title = m.Title,
                 });
             }
 
@@ -343,6 +344,7 @@ namespace Sinbinder.Core
                     Brother = m.Brother,
                     Legend = m.Legend,
                     Shell = (ShellType)m.Shell,
+                    Title = m.Title ?? "",
                 });
             }
 

@@ -36,6 +36,26 @@ namespace Sinbinder.AOS
         /// </summary>
         public string Female;
 
+        /// <summary>
+        /// Как то же деяние зовут в Ордене. Пусто — слово то же.
+        ///
+        /// Заведено 16 октября, когда враги получили титулы по тем же
+        /// правилам, что свои (автор: «пусть получают. это ещё один показ
+        /// глубины механик игры»). Деянию всё равно, на чьей ты стороне, —
+        /// слову нет: охотник, положивший семерых мертвецов, — не «Убийца
+        /// Охотников». Только для слов, которые называют другую сторону;
+        /// «Берсерк» и «Мститель» одинаковы у всех. Женской пары у этого
+        /// слова нет: Орден женщин не выдаёт (правило «женщины уникальны»).
+        /// </summary>
+        public string Order;
+
+        /// <summary>
+        /// Легендарно по сути, а не по обстоятельству. Нужно именам, которые
+        /// не заслуживаются деяниями, а пожалованы (<see cref="TitleDatabase.Granted"/>):
+        /// у них нет условий <c>Requires*</c>, по которым легенду узнают.
+        /// </summary>
+        public bool Legend;
+
         public DeedType MainDeed;
         public int RequiredCount;
         public float RequiredImportance;
@@ -57,5 +77,12 @@ namespace Sinbinder.AOS
         public string For(Gender gender)
             => Grammar.Pick(gender, Title,
                             string.IsNullOrEmpty(Female) ? Title : Female);
+
+        /// <summary>
+        /// Слово для воина Ордена (<paramref name="order"/>) или для прочих.
+        /// Своего слова у Ордена нет — общее.
+        /// </summary>
+        public string For(Gender gender, bool order)
+            => order && !string.IsNullOrEmpty(Order) ? Order : For(gender);
     }
 }

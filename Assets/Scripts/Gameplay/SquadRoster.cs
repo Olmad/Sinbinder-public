@@ -61,6 +61,14 @@ namespace Sinbinder.Gameplay
             public bool Legend;
 
             /// <summary>
+            /// Заработанный титул словом («Костекоп»; пусто — нет). Живёт
+            /// здесь с 16 октября: титул лежит на теле (<c>ReputationData</c>),
+            /// тело остаётся в сцене, и заслуживший имя в набеге входил в склеп
+            /// без него. Вешает обратно <c>TitleManager.Bestow</c>.
+            /// </summary>
+            public string Title;
+
+            /// <summary>
             /// Тело: скелет, зомби, призрак. Живёт в составе, а не в сцене:
             /// зомби у костра обязан войти в склеп зомби и вернуться с вылазки
             /// в своём теле. По умолчанию — скелет, каким отряд был до 25 сентября.
@@ -323,6 +331,7 @@ namespace Sinbinder.Gameplay
                 m.IsCommander = w.IsCommander;
                 m.IsAway = false;
                 m.Shell = w.Shell;
+                m.Title = AOS.TitleManager.TitleOf(w);
                 m.Gear = new List<Inventory.InventoryItem>(w.Carried);
                 m.Pocket = w.PocketGold;
 

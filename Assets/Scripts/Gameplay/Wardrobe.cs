@@ -376,16 +376,17 @@ namespace Sinbinder.Gameplay
         {
             if (warrior == null) yield break;
 
-            // Живые: охотники узнаются по имени — оно у них и есть род
-            // занятий. Четыре вида, и каждый отличим сверху.
+            // Живые: охотники узнаются по чину — ремеслу души. До 16 октября —
+            // по имени, которое и было видом («Ловчий»); теперь имя своё
+            // («Дитмар»), а вид в душе. Четыре вида, и каждый отличим сверху.
             if (warrior.Shell == ShellType.Living)
             {
-                string name = warrior.DisplayName ?? "";
+                var rank = warrior.Soul != null ? warrior.Soul.Trade : Trade.None;
 
                 // Оружие вида — последним: сверху его видно после головы
                 // и плеч, и так же его и перечисляем.
                 string held;
-                if (name.StartsWith("Инквизитор"))
+                if (rank == Trade.Inquisitor)
                 {
                     yield return "InquisitorCap";
                     yield return "Tabard";
@@ -394,13 +395,13 @@ namespace Sinbinder.Gameplay
                     yield return "Shield";
                     held = "Sword";
                 }
-                else if (name.StartsWith("Охотник-следопыт"))
+                else if (rank == Trade.Tracker)
                 {
                     yield return "Hood";
                     yield return "Cloak";
                     held = "Dagger";
                 }
-                else if (name.StartsWith("Ловчий"))
+                else if (rank == Trade.Catcher)
                 {
                     yield return "WideHat";
                     yield return "Net";
@@ -412,6 +413,13 @@ namespace Sinbinder.Gameplay
                     yield return "Quiver";
                     held = "Axe";
                 }
+
+                // Легенда Ордена — в длинном плаще поверх своего: сверху
+                // это шире плеч, и её видно в строю раньше, чем лицо.
+                // Ростом она выше прочих (HunterSquadSpawner).
+                if (rank != Trade.Tracker && warrior.Reputation != null
+                    && warrior.Reputation.LegendaryUnlocked)
+                    yield return "Cloak";
 
                 foreach (var part in Carried(WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name) ?? held))
                     yield return part;
@@ -429,6 +437,13 @@ namespace Sinbinder.Gameplay
                 case Trade.Archer:    yield return "Bow"; break;
                 case Trade.Alchemist: yield return "Flasks"; break;
                 case Trade.Mage:      yield return "Hood"; yield return "Cloak"; break;
+
+                // Поднятый из охотника носит свой чин и в скелете: ремесло
+                // врождённое (выше) — и Орден из души не вытравить.
+                case Trade.OrderHunter: yield return "Hood"; yield return "Quiver"; break;
+                case Trade.Tracker:     yield return "Hood"; yield return "Cloak"; break;
+                case Trade.Inquisitor:  yield return "InquisitorCap"; yield return "Tabard"; break;
+                case Trade.Catcher:     yield return "WideHat"; break;
             }
 
             // Легенду видно первой: плащ из вороньих перьев — вещь
