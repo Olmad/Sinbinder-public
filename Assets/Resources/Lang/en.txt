@@ -4819,6 +4819,10 @@ msgstr "{0} picks up {1}: part goes to the Sinbinder's purse, the rest into his 
 msgid "Снято с павшего. Тому, кто взял, — знак, что победил он."
 msgstr "Taken from the fallen. For whoever took it, a sign that he was the victor."
 
+#: Gameplay/OpeningReveal.cs
+msgid "Не командуй. Искушай."
+msgstr "Don't command. Tempt."
+
 #: Gameplay/PrologueCampSpawner.cs
 msgid "телохранитель, не отходит от вас"
 msgstr "bodyguard, never leaves your side"
@@ -5612,8 +5616,16 @@ msgid "{0} принял отряд."
 msgstr "{0} has taken the squad."
 
 #: UI/DemoEndUI.cs
-msgid "Отряд вернулся."
-msgstr "The squad has returned."
+msgid "Вылазка вернулась."
+msgstr "The sortie has returned."
+
+#: UI/DemoEndUI.cs
+msgid "Вылазка не вернулась."
+msgstr "The sortie did not return."
+
+#: UI/DemoEndUI.cs
+msgid "Ночь позади."
+msgstr "The night is over."
 
 #: UI/DemoEndUI.cs
 msgid "Здесь история демо кончается. Склеп остаётся вашим: можно остаться и посылать отряды на вылазки."
@@ -5624,10 +5636,6 @@ msgid "Демо окончено."
 msgstr "End of the demo."
 
 #: UI/DemoEndUI.cs
-msgid "Отряд вёл {0}."
-msgstr "{0} led the squad."
-
-#: UI/DemoEndUI.cs
 msgid " — ему всё ещё должны"
 msgstr " — still owed his pay"
 
@@ -5636,24 +5644,24 @@ msgid " — ей всё ещё должны"
 msgstr " — still owed her pay"
 
 #: UI/DemoEndUI.cs
-msgid " — старший"
-msgstr " — leader"
+msgid "С вами в склепе:"
+msgstr "With you in the crypt:"
 
 #: UI/DemoEndUI.cs
-msgid "Из ушедших не вернулся никто."
-msgstr "None of those who left came back."
+msgid "Вёл их {0}."
+msgstr "{0} led them."
 
 #: UI/DemoEndUI.cs
-msgid "В склеп входит отряд, ушедший из лагеря."
-msgstr "The squad that left the camp enters the crypt."
+msgid "Вела их {0}."
+msgstr "{0} led them."
 
 #: UI/DemoEndUI.cs
-msgid " — вёл их"
-msgstr " — led them"
+msgid "Из тех, кого вы послали из лагеря за добычей, не вернулся никто."
+msgstr "Of those you sent from the camp to bring back spoils, no one returned."
 
 #: UI/DemoEndUI.cs
-msgid " — вела их"
-msgstr " — led them"
+msgid "В склеп входят те, кого вы послали из лагеря за добычей."
+msgstr "Those you sent from the camp to bring back spoils enter the crypt."
 
 #: UI/DemoEndUI.cs
 msgid "Склеп ваш. Шар у правой стены показывает дороги. Первая ведёт к соляному обозу: охраны при нём двое, а везут серебро."
@@ -6566,6 +6574,34 @@ msgstr "Let them talk. Maybe it'll blow over."
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
 
 #. нет в коде
+msgid "Отряд вернулся."
+msgstr "The squad has returned."
+
+#. нет в коде
+msgid "Отряд вёл {0}."
+msgstr "{0} led the squad."
+
+#. нет в коде
+msgid " — старший"
+msgstr " — leader"
+
+#. нет в коде
+msgid "Из ушедших не вернулся никто."
+msgstr "None of those who left came back."
+
+#. нет в коде
+msgid "В склеп входит отряд, ушедший из лагеря."
+msgstr "The squad that left the camp enters the crypt."
+
+#. нет в коде
+msgid " — вёл их"
+msgstr " — led them"
+
+#. нет в коде
+msgid " — вела их"
+msgstr " — led them"
+
+#. нет в коде
 msgid "В казну прибыло."
 msgstr "The treasury has grown."
 
@@ -6840,7 +6876,3 @@ msgstr "Order — to the whole squad"
 #. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
-
-#: Gameplay/OpeningReveal.cs
-msgid "Не командуй. Искушай."
-msgstr "Don't command. Tempt."

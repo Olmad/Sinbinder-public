@@ -45,17 +45,33 @@ namespace Sinbinder.UI
         /// Показать журнал. Гасим прозрачностью, а не выключением:
         /// этот же объект ищут по типу, а выключенный не находится.
         /// </summary>
-        private void Show()
+        private void Show() => _wanted = true;
+
+        /// <summary>Была ли запись — журнал показан, если ничего не мешает.</summary>
+        private bool _wanted;
+        private CanvasGroup _group;
+
+        /// <summary>
+        /// Виден ли журнал — решается каждый кадр, последним словом.
+        ///
+        /// Пока полосы подняты, журнал молчит на экране: во время набега
+        /// души собираются как раз под полосами, и каждая запись вытаскивала
+        /// журнал обратно поверх кино. Пока открыто окно (<see cref="Modal.Any"/>) —
+        /// тоже: до 16 октября запись поверх окна возвращала журнал, и он
+        /// уходил под край разговора и сундука (опись экранов, 46-UI §1.1, п. 4).
+        /// Окно закрылось, полосы ушли — журнал на месте сам, без новой записи.
+        /// </summary>
+        void LateUpdate()
         {
-            // Пока полосы подняты, журнал молчит на экране. Во время
-            // набега души собираются как раз под полосами, и каждая
-            // запись вытаскивала журнал обратно поверх кино.
-            if (Letterbox.Instance != null && Letterbox.Instance.Shown) return;
+            if (_group == null)
+            {
+                _group = GetComponent<CanvasGroup>();
+                if (_group == null) _group = gameObject.AddComponent<CanvasGroup>();
+            }
 
-            var group = GetComponent<CanvasGroup>();
-            if (group == null) group = gameObject.AddComponent<CanvasGroup>();
-
-            group.alpha = 1f;
+            bool on = _wanted && !Modal.Any
+                   && !(Letterbox.Instance != null && Letterbox.Instance.Shown);
+            _group.alpha = on ? 1f : 0f;
         }
 
         void Awake()

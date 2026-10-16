@@ -106,6 +106,7 @@ namespace Sinbinder.Tests
                 HeraldLines();
                 CryptWelcome();
                 FloorOnSight();
+                WindowsHush();
                 TextRules();
                 NamesAndCases();
                 VirtueHalves();
@@ -1132,6 +1133,26 @@ namespace Sinbinder.Tests
                   "строка поступка — не реплика, наезда нет");
             Check(Herald.Hold("") >= 2f && Herald.Hold(new string('а', 400)) <= 7f,
                   "кадр держится, чтобы прочесть, и не дольше семи секунд");
+        }
+
+        /// <summary>
+        /// Окно требует ответа — сума, журнал и облачка молчат (опись экранов
+        /// 15 октября, docs/46-UI.md §1.1, пп. 3–5). И окно, ушедшее вместе
+        /// со сценой, не держит их погашенными в следующей.
+        /// </summary>
+        private static void WindowsHush()
+        {
+            var canvas = NewObject("Холст окон").AddComponent<Canvas>();
+            var panel = new GameObject("SelfCheck_Окно", typeof(RectTransform));
+            panel.transform.SetParent(canvas.transform, false);
+
+            bool before = UI.Modal.Any;
+            UI.Modal.Open(panel);
+            Check(UI.Modal.Any, "окно открыто — а сума и журнал о нём не знают");
+
+            UnityEngine.Object.DestroyImmediate(panel);
+            Check(UI.Modal.Any == before,
+                  "окно ушло со сценой — а сума и журнал погашены и дальше");
         }
 
         /// <summary>

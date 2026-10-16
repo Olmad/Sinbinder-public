@@ -219,8 +219,10 @@ namespace Sinbinder.Crypt
         /// </summary>
         private static Font PlateFont()
         {
-            var any = Object.FindFirstObjectByType<UnityEngine.UI.Text>(FindObjectsInactive.Include);
-            if (any != null && any.font != null) return any.font;
+            // Книжная антиква, как у панелей; раньше — шрифт «первого текста
+            // сцены», какой попадётся (опись экранов, 46-UI §1.1, п. 9).
+            var style = UI.UiStyle.Body;
+            if (style != null) return style;
 
             var builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (builtin != null) return builtin;

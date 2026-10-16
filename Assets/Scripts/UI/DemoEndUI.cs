@@ -63,18 +63,30 @@ namespace Sinbinder.UI
         {
             if (_panel == null) return;
 
-            if (_title != null)
-                _title.text = wiped ? Loc.T("Отряд не вернулся.") : Loc.T("Отряд вернулся.");
-
             bool sandbox = !wiped && _stay != null && Crypt.CryptMap.Switch;
             if (_stay != null) _stay.gameObject.SetActive(sandbox);
 
+            // Сперва — кто с вами в склепе (до возвращения: вернувшиеся войдут
+            // следом), потом — что стало с вылазкой. Заголовок — по её исходу.
+            // До 16 октября заголовок был «Отряд вернулся» при любом исходе,
+            // а под ним стояли имена бежавших в склеп и «из ушедших не вернулся
+            // никто» — новичок читал имена как вернувшихся (кадр описи 46-UI, 16).
+            string here = wiped ? "" : Here();
+            var outcome = Outcome.None;
+            string back = wiped ? "" : Comeback(out outcome);
+
+            if (_title != null)
+                _title.text = wiped ? Loc.T("Отряд не вернулся.")
+                    : outcome == Outcome.Returned ? Loc.T("Вылазка вернулась.")
+                    : outcome == Outcome.Lost ? Loc.T("Вылазка не вернулась.")
+                    : Loc.T("Ночь позади.");
+
             if (_body != null)
                 _body.text = wiped ? Epitaph()
-                    : (Roll() + Comeback()).TrimEnd() + "\n\n"
-                      + (sandbox ? Loc.T("Здесь история демо кончается. Склеп остаётся вашим: "
-                                       + "можно остаться и посылать отряды на вылазки.")
-                                 : Loc.T("Демо окончено."));
+                    : Join(back, here, sandbox
+                        ? Loc.T("Здесь история демо кончается. Склеп остаётся вашим: "
+                              + "можно остаться и посылать отряды на вылазки.")
+                        : Loc.T("Демо окончено."));
 
             // Подписи кнопок вписал сборщик сцены — по-русски, на миг сборки.
             // Язык могли сменить; подписываем при показе.
@@ -129,33 +141,42 @@ namespace Sinbinder.UI
                 Mathf.Max(Shortest, top + height + below));
         }
 
-        /// <summary>Кто дошёл и кто их вёл.</summary>
-        private string Roll()
+        /// <summary>
+        /// Кто с вами в склепе — бежавшие из лагеря и поднятые. Долг называется:
+        /// это единственное, что отряд уносит с собой к следующей вылазке.
+        /// Пусто — с Греховодом никого.
+        /// </summary>
+        private string Here()
         {
             var sb = new StringBuilder();
 
-            string commander = SquadRoster.CommanderName;
-            if (!string.IsNullOrEmpty(commander))
-                sb.AppendLine(Loc.F("Отряд вёл {0}.", Loc.Name(commander))).AppendLine();
-
             foreach (var m in SquadRoster.Members)
             {
-                if (m.IsAway) continue;   // они возвращаются ниже, отдельно
+                if (m.IsAway) continue;   // о них — в рассказе о вылазке
 
                 sb.Append(Loc.Name(m.Name));
 
-                // Долг — единственное, что отряд уносит с собой к следующей
-                // вылазке. Числа игрок не видит, только факт. «Ему» — по роду:
-                // Женщине (основная игра) должны так же.
+                // Числа игрок не видит, только факт. «Ему» — по роду:
+                // женщине (основная игра) должны так же.
                 if (m.UnpaidMissions > 0)
                     sb.Append(Grammar.Pick(m.Gender, Loc.T(" — ему всё ещё должны"), Loc.T(" — ей всё ещё должны")));
-                else if (m.IsCommander) sb.Append(Loc.T(" — старший"));
 
                 sb.AppendLine();
             }
 
-            return sb.ToString();
+            return sb.Length == 0 ? "" : Loc.T("С вами в склепе:") + "\n" + sb.ToString().TrimEnd();
         }
+
+        /// <summary>Абзацы через пустую строку, пустые пропускаются.</summary>
+        private static string Join(params string[] parts)
+        {
+            var kept = new List<string>();
+            foreach (var p in parts) if (!string.IsNullOrWhiteSpace(p)) kept.Add(p.Trim());
+            return string.Join("\n\n", kept);
+        }
+
+        /// <summary>Чем кончилась вылазка из лагеря.</summary>
+        private enum Outcome { None, Returned, Lost }
 
         /// <summary>
         /// Возвращение отряда, ушедшего на доле 2, — закрытие демо.
@@ -170,12 +191,13 @@ namespace Sinbinder.UI
         /// постановочная сцена не показывает того, чего движок не мог бы
         /// решить сам» — выполняется теперь и здесь.
         /// </summary>
-        private string Comeback()
+        private string Comeback(out Outcome outcome)
         {
             var away = new List<SquadRoster.Member>();
             foreach (var m in SquadRoster.Away) away.Add(m);
 
             _returned.Clear();
+            outcome = Outcome.None;
             if (away.Count == 0) return "";
 
             // Командир идёт первым: он вернулся, если вернулся хоть кто-то.
@@ -195,37 +217,36 @@ namespace Sinbinder.UI
             _returned.AddRange(survivors);
 
             var sb = new StringBuilder();
+            string led = Grammar.Pick(leader.Gender,
+                Loc.F("Вёл их {0}.", Loc.Name(leader.Name)),
+                Loc.F("Вела их {0}.", Loc.Name(leader.Name)));
 
             // Не вернулся никто — это законный исход настоящего боя,
             // а не сбой. Таблица такого не допускала: она всегда
             // возвращала хотя бы одного, и это было обещание,
             // которого движок не давал.
+            //
+            // Что это за вылазка — сказано заново: совет был полчаса назад,
+            // и «ушедшие» без напоминания читались загадкой.
             if (survivors.Count == 0)
             {
-                sb.AppendLine().AppendLine(Loc.T("Из ушедших не вернулся никто."));
-                sb.AppendLine();
-                sb.Append(Homecoming.Story(leader.Sin, leader.Gender));
+                outcome = Outcome.Lost;
+                sb.Append(Loc.T("Из тех, кого вы послали из лагеря за добычей, не вернулся никто."))
+                  .Append(' ').Append(led);
+                sb.Append("\n\n").Append(Homecoming.Story(leader.Sin, leader.Gender));
                 return sb.ToString();
             }
 
-            sb.AppendLine().AppendLine(Loc.T("В склеп входит отряд, ушедший из лагеря."));
-            sb.AppendLine();
+            outcome = Outcome.Returned;
+            sb.Append(Loc.T("В склеп входят те, кого вы послали из лагеря за добычей."))
+              .Append(' ').Append(led).Append('\n');
 
-            foreach (var name in survivors)
-            {
-                sb.Append(Loc.Name(name));
-                if (name == leader.Name && leader.IsCommander)
-                    sb.Append(Grammar.Pick(leader.Gender, Loc.T(" — вёл их"), Loc.T(" — вела их")));
-                sb.AppendLine();
-            }
+            foreach (var name in survivors) sb.Append('\n').Append(Loc.Name(name));
 
             if (survivors.Count < away.Count)
-            {
-                sb.AppendLine();
-                sb.Append(Homecoming.Story(leader.Sin, leader.Gender));
-            }
+                sb.Append("\n\n").Append(Homecoming.Story(leader.Sin, leader.Gender));
 
-            return sb.ToString().TrimEnd();
+            return sb.ToString();
         }
 
         /// <summary>

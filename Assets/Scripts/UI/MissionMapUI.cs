@@ -40,6 +40,11 @@ namespace Sinbinder.UI
 
         private readonly List<GameObject> _spawned = new();
 
+        private static MissionMapUI _shown;
+
+        /// <summary>Открыта ли карта. Спрашивает <see cref="Modal.Any"/>.</summary>
+        public static bool IsOpen => _shown != null && _shown._panel != null && _shown._panel.activeInHierarchy;
+
         private CrystalBall _ball;
         private MissionBoard _board;
 
@@ -133,6 +138,7 @@ namespace Sinbinder.UI
             _pickingCommander = false;
             ShowMissions();
 
+            _shown = this;
             _panel.SetActive(true);
             Core.GamePauseController.Instance?.Pause();
         }

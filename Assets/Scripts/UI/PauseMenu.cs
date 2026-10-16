@@ -55,8 +55,14 @@ namespace Sinbinder.UI
             Open();
         }
 
+        /// <summary>Открыто ли меню паузы. Спрашивает <see cref="Modal.Any"/>.</summary>
+        public static bool IsOpen => _shown != null && _shown._open && _shown.isActiveAndEnabled;
+
+        private static PauseMenu _shown;
+
         private void Open()
         {
+            _shown = this;
             _open = true;
             if (_panel != null) _panel.SetActive(true);
             GamePauseController.Instance?.Pause();

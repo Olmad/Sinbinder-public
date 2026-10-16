@@ -32,6 +32,40 @@ namespace Sinbinder.UI
 
         private static readonly Dictionary<GameObject, List<Was>> Dimmed = new();
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() => Dimmed.Clear();
+
+        /// <summary>
+        /// Открыто ли сейчас окно, требующее ответа, — любое: через <see cref="Open"/>
+        /// и те, что открываются своим устройством (разговор, пауза, карта вылазок).
+        ///
+        /// Спрашивают то, что живёт поверх мира само по себе и потому гасилось
+        /// не всегда: сума, журнал, облачка реплик. Опись экранов 15 октября
+        /// (docs/46-UI.md §1.1): сума горела под каждым окном и на паузе прямо
+        /// на «Выйти из игры», журнал уходил под край разговора, облачко
+        /// из мира ложилось поверх сундука. Сума и журнал сами ставили себе
+        /// прозрачность и перебивали гашение окна; разговор, пауза и карта
+        /// не гасили ничего.
+        ///
+        /// Окно, ушедшее вместе со сценой, не считается: иначе одно незакрытое
+        /// окно погасило бы суму и журнал во всех следующих сценах.
+        /// </summary>
+        public static bool Any
+        {
+            get
+            {
+                if (Dimmed.Count > 0)
+                {
+                    List<GameObject> gone = null;
+                    foreach (var panel in Dimmed.Keys)
+                        if (panel == null) (gone ??= new List<GameObject>()).Add(panel);
+                    if (gone != null) foreach (var panel in gone) Dimmed.Remove(panel);
+                }
+
+                return Dimmed.Count > 0 || GearPanel.Open || PauseMenu.IsOpen || MissionMapUI.IsOpen;
+            }
+        }
+
         /// <summary>
         /// Открыть окно, убрав с глаз всё прочее на том же холсте.
         /// </summary>

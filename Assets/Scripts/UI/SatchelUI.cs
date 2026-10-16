@@ -128,7 +128,10 @@ namespace Sinbinder.UI
         {
             // При выборе на месте сумы — полоса выбранного (docs/42-INTERFACE.md
             // §3): голоса воина или сума самого Греховода, уже на полосе.
-            Fade(Satchel.Anything() && !SelectedUnitPanelUI.ShowsAnyone);
+            // Под окном и под полосами кино сумы нет: окно требует ответа,
+            // кино — внимания (опись экранов 15 октября, 46-UI §1.1, п. 3).
+            Fade(Satchel.Anything() && !SelectedUnitPanelUI.ShowsAnyone && !Modal.Any
+                 && !(Letterbox.Instance != null && Letterbox.Instance.Shown));
 
             int chosen = Satchel.Selected;
 

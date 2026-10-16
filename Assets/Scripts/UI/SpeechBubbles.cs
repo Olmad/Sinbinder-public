@@ -117,6 +117,11 @@ namespace Sinbinder.UI
 
         void LateUpdate()
         {
+            // Окно требует ответа — мир молчит поверх него: облачко из мира
+            // ложилось на сундук, над заголовком (опись экранов, 46-UI §1.1, п. 5).
+            // Холст реплик свой и выше основного, поэтому окно его не гасит.
+            if (_canvas != null) _canvas.enabled = !Modal.Any;
+
             if (_live.Count == 0) return;
             var cam = Camera.main;
 

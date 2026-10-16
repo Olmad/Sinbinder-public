@@ -1094,11 +1094,10 @@ namespace Sinbinder.Gameplay
             return t;
         }
 
-        private static Font UIFont()
-        {
-            var any = Object.FindFirstObjectByType<Text>(FindObjectsInactive.Include);
-            if (any != null && any.font != null) return any.font;
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
+        /// <summary>
+        /// Книжная антиква, как у всех панелей (<see cref="UI.UiStyle"/>). Раньше —
+        /// шрифт «у первого текста сцены»: какой попадётся (опись экранов, 46-UI §1.1, п. 9).
+        /// </summary>
+        private static Font UIFont() => UI.UiStyle.Body;
     }
 }

@@ -120,7 +120,29 @@ namespace Sinbinder.UI
             }
 
             Dress();
+            Fit();
             Refresh();
+        }
+
+        /// <summary>
+        /// Длинная строка голоса ужимается, а не режется краем зоны: «Его душа
+        /// звучит почти вровень с дру…» (опись экранов, 46-UI §1.1, п. 6). Не ниже
+        /// нижней границы кегля (§2.3): голос — 22, остальные — 18.
+        /// Здесь, а не в сборщике: так работает и без пересборки сцен.
+        /// </summary>
+        private void Fit()
+        {
+            Shrink(_voiceLine, 22);
+            foreach (var t in new[] { _reasonLine, _orderLine, _orderWhy }) Shrink(t, 18);
+        }
+
+        private static void Shrink(Text text, int floor)
+        {
+            if (text == null) return;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMaxSize = text.fontSize;
+            text.resizeTextMinSize = Mathf.Min(floor, text.fontSize);
         }
 
         /// <summary>
