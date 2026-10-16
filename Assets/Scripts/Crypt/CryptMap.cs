@@ -69,12 +69,11 @@ namespace Sinbinder.Crypt
 
         private static bool Possible(MissionBoard board)
         {
+            // Послать можно и одного (с 16 октября): точка возможна, если есть кому идти.
+            if (board.Ready() == 0) return false;
             foreach (var mission in board.Missions)
-            {
-                if (!board.EnoughPeople(mission)) continue;
                 foreach (var m in SquadRoster.Members)
                     if (string.IsNullOrEmpty(board.WhyNot(m, mission))) return true;
-            }
             return false;
         }
 

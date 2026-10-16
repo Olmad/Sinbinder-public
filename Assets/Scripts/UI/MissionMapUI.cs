@@ -171,19 +171,26 @@ namespace Sinbinder.UI
 
             Rows(out float y);
 
+            int ready = _board.Ready();
+
             foreach (var mission in _board.Missions)
             {
-                bool enough = _board.EnoughPeople(mission);
                 var m = mission;
 
-                _spawned.Add(Row(y, enough,
+                // Людей меньше, чем советуют, — не запрет (с 16 октября):
+                // послать можно и одного. Строка говорит, сколько советуют
+                // и сколько есть, а решает игрок.
+                string facts = $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
+                             + MissionCatalog.Promise(m.Spoils);
+                if (ready < m.Squad)
+                    facts += " " + Loc.F("Советуют послать {0} — у вас {1}.",
+                                         Leadership.Count(m.Squad), Leadership.Collective(ready));
+
+                _spawned.Add(Row(y, ready > 0,
                     Loc.Name(m.Name),
                     m.Rumour,
-                    enough
-                        ? $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
-                          + MissionCatalog.Promise(m.Spoils)
-                        : Loc.T("Столько людей не наберётся."),
-                    enough ? () => PickCommander(m) : (System.Action)null));
+                    facts,
+                    ready > 0 ? () => PickCommander(m) : (System.Action)null));
 
                 y -= 150f;
             }
@@ -215,7 +222,9 @@ namespace Sinbinder.UI
                 // до 16 октября здесь стояло голое имя, и без Loc.Name.
                 _spawned.Add(Row(y, can,
                     Loc.Name(member.ShownName),
-                    can ? Leadership.Describe(member.Leadership) : why,
+                    !can ? why
+                        : Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
+                        : Leadership.Shortfall(member.Leadership, mission.Squad),
                     prophecy,
                     can ? () => Lead(name) : (System.Action)null));
 
@@ -234,15 +243,19 @@ namespace Sinbinder.UI
             _leader = commanderName;
             _gathering = true;
             _party.Clear();
-            foreach (var name in SquadRoster.Suggest(commanderName, _chosen.Squad, keepExperienced: false))
+            foreach (var name in SquadRoster.Suggest(commanderName, MissionBoard.Fits(commanderName, _chosen),
+                                                     keepExperienced: false))
                 _party.Add(name);
             ShowParty(null);
         }
 
+        /// <summary>Скольких старший возьмёт сверх себя.</summary>
+        private int Room
+            => Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
+
         /// <summary>Отряд набран. Есть развилка — спросить, что предложить; нет — уходят.</summary>
         private void Gathered()
         {
-            if (_party.Count < _chosen.Squad - 1) return;
             _gathering = false;
             if (_chosen.Junction == Junction.None) { Send(_leader, null); return; }
             PickOffer(_leader);
@@ -251,8 +264,8 @@ namespace Sinbinder.UI
         private void Toggle(string name)
         {
             if (_party.Contains(name)) _party.Remove(name);
-            else if (_party.Count < _chosen.Squad - 1) _party.Add(name);
-            else { ShowParty(Loc.T("Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в склепе.")); return; }
+            else if (_party.Count < Room) _party.Add(name);
+            else { ShowParty(Loc.T("Больше за старшим не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в склепе.")); return; }
             ShowParty(null);
         }
 
@@ -262,15 +275,21 @@ namespace Sinbinder.UI
         /// </summary>
         private void ShowParty(string warning)
         {
-            int missing = _chosen.Squad - 1 - _party.Count;
+            int total = _party.Count + 1;
             string leader = Loc.Name(Shown(_leader));
 
+            // Меньше, чем советуют, — можно; сказано, чем это грозит.
+            string risk = total >= _chosen.Squad ? ""
+                : total == 1
+                    ? Loc.F("Советуют послать {0}, а пойдёт один — охраны от этого меньше не станет.",
+                            Leadership.Count(_chosen.Squad))
+                    : Loc.F("Советуют послать {0}, а пойдут {1} — охраны от этого меньше не станет.",
+                            Leadership.Count(_chosen.Squad), Leadership.Collective(total));
+
             if (_title != null)
-                _title.text = (missing > 0
-                        ? Loc.F("{0}. Кого {1} возьмёт — нужно ещё: {2}.", Loc.Name(_chosen.Name), leader,
-                                Leadership.Collective(missing))
-                        : Loc.F("{0}. Кого {1} возьмёт.", Loc.Name(_chosen.Name), leader))
+                _title.text = Loc.F("{0}. Кого {1} возьмёт.", Loc.Name(_chosen.Name), leader)
                     + Loc.T("  Esc — назад")
+                    + (risk == "" ? "" : "\n" + risk)
                     + (string.IsNullOrEmpty(warning) ? "" : "\n" + warning);
 
             Rows(out float y);
@@ -296,10 +315,10 @@ namespace Sinbinder.UI
                 y -= step;
             }
 
-            _spawned.Add(Row(y, missing <= 0,
-                missing <= 0 ? Loc.F("Отправить отряд — ведёт {0}", leader)
-                             : Loc.F("Нужно ещё: {0}", Leadership.Collective(missing)),
-                "", "", missing <= 0 ? Gathered : (System.Action)null, height));
+            _spawned.Add(Row(y, true,
+                _party.Count == 0 ? Loc.F("Отправить одного: {0}", leader)
+                                  : Loc.F("Отправить отряд — ведёт {0}", leader),
+                "", "", Gathered, height));
         }
 
         /// <summary>Идёт ли и что о нём стоит знать, решая: грех словом, долг, братство.</summary>

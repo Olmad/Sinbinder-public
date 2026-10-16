@@ -2021,6 +2021,14 @@ namespace Sinbinder.Tests
                 Check(gone.SetEquals(new[] { "Опытный А", "Опытный Б", "Рядовой 5" }),
                       $"ушли не те, кого выбрали: {string.Join(", ", gone)}");
 
+                // Меньше — можно, вплоть до одного старшего (автор: «даже просто
+                // лидера»): размер — совет, а не порог.
+                SquadRoster.Set(CampLike());
+                SquadRoster.SendAway("Рядовой 1", new string[0]);
+                int alone = 0;
+                foreach (var m in SquadRoster.Away) alone++;
+                Same(alone, 1, "старший без отряда уходит один");
+
                 SquadRoster.Set(CampLike());
                 SquadRoster.ChooseCommander("Опытный А");
                 SquadRoster.SendAway("Опытный А", 5);

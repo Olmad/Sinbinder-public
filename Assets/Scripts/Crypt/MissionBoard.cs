@@ -39,31 +39,36 @@ namespace Sinbinder.Crypt
         public Mission[] Missions => MissionCatalog.All();
 
         /// <summary>
-        /// Кого можно поставить старшим на эту точку и почему нельзя
-        /// остальных. Причина обязана быть названа: серая строка без
-        /// объяснения — это интерфейс, который сломался.
+        /// Почему его нельзя поставить старшим. Причина обязана быть названа:
+        /// серая строка без объяснения — это интерфейс, который сломался.
+        ///
+        /// С 16 октября нехватка навыка — не запрет (автор: «нужно, чтобы была
+        /// возможность отправить и меньше… даже просто лидера»): рядовой
+        /// поведёт, но уведёт троих. Это риск, и о нём строка выбора говорит
+        /// сама (<see cref="Leadership.Shortfall"/>). Запрещают только телохранитель
+        /// и дорога.
         /// </summary>
         public string WhyNot(SquadRoster.Member member, Mission mission)
         {
             if (!string.IsNullOrEmpty(member.Unavailable)) return Loc.T(member.Unavailable);
             if (member.IsAway) return Loc.T("В пути с другим отрядом.");
-
-            return Leadership.CanLead(member.Leadership, mission.Squad)
-                ? ""
-                : Leadership.Shortfall(member.Leadership, mission.Squad);
+            return "";
         }
 
-        /// <summary>Хватит ли вообще людей на эту точку.</summary>
-        public bool EnoughPeople(Mission mission)
+        /// <summary>Сколько людей сейчас может уйти. Ушедшие с другим отрядом — не здесь.</summary>
+        public int Ready()
         {
-            // Ушедшие с другим отрядом — не здесь: из склепа посылают,
-            // пока отряд из лагеря ещё в пути.
             int ready = 0;
             foreach (var m in SquadRoster.Members)
-                if (string.IsNullOrEmpty(m.Unavailable) && !m.IsAway) ready++;
-
-            return ready >= mission.Squad;
+                if (SquadRoster.CanGo(m)) ready++;
+            return ready;
         }
+
+        /// <summary>
+        /// Хватит ли людей на столько, сколько советуют для этой точки.
+        /// Не порог: послать можно и меньше — это риск, а не запрет.
+        /// </summary>
+        public bool EnoughPeople(Mission mission) => Ready() >= mission.Squad;
 
         /// <summary>
         /// Отправить и решить. Возвращает отчёт словами.
@@ -85,8 +90,18 @@ namespace Sinbinder.Crypt
         public string Send(Mission mission, string commanderName,
                            AOS.MissionAction? suggestion)
             => Send(mission, commanderName,
-                    SquadRoster.Suggest(commanderName, mission.Squad, keepExperienced: false),
+                    SquadRoster.Suggest(commanderName, Fits(commanderName, mission), keepExperienced: false),
                     suggestion);
+
+        /// <summary>
+        /// Сколько уйдёт по подсказке: сколько советуют, но не больше, чем
+        /// старший уведёт.
+        /// </summary>
+        public static int Fits(string commanderName, Mission mission)
+        {
+            float skill = SquadRoster.TryGet(commanderName, out var m) ? m.Leadership : 0f;
+            return System.Math.Min(mission.Squad, Leadership.SquadSize(skill));
+        }
 
         /// <summary>
         /// То же, но спутников старшему выбрал игрок (с 16 октября: окно карты
@@ -96,8 +111,8 @@ namespace Sinbinder.Crypt
         public string Send(Mission mission, string commanderName, ICollection<string> companions,
                            AOS.MissionAction? suggestion)
         {
-            if (!EnoughPeople(mission))
-                return Loc.T("Столько людей не наберётся.");
+            if (Ready() == 0)
+                return Loc.T("Послать некого.");
 
             // Вылазка — только те, кого послали сейчас. Отряд, ушедший
             // из лагеря, ещё в пути и вернётся в эпилоге: до 29 сентября

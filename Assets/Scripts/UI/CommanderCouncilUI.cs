@@ -345,38 +345,13 @@ namespace Sinbinder.UI
                     blocked = Loc.T(member.Unavailable);
                 }
 
-                // Навыка не хватает на этот отряд — виден, но не выбирается.
-                // Именно здесь рядовой упирается в требование доли 3, и это
-                // единственное объяснение, зачем нужен опытный, которое
-                // игроку не придётся читать в справке.
-                if (string.IsNullOrEmpty(blocked) && !Leadership.CanLead(skill, _requiredSquad))
-                    blocked = Leadership.Shortfall(skill, _requiredSquad);
-
+                // Навыка не хватает на столько, сколько советует Карган, —
+                // до 16 октября это был запрет: рядовой виден, но не выбирается.
+                // Теперь это риск (автор: «нужно, чтобы была возможность
+                // отправить и меньше… даже просто лидера»): поведёт, но уведёт
+                // троих, и строка говорит это сама. Заодно ушла страховка
+                // «никто не проходит порог — порог снят»: порога нет.
                 options.Add(new Option(w, skill, blocked));
-            }
-
-            // Если порог не проходит никто — совет запер бы игру насмерть:
-            // панель ставит игру на паузу, а PrologueDirector ждёт выбранного
-            // старшего, чтобы вывести отряд из лагеря. Такое случится, если
-            // опытные не дожили. Тогда требование отступает, но запрет из
-            // состава — нет: Карган телохранитель при любом раскладе.
-            bool anyone = false;
-            foreach (var o in options) if (o.CanChoose) { anyone = true; break; }
-
-            if (!anyone)
-            {
-                Debug.LogWarning("[СОВЕТ] Никто не уводит отряд нужного размера. "
-                               + "Требование снято, иначе пролог не двинется.");
-
-                for (int i = 0; i < options.Count; i++)
-                {
-                    var o = options[i];
-                    bool blockedByRoster =
-                        SquadRoster.TryGet(o.Warrior.DisplayName, out var m)
-                        && !string.IsNullOrEmpty(m.Unavailable);
-
-                    if (!blockedByRoster) options[i] = new Option(o.Warrior, o.Skill, "");
-                }
             }
 
             // Порядок обхода сцены не гарантирован, а список обязан
@@ -445,9 +420,9 @@ namespace Sinbinder.UI
             // Навык командования словами, без шкалы: цифры игроку не
             // показываются нигде (docs/00-GDD.md §7). Для невыбираемого
             // здесь стоит причина — и она же объясняет, чего ему не хватает.
-            Label(rt, option.CanChoose
-                    ? Leadership.Describe(option.Skill)
-                    : option.Blocked,
+            Label(rt, !option.CanChoose ? option.Blocked
+                    : Leadership.CanLead(option.Skill, _requiredSquad) ? Leadership.Describe(option.Skill)
+                    : Leadership.Shortfall(option.Skill, _requiredSquad),
                 18, new Vector2(18f, -Mathf.Min(38f, height * 0.55f)), 24f,
                 option.CanChoose);
 
@@ -578,10 +553,9 @@ namespace Sinbinder.UI
             return Loc.T("Точка интереса") + Break
                  + Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
                  + "Взять там есть что, и потому там небезопасно.") + Break
-                 + Loc.F("Карган: «Там довольно опасно, владыка. Нужен старший, "
-                 + "который уведёт {0}. "
-                 + "Кто столько не уводит — в списке виден, но не годится, "
-                 + "и рядом написано почему».", Leadership.Count(_requiredSquad)) + Break
+                 + Loc.F("Карган: «Там довольно опасно, владыка. Я бы послал {0}. "
+                 + "Рядовой столько не уведёт — за ним пойдут трое. "
+                 + "Пошлёте меньше — рискуете всеми, кто пойдёт».", Leadership.Count(_requiredSquad)) + Break
                  + Loc.T("Отряд уйдёт сразу. Вернётся не весь и не таким, "
                  + "каким уходил.");
         }
@@ -595,9 +569,11 @@ namespace Sinbinder.UI
         {
             if (_done || !_picked.HasValue) return;
             if (!_gathering) { Gather(); return; }
-            if (_party.Count < _requiredSquad - 1) return;
             Choose(_picked.Value.Warrior);
         }
+
+        /// <summary>Скольких старший возьмёт сверх себя: сколько за ним пойдёт, минус он сам.</summary>
+        private int Room => Leadership.SquadSize(_picked.Value.Skill) - 1;
 
         // ---------- второй шаг: кого он возьмёт ----------
 
@@ -611,8 +587,9 @@ namespace Sinbinder.UI
         {
             _gathering = true;
             _party.Clear();
+            int size = Mathf.Min(_requiredSquad, Room + 1);
             foreach (var name in SquadRoster.Suggest(_picked.Value.Warrior.DisplayName,
-                                                     _requiredSquad, keepExperienced: true))
+                                                     size, keepExperienced: true))
                 _party.Add(name);
             BuildParty();
         }
@@ -629,8 +606,15 @@ namespace Sinbinder.UI
         private void Toggle(string name)
         {
             if (_party.Contains(name)) _party.Remove(name);
-            else if (_party.Count < _requiredSquad - 1) _party.Add(name);
-            else { BuildParty(Loc.T("Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в лагере.")); return; }
+            else if (_party.Count < Room) _party.Add(name);
+            else
+            {
+                var leader = _picked.Value.Warrior;
+                BuildParty(Grammar.Pick(leader.Gender,
+                    Loc.T("Больше за ним не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в лагере."),
+                    Loc.T("Больше за ней не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в лагере.")));
+                return;
+            }
             BuildParty();
         }
 
@@ -688,31 +672,40 @@ namespace Sinbinder.UI
                 y -= step;
             }
 
-            int missing = _requiredSquad - 1 - _party.Count;
+            int total = _party.Count + 1;
+            string leaderName = Loc.Name(leader.ShownName);
 
             if (_detail != null)
             {
-                string text = Loc.F("Ведёт {0}.", Loc.Name(leader.ShownName)) + Break
+                string text = Loc.F("Ведёт {0}: {1}.", leaderName, Leadership.Describe(_picked.Value.Skill)) + Break
                             + (going.Count > 0
                                 ? Grammar.Pick(leader.Gender,
                                     Loc.F("С ним пойдут: {0}.", string.Join(", ", going)),
                                     Loc.F("С ней пойдут: {0}.", string.Join(", ", going)))
                                 : Grammar.Pick(leader.Gender,
-                                    Loc.T("С ним пока никто не идёт."),
-                                    Loc.T("С ней пока никто не идёт."))) + Break
+                                    Loc.T("Пойдёт один: с ним никто."),
+                                    Loc.T("Пойдёт одна: с ней никто."))) + Break
                             + Loc.F("С вами останутся: {0}.", string.Join(", ", staying));
-                if (missing > 0)
-                    text += Break + Loc.F("Нужно ещё: {0}. Щёлкните имя слева, чтобы взять.",
-                                          Leadership.Collective(missing));
+
+                // Меньше, чем советовал Карган, — можно, но сказано, чем это грозит.
+                if (total < _requiredSquad)
+                    text += Break + (total == 1
+                        ? Loc.F("Карган советовал послать {0}, а пойдёт один. "
+                              + "Охраны от этого меньше не станет.", Leadership.Count(_requiredSquad))
+                        : Loc.F("Карган советовал послать {0}, а пойдут {1}. "
+                              + "Охраны от этого меньше не станет — рискуют все, кто пойдёт.",
+                                Leadership.Count(_requiredSquad), Leadership.Collective(total)));
                 if (!string.IsNullOrEmpty(warning)) text += Break + warning;
                 _detail.text = text;
             }
 
-            if (_confirm != null) _confirm.interactable = missing <= 0;
+            if (_confirm != null) _confirm.interactable = true;
             if (_confirmLabel != null)
-                _confirmLabel.text = missing <= 0
-                    ? Loc.F("Отправить отряд — ведёт {0}", Loc.Name(leader.ShownName))
-                    : Loc.F("Нужно ещё: {0}", Leadership.Collective(missing));
+                _confirmLabel.text = _party.Count == 0
+                    ? Grammar.Pick(leader.Gender,
+                        Loc.F("Отправить одного: {0}", leaderName),
+                        Loc.F("Отправить одну: {0}", leaderName))
+                    : Loc.F("Отправить отряд — ведёт {0}", leaderName);
         }
 
         /// <summary>

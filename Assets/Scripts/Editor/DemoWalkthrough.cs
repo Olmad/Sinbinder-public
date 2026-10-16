@@ -774,17 +774,21 @@ namespace Sinbinder.EditorTools
             var missions = new List<Crypt.Mission>(board.Missions);
             missions.Sort((a, b) => (b.Junction == Crypt.Junction.Caravan).CompareTo(a.Junction == Crypt.Junction.Caravan));
 
-            foreach (var mission in missions)
-            {
-                if (!board.EnoughPeople(mission)) continue;
-                foreach (var m in SquadRoster.Members)
+            // Сперва — туда, где людей хватает на столько, сколько советуют:
+            // прогоны остаются сравнимыми. Нет такой — меньшим отрядом
+            // (с 16 октября это можно), иначе прогон стоял бы у шара вечно.
+            for (int pass = 0; pass < 2; pass++)
+                foreach (var mission in missions)
                 {
-                    if (!string.IsNullOrEmpty(board.WhyNot(m, mission))) continue;
-                    Write("  [ВЫЛАЗКА] " + mission.Name + ", старший — " + m.Name + ": "
-                        + board.Send(mission, m.Name, null));
-                    return;
+                    if (pass == 0 && !board.EnoughPeople(mission)) continue;
+                    foreach (var m in SquadRoster.Members)
+                    {
+                        if (!string.IsNullOrEmpty(board.WhyNot(m, mission))) continue;
+                        Write("  [ВЫЛАЗКА] " + mission.Name + ", старший — " + m.Name + ": "
+                            + board.Send(mission, m.Name, null));
+                        return;
+                    }
                 }
-            }
             Write("  [ВЫЛАЗКА] послать не на что: людей не хватает ни на одну точку");
         }
 
