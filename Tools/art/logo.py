@@ -2,6 +2,9 @@
 # «S» — коса: буква — древко, из верхнего конца — лезвие со светлой кромкой;
 # точка второй «i» — склянка с огоньком души; буквы — старым золотом,
 # тёмная обводка, мягкая тень. Рисуется в SS раз крупнее и уменьшается.
+# Под словом — черта, на ней шипастая пешка (автор, 16 октября: «можно
+# куда-нибудь впихнуть „шипастую пешку“ — теперь она символ нашей системы,
+# а может и игры»): пешка Бога Смерти, у которой проросла своя воля.
 #
 # Запуск из корня проекта:
 #   python Tools/art/logo.py Assets/Resources/Art/SinbinderLogo.png
@@ -145,6 +148,59 @@ def jar(size):
     return img, glow
 
 
+def spiked_pawn(height):
+    """
+    Шипастая пешка — маска (L). Пешка Бога Смерти (миф, 00-GDD §3): фигура
+    с доски, у которой проросла своя воля. Голова — булава: шипы во все
+    стороны, кроме шеи; из воротника — по шипу в стороны; по бокам тела —
+    колючки вверх, как у терна. Силуэт держится и в 60 точках: шипы толстые,
+    основание в две ступени.
+    """
+    h = height
+    w = int(h * 1.0)
+    m = Image.new("L", (w, h), 0)
+    d = ImageDraw.Draw(m)
+    cx = w / 2
+
+    def spike(ox, oy, angle, base, length, half):
+        """Шип от точки (ox, oy) по направлению angle (0 — вверх, по часовой)."""
+        t = math.radians(angle)
+        ux, uy = math.sin(t), -math.cos(t)
+        px, py = -uy, ux
+        bx, by = ox + ux * base, oy + uy * base
+        d.polygon([(bx + px * half, by + py * half),
+                   (ox + ux * (base + length), oy + uy * (base + length)),
+                   (bx - px * half, by - py * half)], fill=255)
+
+    # Голова-булава.
+    hy, hr = h * 0.235, h * 0.135
+    d.ellipse([cx - hr, hy - hr, cx + hr, hy + hr], fill=255)
+    for a in (-100, -50, 0, 50, 100):
+        spike(cx, hy, a, hr * 0.85, h * (0.12 if a == 0 else 0.10), h * 0.048)
+
+    # Шея и воротник; из воротника — по длинному шипу в стороны.
+    d.rectangle([cx - h * 0.05, hy + hr * 0.6, cx + h * 0.05, h * 0.42], fill=255)
+    cy, crx, cry = h * 0.42, h * 0.15, h * 0.042
+    d.ellipse([cx - crx, cy - cry, cx + crx, cy + cry], fill=255)
+    for sgn in (-1, 1):
+        spike(cx + sgn * crx * 0.7, cy, 80 * sgn, 0, h * 0.17, h * 0.040)
+
+    # Тело: от воротника расширяется к основанию, бока вогнутые.
+    left = bezier((cx - h * 0.065, cy), (cx - h * 0.07, h * 0.70), (cx - h * 0.20, h * 0.82))
+    right = bezier((cx + h * 0.20, h * 0.82), (cx + h * 0.07, h * 0.70), (cx + h * 0.065, cy))
+    d.polygon(left + right, fill=255)
+
+    # Колючки по бокам — вверх и наружу.
+    for sgn in (-1, 1):
+        for y, wx in ((h * 0.60, 0.075), (h * 0.72, 0.115)):
+            spike(cx + sgn * h * wx, y, 45 * sgn, -h * 0.01, h * 0.10, h * 0.032)
+
+    # Основание в две ступени.
+    d.rounded_rectangle([cx - h * 0.24, h * 0.80, cx + h * 0.24, h * 0.885], radius=h * 0.02, fill=255)
+    d.rounded_rectangle([cx - h * 0.30, h * 0.87, cx + h * 0.30, h * 1.0 - 1], radius=h * 0.025, fill=255)
+    return m
+
+
 def main():
     canvas = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
     letters = Image.new("L", (CW, CH), 0)
@@ -152,7 +208,9 @@ def main():
 
     size = int(CH * 0.48)
     f = font(size)
-    baseline = int(CH * 0.70)
+    # Слово выше, чем до пешки (было 0,70): под ним черта с пешкой, и кончаться
+    # она обязана выше 0,86 высоты — там открытие ставит девиз (OpeningReveal).
+    baseline = int(CH * 0.55)
 
     # «S»-коса — крупнее строчных, как буквица.
     s_mask, s_ox, s_oy, s_gh, kromka = scythe_s(int(size * 0.98))
@@ -207,17 +265,35 @@ def main():
         canvas.alpha_composite(glow, (gx, gy))
         canvas.alpha_composite(body, (jx, jy))
 
-    # Черта с ромбом под словом.
+    # Черта под словом, и на ней — шипастая пешка, как фигура на линии
+    # доски. Черта ниже прежнего (была baseline + 0,16 кегля): пешке нужно
+    # место между словом и чертой, иначе венец лёг бы на буквы.
     d = ImageDraw.Draw(canvas)
     lb = letters.getbbox()
-    ly = int(baseline + size * 0.16)
+    pawn_h = int(size * 0.56)
+    ly = int(baseline + size * 0.04 + pawn_h)
+    assert ly <= CH * 0.84, "черта ниже 0,84 высоты — девиз открытия ляжет на неё"
     mid = (lb[0] + lb[2]) // 2
-    half = int((lb[2] - lb[0]) * 0.30)
+    half = int((lb[2] - lb[0]) * 0.32)
     lw = max(2, SS * 2)
-    d.line([(mid - half, ly), (mid - size * 0.10, ly)], fill=GOLD_MID + (220,), width=lw)
-    d.line([(mid + size * 0.10, ly), (mid + half, ly)], fill=GOLD_MID + (220,), width=lw)
-    r = size * 0.05
-    d.polygon([(mid, ly - r), (mid + r, ly), (mid, ly + r), (mid - r, ly)], fill=GOLD_TOP + (255,))
+    gap = pawn_h * 0.36
+    d.line([(mid - half, ly), (mid - gap, ly)], fill=GOLD_MID + (220,), width=lw)
+    d.line([(mid + gap, ly), (mid + half, ly)], fill=GOLD_MID + (220,), width=lw)
+    # На концах черты — по маленькому ромбу: прежний знак не пропал, а отошёл.
+    for end in (mid - half, mid + half):
+        r = size * 0.028
+        d.polygon([(end, ly - r), (end + r, ly), (end, ly + r), (end - r, ly)], fill=GOLD_TOP + (255,))
+
+    pawn = Image.new("L", (CW, CH), 0)
+    pm = spiked_pawn(pawn_h)
+    pawn.paste(pm, (int(mid - pm.size[0] / 2), ly - pawn_h + lw), pm)
+    pshadow = Image.new("RGBA", (CW, CH), INK + (0,))
+    pshadow.putalpha(pawn.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(SS * 8)))
+    pstroke = Image.new("RGBA", (CW, CH), INK + (0,))
+    pstroke.putalpha(pawn.filter(ImageFilter.MaxFilter(SS * 2 + 1)))
+    canvas = Image.alpha_composite(canvas, pshadow)
+    canvas = Image.alpha_composite(canvas, pstroke)
+    canvas = Image.alpha_composite(canvas, gradient_fill(pawn))
 
     out = canvas.resize((W, H), Image.LANCZOS)
     out.save(OUT)
