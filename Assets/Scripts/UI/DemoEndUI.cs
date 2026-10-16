@@ -154,7 +154,7 @@ namespace Sinbinder.UI
             {
                 if (m.IsAway) continue;   // о них — в рассказе о вылазке
 
-                sb.Append(Loc.Name(m.Name));
+                sb.Append(Loc.Name(m.ShownName));
 
                 // Числа игрок не видит, только факт. «Ему» — по роду:
                 // женщине (основная игра) должны так же.

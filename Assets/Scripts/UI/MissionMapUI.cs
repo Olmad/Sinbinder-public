@@ -199,8 +199,10 @@ namespace Sinbinder.UI
                 // а у записи их нет.
                 string prophecy = Foretell(name);
 
+                // Имя — по старшинству, как в совете у стола (Core/Naming);
+                // до 16 октября здесь стояло голое имя, и без Loc.Name.
                 _spawned.Add(Row(y, can,
-                    name,
+                    Loc.Name(member.ShownName),
                     can ? Leadership.Describe(member.Leadership) : why,
                     prophecy,
                     can ? () => Lead(name) : (System.Action)null));
