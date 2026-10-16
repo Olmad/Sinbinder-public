@@ -620,7 +620,10 @@ namespace Sinbinder.UI
                 case Counterfactual.Factor.AllyInDanger: return Loc.T("свой в беде");
                 case Counterfactual.Factor.Wounds:       return Loc.T("он ранен");
                 case Counterfactual.Factor.Surrounded:   return Loc.T("его обступили");
-                case Counterfactual.Factor.Fatigue:      return Loc.T("силы на исходе");
+                case Counterfactual.Factor.Fatigue:
+                    // Те же ступени, что у причины в журнале (Counterfactual.Reason).
+                    if (c.IsExhausted) return Loc.T("выдохся");
+                    return c.Fatigue > 0.5f ? Loc.T("силы на исходе") : Loc.T("устал");
                 default:                                 return Loc.T("тише, чем его душа");
             }
         }

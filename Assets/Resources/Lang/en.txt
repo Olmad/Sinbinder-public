@@ -107,6 +107,14 @@ msgstr "she is spent and can't go on"
 msgid "силы у него на исходе"
 msgstr "his strength is running out"
 
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "он устал"
+msgstr "he is tired"
+
+#: AOS Engine/Counterfactual.cs AOS Engine/PhraseGenerator.cs
+msgid "она устала"
+msgstr "she is tired"
+
 #: AOS Engine/FalseGodQuest.cs
 msgid "Ложный Бог"
 msgstr "The False God"
@@ -6324,8 +6332,16 @@ msgid "его обступили"
 msgstr "he is surrounded"
 
 #: UI/SelectedUnitPanelUI.cs
+msgid "выдохся"
+msgstr "spent"
+
+#: UI/SelectedUnitPanelUI.cs
 msgid "силы на исходе"
 msgstr "strength is running out"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "устал"
+msgstr "tired"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "тише, чем его душа"

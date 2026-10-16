@@ -230,9 +230,13 @@ namespace Sinbinder.AOS
                     return c.MaxHP > 0f && c.CurrentHP < c.MaxHP * 0.3f
                         ? Loc.T("на нём нет живого места") : Loc.T("он ранен и бережёт себя");
                 case Factor.Surrounded: return Loc.T("его обступили со всех сторон");
+                // Ступенями, по правде: причина включается, когда потрачена
+                // пятая часть сил, и «на исходе» на трёх четвертях было ложью —
+                // в мирном лагере после прогулки (кадр описи 46-UI, 12).
                 case Factor.Fatigue:
-                    return c.IsExhausted ? P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"))
-                                         : Loc.T("силы у него на исходе");
+                    if (c.IsExhausted) return P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"));
+                    if (c.Fatigue > 0.5f) return Loc.T("силы у него на исходе");
+                    return P(Loc.T("он устал"), Loc.T("она устала"));
                 default: return "";
             }
         }

@@ -293,7 +293,9 @@ namespace Sinbinder.AOS
                     if (context.IsExhausted)
                         return P(Loc.T("он выдохся и больше не может"),
                                  Loc.T("она выдохлась и больше не может"));
-                    if (context.Fatigue > 0.4f) return Loc.T("силы у него на исходе");
+                    // «На исходе» — когда правда меньше половины (как у Counterfactual).
+                    if (context.Fatigue > 0.5f) return Loc.T("силы у него на исходе");
+                    if (context.Fatigue > 0.4f) return P(Loc.T("он устал"), Loc.T("она устала"));
                     return Loc.T("у него не осталось воли");
 
                 case "Patience":
@@ -383,7 +385,8 @@ namespace Sinbinder.AOS
                 case ActionType.Idle:
                     if (context.IsExhausted)
                         return P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"));
-                    return context.Fatigue > 0.2f ? Loc.T("силы у него на исходе") : "";
+                    if (context.Fatigue > 0.5f) return Loc.T("силы у него на исходе");
+                    return context.Fatigue > 0.2f ? P(Loc.T("он устал"), Loc.T("она устала")) : "";
                 case ActionType.Flee:
                     return context.DangerLevel > 0.6f
                         || (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.4f)
