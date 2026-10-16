@@ -191,6 +191,14 @@ namespace Sinbinder.UI
                 if (Due(w)) { waiting++; total += SquadGear.Wage(w); }
             var purse = Inventory.PlayerInventory.Instance;
 
+            // Заголовок стал в две строки: шрифт мельче и без обрезки — до кнопок
+            // место есть (панель 760×300, кнопки — ниже середины).
+            if (_title != null)
+            {
+                _title.fontSize = Mathf.Min(_title.fontSize, 24);
+                _title.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _title.verticalOverflow = VerticalWrapMode.Overflow;
+            }
             if (_title != null)
                 _title.text = waiting == 0
                     ? Loc.T("Отряд пережил эту ночь и ждёт платы.")

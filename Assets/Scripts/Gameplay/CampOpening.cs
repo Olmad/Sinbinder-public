@@ -298,7 +298,8 @@ namespace Sinbinder.Gameplay
             // 47-TEXTS §3, п. 2 (автор: «да»): что за наказание — сказано. Двумя
             // строками: одна длинная держала бы кадр полминуты. Мост — если душа
             // его помнит (PrologueCampSpawner.BridgeMemory); иначе — без истории.
-            string name = Loc.Name(Grammar.Dative(debtor.Name, debtor.Gender));
+            // Dative сам переводит имя, если язык не русский (как везде в журнале).
+            string name = Grammar.Dative(debtor.Name, debtor.Gender);
             string missions = Missions(debtor.UnpaidMissions);
             bool bridge = owed != null && owed.Soul != null && owed.Soul.HasMemory
                        && owed.Soul.Memory.Object == PrologueCampSpawner.BridgeMemory;

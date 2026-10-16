@@ -186,9 +186,13 @@ namespace Sinbinder.UI
 
             if (_menu)
             {
+                // Долга нет — пункта о нём нет, и номера на экране идут подряд:
+                // клавиша «2» — снаряжение. Пересчёт — здесь, у клавиш: строка
+                // по щелчку зовёт свой пункт сама, номер ей не нужен.
+                bool owes = _warrior != null && (SalaryPanelUI.Owes(_warrior) || _warrior.UnpaidMissions > 0);
                 if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) Choose(1);
-                else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) Choose(2);
-                else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) Choose(3);
+                else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) Choose(owes ? 2 : 3);
+                else if (owes && (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))) Choose(3);
             }
 
             if (Input.GetKeyDown(_key) || Input.GetKeyDown(_talkKey) || Input.GetKeyDown(KeyCode.Escape))
@@ -251,13 +255,6 @@ namespace Sinbinder.UI
             if (!_menu || _warrior == null) return;
             string name = Loc.Name(_warrior.DisplayName);
 
-            // Долга нет — пункта о нём нет, и номера идут подряд: «2» — снаряжение.
-            bool owes = SalaryPanelUI.Owes(_warrior) || _warrior.UnpaidMissions > 0;
-            if (!owes)
-            {
-                if (option == 3) return;
-                if (option == 2) option = 3;
-            }
 
             switch (option)
             {

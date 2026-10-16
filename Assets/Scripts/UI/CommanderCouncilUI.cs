@@ -287,6 +287,7 @@ namespace Sinbinder.UI
                 Map();
                 _quest.text = QuestText();
             }
+            FitDetail();
             ShowDetail(null);
             Build(options);
 
@@ -587,6 +588,29 @@ namespace Sinbinder.UI
                  + "и не таким, каким уходил.");
         }
 
+        /// <summary>
+        /// Средний столбец — до кнопки, шрифт мельче. С 16 октября в нём на строку
+        /// «как поведёт отряд» больше, и при прежней высоте (380) обрезалась
+        /// последняя строка пророчества — «когда велено отойти», ради которой
+        /// совет и есть (замер шрифта и ширины столбца: ~450 при 380). Место
+        /// под текстом до кнопки было пустым.
+        /// </summary>
+        private void FitDetail()
+        {
+            if (_detail == null || _confirm == null) return;
+            var column = _detail.rectTransform.parent as RectTransform;
+            var button = _confirm.transform as RectTransform;
+            if (column == null || button == null || button.parent != column) return;
+
+            float h = column.rect.height > 100f ? column.rect.height : 652f;
+            // Кнопка привязана к середине столбца: верх кнопки — от верха столбца.
+            float buttonTop = h * 0.5f - (button.anchoredPosition.y + button.rect.height * 0.5f);
+            var rt = _detail.rectTransform;
+            float room = buttonTop + rt.anchoredPosition.y - 12f;
+            if (room > rt.sizeDelta.y) rt.sizeDelta = new Vector2(rt.sizeDelta.x, room);
+            _detail.fontSize = Mathf.Min(_detail.fontSize, 19);
+        }
+
         // ---------- карта в шаре ----------
 
         /// <summary>Сколько места карта берёт сверху правого столбца, пикселей.</summary>
@@ -636,7 +660,10 @@ namespace Sinbinder.UI
             ground.color = new Color(0.12f, 0.10f, 0.09f, 0.95f);
             ground.raycastTarget = false;
 
-            float w = Mathf.Max(200f, column.rect.width - 24f), h = MapHeight;
+            // Раскладка ещё не посчитана — размеры столбца из сборщика (1280×760, треть).
+            float colW = column.rect.width > 100f ? column.rect.width : 382f;
+            float colH = column.rect.height > 100f ? column.rect.height : 652f;
+            float w = Mathf.Max(200f, colW - 24f), h = MapHeight;
             Vector2 At(float u, float v) => new Vector2(u * w, v * h);
 
             var camp = At(0.50f, 0.14f);
@@ -667,7 +694,7 @@ namespace Sinbinder.UI
             // ужимается в оставшееся место и пишется мельче.
             var rt = _quest.rectTransform;
             rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -12f - MapHeight - 12f);
-            rt.sizeDelta = new Vector2(rt.sizeDelta.x, Mathf.Max(120f, column.rect.height - MapHeight - 36f));
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, Mathf.Max(120f, colH - MapHeight - 36f));
             _quest.fontSize = Mathf.Min(_quest.fontSize, 18);
         }
 
