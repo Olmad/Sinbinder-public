@@ -107,7 +107,7 @@ namespace Sinbinder.UI
         private static bool _fight;
 
         /// <summary>Идёт ли в сцене бой — есть ли живые враги. Раз за кадр на все полосы.</summary>
-        private static bool Fighting()
+        internal static bool Fighting()
         {
             if (_fightFrame == Time.frameCount) return _fight;
             _fightFrame = Time.frameCount;

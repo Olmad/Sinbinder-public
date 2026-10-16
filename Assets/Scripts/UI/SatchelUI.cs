@@ -131,7 +131,8 @@ namespace Sinbinder.UI
             // Под окном и под полосами кино сумы нет: окно требует ответа,
             // кино — внимания (опись экранов 15 октября, 46-UI §1.1, п. 3).
             Fade(Satchel.Anything() && !SelectedUnitPanelUI.ShowsAnyone && !Modal.Any
-                 && !(Letterbox.Instance != null && Letterbox.Instance.Shown));
+                 && !(Letterbox.Instance != null && Letterbox.Instance.Shown)
+                 && !Gameplay.OpeningReveal.Busy);
 
             int chosen = Satchel.Selected;
 
