@@ -1443,7 +1443,7 @@ msgstr "{0} are owed"
 msgid "Где-то"
 msgstr "Somewhere"
 
-#: Core/SaveSystem.cs
+#: Core/SaveSystem.cs UI/CommanderCouncilUI.cs
 msgid "Лагерь"
 msgstr "Camp"
 
@@ -5720,8 +5720,8 @@ msgid "В вылазке под её началом: {0}"
 msgstr "On the raid under her command: {0}"
 
 #: UI/CommanderCouncilUI.cs
-msgid "Цель вылазки"
-msgstr "Raid target"
+msgid "Огни на карте — два отряда уже в пути: у часовни и у каменоломни. Брошенная застава свободна — туда и пойдёт отряд."
+msgstr "The lights on the map are two parties already on the road: at the chapel and at the quarry. The abandoned outpost is free — that is where this party will go."
 
 #: UI/CommanderCouncilUI.cs
 msgid "Разведка донесла: за холмами стоит брошенная застава. Взять там есть что, и потому там небезопасно."
@@ -5734,6 +5734,22 @@ msgstr "Kargan: “It's quite dangerous there, my lord. I would send {0}. A rank
 #: UI/CommanderCouncilUI.cs
 msgid "Отряд уйдёт сразу и вернётся не скоро — в лагере с вами останутся только те, кого вы не пошлёте. Вернётся не весь и не таким, каким уходил."
 msgstr "The party leaves at once and won't be back soon — only those you don't send will stay in the camp with you. Not all of them will return, and not as they left."
+
+#: UI/CommanderCouncilUI.cs
+msgid "Часовня"
+msgstr "Chapel"
+
+#: UI/CommanderCouncilUI.cs
+msgid "Каменоломня"
+msgstr "Quarry"
+
+#: UI/CommanderCouncilUI.cs
+msgid "Застава"
+msgstr "Outpost"
+
+#: UI/CommanderCouncilUI.cs
+msgid "Цель вылазки"
+msgstr "Raid target"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Больше за ним не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в лагере."
