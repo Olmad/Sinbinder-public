@@ -96,6 +96,16 @@ namespace Sinbinder.UI
         private Option? _picked;
 
         /// <summary>
+        /// Второй шаг: старший выбран, игрок собирает ему отряд. До 16 октября
+        /// шага не было — спутников подбирал список (автор: «меня очень
+        /// напрягает, что… войны, отправляемые на них, фиксированные»).
+        /// </summary>
+        private bool _gathering;
+
+        /// <summary>Кто идёт со старшим — голые имена (DisplayName), без него самого.</summary>
+        private readonly HashSet<string> _party = new();
+
+        /// <summary>
         /// Кого игрок предпочитает — и потому чья половина списка сверху.
         ///
         /// Не настройка, а наблюдение: список перестраивается под того,
@@ -258,6 +268,8 @@ namespace Sinbinder.UI
             if (options.Count == 0) return;
 
             _picked = null;
+            _gathering = false;
+            _party.Clear();
 
             // Кнопку связываем здесь, а не в Start: панель может быть
             // собрана руками, и слушатель, повешенный дважды, назначил бы
@@ -416,37 +428,16 @@ namespace Sinbinder.UI
         {
             var warrior = option.Warrior;
 
-            var go = new GameObject(warrior.DisplayName, typeof(RectTransform));
-            go.transform.SetParent(_rows, false);
-
-            var rt = (RectTransform)go.transform;
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0f, 1f);
-            rt.offsetMin = new Vector2(0f, 0f);
-            rt.offsetMax = new Vector2(0f, 0f);
-            rt.sizeDelta = new Vector2(0f, height);
-            rt.anchoredPosition = new Vector2(0f, y);
-
-            var plate = go.AddComponent<Image>();
-            plate.color = option.CanChoose
-                ? new Color(0.10f, 0.09f, 0.08f, 0.92f)
-                : new Color(0.07f, 0.06f, 0.06f, 0.80f);
-
             // Кнопка вешается только на тех, кого можно выбрать. Строка,
             // которая не сработает, не должна и нажиматься: игра про
             // настоящие решения не имеет права соврать на первом же.
-            if (option.CanChoose)
-            {
-                var button = go.AddComponent<Button>();
-                button.targetGraphic = plate;
-
-                // Щелчок отмечает, а не назначает. Пророчество — четыре
-                // строки, и решать по ним, не прочитав, игрок не должен:
-                // раньше первый же щелчок был окончательным.
-                var chosen = option;
-                button.onClick.AddListener(() => Select(chosen));
-            }
+            //
+            // Щелчок отмечает, а не назначает. Пророчество — четыре
+            // строки, и решать по ним, не прочитав, игрок не должен:
+            // раньше первый же щелчок был окончательным.
+            var chosen = option;
+            var rt = Plate(warrior.DisplayName, y, height, option.CanChoose,
+                           option.CanChoose ? () => Select(chosen) : (System.Action)null);
 
             Label(rt, Loc.Name(warrior.ShownName), 26, new Vector2(18f, -8f), 32f,
                 option.CanChoose);
@@ -460,7 +451,40 @@ namespace Sinbinder.UI
                 18, new Vector2(18f, -Mathf.Min(38f, height * 0.55f)), 24f,
                 option.CanChoose);
 
-            return go;
+            return rt.gameObject;
+        }
+
+        /// <summary>
+        /// Плашка строки в списке слева: место, цвет, кнопка. Кнопка — только
+        /// если щелчок что-то сделает.
+        /// </summary>
+        private RectTransform Plate(string name, float y, float height, bool bright, System.Action onClick)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(_rows, false);
+
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.offsetMin = new Vector2(0f, 0f);
+            rt.offsetMax = new Vector2(0f, 0f);
+            rt.sizeDelta = new Vector2(0f, height);
+            rt.anchoredPosition = new Vector2(0f, y);
+
+            var image = go.AddComponent<Image>();
+            image.color = bright
+                ? new Color(0.10f, 0.09f, 0.08f, 0.92f)
+                : new Color(0.07f, 0.06f, 0.06f, 0.80f);
+
+            if (onClick != null)
+            {
+                var button = go.AddComponent<Button>();
+                button.targetGraphic = image;
+                button.onClick.AddListener(() => onClick());
+            }
+
+            return rt;
         }
 
         private void Label(RectTransform parent, string text, int size,
@@ -518,7 +542,7 @@ namespace Sinbinder.UI
 
             if (_confirmLabel != null)
                 _confirmLabel.text = has
-                    ? Loc.F("Поставить старшим: {0}", Loc.Name(option.Value.Warrior.DisplayName))
+                    ? Loc.F("Дальше: кого возьмёт {0}", Loc.Name(option.Value.Warrior.ShownName))
                     : Loc.T("Выберите, кого поставить");
 
             if (_detail == null) return;
@@ -563,10 +587,155 @@ namespace Sinbinder.UI
         }
 
         /// <summary>Назначить отмеченного. Отдельно от отметки: решение одно.</summary>
+        /// <summary>
+        /// Кнопка. На первом шаге — к сбору отряда; на втором — отправить,
+        /// когда набрано столько, сколько нужно.
+        /// </summary>
         private void Appoint()
         {
             if (_done || !_picked.HasValue) return;
+            if (!_gathering) { Gather(); return; }
+            if (_party.Count < _requiredSquad - 1) return;
             Choose(_picked.Value.Warrior);
+        }
+
+        // ---------- второй шаг: кого он возьмёт ----------
+
+        /// <summary>
+        /// Открыть сбор с подсказкой — прежним правилом набора
+        /// (<see cref="SquadRoster.Suggest"/>): не тронувший ничего получает
+        /// то, что получал до 16 октября. Опытные по подсказке остаются:
+        /// лагерь не должен пустеть сам. Взять их игрок может.
+        /// </summary>
+        private void Gather()
+        {
+            _gathering = true;
+            _party.Clear();
+            foreach (var name in SquadRoster.Suggest(_picked.Value.Warrior.DisplayName,
+                                                     _requiredSquad, keepExperienced: true))
+                _party.Add(name);
+            BuildParty();
+        }
+
+        /// <summary>Назад, к выбору старшего. Собранное забывается: другой старший — другой отряд.</summary>
+        private void Ungather()
+        {
+            _gathering = false;
+            _party.Clear();
+            ShowDetail(_picked);
+            Build(FindOptions());
+        }
+
+        private void Toggle(string name)
+        {
+            if (_party.Contains(name)) _party.Remove(name);
+            else if (_party.Count < _requiredSquad - 1) _party.Add(name);
+            else { BuildParty(Loc.T("Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в лагере.")); return; }
+            BuildParty();
+        }
+
+        /// <summary>
+        /// Список отряда на втором шаге. Каждый — идёт или остаётся с вами;
+        /// щелчок меняет. Телохранитель виден и не выбирается — с причиной.
+        /// Порядок — состава, а не сцены: одинаковый при каждом запуске.
+        /// </summary>
+        private void BuildParty(string warning = null)
+        {
+            foreach (var go in _spawned) if (go != null) Destroy(go);
+            _spawned.Clear();
+
+            var leader = _picked.Value.Warrior;
+            if (_title != null)
+                _title.text = Loc.F("Кого {0} возьмёт с собой", Loc.Name(leader.ShownName));
+
+            var going = new List<string>();
+            var staying = new List<string>();
+            var rows = new List<(string Name, string Shown, string Line, bool Can, bool Goes)>();
+
+            foreach (var m in SquadRoster.Members)
+            {
+                if (m.IsAway || m.Name == leader.DisplayName) continue;
+
+                var w = Find(m.Name);
+                if (w == null || w.IsDead) continue;
+
+                bool can = SquadRoster.CanGo(m);
+                bool goes = can && _party.Contains(m.Name);
+                string shown = Loc.Name(w.ShownName);
+                (goes ? going : staying).Add(shown);
+
+                rows.Add((m.Name, shown, PartyLine(m, w, can, goes), can, goes));
+            }
+
+            float room = _rows == null ? 0f : _rows.rect.height;
+            int count = rows.Count + 1;
+            float step = room > 1f ? Mathf.Min(78f, room / count) : 78f;
+            float height = Mathf.Max(30f, step - 8f);
+
+            float y = 0f;
+            var back = Plate("Назад", y, height, true, Ungather);   // ключ: имя объекта, игрок его не видит
+            Label(back, Loc.T("← Выбрать другого старшего"), 22, new Vector2(18f, -8f), 30f, true);
+            _spawned.Add(back.gameObject);
+            y -= step;
+
+            foreach (var r in rows)
+            {
+                string name = r.Name;
+                var plate = Plate(name, y, height, r.Goes, r.Can ? () => Toggle(name) : (System.Action)null);
+                Label(plate, r.Shown, 26, new Vector2(18f, -8f), 32f, r.Goes);
+                Label(plate, r.Line, 18, new Vector2(18f, -Mathf.Min(38f, height * 0.55f)), 24f, r.Goes);
+                _spawned.Add(plate.gameObject);
+                y -= step;
+            }
+
+            int missing = _requiredSquad - 1 - _party.Count;
+
+            if (_detail != null)
+            {
+                string text = Loc.F("Ведёт {0}.", Loc.Name(leader.ShownName)) + Break
+                            + (going.Count > 0
+                                ? Grammar.Pick(leader.Gender,
+                                    Loc.F("С ним пойдут: {0}.", string.Join(", ", going)),
+                                    Loc.F("С ней пойдут: {0}.", string.Join(", ", going)))
+                                : Grammar.Pick(leader.Gender,
+                                    Loc.T("С ним пока никто не идёт."),
+                                    Loc.T("С ней пока никто не идёт."))) + Break
+                            + Loc.F("С вами останутся: {0}.", string.Join(", ", staying));
+                if (missing > 0)
+                    text += Break + Loc.F("Нужно ещё: {0}. Щёлкните имя слева, чтобы взять.",
+                                          Leadership.Collective(missing));
+                if (!string.IsNullOrEmpty(warning)) text += Break + warning;
+                _detail.text = text;
+            }
+
+            if (_confirm != null) _confirm.interactable = missing <= 0;
+            if (_confirmLabel != null)
+                _confirmLabel.text = missing <= 0
+                    ? Loc.F("Отправить отряд — ведёт {0}", Loc.Name(leader.ShownName))
+                    : Loc.F("Нужно ещё: {0}", Leadership.Collective(missing));
+        }
+
+        /// <summary>
+        /// Вторая строка: идёт ли, и что о нём стоит знать, решая, —
+        /// главный грех словом, долг, братство. Без чисел.
+        /// </summary>
+        private static string PartyLine(SquadRoster.Member m, Warrior w, bool can, bool goes)
+        {
+            if (!can) return Loc.T(m.Unavailable);
+
+            var parts = new List<string> { goes ? Loc.T("идёт") : Loc.T("остаётся с вами") };
+            if (w.Soul != null) parts.Add(SoulData.GetSinName(w.Soul.Sin).ToLowerInvariant());
+            if (m.UnpaidMissions > 0) parts.Add(Grammar.Pick(m.Gender, Loc.T("ему должны"), Loc.T("ей должны")));
+            if (m.Brother) parts.Add(Loc.T("брат по оружию"));
+            return string.Join(" · ", parts);
+        }
+
+        /// <summary>Воин в сцене по голому имени.</summary>
+        private static Warrior Find(string name)
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (w != null && w.DisplayName == name && w.Team == Team.Player) return w;
+            return null;
         }
 
         private void Choose(Warrior warrior)
@@ -579,7 +748,7 @@ namespace Sinbinder.UI
             // Отряд действительно уходит. Без этого выбор старшего ничего
             // не менял бы в лагере, а в эпилоге возвращаться было бы некому:
             // «пятеро уходят, остаются Карган и трое» (пролог §4, сцена 2).
-            SquadRoster.SendAway(warrior.DisplayName, _requiredSquad);
+            SquadRoster.SendAway(warrior.DisplayName, _party);
 
             // Командир обязан остаться один: GetCommander берёт первого
             // попавшегося, и без этой уборки верность считалась бы к тому,

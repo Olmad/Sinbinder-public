@@ -2011,7 +2011,7 @@ msgstr "The goods were left behind. They brought back people — alive, bound an
 msgid "На дороге что-то случилось, и рассказывать об этом не стали."
 msgstr "Something happened on the road, and no one would talk about it."
 
-#: Crypt/MissionBoard.cs
+#: Crypt/MissionBoard.cs UI/MissionMapUI.cs
 msgid "В пути с другим отрядом."
 msgstr "On the road with another party."
 
@@ -4983,7 +4983,7 @@ msgstr "Helm with a Raven Feather"
 msgid "Помятый, с чёрным пером за ремнём. Откуда прозвище — видно издали."
 msgstr "Dented, a black feather under the strap. You can tell where the nickname came from at a glance."
 
-#: Gameplay/PrologueCampSpawner.cs
+#: Gameplay/PrologueCampSpawner.cs UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
 msgid "брат по оружию"
 msgstr "brother-in-arms"
 
@@ -5696,8 +5696,8 @@ msgid "Кого поставить старшим"
 msgstr "Who will lead"
 
 #: UI/CommanderCouncilUI.cs
-msgid "Поставить старшим: {0}"
-msgstr "Make leader: {0}"
+msgid "Дальше: кого возьмёт {0}"
+msgstr "Next: who goes with {0}"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Выберите, кого поставить"
@@ -5726,6 +5726,70 @@ msgstr "Kargan: “It's rather dangerous there, my lord. We need a leader who ca
 #: UI/CommanderCouncilUI.cs
 msgid "Отряд уйдёт сразу. Вернётся не весь и не таким, каким уходил."
 msgstr "The squad leaves at once. Not all of them will return, and none will return unchanged."
+
+#: UI/CommanderCouncilUI.cs
+msgid "Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в лагере."
+msgstr "The party is full. To take this one, first leave someone in the camp."
+
+#: UI/CommanderCouncilUI.cs
+msgid "Кого {0} возьмёт с собой"
+msgstr "Who goes with {0}"
+
+#: UI/CommanderCouncilUI.cs
+msgid "← Выбрать другого старшего"
+msgstr "← Choose another leader"
+
+#: UI/CommanderCouncilUI.cs
+msgid "Ведёт {0}."
+msgstr "{0} leads."
+
+#: UI/CommanderCouncilUI.cs
+msgid "С ним пойдут: {0}."
+msgstr "Going with him: {0}."
+
+#: UI/CommanderCouncilUI.cs
+msgid "С ней пойдут: {0}."
+msgstr "Going with her: {0}."
+
+#: UI/CommanderCouncilUI.cs
+msgid "С ним пока никто не идёт."
+msgstr "Nobody is going with him yet."
+
+#: UI/CommanderCouncilUI.cs
+msgid "С ней пока никто не идёт."
+msgstr "Nobody is going with her yet."
+
+#: UI/CommanderCouncilUI.cs
+msgid "С вами останутся: {0}."
+msgstr "Staying with you: {0}."
+
+#: UI/CommanderCouncilUI.cs
+msgid "Нужно ещё: {0}. Щёлкните имя слева, чтобы взять."
+msgstr "Still needed: {0}. Click a name on the left to take them."
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "Отправить отряд — ведёт {0}"
+msgstr "Send the party — {0} leads"
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "Нужно ещё: {0}"
+msgstr "Still needed: {0}"
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "идёт"
+msgstr "goes"
+
+#: UI/CommanderCouncilUI.cs
+msgid "остаётся с вами"
+msgstr "stays with you"
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "ему должны"
+msgstr "owed pay"
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "ей должны"
+msgstr "owed pay"
 
 #: UI/CommanderCouncilUI.cs
 msgid "{0} принял отряд."
@@ -6054,6 +6118,26 @@ msgstr "Where to go.  Esc — step away from the orb"
 #: UI/MissionMapUI.cs
 msgid "{0}. Кого поставить старшим.  Esc — назад"
 msgstr "{0}. Who will lead.  Esc — back"
+
+#: UI/MissionMapUI.cs
+msgid "Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в склепе."
+msgstr "The party is full. To take this one, first leave someone in the crypt."
+
+#: UI/MissionMapUI.cs
+msgid "{0}. Кого {1} возьмёт — нужно ещё: {2}."
+msgstr "{0}. Who goes with {1} — still needed: {2}."
+
+#: UI/MissionMapUI.cs
+msgid "{0}. Кого {1} возьмёт."
+msgstr "{0}. Who goes with {1}."
+
+#: UI/MissionMapUI.cs
+msgid "  Esc — назад"
+msgstr "  Esc — back"
+
+#: UI/MissionMapUI.cs
+msgid "остаётся в склепе"
+msgstr "stays in the crypt"
 
 #: UI/MissionMapUI.cs
 msgid "  Что вы им скажете?  Esc — к карте"
@@ -6696,6 +6780,10 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Поставить старшим: {0}"
+msgstr "Make leader: {0}"
 
 #. нет в коде
 msgid "Охотник-следопыт"

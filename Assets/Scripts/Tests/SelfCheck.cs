@@ -2006,6 +2006,25 @@ namespace Sinbinder.Tests
                 Check(guardStayed, "телохранитель не уходит");
                 Check(otherLeadersStayed, "прочие опытные остаются в лагере");
 
+                // Состав выбирает игрок (16 октября): уходят ровно названные,
+                // телохранитель — нет, даже если назван. Подсказка — прежнее
+                // правило: четверо рядовых при опытном старшем.
+                SquadRoster.Set(CampLike());
+                var hint = SquadRoster.Suggest("Опытный А", 5, keepExperienced: true);
+                Same(hint.Count, 4, "подсказка набирает отряд целиком");
+                Check(!hint.Contains("Опытный Б") && !hint.Contains("Страж"),
+                      "подсказка в лагере не берёт опытных и телохранителя");
+
+                SquadRoster.SendAway("Опытный А", new[] { "Опытный Б", "Страж", "Рядовой 5" });
+                var gone = new HashSet<string>();
+                foreach (var m in SquadRoster.Away) gone.Add(m.Name);
+                Check(gone.SetEquals(new[] { "Опытный А", "Опытный Б", "Рядовой 5" }),
+                      $"ушли не те, кого выбрали: {string.Join(", ", gone)}");
+
+                SquadRoster.Set(CampLike());
+                SquadRoster.ChooseCommander("Опытный А");
+                SquadRoster.SendAway("Опытный А", 5);
+
                 // Ушедших нет ни в одной сцене. Если Remember их забудет,
                 // возвращаться в эпилоге будет некому.
                 SquadRoster.Remember(new List<Warrior>());

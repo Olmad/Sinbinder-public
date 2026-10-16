@@ -137,44 +137,66 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Отправить отряд на доле 2. Уходит выбранный старший и рядовые
-        /// при нём — опытные остаются в лагере, иначе к доле 4 защищать
-        /// его будет некому, а телохранитель не уходит никогда.
-        ///
-        /// Порядок набора — по списку, без Random: тот же выбор игрока
-        /// обязан уводить тех же людей.
+        /// Может ли он уйти на вылазку прямо сейчас: не телохранитель
+        /// и не в пути с другим отрядом.
         /// </summary>
-        public static void SendAway(string commanderName, int size)
-            => SendAway(commanderName, size, keepExperienced: true);
+        public static bool CanGo(Member m)
+            => string.IsNullOrEmpty(m.Unavailable) && !m.IsAway;
 
         /// <summary>
-        /// То же, но с выбором: держать ли опытных дома.
+        /// Кого старший возьмёт, если игрок не выберет сам, — без старшего,
+        /// на <paramref name="size"/> минус одно место. Это прежнее правило
+        /// набора, и до 16 октября оно было единственным: игрок выбирал
+        /// старшего, а спутников ему подбирал список. Теперь это подсказка:
+        /// окно выбора открывается с ней, и не тронувший ничего получает
+        /// ровно то, что получал раньше.
         ///
-        /// В прологе они остаются — иначе к доле 4 защищать лагерь
-        /// некому. В склепе такого правила нет: игрок сам решает, кем
-        /// рискнуть, и запрет «опытные не ходят» отнял бы у него ровно
-        /// то решение, ради которого зона и построена.
+        /// Порядок — по списку, без Random. <paramref name="keepExperienced"/> —
+        /// в прологе опытные по подсказке остаются в лагере: так он не пустеет
+        /// к набегу. Игрок может взять их сам.
         /// </summary>
+        public static List<string> Suggest(string commanderName, int size, bool keepExperienced)
+        {
+            var party = new List<string>();
+            foreach (var m in _members)
+            {
+                if (party.Count >= size - 1) break;
+                if (m.Name == commanderName || !CanGo(m)) continue;
+                if (keepExperienced && Leadership.IsExperienced(m.Leadership)) continue;
+                party.Add(m.Name);
+            }
+            return party;
+        }
+
+        /// <summary>
+        /// Отправить отряд по подсказке (<see cref="Suggest"/>): в прологе
+        /// опытные остаются. Для тех, кто посылает без окна выбора, —
+        /// самопроверки и сцен без игрока.
+        /// </summary>
+        public static void SendAway(string commanderName, int size)
+            => SendAway(commanderName, Suggest(commanderName, size, keepExperienced: true));
+
+        /// <summary>То же, с выбором, держать ли опытных дома.</summary>
         public static void SendAway(string commanderName, int size, bool keepExperienced)
+            => SendAway(commanderName, Suggest(commanderName, size, keepExperienced));
+
+        /// <summary>
+        /// Отправить старшего и тех, кого выбрал игрок (решение автора, 16 октября:
+        /// «по плану можно выбирать командира и его отряд из списка всех воинов»;
+        /// <c>00-GDD.md</c> §5: «сбор отряда → выбор командира → вылазка»).
+        /// Кто не может уйти (<see cref="CanGo"/>), не уходит, даже если назван.
+        /// </summary>
+        public static void SendAway(string commanderName, ICollection<string> party)
         {
             int taken = 0;
-
-            for (int i = 0; i < _members.Count && taken < size; i++)
+            for (int i = 0; i < _members.Count; i++)
             {
                 var m = _members[i];
-                if (m.Name != commanderName) continue;
-
-                m.IsAway = true;
-                _members[i] = m;
-                taken++;
-            }
-
-            for (int i = 0; i < _members.Count && taken < size; i++)
-            {
-                var m = _members[i];
-                if (m.IsAway) continue;
-                if (!string.IsNullOrEmpty(m.Unavailable)) continue;   // телохранитель
-                if (keepExperienced && Leadership.IsExperienced(m.Leadership)) continue;
+                bool named = m.Name == commanderName || (party != null && party.Contains(m.Name));
+                // Старшего уже проверили, когда давали выбрать; спутник,
+                // названный по ошибке (телохранитель, ушедший), — остаётся.
+                if (!named || m.IsAway) continue;
+                if (m.Name != commanderName && !CanGo(m)) continue;
 
                 m.IsAway = true;
                 _members[i] = m;
@@ -182,7 +204,7 @@ namespace Sinbinder.Gameplay
             }
 
             Debug.Log($"[ОТРЯД] С {commanderName} ушли {taken}. "
-                    + $"В лагере остались {_members.Count - taken}.");
+                    + $"Остались {_members.Count - taken}.");
         }
 
         /// <summary>

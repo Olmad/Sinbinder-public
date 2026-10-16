@@ -51,6 +51,15 @@ namespace Sinbinder.UI
         private bool _pickingCommander;
         private Mission _chosen;
 
+        /// <summary>
+        /// Шаг сбора отряда: старший выбран, игрок решает, кого он возьмёт.
+        /// До 16 октября шага не было — спутников подбирал список по порядку
+        /// (автор: «войны, отправляемые на них, фиксированные»).
+        /// </summary>
+        private bool _gathering;
+        private string _leader;
+        private readonly HashSet<string> _party = new();
+
         /// <summary>Отходил ли игрок от шара с прошлого раза.</summary>
         private bool _leftTheBall = true;
 
@@ -121,6 +130,7 @@ namespace Sinbinder.UI
         /// </summary>
         private void Back()
         {
+            if (_gathering) { PickCommander(_chosen); return; }
             if (_pickingCommander) { ShowMissions(); return; }
 
             Close();
@@ -152,6 +162,7 @@ namespace Sinbinder.UI
         private void ShowMissions()
         {
             _pickingCommander = false;
+            _gathering = false;
 
             if (_title != null)
                 _title.text = string.IsNullOrEmpty(_board.LastReport)
@@ -182,6 +193,7 @@ namespace Sinbinder.UI
         {
             _chosen = mission;
             _pickingCommander = true;
+            _gathering = false;
 
             if (_title != null)
                 _title.text = Loc.F("{0}. Кого поставить старшим.  Esc — назад", Loc.Name(mission.Name));
@@ -212,14 +224,99 @@ namespace Sinbinder.UI
         }
 
         /// <summary>
-        /// Старший выбран. Если на точке есть развилка — спрашиваем,
-        /// что предложить; если нет — уходят молча.
+        /// Старший выбран — собрать ему отряд. Открывается с подсказкой
+        /// (<see cref="SquadRoster.Suggest"/>): не тронувший ничего уводит
+        /// тех же, кого уводил до 16 октября. Опытных в склепе подсказка
+        /// не бережёт — кем рискнуть, решает игрок.
         /// </summary>
         private void Lead(string commanderName)
         {
-            if (_chosen.Junction == Junction.None) { Send(commanderName, null); return; }
-            PickOffer(commanderName);
+            _leader = commanderName;
+            _gathering = true;
+            _party.Clear();
+            foreach (var name in SquadRoster.Suggest(commanderName, _chosen.Squad, keepExperienced: false))
+                _party.Add(name);
+            ShowParty(null);
         }
+
+        /// <summary>Отряд набран. Есть развилка — спросить, что предложить; нет — уходят.</summary>
+        private void Gathered()
+        {
+            if (_party.Count < _chosen.Squad - 1) return;
+            _gathering = false;
+            if (_chosen.Junction == Junction.None) { Send(_leader, null); return; }
+            PickOffer(_leader);
+        }
+
+        private void Toggle(string name)
+        {
+            if (_party.Contains(name)) _party.Remove(name);
+            else if (_party.Count < _chosen.Squad - 1) _party.Add(name);
+            else { ShowParty(Loc.T("Отряд набран. Чтобы взять этого, сперва оставьте кого-нибудь в склепе.")); return; }
+            ShowParty(null);
+        }
+
+        /// <summary>
+        /// Кого старший возьмёт: строка на каждого, щелчок — идёт или
+        /// остаётся. Последняя строка — отправить, когда набрано сколько нужно.
+        /// </summary>
+        private void ShowParty(string warning)
+        {
+            int missing = _chosen.Squad - 1 - _party.Count;
+            string leader = Loc.Name(Shown(_leader));
+
+            if (_title != null)
+                _title.text = (missing > 0
+                        ? Loc.F("{0}. Кого {1} возьмёт — нужно ещё: {2}.", Loc.Name(_chosen.Name), leader,
+                                Leadership.Collective(missing))
+                        : Loc.F("{0}. Кого {1} возьмёт.", Loc.Name(_chosen.Name), leader))
+                    + Loc.T("  Esc — назад")
+                    + (string.IsNullOrEmpty(warning) ? "" : "\n" + warning);
+
+            Rows(out float y);
+
+            var members = new List<SquadRoster.Member>();
+            foreach (var m in SquadRoster.Members)
+                if (m.Name != _leader && !m.IsAway) members.Add(m);
+
+            // Строк до десятка: шаг — по месту, как в совете у стола, иначе
+            // последние уходят за край панели.
+            float room = _rows != null ? _rows.rect.height : 0f;
+            float step = room > 1f ? Mathf.Min(150f, room / (members.Count + 1)) : 150f;
+            float height = Mathf.Max(48f, step - 8f);
+
+            foreach (var m in members)
+            {
+                bool can = SquadRoster.CanGo(m);
+                bool goes = can && _party.Contains(m.Name);
+                string name = m.Name;
+
+                _spawned.Add(Row(y, goes, Loc.Name(m.ShownName), PartyLine(m, can, goes), "",
+                    can ? () => Toggle(name) : (System.Action)null, height));
+                y -= step;
+            }
+
+            _spawned.Add(Row(y, missing <= 0,
+                missing <= 0 ? Loc.F("Отправить отряд — ведёт {0}", leader)
+                             : Loc.F("Нужно ещё: {0}", Leadership.Collective(missing)),
+                "", "", missing <= 0 ? Gathered : (System.Action)null, height));
+        }
+
+        /// <summary>Идёт ли и что о нём стоит знать, решая: грех словом, долг, братство.</summary>
+        private static string PartyLine(SquadRoster.Member m, bool can, bool goes)
+        {
+            if (!can) return m.IsAway ? Loc.T("В пути с другим отрядом.") : Loc.T(m.Unavailable);
+
+            var parts = new List<string> { goes ? Loc.T("идёт") : Loc.T("остаётся в склепе") };
+            parts.Add(SoulData.GetSinName(m.Sin).ToLowerInvariant());
+            if (m.UnpaidMissions > 0) parts.Add(Grammar.Pick(m.Gender, Loc.T("ему должны"), Loc.T("ей должны")));
+            if (m.Brother) parts.Add(Loc.T("брат по оружию"));
+            return string.Join(" · ", parts);
+        }
+
+        /// <summary>Имя по старшинству для голого имени из состава.</summary>
+        private static string Shown(string name)
+            => SquadRoster.TryGet(name, out var m) ? m.ShownName : name;
 
         /// <summary>
         /// Развилка. Игрок <b>предлагает</b>, и это надо было сказать
@@ -260,7 +357,7 @@ namespace Sinbinder.UI
 
         private void Send(string commanderName, MissionAction? offer)
         {
-            _board.Send(_chosen, commanderName, offer);
+            _board.Send(_chosen, commanderName, new List<string>(_party), offer);
 
             // Возвращаемся к карте: отчёт стоит в заголовке, и следующий
             // выбор игрок делает, уже зная цену прошлого.
@@ -284,7 +381,7 @@ namespace Sinbinder.UI
         }
 
         private GameObject Row(float y, bool bright, string title, string second,
-            string third, System.Action onClick)
+            string third, System.Action onClick, float height = 140f)
         {
             var go = new GameObject(title, typeof(RectTransform));
             go.transform.SetParent(_rows, false);
@@ -295,7 +392,7 @@ namespace Sinbinder.UI
             rt.pivot = new Vector2(0f, 1f);
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
-            rt.sizeDelta = new Vector2(0f, 140f);
+            rt.sizeDelta = new Vector2(0f, height);
             rt.anchoredPosition = new Vector2(0f, y);
 
             var plate = go.AddComponent<Image>();
@@ -310,6 +407,14 @@ namespace Sinbinder.UI
                 var button = go.AddComponent<Button>();
                 button.targetGraphic = plate;
                 button.onClick.AddListener(() => onClick());
+            }
+
+            // Узкая строка (сбор отряда) — имя и одна строка под ним.
+            if (height < 100f)
+            {
+                Label(rt, title, 24, new Vector2(18f, -6f), 30f, bright);
+                Label(rt, second, 18, new Vector2(18f, -Mathf.Min(36f, height * 0.55f)), 24f, bright);
+                return go;
             }
 
             Label(rt, title, 28, new Vector2(18f, -10f), 36f, bright);

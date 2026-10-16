@@ -84,6 +84,17 @@ namespace Sinbinder.Crypt
         /// </summary>
         public string Send(Mission mission, string commanderName,
                            AOS.MissionAction? suggestion)
+            => Send(mission, commanderName,
+                    SquadRoster.Suggest(commanderName, mission.Squad, keepExperienced: false),
+                    suggestion);
+
+        /// <summary>
+        /// То же, но спутников старшему выбрал игрок (с 16 октября: окно карты
+        /// собирает отряд, а не подбирает его списком). Без старшего,
+        /// на <c>mission.Squad</c> минус одно место.
+        /// </summary>
+        public string Send(Mission mission, string commanderName, ICollection<string> companions,
+                           AOS.MissionAction? suggestion)
         {
             if (!EnoughPeople(mission))
                 return Loc.T("Столько людей не наберётся.");
@@ -98,7 +109,7 @@ namespace Sinbinder.Crypt
             if (before.Contains(commanderName))
                 return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
 
-            SquadRoster.SendAway(commanderName, mission.Squad, keepExperienced: false);
+            SquadRoster.SendAway(commanderName, companions);
 
             // Старший — на копиях: бой (Expedition) и развилка его видят,
             // а общий отряд своего старшего не меняет.
