@@ -294,11 +294,42 @@ namespace Sinbinder.Gameplay
             bool coins = purse != null && owed != null && purse.Gold >= SquadGear.Wage(owed);
 
             DebtWarned = true;
+
+            // 47-TEXTS §3, п. 2 (автор: «да»): что за наказание — сказано. Двумя
+            // строками: одна длинная держала бы кадр полминуты. Мост — если душа
+            // его помнит (PrologueCampSpawner.BridgeMemory); иначе — без истории.
+            string name = Loc.Name(Grammar.Dative(debtor.Name, debtor.Gender));
+            string missions = Missions(debtor.UnpaidMissions);
+            bool bridge = owed != null && owed.Soul != null && owed.Soul.HasMemory
+                       && owed.Soul.Memory.Object == PrologueCampSpawner.BridgeMemory;
+
+            Herald.Line(bridge
+                ? Grammar.Pick(debtor.Gender,
+                    Loc.F("{0}: «Кстати, владыка: {1} не платят уже {2} — вы наказали его за мост. "
+                        + "Отряд дрался, а он копал монеты — и почти всё оставил себе».", who, name, missions),
+                    Loc.F("{0}: «Кстати, владыка: {1} не платят уже {2} — вы наказали её за мост. "
+                        + "Отряд дрался, а она копала монеты — и почти всё оставила себе».", who, name, missions))
+                : Loc.F("{0}: «Кстати, владыка: {1} не платят уже {2} — вы держите плату в наказание».",
+                        who, name, missions));
+
+            // Две ночи — предел, за которым наказание только копит обиду
+            // (48-PUNISHMENT §2; автор: «да»): «затянулось» — правда, а не мнение.
+            string late = debtor.UnpaidMissions > 2 ? Loc.T("Наказание затянулось.") : Loc.T("Пора его снять.");
             Herald.Line(coins
-                ? Loc.F("{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты у вас "
-                      + "теперь есть — отдайте долг сами, из рук в руки».", who, Possessive(debtor.Name))
-                : Loc.F("{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — "
-                      + "в сундуке. Отдайте долг сами, из рук в руки».", who, Possessive(debtor.Name)));
+                ? Loc.F("{0}: «{1} Монеты у вас теперь есть — отдайте долг сами, из рук в руки».", who, late)
+                : Loc.F("{0}: «{1} Монеты — в сундуке. Отдайте долг сами, из рук в руки».", who, late));
+        }
+
+        /// <summary>«две вылазки», «три вылазки», «давно» — для «не платят уже …».</summary>
+        private static string Missions(int unpaid)
+        {
+            switch (unpaid)
+            {
+                case 2:  return Loc.T("две вылазки");
+                case 3:  return Loc.T("три вылазки");
+                case 4:  return Loc.T("четыре вылазки");
+                default: return unpaid <= 1 ? Loc.T("вылазку") : Loc.T("много вылазок");
+            }
         }
 
         private static SquadRoster.Member? Bodyguard()
@@ -309,24 +340,5 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
-        /// <summary>
-        /// «Марга Копатель» → «Марги». Грубо, по первому слову: имён
-        /// в демо девять, и склонять их полноценно незачем.
-        /// </summary>
-        private static string Possessive(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return name;
-
-            // Падеж — русский. В переводе — имя как есть, своим словом.
-            if (!Loc.IsSource) return Loc.Name(name).Split(' ')[0];
-
-            int space = name.IndexOf(' ');
-            string first = space > 0 ? name.Substring(0, space) : name;
-
-            if (first.EndsWith("а")) return first.Substring(0, first.Length - 1) + "и";   // ключ: окончание, не текст
-            if (first.EndsWith("я")) return first.Substring(0, first.Length - 1) + "и";   // ключ: окончание, не текст
-
-            return first + "а";   // ключ: окончание, не текст
-        }
     }
 }

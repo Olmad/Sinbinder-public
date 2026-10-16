@@ -87,6 +87,21 @@ namespace Sinbinder.Core
         }
 
         /// <summary>
+        /// «1 монета», «3 монеты», «10 монет». Монеты — числом: то, чем Греховод
+        /// владеет и платит (решение автора 30 сентября; `CLAUDE.md`). Число
+        /// души так не пишется никогда — это деньги, а не душа.
+        /// </summary>
+        public static string Coins(int n)
+        {
+            if (Loc.Language == "en") return n == 1 ? Loc.F("{0} монета", n) : Loc.F("{0} монет", n);
+
+            int last = System.Math.Abs(n) % 10, two = System.Math.Abs(n) % 100;
+            if (last == 1 && two != 11) return Loc.F("{0} монета", n);
+            if (last >= 2 && last <= 4 && (two < 12 || two > 14)) return Loc.F("{0} монеты", n);
+            return Loc.F("{0} монет", n);
+        }
+
+        /// <summary>
         /// Имя в дательном падеже: «бросился к Косому Ждану», а не «к Косой
         /// Ждан» (журнал прогона 26 сентября, <c>14-HANDOFF.md</c> §111).
         ///

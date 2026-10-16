@@ -361,7 +361,8 @@ namespace Sinbinder.Crypt
             for (int i = 0; i < survivors.Count; i++)
             {
                 if (i > 0) sb.Append(", ");
-                sb.Append(Loc.Name(survivors[i]));
+                // Имя по старшинству, как везде в окнах (правило имён).
+                sb.Append(Loc.Name(SquadRoster.TryGet(survivors[i], out var back) ? back.ShownName : survivors[i]));
             }
             sb.Append('.');
 
@@ -370,7 +371,10 @@ namespace Sinbinder.Crypt
                     if (m.Name == commanderName)
                     { sb.Append(' ').Append(Homecoming.Story(m.Sin, m.Gender)); break; }
 
-            sb.Append(Loc.T(" Им теперь должны."));
+            // 47-TEXTS §2, п. 13: что должны. Добычу журнал называет сам.
+            sb.Append(survivors.Count == 1
+                ? Loc.T(" Ему вы должны плату за эту вылазку.")
+                : Loc.T(" Каждому из них вы должны плату за эту вылазку."));
             return sb.ToString();
         }
 
@@ -385,7 +389,8 @@ namespace Sinbinder.Crypt
             // ничего, и это тоже исход.
             if (chosen == AOS.MissionAction.TakeEverything) BringSoul(mission.Name);
             if (chosen == AOS.MissionAction.TakePeople)
-                Log(Loc.T("Живых увели. Что с ними делать, склеп ещё не решил."));
+                // 47-TEXTS §2, п. 14: обещания без продолжения не даём.
+                Log(Loc.T("Живых привели связанными. Склепу пока нечего с ними делать."));
             if (chosen == AOS.MissionAction.LetThemPass) return;
 
             switch (mission.Spoils)

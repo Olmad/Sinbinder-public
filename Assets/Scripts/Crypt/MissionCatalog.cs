@@ -164,24 +164,27 @@ namespace Sinbinder.Crypt
             };
         }
 
-        /// <summary>Насколько там опасно — словами, для карты.</summary>
+        /// <summary>
+        /// Насколько там опасно — словами, для карты: сколько врагов и скольких
+        /// советуют послать. До 16 октября — «Их там меньше»: меньше, чем кого,
+        /// игрок не знал (47-TEXTS §2, п. 2; автор: «да»). Люди — счётом
+        /// словами, как в совете: это не числа души.
+        /// </summary>
         public static string Danger(Mission mission)
-        {
-            if (mission.Guards < mission.Squad) return Loc.T("Их там меньше.");
-            if (mission.Guards == mission.Squad) return Loc.T("Их там столько же.");
-            if (mission.Guards <= mission.Squad + 2) return Loc.T("Их там больше.");
-            return Loc.T("Их там намного больше.");
-        }
+            => Loc.F("Врагов там: {0}. Советуют послать {1}.",
+                     Gameplay.Leadership.Collective(mission.Guards),
+                     Gameplay.Leadership.Count(mission.Squad));
 
         /// <summary>Что обещают принести — словами.</summary>
         public static string Promise(Spoils spoils)
         {
             switch (spoils)
             {
-                case Spoils.Souls:   return Loc.T("Оттуда несут души.");
-                case Spoils.Shell:   return Loc.T("Оттуда несут тело.");
-                case Spoils.Upgrade: return Loc.T("Оттуда несут то, что ставят в склепе.");
-                default:             return Loc.T("Оттуда несут только своих.");
+                // 47-TEXTS §2, пп. 4–7: что принести и зачем — без загадок.
+                case Spoils.Souls:   return Loc.T("Оттуда можно принести души — для пустых тел в склепе.");
+                case Spoils.Shell:   return Loc.T("Оттуда можно принести тело — новую оболочку для души.");
+                case Spoils.Upgrade: return Loc.T("Оттуда можно принести вещь для гнезда в склепе.");
+                default:             return Loc.T("Больше оттуда нечего принести.");
             }
         }
 
@@ -190,7 +193,7 @@ namespace Sinbinder.Crypt
         {
             switch (prize)
             {
-                case Prize.Purses: return Loc.T("Кошели у пояса, не больше.");
+                case Prize.Purses: return Loc.T("Денег — только в кошелях у охраны.");
                 case Prize.Silver: return Loc.T("Там серебро.");
                 default:           return Loc.T("Денег там нет.");
             }

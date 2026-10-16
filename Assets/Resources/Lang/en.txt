@@ -1335,6 +1335,18 @@ msgstr "Committed: one save, no second chances"
 msgid "Свободно: сохраняйтесь и грузитесь когда угодно"
 msgstr "Free: save and load whenever you like"
 
+#: Core/Grammar.cs
+msgid "{0} монета"
+msgstr "{0} coin"
+
+#: Core/Grammar.cs
+msgid "{0} монет"
+msgstr "{0} coins"
+
+#: Core/Grammar.cs
+msgid "{0} монеты"
+msgstr "{0} coins"
+
 #: Core/Preferences.cs
 msgid "как задумано"
 msgstr "as intended"
@@ -2040,12 +2052,16 @@ msgid "Вернулись: "
 msgstr "Returned: "
 
 #: Crypt/MissionBoard.cs
-msgid " Им теперь должны."
-msgstr " They are owed now."
+msgid " Ему вы должны плату за эту вылазку."
+msgstr " You owe him pay for this raid."
 
 #: Crypt/MissionBoard.cs
-msgid "Живых увели. Что с ними делать, склеп ещё не решил."
-msgstr "The living were led away. The crypt hasn't decided what to do with them yet."
+msgid " Каждому из них вы должны плату за эту вылазку."
+msgstr " You owe each of them pay for this raid."
+
+#: Crypt/MissionBoard.cs
+msgid "Живых привели связанными. Склепу пока нечего с ними делать."
+msgstr "The living were brought back bound. The crypt has no use for them yet."
 
 #: Crypt/MissionBoard.cs
 msgid "Оттуда принесли: {0}. Найдётся гнездо — поставите."
@@ -2116,40 +2132,28 @@ msgid "Туда уходят и не возвращаются. Причину н
 msgstr "People go there and don't come back. No one says why."
 
 #: Crypt/MissionCatalog.cs
-msgid "Их там меньше."
-msgstr "There are fewer of them."
+msgid "Врагов там: {0}. Советуют послать {1}."
+msgstr "Enemies there: {0}. Advised: send {1}."
 
 #: Crypt/MissionCatalog.cs
-msgid "Их там столько же."
-msgstr "There are as many of them."
+msgid "Оттуда можно принести души — для пустых тел в склепе."
+msgstr "Souls can be brought back from there — for the empty bodies in the crypt."
 
 #: Crypt/MissionCatalog.cs
-msgid "Их там больше."
-msgstr "There are more of them."
+msgid "Оттуда можно принести тело — новую оболочку для души."
+msgstr "A body can be brought back from there — a new shell for a soul."
 
 #: Crypt/MissionCatalog.cs
-msgid "Их там намного больше."
-msgstr "There are far more of them."
+msgid "Оттуда можно принести вещь для гнезда в склепе."
+msgstr "Something for a socket in the crypt can be brought back from there."
 
 #: Crypt/MissionCatalog.cs
-msgid "Оттуда несут души."
-msgstr "Souls are brought back from there."
+msgid "Больше оттуда нечего принести."
+msgstr "There is nothing else to bring back from there."
 
 #: Crypt/MissionCatalog.cs
-msgid "Оттуда несут тело."
-msgstr "A body is brought back from there."
-
-#: Crypt/MissionCatalog.cs
-msgid "Оттуда несут то, что ставят в склепе."
-msgstr "What they bring back from there is set up in the crypt."
-
-#: Crypt/MissionCatalog.cs
-msgid "Оттуда несут только своих."
-msgstr "The only thing brought back from there is our own."
-
-#: Crypt/MissionCatalog.cs
-msgid "Кошели у пояса, не больше."
-msgstr "Purses on belts, nothing more."
+msgid "Денег — только в кошелях у охраны."
+msgstr "The only money is in the guards' purses."
 
 #: Crypt/MissionCatalog.cs
 msgid "Там серебро."
@@ -3976,16 +3980,24 @@ msgid "Служу, пока есть за что."
 msgstr "I serve while there's something to serve for."
 
 #: Dialogue/TalkLines.cs
-msgid "Одна за две? …Ладно. Наказание кончилось — и то хлеб."
-msgstr "One for two? …Fine. The punishment's over — that's something."
+msgid "Всё из-за моста? Я копал, а они дрались. Кто ж знал, что их там столько ляжет."
+msgstr "Is this all about the bridge? I was digging while they fought. Who knew so many of them would fall there."
 
 #: Dialogue/TalkLines.cs
-msgid "Одна за три? …Ладно. Наказание кончилось — и то хлеб."
-msgstr "One for three? …Fine. The punishment's over — that's something."
+msgid "Всё из-за моста? Я копала, а они дрались. Кто ж знал, что их там столько ляжет."
+msgstr "Is this all about the bridge? I was digging while they fought. Who knew so many of them would fall there."
 
 #: Dialogue/TalkLines.cs
-msgid "Одна за все? …Ладно. Наказание кончилось — и то хлеб."
-msgstr "One for all of them? …Fine. The punishment's over — that's something."
+msgid "Одна плата за две вылазки? …Ладно. Хоть наказание кончилось — и то хлеб."
+msgstr "One pay for two raids? …Fine. At least the punishment is over — that's something."
+
+#: Dialogue/TalkLines.cs
+msgid "Одна плата за три вылазки? …Ладно. Хоть наказание кончилось — и то хлеб."
+msgstr "One pay for three raids? …Fine. At least the punishment is over — that's something."
+
+#: Dialogue/TalkLines.cs
+msgid "Одна плата за все вылазки? …Ладно. Хоть наказание кончилось — и то хлеб."
+msgstr "One pay for all those raids? …Fine. At least the punishment is over — that's something."
 
 #: Dialogue/TalkLines.cs
 msgid "Наказание кончилось. Этого довольно, владыка."
@@ -4236,12 +4248,52 @@ msgid "{0}: «Владыка, позвольте пройтись с вами. �
 msgstr "{0}: “My lord, let me walk with you. Let them see whom I walk with.”"
 
 #: Gameplay/CampOpening.cs
-msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты у вас теперь есть — отдайте долг сами, из рук в руки»."
-msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. You have coin now — pay the debt yourself, hand to hand.”"
+msgid "{0}: «Кстати, владыка: {1} не платят уже {2} — вы наказали его за мост. Отряд дрался, а он копал монеты — и почти всё оставил себе»."
+msgstr "{0}: “By the way, my lord: {1} hasn't been paid for {2} — you punished him for the bridge. The party fought while he dug for coins — and kept nearly all of them.”"
 
 #: Gameplay/CampOpening.cs
-msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — в сундуке. Отдайте долг сами, из рук в руки»."
-msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. The coin is in the chest. Pay the debt yourself, hand to hand.”"
+msgid "{0}: «Кстати, владыка: {1} не платят уже {2} — вы наказали её за мост. Отряд дрался, а она копала монеты — и почти всё оставила себе»."
+msgstr "{0}: “By the way, my lord: {1} hasn't been paid for {2} — you punished her for the bridge. The party fought while she dug for coins — and kept nearly all of them.”"
+
+#: Gameplay/CampOpening.cs
+msgid "{0}: «Кстати, владыка: {1} не платят уже {2} — вы держите плату в наказание»."
+msgstr "{0}: “By the way, my lord: {1} hasn't been paid for {2} — you are withholding the pay as punishment.”"
+
+#: Gameplay/CampOpening.cs
+msgid "Наказание затянулось."
+msgstr "The punishment has gone on too long."
+
+#: Gameplay/CampOpening.cs
+msgid "Пора его снять."
+msgstr "It's time to lift it."
+
+#: Gameplay/CampOpening.cs
+msgid "{0}: «{1} Монеты у вас теперь есть — отдайте долг сами, из рук в руки»."
+msgstr "{0}: “{1} You have coins now — pay the debt yourself, hand to hand.”"
+
+#: Gameplay/CampOpening.cs
+msgid "{0}: «{1} Монеты — в сундуке. Отдайте долг сами, из рук в руки»."
+msgstr "{0}: “{1} The coins are in the chest. Pay the debt yourself, hand to hand.”"
+
+#: Gameplay/CampOpening.cs
+msgid "две вылазки"
+msgstr "two raids"
+
+#: Gameplay/CampOpening.cs
+msgid "три вылазки"
+msgstr "three raids"
+
+#: Gameplay/CampOpening.cs
+msgid "четыре вылазки"
+msgstr "four raids"
+
+#: Gameplay/CampOpening.cs
+msgid "вылазку"
+msgstr "a raid"
+
+#: Gameplay/CampOpening.cs
+msgid "много вылазок"
+msgstr "many raids"
 
 #: Gameplay/CardTable.cs
 msgid "За картами никого: играть не с кем."
@@ -4983,6 +5035,14 @@ msgstr "Helm with a Raven Feather"
 msgid "Помятый, с чёрным пером за ремнём. Откуда прозвище — видно издали."
 msgstr "Dented, a black feather under the strap. You can tell where the nickname came from at a glance."
 
+#: Gameplay/PrologueCampSpawner.cs
+msgid "Вина"
+msgstr "Guilt"
+
+#: Gameplay/PrologueCampSpawner.cs
+msgid "У моста отряд дрался, а он копал монеты. Выкопал много, почти всё оставил себе — а отряд почти весь там лёг."
+msgstr "At the bridge the party fought while he dug for coins. He dug up a lot and kept nearly all of it — and nearly the whole party fell there."
+
 #: Gameplay/PrologueCampSpawner.cs UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
 msgid "брат по оружию"
 msgstr "brother-in-arms"
@@ -5411,7 +5471,7 @@ msgstr "no room in the bag"
 msgid "долга нет"
 msgstr "no debt"
 
-#: Gameplay/SquadGear.cs UI/GearPanel.cs
+#: Gameplay/SquadGear.cs
 msgid "в кошеле не хватает"
 msgstr "not enough in the purse"
 
@@ -6032,40 +6092,44 @@ msgid "Что вы знаете"
 msgstr "What you know"
 
 #: UI/GearPanel.cs
-msgid "1 · Как ты? Как ко мне?"
-msgstr "1 · How are you? How do you feel about me?"
+msgid "1 · Как ты? Что думаешь обо мне?"
+msgstr "1 · How are you? What do you think of me?"
 
 #: UI/GearPanel.cs
 msgid "узнать отношение"
 msgstr "learn where he stands"
 
 #: UI/GearPanel.cs
-msgid "одна плата из кошеля — долг снят целиком"
-msgstr "one wage from the purse — the whole debt is cleared"
+msgid "{0} из кошеля — долг снят целиком"
+msgstr "{0} from the purse — the debt is cleared in full"
 
 #: UI/GearPanel.cs
-msgid "одна плата из кошеля — и за вылазку, и за старый долг"
-msgstr "one wage from the purse covers the sortie and the old debt"
+msgid "{0} из кошеля — и за вылазку, и за старый долг"
+msgstr "{0} from the purse — for the raid and the old debt"
 
 #: UI/GearPanel.cs
-msgid "одна плата из кошеля"
-msgstr "one wage from the purse"
+msgid "{0} из кошеля"
+msgstr "{0} from the purse"
 
 #: UI/GearPanel.cs
 msgid "2 · Плата за вылазку"
 msgstr "2 · Pay for the sortie"
 
 #: UI/GearPanel.cs
-msgid "2 · Вот твой долг"
-msgstr "2 · Here's what you're owed"
+msgid "2 · Отдать долг"
+msgstr "2 · Pay the debt"
 
 #: UI/GearPanel.cs
-msgid "2 · Долга нет"
-msgstr "2 · Nothing is owed"
+msgid "нужно {0}, у вас {1}"
+msgstr "need {0}, you have {1}"
 
 #: UI/GearPanel.cs
 msgid "3 · Покажи снаряжение"
 msgstr "3 · Show me your gear"
+
+#: UI/GearPanel.cs
+msgid "2 · Покажи снаряжение"
+msgstr "2 · Show me your gear"
 
 #: UI/GearPanel.cs
 msgid "вещи на воине и в мешке — обмен из рук в руки"
@@ -6086,6 +6150,10 @@ msgstr "not paid yet"
 #: UI/GearPanel.cs
 msgid "1, 2, 3 или щелчок — сказать. F или Esc — уйти."
 msgstr "1, 2, 3 or click — say it. F or Esc — leave."
+
+#: UI/GearPanel.cs
+msgid "1, 2 или щелчок — сказать. F или Esc — уйти."
+msgstr "1, 2 or click — to speak. F or Esc — to leave."
 
 #: UI/GearPanel.cs
 msgid "нет"
@@ -6160,16 +6228,16 @@ msgid "Подойдите и нажмите E, чтобы забрать душ�
 msgstr "Walk up and press E to take the soul into a jar. The longer it fades, the less of it will remain."
 
 #: UI/MissionMapUI.cs
-msgid "Куда пойти.  Esc — отойти от шара"
-msgstr "Where to go.  Esc — step away from the orb"
+msgid "Куда послать отряд?  Esc — отойти от шара"
+msgstr "Where to send a party?  Esc — step away from the orb"
 
 #: UI/MissionMapUI.cs
-msgid "Советуют послать {0} — у вас {1}."
-msgstr "Advised: send {0} — you have {1}."
+msgid "У вас сейчас только {0}."
+msgstr "You have only {0} right now."
 
 #: UI/MissionMapUI.cs
-msgid "{0}. Кого поставить старшим.  Esc — назад"
-msgstr "{0}. Who will lead.  Esc — back"
+msgid "{0}. Кто поведёт отряд?  Esc — назад"
+msgstr "{0}. Who will lead the party?  Esc — back"
 
 #: UI/MissionMapUI.cs
 msgid "Больше за старшим не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в склепе."
@@ -6332,16 +6400,20 @@ msgid "Отряд пережил эту ночь и ждёт платы."
 msgstr "The squad has survived this night and awaits payment."
 
 #: UI/SalaryPanelUI.cs
-msgid "Платить лично\nкому хватит монет"
-msgstr "Pay in person\nwhoever the coins will cover"
+msgid "Отряд пережил эту ночь и ждёт платы: ждут {0}, всего — {1}. В кошеле — {2}."
+msgstr "The party survived the night and awaits pay: {0} waiting, {1} in all. In the purse — {2}."
 
 #: UI/SalaryPanelUI.cs
-msgid "Придержать всем\nони запомнят"
-msgstr "Withhold from all\nthey will remember"
+msgid "Платить каждому сам\nиз рук в руки"
+msgstr "Pay each one yourself\nhand to hand"
 
 #: UI/SalaryPanelUI.cs
-msgid "Платите каждому из рук в руки: подойдите к воину, нажмите F и выберите второй пункт. Кому не заплатите, пока не дойдёте до алтаря, тот это запомнит."
-msgstr "Pay each warrior hand to hand: walk up to them, press F and choose the second option. Whoever is still unpaid when you reach the altar will remember it."
+msgid "Не платить никому\nотряд это запомнит"
+msgstr "Pay no one\nthe party will remember"
+
+#: UI/SalaryPanelUI.cs
+msgid "Платите каждому из рук в руки: подойдите к воину, нажмите F и выберите «Плата за вылазку». Кому не заплатите, пока не дойдёте до алтаря, тот это запомнит."
+msgstr "Pay each one hand to hand: walk up to a warrior, press F and choose “Pay for the sortie”. Whoever you haven't paid by the time you reach the altar will remember it."
 
 #: UI/SalaryPanelUI.cs
 msgid "Платить некому."
@@ -6836,6 +6908,118 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid " Им теперь должны."
+msgstr " They are owed now."
+
+#. нет в коде
+msgid "Живых увели. Что с ними делать, склеп ещё не решил."
+msgstr "The living were led away. The crypt hasn't decided what to do with them yet."
+
+#. нет в коде
+msgid "Их там меньше."
+msgstr "There are fewer of them."
+
+#. нет в коде
+msgid "Их там столько же."
+msgstr "There are as many of them."
+
+#. нет в коде
+msgid "Их там больше."
+msgstr "There are more of them."
+
+#. нет в коде
+msgid "Их там намного больше."
+msgstr "There are far more of them."
+
+#. нет в коде
+msgid "Оттуда несут души."
+msgstr "Souls are brought back from there."
+
+#. нет в коде
+msgid "Оттуда несут тело."
+msgstr "A body is brought back from there."
+
+#. нет в коде
+msgid "Оттуда несут то, что ставят в склепе."
+msgstr "What they bring back from there is set up in the crypt."
+
+#. нет в коде
+msgid "Оттуда несут только своих."
+msgstr "The only thing brought back from there is our own."
+
+#. нет в коде
+msgid "Кошели у пояса, не больше."
+msgstr "Purses on belts, nothing more."
+
+#. нет в коде
+msgid "Одна за две? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for two? …Fine. The punishment's over — that's something."
+
+#. нет в коде
+msgid "Одна за три? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for three? …Fine. The punishment's over — that's something."
+
+#. нет в коде
+msgid "Одна за все? …Ладно. Наказание кончилось — и то хлеб."
+msgstr "One for all of them? …Fine. The punishment's over — that's something."
+
+#. нет в коде
+msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты у вас теперь есть — отдайте долг сами, из рук в руки»."
+msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. You have coin now — pay the debt yourself, hand to hand.”"
+
+#. нет в коде
+msgid "{0}: «Кстати, владыка, ваше наказание {1} затянулось. Монеты — в сундуке. Отдайте долг сами, из рук в руки»."
+msgstr "{0}: “By the way, my lord, your punishment of {1} has dragged on. The coin is in the chest. Pay the debt yourself, hand to hand.”"
+
+#. нет в коде
+msgid "1 · Как ты? Как ко мне?"
+msgstr "1 · How are you? How do you feel about me?"
+
+#. нет в коде
+msgid "одна плата из кошеля — долг снят целиком"
+msgstr "one wage from the purse — the whole debt is cleared"
+
+#. нет в коде
+msgid "одна плата из кошеля — и за вылазку, и за старый долг"
+msgstr "one wage from the purse covers the sortie and the old debt"
+
+#. нет в коде
+msgid "одна плата из кошеля"
+msgstr "one wage from the purse"
+
+#. нет в коде
+msgid "2 · Вот твой долг"
+msgstr "2 · Here's what you're owed"
+
+#. нет в коде
+msgid "2 · Долга нет"
+msgstr "2 · Nothing is owed"
+
+#. нет в коде
+msgid "Куда пойти.  Esc — отойти от шара"
+msgstr "Where to go.  Esc — step away from the orb"
+
+#. нет в коде
+msgid "Советуют послать {0} — у вас {1}."
+msgstr "Advised: send {0} — you have {1}."
+
+#. нет в коде
+msgid "{0}. Кого поставить старшим.  Esc — назад"
+msgstr "{0}. Who will lead.  Esc — back"
+
+#. нет в коде
+msgid "Платить лично\nкому хватит монет"
+msgstr "Pay in person\nwhoever the coins will cover"
+
+#. нет в коде
+msgid "Придержать всем\nони запомнят"
+msgstr "Withhold from all\nthey will remember"
+
+#. нет в коде
+msgid "Платите каждому из рук в руки: подойдите к воину, нажмите F и выберите второй пункт. Кому не заплатите, пока не дойдёте до алтаря, тот это запомнит."
+msgstr "Pay each warrior hand to hand: walk up to them, press F and choose the second option. Whoever is still unpaid when you reach the altar will remember it."
 
 #. нет в коде
 msgid "Карган: «Владыка, отряд вернулся с трофеями. У нас ещё осталась точка интереса — давайте кого-нибудь отправим». Он ждёт у стола с шаром."

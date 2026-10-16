@@ -88,7 +88,11 @@ namespace Sinbinder.Gameplay
             // Отряду задолжали до пробуждения — тем же приёмом, что и пять
             // пустых палаток: лагерь жил до того, как игрок открыл глаза.
             new(Loc.N("Марга Копатель"),      SinType.Greed,    MoralType.Vicious, 65f, 70f, 40f,
-                unpaid: 3, trade: Trade.Peasant, shell: ShellType.Zombie),
+                unpaid: 3, trade: Trade.Peasant, shell: ShellType.Zombie,
+                // За что ему не платят (автор, 16 октября): мост. Отряд дрался,
+                // он копал монеты, почти всё оставил себе, и отряд почти весь
+                // там лёг. Удержанная плата — наказание; механика — 48-PUNISHMENT.
+                deed: Deed.Bridge),
             new(Loc.N("Брат Хальд"),          SinType.Pride,    MoralType.Pious,   35f, 95f, 25f,
                 trade: Trade.Alchemist),
 
@@ -213,13 +217,17 @@ namespace Sinbinder.Gameplay
             /// <summary>Тело: скелет, зомби или призрак.</summary>
             public readonly ShellType Shell;
 
+            /// <summary>Деяние, за которое ему держат плату. Нет — не наказан.</summary>
+            public readonly Deed Deed;
+
             public CampMember(string name, SinType sin, MoralType moral,
                 float intensity, float loyalty, float leadership,
                 string unavailable = "", int unpaid = 0,
                 Gender gender = Gender.Male, bool brother = false,
                 Trade trade = Trade.None, bool legend = false,
-                ShellType shell = ShellType.Skeleton)
+                ShellType shell = ShellType.Skeleton, Deed deed = Deed.None)
             {
+                Deed = deed;
                 Shell = shell;
                 Name = name;
                 Sin = sin;
@@ -457,8 +465,30 @@ namespace Sinbinder.Gameplay
         /// пустой мешок у восьмерых ничего не стоит, зато у двоих
         /// в нём лежит то, из-за чего они держатся вместе.
         /// </summary>
+        /// <summary>
+        /// Деяние из прошлого, которое помнит душа и за которое её наказали.
+        /// Пока одно — мост Марги; механика наказания — `48-PUNISHMENT.md`.
+        /// </summary>
+        public enum Deed { None, Bridge }
+
+        /// <summary>
+        /// Что он помнит. Объект памяти — ключ, по которому разговор и Карган
+        /// узнают, за что наказан: <see cref="BridgeMemory"/>.
+        /// </summary>
+        public const string BridgeMemory = "мост";   // ключ: объект памяти, игрок его не видит
+
         private static MemorySeed Memory(SquadRoster.Member member)
         {
+            foreach (var c in Squad)
+                if (c.Name == member.Name && c.Deed == Deed.Bridge)
+                    return new MemorySeed
+                    {
+                        Object = BridgeMemory,
+                        Emotion = Loc.N("Вина"),
+                        Story = Loc.N("У моста отряд дрался, а он копал монеты. Выкопал много, "
+                                    + "почти всё оставил себе — а отряд почти весь там лёг."),
+                    };
+
             if (!member.Brother) return null;
 
             var seed = new MemorySeed

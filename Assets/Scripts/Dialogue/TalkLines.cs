@@ -80,6 +80,15 @@ namespace Sinbinder.Dialogue
             else toMe = Loc.T("Служу, пока есть за что.");
 
             string said = HowAreYou(w) + " " + toMe;
+
+            // За что держат плату — его словами, пока держат (47-TEXTS §3, п. 3;
+            // автор: «да»). Память — у души (PrologueCampSpawner.BridgeMemory).
+            if (w.UnpaidMissions > 0 && w.Soul != null && w.Soul.HasMemory
+                && w.Soul.Memory.Object == PrologueCampSpawner.BridgeMemory)
+                said += " " + Grammar.Pick(w.Gender,
+                    Loc.T("Всё из-за моста? Я копал, а они дрались. Кто ж знал, что их там столько ляжет."),
+                    Loc.T("Всё из-за моста? Я копала, а они дрались. Кто ж знал, что их там столько ляжет."));
+
             string memory = Remembers(w);
             return string.IsNullOrEmpty(memory) ? said : said + " " + memory;
         }
@@ -102,9 +111,10 @@ namespace Sinbinder.Dialogue
             {
                 if (!virtue && soul.Sin == SinType.Greed)
                 {
-                    if (owed == 2) return Loc.T("Одна за две? …Ладно. Наказание кончилось — и то хлеб.");
-                    if (owed == 3) return Loc.T("Одна за три? …Ладно. Наказание кончилось — и то хлеб.");
-                    return Loc.T("Одна за все? …Ладно. Наказание кончилось — и то хлеб.");
+                    // 47-TEXTS §3, п. 3: «одна за три» — чего, теперь сказано.
+                    if (owed == 2) return Loc.T("Одна плата за две вылазки? …Ладно. Хоть наказание кончилось — и то хлеб.");
+                    if (owed == 3) return Loc.T("Одна плата за три вылазки? …Ладно. Хоть наказание кончилось — и то хлеб.");
+                    return Loc.T("Одна плата за все вылазки? …Ладно. Хоть наказание кончилось — и то хлеб.");
                 }
                 return Loc.T("Наказание кончилось. Этого довольно, владыка.");
             }

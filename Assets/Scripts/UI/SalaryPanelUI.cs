@@ -184,9 +184,21 @@ namespace Sinbinder.UI
             if (_asked || _panel == null) return;
             _asked = true;
 
-            if (_title != null) _title.text = Loc.T("Отряд пережил эту ночь и ждёт платы.");
-            if (_payLabel != null) _payLabel.text = Loc.T("Платить лично\nкому хватит монет");
-            if (_withholdLabel != null) _withholdLabel.text = Loc.T("Придержать всем\nони запомнят");
+            // 47-TEXTS §3, пп. 11–12 (автор: «да»): сколько платить — сказано,
+            // монеты числом (решение 30.09); «придержать всем» — не по-русски.
+            int waiting = 0, total = 0;
+            foreach (var w in Squad())
+                if (Due(w)) { waiting++; total += SquadGear.Wage(w); }
+            var purse = Inventory.PlayerInventory.Instance;
+
+            if (_title != null)
+                _title.text = waiting == 0
+                    ? Loc.T("Отряд пережил эту ночь и ждёт платы.")
+                    : Loc.F("Отряд пережил эту ночь и ждёт платы: ждут {0}, всего — {1}. В кошеле — {2}.",
+                            Leadership.Collective(waiting), Grammar.Coins(total),
+                            Grammar.Coins(purse != null ? purse.Gold : 0));
+            if (_payLabel != null) _payLabel.text = Loc.T("Платить каждому сам\nиз рук в руки");
+            if (_withholdLabel != null) _withholdLabel.text = Loc.T("Не платить никому\nотряд это запомнит");
 
             Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
@@ -209,7 +221,7 @@ namespace Sinbinder.UI
             _altar = altar != null ? altar.transform : null;
 
             Log(Loc.T("Платите каждому из рук в руки: подойдите к воину, нажмите F "
-                    + "и выберите второй пункт. Кому не заплатите, пока не дойдёте "
+                    + "и выберите «Плата за вылазку». Кому не заплатите, пока не дойдёте "
                     + "до алтаря, тот это запомнит."));
         }
 

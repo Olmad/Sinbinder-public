@@ -166,7 +166,7 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = string.IsNullOrEmpty(_board.LastReport)
-                    ? Loc.T("Куда пойти.  Esc — отойти от шара")
+                    ? Loc.T("Куда послать отряд?  Esc — отойти от шара")
                     : _board.LastReport;
 
             Rows(out float y);
@@ -182,9 +182,9 @@ namespace Sinbinder.UI
                 // и сколько есть, а решает игрок.
                 string facts = $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
                              + MissionCatalog.Promise(m.Spoils);
+                // Сколько советуют — уже в строке опасности (MissionCatalog.Danger).
                 if (ready < m.Squad)
-                    facts += " " + Loc.F("Советуют послать {0} — у вас {1}.",
-                                         Leadership.Count(m.Squad), Leadership.Collective(ready));
+                    facts += " " + Loc.F("У вас сейчас только {0}.", Leadership.Collective(ready));
 
                 _spawned.Add(Row(y, ready > 0,
                     Loc.Name(m.Name),
@@ -203,7 +203,7 @@ namespace Sinbinder.UI
             _gathering = false;
 
             if (_title != null)
-                _title.text = Loc.F("{0}. Кого поставить старшим.  Esc — назад", Loc.Name(mission.Name));
+                _title.text = Loc.F("{0}. Кто поведёт отряд?  Esc — назад", Loc.Name(mission.Name));
 
             Rows(out float y);
 

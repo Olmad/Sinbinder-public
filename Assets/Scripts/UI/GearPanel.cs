@@ -251,6 +251,14 @@ namespace Sinbinder.UI
             if (!_menu || _warrior == null) return;
             string name = Loc.Name(_warrior.DisplayName);
 
+            // Долга нет — пункта о нём нет, и номера идут подряд: «2» — снаряжение.
+            bool owes = SalaryPanelUI.Owes(_warrior) || _warrior.UnpaidMissions > 0;
+            if (!owes)
+            {
+                if (option == 3) return;
+                if (option == 2) option = 3;
+            }
+
             switch (option)
             {
                 case 1:
@@ -522,7 +530,7 @@ namespace Sinbinder.UI
                 }
 
                 if (shown == 0) Row(_store, Loc.T("— Пусто —"), "", null);
-                _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+                _gold.text = Loc.F("Кошель Греховода: {0}", Grammar.Coins(store.Gold));
             }
 
             _bagTitle.text = _near ? Loc.T("Мешок Греховода — щелчок: отдать")
@@ -564,7 +572,7 @@ namespace Sinbinder.UI
                 foreach (var item in bag)
                     Row(_store, Loc.Name(item.Name), Plain(item, Loc.T("в сундук")), () => ToChest(item), right);
                 if (bag.Count == 0) Row(_store, Loc.T("— Пусто —"), "", null);
-                _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+                _gold.text = Loc.F("Кошель Греховода: {0}", Grammar.Coins(store.Gold));
             }
 
             _hint.text = Loc.T("Что останется в сундуке, останется в лагере: придётся бежать — достанется охотникам. F или Esc — закрыть.");
@@ -586,31 +594,38 @@ namespace Sinbinder.UI
             Clear(_hands);
             Clear(_store);
 
-            Row(_hands, Loc.T("1 · Как ты? Как ко мне?"), Loc.T("узнать отношение"), () => Choose(1));
+            Row(_hands, Loc.T("1 · Как ты? Что думаешь обо мне?"), Loc.T("узнать отношение"), () => Choose(1));
 
             // В склепе, пока идёт плата лично, второй пункт — плата за вылазку:
             // платят тем же, что и долг в лагере (SalaryPanelUI, решение
             // автора 30 сентября).
+            // 47-TEXTS §3, пп. 5–8 (автор: «да»): цена и кошель — числом
+            // (решение 30.09: чем Греховод платит — числом); «Долга нет» —
+            // не пункт: ничего не делает, и справа то же сказано.
             bool sortie = SalaryPanelUI.Owes(_warrior);
-            if (sortie || _warrior.UnpaidMissions > 0)
+            bool owes = sortie || _warrior.UnpaidMissions > 0;
+            if (owes)
             {
-                bool can = store != null && store.Gold >= SquadGear.Wage(_warrior);
-                string what = !sortie ? Loc.T("одна плата из кошеля — долг снят целиком")
-                            : _warrior.UnpaidMissions > 0 ? Loc.T("одна плата из кошеля — и за вылазку, и за старый долг")
-                            : Loc.T("одна плата из кошеля");
-                Row(_hands, sortie ? Loc.T("2 · Плата за вылазку") : Loc.T("2 · Вот твой долг"),
-                    can ? what : Loc.T("в кошеле не хватает"),
+                int wage = SquadGear.Wage(_warrior);
+                int gold = store != null ? store.Gold : 0;
+                bool can = gold >= wage;
+                string what = !sortie ? Loc.F("{0} из кошеля — долг снят целиком", Grammar.Coins(wage))
+                            : _warrior.UnpaidMissions > 0 ? Loc.F("{0} из кошеля — и за вылазку, и за старый долг", Grammar.Coins(wage))
+                            : Loc.F("{0} из кошеля", Grammar.Coins(wage));
+                Row(_hands, sortie ? Loc.T("2 · Плата за вылазку") : Loc.T("2 · Отдать долг"),
+                    can ? what : Loc.F("нужно {0}, у вас {1}", Grammar.Coins(wage), gold),
                     can ? () => Choose(2) : (System.Action)null);
             }
-            else Row(_hands, Loc.T("2 · Долга нет"), "", null);
 
-            Row(_hands, Loc.T("3 · Покажи снаряжение"), Loc.T("вещи на воине и в мешке — обмен из рук в руки"), () => Choose(3));
+            Row(_hands, owes ? Loc.T("3 · Покажи снаряжение") : Loc.T("2 · Покажи снаряжение"),
+                Loc.T("вещи на воине и в мешке — обмен из рук в руки"), () => Choose(3));
 
             Row(_store, Loc.T("Долг"), Debt(_warrior.UnpaidMissions), null);
             if (sortie) Row(_store, Loc.T("За вылазку"), Loc.T("ещё не заплачено"), null);
-            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", Grammar.Coins(store.Gold));
 
-            _hint.text = Loc.T("1, 2, 3 или щелчок — сказать. F или Esc — уйти.");
+            _hint.text = owes ? Loc.T("1, 2, 3 или щелчок — сказать. F или Esc — уйти.")
+                              : Loc.T("1, 2 или щелчок — сказать. F или Esc — уйти.");
             _reply.text = _answer;
         }
 
@@ -650,7 +665,7 @@ namespace Sinbinder.UI
             Row(_store, Loc.T("Посмотреть, что на воине"), Loc.T("выделить его и I — или «Вещи»"), null);
             if (TrophyChest.Store) Row(_store, Loc.T("В сундук лагеря"), Loc.T("подойти к сундуку и F"), null);
 
-            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", SquadGear.GoldWord(store.Gold));
+            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", Grammar.Coins(store.Gold));
             _hint.text = Loc.T("I или Esc — закрыть.");
             _reply.text = "";
         }
