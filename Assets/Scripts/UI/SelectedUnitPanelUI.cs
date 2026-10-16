@@ -379,11 +379,14 @@ namespace Sinbinder.UI
         {
             var soul = who.Soul;
 
-            // Имя без ремесла: ремесло стоит строкой ниже, «лучник, скелет».
-            // Заслуженный титул — тот же ShownName, он ремесла не несёт.
-            bool titled = soul != null && !string.IsNullOrEmpty(who.Reputation?.CurrentName);
-            _nameLine.text = Loc.Name(titled ? who.ShownName : who.DisplayName);
-            Set(_craftLine, CraftLine(who), Muted);
+            // Имя — по старшинству (Core/Naming): легенда, титул, ремесло.
+            // Ремесло ушло из второй строки (автор, 16 октября: «вторую строку
+            // с второстепенным прозвищем можно вообще не показывать»): боя оно
+            // не меняет, а у кого прозвища нет, оно и так стоит в имени —
+            // «Лиска Лучник». Тело осталось: от него с 15 октября зависят
+            // удар и защита, это знание для приказа.
+            _nameLine.text = Loc.Name(who.ShownName);
+            Set(_craftLine, ShellLine(who), Muted);
             Set(_sinLine, soul != null ? SinsLine(soul) : Loc.T("Душа неизвестна"), Bone);
             Set(_bodyLine, BodyLine(who), Muted);
             Flame(soul);
@@ -437,14 +440,9 @@ namespace Sinbinder.UI
                 Order(Loc.T("Ваш приказ — тише"), why, true);
         }
 
-        /// <summary>Ремесло и тело одной строкой, строчными: «крестьянин, зомби».</summary>
-        private static string CraftLine(Warrior who)
-        {
-            string body = Crypt.CryptHands.ShellName(who.Shell);
-            string craft = who.Soul != null ? Trades.Name(who.Soul.Trade) : "";
-            string line = string.IsNullOrEmpty(craft) ? body : Loc.F("{0}, {1}", Loc.T(craft), body);
-            return line.ToLowerInvariant();
-        }
+        /// <summary>Тело строчными: «зомби», «скелет».</summary>
+        private static string ShellLine(Warrior who)
+            => Crypt.CryptHands.ShellName(who.Shell).ToLowerInvariant();
 
         /// <summary>
         /// Два самых громких спектра словами: «Жадность жжёт, Уныние тлеет».

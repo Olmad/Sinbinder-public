@@ -58,7 +58,8 @@ namespace Sinbinder.Gameplay
         /// <summary>
         /// Имя, каким его видит игрок: с ремеслом после него,
         /// а заработанный титул — впереди («Гертон Крестьянин»
-        /// → «Костекоп Гертон»). Разбор приёма — Core/Naming.
+        /// → «Костекоп Гертон»). Легенда старше титула, титул старше
+        /// ремесла; прозвище — часть имени. Разбор приёма — Core/Naming.
         ///
         /// DisplayName остаётся голым именем нарочно: по нему
         /// ищут в составе отряда, сверяют с ушедшими и пишут
@@ -66,7 +67,7 @@ namespace Sinbinder.Gameplay
         /// в тот же день, когда кто-нибудь заработает титул.
         /// </summary>
         public string ShownName => Core.Naming.Full(
-            _soul.Name, _soul.Trade, Reputation?.CurrentName);
+            _soul.Name, _soul.Trade, Reputation?.CurrentLegendaryTitle, Reputation?.CurrentName);
         public Core.SoulData Soul => _soul;
         public Core.ShellType Shell => _shell;
 

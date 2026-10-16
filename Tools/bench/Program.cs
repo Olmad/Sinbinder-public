@@ -4017,6 +4017,32 @@ static class Bench
     }
 
     /// <summary>
+    /// Строка имени (Core/Naming): легенда старше титула, титул старше
+    /// ремесла, прозвище — часть имени (автор, 16 октября).
+    /// </summary>
+    static void NamingCheck()
+    {
+        Console.WriteLine("\n=== ИМЕНА: что стоит в строке имени ===");
+
+        int bad = 0;
+        void Same(string got, string want, string what)
+        {
+            Console.WriteLine($"  {what,-40} {got}");
+            if (got != want) { bad++; Console.WriteLine($"  ПРОВАЛ: {what} — ждали «{want}»"); }
+        }
+
+        Same(Naming.Full("Гертон", Trade.Peasant, "", ""), "Гертон Крестьянин", "одно слово — ремесло после");
+        Same(Naming.Full("Лиска", Trade.Archer, null, null), "Лиска Лучник", "пустые титулы как нет титула");
+        Same(Naming.Full("Марга Копатель", Trade.Peasant, "", ""), "Марга Копатель", "прозвище — ремесло молчит");
+        Same(Naming.Full("Карган Старый Ворон", Trade.None, "", ""), "Карган Старый Ворон", "без ремесла — как есть");
+        Same(Naming.Full("Гертон", Trade.Peasant, "", "Костекоп Гертон"), "Костекоп Гертон", "титул вытесняет ремесло");
+        Same(Naming.Full("Гертон", Trade.Peasant, "Легенда Гертон", "Тень Гертон"), "Легенда Гертон", "легенда старше титула");
+        Same(Naming.Full("Сквип", Trade.None, "", ""), "Сквип", "ни титула, ни ремесла");
+
+        Console.WriteLine(bad == 0 ? "  Порядок старшинства держится." : $"  ПРОВАЛОВ: {bad}");
+    }
+
+    /// <summary>
     /// Что говорит поднятый во второй раз.
     ///
     /// Случай автора от 17 сентября, дословно: «Копатель умер,
@@ -5356,6 +5382,7 @@ static class Bench
         CombatCheck();
         LootCheck();
         TitleCheck();
+        NamingCheck();
         RaisedAgainCheck();
         JunctionCheck(cfg);
         MomentsCheck(cfg);
