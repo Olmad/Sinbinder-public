@@ -5684,16 +5684,16 @@ msgid "Карган ждёт у стола с шаром."
 msgstr "Kargan is waiting at the table with the orb."
 
 #: UI/CommanderCouncilUI.cs
-msgid "Карган: «Владыка, отряд вернулся с трофеями. У нас ещё осталась точка интереса — давайте кого-нибудь отправим». Он ждёт у стола с шаром."
-msgstr "Kargan: “My lord, the squad is back with trophies. There is still a point of interest left — let's send someone.” He is waiting at the table with the orb."
+msgid "Карган: «Владыка, трофеев с прошлой вылазки надолго не хватит — людям платить нечем. Разведка нашла брошенную заставу. Пошлём туда отряд». Он ждёт у стола с шаром."
+msgstr "Kargan: “My lord, the trophies from the last raid won't last long — we have nothing to pay the men with. The scouts found an abandoned outpost. Let's send a party there.” He waits at the table with the orb."
 
 #: UI/CommanderCouncilUI.cs
 msgid "Карган: «Пришли. Нажмите {0} — и решайте, владыка: кого отправить, а кого при себе оставить. Я скажу, чего от каждого ждать»."
 msgstr "Kargan: “You're here. Press {0} and decide, my lord: whom to send and whom to keep. I'll tell you what to expect of each.”"
 
 #: UI/CommanderCouncilUI.cs
-msgid "Кого поставить старшим"
-msgstr "Who will lead"
+msgid "Кто поведёт отряд к заставе"
+msgstr "Who will lead the party to the outpost"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Дальше: кого возьмёт {0}"
@@ -5712,8 +5712,16 @@ msgid "Здесь Карган скажет, чего от него ждать: 
 msgstr "Here Kargan will tell you what to expect: how many will follow and how the leader will act when things get hard."
 
 #: UI/CommanderCouncilUI.cs
-msgid "Точка интереса"
-msgstr "Point of interest"
+msgid "В вылазке под его началом: {0}"
+msgstr "On the raid under his command: {0}"
+
+#: UI/CommanderCouncilUI.cs
+msgid "В вылазке под её началом: {0}"
+msgstr "On the raid under her command: {0}"
+
+#: UI/CommanderCouncilUI.cs
+msgid "Цель вылазки"
+msgstr "Raid target"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Разведка донесла: за холмами стоит брошенная застава. Взять там есть что, и потому там небезопасно."
@@ -5724,8 +5732,8 @@ msgid "Карган: «Там довольно опасно, владыка. Я 
 msgstr "Kargan: “It's quite dangerous there, my lord. I would send {0}. A rank-and-file man can't lead that many — only three will follow him. Send fewer and you risk everyone who goes.”"
 
 #: UI/CommanderCouncilUI.cs
-msgid "Отряд уйдёт сразу. Вернётся не весь и не таким, каким уходил."
-msgstr "The squad leaves at once. Not all of them will return, and none will return unchanged."
+msgid "Отряд уйдёт сразу и вернётся не скоро — в лагере с вами останутся только те, кого вы не пошлёте. Вернётся не весь и не таким, каким уходил."
+msgstr "The party leaves at once and won't be back soon — only those you don't send will stay in the camp with you. Not all of them will return, and not as they left."
 
 #: UI/CommanderCouncilUI.cs
 msgid "Больше за ним не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в лагере."
@@ -5804,8 +5812,20 @@ msgid "ей должны"
 msgstr "owed pay"
 
 #: UI/CommanderCouncilUI.cs
-msgid "{0} принял отряд."
-msgstr "{0} has taken the squad."
+msgid "{0} ушёл к заставе один. Назад его ждать не скоро."
+msgstr "{0} set off for the outpost alone. Don't expect him back soon."
+
+#: UI/CommanderCouncilUI.cs
+msgid "{0} ушла к заставе одна. Назад её ждать не скоро."
+msgstr "{0} set off for the outpost alone. Don't expect her back soon."
+
+#: UI/CommanderCouncilUI.cs
+msgid "{0} повёл отряд к заставе. Назад их ждать не скоро."
+msgstr "{0} led the party to the outpost. Don't expect them back soon."
+
+#: UI/CommanderCouncilUI.cs
+msgid "{0} повела отряд к заставе. Назад их ждать не скоро."
+msgstr "{0} led the party to the outpost. Don't expect them back soon."
 
 #: UI/DemoEndUI.cs
 msgid "Вылазка вернулась."
@@ -6800,6 +6820,26 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Карган: «Владыка, отряд вернулся с трофеями. У нас ещё осталась точка интереса — давайте кого-нибудь отправим». Он ждёт у стола с шаром."
+msgstr "Kargan: “My lord, the squad is back with trophies. There is still a point of interest left — let's send someone.” He is waiting at the table with the orb."
+
+#. нет в коде
+msgid "Кого поставить старшим"
+msgstr "Who will lead"
+
+#. нет в коде
+msgid "Точка интереса"
+msgstr "Point of interest"
+
+#. нет в коде
+msgid "Отряд уйдёт сразу. Вернётся не весь и не таким, каким уходил."
+msgstr "The squad leaves at once. Not all of them will return, and none will return unchanged."
+
+#. нет в коде
+msgid "{0} принял отряд."
+msgstr "{0} has taken the squad."
 
 #. нет в коде
 msgid "Столько людей не наберётся."

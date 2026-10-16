@@ -201,9 +201,11 @@ namespace Sinbinder.UI
             // одиннадцать подряд — двадцать одна секунда сплошного текста
             // в сцене, где игрок ещё учится ходить. Он либо читает
             // и не играет, либо играет и не читает.
-            Gameplay.Herald.Line(Loc.T("Карган: «Владыка, отряд вернулся с трофеями. У нас "
-                    + "ещё осталась точка интереса — давайте кого-нибудь "
-                    + "отправим». Он ждёт у стола с шаром."));
+            // Строка по проходу текстов (47-TEXTS §1, п. 1; автор: «да»): «точка
+            // интереса» — слово из редактора карт, а зачем посылать, не говорилось.
+            Gameplay.Herald.Line(Loc.T("Карган: «Владыка, трофеев с прошлой вылазки надолго "
+                    + "не хватит — людям платить нечем. Разведка нашла брошенную "
+                    + "заставу. Пошлём туда отряд». Он ждёт у стола с шаром."));
         }
 
         void Update()
@@ -378,7 +380,7 @@ namespace Sinbinder.UI
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
 
-            if (_title != null) _title.text = Loc.T("Кого поставить старшим");
+            if (_title != null) _title.text = Loc.T("Кто поведёт отряд к заставе");
 
             // Шаг строки считаем по месту, а не берём готовым. Имён
             // в лагере двенадцать, а места в столбце — на семь строк;
@@ -538,7 +540,25 @@ namespace Sinbinder.UI
             // не то, что случится.
             _detail.text = Loc.Name(o.Warrior.ShownName) + Break
                          + Leadership.Describe(o.Skill) + Break
+                         + Leads(o.Warrior) + Break
                          + TemperamentPredictor.Describe(o.Warrior);
+        }
+
+        /// <summary>
+        /// Как отряд поведёт себя под ним в вылазке (47-TEXTS §1, п. 11; автор:
+        /// «да»). Пророчество ниже — о нём самом в бою, а исход вылазки решает
+        /// его грех как старшего: та же установка (<see cref="SquadOrders.FromSin"/>)
+        /// уходит в автобой (<c>Expedition</c>). Обещание, которое игра сдержит.
+        /// </summary>
+        private static string Leads(Warrior warrior)
+        {
+            if (warrior.Soul == null) return "";
+            string how = SquadOrders.Describe(SquadOrders.FromSin(warrior.Soul.Sin));
+            if (string.IsNullOrEmpty(how)) return "";
+            how = char.ToLower(how[0]) + how.Substring(1);
+            return Grammar.Pick(warrior.Gender,
+                Loc.F("В вылазке под его началом: {0}", how),
+                Loc.F("В вылазке под её началом: {0}", how));
         }
 
         /// <summary>Пустая строка между абзацами. Одно место на весь класс.</summary>
@@ -550,14 +570,15 @@ namespace Sinbinder.UI
         /// </summary>
         private string QuestText()
         {
-            return Loc.T("Точка интереса") + Break
+            return Loc.T("Цель вылазки") + Break
                  + Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
                  + "Взять там есть что, и потому там небезопасно.") + Break
                  + Loc.F("Карган: «Там довольно опасно, владыка. Я бы послал {0}. "
                  + "Рядовой столько не уведёт — за ним пойдут трое. "
                  + "Пошлёте меньше — рискуете всеми, кто пойдёт».", Leadership.Count(_requiredSquad)) + Break
-                 + Loc.T("Отряд уйдёт сразу. Вернётся не весь и не таким, "
-                 + "каким уходил.");
+                 + Loc.T("Отряд уйдёт сразу и вернётся не скоро — в лагере с вами "
+                 + "останутся только те, кого вы не пошлёте. Вернётся не весь "
+                 + "и не таким, каким уходил.");
         }
 
         /// <summary>Назначить отмеченного. Отдельно от отметки: решение одно.</summary>
@@ -768,7 +789,15 @@ namespace Sinbinder.UI
             Core.GamePauseController.Instance?.Resume();
 
             var log = Object.FindFirstObjectByType<BattleLogUI>();
-            log?.Write(Loc.F("{0} принял отряд.", Loc.Name(warrior.DisplayName)));
+            // 47-TEXTS §1, п. 13: куда и надолго ли. Один — так и сказано.
+            string who = Loc.Name(warrior.DisplayName);
+            log?.Write(_party.Count == 0
+                ? Grammar.Pick(warrior.Gender,
+                    Loc.F("{0} ушёл к заставе один. Назад его ждать не скоро.", who),
+                    Loc.F("{0} ушла к заставе одна. Назад её ждать не скоро.", who))
+                : Grammar.Pick(warrior.Gender,
+                    Loc.F("{0} повёл отряд к заставе. Назад их ждать не скоро.", who),
+                    Loc.F("{0} повела отряд к заставе. Назад их ждать не скоро.", who)));
         }
     }
 }
