@@ -1143,8 +1143,11 @@ namespace Sinbinder.Utilets
             // поэтому ни знака угла, ни порядка Эйлера здесь знать
             // не нужно — а именно на них тут проще всего ошибиться.
             ramp.transform.rotation = Quaternion.LookRotation(foot - top, Vector3.up);
+            // Ширина — тропа, а не помост: при 0,8 радиуса (4 м) склон сверху
+            // читался «большим серым ящиком посреди лагеря» (отзыв игрока
+            // 19 октября, п. 2). Двоим разойтись хватает и при 0,55.
             ramp.transform.localScale = new Vector3(
-                radius * 0.8f, 0.3f, Vector3.Distance(top, foot));
+                radius * 0.55f, 0.3f, Vector3.Distance(top, foot));
 
             Cover(ramp, "Ground048");
         }
