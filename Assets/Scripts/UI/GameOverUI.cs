@@ -31,8 +31,6 @@ namespace Sinbinder.UI
     {
         private const string FirstScene = "Prologue_Camp";
 
-        private static readonly Color Ink = new Color(0.05f, 0.05f, 0.06f);
-        private static readonly Color Edge = new Color(0.62f, 0.58f, 0.50f);
         private static readonly Color Bone = new Color(0.94f, 0.90f, 0.80f);
 
         /// <summary>Показан ли уже. Второй конец поверх первого не нужен.</summary>
@@ -105,8 +103,9 @@ namespace Sinbinder.UI
 
             var panel = Rect("Панель", transform, new Vector2(0.5f, 0.5f),
                              new Vector2(0.5f, 0.5f), new Vector2(900f, 460f));
-            panel.gameObject.AddComponent<Image>().color = new Color(Ink.r, Ink.g, Ink.b, 0.96f);
-            Frame(panel);
+            // Табличка, как у прочих окон (46-UI §2.1); до 15 октября — тёмная
+            // заливка и своя волосяная рамка в четыре полоски.
+            UiStyle.Dress(panel.gameObject.AddComponent<Image>(), UiStyle.PlateWeight.Screen);
 
             Line("Заголовок", panel, font, title, 40, new Vector2(0f, -36f), 60f);
             Line("Слова", panel, font, body, 24, new Vector2(0f, -116f), 190f);
@@ -169,37 +168,6 @@ namespace Sinbinder.UI
             rt.sizeDelta = size;
             rt.anchoredPosition = Vector2.zero;
             return rt;
-        }
-
-        /// <summary>Волосяная рамка, как у прочих панелей во весь экран.</summary>
-        private static void Frame(RectTransform panel)
-        {
-            const float Hair = 1.5f;
-            var color = new Color(Edge.r, Edge.g, Edge.b, 0.30f);
-
-            (Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax)[] sides =
-            {
-                (new Vector2(0f, 1f), Vector2.one,         new Vector2(0f, -Hair), Vector2.zero),
-                (Vector2.zero,        new Vector2(1f, 0f), Vector2.zero,           new Vector2(0f, Hair)),
-                (Vector2.zero,        new Vector2(0f, 1f), Vector2.zero,           new Vector2(Hair, 0f)),
-                (new Vector2(1f, 0f), Vector2.one,         new Vector2(-Hair, 0f), Vector2.zero),
-            };
-
-            foreach (var side in sides)
-            {
-                var go = new GameObject("Край", typeof(RectTransform));
-                go.transform.SetParent(panel, false);
-
-                var rt = (RectTransform)go.transform;
-                rt.anchorMin = side.min;
-                rt.anchorMax = side.max;
-                rt.offsetMin = side.offMin;
-                rt.offsetMax = side.offMax;
-
-                var image = go.AddComponent<Image>();
-                image.color = color;
-                image.raycastTarget = false;
-            }
         }
 
         private static void Line(string name, RectTransform panel, Font font,

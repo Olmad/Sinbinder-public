@@ -366,7 +366,7 @@ namespace Sinbinder.UI
                 if (tall > 0f) y = _stack.anchoredPosition.y + tall + 8f;
             }
 
-            _prompt.rectTransform.anchoredPosition = new Vector2(0f, y);
+            _promptPlate.anchoredPosition = new Vector2(0f, y);
         }
 
         /// <summary>Мешок Греховода сам по себе: что несёт он и как отдать это воину.</summary>
@@ -771,6 +771,9 @@ namespace Sinbinder.UI
             // сундука и обмена 26 сентября. Теперь низ на 280.
             var panel = Box("Панель", _root.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                             new Vector2(0f, 30f), new Vector2(1000f, 580f), new Color(0.07f, 0.06f, 0.055f, 0.97f));
+            // Табличка, как у окон сборщика (46-UI §2.1): до 15 октября это окно
+            // было своей семьёй — плоская заливка без рамки (опись, кадры 6–7).
+            UiStyle.Dress(panel.GetComponent<Image>(), UiStyle.PlateWeight.Screen);
 
             _title = Label(panel, "Заголовок", 30, TextAnchor.UpperLeft,
                            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(28f, -64f), new Vector2(-28f, -18f));
@@ -899,12 +902,18 @@ namespace Sinbinder.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
 
+            // Строка — на тонкой табличке по своей длине (46-UI §2.1): до 15 октября
+            // висела голым текстом поверх мира и ложилась на кромку полосы.
+            var plate = new GameObject("Табличка", typeof(RectTransform));
+            _promptPlate = (RectTransform)plate.transform;
+            _promptPlate.SetParent(canvasGo.transform, false);
+            _promptPlate.anchorMin = _promptPlate.anchorMax = _promptPlate.pivot = new Vector2(0.5f, 0f);
+            _promptPlate.anchoredPosition = new Vector2(0f, PromptFloor);
+            _promptPlate.sizeDelta = new Vector2(700f, 40f);
+            var fit = plate.AddComponent<PlateFit>();
+
             var go = new GameObject("Строка", typeof(RectTransform), typeof(Text));
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(canvasGo.transform, false);
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0f);
-            rt.anchoredPosition = new Vector2(0f, PromptFloor);
-            rt.sizeDelta = new Vector2(700f, 40f);
+            go.transform.SetParent(_promptPlate, false);
 
             _prompt = go.GetComponent<Text>();
             _prompt.font = UIFont();
@@ -913,7 +922,11 @@ namespace Sinbinder.UI
             _prompt.color = new Color(0.94f, 0.86f, 0.62f);
             _prompt.raycastTarget = false;
             go.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.85f);
+
+            fit.Bind(_prompt, 700f, new Vector2(18f, 6f));
         }
+
+        private RectTransform _promptPlate;
 
         /// <summary>Шрифт макета (<see cref="UiStyle"/>) — тот же, что на полосе и в журнале.</summary>
         private static Font UIFont() => UiStyle.Body;

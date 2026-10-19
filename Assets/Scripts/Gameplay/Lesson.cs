@@ -1037,8 +1037,10 @@ namespace Sinbinder.Gameplay
             // и не на журнале (слева внизу).
             var back = Rect("Подложка", _plate.transform, new Vector2(1f, 0.5f),
                             new Vector2(-40f, 60f), new Vector2(560f, 150f));
+            // Табличка, как у окон (46-UI §2.1): до 15 октября — полупрозрачная
+            // полоса без рамки, сквозь неё читался журнал (опись, кадр 10б).
             var shade = back.gameObject.AddComponent<Image>();
-            shade.color = new Color(0.10f, 0.09f, 0.08f, 0.88f);
+            UI.UiStyle.Dress(shade, UI.UiStyle.PlateWeight.Screen);
             shade.raycastTarget = false;
 
             // Клавиша крупно, в рамке.

@@ -79,6 +79,9 @@ namespace Sinbinder.EditorTools
         /// <summary>Снят ли кадр шара, где гаснут отряды. Один за прогон.</summary>
         private static bool _ballShot;
 
+        /// <summary>Уроки, чья плашка уже снята (опись, 46-UI §1): по кадру на урок.</summary>
+        private static readonly HashSet<string> _lessonsShot = new();
+
         private static float _lastTick;
 
         private static List<Step> _steps;
@@ -189,7 +192,7 @@ namespace Sinbinder.EditorTools
                 _ballShot = false;
                 _startSeen = -1f;
                 _startShot = false;
-                _lessonShot = false;
+                _lessonsShot.Clear();
                 _mapSeen = -1f;
                 _mapShot = false;
                 _flapShot = false;
@@ -294,12 +297,12 @@ namespace Sinbinder.EditorTools
                     _lessonWarped = false;
                     Write("  [УРОК] " + Lesson.Now + ": мир стоит, кольцо по Греховоду");
                 }
-                // Опись (46-UI §1): плашка урока — один кадр за прогон.
-                if (!_lessonShot && now - _lessonSince > 1.0f)
-                {
-                    _lessonShot = true;
+                // Опись (46-UI §1): плашка каждого урока — по кадру за прогон.
+                // Был один кадр на прогон, и какой урок в него попадал, решал
+                // порядок: 15 октября вторым прогоном — обмен, у которого своей
+                // плашки нет, а плашка жатвы осталась несфотографированной.
+                if (now - _lessonSince > 1.0f && _lessonsShot.Add(Lesson.Now.ToString()))
                     Snap("опись — плашка урока " + Lesson.Now);
-                }
                 if (now - _lessonSince < 60f)
                 {
                     Learn(now - _lessonSince);
@@ -1667,7 +1670,6 @@ namespace Sinbinder.EditorTools
         // ссылается ПОКАЗ.md. Каждое состояние — через кадр-другой после
         // того, как его поставили: панели обновляются в своём Update.
 
-        private static bool _lessonShot;
         private static float _startSeen = -1f;
         private static bool _startShot;
 

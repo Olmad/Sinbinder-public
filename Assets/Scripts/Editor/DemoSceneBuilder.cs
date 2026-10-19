@@ -2816,8 +2816,8 @@ namespace Sinbinder.Utilets
         private static void BuildSelectedUnit(Transform parent)
         {
             // Полоса во всю ширину у нижнего края — макет лагеря
-            // (docs/42-INTERFACE.md §3). Тёмная кожа и железная кромка
-            // сверху; видна только при выборе — гасит её сам компонент.
+            // (docs/42-INTERFACE.md §3). Видна только при выборе — гасит
+            // её сам компонент.
             // Слева две зоны: душа и голоса. Правая часть — отряд и приказы —
             // следующим шагом; пока там прежние сетка приказов и сума.
             var panel = Panel("Кто выделен", parent,
@@ -2825,15 +2825,12 @@ namespace Sinbinder.Utilets
                 pivot: new Vector2(0.5f, 0f), size: new Vector2(0f, ConsoleHeight),
                 position: Vector2.zero);
 
+            // Табличка во всю ширину — та же, что у окон (46-UI §2.1): железо,
+            // линия старого золота, кожа. До 15 октября — заливка кожей
+            // и серая железная кромка сверху в пять точек.
             var leather = panel.gameObject.AddComponent<Image>();
             leather.color = new Color(0.114f, 0.086f, 0.071f, 0.97f);
-
-            var edge = Panel("Кромка", panel,
-                anchorMin: new Vector2(0f, 1f), anchorMax: Vector2.one,
-                pivot: new Vector2(0.5f, 1f), size: new Vector2(0f, 5f), position: Vector2.zero);
-            var iron = edge.gameObject.AddComponent<Image>();
-            iron.color = new Color(0.29f, 0.28f, 0.26f, 1f);
-            iron.raycastTarget = false;
+            panel.gameObject.AddComponent<Sinbinder.UI.PlateLook>().Set(Sinbinder.UI.UiStyle.PlateWeight.Board);
 
             // ---- душа ----
             var knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
@@ -3396,8 +3393,18 @@ namespace Sinbinder.Utilets
         }
 
         private static readonly Color PanelInk = new Color(0.05f, 0.05f, 0.06f);
-        private static readonly Color PanelEdge = new Color(0.62f, 0.58f, 0.50f);
 
+        /// <summary>
+        /// Подложка панели — табличка макета (<see cref="Sinbinder.UI.UiStyle.Plate"/>,
+        /// 46-UI §2.1): тёмное железо, линия старого золота, кожа, метки
+        /// в углах. Табличка рисуется кодом и в сцену не сохраняется — её
+        /// ставит при запуске <see cref="Sinbinder.UI.PlateLook"/>; цвет
+        /// здесь — то, что видно в редакторе, пока игра не запущена.
+        ///
+        /// До 15 октября здесь была тёмная заливка и волосяная рамка цвета
+        /// кости в четыре полоски, а панели, которые строит код, — своей
+        /// семьёй, сливовой и без рамки (опись, 46-UI §1.1).
+        /// </summary>
         private static Image Backdrop(RectTransform panel, Weight weight)
         {
             float fill = weight switch
@@ -3410,58 +3417,13 @@ namespace Sinbinder.Utilets
             var backdrop = panel.gameObject.AddComponent<Image>();
             backdrop.color = new Color(PanelInk.r, PanelInk.g, PanelInk.b, fill);
 
-            float edge = weight switch
+            panel.gameObject.AddComponent<Sinbinder.UI.PlateLook>().Set(weight switch
             {
-                Weight.Screen => 0.30f,
-                Weight.Board => 0.16f,
-                _ => 0f,
-            };
-
-            if (edge > 0f) Frame(panel, edge);
+                Weight.Screen => Sinbinder.UI.UiStyle.PlateWeight.Screen,
+                Weight.Board => Sinbinder.UI.UiStyle.PlateWeight.Board,
+                _ => Sinbinder.UI.UiStyle.PlateWeight.Strip,
+            });
             return backdrop;
-        }
-
-        /// <summary>
-        /// Волосяная рамка по краю панели.
-        ///
-        /// Четырьмя полосками, а не картинкой: спрайта рамки в проекте
-        /// нет, заводить его ради одной линии — лишний ассет, который
-        /// потом ищут. Полоски не ловят мышь и лежат под содержимым,
-        /// а содержимое стоит с отступом — пересечься им негде.
-        ///
-        /// Рамка здесь делает больше, чем кажется: она превращает пятно
-        /// в предмет. Без неё панель на тёмной сцене — дыра, с ней —
-        /// табличка.
-        /// </summary>
-        private static void Frame(RectTransform panel, float alpha)
-        {
-            const float Hair = 1.5f;
-
-            var color = new Color(PanelEdge.r, PanelEdge.g, PanelEdge.b, alpha);
-
-            (Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax)[] sides =
-            {
-                (new Vector2(0f, 1f), Vector2.one,        new Vector2(0f, -Hair), Vector2.zero),
-                (Vector2.zero,        new Vector2(1f, 0f), Vector2.zero,          new Vector2(0f, Hair)),
-                (Vector2.zero,        new Vector2(0f, 1f), Vector2.zero,          new Vector2(Hair, 0f)),
-                (new Vector2(1f, 0f), Vector2.one,        new Vector2(-Hair, 0f), Vector2.zero),
-            };
-
-            foreach (var side in sides)
-            {
-                var go = new GameObject("Край", typeof(RectTransform));
-                go.transform.SetParent(panel, false);
-
-                var rt = (RectTransform)go.transform;
-                rt.anchorMin = side.min;
-                rt.anchorMax = side.max;
-                rt.offsetMin = side.offMin;
-                rt.offsetMax = side.offMax;
-
-                var image = go.AddComponent<Image>();
-                image.color = color;
-                image.raycastTarget = false;
-            }
         }
 
         private static RectTransform Panel(string name, Transform parent,

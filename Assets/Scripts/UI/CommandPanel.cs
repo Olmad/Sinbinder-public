@@ -317,8 +317,12 @@ namespace Sinbinder.UI
 
             BuildStance(font);
 
-            var tipRect = Rect("Подсказка", canvasGo.transform, new Vector2(1f, 0f),
-                               new Vector2(ZoneAt.x, ZoneAt.y + 280f), new Vector2(520f, 110f));
+            // Подсказка с прогнозом — на тонкой табличке по своему тексту
+            // (46-UI §2.1): до 15 октября висела голым текстом поверх мира.
+            var tipPlate = Rect("Подсказка", canvasGo.transform, new Vector2(1f, 0f),
+                                new Vector2(ZoneAt.x, ZoneAt.y + 280f), new Vector2(520f, 110f));
+            var fit = tipPlate.gameObject.AddComponent<PlateFit>();
+            var tipRect = Rect("Строка", tipPlate, new Vector2(1f, 0f), Vector2.zero, new Vector2(520f, 110f));
             _tip = tipRect.gameObject.AddComponent<Text>();
             _tip.font = font;
             _tip.fontSize = 19;
@@ -328,6 +332,7 @@ namespace Sinbinder.UI
             _tip.verticalOverflow = VerticalWrapMode.Overflow;
             _tip.raycastTarget = false;
             tipRect.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+            fit.Bind(_tip, 520f, new Vector2(16f, 10f));
 
             _group.alpha = 0f;
         }
