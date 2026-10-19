@@ -62,6 +62,17 @@ namespace Sinbinder.UI
                 return;
             }
 
+            // «пустая банка» в ячейку не влезала и резалась до «пустая» —
+            // рядом с «— Пусто —» это читалось как две разные ошибки
+            // (отзыв игрока 19 октября, п. 3). Длинное имя ужимается, а не режется.
+            foreach (var cell in _cells)
+            {
+                if (cell == null) continue;
+                cell.resizeTextForBestFit = true;
+                cell.resizeTextMaxSize = cell.fontSize;
+                cell.resizeTextMinSize = Mathf.Min(10, cell.fontSize);
+            }
+
             Keys();
             Refresh();
         }

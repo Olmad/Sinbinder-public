@@ -48,6 +48,7 @@ namespace Sinbinder.Gameplay
         private const float FadeOut = 1.8f;
 
         private static readonly string Motto = Loc.N("Не командуй. Искушай.");
+        private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.\nW — идти · мышь — оглядеться");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Showing = false; Busy = false; }
@@ -77,9 +78,23 @@ namespace Sinbinder.Gameplay
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             if (view != null && !view.FirstPersonNow) view.Switch();   // глазами Греховода
 
-            // Ждём, пока выйдет за порог.
-            while (SinbinderPlayer.Exists && tent != null && tent.Contains(SinbinderPlayer.Where))
+            // Проснулся — и смотрит на выход, за которым горит костёр. Раньше
+            // взгляд упирался в скат: две плоскости ткани, ни точки, куда
+            // смотреть, — «читается как сбой отрисовки» (отзыв игрока 19.10).
+            var door = tent.Doorstep(0f);
+            if (view != null) view.Face(door);
+            var glow = Glow(tent);
+            var hint = Hint(out var hintGroup);
+
+            // Ждём, пока выйдет за порог. Строка проявляется не сразу:
+            // первую секунду кадр принадлежит шатру.
+            for (float t = 0f; SinbinderPlayer.Exists && tent != null && tent.Contains(SinbinderPlayer.Where); t += Time.unscaledDeltaTime)
+            {
+                hintGroup.alpha = Mathf.Clamp01((t - 1.2f) / 1.0f);
                 yield return null;
+            }
+            Destroy(hint);
+            if (glow != null) StartCoroutine(Dim(glow));
             if (!SinbinderPlayer.Exists || RaidEvent.Running) { Busy = false; yield break; }
 
             yield return new WaitForSecondsRealtime(Settle);
@@ -126,6 +141,79 @@ namespace Sinbinder.Gameplay
 
             Destroy(root);
             Showing = false;
+        }
+
+        /// <summary>
+        /// Отсвет костра на пологе: тёплое пятно у выхода, дышит, как огонь.
+        /// Тени не бросает — он только говорит, куда идти.
+        /// </summary>
+        private static Light Glow(TentInterior tent)
+        {
+            var go = new GameObject("Отсвет костра у полога");
+            go.transform.SetParent(tent.transform, false);
+            go.transform.position = tent.Doorstep(-0.35f) + Vector3.up * tent.Top * 0.45f;
+
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.58f, 0.26f);
+            light.intensity = 1.8f;
+            light.range = 2.8f;
+            light.shadows = LightShadows.None;
+            go.AddComponent<FireFlicker>().Tune(0.22f, 2.6f, 0.03f);
+            return light;
+        }
+
+        private static IEnumerator Dim(Light light)
+        {
+            // Мерцание задаёт яркость каждый кадр — гасить поверх него нельзя.
+            var flicker = light != null ? light.GetComponent<FireFlicker>() : null;
+            if (flicker != null) flicker.enabled = false;
+            float from = light != null ? light.intensity : 0f;
+            for (float t = 0f; t < 1.5f && light != null; t += Time.unscaledDeltaTime)
+            {
+                light.intensity = from * (1f - t / 1.5f);
+                yield return null;
+            }
+            if (light != null) Destroy(light.gameObject);
+        }
+
+        /// <summary>Одна строка внизу, пока Греховод в шатре: что там и как выйти.</summary>
+        private static GameObject Hint(out CanvasGroup group)
+        {
+            var root = new GameObject("Строка пробуждения");
+            var canvas = root.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 84;
+            var scaler = root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            group = root.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+
+            var line = new GameObject("Строка", typeof(RectTransform));
+            line.transform.SetParent(root.transform, false);
+            var rt = (RectTransform)line.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.sizeDelta = new Vector2(1400f, 120f);
+            rt.anchoredPosition = new Vector2(0f, 110f);
+
+            var text = line.AddComponent<Text>();
+            text.font = UI.UiStyle.Body;
+            text.fontSize = 30;
+            text.alignment = TextAnchor.LowerCenter;
+            text.color = new Color(0.90f, 0.84f, 0.72f);
+            text.raycastTarget = false;
+            text.text = Loc.T(WakeLine);
+            var shadow = line.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            shadow.effectDistance = new Vector2(2f, -2f);
+
+            return root;
         }
 
         private static float Smooth(float t)

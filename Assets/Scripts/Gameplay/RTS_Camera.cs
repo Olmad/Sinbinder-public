@@ -155,6 +155,19 @@ namespace Sinbinder.Gameplay
             ShowHero(_mode == CameraView.Tactical);
         }
 
+        /// <summary>
+        /// Повернуть голову к точке (от первого лица). Открытие ставит
+        /// взгляд на выход из шатра: проснувшись, Греховод смотрел в скат.
+        /// </summary>
+        public void Face(Vector3 world)
+        {
+            var d = world - transform.position;
+            d.y = 0f;
+            if (d.sqrMagnitude < 1e-4f) return;
+            _yaw = Quaternion.LookRotation(d).eulerAngles.y;
+            _pitch = 0f;
+        }
+
         /// <summary>Задать взгляд из сборщика сцены.</summary>
         public void SetView(CameraView view)
         {

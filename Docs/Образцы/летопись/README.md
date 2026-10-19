@@ -7,7 +7,8 @@
 
 | Дата | Что изменилось | Кадров | Где записано | Автор |
 |---|---|---|---|---|
-| 19 октября | [Табличка — одна на все окна (46-UI §2.1)](2026-10-19%201%20%D1%82%D0%B0%D0%B1%D0%BB%D0%B8%D1%87%D0%BA%D0%B0/README.md) | 23 | 46-UI.md §2.1 · 14-HANDOFF.md §111.18 | ждём |
+| 19 октября | [Первые минуты: пробуждение, выход, тёплый лагерь](2026-10-19%202%20%D0%BF%D1%80%D0%BE%D0%B1%D1%83%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5/README.md) | 4 | 14-HANDOFF.md §111.20 · ОТЗЫВ ИГРОКА 19 октября.md | ждём |
+| 19 октября | [Табличка — одна на все окна (46-UI §2.1)](2026-10-19%201%20%D1%82%D0%B0%D0%B1%D0%BB%D0%B8%D1%87%D0%BA%D0%B0/README.md) | 23 | 46-UI.md §2.1 · 14-HANDOFF.md §111.18 · [`81b5584`](https://github.com/Olmad/Sinbinder-public/commit/81b5584) | ждём |
 | 16 октября | [Надпись: шипастая пешка на черте](2026-10-16%201%20%D0%BD%D0%B0%D0%B4%D0%BF%D0%B8%D1%81%D1%8C%20%E2%80%94%20%D1%88%D0%B8%D0%BF%D0%B0%D1%81%D1%82%D0%B0%D1%8F%20%D0%BF%D0%B5%D1%88%D0%BA%D0%B0/README.md) | 1 | Tools/art/logo.py · 14-HANDOFF.md §135.30 · [`c8f58a0`](https://github.com/Olmad/Sinbinder-public/commit/c8f58a0) | ждём |
 | 15 октября | [Открытие: полог шатра, надпись «Sinbinder», кран](2026-10-15%202%20%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D0%B5/README.md) | 3 | 14-HANDOFF.md §111.16 · 41-SHOWCASE.md п. 10 · [`162c785`](https://github.com/Olmad/Sinbinder-public/commit/162c785) | ждём |
 | 15 октября | [Опись экранов — интерфейс до правок](2026-10-15%201%20%D0%BE%D0%BF%D0%B8%D1%81%D1%8C%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%BE%D0%B2/README.md) | 23 | 46-UI.md §1.1 · 14-HANDOFF.md §111.15 · [`162c785`](https://github.com/Olmad/Sinbinder-public/commit/162c785) | да (15 октября) |

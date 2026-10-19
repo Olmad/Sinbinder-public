@@ -111,6 +111,9 @@ namespace Sinbinder.UI
         private static string Word(Warrior w)
         {
             if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) return null;
+            // Открытие — кадр, а не сводка: «● Колеблется…» висело красным
+            // посреди неба над лагерем, пока проявлялась надпись (кадры 19.10).
+            if (Gameplay.OpeningReveal.Busy) return null;
             if (FogOfWar.Hides(w)) return null;
             if (!Transparency.Shows(Detail.Moments)) return null;
 
