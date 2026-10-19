@@ -2103,9 +2103,6 @@ namespace Sinbinder.Utilets
             BuildSelectionBox(canvasGO.transform);
             BuildLog(canvasGO.transform);
             BuildMomentCaption(canvasGO.transform);
-            BuildClarityPanel(canvasGO.transform);
-            BuildSaveSlots(canvasGO.transform);
-            BuildPause(canvasGO.transform);
             BuildStrategy(canvasGO.transform);
 
             // Сверху вниз — в том порядке, в каком они лягут в стопке:
@@ -2136,6 +2133,15 @@ namespace Sinbinder.Utilets
             // лежать поверх журнала, панелей и подписей. Построй её
             // раньше — и сквозь чёрное полезет полоса журнала.
             BuildLetterbox(canvasGO.transform);
+
+            // Окна, которые требуют ответа, — поверх всего, даже полос кино:
+            // пауза, записи, «что игра объясняет». До 19 октября стояли
+            // в начале холста, и подсказка «Щёлкните по Греховоду…», полоса
+            // выделенного и сума рисовались поверх меню паузы (опись,
+            // 46-UI §1.1, кадр 18). Порядок между ними прежний.
+            BuildClarityPanel(canvasGO.transform);
+            BuildSaveSlots(canvasGO.transform);
+            BuildPause(canvasGO.transform);
 
             // Панель искусителей отложена до полной версии вместе
             // с механикой (docs/09-PROLOGUE.md §7). Метод, который её
