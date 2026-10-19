@@ -48,9 +48,10 @@ namespace Sinbinder.Crypt
         {
             get
             {
-                if (!HasSoul && !HasShell) return Loc.T("Устройство пусто.");
-                if (!HasSoul) return Loc.T("Нет души.");
-                if (!HasShell) return Loc.T("Нет тела.");
+                // 47-TEXTS §4, п. 5: что не так и что сделать.
+                if (!HasSoul && !HasShell) return Loc.T("Рычаг не сработает: нет ни души, ни тела.");
+                if (!HasSoul) return Loc.T("Рычаг не сработает: нет души — положите её в гнездо.");
+                if (!HasShell) return Loc.T("Рычаг не сработает: нет тела — положите его на ложе.");
 
                 // Голем — только с оковами. Слово автора: големов в лагере
                 // нет, их получают улучшением устройства связывания.
@@ -119,9 +120,27 @@ namespace Sinbinder.Crypt
             var after = ShellChoice.Preview(_soul, data);
             if (after == null) return "";
 
+            // 47-TEXTS §4, п. 6: «тело перетянуло» — что и куда.
             return after.Sin == _soul.Sin
-                ? Loc.F("Встанет прежним: {0}.", SoulData.GetSinName(after.Sin))
-                : Loc.F("Встанет другим: {0}. Тело перетянуло.", SoulData.GetSinName(after.Sin));
+                ? Loc.F("Встанет прежним — с тем же главным грехом: {0}.", SoulData.GetSinName(after.Sin))
+                : Grammar.Pick(_soul.Gender,
+                    Loc.F("Встанет другим: в этом теле его потянет к {0}.", ToSin(after.Sin)),
+                    Loc.F("Встанет другим: в этом теле её потянет к {0}.", ToSin(after.Sin)));
+        }
+
+        /// <summary>Грех в дательном: «к Гневу», «к Жадности».</summary>
+        private static string ToSin(SinType sin)
+        {
+            switch (sin)
+            {
+                case SinType.Greed:    return Loc.T("Жадности");
+                case SinType.Pride:    return Loc.T("Гордыне");
+                case SinType.Wrath:    return Loc.T("Гневу");
+                case SinType.Envy:     return Loc.T("Зависти");
+                case SinType.Lust:     return Loc.T("Похоти");
+                case SinType.Gluttony: return Loc.T("Чревоугодию");
+                default:               return Loc.T("Унынию");
+            }
         }
 
         /// <summary>Дёрнуть рычаг.</summary>

@@ -82,10 +82,11 @@ namespace Sinbinder.Crypt
         {
             switch (quality)
             {
-                case SoulQuality.Shock:      return Loc.T("Она ещё вся здесь");
-                case SoulQuality.Acceptance: return Loc.T("Крайности уже сгладились");
-                case SoulQuality.Fading:     return Loc.T("Характер тускнеет");
-                default:                     return Loc.T("Осталась одна воля");
+                // 47-TEXTS §4, п. 8: с подлежащим — о душе.
+                case SoulQuality.Shock:      return Loc.T("Душа свежая — вся здесь");
+                case SoulQuality.Acceptance: return Loc.T("Душа остывает: крайности сгладились");
+                case SoulQuality.Fading:     return Loc.T("Душа тускнеет: характер стирается");
+                default:                     return Loc.T("От души осталась одна воля");
             }
         }
     }

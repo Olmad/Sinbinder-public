@@ -1836,24 +1836,56 @@ msgid "считает, что можно было и больше"
 msgstr "thinks they could have taken more"
 
 #: Crypt/BindingDevice.cs
-msgid "Устройство пусто."
-msgstr "The device is empty."
+msgid "Рычаг не сработает: нет ни души, ни тела."
+msgstr "The lever won't work: there is neither a soul nor a body."
 
 #: Crypt/BindingDevice.cs
-msgid "Нет души."
-msgstr "No soul."
+msgid "Рычаг не сработает: нет души — положите её в гнездо."
+msgstr "The lever won't work: there is no soul — place one in the socket."
 
 #: Crypt/BindingDevice.cs
-msgid "Нет тела."
-msgstr "No body."
+msgid "Рычаг не сработает: нет тела — положите его на ложе."
+msgstr "The lever won't work: there is no body — lay one on the bed."
 
-#: Crypt/BindingDevice.cs UI/ShellPickerUI.cs
-msgid "Встанет прежним: {0}."
-msgstr "Will rise unchanged: {0}."
+#: Crypt/BindingDevice.cs
+msgid "Встанет прежним — с тем же главным грехом: {0}."
+msgstr "Will rise the same — with the same main sin: {0}."
 
-#: Crypt/BindingDevice.cs UI/ShellPickerUI.cs
-msgid "Встанет другим: {0}. Тело перетянуло."
-msgstr "Will rise changed: {0}. The body pulled it over."
+#: Crypt/BindingDevice.cs
+msgid "Встанет другим: в этом теле его потянет к {0}."
+msgstr "Will rise changed: in this body he will be drawn to {0}."
+
+#: Crypt/BindingDevice.cs
+msgid "Встанет другим: в этом теле её потянет к {0}."
+msgstr "Will rise changed: in this body she will be drawn to {0}."
+
+#: Crypt/BindingDevice.cs
+msgid "Жадности"
+msgstr "Greed"
+
+#: Crypt/BindingDevice.cs
+msgid "Гордыне"
+msgstr "Pride"
+
+#: Crypt/BindingDevice.cs
+msgid "Гневу"
+msgstr "Wrath"
+
+#: Crypt/BindingDevice.cs
+msgid "Зависти"
+msgstr "Envy"
+
+#: Crypt/BindingDevice.cs
+msgid "Похоти"
+msgstr "Lust"
+
+#: Crypt/BindingDevice.cs
+msgid "Чревоугодию"
+msgstr "Gluttony"
+
+#: Crypt/BindingDevice.cs
+msgid "Унынию"
+msgstr "Sloth"
 
 #: Crypt/BindingDevice.cs
 msgid "{0} поднялся и встал рядом."
@@ -1892,8 +1924,12 @@ msgid "{0} занято — забрать на {1}."
 msgstr "{0} is occupied — take it with {1}."
 
 #: Crypt/BindingSocket.cs
-msgid "{0} пусто. Принесите то, что сюда кладут."
-msgstr "{0} is empty. Bring what goes here."
+msgid "Гнездо души пусто: сюда кладут душу. Возьмите банку с полки и подойдите."
+msgstr "The soul socket is empty: a soul goes here. Take a jar from the shelf and come back."
+
+#: Crypt/BindingSocket.cs
+msgid "Ложе тела пусто: сюда кладут тело. Возьмите его со стойки с телами и подойдите."
+msgstr "The body bed is empty: a body goes here. Take one from the body stand and come back."
 
 #: Crypt/BindingSocket.cs
 msgid "{0} — положить на {1}."
@@ -2224,20 +2260,20 @@ msgid "Взято: {0}. {1}"
 msgstr "Taken: {0}. {1}"
 
 #: Crypt/SoulJar.cs
-msgid "Она ещё вся здесь"
-msgstr "It is still whole"
+msgid "Душа свежая — вся здесь"
+msgstr "The soul is fresh — all of it is here"
 
 #: Crypt/SoulJar.cs
-msgid "Крайности уже сгладились"
-msgstr "Its extremes have worn smooth"
+msgid "Душа остывает: крайности сгладились"
+msgstr "The soul is cooling: its extremes have softened"
 
 #: Crypt/SoulJar.cs
-msgid "Характер тускнеет"
-msgstr "Its character is fading"
+msgid "Душа тускнеет: характер стирается"
+msgstr "The soul is dimming: its character is wearing away"
 
 #: Crypt/SoulJar.cs
-msgid "Осталась одна воля"
-msgstr "Only the will remains"
+msgid "От души осталась одна воля"
+msgstr "Only the will is left of the soul"
 
 #: Crypt/TestChamber.cs
 msgid "послушался"
@@ -6699,6 +6735,14 @@ msgstr "Its character is fading."
 msgid "От неё осталась одна воля."
 msgstr "Only its will remains."
 
+#: UI/ShellPickerUI.cs
+msgid "Встанет прежним: {0}."
+msgstr "Will rise unchanged: {0}."
+
+#: UI/ShellPickerUI.cs
+msgid "Встанет другим: {0}. Тело перетянуло."
+msgstr "Will rise changed: {0}. The body pulled it over."
+
 #: UI/SoulAssemblyUI.cs
 msgid "Оболочка не задана."
 msgstr "No shell chosen."
@@ -6908,6 +6952,38 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Устройство пусто."
+msgstr "The device is empty."
+
+#. нет в коде
+msgid "Нет души."
+msgstr "No soul."
+
+#. нет в коде
+msgid "Нет тела."
+msgstr "No body."
+
+#. нет в коде
+msgid "{0} пусто. Принесите то, что сюда кладут."
+msgstr "{0} is empty. Bring what goes here."
+
+#. нет в коде
+msgid "Она ещё вся здесь"
+msgstr "It is still whole"
+
+#. нет в коде
+msgid "Крайности уже сгладились"
+msgstr "Its extremes have worn smooth"
+
+#. нет в коде
+msgid "Характер тускнеет"
+msgstr "Its character is fading"
+
+#. нет в коде
+msgid "Осталась одна воля"
+msgstr "Only the will remains"
 
 #. нет в коде
 msgid " Им теперь должны."
