@@ -44,6 +44,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Тексты по имени — из InspectTexts (правятся без пересборки сцен).</summary>
         public void UseTexts(string key) => _texts = key;
 
+        [Tooltip("Говорит голосом Смерти: тишина вокруг, огни меркнут, печать медленнее.")]
+        [SerializeField] private bool _death;
+
+        /// <summary>Голос Смерти — для пешки (Audio.DeathVoice).</summary>
+        public void UseDeath() => _death = true;
+
         void Awake()
         {
             if (string.IsNullOrEmpty(_texts)) return;
@@ -155,14 +161,30 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[ОСМОТР] {name}: наезд, строк {_lines.Length}");
             yield return camera.FocusOnPoint(look, eye);
 
+            var box = UI.Letterbox.Instance;
+            float pace = box != null ? box.LettersPerSecond : 40f;
+            if (_death)
+            {
+                Audio.DeathVoice.Begin(transform.position);
+                if (box != null) box.LettersPerSecond = Audio.DeathVoice.Letters;
+                yield return new WaitForSecondsRealtime(1.2f);   // тишина опускается
+            }
+
             string who = string.IsNullOrEmpty(_speaker) ? null : Loc.T(_speaker);
             foreach (var raw in _lines)
             {
                 string line = Loc.T(raw);
-                var box = UI.Letterbox.Instance;
-                Debug.Log($"[ОСМОТР] строка ({line.Length} зн.), полоса {(box == null ? "НЕТ" : box.Shown ? "поднята" : "опущена")}");
+                box = UI.Letterbox.Instance;
                 box?.Say(who, line);
-                yield return new WaitForSecondsRealtime(Herald.Hold(line) + 0.6f);
+                float hold = Herald.Hold(line) + 0.6f;
+                if (_death) hold = Mathf.Max(hold, Audio.DeathVoice.Say(line) + 1.6f);
+                yield return new WaitForSecondsRealtime(hold);
+            }
+
+            if (_death)
+            {
+                Audio.DeathVoice.End();
+                if (UI.Letterbox.Instance != null) UI.Letterbox.Instance.LettersPerSecond = pace;
             }
 
             camera.StopSway();

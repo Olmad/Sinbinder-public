@@ -84,6 +84,8 @@ namespace Sinbinder.EditorTools
 
         // Дерево с топором: попросили рассказать, сняли кадр, с какого мига.
         private static bool _axeAsked, _axeShot;
+        private static string _axeFrame = "дерево с топором — вырезанное";
+        private static string _axeTarget = "AxeTree";
         private static float _axeSince;
 
         // Сторожа глупостей (Guards): что уже сказано и когда смотреть снова.
@@ -499,6 +501,7 @@ namespace Sinbinder.EditorTools
 
             // Дерево с топором — и в обычном прогоне: F у вещи не за выключателем.
             steps.Add(S("лагерь: дерево с топором — прочли вырезанное", GoToAxeTree, AxeTreeRead, 60f));
+            steps.Add(S("лагерь: пешка в палатке — заговорила", GoToPawn, AxeTreeRead, 90f));
 
             steps.AddRange(new[]
             {
@@ -1007,7 +1010,23 @@ namespace Sinbinder.EditorTools
             _axeAsked = false;
             _axeShot = false;
             _axeSince = -1f;
+            _axeFrame = "дерево с топором — вырезанное";
+            _axeTarget = "AxeTree";
             HeroTo(GameObject.Find("AxeTree")?.transform, 1.6f);
+        }
+
+        /// <summary>Пешка в палатке павшего (21 октября): с порога F — голос Смерти.</summary>
+        private static void GoToPawn()
+        {
+            _axeAsked = false;
+            _axeShot = false;
+            _axeSince = -1f;
+            _axeFrame = "пешка — голос Смерти";
+            _axeTarget = "Pawn";
+            var pawn = GameObject.Find("Pawn");
+            var tent = pawn != null ? pawn.GetComponentInParent<TentInterior>() : null;
+            var hero = SinbinderPlayer.Instance;
+            if (tent != null && hero != null) Warp(hero.gameObject, tent.Doorstep(0.9f));
         }
 
         private static bool AxeTreeRead()
@@ -1015,7 +1034,9 @@ namespace Sinbinder.EditorTools
             if (!_axeAsked)
             {
                 var thing = Inspectable.Nearest();
-                if (thing == null) return false;
+                // Та самая вещь, а не ближайшая какая-нибудь: без пешки шаг
+                // «пешка заговорила» засчитал дерево (21.10).
+                if (thing == null || thing.name != _axeTarget) return false;
                 thing.Inspect();
                 _axeAsked = true;
                 _axeSince = Time.realtimeSinceStartup;
@@ -1036,7 +1057,7 @@ namespace Sinbinder.EditorTools
             if (!_axeAsked || _axeShot || !Inspectable.Telling) return;
             if (UI.Letterbox.Instance == null || !UI.Letterbox.Instance.Typed) return;
             _axeShot = true;
-            Snap("дерево с топором — вырезанное");
+            Snap(_axeFrame);
         }
 
         private static void HeroTo(Transform what, float gap)

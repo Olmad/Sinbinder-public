@@ -28,7 +28,7 @@ namespace Sinbinder.Gameplay
             switch (key)
             {
                 case "AxeTree": return (AxeTreePrompt, AxeTreeSpeaker, AxeTree);
-                // Пешка — ветка появится вместе с пешкой в сцене (строки ниже уже есть).
+                case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn);
                 default: return null;
             }
         }
@@ -54,7 +54,9 @@ namespace Sinbinder.Gameplay
 
         public static readonly string[] Pawn =
         {
-            Loc.N("Ты думаешь, что двигаешь их. Я тоже так думала."),
+            Loc.N("Ты думаешь, что двигаешь их."),
+            Loc.N("Он тоже так думал — тот, кто вырезал меня из кости и оставил здесь."),
+            Loc.N("Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."),
         };
     }
 }

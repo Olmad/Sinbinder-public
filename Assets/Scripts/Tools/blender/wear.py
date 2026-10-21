@@ -687,15 +687,19 @@ def sin_staff(b):
     bone = "LeftHand"
     # Навершие — в сторону «назад» от кулака: в стойке рука опущена, и «вперёд»
     # кулака смотрит в землю (первая примерка — клетка у самой земли).
-    foot, head = held_left(0.62), held_left(-0.42)
-    b.add(*tube(foot, head, 0.011, 0.013, segs=8), bone=bone, mat=1)
-    top = held_left(-0.47)
-    b.add(*sphere(top, 0.028, segs=12, rings=8), bone=bone, mat=2)
+    # Длинная часть — вверх, над плечом; к земле — короткая (вторая примерка:
+    # посох лежал вдоль земли, огонька не было — материал «Soulfire» стоял
+    # ни на чём).
+    foot, head = held_left(0.38), held_left(-0.80)
+    b.add(*tube(foot, head, 0.011, 0.013, segs=8), bone=bone, mat=2)
+    top = held_left(-0.86)
+    b.add(*sphere(top, 0.034, segs=14, rings=10), bone=bone, mat=0)          # огонёк души
     for k in range(4):
         a = math.radians(45 + 90 * k)
-        p0 = (top[0] + math.cos(a) * 0.030, top[1] - 0.035, top[2] + math.sin(a) * 0.030)
-        p1 = (top[0] + math.cos(a) * 0.030, top[1] + 0.035, top[2] + math.sin(a) * 0.030)
-        b.add(*tube(p0, p1, 0.0035, 0.0035, segs=5), bone=bone, mat=1)
+        p0 = (top[0] + math.cos(a) * 0.040, top[1] + 0.045, top[2] + math.sin(a) * 0.040)
+        p1 = (top[0] + math.cos(a) * 0.040, top[1] - 0.045, top[2] + math.sin(a) * 0.040)
+        b.add(*tube(p0, p1, 0.0040, 0.0040, segs=5), bone=bone, mat=1)    # кованая клетка
+    b.add(*sphere(held_left(-0.92), 0.012, segs=8, rings=6), bone=bone, mat=1)
 
 
 ITEMS = [

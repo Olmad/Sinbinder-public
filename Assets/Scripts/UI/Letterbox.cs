@@ -230,6 +230,13 @@ namespace Sinbinder.UI
 
         private Coroutine _typing;
 
+        /// <summary>Скорость печати. Голос Смерти печатает медленнее (Inspectable).</summary>
+        public float LettersPerSecond
+        {
+            get => _lettersPerSecond;
+            set => _lettersPerSecond = Mathf.Max(1f, value);
+        }
+
         /// <summary>
         /// Печатаем, а не дописываем: вся строка стоит на месте с первого
         /// кадра, ненапечатанный хвост — прозрачный. Иначе строка по центру

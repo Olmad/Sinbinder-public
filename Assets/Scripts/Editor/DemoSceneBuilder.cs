@@ -1134,6 +1134,49 @@ namespace Sinbinder.Utilets
             // Мимо проходов: восток (выход), север (охотники), юг (холм).
             foreach (float a in new[] { 47f, 140f, 205f, 328f })
                 RoadTorch(root.transform, Ring(a, 7.9f), 2.2f, 8f);
+
+            PawnInTent();
+        }
+
+        /// <summary>
+        /// Пешка-пасхалка (автор, 21 октября): резная костяная пешка у самого
+        /// входа в жилую палатку — видна с порога, F оттуда же. Не
+        /// подбирается: наезд, голос Смерти (Audio.DeathVoice), строки по букве.
+        /// Ребёнок палатки — для проверки пересечений она часть палатки.
+        /// Тексты — Gameplay/InspectTexts.cs, черновик на сверку облачной.
+        /// </summary>
+        private static void PawnInTent()
+        {
+            var camp = GameObject.Find("Палатки");
+            if (camp == null) return;
+
+            Transform tent = null;
+            foreach (Transform t in camp.transform)
+                // Жилая палатка (у брошенных нутра нет), не шатёр Греховода; третья по кругу.
+                if (t.GetComponent<TentInterior>() != null && !t.name.Contains("Греховода") && !t.name.Contains("павшего")
+                    && (tent == null || t.name.EndsWith("3"))) tent = t;
+            if (tent == null) { Debug.LogWarning("[ПЕШКА] Жилой палатки с нутром нет — пешку поставить некуда."); return; }
+
+            var inside = tent.GetComponent<TentInterior>();
+            var at = inside.Doorstep(-0.55f);
+            var pawn = Prop("Pawn", tent, at, 0f, 2.0f);
+            if (pawn == null) return;
+
+            // «Перёд» модели (−Y Blender) — к выходу: камера заходит оттуда.
+            var front = pawn.transform.TransformDirection(Vector3.down);
+            front.y = 0f;
+            var outward = inside.Doorstep(1f) - at;
+            outward.y = 0f;
+            if (front.sqrMagnitude > 1e-4f)
+                pawn.transform.Rotate(Vector3.up, Vector3.SignedAngle(front, outward, Vector3.up), Space.World);
+
+            var t2 = Sinbinder.Gameplay.InspectTexts.For("Pawn").Value;
+            var look = pawn.AddComponent<Sinbinder.Gameplay.Inspectable>();
+            look.Configure(t2.Prompt, t2.Speaker, t2.Lines,
+                focus: 0.16f, distance: 1.1f, reach: 2.4f, front: Vector3.down);
+            look.UseTexts("Pawn");
+            look.UseDeath();
+            Debug.Log($"[ПЕШКА] у входа в «{tent.name}»");
         }
 
         private static void RoadTorch(Transform basket, Vector3 ground,
