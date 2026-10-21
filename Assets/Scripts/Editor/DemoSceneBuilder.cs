@@ -164,6 +164,10 @@ namespace Sinbinder.Utilets
             // на свету костра, к северо-западу, между очагом и палатками.
             CardTableProp(new Vector3(-1.0f, 0f, 3.9f));
 
+            // За кольцом палаток — не пустошь (автор, 21 октября: «сделать
+            // больше окружения. Сейчас это просто пустошь») и дорога к выходу.
+            Outskirts();
+
             // Сцена 3, первая половина: сундук с трофеями Марги. Стоит
             // по другую сторону спуска, чем стол, — чтобы к нему пришлось
             // идти отдельно, а не задеть взглядом заодно с советом.
@@ -949,6 +953,134 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>Точка на круге вокруг костра. Угол в градусах.</summary>
+        /// <summary>
+        /// Окрестности лагеря: валуны, поваленные брёвна, брошенный скарб
+        /// у крайних палаток и дорога факелов к кругу выхода
+        /// (<see cref="RaidEvent.ExitPoint"/>). Раскладка без Random-по-часам —
+        /// жребий с постоянным зерном: лагерь одинаков при каждой сборке.
+        ///
+        /// Свободны три прохода: на восток — дорога к выходу, на север —
+        /// откуда идут охотники и где дозор, на юг — холм вожака.
+        /// </summary>
+        private static void Outskirts()
+        {
+            var root = new GameObject("Окрестности");
+            var rng = new System.Random(1021);
+            float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
+
+            var exit = RaidEvent.ExitPoint;
+            var toExit = new Vector3(exit.x, 0f, exit.z).normalized;
+            var hill = new Vector3(0f, 0f, -12f);
+            var taken = new List<(Vector3, float)>();
+
+            bool Free(Vector3 p, float pad)
+            {
+                // Дорога к выходу — полоса в четыре метра и круг выхода.
+                float along = Vector3.Dot(p, toExit);
+                float aside = (p - toExit * along).magnitude;
+                if (along > 0f && along < exit.magnitude + 6f && aside < 4f + pad) return false;
+                if ((p - exit).magnitude < 7f + pad) return false;
+                // Север — путь охотников и дозор.
+                if (p.z > 6f && Mathf.Abs(p.x) < 7f + pad) return false;
+                // Холм вожака и его склон.
+                if ((p - hill).magnitude < 9f + pad) return false;
+                // Палатки — до внешнего кольца с запасом.
+                if (p.magnitude <= 12.5f + pad) return false;
+                // И не на уже поставленном (OverlapCheck: валуны в бревне).
+                foreach (var (at, r) in taken)
+                    if ((p - at).magnitude < r + pad) return false;
+                return true;
+            }
+
+            void Take(Vector3 p, float r) => taken.Add((p, r));
+
+            // Валуны группами — по две-четыре: одиночные камни на ровном
+            // читаются расставленными, кучки — выросшими из земли.
+            for (int i = 0; i < 18; i++)
+            {
+                float a = i * 20f + R(-7f, 7f);
+                var centre = Ring(a, R(15f, 36f));
+                if (!Free(centre, 1.5f)) continue;
+                Take(centre, 2.6f);
+
+                // Куча — один предмет: камни в ней лежат друг на друге нарочно
+                // (OverlapCheck сравнивает кучу с соседями, а не камень с камнем).
+                var pile = new GameObject("Валуны");
+                pile.transform.SetParent(root.transform);
+                pile.transform.position = centre;
+
+                int n = 2 + rng.Next(3);
+                for (int k = 0; k < n; k++)
+                {
+                    var at = centre + new Vector3(R(-1.8f, 1.8f), 0f, R(-1.8f, 1.8f));
+                    Prop("Rock", pile.transform, at, R(0f, 360f), k == 0 ? R(1.1f, 1.7f) : R(0.45f, 0.9f));
+                }
+            }
+
+            // Поваленные брёвна — на краю, куда свет костра ещё достаёт.
+            for (int i = 0; i < 9; i++)
+            {
+                var at = Ring(i * 40f + R(-12f, 12f), R(14f, 26f));
+                if (!Free(at, 1f)) continue;
+                Take(at, 2.2f);
+                Prop("LogBench", root.transform, at, R(0f, 360f), R(1.0f, 1.35f));
+            }
+
+            // Брошенный скарб у внешнего кольца: ящик и бочка вперемешку.
+            for (int i = 0; i < 6; i++)
+            {
+                var at = Ring(i * 60f + 25f + R(-8f, 8f), R(13f, 15f));
+                if (!Free(at, 0.5f)) continue;
+                Prop(rng.Next(2) == 0 ? "Crate" : "Barrel", root.transform, at, R(0f, 360f));
+                var second = at + new Vector3(R(-1f, 1f) * 0.3f, 0f, R(1.1f, 1.4f));
+                bool pair = rng.Next(2) == 0 && Free(second, 0.6f);
+                Take(at, 1.8f);
+                if (pair)
+                {
+                    Take(second, 1.2f);
+                    Prop("Crate", root.transform, second, R(0f, 360f), 0.8f);
+                }
+            }
+
+            // Дорога к выходу — парные факелы на шестах: путь виден от костра
+            // и тёплым светом ведёт туда, где бежать (выход дальше прежнего).
+            var side = Vector3.Cross(Vector3.up, toExit);
+            foreach (float d in new[] { 11.5f, 16f, 20.5f })
+                for (int s = -1; s <= 1; s += 2)
+                    RoadTorch(root.transform, toExit * d + side * (s * 2.3f));
+        }
+
+        private static void RoadTorch(Transform basket, Vector3 ground)
+        {
+            // Шест, факел и огонь — один предмет для проверки пересечений.
+            var parent = new GameObject("Факел у дороги").transform;
+            parent.SetParent(basket);
+            parent.position = ground;
+
+            var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pole.name = "Шест";
+            pole.transform.SetParent(parent);
+            pole.transform.position = ground + new Vector3(0f, 0.75f, 0f);
+            pole.transform.localScale = new Vector3(0.09f, 0.75f, 0.09f);
+            Cover(pole, "Ground048");
+            Object.DestroyImmediate(pole.GetComponent<Collider>());
+
+            var top = ground + new Vector3(0f, 1.55f, 0f);
+            Prop("Torch", parent, top, 0f, 0.8f);
+
+            var glow = new GameObject("Огонь у дороги");
+            glow.transform.SetParent(parent);
+            glow.transform.position = top + new Vector3(0f, 0.45f, 0f);
+            var fire = glow.AddComponent<Light>();
+            fire.type = LightType.Point;
+            fire.color = new Color(1f, 0.58f, 0.26f);
+            fire.intensity = 1.6f;
+            fire.range = 5.5f;
+            fire.shadows = LightShadows.None;
+            glow.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.25f, 3f, 0.04f);
+            Embers(parent, top + new Vector3(0f, 0.45f, 0f), 0.4f, 10f);
+        }
+
         private static Vector3 Ring(float degrees, float radius)
         {
             float a = degrees * Mathf.Deg2Rad;
@@ -3573,6 +3705,11 @@ namespace Sinbinder.Utilets
         private static void Save(UnityEngine.SceneManagement.Scene scene, string name)
         {
             string path = $"{SceneDir}/{name}.unity";
+
+            // Не врос ли предмет в предмет (автор, 21 октября: сундук Марги
+            // стоял в склоне холма, «и это не единичный случай»).
+            OverlapCheck.Run(name);
+
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);
             RegisterInBuildSettings(path);

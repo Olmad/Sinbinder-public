@@ -73,7 +73,15 @@ namespace Sinbinder.Gameplay
         // обоих колец (внутреннее — палатки на 65° и 98°, внешнее — на 64°
         // и 90°): ворота видны от костра, дорога к ним прямая. Прошёл ли
         // навмеш — проверяет прогон демо шагом «набег: отряд у края».
-        private static readonly Vector3 Edge = new Vector3(13.8f, 0f, 2.4f);
+        //
+        // 21 октября — дальше по тому же лучу: 14 м → 22 м. Автор: «нам нужно
+        // перенести выход из лагеря дальше, а то сейчас выглядит тупо» —
+        // круг стоял впритык к палаткам. К нему ведёт дорога факелов
+        // (DemoSceneBuilder.Outskirts).
+        private static readonly Vector3 Edge = new Vector3(21.7f, 0f, 3.8f);
+
+        /// <summary>Где круг выхода из лагеря. Сборщик ставит к нему дорогу.</summary>
+        public static Vector3 ExitPoint => Edge;
         private const float EdgeRadius = 5f;
 
         /// <summary>
