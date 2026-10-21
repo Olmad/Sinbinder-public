@@ -82,6 +82,10 @@ namespace Sinbinder.EditorTools
         /// <summary>Уроки, чья плашка уже снята (опись, 46-UI §1): по кадру на урок.</summary>
         private static readonly HashSet<string> _lessonsShot = new();
 
+        // Дерево с топором: попросили рассказать, сняли кадр, с какого мига.
+        private static bool _axeAsked, _axeShot;
+        private static float _axeSince;
+
         // Сторожа глупостей (Guards): что уже сказано и когда смотреть снова.
         private static readonly HashSet<string> _guardSaid = new();
         private static float _guardNext;
@@ -489,6 +493,7 @@ namespace Sinbinder.EditorTools
                 steps.Add(S("опись: воин, группа, Греховод, пауза", InventoryStart, InventoryDone, 20f));
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
                 steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
+                steps.Add(S("лагерь: дерево с топором — прочли вырезанное", GoToAxeTree, AxeTreeRead, 60f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
             }
 
@@ -990,6 +995,38 @@ namespace Sinbinder.EditorTools
 
             var target = hero.transform.position + hero.transform.forward * metres;
             Warp(hero.gameObject, target);
+        }
+
+        // ── Дерево с топором (21 октября): F у дерева — наезд и записи по букве ──
+
+        private static void GoToAxeTree()
+        {
+            _axeAsked = false;
+            _axeShot = false;
+            _axeSince = -1f;
+            HeroTo(GameObject.Find("AxeTree")?.transform, 1.6f);
+        }
+
+        private static bool AxeTreeRead()
+        {
+            if (!_axeAsked)
+            {
+                var thing = Inspectable.Nearest();
+                if (thing == null) return false;
+                thing.Inspect();
+                _axeAsked = true;
+                _axeSince = Time.realtimeSinceStartup;
+                return false;
+            }
+
+            // Кадр — через пять секунд: камера доехала с высоты, первая запись напечатана.
+            if (!_axeShot && Inspectable.Telling && Time.realtimeSinceStartup - _axeSince > 5f)
+            {
+                _axeShot = true;
+                Snap("дерево с топором — вырезанное");
+            }
+
+            return _axeShot && !Inspectable.Telling;
         }
 
         private static void HeroTo(Transform what, float gap)

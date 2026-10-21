@@ -1003,6 +1003,30 @@ namespace Sinbinder.Utilets
 
             void Take(Vector3 p, float r) => taken.Add((p, r));
 
+            // Дерево с топором и дневником на коре (автор, 21 октября) — на
+            // западе за палатками, передом к костру. F — наезд и записи по
+            // букве (Inspectable). Тексты — черновик работника D, на сверку
+            // облачной (мир — её): 14-HANDOFF §111.29.
+            {
+                var at = Ring(176f, 15.5f);
+                var tree = Prop("AxeTree", root.transform, at, TowardFire(at));
+                if (tree != null)
+                {
+                    tree.AddComponent<Sinbinder.Gameplay.Inspectable>().Configure(
+                        Sinbinder.Core.Loc.N("F — прочесть вырезанное"),
+                        Sinbinder.Core.Loc.N("Вырезано на коре"),
+                        new[]
+                        {
+                            Sinbinder.Core.Loc.N("Пять зарубок — пять ночей у этого дерева. Шестую вырезать было некому."),
+                            Sinbinder.Core.Loc.N("Топор не вынимай. Дерево мёртвое, а держит крепче живого."),
+                            Sinbinder.Core.Loc.N("Ушли за солью на восток. Вернусь — заберу топор. Т."),
+                            Sinbinder.Core.Loc.N("По ночам за лесом кто-то двигает фигуры. Слышно, как они стучат о доску."),
+                        },
+                        focus: 1.45f, distance: 3.2f, reach: 2.8f);
+                }
+                Take(at, 3.5f);
+            }
+
             // Валуны группами — по две-четыре: одиночные камни на ровном
             // читаются расставленными, кучки — выросшими из земли.
             for (int i = 0; i < 18; i++)

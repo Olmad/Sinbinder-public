@@ -327,7 +327,9 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
-            _prompt.text = TrophyChest.Reachable() != null ? Loc.T("F — сундук Марги") : "";
+            if (TrophyChest.Reachable() != null) { _prompt.text = Loc.T("F — сундук Марги"); return; }
+            var thing = Inspectable.Nearest();
+            _prompt.text = thing != null ? thing.Prompt : "";
         }
 
         /// <summary>Нижний край строки F, когда над панелью выделенного пусто.</summary>
@@ -395,7 +397,10 @@ namespace Sinbinder.UI
             if (pause != null && pause.IsPaused) return;
 
             var chest = TrophyChest.Reachable();
-            if (chest != null) OpenChest(chest);
+            if (chest != null) { OpenChest(chest); return; }
+
+            // Последним — вещь, которую рассматривают (дерево с топором, пешка).
+            Inspectable.Nearest()?.Inspect();
         }
 
         /// <summary>Открыть сундук лагеря: слева он, справа мешок Греховода.</summary>
