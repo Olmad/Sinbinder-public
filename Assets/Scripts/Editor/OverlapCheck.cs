@@ -29,6 +29,8 @@ namespace Sinbinder.Utilets
         {
             "Палатки", "Обстановка", "Окрестности", "Камни у тропы",
             "Мастерская", "Гнёзда",
+            // Склеп: зал, вход, мастерская («Связывание») и стол вылазок.
+            "Зал", "Вход в склеп", "Связывание", "Карта вылазок",
         };
 
         /// <summary>Не предметы: земля, свет, камера, интерфейс.</summary>
@@ -67,14 +69,7 @@ namespace Sinbinder.Utilets
             foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
             {
                 if (Ignored.Contains(root.name) || root.GetComponentInChildren<Canvas>(true) != null) continue;
-
-                if (Baskets.Contains(root.name))
-                {
-                    foreach (Transform child in root.transform) Add(items, child.gameObject);
-                    continue;
-                }
-
-                Add(items, root);
+                Collect(items, root.transform);
             }
 
             int found = 0;
@@ -88,7 +83,8 @@ namespace Sinbinder.Utilets
                     Debug.LogError($"[ПЕРЕСЕЧЕНИЕ] {scene}: «{items[a].Name}» × «{items[b].Name}» — вглубь {depth:0.00} м");
                 }
 
-            Debug.Log($"[ПЕРЕСЕЧЕНИЯ] {scene}: предметов {items.Count}, пересечений {found}");
+            Debug.Log($"[ПЕРЕСЕЧЕНИЯ] {scene}: предметов {items.Count}, пересечений {found}"
+                    + (items.Count <= 12 ? " — " + string.Join(", ", items.ConvertAll(i => i.Name)) : ""));
 
             found += Grounded(scene, items);
             return found;
@@ -126,10 +122,17 @@ namespace Sinbinder.Utilets
                 for (int b = 0; b < items.Count && !held; b++)
                 {
                     if (a == b) continue;
-                    Span(items[b].Boxes, out _, out float top, out var under);
+                    Span(items[b].Boxes, out float bottom, out float top, out var under);
                     held = top > low - 0.3f && top < low + 0.2f + Slack
                         && under.xMin < flat.xMax && under.xMax > flat.xMin
                         && under.yMin < flat.yMax && under.yMax > flat.yMin;
+
+                    // Опора сбоку — факел на стене или воротах: рядом (35 см)
+                    // предмет, который стоит на этой высоте.
+                    const float side = 0.35f;
+                    held |= bottom < low && top > low
+                        && under.xMin - side < flat.xMax && under.xMax + side > flat.xMin
+                        && under.yMin - side < flat.yMax && under.yMax + side > flat.yMin;
                 }
 
                 if (held) continue;
@@ -156,6 +159,36 @@ namespace Sinbinder.Utilets
                 z0 = Mathf.Min(z0, b.Centre.z - hz); z1 = Mathf.Max(z1, b.Centre.z + hz);
             }
             flat = Rect.MinMaxRect(x0, z0, x1, z1);
+        }
+
+        /// <summary>
+        /// Корзина на любой глубине: «Мастерская» склепа лежит не в корне,
+        /// и до 21 октября весь склеп проверялся четырьмя «предметами».
+        /// Корзина — её дети по отдельности; объект с корзиной где-то внутри —
+        /// разбираем дальше; иначе — один предмет.
+        /// </summary>
+        private static void Collect(List<(string, List<Box>)> items, Transform t)
+        {
+            if (Baskets.Contains(t.name))
+            {
+                foreach (Transform child in t) Collect(items, child);
+                return;
+            }
+
+            if (HasBasket(t))
+            {
+                foreach (Transform child in t) Collect(items, child);
+                return;
+            }
+
+            Add(items, t.gameObject);
+        }
+
+        private static bool HasBasket(Transform t)
+        {
+            foreach (Transform child in t)
+                if (Baskets.Contains(child.name) || HasBasket(child)) return true;
+            return false;
         }
 
         private static void Add(List<(string, List<Box>)> items, GameObject go)
