@@ -82,6 +82,10 @@ namespace Sinbinder.EditorTools
         /// <summary>Уроки, чья плашка уже снята (опись, 46-UI §1): по кадру на урок.</summary>
         private static readonly HashSet<string> _lessonsShot = new();
 
+        // Сторожа глупостей (Guards): что уже сказано и когда смотреть снова.
+        private static readonly HashSet<string> _guardSaid = new();
+        private static float _guardNext;
+
         private static float _lastTick;
 
         private static List<Step> _steps;
@@ -197,6 +201,8 @@ namespace Sinbinder.EditorTools
                 _mapShot = false;
                 _flapShot = false;
                 _logoShot = false;
+                _guardSaid.Clear();
+                _guardNext = 0f;
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
@@ -232,6 +238,7 @@ namespace Sinbinder.EditorTools
 
             Sample();
             Opening();
+            Guards();
 
             var step = _steps[_index];
 
@@ -1665,6 +1672,104 @@ namespace Sinbinder.EditorTools
                 _logoShot = true;
                 Snap("открытие — надпись над лагерем");
                 Write("  [ОТКРЫТИЕ] надпись над лагерем — кадр снят");
+            }
+        }
+
+        // ── Сторожа глупостей (автор, 21 октября: «подумай, на какие ещё
+        // глупые проблемы нужно делать проверки») ──
+        //
+        // Дважды в секунду, всю игру. Каждая находка — ошибка один раз
+        // на случай: прогон краснеет, отчёт называет кого и где.
+
+        private static Transform _seenTarget;
+        private static float _seenSince;
+
+        private static void Guards()
+        {
+            float now = Time.realtimeSinceStartup;
+            if (now < _guardNext) return;
+            _guardNext = now + 0.5f;
+
+            Heads();
+            Hidden();
+        }
+
+        private static void Guard(string kind, string key, string text)
+        {
+            if (_guardSaid.Add(kind + "|" + key)) Debug.LogError($"[{kind}] {text}");
+        }
+
+        /// <summary>Верх тела по его сеткам — макушка, а не точка опоры.</summary>
+        private static float Top(Component body)
+        {
+            float top = float.MinValue;
+            foreach (var r in body.GetComponentsInChildren<Renderer>())
+            {
+                if (!r.enabled || r is ParticleSystemRenderer || r is LineRenderer) continue;
+                if (r.GetComponent<TextMesh>() != null) continue;
+                top = Mathf.Max(top, r.bounds.max.y);
+            }
+            return top == float.MinValue ? body.transform.position.y + 1.8f : top;
+        }
+
+        /// <summary>
+        /// «Головы воинов торчат из палаток» (автор, 21 октября). Под скатом —
+        /// макушка не выше крыши над ней. Греховода не меряем: в своём шатре
+        /// он пригибается (RTS_Camera.Eye), а тело его — не тело воина.
+        /// </summary>
+        private static void Heads()
+        {
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || w is SinbinderPlayer) continue;
+
+                var feet = w.transform.position;
+                var tent = TentInterior.Around(feet + Vector3.up * 0.1f);
+                if (tent == null) continue;
+
+                float over = Top(w) - tent.Ceiling(feet);
+                if (over > 0.05f)
+                    Guard("ГОЛОВА", w.DisplayName + "|" + tent.name,
+                        $"{w.DisplayName} стоит под скатом «{tent.name}» — голова на {over:0.00} м выше крыши");
+            }
+        }
+
+        /// <summary>
+        /// «Карган наполовину вещал из палатки» (автор, 21 октября). Пока идёт
+        /// наезд, между камерой и лицом говорящего нет палатки.
+        /// </summary>
+        private static void Hidden()
+        {
+            var talk = Dialogue.DialogueCameraController.Instance;
+            var cam = Camera.main;
+            if (talk == null || !talk.InDialogue || talk.Target == null || cam == null) return;
+
+            var who = talk.Target;
+
+            // Камера подъезжает — по пути она может пройти сквозь ткань.
+            // Смотрим, когда кадр встал: через секунду после наведения.
+            float now = Time.realtimeSinceStartup;
+            if (who != _seenTarget) { _seenTarget = who; _seenSince = now; return; }
+            if (now - _seenSince < 1f) return;
+
+            var face =new Vector3(who.position.x, Top(who) - 0.15f, who.position.z);
+            var eye = cam.transform.position;
+            string name = who.TryGetComponent<Warrior>(out var w) ? w.DisplayName : who.name;
+
+            var own = TentInterior.Around(who.position + Vector3.up * 0.1f);
+            if (own != null)
+                Guard("ЗАСЛОНЁН", name + "|в " + own.name, $"{name} говорит, стоя в «{own.name}» — лицо за тканью");
+
+            float length = Vector3.Distance(eye, face);
+            for (int i = 1; i < 24; i++)
+            {
+                var p = Vector3.Lerp(eye, face, i / 24f);
+                if (Vector3.Distance(p, face) < 0.4f) break;
+                var tent = TentInterior.Around(p);
+                if (tent == null || tent == own) continue;
+                Guard("ЗАСЛОНЁН", name + "|" + tent.name,
+                    $"{name} говорит, а между камерой и лицом — «{tent.name}» ({length:0.0} м)");
+                break;
             }
         }
 

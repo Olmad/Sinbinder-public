@@ -53,6 +53,9 @@ namespace Sinbinder.Dialogue
 
         public bool InDialogue => _inDialogue;
 
+        /// <summary>На кого наехали последним. Спрашивает прогон: не заслонён ли он.</summary>
+        public Transform Target { get; private set; }
+
         void Awake()
         {
             Instance = this;
@@ -182,6 +185,7 @@ namespace Sinbinder.Dialogue
             if (Cam() == null) yield break;
 
             _inDialogue = true;
+            Target = target;
             Cam().fieldOfView = _dialogueFOV;
 
             // Полосы живут на Canvas и умирают со сценой, а контроллер
@@ -232,6 +236,7 @@ namespace Sinbinder.Dialogue
             if (Cam() == null) yield break;
 
             _inDialogue = true;
+            Target = null;   // точка, а не говорящий
             Cam().fieldOfView = _dialogueFOV;
             UI.Letterbox.Instance?.Show(caption);
 
@@ -366,6 +371,7 @@ namespace Sinbinder.Dialogue
         public IEnumerator RestoreCamera()
         {
             _inDialogue = false;
+            Target = null;
             if (_swayCoroutine != null)
             {
                 StopCoroutine(_swayCoroutine);
