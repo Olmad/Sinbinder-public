@@ -28,6 +28,7 @@ namespace Sinbinder.Utilets
         private static readonly HashSet<string> Baskets = new()
         {
             "Палатки", "Обстановка", "Окрестности", "Камни у тропы",
+            "Мастерская", "Гнёзда",
         };
 
         /// <summary>Не предметы: земля, свет, камера, интерфейс.</summary>
@@ -88,7 +89,73 @@ namespace Sinbinder.Utilets
                 }
 
             Debug.Log($"[ПЕРЕСЕЧЕНИЯ] {scene}: предметов {items.Count}, пересечений {found}");
+
+            found += Grounded(scene, items);
             return found;
+        }
+
+        /// <summary>
+        /// Висит или утонул (21 октября, список сторожей). Земля — верх
+        /// плоскости «Земля»/«Камень»/«Плиты». Низ предмета выше земли больше
+        /// чем на 15 см и под ним нет другого предмета, на котором он мог бы
+        /// стоять, — висит. Верх ниже земли — утонул.
+        /// </summary>
+        private static int Grounded(string scene, List<(string Name, List<Box> Boxes)> items)
+        {
+            float ground = 0f;
+            foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+                if ((root.name == "Земля" || root.name == "Камень" || root.name == "Плиты")
+                    && root.TryGetComponent<Renderer>(out var g))
+                { ground = g.bounds.max.y; break; }
+
+            int found = 0;
+            for (int a = 0; a < items.Count; a++)
+            {
+                Span(items[a].Boxes, out float low, out float high, out var flat);
+
+                if (high < ground + 0.02f)
+                {
+                    found++;
+                    Debug.LogError($"[УТОНУЛ] {scene}: «{items[a].Name}» целиком под землёй (верх {high:0.00} м)");
+                    continue;
+                }
+
+                if (low < ground + 0.15f) continue;
+
+                bool held = false;
+                for (int b = 0; b < items.Count && !held; b++)
+                {
+                    if (a == b) continue;
+                    Span(items[b].Boxes, out _, out float top, out var under);
+                    held = top > low - 0.3f && top < low + 0.2f + Slack
+                        && under.xMin < flat.xMax && under.xMax > flat.xMin
+                        && under.yMin < flat.yMax && under.yMax > flat.yMin;
+                }
+
+                if (held) continue;
+                found++;
+                Debug.LogError($"[ВИСИТ] {scene}: «{items[a].Name}» — низ на {low - ground:0.00} м над землёй, под ним пусто");
+            }
+
+            Debug.Log($"[ОПОРА] {scene}: висящих и утонувших — {found}");
+            return found;
+        }
+
+        /// <summary>Низ, верх и след в плане (x, z) набора коробок.</summary>
+        private static void Span(List<Box> boxes, out float low, out float high, out Rect flat)
+        {
+            low = float.MaxValue; high = float.MinValue;
+            float x0 = float.MaxValue, x1 = float.MinValue, z0 = float.MaxValue, z1 = float.MinValue;
+            foreach (var b in boxes)
+            {
+                float v = Mathf.Abs(b.X.y) * b.Half.x + Mathf.Abs(b.Y.y) * b.Half.y + Mathf.Abs(b.Z.y) * b.Half.z;
+                float hx = Mathf.Abs(b.X.x) * b.Half.x + Mathf.Abs(b.Y.x) * b.Half.y + Mathf.Abs(b.Z.x) * b.Half.z;
+                float hz = Mathf.Abs(b.X.z) * b.Half.x + Mathf.Abs(b.Y.z) * b.Half.y + Mathf.Abs(b.Z.z) * b.Half.z;
+                low = Mathf.Min(low, b.Centre.y - v); high = Mathf.Max(high, b.Centre.y + v);
+                x0 = Mathf.Min(x0, b.Centre.x - hx); x1 = Mathf.Max(x1, b.Centre.x + hx);
+                z0 = Mathf.Min(z0, b.Centre.z - hz); z1 = Mathf.Max(z1, b.Centre.z + hz);
+            }
+            flat = Rect.MinMaxRect(x0, z0, x1, z1);
         }
 
         private static void Add(List<(string, List<Box>)> items, GameObject go)
