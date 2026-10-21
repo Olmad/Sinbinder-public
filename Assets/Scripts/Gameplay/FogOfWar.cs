@@ -194,6 +194,8 @@ namespace Sinbinder.Gameplay
             Shader.SetGlobalTexture(TexId, _texture);
             Shader.SetGlobalVector(RectId, new Vector4(_min.x, _min.y, _size.x, _size.y));
 
+            KnownHome();
+
             // Первый пересчёт сразу и без плавности, всей картой: сцена
             // не должна открываться чернотой, которая за треть секунды
             // отступает.
@@ -202,6 +204,31 @@ namespace Sinbinder.Gameplay
             _dirty.Add(0, 0, _w - 1, _h - 1);
             Paint(0f);
             _paintedAt = Time.unscaledTime;
+        }
+
+        /// <summary>Сколько вокруг костра Греховод знает с начала, в метрах.</summary>
+        public const float HomeKnown = 30f;
+
+        /// <summary>
+        /// Свой лагерь разведан с начала — как своя база в Warcraft 3. До
+        /// 21 октября окрестности лагеря стояли чёрными, пока туда не сходят:
+        /// валуны, брёвна и дорога факелов к выходу не были видны вовсе
+        /// (автор: «сейчас это просто пустошь»). Разведано — значит серое:
+        /// земля и вещи видны, враги в нём прячутся, как прежде.
+        /// </summary>
+        private void KnownHome()
+        {
+            var home = Object.FindFirstObjectByType<CampOpening>();
+            if (home == null) return;
+
+            var c = home.transform.position;
+            for (int z = 0; z < _h; z++)
+                for (int x = 0; x < _w; x++)
+                {
+                    float wx = _min.x + (x + 0.5f) * Cell - c.x;
+                    float wz = _min.y + (z + 0.5f) * Cell - c.z;
+                    if (wx * wx + wz * wz <= HomeKnown * HomeKnown) _explored[z * _w + x] = true;
+                }
         }
 
         void OnDestroy()

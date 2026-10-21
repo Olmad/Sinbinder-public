@@ -29,7 +29,7 @@ namespace Sinbinder.Core
 
         public static ShadowMode Shadows { get; private set; } = ShadowMode.Soft;
         public static bool Occlusion { get; private set; } = true;
-        public static Smoothing Antialias { get; private set; } = Smoothing.Fast;
+        public static Smoothing Antialias { get; private set; } = Smoothing.Sharp;
         public static Sharpness Detail { get; private set; } = Sharpness.Full;
         public static bool Grain { get; private set; } = true;
         public static FrameCap Frames { get; private set; } = FrameCap.Sixty;
@@ -40,7 +40,7 @@ namespace Sinbinder.Core
         public static bool IsLight => Shadows == ShadowMode.Off && !Occlusion && Detail != Sharpness.Full;
 
         private static bool IsFull => Shadows == ShadowMode.Soft && Occlusion && Detail == Sharpness.Full
-                                   && Antialias == Smoothing.Fast && Grain;
+                                   && Antialias == Smoothing.Sharp && Grain;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Load()
@@ -58,7 +58,7 @@ namespace Sinbinder.Core
 
             Shadows = (ShadowMode)PlayerPrefs.GetInt(Key + "shadows", (int)ShadowMode.Soft);
             Occlusion = PlayerPrefs.GetInt(Key + "ao", 1) != 0;
-            Antialias = (Smoothing)PlayerPrefs.GetInt(Key + "aa", (int)Smoothing.Fast);
+            Antialias = (Smoothing)PlayerPrefs.GetInt(Key + "aa", (int)Smoothing.Sharp);
             Detail = (Sharpness)PlayerPrefs.GetInt(Key + "scale", (int)Sharpness.Full);
             Grain = PlayerPrefs.GetInt(Key + "grain", 1) != 0;
             Frames = (FrameCap)PlayerPrefs.GetInt(Key + "fps", (int)FrameCap.Sixty);
@@ -78,7 +78,7 @@ namespace Sinbinder.Core
 
         private static void Full()
         {
-            Shadows = ShadowMode.Soft; Occlusion = true; Antialias = Smoothing.Fast;
+            Shadows = ShadowMode.Soft; Occlusion = true; Antialias = Smoothing.Sharp;
             Detail = Sharpness.Full; Grain = true;
         }
 

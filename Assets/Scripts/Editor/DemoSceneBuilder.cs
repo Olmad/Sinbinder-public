@@ -808,7 +808,10 @@ namespace Sinbinder.Utilets
             // её забыли — и это не видно ниоткуда, кроме как глазами.
             var urp = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             urp.renderPostProcessing = true;
-            urp.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.FastApproximateAntialiasing;
+            // SMAA, а не FXAA (21 октября): FXAA мылил края палаток и букв
+            // на кадре. Игрок может сменить — «Графика» в паузе.
+            urp.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            urp.antialiasingQuality = UnityEngine.Rendering.Universal.AntialiasingQuality.High;
             cam.fieldOfView = 55f;
             cam.nearClipPlane = 0.1f;
 
@@ -1048,9 +1051,17 @@ namespace Sinbinder.Utilets
             foreach (float d in new[] { 11.5f, 16f, 20.5f })
                 for (int s = -1; s <= 1; s += 2)
                     RoadTorch(root.transform, toExit * d + side * (s * 2.3f));
+
+            // Тёплый остров (21 октября, курс «графика — на первых местах»):
+            // факелы между кольцами палаток — свет ложится на ткань снаружи,
+            // и лагерь читается тёплым пятном во тьме, а не одним костром.
+            // Мимо проходов: восток (выход), север (охотники), юг (холм).
+            foreach (float a in new[] { 47f, 140f, 205f, 328f })
+                RoadTorch(root.transform, Ring(a, 7.9f), 2.2f, 8f);
         }
 
-        private static void RoadTorch(Transform basket, Vector3 ground)
+        private static void RoadTorch(Transform basket, Vector3 ground,
+                                      float intensity = 1.6f, float range = 5.5f)
         {
             // Шест, факел и огонь — один предмет для проверки пересечений.
             var parent = new GameObject("Факел у дороги").transform;
@@ -1074,8 +1085,8 @@ namespace Sinbinder.Utilets
             var fire = glow.AddComponent<Light>();
             fire.type = LightType.Point;
             fire.color = new Color(1f, 0.58f, 0.26f);
-            fire.intensity = 1.6f;
-            fire.range = 5.5f;
+            fire.intensity = intensity;
+            fire.range = range;
             fire.shadows = LightShadows.None;
             glow.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.25f, 3f, 0.04f);
             Embers(parent, top + new Vector3(0f, 0.45f, 0f), 0.4f, 10f);
