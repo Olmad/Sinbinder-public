@@ -206,8 +206,8 @@ namespace Sinbinder.Gameplay
             _paintedAt = Time.unscaledTime;
         }
 
-        /// <summary>Сколько вокруг костра Греховод знает с начала, в метрах.</summary>
-        public const float HomeKnown = 30f;
+        /// <summary>Сколько вокруг костра Греховод знает с начала, в метрах: лагерь и лес вокруг.</summary>
+        public const float HomeKnown = 42f;   // с лесом кругом (21.10) — до опушки
 
         /// <summary>
         /// Свой лагерь разведан с начала — как своя база в Warcraft 3. До

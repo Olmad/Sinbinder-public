@@ -974,7 +974,13 @@ namespace Sinbinder.Utilets
             var exit = RaidEvent.ExitPoint;
             var toExit = new Vector3(exit.x, 0f, exit.z).normalized;
             var hill = new Vector3(0f, 0f, -12f);
-            var taken = new List<(Vector3, float)>();
+            var taken = new List<(Vector3, float)>
+            {
+                // Валуны «Обстановки» (CampClutter) — окрестности их обходят.
+                (new Vector3(-5.7f, 0f, -10.4f), 1.8f),
+                (new Vector3(6.0f, 0f, -10.9f), 1.5f),
+                (new Vector3(-12.2f, 0f, 5.6f), 1.6f),
+            };
 
             bool Free(Vector3 p, float pad)
             {
@@ -1027,6 +1033,47 @@ namespace Sinbinder.Utilets
                 if (!Free(at, 1f)) continue;
                 Take(at, 2.2f);
                 Prop("LogBench", root.transform, at, R(0f, 360f), R(1.0f, 1.35f));
+            }
+
+            // Лес кольцом (21 октября, props.py «окрестности»): ели и три
+            // сухих дерева вперемешку — силуэты над палатками. Ближе к лагерю
+            // — пни, кусты и сухая трава. Траву навмеш не видит: она по колено
+            // и прорезала бы в земле дыры, по которым не пройти.
+            string[] trees = { "Pine", "Pine", "DeadTreeA", "DeadTreeB", "DeadTreeC" };
+            for (int i = 0; i < 48; i++)
+            {
+                var at = Ring(i * 7.5f + R(-3f, 3f), R(27f, 42f));
+                // Крона — метра по два в каждую сторону: реже, чем ствол
+                // требует (OverlapCheck: кроны соседей сплетались).
+                if (!Free(at, 2.4f)) continue;
+                Take(at, 3.5f);
+                Prop(trees[rng.Next(trees.Length)], root.transform, at, R(0f, 360f), R(0.85f, 1.25f));
+            }
+
+            for (int i = 0; i < 7; i++)
+            {
+                var at = Ring(i * 51f + R(-15f, 15f), R(14f, 25f));
+                if (!Free(at, 0.8f)) continue;
+                Take(at, 1.2f);
+                Prop("Stump", root.transform, at, R(0f, 360f), R(0.8f, 1.2f));
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                var at = Ring(i * 30f + R(-12f, 12f), R(14f, 30f));
+                if (!Free(at, 0.8f)) continue;
+                Take(at, 1.4f);
+                Prop("Bush", root.transform, at, R(0f, 360f), R(0.8f, 1.3f));
+            }
+
+            for (int i = 0; i < 40; i++)
+            {
+                var at = Ring(i * 9f + R(-4f, 4f), R(13f, 34f));
+                if (!Free(at, 0.3f)) continue;
+                Take(at, 0.5f);
+                var tuft = Prop("GrassTuft", root.transform, at, R(0f, 360f), R(0.8f, 1.4f));
+                if (tuft != null)
+                    tuft.AddComponent<Unity.AI.Navigation.NavMeshModifier>().ignoreFromBuild = true;
             }
 
             // Брошенный скарб у внешнего кольца: ящик и бочка вперемешку.

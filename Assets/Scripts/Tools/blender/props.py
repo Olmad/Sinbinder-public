@@ -375,6 +375,116 @@ def sakura(b):
           bone="", mat=1)
 
 
+# --------------------------------------------------------------- окрестности
+#
+# Автор, 21 октября: «сделать больше окружения. Сейчас это просто пустошь».
+# До этого дня в проекте не было ни одного дерева, кроме сакуры для
+# отдельной сцены. Ночной лес «Knightcore» (00-GDD §9): сухие деревья
+# и тёмные ели — силуэты на холодном небе, а не зелень. Всё — формулой
+# с номером варианта, без жребия: три сухих дерева разные, но каждый
+# запуск одни и те же.
+
+NEEDLES = ("Needles", (0.085, 0.105, 0.090, 1.0))
+DRY = ("Dry Grass", (0.330, 0.285, 0.190, 1.0))
+LEAF = ("Dark Leaf", (0.120, 0.135, 0.095, 1.0))
+
+
+def _wobble(i, k):
+    """Число от −1 до 1 из номера — «случайное», но всегда одно и то же."""
+    return math.sin(i * 12.9898 + k * 78.233) * 0.5 + math.sin(i * 3.7 + k * 1.3) * 0.5
+
+
+def _dead_tree(b, variant):
+    """
+    Сухое дерево: ствол с изгибом, четыре-шесть ветвей, у каждой — ответвление.
+    Высота 4–5,5 м: втрое выше воина, силуэт над палатками.
+    """
+    h = 4.0 + 0.75 * (variant % 3)
+    lean = 0.25 * _wobble(variant, 1)
+    trunk = [(0, 0, 0), (lean * 0.4, 0.05, h * 0.35), (lean, -0.08, h * 0.7), (lean * 1.3, 0.04, h)]
+    radii = [0.30, 0.21, 0.13, 0.05]
+    for (p0, p1), (r0, r1) in zip(zip(trunk, trunk[1:]), zip(radii, radii[1:])):
+        b.add(*tube(p0, p1, r0, r1, segs=9), bone="", mat=0)
+
+    # Корни — короткие наклонные трубы у земли: дерево растёт, а не стоит.
+    for k in range(4):
+        a = math.radians(k * 90 + 20 * _wobble(variant, k + 9))
+        b.add(*tube((0, 0, 0.25), (math.cos(a) * 0.75, math.sin(a) * 0.75, -0.05), 0.15, 0.05, segs=6),
+              bone="", mat=0)
+
+    # Раскидистые ветви: первый заход (тонкие, короткие) читался палками.
+    limbs = 6 + variant % 3
+    lo, hi = Vector(trunk[1]), Vector(trunk[3])
+    for k in range(limbs):
+        t = 0.30 + 0.62 * k / max(1, limbs - 1)
+        base = lo.lerp(hi, max(0.0, (t - 0.30) / 0.70))
+        a = math.radians(k * 137.5 + 25 * _wobble(variant, k))   # золотой угол — вкруговую
+        reach = (2.2 - 1.0 * t) * (1 + 0.25 * _wobble(variant, k + 3))
+        tip = base + Vector((math.cos(a) * reach, math.sin(a) * reach, 0.35 + 0.9 * t))
+        b.add(*tube(tuple(base), tuple(tip), 0.14 * (1.25 - t), 0.03, segs=6), bone="", mat=0)
+
+        # Два отростка: вверх и вбок — крона из сучьев, а не прутья.
+        for s, (turn, up) in enumerate(((0.9, 0.7), (-0.8, 0.35))):
+            mid = base.lerp(tip, 0.45 + 0.25 * s)
+            twig = mid + Vector((math.cos(a + turn) * 0.7, math.sin(a + turn) * 0.7, up))
+            b.add(*tube(tuple(mid), tuple(twig), 0.05, 0.012, segs=5), bone="", mat=0)
+
+
+def dead_tree_a(b):
+    _dead_tree(b, 1)
+
+
+def dead_tree_b(b):
+    _dead_tree(b, 2)
+
+
+def dead_tree_c(b):
+    _dead_tree(b, 3)
+
+
+def pine(b):
+    """
+    Тёмная ель: ствол и пять ярусов-конусов, каждый уже предыдущего.
+    Пять метров. Хвоя почти чёрная — силуэт, не пятно цвета.
+    """
+    b.add(*tube((0, 0, 0), (0, 0, 4.9), 0.20, 0.04, segs=8), bone="", mat=1)
+    for k in range(5):
+        z0 = 0.9 + k * 0.82
+        r = 1.55 * (1 - k / 5.6)
+        b.add(*tube((0, 0, z0), (0, 0, z0 + 1.25), r, 0.04, segs=12), bone="", mat=0)
+
+
+def stump(b):
+    """Пень с корнями: тёмный срез читается и без годовых колец."""
+    b.add(*tube((0, 0, 0), (0, 0, 0.55), 0.36, 0.30, segs=11), bone="", mat=0)
+    b.add(*tube((0, 0, 0.55), (0, 0, 0.58), 0.30, 0.27, segs=11), bone="", mat=1)
+    for k in range(5):
+        a = math.radians(k * 72 + 15)
+        b.add(*tube((0, 0, 0.18), (math.cos(a) * 0.6, math.sin(a) * 0.6, -0.04), 0.13, 0.04, segs=6),
+              bone="", mat=0)
+
+
+def bush(b):
+    """Куст по пояс: сплющенный шар и пять поменьше вокруг."""
+    b.add(*sphere((0, 0, 0.42), 0.55, scale=(1.1, 1.0, 0.8), segs=12, rings=8), bone="", mat=0)
+    for k in range(5):
+        a = math.radians(k * 72 + 10)
+        r = 0.36 * (1 + 0.2 * _wobble(5, k))
+        b.add(*sphere((math.cos(a) * 0.48, math.sin(a) * 0.48, 0.30), r,
+                      scale=(1.0, 1.0, 0.75), segs=10, rings=6), bone="", mat=0)
+
+
+def grass_tuft(b):
+    """Пучок сухой травы по колено: двенадцать стеблей веером."""
+    for k in range(12):
+        a = math.radians(k * 30 + 9 * _wobble(7, k))
+        lean = 0.12 + 0.08 * abs(_wobble(8, k))
+        h = 0.35 + 0.15 * abs(_wobble(9, k))
+        b.add(*tube((math.cos(a) * 0.04, math.sin(a) * 0.04, 0),
+                    (math.cos(a) * lean * 2.2, math.sin(a) * lean * 2.2, h), 0.018, 0.003, segs=4),
+              bone="", mat=0)
+
+
 def katana(b):
     """
     Катана: рукоять, цуба, клинок с лёгким изгибом.
@@ -570,6 +680,14 @@ PROPS = [
 
     Prop("Rock", rock, [STONE, DARK, DARK]),
     Prop("Sakura", sakura, [BARK, BLOSSOM, DARK]),
+
+    Prop("DeadTreeA", dead_tree_a, [BARK, DARK, DARK]),
+    Prop("DeadTreeB", dead_tree_b, [BARK, DARK, DARK]),
+    Prop("DeadTreeC", dead_tree_c, [BARK, DARK, DARK]),
+    Prop("Pine", pine, [NEEDLES, BARK, DARK]),
+    Prop("Stump", stump, [BARK, WOOD, DARK]),
+    Prop("Bush", bush, [LEAF, DARK, DARK]),
+    Prop("GrassTuft", grass_tuft, [DRY, DARK, DARK]),
     Prop("Katana", katana, [STEEL, IRON, DARK]),
 ]
 
