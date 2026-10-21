@@ -1012,17 +1012,22 @@ namespace Sinbinder.Utilets
                 var tree = Prop("AxeTree", root.transform, at, TowardFire(at));
                 if (tree != null)
                 {
-                    tree.AddComponent<Sinbinder.Gameplay.Inspectable>().Configure(
-                        Sinbinder.Core.Loc.N("F — прочесть вырезанное"),
-                        Sinbinder.Core.Loc.N("Вырезано на коре"),
-                        new[]
-                        {
-                            Sinbinder.Core.Loc.N("Пять зарубок — пять ночей у этого дерева. Шестую вырезать было некому."),
-                            Sinbinder.Core.Loc.N("Топор не вынимай. Дерево мёртвое, а держит крепче живого."),
-                            Sinbinder.Core.Loc.N("Ушли за солью на восток. Вернусь — заберу топор. Т."),
-                            Sinbinder.Core.Loc.N("По ночам за лесом кто-то двигает фигуры. Слышно, как они стучат о доску."),
-                        },
-                        focus: 1.45f, distance: 3.2f, reach: 2.8f);
+                    // Знаки — на −Y модели (оси Blender: корень FBX повёрнут на 270°
+                    // по X, и его «вперёд» смотрит в небо). Не угадываем, а меряем:
+                    // куда смотрят знаки — и доворачиваем точно на костёр.
+                    var marks = tree.transform.TransformDirection(Vector3.down);
+                    marks.y = 0f;
+                    var toFire = -at;
+                    toFire.y = 0f;
+                    if (marks.sqrMagnitude > 1e-4f)
+                        tree.transform.Rotate(Vector3.up, Vector3.SignedAngle(marks, toFire, Vector3.up), Space.World);
+
+                    // Тексты — в Gameplay/InspectTexts.cs (правятся без пересборки).
+                    var t = Sinbinder.Gameplay.InspectTexts.For("AxeTree").Value;
+                    var look = tree.AddComponent<Sinbinder.Gameplay.Inspectable>();
+                    look.Configure(t.Prompt, t.Speaker, t.Lines,
+                        focus: 1.45f, distance: 3.2f, reach: 2.8f, front: Vector3.down);
+                    look.UseTexts("AxeTree");
                 }
                 Take(at, 3.5f);
             }

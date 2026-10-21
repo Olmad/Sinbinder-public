@@ -237,7 +237,8 @@ namespace Sinbinder.Gameplay
             // Первый выбор — без ритма: пришёл в лагерь, встал к своему.
             if (!Chosen.TryGetValue(w, out var was))
             {
-                var first = CampChoice.Choose(Voices, Soul.FromWarrior(w));
+                var fresh = Soul.FromWarrior(w);
+                var first = CampChoice.Choose(Voices, fresh, s => -Company(w, fresh, s));
                 Chosen[w] = new Choice { Spot = first, Epoch = epoch, Since = Time.time };
                 return first;
             }
@@ -245,12 +246,39 @@ namespace Sinbinder.Gameplay
             var soul = Soul.FromWarrior(w);
             float here = (Time.time - was.Since) / 60f;
             float gone = (Time.time - was.LeftAt) / 60f;
-            var spot = CampChoice.Next(Voices, soul, was.Spot, here, was.Left, gone);
+            var spot = CampChoice.Choose(Voices, soul,
+                s => CampChoice.Tired(soul, s, was.Spot, here, was.Left, gone) - Company(w, soul, s));
 
             Chosen[w] = spot == was.Spot
                 ? new Choice { Spot = spot, Epoch = epoch, Since = was.Since, Left = was.Left, LeftAt = was.LeftAt }
                 : new Choice { Spot = spot, Epoch = epoch, Since = Time.time, Left = was.Spot, LeftAt = Time.time };
             return spot;
+        }
+
+        /// <summary>
+        /// Стол с картами зовёт компанию: пока за ним меньше двоих, он тянет
+        /// тех, кого карты вообще тянут (жадность, похоть, зависть, уныние —
+        /// голос за Cards больше нуля). Автор, 21 октября: «я так ни разу
+        /// и не увидел, чтобы воины сидели за картами» — у каждого любителя
+        /// карт было место милее (жадный — сундук, унылый — палатка), и стол
+        /// пустовал всегда. Игре за столом нужны двое. Движок решений не
+        /// тронут — это слой лагеря.
+        /// </summary>
+        private const float CardsCall = 7f;
+
+        private static float Company(Warrior w, Soul soul, CampSpot spot)
+        {
+            if (spot != CampSpot.Cards) return 0f;
+
+            int seated = 0;
+            foreach (var pair in Chosen)
+                if (pair.Key != null && pair.Key != w && !pair.Key.IsDead && pair.Value.Spot == CampSpot.Cards)
+                    seated++;
+            if (seated >= 2) return 0f;
+
+            float vote = 0f;
+            foreach (var v in Voices) vote += v.EvaluateSpot(soul, CampSpot.Cards);
+            return vote > 0f ? CardsCall : 0f;
         }
 
         /// <summary>

@@ -35,6 +35,23 @@ namespace Sinbinder.Gameplay
         [Tooltip("С какого расстояния по земле можно рассмотреть, м.")]
         [SerializeField] private float _reach = 2.6f;
 
+        [Tooltip("Где у вещи перёд, в её осях: туда смотрит то, что рассматривают.")]
+        [SerializeField] private Vector3 _front = Vector3.forward;
+
+        [Tooltip("Имя текстов в InspectTexts. Задано — строки берутся оттуда при запуске.")]
+        [SerializeField] private string _texts = "";
+
+        /// <summary>Тексты по имени — из InspectTexts (правятся без пересборки сцен).</summary>
+        public void UseTexts(string key) => _texts = key;
+
+        void Awake()
+        {
+            if (string.IsNullOrEmpty(_texts)) return;
+            var t = InspectTexts.For(_texts);
+            if (t == null) { Debug.LogWarning($"[ОСМОТР] {name}: текстов «{_texts}» нет в InspectTexts"); return; }
+            (_prompt, _speaker, _lines) = t.Value;
+        }
+
         private static readonly List<Inspectable> Live = new();
 
         /// <summary>Идёт ли рассказ какой-нибудь вещи. Спрашивает прогон.</summary>
@@ -45,8 +62,10 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Задать из сборщика сцены. Строки — русские (Loc.N), перевод при показе.</summary>
         public void Configure(string prompt, string speaker, string[] lines,
-                              float focus = 1.3f, float distance = 2.2f, float reach = 2.6f)
+                              float focus = 1.3f, float distance = 2.2f, float reach = 2.6f,
+                              Vector3? front = null)
         {
+            _front = front ?? Vector3.forward;
             _prompt = prompt;
             _speaker = speaker;
             _lines = lines ?? new string[0];
@@ -117,28 +136,39 @@ namespace Sinbinder.Gameplay
             if (pause != null) { pause.Pause(); mine = pause.Stamp; }
             camera.SaveCameraPosition();
 
-            // Смотрим на вещь оттуда, откуда подошёл Греховод: чуть сбоку и выше.
+            // На перёд вещи (+Z — там знаки), под 35° сбоку и чуть сверху:
+            // из-за спины Греховода он сам вставал в пол-кадра (прогон 21.10).
             var look = transform.position + Vector3.up * _focus;
-            var from = SinbinderPlayer.Exists ? SinbinderPlayer.Where : transform.position + transform.forward * 3f;
-            var flat = from - transform.position;
-            flat.y = 0f;
-            if (flat.sqrMagnitude < 0.01f) flat = transform.forward;
-            var side = Vector3.Cross(Vector3.up, flat.normalized);
-            var eye = look + flat.normalized * _distance + side * (_distance * 0.25f) + Vector3.up * 0.35f;
+            var front = transform.TransformDirection(_front);
+            front.y = 0f;
+            if (front.sqrMagnitude < 0.01f) front = Vector3.forward;
+            var dir = Quaternion.Euler(0f, 35f, 0f) * front.normalized;
+            var eye = look + dir * _distance + Vector3.up * 0.6f;
 
+            // Греховод подходит как раз с той стороны, куда смотрит кадр, и
+            // вставал в пол-экрана (кадры 21.10) — на время рассказа его не видно.
+            var hidden = new List<Renderer>();
+            if (SinbinderPlayer.Instance != null)
+                foreach (var r in SinbinderPlayer.Instance.GetComponentsInChildren<Renderer>())
+                    if (r.enabled) { r.enabled = false; hidden.Add(r); }
+
+            Debug.Log($"[ОСМОТР] {name}: наезд, строк {_lines.Length}");
             yield return camera.FocusOnPoint(look, eye);
 
             string who = string.IsNullOrEmpty(_speaker) ? null : Loc.T(_speaker);
             foreach (var raw in _lines)
             {
                 string line = Loc.T(raw);
-                UI.Letterbox.Instance?.Say(who, line);
+                var box = UI.Letterbox.Instance;
+                Debug.Log($"[ОСМОТР] строка ({line.Length} зн.), полоса {(box == null ? "НЕТ" : box.Shown ? "поднята" : "опущена")}");
+                box?.Say(who, line);
                 yield return new WaitForSecondsRealtime(Herald.Hold(line) + 0.6f);
             }
 
             camera.StopSway();
             yield return camera.RestoreCamera();
             UI.Letterbox.Instance?.Hide();
+            foreach (var r in hidden) if (r != null) r.enabled = true;
 
             if (pause != null && pause.IsPaused && pause.Stamp == mine) pause.Resume();
             Telling = false;

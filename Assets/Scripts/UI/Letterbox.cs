@@ -68,6 +68,9 @@ namespace Sinbinder.UI
         /// раз то же слово над головой читалось бы как поломка.</summary>
         public bool Shown => _shown;
 
+        /// <summary>Напечатано ли что-нибудь на нижней полосе. Спрашивает прогон: снимать кадр.</summary>
+        public bool Typed => _line != null && !string.IsNullOrEmpty(_line.text) && _typing == null;
+
         void Awake()
         {
             Instance = this;

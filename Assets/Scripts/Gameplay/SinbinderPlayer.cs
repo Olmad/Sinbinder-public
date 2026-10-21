@@ -202,26 +202,12 @@ namespace Sinbinder.Gameplay
                 Wardrobe.Tint(model.gameObject, "Eye", EyeCrimson, glow: 1.0f);
             }
 
-            // Кольцо под ногами. Плоский цилиндр, чуть над землёй, чтобы
-            // не тонуть в ней; коллайдер снят — по нему не ходят и в него
-            // не стреляют, он только метка.
-            var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            ring.name = "Знак";
-            ring.transform.SetParent(root);
-            ring.transform.localPosition = new Vector3(0f, 0.02f, 0f);
-            ring.transform.localScale = new Vector3(1.5f, 0.01f, 1.5f);
-            Paint(ring, new Color(0.75f, 0.16f, 0.22f));
-            Object.Destroy(ring.GetComponent<Collider>());
+            // Багрового диска под ногами больше нет (автор, 21 октября: «нужно
+            // наконец-то убрать розовый круг под Греховодом»). Он ставился,
+            // пока камера смотрела отвесно и Греховода терялся за палатками;
+            // теперь камера под углом, и узнаётся он ростом и багрецом,
+            // а выбранный — тем же кругом, что у всех (SelectionComponent).
         }
 
-        private static void Paint(GameObject go, Color color)
-        {
-            var renderer = go.GetComponent<Renderer>();
-            if (renderer == null) return;
-
-            // sharedMaterial трогать нельзя: он общий для всех примитивов
-            // сцены, и покраска кольца перекрасила бы все кольца сразу.
-            renderer.material.color = color;
-        }
     }
 }

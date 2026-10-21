@@ -245,6 +245,7 @@ namespace Sinbinder.EditorTools
             Sample();
             Opening();
             Guards();
+            AxeWatch();
 
             var step = _steps[_index];
 
@@ -493,9 +494,11 @@ namespace Sinbinder.EditorTools
                 steps.Add(S("опись: воин, группа, Греховод, пауза", InventoryStart, InventoryDone, 20f));
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
                 steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
-                steps.Add(S("лагерь: дерево с топором — прочли вырезанное", GoToAxeTree, AxeTreeRead, 60f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
             }
+
+            // Дерево с топором — и в обычном прогоне: F у вещи не за выключателем.
+            steps.Add(S("лагерь: дерево с топором — прочли вырезанное", GoToAxeTree, AxeTreeRead, 60f));
 
             steps.AddRange(new[]
             {
@@ -1019,14 +1022,21 @@ namespace Sinbinder.EditorTools
                 return false;
             }
 
-            // Кадр — через пять секунд: камера доехала с высоты, первая запись напечатана.
-            if (!_axeShot && Inspectable.Telling && Time.realtimeSinceStartup - _axeSince > 5f)
-            {
-                _axeShot = true;
-                Snap("дерево с топором — вырезанное");
-            }
-
+            // Кадр снимает AxeWatch: пока идёт наезд, условие шага не спрашивают.
             return _axeShot && !Inspectable.Telling;
+        }
+
+        /// <summary>
+        /// Каждый тик, и в наезде тоже: первая запись напечатана — кадр.
+        /// В условии шага кадр не снимался никогда — прогон ждёт с игроком,
+        /// пока кадр занят, и шага не спрашивает (три прогона 21.10).
+        /// </summary>
+        private static void AxeWatch()
+        {
+            if (!_axeAsked || _axeShot || !Inspectable.Telling) return;
+            if (UI.Letterbox.Instance == null || !UI.Letterbox.Instance.Typed) return;
+            _axeShot = true;
+            Snap("дерево с топором — вырезанное");
         }
 
         private static void HeroTo(Transform what, float gap)
@@ -2922,6 +2932,13 @@ namespace Sinbinder.EditorTools
             else
             {
                 Write($"  [РАМКА] рамка на весь экран взяла {(hero ? "одного Греховода" : "отряд без Греховода")} ({squad})");
+                var cam = Camera.main;
+                if (!hero && cam != null && SinbinderPlayer.Exists)
+                {
+                    var s = cam.WorldToScreenPoint(SinbinderPlayer.Where);
+                    Write($"    Греховод на экране ({s.x:0}; {s.y:0}; глубина {s.z:0.0}) при {Screen.width}×{Screen.height}; "
+                        + $"камера {cam.transform.position} наклон {cam.transform.eulerAngles.x:0}°");
+                }
                 _failed++;
             }
 
