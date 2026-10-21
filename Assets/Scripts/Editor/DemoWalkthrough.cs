@@ -514,7 +514,7 @@ namespace Sinbinder.EditorTools
                 S("старший назначен", ChooseCommander,
                   () => !string.IsNullOrEmpty(SquadRoster.CommanderName), 5f),
 
-                S("Греховод у сундука", () => HeroTo(Chest()?.transform, 1.2f),
+                S("Греховод у сундука", () => { HeroTo(Chest()?.transform, 1.2f); Chest()?.Open(); },   // с 21.10 — по F, не сам
                   () => TrophyChest.Looted, 15f),
 
                 // Сундук-склад (выключатель «склад»): экран сундука обязан

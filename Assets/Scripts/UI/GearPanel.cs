@@ -327,7 +327,16 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
+            if (TrophyChest.Unopened() != null) { _prompt.text = Loc.T("F — открыть сундук Марги"); return; }
             if (TrophyChest.Reachable() != null) { _prompt.text = Loc.T("F — сундук Марги"); return; }
+            // У стола с картами F — его (CardTable), но сказать об этом некому было:
+            // автор, 21.10: «пропало взаимодействие с картами».
+            if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
+            {
+                _prompt.text = Gameplay.CardTable.Instance.Players().Count > 0
+                    ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
+                return;
+            }
             var thing = Inspectable.Nearest();
             _prompt.text = thing != null ? thing.Prompt : "";
         }
@@ -395,6 +404,10 @@ namespace Sinbinder.UI
         {
             var pause = Core.GamePauseController.Instance;
             if (pause != null && pause.IsPaused) return;
+
+            // Закрытый сундук Марги — открыть (раньше открывался сам на подходе).
+            var shut = TrophyChest.Unopened();
+            if (shut != null) { shut.Open(); return; }
 
             var chest = TrophyChest.Reachable();
             if (chest != null) { OpenChest(chest); return; }
@@ -764,7 +777,7 @@ namespace Sinbinder.UI
             canvas.sortingOrder = 70;
             var scaler = _root.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
 
             var shade = Box("Тень", _root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
                             new Color(0f, 0f, 0f, 0.55f));
@@ -910,7 +923,7 @@ namespace Sinbinder.UI
             canvas.sortingOrder = 35;
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
 
             // Строка — на тонкой табличке по своей длине (46-UI §2.1): до 15 октября
             // висела голым текстом поверх мира и ложилась на кромку полосы.

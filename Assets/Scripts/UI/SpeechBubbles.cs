@@ -111,8 +111,10 @@ namespace Sinbinder.UI
 
             // Реплика над головой — и голосом (разговоры лагеря, слова
             // охотников на зов Каргана): до 2 октября облачка шли молча.
+            // Тише и короче сцены (автор, 21.10: «звук подбешивает, возможно,
+            // стоит сделать тише»): облачка идут всё время, это фон лагеря.
             if (who.TryGetComponent<Sinbinder.Audio.VoiceGenerator>(out var voice))
-                voice.Babble(line, seconds - 1f);
+                voice.Babble(line, Mathf.Min(seconds - 1f, line.Length / 26f + 0.3f), 0.45f);
         }
 
         void LateUpdate()

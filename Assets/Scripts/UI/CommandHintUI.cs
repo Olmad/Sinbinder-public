@@ -77,6 +77,13 @@ namespace Sinbinder.UI
         {
             if (Ordered) { Hide(); return; }
 
+            // Щелчки по воинам — дело вида сверху. От первого лица (и пока идёт
+            // открытие) строка не к месту: автор видел её в шатре над пешкой
+            // (скриншоты 21.10). Прячем на это время, не забывая урок.
+            bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson();
+            if (_showing && _panel != null && _panel.activeSelf != fit) _panel.SetActive(fit);
+            if (!fit) return;
+
             // Пока не пошёл — молчим: первый урок ещё не сдан.
             if (!MovementHintUI.Shown && !Walking()) return;
 
@@ -98,6 +105,13 @@ namespace Sinbinder.UI
 
             var walk = player.GetComponent<Gameplay.PlayerWalk>();
             return walk != null && walk.Walking;
+        }
+
+        private static bool FirstPerson()
+        {
+            var cam = Camera.main;
+            var view = cam != null ? cam.GetComponent<Gameplay.RTS_Camera>() : null;
+            return view != null && view.FirstPersonNow;
         }
 
         private void Show()

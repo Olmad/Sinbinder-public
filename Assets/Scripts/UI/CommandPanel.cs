@@ -288,7 +288,7 @@ namespace Sinbinder.UI
             canvas.sortingOrder = 40;
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
             _group = canvasGo.GetComponent<CanvasGroup>();
 
             _grid = Rect("Приказы", canvasGo.transform, new Vector2(1f, 0f), ZoneAt, ZoneSize);

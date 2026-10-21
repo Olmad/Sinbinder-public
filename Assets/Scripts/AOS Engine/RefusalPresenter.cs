@@ -76,9 +76,24 @@ namespace Sinbinder.AOS
             StartCoroutine(Beat());
             StartCoroutine(Glow());
 
+            // Огрызается не чаще раза в 12 с и ту же фразу — не раньше чем
+            // через 40: вымотанный отказывает на каждом решении, и «я устал»
+            // звучало без конца (автор, 21.10: «это сводит с ума»).
             string retort = Retort(decision, context);
-            if (!string.IsNullOrEmpty(retort)) UI.SpeechBubbles.Say(_warrior, retort, 3.5f);
+            float now = Time.unscaledTime;
+            if (!string.IsNullOrEmpty(retort) && now >= _nextRetort
+                && (retort != _lastRetort || now - _lastRetortAt > 40f))
+            {
+                UI.SpeechBubbles.Say(_warrior, retort, 3.5f);
+                _nextRetort = now + 12f;
+                _lastRetort = retort;
+                _lastRetortAt = now;
+            }
         }
+
+        private float _nextRetort;
+        private string _lastRetort;
+        private float _lastRetortAt = -99f;
 
         private IEnumerator Routine(Decision decision, DecisionContext context)
         {

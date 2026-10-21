@@ -116,6 +116,9 @@ namespace Sinbinder.Audio
         /// <summary>Во сколько раз тише, пока кадр в рамке кино.</summary>
         private const float Duck = 0.45f;
 
+        /// <summary>Музыка почти молчит, пока говорит Смерть (<see cref="DeathVoice"/>).</summary>
+        public static bool Silenced { get; set; }
+
         /// <summary>Как быстро музыка приседает и встаёт, долей громкости в секунду.</summary>
         private const float DuckSpeed = 1.5f;
 
@@ -272,7 +275,11 @@ namespace Sinbinder.Audio
             float dt = Time.unscaledDeltaTime;
 
             bool framed = UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown;
-            _duck = Mathf.MoveTowards(_duck, framed ? Duck : 1f, DuckSpeed * dt);
+            // Говорит Смерть (пешка, DeathVoice) — музыка уходит совсем:
+            // громкость ставится здесь каждый кадр, и чужая правка её не держала
+            // (автор, 21.10: «пешка не заглушает музыку во время боя»).
+            float want = Silenced ? 0.03f : framed ? Duck : 1f;
+            _duck = Mathf.MoveTowards(_duck, want, DuckSpeed * dt);
 
             bool cueing = Time.unscaledTime < _cueUntil;
             _under = Mathf.MoveTowards(_under, cueing ? UnderCue : 1f, DuckSpeed * dt);

@@ -102,6 +102,7 @@ namespace Sinbinder.Audio
                 _dimmed.Add((l, l.intensity, flicker));
             }
 
+            Music.Silenced = true;
             StopAllCoroutines();
             StartCoroutine(Fade(0f, 1.2f));
             _beat = StartCoroutine(Beat());
@@ -111,6 +112,7 @@ namespace Sinbinder.Audio
         {
             if (_beat != null) StopCoroutine(_beat);
             _beat = null;
+            Music.Silenced = false;
             StartCoroutine(Restore(1.5f));
         }
 

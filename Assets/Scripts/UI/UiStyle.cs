@@ -23,6 +23,14 @@ namespace Sinbinder.UI
     /// </summary>
     public static class UiStyle
     {
+        /// <summary>
+        /// Эталонный экран всех холстов интерфейса — одна ручка крупности.
+        /// Было 1920×1080 у каждого холста отдельно; автор, 21 октября:
+        /// «шрифты выглядят странно, вероятно, слишком большие». Эталон
+        /// на 15% больше — интерфейс на 15% мельче на любом экране.
+        /// </summary>
+        public static readonly Vector2 Reference = new(2208f, 1242f);
+
         private static Font _body, _bodyBold, _title;
         private static Sprite _drop, _pill, _plate, _plateThin;
 

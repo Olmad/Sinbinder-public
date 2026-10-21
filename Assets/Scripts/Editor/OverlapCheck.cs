@@ -87,6 +87,44 @@ namespace Sinbinder.Utilets
                     + (items.Count <= 12 ? " — " + string.Join(", ", items.ConvertAll(i => i.Name)) : ""));
 
             found += Grounded(scene, items);
+            found += InsideTents(scene);
+            return found;
+        }
+
+        /// <summary>
+        /// Убранство палатки — под тканью (автор, 21.10: «сундуки часто
+        /// пересекают палатки»). Палатка с вещами внутри — один предмет для
+        /// проверки пересечений, поэтому сундучок сквозь скат там не виден.
+        /// Здесь: каждый угол каждой вещи внутри — не за боковиной, не за
+        /// пологом и не выше ската (<see cref="Gameplay.TentInterior.PokesOut"/>).
+        /// </summary>
+        private static int InsideTents(string scene)
+        {
+            int found = 0;
+            foreach (var tent in Object.FindObjectsByType<Gameplay.TentInterior>(FindObjectsSortMode.None))
+            {
+                foreach (var r in tent.GetComponentsInChildren<Renderer>())
+                {
+                    if (tent.IsCover(r) || r is ParticleSystemRenderer || r is LineRenderer || !r.enabled) continue;
+                    if (r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly) continue;
+
+                    var lb = r.localBounds;
+                    var t = r.transform;
+                    float worst = 0f;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        var c = lb.center + Vector3.Scale(lb.extents,
+                            new Vector3((k & 1) == 0 ? -1 : 1, (k & 2) == 0 ? -1 : 1, (k & 4) == 0 ? -1 : 1)) * 0.92f;
+                        var w = t.TransformPoint(c);
+                        if (tent.PokesOut(w)) worst = Mathf.Max(worst, 1f);
+                    }
+                    if (worst <= 0f) continue;
+
+                    found++;
+                    Debug.LogError($"[СКВОЗЬ ТКАНЬ] {scene}: «{r.name}» в «{tent.name}» торчит наружу");
+                }
+            }
+            Debug.Log($"[ПАЛАТКИ] {scene}: вещей сквозь ткань — {found}");
             return found;
         }
 

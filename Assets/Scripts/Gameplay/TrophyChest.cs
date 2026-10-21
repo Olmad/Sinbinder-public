@@ -172,17 +172,27 @@ namespace Sinbinder.Gameplay
                 }
             }
 
-            // Тем же правилом, что и стол совета: есть тело — открывает
-            // тело. «Подойти к сундуку», не сходя с места, — не подход.
-            if (SinbinderPlayer.Exists)
-            {
-                if (CampFocus.GroundDistance(SinbinderPlayer.Where,
-                                             transform.position) > _reach) return;
-            }
-            else if (!CampFocus.Reached(_eye.position, _eye.forward,
-                                        transform.position, _reach)) return;
+            // Без тела героя (старые сцены) — по-прежнему сам, по взгляду.
+            // С телом — по F (Unopened, GearPanel): автор, 21 октября:
+            // «Сундук Марги открывается сам» — открыть должен решить игрок.
+            if (!SinbinderPlayer.Exists
+                && CampFocus.Reached(_eye.position, _eye.forward, transform.position, _reach))
+                Open();
+        }
 
-            Open();
+        /// <summary>
+        /// Закрытый сундук, к которому Греховод подошёл и который пора
+        /// открыть (старший назначен). F открывает его (<see cref="UI.GearPanel"/>).
+        /// Нет такого — null.
+        /// </summary>
+        public static TrophyChest Unopened()
+        {
+            if (Looted || !SinbinderPlayer.Exists || string.IsNullOrEmpty(SquadRoster.CommanderName)) return null;
+
+            var chest = Object.FindFirstObjectByType<TrophyChest>();
+            if (chest == null || chest._opening) return null;
+            return CampFocus.GroundDistance(SinbinderPlayer.Where, chest.transform.position) <= chest._reach
+                ? chest : null;
         }
 
         /// <summary>Открыть и раздать. Публично: сцену может вести и не игрок.</summary>

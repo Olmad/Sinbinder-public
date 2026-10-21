@@ -78,7 +78,7 @@ namespace Sinbinder.Gameplay
         // перенести выход из лагеря дальше, а то сейчас выглядит тупо» —
         // круг стоял впритык к палаткам. К нему ведёт дорога факелов
         // (DemoSceneBuilder.Outskirts).
-        private static readonly Vector3 Edge = new Vector3(21.7f, 0f, 3.8f);
+        private static readonly Vector3 Edge = new Vector3(26.6f, 0f, 4.65f);   // 21.10, вечер: 22 → 27 м, в конец тропинки (автор)
 
         /// <summary>Где круг выхода из лагеря. Сборщик ставит к нему дорогу.</summary>
         public static Vector3 ExitPoint => Edge;

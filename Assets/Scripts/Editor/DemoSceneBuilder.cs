@@ -1124,7 +1124,7 @@ namespace Sinbinder.Utilets
             // Дорога к выходу — парные факелы на шестах: путь виден от костра
             // и тёплым светом ведёт туда, где бежать (выход дальше прежнего).
             var side = Vector3.Cross(Vector3.up, toExit);
-            foreach (float d in new[] { 11.5f, 16f, 20.5f })
+            foreach (float d in new[] { 11.5f, 16f, 20.5f, 25f })
                 for (int s = -1; s <= 1; s += 2)
                     RoadTorch(root.transform, toExit * d + side * (s * 2.3f));
 
@@ -1769,7 +1769,10 @@ namespace Sinbinder.Utilets
             Bedroll(tent, new Vector3(side * Mathf.Min(half - 0.25f, path + 0.35f), 0f,
                                       back + 0.2f + length * 0.5f), 0.55f, length);
 
-            SmallChest(tent, new Vector3(-side * (path + 0.30f), 0f, back + 0.35f), side * 90f, 0.42f);
+            // Ближе к коньку и от полога (21.10): у боковины под скатом крышка
+            // уходила в ткань во всех четырнадцати палатках (OverlapCheck,
+            // «СКВОЗЬ ТКАНЬ»; автор: «сундуки часто пересекают палатки»).
+            SmallChest(tent, new Vector3(-side * Mathf.Min(path + 0.05f, 0.28f), 0f, back + 0.55f), side * 90f, 0.40f);
 
             Lantern(tent, new Vector3(0f, top - 0.40f, back + 0.45f),
                     range: 2.4f, intensity: 0.7f, shadows: false);
@@ -2394,7 +2397,7 @@ namespace Sinbinder.Utilets
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
             canvasGO.AddComponent<GraphicRaycaster>();
 
             if (Object.FindFirstObjectByType<EventSystem>() == null)

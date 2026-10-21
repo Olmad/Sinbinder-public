@@ -61,6 +61,22 @@ namespace Sinbinder.Gameplay
 
         public float Half => _half;
         public float Top => _top;
+        public float Back => _back;
+
+        /// <summary>Ткань или шест самой палатки — не убранство. Спрашивает проверка сцены.</summary>
+        public bool IsCover(Renderer r) => System.Array.IndexOf(_cover, r) >= 0;
+
+        /// <summary>
+        /// Торчит ли точка сквозь ткань: за боковиной, за задним пологом
+        /// или выше ската. Перёд открыт — оттуда торчать можно.
+        /// </summary>
+        public bool PokesOut(Vector3 world, float slack = 0.03f)
+        {
+            var p = transform.InverseTransformPoint(world);
+            if (Mathf.Abs(p.x) > _half + slack) return true;
+            if (p.z < _back - slack) return true;
+            return p.y > RoofOver(Mathf.Min(Mathf.Abs(p.x), _half)) + slack;
+        }
 
         void OnEnable()
         {

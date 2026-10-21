@@ -1031,7 +1031,7 @@ namespace Sinbinder.Gameplay
             canvas.sortingOrder = 45;
             var scaler = _plate.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
 
             // Справа по центру: не на панели приказов (справа внизу)
             // и не на журнале (слева внизу).

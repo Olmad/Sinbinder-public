@@ -48,7 +48,7 @@ namespace Sinbinder.Gameplay
         private const float FadeOut = 1.8f;
 
         private static readonly string Motto = Loc.N("Не командуй. Искушай.");
-        private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.\nW — идти · мышь — оглядеться");
+        private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Showing = false; Busy = false; }
@@ -186,7 +186,7 @@ namespace Sinbinder.Gameplay
             canvas.sortingOrder = 84;
             var scaler = root.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
             scaler.matchWidthOrHeight = 0.5f;
 
             group = root.AddComponent<CanvasGroup>();
@@ -234,7 +234,7 @@ namespace Sinbinder.Gameplay
             canvas.sortingOrder = 85;
             var scaler = root.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = Sinbinder.UI.UiStyle.Reference;
             scaler.matchWidthOrHeight = 0.5f;
 
             group = root.AddComponent<CanvasGroup>();

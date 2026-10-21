@@ -44,7 +44,7 @@ namespace Sinbinder.Utilets
             ("PavingStones127", 8f, 0.10f),
             ("Bricks076A", 5f, 0.06f),
             ("Planks037A", 4f, 0.10f),
-            ("Fabric061", 3f, 0.05f),
+            ("Fabric061", 1.5f, 0.05f),   // 21.10: 3 → 1,5 — мелкое плетение рябило муаром на скатах
             ("Leather033A", 2f, 0.12f),
         };
 

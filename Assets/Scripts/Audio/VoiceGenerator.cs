@@ -109,11 +109,19 @@ namespace Sinbinder.Audio
 
             float finalPitch = pitch * (1f + variation * Wobble(letter));
             AudioClip clip = Clip(voiceType, finalPitch, duration);
-            _audioSource.PlayOneShot(clip);
+            _audioSource.PlayOneShot(clip, _loud);
         }
 
-        /// <summary>Сколько букв в секунду проговаривает голос строку, показанную целиком.</summary>
-        private const float LettersPerSecond = 13f;
+        /// <summary>Громкость текущего бормотания: болтовня лагеря тише сцены.</summary>
+        private float _loud = 1f;
+
+        /// <summary>
+        /// Сколько букв в секунду проговаривает голос строку, показанную целиком.
+        /// 21 октября: 13 → 26. Строка печатается по 40 в секунду, и при 13
+        /// писк тянулся втрое дольше текста — автор: «фразы давно
+        /// отпечатались, а они ещё минуту пищат».
+        /// </summary>
+        private const float LettersPerSecond = 26f;
 
         /// <summary>Больше бипов на одну реплику не надо: дальше — уже шум, а не речь.</summary>
         private const int MostBips = 46;
@@ -134,9 +142,10 @@ namespace Sinbinder.Audio
         /// Новая строка того же голоса обрывает прежнюю: говорить разом
         /// могут двое, но не один дважды.
         /// </summary>
-        public void Babble(string words, float seconds)
+        public void Babble(string words, float seconds, float loud = 1f)
         {
             if (string.IsNullOrEmpty(words) || seconds <= 0f || !isActiveAndEnabled) return;
+            _loud = Mathf.Clamp01(loud);
             if (_babble != null) StopCoroutine(_babble);
             _babble = StartCoroutine(BabbleRoutine(words, seconds));
         }
@@ -163,6 +172,7 @@ namespace Sinbinder.Audio
             }
 
             _babble = null;
+            _loud = 1f;   // разговор вблизи (DialogueUI, Speak) — в полную силу
         }
 
         /// <summary>

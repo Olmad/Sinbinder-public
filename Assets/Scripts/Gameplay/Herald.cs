@@ -182,8 +182,11 @@ namespace Sinbinder.Gameplay
 
                 // Голосом говорящего — тем же, что у окна диалога: строка
                 // показана целиком, голос проговаривает её, пока кадр стоит.
+                // Пищит, пока строка печатается (Letterbox, ~40 букв/с), а не
+                // всё время, пока висит: автор, 21.10 — «фразы давно
+                // отпечатались, а они ещё минуту пищат».
                 if (speaker.TryGetComponent<Audio.VoiceGenerator>(out var voice))
-                    voice.Babble(words, Hold(words) - 0.4f);
+                    voice.Babble(words, Mathf.Min(Hold(words) - 0.4f, words.Length / 40f * 1.2f + 0.3f));
 
                 // Реальное время: игровое стоит.
                 yield return new WaitForSecondsRealtime(Hold(words));
