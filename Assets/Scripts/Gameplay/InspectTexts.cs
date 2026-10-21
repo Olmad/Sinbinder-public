@@ -28,7 +28,7 @@ namespace Sinbinder.Gameplay
             switch (key)
             {
                 case "AxeTree": return (AxeTreePrompt, AxeTreeSpeaker, AxeTree);
-                case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn);
+                // Пешка — ветка появится вместе с пешкой в сцене (строки ниже уже есть).
                 default: return null;
             }
         }
