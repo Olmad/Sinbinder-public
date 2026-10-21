@@ -203,6 +203,8 @@ namespace Sinbinder.EditorTools
                 _logoShot = false;
                 _guardSaid.Clear();
                 _guardNext = 0f;
+                _roadsScene = null;
+                _still.Clear();
                 ResetHandChecks();
                 _lessonSince = -1f;
                 _lessonStuckTold = false;
@@ -1692,6 +1694,137 @@ namespace Sinbinder.EditorTools
 
             Heads();
             Hidden();
+            Roads();
+            Stuck();
+            Clipped();
+        }
+
+        // ── Предмет на пути: до всего, к чему игрок обязан подойти, есть дорога ──
+
+        private static string _roadsScene;
+        private static float _roadsSceneSince;
+        private static bool _roadsDone;
+
+        /// <summary>
+        /// Раз на сцену, через три секунды после загрузки (навмеш печётся
+        /// в игре): от Греховода — дорога до костра, стола совета, сундука,
+        /// стола с картами, шара, круга выхода и всего, у чего в склепе F.
+        /// Нет дороги — ошибка: предмет, к которому не пройти, — глупость
+        /// того же рода, что сундук в склоне.
+        /// </summary>
+        private static void Roads()
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            float now = Time.realtimeSinceStartup;
+            if (scene != _roadsScene) { _roadsScene = scene; _roadsSceneSince = now; _roadsDone = false; return; }
+            if (_roadsDone || now - _roadsSceneSince < 3f || !SinbinderPlayer.Exists) return;
+            _roadsDone = true;
+
+            if (!NavMesh.SamplePosition(SinbinderPlayer.Where, out var start, 2f, NavMesh.AllAreas))
+            {
+                Guard("ДОРОГА", scene + "|старт", $"{scene}: под Греховодом нет навмеша — идти неоткуда");
+                return;
+            }
+
+            var goals = new List<(string Name, Vector3 At)>();
+            void Goal(string name, Component c) { if (c != null) goals.Add((name, c.transform.position)); }
+
+            Goal("костёр", UnityEngine.Object.FindFirstObjectByType<CampOpening>());
+            Goal("сундук Марги", UnityEngine.Object.FindFirstObjectByType<TrophyChest>());
+            Goal("стол с картами", UnityEngine.Object.FindFirstObjectByType<CardTable>());
+            Goal("шар", UnityEngine.Object.FindFirstObjectByType<CrystalBall>());
+            var council = GameObject.Find("Стол совета");
+            if (council != null) goals.Add(("стол совета", council.transform.position));
+            if (UnityEngine.Object.FindFirstObjectByType<CampOpening>() != null)
+                goals.Add(("круг выхода", RaidEvent.ExitPoint));
+            foreach (var f in UnityEngine.Object.FindObjectsByType<Crypt.CryptInteractable>(FindObjectsSortMode.None))
+                goals.Add((f.name, f.transform.position));
+
+            int ok = 0;
+            var path = new NavMeshPath();
+            foreach (var (name, at) in goals)
+            {
+                if (!NavMesh.SamplePosition(at, out var near, 2.5f, NavMesh.AllAreas))
+                {
+                    Guard("ДОРОГА", scene + "|" + name, $"{scene}: у «{name}» нет земли, на которую встать (2,5 м)");
+                    continue;
+                }
+                if (!NavMesh.CalculatePath(start.position, near.position, NavMesh.AllAreas, path)
+                    || path.status != NavMeshPathStatus.PathComplete)
+                {
+                    Guard("ДОРОГА", scene + "|" + name, $"{scene}: до «{name}» от Греховода не дойти — дорога перекрыта");
+                    continue;
+                }
+                ok++;
+            }
+            Write($"  [ДОРОГА] {scene}: дойти можно до {ok} из {goals.Count}");
+        }
+
+        // ── Застрял: идёт, а с места не сходит ──
+
+        private static readonly Dictionary<NavMeshAgent, (Vector3 At, float Since)> _still = new();
+
+        /// <summary>
+        /// Агент с целью дальше метра, не остановленный, за шесть секунд
+        /// игрового времени не сдвинулся на полметра. Мир на паузе (наезд,
+        /// урок, окно) не в счёт — время игры стоит.
+        /// </summary>
+        private static void Stuck()
+        {
+            if (Time.timeScale <= 0f) return;
+            float now = Time.time;
+
+            foreach (var agent in UnityEngine.Object.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None))
+            {
+                if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh) continue;
+                var w = agent.GetComponent<Warrior>();
+                if (w == null || w.IsDead) { _still.Remove(agent); continue; }
+
+                // Дошёл «почти» — не застрял: агент встаёт в метре от точки,
+                // когда у неё уже стоят (первый прогон: девять «застрявших»
+                // в 1,0–1,2 м от цели — все стояли там, куда шли).
+                bool going = agent.hasPath && !agent.isStopped && !agent.pathPending
+                          && agent.remainingDistance > agent.stoppingDistance + 1.5f;
+                var at = agent.transform.position;
+
+                if (!going || !_still.TryGetValue(agent, out var was) || (at - was.At).magnitude > 0.5f)
+                {
+                    _still[agent] = (at, now);
+                    continue;
+                }
+
+                if (now - was.Since > 6f)
+                    Guard("ЗАСТРЯЛ", w.DisplayName + "|" + Mathf.RoundToInt(at.x) + "," + Mathf.RoundToInt(at.z),
+                        $"{w.DisplayName} идёт к цели в {agent.remainingDistance:0.0} м, а шесть секунд стоит у ({at.x:0.0}; {at.z:0.0})");
+            }
+        }
+
+        // ── Текст не влез: рамка обрезала надпись ──
+
+        /// <summary>
+        /// Видимая надпись со строгой рамкой (обрезка по высоте), в которой
+        /// уложено меньше знаков, чем написано. Разметку (&lt;color&gt;…)
+        /// не считаем — её не видно.
+        /// </summary>
+        private static void Clipped()
+        {
+            foreach (var t in UnityEngine.Object.FindObjectsByType<Text>(FindObjectsSortMode.None))
+            {
+                if (t == null || !t.isActiveAndEnabled || string.IsNullOrEmpty(t.text)) continue;
+                if (t.verticalOverflow == VerticalWrapMode.Overflow || t.resizeTextForBestFit) continue;
+                if (t.canvasRenderer.GetAlpha() < 0.05f) continue;
+                var group = t.GetComponentInParent<CanvasGroup>();
+                if (group != null && group.alpha < 0.05f) continue;
+
+                string plain = System.Text.RegularExpressions.Regex.Replace(t.text, "<[^>]+>", "");
+                int visible = t.cachedTextGenerator.characterCountVisible;
+                int need = plain.Replace("\n", "").Replace(" ", "").Length;
+                int got = Mathf.Max(0, visible);
+                // characterCountVisible считает и пробелы — сравниваем грубо, с запасом.
+                if (visible > 0 && got + 2 < plain.Length && plain.Length - got > 3 && need > 0)
+                    Guard("ОБРЕЗАН", t.name + "|" + plain.GetHashCode(),
+                        $"«{t.name}»: видно {got} знаков из {plain.Length} — «{(plain.Length > 50 ? plain.Substring(0, 50) + "…" : plain)}»");
+            }
         }
 
         private static void Guard(string kind, string key, string text)
