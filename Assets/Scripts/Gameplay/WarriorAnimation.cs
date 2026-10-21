@@ -108,6 +108,10 @@ namespace Sinbinder.Gameplay
 
             if (_talking) return BodyMotion.Talk;
 
+            // Ударил только что — взмах, даже если чуть сдвинулся: толкотня
+            // в свалке даёт агенту скорость, и раньше удар читался ходьбой.
+            if (Time.time - _struckAt < StrikeShows) return BodyMotion.Attack;
+
             // Ноги важнее решения: воин, решивший «бить», но ещё идущий
             // к цели, на экране идёт. Решение станет ударом, когда он
             // дойдёт, и спорить с ногами здесь нельзя — игрок смотрит
@@ -117,7 +121,34 @@ namespace Sinbinder.Gameplay
             // Реплика лагеря над головой — и рот при ней (TalkFor).
             if (Time.time < _talkUntil) return BodyMotion.Talk;
 
-            return _mind != null ? BodyMotion.For(_mind.LastDecision) : BodyMotion.Idle;
+            // Стоит на месте — не идёт. «Подчиниться» и «за добычей» — это
+            // ходьба, пока ноги идут (проверено выше); стоящий с таким
+            // решением шагал на месте — в том числе у врага, которого бьёт
+            // по приказу.
+            var motion = _mind != null ? BodyMotion.For(_mind.LastDecision) : BodyMotion.Idle;
+            return motion == BodyMotion.Walk ? BodyMotion.Idle : motion;
+        }
+
+        // ---------------------------------------------------------- удар
+
+        /// <summary>Сколько секунд после удара тело показывает взмах.</summary>
+        private const float StrikeShows = 0.7f;
+
+        /// <summary>Сколько взмахов показано с начала игры. Спрашивает прогон.</summary>
+        public static int Swings { get; private set; }
+
+        private float _struckAt = -99f;
+        private bool _strikeFresh;
+
+        /// <summary>
+        /// Ударил. Зовёт <see cref="Damageable.TakeDamage"/> — там сходятся
+        /// все пути удара. Каждый удар — взмах с начала клипа, а не
+        /// продолжение прежнего (21 октября: «махать так и не научились»).
+        /// </summary>
+        public void Struck()
+        {
+            _struckAt = Time.time;
+            _strikeFresh = true;
         }
 
         private bool Walking()
@@ -183,6 +214,16 @@ namespace Sinbinder.Gameplay
 
         private void Play(string state)
         {
+            // Новый удар — взмах заново, даже если уже стоим во взмахе.
+            if (state == BodyMotion.Attack && _strikeFresh)
+            {
+                _strikeFresh = false;
+                Swings++;
+                _now = state;
+                _animator.CrossFadeInFixedTime(state, Blend, -1, 0f);
+                return;
+            }
+
             if (state == _now) return;
 
             _now = state;
@@ -329,6 +370,7 @@ namespace Sinbinder.Gameplay
         {
             _everyone = new Warrior[0];
             _everyoneAt = -1f;
+            Swings = 0;
         }
 
         /// <summary>

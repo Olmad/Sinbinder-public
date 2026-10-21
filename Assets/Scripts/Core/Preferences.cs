@@ -142,17 +142,16 @@ namespace Sinbinder.Core
             PlayerPrefs.Save();
         }
 
-        public static string GraphicsName() => LightGraphics
-            ? Loc.T("облегчённая — без теней")
-            : Loc.T("полная");
+        /// <summary>Набор графики — с 21 октября по пунктам (<see cref="GraphicsOptions"/>).</summary>
+        public static string GraphicsName() => GraphicsOptions.PresetName();
 
-        /// <summary>Полная или облегчённая — и сразу в игру, без перезапуска.</summary>
+        /// <summary>Полная ↔ облегчённая — и сразу в игру, без перезапуска.</summary>
         public static void ToggleGraphics()
         {
-            LightGraphics = !LightGraphics;
+            GraphicsOptions.CyclePreset();
+            LightGraphics = GraphicsOptions.IsLight;
             PlayerPrefs.SetInt(GraphicsKey, LightGraphics ? 1 : 0);
             PlayerPrefs.Save();
-            FrameBudget.Apply();
         }
 
         /// <summary>
@@ -164,7 +163,7 @@ namespace Sinbinder.Core
         ///
         /// Прогон в пакетном режиме — всегда полная: его снимки смотрит автор.
         /// </summary>
-        private static bool Integrated()
+        internal static bool Integrated()
         {
             if (Application.isBatchMode) return false;
 

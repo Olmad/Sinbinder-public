@@ -62,6 +62,14 @@ namespace Sinbinder.Gameplay
                 && attacker.TryGetComponent<AOS.AOSWarriorWrapper>(out var striker))
                 striker.MarkStruck();
 
+            // И взмах у того, кто ударил: удар идёт тремя путями (AutoAttack,
+            // Engagement, умения), а ловить его надёжно — здесь, где он
+            // доходит. Автор, 21 октября: «оружие достают, а махать им так
+            // и не научились».
+            if (attacker != null
+                && attacker.TryGetComponent<WarriorAnimation>(out var arm))
+                arm.Struck();
+
             damage = ApplyPosition(damage, attacker);
 
             // Защита тела: от оболочки и от вещей в руках (CombatMath).

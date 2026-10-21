@@ -107,19 +107,85 @@ namespace Sinbinder.Core
             // В редакторе фокус уходит от окна игры к инспектору — игре
             // в нём незачем падать до пятнадцати кадров.
             if (Application.isEditor) return;
-            Application.targetFrameRate = focused ? Target : Background;
+            _focused = focused;
+            Frames();
         }
+
+        private bool _focused = true;
 
         void OnApplicationQuit() => Wake();
 
         void OnDestroy() => Wake();
 
+        /// <summary>
+        /// Всё из <see cref="GraphicsOptions"/> (21 октября): тени, затенение
+        /// углов, сглаживание, чёткость, зерно, потолок кадров. Раньше —
+        /// одна «облегчённая» разом.
+        /// </summary>
         private void Enforce()
         {
-            bool light = Preferences.LightGraphics;
-            Shadows(light);
-            Occlusion(light);
+            Shadows(GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Off);
+            ShadowEdges();
+            Occlusion(!GraphicsOptions.Occlusion);
+            Detail();
+            Smoothing();
+            GraphicsOptions.ApplyGrain();
+            Frames();
         }
+
+        private void Frames()
+        {
+            bool sync = GraphicsOptions.Frames == GraphicsOptions.FrameCap.Sync;
+            QualitySettings.vSyncCount = sync ? 1 : 0;
+            Application.targetFrameRate = _focused ? GraphicsOptions.TargetFrames : Background;
+        }
+
+        /// <summary>Мягкие или чёткие края теней — у каждого света с тенью.</summary>
+        private static void ShadowEdges()
+        {
+            if (GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Off) return;
+            var want = GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Hard
+                ? LightShadows.Hard : LightShadows.Soft;
+
+            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+                if (l.shadows != LightShadows.None && l.shadows != want) l.shadows = want;
+        }
+
+        /// <summary>Сглаживание — свойство камеры, не файла настроек: можно и в редакторе.</summary>
+        private static void Smoothing()
+        {
+            var mode = GraphicsOptions.Mode;
+            foreach (var cam in Camera.allCameras)
+            {
+                var data = cam.GetComponent<UniversalAdditionalCameraData>();
+                if (data == null || data.renderType != CameraRenderType.Base) continue;
+                if (data.antialiasing != mode) data.antialiasing = mode;
+                if (mode == AntialiasingMode.SubpixelMorphologicalAntiAliasing)
+                    data.antialiasingQuality = AntialiasingQuality.High;
+            }
+        }
+
+        /// <summary>
+        /// Чёткость — доля разрешения мира и масштабатор STP: мир рисуется
+        /// мельче, а STP собирает кадр в полный размер (свой у Unity, на любой
+        /// видеокарте). Файл настроек — только в собранной игре.
+        /// </summary>
+        private void Detail()
+        {
+            if (Application.isEditor) return;
+            var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                       as UniversalRenderPipelineAsset;
+            if (pipe == null) return;
+
+            if (_scaleWas < 0f) { _scaleWas = pipe.renderScale; _filterWas = pipe.upscalingFilter; }
+
+            float scale = GraphicsOptions.Scale;
+            if (!Mathf.Approximately(pipe.renderScale, scale)) pipe.renderScale = scale;
+            var filter = scale < 1f ? UpscalingFilterSelection.STP : _filterWas;
+            if (pipe.upscalingFilter != filter) pipe.upscalingFilter = filter;
+        }
+
+        private UpscalingFilterSelection _filterWas = UpscalingFilterSelection.Auto;
 
         /// <summary>Тени — у каждой камеры; вернуть только тем, у кого сняли.</summary>
         private void Shadows(bool light)
@@ -149,14 +215,11 @@ namespace Sinbinder.Core
         private void Occlusion(bool light)
         {
             if (Application.isEditor) return;
-            if (!light) { Wake(); return; }
-
-            var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
-                       as UniversalRenderPipelineAsset;
-            if (pipe != null && _scaleWas < 0f)
+            if (!light)
             {
-                _scaleWas = pipe.renderScale;
-                pipe.renderScale = LightScale;
+                foreach (var f in _dimmed) if (f != null) f.SetActive(true);
+                _dimmed.Clear();
+                return;
             }
 
             if (_dimmed.Count > 0) return;
@@ -178,7 +241,7 @@ namespace Sinbinder.Core
             if (_scaleWas < 0f) return;
             var pipe = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
                        as UniversalRenderPipelineAsset;
-            if (pipe != null) pipe.renderScale = _scaleWas;
+            if (pipe != null) { pipe.renderScale = _scaleWas; pipe.upscalingFilter = _filterWas; }
             _scaleWas = -1f;
         }
     }

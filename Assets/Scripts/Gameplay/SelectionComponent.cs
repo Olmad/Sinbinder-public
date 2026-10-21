@@ -35,8 +35,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         void Start()
         {
-            // Кольцо отношения — у всех и всегда (docs/42-INTERFACE.md §4):
-            // в покое тусклое, у выбранного — в полную силу.
+            // Кольцо отношения (docs/42-INTERFACE.md §4): у выбранного —
+            // в полную силу, у противника в покое — тусклое, у своего
+            // невыбранного — нет (21 октября, см. Update).
             if (_selectionCircle == null) _selectionCircle = BuildCircle();
             Paint();
 
@@ -82,7 +83,14 @@ namespace Sinbinder.Gameplay
         {
             if (_selectionCircle == null) return;
 
-            bool show = _warrior != null && !_warrior.IsDead && !FogOfWar.Hides(_warrior);
+            // Свой невыбранный — без кольца (автор, 21 октября: «даже когда
+            // воины не выделены — у них круги. Это очень мешает и портит кадр
+            // с названием игры»). Отменяет «кольцо у всех и всегда»
+            // 42-INTERFACE §4 для своих; противнику тусклое кольцо оставлено —
+            // в набеге по нему охотника находят в темноте. Под открытием
+            // колец нет ни у кого: это кадр, а не поле боя.
+            bool show = _warrior != null && !_warrior.IsDead && !FogOfWar.Hides(_warrior)
+                     && (_isSelected || (_warrior.Team == Team.Enemy && !OpeningReveal.Busy));
             if (_selectionCircle.activeSelf != show) _selectionCircle.SetActive(show);
 
             // Подкуп меняет сторону — кольцо обязано сказать правду о нынешней.

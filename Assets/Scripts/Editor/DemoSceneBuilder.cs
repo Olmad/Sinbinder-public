@@ -1150,6 +1150,27 @@ namespace Sinbinder.Utilets
                 radius * 0.55f, 0.3f, Vector3.Distance(top, foot));
 
             Cover(ramp, "Ground048");
+
+            // Валуны по краям тропы: прямые боковые грани куба сверху
+            // читались плитой (21 октября, после сужения). Камни стоят
+            // на земле, а не на склоне, — закрывают грань и не мешают
+            // идти по тропе. Раскладка без Random: лагерь одинаков всегда.
+            var stones = new GameObject("Камни у тропы");
+            Vector3 side = Vector3.Cross(Vector3.up, down);
+            float edge = radius * 0.55f * 0.5f + 0.45f;
+            var places = new[]
+            {
+                (t: 0.42f, s: +1f, k: 0.85f, yaw: 30f),
+                (t: 0.70f, s: +1f, k: 0.70f, yaw: 110f),
+                (t: 0.55f, s: -1f, k: 0.80f, yaw: 200f),
+                (t: 0.86f, s: -1f, k: 0.60f, yaw: 290f),
+            };
+            foreach (var p in places)
+            {
+                var at = Vector3.Lerp(top, foot, p.t);
+                at.y = 0f;
+                Prop("Rock", stones.transform, at + side * (edge * p.s), p.yaw, p.k);
+            }
         }
 
         /// <summary>

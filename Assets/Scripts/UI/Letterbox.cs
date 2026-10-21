@@ -205,7 +205,65 @@ namespace Sinbinder.UI
                 _speaker.gameObject.SetActive(!string.IsNullOrEmpty(speaker));
             }
 
-            if (_line != null) _line.text = line ?? "";
+            if (_line == null) return;
+
+            if (_typing != null) { StopCoroutine(_typing); _typing = null; }
+
+            // По букве, как в Undertale (автор, 21 октября: «сейчас это
+            // выглядит очень тупо» — строка падала на полосу целиком).
+            // Пустое, разметка или выключенный объект — сразу целиком.
+            if (string.IsNullOrEmpty(line) || line.IndexOf('<') >= 0 || !isActiveAndEnabled)
+            {
+                _line.text = line ?? "";
+                return;
+            }
+
+            _typing = StartCoroutine(Type(line));
+        }
+
+        [Tooltip("Букв в секунду. Читают ~16 в секунду (Herald.Hold) — печать "
+               + "обгоняет чтение, но видна.")]
+        [SerializeField] private float _lettersPerSecond = 40f;
+
+        private Coroutine _typing;
+
+        /// <summary>
+        /// Печатаем, а не дописываем: вся строка стоит на месте с первого
+        /// кадра, ненапечатанный хвост — прозрачный. Иначе строка по центру
+        /// переносилась бы заново на каждой букве и прыгала. Время —
+        /// настоящее: под наездом игра стоит.
+        /// </summary>
+        private IEnumerator Type(string full)
+        {
+            _line.supportRichText = true;
+
+            int shown = 0;
+            float wait = 0f;
+            while (shown < full.Length)
+            {
+                wait -= Time.unscaledDeltaTime;
+                while (wait <= 0f && shown < full.Length)
+                    wait += 1f / Mathf.Max(1f, _lettersPerSecond) + Breath(full[shown++]);
+
+                _line.text = shown >= full.Length
+                    ? full
+                    : full.Substring(0, shown) + "<color=#00000000>" + full.Substring(shown) + "</color>";
+                yield return null;
+            }
+
+            _line.text = full;
+            _typing = null;
+        }
+
+        /// <summary>Запинка после знака: точка — вдох, запятая — полвдоха.</summary>
+        private static float Breath(char c)
+        {
+            switch (c)
+            {
+                case '.': case '!': case '?': case '…': return 0.22f;
+                case ',': case ';': case ':': case '—': return 0.09f;
+                default: return 0f;
+            }
         }
 
         private void Clear() => Say(null, null);

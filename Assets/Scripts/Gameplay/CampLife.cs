@@ -115,7 +115,7 @@ namespace Sinbinder.Gameplay
                 case CampSpot.Chest: return 45f;
                 case CampSpot.Cards: return 0f;    // за картами сидят на своём месте
                 case CampSpot.Apart: return 60f;
-                case CampSpot.Tents: return 25f;
+                case CampSpot.Tents: return 0f;    // у входа своей палатки — на месте: шаг уводил под скат
                 default:             return 0f;   // дозор ходит сам, у Греховода — не топчутся
             }
         }
@@ -194,6 +194,7 @@ namespace Sinbinder.Gameplay
                 case CampSpot.Table: return 1.8f;
                 case CampSpot.Chest: return 1.4f;
                 case CampSpot.Cards: return 1.0f;   // вокруг ящика, на расстоянии руки
+                case CampSpot.Tents: return 0.3f;   // у порога, не обходя палатку под скатом
                 default:             return 1.2f;
             }
         }
@@ -220,7 +221,11 @@ namespace Sinbinder.Gameplay
 
             // Лагерь — там, где идёт его открытие; сцена ведёт, пока она идёт.
             if (Object.FindFirstObjectByType<CampOpening>() == null) return false;
-            if (!CampOpening.EscortArrived || CrystalBall.Leading || RaidEvent.Running) return false;
+            // Провожатого не ждём (автор, 21 октября: «лагерь оживает через
+            // некоторое время, как игрок выходит»): лагерь живёт с первого
+            // кадра, и под открытием тоже. Сам провожатый идёт приказом —
+            // HasCommand выше выводит его из жизни лагеря на время пути.
+            if (CrystalBall.Leading || RaidEvent.Running) return false;
             return true;
         }
 
@@ -324,9 +329,21 @@ namespace Sinbinder.Gameplay
             if (_tents.Count == 0) return false;
 
             var tent = _tents[Stable(w.DisplayName) % _tents.Count];
+
+            // За порогом входа, снаружи. Раньше — 1,4 м от середины в сторону
+            // огня, да ещё кольцо прогулки поверх: воин вставал внутри низкой
+            // палатки, и голова торчала сквозь скат (автор, 21 октября:
+            // «головы воинов торчат из палаток»). Вход знает сама палатка.
+            var inside = tent.GetComponent<TentInterior>();
+            if (inside != null)
+            {
+                point = inside.Doorstep(0.9f);
+                return true;
+            }
+
             var toFire = fire - tent.position;
             toFire.y = 0f;
-            point = tent.position + (toFire.sqrMagnitude > 0.01f ? toFire.normalized : Vector3.forward) * 1.4f;
+            point = tent.position + (toFire.sqrMagnitude > 0.01f ? toFire.normalized : Vector3.forward) * 2.4f;
             return true;
         }
 

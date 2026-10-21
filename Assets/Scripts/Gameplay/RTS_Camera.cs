@@ -49,7 +49,13 @@ namespace Sinbinder.Gameplay
         [Header("Тактический")]
         [Tooltip("Наклон. Девяносто — строго вниз; чуть меньше оставляет "
                + "тени и высоту читаемыми.")]
-        [SerializeField] private float _tacticalPitch = 84f;
+        //
+        // 21 октября: 84° → 70° (62° — камера уезжала за шатёр Греховода). Автор: «Может сделать тактическую камеру
+        // больше под углом?» Почти отвесно люди сверху были точками
+        // и кольцами — кто есть кто, не разобрать (отзыв игрока 19.10, п. 2);
+        // под углом видны силуэты. Камера над точкой — со сдвигом назад
+        // (Over), иначе герой уезжал бы к нижнему краю кадра.
+        [SerializeField] private float _tacticalPitch = 70f;
 
         [Tooltip("Высота над землёй, когда возвращаемся из первого лица.")]
         [SerializeField] private float _tacticalHeight = 22f;
@@ -202,7 +208,7 @@ namespace Sinbinder.Gameplay
             _pitch = _tacticalPitch;
             var ground = SinbinderPlayer.Where;
             ground.y = 0f;
-            Vector3 toPos = ground + Vector3.up * _tacticalHeight;
+            Vector3 toPos = Over(ground);
             Quaternion toRot = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
             _targetPosition = toPos;
 
@@ -294,6 +300,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void Tactical()
         {
+            Orbit();
+
             Vector3 move = Vector3.zero;
 
             if (Input.GetKey(KeyCode.W)) move.z += 1;
@@ -328,6 +336,62 @@ namespace Sinbinder.Gameplay
 
             transform.position = Vector3.Lerp(transform.position, _targetPosition, 0.35f);
             transform.rotation = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
+        }
+
+        // ---------- поворот и наклон ----------
+
+        private const float OrbitSpeed = 3f;      // градусов на единицу оси мыши
+        private const float TiltKeys = 45f;       // градусов в секунду на PageUp/PageDown
+        private const float TiltMin = 35f;
+        private const float TiltMax = 85f;
+
+        private float _homePitch = -1f;
+
+        /// <summary>
+        /// Как в Dawn of War (автор, 21 октября: «сделай, чтобы угол камеры
+        /// можно было менять»): зажатое колесо — камера ходит вокруг точки
+        /// в середине экрана, мышь вбок — поворот, вверх-вниз — наклон.
+        /// Без колеса: PageUp/PageDown — наклон; Home — как было.
+        /// Точка остаётся в середине кадра, расстояние до неё — прежним.
+        /// </summary>
+        private void Orbit()
+        {
+            if (_homePitch < 0f) _homePitch = _tacticalPitch;
+
+            float dYaw = 0f, dTilt = 0f;
+            if (Input.GetMouseButton(2))
+            {
+                dYaw = Input.GetAxisRaw("Mouse X") * OrbitSpeed;
+                dTilt = -Input.GetAxisRaw("Mouse Y") * OrbitSpeed;
+            }
+            if (Input.GetKey(KeyCode.PageUp)) dTilt += TiltKeys * Time.unscaledDeltaTime;
+            if (Input.GetKey(KeyCode.PageDown)) dTilt -= TiltKeys * Time.unscaledDeltaTime;
+            bool home = Input.GetKeyDown(KeyCode.Home);
+
+            if (dYaw == 0f && dTilt == 0f && !home) return;
+
+            // Точка на земле в середине кадра — вокруг неё и ходим.
+            var look = Quaternion.Euler(_tacticalPitch, _yaw, 0f) * Vector3.forward;
+            if (look.y > -0.05f) return;
+            float dist = -_targetPosition.y / look.y;
+            var focus = _targetPosition + look * dist;
+
+            if (home)
+            {
+                _yaw = _homeYaw;
+                _tacticalPitch = _homePitch;
+            }
+            else
+            {
+                _yaw += dYaw;
+                _tacticalPitch = Mathf.Clamp(_tacticalPitch + dTilt, TiltMin, TiltMax);
+            }
+
+            _pitch = _tacticalPitch;
+            var now = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
+            _targetPosition = focus - now * Vector3.forward * dist;
+            transform.position = _targetPosition;
+            transform.rotation = now;
         }
 
         /// <summary>
@@ -391,9 +455,21 @@ namespace Sinbinder.Gameplay
             var ground = Following ? SinbinderPlayer.Where : transform.position;
             ground.y = 0f;
 
-            _targetPosition = ground + Vector3.up * _tacticalHeight;
+            _targetPosition = Over(ground);
             transform.position = _targetPosition;
             transform.rotation = Quaternion.Euler(_tacticalPitch, _yaw, 0f);
+        }
+
+        /// <summary>
+        /// Где встать, чтобы точка на земле была в середине кадра: на высоте
+        /// и назад от неё на высоту, делённую на тангенс наклона. Отвесно
+        /// сдвиг был бы нулём, под 70° — восемь метров.
+        /// </summary>
+        private Vector3 Over(Vector3 ground)
+        {
+            float run = _tacticalHeight / Mathf.Tan(Mathf.Clamp(_tacticalPitch, 10f, 90f) * Mathf.Deg2Rad);
+            var back = Quaternion.Euler(0f, _yaw, 0f) * Vector3.back * run;
+            return ground + Vector3.up * _tacticalHeight + back;
         }
 
         // ---------- курсор и тело ----------

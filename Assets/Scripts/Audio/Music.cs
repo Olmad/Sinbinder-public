@@ -64,7 +64,9 @@ namespace Sinbinder.Audio
             switch (track)
             {
                 case Track.Camp:     return 0.28f;
-                case Track.Raid:     return 0.38f;
+                // 21 октября: 0,38 → 0,22. Автор: «мелодия первой волны — ОЧЕНЬ
+                // РАЗДРАЖАЕТ И ОЧЕНЬ НАВЯЗЧИВАЯ». Тише — до его решения о теме.
+                case Track.Raid:     return 0.22f;
                 case Track.Hunted:   return 0.38f;   // сама запись на 2–3 дБ плотнее «Grind» — громче и так
                 case Track.Crypt:    return 0.30f;
                 case Track.Epilogue: return 0.50f;

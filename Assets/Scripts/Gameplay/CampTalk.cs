@@ -58,6 +58,9 @@ namespace Sinbinder.Gameplay
             if (!CampLife.Enabled) { _next = -1f; return; }
             if (_next < 0f) { _next = Time.time + FirstAfter; return; }
             if (Time.time < _next) return;
+            // Лагерь живёт и под открытием (21 октября), но молча: облачко
+            // поверх надписи над лагерем — не жизнь, а помеха кадру.
+            if (OpeningReveal.Busy) return;
             _next = Time.time + Every;
 
             if (!Pick(out var first, out var second)) return;

@@ -64,6 +64,7 @@ namespace Sinbinder.UI
         {
             _shown = this;
             _open = true;
+            _graphics = false;
             if (_panel != null) _panel.SetActive(true);
             GamePauseController.Instance?.Pause();
             Draw();
@@ -84,6 +85,8 @@ namespace Sinbinder.UI
         {
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
+
+            if (_graphics) { DrawGraphics(); return; }
 
             if (_title != null)
                 _title.text = Commitment.On
@@ -144,9 +147,10 @@ namespace Sinbinder.UI
             // Графика (Core.FrameBudget): на встроенной видеокарте тени
             // и затенение углов съедают больше половины кадра. Пока игрок
             // не выбрал сам, выбор — по видеокарте.
+            // С 21 октября — своя страница, каждый пункт отдельно (Core.GraphicsOptions).
             Add(ref y, Loc.T("Графика"), Core.Preferences.GraphicsName(), () =>
             {
-                Core.Preferences.ToggleGraphics();
+                _graphics = true;
                 Draw();
             });
 
@@ -201,6 +205,37 @@ namespace Sinbinder.UI
             float room = panel.parent is RectTransform screen ? screen.rect.height - 40f : 0f;
             float height = panel.sizeDelta.y;
             panel.localScale = room > 0f && height > room ? Vector3.one * (room / height) : Vector3.one;
+        }
+
+        private bool _graphics;
+
+        /// <summary>
+        /// Страница «Графика»: каждый пункт отдельно, сразу в игру
+        /// (<see cref="Core.GraphicsOptions"/>). Автор, 21 октября: «сделай
+        /// настройки, которые реально помогут… переключать, выключать».
+        /// </summary>
+        private void DrawGraphics()
+        {
+            if (_title != null) _title.text = Loc.T("Графика");
+
+            float y = 0f;
+            void Row(string title, string now, System.Action act)
+                => Add(ref y, title, now, () => { act(); Draw(); });
+
+            Add(ref y, Loc.T("Назад"), "", () => { _graphics = false; Draw(); });
+            y -= MenuRows.Height * 0.5f;
+
+            Row(Loc.T("Набор"), Core.GraphicsOptions.PresetName(), Core.Preferences.ToggleGraphics);
+            y -= MenuRows.Height * 0.5f;
+
+            Row(Loc.T("Тени"), Core.GraphicsOptions.ShadowsName(), Core.GraphicsOptions.CycleShadows);
+            Row(Loc.T("Затенение углов"), Core.GraphicsOptions.OcclusionName(), Core.GraphicsOptions.ToggleOcclusion);
+            Row(Loc.T("Сглаживание краёв"), Core.GraphicsOptions.AntialiasName(), Core.GraphicsOptions.CycleAntialias);
+            Row(Loc.T("Чёткость"), Core.GraphicsOptions.DetailName(), Core.GraphicsOptions.CycleDetail);
+            Row(Loc.T("Зерно и виньетка"), Core.GraphicsOptions.GrainName(), Core.GraphicsOptions.ToggleGrain);
+            Row(Loc.T("Кадры"), Core.GraphicsOptions.FramesName(), Core.GraphicsOptions.CycleFrames);
+
+            Fit(y);
         }
 
         /// <summary>
