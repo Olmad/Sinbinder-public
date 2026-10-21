@@ -187,6 +187,15 @@ namespace Sinbinder.Gameplay
                 Wardrobe.Wear(model.gameObject, "Hood", MantleCrimson);
                 Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
 
+                // Облачение (автор, 21 октября: «сделать его более… Греховодом»,
+                // «он не должен быть голым»): ряса до земли с золотой нитью,
+                // рукава, оплечье с шипами — пешка логотипа, — пояс с гримуаром
+                // и банками душ, посох с огоньком души. Цвета — в самих вещах.
+                foreach (var item in new[] { "SinRobe", "SinSleeveLeft", "SinSleeveRight",
+                                             "SinCuffLeft", "SinCuffRight", "SinMantle",
+                                             "SinBelt", "SinStaff" })
+                    Wardrobe.Wear(model.gameObject, item);
+
                 // Тень надевается ПОСЛЕ общей покраски: иначе она
                 // перекрасилась бы в багрец вместе со всем прочим,
                 // и никакой темноты под капюшоном не осталось бы.
@@ -200,6 +209,9 @@ namespace Sinbinder.Gameplay
                 // стоит на 1,05, и всё ярче него выбеливается добела.
                 // Угольку положено остаться красным.
                 Wardrobe.Tint(model.gameObject, "Eye", EyeCrimson, glow: 1.0f);
+                // Огонёк души на посохе — тот же тёплый, что у костра.
+                Wardrobe.Tint(model.gameObject, "Soulfire", new Color(1f, 0.55f, 0.22f), glow: 1.0f);
+                Wardrobe.Matte(model.gameObject, "Robe");
             }
 
             // Багрового диска под ногами больше нет (автор, 21 октября: «нужно

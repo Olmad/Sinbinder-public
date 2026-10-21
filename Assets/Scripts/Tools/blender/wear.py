@@ -582,7 +582,132 @@ def stowed_mesh(b, tmp):
     b.groups.setdefault("Hips", []).extend(range(base, base + len(tmp.verts)))
 
 
+# ------------------------------------------------------------- Греховод
+#
+# Автор, 21 октября: «нужно сделать его более… Греховодом. Сейчас это просто
+# скелет, у которого скрыто лицо», и «побольше одежды. Он не должен быть
+# голым». Кто он — `44-LORE.md`: пешка Бога Смерти, ставшая вольной;
+# полевой командир, вселяющий чужие души в тела. Отсюда облачение:
+# ряса до земли с золотой нитью, рукава, оплечье с шипами — шипастая
+# пешка логотипа, — пояс с «Гримуаром порока» на цепи и банками душ,
+# посох с фонарём души (огонёк — точка над «i» в надписи Sinbinder).
+# Цвета — в материалах: общая покраска Греховода их не трогает
+# (Wardrobe.Wear без оттенка).
+
+ROBE = ("Robe", (0.300, 0.045, 0.065, 1.0))
+GOLD = ("Gold", (0.455, 0.355, 0.140, 1.0))
+SOULFIRE = ("Soulfire", (0.900, 0.420, 0.180, 1.0))
+
+
+def sin_robe(b):
+    """Ряса: от плеч до щиколоток, книзу шире — ноги ходят внутри."""
+    # Замкнуто (359,9°): при 352° зазор пришёлся на перёд, и в щель
+    # смотрели рёбра (портрет 21.10).
+    b.add(*drape(P["shoulder"] - 0.004, P["ankle"] + 0.012, 0.112, 0.205,
+                 spread=359.9, thick=0.010, segs=28, rows=10), bone="Spine", mat=0)
+    # Золотая нить по подолу и по вороту.
+    b.add(*ring((0, 0, P["ankle"] + 0.016), 0.205, 0.006, scale=(1.0, 0.88, 1.0), segs=30, rsegs=5),
+          bone="Spine", mat=1)
+    b.add(*ring((0, 0, P["shoulder"] - 0.004), 0.112, 0.006, scale=(1.0, 0.88, 1.0), segs=26, rsegs=5),
+          bone="Spine", mat=1)
+
+
+def sin_sleeve(b, side):
+    """Рукав до запястья, колоколом к кисти, с золотой кромкой."""
+    s = side
+    bone = ("Left" if s > 0 else "Right") + "UpperArm"
+    b.add(*tube((s * 0.112, 0, P["shoulder"]), (s * (P["elbow"] - 0.005), 0, P["shoulder"]), 0.036, 0.034, segs=12),
+          bone=bone, mat=0)
+
+
+def sin_cuff(b, side):
+    s = side
+    bone = ("Left" if s > 0 else "Right") + "LowerArm"
+    b.add(*tube((s * (P["elbow"] - 0.010), 0, P["shoulder"]), (s * (P["wrist"] - 0.004), 0, P["shoulder"]), 0.033, 0.052, segs=12),
+          bone=bone, mat=0)
+    b.add(*ring((s * (P["wrist"] - 0.006), 0, P["shoulder"]), 0.052, 0.005, segs=16, rsegs=5),
+          bone=bone, mat=1)
+
+
+def sin_mantle(b):
+    """
+    Оплечье: тёмный воротник и семь шипов назад и вверх — силуэт шипастой
+    пешки с логотипа; спереди проём, капюшон не подпирается.
+    """
+    z = P["neck"] - 0.012
+    b.add(*ring((0, 0.004, z), 0.080, 0.016, scale=(1.0, 0.92, 0.8), segs=22, rsegs=6), bone="Chest", mat=2)
+    for k in range(7):
+        a = math.radians(30 + k * 20)        # от 30° до 150° — бока и спина
+        base = (math.cos(a) * 0.086, math.sin(a) * 0.080, z + 0.006)
+        tip = (math.cos(a) * 0.150, math.sin(a) * 0.140, z + 0.090 - 0.010 * abs(k - 3))
+        b.add(*tube(base, tip, 0.012, 0.0015, segs=6), bone="Chest", mat=2)
+    for s in (1, -1):
+        b.add(*sphere((s * 0.108, 0.004, P["shoulder"] + 0.008), 0.044, scale=(1.25, 1.0, 0.55), segs=14, rings=7),
+              bone="Chest", mat=0)
+        b.add(*ring((s * 0.108, 0.004, P["shoulder"] - 0.004), 0.050, 0.004, scale=(1.2, 1.0, 1.0), segs=16, rsegs=4),
+              bone="Chest", mat=1)
+
+
+def sin_belt(b):
+    """
+    Кушак, «Гримуар порока» на цепи у левого бедра, три банки душ справа
+    сзади. Книга — тёмная кожа и золотые уголки: видна сверху.
+    """
+    z = P["waist"] + 0.004
+    b.add(*ring((0, 0, z), 0.142, 0.012, scale=(1.0, 0.88, 0.9), segs=26, rsegs=5), bone="Hips", mat=1)
+
+    # Цепь от кушака к книге — три звена.
+    links = [(0.128, -0.050, z - 0.012), (0.140, -0.052, z - 0.040), (0.150, -0.050, z - 0.068)]
+    for p0, p1 in zip(links, links[1:]):
+        b.add(*tube(p0, p1, 0.004, 0.004, segs=5), bone="Hips", mat=1)
+    book = (0.160, -0.046, z - 0.115)
+    b.add(*box(book, (0.030, 0.080, 0.100)), bone="Hips", mat=2)
+    for dy in (-0.036, 0.036):
+        for dz in (-0.045, 0.045):
+            b.add(*box((book[0] + 0.012, book[1] + dy, book[2] + dz), (0.010, 0.014, 0.014)), bone="Hips", mat=1)
+
+    for i, a in enumerate((205, 230, 255)):
+        r = math.radians(a)
+        x, y = math.cos(r) * 0.150, -math.sin(r) * 0.132
+        b.add(*tube((x, y, z - 0.070), (x, y, z - 0.020), 0.017, 0.015, segs=10), bone="Hips", mat=0)
+        b.add(*box((x, y, z - 0.015), (0.014, 0.014, 0.010)), bone="Hips", mat=1)
+
+
+def held_left(a, b=0.0, c=0.0):
+    """Как held, но в левом кулаке."""
+    x, _, z = anatomy.grip(P, 1)
+    return (x + c, -a, z + b)
+
+
+def sin_staff(b):
+    """
+    Посох в левой руке, древком вниз-вперёд, навершие — кованая клетка
+    с огоньком души. Огонёк — «Soulfire»: Греховод красит его светом.
+    """
+    bone = "LeftHand"
+    # Навершие — в сторону «назад» от кулака: в стойке рука опущена, и «вперёд»
+    # кулака смотрит в землю (первая примерка — клетка у самой земли).
+    foot, head = held_left(0.62), held_left(-0.42)
+    b.add(*tube(foot, head, 0.011, 0.013, segs=8), bone=bone, mat=1)
+    top = held_left(-0.47)
+    b.add(*sphere(top, 0.028, segs=12, rings=8), bone=bone, mat=2)
+    for k in range(4):
+        a = math.radians(45 + 90 * k)
+        p0 = (top[0] + math.cos(a) * 0.030, top[1] - 0.035, top[2] + math.sin(a) * 0.030)
+        p1 = (top[0] + math.cos(a) * 0.030, top[1] + 0.035, top[2] + math.sin(a) * 0.030)
+        b.add(*tube(p0, p1, 0.0035, 0.0035, segs=5), bone=bone, mat=1)
+
+
 ITEMS = [
+    Item("SinRobe",        "Spine",         sin_robe,                   [ROBE, GOLD, DARK]),
+    Item("SinSleeveLeft",  "LeftUpperArm",  lambda b: sin_sleeve(b, 1), [ROBE, GOLD, DARK]),
+    Item("SinSleeveRight", "RightUpperArm", lambda b: sin_sleeve(b, -1), [ROBE, GOLD, DARK]),
+    Item("SinCuffLeft",    "LeftLowerArm",  lambda b: sin_cuff(b, 1),   [ROBE, GOLD, DARK]),
+    Item("SinCuffRight",   "RightLowerArm", lambda b: sin_cuff(b, -1),  [ROBE, GOLD, DARK]),
+    Item("SinMantle",      "Chest",         sin_mantle,                 [ROBE, GOLD, IRON]),
+    Item("SinBelt",        "Hips",          sin_belt,                   [GLASS, GOLD, LEATHER]),
+    Item("SinStaff",       "LeftHand",      sin_staff,                  [SOULFIRE, IRON, DARK]),
+
     Item("Hood",           "Head",  hood,            [CLOTH, LEATHER, DARK]),
     Item("WideHat",        "Head",  wide_hat,        [LEATHER, DARK, DARK]),
     Item("StrawHat",       "Head",  straw_hat,       [STRAW, LEATHER, DARK]),
@@ -817,6 +942,15 @@ def flasks_skeleton(b):
 # Что носит скелет своего: (имя, свой сборщик или None, подгонка общего).
 # Остального скелету шить не нужно — общая вещь на нём сидит.
 SKELETON_ITEMS = [
+    # Облачение Греховода — на узком скелете поджато к оси.
+    ("SinRobe", None, hug(0.80, y0=0.004)),
+    ("SinSleeveLeft", None, None),
+    ("SinSleeveRight", None, None),
+    ("SinCuffLeft", None, None),
+    ("SinCuffRight", None, None),
+    ("SinMantle", None, hug(0.82, y0=0.004)),
+    ("SinBelt", None, hug(0.80)),
+    ("SinStaff", None, None),
     ("Circlet", circlet_skull, None),
     ("Crack", crack_skull, None),
     ("Shade", shade_skull, None),

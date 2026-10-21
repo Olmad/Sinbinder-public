@@ -800,6 +800,11 @@ namespace Sinbinder.UI
             _reply = Label(panel, "Ответ", 21, TextAnchor.LowerLeft,
                            new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 34f), new Vector2(-28f, 66f));
             _reply.color = new Color(0.94f, 0.86f, 0.62f);
+            // Длинный ответ в две строки не влезал в 32 точки высоты — сторож
+            // прогона «ОБРЕЗАН» (21.10): «Одна плата за три вылазки? …Ладно…».
+            _reply.resizeTextForBestFit = true;
+            _reply.resizeTextMaxSize = 21;
+            _reply.resizeTextMinSize = 14;
 
             _hint = Label(panel, "Клавиши", 16, TextAnchor.LowerLeft,
                           new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 10f), new Vector2(-28f, 32f));
