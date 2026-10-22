@@ -174,6 +174,16 @@ namespace Sinbinder.Gameplay
             _pitch = 0f;
         }
 
+        /// <summary>
+        /// Лёжа (0 — стоит, 1 — лежит): глаза опускаются к подушке. Ставит сон
+        /// в начале игры (<see cref="OpeningReveal"/>, автор, п. 22 отзыва 21.10:
+        /// «он лежит на кровати, и ему нужно нажать F, чтобы подняться»).
+        /// </summary>
+        public float Lying { get; set; }
+
+        /// <summary>Наклон взгляда от первого лица, градусы (минус — вверх).</summary>
+        public float Pitch { get => _pitch; set => _pitch = Mathf.Clamp(value, -85f, 85f); }
+
         /// <summary>Задать взгляд из сборщика сцены.</summary>
         public void SetView(CameraView view)
         {
@@ -245,10 +255,12 @@ namespace Sinbinder.Gameplay
 
             _yaw += Input.GetAxisRaw("Mouse X") * sens;
             _pitch -= Input.GetAxisRaw("Mouse Y") * sens;
-            _pitch = Mathf.Clamp(_pitch, -_pitchLimit, _pitchLimit);
+            // Лёжа можно смотреть в полог над собой — выше обычного предела.
+            float limit = Mathf.Lerp(_pitchLimit, 85f, Lying);
+            _pitch = Mathf.Clamp(_pitch, -limit, _pitchLimit);
 
             transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            transform.position = SinbinderPlayer.Where + Vector3.up * Eye();
+            transform.position = SinbinderPlayer.Where + Vector3.up * Mathf.Lerp(Eye(), 0.32f, Lying);
 
             // Тело поворачивается туда, куда смотрит голова. Курс задаёт
             // камера, а не шаг: иначе шаг поворачивал бы героя, поворот

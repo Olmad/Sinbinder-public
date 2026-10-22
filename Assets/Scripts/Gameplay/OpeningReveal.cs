@@ -51,9 +51,9 @@ namespace Sinbinder.Gameplay
         private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { Showing = false; Busy = false; }
+        private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; }
 
-        void OnDestroy() { Showing = false; Busy = false; }
+        void OnDestroy() { Showing = false; Busy = false; Dreaming = false; Lying = false; }
 
         IEnumerator Start()
         {
@@ -64,7 +64,7 @@ namespace Sinbinder.Gameplay
             // переносит Греховода туда, где его записали, и открытие
             // решается по тому, где он оказался.
             float waited = 0f;
-            while ((!SinbinderPlayer.Exists || UI.StartPanel.Waiting) && waited < 600f)
+            while ((!SinbinderPlayer.Exists || UI.StartPanel.Waiting || UI.PrologueTitleUI.Showing) && waited < 600f)
             {
                 waited += Time.unscaledDeltaTime;
                 yield return null;
@@ -78,10 +78,13 @@ namespace Sinbinder.Gameplay
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             if (view != null && !view.FirstPersonNow) view.Switch();   // глазами Греховода
 
+            // Сон и пробуждение на постели (п. 22 отзыва 21.10).
+            var door = tent.Doorstep(0f);
+            yield return Dream(view, tent, door);
+
             // Проснулся — и смотрит на выход, за которым горит костёр. Раньше
             // взгляд упирался в скат: две плоскости ткани, ни точки, куда
             // смотреть, — «читается как сбой отрисовки» (отзыв игрока 19.10).
-            var door = tent.Doorstep(0f);
             if (view != null) view.Face(door);
             var glow = Glow(tent);
             var hint = Hint(out var hintGroup);
@@ -100,6 +103,191 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(Settle);
             yield return Reveal(view);
             Busy = false;
+        }
+
+        // ───────────────────────────── сон ─────────────────────────────
+
+        /// <summary>Идёт сон: темнота и огонёк. Спрашивает прогон.</summary>
+        public static bool Dreaming { get; private set; }
+
+        /// <summary>Проснулся и лежит — ждёт F. Спрашивает прогон.</summary>
+        public static bool Lying { get; private set; }
+
+        /// <summary>Насколько дошёл до огонька, 0–1. Спрашивает прогон: кадр на полпути.</summary>
+        public static float DreamProgress { get; private set; }
+
+        /// <summary>
+        /// Прогон без клавиатуры: идёт к огоньку сам и поднимается сам —
+        /// тем же путём, что и игрок, только вместо нажатий.
+        /// </summary>
+        public static bool Autopilot { get; set; }
+
+        private static readonly string DreamLine = Loc.N("Иди к свету — W");
+        private static readonly string RiseLine = Loc.N("F — подняться");
+
+        private const float DreamWalk = 4.5f;   // секунд с зажатой W до света
+
+        /// <summary>
+        /// Сон. Автор, 21 октября, п. 22: «хочу в начале сон: темнота, белый
+        /// огонёк, игрок тянет руку, и механически ему нужно подойти. При подходе
+        /// игрок просыпается. Полноценно — он лежит на кровати, и ему нужно нажать
+        /// F, чтобы подняться».
+        ///
+        /// Темнота во весь экран, в ней огонёк. Пока зажат шаг вперёд, огонёк
+        /// приближается — растёт и светлеет; дошёл — свет заливает всё. Белое
+        /// тает — Греховод лежит у постели, смотрит в полог. F — поднимается:
+        /// глаза из-под подушки в рост, взгляд на выход. Ноги до того стоят.
+        /// </summary>
+        private IEnumerator Dream(RTS_Camera view, TentInterior tent, Vector3 door)
+        {
+            var hero = SinbinderPlayer.Instance;
+            var walk = hero != null ? hero.GetComponent<PlayerWalk>() : null;
+            if (walk != null) walk.enabled = false;
+
+            // Лечь у постели: агент — на ближайшую к ней землю.
+            var bed = tent.transform.Find("Постель");
+            if (bed != null && hero != null)
+            {
+                var agent = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (agent != null && agent.isOnNavMesh
+                    && UnityEngine.AI.NavMesh.SamplePosition(bed.position, out var near, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    agent.Warp(near.position);
+            }
+            if (view != null) { view.Lying = 1f; view.Face(door); view.Pitch = -58f; }
+
+            var root = DreamCanvas(out var dark, out var light, out var hint, out var white);
+            Dreaming = true;
+            DreamProgress = 0f;
+
+            for (float t = 0f; DreamProgress < 1f; t += Time.unscaledDeltaTime)
+            {
+                bool forward = Autopilot || Input.GetAxisRaw("Vertical") > 0.2f || Input.GetKey(KeyCode.W);
+                if (forward) DreamProgress = Mathf.Min(1f, DreamProgress + Time.unscaledDeltaTime / DreamWalk);
+
+                // Огонёк дышит, растёт к концу пути и светлеет.
+                float breath = 1f + 0.06f * Mathf.Sin(t * 2.2f);
+                float k = DreamProgress * DreamProgress;
+                light.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(46f, 1500f, k) * breath;
+                light.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.75f, 1f, DreamProgress));
+                hint.color = new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 2.0f) / 1.2f) * (1f - DreamProgress * 2f));
+                yield return null;
+            }
+
+            // Свет заливает всё.
+            for (float t = 0f; t < 0.7f; t += Time.unscaledDeltaTime)
+            {
+                white.color = new Color(1f, 1f, 1f, Smooth(t / 0.7f));
+                yield return null;
+            }
+            dark.color = Color.clear;
+            light.color = Color.clear;
+            Dreaming = false;
+
+            // Белое тает — шатёр, полог над головой.
+            hint.text = Loc.T(RiseLine);
+            hint.rectTransform.anchorMin = hint.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            hint.rectTransform.anchoredPosition = new Vector2(0f, 140f);
+            for (float t = 0f; t < 1.6f; t += Time.unscaledDeltaTime)
+            {
+                white.color = new Color(1f, 1f, 1f, 1f - Smooth(t / 1.6f));
+                yield return null;
+            }
+            white.color = Color.clear;
+            Lying = true;
+
+            float waited = 0f;
+            while (!(Input.GetKeyDown(KeyCode.F) || (Autopilot && waited > 1.2f)))
+            {
+                waited += Time.unscaledDeltaTime;
+                hint.color = new Color(0.90f, 0.84f, 0.72f, Mathf.Clamp01((waited - 0.4f) / 0.8f));
+                yield return null;
+            }
+            Destroy(root);
+
+            // Поднимается: глаза в рост, взгляд на выход.
+            float fromPitch = view != null ? view.Pitch : 0f;
+            for (float t = 0f; t < 1.1f && view != null; t += Time.unscaledDeltaTime)
+            {
+                float k = Smooth(t / 1.1f);
+                view.Lying = 1f - k;
+                view.Pitch = Mathf.Lerp(fromPitch, 0f, k);
+                yield return null;
+            }
+            if (view != null) { view.Lying = 0f; view.Pitch = 0f; }
+            Lying = false;
+            if (walk != null) walk.enabled = true;
+        }
+
+        private static Texture2D _glowTex;
+
+        private static GameObject DreamCanvas(out Image dark, out Image light, out Text hint, out Image white)
+        {
+            var root = new GameObject("Сон");
+            var canvas = root.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 95;
+            var scaler = root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = UI.UiStyle.Reference;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            Image Full(string name, Color c)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+                go.transform.SetParent(root.transform, false);
+                var rt = (RectTransform)go.transform;
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                var img = go.GetComponent<Image>();
+                img.color = c;
+                img.raycastTarget = false;
+                return img;
+            }
+
+            dark = Full("Темнота", Color.black);
+
+            if (_glowTex == null)
+            {
+                const int n = 128;
+                _glowTex = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float dx = (x + 0.5f) / n * 2f - 1f, dy = (y + 0.5f) / n * 2f - 1f;
+                        float r = Mathf.Sqrt(dx * dx + dy * dy);
+                        // Ядро и мягкий ореол без края: точка света, а не шар
+                        // (первый заход линейным спадом читался серым диском).
+                        float core = Mathf.Exp(-(r / 0.10f) * (r / 0.10f));
+                        float halo = Mathf.Exp(-(r / 0.28f) * (r / 0.28f)) * 0.35f;
+                        float a = Mathf.Clamp01(core + halo) * Mathf.Clamp01((1f - r) * 6f);
+                        _glowTex.SetPixel(x, y, new Color(1f, 0.98f, 0.94f, a));
+                    }
+                _glowTex.Apply();
+            }
+            var lg = new GameObject("Огонёк", typeof(RectTransform), typeof(Image));
+            lg.transform.SetParent(root.transform, false);
+            light = lg.GetComponent<Image>();
+            light.sprite = Sprite.Create(_glowTex, new Rect(0, 0, _glowTex.width, _glowTex.height), new Vector2(0.5f, 0.5f));
+            light.raycastTarget = false;
+            var lr = (RectTransform)lg.transform;
+            lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.52f);
+            lr.sizeDelta = Vector2.one * 46f;
+
+            var tg = new GameObject("Строка сна", typeof(RectTransform), typeof(Text));
+            tg.transform.SetParent(root.transform, false);
+            hint = tg.GetComponent<Text>();
+            hint.font = UI.UiStyle.Body;
+            hint.fontSize = 28;
+            hint.alignment = TextAnchor.MiddleCenter;
+            hint.text = Loc.T(DreamLine);
+            hint.color = Color.clear;
+            hint.raycastTarget = false;
+            var hr = (RectTransform)tg.transform;
+            hr.anchorMin = hr.anchorMax = new Vector2(0.5f, 0.30f);
+            hr.sizeDelta = new Vector2(900f, 60f);
+
+            white = Full("Свет", Color.clear);
+            return root;
         }
 
         private IEnumerator Reveal(RTS_Camera view)
