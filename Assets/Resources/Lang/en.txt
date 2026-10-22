@@ -1347,6 +1347,78 @@ msgstr "{0} coins"
 msgid "{0} монеты"
 msgstr "{0} coins"
 
+#: Core/GraphicsOptions.cs
+msgid "полная"
+msgstr "full"
+
+#: Core/GraphicsOptions.cs
+msgid "облегчённая"
+msgstr "light"
+
+#: Core/GraphicsOptions.cs
+msgid "своя"
+msgstr "custom"
+
+#: Core/GraphicsOptions.cs
+msgid "выключены"
+msgstr "off"
+
+#: Core/GraphicsOptions.cs
+msgid "чёткие"
+msgstr "sharp"
+
+#: Core/GraphicsOptions.cs
+msgid "мягкие"
+msgstr "soft"
+
+#: Core/GraphicsOptions.cs
+msgid "включено"
+msgstr "on"
+
+#: Core/GraphicsOptions.cs
+msgid "выключено"
+msgstr "off"
+
+#: Core/GraphicsOptions.cs
+msgid "чёткое (SMAA)"
+msgstr "sharp (SMAA)"
+
+#: Core/GraphicsOptions.cs
+msgid "временное (TAA) — мягче, без лесенки"
+msgstr "temporal (TAA) — softer, no jagged edges"
+
+#: Core/GraphicsOptions.cs
+msgid "быстрое (FXAA)"
+msgstr "fast (FXAA)"
+
+#: Core/GraphicsOptions.cs
+msgid "высокая — мир чуть мягче, кадр легче"
+msgstr "high — the world a touch softer, the frame lighter"
+
+#: Core/GraphicsOptions.cs
+msgid "средняя — для слабой видеокарты"
+msgstr "medium — for a weak graphics card"
+
+#: Core/GraphicsOptions.cs
+msgid "включены"
+msgstr "on"
+
+#: Core/GraphicsOptions.cs
+msgid "тридцать в секунду — тише и холоднее"
+msgstr "thirty per second — quieter and cooler"
+
+#: Core/GraphicsOptions.cs
+msgid "без потолка"
+msgstr "no cap"
+
+#: Core/GraphicsOptions.cs
+msgid "по частоте монитора"
+msgstr "match the monitor"
+
+#: Core/GraphicsOptions.cs
+msgid "шестьдесят в секунду"
+msgstr "sixty per second"
+
 #: Core/Preferences.cs
 msgid "как задумано"
 msgstr "as intended"
@@ -1382,14 +1454,6 @@ msgstr "fullscreen"
 #: Core/Preferences.cs
 msgid "в окне"
 msgstr "windowed"
-
-#: Core/Preferences.cs
-msgid "облегчённая — без теней"
-msgstr "light — no shadows"
-
-#: Core/Preferences.cs
-msgid "полная"
-msgstr "full"
 
 #: Core/Satchel.cs
 msgid "пустая банка"
@@ -4264,6 +4328,14 @@ msgid "{0}: «Никто не подошёл, владыка. Они вас сл
 msgstr "{0}: “No one came, my lord. They heard you.”"
 
 #: Gameplay/CampMuster.cs
+msgid "{0}: «{1} остался на месте. Он вас слышал, владыка»."
+msgstr "{0}: “{1} stayed where he was. He heard you, my lord.”"
+
+#: Gameplay/CampMuster.cs
+msgid "{0}: «{1} осталась на месте. Она вас слышала, владыка»."
+msgstr "{0}: “{1} stayed where she was. She heard you, my lord.”"
+
+#: Gameplay/CampMuster.cs
 msgid "{0}: «{1} остались на месте. Они вас слышали, владыка»."
 msgstr "{0}: “{1} stayed where they were. They heard you, my lord.”"
 
@@ -4775,6 +4847,54 @@ msgstr "Consecrated breastplate"
 msgid "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили."
 msgstr "Iron branded with the mark of the Order. Holiness is iron that someone believed in."
 
+#: Gameplay/InspectTexts.cs
+msgid "F — прочесть вырезанное"
+msgstr "F — read the carving"
+
+#: Gameplay/InspectTexts.cs
+msgid "Вырезано на коре"
+msgstr "Carved into the bark"
+
+#: Gameplay/InspectTexts.cs
+msgid "Пятая ночь у этого дерева. Зарубка за каждую."
+msgstr "Fifth night by this tree. A notch for each."
+
+#: Gameplay/InspectTexts.cs
+msgid "По ночам за лесом кто-то двигает фигуры. Слышно, как они стучат о доску."
+msgstr "At night, beyond the woods, someone moves the pieces. You can hear them knock against the board."
+
+#: Gameplay/InspectTexts.cs
+msgid "Топор не вынимай. Дерево мёртвое, а держит крепче живого."
+msgstr "Don't pull the axe out. The tree is dead, but it holds tighter than a living one."
+
+#: Gameplay/InspectTexts.cs
+msgid "Ушли за солью на восток. Вернусь — заберу топор. Т."
+msgstr "Gone east for salt. I'll be back for the axe. — T."
+
+#: Gameplay/InspectTexts.cs
+msgid "F — присмотреться"
+msgstr "F — look closer"
+
+#: Gameplay/InspectTexts.cs
+msgid "Пешка"
+msgstr "The Pawn"
+
+#: Gameplay/InspectTexts.cs
+msgid "Ты думаешь, что двигаешь их."
+msgstr "You think you move them."
+
+#: Gameplay/InspectTexts.cs
+msgid "Он тоже так думал — тот, кто вырезал меня из кости и оставил здесь."
+msgstr "So did he — the one who carved me from bone and left me here."
+
+#: Gameplay/InspectTexts.cs
+msgid "Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."
+msgstr "Every piece stops obeying the hand one day. Even the one that holds the board."
+
+#: Gameplay/Inspectable.cs
+msgid "F — осмотреть"
+msgstr "F — examine"
+
 #: Gameplay/Leadership.cs
 msgid "водит впервые, уведёт {0}"
 msgstr "leading for the first time, will take {0}"
@@ -5010,6 +5130,10 @@ msgstr "Taken from the fallen. For whoever took it, a sign that he was the victo
 #: Gameplay/OpeningReveal.cs
 msgid "Не командуй. Искушай."
 msgstr "Don't command. Tempt."
+
+#: Gameplay/OpeningReveal.cs
+msgid "За пологом трещит костёр. Лагерь ждёт."
+msgstr "Beyond the tent flap a fire crackles. The camp is waiting."
 
 #: Gameplay/PrologueCampSpawner.cs
 msgid "телохранитель, не отходит от вас"
@@ -6036,8 +6160,20 @@ msgid "F — поговорить: {0}"
 msgstr "F — talk: {0}"
 
 #: UI/GearPanel.cs
+msgid "F — открыть сундук Марги"
+msgstr "F — open Marga's chest"
+
+#: UI/GearPanel.cs
 msgid "F — сундук Марги"
 msgstr "F — Marga's chest"
+
+#: UI/GearPanel.cs
+msgid "F — подсесть к картам"
+msgstr "F — sit in on the cards"
+
+#: UI/GearPanel.cs
+msgid "За картами никого"
+msgstr "No one at the cards"
 
 #: UI/GearPanel.cs
 msgid "Снаряжение: {0}"
@@ -6394,6 +6530,38 @@ msgstr "Language"
 #: UI/PauseMenu.cs
 msgid "Игра с обязательством — записывайте перед выходом"
 msgstr "A committed game — save before you quit"
+
+#: UI/PauseMenu.cs
+msgid "Назад"
+msgstr "Back"
+
+#: UI/PauseMenu.cs
+msgid "Набор"
+msgstr "Preset"
+
+#: UI/PauseMenu.cs
+msgid "Тени"
+msgstr "Shadows"
+
+#: UI/PauseMenu.cs
+msgid "Затенение углов"
+msgstr "Ambient occlusion"
+
+#: UI/PauseMenu.cs
+msgid "Сглаживание краёв"
+msgstr "Anti-aliasing"
+
+#: UI/PauseMenu.cs
+msgid "Чёткость"
+msgstr "Sharpness"
+
+#: UI/PauseMenu.cs
+msgid "Зерно и виньетка"
+msgstr "Grain and vignette"
+
+#: UI/PauseMenu.cs
+msgid "Кадры"
+msgstr "Frame rate"
 
 #: UI/PauseMenu.cs UI/QuickSave.cs UI/SaveSlotsPanel.cs UI/StartPanel.cs
 msgid "Эта запись не от нынешней игры."
@@ -6952,6 +7120,10 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "облегчённая — без теней"
+msgstr "light — no shadows"
 
 #. нет в коде
 msgid "Устройство пусто."

@@ -12,6 +12,23 @@ namespace UnityEngine.Rendering
 
     public class RTHandle { }
 
+    // Объём постобработки (Core/GraphicsOptions — зерно, виньетка и радуга краёв).
+    public class VolumeComponent : ScriptableObject
+    {
+        public bool active = true;
+    }
+
+    public class VolumeProfile : ScriptableObject
+    {
+        public bool TryGet<T>(out T component) where T : VolumeComponent { component = null; return false; }
+    }
+
+    public class Volume : MonoBehaviour
+    {
+        public VolumeProfile sharedProfile;
+        public VolumeProfile profile { get; set; }
+    }
+
     public class RasterCommandBuffer { }
 
     public static class Blitter
@@ -89,15 +106,25 @@ namespace UnityEngine.Rendering.Universal
     public abstract class ScriptableRenderer { public void EnqueuePass(ScriptableRenderPass pass) { } }
 
     // Настройки рендера: доля разрешения (Core/FrameBudget — облегчённая графика).
+    // Фильтр увеличения при доле разрешения меньше единицы (Core/FrameBudget).
+    public enum UpscalingFilterSelection { Auto, Linear, Point, FSR, STP }
+
     public class UniversalRenderPipelineAsset : RenderPipelineAsset
     {
         public float renderScale { get; set; }
+        public UpscalingFilterSelection upscalingFilter { get; set; }
         public int shadowCascadeCount { get; set; }
         public float shadowDistance { get; set; }
         public override RenderPipeline CreatePipeline() => null;
     }
 
     public enum AntialiasingMode { None, FastApproximateAntialiasing, SubpixelMorphologicalAntiAliasing, TemporalAntiAliasing }
+    public enum AntialiasingQuality { Low, Medium, High }
+    public enum CameraRenderType { Base, Overlay }
+
+    public class FilmGrain : VolumeComponent { }
+    public class Vignette : VolumeComponent { }
+    public class ChromaticAberration : VolumeComponent { }
 
     // Данные камеры: тени и постобработка (Core/FrameBudget, редакторные сборщики сцен).
     public class UniversalAdditionalCameraData : MonoBehaviour
@@ -105,6 +132,8 @@ namespace UnityEngine.Rendering.Universal
         public bool renderShadows;
         public bool renderPostProcessing;
         public AntialiasingMode antialiasing;
+        public AntialiasingQuality antialiasingQuality;
+        public CameraRenderType renderType;
     }
 
     public static class CameraExtensions

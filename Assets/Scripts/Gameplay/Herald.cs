@@ -47,11 +47,25 @@ namespace Sinbinder.Gameplay
         {
             if (string.IsNullOrEmpty(line)) return;
 
+            Warrior speaker = null;
+            if (Split(line, out string label, out string words))
+            {
+                speaker = Find(label);
+
+                // Один человек — одна подпись. Строки пишутся в разных местах:
+                // где «Карган», где имя из состава — «Карган Старый Ворон», —
+                // и в одном журнале он выходил двумя людьми (отзыв автора
+                // 21.10, кадр 6). Подпись — его имя, как в строках отказов.
+                if (speaker != null)
+                {
+                    string name = Core.Loc.Name(speaker.DisplayName);
+                    line = Relabel(line, label, name);
+                    label = name;
+                }
+            }
+
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
 
-            if (!Split(line, out string label, out string words)) return;
-
-            var speaker = Find(label);
             if (speaker == null) return;
 
             if (_host == null) _host = new GameObject("Глашатай").AddComponent<Herald>();
@@ -84,6 +98,20 @@ namespace Sinbinder.Gameplay
             label = line.Substring(0, open);
             words = line.Substring(open + 3, close - open - 3);
             return true;
+        }
+
+        /// <summary>
+        /// Та же реплика, подписанная полным именем: «Карган: «…»» →
+        /// «Карган Старый Ворон: «…»». Подпись — до первого двоеточия,
+        /// остальное не трогается.
+        /// </summary>
+        public static string Relabel(string line, string label, string name)
+        {
+            if (string.IsNullOrEmpty(line) || string.IsNullOrEmpty(label)
+                || string.IsNullOrEmpty(name) || label == name
+                || !line.StartsWith(label, System.StringComparison.Ordinal)) return line;
+
+            return name + line.Substring(label.Length);
         }
 
         /// <summary>

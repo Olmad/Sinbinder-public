@@ -155,6 +155,7 @@ namespace Sinbinder.Gameplay
 
             var came = new List<string>();
             var stayed = new List<string>();
+            var lone = Gender.Male;
 
             foreach (var pair in _wasFar)
             {
@@ -170,7 +171,7 @@ namespace Sinbinder.Gameplay
 
                 // Остался — но упрекать за это можно только того, кого
                 // звали. Прочие просто стояли, где стояли.
-                if (_ordered.Contains(w)) stayed.Add(w.DisplayName);
+                if (_ordered.Contains(w)) { stayed.Add(w.DisplayName); lone = w.Gender; }
             }
 
             // Никого не звали и никто не пришёл — молчим. Отчёт о том,
@@ -189,6 +190,16 @@ namespace Sinbinder.Gameplay
             if (came.Count == 0)
             {
                 Herald.Line(Loc.F("{0}: «Никто не подошёл, владыка. Они вас слышали».", who));
+                return;
+            }
+
+            // Один — «остался»: множественное число при одном имени
+            // («Косой Ждан остались») читалось ошибкой, а не речью.
+            if (stayed.Count == 1)
+            {
+                Herald.Line(Grammar.Pick(lone,
+                    Loc.F("{0}: «{1} остался на месте. Он вас слышал, владыка».", who, Join(stayed)),
+                    Loc.F("{0}: «{1} осталась на месте. Она вас слышала, владыка».", who, Join(stayed))));
                 return;
             }
 
