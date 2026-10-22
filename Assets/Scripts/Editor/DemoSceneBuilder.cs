@@ -1039,7 +1039,9 @@ namespace Sinbinder.Utilets
                 float a = i * 20f + R(-7f, 7f);
                 var centre = Ring(a, R(15f, 36f));
                 if (!Free(centre, 1.5f)) continue;
-                Take(centre, 2.6f);
+                // Камни кучи — до 1,8 м от середины, крупный ещё на метр:
+                // при 2,6 в кучу врастали кроны густого леса (22 октября).
+                Take(centre, 3.4f);
 
                 // Куча — один предмет: камни в ней лежат друг на друге нарочно
                 // (OverlapCheck сравнивает кучу с соседями, а не камень с камнем).
@@ -1068,16 +1070,29 @@ namespace Sinbinder.Utilets
             // сухих дерева вперемешку — силуэты над палатками. Ближе к лагерю
             // — пни, кусты и сухая трава. Траву навмеш не видит: она по колено
             // и прорезала бы в земле дыры, по которым не пройти.
-            string[] trees = { "Pine", "Pine", "DeadTreeA", "DeadTreeB", "DeadTreeC" };
-            for (int i = 0; i < 48; i++)
+            // 22 октября, отзыв п. 11: «если не выходить из лагеря — лес выглядит
+            // жалким». Было одно кольцо на 27–42 м из 48 попыток — с проходами
+            // вставало около тридцати деревьев. Теперь три кольца, гуще к краю
+            // земли (45 м): ближнее редкое, дальние плотнее и выше — их силуэты
+            // встают над палатками и закрывают край земли. Ели — основа, сухие —
+            // вкраплениями. Лес — одна корзина «Лес»: кроны в лесу сплетаются,
+            // и это не пересечение (OverlapCheck сравнивает лес с соседями целиком).
+            string[] trees = { "Pine", "Pine", "Pine", "Pine", "DeadTreeA", "DeadTreeB", "DeadTreeC" };
+            var forest = new GameObject("Лес");
+            forest.transform.SetParent(root.transform);
+            foreach (var (from, to, count, pad, take, small, big) in new[]
             {
-                var at = Ring(i * 7.5f + R(-3f, 3f), R(27f, 42f));
-                // Крона — метра по два в каждую сторону: реже, чем ствол
-                // требует (OverlapCheck: кроны соседей сплетались).
-                if (!Free(at, 2.4f)) continue;
-                Take(at, 3.5f);
-                Prop(trees[rng.Next(trees.Length)], root.transform, at, R(0f, 360f), R(0.85f, 1.25f));
-            }
+                (25f, 31f,  44, 1.8f, 2.6f, 0.90f, 1.20f),
+                (31f, 38f,  80, 1.3f, 2.2f, 1.00f, 1.40f),
+                (38f, 44.5f, 120, 1.0f, 2.0f, 1.15f, 1.70f),
+            })
+                for (int i = 0; i < count; i++)
+                {
+                    var at = Ring(i * 360f / count + R(-2f, 2f), R(from, to));
+                    if (!Free(at, pad)) continue;
+                    Take(at, take);
+                    Prop(trees[rng.Next(trees.Length)], forest.transform, at, R(0f, 360f), R(small, big));
+                }
 
             for (int i = 0; i < 7; i++)
             {
