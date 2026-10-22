@@ -92,6 +92,15 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Дошёл, докуда смог: пути нет или он кончился, и агент стоит.
+        /// Точка бывает недостижима (в предмете, за толпой) — тогда «в полутора
+        /// метрах от неё» не наступает никогда, а приказ висит вечно.
+        /// </summary>
+        public bool Arrived => _agent.enabled && !_agent.pathPending
+            && (!_agent.hasPath || _agent.remainingDistance <= _agent.stoppingDistance + 0.3f)
+            && _agent.velocity.sqrMagnitude < 0.01f;
+
         public void CommandMove(Vector3 destination)
         {
             if (_self != null && _self.IsDead) return;

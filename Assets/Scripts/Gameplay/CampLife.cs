@@ -225,17 +225,33 @@ namespace Sinbinder.Gameplay
         private static bool Alive(Warrior w)
         {
             if (!Enabled || w == null || w.IsDead) return false;
-            if (w.Team != Team.Player || w is SinbinderPlayer || w.HasCommand) return false;
 
             // Лагерь — там, где идёт его открытие; сцена ведёт, пока она идёт.
             if (Object.FindFirstObjectByType<CampOpening>() == null) return false;
+            if (w.Team != Team.Player || w is SinbinderPlayer) return false;
             // Провожатого не ждём (автор, 21 октября: «лагерь оживает через
             // некоторое время, как игрок выходит»): лагерь живёт с первого
             // кадра, и под открытием тоже. Сам провожатый идёт приказом —
-            // HasCommand выше выводит его из жизни лагеря на время пути.
+            // HasCommand ниже выводит его из жизни лагеря на время пути.
             if (CrystalBall.Leading || RaidEvent.Running) return false;
-            return true;
+
+            // Приказ на ходу в лагере не вечен. Отвергнутый оставался записанным
+            // навсегда: воин его не исполнял, но и к своей жизни не возвращался,
+            // и с каждым приказом лагерь замирал ещё на одного (автор, 21 октября,
+            // п. 16: «со временем всё замирает»). Стоять, оборонять, патрулировать —
+            // приказы долгие, их снимает только игрок. В набеге не трогаем.
+            if (w.HasCommand && Moving(w.Command.Kind) && Time.time - w.Command.IssuedAt > StaleOrder)
+                w.ClearCommand();
+
+            return !w.HasCommand;
         }
+
+        /// <summary>Сколько живёт приказ «на ходу» в лагере, секунд.</summary>
+        private const float StaleOrder = 20f;
+
+        private static bool Moving(CommandKind kind)
+            => kind == CommandKind.Move || kind == CommandKind.FallBack
+            || kind == CommandKind.AttackMove || kind == CommandKind.Attack;
 
         private static CampSpot Pick(Warrior w)
         {

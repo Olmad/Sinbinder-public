@@ -1766,6 +1766,28 @@ namespace Sinbinder.EditorTools
             Stuck();
             Clipped();
             Through();
+            Hanging();
+        }
+
+        /// <summary>
+        /// «Со временем всё замирает» (автор, 21 октября, п. 16): приказ на ходу,
+        /// отвергнутый или в недостижимую точку, висел вечно и выводил воина
+        /// из жизни лагеря. В лагере вне набега такой приказ старше 30 с — ошибка.
+        /// </summary>
+        private static void Hanging()
+        {
+            if (UnityEngine.Object.FindFirstObjectByType<CampOpening>() == null || RaidEvent.Running) return;
+            if (Time.timeScale <= 0f) return;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || w is SinbinderPlayer || w.Team != Team.Player || !w.HasCommand) continue;
+                var k = w.Command.Kind;
+                if (k != CommandKind.Move && k != CommandKind.FallBack && k != CommandKind.AttackMove && k != CommandKind.Attack) continue;
+                float age = Time.time - w.Command.IssuedAt;
+                if (age > 30f)
+                    Guard("ПРИКАЗ ВИСИТ", w.DisplayName + "|" + Mathf.RoundToInt(w.Command.IssuedAt),
+                        $"{w.DisplayName}: приказ «{k}» висит {age:0} с — воин выпал из жизни лагеря");
+            }
         }
 
         // ── Сквозь предмет: ноги внутри палатки, камня, стола ──

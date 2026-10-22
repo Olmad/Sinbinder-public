@@ -186,8 +186,12 @@ namespace Sinbinder.AOS
                 case CommandKind.Move:
                 case CommandKind.FallBack:
                     if (mover != null) mover.CommandMove(cmd.Point);
-                    // Дошёл — приказ исчерпан.
-                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f)
+                    // Дошёл — приказ исчерпан. Или дошёл, докуда пускают: точка
+                    // в предмете или за толпой (22 октября: такие приказы висели
+                    // вечно и выводили воина из жизни лагеря — «со временем всё
+                    // замирает», отзыв автора п. 16).
+                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f
+                        || (mover != null && Time.time - cmd.IssuedAt > 1f && mover.Arrived))
                         _warrior.ClearCommand();
                     break;
 
@@ -203,7 +207,8 @@ namespace Sinbinder.AOS
                 // и удар приказ исполняет (DecisionContext.SatisfiedBy).
                 case CommandKind.AttackMove:
                     if (mover != null) mover.CommandMove(cmd.Point);
-                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f)
+                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f
+                        || (mover != null && Time.time - cmd.IssuedAt > 1f && mover.Arrived))
                         _warrior.ClearCommand();
                     break;
 
