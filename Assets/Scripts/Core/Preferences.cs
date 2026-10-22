@@ -87,12 +87,33 @@ namespace Sinbinder.Core
                 Screen.fullScreen = PlayerPrefs.GetInt(FullscreenKey, 1) != 0;
         }
 
-        public static string ScreenName() => Screen.fullScreen ? Loc.T("полный экран") : Loc.T("в окне");
+        /// <summary>
+        /// Что игрок выбрал, а не что сейчас у окна. <c>Screen.fullScreen</c>
+        /// меняется только со следующего кадра: строка паузы, перерисованная
+        /// сразу после щелчка, показывала прежнее, в память писалось прежнее,
+        /// а окно на секунду чернело, перестраиваясь. Игрок щёлкал ещё раз —
+        /// «при выборе настроек всё как будто зависает» (автор, 21 октября, п. 19).
+        /// </summary>
+        private static bool? _fullWanted;
+
+        private static bool Full => _fullWanted ?? Screen.fullScreen;
+
+        public static string ScreenName() => Full ? Loc.T("полный экран") : Loc.T("в окне");
 
         public static void ToggleScreen()
         {
-            Screen.fullScreen = !Screen.fullScreen;
-            PlayerPrefs.SetInt(FullscreenKey, Screen.fullScreen ? 1 : 0);
+            bool full = !Full;
+            _fullWanted = full;
+
+            // В окно — не во весь экран размером: окно ровно с монитор
+            // неотличимо от полного экрана, и смена выглядела ничем.
+            var display = Screen.currentResolution;
+            if (full)
+                Screen.SetResolution(display.width, display.height, FullScreenMode.FullScreenWindow);
+            else
+                Screen.SetResolution(display.width * 3 / 4, display.height * 3 / 4, FullScreenMode.Windowed);
+
+            PlayerPrefs.SetInt(FullscreenKey, full ? 1 : 0);
             PlayerPrefs.Save();
         }
 

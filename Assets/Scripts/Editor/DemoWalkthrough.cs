@@ -1765,6 +1765,66 @@ namespace Sinbinder.EditorTools
             Roads();
             Stuck();
             Clipped();
+            Through();
+        }
+
+        // ── Сквозь предмет: ноги внутри палатки, камня, стола ──
+
+        private static string _solidsScene;
+        private static readonly List<Renderer> _solids = new();
+
+        /// <summary>
+        /// «Воины нередко ходят по палаткам и другим объектам» (автор,
+        /// 21 октября, п. 15; 22-го уточнил: «по верхам… если объект низкий —
+        /// ничего страшного, если до бедра — убирай»). Ноги над следом
+        /// предмета выше колена из корзин сборки и выше его низа на 0,25 м —
+        /// идёт по нему. Мерить от нуля нельзя: шатёр Греховода на холме.
+        /// Под скатом жилой палатки — её нутро, не меряем.
+        /// </summary>
+        private static void Through()
+        {
+            if (UnityEngine.Object.FindFirstObjectByType<CampOpening>() == null) return;
+
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (scene != _solidsScene)
+            {
+                _solidsScene = scene;
+                _solids.Clear();
+                foreach (var basket in new[] { "Палатки", "Обстановка", "Окрестности", "Камни у тропы", "Мастерская" })
+                {
+                    var root = GameObject.Find(basket);
+                    if (root == null) continue;
+                    foreach (var r in root.GetComponentsInChildren<MeshRenderer>())
+                        if (r.enabled && r.bounds.size.y > 0.6f && r.GetComponentInParent<TentInterior>() == null)
+                            _solids.Add(r);
+                }
+            }
+
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead) continue;
+                var agent = w.GetComponent<NavMeshAgent>();
+                if (agent == null || !agent.isActiveAndEnabled) continue;
+                var feet = w.transform.position;
+                if (TentInterior.Around(feet + Vector3.up * 0.1f) != null) continue;
+
+                foreach (var r in _solids)
+                {
+                    if (r == null) continue;
+                    var wb = r.bounds;
+                    float lift = feet.y - wb.min.y;
+                    if (lift < 0.25f || feet.y > wb.max.y + 0.2f) continue;
+                    if (feet.x < wb.min.x || feet.x > wb.max.x || feet.z < wb.min.z || feet.z > wb.max.z) continue;
+                    // Рамка мира у повёрнутого предмета шире его самого — уточняем в его осях.
+                    var local = r.transform.InverseTransformPoint(feet);
+                    var b = r.localBounds;
+                    if (!(local.x >= b.min.x && local.x <= b.max.x && local.z >= b.min.z && local.z <= b.max.z)
+                        && !(local.x >= b.min.x && local.x <= b.max.x && local.y >= b.min.y && local.y <= b.max.y)) continue;
+                    Guard("ПО ВЕРХУ", w.DisplayName + "|" + r.transform.parent?.name + "/" + r.name,
+                        $"{w.DisplayName} идёт по «{r.transform.parent?.name}/{r.name}» на {lift:0.00} м над землёй у ({feet.x:0.0}; {feet.z:0.0})");
+                    break;
+                }
+            }
         }
 
         // ── Предмет на пути: до всего, к чему игрок обязан подойти, есть дорога ──
@@ -1820,7 +1880,9 @@ namespace Sinbinder.EditorTools
                 if (!NavMesh.CalculatePath(start.position, near.position, NavMesh.AllAreas, path)
                     || path.status != NavMeshPathStatus.PathComplete)
                 {
-                    Guard("ДОРОГА", scene + "|" + name, $"{scene}: до «{name}» от Греховода не дойти — дорога перекрыта");
+                    var end = path.corners.Length > 0 ? path.corners[path.corners.Length - 1] : start.position;
+                    Guard("ДОРОГА", scene + "|" + name, $"{scene}: до «{name}» от Греховода не дойти — дорога перекрыта, "
+                        + $"обрывается у ({end.x:0.0}; {end.z:0.0}), цель ({near.position.x:0.0}; {near.position.z:0.0})");
                     continue;
                 }
                 ok++;

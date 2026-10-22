@@ -1336,103 +1336,126 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>
-        /// Возвышенность, на которой стоит палатка Греховода. Сплющенный
-        /// цилиндр: холм из одного примитива, зато лагерь виден сверху.
+        /// Возвышенность, на которой стоит палатка Греховода.
+        ///
+        /// До 22 октября — сплющенный цилиндр и прямой ящик-спуск сбоку.
+        /// Автор: «холму стоит придать более естественный, природный вид,
+        /// то же самое со спуском». Теперь это один курган, вылепленный
+        /// по высоте (<see cref="HillHeight"/>): ровная макушка под шатёр,
+        /// крутые скруглённые бока с буграми и спуск к костру — пологий
+        /// язык того же склона, а не приставленная плита.
+        /// Сетка ложится ассетом поверх себя — ссылки сцен не рвутся.
         /// </summary>
         private static void Hill(Vector3 position, float radius, float height)
         {
-            var hill = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            hill.name = "Возвышенность";
-            hill.transform.position = position + new Vector3(0f, height * 0.5f, 0f);
-            hill.transform.localScale = new Vector3(radius * 2f, height * 0.5f, radius * 2f);
+            var hill = new GameObject("Возвышенность");
+            hill.transform.position = position;
 
-            // Земля, а не белый примитив: без материала холм светится
-            // посреди ночного лагеря ярче костра — на снимке сцены он
-            // читался куском чужой игры.
-            // Той же землёй, что и всё вокруг: гравий светлее грунта,
-            // и сверху холм читался бледным блином посреди лагеря,
-            // а не возвышенностью. Форму ему теперь задаёт длинная тень.
+            var mesh = HillMesh(position, radius, height);
+            hill.AddComponent<MeshFilter>().sharedMesh = mesh;
+            hill.AddComponent<MeshRenderer>();
+            // Щелчок по холму — ход туда (RTS_Camera бьёт лучом в коллайдеры).
+            hill.AddComponent<MeshCollider>().sharedMesh = mesh;
+
+            // Той же землёй, что и двор, и в тех же мировых координатах
+            // фактуры: шва у подножия не видно.
             Cover(hill, "Ground048");
 
             // Палатка Греховода наверху, входом к лагерю: в ней он просыпается,
             // из неё и выходит (слово автора, 26 сентября). Крупнее прежней
             // в полтора раза: внутри — стол с картой, полка с банками, стойка
-            // и постель, а между ними ему самому нужно пройти в рост. При
-            // прежних 1,25 над головой хватало крыши на полосу в ладонь.
+            // и постель, а между ними ему самому нужно пройти в рост.
             Tent(position + new Vector3(0f, height, 0f), yaw: 0f, abandoned: false,
                 name: "Палатка Греховода", size: 1.9f, master: true);
 
-            Slope(position, radius, height);
+            // Валунов вдоль тропы больше нет: они прятали прямые грани ящика.
+            // Два у подножия (CampClutter) теперь уходят в склон — как надо.
         }
 
+        private const string HillAsset = "Assets/Models/Сцены/Холм.asset";
+
         /// <summary>
-        /// Склон с холма к лагерю.
+        /// Высота кургана над землёй в точке (в осях холма, спуск — к +Z).
         ///
-        /// Пока Греховод был камерой, холм мог быть барабаном с отвесными
-        /// стенками: смотреть с него ничто не мешало. Теперь он с него
-        /// сходит — а навмеш вертикальных стен не печёт, и без склона
-        /// вершина оказалась бы отдельным островом. Игрок вышел бы
-        /// из палатки и застрял в первой же сцене насмерть, ровно там,
-        /// где демо начинается.
-        ///
-        /// Наклон держим заметно положе сорока пяти градусов — порога,
-        /// выше которого навмеш поверхность отбрасывает. Запас нужен
-        /// потому, что печётся всё в рантайме и проверить глазом
-        /// перед запуском нечего.
+        /// Макушка — круг радиусом 0,72 холма с неровным краем. Дальше склон
+        /// гладкой ступенькой (smootherstep) до нуля: на боках за 2,6 м —
+        /// круто, по навмешу не пройти, как и у прежнего барабана; к костру —
+        /// за 6,6 м, наклон не круче тридцати одного градуса (навмеш берёт
+        /// до сорока пяти). Ширина языка — по удалению вбок от оси спуска.
+        /// Бугры — только на боках: тропа под ногами ровная.
         /// </summary>
-        private static void Slope(Vector3 hillCentre, float radius, float height)
+        private static float HillHeight(float x, float z, float radius, float height)
         {
-            // Вниз — в сторону костра. Он стоит в начале координат
-            // в обеих прологовых сценах.
-            Vector3 down = Vector3.zero - hillCentre;
-            down.y = 0f;
+            float r = Mathf.Sqrt(x * x + z * z);
+            float a = Mathf.Atan2(x, z);
 
-            if (down.sqrMagnitude < 0.01f) down = Vector3.forward;
-            down.Normalize();
+            float top = radius * 0.72f + 0.25f * Mathf.Sin(a * 3f + 0.7f) + 0.15f * Mathf.Sin(a * 7f + 2.1f);
 
-            // Разбег вдвое длиннее подъёма: около двадцати семи градусов.
-            float run = height * 2f;
+            // Язык спуска: впереди (z > 0) и не дальше 1,3–2,8 м вбок.
+            float side = Mathf.Abs(x);
+            float tongue = z > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(1.3f, 2.8f, side)) : 0f;
+            tongue *= Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 2.5f, z));
+            float run = Mathf.Lerp(2.6f, 6.6f, tongue);
 
-            Vector3 top = hillCentre + down * radius + new Vector3(0f, height, 0f);
-            Vector3 foot = hillCentre + down * (radius + run);
+            float u = Mathf.Clamp01((r - top) / run);
+            float s = u * u * u * (u * (u * 6f - 15f) + 10f);   // smootherstep
+            float h = height * (1f - s);
 
-            var ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ramp.name = "Спуск";
-            ramp.transform.position = (top + foot) * 0.5f;
-
-            // Локальная ось Z вдоль склона, локальная Y — нормаль
-            // поверхности. LookRotation сам разложит и то и другое,
-            // поэтому ни знака угла, ни порядка Эйлера здесь знать
-            // не нужно — а именно на них тут проще всего ошибиться.
-            ramp.transform.rotation = Quaternion.LookRotation(foot - top, Vector3.up);
-            // Ширина — тропа, а не помост: при 0,8 радиуса (4 м) склон сверху
-            // читался «большим серым ящиком посреди лагеря» (отзыв игрока
-            // 19 октября, п. 2). Двоим разойтись хватает и при 0,55.
-            ramp.transform.localScale = new Vector3(
-                radius * 0.55f, 0.3f, Vector3.Distance(top, foot));
-
-            Cover(ramp, "Ground048");
-
-            // Валуны по краям тропы: прямые боковые грани куба сверху
-            // читались плитой (21 октября, после сужения). Камни стоят
-            // на земле, а не на склоне, — закрывают грань и не мешают
-            // идти по тропе. Раскладка без Random: лагерь одинаков всегда.
-            var stones = new GameObject("Камни у тропы");
-            Vector3 side = Vector3.Cross(Vector3.up, down);
-            float edge = radius * 0.55f * 0.5f + 0.45f;
-            var places = new[]
+            if (u > 0f && u < 1f)
             {
-                (t: 0.42f, s: +1f, k: 0.85f, yaw: 30f),
-                (t: 0.70f, s: +1f, k: 0.70f, yaw: 110f),
-                (t: 0.55f, s: -1f, k: 0.80f, yaw: 200f),
-                (t: 0.86f, s: -1f, k: 0.60f, yaw: 290f),
-            };
-            foreach (var p in places)
-            {
-                var at = Vector3.Lerp(top, foot, p.t);
-                at.y = 0f;
-                Prop("Rock", stones.transform, at + side * (edge * p.s), p.yaw, p.k);
+                float bumps = Mathf.PerlinNoise(x * 0.55f + 13.1f, z * 0.55f + 7.3f) - 0.5f;
+                h += bumps * 0.45f * Mathf.Sin(u * Mathf.PI) * (1f - tongue);
             }
+
+            // За подножием — чуть под землёй: без мерцания двух плоскостей.
+            return u >= 1f ? -0.03f : h;
+        }
+
+        private static Mesh HillMesh(Vector3 centre, float radius, float height)
+        {
+            const float step = 0.3f;
+            float reach = radius * 0.72f + 0.4f + 6.6f + step;
+            int n = Mathf.CeilToInt(reach * 2f / step) + 1;
+
+            var verts = new Vector3[n * n];
+            var uvs = new Vector2[n * n];
+            for (int j = 0; j < n; j++)
+                for (int i = 0; i < n; i++)
+                {
+                    float x = -reach + i * step, z = -reach + j * step;
+                    verts[j * n + i] = new Vector3(x, HillHeight(x, z, radius, height), z);
+                    // Как у плоскости земли (90 м, «Земля»): u = 0,5 − x/90.
+                    uvs[j * n + i] = new Vector2(0.5f - (centre.x + x) / 90f, 0.5f - (centre.z + z) / 90f);
+                }
+
+            var tris = new List<int>();
+            for (int j = 0; j < n - 1; j++)
+                for (int i = 0; i < n - 1; i++)
+                {
+                    int a = j * n + i, b = a + 1, c = a + n, d = c + 1;
+                    // Клетка целиком под землёй — не нужна.
+                    if (verts[a].y <= 0f && verts[b].y <= 0f && verts[c].y <= 0f && verts[d].y <= 0f) continue;
+                    tris.AddRange(new[] { a, c, b, b, c, d });
+                }
+
+            if (!AssetDatabase.IsValidFolder("Assets/Models")) AssetDatabase.CreateFolder("Assets", "Models");
+            if (!AssetDatabase.IsValidFolder("Assets/Models/Сцены")) AssetDatabase.CreateFolder("Assets/Models", "Сцены");
+
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(HillAsset);
+            bool fresh = mesh == null;
+            if (fresh) mesh = new Mesh();
+            mesh.Clear();
+            mesh.name = "Холм";
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.vertices = verts;
+            mesh.uv = uvs;
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            mesh.RecalculateBounds();
+            if (fresh) AssetDatabase.CreateAsset(mesh, HillAsset);
+            else EditorUtility.SetDirty(mesh);
+            return mesh;
         }
 
         /// <summary>
@@ -1490,6 +1513,16 @@ namespace Sinbinder.Utilets
                 // совета и склад (BuildCamp). Двор — между холмом и очагом,
                 // по шесть с половиной метров в обе стороны от спуска.
                 if (Mathf.Abs(position.x) < 6.5f && position.z < -2f && position.z > -6f)
+                    continue;
+
+                // И на коридоре к выходу (22 октября). Две палатки внутреннего
+                // кольца, одна из них брошенная, стояли на самой оси, и путь
+                // наружу шёл по просевшей крыше брошенной: когда крыши закрыли
+                // для хождения, выход оказался замурован. Автор, 21 октября,
+                // п. 10: «проход к лагерю довольно сложный».
+                var exit = new Vector3(26.6f, 0f, 4.65f).normalized;   // RaidEvent.Edge
+                if (Vector3.Dot(position, exit) > 0f
+                    && Mathf.Abs(Vector3.Cross(exit, position).y) < 2.6f)
                     continue;
 
                 places.Add(position);
@@ -1575,6 +1608,12 @@ namespace Sinbinder.Utilets
                     model.transform.localScale = new Vector3(was.x, was.y, was.z * 0.62f);
                     model.transform.rotation = Quaternion.Euler(9f, yaw, 6f)
                                              * Axis(Resources.Load<GameObject>("Props/Tent"));
+
+                    // Просевшая — пологая: её скаты навмеш принимал за пригорок,
+                    // и воины шли по крыше насквозь (автор, 21 октября, п. 15:
+                    // «воины нередко ходят по палаткам»). Модель — мимо выпечки,
+                    // а по её следу на земле — объём «не пройти».
+                    Shut(tent.transform, model);
                 }
                 else
                 {
@@ -1741,6 +1780,37 @@ namespace Sinbinder.Utilets
             if (half < 0.5f || top < 1f || front - back < 1f) return null;
 
             return (half, top, front, back);
+        }
+
+        /// <summary>
+        /// Закрыть предмет для хождения целиком: сам — мимо выпечки навмеша,
+        /// по его следу на земле (в осях корня) — объём «не пройти».
+        /// </summary>
+        private static void Shut(Transform root, GameObject model)
+        {
+            float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue, top = 0f;
+            foreach (var filter in model.GetComponentsInChildren<MeshFilter>())
+            {
+                var mesh = filter.sharedMesh;
+                if (mesh == null || mesh.subMeshCount == 0) continue;
+                var toWorld = filter.transform.localToWorldMatrix;
+                var verts = mesh.vertices;
+                // Только ткань (первый материал, как в Measure): растяжки
+                // и колышки торчат далеко за скаты и закрывали проходы.
+                foreach (int i in mesh.GetTriangles(0))
+                {
+                    var p = root.InverseTransformPoint(toWorld.MultiplyPoint3x4(verts[i]));
+                    minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+                    minZ = Mathf.Min(minZ, p.z); maxZ = Mathf.Max(maxZ, p.z);
+                    top = Mathf.Max(top, p.y);
+                }
+            }
+            if (minX > maxX) return;
+
+            model.AddComponent<Unity.AI.Navigation.NavMeshModifier>().ignoreFromBuild = true;
+            Wall(root, "След", UnityEngine.AI.NavMesh.GetAreaFromName("Not Walkable"),
+                 new Vector3((minX + maxX) * 0.5f, top * 0.5f, (minZ + maxZ) * 0.5f),
+                 new Vector3(maxX - minX, top + 1f, maxZ - minZ));
         }
 
         /// <summary>Невидимая стена для навмеша: объём «не пройти».</summary>
@@ -3846,6 +3916,39 @@ namespace Sinbinder.Utilets
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// <summary>
+        /// Выше колена — не дорога. Автор, 22 октября: «по верхам палаток
+        /// и других объектов… если объект низкий — ничего страшного, но если
+        /// до бедра — или анимацию перелезания, или убирай». Навмеш печётся
+        /// по видимой геометрии, и верх сундука, бочки, просевшей палатки
+        /// был для агента пригорком. Всё выше 0,35 м в корзинах лагеря —
+        /// «не пройти»: верх не дорога, и под ним земли тоже нет — обходят.
+        /// Ниже — перешагивают, как и было. Уже размеченное (нутро палаток,
+        /// трава) не трогаем.
+        /// </summary>
+        private const float KneeHeight = 0.35f;
+
+        private static void NoWalkingOnTop()
+        {
+            int blocked = UnityEngine.AI.NavMesh.GetAreaFromName("Not Walkable");
+            int marked = 0;
+            foreach (var basket in new[] { "Палатки", "Обстановка", "Окрестности", "Камни у тропы", "Мастерская" })
+            {
+                var root = GameObject.Find(basket);
+                if (root == null) continue;
+                foreach (var r in root.GetComponentsInChildren<MeshRenderer>())
+                {
+                    if (r.bounds.size.y <= KneeHeight || r.GetComponent<TextMesh>() != null) continue;
+                    if (r.GetComponentInParent<Unity.AI.Navigation.NavMeshModifier>() != null) continue;
+                    var m = r.gameObject.AddComponent<Unity.AI.Navigation.NavMeshModifier>();
+                    m.overrideArea = true;
+                    m.area = blocked;
+                    marked++;
+                }
+            }
+            if (marked > 0) Debug.Log($"[СБОРКА] Выше колена — не дорога: {marked} предметов.");
+        }
+
         private static void Save(UnityEngine.SceneManagement.Scene scene, string name)
         {
             string path = $"{SceneDir}/{name}.unity";
@@ -3853,6 +3956,7 @@ namespace Sinbinder.Utilets
             // Не врос ли предмет в предмет (автор, 21 октября: сундук Марги
             // стоял в склоне холма, «и это не единичный случай»).
             OverlapCheck.Run(name);
+            NoWalkingOnTop();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);

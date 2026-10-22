@@ -101,6 +101,14 @@ namespace Sinbinder.Gameplay
             // Дозор — не кольцо, а ход вдоль края, туда и обратно.
             if (spot == CampSpot.Watch) point += new Vector3(step * 3f, 0f, 0f);
 
+            // Точка — на земле, а не на предмете. Кольцо у огня легло ровно
+            // на брёвна, у карт — на бочки-сиденья, и воины шли по верху
+            // (автор, 21–22 октября: «ходят по верхам палаток и других
+            // объектов»). Верх выше колена теперь не навмеш (сборщик) —
+            // берём ближайшую землю рядом.
+            if (UnityEngine.AI.NavMesh.SamplePosition(point, out var ground, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                point = ground.position;
+
             word = Word(spot);
             return true;
         }
@@ -190,7 +198,7 @@ namespace Sinbinder.Gameplay
         {
             switch (spot)
             {
-                case CampSpot.Fire:  return 2.6f;
+                case CampSpot.Fire:  return 3.2f;   // за брёвнами (2,6 — их кольцо)
                 case CampSpot.Table: return 1.8f;
                 case CampSpot.Chest: return 1.4f;
                 case CampSpot.Cards: return 1.0f;   // вокруг ящика, на расстоянии руки

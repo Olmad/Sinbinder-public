@@ -244,6 +244,24 @@ namespace Sinbinder.Utilets
                 if (half.x <= 0f || half.y <= 0f || half.z <= 0f) continue;
 
                 var mesh = r.GetComponent<MeshFilter>();
+
+                // Курган (22 октября, DemoSceneBuilder.HillMesh) — земля, а не
+                // коробка: рамка его склонов 22 × 22 м «пересекала» всё у подножия.
+                // Меряем макушку — цилиндр, на котором стоит шатёр.
+                if (mesh != null && mesh.sharedMesh != null && mesh.sharedMesh.name == "Холм")
+                {
+                    float top = lb.max.y * Mathf.Abs(t.lossyScale.y);
+                    float plateau = 3.4f;
+                    boxes.Add(new Box
+                    {
+                        Centre = t.position + Vector3.up * (top * 0.5f),
+                        Half = new Vector3(plateau, top * 0.5f, plateau) - Vector3.one * Slack,
+                        X = Vector3.right, Y = Vector3.up, Z = Vector3.forward,
+                        Round = true,
+                    });
+                    continue;
+                }
+
                 bool round = mesh != null && mesh.sharedMesh != null && mesh.sharedMesh.name == PrimitiveType.Cylinder.ToString()
                           && Vector3.Dot(t.up, Vector3.up) > 0.99f;
 
