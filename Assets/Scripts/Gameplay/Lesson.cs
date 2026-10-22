@@ -123,9 +123,11 @@ namespace Sinbinder.Gameplay
         /// <summary>
         /// Выключатель консоли «уроки». Урок держит мир, и держащий мир
         /// код, не проверенный в игре, — это риск остановить демо насовсем.
-        /// Сессия игры проверит его прогоном со «все» и включит здесь.
+        /// Прогон со «все» его проходит; с 22 октября включён по умолчанию:
+        /// автор, п. 9 отзыва 21.10 — «не увидел обучения и плашек с подсказками».
+        /// Выключается галочкой на O и в консоли.
         /// </summary>
-        public static bool Switch { get; set; }
+        public static bool Switch { get; set; } = true;
 
         /// <summary>Идёт ли урок сейчас и какой.</summary>
         public static LessonKind? Now => _instance != null ? _instance._now : null;
@@ -318,7 +320,7 @@ namespace Sinbinder.Gameplay
             _instance = null;
             _given.Clear();
             _backTold = false;
-            Switch = false;
+            Switch = true;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
