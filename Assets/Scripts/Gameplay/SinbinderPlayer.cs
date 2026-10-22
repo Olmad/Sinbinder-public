@@ -191,7 +191,7 @@ namespace Sinbinder.Gameplay
                 // «он не должен быть голым»): ряса до земли с золотой нитью,
                 // рукава, оплечье с шипами — пешка логотипа, — пояс с гримуаром
                 // и банками душ, посох с огоньком души. Цвета — в самих вещах.
-                foreach (var item in new[] { "SinRobe", "SinSleeveLeft", "SinSleeveRight",
+                foreach (var item in new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
                                              "SinCuffLeft", "SinCuffRight", "SinMantle",
                                              "SinBelt", "SinStaff" })
                     Wardrobe.Wear(model.gameObject, item);
@@ -212,6 +212,10 @@ namespace Sinbinder.Gameplay
                 // Огонёк души на посохе — тот же тёплый, что у костра.
                 Wardrobe.Tint(model.gameObject, "Soulfire", new Color(1f, 0.55f, 0.22f), glow: 1.0f);
                 Wardrobe.Matte(model.gameObject, "Robe");
+
+                // Тьма под капюшоном — провал, а не чёрное лицо (автор,
+                // 22 октября): неосвещаемая пустота и дымка из глубины.
+                HoodVoid.Make(model.gameObject);
             }
 
             // Багрового диска под ногами больше нет (автор, 21 октября: «нужно

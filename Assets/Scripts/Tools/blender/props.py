@@ -717,10 +717,15 @@ PAWN = [
 
 
 def pawn(b):
-    b.add(*lathe(PAWN, 40), bone="", mat=0, smooth=True)
+    # 22.10: «пешка по-прежнему выглядит очень плохо» — голова была открыта
+    # сверху, кость — белый пластик. Теперь: макушка закрыта, кость старая,
+    # пешка стоит на тёмной точёной подставке.
+    b.add(*lathe(PAWN, 48), bone="", mat=0, smooth=True)
+    b.add(*sphere((0, 0, 0.1125), 0.0105, segs=16, rings=10), bone="", mat=0, smooth=True)
+    b.add(*lathe([(0.0, 0.0), (0.036, 0.0), (0.038, 0.003), (0.036, 0.007), (0.0, 0.007)], 48), bone="", mat=2, smooth=True)
     # Трещина по голове — две тонкие тёмные черты.
-    b.add(*tube((0.012, -0.010, 0.112), (0.016, -0.008, 0.094), 0.0012, 0.0010, segs=4), bone="", mat=2)
-    b.add(*tube((0.016, -0.008, 0.094), (0.013, -0.011, 0.086), 0.0011, 0.0008, segs=4), bone="", mat=2)
+    b.add(*tube((0.012, -0.010, 0.112), (0.016, -0.008, 0.094), 0.0012, 0.0010, segs=4), bone="", mat=1)
+    b.add(*tube((0.016, -0.008, 0.094), (0.013, -0.011, 0.086), 0.0011, 0.0008, segs=4), bone="", mat=1)
 
 
 def soul_jar(b):
@@ -809,7 +814,7 @@ PROPS = [
     Prop("Bush", bush, [LEAF, DARK, DARK]),
     Prop("GrassTuft", grass_tuft, [DRY, DARK, DARK]),
     Prop("AxeTree", axe_tree, [BARK, DARK, IRON]),
-    Prop("Pawn", pawn, [BONE, DARK, DARK]),
+    Prop("Pawn", pawn, [("Old Bone", (0.560, 0.500, 0.400, 1.0)), DARK, WOOD]),
     Prop("Balalaika", balalaika, [WOOD, DARK, IRON]),
     Prop("Banana", banana, [("Banana", (0.780, 0.640, 0.180, 1.0)), DARK, DARK]),
     Prop("Katana", katana, [STEEL, IRON, DARK]),

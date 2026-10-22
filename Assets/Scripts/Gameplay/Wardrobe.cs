@@ -60,6 +60,7 @@ namespace Sinbinder.Gameplay
             { "Cloak", "Chest" },
             // Облачение Греховода (21 октября, wear.py «Греховод»).
             { "SinRobe", "Spine" },
+            { "SinSkirt", "Hips" },
             { "SinSleeveLeft", "LeftUpperArm" },
             { "SinSleeveRight", "RightUpperArm" },
             { "SinCuffLeft", "LeftLowerArm" },
@@ -384,6 +385,11 @@ namespace Sinbinder.Gameplay
         public static IEnumerable<string> For(Warrior warrior)
         {
             if (warrior == null) yield break;
+
+            // Греховод одевается сам (SinbinderPlayer.BuildBody). Через общие
+            // правила он получал меч ремесла «по умолчанию» — розовый прут
+            // поперёк посоха на портрете 22 октября. Меч он поднимет сам.
+            if (warrior is SinbinderPlayer) yield break;
 
             // Живые: охотники узнаются по чину — ремеслу души. До 16 октября —
             // по имени, которое и было видом («Ловчий»); теперь имя своё
