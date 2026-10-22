@@ -66,7 +66,7 @@ namespace Sinbinder.Crypt
             if (device.HasSoul && Bindable(device.Quality)) return true;
             if (CryptHands.HasSoul && Bindable(CryptHands.Quality)) return true;
 
-            for (int i = 0; i < Satchel.Size; i++)
+            for (int i = 0; i < Satchel.Jars; i++)
             {
                 var slot = Satchel.At(i);
                 if (slot.FullJar && Bindable(slot.Quality)) return true;

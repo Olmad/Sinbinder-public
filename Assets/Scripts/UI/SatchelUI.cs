@@ -7,7 +7,7 @@ using Sinbinder.Core;
 namespace Sinbinder.UI
 {
     /// <summary>
-    /// Сума на экране: шесть ячеек и та, что под рукой.
+    /// Сума на экране: ячейка на каждую банку и та, что под рукой.
     ///
     /// Без неё сума существовала бы только в голове у игрока: он нажимает
     /// <c>Tab</c>, что-то там переключается, а увидеть это негде. Предел
@@ -16,6 +16,10 @@ namespace Sinbinder.UI
     ///
     /// Ни одной цифры (00-GDD.md §7): ячейки считаются от единицы просто
     /// как места, а что в них лежит, названо словом.
+    ///
+    /// Ячеек столько, сколько банок (автор, 19 октября): сборщик сцен ставит
+    /// шесть мест слева направо у правого края экрана, а видны только правые —
+    /// по одному на банку. Пустых мест «— Пусто —» больше нет.
     /// </summary>
     public class SatchelUI : MonoBehaviour
     {
@@ -47,13 +51,11 @@ namespace Sinbinder.UI
         /// </summary>
         private static readonly Color Ink = new(0.08f, 0.07f, 0.04f);
 
-        private static readonly string EmptyCell = Loc.N("— Пусто —");
-
         private float _next;
 
         void Start()
         {
-            if (_cells == null || _cells.Length != Satchel.Size)
+            if (_cells == null || _cells.Length != Satchel.Max)
             {
                 Debug.LogWarning("[СУМА] Полоса сумы не связана в сцене или "
                                + "ячеек не столько, сколько в суме. "
@@ -105,7 +107,7 @@ namespace Sinbinder.UI
             text.alignment = TextAnchor.MiddleRight;
             text.color = Idle;
             text.raycastTarget = false;
-            text.text = Loc.T("Tab — следующая ячейка · R — взять в руку или положить");
+            text.text = Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку");
         }
 
         void Update()
@@ -146,24 +148,42 @@ namespace Sinbinder.UI
                  && !Gameplay.OpeningReveal.Busy);
 
             int chosen = Satchel.Selected;
+            int jars = Satchel.Jars;
+            int skip = _cells.Length - jars;   // места слева, на которых банок нет
 
             for (int i = 0; i < _cells.Length; i++)
             {
-                var slot = Satchel.At(i);
+                // Место i показывает банку i - skip: банки прижаты вправо.
+                int j = i - skip;
+                var place = Place(i);
+                if (place == null) continue;
+
+                bool shown = j >= 0;
+                if (place.gameObject.activeSelf != shown) place.gameObject.SetActive(shown);
+                if (!shown) continue;
+
+                var slot = Satchel.At(j);
 
                 if (_cells[i] != null)
                 {
-                    // Пустая ячейка — «— Пусто —» (автор, 24 сентября):
-                    // одно слово «пусто» терялось среди названий душ.
-                    _cells[i].text = slot.Empty ? Loc.T(EmptyCell) : Satchel.Describe(i);
-                    _cells[i].color = i == chosen
-                        ? Ink
-                        : (slot.Empty || slot.EmptyJar ? Idle : Full);
+                    _cells[i].text = Satchel.Describe(j);
+                    _cells[i].color = j == chosen ? Ink : (slot.EmptyJar ? Idle : Full);
                 }
 
                 if (_frames != null && i < _frames.Length && _frames[i] != null)
-                    _frames[i].color = i == chosen ? Chosen : Plain;
+                    _frames[i].color = j == chosen ? Chosen : Plain;
             }
+        }
+
+        /// <summary>
+        /// Место ячейки — объект с рамкой; текст лежит внутри него
+        /// (<c>DemoSceneBuilder.BuildSatchel</c>).
+        /// </summary>
+        private RectTransform Place(int i)
+        {
+            if (_frames != null && i < _frames.Length && _frames[i] != null)
+                return _frames[i].rectTransform;
+            return _cells[i] != null ? _cells[i].transform.parent as RectTransform : null;
         }
     }
 }

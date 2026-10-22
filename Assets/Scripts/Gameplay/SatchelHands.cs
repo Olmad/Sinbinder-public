@@ -13,16 +13,14 @@ namespace Sinbinder.Gameplay
     /// её нет, а нажатия слушать кто-то должен. Заодно это верно
     /// и по смыслу — перекладывает он, а не сума.
     ///
-    /// <see cref="_next"/> ходит по ячейкам, <see cref="_swap"/>
-    /// перекладывает между рукой и выбранной ячейкой. Две клавиши,
-    /// а не шесть цифр: цифры с первой по шестую заняты установкой
-    /// отряда, и вешать на них второе значило бы повторить ошибку
-    /// с клавишей D.
+    /// <see cref="_next"/> ходит по банкам, <see cref="_swap"/>
+    /// перекладывает душу между рукой и банкой. Две клавиши, а не шесть
+    /// цифр: цифры с первой по шестую заняты установкой отряда, и вешать
+    /// на них второе значило бы повторить ошибку с клавишей D.
     ///
-    /// Пустую банку в руки не берём. Она нужна не в руке, а в суме:
-    /// жатва наливает душу прямо туда (<see cref="SoulHarvester"/>),
-    /// и носить пустую посуду в руках незачем — руки одни, и заняты
-    /// они были бы ничем.
+    /// Банка из сумы не уходит (<see cref="Satchel"/>, с 22 октября): в руки
+    /// берут душу, пустая банка остаётся ждать следующей жатвы. Тело в суму
+    /// не кладётся — его носят в руках.
     /// </summary>
     public class SatchelHands : MonoBehaviour
     {
@@ -48,11 +46,10 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(_next))
             {
                 Satchel.Next();
-                // Без номера ячейки: номер — тоже цифра на экране (автор,
-                // 24 сентября). Какая ячейка под рукой, видно по рамке сумы.
-                int now = Satchel.Selected;
-                Say(Satchel.At(now).Empty ? Loc.T("Под рукой пустая ячейка.")
-                                          : Loc.F("Под рукой: {0}.", Satchel.Describe(now)));
+                // Без номера банки: номер — тоже цифра на экране (автор,
+                // 24 сентября). Какая банка под рукой, видно по рамке сумы.
+                Say(Satchel.Jars == 0 ? Loc.T("Банок при себе нет.")
+                                      : Loc.F("Под рукой: {0}.", Satchel.Describe(Satchel.Selected)));
             }
 
             if (Input.GetKeyDown(_swap)) Swap();
@@ -60,69 +57,64 @@ namespace Sinbinder.Gameplay
 
         private void Swap()
         {
-            int i = Satchel.Selected;
+            if (CryptHands.Empty) { FromSatchel(Satchel.Selected); return; }
 
-            if (CryptHands.Empty) { FromSatchel(i); return; }
-
-            ToSatchel(i);
+            ToSatchel();
         }
 
-        /// <summary>Из ячейки в руку.</summary>
+        /// <summary>Душу из банки — в руку. Банка остаётся в суме.</summary>
         private void FromSatchel(int i)
         {
             var slot = Satchel.At(i);
 
             if (slot.Empty)
             {
-                Say(Loc.T("Под рукой пусто — брать нечего."));
+                Say(Loc.T("Банок при себе нет."));
                 return;
             }
 
             if (slot.EmptyJar)
             {
                 // Не ошибка игрока, а разъяснение устройства: пустая банка
-                // работает из сумы, в руки её брать незачем.
-                Say(Loc.T("Пустая банка нужна в суме, а не в руках: душа наливается прямо туда."));
+                // работает из сумы, душа наливается в неё при жатве.
+                Say(Loc.T("Банка пуста. Душа нальётся в неё сама, когда вы её соберёте."));
                 return;
             }
 
-            Satchel.Take(i);
+            Satchel.TakeSoul(i);
 
-            bool took = slot.Kind == CarryKind.Shell
-                ? CryptHands.TakeShell(slot.Shell)
-                : CryptHands.TakeSoul(slot.Soul, slot.Quality);
-
-            if (!took)
+            if (!CryptHands.TakeSoul(slot.Soul, slot.Quality))
             {
                 // Руки оказались заняты между проверкой и взятием —
-                // класть обратно обязательно, иначе вещь исчезнет молча.
-                Satchel.PutAt(i, slot);
+                // налить обратно обязательно, иначе душа исчезнет молча.
+                Satchel.Fill(i, slot.Soul, slot.Quality);
                 return;
             }
 
             Say(Loc.F("В руках: {0}.", CryptHands.What));
         }
 
-        /// <summary>Из руки в ячейку.</summary>
-        private void ToSatchel(int i)
+        /// <summary>Душу из руки — в банку: под рукой, если пуста, иначе в первую пустую.</summary>
+        private void ToSatchel()
         {
-            var slot = CryptHands.HasShell
-                ? new Satchel.Slot { Kind = CarryKind.Shell, Shell = CryptHands.Shell }
-                : new Satchel.Slot
-                {
-                    Kind = CarryKind.Jar,
-                    Soul = CryptHands.Soul,
-                    Quality = CryptHands.Quality,
-                };
-
-            if (!Satchel.PutAt(i, slot))
+            if (CryptHands.HasShell)
             {
-                Say(Loc.F("Эта ячейка занята: {0}.", Satchel.Describe(i)));
+                Say(Loc.T("Тело в суму не влезет — его носят в руках."));
                 return;
             }
 
+            int jar = Satchel.JarFor();
+            if (jar < 0)
+            {
+                Say(Satchel.Jars == 0 ? Loc.T("Банок при себе нет.")
+                                      : Loc.T("Пустых банок нет — душу некуда налить."));
+                return;
+            }
+
+            if (!Satchel.Fill(jar, CryptHands.Soul, CryptHands.Quality)) return;
+
             CryptHands.Drop();
-            Say(Loc.F("В суму: {0}.", Satchel.Describe(i)));
+            Say(Loc.F("В банку: {0}.", Satchel.Describe(jar)));
         }
 
         private static void Say(string line)

@@ -1459,34 +1459,6 @@ msgstr "windowed"
 msgid "пустая банка"
 msgstr "an empty jar"
 
-#: Core/Satchel.cs
-msgid "пусто"
-msgstr "empty"
-
-#: Core/Satchel.cs
-msgid "тело: скелет"
-msgstr "body: skeleton"
-
-#: Core/Satchel.cs
-msgid "тело: зомби"
-msgstr "body: zombie"
-
-#: Core/Satchel.cs
-msgid "тело: призрак"
-msgstr "body: ghost"
-
-#: Core/Satchel.cs
-msgid "тело: голем"
-msgstr "body: golem"
-
-#: Core/Satchel.cs
-msgid "тело: человек"
-msgstr "body: human"
-
-#: Core/Satchel.cs
-msgid "тело"
-msgstr "body"
-
 #: Core/SaveSystem.cs
 msgid "первое"
 msgstr "first"
@@ -5380,32 +5352,32 @@ msgid "Сеть... Я ловил вас. Поймали меня."
 msgstr "The net... I caught your kind. Now I am the one caught."
 
 #: Gameplay/SatchelHands.cs
-msgid "Под рукой пустая ячейка."
-msgstr "An empty slot at hand."
+msgid "Банок при себе нет."
+msgstr "You carry no jars."
 
 #: Gameplay/SatchelHands.cs
 msgid "Под рукой: {0}."
 msgstr "At hand: {0}."
 
 #: Gameplay/SatchelHands.cs
-msgid "Под рукой пусто — брать нечего."
-msgstr "Nothing at hand — nothing to take."
-
-#: Gameplay/SatchelHands.cs
-msgid "Пустая банка нужна в суме, а не в руках: душа наливается прямо туда."
-msgstr "An empty jar belongs in the satchel, not in your hands: the soul pours straight into it."
+msgid "Банка пуста. Душа нальётся в неё сама, когда вы её соберёте."
+msgstr "The jar is empty. A soul pours into it by itself when you gather one."
 
 #: Gameplay/SatchelHands.cs
 msgid "В руках: {0}."
 msgstr "In hand: {0}."
 
 #: Gameplay/SatchelHands.cs
-msgid "Эта ячейка занята: {0}."
-msgstr "This slot is taken: {0}."
+msgid "Тело в суму не влезет — его носят в руках."
+msgstr "A body won't fit in the satchel — it's carried in your hands."
 
 #: Gameplay/SatchelHands.cs
-msgid "В суму: {0}."
-msgstr "Into the satchel: {0}."
+msgid "Пустых банок нет — душу некуда налить."
+msgstr "No empty jars — nowhere to pour the soul."
+
+#: Gameplay/SatchelHands.cs
+msgid "В банку: {0}."
+msgstr "Into the jar: {0}."
 
 #: Gameplay/Scryer.cs
 msgid "Инквизитор шепчет над ладонью — охотники повернули к Греховоду."
@@ -6211,7 +6183,7 @@ msgstr "his own gold · won't give it: {0}"
 msgid "не возьмёт: {0}"
 msgstr "won't take it: {0}"
 
-#: UI/GearPanel.cs UI/SatchelUI.cs
+#: UI/GearPanel.cs
 msgid "— Пусто —"
 msgstr "— Empty —"
 
@@ -6640,8 +6612,8 @@ msgid "Золото осталось в мешке. Отряд это запом
 msgstr "The gold stayed in the bag. The squad will remember."
 
 #: UI/SatchelUI.cs
-msgid "Tab — следующая ячейка · R — взять в руку или положить"
-msgstr "Tab — next slot · R — take in hand or put away"
+msgid "Tab — следующая банка · R — душу в руку или обратно в банку"
+msgstr "Tab — next jar · R — soul to hand or back into the jar"
 
 #: UI/SaveSlotsPanel.cs
 msgid "Вернуться к записанному.  F9 или Esc — закрыть"
@@ -6792,8 +6764,8 @@ msgid "Сума и кошель"
 msgstr "Satchel and purse"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Сума пуста"
-msgstr "The satchel is empty"
+msgid "Банок при себе нет"
+msgstr "You carry no jars"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка"
@@ -7120,6 +7092,62 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "пусто"
+msgstr "empty"
+
+#. нет в коде
+msgid "тело: скелет"
+msgstr "body: skeleton"
+
+#. нет в коде
+msgid "тело: зомби"
+msgstr "body: zombie"
+
+#. нет в коде
+msgid "тело: призрак"
+msgstr "body: ghost"
+
+#. нет в коде
+msgid "тело: голем"
+msgstr "body: golem"
+
+#. нет в коде
+msgid "тело: человек"
+msgstr "body: human"
+
+#. нет в коде
+msgid "тело"
+msgstr "body"
+
+#. нет в коде
+msgid "Под рукой пустая ячейка."
+msgstr "An empty slot at hand."
+
+#. нет в коде
+msgid "Под рукой пусто — брать нечего."
+msgstr "Nothing at hand — nothing to take."
+
+#. нет в коде
+msgid "Пустая банка нужна в суме, а не в руках: душа наливается прямо туда."
+msgstr "An empty jar belongs in the satchel, not in your hands: the soul pours straight into it."
+
+#. нет в коде
+msgid "Эта ячейка занята: {0}."
+msgstr "This slot is taken: {0}."
+
+#. нет в коде
+msgid "В суму: {0}."
+msgstr "Into the satchel: {0}."
+
+#. нет в коде
+msgid "Tab — следующая ячейка · R — взять в руку или положить"
+msgstr "Tab — next slot · R — take in hand or put away"
+
+#. нет в коде
+msgid "Сума пуста"
+msgstr "The satchel is empty"
 
 #. нет в коде
 msgid "облегчённая — без теней"

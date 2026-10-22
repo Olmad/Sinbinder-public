@@ -2,20 +2,18 @@
 // Перевод: текст через Loc
 namespace Sinbinder.Core
 {
-    /// <summary>Что лежит в ячейке сумы.</summary>
+    /// <summary>Что в ячейке сумы.</summary>
     public enum CarryKind
     {
+        /// <summary>Ячейки нет: банок меньше, чем мест.</summary>
         None = 0,
 
         /// <summary>Банка. Пустая, если душа в ней не лежит.</summary>
         Jar = 1,
-
-        /// <summary>Оболочка.</summary>
-        Shell = 2,
     }
 
     /// <summary>
-    /// Сума Греховода: шесть ячеек.
+    /// Сума Греховода: банки для душ.
     ///
     /// Решение автора от 12 сентября. До неё руки были единственным
     /// вместилищем — одно за раз и больше нигде, — и «сколько душ можно
@@ -23,9 +21,20 @@ namespace Sinbinder.Core
     /// без предела.
     ///
     /// Теперь предел есть, и он физический: <b>душа живёт в банке</b>.
-    /// Сколько банок в суме, столько душ и унесёшь. Пустая банка —
-    /// это место под душу, а не пустая ячейка: ячейку можно занять
-    /// и оболочкой.
+    /// Сколько банок в суме, столько душ и унесёшь.
+    ///
+    /// <b>Ячейка — это банка</b> (автор, 19 октября: «может делать количество
+    /// ячеек по количеству банок с максимумом 6?»). Прежде мест было шесть
+    /// всегда, и рядом с тремя «пустая банка» стояли три «— Пусто —»: два
+    /// слова для разного, которые на вид одно (`46-UI.md` §1.3). Теперь
+    /// сколько банок — столько ячеек, и предел душ виден числом ячеек.
+    ///
+    /// Отсюда два правила. <b>Банка из сумы не уходит</b>: вынимают душу,
+    /// пустая банка остаётся. Прежде душа уходила в руки вместе с банкой,
+    /// а новых банок в игре нет — с ячейками по банкам сума сжималась бы
+    /// после каждого связывания и после трёх исчезла бы. <b>Тело в суму
+    /// не кладётся</b>: его носят в руках (тело в мешке и прежде было
+    /// странно).
     ///
     /// Руки остаются как были: одно за раз. Сума не отменяет их, а даёт
     /// куда переложить — иначе «принести душу к устройству» перестало бы
@@ -35,12 +44,12 @@ namespace Sinbinder.Core
     /// <c>SquadRoster</c>: Греховод один, а сцены меняются. Не забыть суму
     /// при новой игре значит начать её с чужим добром.
     ///
-    /// Правило без Unity — проверяется стендом.
+    /// Правило без Unity — проверяется самопроверкой (<c>SatchelJars</c>).
     /// </summary>
     public static class Satchel
     {
-        /// <summary>Сколько ячеек. Шесть — пока что; автор сказал «там посмотрим».</summary>
-        public const int Size = 6;
+        /// <summary>Больше шести банок сума не вмещает (автор, 19 октября).</summary>
+        public const int Max = 6;
 
         /// <summary>
         /// Сколько пустых банок выдаётся на старте.
@@ -56,149 +65,109 @@ namespace Sinbinder.Core
             public CarryKind Kind;
             public SoulData Soul;
             public SoulQuality Quality;
-            public ShellType Shell;
 
             public bool Empty => Kind == CarryKind.None;
             public bool EmptyJar => Kind == CarryKind.Jar && Soul == null;
             public bool FullJar => Kind == CarryKind.Jar && Soul != null;
         }
 
-        private static readonly Slot[] _slots = new Slot[Size];
+        private static readonly Slot[] _jars = new Slot[Max];
+        private static int _count;
         private static bool _ready;
         private static int _selected;
 
-        /// <summary>Какая ячейка сейчас под рукой.</summary>
+        /// <summary>Сколько банок при себе, пустых и полных. Столько и ячеек.</summary>
+        public static int Jars
+        {
+            get { Ensure(); return _count; }
+        }
+
+        /// <summary>Какая банка сейчас под рукой.</summary>
         public static int Selected
         {
             get { Ensure(); return _selected; }
         }
 
-        /// <summary>Перейти к следующей ячейке. По кругу.</summary>
+        /// <summary>Перейти к следующей банке. По кругу.</summary>
         public static void Next()
         {
             Ensure();
-            _selected = (_selected + 1) % Size;
+            _selected = _count > 0 ? (_selected + 1) % _count : 0;
         }
 
+        /// <summary>Банка по месту. За последней банкой — ячейки нет (<see cref="Slot.Empty"/>).</summary>
         public static Slot At(int index)
         {
             Ensure();
-            return index >= 0 && index < Size ? _slots[index] : default;
-        }
-
-        /// <summary>Сколько банок при себе, пустых и полных.</summary>
-        public static int Jars
-        {
-            get
-            {
-                Ensure();
-
-                int n = 0;
-                for (int i = 0; i < Size; i++)
-                    if (_slots[i].Kind == CarryKind.Jar) n++;
-
-                return n;
-            }
+            return index >= 0 && index < _count ? _jars[index] : default;
         }
 
         /// <summary>
+        /// Есть ли в суме хоть что-нибудь. Спрашивает интерфейс: сума
+        /// без банок — не сума, а рамка, которую игрок читает поломкой.
+        /// </summary>
+        public static bool Anything() => Jars > 0;
+
+        /// <summary>
         /// Куда положить свежую душу: первая пустая банка.
-        /// Минус один — банок при себе нет, и жать некуда.
+        /// Минус один — пустых банок нет, и жать некуда.
         /// </summary>
         public static int FreeJar()
         {
             Ensure();
 
-            for (int i = 0; i < Size; i++)
-                if (_slots[i].EmptyJar) return i;
+            for (int i = 0; i < _count; i++)
+                if (_jars[i].EmptyJar) return i;
 
             return -1;
         }
 
-        /// <summary>Налить душу в пустую банку. Ложь — банка не та или занята.</summary>
         /// <summary>
-        /// Есть ли в суме хоть что-нибудь. Спрашивает интерфейс: шесть
-        /// ячеек «пусто» на экране, пока брать нечего, — это не сума,
-        /// это рамка, которую игрок читает поломкой.
+        /// Куда налить душу из рук: банка под рукой, если пуста, иначе
+        /// первая пустая. Минус один — пустых нет.
         /// </summary>
-        public static bool Anything()
+        public static int JarFor()
         {
-            for (int i = 0; i < _slots.Length; i++)
-                if (!_slots[i].Empty) return true;
-
-            return false;
+            Ensure();
+            return At(_selected).EmptyJar ? _selected : FreeJar();
         }
 
+        /// <summary>Налить душу в пустую банку. Ложь — банки нет или она занята.</summary>
         public static bool Fill(int index, SoulData soul, SoulQuality quality)
         {
             Ensure();
 
             if (soul == null) return false;
-            if (index < 0 || index >= Size) return false;
-            if (!_slots[index].EmptyJar) return false;
+            if (index < 0 || index >= _count) return false;
+            if (!_jars[index].EmptyJar) return false;
 
-            _slots[index].Soul = soul;
-            _slots[index].Quality = quality;
+            _jars[index].Soul = soul;
+            _jars[index].Quality = quality;
             return true;
         }
 
-        /// <summary>Положить в свободную ячейку. Ложь — места нет.</summary>
-        public static bool Put(Slot what)
+        /// <summary>
+        /// Вынуть душу из банки. Банка остаётся в суме пустой; вернётся то,
+        /// что в ней было. Пустая или её нет — вернётся без души.
+        /// </summary>
+        public static Slot TakeSoul(int index)
         {
             Ensure();
 
-            if (what.Empty) return false;
+            if (index < 0 || index >= _count) return default;
 
-            for (int i = 0; i < Size; i++)
-            {
-                if (!_slots[i].Empty) continue;
-
-                _slots[i] = what;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>Положить именно в эту ячейку. Ложь — занята.</summary>
-        public static bool PutAt(int index, Slot what)
-        {
-            Ensure();
-
-            if (what.Empty) return false;
-            if (index < 0 || index >= Size) return false;
-            if (!_slots[index].Empty) return false;
-
-            _slots[index] = what;
-            return true;
-        }
-
-        /// <summary>Вынуть из ячейки. Пустая — вернётся пустая.</summary>
-        public static Slot Take(int index)
-        {
-            Ensure();
-
-            if (index < 0 || index >= Size) return default;
-
-            var what = _slots[index];
-            _slots[index] = default;
+            var what = _jars[index];
+            _jars[index] = new Slot { Kind = CarryKind.Jar };
             return what;
         }
 
-        /// <summary>Что лежит в ячейке — словами, для подсказок.</summary>
+        /// <summary>Что в банке — словами, для подсказок.</summary>
         public static string Describe(int index)
         {
             var slot = At(index);
 
-            switch (slot.Kind)
-            {
-                case CarryKind.Jar:
-                    return slot.Soul != null ? slot.Soul.Name : Loc.T("пустая банка");
-                case CarryKind.Shell:
-                    return ShellWord(slot.Shell);
-                default:
-                    return Loc.T("пусто");
-            }
+            if (slot.FullJar) return slot.Soul.Name;
+            return slot.EmptyJar ? Loc.T("пустая банка") : "";
         }
 
         /// <summary>
@@ -210,10 +179,11 @@ namespace Sinbinder.Core
         /// </summary>
         public static void Forget()
         {
-            for (int i = 0; i < Size; i++) _slots[i] = default;
+            for (int i = 0; i < Max; i++) _jars[i] = default;
 
-            for (int i = 0; i < StartingJars && i < Size; i++)
-                _slots[i] = new Slot { Kind = CarryKind.Jar };
+            _count = System.Math.Min(StartingJars, Max);
+            for (int i = 0; i < _count; i++)
+                _jars[i] = new Slot { Kind = CarryKind.Jar };
 
             _selected = 0;
             _ready = true;
@@ -222,23 +192,6 @@ namespace Sinbinder.Core
         private static void Ensure()
         {
             if (!_ready) Forget();
-        }
-
-        /// <summary>
-        /// Имя оболочки без обращения к Unity: сума проверяется стендом,
-        /// а <c>ShellLibrary</c> лезет в <c>Resources</c>.
-        /// </summary>
-        private static string ShellWord(ShellType type)
-        {
-            switch (type)
-            {
-                case ShellType.Skeleton: return Loc.T("тело: скелет");
-                case ShellType.Zombie:   return Loc.T("тело: зомби");
-                case ShellType.Ghost:    return Loc.T("тело: призрак");
-                case ShellType.Golem:    return Loc.T("тело: голем");
-                case ShellType.Living:   return Loc.T("тело: человек");
-                default:                 return Loc.T("тело");
-            }
         }
     }
 }

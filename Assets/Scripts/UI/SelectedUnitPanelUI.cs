@@ -527,14 +527,12 @@ namespace Sinbinder.UI
             if (_satchelText != null)
             {
                 var lines = new System.Text.StringBuilder();
-                for (int i = 0; i < Satchel.Size; i++)
+                for (int i = 0; i < Satchel.Jars; i++)
                 {
-                    var slot = Satchel.At(i);
-                    if (slot.Empty) continue;
                     if (lines.Length > 0) lines.Append('\n');
                     lines.Append(i == Satchel.Selected ? "▸ " : "   ").Append(Satchel.Describe(i));
                 }
-                _satchelText.text = lines.Length > 0 ? lines.ToString() : Loc.T("Сума пуста");
+                _satchelText.text = lines.Length > 0 ? lines.ToString() : Loc.T("Банок при себе нет");
                 _satchelText.color = Bone;
             }
 

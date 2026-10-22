@@ -2997,7 +2997,7 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void BuildSatchel(Transform parent)
         {
-            const int cells = Sinbinder.Core.Satchel.Size;
+            const int cells = Sinbinder.Core.Satchel.Max;   // видны — по банкам (SatchelUI)
             const float cell = 132f;
             const float gap = 6f;
 

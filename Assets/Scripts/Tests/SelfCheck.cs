@@ -104,6 +104,7 @@ namespace Sinbinder.Tests
                 OverheadNearLens();
                 ExitMarkerPlace();
                 HeraldLines();
+                SatchelJars();
                 CryptWelcome();
                 FloorOnSight();
                 WindowsHush();
@@ -1145,6 +1146,42 @@ namespace Sinbinder.Tests
             // сзади справа приходят слева. Стрелка обязана смотреть вправо.
             UI.ExitMarker.Place(new Vector3(-3000f, 450f, -10f), w, h, out text);
             Check(text.EndsWith("→"), "ворота за спиной справа — стрелка вправо, а не влево");
+        }
+
+        /// <summary>
+        /// Сума по банкам (автор, 19 октября: «количество ячеек по количеству
+        /// банок с максимумом 6»): ячеек столько, сколько банок; душу вынимают —
+        /// банка остаётся; из рук душа наливается в банку под рукой, а если
+        /// та полна — в первую пустую; Tab ходит только по банкам.
+        /// </summary>
+        private static void SatchelJars()
+        {
+            Satchel.Forget();
+            Check(Satchel.Jars == Satchel.StartingJars && Satchel.At(Satchel.Jars).Empty
+                  && Satchel.At(0).EmptyJar,
+                  "сума: на старте три банки — и ни одной ячейки сверх них");
+
+            var a = new SoulData("Первая", SinType.Greed, MoralType.Neutral, 1, 50f);
+            var b = new SoulData("Вторая", SinType.Wrath, MoralType.Neutral, 1, 50f);
+            Check(Satchel.Fill(Satchel.FreeJar(), a, SoulQuality.Shock) && Satchel.FreeJar() == 1,
+                  "сума: жатва наливает в первую пустую банку");
+
+            var taken = Satchel.TakeSoul(0);
+            Check(taken.Soul == a && Satchel.Jars == Satchel.StartingJars && Satchel.At(0).EmptyJar,
+                  "сума: душу вынули — банка осталась в суме пустой");
+
+            Satchel.Fill(0, b, SoulQuality.Shock);   // под рукой банка 0 — полна
+            Check(Satchel.JarFor() == 1, "сума: из рук — в банку под рукой, а если полна — в первую пустую");
+
+            for (int i = 0; i < Satchel.Jars; i++) Satchel.Next();
+            Check(Satchel.Selected == 0, "сума: Tab ходит по кругу банок, а не шести мест");
+
+            Satchel.Fill(1, a, SoulQuality.Shock);
+            Satchel.Fill(2, a, SoulQuality.Shock);
+            Check(Satchel.FreeJar() < 0 && Satchel.JarFor() < 0 && !Satchel.Fill(Satchel.Jars, b, SoulQuality.Shock),
+                  "сума: банки полны — налить некуда, лишней ячейки нет");
+
+            Satchel.Forget();
         }
 
         /// <summary>

@@ -717,11 +717,11 @@ namespace Sinbinder.EditorTools
             if (!device.HasSoul)
             {
                 if (!Crypt.CryptHands.HasSoul)
-                    for (int i = 0; i < Core.Satchel.Size; i++)
+                    for (int i = 0; i < Core.Satchel.Jars; i++)
                     {
                         var slot = Core.Satchel.At(i);
                         if (!slot.FullJar || !Crypt.CryptWorkshop.Bindable(slot.Quality)) continue;
-                        Core.Satchel.Take(i);
+                        Core.Satchel.TakeSoul(i);   // банка остаётся в суме
                         Crypt.CryptHands.TakeSoul(slot.Soul, slot.Quality);
                         break;
                     }
