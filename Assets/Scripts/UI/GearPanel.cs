@@ -246,8 +246,20 @@ namespace Sinbinder.UI
         {
             OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), Dialogue.TalkLines.Greet(w)), near: true);
             _menu = true;
+
+            // Наезд на лицо — разговор как в Skyrim и Fallout (TalkView).
+            var cam = Dialogue.DialogueCameraController.Instance;
+            if (cam != null && !cam.InDialogue)
+            {
+                cam.SaveCameraPosition();
+                cam.StartCoroutine(cam.FocusOn(w.transform));
+                _framed = true;
+            }
             Redraw();
         }
+
+        /// <summary>Камера наехала на собеседника — вернуть при закрытии.</summary>
+        private bool _framed;
 
         /// <summary>Пункт меню разговора.</summary>
         private void Choose(int option)
@@ -466,6 +478,14 @@ namespace Sinbinder.UI
             _bagOnly = false;
             if (_root != null) _root.SetActive(false);
 
+            TalkView.Hide();
+            if (_framed)
+            {
+                _framed = false;
+                var cam = Dialogue.DialogueCameraController.Instance;
+                if (cam != null) cam.StartCoroutine(cam.RestoreCamera());
+            }
+
             var pause = Core.GamePauseController.Instance;
             if (pause != null && pause.Stamp == _stamp) pause.Resume();
         }
@@ -501,6 +521,10 @@ namespace Sinbinder.UI
 
         private void Redraw()
         {
+            // Меню разговора — свой вид (TalkView), без коробки; остальное — коробка.
+            if (_root != null) _root.SetActive(!(_menu && _warrior != null));
+            if (!(_menu && _warrior != null)) TalkView.Hide();
+
             if (_chest != null) { RedrawChest(); return; }
             if (_bagOnly) { RedrawBag(); return; }
             if (_menu) { RedrawMenu(); return; }
@@ -609,13 +633,12 @@ namespace Sinbinder.UI
             var store = PlayerInventory.Instance;
             string name = Loc.Name(_warrior.DisplayName);
 
-            _title.text = Loc.F("Разговор: {0}", name);
-            _leftTitle.text = Loc.T("Что сказать");
-            _bagTitle.text = Loc.T("Что вы знаете");
-            Clear(_hands);
-            Clear(_store);
-
-            Row(_hands, Loc.T("1 · Как ты? Что думаешь обо мне?"), Loc.T("узнать отношение"), () => Choose(1));
+            // С 22 октября — вид Skyrim/Fallout (TalkView): наезд, реплика
+            // субтитром, ответы списком. Пункты и их смысл — прежние.
+            var options = new List<TalkView.Option>
+            {
+                new TalkView.Option { Text = Loc.T("1 · Как ты? Что думаешь обо мне?"), Sub = Loc.T("узнать отношение"), Act = () => Choose(1) },
+            };
 
             // В склепе, пока идёт плата лично, второй пункт — плата за вылазку:
             // платят тем же, что и долг в лагере (SalaryPanelUI, решение
@@ -633,21 +656,31 @@ namespace Sinbinder.UI
                 string what = !sortie ? Loc.F("{0} из кошеля — долг снят целиком", Grammar.Coins(wage))
                             : _warrior.UnpaidMissions > 0 ? Loc.F("{0} из кошеля — и за вылазку, и за старый долг", Grammar.Coins(wage))
                             : Loc.F("{0} из кошеля", Grammar.Coins(wage));
-                Row(_hands, sortie ? Loc.T("2 · Плата за вылазку") : Loc.T("2 · Отдать долг"),
-                    can ? what : Loc.F("нужно {0}, у вас {1}", Grammar.Coins(wage), gold),
-                    can ? () => Choose(2) : (System.Action)null);
+                options.Add(new TalkView.Option
+                {
+                    Text = sortie ? Loc.T("2 · Плата за вылазку") : Loc.T("2 · Отдать долг"),
+                    Sub = can ? what : Loc.F("нужно {0}, у вас {1}", Grammar.Coins(wage), gold),
+                    Act = can ? () => Choose(2) : (System.Action)null,
+                });
             }
 
-            Row(_hands, owes ? Loc.T("3 · Покажи снаряжение") : Loc.T("2 · Покажи снаряжение"),
-                Loc.T("вещи на воине и в мешке — обмен из рук в руки"), () => Choose(3));
+            options.Add(new TalkView.Option
+            {
+                Text = owes ? Loc.T("3 · Покажи снаряжение") : Loc.T("2 · Покажи снаряжение"),
+                Sub = Loc.T("вещи на воине и в мешке — обмен из рук в руки"),
+                Act = () => Choose(3),
+            });
+            options.Add(new TalkView.Option { Text = Loc.T("F · Уйти"), Act = Close });
 
-            Row(_store, Loc.T("Долг"), Debt(_warrior.UnpaidMissions), null);
-            if (sortie) Row(_store, Loc.T("За вылазку"), Loc.T("ещё не заплачено"), null);
-            if (store != null) _gold.text = Loc.F("Кошель Греховода: {0}", Grammar.Coins(store.Gold));
+            string footer = Loc.F("Долг: {0}", Debt(_warrior.UnpaidMissions))
+                          + (sortie ? Loc.T(" · за вылазку не заплачено") : "")
+                          + (store != null ? " · " + Loc.F("кошель: {0}", Grammar.Coins(store.Gold)) : "");
 
-            _hint.text = owes ? Loc.T("1, 2, 3 или щелчок — сказать. F или Esc — уйти.")
-                              : Loc.T("1, 2 или щелчок — сказать. F или Esc — уйти.");
-            _reply.text = _answer;
+            // «Имя: «реплика»» — имя на полосе отдельно, реплика по букве.
+            string speaker = "", line = _answer ?? "";
+            int colon = line.IndexOf(": ", System.StringComparison.Ordinal);
+            if (colon > 0 && line.StartsWith(name)) { speaker = name; line = line.Substring(colon + 2).Trim('«', '»'); }
+            TalkView.Show(speaker, line, options, footer);
         }
 
         /// <summary>Долг словами. Без чисел: «три вылазки без платы», а не «3».</summary>

@@ -142,6 +142,29 @@ namespace Sinbinder.UI
 
         private readonly Dictionary<Gameplay.Warrior, (string Line, float At)> _last = new();
 
+        /// <summary>
+        /// Запись журнала — отдельной, а не продолжением соседней. Автор,
+        /// 21 октября: «в логах не хватает разделения — выглядит как один
+        /// огромный текст». Метка в начале, имя говорящего старым золотом
+        /// (как рамки табличек, UiStyle), старое приглушено — последнее ярче.
+        /// Места не прибавляет: строка та же, меняется только цвет.
+        /// </summary>
+        private static string Entry(string text, bool latest)
+        {
+            string body = latest ? "#EAE2D2" : "#A9A091";
+            string name = latest ? "#D2AE63" : "#9C8350";
+            string mark = "<color=#7A6338>•</color> ";
+
+            // «Имя: …» — имя до двоеточия, если двоеточие рано и до кавычки.
+            int colon = text.IndexOf(": ", System.StringComparison.Ordinal);
+            int quote = text.IndexOf('«');
+            if (colon > 0 && colon < 42 && (quote < 0 || colon < quote))
+                return mark + $"<color={name}>{text.Substring(0, colon + 1)}</color>"
+                     + $"<color={body}>{text.Substring(colon + 1)}</color>";
+
+            return mark + $"<color={body}>{text}</color>";
+        }
+
         public void Write(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
@@ -159,7 +182,10 @@ namespace Sinbinder.UI
             _shown.Add(text);
             if (_shown.Count > _keep) _shown.RemoveRange(0, _shown.Count - _keep);
 
-            _line.text = string.Join(System.Environment.NewLine, _shown);
+            _line.supportRichText = true;
+            var lines = new List<string>(_shown.Count);
+            for (int i = 0; i < _shown.Count; i++) lines.Add(Entry(_shown[i], i == _shown.Count - 1));
+            _line.text = string.Join(System.Environment.NewLine, lines);
 
             // Пустой журнал не показываем: рамка в четверть экрана
             // с одной строкой внутри читалась поломкой. Появляется
