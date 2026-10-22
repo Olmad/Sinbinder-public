@@ -895,9 +895,23 @@ namespace Sinbinder.Utilets
             root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
 
             var crate = Prop("Crate", root.transform, position, yaw + 8f);
-            Prop("Barrel", root.transform, root.transform.TransformPoint(new Vector3(-0.95f, 0f, 0.1f)), yaw + 30f);
-            Prop("Barrel", root.transform, root.transform.TransformPoint(new Vector3(0.95f, 0f, 0.1f)), yaw - 20f);
-            Prop("Crate", root.transform, root.transform.TransformPoint(new Vector3(0f, 0f, -0.95f)), yaw + 45f, 0.8f);
+
+            // Сиденья (22 октября: воины садятся, CardTable) — пни и низкий ящик.
+            // Были бочки по семьдесят сантиметров: сидеть на таких — ноги в воздухе.
+            Seat(Prop("Stump", root.transform, root.transform.TransformPoint(new Vector3(-0.95f, 0f, 0.1f)), yaw + 30f, 0.65f));
+            Seat(Prop("Stump", root.transform, root.transform.TransformPoint(new Vector3(0.95f, 0f, 0.1f)), yaw - 20f, 0.65f));
+            Seat(Prop("Crate", root.transform, root.transform.TransformPoint(new Vector3(0f, 0f, -0.95f)), yaw + 45f, 0.62f));
+
+            // Маркер на верх сиденья: туда садит CardTable.
+            void Seat(GameObject prop)
+            {
+                if (prop == null) return;
+                float topY = 0f;
+                foreach (var r in prop.GetComponentsInChildren<Renderer>()) topY = Mathf.Max(topY, r.bounds.max.y);
+                var mark = new GameObject("Сиденье");
+                mark.transform.SetParent(root.transform, true);
+                mark.transform.position = new Vector3(prop.transform.position.x, topY, prop.transform.position.z);
+            }
 
             // Верх ящика — по самой модели: карты должны лечь, а не висеть.
             float top = 0.6f;

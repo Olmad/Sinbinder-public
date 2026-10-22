@@ -76,8 +76,138 @@ namespace Sinbinder.Gameplay
             return list;
         }
 
+        // ── Сиденья ─────────────────────────────────────────────────────
+        // Автор, 21 октября: «я так ни разу и не увидел, чтобы воины сидели
+        // за картами». Сиденья — пни и ящик вокруг стола (сборщик: «Сиденье»).
+        // Подошёл к свободному и стоит — садится: навигация на время выключена,
+        // тело — на сиденье лицом к столу, поза Sit (WarriorAnimation.Seated).
+        // Душа увела в другое место, приказ, набег, смерть — встаёт.
+
+        private readonly Dictionary<Warrior, Transform> _seated = new();
+        private readonly Dictionary<Warrior, float> _hipHeight = new();
+        private float _nextSeat;
+
+        /// <summary>Таз сидящего — на 41 % ниже стоячего (клип SitIdle, motion/SitIdle.json).</summary>
+        private const float SeatedHips = 0.591f;
+
+        /// <summary>Сколько сидит сейчас. Спрашивает прогон.</summary>
+        public int SeatedCount => _seated.Count;
+
+        /// <summary>Кто-нибудь из сидящих или null. Прогону — для портрета.</summary>
+        public Warrior AnySeated()
+        {
+            foreach (var w in _seated.Keys) if (w != null) return w;
+            return null;
+        }
+
+        private void Seating()
+        {
+            if (Time.unscaledTime < _nextSeat) return;
+            _nextSeat = Time.unscaledTime + 0.3f;
+
+            var players = Players();
+
+            // Встать тем, кто больше не за картами.
+            var leave = new List<Warrior>();
+            foreach (var pair in _seated)
+            {
+                var w = pair.Key;
+                if (w == null || w.IsDead || !players.Contains(w) || w.HasCommand || RaidEvent.Running)
+                    leave.Add(w);
+            }
+            foreach (var w in leave) StandUp(w);
+
+            if (RaidEvent.Running) return;
+
+            // Сесть тем, кто дошёл и стоит у свободного сиденья.
+            foreach (var w in players)
+            {
+                if (_seated.ContainsKey(w) || w.HasCommand) continue;
+                // Призрак не садится: ног нет, в позе «сидя» он врастал в пень
+                // (портрет прогона 22.10). Бесплотный стоит у стола.
+                if (w.Shell == ShellType.Ghost) continue;
+                var agent = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (agent == null || !agent.enabled || agent.velocity.sqrMagnitude > 0.04f) continue;
+
+                Transform best = null;
+                float bestD = 1.4f;
+                foreach (Transform seat in transform)
+                {
+                    if (seat.name != "Сиденье" || _seated.ContainsValue(seat)) continue;
+                    float d = CampFocus.GroundDistance(w.transform.position, seat.position);
+                    if (d < bestD) { bestD = d; best = seat; }
+                }
+                if (best != null) SitOn(w, best, agent);
+            }
+        }
+
+        private void SitOn(Warrior w, Transform seat, UnityEngine.AI.NavMeshAgent agent)
+        {
+            // Высота таза стоя — меряем, пока стоит.
+            float hip = 0.55f;
+            var hips = Find(w.transform, "Hips");
+            if (hips != null) hip = Mathf.Max(0.2f, hips.position.y - w.transform.position.y);
+            _hipHeight[w] = hip;
+
+            agent.ResetPath();
+            agent.enabled = false;
+
+            // Маркер «Сиденье» сборщик ставит на верх пня или ящика.
+            float top = seat.position.y;
+            var pos = seat.position;
+            pos.y = top + 0.04f - hip * SeatedHips;
+            w.transform.position = pos;
+
+            var to = transform.position - pos;
+            to.y = 0f;
+            if (to.sqrMagnitude > 1e-4f) w.transform.rotation = Quaternion.LookRotation(to);
+
+            var body = w.GetComponent<WarriorAnimation>();
+            if (body != null) body.Seated = true;
+            _seated[w] = seat;
+        }
+
+        private void StandUp(Warrior w)
+        {
+            if (w == null) { CleanNulls(); return; }
+            _seated.Remove(w);
+            var body = w.GetComponent<WarriorAnimation>();
+            if (body != null) body.Seated = false;
+
+            var pos = w.transform.position;
+            pos.y = transform.position.y;
+            var agent = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null && !agent.enabled)
+            {
+                w.transform.position = pos;
+                agent.enabled = true;
+                if (UnityEngine.AI.NavMesh.SamplePosition(pos, out var hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    agent.Warp(hit.position);
+            }
+        }
+
+        private void CleanNulls()
+        {
+            var dead = new List<Warrior>();
+            foreach (var k in _seated.Keys) if (k == null) dead.Add(k);
+            foreach (var k in dead) _seated.Remove(k);
+        }
+
+        private static Transform Find(Transform root, string name)
+        {
+            if (root.name == name) return root;
+            foreach (Transform c in root)
+            {
+                var hit = Find(c, name);
+                if (hit != null) return hit;
+            }
+            return null;
+        }
+
         void Update()
         {
+            Seating();
+
             if (!Watching)
             {
                 // Подсесть — F у стола. Мир стоит под панелью — не наше.

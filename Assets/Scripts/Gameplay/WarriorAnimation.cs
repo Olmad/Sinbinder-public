@@ -44,6 +44,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Поза, заданная съёмкой, или null — тело слушает душу.</summary>
         public string Posed => _posed;
 
+        /// <summary>Сидит на сиденье за картами — ставит и снимает <see cref="CardTable"/>.</summary>
+        public bool Seated { get; set; }
+
         /// <summary>
         /// Поставить позу из <see cref="BodyMotion"/> поверх решения души.
         /// Зовёт только съёмка из консоли (<c>Dev.Shooting</c>): для кадра
@@ -102,6 +105,9 @@ namespace Sinbinder.Gameplay
             if (_fell) return BodyMotion.Die;
 
             if (_posed != null) return _posed;
+
+            // Сидит за картами — сидит, что бы ни решала душа (CardTable).
+            if (Seated) return BodyMotion.Sit;
 
             // Достаёт или убирает оружие — стоя; клип короткий и доигрывается.
             if (_armsClip != null) return _armsClip;

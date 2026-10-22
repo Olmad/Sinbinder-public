@@ -146,7 +146,12 @@ namespace Sinbinder.Gameplay
         }
 
         private static readonly Color BodyCrimson = new Color(0.42f, 0.06f, 0.12f);
-        private static readonly Color MantleCrimson = new Color(0.14f, 0.04f, 0.08f);
+        // 22 октября: 0,14/0,04/0,08 → темнее и глуше. Под красным светом шатра
+        // капюшон читался розовым (портрет «лагерь — Греховод»).
+        private static readonly Color MantleCrimson = new Color(0.075f, 0.022f, 0.040f);
+
+        /// <summary>Металл облачения — шипы оплечья, клетка посоха: тёмное железо, не белое.</summary>
+        private static readonly Color DarkIron = new Color(0.16f, 0.14f, 0.15f);
 
         /// <summary>
         /// Глаза Греховода. Лица у него нет: под капюшоном темнота
@@ -212,6 +217,8 @@ namespace Sinbinder.Gameplay
                 // Огонёк души на посохе — тот же тёплый, что у костра.
                 Wardrobe.Tint(model.gameObject, "Soulfire", new Color(1f, 0.55f, 0.22f), glow: 1.0f);
                 Wardrobe.Matte(model.gameObject, "Robe");
+                // Шипы оплечья светились белыми иглами на портрете (22.10).
+                Wardrobe.Tint(model.gameObject, "Iron", DarkIron);
 
                 // Тьма под капюшоном — провал, а не чёрное лицо (автор,
                 // 22 октября): неосвещаемая пустота и дымка из глубины.

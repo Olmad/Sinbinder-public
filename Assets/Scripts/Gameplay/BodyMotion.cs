@@ -57,9 +57,17 @@ namespace Sinbinder.Gameplay
         /// <summary>Убирает оружие в ножны.</summary>
         public const string Sheathe = "Sheathe";
 
+        /// <summary>
+        /// Сидит — за картами (<see cref="CardTable"/>). Автор, 21 октября:
+        /// «я так ни разу и не увидел, чтобы воины сидели за картами».
+        /// Клип — «Sitting_Idle_Loop» из Quaternius Universal Animation Library
+        /// (CC0), перенесённый <c>retarget.py --rig rigify</c>.
+        /// </summary>
+        public const string Sit = "Sit";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit };
 
         /// <summary>
         /// Во что превращается решение.

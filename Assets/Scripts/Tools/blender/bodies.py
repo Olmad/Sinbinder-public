@@ -946,7 +946,9 @@ def make_actions(arm, g, shell_name=""):
 MOTION = Path(__file__).resolve().parent / "motion"
 
 # У всех: достать и убрать оружие (набор «Sword and Shield»).
-ALWAYS = {"Draw": "Draw", "Sheathe": "Sheathe"}
+ALWAYS = {"Draw": "Draw", "Sheathe": "Sheathe",
+          # Сидя — за картами (22 октября): Quaternius UAL, CC0, `retarget.py --rig rigify`.
+          "Sit": "SitIdle"}
 
 # По оболочкам. Автор, 29 сентября: «займись оружием и анимациями» —
 # удар был взмахом пустой руки, а в руке теперь оружие. Из наборов Mixamo

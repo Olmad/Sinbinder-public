@@ -528,6 +528,18 @@ namespace Sinbinder.EditorTools
             steps.Add(S("лагерь: дерево с топором — прочли вырезанное", GoToAxeTree, AxeTreeRead, 60f));
             steps.Add(S("лагерь: пешка в палатке — заговорила", GoToPawn, AxeTreeRead, 90f));
 
+            // За картами сидят (автор, 21.10: «ни разу не увидел, чтобы воины сидели
+            // за картами»). Стол зовёт компанию сам (CampLife.Company) — ждём, кадр.
+            steps.Add(S("лагерь: за картами сидят", null, () =>
+            {
+                var table = CardTable.Instance;
+                var w = table != null ? table.AnySeated() : null;
+                if (w == null) return false;
+                Write($"  [КАРТЫ] сидят за картами: {table.SeatedCount}");
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "за картами — сидит", w.transform);
+                return true;
+            }, 120f));
+
             steps.AddRange(new[]
             {
                 S("Греховод у стола", () => HeroTo(Ball()?.transform, 1.5f),
@@ -1891,6 +1903,43 @@ namespace Sinbinder.EditorTools
             Clipped();
             Through();
             Hanging();
+            Overlapping();
+        }
+
+        private static readonly Dictionary<string, float> _together = new();
+
+        /// <summary>
+        /// Воин в воине (список сторожей 21.10): двое живых ближе 0,35 м друг
+        /// к другу дольше трёх секунд игры — тела проходят друг сквозь друга.
+        /// Свалка в бою на миг — не в счёт; стоят так — ошибка.
+        /// </summary>
+        private static void Overlapping()
+        {
+            if (Time.timeScale <= 0f) return;
+            var all = UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
+            var seen = new HashSet<string>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var a = all[i];
+                if (a == null || a.IsDead) continue;
+                for (int j = i + 1; j < all.Length; j++)
+                {
+                    var b = all[j];
+                    if (b == null || b.IsDead) continue;
+                    var d = a.transform.position - b.transform.position;
+                    d.y = 0f;
+                    if (d.magnitude > 0.35f) continue;
+                    string key = a.DisplayName + "|" + b.DisplayName;
+                    seen.Add(key);
+                    if (!_together.TryGetValue(key, out var since)) { _together[key] = Time.time; continue; }
+                    if (Time.time - since > 3f)
+                        Guard("ВОИН В ВОИНЕ", key,
+                            $"{a.DisplayName} и {b.DisplayName} стоят друг в друге ({d.magnitude:0.00} м) у ({a.transform.position.x:0.0}; {a.transform.position.z:0.0})");
+                }
+            }
+            var gone = new List<string>();
+            foreach (var k in _together.Keys) if (!seen.Contains(k)) gone.Add(k);
+            foreach (var k in gone) _together.Remove(k);
         }
 
         /// <summary>

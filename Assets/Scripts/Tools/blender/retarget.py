@@ -61,6 +61,24 @@ MAP = {
 
 PREFIX = "mixamorig:"
 
+# Риг Rigify (`DEF-…`) — набор Quaternius «Universal Animation Library»
+# (CC0, 22 октября: «сидя» для стола с картами, автор: «можешь скачать
+# анимацию из интернета»). В покое та же Т-поза лицом в −Y, что у Mixamo
+# (проверено замером: плечо вдоль ±X, стопа к −Y). Позвоночник из трёх
+# звеньев — как у Mixamo: поясница — среднее, грудь — верхнее.
+MAP_RIGIFY = {
+    "Hips": "DEF-hips", "Spine": "DEF-spine.002", "Chest": "DEF-spine.003",
+    "Neck": "DEF-neck", "Head": "DEF-head",
+    "LeftShoulder": "DEF-shoulder.L", "LeftUpperArm": "DEF-upper_arm.L",
+    "LeftLowerArm": "DEF-forearm.L", "LeftHand": "DEF-hand.L",
+    "RightShoulder": "DEF-shoulder.R", "RightUpperArm": "DEF-upper_arm.R",
+    "RightLowerArm": "DEF-forearm.R", "RightHand": "DEF-hand.R",
+    "LeftUpperLeg": "DEF-thigh.L", "LeftLowerLeg": "DEF-shin.L",
+    "LeftFoot": "DEF-foot.L", "LeftToes": "DEF-toe.L",
+    "RightUpperLeg": "DEF-thigh.R", "RightLowerLeg": "DEF-shin.R",
+    "RightFoot": "DEF-foot.R", "RightToes": "DEF-toe.R",
+}
+
 
 def rotation(matrix):
     """Поворот матрицы без масштаба: у Mixamo объект ×0,01."""
@@ -79,18 +97,34 @@ def main():
 
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
-    bpy.ops.import_scene.fbx(filepath=str(clip))
+    if clip.suffix.lower() in (".glb", ".gltf"):
+        bpy.ops.import_scene.gltf(filepath=str(clip))
+    else:
+        bpy.ops.import_scene.fbx(filepath=str(clip))
+
+    # Чей риг: Mixamo (по умолчанию) или Rigify (Quaternius, `--rig rigify`).
+    rigify = opt("--rig") == "rigify"
+    bones_map = MAP_RIGIFY if rigify else MAP
+    prefix = "" if rigify else PREFIX
 
     arm = next(o for o in bpy.context.scene.objects if o.type == "ARMATURE")
+    # В одном файле Quaternius — сорок с лишним клипов: нужный по имени.
+    wanted = opt("--action")
+    if wanted is not None:
+        if arm.animation_data is None:
+            arm.animation_data_create()
+        arm.animation_data.action = bpy.data.actions[wanted]
     act = arm.animation_data.action
     first, last = (int(round(x)) for x in act.frame_range)
     first = int(opt("--from", first))
     last = int(opt("--to", last))
 
     world = arm.matrix_world
-    rest = {ours: rotation(world @ arm.data.bones[PREFIX + theirs].matrix_local)
-            for ours, theirs in MAP.items()}
-    hips_rest = world @ arm.data.bones[PREFIX + "Hips"].head_local
+    rest = {ours: rotation(world @ arm.data.bones[prefix + theirs].matrix_local)
+            for ours, theirs in bones_map.items()}
+    hips_name = prefix + bones_map["Hips"]
+    hand_name = prefix + bones_map["RightHand"]
+    hips_rest = world @ arm.data.bones[hips_name].head_local
     height = hips_rest.z
 
     scene = bpy.context.scene
@@ -98,15 +132,15 @@ def main():
     for f in range(first, last + 1):
         scene.frame_set(f)
         row = {}
-        for ours, theirs in MAP.items():
-            pb = arm.pose.bones[PREFIX + theirs]
+        for ours, theirs in bones_map.items():
+            pb = arm.pose.bones[prefix + theirs]
             delta = rotation(world @ pb.matrix) @ rest[ours].inverted()
             row[ours] = [round(c, 5) for c in delta]
         frames.append(row)
 
-        head = world @ arm.pose.bones[PREFIX + "Hips"].head
+        head = world @ arm.pose.bones[hips_name].head
         hips.append([round(c, 5) for c in (head - hips_rest) / height])
-        hand.append(world @ arm.pose.bones[PREFIX + "RightHand"].head)
+        hand.append(world @ arm.pose.bones[hand_name].head)
 
     # Где кисть отпускает рукоять — для «убрать»: первый кадр, после
     # которого кисть уже не уходит от своего последнего места дальше
