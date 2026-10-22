@@ -534,11 +534,29 @@ namespace Sinbinder.EditorTools
             {
                 var table = CardTable.Instance;
                 var w = table != null ? table.AnySeated() : null;
-                if (w == null) return false;
+                if (w == null)
+                {
+                    // Раз в 20 с — кто за картами и почему не сел.
+                    if (table != null && Time.realtimeSinceStartup > _cardsNext)
+                    {
+                        _cardsNext = Time.realtimeSinceStartup + 20f;
+                        var who = new List<string>();
+                        foreach (var p in table.Players())
+                        {
+                            float seat = float.MaxValue;
+                            foreach (Transform s in table.transform)
+                                if (s.name == "Сиденье") seat = Mathf.Min(seat, CampFocus.GroundDistance(p.transform.position, s.position));
+                            var ag = p.GetComponent<NavMeshAgent>();
+                            who.Add($"{p.DisplayName} ({p.Shell}, до сиденья {seat:0.0} м, скорость {(ag != null ? ag.velocity.magnitude : -1f):0.0})");
+                        }
+                        Write("  [КАРТЫ] за столом: " + (who.Count == 0 ? "никого" : string.Join("; ", who)));
+                    }
+                    return false;
+                }
                 Write($"  [КАРТЫ] сидят за картами: {table.SeatedCount}");
                 Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "за картами — сидит", w.transform);
                 return true;
-            }, 120f));
+            }, 300f));   // тянет по греху; первым часто приходит призрак, а он не садится
 
             steps.AddRange(new[]
             {
@@ -990,6 +1008,8 @@ namespace Sinbinder.EditorTools
         /// до порога и печатается, затем агент идёт по нему. Пола в палатке
         /// нет — агент не на навмеше, и шаг застревает с объяснением.
         /// </summary>
+        private static float _cardsNext;
+
         private static void TakeSword()
         {
             foreach (var p in UnityEngine.Object.FindObjectsByType<WeaponPickup>(FindObjectsSortMode.None))

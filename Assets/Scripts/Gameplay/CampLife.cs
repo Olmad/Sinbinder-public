@@ -294,9 +294,16 @@ namespace Sinbinder.Gameplay
         {
             if (spot != CampSpot.Cards) return 0f;
 
+            // Призраку в карты играть нечем: «бесплотный не может взять — только
+            // смотреть, как берут другие» (bodies.py). До 22 октября за столом
+            // сидели два призрака, стол считал себя полным, и телесных не звал —
+            // сесть было некому (прогон: «за столом: Немой Гурт (Ghost)…»).
+            if (w.Shell == ShellType.Ghost) return -100f;
+
             int seated = 0;
             foreach (var pair in Chosen)
-                if (pair.Key != null && pair.Key != w && !pair.Key.IsDead && pair.Value.Spot == CampSpot.Cards)
+                if (pair.Key != null && pair.Key != w && !pair.Key.IsDead && pair.Value.Spot == CampSpot.Cards
+                    && pair.Key.Shell != ShellType.Ghost)
                     seated++;
             if (seated >= 2) return 0f;
 
