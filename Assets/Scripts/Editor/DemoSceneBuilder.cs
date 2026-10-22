@@ -1902,6 +1902,7 @@ namespace Sinbinder.Utilets
             // где он встаёт: спавнер находит его по имени.
             float bedX = -(path + 0.35f);
             Bedroll(tent, new Vector3(bedX, 0f, back + 1.3f), 0.8f, 2.0f);
+            Look(tent.Find("Постель")?.gameObject, "Bed", focus: 0.2f, distance: 1.2f, reach: 1.5f);
 
             var wake = new GameObject("Где проснулся");
             wake.transform.SetParent(tent, false);
@@ -1922,8 +1923,11 @@ namespace Sinbinder.Utilets
             }
 
             // Столешница стола совета — на 0,97 (props.py), здесь ×0,85.
-            Block(tent, "Карта", "Leather033A", new Vector3(0.45f, 0.831f, back + 0.55f),
+            var map = Block(tent, "Карта", "Leather033A", new Vector3(0.45f, 0.831f, back + 0.55f),
                   new Vector3(0.78f, 0.012f, 0.42f), yaw: 4f);
+            // F — рассмотреть (п. 24 отзыва 21.10). Тексты — Gameplay/InspectTexts.cs.
+            Look(map, "Map", focus: 0.0f, distance: 1.0f, reach: 1.7f);
+            MapMarks(tent, new Vector3(0.45f, 0.838f, back + 0.55f));
 
             // Полка с банками для душ вдоль правого ската, лицом к середине.
             var shelf = new GameObject("Полка с банками");
@@ -1938,6 +1942,7 @@ namespace Sinbinder.Utilets
                 var s = board.transform.localScale;
                 board.transform.localScale = new Vector3(s.x * 0.35f, s.y * 0.80f, s.z * 0.75f);
             }
+            Look(shelf, "Jars", focus: 0.9f, distance: 1.1f, reach: 1.6f);
 
             // Банки души (сессия моделей, 27 сентября: Props/SoulJar,
             // SoulJarFull). Пустые все, кроме одной: в ней тлеет последняя,
@@ -2020,6 +2025,84 @@ namespace Sinbinder.Utilets
         }
 
         /// <summary>Постель: кожаная подстилка и свёрнутое в изголовье одеяло.</summary>
+        /// <summary>
+        /// Углём по карте — то, о чём говорят её строки (InspectTexts «Map»):
+        /// склеп в круге, путь к нему пунктиром, крест у заставы, три фигуры
+        /// на краю — одна стёрта. Без знаков карта была пустой кожей, а строки
+        /// говорили о том, чего не видно (кадр прогона 22.10).
+        /// </summary>
+        private static void MapMarks(Transform tent, Vector3 centre)
+        {
+            var coal = Plain("Уголь", new Color(0.05f, 0.04f, 0.035f), smoothness: 0.05f);
+            var smear = Plain("Стёртый уголь", new Color(0.16f, 0.12f, 0.10f), smoothness: 0.05f);
+            var marks = new GameObject("Знаки на карте");
+            marks.transform.SetParent(tent, false);
+
+            void Stroke(float x, float z, float length, float yaw, Material m, float width = 0.008f)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                go.name = "Штрих";
+                Object.DestroyImmediate(go.GetComponent<Collider>());
+                go.transform.SetParent(marks.transform, false);
+                go.transform.localPosition = centre + new Vector3(x, 0f, z);
+                go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+                go.transform.localScale = new Vector3(width, 0.003f, length);
+                var r = go.GetComponent<Renderer>();
+                r.sharedMaterial = m;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
+            // Склеп — квадратик в круге из восьми штрихов.
+            var crypt = new Vector2(-0.24f, 0.09f);
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * 45f;
+                var p = crypt + new Vector2(Mathf.Sin(a * Mathf.Deg2Rad), Mathf.Cos(a * Mathf.Deg2Rad)) * 0.055f;
+                Stroke(p.x, p.y, 0.045f, a + 90f, coal);
+            }
+            Stroke(crypt.x - 0.012f, crypt.y, 0.024f, 0f, coal);
+            Stroke(crypt.x + 0.012f, crypt.y, 0.024f, 0f, coal);
+
+            // Путь от лагеря (середина) к склепу — пунктир.
+            var camp = new Vector2(0.04f, -0.06f);
+            for (int i = 1; i < 6; i++)
+            {
+                var p = Vector2.Lerp(camp, crypt, i / 6.5f);
+                var d = crypt - camp;
+                Stroke(p.x, p.y, 0.022f, Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg, coal, 0.006f);
+            }
+            // Лагерь — точка-крестик.
+            Stroke(camp.x, camp.y, 0.03f, 45f, coal);
+            Stroke(camp.x, camp.y, 0.03f, -45f, coal);
+
+            // Застава на перевале — обведена дважды, над ней перечёркнутый знак.
+            var pass = new Vector2(0.20f, 0.11f);
+            Stroke(pass.x, pass.y, 0.05f, 0f, coal);
+            Stroke(pass.x, pass.y, 0.05f, 90f, coal);
+            Stroke(pass.x, pass.y + 0.06f, 0.05f, 30f, coal);
+            Stroke(pass.x, pass.y + 0.06f, 0.05f, -30f, coal);
+
+            // Три фигуры на краю — одна стёрта.
+            for (int i = 0; i < 3; i++)
+                Stroke(0.28f + i * 0.03f, -0.15f, 0.03f, 0f, i == 1 ? smear : coal, i == 1 ? 0.014f : 0.009f);
+        }
+
+        /// <summary>
+        /// Вещь, которую рассматривают на F: наезд и строки по букве
+        /// (<see cref="Sinbinder.Gameplay.Inspectable"/>). Тексты — по ключу
+        /// в Gameplay/InspectTexts.cs, правятся без пересборки сцен.
+        /// </summary>
+        private static void Look(GameObject go, string key, float focus, float distance, float reach)
+        {
+            if (go == null) return;
+            var t = Sinbinder.Gameplay.InspectTexts.For(key);
+            if (t == null) return;
+            var look = go.AddComponent<Sinbinder.Gameplay.Inspectable>();
+            look.Configure(t.Value.Prompt, t.Value.Speaker, t.Value.Lines,
+                focus: focus, distance: distance, reach: reach, front: Vector3.forward);
+            look.UseTexts(key);
+        }
+
         private static void Bedroll(Transform tent, Vector3 at, float width, float length)
         {
             var bed = new GameObject("Постель");

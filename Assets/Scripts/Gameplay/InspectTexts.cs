@@ -29,6 +29,9 @@ namespace Sinbinder.Gameplay
             {
                 case "AxeTree": return (AxeTreePrompt, AxeTreeSpeaker, AxeTree);
                 case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn);
+                case "Map": return (MapPrompt, MapSpeaker, Map);
+                case "Jars": return (JarsPrompt, JarsSpeaker, Jars);
+                case "Bed": return (BedPrompt, BedSpeaker, Bed);
                 default: return null;
             }
         }
@@ -64,6 +67,38 @@ namespace Sinbinder.Gameplay
             Loc.N("Ты думаешь, что двигаешь их."),
             Loc.N("Он тоже так думал — тот, кто вырезал меня из кости и оставил здесь."),
             Loc.N("Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."),
+        };
+
+        // ── Шатёр Греховода (автор, 21 октября, п. 24: «хочется больше
+        // взаимодействий с предметами, вероятно, даже в палатке Греховода»).
+        // ЧЕРНОВИК работника D, 22.10 — на суд облачной (мир — её).
+
+        public static readonly string MapPrompt = Loc.N("F — рассмотреть карту");
+        public static readonly string MapSpeaker = Loc.N("Карта на коже");
+
+        public static readonly string[] Map =
+        {
+            Loc.N("Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."),
+            Loc.N("Застава на перевале отмечена дважды. Над ней — знак охотников, перечёркнутый."),
+            Loc.N("На краю, где кожа истёрлась, — три фигуры. Одна стёрта пальцем."),
+        };
+
+        public static readonly string JarsPrompt = Loc.N("F — взглянуть на банки");
+        public static readonly string JarsSpeaker = Loc.N("Банки для душ");
+
+        public static readonly string[] Jars =
+        {
+            Loc.N("Стекло холодное. Пустые банки ждут, как ждут пустые места у костра."),
+            Loc.N("В одной огонёк. Жадный — льнёт к стенке, за которой лежит монета."),
+        };
+
+        public static readonly string BedPrompt = Loc.N("F — постель");
+        public static readonly string BedSpeaker = Loc.N("Постель");
+
+        public static readonly string[] Bed =
+        {
+            Loc.N("Шкуры ещё тёплые. Свет из сна не уходит из-под век."),
+            Loc.N("Под изголовьем что-то белеет. Нет — просто узел на ремне."),
         };
     }
 }

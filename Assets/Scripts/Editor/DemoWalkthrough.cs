@@ -480,6 +480,9 @@ namespace Sinbinder.EditorTools
                 S("сон: поднялся", null,
                   () => !OpeningReveal.Lying && !OpeningReveal.Dreaming, 10f),
 
+                // Вещи шатра на F (п. 24 отзыва 21.10): карта, банки, постель.
+                S("шатёр: карта на столе — прочли", GoToMap, MapRead, 40f),
+
                 // Меч со стойки у входа (п. 23 отзыва 21.10): F — в ножны на пояс,
                 // B — наголо. Проверяем, что встал в руку, и снимаем кадр наголо.
                 S("Греховод взял меч у входа", TakeSword, SwordDrawn, 10f),
@@ -1096,6 +1099,55 @@ namespace Sinbinder.EditorTools
             var tent = pawn != null ? pawn.GetComponentInParent<TentInterior>() : null;
             var hero = SinbinderPlayer.Instance;
             if (tent != null && hero != null) Warp(hero.gameObject, tent.Doorstep(0.9f));
+        }
+
+        /// <summary>Карта на столе в шатре: подойти и F — та самая вещь, по имени.</summary>
+        private static void GoToMap()
+        {
+            _axeAsked = false;
+            _axeShot = false;
+            _axeSince = -1f;
+            _axeFrame = "шатёр — карта на столе";
+            _axeTarget = "Карта";
+            // Со стороны входа: стол у задней стенки, и «от того места, где стоял»
+            // ставило Греховода за ткань — открытие считало, что он вышел.
+            var map = Map();
+            var hero = SinbinderPlayer.Instance;
+            if (map != null && hero != null)
+            {
+                // На ось шатра перед столом: пол навмеша в шатре — полоса посередине,
+                // и ближайшей «землёй» у самого стола была земля под холмом (−2,5 м).
+                var tent = map.GetComponentInParent<TentInterior>();
+                if (tent != null)
+                {
+                    var at = tent.transform.InverseTransformPoint(map.transform.position);
+                    Warp(hero.gameObject, tent.transform.TransformPoint(new Vector3(0f, 0f, at.z + 0.9f)));
+                }
+                var local = tent != null ? tent.transform.InverseTransformPoint(SinbinderPlayer.Where) : Vector3.zero;
+                Write($"  [КАРТА] Греховод у карты: в осях шатра ({local.x:0.00}; {local.y:0.00}; {local.z:0.00}), "
+                    + $"под крышей — {(tent != null && tent.Contains(SinbinderPlayer.Where + Vector3.up * 0.1f) ? "да" : "НЕТ")}");
+            }
+        }
+
+        private static Inspectable Map()
+        {
+            foreach (var i in UnityEngine.Object.FindObjectsByType<Inspectable>(FindObjectsSortMode.None))
+                if (i.name == "Карта") return i;
+            return null;
+        }
+
+        private static bool MapRead()
+        {
+            if (!_axeAsked)
+            {
+                var map = Map();
+                if (map == null) return false;
+                map.Inspect();
+                _axeAsked = true;
+                _axeSince = Time.realtimeSinceStartup;
+                return false;
+            }
+            return _axeShot && !Inspectable.Telling;
         }
 
         private static bool AxeTreeRead()

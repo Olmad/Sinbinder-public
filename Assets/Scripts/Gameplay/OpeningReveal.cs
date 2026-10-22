@@ -93,10 +93,17 @@ namespace Sinbinder.Gameplay
             // первую секунду кадр принадлежит шатру.
             for (float t = 0f; SinbinderPlayer.Exists && tent != null && tent.Contains(SinbinderPlayer.Where); t += Time.unscaledDeltaTime)
             {
-                hintGroup.alpha = Mathf.Clamp01((t - 1.2f) / 1.0f);
+                // Пока вещь рассказывает (карта, постель — Inspectable), строка
+                // пробуждения молчит: печаталась поверх её строк (прогон 22.10).
+                hintGroup.alpha = Inspectable.Telling ? 0f : Mathf.Clamp01((t - 1.2f) / 1.0f);
                 yield return null;
             }
             Destroy(hint);
+            if (SinbinderPlayer.Exists && tent != null)
+            {
+                var local = tent.transform.InverseTransformPoint(SinbinderPlayer.Where);
+                Debug.Log($"[ОТКРЫТИЕ] вышел из шатра: в осях шатра ({local.x:0.00}; {local.y:0.00}; {local.z:0.00})");
+            }
             if (glow != null) StartCoroutine(Dim(glow));
             if (!SinbinderPlayer.Exists || RaidEvent.Running) { Busy = false; yield break; }
 
@@ -144,13 +151,17 @@ namespace Sinbinder.Gameplay
             var walk = hero != null ? hero.GetComponent<PlayerWalk>() : null;
             if (walk != null) walk.enabled = false;
 
-            // Лечь у постели: агент — на ближайшую к ней землю.
-            var bed = tent.transform.Find("Постель");
-            if (bed != null && hero != null)
+            // Лечь у постели — на метку «Где проснулся» (сборщик: на полу шатра,
+            // рядом с постелью). Ближайшая к самой постели земля навмеша лежала
+            // за скатом, снаружи: открытие считало, что Греховод уже вышел, и
+            // надпись вставала посреди шатра (прогон 22.10).
+            var wake = tent.transform.Find("Где проснулся");
+            if (wake != null && hero != null)
             {
                 var agent = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
                 if (agent != null && agent.isOnNavMesh
-                    && UnityEngine.AI.NavMesh.SamplePosition(bed.position, out var near, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    && UnityEngine.AI.NavMesh.SamplePosition(wake.position, out var near, 0.6f, UnityEngine.AI.NavMesh.AllAreas)
+                    && tent.Contains(near.position + Vector3.up * 0.1f))
                     agent.Warp(near.position);
             }
             if (view != null) { view.Lying = 1f; view.Face(door); view.Pitch = -58f; }
@@ -167,7 +178,7 @@ namespace Sinbinder.Gameplay
                 // Огонёк дышит, растёт к концу пути и светлеет.
                 float breath = 1f + 0.06f * Mathf.Sin(t * 2.2f);
                 float k = DreamProgress * DreamProgress;
-                light.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(46f, 1500f, k) * breath;
+                light.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(150f, 1700f, k) * breath;
                 light.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.75f, 1f, DreamProgress));
                 hint.color = new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 2.0f) / 1.2f) * (1f - DreamProgress * 2f));
                 yield return null;
@@ -271,7 +282,7 @@ namespace Sinbinder.Gameplay
             light.raycastTarget = false;
             var lr = (RectTransform)lg.transform;
             lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.52f);
-            lr.sizeDelta = Vector2.one * 46f;
+            lr.sizeDelta = Vector2.one * 150f;
 
             var tg = new GameObject("Строка сна", typeof(RectTransform), typeof(Text));
             tg.transform.SetParent(root.transform, false);
