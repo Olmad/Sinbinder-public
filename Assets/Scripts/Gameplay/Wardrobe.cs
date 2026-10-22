@@ -53,8 +53,10 @@ namespace Sinbinder.Gameplay
             { "Circlet", "Head" },
             { "Crack", "Head" },
             { "Shade", "Head" },
+            { "LegendEyes", "Head" },
 
             { "RavenMantle", "Chest" },
+            { "LegendBanner", "Chest" },
             { "Quiver", "Chest" },
             { "Bow", "Chest" },
             { "Cloak", "Chest" },
@@ -435,6 +437,8 @@ namespace Sinbinder.Gameplay
                 if (rank != Trade.Tracker && warrior.Reputation != null
                     && warrior.Reputation.LegendaryUnlocked)
                     yield return "Cloak";
+                if (warrior.Reputation != null && warrior.Reputation.LegendaryUnlocked)
+                    yield return "LegendBanner";
 
                 foreach (var part in Carried(WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name) ?? held))
                     yield return part;
@@ -467,6 +471,11 @@ namespace Sinbinder.Gameplay
             {
                 yield return "RavenMantle";
                 yield return "Circlet";
+                // Автор, 21 октября, п. 12: «легенды слабо выделяются». Флажок
+                // за спиной — сверху виден первым; огоньки в глазницах горят
+                // грехом (SinEyes красит материал «Eye») — вблизи.
+                yield return "LegendBanner";
+                if (warrior.Shell == ShellType.Skeleton) yield return "LegendEyes";
             }
 
             // Братья по оружию — одна лента на двоих. Была бирюзовым

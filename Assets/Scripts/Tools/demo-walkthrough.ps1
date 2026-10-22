@@ -25,6 +25,10 @@
     То же прохождение со всеми выключателями дня (голос, причина, удар,
     добыча, лагерь, склад). Отчёт — отдельным файлом, *-all.txt.
 
+.PARAMETER Camp
+    Короткий прогон: только лагерь, до тревоги шара (около трети полного).
+    Для правок облика и лагеря. Отчёт — *-camp.txt.
+
 .PARAMETER UnityExe
     Путь к Unity.exe, если редактор стоит не там, куда его ставит Hub
     (флешка, своя папка). То же — переменная SINBINDER_UNITY. Как
@@ -39,11 +43,12 @@ param(
     [string]$Project = "",
     [int]$TimeoutSeconds = 900,
     [switch]$All,
+    [switch]$Camp,
     [string]$UnityExe = ""
 )
 
-$suffix = if ($All) { "-all" } else { "" }
-$method = if ($All) { "RunAll" } else { "Run" }
+$suffix = if ($All) { "-all" } elseif ($Camp) { "-camp" } else { "" }
+$method = if ($All) { "RunAll" } elseif ($Camp) { "RunCamp" } else { "Run" }
 
 $ErrorActionPreference = "Stop"
 

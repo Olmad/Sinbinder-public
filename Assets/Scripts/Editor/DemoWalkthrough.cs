@@ -49,7 +49,8 @@ namespace Sinbinder.EditorTools
         private const string AllOn = "Sinbinder.DemoWalkthrough.AllOn";
 
         private static string Report => SessionState.GetBool(AllOn, false)
-            ? "Logs/demo-walkthrough-all.txt" : "Logs/demo-walkthrough.txt";
+            ? "Logs/demo-walkthrough-all.txt"
+            : SessionState.GetBool(CampOnly, false) ? "Logs/demo-walkthrough-camp.txt" : "Logs/demo-walkthrough.txt";
 
         private static readonly string NL = Environment.NewLine;
 
@@ -153,9 +154,15 @@ namespace Sinbinder.EditorTools
         /// <summary>То же прохождение со всеми выключателями дня.</summary>
         public static void RunAll() => Begin(true);
 
-        private static void Begin(bool all)
+        /// <summary>Короткий прогон: только лагерь, до тревоги шара.</summary>
+        public static void RunCamp() => Begin(false, campOnly: true);
+
+        private const string CampOnly = "Sinbinder.DemoWalkthrough.CampOnly";
+
+        private static void Begin(bool all, bool campOnly = false)
         {
             SessionState.SetBool(AllOn, all);
+            SessionState.SetBool(CampOnly, campOnly);
 
             // Проверки идут молча. Прогон и дымовая проверка входят
             // в Play со всем звуком игры — рог, голоса, бой, — идут
@@ -699,6 +706,15 @@ namespace Sinbinder.EditorTools
 
                 S("новая игра: лагерь встал заново, девять у костра", null, FreshCamp, 40f),
             });
+
+            // Короткий прогон — только лагерь, до тревоги шара (автор, 22 октября:
+            // полный идёт 7–8 минут, для правки облика или лагеря это лишнее).
+            // Сторожа, портреты лагеря и кадры — те же.
+            if (SessionState.GetBool(CampOnly, false))
+            {
+                int cut = steps.FindIndex(s => s.Name == "Греховод у горящего шара");
+                if (cut > 0) steps.RemoveRange(cut, steps.Count - cut);
+            }
 
             return steps;
         }
@@ -1639,7 +1655,10 @@ namespace Sinbinder.EditorTools
                 var size = body.bounds.size;
                 if (size.y < Mathf.Max(size.x, size.z)) continue;
 
-                if (!seen.Add(warrior.Team)) continue;
+                // Легенды — всегда (п. 12 отзыва: «легенды слабо выделяются»):
+                // их облик правится, и кадр нужен каждый прогон.
+                bool legend = warrior.Reputation != null && warrior.Reputation.LegendaryUnlocked;
+                if (!legend && !seen.Add(warrior.Team)) continue;
 
                 Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре",
                     where + " — " + warrior.Team + " — " + warrior.DisplayName,

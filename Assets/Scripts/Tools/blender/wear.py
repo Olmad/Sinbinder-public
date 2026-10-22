@@ -57,8 +57,12 @@ DARK = ("Dark", (0.060, 0.055, 0.050, 1.0))
 # Имя «Eye» не случайно: по нему SinEyes находит, чему гореть.
 VOID = ("Void", (0.020, 0.018, 0.022, 1.0))
 EYE = ("Eye", (0.62, 0.60, 0.58, 1.0))
-FEATHER = ("Feather", (0.085, 0.080, 0.090, 1.0))
+# Воронье перо — не чёрное, а сине-чёрное: чёрное на ночном кадре
+# сливалось с тенью, и плащ Каргана читался одним воротником (22 октября).
+FEATHER = ("Feather", (0.110, 0.125, 0.185, 1.0))
 GLASS = ("Glass", (0.300, 0.380, 0.330, 1.0))
+# Полотнище флажка легенды: тёмный кармин — не багрец Греховода.
+LEGEND = ("Legend", (0.300, 0.055, 0.045, 1.0))
 
 Item = namedtuple("Item", "name bone build materials")
 
@@ -149,26 +153,104 @@ def crack(b):
 
 # ------------------------------------------------------------- плечевое
 
-def raven_mantle(b):
+def leaf(b, root, along, across, length, width, thick=0.005, bone="Chest", mat=1):
     """
-    Плащ из вороньих перьев на оба плеча — Карган Старый Ворон
+    Перо: плоский лист от корня к кончику — шире в трети длины, острый
+    на конце. Два деформированных кирпича с намоткой `box`: рамка
+    (поперёк, толщина, вдоль) правая, и грани смотрят наружу.
+    """
+    W = Vector(along).normalized()
+    U = Vector(across)
+    U = (U - W * U.dot(W)).normalized()
+    V = W.cross(U)
+    R = Vector(root)
+
+    def slab(z0, z1, w0, w1):
+        v = []
+        for (z, w) in ((z0, w0), (z1, w1)):
+            for su, sv in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+                p = R + W * z + U * (su * w * 0.5) + V * (sv * thick * 0.5)
+                v.append(tuple(p))
+        f = [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4],
+             [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]
+        return v, f
+
+    mid = length * 0.35
+    b.add(*slab(0.0, mid, width * 0.45, width), bone=bone, mat=mat)
+    b.add(*slab(mid, length, width, width * 0.08), bone=bone, mat=mat)
+
+
+def raven_mantle(b, k=1.0, front=True):
+    """
+    Плащ из вороньих перьев — Карган Старый Ворон и прочие легенды
     (`23-PROMPTS.md` §3). Имя носят там, где его видно сверху.
+
+    До 22 октября — кольцо и восемнадцать брусков за спиной: на портрете
+    читалось тонким воротником, перьев не было видно ни спереди, ни
+    сверху (автор: «Карган слабо выделяется… легенды слабо выделяются»).
+    Теперь — два слоя перьев, разбегающихся с плеч вниз и наружу (сверху
+    плечи шире всех в отряде), сзади длиннее — накидка, и над затылком
+    стоячий гребень: силуэт, который не спутать.
     """
     sh = P["shoulder"]
-    b.add(*ring((0, 0.008, sh + 0.024), 0.096, 0.018, scale=(1.0, 0.95, 0.65), segs=22),
-          bone="Chest")
+    b.add(*ring((0, 0.008 * k, sh + 0.026), 0.098 * k, 0.022, scale=(1.0, 0.95, 0.70), segs=24),
+          bone="Chest", mat=0)
 
-    # Перья. Узкие и разной длины, иначе ряд одинаковых пластин читается
-    # бочкой, а не оперением (так вышло с первого раза). Сзади длиннее:
-    # плащ, а не воротник.
-    for i in range(18):
-        a = math.radians(14 + i * 19)
-        back = 0.5 + 0.5 * math.sin(a)
-        length = 0.055 + 0.135 * back
-        r = 0.090 + 0.012 * back
-        x, y = math.cos(a) * r, math.sin(a) * r * 0.92
-        b.add(*box((x, y + 0.008, sh + 0.012 - length * 0.5),
-                   (0.022, 0.014, length)), bone="Chest", mat=1)
+    for layer, (n, rad, dz, grow) in enumerate(((26, 0.088, 0.034, 1.0), (22, 0.100, 0.010, 0.80))):
+        off = 0.5 * (layer % 2)
+        for i in range(n):
+            a = 2.0 * math.pi * (i + off) / n
+            ca, sa = math.cos(a), math.sin(a)      # +Y — спина, −Y — грудь
+            if not front and sa < -0.30:
+                continue
+            back = 0.5 + 0.5 * sa
+            side = abs(ca)
+            # Спереди коротко (лежит на груди), на плечах — наружу и длинно:
+            # спереди скелета видны только плечевые, и они обязаны читаться.
+            length = (0.060 + 0.130 * side + 0.170 * back * back) * grow
+            out = 0.60 + 0.70 * side - 0.25 * back
+            root = (ca * rad * k, sa * rad * 0.92 * k + 0.008 * k, sh + dz)
+            along = (ca * out, sa * out * 0.92, -1.0)
+            # Чуть вразнобой по длине, иначе ряд читается бахромой.
+            length *= 0.88 + 0.24 * ((i * 7 + layer * 3) % 5) / 4.0
+            leaf(b, root, along, (-sa, ca, 0.0), length, 0.030 + 0.010 * side)
+
+    # Гребень над затылком — пять перьев стоя, веером.
+    for j in range(5):
+        a = math.radians(90 + (j - 2) * 22)
+        ca, sa = math.cos(a), math.sin(a)
+        root = (ca * 0.070 * k, sa * 0.070 * k + 0.010 * k, sh + 0.040)
+        leaf(b, root, (ca * 0.45, 0.40 + sa * 0.25, 1.0), (-sa, ca, 0.0),
+             0.120 - 0.018 * abs(j - 2), 0.030)
+
+
+def legend_banner(b, k=1.0):
+    """
+    Флажок легенды за спиной — сверху его видно первым, раньше лица.
+    Древко от поясницы выше головы, полотнище к правому плечу, навершие.
+    Цвет полотнища — материал «Legend», его и тонирует игра.
+    """
+    y = 0.112 * k
+    x = 0.040
+    z0, z1 = P["hip"] - 0.020, P["skull"] + 0.250
+    b.add(*tube((x, y, z0), (x, y, z1), 0.0075, 0.0065, segs=8), bone="Chest", mat=2)
+    b.add(*sphere((x, y, z1 + 0.010), 0.014, segs=10, rings=8), bone="Chest", mat=1)
+    # Полотнище — к краю, косицей: верх длиннее низа.
+    top, bottom = z1 - 0.012, z1 - 0.120
+    v = [(x, y - 0.003, bottom), (x + 0.150, y - 0.003, bottom + 0.030),
+         (x + 0.170, y - 0.003, top), (x, y - 0.003, top),
+         (x, y + 0.003, bottom), (x + 0.150, y + 0.003, bottom + 0.030),
+         (x + 0.170, y + 0.003, top), (x, y + 0.003, top)]
+    # Кирпич с осями (x, z, y): намотка box при замене y↔z переворачивается.
+    f = [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]
+    b.add(v, f, bone="Chest", mat=0)
+
+
+def legend_eyes(b, z=None, y=-0.050, x=0.021, r=0.0072):
+    """Огоньки в глазницах легенды — материал «Eye», зажигает игра."""
+    z = P["skull"] - 0.004 if z is None else z
+    for side in (1, -1):
+        b.add(*sphere((side * x, y, z), r, segs=10, rings=8), bone="Head", mat=1)
 
 
 def pauldron(b, side):
@@ -715,7 +797,9 @@ ITEMS = [
     Item("Crack",          "Head",  crack,           [DARK, DARK, DARK]),
     Item("Shade",          "Head",  shade,           [VOID, EYE, DARK]),
 
-    Item("RavenMantle",    "Chest", raven_mantle,    [LEATHER, FEATHER, DARK]),
+    Item("RavenMantle",    "Chest", raven_mantle,    [FEATHER, FEATHER, DARK]),
+    Item("LegendBanner",   "Chest", legend_banner,   [LEGEND, GOLD, WOOD]),
+    Item("LegendEyes",     "Head",  legend_eyes,     [DARK, EYE, DARK]),
     Item("PauldronLeft",   "LeftShoulder",  lambda b: pauldron(b, 1),  [IRON, IRON, DARK]),
     Item("PauldronRight",  "RightShoulder", lambda b: pauldron(b, -1), [IRON, IRON, DARK]),
     Item("BrotherBand",    "LeftUpperArm",  brother_band,              [(("Band"), (0.420, 0.300, 0.190, 1.0)), LEATHER, DARK]),
@@ -874,24 +958,23 @@ def shade_skull(b):
 
 def raven_mantle_skeleton(b):
     """
-    Плащ из вороньих перьев на скелете — сзади и с боков, спереди открыт.
-    Общий обнимает грудь по кругу: на живом перья лежат на теле, а на
-    скелете висели на пустоте клетки кольцом — бочкой вокруг рёбер.
+    Плащ из вороньих перьев на скелете — сзади и с боков, спереди открыт:
+    на скелете перья на груди висели бы на пустоте клетки бочкой.
     """
-    sh = P["shoulder"]
-    k = 0.82
-    b.add(*ring((0, 0.008, sh + 0.024), 0.096 * k, 0.018, scale=(1.0, 0.95, 0.65), segs=22),
-          bone="Chest")
-    for i in range(18):
-        a = math.radians(14 + i * 19)
-        if math.sin(a) < -0.35:
-            continue
-        back = 0.5 + 0.5 * math.sin(a)
-        length = 0.055 + 0.135 * back
-        r = (0.090 + 0.012 * back) * k
-        x, y = math.cos(a) * r, math.sin(a) * r * 0.92
-        b.add(*box((x, y + 0.008, sh + 0.012 - length * 0.5), (0.022, 0.014, length)),
-              bone="Chest", mat=1)
+    raven_mantle(b, k=0.82, front=False)
+
+
+def legend_eyes_skeleton(b):
+    """
+    Огоньки глубоко в глазницах черепа скелета: по лучу к поверхности
+    гладкого черепа (без глазниц) и на сантиметр внутрь — в пустоту глазницы.
+    """
+    # Яма глазницы в черепе — `anatomy.skull_field`: Egg в (±0,0186; −0,0545;
+    # 0,9335), полуоси (0,0122; 0,024; 0,0104). Огонёк — в её глубине,
+    # у задней стенки: по лучу от гладкого черепа он уходил в кость.
+    for side in (1, -1):
+        b.add(*sphere((side * 0.0186, -0.0420, 0.9335), 0.0072, segs=10, rings=8),
+              bone="Head", mat=1)
 
 
 def cowl_skeleton(b):
@@ -962,6 +1045,8 @@ SKELETON_ITEMS = [
     ("Bow", None, shift(-0.022)),
     ("Cloak", None, hug(0.74, y0=0.010)),
     ("RavenMantle", raven_mantle_skeleton, None),
+    ("LegendBanner", lambda b: legend_banner(b, k=0.82), None),
+    ("LegendEyes", legend_eyes_skeleton, None),
     # Оружие — то же, но на суставах скелета: кулак у него свой.
     ("Sword", None, None),
     ("Dagger", None, None),
