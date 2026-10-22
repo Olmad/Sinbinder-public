@@ -68,7 +68,18 @@ namespace Sinbinder.Gameplay
         }
 
 
-        private void Attack(Damageable target)
+        /// <summary>
+        /// Через сколько после начала взмаха клинок доходит до цели, секунд.
+        /// До 22 октября урон приходил в миг решения, и взмах начинался вместе
+        /// с ним: враг вздрагивал раньше, чем его задевали (отзыв автора 21.10,
+        /// п. 8: «атаки выглядят странно»).
+        /// </summary>
+        private const float HitDelay = 0.3f;
+
+        /// <summary>Удар по приказу — не чаще раза в столько секунд.</summary>
+        private const float ForcedPace = 0.55f;
+
+        private void Attack(Damageable target, bool credit = false)
         {
             _cooldownTimer = _attackCooldown;
 
@@ -81,7 +92,32 @@ namespace Sinbinder.Gameplay
                 fatigue.SpendForAttack();
             }
 
+            // Лицом к цели, если она сильно сбоку: бил туда, куда смотрел, —
+            // бывало, и боком. Чуть вбок — не трогаем: в свалке спина врага
+            // открыта соседу (Facing, удар сзади ×1,5), и выравнивать всех
+            // лицом к лицу значило бы срезать урон боя.
+            var to = target.transform.position - transform.position;
+            to.y = 0f;
+            if (to.sqrMagnitude > 1e-4f && Vector3.Angle(transform.forward, to) > 45f)
+                transform.rotation = Quaternion.LookRotation(to);
+
+            // Взмах — сейчас, урон — когда клинок дойдёт.
+            if (TryGetComponent<WarriorAnimation>(out var arm)) arm.Struck();
+            StartCoroutine(Land(target, damage, credit));
+        }
+
+        private System.Collections.IEnumerator Land(Damageable target, float damage, bool credit)
+        {
+            yield return new WaitForSeconds(HitDelay);
+            if (_self.IsDead || target == null || target.IsDead) yield break;
+            // Отскочил за время взмаха — промах.
+            if (Vector3.Distance(transform.position, target.transform.position) > _attackRange + 0.6f) yield break;
+
             target.TakeDamage(damage, gameObject);
+
+            // Убийство по приказу — деяние (AOSWarriorWrapper, как и до задержки).
+            if (credit && target.IsDead && TryGetComponent<AOS.AOSWarriorWrapper>(out var mind))
+                mind.OnKilledEnemy(target.Warrior);
         }
 
         private void FindClosestEnemy()
@@ -105,8 +141,11 @@ namespace Sinbinder.Gameplay
             {
                 _currentTarget = target;
                 _isPlayerControlled = true;
-                _cooldownTimer = 0f;
-                Attack(target);
+                // Решение приходит каждый такт, и до 22 октября каждый такт
+                // начинал удар заново, не докончив прежний (п. 8 отзыва 21.10).
+                // Темп боя по приказу при этом был около двух ударов в секунду —
+                // на нём держится бой демо. Его и оставляем, но взмах доигрывается.
+                if (_cooldownTimer <= _attackCooldown - ForcedPace) Attack(target, credit: true);
             }
         }
     }

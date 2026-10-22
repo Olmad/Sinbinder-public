@@ -164,15 +164,17 @@ namespace Sinbinder.AOS
                         var dmg = cmd.Target.GetComponent<Damageable>();
                         if (dmg != null && !dmg.IsDead)
                         {
-                            if (mover != null) mover.CommandMove(cmd.Target.transform.position);
-
                             var autoAttack = GetComponent<AutoAttack>();
-                            if (autoAttack != null
-                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.AttackRange)
+                            bool reach = autoAttack != null
+                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.AttackRange;
+                            // В досягаемости — стоит и бьёт; не дошёл — идёт. Раньше шёл
+                            // и в досягаемости: упирался в цель грудью (п. 8 отзыва 21.10).
+                            if (mover != null)
                             {
-                                autoAttack.ForceAttack(dmg);
-                                if (dmg.IsDead) OnKilledEnemy(dmg.Warrior);
+                                if (reach) mover.Stop(); else mover.CommandMove(cmd.Target.transform.position);
                             }
+                            // Деяние за убийство — когда клинок дойдёт (AutoAttack.Land).
+                            if (reach) autoAttack.ForceAttack(dmg);
                             return;
                         }
                     }
@@ -223,10 +225,7 @@ namespace Sinbinder.AOS
                     var aa = GetComponent<AutoAttack>();
                     if (near != null && aa != null
                         && Vector3.Distance(transform.position, near.transform.position) <= aa.AttackRange)
-                    {
-                        aa.ForceAttack(near);
-                        if (near.IsDead) OnKilledEnemy(near.Warrior);
-                    }
+                        aa.ForceAttack(near);   // деяние — в AutoAttack.Land
                     break;
             }
         }
@@ -243,22 +242,20 @@ namespace Sinbinder.AOS
             if (target == null) target = FindBestTarget();
             if (target == null || target.IsDead) { ExecuteLoot(); return; }
             var mover = GetComponent<UnitMover>();
-            if (mover != null) mover.CommandMove(target.transform.position);
             float dist = Vector3.Distance(transform.position, target.transform.position);
             // Проверка стояла ПОСЛЕ обращения: autoAttack.AttackRange
             // читался у того, кого могло не быть. У прологовых воинов
             // его и не было — значит на каждом решении Attack, у каждого,
             // дважды в секунду, летело исключение.
             var autoAttack = GetComponent<AutoAttack>();
-            if (autoAttack != null && dist <= autoAttack.AttackRange)
+            bool reach = autoAttack != null && dist <= autoAttack.AttackRange;
+            // В досягаемости — стоит; не дошёл — идёт (п. 8 отзыва 21.10).
+            if (mover != null)
             {
-                autoAttack.ForceAttack(target);
-                // Если цель умерла от этой атаки – записываем деяние
-                if (target.IsDead)
-                {
-                    OnKilledEnemy(target.Warrior);
-                }
+                if (reach) mover.Stop(); else mover.CommandMove(target.transform.position);
             }
+            // Деяние за убийство — когда клинок дойдёт (AutoAttack.Land).
+            if (reach) autoAttack.ForceAttack(target);
         }
 
         private HunterGoal _goal;

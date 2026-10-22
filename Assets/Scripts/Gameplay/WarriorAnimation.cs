@@ -147,6 +147,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Struck()
         {
+            // С 22 октября взмах начинает AutoAttack, а урон (и этот вызов
+            // из Damageable) приходит через 0,3 с — тот же взмах, не новый.
+            if (Time.time - _struckAt < 0.45f) return;
             _struckAt = Time.time;
             _strikeFresh = true;
         }
