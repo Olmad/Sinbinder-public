@@ -26,7 +26,7 @@ namespace Sinbinder.Audio
     /// | Где               | Тема                          | Файл в Resources/Music |
     /// |-------------------|-------------------------------|------------------------|
     /// | лагерь            | Daydream of the Architect     | Daydream               |
-    /// | набег             | The Eternal Grind             | EternalGrind           |
+    /// | набег             | The Routine Raid              | RoutineRaid            |
     /// | вторая волна      | The Hunted                    | Hunted                 |
     /// | склеп             | Bad is good, but Evil is better | BadIsGood            |
     /// | конец демо        | A Lord Returns                | LordReturns            |
@@ -36,7 +36,7 @@ namespace Sinbinder.Audio
     ///
     /// Поворотные места пролога говорят сами: тревога шара гасит лагерь —
     /// бьёт один колокол (<see cref="Gameplay.CrystalBall.Alarm"/>); набег
-    /// включает «Grind» под строкой на чёрном (<see cref="Gameplay.RaidEvent"/>);
+    /// включает марш «The Routine Raid» под строкой на чёрном (<see cref="Gameplay.RaidEvent"/>);
     /// вторая волна, выходя, меняет его на «The Hunted» — бой кончился,
     /// начинается бегство (<see cref="Gameplay.HunterSquadSpawner"/>);
     /// уход из доли гасит, пока длится задержка (<see cref="Gameplay.PrologueDirector"/>);
@@ -64,10 +64,12 @@ namespace Sinbinder.Audio
             switch (track)
             {
                 case Track.Camp:     return 0.28f;
-                // 21 октября: 0,38 → 0,22. Автор: «мелодия первой волны — ОЧЕНЬ
-                // РАЗДРАЖАЕТ И ОЧЕНЬ НАВЯЗЧИВАЯ». Тише — до его решения о теме.
-                case Track.Raid:     return 0.22f;
-                case Track.Hunted:   return 0.38f;   // сама запись на 2–3 дБ плотнее «Grind» — громче и так
+                // 22 октября: вместо «The Eternal Grind» — «The Routine Raid» (автор,
+                // 21.10, о «Grind»: «ОЧЕНЬ РАЗДРАЖАЕТ И ОЧЕНЬ НАВЯЗЧИВАЯ»). Марш плотнее
+                // транса на 5 дБ (медиана −13 против −18,3), поэтому место тише:
+                // −28,4 дБ против −23,9 у второй волны — бегство громче боя.
+                case Track.Raid:     return 0.17f;
+                case Track.Hunted:   return 0.38f;
                 case Track.Crypt:    return 0.30f;
                 case Track.Epilogue: return 0.50f;
                 default:             return 0f;
@@ -80,7 +82,7 @@ namespace Sinbinder.Audio
             switch (track)
             {
                 case Track.Camp:     return "Daydream";
-                case Track.Raid:     return "EternalGrind";
+                case Track.Raid:     return "RoutineRaid";
                 case Track.Hunted:   return "Hunted";
                 case Track.Crypt:    return "BadIsGood";
                 case Track.Epilogue: return "LordReturns";
