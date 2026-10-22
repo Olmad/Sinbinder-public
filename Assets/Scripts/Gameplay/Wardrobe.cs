@@ -85,6 +85,10 @@ namespace Sinbinder.Gameplay
             { "Axe", "RightHand" },
             { "Club", "RightHand" },
             { "Shield", "LeftLowerArm" },
+            // Катана Греховода — со стойки у входа в шатёр (WeaponPickup).
+            { "Katana", "RightHand" },
+            { "KatanaStowed", "Hips" },
+            { "KatanaSaya", "Hips" },
 
             // Убранное оружие и ножны — на тазу (wear.py, «в ножнах»);
             // в руке или в ножнах — показывает Armament.
@@ -173,7 +177,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Оружие в руке — то, что уходит в ножны (<see cref="Armament"/>).</summary>
-        private static readonly HashSet<string> Hands = new() { "Sword", "Dagger", "Axe", "Club" };
+        private static readonly HashSet<string> Hands = new() { "Sword", "Dagger", "Axe", "Club", "Katana" };
 
         /// <summary>Та же вещь в ножнах — имя оружия с этим хвостом.</summary>
         private const string StowedSuffix = "Stowed";

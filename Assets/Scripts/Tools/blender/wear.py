@@ -487,6 +487,29 @@ def sword(b):
         b.add(verts, faces, bone=bone, mat=2)
 
 
+def katana(b):
+    """
+    Катана Греховода — со стойки у входа в шатёр (автор, 21 октября, п. 23:
+    «нужна возможность взять катану — так интереснее»). Узнаётся тем, чем
+    отличается от меча: длинная рукоять на две руки в частой обмотке,
+    круглая цуба вместо гарды, узкий клинок длиннее меча.
+    """
+    bone = "RightHand"
+    grip_parts(b, bone, 0.105, 0.048, 0.0100, 8, 1, 2, 0.0105)
+    # Цуба — диск поперёк клинка.
+    b.add(*tube(held(0.050), held(0.058), 0.030, 0.030, segs=18), bone=bone, mat=2, smooth=True)
+    blade(b, bone, 0.060, 0.700, 0.031, 0.0078, 0.055, 0)
+
+
+def katana_saya(b):
+    """Ножны катаны: чёрный лак, железное устье; переведены на таз, как у меча."""
+    tmp = Body()
+    blade(tmp, "RightHand", 0.058, 0.712, 0.044, 0.020, 0.020, 0)
+    tmp.add(*tube(held(0.054), held(0.082), 0.0160, 0.0155, segs=12), bone="RightHand", mat=1, smooth=True)
+    tmp.add(*box(held(0.066, 0.0, -0.016), (0.012, 0.030, 0.046)), bone="RightHand", mat=2)
+    stowed_mesh(b, tmp)
+
+
 def dagger(b):
     """Кинжал: короткий клинок, малая гарда."""
     bone = "RightHand"
@@ -816,6 +839,7 @@ ITEMS = [
     Item("Axe",            "RightHand",    axe,      [STEEL, WOOD, IRON]),
     Item("Club",           "RightHand",    club,     [WOOD, IRON, DARK]),
     Item("Shield",         "LeftLowerArm", shield,   [WOOD, IRON, DARK]),
+    Item("Katana",         "RightHand",    katana,   [STEEL, DARK, IRON]),
 
     # Убранное оружие и ножны — на тазу (`Armament` показывает одно
     # из двух: в руке или в ножнах).
@@ -824,6 +848,8 @@ ITEMS = [
     Item("AxeStowed",      "Hips", stowed(axe),      [STEEL, WOOD, IRON]),
     Item("ClubStowed",     "Hips", stowed(club),     [WOOD, IRON, DARK]),
     Item("Scabbard",       "Hips", scabbard,         [LEATHER, IRON, DARK]),
+    Item("KatanaStowed",   "Hips", stowed(katana),   [STEEL, DARK, IRON]),
+    Item("KatanaSaya",     "Hips", katana_saya,      [("Lacquer", (0.045, 0.030, 0.030, 1.0)), IRON, LEATHER]),
     Item("DaggerSheath",   "Hips", dagger_sheath,    [LEATHER, IRON, DARK]),
 ]
 
@@ -1058,6 +1084,9 @@ SKELETON_ITEMS = [
     ("AxeStowed", None, None),
     ("ClubStowed", None, None),
     ("Scabbard", None, None),
+    ("Katana", None, None),
+    ("KatanaStowed", None, None),
+    ("KatanaSaya", None, None),
     ("DaggerSheath", None, None),
 ]
 

@@ -973,6 +973,19 @@ RETARGETED = {
 }
 
 
+def motion(name):
+    """
+    Перенесённое движение из `motion/<имя>.json` (`retarget.py`): повороты
+    костей по кадрам («frames»), сдвиг таза («hips»), кадр посадки («settle»).
+
+    22 октября: функцию звали `retargeted`, `wear.settled` и `armscheck`,
+    а её самой в файле не было — пропала с прежней машиной; вещи «в ножнах»
+    не пересобирались вовсе.
+    """
+    with open(MOTION / (name + ".json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
 def retargeted(arm, name, clip=None):
     """
     Клип из перенесённого движения — на суставы этой оболочки.

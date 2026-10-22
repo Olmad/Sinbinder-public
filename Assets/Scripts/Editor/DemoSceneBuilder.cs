@@ -1991,7 +1991,20 @@ namespace Sinbinder.Utilets
             var blade = Prop("Katana", rack.transform, rack.transform.TransformPoint(new Vector3(-0.08f, 0.30f, 0.12f)),
                              tent.eulerAngles.y + 90f);
             if (blade != null)
+            {
                 blade.transform.rotation = Quaternion.AngleAxis(-10f, tent.right) * blade.transform.rotation;
+                blade.AddComponent<Sinbinder.Gameplay.WeaponPickup>().Configure("Katana");
+            }
+
+            // Меч рядом с катаной (автор, 21 октября, п. 23): оба берутся на F.
+            var sword = Prop("SwordProp", rack.transform, rack.transform.TransformPoint(new Vector3(-0.08f, 0.32f, -0.22f)),
+                             tent.eulerAngles.y + 90f);
+            if (sword != null)
+            {
+                sword.name = "Меч";
+                sword.transform.rotation = Quaternion.AngleAxis(-10f, tent.right) * sword.transform.rotation;
+                sword.AddComponent<Sinbinder.Gameplay.WeaponPickup>().Configure("Sword");
+            }
 
             // Сундук в ногах постели, крышкой к середине.
             SmallChest(tent, new Vector3(bedX + 0.15f, 0f, back + 2.85f), 90f, 0.70f);

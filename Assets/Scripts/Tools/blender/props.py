@@ -617,6 +617,20 @@ def katana(b):
         b.add(*tube((0, y0, z0), (0, y1, z1), r0, r1, segs=4), bone="", mat=0)
 
 
+def sword_prop(b):
+    """
+    Меч на стойке у входа в шатёр Греховода — рядом с катаной (автор,
+    21 октября, п. 23: «меч положить рядом с катаной при входе, и игроку
+    нужно будет поднять его на F»). Та же раскладка, что у катаны:
+    рукоять вниз от нуля, клинок вверх; прямой, с гардой и навершием.
+    """
+    b.add(*tube((0, 0, -0.11), (0, 0, 0.0), 0.016, 0.017, segs=8), bone="", mat=2)
+    b.add(*sphere((0, 0, -0.125), 0.024, scale=(1.0, 0.8, 1.0), segs=10, rings=6), bone="", mat=1)
+    b.add(*box((0, 0, 0.012), (0.17, 0.028, 0.022)), bone="", mat=1)
+    b.add(*tube((0, 0, 0.02), (0, 0, 0.60), 0.022, 0.012, segs=4), bone="", mat=0)
+    b.add(*tube((0, 0, 0.60), (0, 0, 0.68), 0.012, 0.001, segs=4), bone="", mat=0)
+
+
 def lathe(profile, segs, ridges=0, band=None, depth=0.0):
     """
     Тело вращения: профиль (r, z) от оси до оси — замкнутая поверхность.
@@ -835,6 +849,7 @@ PROPS = [
     Prop("Balalaika", balalaika, [WOOD, DARK, IRON]),
     Prop("Banana", banana, [("Banana", (0.780, 0.640, 0.180, 1.0)), DARK, DARK]),
     Prop("Katana", katana, [STEEL, IRON, DARK]),
+    Prop("SwordProp", sword_prop, [STEEL, IRON, DARK]),
 ]
 
 

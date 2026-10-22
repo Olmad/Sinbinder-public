@@ -70,6 +70,9 @@ namespace Sinbinder.UI
             bool outOfTent = false;
 
             // Одна цепочка: каждая следующая открывается, когда сделана предыдущая.
+            Add(Loc.T("Возьмите меч или катану у входа (F)"),
+                () => true,
+                () => !string.IsNullOrEmpty(WeaponPickup.Taken));
             Add(Loc.T("Выйдите из шатра"),
                 () => true,
                 () => outOfTent || (outOfTent = OutOfTent()));

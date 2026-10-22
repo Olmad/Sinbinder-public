@@ -471,8 +471,14 @@ namespace Sinbinder.EditorTools
                 // сам — ногами по навмешу, а не переносом: так прогон
                 // проверяет, что пол внутри есть и выход не заперт стенами
                 // (DemoSceneBuilder.Furnish).
+                // Меч со стойки у входа (п. 23 отзыва 21.10): F — в ножны на пояс,
+                // B — наголо. Проверяем, что встал в руку, и снимаем кадр наголо.
+                S("Греховод взял меч у входа", TakeSword, SwordDrawn, 10f),
+
                 S("Греховод вышел из палатки", WalkOutOfTent,
                   () => OutOfTent() && !Paused(), 15f),
+
+                S("Греховод с мечом наголо", null, SwordPortrait, 5f),
 
                 // ── Мышь ──
                 // До 24 сентября прогон не касался мыши вовсе, и двенадцать
@@ -960,6 +966,44 @@ namespace Sinbinder.EditorTools
         /// до порога и печатается, затем агент идёт по нему. Пола в палатке
         /// нет — агент не на навмеше, и шаг застревает с объяснением.
         /// </summary>
+        private static void TakeSword()
+        {
+            foreach (var p in UnityEngine.Object.FindObjectsByType<WeaponPickup>(FindObjectsSortMode.None))
+                if (p.name == "Меч")
+                {
+                    Warp(SinbinderPlayer.Instance.gameObject, p.transform.position - p.transform.parent.right * 0.6f);
+                    p.Take();
+                    return;
+                }
+            Write("  [МЕЧ] на стойке нет меча");
+        }
+
+        private static bool SwordDrawn()
+        {
+            if (WeaponPickup.Taken != "Sword") return false;
+            var arms = SinbinderPlayer.Instance != null ? SinbinderPlayer.Instance.GetComponentInChildren<Armament>() : null;
+            if (arms == null) return false;
+            Write("  [МЕЧ] взят со стойки — " + (arms.CanSheathe ? "в ножнах на поясе" : "НОЖЕН НЕТ"));
+            return true;
+        }
+
+        /// <summary>Снаружи шатра — кадр Греховода с мечом наголо (внутри камера упиралась в ткань).</summary>
+        private static bool SwordPortrait()
+        {
+            var hero = SinbinderPlayer.Instance;
+            var arms = hero != null ? hero.GetComponentInChildren<Armament>() : null;
+            if (arms == null) return true;
+            // В первом лице тело выключено — на кадр включаем и возвращаем как было.
+            var renderers = hero.GetComponentsInChildren<Renderer>(true);
+            var was = new bool[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++) { was[i] = renderers[i].enabled; renderers[i].enabled = true; }
+            arms.Show(true);
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Греховод — меч наголо", hero.transform);
+            arms.Show(false);
+            for (int i = 0; i < renderers.Length; i++) renderers[i].enabled = was[i];
+            return true;
+        }
+
         private static void WalkOutOfTent()
         {
             var hero = SinbinderPlayer.Instance;
@@ -1966,7 +2010,9 @@ namespace Sinbinder.EditorTools
 
                 if (now - was.Since > 6f)
                     Guard("ЗАСТРЯЛ", w.DisplayName + "|" + Mathf.RoundToInt(at.x) + "," + Mathf.RoundToInt(at.z),
-                        $"{w.DisplayName} идёт к цели в {agent.remainingDistance:0.0} м, а шесть секунд стоит у ({at.x:0.0}; {at.z:0.0})");
+                        $"{w.DisplayName} идёт к цели в {agent.remainingDistance:0.0} м, а шесть секунд стоит у ({at.x:0.0}; {at.z:0.0}); "
+                        + $"цель ({agent.destination.x:0.0}; {agent.destination.z:0.0}), путь {agent.pathStatus}, "
+                        + $"в лагере — «{CampLife.Now(w)}», приказ — {(w.HasCommand ? w.Command.Kind.ToString() : "нет")}");
             }
         }
 

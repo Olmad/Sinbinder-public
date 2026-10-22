@@ -337,6 +337,8 @@ namespace Sinbinder.UI
                     ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
                 return;
             }
+            var weapon = WeaponPickup.Nearest();
+            if (weapon != null) { _prompt.text = weapon.Prompt; return; }
             var thing = Inspectable.Nearest();
             _prompt.text = thing != null ? thing.Prompt : "";
         }
@@ -411,6 +413,10 @@ namespace Sinbinder.UI
 
             var chest = TrophyChest.Reachable();
             if (chest != null) { OpenChest(chest); return; }
+
+            // Оружие со стойки у входа в шатёр (п. 23 отзыва 21.10).
+            var weapon = WeaponPickup.Nearest();
+            if (weapon != null) { weapon.Take(); return; }
 
             // Последним — вещь, которую рассматривают (дерево с топором, пешка).
             Inspectable.Nearest()?.Inspect();
