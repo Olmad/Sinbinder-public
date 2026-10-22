@@ -475,7 +475,7 @@ namespace Sinbinder.Gameplay
         /// Что он помнит. Объект памяти — ключ, по которому разговор и Карган
         /// узнают, за что наказан: <see cref="BridgeMemory"/>.
         /// </summary>
-        public const string BridgeMemory = "мост";   // ключ: объект памяти, игрок его не видит
+        public const string BridgeMemory = Punishment.BridgeDeed;
 
         private static MemorySeed Memory(SquadRoster.Member member)
         {
@@ -484,6 +484,10 @@ namespace Sinbinder.Gameplay
                     return new MemorySeed
                     {
                         Object = BridgeMemory,
+                        // Три невыплаты до пробуждения — две ночи наказания уже
+                        // отбыты: оно затянулось ещё до того, как игрок открыл
+                        // глаза (Карган: «Наказание затянулось»).
+                        Atoned = System.Math.Min(member.UnpaidMissions, Punishment.Limit),
                         Emotion = Loc.N("Вина"),
                         Story = Loc.N("У моста отряд дрался, а он копал монеты. Выкопал много, "
                                     + "почти всё оставил себе — а отряд почти весь там лёг."),

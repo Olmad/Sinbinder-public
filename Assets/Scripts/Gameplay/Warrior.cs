@@ -359,11 +359,20 @@ namespace Sinbinder.Gameplay
         /// в голос Верности за приказ, и уйдя ниже нуля, начинала бы
         /// голосовать против послушания — тем сильнее, чем дольше не платят.
         /// Долг и без того наказывается штрафом Жадности.
+        ///
+        /// Невыплата тому, кто помнит деяние Жадности (мост Марги), — наказание
+        /// (<see cref="Core.Punishment"/>, `48-PUNISHMENT.md`): две ночи Жадность
+        /// исправляется и обида мала — он знает, за что; дальше наказание
+        /// затянулось, и обида больше обычной невыплаты.
         /// </summary>
         public void PaySalary(float amount)
         {
             if (amount >= _soul.Level * 10f) { _loyalty = Mathf.Min(100f, _loyalty + 5f); _unpaidMissions = 0; }
-            else { _loyalty = Mathf.Max(0f, _loyalty - 20f); _unpaidMissions++; }
+            else
+            {
+                _loyalty = Mathf.Max(0f, _loyalty - Core.Punishment.Night(_soul, Core.SinType.Greed, out _));
+                _unpaidMissions++;
+            }
         }
 
         public void ChangeLoyalty(float amount) => _loyalty = Mathf.Clamp(_loyalty + amount, 0f, 100f);

@@ -1524,6 +1524,93 @@ static class Bench
     }
 
     /// <summary>
+    /// Наказание Жадности (docs/48-PUNISHMENT.md): ночь за ночью без платы.
+    ///
+    /// Три вопроса. Слышно ли исправление — меняет ли оно отказ, когда
+    /// долг отдан (наказание снято)? Не съедает ли обида исправление —
+    /// не хуже ли наказанный, чем не наказанный вовсе? И разные ли
+    /// души переносят одно наказание по-разному — иначе мораль здесь
+    /// для красоты.
+    ///
+    /// Отказ — в голом поле, приказ отходить (как «Долг Марги»): там,
+    /// где без долга он послушался бы, — иначе рычаг не виден.
+    /// </summary>
+    static void PunishmentCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== НАКАЗАНИЕ: ПЛАТА УДЕРЖАНА ===");
+
+        var modules = Modules();
+        const int runs = 600;
+
+        foreach (var (moral, label) in new[]
+                 {
+                     (MoralType.Vicious, "порочный — Марга"),
+                     (MoralType.Neutral, "нейтральный"),
+                     (MoralType.Pious,   "праведный"),
+                 })
+        {
+            Console.WriteLine($"\n  --- {label}: Жадность 65, верность 70, деяние «мост» ---");
+            Console.WriteLine($"  {"ночь",-5} {"жадн.",6} {"верн.",6} {"в долгу",8} {"снято",8}");
+
+            var soul = new SoulData("Марга", SinType.Greed, moral, 1, 65f,
+                new MemorySeed { Object = Punishment.BridgeDeed, Story = "мост" });
+            float loyalty = 70f;
+
+            double before = OrderRun(modules, cfg, SinType.Greed, moral, 65f, 75f, 0, runs,
+                loot: 0, allyInDanger: false).Rate;
+
+            for (int night = 0; night <= 4; night++)
+            {
+                if (night > 0)
+                    loyalty = Math.Max(0f, loyalty - Punishment.Night(soul, SinType.Greed, out _));
+
+                float greed = soul.Get(SinType.Greed);
+                double owed = OrderRun(modules, cfg, SinType.Greed, moral, greed, loyalty, night, runs,
+                    loot: 0, allyInDanger: false).Rate;
+                // Снять наказание — заплатить: долг ноль, верность +5 (Warrior.PaySalary).
+                double lifted = OrderRun(modules, cfg, SinType.Greed, moral, greed,
+                    Math.Min(100f, loyalty + 5f), 0, runs, loot: 0, allyInDanger: false).Rate;
+
+                Console.WriteLine($"  {night,-5} {greed,6:F0} {loyalty,6:F0} {owed * 100,7:F1}% {lifted * 100,7:F1}%");
+            }
+
+            Console.WriteLine($"  до моста, без долга и обиды (верность 75): {before * 100:F1}%");
+        }
+
+        // Насколько надо сдвинуть Жадность, чтобы отказ сдвинулся на слух.
+        Console.WriteLine("\n  --- Жадность против отказа: верность 75, долга нет ---");
+        Console.WriteLine($"  {"жадн.",6} {"порочн. поле",13} {"порочн. добыча",15} {"нейтр. добыча",14} {"праведн. добыча",16}");
+        foreach (float g in new[] { 65f, 55f, 45f, 35f, 25f, 15f })
+        {
+            double vb = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, g, 75f, 0, runs, loot: 0, allyInDanger: false).Rate;
+            double vl = OrderRun(modules, cfg, SinType.Greed, MoralType.Vicious, g, 75f, 0, runs, loot: 2, allyInDanger: false).Rate;
+            double nl = OrderRun(modules, cfg, SinType.Greed, MoralType.Neutral, g, 75f, 0, runs, loot: 2, allyInDanger: false).Rate;
+            double pl = OrderRun(modules, cfg, SinType.Greed, MoralType.Pious, g, 75f, 0, runs, loot: 2, allyInDanger: false).Rate;
+            Console.WriteLine($"  {g,6:F0} {vb * 100,12:F1}% {vl * 100,14:F1}% {nl * 100,13:F1}% {pl * 100,15:F1}%");
+        }
+
+        // С добычей рядом — там, где Жадность и правда тянет прочь от приказа.
+        Console.WriteLine("\n  --- рядом добыча: снято после двух ночей против «до моста» ---");
+        foreach (var moral in new[] { MoralType.Vicious, MoralType.Neutral, MoralType.Pious })
+        {
+            var soul = new SoulData("Марга", SinType.Greed, moral, 1, 65f,
+                new MemorySeed { Object = Punishment.BridgeDeed, Story = "мост" });
+            float loyalty = 70f;
+            for (int night = 1; night <= Punishment.Limit; night++)
+                loyalty = Math.Max(0f, loyalty - Punishment.Night(soul, SinType.Greed, out _));
+
+            double was = OrderRun(modules, cfg, SinType.Greed, moral, 65f, 75f, 0, runs, loot: 2, allyInDanger: false).Rate;
+            // Цена — пока наказание идёт: вторая ночь, долг висит.
+            double during = OrderRun(modules, cfg, SinType.Greed, moral, soul.Get(SinType.Greed),
+                loyalty, Punishment.Limit, runs, loot: 2, allyInDanger: false).Rate;
+            double now = OrderRun(modules, cfg, SinType.Greed, moral, soul.Get(SinType.Greed),
+                Math.Min(100f, loyalty + 5f), 0, runs, loot: 2, allyInDanger: false).Rate;
+            Console.WriteLine($"  {moral,-8} жадность {soul.Get(SinType.Greed),3:F0}, верность {loyalty + 5f,3:F0}: "
+                + $"отказов {was * 100,5:F1}% → в наказании {during * 100,5:F1}% → снято {now * 100,5:F1}%");
+        }
+    }
+
+    /// <summary>
     /// Лагерь под приказом отходить: кто послушается и почему.
     ///
     /// Проверяются две вещи, которые не проверялись никогда.
@@ -5408,6 +5495,7 @@ static class Bench
         SoulDecayCheck();
         ExpeditionCheck(cfg);
         CampUnderOrderCheck(cfg);
+        PunishmentCheck(cfg);
         VoiceCheck(cfg);
         CampCheck();
         CommandsCheck(cfg);

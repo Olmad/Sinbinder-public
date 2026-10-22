@@ -105,6 +105,7 @@ namespace Sinbinder.Tests
                 ExitMarkerPlace();
                 HeraldLines();
                 SatchelJars();
+                PunishmentNights();
                 CryptWelcome();
                 FloorOnSight();
                 WindowsHush();
@@ -1146,6 +1147,44 @@ namespace Sinbinder.Tests
             // сзади справа приходят слева. Стрелка обязана смотреть вправо.
             UI.ExitMarker.Place(new Vector3(-3000f, 450f, -10f), w, h, out text);
             Check(text.EndsWith("→"), "ворота за спиной справа — стрелка вправо, а не влево");
+        }
+
+        /// <summary>
+        /// Наказание Жадности (docs/48-PUNISHMENT.md): невыплата тому, кто
+        /// помнит деяние, — две ночи исправления с малой обидой, дальше —
+        /// затянулось: обида больше обычной; без деяния — просто невыплата;
+        /// мораль решает, сколько исправит.
+        /// </summary>
+        private static void PunishmentNights()
+        {
+            var plain = new SoulData("Без деяния", SinType.Greed, MoralType.Neutral, 1, 65f);
+            float hurt = Punishment.Night(plain, SinType.Greed, out float none);
+            Check(hurt == Punishment.Unpaid && none == 0f && plain.Get(SinType.Greed) == 65f,
+                  "наказание: без деяния невыплата — только обида, Жадность не тронута");
+
+            MemorySeed Bridge() => new MemorySeed { Object = Punishment.BridgeDeed, Story = "мост" };
+            var marga = new SoulData("Нейтральный", SinType.Greed, MoralType.Neutral, 1, 65f, Bridge());
+
+            float first = Punishment.Night(marga, SinType.Greed, out float fixedFirst);
+            float second = Punishment.Night(marga, SinType.Greed, out _);
+            Check(fixedFirst > 0f && first < Punishment.Unpaid && second < Punishment.Unpaid
+                  && marga.Get(SinType.Greed) < 65f && Punishment.Overdue(marga),
+                  "наказание: две ночи за деяние — Жадность ниже, обида меньше невыплаты");
+
+            float greed = marga.Get(SinType.Greed);
+            float third = Punishment.Night(marga, SinType.Greed, out float fixedThird);
+            Check(third > Punishment.Unpaid && fixedThird == 0f && marga.Get(SinType.Greed) == greed,
+                  "наказание: затянулось — исправления нет, обида больше обычной невыплаты");
+
+            var wrath = new SoulData("Не та кара", SinType.Wrath, MoralType.Neutral, 1, 65f, Bridge());
+            Check(Punishment.Night(wrath, SinType.Wrath, out _) == Punishment.Unpaid,
+                  "наказание: отнимают не то, чего хочет грех деяния, — это не кара за него");
+
+            var pious = new SoulData("Праведный", SinType.Greed, MoralType.Pious, 1, 65f, Bridge());
+            var vicious = new SoulData("Порочный", SinType.Greed, MoralType.Vicious, 1, 65f, Bridge());
+            Punishment.Night(pious, SinType.Greed, out float p);
+            Punishment.Night(vicious, SinType.Greed, out float v);
+            Check(p > v, "наказание: праведный принимает и исправляется сильнее порочного");
         }
 
         /// <summary>

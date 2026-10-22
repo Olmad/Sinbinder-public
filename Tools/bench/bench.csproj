@@ -69,6 +69,7 @@
          целиком — а узнаётся это только при следующем замере. -->
     <Compile Include="../../Assets/Scripts/Core/Soul/Trade.cs" />
     <Compile Include="../../Assets/Scripts/Core/Naming.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Punishment.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulData.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/NarrativePerk.cs" />
     <Compile Include="../../Assets/Scripts/Core/Virtue/VirtueType.cs" />

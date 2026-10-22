@@ -315,7 +315,11 @@ namespace Sinbinder.Gameplay
 
             // Две ночи — предел, за которым наказание только копит обиду
             // (48-PUNISHMENT §2; автор: «да»): «затянулось» — правда, а не мнение.
-            string late = debtor.UnpaidMissions > 2 ? Loc.T("Наказание затянулось.") : Loc.T("Пора его снять.");
+            // Есть деяние — спрашиваем само наказание (Core.Punishment), нет — долг.
+            bool overdue = owed != null && Punishment.DeedSin(owed.Soul) != null
+                ? Punishment.Overdue(owed.Soul)
+                : debtor.UnpaidMissions > Punishment.Limit;
+            string late = overdue ? Loc.T("Наказание затянулось.") : Loc.T("Пора его снять.");
             Herald.Line(coins
                 ? Loc.F("{0}: «{1} Монеты у вас теперь есть — отдайте долг сами, из рук в руки».", who, late)
                 : Loc.F("{0}: «{1} Монеты — в сундуке. Отдайте долг сами, из рук в руки».", who, late));

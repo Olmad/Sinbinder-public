@@ -14,6 +14,10 @@ namespace Sinbinder.Core
         public string Story;
         public string Trigger;
 
+        [Tooltip("Сколько ночей наказания душа отбыла за это деяние (Core/Punishment). "
+               + "Отбыла предел — наказание за него только копит обиду.")]
+        public int Atoned;
+
         [Tooltip("Врождённые модификаторы действий, которые не меняются со временем.")]
         public List<ActionModifier> ActionModifiers = new();
 
