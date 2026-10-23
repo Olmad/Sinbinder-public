@@ -176,6 +176,7 @@ namespace Sinbinder.UI
                 // У стола совета и у стола с картами F — их (Gameplay.CardTable):
                 // за картами стоят люди, и без этой оговорки F заговаривал бы
                 // с тем, на кого смотришь, вместо того чтобы подсесть.
+                else if (Input.GetKeyDown(_talkKey) && RatBanner.Reachable) RatBanner.Lift();   // знамя павшего — прежде разговора (автор, 23.10)
                 else if (Input.GetKeyDown(_talkKey) && !CommanderCouncilUI.AtTable
                          && !Gameplay.CardTable.Near && !TryTalk()) TryChest();
                 return;
@@ -335,6 +336,9 @@ namespace Sinbinder.UI
             var pause = Core.GamePauseController.Instance;
             if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null
                 || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
+
+            // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.
+            if (RatBanner.Reachable) { _prompt.text = RatBanner.Prompt; return; }
 
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }

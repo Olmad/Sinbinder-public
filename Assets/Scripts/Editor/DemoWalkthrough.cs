@@ -680,6 +680,24 @@ namespace Sinbinder.EditorTools
                 S("набег: первая волна положена", AttackAll,
                   () => Enemies() == 0 && FirstWaveOver(), 150f),
 
+                // Знамя «Крыс» — пал и поднял (28-ORDERS, 23.10, п. 3). Хорь сам
+                // не гибнет — кладём его: знамя должно встать воткнутым там, где
+                // он упал, а Греховод, подойдя, — понести его на спине. Хорь ушёл
+                // с вылазкой (прогон -All) — знамя с ним, шаги пропускаются.
+                S("знамя: Хорь пал — знамя воткнуто", KillBearer, PlantedShot, 10f),
+                // Поднимает по F (автор, 23.10) — подойти и нажать, как игрок.
+                S("знамя: Греховод поднял", () =>
+                  {
+                      if (RatBanner.Planted != null && SinbinderPlayer.Instance != null)
+                          Warp(SinbinderPlayer.Instance.gameObject, RatBanner.PlantedAt + Vector3.back * 0.8f);
+                  },
+                  () =>
+                  {
+                      if (_bearerAway) return true;
+                      RatBanner.Lift();   // F у знамени
+                      return RatBanner.BySinbinder && HeroShot("знамя — у Греховода");
+                  }, 10f),
+
                 // SoulManager.Instance == null раньше засчитывался за успех:
                 // нет жнеца в сцене — значит души собраны. Это «ноль вместо
                 // события», против которого весь проект. Нет его — шаг
@@ -700,6 +718,9 @@ namespace Sinbinder.EditorTools
                 // склеп встречает отряд словами о Каргане и «нас мало».
                 S("склеп: встретили — потеря и «нас мало»", null,
                   () => !CryptArrival.Running, 60f),
+
+                S("склеп: знамя на Греховоде", null,
+                  () => _bearerAway || (RatBanner.BySinbinder && HeroShot("знамя — в склепе")), 5f),
 
                 // Мастерская (выключатель «связывание»): «нас мало» — и ответ
                 // на это до платы. Без выключателя шаг сделан сразу.
@@ -1266,6 +1287,13 @@ namespace Sinbinder.EditorTools
             // отправить с тем составом, что предложен. Подсказка набирает
             // полный отряд, как набирал прежний список.
             confirm?.onClick.Invoke();
+
+            // Обычный прогон оставляет знаменосца в лагере: иначе Хорь всегда
+            // уходит на заставу, и знамя «пал — поднял» проверить не на ком
+            // (28-ORDERS, 23.10, п. 3). -All отправляет полный отряд, как прежде.
+            if (!SessionState.GetBool(AllOn, false))
+                Field<HashSet<string>>(council, "_party")?.Remove(RatBanner.Bearer);
+
             confirm?.onClick.Invoke();
         }
 
@@ -2875,6 +2903,57 @@ namespace Sinbinder.EditorTools
         /// «иначе мёртвые остались бы мёртвыми»). Состав, вещи, мешок,
         /// сундук и ушедшие запоминаются до обеих смертей.
         /// </summary>
+        /// <summary>Хоря в набеге нет (ушёл с вылазкой) — шаги знамени пропускаются.</summary>
+        private static bool _bearerAway;
+
+        private static void KillBearer()
+        {
+            _bearerAway = true;
+            foreach (var w in Own())
+            {
+                if (w.DisplayName != RatBanner.Bearer) continue;
+                _bearerAway = false;
+                Write($"  [ЗНАМЯ] кладём знаменосца: {w.DisplayName} у ({w.transform.position.x:0.0}; {w.transform.position.z:0.0})");
+                Strike(w.gameObject);
+                return;
+            }
+            Write("  [ЗНАМЯ] Хоря в набеге нет — знамя ушло с ним, пал-поднял не проверить");
+        }
+
+        /// <summary>Знамя воткнуто: низ древка — у земли, кадр с той стороны, откуда смотрит камера.</summary>
+        private static bool PlantedShot()
+        {
+            if (_bearerAway) return true;
+            var flag = RatBanner.Planted;
+            if (flag == null) return false;
+
+            var look = flag.GetComponentInChildren<Renderer>();
+            if (look == null) return true;
+            // От земли под знаменем, а не от нуля: Хорь падает и на холме у шатра.
+            float ground = RatBanner.PlantedAt.y;
+            Write($"  [ЗНАМЯ] воткнуто: древко {look.bounds.min.y - ground:0.00} … {look.bounds.max.y - ground:0.00} м от земли");
+
+            // Портрет целится в опору + метр, а опора сетки знамени — у ног
+            // прежнего носящего, в стороне. Ставим метку у самого древка.
+            var mark = new GameObject("знамя — метка кадра");
+            mark.transform.position = look.bounds.center - Vector3.up * 0.4f;
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "знамя — воткнуто", mark.transform, Vector3.zero);
+            UnityEngine.Object.Destroy(mark);
+            return true;
+        }
+
+        /// <summary>
+        /// Портрет Греховода — знамя на нём. Со стороны игрока, а не строго со
+        /// спины: со спины камера упиралась в палатку и вставала вплотную к плащу.
+        /// </summary>
+        private static bool HeroShot(string name)
+        {
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null) return false;
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", name, hero.transform, Vector3.zero);
+            return true;
+        }
+
         private static void KillHero()
         {
             _gearBefore = GearNow();

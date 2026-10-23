@@ -48,6 +48,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Сцена у огня прошла (или пропущена — Хоря в лагере не было).</summary>
         public static bool Named { get; private set; }
 
+        /// <summary>Воткнутое знамя — пало с носящим и ещё не поднято; иначе null. Для прогона.</summary>
+        public static GameObject Planted => _dropped;
+
+        /// <summary>Где воткнуто — у древка, на земле. Для прогона.</summary>
+        public static Vector3 PlantedAt => _droppedAt;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Reset();
 
@@ -150,8 +156,6 @@ namespace Sinbinder.Gameplay
                 _subscribed = combat;
             }
 
-            PickUp();
-
             // Модель тела пересобирают (титул, оболочка) — знамя с ней уходит.
             // Раз в секунду: носящий жив, а знамени на нём нет — надеть снова.
             if (Time.unscaledTime >= _nextHeal)
@@ -195,15 +199,35 @@ namespace Sinbinder.Gameplay
             var t = _worn.transform;
             t.SetParent(null, true);
 
+            // Со спины падающего знамя снимается в любом положении — косо, почти
+            // лёжа. Сперва стоймя: длинная ось модели (древко) — вверх, полотнищем
+            // кверху; потом наклон; и только потом — вниз, пока низ древка не уйдёт
+            // в землю. Коробка — после каждого шага: до 23.10 её брали до наклона,
+            // и знамя висело (прогон: низ древка на 1,5 м).
+            var mesh = _worn.GetComponentInChildren<MeshFilter>();
             var look = _worn.GetComponentInChildren<Renderer>();
-            if (look != null)
+            if (mesh != null && mesh.sharedMesh != null && look != null)
             {
+                var size = mesh.sharedMesh.bounds.size;
+                var axis = size.x >= size.y && size.x >= size.z ? Vector3.right
+                         : size.y >= size.z ? Vector3.up : Vector3.forward;
+                var pole = mesh.transform.TransformDirection(axis);
+                // Какой конец верхний: сетка собрана в координатах тела (wear.py),
+                // её начало — у ног, а знамя — на спине, выше. Значит, от начала
+                // к середине сетки — это «вверх» знамени на стоящем.
+                var middle = mesh.sharedMesh.bounds.center;
+                if (Vector3.Dot(axis, middle) < 0f) pole = -pole;
+
+                var centre = look.bounds.center;
+                t.rotation = Quaternion.FromToRotation(pole, Vector3.up) * t.rotation;
+                t.position += centre - look.bounds.center;
+                t.RotateAround(look.bounds.center, Vector3.right, PlantLean);
+                t.position += new Vector3(at.x - look.bounds.center.x, 0f, at.z - look.bounds.center.z);
+
                 // Нижний конец древка — на PlantDepth под землёй.
-                float lift = look.bounds.min.y - (at.y - PlantDepth);
-                t.position -= Vector3.up * lift;
-                var foot = new Vector3(look.bounds.center.x, at.y, look.bounds.center.z);
-                t.RotateAround(foot, Vector3.right, PlantLean);
-                _droppedAt = foot;
+                t.position -= Vector3.up * (look.bounds.min.y - (at.y - PlantDepth));
+                _droppedAt = new Vector3(look.bounds.center.x, at.y, look.bounds.center.z);
+                Debug.Log($"[ЗНАМЯ] воткнуто у {at}: древко {look.bounds.min.y - at.y:0.00} … {look.bounds.max.y - at.y:0.00} м от земли");
             }
             else
             {
@@ -214,10 +238,22 @@ namespace Sinbinder.Gameplay
             _worn = null;
         }
 
-        private static void PickUp()
+        /// <summary>Воткнутое знамя в пределах руки Греховода — его можно поднять на F.</summary>
+        public static bool Reachable
+            => _dropped != null && SinbinderPlayer.Exists
+            && CampFocus.GroundDistance(SinbinderPlayer.Where, _droppedAt) <= PickReach;
+
+        /// <summary>Строка F у воткнутого знамени (<see cref="UI.GearPanel"/>).</summary>
+        public static string Prompt => Loc.T("F — поднять знамя «Крыс»");
+
+        /// <summary>
+        /// Поднять знамя — по F, а не само (автор, 23.10: «поднимать ГГ будет
+        /// не автоматически, а через F»): подойти к павшему и поднять его знамя —
+        /// поступок, а не то, что случилось, пока шёл мимо.
+        /// </summary>
+        public static void Lift()
         {
-            if (_dropped == null || !SinbinderPlayer.Exists) return;
-            if (CampFocus.GroundDistance(SinbinderPlayer.Where, _droppedAt) > PickReach) return;
+            if (!Reachable) return;
 
             Destroy(_dropped);
             _dropped = null;
