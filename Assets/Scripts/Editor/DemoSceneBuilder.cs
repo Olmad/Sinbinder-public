@@ -1100,21 +1100,48 @@ namespace Sinbinder.Utilets
             // встают над палатками и закрывают край земли. Ели — основа, сухие —
             // вкраплениями. Лес — одна корзина «Лес»: кроны в лесу сплетаются,
             // и это не пересечение (OverlapCheck сравнивает лес с соседями целиком).
-            string[] trees = { "Pine", "Pine", "Pine", "Pine", "DeadTreeA", "DeadTreeB", "DeadTreeC" };
+            //
+            // 23 октября — бор (автор: «может перенести лагерь глубоко в высокий
+            // лес?», 32-CAMP §11): лагерь «Крыс» спрятан. Лес — сразу за палатками,
+            // а не с 25 м. Основа — корабельные сосны (TallPine, 11–15 м): ствол голый,
+            // крона наверху, стоят редко — светлый бор, свет между стволами («лёгкий
+            // лес» в «Крысах»). Ели и сухие — тёмный лес — только на стороне бегства
+            // (к выходу на востоке) и местами у края земли: уходя, отряд уходит
+            // из светлого в тёмное, как музыка — из «Крыс» в «The Hunted».
+            // Север и дорога к выходу открыты, как прежде (Free).
+            // Выше 15 м сосен нет нарочно: тактическая камера — на 22 м.
+            string[] tall = { "TallPineA", "TallPineB", "TallPineC" };
+            string[] dark = { "Pine", "Pine", "Pine", "DeadTreeA", "DeadTreeB", "DeadTreeC" };
             var forest = new GameObject("Лес");
             forest.transform.SetParent(root.transform);
-            foreach (var (from, to, count, pad, take, small, big) in new[]
+
+            // Сосен ещё нет (props.py не собран в Blender) — на их месте ель
+            // вдвое выше: лагерь не голеет, а сборка не падает.
+            void TallTree(Vector3 at, float yaw, float scale)
             {
-                (25f, 31f,  44, 1.8f, 2.6f, 0.90f, 1.20f),
-                (31f, 38f,  80, 1.3f, 2.2f, 1.00f, 1.40f),
-                (38f, 44.5f, 120, 1.0f, 2.0f, 1.15f, 1.70f),
+                if (Prop(tall[rng.Next(tall.Length)], forest.transform, at, yaw, scale) == null)
+                    Prop("Pine", forest.transform, at, yaw, scale * 2.2f);
+            }
+
+            foreach (var (from, to, count, pad, take) in new[]
+            {
+                (14.5f, 20f,  34, 2.2f, 2.8f),     // ближнее — редко: поляна, а не стена
+                (20f,   27f,  56, 1.8f, 2.6f),
+                (27f,   35f,  84, 1.5f, 2.4f),
+                (35f,   44.5f, 120, 1.2f, 2.2f),
             })
                 for (int i = 0; i < count; i++)
                 {
                     var at = Ring(i * 360f / count + R(-2f, 2f), R(from, to));
                     if (!Free(at, pad)) continue;
                     Take(at, take);
-                    Prop(trees[rng.Next(trees.Length)], forest.transform, at, R(0f, 360f), R(small, big));
+
+                    bool flight = at.magnitude > 20f && Vector3.Dot(at.normalized, toExit) > 0.55f;
+                    bool edge = at.magnitude > 38f && rng.Next(3) == 0;
+                    if (flight || edge)
+                        Prop(dark[rng.Next(dark.Length)], forest.transform, at, R(0f, 360f), R(1.0f, 1.6f));
+                    else
+                        TallTree(at, R(0f, 360f), R(0.9f, 1.1f));
                 }
 
             for (int i = 0; i < 7; i++)

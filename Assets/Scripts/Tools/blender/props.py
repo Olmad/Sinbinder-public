@@ -401,6 +401,10 @@ def sakura(b):
 NEEDLES = ("Needles", (0.085, 0.105, 0.090, 1.0))
 DRY = ("Dry Grass", (0.330, 0.285, 0.190, 1.0))
 LEAF = ("Dark Leaf", (0.120, 0.135, 0.095, 1.0))
+# Бор (корабельная сосна): кора внизу бурая, к верху рыжая; хвоя светлее еловой.
+PINE_BARK = ("Pine Bark", (0.300, 0.185, 0.120, 1.0))
+PINE_COPPER = ("Pine Copper", (0.500, 0.290, 0.150, 1.0))
+PINE_NEEDLES = ("Pine Needles", (0.120, 0.155, 0.105, 1.0))
 
 
 def _wobble(i, k):
@@ -442,6 +446,60 @@ def _dead_tree(b, variant, straight=False, segs=9):
             mid = base.lerp(tip, 0.45 + 0.25 * s)
             twig = mid + Vector((math.cos(a + turn) * 0.7, math.sin(a + turn) * 0.7, up))
             b.add(*tube(tuple(mid), tuple(twig), 0.05, 0.012, segs=5), bone="", mat=0)
+
+
+def _tall_pine(b, variant):
+    """
+    Корабельная сосна — бор вокруг лагеря «Крыс» (автор, 23 октября: «может
+    перенести лагерь глубоко в высокий лес?»; 32-CAMP §11). Светлый лес, а не
+    глухой: ствол голый до двух третей, кора рыжеет к верху, крона — шапками
+    в верхней трети, свет проходит между стволами. Высота 11–15 м — не выше:
+    тактическая камера стоит на 22 м под углом 70°, кроны выше закрыли бы кадр.
+    Материалы: 0 — кора внизу, 1 — хвоя, 2 — рыжая кора вверху.
+    """
+    h = 9.0 + 2.0 * variant                       # 11, 13, 15 м
+    k = h / 13.0
+    lean = 0.18 * _wobble(variant, 1)
+    trunk = [(0, 0, 0), (lean * 0.3, 0.0, h * 0.30), (lean * 0.7, 0.05 * _wobble(variant, 2), h * 0.62),
+             (lean, 0.0, h * 0.86), (lean * 1.05, 0.0, h)]
+    radii = [0.32 * k, 0.26 * k, 0.19 * k, 0.12 * k, 0.04]
+    for i, ((p0, p1), (r0, r1)) in enumerate(zip(zip(trunk, trunk[1:]), zip(radii, radii[1:]))):
+        b.add(*tube(p0, p1, r0, r1, segs=9), bone="", mat=0 if i < 2 else 2)
+
+    # Корни — коротко: сосна стоит на песке, а не на камне.
+    for j in range(4):
+        a = math.radians(j * 90 + 20 * _wobble(variant, j + 9))
+        b.add(*tube((0, 0, 0.20), (math.cos(a) * 0.6, math.sin(a) * 0.6, -0.05), 0.13 * k, 0.04, segs=6),
+              bone="", mat=0)
+
+    # Сухие сучья ниже кроны — бор чистит себя сам, остаются обломки.
+    for j in range(3):
+        t = 0.35 + 0.10 * j
+        base = Vector((lean * t, 0.0, h * t))
+        a = math.radians(j * 137.5 + 30 * _wobble(variant, j + 5))
+        tip = base + Vector((math.cos(a) * 0.9, math.sin(a) * 0.9, 0.25))
+        b.add(*tube(tuple(base), tuple(tip), 0.05, 0.015, segs=5), bone="", mat=0)
+
+    # Крона — шапки хвои в верхней трети, по золотому углу вкруговую.
+    for j in range(6):
+        t = 0.70 + 0.26 * j / 5
+        a = math.radians(j * 137.5 + 20 * _wobble(variant, j + 11))
+        r = (1.6 - 0.9 * (t - 0.70) / 0.26) * (1 + 0.15 * _wobble(variant, j + 21)) * (0.85 + 0.15 * k)
+        c = (lean * t + math.cos(a) * 0.6, math.sin(a) * 0.6, h * t)
+        b.add(*sphere(c, r, scale=(1.0, 1.0, 0.55), segs=10, rings=6), bone="", mat=1)
+    b.add(*sphere((lean * 1.05, 0.0, h + 0.15), 0.8, scale=(1.0, 1.0, 0.9), segs=10, rings=6), bone="", mat=1)
+
+
+def tall_pine_a(b):
+    _tall_pine(b, 1)
+
+
+def tall_pine_b(b):
+    _tall_pine(b, 2)
+
+
+def tall_pine_c(b):
+    _tall_pine(b, 3)
 
 
 def dead_tree_a(b):
@@ -855,6 +913,9 @@ PROPS = [
     Prop("DeadTreeB", dead_tree_b, [BARK, DARK, DARK]),
     Prop("DeadTreeC", dead_tree_c, [BARK, DARK, DARK]),
     Prop("Pine", pine, [NEEDLES, BARK, DARK]),
+    Prop("TallPineA", tall_pine_a, [PINE_BARK, PINE_NEEDLES, PINE_COPPER]),
+    Prop("TallPineB", tall_pine_b, [PINE_BARK, PINE_NEEDLES, PINE_COPPER]),
+    Prop("TallPineC", tall_pine_c, [PINE_BARK, PINE_NEEDLES, PINE_COPPER]),
     Prop("Stump", stump, [BARK, WOOD, DARK]),
     Prop("Bush", bush, [LEAF, DARK, DARK]),
     Prop("GrassTuft", grass_tuft, [DRY, DARK, DARK]),
