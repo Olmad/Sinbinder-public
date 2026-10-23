@@ -79,9 +79,20 @@ namespace Sinbinder.Gameplay
         /// <summary>Удар по приказу — не чаще раза в столько секунд.</summary>
         private const float ForcedPace = 0.55f;
 
+        /// <summary>
+        /// Когда начат последний взмах — по часам игры. Темп удара по приказу
+        /// считается по нему, а не по <c>_cooldownTimer</c>: у воинов отряда
+        /// этот компонент выключен (AOSSceneSetup — бьёт AutoAttackAOS), его
+        /// Update не идёт, и таймер, взведённый первым ударом, стоял вечно —
+        /// каждый бил по приказу один раз за бой (23 октября: убежавших раненых
+        /// охотников первой волны никто не мог добить).
+        /// </summary>
+        private float _lastSwing = float.NegativeInfinity;
+
         private void Attack(Damageable target, bool credit = false)
         {
             _cooldownTimer = _attackCooldown;
+            _lastSwing = Time.time;
 
             // Удар стоит сил, а выдохшийся бьёт вполсилы.
             float damage = AttackDamage;
@@ -145,7 +156,7 @@ namespace Sinbinder.Gameplay
                 // начинал удар заново, не докончив прежний (п. 8 отзыва 21.10).
                 // Темп боя по приказу при этом был около двух ударов в секунду —
                 // на нём держится бой демо. Его и оставляем, но взмах доигрывается.
-                if (_cooldownTimer <= _attackCooldown - ForcedPace) Attack(target, credit: true);
+                if (Time.time - _lastSwing >= ForcedPace) Attack(target, credit: true);
             }
         }
     }

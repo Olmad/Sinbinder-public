@@ -508,6 +508,12 @@ namespace Sinbinder.EditorTools
                 S("провожатый дошёл, лагерь пошёл дальше", null,
                   () => CampOpening.EscortArrived, 40f),
 
+                // Знамя «Крыс» (28-ORDERS, 23.10): стихло — Хорь подходит сам,
+                // поворачивается спиной, в кадре знамя. Ответ — автопилот (1).
+                // Кадр — на второй строке, когда он стоит спиной. Сразу за
+                // провожатым: позже сцена успевает пройти до шага, без кадра.
+                S("у огня: Хорь назвал отряд Крысами", null, BannerNamed, 90f),
+
                 S("Карган позвал к шару", null,
                   () => Summoned(), 15f),
             };
@@ -2268,6 +2274,30 @@ namespace Sinbinder.EditorTools
         /// полторы секунды (раньше кадр шага выходил чёрным: затемнение);
         /// потом «начать заново», как и прежде.
         /// </summary>
+        /// <summary>Снят ли кадр спины со знаменем.</summary>
+        private static bool _bannerShot;
+
+        /// <summary>
+        /// Сцена у огня прошла: <see cref="RatBanner.Named"/>; кадр спины со знаменем.
+        /// </summary>
+        private static bool BannerNamed()
+        {
+            if (!RatBanner.Named) return false;
+
+            // Сцена проходит, пока снимается замер кадра после провожатого, —
+            // поймать её посреди не выходит. Знамя видно и потом: портрет Хоря
+            // со спины.
+            if (!_bannerShot)
+            {
+                _bannerShot = true;
+                foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (w.DisplayName == RatBanner.Bearer)
+                        Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "знамя — Хорь спиной",
+                            w.transform, -w.transform.forward);
+            }
+            return true;
+        }
+
         private static bool StartAnswered()
         {
             if (SessionState.GetBool(AllOn, false) && !_startShot && Sinbinder.UI.StartPanel.Waiting)
