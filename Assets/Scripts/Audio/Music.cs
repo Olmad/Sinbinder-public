@@ -8,7 +8,7 @@ namespace Sinbinder.Audio
 {
     /// <summary>Что звучит: место пролога, а не имя файла.</summary>
     /// <remarks>Новое место — в конец: номера прежних не сдвигаются.</remarks>
-    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted }
+    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted, Menu }
 
     /// <summary>
     /// Короткий сигнал поверх темы: событие, а не место. Из архива автора:
@@ -25,18 +25,25 @@ namespace Sinbinder.Audio
     ///
     /// | Где               | Тема                          | Файл в Resources/Music |
     /// |-------------------|-------------------------------|------------------------|
-    /// | лагерь            | Daydream of the Architect     | Daydream               |
-    /// | набег             | The Routine Raid              | RoutineRaid            |
+    /// | дверь в игру      | «Крысы»: колыбельная          | Lullaby                |
+    /// | лагерь            | «Крысы»: песня, добыча — по очереди | RatSong, RatLoot |
+    /// | набег             | Шуганули                      | Scatter                |
     /// | вторая волна      | The Hunted                    | Hunted                 |
     /// | склеп             | Bad is good, but Evil is better | BadIsGood            |
     /// | конец демо        | A Lord Returns                | LordReturns            |
     ///
-    /// Каждый файл — петля без шва: отрисован круг дважды и взят второй
-    /// проход, хвост зала от конца уже лежит в начале.
+    /// 23 октября — решения автора: «Крысы» — тема отряда Безымянного; колыбельная
+    /// сюиты — в главное меню; «для лагеря хороша 6 или 7» — звучат по очереди,
+    /// чтобы за десять минут лагеря ни одна не стала навязчивой; «под бой мне
+    /// нравится черновой „Шуганули“». Прежние записи — `Docs/Музыка`.
+    ///
+    /// Темы одним файлом — петля без шва: отрисован круг дважды и взят второй
+    /// проход. Темы несколькими файлами (лагерь) — пьесы с началом и концом,
+    /// играют одна за другой по кругу.
     ///
     /// Поворотные места пролога говорят сами: тревога шара гасит лагерь —
     /// бьёт один колокол (<see cref="Gameplay.CrystalBall.Alarm"/>); набег
-    /// включает марш «The Routine Raid» под строкой на чёрном (<see cref="Gameplay.RaidEvent"/>);
+    /// включает «Шуганули» под строкой на чёрном (<see cref="Gameplay.RaidEvent"/>);
     /// вторая волна, выходя, меняет его на «The Hunted» — бой кончился,
     /// начинается бегство (<see cref="Gameplay.HunterSquadSpawner"/>);
     /// уход из доли гасит, пока длится задержка (<see cref="Gameplay.PrologueDirector"/>);
@@ -63,13 +70,14 @@ namespace Sinbinder.Audio
         {
             switch (track)
             {
-                case Track.Camp:     return 0.28f;
-                // 22 октября: вместо «The Eternal Grind» — «The Routine Raid» (автор,
-                // 21.10, о «Grind»: «ОЧЕНЬ РАЗДРАЖАЕТ И ОЧЕНЬ НАВЯЗЧИВАЯ»). 23 октября:
-                // 0,17 → 0,12 — замер первых 60 с: при 0,17 марш звучал на 4 дБ громче,
-                // чем «Grind» после того, как его приглушили, — та громкость, на которую
-                // жаловался автор. При 0,12 — −31 дБ, на 7 дБ тише второй волны.
-                case Track.Raid:     return 0.12f;
+                // Громкости новых тем 23 октября — по слуху, взвешенному A (43-SOUND.md):
+                // лагерь — как прежний «Daydream» при 0,28 (−35,7 дБ(A)); песня
+                // выровнена с добычей в самом файле. Набег — между приглушённым
+                // «Grind» (−39,9) и маршем (−35,5): −36,3. Дверь — колыбельная, −34:
+                // тише эпилога, громче лагеря — кроме неё ничего не звучит.
+                case Track.Menu:     return 0.09f;
+                case Track.Camp:     return 0.11f;
+                case Track.Raid:     return 0.10f;
                 case Track.Hunted:   return 0.38f;
                 case Track.Crypt:    return 0.30f;
                 case Track.Epilogue: return 0.50f;
@@ -77,18 +85,30 @@ namespace Sinbinder.Audio
             }
         }
 
-        /// <summary>Файл темы в <c>Assets/Resources/Music</c>. Сменить тему месту — сменить строку здесь.</summary>
-        public static string FileOf(Track track)
+        /// <summary>
+        /// Записи темы в <c>Assets/Resources/Music</c>, по порядку. Одна — петля;
+        /// несколько — играют одна за другой по кругу. Сменить тему месту —
+        /// сменить строку здесь.
+        /// </summary>
+        public static string[] FilesOf(Track track)
         {
             switch (track)
             {
-                case Track.Camp:     return "Daydream";
-                case Track.Raid:     return "RoutineRaid";
-                case Track.Hunted:   return "Hunted";
-                case Track.Crypt:    return "BadIsGood";
-                case Track.Epilogue: return "LordReturns";
+                case Track.Menu:     return new[] { "Lullaby" };
+                case Track.Camp:     return new[] { "RatSong", "RatLoot" };
+                case Track.Raid:     return new[] { "Scatter" };
+                case Track.Hunted:   return new[] { "Hunted" };
+                case Track.Crypt:    return new[] { "BadIsGood" };
+                case Track.Epilogue: return new[] { "LordReturns" };
                 default:             return null;
             }
+        }
+
+        /// <summary>Первая запись темы — та, с которой она начинается.</summary>
+        public static string FileOf(Track track)
+        {
+            var files = FilesOf(track);
+            return files != null && files.Length > 0 ? files[0] : null;
         }
 
         /// <summary>
@@ -137,6 +157,7 @@ namespace Sinbinder.Audio
         private readonly float[] _target = new float[2];
         private readonly float[] _speed = new float[2];
         private readonly Track[] _on = new Track[2];
+        private readonly int[] _piece = new int[2];         // которая запись темы звучит на дорожке
         private float _duck = 1f;
         private AudioSource _cue;
         private float _cueUntil;
@@ -257,8 +278,10 @@ namespace Sinbinder.Audio
             deck.Stop();
             deck.clip = clip;
             deck.time = 0f;
+            deck.loop = FilesOf(track).Length == 1;   // несколько пьес — не по кругу каждая, а одна за другой
             deck.Play();
             _on[back] = track;
+            _piece[back] = 0;
             _level[back] = 0f;
             Aim(back, 1f, fade);
 
@@ -300,7 +323,39 @@ namespace Sinbinder.Audio
                     deck.Stop();
                     _on[i] = Track.None;
                 }
+
+                // Пьеса кончилась — следующая той же темы (лагерь: песня, добыча, песня…).
+                if (!deck.loop && !deck.isPlaying && _target[i] > 0f && _on[i] != Track.None)
+                    Next(i);
             }
+
+            Door();
+        }
+
+        private void Next(int i)
+        {
+            var files = FilesOf(_on[i]);
+            if (files == null || files.Length == 0) return;
+            _piece[i] = (_piece[i] + 1) % files.Length;
+            var clip = Load(files[_piece[i]]);
+            if (clip == null) return;
+            var deck = _decks[i];
+            deck.clip = clip;
+            deck.time = 0f;
+            deck.Play();
+            Debug.Log($"[МУЗЫКА] {files[_piece[i]]}.");
+        }
+
+        /// <summary>
+        /// Дверь в игру (<see cref="UI.StartPanel"/>) — главное меню демо: пока
+        /// на ней вопрос, звучит колыбельная «Крыс» (автор, 23.10: «я бы её
+        /// в главное меню впихнул»); ответили — тема сцены.
+        /// </summary>
+        private void Door()
+        {
+            bool door = UI.StartPanel.Waiting;
+            if (door && Current != Track.Menu) Play(Track.Menu, 1.5f);
+            else if (!door && Current == Track.Menu) Play(ForScene(SceneManager.GetActiveScene().name), 3f);
         }
 
         /// <summary>Запись темы; нет — сказать один раз, где положить.</summary>

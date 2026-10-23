@@ -1036,10 +1036,17 @@ namespace Sinbinder.Tests
             foreach (Sinbinder.Audio.Track track in System.Enum.GetValues(typeof(Sinbinder.Audio.Track)))
             {
                 if (track == Sinbinder.Audio.Track.None) continue;
-                string file = Sinbinder.Audio.Music.FileOf(track);
-                Check(!string.IsNullOrEmpty(file) && Resources.Load<AudioClip>("Music/" + file) != null,
-                    $"запись темы «{track}» лежит в Resources/Music");
+                var files = Sinbinder.Audio.Music.FilesOf(track);
+                bool all = files != null && files.Length > 0;
+                if (all)
+                    foreach (var file in files)
+                        all &= !string.IsNullOrEmpty(file) && Resources.Load<AudioClip>("Music/" + file) != null;
+                Check(all, $"все записи темы «{track}» лежат в Resources/Music");
             }
+            // Лагерь — десять минут: одна короткая пьеса по кругу стала бы вторым
+            // «Grind» (автор, 21.10). Две «Крысы» по очереди (автор, 23.10).
+            Check(Sinbinder.Audio.Music.FilesOf(Sinbinder.Audio.Track.Camp).Length >= 2,
+                "в лагере пьесы сменяют друг друга, а не одна по кругу");
 
             // Звуки мира, которые ищутся по сцене: шаги и ночь лагеря.
             Check(Sinbinder.Audio.Sfx.Surface("Prologue_Camp") == "Step/Grass", "в лагере Греховод идёт по траве");
