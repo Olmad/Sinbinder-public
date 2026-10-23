@@ -68,7 +68,10 @@ namespace Sinbinder.Gameplay
 
             // Сила греха — не число на экране, а яркость. Слабый грех
             // тлеет, сильный жжёт; между ними видна разница, а цифры нет.
-            float force = Mathf.Clamp01(Mathf.Abs(warrior.Soul.Get(sin)));
+            // Спектр — −100…+100 (SoulData.Get): до 23.10 здесь не делили на сто,
+            // и у любого греха сильнее единицы сила была полной — горели все
+            // одинаково, и легенда не выделялась ничем (отзыв 21.10, п. 12).
+            float force = Mathf.Clamp01(Mathf.Abs(warrior.Soul.Get(sin)) / 100f);
 
             Paint(colour, force);
             Lamp(colour, force);

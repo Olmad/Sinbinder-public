@@ -5052,12 +5052,12 @@ msgid "Эта душа ждёт вас. Следующие будут гасну
 msgstr "This soul will wait for you. The next ones will fade while you walk."
 
 #: Gameplay/Lesson.cs
-msgid "1 — как воин и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."
-msgstr "1 — how the warrior is and feels about you. 2 — pay a debt, if there is one. 3 — gear."
+msgid "Выберите ответ — цифрой или мышью."
+msgstr "Choose an answer — with a number key or the mouse."
 
 #: Gameplay/Lesson.cs
-msgid "F или Esc — закончить разговор."
-msgstr "F or Esc — end the conversation."
+msgid "F или Esc — уйти."
+msgstr "F or Esc — leave."
 
 #: Gameplay/Lesson.cs
 msgid "Подойдите к {0}, посмотрите на воина и нажмите F — поговорить."
@@ -7208,6 +7208,14 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "1 — как воин и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."
+msgstr "1 — how the warrior is and feels about you. 2 — pay a debt, if there is one. 3 — gear."
+
+#. нет в коде
+msgid "F или Esc — закончить разговор."
+msgstr "F or Esc — end the conversation."
 
 #. нет в коде
 msgid "Приказ был. {0} {1}."
