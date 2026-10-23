@@ -300,7 +300,12 @@ namespace Sinbinder.Gameplay
             // Первая сцена пролога заводит канон, дальнейшие берут то, что
             // от отряда осталось: выбор командира на доле 3 и потери в бою
             // обязаны дожить до последней сцены (00-GDD.md §8).
-            if (!SquadRoster.HasSquad) SquadRoster.Set(Canon());
+            if (!SquadRoster.HasSquad)
+            {
+                SquadRoster.Set(Canon());
+                RatBanner.Reset();        // новая игра — знамя «Крыс» снова у Хоря
+            }
+            Banner();
 
             // Ушедших не ставим. Они живут в составе — им возвращаться
             // в эпилоге, — но в сцене их нет и быть не может.
@@ -526,6 +531,7 @@ namespace Sinbinder.Gameplay
 
             // Спавнер мог не собирать отряд в этой сцене сам.
             _relSystem ??= new Core.RelationshipSystem(AOS.MemoryProcessor.Instance);
+            Banner();
 
             var party = new List<SquadRoster.Member>();
             foreach (var name in names)
@@ -612,7 +618,20 @@ namespace Sinbinder.Gameplay
             // до того, как задумается, кто есть кто.
             if (member.Brother) BrotherMark(go.transform);
 
+            // Знамя «Крыс» — на том, кто его несёт: Хорь с начала,
+            // в склепе — тот, кто донёс (RatBanner).
+            RatBanner.Dress(warrior);
+
             return warrior;
+        }
+
+        /// <summary>
+        /// Знамя «Крыс» живёт там же, где отряд: в лагере и в склепе
+        /// (docs/32-CAMP.md §12). Ставится один раз на спавнер.
+        /// </summary>
+        private void Banner()
+        {
+            if (GetComponent<RatBanner>() == null) gameObject.AddComponent<RatBanner>();
         }
 
         /// <summary>Метка брата по оружию. Одна на двоих, потому и узнаётся.</summary>

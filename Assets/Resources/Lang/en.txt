@@ -5055,7 +5055,7 @@ msgstr "Walk up to the soul and press E — it will go into an empty jar."
 msgid "Эта душа подождёт. Другие гаснут, пока вы идёте: чем позже, тем меньше от них останется."
 msgstr "This soul will wait. The others fade while you walk: the later you come, the less is left of them."
 
-#: Gameplay/Lesson.cs
+#: Gameplay/Lesson.cs Gameplay/RatBanner.cs
 msgid "Выберите ответ — цифрой или мышью."
 msgstr "Choose an answer — with a number key or the mouse."
 
@@ -5207,7 +5207,7 @@ msgstr "Marga the Digger"
 msgid "Брат Хальд"
 msgstr "Brother Hald"
 
-#: Gameplay/PrologueCampSpawner.cs
+#: Gameplay/PrologueCampSpawner.cs Gameplay/RatBanner.cs
 msgid "Одноглазый Хорь"
 msgstr "One-Eyed Khor"
 
@@ -5338,6 +5338,46 @@ msgstr "Not only our own knew where the camp was."
 #: Gameplay/RaidEvent.cs
 msgid "Карган: «Владыка, охотники знают, где наш лагерь, — видно, кто-то из наших проговорился. Тяжело это признавать, но надо бежать. К кругу на востоке — туда, где свет»."
 msgstr "Kargan: “My lord, the hunters know where our camp is — one of ours must have talked. It's hard to admit, but we have to run. To the circle in the east — where the light is.”"
+
+#: Gameplay/RatBanner.cs
+msgid "Владыка, мы тут с Гуртом подумали. Раз уж мы всё бегаем да прячемся по углам — пусть хоть знамя будет честное."
+msgstr "My Lord, Gurt and I got to thinking. Since all we do is run and hide in corners — let the banner at least be honest."
+
+#: Gameplay/RatBanner.cs
+msgid "Крысы. А что? Живучие."
+msgstr "Rats. Why not? Hard to kill."
+
+#: Gameplay/RatBanner.cs
+msgid "Крысы так крысы."
+msgstr "Rats it is."
+
+#: Gameplay/RatBanner.cs
+msgid "Мы не крысы."
+msgstr "We are not rats."
+
+#: Gameplay/RatBanner.cs
+msgid "Вот и я говорю. Гурт, слыхал? Мы теперь Крысы."
+msgstr "That's what I said. Hear that, Gurt? We're the Rats now."
+
+#: Gameplay/RatBanner.cs
+msgid "Вы — нет, Владыка. А мы — да."
+msgstr "You're not, my Lord. But we are."
+
+#: Gameplay/RatBanner.cs
+msgid "Крысы. Хуже имени для того, кто ушёл от Смерти, не придумать. И точнее — тоже."
+msgstr "Rats. No worse name for one who walked away from Death. And none truer."
+
+#: Gameplay/RatBanner.cs
+msgid "Знамя «Крыс» осталось там, где пал {0}."
+msgstr "The Rats' banner stands where {0} fell."
+
+#: Gameplay/RatBanner.cs
+msgid "Греховод поднял знамя «Крыс»."
+msgstr "The Sinbinder took up the Rats' banner."
+
+#: Gameplay/RatBanner.cs
+msgid "Отряд назвал себя Крысами."
+msgstr "The squad named itself the Rats."
 
 #: Gameplay/RetreatHorn.cs
 msgid "Рог трубит отход."

@@ -246,6 +246,41 @@ def legend_banner(b, k=1.0):
     b.add(v, f, bone="Chest", mat=0)
 
 
+def rat_banner(b):
+    """
+    Знамя «Крыс» за спиной Хоря (автор, 23 октября: «кто-то из лагеря стоял
+    со знаменем, где изображена голова крысы»). Больше флажка легенды и с другой
+    стороны спины — чтобы не спутать и не сцепиться: древко слева, выше головы
+    на полголовы с лишним, перекладина, тряпка — краденая ткань Ордена, низ
+    рваный. На ней углём, с обеих сторон, голова крысы мордой наружу: лоб,
+    вытянутая морда, два уха, светлый глаз — силуэт читается и вблизи
+    разговора, и сверху боком. Материалы: 0 — ткань, 1 — уголь, 2 — дерево.
+    """
+    x, y = -0.040, 0.118
+    z0, z1 = P["hip"] - 0.020, P["skull"] + 0.500
+    b.add(*tube((x, y, z0), (x, y, z1), 0.010, 0.009, segs=8), bone="Chest", mat=2)
+    w, h = 0.280, 0.260
+    top = z1 - 0.020
+    b.add(*tube((x, y, top), (x - w, y, top), 0.006, 0.006, segs=6), bone="Chest", mat=2)
+    cx, cz = x - w * 0.5, top - h * 0.5
+    b.add(*box((cx, y, cz), (w, 0.006, h)), bone="Chest", mat=0)
+    # Рваный низ: три лоскута разной длины.
+    for k, (dx, ln) in enumerate(((-0.10, 0.040), (0.00, 0.065), (0.09, 0.030))):
+        b.add(*box((cx + dx, y, top - h - ln * 0.5), (0.060, 0.006, ln)), bone="Chest", mat=0)
+    # Голова крысы — углём на обеих сторонах полотна.
+    for side in (1, -1):
+        yy = y + side * 0.0045
+        b.add(*sphere((cx + 0.010, yy, cz - 0.005), 0.050, scale=(1.30, 0.08, 1.00), segs=16, rings=8),
+              bone="Chest", mat=1)                                         # лоб
+        b.add(*sphere((cx - 0.065, yy, cz - 0.020), 0.036, scale=(1.50, 0.08, 0.70), segs=14, rings=6),
+              bone="Chest", mat=1)                                         # морда наружу
+        for ex, ez in ((0.045, 0.050), (0.005, 0.060)):
+            b.add(*sphere((cx + ex, yy, cz + ez), 0.025, scale=(1.0, 0.08, 1.0), segs=12, rings=6),
+                  bone="Chest", mat=1)                                     # уши
+        b.add(*sphere((cx - 0.030, y + side * 0.0080, cz + 0.008), 0.009, scale=(1.0, 0.10, 1.0),
+                      segs=10, rings=6), bone="Chest", mat=0)               # глаз — ткань сквозь уголь
+
+
 def legend_eyes(b, z=None, y=-0.050, x=0.021, r=0.0072):
     """Огоньки в глазницах легенды — материал «Eye», зажигает игра."""
     z = P["skull"] - 0.004 if z is None else z
@@ -822,6 +857,8 @@ ITEMS = [
 
     Item("RavenMantle",    "Chest", raven_mantle,    [FEATHER, FEATHER, DARK]),
     Item("LegendBanner",   "Chest", legend_banner,   [LEGEND, GOLD, WOOD]),
+    # Знамя «Крыс»: краденая ткань Ордена — светлый лён, голова крысы углём.
+    Item("RatBanner",      "Chest", rat_banner,      [("Order Linen", (0.560, 0.520, 0.440, 1.0)), DARK, WOOD]),
     Item("LegendEyes",     "Head",  legend_eyes,     [DARK, EYE, DARK]),
     Item("PauldronLeft",   "LeftShoulder",  lambda b: pauldron(b, 1),  [IRON, IRON, DARK]),
     Item("PauldronRight",  "RightShoulder", lambda b: pauldron(b, -1), [IRON, IRON, DARK]),

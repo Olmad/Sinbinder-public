@@ -57,6 +57,7 @@ namespace Sinbinder.Gameplay
 
             { "RavenMantle", "Chest" },
             { "LegendBanner", "Chest" },
+            { "RatBanner", "Chest" },        // знамя «Крыс» — не по правилам For, его носит тот, кто поднял (RatBanner)
             { "Quiver", "Chest" },
             { "Bow", "Chest" },
             { "Cloak", "Chest" },

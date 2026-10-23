@@ -106,6 +106,7 @@ namespace Sinbinder.Tests
                 HeraldLines();
                 SatchelJars();
                 PunishmentNights();
+                RatBannerHands();
                 Thoughts();
                 CryptWelcome();
                 FloorOnSight();
@@ -1191,6 +1192,26 @@ namespace Sinbinder.Tests
         /// затянулось: обида больше обычной; без деяния — просто невыплата;
         /// мораль решает, сколько исправит.
         /// </summary>
+        /// <summary>
+        /// Знамя «Крыс» (32-CAMP §12): носит Хорь; пал — знамя ничьё; поднял
+        /// Греховод — несёт он, и гибель прежнего носящего его уже не касается.
+        /// </summary>
+        private static void RatBannerHands()
+        {
+            RatBanner.Reset();
+            Check(RatBanner.Holder == RatBanner.Bearer && !RatBanner.BySinbinder && !RatBanner.Named,
+                  "знамя «Крыс»: в новой игре его несёт Хорь, имени ещё нет");
+            Check(!RatBanner.Fell("Кто-то другой") && RatBanner.Holder == RatBanner.Bearer,
+                  "знамя «Крыс»: гибель другого знамени не роняет");
+            Check(RatBanner.Fell(RatBanner.Bearer) && string.IsNullOrEmpty(RatBanner.Holder),
+                  "знамя «Крыс»: носящий пал — знамя ничьё");
+            RatBanner.PickedUp();
+            Check(RatBanner.BySinbinder && !RatBanner.Fell(RatBanner.Bearer),
+                  "знамя «Крыс»: поднял Греховод — несёт он");
+            Check(Wardrobe.Knows(RatBanner.Item), "знамя «Крыс» — вещь гардероба, на кость ей есть место");
+            RatBanner.Reset();
+        }
+
         private static void PunishmentNights()
         {
             var plain = new SoulData("Без деяния", SinType.Greed, MoralType.Neutral, 1, 65f);
