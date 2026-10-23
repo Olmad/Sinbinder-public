@@ -1032,6 +1032,11 @@ namespace Sinbinder.Tests
                 "вторая волна набега меняет тему, а не продолжает первую");
             Check(Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.None) == null,
                 "у тишины нет файла");
+            // Склеп — передышка ценою потерь, и конец демо — она же (автор, 23.10:
+            // «Bad is good» и «A Lord Returns» — «абсолютно не уместна», обе).
+            Check(Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.Epilogue)
+                  == Sinbinder.Audio.Music.FileOf(Sinbinder.Audio.Track.Crypt),
+                "конец демо звучит плачем склепа и не начинает его заново");
 
             foreach (Sinbinder.Audio.Track track in System.Enum.GetValues(typeof(Sinbinder.Audio.Track)))
             {

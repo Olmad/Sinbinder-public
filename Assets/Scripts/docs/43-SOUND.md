@@ -840,6 +840,13 @@ Grind» — транс: круг почти три минуты на одной 
   они: три «уа-уа-уа», каждое медленнее и выше — смех над собой становится
   плачем (по-русски «уа» — плач и есть). Тромбон −41 дБ(A), скачок +6,7 дБ.
 
+**В игре — 23.10** (автор: «Предыдущая версия отличная. Оставим её» — первый
+смешок; сбег — «как будто крыса пытается петь, но в итоге почти плачет», уа-уа —
+«так себе»): склеп и конец демо — «Нас мало» со всхлипами (`Lament`, петля 129,92 с,
+`Music.LevelOf` 0,12 — −33,6 дБ(A)). Экран конца плач не начинает заново
+(`Music.Switch`: та же запись — только сменить место). «Bad is good» и
+«A Lord Returns» — в архив.
+
 **Эпилог — из той же мысли.** «Не задержится в Склепе и будет дальше скитаться» —
 значит, конец демо не дом и не трон, а дорога. Предложение: эпилог — последняя
 часть выбранного варианта («дальше»), а не новая тема; и если склеп кончается
@@ -1118,11 +1125,12 @@ Begins» — тот же мотив автора (валторна ре–ми�
 
 ```
 cd Tools/music
-python3 daydream_concept.py d.mid --loop && sh render.sh d.mid d.wav && python3 master.py d.wav Daydream.ogg --cut 160:320
-python3 battles.py raid r.mid --loop      && sh render.sh r.mid r.wav && python3 master.py r.wav RoutineRaid.ogg --cut 96:192
-python3 battles.py hunted h.mid --loop    && sh render.sh h.mid h.wav && python3 master.py h.wav Hunted.ogg --cut 85.76:171.52
-python3 bad_concept.py b.mid --loop --less-celesta && sh render.sh b.mid b.wav && python3 master.py b.wav BadIsGood.ogg --cut 178.56:357.12
-python3 lord_concept.py l.mid --loop     && sh render.sh l.mid l.wav && python3 master.py l.wav LordReturns.ogg --cut 180:360
+python3 rats.py lullaby u.mid && sh render.sh u.mid u.wav && python3 master.py u.wav Lullaby.ogg --trim
+python3 rats.py rat s.mid     && sh render.sh s.mid s.wav && python3 master.py s.wav RatSong.ogg --trim   # затем −3,7 дБ к добыче
+python3 rats.py loot l.mid    && sh render.sh l.mid l.wav && python3 master.py l.wav RatLoot.ogg --trim
+python3 battles.py scatter r.mid --loop && sh render.sh r.mid r.wav && python3 master.py r.wav Scatter.ogg --cut 63.36:126.72
+python3 battles.py hunted h.mid --loop  && sh render.sh h.mid h.wav && python3 master.py h.wav Hunted.ogg --cut 85.76:171.52
+python3 rats.py weep w.mid --loop       && sh render.sh w.mid w.wav && python3 master.py w.wav Lament.ogg --cut 129.92:259.84
 python3 stingers.py spark s.mid  && sh render.sh s.mid s.wav && python3 master.py s.wav Spark.ogg --trim
 python3 stingers.py fallen f.mid && sh render.sh f.mid f.wav && python3 master.py f.wav Fallen.ogg --trim
 ```

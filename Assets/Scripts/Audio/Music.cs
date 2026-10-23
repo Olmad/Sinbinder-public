@@ -29,13 +29,15 @@ namespace Sinbinder.Audio
     /// | лагерь            | «Крысы»: песня, добыча — по очереди | RatSong, RatLoot |
     /// | набег             | Шуганули                      | Scatter                |
     /// | вторая волна      | The Hunted                    | Hunted                 |
-    /// | склеп             | Bad is good, but Evil is better | BadIsGood            |
-    /// | конец демо        | A Lord Returns                | LordReturns            |
+    /// | склеп, конец демо | «Нас мало» — плач «Крыс»      | Lament                 |
     ///
     /// 23 октября — решения автора: «Крысы» — тема отряда Безымянного; колыбельная
     /// сюиты — в главное меню; «для лагеря хороша 6 или 7» — звучат по очереди,
     /// чтобы за десять минут лагеря ни одна не стала навязчивой; «под бой мне
-    /// нравится черновой „Шуганули“». Прежние записи — `Docs/Музыка`.
+    /// нравится черновой „Шуганули“». Склеп и конец демо — «Нас мало» со всхлипами:
+    /// склеп — «место, где они должны перевести дух… ценою потерь почти всех»,
+    /// а прежние «Bad is good» и «A Lord Returns» — голос владыки, который власти
+    /// не ищет («абсолютно не уместна» — обе). Прежние записи — `Docs/Музыка`.
     ///
     /// Темы одним файлом — петля без шва: отрисован круг дважды и взят второй
     /// проход. Темы несколькими файлами (лагерь) — пьесы с началом и концом,
@@ -47,7 +49,7 @@ namespace Sinbinder.Audio
     /// вторая волна, выходя, меняет его на «The Hunted» — бой кончился,
     /// начинается бегство (<see cref="Gameplay.HunterSquadSpawner"/>);
     /// уход из доли гасит, пока длится задержка (<see cref="Gameplay.PrologueDirector"/>);
-    /// экран конца — «Возвращение лорда», «Отряд не вернулся» — тишина.
+    /// экран конца — тот же плач, не начинаясь заново; «Отряд не вернулся» — тишина.
     /// Тишину первого отказа делать не нужно: <see cref="UI.RefusalSilence"/>
     /// глушит весь звук, музыку тоже.
     ///
@@ -79,8 +81,11 @@ namespace Sinbinder.Audio
                 case Track.Camp:     return 0.11f;
                 case Track.Raid:     return 0.10f;
                 case Track.Hunted:   return 0.38f;
-                case Track.Crypt:    return 0.30f;
-                case Track.Epilogue: return 0.50f;
+                // Склеп и конец — одна запись, и громкость одна: экран конца
+                // не подскакивает. «Нас мало» — −33,6 дБ(A): между колыбельной
+                // двери (−34) и прежним «Bad is good» (−32,4) — тихий плач.
+                case Track.Crypt:    return 0.12f;
+                case Track.Epilogue: return 0.12f;
                 default:             return 0f;
             }
         }
@@ -98,8 +103,8 @@ namespace Sinbinder.Audio
                 case Track.Camp:     return new[] { "RatSong", "RatLoot" };
                 case Track.Raid:     return new[] { "Scatter" };
                 case Track.Hunted:   return new[] { "Hunted" };
-                case Track.Crypt:    return new[] { "BadIsGood" };
-                case Track.Epilogue: return new[] { "LordReturns" };
+                case Track.Crypt:    return new[] { "Lament" };
+                case Track.Epilogue: return new[] { "Lament" };
                 default:             return null;
             }
         }
@@ -270,6 +275,17 @@ namespace Sinbinder.Audio
 
             var clip = Load(FileOf(track));
             if (clip == null) return;
+
+            // Та же запись уже звучит (склеп → конец демо → «Остаться в склепе»):
+            // не начинать её заново посреди круга — только сменить место.
+            int loud = _level[0] >= _level[1] ? 0 : 1;
+            if (_decks[loud].isPlaying && _decks[loud].clip == clip && _target[loud] > 0f)
+            {
+                _on[loud] = track;
+                Aim(loud, 1f, fade);
+                Debug.Log($"[МУЗЫКА] {FileOf(track)} — звучит дальше.");
+                return;
+            }
 
             // Новая — на ту дорожку, что тише: перехода не слышно, даже если
             // прошлый ещё не кончился.
