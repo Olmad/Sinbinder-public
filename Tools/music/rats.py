@@ -19,7 +19,7 @@
 # а не петли; петля — у «Отбиваются», она может стать первой волной набега).
 #
 #   python3 Tools/music/rats.py <пьеса> выход.mid [--loop]
-#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament
+#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament burden
 import sys
 from score import loop_tempo
 from orchestra import (Orchestra, CHORD, bar, HORN, STR, PAD, CELLO, BASS, BONE,
@@ -614,9 +614,78 @@ def lament():
     return s, 52, bar(25)
 
 
+def burden():
+    """Склеп, вариант 4 — «Ноша». Автор, 23 октября, — что вложить в мелодию:
+    «он сбежал от Смерти. Свобода, но его обременили пешки. Лагерь —
+    передышка, обманчивый покой… Но тут покой нарушает, и через бой ГГ
+    снова находит минуту покоя ценою потерь почти всех. И вот ГГ должен
+    поддерживать небольшой отряд и дальше как-то жить… не задержится
+    в Склепе и будет дальше скитаться с отрядом».
+
+    Свобода — путь Безымянного наверху, у гобоя. Пешки — мотив «Крыс»
+    пиццикато под ним: шаги тех, кто увязался, по аккорду, с тревожным
+    соль-диезом. Лагерь — память: кларнет поёт мотив тепло, как «У огня»,
+    с арфой. Цена — шаги смолкают: фагот один, мотив обрывается на
+    соль-диез. Дальше — путь у фагота: теперь ношу несёт он сам; шаги
+    снова идут, четвертями, но их мало; конец — на ля, открыто: дорога
+    не кончилась. Петля."""
+    s = Orchestra({BSN: 108, CLAR: 96, OBOE: 88, PIZZ: 120, PIANO: 110, PAD: 70, CELLO: 84, BASS: 86},
+                  program={**FOREST, PIANO: 46})
+
+    def tagalong(at, names, vel=62, every=1):
+        """Пешки увязались: мотив «Крыс» пиццикато от корня аккорда, раз в
+        every тактов — по такту на мотив (пять нот, последняя — половинка)."""
+        for b, name in enumerate(names):
+            if b % every: continue
+            r = CHORD[name]['cello']
+            for i, (p, st, d) in enumerate(MOTIF):
+                s.add(PIZZ, p - 50 + r, at + b * 4 + st * 0.75, 0.5, vel + (6 if i == 0 else 0))
+
+    def under(at, names, vel=46, cello=58):
+        s.pads(PAD, at, names, vel)
+        for b, name in enumerate(names):
+            s.add(CELLO, CHORD[name]['cello'], at + b * 4, 4, cello)
+            s.add(BASS, CHORD[name]['bass'], at + b * 4, 4, vel + 4)
+
+    # 1–4: шаги тех, кто увязался
+    I = ['Dm', 'Dm', 'Bb', 'A']
+    tagalong(bar(1), I, 78); under(bar(1), I, 54, 62)
+    # 5–12: свобода — путь Безымянного у гобоя, пешки под ним
+    P = ['Dm', 'Dm', 'Gm', 'Gm', 'Dm', 'Dm', 'C', 'A']
+    s.line(OBOE, ROAD[:14], bar(5), 76)
+    s.line(OBOE, [(65, 0, 1), (64, 1, 1), (62, 2, 2), (61, 4, 4)], bar(9), 70)
+    # Пешек слышно, а не только видно в нотах: по первому замеру шаги были
+    # на 14 дБ(A) ниже гобоя (−51 против −37) — подняты.
+    tagalong(bar(5), P, 72); under(bar(5), P, 44)
+    # 13–16: лагерь — память: кларнет поёт мотив тепло и медленно, арфа
+    M = ['Dm', 'Bb', 'Gm', 'A']
+    motif(s, CLAR, bar(13), 70, k=2.0, upto=4, hold=2)
+    for b, name in enumerate(M):
+        c = CHORD[name]
+        for k, p in enumerate([c['cello'] + 12, *c['mid']]):
+            s.add(PIANO, p, bar(13) + b * 4 + k * 0.5, 2.5, 56 + (6 if k == 0 else 0))
+    under(bar(13), M, 42, 54)
+    # 17–20: цена — шагов нет; фагот один, мотив обрывается на соль-диез
+    E = ['Dm', 'Dm', 'E', 'E']
+    motif(s, BSN, bar(17), 80, k=1.5, upto=3, hold=6)
+    under(bar(17), E, 40, 54)
+    s.add(PIZZ, 38, bar(17), 0.8, 56)
+    # 21–28: дальше — путь у фагота, ношу несёт он сам; шаги идут, но их мало
+    R = ['A', 'Dm', 'Gm', 'Gm', 'Dm', 'Dm', 'C', 'A']
+    s.line(BSN, ROAD[:14], bar(22), 84, shift=-12)
+    s.line(BSN, [(65, 0, 1), (64, 1, 1), (62, 2, 2), (61, 4, 4)], bar(26), 78, shift=-12)
+    for b, name in enumerate(R):
+        if b % 4 == 3: continue
+        r = CHORD[name]['cello']
+        for q in range(4):
+            s.add(PIZZ, r if q % 2 == 0 else r + 7, bar(21) + b * 4 + q, 0.45, 56 + (6 if q == 0 else 0))
+    under(bar(21), R, 44)
+    return s, 66, bar(29)
+
+
 PIECES = {'fire': fire, 'trail': trail, 'hide': hide, 'flee': flee, 'fight': fight,
           'loot': loot, 'rat': rat, 'lullaby': lullaby, 'refuge': refuge,
-          'song': lonely_song, 'lament': lament}
+          'song': lonely_song, 'lament': lament, 'burden': burden}
 
 if __name__ == '__main__':
     name, out = sys.argv[1], sys.argv[2]
