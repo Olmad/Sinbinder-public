@@ -19,7 +19,7 @@
 # а не петли; петля — у «Отбиваются», она может стать первой волной набега).
 #
 #   python3 Tools/music/rats.py <пьеса> выход.mid [--loop]
-#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament burden
+#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament weep burden
 import sys
 from score import loop_tempo
 from orchestra import (Orchestra, CHORD, bar, HORN, STR, PAD, CELLO, BASS, BONE,
@@ -567,15 +567,23 @@ def lonely_song():
     return s, 60, b3(33)
 
 
-def lament():
+def lament(sobs=False):
     """Склеп, вариант 3 — «Нас мало». Плач на нисходящем басе: ре — до —
     си-бемоль — ля, четыре такта по кругу, как в старых плачах (Перселл,
     «Дидона»). Круг — сам себе петля. Над ним по очереди, не вместе:
     фагот — путь Безымянного; кларнет — мотив «Крыс», соль-диез уходит в ля,
     как в «Колыбельной»; гобой — обрывок надежды; потом фагот и кларнет
-    делят путь пополам. В последнем круге остаются бас и фагот."""
-    s = Orchestra({BSN: 108, CLAR: 98, OBOE: 86, PIZZ: 120, PAD: 70, CELLO: 92, BASS: 88, PIANO: 110},
-                  program={**FOREST, PIANO: 46})
+    делят путь пополам. В последнем круге остаются бас и фагот.
+
+    sobs — автор, 23 октября: «меньше всего проблем у 3. А можно ли добавить
+    печальный смех крыс, что-то что будет как всхлипы». После мотива «Крыс» —
+    круг смеха сквозь слёзы: кларнет, который в сюите хихикал («Делят
+    добычу»), смеётся тем же смешком — и смех медленнеет, опускается,
+    ломается во всхлипы; потом тромбон тихо и медленно — «уа-уа-уа»
+    проигравшего из «Шуганули», и смешной звук становится плачем.
+    Никто никого не перебивает: в этом круге больше никто не поёт."""
+    s = Orchestra({BSN: 108, CLAR: 98, OBOE: 86, PIZZ: 120, PAD: 70, CELLO: 92, BASS: 88, PIANO: 110,
+                   BONE: 84}, program={**FOREST, PIANO: 46})
     GROUND = ['Dm', 'C', 'Bb', 'A']
     LOW = [38, 36, 34, 33]
 
@@ -591,27 +599,53 @@ def lament():
                 for k, p in enumerate([c['cello'] + 12, *c['mid']]):
                     s.add(PIANO, p, t + k * 0.5, 2.5, 52 + (6 if k == 0 else 0))
 
+    def giggle(at, root, vel, gap=0.75):
+        """Смешок кларнета, как в «Делят добычу»: форшлаг и короткая нота, дважды."""
+        for k in (0, gap):
+            s.add(CLAR, root + 1, at + k, 0.1, vel - 8); s.add(CLAR, root, at + k + 0.1, 0.3, vel)
+
+    def sob(at, root, vel):
+        """Всхлип: вдох вверх на полутон — и короткое падение; дважды, с запинкой."""
+        for k in (0, 0.9):
+            s.add(CLAR, root, at + k, 0.18, vel - 6); s.add(CLAR, root - 1, at + k + 0.2, 0.45, vel)
+
+    def weeping(at):
+        """Круг смеха сквозь слёзы: смех — медленнее и ниже — всхлипы — «уа-уа-уа»."""
+        # Первый замер: кларнет в этом круге −44, тромбон −50 дБ(A) против −34
+        # у мелодии кругом раньше — короткие ноты тонули; громче.
+        giggle(at + 0.5, 69, 76)                       # смеются, как у огня
+        giggle(at + 4.5, 67, 70, gap=1.25)             # медленнее, ниже
+        sob(at + 8.25, 65, 72)                         # ломается
+        s.add(CLAR, 64, at + 10.25, 1.5, 62)           # и выдох вниз
+        for k, p in enumerate((57, 56, 55)):           # «уа-уа-уа» — медленно, тихо
+            s.add(BONE, p, at + 12 + k, 0.9, 72 - k * 4)
+        s.add(BONE, 54, at + 15, 1.0, 58)
+
     ROAD4 = ROAD[:14]                                        # четыре такта пути
+    circle = iter(range(1, 64, 4))
     # круг 1: один бас
-    ground(bar(1), 70, 52)
+    at = bar(next(circle)); ground(at, 70, 52)
     # круг 2: фагот — путь Безымянного
-    ground(bar(5)); s.line(BSN, ROAD4, bar(5), 84, shift=-12)
+    at = bar(next(circle)); ground(at); s.line(BSN, ROAD4, at, 84, shift=-12)
     # круг 3: кларнет — мотив «Крыс»: ре, фа, соль-диез на си-бемоле — и ля
-    ground(bar(9))
-    s.line(CLAR, [(62, 0, 3), (65, 3, 1), (64, 4, 3), (62, 7, 1), (68, 8, 4), (69, 12, 4)], bar(9), 70)
+    at = bar(next(circle)); ground(at)
+    s.line(CLAR, [(62, 0, 3), (65, 3, 1), (64, 4, 3), (62, 7, 1), (68, 8, 4), (69, 12, 4)], at, 70)
+    if sobs:
+        # круг смеха сквозь слёзы
+        at = bar(next(circle)); ground(at, 58, 40); weeping(at)
     # круг 4: гобой — обрывок надежды, с арфой
-    ground(bar(13), 60, 42, harp=True)
+    at = bar(next(circle)); ground(at, 60, 42, harp=True)
     s.line(OBOE, [(69, 0, 1), (70, 1, 1), (72, 2, 2), (72, 4, 1), (70, 5, 1), (69, 6, 2),
-                  (70, 8, 1), (69, 9, 1), (67, 10, 2), (65, 12, 2), (64, 14, 2)], bar(13), 70)
+                  (70, 8, 1), (69, 9, 1), (67, 10, 2), (65, 12, 2), (64, 14, 2)], at, 70)
     # круг 5: путь пополам — фагот два такта, кларнет два
-    ground(bar(17))
-    s.line(BSN, ROAD[:7], bar(17), 82, shift=-12)
-    s.line(CLAR, [(p, st - 8, d) for p, st, d in ROAD[7:14]], bar(19), 68)
+    at = bar(next(circle)); ground(at)
+    s.line(BSN, ROAD[:7], at, 82, shift=-12)
+    s.line(CLAR, [(p, st - 8, d) for p, st, d in ROAD[7:14]], at + 8, 68)
     # круг 6: остались бас и фагот — путь до конца, тихо
-    ground(bar(21), 56, 38)
+    at = bar(next(circle)); ground(at, 56, 38)
     s.line(BSN, [(62, 0, 1), (64, 1, 1), (65, 2, 1), (67, 3, 1), (69, 4, 4),
-                 (67, 8, 2), (65, 10, 2), (64, 12, 2), (61, 14, 2)], bar(21), 74, shift=-12)
-    return s, 52, bar(25)
+                 (67, 8, 2), (65, 10, 2), (64, 12, 2), (61, 14, 2)], at, 74, shift=-12)
+    return s, 52, at + 16
 
 
 def burden():
@@ -685,7 +719,7 @@ def burden():
 
 PIECES = {'fire': fire, 'trail': trail, 'hide': hide, 'flee': flee, 'fight': fight,
           'loot': loot, 'rat': rat, 'lullaby': lullaby, 'refuge': refuge,
-          'song': lonely_song, 'lament': lament, 'burden': burden}
+          'song': lonely_song, 'lament': lament, 'weep': lambda: lament(sobs=True), 'burden': burden}
 
 if __name__ == '__main__':
     name, out = sys.argv[1], sys.argv[2]
