@@ -323,14 +323,15 @@ def charm(b):
     тонкий шнурок терялся бы под подбородком.
     """
     z = P["shoulder"] + 0.026
-    b.add(*ring((0, 0.004, z), 0.068, 0.022, scale=(1.0, 0.86, 0.45), segs=24), bone="Chest")
+    # Сечение 0,016: при 0,022 на рослом Каргане ворот читался тарелкой.
+    b.add(*ring((0, 0.004, z), 0.066, 0.016, scale=(1.0, 0.86, 0.55), segs=24), bone="Chest")
     # Ромбы — по верху ворота, восемь по кругу; спереди и сзади по одному
     # на оси, чтобы узор не косил.
     for i in range(8):
         a = 2.0 * math.pi * i / 8 + math.pi * 0.5
-        x, y = math.cos(a) * 0.068, 0.004 + math.sin(a) * 0.068 * 0.86
-        verts, faces = box((x, y, z + 0.010), (0.016, 0.016, 0.004))
-        verts = tilt(verts, (x, y, z + 0.010), "z", 45.0 + math.degrees(a))
+        x, y = math.cos(a) * 0.066, 0.004 + math.sin(a) * 0.066 * 0.86
+        verts, faces = box((x, y, z + 0.009), (0.014, 0.014, 0.004))
+        verts = tilt(verts, (x, y, z + 0.009), "z", 45.0 + math.degrees(a))
         b.add(verts, faces, bone="Chest", mat=1)
 
 
