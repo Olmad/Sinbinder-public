@@ -610,13 +610,10 @@ namespace Sinbinder.Gameplay
             float tall = (seasoned ? 1.50f : 1.20f) * (0.95f + (stamp % 6) * 0.02f);
             float thick = 0.50f * (0.90f + ((stamp / 6) % 6) * 0.04f);
 
+            // Братьев видно по одной ленте на плече на двоих (Wardrobe,
+            // «BrotherBand»). Бирюзовый куб над головой висел здесь и после
+            // ленты — автор, 23 октября: «убери летающий знак у братьев».
             WarriorLook.Build(go, member.Shell, tall, thick, tall * 0.5f);
-
-            // Братьев видно без наведения: у обоих над головой одна
-            // и та же бирюзовая метка. Подпись при взгляде — вторая
-            // ступень, а здесь нужна первая: игрок должен заметить пару
-            // до того, как задумается, кто есть кто.
-            if (member.Brother) BrotherMark(go.transform);
 
             // Знамя «Крыс» — на том, кто его несёт: Хорь с начала,
             // в склепе — тот, кто донёс (RatBanner).
@@ -632,24 +629,6 @@ namespace Sinbinder.Gameplay
         private void Banner()
         {
             if (GetComponent<RatBanner>() == null) gameObject.AddComponent<RatBanner>();
-        }
-
-        /// <summary>Метка брата по оружию. Одна на двоих, потому и узнаётся.</summary>
-        private static void BrotherMark(Transform root)
-        {
-            var mark = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mark.name = "Брат по оружию";
-            mark.transform.SetParent(root);
-            mark.transform.localPosition = new Vector3(0f, 1.62f, 0f);
-            mark.transform.localScale = new Vector3(0.34f, 0.1f, 0.34f);
-            mark.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
-
-            var renderer = mark.GetComponent<Renderer>();
-            if (renderer != null) renderer.material.color = new Color(0.25f, 0.80f, 0.74f);
-
-            // Коллайдер снят: метка не должна ловить ни луч выделения,
-            // ни удар. Она знак, а не часть тела.
-            Object.Destroy(mark.GetComponent<Collider>());
         }
     }
 }

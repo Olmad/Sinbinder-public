@@ -75,6 +75,8 @@ namespace Sinbinder.Gameplay
             { "PauldronRight", "RightShoulder" },
             { "Net", "RightShoulder" },
             { "BrotherBand", "LeftUpperArm" },
+            // Оберег цветом греха — ворот на плечах (wear.py, «charm»).
+            { "Charm", "Chest" },
 
             { "Flasks", "Spine" },
             { "Tabard", "Spine" },
@@ -167,6 +169,8 @@ namespace Sinbinder.Gameplay
             {
                 var worn = Put(item, shell, bones, binds, null);
                 if (worn == null) continue;
+                if (item == "Charm" && warrior.Soul != null)
+                    Tint(worn, "Charm", SinPalette.Of(warrior.Soul.Sin));
                 if (Hands.Contains(item)) inHand = worn;
                 else if (item.EndsWith(StowedSuffix)) stowed = worn;
             }
@@ -482,6 +486,13 @@ namespace Sinbinder.Gameplay
                 yield return "LegendBanner";
                 if (warrior.Shell == ShellType.Skeleton) yield return "LegendEyes";
             }
+
+            // Оберег: ворот, вышитый цветом греха (суд облачной 22 октября,
+            // 28-ORDERS §8.1). Грех читается сверху — внутри мира, а не
+            // кольцом интерфейса. Под саваном призрака его не видно, а голем
+            // — камень: на них не шьют.
+            if (warrior.Soul != null && warrior.Shell != ShellType.Ghost && warrior.Shell != ShellType.Golem)
+                yield return "Charm";
 
             // Братья по оружию — одна лента на двоих. Была бирюзовым
             // кубом над головой; стала вещью, которую носят.

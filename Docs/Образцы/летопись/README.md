@@ -7,7 +7,8 @@
 
 | Дата | Что изменилось | Кадров | Где записано | Автор |
 |---|---|---|---|---|
-| 22 октября | [За картами сидят](2026-10-22%2011%20%D0%B7%D0%B0%20%D0%BA%D0%B0%D1%80%D1%82%D0%B0%D0%BC%D0%B8%20%D1%81%D0%B8%D0%B4%D1%8F%D1%82/README.md) | 1 | 14-HANDOFF.md §111.43 | ждём |
+| 23 октября | [Оберег — ворот цветом греха; у братьев нет куба над головой](2026-10-23%201%20%D0%BE%D0%B1%D0%B5%D1%80%D0%B5%D0%B3%20%D1%86%D0%B2%D0%B5%D1%82%D0%BE%D0%BC%20%D0%B3%D1%80%D0%B5%D1%85%D0%B0/README.md) | 1 | 14-HANDOFF.md §111.44 · 28-ORDERS.md §8.1 | ждём |
+| 22 октября | [За картами сидят](2026-10-22%2011%20%D0%B7%D0%B0%20%D0%BA%D0%B0%D1%80%D1%82%D0%B0%D0%BC%D0%B8%20%D1%81%D0%B8%D0%B4%D1%8F%D1%82/README.md) | 1 | 14-HANDOFF.md §111.43 · [`cd850bb`](https://github.com/Olmad/Sinbinder-public/commit/cd850bb) | ждём |
 | 22 октября | [Разговор как в Skyrim/Fallout; журнал по записям](2026-10-22%2010%20%D1%80%D0%B0%D0%B7%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%20%D0%B8%20%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB/README.md) | 2 | 14-HANDOFF.md §111.42 · [`906f5ee`](https://github.com/Olmad/Sinbinder-public/commit/906f5ee) | ждём |
 | 22 октября | [Вещи шатра на F: карта с углём, банки, постель](2026-10-22%209%20%D0%B2%D0%B5%D1%89%D0%B8%20%D1%88%D0%B0%D1%82%D1%80%D0%B0/README.md) | 1 | 14-HANDOFF.md §111.41 · [`1edff05`](https://github.com/Olmad/Sinbinder-public/commit/1edff05) | ждём |
 | 22 октября | [Сон в начале: огонёк во тьме, пробуждение у постели, F — подняться](2026-10-22%208%20%D1%81%D0%BE%D0%BD/README.md) | 2 | 14-HANDOFF.md §111.39 · [`4e93869`](https://github.com/Olmad/Sinbinder-public/commit/4e93869) | ждём |

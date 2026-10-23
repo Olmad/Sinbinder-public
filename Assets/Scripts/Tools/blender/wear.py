@@ -311,6 +311,29 @@ def brother_band(b):
                 0.038, 0.038, segs=14), bone="LeftUpperArm")
 
 
+def charm(b):
+    """
+    Оберег — ворот с вышитыми ромбами, лежит на плечах вокруг шеи.
+    Суд облачной 22 октября (`28-ORDERS.md` §8.1): грех — в силуэте,
+    цвет читается сверху; вышивка решает это внутри мира, а не кольцом
+    интерфейса. Ворот — материал «Charm»: его красит игра цветом греха
+    (`Wardrobe`, `SinPalette`), ромбы — тёмной нитью.
+
+    Сверху ворот — первое после головы, поэтому он плоский и широкий:
+    тонкий шнурок терялся бы под подбородком.
+    """
+    z = P["shoulder"] + 0.026
+    b.add(*ring((0, 0.004, z), 0.068, 0.022, scale=(1.0, 0.86, 0.45), segs=24), bone="Chest")
+    # Ромбы — по верху ворота, восемь по кругу; спереди и сзади по одному
+    # на оси, чтобы узор не косил.
+    for i in range(8):
+        a = 2.0 * math.pi * i / 8 + math.pi * 0.5
+        x, y = math.cos(a) * 0.068, 0.004 + math.sin(a) * 0.068 * 0.86
+        verts, faces = box((x, y, z + 0.010), (0.016, 0.016, 0.004))
+        verts = tilt(verts, (x, y, z + 0.010), "z", 45.0 + math.degrees(a))
+        b.add(verts, faces, bone="Chest", mat=1)
+
+
 def quiver(b):
     """Колчан за спиной — охотник и лучник."""
     sh = P["shoulder"]
@@ -863,6 +886,7 @@ ITEMS = [
     Item("PauldronLeft",   "LeftShoulder",  lambda b: pauldron(b, 1),  [IRON, IRON, DARK]),
     Item("PauldronRight",  "RightShoulder", lambda b: pauldron(b, -1), [IRON, IRON, DARK]),
     Item("BrotherBand",    "LeftUpperArm",  brother_band,              [(("Band"), (0.420, 0.300, 0.190, 1.0)), LEATHER, DARK]),
+    Item("Charm",          "Chest", charm,           [("Charm", (0.800, 0.790, 0.760, 1.0)), DARK, DARK]),
     Item("Quiver",         "Chest", quiver,          [LEATHER, BONE, DARK]),
     Item("Bow",            "Chest", bow,             [LEATHER, LEATHER, DARK]),
     Item("Net",            "RightShoulder", net,     [CLOTH, CLOTH, DARK]),
@@ -1105,6 +1129,9 @@ SKELETON_ITEMS = [
     ("PauldronLeft", None, about((S["shoulder_x"] - 0.004, 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
     ("PauldronRight", None, about((-(S["shoulder_x"] - 0.004), 0.004, S["shoulder"] + 0.008), 0.80, -0.012)),
     ("BrotherBand", None, around_arm(0.55)),
+    # Оберег — на ключицах, поджат чуть-чуть: сильнее — тонул между ними
+    # (кадр 23 октября: у Ждана виднелись два лиловых пятнышка).
+    ("Charm", None, hug(0.94, y0=0.004)),
     ("Bow", None, shift(-0.022)),
     ("Cloak", None, hug(0.74, y0=0.010)),
     ("RavenMantle", raven_mantle_skeleton, None),
