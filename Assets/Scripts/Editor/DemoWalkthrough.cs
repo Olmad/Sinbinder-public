@@ -514,6 +514,8 @@ namespace Sinbinder.EditorTools
                 // провожатым: позже сцена успевает пройти до шага, без кадра.
                 S("у огня: Хорь назвал отряд Крысами", null, BannerNamed, 90f),
 
+                S("лагерь: балалайка у костра, глаза Каргана", null, CampLooks, 5f),
+
                 S("Карган позвал к шару", null,
                   () => Summoned(), 15f),
             };
@@ -2302,6 +2304,37 @@ namespace Sinbinder.EditorTools
         /// полторы секунды (раньше кадр шага выходил чёрным: затемнение);
         /// потом «начать заново», как и прежде.
         /// </summary>
+        /// <summary>
+        /// Два кадра вблизи: балалайка у костра (28-ORDERS §8.2) и голова Каргана —
+        /// горят ли глаза цветом Гордыни, не уходя в белый (§135.51). Портрет целится
+        /// в опору + метр — метку ставим на метр ниже того, что снимаем.
+        /// </summary>
+        private static bool CampLooks()
+        {
+            void Close(string name, Vector3 at, Vector3 dir)
+            {
+                var mark = new GameObject("метка кадра");
+                mark.transform.position = at - Vector3.up * 1.2f;
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", name, mark.transform, dir);
+                UnityEngine.Object.Destroy(mark);
+            }
+
+            var lute = GameObject.Find("Balalaika");
+            if (lute != null) Close("балалайка у костра", lute.transform.position + Vector3.up * 0.3f, Vector3.zero);
+            else Write("  [ЛАГЕРЬ] балалайки нет — props.py не собран?");
+
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (!w.DisplayName.StartsWith("Карган")) continue;
+                Transform head = null;
+                foreach (var t in w.GetComponentsInChildren<Transform>())
+                    if (t.name == "Head") { head = t; break; }
+                if (head != null) Close("Карган — глаза", head.position, w.transform.forward);
+                break;
+            }
+            return true;
+        }
+
         /// <summary>Снят ли кадр спины со знаменем.</summary>
         private static bool _bannerShot;
 

@@ -7,7 +7,8 @@
 
 | Дата | Что изменилось | Кадров | Где записано | Автор |
 |---|---|---|---|---|
-| 23 октября | [Знамя «Крыс» — Греховод поднял по F](2026-10-23%204%20%D0%B7%D0%BD%D0%B0%D0%BC%D1%8F%20%D0%BF%D0%BE%D0%B4%D0%BD%D1%8F%D1%82%D0%BE%20%D0%BF%D0%BE%20F/README.md) | 2 | 14-HANDOFF.md §111.46 | ждём |
+| 23 октября | [Балалайка у костра; глаза Каргана вблизи](2026-10-23%205%20%D0%B1%D0%B0%D0%BB%D0%B0%D0%BB%D0%B0%D0%B9%D0%BA%D0%B0%20%D0%B8%20%D0%B3%D0%BB%D0%B0%D0%B7%D0%B0/README.md) | 2 | 14-HANDOFF.md §111.47 · 28-ORDERS.md §8.2 | ждём |
+| 23 октября | [Знамя «Крыс» — Греховод поднял по F](2026-10-23%204%20%D0%B7%D0%BD%D0%B0%D0%BC%D1%8F%20%D0%BF%D0%BE%D0%B4%D0%BD%D1%8F%D1%82%D0%BE%20%D0%BF%D0%BE%20F/README.md) | 2 | 14-HANDOFF.md §111.46 · [`c9c0f64`](https://github.com/Olmad/Sinbinder-public/commit/c9c0f64) | ждём |
 | 23 октября | [Знамя «Крыс» на спине Хоря](2026-10-23%203%20%D0%B7%D0%BD%D0%B0%D0%BC%D1%8F%20%D0%9A%D1%80%D1%8B%D1%81/README.md) | 1 | 14-HANDOFF.md §111.45 · 28-ORDERS.md «знамя Крыс» · [`916ba71`](https://github.com/Olmad/Sinbinder-public/commit/916ba71) | ждём |
 | 23 октября | [Лагерь в высоком бору — план сверху](2026-10-23%202%20%D0%BB%D0%B0%D0%B3%D0%B5%D1%80%D1%8C%20%D0%B2%20%D0%B1%D0%BE%D1%80%D1%83/README.md) | 1 | 14-HANDOFF.md §111.45 · 28-ORDERS.md «перенос лагеря в высокий бор» · [`916ba71`](https://github.com/Olmad/Sinbinder-public/commit/916ba71) | ждём |
 | 23 октября | [Оберег — ворот цветом греха; у братьев нет куба над головой](2026-10-23%201%20%D0%BE%D0%B1%D0%B5%D1%80%D0%B5%D0%B3%20%D1%86%D0%B2%D0%B5%D1%82%D0%BE%D0%BC%20%D0%B3%D1%80%D0%B5%D1%85%D0%B0/README.md) | 1 | 14-HANDOFF.md §111.44 · 28-ORDERS.md §8.1 · [`fe9e946`](https://github.com/Olmad/Sinbinder-public/commit/fe9e946) | ждём |
