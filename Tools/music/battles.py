@@ -783,7 +783,104 @@ def dominion():
     return s, 100, bar(33)
 
 
-THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final, 'stalked': stalked, 'dominion': dominion,
+def scatter():
+    """Первая волна набега — «Шуганули» (23 октября). Автор: «Помнишь мелодию
+    крыс. Вот сделать что-нибудь в этом же духе, но только для слабенького
+    боя». В первой волне побитые охотники бегут, едва к ним подойдёшь,
+    а наши их гоняют: охотники сами стали крысами. Язык «The Rat Pack» —
+    фагот, кларнет, пиццикато, коробочки, ни хора, ни меди на полную;
+    своё: тема Владыки отрывисто у фагота — войско Владыки гонит непрошеных;
+    сбег кларнета вниз — удирают; дважды за круг тромбон «уа-уа-уа» вниз
+    полутонами — над проигравшим. Против Владыки они мелочь, и музыка это
+    знает: жуть — второй волне («The Hunted»), контраст — во всю ширину.
+    Урок «Grind»: гармония ходит, такт передышки через три, высокое — краской.
+    36 тактов, около 1:05 — первая волна не слышит шва."""
+    BSN, CLAR, PIZZ = CEL, HARPSI, HARP
+    s = Orchestra({BSN: 110, CLAR: 96, PIZZ: 100, CELLO: 90, BASS: 96, TIMP: 90,
+                   BONE: 100, DRUMS: 96, PAD: 56, PICC: 100},
+                  program={BSN: 70, CLAR: 71, PIZZ: 45})
+    # Тема Владыки (ре–ля–соль–фа–ми–ре), отрывисто: войско, а не царь
+    LORD = [(50, 0, 0.5), (57, 1, 0.5), (55, 2, 0.5), (53, 3, 0.5), (52, 4, 1), (50, 6, 1)]
+    # Удирают: сбег кларнета шестнадцатыми — ре, до-диез, до, си, си-бемоль, ля
+    FLEE = [(62, 0, 0.25), (61, 0.25, 0.25), (60, 0.5, 0.25), (59, 0.75, 0.25),
+            (58, 1, 0.25), (57, 1.25, 0.75)]
+
+    def walk(at, roots, vel=64):
+        """Пиццикато шагом внизу: корень и квинта; такт тишины через три."""
+        for b, r in enumerate(roots):
+            if b % 4 == 3: continue
+            for k in range(4):
+                s.add(PIZZ, r if k % 2 == 0 else r + 7, at + b * 4 + k, 0.4, vel + (8 if k == 0 else 0))
+
+    def feet(at, bars, vel=52):
+        """Топот бегущих — коробочки, но только краской и редко."""
+        for b in range(bars):
+            if b % 2: continue
+            for k in (0, 1, 2, 3, 4, 5):
+                drum(s, WOOD_HI if k % 2 == 0 else WOOD_LO, at + b * 4 + 2 + k * 0.25, vel + (8 if k == 0 else 0), 0.25)
+
+    def low(at, roots, vel=74):
+        """Бас: корень на раз — контрабас под пиццикато."""
+        for b, r in enumerate(roots):
+            if b % 4 == 3: continue
+            s.add(BASS, r - 12, at + b * 4, 1.5, vel)
+
+    def wah(at, vel=92):
+        """Тромбон над проигравшим: ля, ля-бемоль, соль — и долгое фа-диез."""
+        for k, p in enumerate((45, 44, 43)):
+            s.add(BONE, p, at + k * 0.75, 0.6, vel - k * 4)
+        s.add(BONE, 42, at + 2.25, 1.6, vel - 14)
+
+    def tap(at, bars, vel=66):
+        """Литавры — щелчок на раз через такт, ре и ля."""
+        for b in range(0, bars, 2):
+            s.add(TIMP, 38 if b % 4 == 0 else 45, at + b * 4, 0.5, vel)
+
+    D = [50, 50, 46, 46, 43, 43, 45, 45]          # Dm Dm Bb Bb Gm Gm A A — корни пиццикато
+    F = [53, 53, 48, 48, 46, 46, 48, 45]          # фа мажор: F F C C Bb Bb C A
+    # A — такты 1–8: шаг пиццикато, тема Владыки у фагота, кларнет удирает
+    walk(bar(1), D)
+    low(bar(1), D)
+    s.line(BSN, LORD, bar(1), 92); s.line(BSN, LORD, bar(3), 88, shift=-2)
+    s.line(CLAR, FLEE, bar(4) + 2, 78)
+    s.line(BSN, LORD, bar(5), 96); s.line(CLAR, LORD, bar(7), 84, shift=7)
+    s.line(CLAR, FLEE, bar(8) + 2, 80)
+    tap(bar(1), 8)
+    # B — такты 9–16: погоня — канон фагот / кларнет, топот, бас уходит
+    walk(bar(9), D, 68)
+    low(bar(9), D, 78)
+    feet(bar(9), 6)
+    for k in range(4):
+        s.line(BSN, LORD, bar(9) + k * 8, 94)
+        s.line(CLAR, LORD, bar(9) + k * 8 + 1, 82, shift=7)
+        s.line(CLAR, FLEE, bar(9) + k * 8 + 6, 80, shift=-12 if k % 2 else 0)
+    wah(bar(16))
+    # C — такты 17–24: фа мажор — светлее, кларнет ведёт тему, фагот подпевает
+    walk(bar(17), F, 60)
+    low(bar(17), F, 70)
+    s.line(CLAR, LORD, bar(17), 88, shift=3); s.line(CLAR, LORD, bar(19), 84, shift=1)
+    s.line(BSN, LORD, bar(21), 90, shift=3); s.line(CLAR, LORD, bar(21) + 2, 80, shift=10)
+    for p in (53, 57, 60): s.add(PAD, p, bar(17), 16, 36)
+    for p in (48, 52, 55): s.add(PAD, p, bar(21), 16, 36)
+    s.line(CLAR, FLEE, bar(24) + 2, 82)
+    # D — такты 25–32: снова ре — всё вместе, топот, писк пикколо краской
+    walk(bar(25), D, 70)
+    low(bar(25), D, 80)
+    feet(bar(25), 8, 56)
+    tap(bar(25), 8, 74)
+    for k in range(4):
+        s.line(BSN, LORD, bar(25) + k * 8, 98)
+        s.line(CLAR, LORD, bar(25) + k * 8 + 2, 86, shift=5)   # октавой выше колол слух, как у «Крыс»
+    for k in range(6): s.add(PICC, 86 if k % 2 == 0 else 87, bar(28) + 2 + k * 0.125, 0.125, 64)
+    # E — такты 33–36: выдох — пиццикато и фагот одни, тромбон, к петле
+    walk(bar(33), [50, 50, 45, 45], 58)
+    s.line(BSN, LORD, bar(33), 84)
+    wah(bar(35), 86)
+    s.add(TIMP, 38, bar(36) + 3, 0.5, 70)
+    return s, 132, bar(37)
+
+
+THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final, 'stalked': stalked, 'dominion': dominion, 'scatter': scatter,
           'hunted': hunted}
 
 if __name__ == '__main__':
