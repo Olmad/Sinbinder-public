@@ -19,7 +19,7 @@
 # а не петли; петля — у «Отбиваются», она может стать первой волной набега).
 #
 #   python3 Tools/music/rats.py <пьеса> выход.mid [--loop]
-#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament weep burden
+#   пьесы: fire trail hide flee fight loot rat lullaby; склеп: refuge song lament weep weep_run weep_wah burden
 import sys
 from score import loop_tempo
 from orchestra import (Orchestra, CHORD, bar, HORN, STR, PAD, CELLO, BASS, BONE,
@@ -567,7 +567,7 @@ def lonely_song():
     return s, 60, b3(33)
 
 
-def lament(sobs=False):
+def lament(sobs=False, laugh='giggle'):
     """Склеп, вариант 3 — «Нас мало». Плач на нисходящем басе: ре — до —
     си-бемоль — ля, четыре такта по кругу, как в старых плачах (Перселл,
     «Дидона»). Круг — сам себе петля. Над ним по очереди, не вместе:
@@ -581,7 +581,17 @@ def lament(sobs=False):
     добычу»), смеётся тем же смешком — и смех медленнеет, опускается,
     ломается во всхлипы; потом тромбон тихо и медленно — «уа-уа-уа»
     проигравшего из «Шуганули», и смешной звук становится плачем.
-    Никто никого не перебивает: в этом круге больше никто не поёт."""
+    Никто никого не перебивает: в этом круге больше никто не поёт.
+
+    laugh — автор о первом смехе: «Смех какой-то не такой. Но да, лучше».
+    Тот смешок был из «Делят добычу»; любимый смех автора — в «Шуганули»
+    («хорошая версия со смехом»), и он там двух видов:
+    'run' — сбег кларнета «хи-хи-хи-хи» полутонами вниз; здесь он сперва
+            как в «Шуганули», потом медленнее, потом ломается на вдохи
+            и выдыхается долгой нотой;
+    'wah' — тромбон «уа-уа-уа» над проигравшим; теперь проигравшие — они,
+            и «уа» каждый раз медленнее и выше — смех над собой становится
+            плачем (по-русски «уа» — и есть плач)."""
     s = Orchestra({BSN: 108, CLAR: 98, OBOE: 86, PIZZ: 120, PAD: 70, CELLO: 92, BASS: 88, PIANO: 110,
                    BONE: 84}, program={**FOREST, PIANO: 46})
     GROUND = ['Dm', 'C', 'Bb', 'A']
@@ -609,8 +619,35 @@ def lament(sobs=False):
         for k in (0, 0.9):
             s.add(CLAR, root, at + k, 0.18, vel - 6); s.add(CLAR, root - 1, at + k + 0.2, 0.45, vel)
 
+    def run(at, notes, step, vel):
+        """Сбег кларнета из «Шуганули»: полутоны вниз, каждая нота — step долей."""
+        for i, p in enumerate(notes):
+            s.add(CLAR, p, at + i * step, step * 0.7, vel - i * 2)
+
+    def weeping_run(at):
+        """Смех «Шуганули» — медленнее — вдохами — выдох."""
+        run(at + 0.5, [62, 61, 60, 59, 58], 0.25, 80)                # как в «Шуганули»
+        s.add(CLAR, 57, at + 1.75, 0.75, 72)
+        run(at + 4.5, [62, 61, 60, 59], 0.5, 74)                     # медленнее — и без точки
+        for k, p in enumerate((60, 60, 59)):                         # ломается: вдохи с паузой
+            s.add(CLAR, p, at + 8.5 + k * 0.75, 0.22, 70 - k * 3)
+        s.add(CLAR, 57, at + 11, 3, 62)                              # выдох — долго вниз
+        s.swell(CLAR, at + 12, at + 14, 100, 30)
+
+    def weeping_wah(at):
+        """«Уа-уа-уа» из «Шуганули» — медленнее и выше с каждым разом."""
+        def wah(t, top, step, vel):
+            for k in range(3):
+                s.add(BONE, top - k, t + k * step, step * 0.8, vel - k * 4)
+            s.add(BONE, top - 3, t + 3 * step, step * 2.2, vel - 14)
+        wah(at + 0.5, 45, 0.75, 84)                                  # как в «Шуганули»
+        wah(at + 5, 50, 1.0, 78)                                     # медленнее, выше
+        wah(at + 10, 53, 1.25, 72)                                   # ещё — и это уже плач
+
     def weeping(at):
         """Круг смеха сквозь слёзы: смех — медленнее и ниже — всхлипы — «уа-уа-уа»."""
+        if laugh == 'run': return weeping_run(at)
+        if laugh == 'wah': return weeping_wah(at)
         # Первый замер: кларнет в этом круге −44, тромбон −50 дБ(A) против −34
         # у мелодии кругом раньше — короткие ноты тонули; громче.
         giggle(at + 0.5, 69, 76)                       # смеются, как у огня
@@ -719,7 +756,9 @@ def burden():
 
 PIECES = {'fire': fire, 'trail': trail, 'hide': hide, 'flee': flee, 'fight': fight,
           'loot': loot, 'rat': rat, 'lullaby': lullaby, 'refuge': refuge,
-          'song': lonely_song, 'lament': lament, 'weep': lambda: lament(sobs=True), 'burden': burden}
+          'song': lonely_song, 'lament': lament, 'weep': lambda: lament(sobs=True),
+          'weep_run': lambda: lament(sobs=True, laugh='run'),
+          'weep_wah': lambda: lament(sobs=True, laugh='wah'), 'burden': burden}
 
 if __name__ == '__main__':
     name, out = sys.argv[1], sys.argv[2]
