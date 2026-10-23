@@ -51,15 +51,13 @@ namespace Sinbinder.Gameplay
         private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.");
 
         /// <summary>
-        /// Мысль Греховода при пробуждении — курсивом под строкой шатра
-        /// (37-DEMO §8.7; автор, 23.10: «пробуй»). Пара к пешке
-        /// (<see cref="InspectTexts.PawnThought"/>): здесь он думает, что они
-        /// служат ему, — там фигура скажет ему: «Ты думаешь, что двигаешь их».
+        /// Мысль Греховода на выходе — слова автора, 23.10 (37-DEMO §8.7).
+        /// Не в шатре: там «они» не на кого показать, а первая минута и так
+        /// занята — сон, подъём, строка шатра, клавиши, задачи. Здесь — когда
+        /// кран показал лагерь целиком, и следом провожатый сам просится рядом:
+        /// «увязались» сказано — и тут же видно.
         /// </summary>
-        private static readonly string WakeThought = Loc.N("Они думают, что служат мне. Пусть думают.");
-
-        /// <summary>Через сколько секунд после строки шатра проступает мысль.</summary>
-        private const float ThoughtAfter = 2.2f;
+        private static readonly string ArrivalThought = Loc.N("Я хотел уйти один. Но они увязались за мной.");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; }
@@ -98,7 +96,7 @@ namespace Sinbinder.Gameplay
             // смотреть, — «читается как сбой отрисовки» (отзыв игрока 19.10).
             if (view != null) view.Face(door);
             var glow = Glow(tent);
-            var hint = Hint(out var hintGroup, out var thoughtGroup);
+            var hint = Hint(out var hintGroup);
 
             // Ждём, пока выйдет за порог. Строка проявляется не сразу:
             // первую секунду кадр принадлежит шатру.
@@ -107,7 +105,6 @@ namespace Sinbinder.Gameplay
                 // Пока вещь рассказывает (карта, постель — Inspectable), строка
                 // пробуждения молчит: печаталась поверх её строк (прогон 22.10).
                 hintGroup.alpha = Inspectable.Telling ? 0f : Mathf.Clamp01((t - 1.2f) / 1.0f);
-                thoughtGroup.alpha = Inspectable.Telling ? 0f : Mathf.Clamp01((t - 1.2f - ThoughtAfter) / 1.2f);
                 yield return null;
             }
             Destroy(hint);
@@ -121,6 +118,7 @@ namespace Sinbinder.Gameplay
 
             yield return new WaitForSecondsRealtime(Settle);
             yield return Reveal(view);
+            yield return Think(Loc.T(ArrivalThought));
             Busy = false;
         }
 
@@ -388,13 +386,42 @@ namespace Sinbinder.Gameplay
             if (light != null) Destroy(light.gameObject);
         }
 
+        /// <summary>Одна строка внизу, пока Греховод в шатре: что там и как выйти.</summary>
+        private static GameObject Hint(out CanvasGroup group)
+            => Line("Строка пробуждения", Loc.T(WakeLine), UI.UiStyle.Body, Bone, out group);
+
+        private static readonly Color Bone = new(0.90f, 0.84f, 0.72f);
+
         /// <summary>
-        /// Строка внизу, пока Греховод в шатре: что там и как выйти; под ней —
-        /// его мысль, курсивом и тусклее, со своей прозрачностью (проступает позже).
+        /// Мысль — та же строка внизу, курсивом и тусклее (как
+        /// <see cref="UI.Letterbox.Think"/>): проступает, держится, чтобы
+        /// прочли, и тает. Мир не стоит — это не урок, а взгляд.
         /// </summary>
-        private static GameObject Hint(out CanvasGroup group, out CanvasGroup thought)
+        private static IEnumerator Think(string thought)
         {
-            var root = new GameObject("Строка пробуждения");
+            if (string.IsNullOrEmpty(thought)) yield break;
+
+            var root = Line("Мысль Греховода", thought, UI.UiStyle.Thought,
+                            UI.Letterbox.Thinking(Bone), out var group);
+            for (float t = 0f; t < 0.7f; t += Time.unscaledDeltaTime)
+            {
+                group.alpha = Smooth(t / 0.7f);
+                yield return null;
+            }
+            group.alpha = 1f;
+            yield return new WaitForSecondsRealtime(Herald.Hold(thought) + 0.4f);
+            for (float t = 0f; t < 0.7f; t += Time.unscaledDeltaTime)
+            {
+                group.alpha = 1f - Smooth(t / 0.7f);
+                yield return null;
+            }
+            Destroy(root);
+        }
+
+        /// <summary>Свой холст и одна строка внизу по центру, прозрачная до показа.</summary>
+        private static GameObject Line(string name, string words, Font font, Color colour, out CanvasGroup group)
+        {
+            var root = new GameObject(name);
             var canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 84;
@@ -417,39 +444,15 @@ namespace Sinbinder.Gameplay
             rt.anchoredPosition = new Vector2(0f, 110f);
 
             var text = line.AddComponent<Text>();
-            text.font = UI.UiStyle.Body;
+            text.font = font;
             text.fontSize = 30;
             text.alignment = TextAnchor.LowerCenter;
-            text.color = new Color(0.90f, 0.84f, 0.72f);
+            text.color = colour;
             text.raycastTarget = false;
-            text.text = Loc.T(WakeLine);
+            text.text = words;
             var shadow = line.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
             shadow.effectDistance = new Vector2(2f, -2f);
-
-            var mind = new GameObject("Мысль", typeof(RectTransform));
-            mind.transform.SetParent(root.transform, false);
-            var mt = (RectTransform)mind.transform;
-            mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0f);
-            mt.pivot = new Vector2(0.5f, 1f);
-            mt.sizeDelta = new Vector2(1400f, 60f);
-            mt.anchoredPosition = new Vector2(0f, 100f);   // под строкой шатра, впритык
-
-            thought = mind.AddComponent<CanvasGroup>();
-            thought.alpha = 0f;
-            thought.interactable = false;
-            thought.blocksRaycasts = false;
-
-            var said = mind.AddComponent<Text>();
-            said.font = UI.UiStyle.Thought;
-            said.fontSize = 27;
-            said.alignment = TextAnchor.UpperCenter;
-            said.color = UI.Letterbox.Thinking(text.color);
-            said.raycastTarget = false;
-            said.text = Loc.T(WakeThought);
-            var deep = mind.AddComponent<Shadow>();
-            deep.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            deep.effectDistance = new Vector2(2f, -2f);
 
             return root;
         }

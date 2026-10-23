@@ -4876,8 +4876,8 @@ msgid "Каждая фигура однажды перестаёт слушат�
 msgstr "Every piece stops obeying the hand one day. Even the one that holds the board."
 
 #: Gameplay/InspectTexts.cs
-msgid "Пешки не разговаривают. Значит, говорила не она."
-msgstr "Pawns don't speak. So it wasn't the pawn talking."
+msgid "Это был Его голос. Он по-своему прав. Но я продолжу их вести. А потом придумаем, что нам делать."
+msgstr "That was His voice. He is right, in His way. But I will keep leading them. Then we'll figure out what to do."
 
 #: Gameplay/InspectTexts.cs
 msgid "F — рассмотреть карту"
@@ -4930,6 +4930,10 @@ msgstr "The furs are still warm."
 #: Gameplay/InspectTexts.cs
 msgid "Свет из сна всё ещё стоит перед глазами."
 msgstr "The light from the dream still hangs before your eyes."
+
+#: Gameplay/InspectTexts.cs
+msgid "Он точно будет зол, что я забрал Его последних пешек."
+msgstr "He will surely be angry that I took His last pawns."
 
 #: Gameplay/Inspectable.cs
 msgid "F — осмотреть"
@@ -5048,8 +5052,8 @@ msgid "Подойдите к душе и нажмите E — она ляжет 
 msgstr "Walk up to the soul and press E — it will go into an empty jar."
 
 #: Gameplay/Lesson.cs
-msgid "Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."
-msgstr "This soul will wait for you. The next ones will fade while you walk."
+msgid "Эта душа подождёт. Другие гаснут, пока вы идёте: чем позже, тем меньше от них останется."
+msgstr "This soul will wait. The others fade while you walk: the later you come, the less is left of them."
 
 #: Gameplay/Lesson.cs
 msgid "Выберите ответ — цифрой или мышью."
@@ -5068,8 +5072,8 @@ msgid "Воину задолжали. В разговоре долг отдаю�
 msgstr "This warrior is owed pay. In a conversation, debts are paid hand to hand."
 
 #: Gameplay/Lesson.cs
-msgid "В разговоре — как воин, и вещи из рук в руки."
-msgstr "In a conversation — how the warrior is, and gear hand to hand."
+msgid "В разговоре узнают, как воин, и передают вещи из рук в руки."
+msgstr "In a conversation you learn how the warrior is doing and hand things over in person."
 
 #: Gameplay/Lesson.cs
 msgid "{0} — смотреть глазами Греховода."
@@ -5108,8 +5112,8 @@ msgid "F у ложа тела — забрать тело и взять со с�
 msgstr "F at the body cradle — take the body back and pick another from the table."
 
 #: Gameplay/Lesson.cs
-msgid "F у рычага связывания — поднять."
-msgstr "F at the binding lever — raise."
+msgid "Подойдите к рычагу и нажмите F — воин встанет."
+msgstr "Go to the lever and press F — the warrior will rise."
 
 #: Gameplay/Lesson.cs
 msgid "Подойдите к гнезду души на устройстве и нажмите F — вложить."
@@ -5176,8 +5180,8 @@ msgid "За пологом трещит костёр. Лагерь ждёт."
 msgstr "Beyond the tent flap a fire crackles. The camp is waiting."
 
 #: Gameplay/OpeningReveal.cs
-msgid "Они думают, что служат мне. Пусть думают."
-msgstr "They think they serve me. Let them think so."
+msgid "Я хотел уйти один. Но они увязались за мной."
+msgstr "I meant to leave alone. But they tagged along."
 
 #: Gameplay/OpeningReveal.cs
 msgid "Иди к свету — W"
@@ -7208,6 +7212,26 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Пешки не разговаривают. Значит, говорила не она."
+msgstr "Pawns don't speak. So it wasn't the pawn talking."
+
+#. нет в коде
+msgid "Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."
+msgstr "This soul will wait for you. The next ones will fade while you walk."
+
+#. нет в коде
+msgid "В разговоре — как воин, и вещи из рук в руки."
+msgstr "In a conversation — how the warrior is, and gear hand to hand."
+
+#. нет в коде
+msgid "F у рычага связывания — поднять."
+msgstr "F at the binding lever — raise."
+
+#. нет в коде
+msgid "Они думают, что служат мне. Пусть думают."
+msgstr "They think they serve me. Let them think so."
 
 #. нет в коде
 msgid "1 — как воин и как к вам. 2 — отдать долг, если он есть. 3 — снаряжение."

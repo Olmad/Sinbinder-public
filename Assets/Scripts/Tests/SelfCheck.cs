@@ -1151,19 +1151,21 @@ namespace Sinbinder.Tests
         }
 
         /// <summary>
-        /// Мысли Греховода (37-DEMO §8.7; автор, 23.10: «пробуй»): у дерева
-        /// и пешки последнее слово — его, у прочих вещей мысли нет; мысль
-        /// тусклее реплики, а не ярче.
+        /// Мысли Греховода (37-DEMO §8.7; автор, 23.10: «пробуй»): у дерева,
+        /// пешки и постели последнее слово — его, у прочих вещей мысли нет;
+        /// мысль тусклее реплики, а не ярче.
         /// </summary>
         private static void Thoughts()
         {
             var tree = InspectTexts.For("AxeTree");
             var pawn = InspectTexts.For("Pawn");
             var map = InspectTexts.For("Map");
+            var bed = InspectTexts.For("Bed");
             Check(tree.HasValue && !string.IsNullOrEmpty(tree.Value.Thought)
+                  && bed.HasValue && !string.IsNullOrEmpty(bed.Value.Thought)
                   && pawn.HasValue && !string.IsNullOrEmpty(pawn.Value.Thought)
                   && map.HasValue && string.IsNullOrEmpty(map.Value.Thought),
-                  "мысли: у дерева и пешки — мысль Греховода, у карты — нет");
+                  "мысли: у дерева, пешки и постели — мысль Греховода, у карты — нет");
 
             var bone = new Color(0.90f, 0.84f, 0.72f);
             var mind = UI.Letterbox.Thinking(bone);

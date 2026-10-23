@@ -33,7 +33,7 @@ namespace Sinbinder.Gameplay
                 case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn, PawnThought);
                 case "Map": return (MapPrompt, MapSpeaker, Map, "");
                 case "Jars": return (JarsPrompt, JarsSpeaker, Jars, "");
-                case "Bed": return (BedPrompt, BedSpeaker, Bed, "");
+                case "Bed": return (BedPrompt, BedSpeaker, Bed, BedThought);
                 default: return null;
             }
         }
@@ -74,10 +74,11 @@ namespace Sinbinder.Gameplay
             Loc.N("Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."),
         };
 
-        // Говорила пешка голосом Смерти (Audio.DeathVoice) — Греховод это слышит.
-        // Пара к мысли при пробуждении (OpeningReveal.WakeThought): там он думает,
-        // что они служат ему, здесь фигура говорит ему то же самое о нём.
-        public static readonly string PawnThought = Loc.N("Пешки не разговаривают. Значит, говорила не она.");
+        // Слова автора, 23.10. Пешка говорила голосом Смерти (Audio.DeathVoice):
+        // «Это был Его голос» — мост облачной, чтобы «Он» не спутали с тем, кто
+        // вырезал пешку (вторая строка пешки). «Он» с большой — бог, не названный.
+        public static readonly string PawnThought =
+            Loc.N("Это был Его голос. Он по-своему прав. Но я продолжу их вести. А потом придумаем, что нам делать.");
 
         // ── Шатёр Греховода (автор, 21 октября, п. 24: «хочется больше
         // взаимодействий с предметами, вероятно, даже в палатке Греховода»).
@@ -116,5 +117,11 @@ namespace Sinbinder.Gameplay
             Loc.N("Шкуры ещё тёплые."),
             Loc.N("Свет из сна всё ещё стоит перед глазами."),
         };
+
+        // Слова автора, 23.10 — третья фраза его мысли при пробуждении. Здесь, а не
+        // на пути: постель смотрит тот, кому интересно, а миф в демо — только
+        // следами (44-LORE §5, п. 6). Свет из сна — Его зов.
+        public static readonly string BedThought =
+            Loc.N("Он точно будет зол, что я забрал Его последних пешек.");
     }
 }

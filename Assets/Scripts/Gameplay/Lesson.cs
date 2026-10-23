@@ -936,7 +936,7 @@ namespace Sinbinder.Gameplay
         {
             if (_now == LessonKind.Harvest)
                 return ("E", Loc.T("Подойдите к душе и нажмите E — она ляжет в пустую банку.")
-                           + "\n" + Loc.T("Эта душа ждёт вас. Следующие будут гаснуть, пока вы идёте."));
+                           + "\n" + Loc.T("Эта душа подождёт. Другие гаснут, пока вы идёте: чем позже, тем меньше от них останется."));
 
             if (_now == LessonKind.Raising) return RaisingStep();
             if (_now == LessonKind.Backstab) return BackstabStep();
@@ -956,7 +956,7 @@ namespace Sinbinder.Gameplay
             string approach = Loc.F("Подойдите к {0}, посмотрите на воина и нажмите F — поговорить.", name);
             string why = _partner != null && _partner.UnpaidMissions > 0
                 ? Loc.T("Воину задолжали. В разговоре долг отдают из рук в руки.")
-                : Loc.T("В разговоре — как воин, и вещи из рук в руки.");
+                : Loc.T("В разговоре узнают, как воин, и передают вещи из рук в руки.");
 
             if (view != null && !view.FirstPersonNow)
                 return (view.SwitchKey.ToString(),
@@ -1007,7 +1007,7 @@ namespace Sinbinder.Gameplay
                 if (!string.IsNullOrEmpty(no))
                     return ("F", no + "\n" + Loc.T("F у ложа тела — забрать тело и взять со стола другое."));
 
-                return ("F", Loc.T("F у рычага связывания — поднять.")
+                return ("F", Loc.T("Подойдите к рычагу и нажмите F — воин встанет.")
                            + "\n" + d.Foretell());
             }
 
