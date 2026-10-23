@@ -8,6 +8,13 @@
 #
 # Запуск из корня проекта:
 #   python Tools/art/logo.py Assets/Resources/Art/SinbinderLogo.png
+#   python Tools/art/logo.py Assets/Resources/Art/SinbinderLogoRu.png --ru
+#
+# «Греховод» (автор, 23 октября: «нужна такая же надпись над лагерем, но на
+# русском»; «надпись должна зависеть от языка игры, выбранного в начале»):
+# коса — в «Г» (древко — буква, перекладина — лезвие); душа — в первой «о»,
+# банкой: «Грех» — банка — «вод».
+# Пешка на черте — та же.
 # Шрифт — Cormorant Garamond (OFL, лицензия рядом), только для этой картинки:
 # в игру идёт PNG, а не шрифт.
 import math, os, sys
@@ -15,7 +22,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.path.join(HERE, "CormorantGaramond-VF.ttf")
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "SinbinderLogo.png")
+RU = "--ru" in sys.argv
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+OUT = ARGS[0] if ARGS else os.path.join(HERE, "SinbinderLogoRu.png" if RU else "SinbinderLogo.png")
 
 SS = 4                      # во сколько раз крупнее рисуем
 W, H = 1600, 520            # итог
@@ -115,6 +124,123 @@ def scythe_s(height):
     return mask, ox, oy, gh, kromka
 
 
+def scythe_g(height):
+    """
+    «Г»-коса: древко — ножка буквы, перекладина — само лезвие. Перекладину
+    шрифта стираем, а от верха древка вправо растёт серп: обух — выпуклой
+    дугой сверху, режущий край — вогнутой снизу, острие — вправо и чуть
+    вниз, над строкой. Так «Г» остаётся «Г» по силуэту, а читается косой.
+    (Первая проба — лезвие отдельной дугой над перекладиной, — автор:
+    «„Г“ очень странная».) Возвращает то же, что scythe_s, и ширину древка.
+    """
+    f = font(int(height * 1.32))
+    probe = Image.new("L", (int(height * 2), int(height * 2)), 0)
+    ImageDraw.Draw(probe).text((height * 0.3, 0), "Г", font=f, fill=255)
+    glyph = probe.crop(probe.getbbox())
+    gw, gh = glyph.size
+
+    # Древко: где буква в нижней половине — там ножка; выше — только она же.
+    low = glyph.crop((0, gh // 2, gw, gh)).getbbox()
+    sl, sr = low[0], low[2]
+    stem = Image.new("L", glyph.size, 0)
+    stem.paste(glyph.crop((0, 0, sr + int(gw * 0.02), gh)), (0, 0))
+
+    mask = Image.new("L", (int(gw * 3.0), int(gh * 1.6)), 0)
+    ox, oy = int(gw * 0.2), int(gh * 0.55)
+    mask.paste(stem, (ox, oy), stem)
+
+    d = ImageDraw.Draw(mask)
+    top = oy
+    heel_l, heel_r = ox + sl, ox + sr
+    bar = gh * 0.13                                   # толщина лезвия у пятки — как перекладина шрифта
+    reach = gw * 1.55                                 # длина лезвия от древка
+    tip = (heel_r + reach, top + gh * 0.20)
+    back = bezier((heel_l, top - gh * 0.01), (heel_r + reach * 0.45, top - gh * 0.16), tip)
+    edge = bezier((heel_r, top + bar), (heel_r + reach * 0.55, top + bar * 0.15), tip)
+    d.polygon(back + list(reversed(edge)) + [(heel_l, top + bar)], fill=255)
+
+    # Обоймы нет: шаром на верху древка «Г» читалась ключом. Пятка лезвия
+    # садится прямо на срез древка — как перекладина буквы.
+
+    shift = gh * 0.020
+    kromka = [(x, y - shift) for (x, y) in edge[10:-6]]
+    return mask, ox, oy, gh, kromka, sr + int(gw * 0.02)
+
+
+# Банка души — по меркам модели игры (props.py: JAR_GLASS, JAR_LID): банка
+# для закаток, а не склянка зельевара. Автор, 23 октября: «банка выглядит
+# скорее как склянка для зелий, а у нас банки — обычные, в которых огурцы
+# на зиму закатывают». Прямые стенки, плечики, горло с насечкой, плоская
+# закрутка шире горла, под ней бечёвка. (r, z) — метры модели.
+JAR_OUTLINE = [(0.066, 0.000), (0.074, 0.003), (0.078, 0.009), (0.079, 0.020),
+               (0.079, 0.140), (0.078, 0.150), (0.075, 0.160), (0.069, 0.169), (0.061, 0.176),
+               (0.056, 0.180), (0.055, 0.184), (0.057, 0.187), (0.055, 0.190), (0.057, 0.193),
+               (0.055, 0.196)]
+JAR_TOP, JAR_SHOULDER, JAR_R = 0.2145, 0.180, 0.079
+LID = (0.0668, 0.1958, 0.2145)          # радиус, низ, верх крышки
+GLASS = (128, 160, 150)
+
+
+def preserve_jar(height):
+    """
+    Банка души во весь рост height (до верха крышки): (RGBA, свечение, донышко).
+    Стекло — прозрачная зелень, обвод — старое золото, крышка — золото с насечкой,
+    бечёвка, внутри — огонёк души.
+    """
+    k = height / JAR_TOP
+    pad = max(2, int(height * 0.04))
+    w = int(2 * JAR_R * k) + pad * 2
+    h = int(height) + pad * 2
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx, base = w / 2, h - pad
+
+    def at(r, z):
+        return (cx + r * k, base - z * k)
+
+    right = [at(r, z) for (r, z) in JAR_OUTLINE]
+    left = [at(-r, z) for (r, z) in reversed(JAR_OUTLINE)]
+    outline = max(2, int(w * 0.045))
+    d.polygon(right + left, fill=GLASS + (100,), outline=GOLD_MID + (255,), width=outline)
+
+    # Огонёк души — в теле банки, ниже плеч.
+    fx, fy = cx, base - 0.070 * k
+    fw, fh = 0.040 * k, 0.050 * k
+    flame = [(fx, fy - fh * 1.55)]
+    flame += [(fx + fw * math.sin(math.radians(a)), fy - fh * 0.15 - fh * 0.85 * math.cos(math.radians(a)))
+              for a in range(30, 331, 10)]
+    d.polygon(flame, fill=SOUL + (235,))
+    d.ellipse([fx - fw * 0.45, fy - fh * 0.55, fx + fw * 0.45, fy + fh * 0.25], fill=(245, 255, 255, 255))
+
+    # Блик стекла — полоса вдоль левой стенки.
+    d.rounded_rectangle([cx - 0.062 * k, base - 0.150 * k, cx - 0.046 * k, base - 0.030 * k],
+                        radius=0.008 * k, fill=(255, 255, 255, 70))
+
+    # Бечёвка под крышкой — два оборота.
+    for z in (0.1795, 0.1830):
+        y = base - z * k
+        d.line([(cx - 0.058 * k, y), (cx + 0.058 * k, y)], fill=(150, 112, 70, 255), width=max(1, int(0.004 * k)))
+
+    # Крышка-закрутка: шире горла, насечка по ободу.
+    lr, lz0, lz1 = LID
+    d.rounded_rectangle([cx - lr * k, base - lz1 * k, cx + lr * k, base - lz0 * k],
+                        radius=0.004 * k, fill=GOLD_MID + (255,), outline=GOLD_LOW + (255,),
+                        width=max(1, int(w * 0.02)))
+    for t in range(-5, 6):
+        x = cx + t * lr * k / 6.0
+        d.line([(x, base - (lz1 - 0.004) * k), (x, base - (lz0 + 0.004) * k)],
+               fill=GOLD_LOW + (200,), width=max(1, int(0.002 * k)))
+
+    glow = Image.new("RGBA", (int(height * 2.6), int(height * 2.6)), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    gw, gh = glow.size
+    for r, a in ((0.30, 40), (0.21, 90), (0.13, 170), (0.07, 255)):
+        gd.ellipse([gw * (0.5 - r), gh * (0.5 - r), gw * (0.5 + r), gh * (0.5 + r)],
+                   fill=SOUL + (a,))
+    glow = glow.filter(ImageFilter.GaussianBlur(height * 0.10))
+    return img, glow, base
+
+
 def jar(size):
     """Склянка с огоньком души: (RGBA стекло+пробка, RGBA свечение)."""
     s = size
@@ -212,20 +338,40 @@ def main():
     # она обязана выше 0,86 высоты — там открытие ставит девиз (OpeningReveal).
     baseline = int(CH * 0.55)
 
-    # «S»-коса — крупнее строчных, как буквица.
-    s_mask, s_ox, s_oy, s_gh, kromka = scythe_s(int(size * 0.98))
-    s_x = int(CW * 0.02)
-    s_y = baseline - (s_oy + s_gh) + int(size * 0.06)
-    letters.paste(s_mask, (s_x, s_y), s_mask)
-    kromka = [(px + s_x, py + s_y) for (px, py) in kromka]
-    x = s_x + s_ox + int(s_gh * 0.62)
-
-    # «inbinder»: вторая «i» — без точки, над ней склянка.
-    word = ["i", "n", "b", "ı", "n", "d", "e", "r"]
     ascent = f.getmetrics()[0]
     xheight = f.getbbox("x")[3] - f.getbbox("x")[1]
     jar_at = None
+    flask_at = None
+
+    if not RU:
+        # «S»-коса — крупнее строчных, как буквица.
+        s_mask, s_ox, s_oy, s_gh, kromka = scythe_s(int(size * 0.98))
+        s_x = int(CW * 0.02)
+        s_y = baseline - (s_oy + s_gh) + int(size * 0.06)
+        letters.paste(s_mask, (s_x, s_y), s_mask)
+        kromka = [(px + s_x, py + s_y) for (px, py) in kromka]
+        x = s_x + s_ox + int(s_gh * 0.62)
+
+        # «inbinder»: вторая «i» — без точки, над ней склянка.
+        word = ["i", "n", "b", "ı", "n", "d", "e", "r"]
+    else:
+        # «Г»-коса — буквица; лезвие нависает над «рех».
+        g_mask, g_ox, g_oy, g_gh, kromka, g_gw = scythe_g(int(size * 0.98))
+        s_x = int(CW * 0.02)
+        s_y = baseline - (g_oy + g_gh)
+        letters.paste(g_mask, (s_x, s_y), g_mask)
+        kromka = [(px + s_x, py + s_y) for (px, py) in kromka]
+        x = s_x + g_ox + g_gw + int(size * 0.03)
+
+        # «рех» — колба — «вод»: первая «о» — колба с душой.
+        word = ["р", "е", "х", "◯", "в", "о", "д"]
+
     for ch in word:
+        if ch == "◯":
+            adv = f.getlength("о")
+            flask_at = (x + adv / 2, baseline)
+            x += adv + size * 0.012
+            continue
         ld.text((x, baseline - ascent), ch, font=f, fill=255)
         adv = f.getlength(ch)
         if ch == "ı":
@@ -264,6 +410,18 @@ def main():
         gy = int(jy + body.size[1] * 0.68 - glow.size[1] / 2)
         canvas.alpha_composite(glow, (gx, gy))
         canvas.alpha_composite(body, (jx, jy))
+
+    # Банка вместо «о»: донышком на строке, плечики — в строчную высоту,
+    # горло и крышка — над строкой, как у «о» её нет, но место то же.
+    if flask_at is not None:
+        jh = xheight * 1.04 * JAR_TOP / JAR_SHOULDER
+        body, glow, bottom = preserve_jar(jh)
+        fx = int(flask_at[0] + shift - body.size[0] / 2)
+        fy = int(flask_at[1] - bottom + size * 0.006)
+        gx = int(fx + body.size[0] / 2 - glow.size[0] / 2)
+        gy = int(fy + bottom - jh * 0.35 - glow.size[1] / 2)
+        canvas.alpha_composite(glow, (gx, gy))
+        canvas.alpha_composite(body, (fx, fy))
 
     # Черта под словом, и на ней — шипастая пешка, как фигура на линии
     # доски. Черта ниже прежнего (была baseline + 0,16 кегля): пешке нужно

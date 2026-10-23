@@ -124,6 +124,16 @@ namespace Sinbinder.UI
 
             float y = 0f;
 
+            // Язык — первым (автор, 23 октября: «Сделай выбор языка в начале
+            // игры»): от него зависит всё дальше, и надпись над лагерем тоже —
+            // «Греховод» или «Sinbinder» (OpeningReveal). Названия — на самих
+            // языках: свой узнают, не читая чужого. Щелчок — следующий язык,
+            // и дверь тут же перерисовывается на нём.
+            _spawned.Add(Row(y, Languages(),
+                Loc.F("Язык игры — щелчок, чтобы сменить. Сейчас: {0}.", LocSetup.CurrentName()),
+                () => { LocSetup.Cycle(); Draw(); }));
+            y -= RowHeight * 1.2f;
+
             // Сначала продолжить: игрок, у которого есть незаконченная
             // партия, пришёл за ней, а не выбирать режим заново.
             foreach (var slot in new[] { SaveSystem.Bound, SaveSystem.Quick })
@@ -159,6 +169,14 @@ namespace Sinbinder.UI
                 Loc.T("Воины здесь спорят и отказываются. Если отказ можно "
               + "переиграть, он ничего не стоит — и весь спор становится "
               + "помехой, которую обходят клавишей."), null));
+        }
+
+        /// <summary>«Русский · English» — все языки меню, каждый на себе самом.</summary>
+        private static string Languages()
+        {
+            var names = new List<string>();
+            foreach (var l in LocSetup.Languages) names.Add(l.Name);
+            return string.Join("  ·  ", names);
         }
 
         private static void Say(string line)

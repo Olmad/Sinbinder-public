@@ -48,6 +48,9 @@ namespace Sinbinder.Gameplay
         private const float FadeOut = 1.8f;
 
         private static readonly string Motto = Loc.N("Не командуй. Искушай.");
+
+        /// <summary>Надпись над лагерем: «Sinbinder» и «Греховод» (Tools/art/logo.py, --ru).</summary>
+        private const string Logo = "Art/SinbinderLogo", LogoRu = "Art/SinbinderLogoRu";
         private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.");
 
         /// <summary>
@@ -313,10 +316,17 @@ namespace Sinbinder.Gameplay
 
         private IEnumerator Reveal(RTS_Camera view)
         {
-            var art = Resources.Load<Texture2D>("Art/SinbinderLogo");
+            // Надпись — на языке игры, выбранном у двери (автор, 23 октября:
+            // «нужна такая же надпись над лагерем, но на русском»; «надпись
+            // должна зависеть от языка игры, выбранного в начале»): по-русски —
+            // «Греховод» (коса в «Г», душа в колбе вместо «о»), иначе — «Sinbinder».
+            // Русской нет — английская, как прежде.
+            Texture2D art = null;
+            if (Loc.IsSource) art = Resources.Load<Texture2D>(LogoRu);
+            if (art == null) art = Resources.Load<Texture2D>(Logo);
             if (art == null)
             {
-                Debug.LogWarning("[ОТКРЫТИЕ] Надписи нет: Resources/Art/SinbinderLogo.png. "
+                Debug.LogWarning("[ОТКРЫТИЕ] Надписи нет: Resources/" + Logo + ".png. "
                                + "Нарисовать — Tools/art/logo.py.");
                 yield break;
             }

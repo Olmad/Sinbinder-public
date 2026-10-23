@@ -3707,9 +3707,11 @@ namespace Sinbinder.Utilets
         /// </summary>
         private static void BuildStartPanel(Transform parent)
         {
+            // 820, а не 720: первой строкой встал выбор языка (23 октября),
+            // и с двумя записями «продолжить» строки уходили за край.
             var panel = Panel("Начало", parent,
                 anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
-                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 720f),
+                pivot: new Vector2(0.5f, 0.5f), size: new Vector2(1000f, 820f),
                 position: Vector2.zero);
 
             var backdrop = Backdrop(panel, Weight.Screen);
@@ -3719,7 +3721,7 @@ namespace Sinbinder.Utilets
 
             var rows = Panel("Строки", panel,
                 anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
-                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 600f),
+                pivot: new Vector2(0f, 1f), size: new Vector2(0f, 700f),
                 position: new Vector2(0f, -104f));
             rows.offsetMin = new Vector2(28f, rows.offsetMin.y);
             rows.offsetMax = new Vector2(-28f, rows.offsetMax.y);

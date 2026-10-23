@@ -7020,6 +7020,10 @@ msgid "Отряд: {0}"
 msgstr "Squad: {0}"
 
 #: UI/StartPanel.cs
+msgid "Язык игры — щелчок, чтобы сменить. Сейчас: {0}."
+msgstr "Game language — click to change. Now: {0}."
+
+#: UI/StartPanel.cs
 msgid "с обязательством — переиграть нельзя"
 msgstr "committed — no second chances"
 
