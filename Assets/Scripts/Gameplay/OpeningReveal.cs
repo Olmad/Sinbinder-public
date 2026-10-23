@@ -50,6 +50,17 @@ namespace Sinbinder.Gameplay
         private static readonly string Motto = Loc.N("Не командуй. Искушай.");
         private static readonly string WakeLine = Loc.N("За пологом трещит костёр. Лагерь ждёт.");
 
+        /// <summary>
+        /// Мысль Греховода при пробуждении — курсивом под строкой шатра
+        /// (37-DEMO §8.7; автор, 23.10: «пробуй»). Пара к пешке
+        /// (<see cref="InspectTexts.PawnThought"/>): здесь он думает, что они
+        /// служат ему, — там фигура скажет ему: «Ты думаешь, что двигаешь их».
+        /// </summary>
+        private static readonly string WakeThought = Loc.N("Они думают, что служат мне. Пусть думают.");
+
+        /// <summary>Через сколько секунд после строки шатра проступает мысль.</summary>
+        private const float ThoughtAfter = 2.2f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; }
 
@@ -87,7 +98,7 @@ namespace Sinbinder.Gameplay
             // смотреть, — «читается как сбой отрисовки» (отзыв игрока 19.10).
             if (view != null) view.Face(door);
             var glow = Glow(tent);
-            var hint = Hint(out var hintGroup);
+            var hint = Hint(out var hintGroup, out var thoughtGroup);
 
             // Ждём, пока выйдет за порог. Строка проявляется не сразу:
             // первую секунду кадр принадлежит шатру.
@@ -96,6 +107,7 @@ namespace Sinbinder.Gameplay
                 // Пока вещь рассказывает (карта, постель — Inspectable), строка
                 // пробуждения молчит: печаталась поверх её строк (прогон 22.10).
                 hintGroup.alpha = Inspectable.Telling ? 0f : Mathf.Clamp01((t - 1.2f) / 1.0f);
+                thoughtGroup.alpha = Inspectable.Telling ? 0f : Mathf.Clamp01((t - 1.2f - ThoughtAfter) / 1.2f);
                 yield return null;
             }
             Destroy(hint);
@@ -376,8 +388,11 @@ namespace Sinbinder.Gameplay
             if (light != null) Destroy(light.gameObject);
         }
 
-        /// <summary>Одна строка внизу, пока Греховод в шатре: что там и как выйти.</summary>
-        private static GameObject Hint(out CanvasGroup group)
+        /// <summary>
+        /// Строка внизу, пока Греховод в шатре: что там и как выйти; под ней —
+        /// его мысль, курсивом и тусклее, со своей прозрачностью (проступает позже).
+        /// </summary>
+        private static GameObject Hint(out CanvasGroup group, out CanvasGroup thought)
         {
             var root = new GameObject("Строка пробуждения");
             var canvas = root.AddComponent<Canvas>();
@@ -411,6 +426,30 @@ namespace Sinbinder.Gameplay
             var shadow = line.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
             shadow.effectDistance = new Vector2(2f, -2f);
+
+            var mind = new GameObject("Мысль", typeof(RectTransform));
+            mind.transform.SetParent(root.transform, false);
+            var mt = (RectTransform)mind.transform;
+            mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0f);
+            mt.pivot = new Vector2(0.5f, 1f);
+            mt.sizeDelta = new Vector2(1400f, 60f);
+            mt.anchoredPosition = new Vector2(0f, 100f);   // под строкой шатра, впритык
+
+            thought = mind.AddComponent<CanvasGroup>();
+            thought.alpha = 0f;
+            thought.interactable = false;
+            thought.blocksRaycasts = false;
+
+            var said = mind.AddComponent<Text>();
+            said.font = UI.UiStyle.Thought;
+            said.fontSize = 27;
+            said.alignment = TextAnchor.UpperCenter;
+            said.color = UI.Letterbox.Thinking(text.color);
+            said.raycastTarget = false;
+            said.text = Loc.T(WakeThought);
+            var deep = mind.AddComponent<Shadow>();
+            deep.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            deep.effectDistance = new Vector2(2f, -2f);
 
             return root;
         }

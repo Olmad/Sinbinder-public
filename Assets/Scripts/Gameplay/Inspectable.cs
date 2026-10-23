@@ -26,6 +26,13 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _speaker = "";
         [SerializeField] private string[] _lines = new string[0];
 
+        /// <summary>
+        /// Мысль Греховода после строк вещи — курсивом, без подписи
+        /// (<see cref="UI.Letterbox.Think"/>). Пусто — молчит. Берётся из
+        /// <see cref="InspectTexts"/>, в сцену не пишется.
+        /// </summary>
+        private string _thought = "";
+
         [Tooltip("Высота, на которую смотрит камера, м.")]
         [SerializeField] private float _focus = 1.3f;
 
@@ -55,7 +62,7 @@ namespace Sinbinder.Gameplay
             if (string.IsNullOrEmpty(_texts)) return;
             var t = InspectTexts.For(_texts);
             if (t == null) { Debug.LogWarning($"[ОСМОТР] {name}: текстов «{_texts}» нет в InspectTexts"); return; }
-            (_prompt, _speaker, _lines) = t.Value;
+            (_prompt, _speaker, _lines, _thought) = t.Value;
         }
 
         private static readonly List<Inspectable> Live = new();
@@ -185,6 +192,15 @@ namespace Sinbinder.Gameplay
             {
                 Audio.DeathVoice.End();
                 if (UI.Letterbox.Instance != null) UI.Letterbox.Instance.LettersPerSecond = pace;
+            }
+
+            // Последнее слово — его: вещь показала, Греховод понял (37-DEMO §8.7).
+            // После голоса Смерти — когда тишина ушла: мысль уже своим голосом.
+            if (!string.IsNullOrEmpty(_thought))
+            {
+                string thought = Loc.T(_thought);
+                UI.Letterbox.Instance?.Think(thought);
+                yield return new WaitForSecondsRealtime(Herald.Hold(thought) + 0.6f);
             }
 
             camera.StopSway();

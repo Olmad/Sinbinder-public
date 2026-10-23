@@ -35,16 +35,17 @@ namespace Sinbinder.UI
                + "Камера дрожит на сглаживании, и ноль здесь не годится.")]
         [SerializeField] private float _moved = 0.25f;
 
-        [Tooltip("Подсказка, когда смотрят глазами Греховода: там W, A, S, D ведут его.")]
-        [TextArea(1, 3)]
-        [SerializeField] private string _line =
-            Loc.N("W, A, S, D — идти. Камера идёт за вами.");
+        // Строки — в коде, а не в сцене: сериализованная строка держала старый
+        // текст до пересборки сцен, и правка по таблице (47-TEXTS §5) до игры
+        // не доходила.
 
-        [Tooltip("Подсказка, когда смотрят сверху: там W, A, S, D ведут камеру, "
-               + "а Греховода — правая кнопка.")]
-        [TextArea(1, 3)]
-        [SerializeField] private string _fromAbove =
-            Loc.N("Щёлкните по Греховоду, затем правой кнопкой — куда идти.");
+        /// <summary>Глазами Греховода: W, A, S, D ведут его (47-TEXTS §5, п. 1).</summary>
+        private static readonly string Eyes =
+            Loc.N("W, A, S, D — идти. Мышь — оглядеться.");
+
+        /// <summary>Сверху: W, A, S, D ведут камеру, Греховода — правая кнопка (§5, п. 2).</summary>
+        private static readonly string FromAbove =
+            Loc.N("Щёлкните по Греховоду, затем правой кнопкой по земле — он пойдёт туда.");
 
         /// <summary>
         /// Показывали ли уже. Статично и переживает смену сцен: подсказка
@@ -94,7 +95,7 @@ namespace Sinbinder.UI
             _eye = cam.transform;
             _wasAt = _eye.position;
 
-            if (_text != null) _text.text = Loc.T(_line);
+            if (_text != null) _text.text = Loc.T(Eyes);
         }
 
         void Update()
@@ -138,7 +139,7 @@ namespace Sinbinder.UI
         {
             var view = Object.FindFirstObjectByType<Gameplay.RTS_Camera>();
             bool fromAbove = Gameplay.SinbinderPlayer.Exists && view != null && !view.FirstPersonNow;
-            return Loc.T(fromAbove ? _fromAbove : _line);
+            return Loc.T(fromAbove ? FromAbove : Eyes);
         }
 
         private void Show()

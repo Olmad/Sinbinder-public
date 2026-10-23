@@ -33,9 +33,9 @@ namespace Sinbinder.UI
                + "подсказать про приказы.")]
         [SerializeField] private float _afterSeconds = 6f;
 
-        [TextArea(1, 3)]
-        [SerializeField] private string _line =
-            Loc.N("Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда.");
+        // В коде, а не в сцене — как у подсказки движения (47-TEXTS §5, п. 3).
+        private static readonly string Line =
+            Loc.N("Щёлкните по воину, затем правой кнопкой по земле — он пойдёт туда.");
 
         /// <summary>
         /// Показывали ли уже. Как и у подсказки движения — одна на пролог,
@@ -119,7 +119,7 @@ namespace Sinbinder.UI
             if (_showing || _panel == null) return;
 
             // Строка — в миг показа: язык могли сменить в меню после начала сцены.
-            if (_text != null) _text.text = Loc.T(_line);
+            if (_text != null) _text.text = Loc.T(Line);
             _panel.SetActive(true);
             _showing = true;
             Shown = true;

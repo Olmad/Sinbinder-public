@@ -300,8 +300,8 @@ namespace Sinbinder.Gameplay
                 // в эпилоге решит, сколько их вернётся. Названия греха игрок
                 // не увидит: он увидит, что Карган узнаёт человека.
                 if (SquadRoster.TryGet(name, out var commander))
-                    Herald.Line(Loc.F("Карган: «Похоже, что-то случилось. "
-                            + "Вероятно, {0} {1}».", Loc.Name(name), Homecoming.Guess(commander.Sin, commander.Gender)));
+                    Herald.Line(Loc.F("Карган: «Владыка, с отрядом неладно. "
+                            + "Наверное, {0} {1}».", Loc.Name(name), Homecoming.Guess(commander.Sin, commander.Gender)));
             }
 
             // Зрелище — тому, кто смотрит. Игрок в этот миг у сундука,
@@ -323,8 +323,8 @@ namespace Sinbinder.Gameplay
             // сверху, с высоты камеры, шар — горсть точек на экране.
             yield return Gaze();
 
-            Herald.Line(Loc.T("Карган: «Дело плохо, Владыка. Кто-то щёлкает наших "
-                     + "ребят как косточки крысы»."));
+            Herald.Line(Loc.T("Карган: «Дело плохо, владыка. Кто-то щёлкает наших "
+                     + "ребят, как крысиные косточки»."));
 
             yield return new WaitForSecondsRealtime(_watchSeconds);
 

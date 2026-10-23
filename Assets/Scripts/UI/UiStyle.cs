@@ -31,7 +31,7 @@ namespace Sinbinder.UI
         /// </summary>
         public static readonly Vector2 Reference = new(2208f, 1242f);
 
-        private static Font _body, _bodyBold, _title;
+        private static Font _body, _bodyBold, _title, _thought;
         private static Sprite _drop, _pill, _plate, _plateThin;
 
         /// <summary>
@@ -141,6 +141,12 @@ namespace Sinbinder.UI
 
         /// <summary>Жирный основной: PT Serif Bold — свой файл, а не дорисованный жирный.</summary>
         public static Font BodyBold => _bodyBold ??= Load("Fonts/PTSerif-Bold");
+
+        /// <summary>
+        /// Мысли Греховода: PT Serif Italic — свой файл, а не наклонённый
+        /// прямой (37-DEMO §8.7; автор, 23.10: «пробуй»).
+        /// </summary>
+        public static Font Thought => _thought ??= Load("Fonts/PTSerif-Italic");
 
         /// <summary>Названия и имена: Cormorant SC.</summary>
         public static Font Title => _title ??= Load("Fonts/CormorantSC-Bold");

@@ -160,12 +160,12 @@ msgid "{0} колеблется. {1} и {2} тянут его почти пор�
 msgstr "{0} hesitates. {1} and {2} pull at him almost equally."
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "Приказ был. {0} {1}."
-msgstr "There was an order. {0} {1}."
+msgid "{0} не выполняет приказ. Вместо этого {1}."
+msgstr "{0} disobeys the order and {1} instead."
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "Приказ был. {0} {1} — {2}."
-msgstr "There was an order. {0} {1} — {2}."
+msgid "{0} не выполняет приказ: {1}. Вместо этого {2}."
+msgstr "{0} disobeys the order — {1} — and {2} instead."
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "{0} не сдвинулся с места"
@@ -220,12 +220,12 @@ msgid "ему страшно"
 msgstr "he is afraid"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "он не привык к чужим приказам"
-msgstr "he isn't used to taking orders"
+msgid "он не терпит приказов"
+msgstr "he can't stand being ordered"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "она не привыкла к чужим приказам"
-msgstr "she isn't used to taking orders"
+msgid "она не терпит приказов"
+msgstr "she can't stand being ordered"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "он скорее ляжет, чем побежит"
@@ -256,8 +256,8 @@ msgid "он не считает командира выше себя"
 msgstr "he doesn't think the commander is above him"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "он не хочет, чтобы это досталось кому-то другому"
-msgstr "he doesn't want anyone else to have it"
+msgid "он не хочет, чтобы другому досталось больше, чем ему"
+msgstr "he won't let another get more than him"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "он не бросит своего"
@@ -276,12 +276,12 @@ msgid "лишнего ему не нужно — только дело"
 msgstr "he needs nothing extra — only the job"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "он тащит всё, до чего дотянется"
-msgstr "he grabs everything within reach"
+msgid "он сгребает всё подряд — нужное и ненужное"
+msgstr "he scoops up everything — useful or not"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "у него не осталось воли"
-msgstr "he has no will left"
+msgid "ему всё безразлично — и приказ тоже"
+msgstr "nothing matters to him — the order included"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "он ждёт удобной минуты"
@@ -300,24 +300,32 @@ msgid "уйти отсюда — значит подставить спину"
 msgstr "leaving now means turning his back on the enemy"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "иначе он не может"
-msgstr "he can't do otherwise"
+msgid "совесть не пускает"
+msgstr "his conscience won't let him"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "чужая беда его не касается"
 msgstr "other people's trouble is none of his concern"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "он поступает как привык"
-msgstr "he does as he always does"
+msgid "он поступает, как привык"
+msgstr "he does as he's used to"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она поступает, как привыкла"
+msgstr "she does as she's used to"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "он помнит, чем это кончилось в прошлый раз"
 msgstr "he remembers how it ended last time"
 
 #: AOS Engine/PhraseGenerator.cs
-msgid "он не привык проходить мимо"
-msgstr "he isn't one to walk on by"
+msgid "он не привык проходить мимо чужой беды"
+msgstr "he can't walk past someone in trouble"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она не привыкла проходить мимо чужой беды"
+msgstr "she can't walk past someone in trouble"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "ему для своих ничего не жалко"
@@ -4288,28 +4296,28 @@ msgid "Карган Старый Ворон"
 msgstr "Kargan Old Raven"
 
 #: Gameplay/CampMuster.cs
-msgid "{0}: «Владыка, покличьте их к столу. Совет любит, когда все на виду»."
-msgstr "{0}: “My lord, call them to the table. The council likes everyone in plain sight.”"
+msgid "{0}: «Владыка, позовите людей к столу. Придут не все: приказ они слышат, а решает каждый сам»."
+msgstr "{0}: “My lord, call the men to the table. Not all will come: they hear the order, but each decides for himself.”"
 
 #: Gameplay/CampMuster.cs
 msgid "{0}: «Все пришли, владыка. Это редкость»."
 msgstr "{0}: “They all came, my lord. That's rare.”"
 
 #: Gameplay/CampMuster.cs
-msgid "{0}: «Никто не подошёл, владыка. Они вас слышали»."
-msgstr "{0}: “No one came, my lord. They heard you.”"
+msgid "{0}: «Никто не подошёл, владыка. Слышали все — и решили по-своему»."
+msgstr "{0}: “No one came, my lord. They all heard — and decided otherwise.”"
 
 #: Gameplay/CampMuster.cs
-msgid "{0}: «{1} остался на месте. Он вас слышал, владыка»."
-msgstr "{0}: “{1} stayed where he was. He heard you, my lord.”"
+msgid "{0}: «{1} остался на месте. Он вас слышал, владыка, — и решил по-своему»."
+msgstr "{0}: “{1} stayed where he was. He heard you, my lord — and decided otherwise.”"
 
 #: Gameplay/CampMuster.cs
-msgid "{0}: «{1} осталась на месте. Она вас слышала, владыка»."
-msgstr "{0}: “{1} stayed where she was. She heard you, my lord.”"
+msgid "{0}: «{1} осталась на месте. Она вас слышала, владыка, — и решила по-своему»."
+msgstr "{0}: “{1} stayed where she was. She heard you, my lord — and decided otherwise.”"
 
 #: Gameplay/CampMuster.cs
-msgid "{0}: «{1} остались на месте. Они вас слышали, владыка»."
-msgstr "{0}: “{1} stayed where they were. They heard you, my lord.”"
+msgid "{0}: «{1} остались на месте. Они вас слышали, владыка, — и решили по-своему»."
+msgstr "{0}: “{1} stayed where they were. They heard you, my lord — and decided otherwise.”"
 
 #: Gameplay/CampMuster.cs
 msgid " и "
@@ -4324,8 +4332,8 @@ msgid "Провожатый не дошёл до Греховода — Карг
 msgstr "The guide never reached the Sinbinder — Kargan will speak without him."
 
 #: Gameplay/CampOpening.cs
-msgid "{0}: «Владыка, позвольте пройтись с вами. Пусть видят, с кем я хожу»."
-msgstr "{0}: “My lord, let me walk with you. Let them see whom I walk with.”"
+msgid "{0}: «Владыка, позвольте пройтись с вами. Пусть весь лагерь видит, кого вы держите рядом»."
+msgstr "{0}: “My lord, let me walk with you. Let the whole camp see whom you keep at your side.”"
 
 #: Gameplay/CampOpening.cs
 msgid "{0}: «Кстати, владыка: {1} не платят уже {2} — вы наказали его за мост. Отряд дрался, а он копал монеты — и почти всё оставил себе»."
@@ -4480,8 +4488,8 @@ msgid "Карган ждёт у сундука Марги."
 msgstr "Kargan is waiting at Marga's chest."
 
 #: Gameplay/CrystalBall.cs
-msgid "Карган: «Похоже, что-то случилось. Вероятно, {0} {1}»."
-msgstr "Kargan: “Looks like something happened. Most likely {0} {1}.”"
+msgid "Карган: «Владыка, с отрядом неладно. Наверное, {0} {1}»."
+msgstr "Kargan: “My lord, something's wrong with the squad. Most likely {0} {1}.”"
 
 #: Gameplay/CrystalBall.cs
 msgid "Карган: «Владыка, взгляните в шар. Скорее»."
@@ -4492,8 +4500,8 @@ msgid "Карган: «Владыка, шар. Скорее»."
 msgstr "Kargan: “My lord, the orb. Quickly.”"
 
 #: Gameplay/CrystalBall.cs
-msgid "Карган: «Дело плохо, Владыка. Кто-то щёлкает наших ребят как косточки крысы»."
-msgstr "Kargan: “Things are bad, my lord. Someone is snapping our lads like rat bones.”"
+msgid "Карган: «Дело плохо, владыка. Кто-то щёлкает наших ребят, как крысиные косточки»."
+msgstr "Kargan: “It's bad, my lord. Someone is cracking our lads like rat bones.”"
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -4844,6 +4852,10 @@ msgid "Ушли за солью на восток. Вернусь — забер
 msgstr "Gone east for salt. I'll be back for the axe. — T."
 
 #: Gameplay/InspectTexts.cs
+msgid "Топор всё ещё здесь."
+msgstr "The axe is still here."
+
+#: Gameplay/InspectTexts.cs
 msgid "F — присмотреться"
 msgstr "F — look closer"
 
@@ -4862,6 +4874,62 @@ msgstr "So did he — the one who carved me from bone and left me here."
 #: Gameplay/InspectTexts.cs
 msgid "Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."
 msgstr "Every piece stops obeying the hand one day. Even the one that holds the board."
+
+#: Gameplay/InspectTexts.cs
+msgid "Пешки не разговаривают. Значит, говорила не она."
+msgstr "Pawns don't speak. So it wasn't the pawn talking."
+
+#: Gameplay/InspectTexts.cs
+msgid "F — рассмотреть карту"
+msgstr "F — study the map"
+
+#: Gameplay/InspectTexts.cs
+msgid "Карта на коже"
+msgstr "Map on hide"
+
+#: Gameplay/InspectTexts.cs
+msgid "Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."
+msgstr "The crypt is circled in charcoal. A note beside it: “Only if all is lost.”"
+
+#: Gameplay/InspectTexts.cs
+msgid "У заставы за холмами — крест: брошена. Знак охотников над ней перечёркнут."
+msgstr "A cross by the outpost beyond the hills: abandoned. The hunters' sign above it is struck through."
+
+#: Gameplay/InspectTexts.cs
+msgid "На краю — три фигурки: три отряда. Одну стёрли пальцем — тот, что лёг у моста."
+msgstr "On the edge, three little figures: three squads. One rubbed out with a finger — the one that fell at the bridge."
+
+#: Gameplay/InspectTexts.cs
+msgid "F — взглянуть на банки"
+msgstr "F — look at the jars"
+
+#: Gameplay/InspectTexts.cs
+msgid "Банки для душ"
+msgstr "Soul jars"
+
+#: Gameplay/InspectTexts.cs
+msgid "Пустые банки для душ. Сегодня в них ляжет кто-то из тех, кто сейчас у костра."
+msgstr "Empty soul jars. Tonight someone now sitting at the fire will end up in one."
+
+#: Gameplay/InspectTexts.cs
+msgid "Три такие же — в суме у пояса. Сколько банок, столько душ и унесёшь."
+msgstr "Three more like these hang in the satchel at your belt. As many jars, as many souls you can carry."
+
+#: Gameplay/InspectTexts.cs
+msgid "F — постель"
+msgstr "F — the bed"
+
+#: Gameplay/InspectTexts.cs
+msgid "Постель"
+msgstr "Bed"
+
+#: Gameplay/InspectTexts.cs
+msgid "Шкуры ещё тёплые."
+msgstr "The furs are still warm."
+
+#: Gameplay/InspectTexts.cs
+msgid "Свет из сна всё ещё стоит перед глазами."
+msgstr "The light from the dream still hangs before your eyes."
 
 #: Gameplay/Inspectable.cs
 msgid "F — осмотреть"
@@ -5107,6 +5175,18 @@ msgstr "Don't command. Tempt."
 msgid "За пологом трещит костёр. Лагерь ждёт."
 msgstr "Beyond the tent flap a fire crackles. The camp is waiting."
 
+#: Gameplay/OpeningReveal.cs
+msgid "Они думают, что служат мне. Пусть думают."
+msgstr "They think they serve me. Let them think so."
+
+#: Gameplay/OpeningReveal.cs
+msgid "Иди к свету — W"
+msgstr "Walk to the light — W"
+
+#: Gameplay/OpeningReveal.cs
+msgid "F — подняться"
+msgstr "F — get up"
+
 #: Gameplay/PrologueCampSpawner.cs
 msgid "телохранитель, не отходит от вас"
 msgstr "bodyguard, never leaves your side"
@@ -5252,8 +5332,8 @@ msgid "Лагерь знали не только свои."
 msgstr "Not only our own knew where the camp was."
 
 #: Gameplay/RaidEvent.cs
-msgid "Карган: «Владыка, они узнали, где наш лагерь. Вероятно, от одного из наших. Тяжело это признавать, но нам нужно бежать. К кругу на востоке — туда, где свет»."
-msgstr "Kargan: “My lord, they found out where our camp is. Probably from one of our own. It's hard to admit, but we have to run. To the circle in the east — where the light is.”"
+msgid "Карган: «Владыка, охотники знают, где наш лагерь, — видно, кто-то из наших проговорился. Тяжело это признавать, но надо бежать. К кругу на востоке — туда, где свет»."
+msgstr "Kargan: “My lord, the hunters know where our camp is — one of ours must have talked. It's hard to admit, but we have to run. To the circle in the east — where the light is.”"
 
 #: Gameplay/RetreatHorn.cs
 msgid "Рог трубит отход."
@@ -5704,8 +5784,8 @@ msgid "Не останавливаются, даже когда стоило б�
 msgstr "Don't stop, even when they should."
 
 #: Gameplay/TrophyChest.cs
-msgid "Карган: «Давайте осмотрим, что принёс Марга Копатель. Я уверен, он это всё просто выкопал возле лагеря»."
-msgstr "Kargan: “Let's look at what Marga the Digger brought. I'm sure he just dug it all up near the camp.”"
+msgid "Карган: «Владыка, взглянем, что Марга Копатель принёс с вылазки. Готов спорить, половину он выкопал у самого лагеря»."
+msgstr "Kargan: “My lord, let's see what Marga the Digger brought back from the sortie. I'd wager he dug up half of it right by the camp.”"
 
 #: Gameplay/TrophyChest.cs
 msgid "В сундуке пусто. Марга объяснится, когда вернётся."
@@ -5744,8 +5824,24 @@ msgid "Из сундука — в мешок Греховода: {0}."
 msgstr "From the chest into the Sinbinder's bag: {0}."
 
 #: Gameplay/TrophyChest.cs
-msgid "{0}: «Выкопал, не выкопал — а плату за вылазки мне так никто и не выкопал»."
-msgstr "{0}: “Dug it up or not — nobody's dug up my pay for the sorties yet.”"
+msgid "{0}: «Копал, не копал — а платы за вылазки я так и не видел»."
+msgstr "{0}: “Dug or didn't dig — I still haven't seen my pay for the sorties.”"
+
+#: Gameplay/WeaponPickup.cs
+msgid "F — взять катану"
+msgstr "F — take the katana"
+
+#: Gameplay/WeaponPickup.cs
+msgid "F — взять меч"
+msgstr "F — take the sword"
+
+#: Gameplay/WeaponPickup.cs
+msgid "Катана на поясе. B — наголо или в ножны."
+msgstr "Katana at your belt. B — draw or sheathe."
+
+#: Gameplay/WeaponPickup.cs
+msgid "Меч на поясе. B — наголо или в ножны."
+msgstr "Sword at your belt. B — draw or sheathe."
 
 #: Inventory/TrophyCatalog.cs
 msgid "Кольчужный ворот"
@@ -5792,8 +5888,8 @@ msgid "Свой набор — соберите галочками ниже"
 msgstr "Custom set — tick what you want below"
 
 #: UI/CommandHintUI.cs
-msgid "Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда."
-msgstr "Click a warrior to select. Right-click the ground to go there."
+msgid "Щёлкните по воину, затем правой кнопкой по земле — он пойдёт туда."
+msgstr "Click a warrior, then right-click the ground — he'll go there."
 
 #: UI/CommandPanel.cs
 msgid "Приказы — сначала выберите воинов"
@@ -6020,20 +6116,20 @@ msgid "ей должны"
 msgstr "owed pay"
 
 #: UI/CommanderCouncilUI.cs
-msgid "{0} ушёл к заставе один. Назад его ждать не скоро."
-msgstr "{0} set off for the outpost alone. Don't expect him back soon."
+msgid "{0} ушёл к заставе один. Вернётся не скоро."
+msgstr "{0} went to the outpost alone. He won't be back soon."
 
 #: UI/CommanderCouncilUI.cs
-msgid "{0} ушла к заставе одна. Назад её ждать не скоро."
-msgstr "{0} set off for the outpost alone. Don't expect her back soon."
+msgid "{0} ушла к заставе одна. Вернётся не скоро."
+msgstr "{0} went to the outpost alone. She won't be back soon."
 
 #: UI/CommanderCouncilUI.cs
-msgid "{0} повёл отряд к заставе. Назад их ждать не скоро."
-msgstr "{0} led the party to the outpost. Don't expect them back soon."
+msgid "{0} повёл отряд к заставе. Вернутся не скоро."
+msgstr "{0} led the squad to the outpost. They won't be back soon."
 
 #: UI/CommanderCouncilUI.cs
-msgid "{0} повела отряд к заставе. Назад их ждать не скоро."
-msgstr "{0} led the party to the outpost. Don't expect them back soon."
+msgid "{0} повела отряд к заставе. Вернутся не скоро."
+msgstr "{0} led the squad to the outpost. They won't be back soon."
 
 #: UI/DemoEndUI.cs
 msgid "Вылазка вернулась."
@@ -6224,18 +6320,6 @@ msgid "Что останется в сундуке, останется в лаг
 msgstr "Whatever stays in the chest stays in the camp: if you have to flee, the hunters get it. F or Esc — close."
 
 #: UI/GearPanel.cs
-msgid "Разговор: {0}"
-msgstr "Talking to {0}"
-
-#: UI/GearPanel.cs
-msgid "Что сказать"
-msgstr "What to say"
-
-#: UI/GearPanel.cs
-msgid "Что вы знаете"
-msgstr "What you know"
-
-#: UI/GearPanel.cs
 msgid "1 · Как ты? Что думаешь обо мне?"
 msgstr "1 · How are you? What do you think of me?"
 
@@ -6280,24 +6364,20 @@ msgid "вещи на воине и в мешке — обмен из рук в �
 msgstr "what the warrior wears and what's in the bag — hand to hand"
 
 #: UI/GearPanel.cs
-msgid "Долг"
-msgstr "Debt"
+msgid "F · Уйти"
+msgstr "F · Leave"
 
 #: UI/GearPanel.cs
-msgid "За вылазку"
-msgstr "For the sortie"
+msgid "Долг: {0}"
+msgstr "Debt: {0}"
 
 #: UI/GearPanel.cs
-msgid "ещё не заплачено"
-msgstr "not paid yet"
+msgid " · за вылазку не заплачено"
+msgstr " · sortie unpaid"
 
 #: UI/GearPanel.cs
-msgid "1, 2, 3 или щелчок — сказать. F или Esc — уйти."
-msgstr "1, 2, 3 or click — say it. F or Esc — leave."
-
-#: UI/GearPanel.cs
-msgid "1, 2 или щелчок — сказать. F или Esc — уйти."
-msgstr "1, 2 or click — to speak. F or Esc — to leave."
+msgid "кошель: {0}"
+msgstr "purse: {0}"
 
 #: UI/GearPanel.cs
 msgid "нет"
@@ -6424,12 +6504,12 @@ msgid "Пусть решают сами."
 msgstr "Let them decide for themselves."
 
 #: UI/MovementHintUI.cs
-msgid "W, A, S, D — идти. Камера идёт за вами."
-msgstr "W, A, S, D — walk. The camera follows you."
+msgid "W, A, S, D — идти. Мышь — оглядеться."
+msgstr "W, A, S, D — walk. Mouse — look around."
 
 #: UI/MovementHintUI.cs
-msgid "Щёлкните по Греховоду, затем правой кнопкой — куда идти."
-msgstr "Click the Sinbinder, then right-click where to go."
+msgid "Щёлкните по Греховоду, затем правой кнопкой по земле — он пойдёт туда."
+msgstr "Click the Sinbinder, then right-click the ground — he'll go there."
 
 #: UI/OverheadWord.cs
 msgid "Колеблется…"
@@ -6923,6 +7003,42 @@ msgstr "{0} is surrounded — a sign has appeared by the health bar. With two or
 msgid "{0} окружена — у полосы здоровья встал знак. Когда рядом двое врагов и больше, каждый лишний делает удары по ней больнее."
 msgstr "{0} is surrounded — a sign has appeared by the health bar. With two or more enemies close by, each extra one makes the blows on her hurt more."
 
+#: UI/TaskList.cs
+msgid "Возьмите меч или катану у входа (F)"
+msgstr "Take the sword or the katana by the entrance (F)"
+
+#: UI/TaskList.cs
+msgid "Выйдите из шатра"
+msgstr "Leave the tent"
+
+#: UI/TaskList.cs
+msgid "Пошлите отряд к заставе — совет у стола с шаром"
+msgstr "Send a squad to the outpost — council at the table with the orb"
+
+#: UI/TaskList.cs
+msgid "Откройте сундук Марги (F)"
+msgstr "Open Marga's chest (F)"
+
+#: UI/TaskList.cs
+msgid "Отдайте Марге долг из рук в руки (необязательно)"
+msgstr "Pay Marga his debt in person (optional)"
+
+#: UI/TaskList.cs
+msgid "Взгляните в горящий шар"
+msgstr "Look into the burning orb"
+
+#: UI/TaskList.cs
+msgid "Отбейте охотников"
+msgstr "Beat back the hunters"
+
+#: UI/TaskList.cs
+msgid "Уведите отряд к кругу на востоке — по дороге факелов"
+msgstr "Lead the squad to the circle in the east — along the torch road"
+
+#: UI/TaskList.cs
+msgid "Задачи"
+msgstr "Tasks"
+
 #: Resources/DialogueDatabase.asset
 msgid "У тебя есть кошель. Скоро он будет мой."
 msgstr "You have a purse. Soon it'll be mine."
@@ -7092,6 +7208,150 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Приказ был. {0} {1}."
+msgstr "There was an order. {0} {1}."
+
+#. нет в коде
+msgid "Приказ был. {0} {1} — {2}."
+msgstr "There was an order. {0} {1} — {2}."
+
+#. нет в коде
+msgid "он не привык к чужим приказам"
+msgstr "he isn't used to taking orders"
+
+#. нет в коде
+msgid "она не привыкла к чужим приказам"
+msgstr "she isn't used to taking orders"
+
+#. нет в коде
+msgid "он не хочет, чтобы это досталось кому-то другому"
+msgstr "he doesn't want anyone else to have it"
+
+#. нет в коде
+msgid "он тащит всё, до чего дотянется"
+msgstr "he grabs everything within reach"
+
+#. нет в коде
+msgid "у него не осталось воли"
+msgstr "he has no will left"
+
+#. нет в коде
+msgid "иначе он не может"
+msgstr "he can't do otherwise"
+
+#. нет в коде
+msgid "он поступает как привык"
+msgstr "he does as he always does"
+
+#. нет в коде
+msgid "он не привык проходить мимо"
+msgstr "he isn't one to walk on by"
+
+#. нет в коде
+msgid "{0}: «Владыка, покличьте их к столу. Совет любит, когда все на виду»."
+msgstr "{0}: “My lord, call them to the table. The council likes everyone in plain sight.”"
+
+#. нет в коде
+msgid "{0}: «Никто не подошёл, владыка. Они вас слышали»."
+msgstr "{0}: “No one came, my lord. They heard you.”"
+
+#. нет в коде
+msgid "{0}: «{1} остался на месте. Он вас слышал, владыка»."
+msgstr "{0}: “{1} stayed where he was. He heard you, my lord.”"
+
+#. нет в коде
+msgid "{0}: «{1} осталась на месте. Она вас слышала, владыка»."
+msgstr "{0}: “{1} stayed where she was. She heard you, my lord.”"
+
+#. нет в коде
+msgid "{0}: «{1} остались на месте. Они вас слышали, владыка»."
+msgstr "{0}: “{1} stayed where they were. They heard you, my lord.”"
+
+#. нет в коде
+msgid "{0}: «Владыка, позвольте пройтись с вами. Пусть видят, с кем я хожу»."
+msgstr "{0}: “My lord, let me walk with you. Let them see whom I walk with.”"
+
+#. нет в коде
+msgid "Карган: «Похоже, что-то случилось. Вероятно, {0} {1}»."
+msgstr "Kargan: “Looks like something happened. Most likely {0} {1}.”"
+
+#. нет в коде
+msgid "Карган: «Дело плохо, Владыка. Кто-то щёлкает наших ребят как косточки крысы»."
+msgstr "Kargan: “Things are bad, my lord. Someone is snapping our lads like rat bones.”"
+
+#. нет в коде
+msgid "Карган: «Владыка, они узнали, где наш лагерь. Вероятно, от одного из наших. Тяжело это признавать, но нам нужно бежать. К кругу на востоке — туда, где свет»."
+msgstr "Kargan: “My lord, they found out where our camp is. Probably from one of our own. It's hard to admit, but we have to run. To the circle in the east — where the light is.”"
+
+#. нет в коде
+msgid "Карган: «Давайте осмотрим, что принёс Марга Копатель. Я уверен, он это всё просто выкопал возле лагеря»."
+msgstr "Kargan: “Let's look at what Marga the Digger brought. I'm sure he just dug it all up near the camp.”"
+
+#. нет в коде
+msgid "{0}: «Выкопал, не выкопал — а плату за вылазки мне так никто и не выкопал»."
+msgstr "{0}: “Dug it up or not — nobody's dug up my pay for the sorties yet.”"
+
+#. нет в коде
+msgid "Щёлкните по воину — выделить. Правой кнопкой по земле — идти туда."
+msgstr "Click a warrior to select. Right-click the ground to go there."
+
+#. нет в коде
+msgid "{0} ушёл к заставе один. Назад его ждать не скоро."
+msgstr "{0} set off for the outpost alone. Don't expect him back soon."
+
+#. нет в коде
+msgid "{0} ушла к заставе одна. Назад её ждать не скоро."
+msgstr "{0} set off for the outpost alone. Don't expect her back soon."
+
+#. нет в коде
+msgid "{0} повёл отряд к заставе. Назад их ждать не скоро."
+msgstr "{0} led the party to the outpost. Don't expect them back soon."
+
+#. нет в коде
+msgid "{0} повела отряд к заставе. Назад их ждать не скоро."
+msgstr "{0} led the party to the outpost. Don't expect them back soon."
+
+#. нет в коде
+msgid "Разговор: {0}"
+msgstr "Talking to {0}"
+
+#. нет в коде
+msgid "Что сказать"
+msgstr "What to say"
+
+#. нет в коде
+msgid "Что вы знаете"
+msgstr "What you know"
+
+#. нет в коде
+msgid "Долг"
+msgstr "Debt"
+
+#. нет в коде
+msgid "За вылазку"
+msgstr "For the sortie"
+
+#. нет в коде
+msgid "ещё не заплачено"
+msgstr "not paid yet"
+
+#. нет в коде
+msgid "1, 2, 3 или щелчок — сказать. F или Esc — уйти."
+msgstr "1, 2, 3 or click — say it. F or Esc — leave."
+
+#. нет в коде
+msgid "1, 2 или щелчок — сказать. F или Esc — уйти."
+msgstr "1, 2 or click — to speak. F or Esc — to leave."
+
+#. нет в коде
+msgid "W, A, S, D — идти. Камера идёт за вами."
+msgstr "W, A, S, D — walk. The camera follows you."
+
+#. нет в коде
+msgid "Щёлкните по Греховоду, затем правой кнопкой — куда идти."
+msgstr "Click the Sinbinder, then right-click where to go."
 
 #. нет в коде
 msgid "пусто"

@@ -13,6 +13,8 @@ namespace Sinbinder.Gameplay
     /// Как править:
     ///   • меняйте только текст в кавычках внутри Loc.N("…");
     ///   • новая строка массива — новая запись (каждая печатается отдельно);
+    ///   • …Thought — мысль Греховода после строк, курсивом и без подписи;
+    ///     пустые кавычки "" — вещь без мысли;
     ///   • Loc.N(...) не удаляйте — по нему находят строку для перевода.
     ///     Английская версия покажет старый перевод, пока его не обновят
     ///     (Resources/Lang/en.txt).
@@ -23,15 +25,15 @@ namespace Sinbinder.Gameplay
     public static class InspectTexts
     {
         /// <summary>Тексты по имени вещи. Имя вещи ставит сборщик сцены.</summary>
-        public static (string Prompt, string Speaker, string[] Lines)? For(string key)
+        public static (string Prompt, string Speaker, string[] Lines, string Thought)? For(string key)
         {
             switch (key)
             {
-                case "AxeTree": return (AxeTreePrompt, AxeTreeSpeaker, AxeTree);
-                case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn);
-                case "Map": return (MapPrompt, MapSpeaker, Map);
-                case "Jars": return (JarsPrompt, JarsSpeaker, Jars);
-                case "Bed": return (BedPrompt, BedSpeaker, Bed);
+                case "AxeTree": return (AxeTreePrompt, AxeTreeSpeaker, AxeTree, AxeTreeThought);
+                case "Pawn": return (PawnPrompt, PawnSpeaker, Pawn, PawnThought);
+                case "Map": return (MapPrompt, MapSpeaker, Map, "");
+                case "Jars": return (JarsPrompt, JarsSpeaker, Jars, "");
+                case "Bed": return (BedPrompt, BedSpeaker, Bed, "");
                 default: return null;
             }
         }
@@ -43,8 +45,8 @@ namespace Sinbinder.Gameplay
 
         // Сверено облачной 22.10: всё вырезал один человек, «Т.», — поэтому
         // ни строки голосом рассказчика («Шестую вырезать было некому» —
-        // а кто тогда вырезал это?). Записи — по порядку ночей; что он
-        // не вернулся, говорит сам топор, который так и торчит в дереве.
+        // а кто тогда вырезал это?). Записи — по порядку ночей. Что Т. не
+        // вернулся, понимает Греховод — его мысль (AxeTreeThought).
         public static readonly string[] AxeTree =
         {
             Loc.N("Пятая ночь у этого дерева. Зарубка за каждую."),
@@ -52,6 +54,9 @@ namespace Sinbinder.Gameplay
             Loc.N("Топор не вынимай. Дерево мёртвое, а держит крепче живого."),
             Loc.N("Ушли за солью на восток. Вернусь — заберу топор. Т."),
         };
+
+        // Мысль Греховода — проба без голоса (37-DEMO §8.7, автор 23.10: «пробуй»).
+        public static readonly string AxeTreeThought = Loc.N("Топор всё ещё здесь.");
 
         // ── Пешка (пасхалка в одной из палаток) ────────────────────────────
         // Сверено облачной 22.10 — оставить как есть: первая строка — тезис
@@ -69,9 +74,15 @@ namespace Sinbinder.Gameplay
             Loc.N("Каждая фигура однажды перестаёт слушаться руки. Даже та, что держит доску."),
         };
 
+        // Говорила пешка голосом Смерти (Audio.DeathVoice) — Греховод это слышит.
+        // Пара к мысли при пробуждении (OpeningReveal.WakeThought): там он думает,
+        // что они служат ему, здесь фигура говорит ему то же самое о нём.
+        public static readonly string PawnThought = Loc.N("Пешки не разговаривают. Значит, говорила не она.");
+
         // ── Шатёр Греховода (автор, 21 октября, п. 24: «хочется больше
         // взаимодействий с предметами, вероятно, даже в палатке Греховода»).
-        // ЧЕРНОВИК работника D, 22.10 — на суд облачной (мир — её).
+        // Черновик работника D, 22.10; сверено облачной 23.10: вещь говорит то,
+        // что игроку пригодится, — без новых загадок (пешки и дерева хватит).
 
         public static readonly string MapPrompt = Loc.N("F — рассмотреть карту");
         public static readonly string MapSpeaker = Loc.N("Карта на коже");
@@ -79,8 +90,10 @@ namespace Sinbinder.Gameplay
         public static readonly string[] Map =
         {
             Loc.N("Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."),
-            Loc.N("Застава на перевале отмечена дважды. Над ней — знак охотников, перечёркнутый."),
-            Loc.N("На краю, где кожа истёрлась, — три фигуры. Одна стёрта пальцем."),
+            // Застава — цель вылазки совета: «брошенная» — так и нарисовано.
+            Loc.N("У заставы за холмами — крест: брошена. Знак охотников над ней перечёркнут."),
+            // Три фигурки (MapMarks) — три отряда; стёртая — мост Марги (48-PUNISHMENT).
+            Loc.N("На краю — три фигурки: три отряда. Одну стёрли пальцем — тот, что лёг у моста."),
         };
 
         public static readonly string JarsPrompt = Loc.N("F — взглянуть на банки");
@@ -88,8 +101,10 @@ namespace Sinbinder.Gameplay
 
         public static readonly string[] Jars =
         {
-            Loc.N("Стекло холодное. Пустые банки ждут, как ждут пустые места у костра."),
-            Loc.N("В одной огонёк. Жадный — льнёт к стенке, за которой лежит монета."),
+            // Души в банке на полке быть не может: её нельзя взять, а игрок
+            // увидел бы душу, с которой ничего не сделать. Полка учит суме.
+            Loc.N("Пустые банки для душ. Сегодня в них ляжет кто-то из тех, кто сейчас у костра."),
+            Loc.N("Три такие же — в суме у пояса. Сколько банок, столько душ и унесёшь."),
         };
 
         public static readonly string BedPrompt = Loc.N("F — постель");
@@ -97,8 +112,9 @@ namespace Sinbinder.Gameplay
 
         public static readonly string[] Bed =
         {
-            Loc.N("Шкуры ещё тёплые. Свет из сна не уходит из-под век."),
-            Loc.N("Под изголовьем что-то белеет. Нет — просто узел на ремне."),
+            // Без ложной находки («что-то белеет. Нет — узел»): обещание без дела.
+            Loc.N("Шкуры ещё тёплые."),
+            Loc.N("Свет из сна всё ещё стоит перед глазами."),
         };
     }
 }

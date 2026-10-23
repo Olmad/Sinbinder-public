@@ -202,6 +202,8 @@ namespace Sinbinder.UI
         /// </summary>
         public void Say(string speaker, string line)
         {
+            Plain();
+
             if (_speaker != null)
             {
                 _speaker.text = speaker ?? "";
@@ -222,6 +224,39 @@ namespace Sinbinder.UI
             }
 
             _typing = StartCoroutine(Type(line));
+        }
+
+        /// <summary>
+        /// Мысль Греховода: без подписи, курсивом и тусклее, чем реплика.
+        /// Автор, 21.10: «как будто чего-то не хватает… голос Греховоду, чтобы
+        /// он „читал“ или „думал“» — проба без голоса (37-DEMO §8.7). Говорят
+        /// все, кроме героя; мысль — его отношение, но не его лицо. Следующая
+        /// реплика (<see cref="Say"/>) возвращает строке обычный вид.
+        /// </summary>
+        public void Think(string line)
+        {
+            Say(null, line);
+            if (_line == null) return;
+
+            _plainFont ??= _line.font;
+            _plainColor ??= _line.color;
+            _line.font = UiStyle.Thought;
+            _line.color = Thinking(_plainColor.Value);
+        }
+
+        /// <summary>Цвет мысли: та же кость, на треть тусклее — тише реплики.</summary>
+        public static Color Thinking(Color plain)
+            => new(plain.r * 0.78f, plain.g * 0.76f, plain.b * 0.72f, plain.a);
+
+        private Font _plainFont;
+        private Color? _plainColor;
+
+        /// <summary>Вернуть строке вид реплики после мысли.</summary>
+        private void Plain()
+        {
+            if (_line == null) return;
+            if (_plainFont != null) _line.font = _plainFont;
+            if (_plainColor.HasValue) _line.color = _plainColor.Value;
         }
 
         [Tooltip("Букв в секунду. Читают ~16 в секунду (Herald.Hold) — печать "

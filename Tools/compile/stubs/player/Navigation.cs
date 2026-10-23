@@ -14,6 +14,8 @@ namespace Unity.AI.Navigation
     public class NavMeshModifier : UnityEngine.MonoBehaviour
     {
         public bool ignoreFromBuild { get; set; }
+        public bool overrideArea { get; set; }   // DemoSceneBuilder.NoWalkingOnTop — «Not Walkable»
+        public int area { get; set; }
     }
 
     public class NavMeshModifierVolume : UnityEngine.MonoBehaviour

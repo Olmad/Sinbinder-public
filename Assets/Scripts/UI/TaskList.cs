@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
@@ -22,7 +23,14 @@ namespace Sinbinder.UI
     /// Только лагерь (и набег в нём). Прячется, пока говорит сцена: заставка,
     /// открытие, наезд, окна.
     ///
-    /// Слова — черновик работника D; формулировки — на суд облачной.
+    /// Задача, раз открывшись, не закрывается, а зачёркнутая не
+    /// раззачёркивается: признаки мгновенные — «охотников нет» снова ложь,
+    /// когда выходит вторая волна, и строки мигали бы.
+    ///
+    /// Необязательная (долг Марге) так и подписана: выбор — не обязанность;
+    /// не сделана к набегу — уходит, а не висит упрёком.
+    ///
+    /// Слова — черновик работника D, сверены облачной 23.10 (`14-HANDOFF.md` §135.50).
     /// </summary>
     public class TaskList : MonoBehaviour
     {
@@ -31,6 +39,8 @@ namespace Sinbinder.UI
             public string Text;
             public Func<bool> Open;
             public Func<bool> Done;
+            public Func<bool> Gone;     // необязательная: окно прошло — не показывать
+            public bool Opened, Finished;
             public Text Label;
             public Image Strike;
         }
@@ -57,37 +67,52 @@ namespace Sinbinder.UI
         private CanvasGroup _group;
         private readonly List<Task> _tasks = new();
         private bool _enemiesSeen;
+        private bool _outOfTent;
         private float _nextLook;
 
         void Start()
         {
             Build();
             Define();
+            SceneManager.sceneLoaded += Forget;
+        }
+
+        void OnDestroy() => SceneManager.sceneLoaded -= Forget;
+
+        /// <summary>
+        /// Сцена загружена заново — новая игра или запись: защёлки прочь, задачи
+        /// откроются и зачеркнутся по состоянию игры заново. Иначе после «новой
+        /// игры» список стоял бы зачёркнутым с прошлого раза.
+        /// </summary>
+        private void Forget(Scene scene, LoadSceneMode mode)
+        {
+            foreach (var t in _tasks) { t.Opened = false; t.Finished = false; }
+            _enemiesSeen = false;
+            _outOfTent = false;
         }
 
         private void Define()
         {
-            bool outOfTent = false;
-
             // Одна цепочка: каждая следующая открывается, когда сделана предыдущая.
             Add(Loc.T("Возьмите меч или катану у входа (F)"),
                 () => true,
                 () => !string.IsNullOrEmpty(WeaponPickup.Taken));
             Add(Loc.T("Выйдите из шатра"),
                 () => true,
-                () => outOfTent || (outOfTent = OutOfTent()));
-            Add(Loc.T("Идите к костру за провожатым"),
-                () => true,
-                () => CampOpening.EscortArrived);
-            Add(Loc.T("Назначьте старшего — совет у стола с шаром"),
+                () => _outOfTent || (_outOfTent = OutOfTent()));
+            // «Идите к костру за провожатым» убрана: провожатый подходит сам,
+            // идти за ним не нужно, — задача обещала дело, которого нет.
+            Add(Loc.T("Пошлите отряд к заставе — совет у стола с шаром"),
                 () => CampOpening.EscortArrived,
                 () => !string.IsNullOrEmpty(SquadRoster.CommanderName));
             Add(Loc.T("Откройте сундук Марги (F)"),
                 () => !string.IsNullOrEmpty(SquadRoster.CommanderName),
                 () => TrophyChest.Looted);
-            Add(Loc.T("Отдайте Марге долг — лично, в разговоре"),
+            // Отдать или бежать к шару — оба пути честные (09-PROLOGUE, сцена 3).
+            Add(Loc.T("Отдайте Марге долг из рук в руки (необязательно)"),
                 () => TrophyChest.Looted && CampOpening.DebtWarned,
-                () => { var w = CampOpening.Debtor(); return w == null || w.UnpaidMissions == 0; });
+                () => { var w = CampOpening.Debtor(); return w == null || w.UnpaidMissions == 0; },
+                gone: () => RaidEvent.Running);
             Add(Loc.T("Взгляните в горящий шар"),
                 () => CrystalBall.Raised,
                 () => RaidEvent.Running);
@@ -99,9 +124,9 @@ namespace Sinbinder.UI
                 () => false);
         }
 
-        private void Add(string text, Func<bool> open, Func<bool> done)
+        private void Add(string text, Func<bool> open, Func<bool> done, Func<bool> gone = null)
         {
-            var t = new Task { Text = text, Open = open, Done = done };
+            var t = new Task { Text = text, Open = open, Done = done, Gone = gone };
 
             var go = new GameObject("Задача", typeof(RectTransform), typeof(Text));
             go.transform.SetParent(_plate, false);
@@ -193,8 +218,11 @@ namespace Sinbinder.UI
             float widest = 0f;
             foreach (var t in _tasks)
             {
-                bool open = t.Open();
-                bool done = open && t.Done();
+                t.Opened |= t.Open();
+                bool open = t.Opened;
+                t.Finished |= open && t.Done();
+                bool done = t.Finished;
+                if (open && !done && t.Gone != null && t.Gone()) open = false;
                 t.Label.gameObject.SetActive(open);
                 if (!open) continue;
 

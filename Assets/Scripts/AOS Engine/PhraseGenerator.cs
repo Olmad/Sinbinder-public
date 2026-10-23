@@ -60,10 +60,12 @@ namespace Sinbinder.AOS
             string what = Verb(decision.Action, context);
             string why = Reason(warrior, context, decision);
 
+            // Тем же порядком, что журнал, только в настоящем (47-TEXTS §6, п. 1;
+            // автор: «да»): одно решение — одни слова. «Приказ был» читался обрывком.
             if (decision.RefusedCommand)
                 return string.IsNullOrEmpty(why)
-                    ? Loc.F("Приказ был. {0} {1}.", name, what)
-                    : Loc.F("Приказ был. {0} {1} — {2}.", name, what, why);
+                    ? Loc.F("{0} не выполняет приказ. Вместо этого {1}.", name, what)
+                    : Loc.F("{0} не выполняет приказ: {1}. Вместо этого {2}.", name, why, what);
 
             return string.IsNullOrEmpty(why)
                 ? $"{name} {what}."
@@ -246,7 +248,7 @@ namespace Sinbinder.AOS
                     // задел приказ, а побежал он по другой причине.
                     if (decision.Action == ActionType.Flee)
                         return decision.RefusedCommand
-                            ? P(Loc.T("он не привык к чужим приказам"), Loc.T("она не привыкла к чужим приказам"))
+                            ? P(Loc.T("он не терпит приказов"), Loc.T("она не терпит приказов"))
                             : "";
 
                     // Велели уйти из схватки — вот где эти слова правда:
@@ -261,8 +263,8 @@ namespace Sinbinder.AOS
                     // слова два разных хозяина, и по строке их не различить.
                     // Фраза переписана так, чтобы его не было.
                     if (decision.RefusedCommand)
-                        return P(Loc.T("он не привык к чужим приказам"),
-                                 Loc.T("она не привыкла к чужим приказам"));
+                        return P(Loc.T("он не терпит приказов"),
+                                 Loc.T("она не терпит приказов"));
                     if (context.LastAlive)
                         return P(Loc.T("он остался один и не собирается уходить"),
                                  Loc.T("она осталась одна и не собирается уходить"));
@@ -274,7 +276,7 @@ namespace Sinbinder.AOS
                     if (Virtuous(warrior, SinType.Envy)) return "";
                     if (context.RelationshipWithCommander < 40f)
                         return Loc.T("он не считает командира выше себя");
-                    return Loc.T("он не хочет, чтобы это досталось кому-то другому");
+                    return Loc.T("он не хочет, чтобы другому досталось больше, чем ему");
 
                 case "Lust":
                     if (context.BrotherNearby) return Loc.T("он не бросит своего");
@@ -285,18 +287,18 @@ namespace Sinbinder.AOS
                 case "Gluttony":
                     if (Virtuous(warrior, SinType.Gluttony))
                         return did == ActionType.Attack ? Loc.T("лишнего ему не нужно — только дело") : "";
-                    return Loc.T("он тащит всё, до чего дотянется");
+                    return Loc.T("он сгребает всё подряд — нужное и ненужное");
 
                 case "Sloth":
                     if (Virtuous(warrior, SinType.Sloth)) return Diligence(did, context, P);
-                    if (weighed) return Loc.T("у него не осталось воли");
+                    if (weighed) return Loc.T("ему всё безразлично — и приказ тоже");
                     if (context.IsExhausted)
                         return P(Loc.T("он выдохся и больше не может"),
                                  Loc.T("она выдохлась и больше не может"));
                     // «На исходе» — когда правда меньше половины (как у Counterfactual).
                     if (context.Fatigue > 0.5f) return Loc.T("силы у него на исходе");
                     if (context.Fatigue > 0.4f) return P(Loc.T("он устал"), Loc.T("она устала"));
-                    return Loc.T("у него не осталось воли");
+                    return Loc.T("ему всё безразлично — и приказ тоже");
 
                 case "Patience":
                     return Loc.T("он ждёт удобной минуты");
@@ -310,16 +312,16 @@ namespace Sinbinder.AOS
 
                 case "Morality":
                     if (warrior.Soul != null && warrior.Soul.Moral == MoralType.Pious)
-                        return Loc.T("иначе он не может");
+                        return Loc.T("совесть не пускает");
                     if (warrior.Soul != null && warrior.Soul.Moral == MoralType.Vicious)
                         return Loc.T("чужая беда его не касается");
-                    return Loc.T("он поступает как привык");
+                    return P(Loc.T("он поступает, как привык"), Loc.T("она поступает, как привыкла"));
 
                 case "Memory":
                     return Loc.T("он помнит, чем это кончилось в прошлый раз");
 
                 case "Virtue":
-                    return Loc.T("он не привык проходить мимо");
+                    return P(Loc.T("он не привык проходить мимо чужой беды"), Loc.T("она не привыкла проходить мимо чужой беды"));
 
                 default:
                     return "";

@@ -12,8 +12,8 @@ namespace Sinbinder.Gameplay
     /// Сундук с трофеями Марги Копателя. Сцена 3 пролога, первая половина
     /// (docs/09-PROLOGUE.md §4).
     ///
-    /// > «Давайте осмотрим, что принёс Марга Копатель. Я уверен, он это
-    /// > всё просто выкопал возле лагеря».
+    /// > «Владыка, взглянем, что Марга Копатель принёс с вылазки. Готов
+    /// > спорить, половину он выкопал у самого лагеря».
     ///
     /// Одной фразой — характер Жадности и юмор мира. А по делу это
     /// обучение снаряжению без слова «снаряжение»: игрок подходит,
@@ -47,10 +47,15 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _lidAngle = -72f;
         [SerializeField] private float _lidSeconds = 0.9f;
 
-        [Tooltip("Что говорит Карган, ведя к сундуку.")]
-        [SerializeField] private string _invite =
-            Loc.N("Карган: «Давайте осмотрим, что принёс Марга Копатель. "
-          + "Я уверен, он это всё просто выкопал возле лагеря».");
+        /// <summary>
+        /// Что говорит Карган, ведя к сундуку. Шутка сценария автора
+        /// (`09-PROLOGUE.md`, сцена 3), слог — по 47-TEXTS §5, п. 10 (автор: «да»).
+        /// В коде, а не в сцене: сериализованная строка держала старый текст
+        /// до пересборки сцен.
+        /// </summary>
+        private static readonly string Invite =
+            Loc.N("Карган: «Владыка, взглянем, что Марга Копатель принёс с вылазки. "
+          + "Готов спорить, половину он выкопал у самого лагеря».");
 
         /// <summary>
         /// Разобрали ли трофеи. Статично: сцена 3 идёт дальше только после
@@ -164,12 +169,9 @@ namespace Sinbinder.Gameplay
             if (!_invited)
             {
                 _invited = true;
-                if (!string.IsNullOrEmpty(_invite))
-                {
-                    string invite = Loc.T(_invite);
-                    Herald.Line(invite);
-                    Grumble(invite);
-                }
+                string invite = Loc.T(Invite);
+                Herald.Line(invite);
+                Grumble(invite);
             }
 
             // Без тела героя (старые сцены) — по-прежнему сам, по взгляду.
@@ -410,8 +412,9 @@ namespace Sinbinder.Gameplay
             string name = Loc.Name(debtor.DisplayName);
             if (!invite.Contains(name)) return;
 
-            Herald.Line(Loc.F("{0}: «Выкопал, не выкопал — а плату за вылазки мне "
-                            + "так никто и не выкопал».", name));
+            // 47-TEXTS §5, п. 11 (автор: «да»): плату не выкапывают.
+            Herald.Line(Loc.F("{0}: «Копал, не копал — а платы за вылазки "
+                            + "я так и не видел».", name));
         }
 
         /// <summary>

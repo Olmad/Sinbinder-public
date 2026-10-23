@@ -140,8 +140,10 @@ namespace Sinbinder.Gameplay
             var keeper = Bodyguard();
             string who = Loc.Name(keeper ?? Loc.N("Карган Старый Ворон"));
 
-            Herald.Line(Loc.F("{0}: «Владыка, покличьте их к столу. Совет любит, "
-              + "когда все на виду».", who));
+            // 47-TEXTS §5, п. 5 (автор: «да»): тезис игры вслух, пока отказ
+            // ничего не стоит, — первый отказ не должен читаться поломкой.
+            Herald.Line(Loc.F("{0}: «Владыка, позовите людей к столу. Придут не все: "
+              + "приказ они слышат, а решает каждый сам».", who));
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace Sinbinder.Gameplay
 
             if (came.Count == 0)
             {
-                Herald.Line(Loc.F("{0}: «Никто не подошёл, владыка. Они вас слышали».", who));
+                Herald.Line(Loc.F("{0}: «Никто не подошёл, владыка. Слышали все — и решили по-своему».", who));
                 return;
             }
 
@@ -198,13 +200,13 @@ namespace Sinbinder.Gameplay
             if (stayed.Count == 1)
             {
                 Herald.Line(Grammar.Pick(lone,
-                    Loc.F("{0}: «{1} остался на месте. Он вас слышал, владыка».", who, Join(stayed)),
-                    Loc.F("{0}: «{1} осталась на месте. Она вас слышала, владыка».", who, Join(stayed))));
+                    Loc.F("{0}: «{1} остался на месте. Он вас слышал, владыка, — и решил по-своему».", who, Join(stayed)),
+                    Loc.F("{0}: «{1} осталась на месте. Она вас слышала, владыка, — и решила по-своему».", who, Join(stayed))));
                 return;
             }
 
             Herald.Line(Loc.F("{0}: «{1} остались на месте. "
-              + "Они вас слышали, владыка».", who, Join(stayed)));
+              + "Они вас слышали, владыка, — и решили по-своему».", who, Join(stayed)));
         }
 
         private Transform Table()
