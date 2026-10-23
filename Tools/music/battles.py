@@ -645,7 +645,86 @@ def hunted():
     return s, 112, bar(41)
 
 
-THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final,
+def stalked():
+    """Первая волна набега — «барабаны охоты» (23 октября). Автор о «Grind»:
+    «очень навязчивая»; о марше «The Routine Raid», что пришёл на смену:
+    «по-прежнему слабо уместно звучит». Причина не в нотах, а в месте:
+    первая волна идёт сразу за шаром, где гасли отряды («кто-то щёлкает
+    наших ребят»), и подмигивание Overlord после потери спорит с ней.
+
+    Поэтому — без мелодии: материал «The Hunted» (сердце, крадущийся полутон
+    с ми-бемолем отказа, удары тритоном), только низ — выше ре первой октавы
+    ничего, середина свободна для голосов, ударов и реплик отказа. Вторая
+    волна берёт тот же материал и даёт ему голос — валторну и тему Владыки:
+    охота началась тихо и только потом заговорила. 32 такта, около 1:08 —
+    первая волна (около минуты) не слышит шва петли."""
+    TREM = PAD
+    s = Orchestra({STR: 70, TREM: 64, CELLO: 96, BASS: 104, BONE: 84, TIMP: 112,
+                   PIANO: 80, DRUMS: 104}, program={TREM: 44})
+
+    def heart(at, bars, vel, double=False, skip=4):
+        for b in range(bars):
+            if skip and b % skip == skip - 1: continue
+            for beat in ((0, 2) if double else (0,)):
+                t = at + b * 4 + beat
+                drum(s, BD, t, vel); drum(s, BD, t + 0.5, vel - 16)
+                s.add(TIMP, 38, t, 0.5, vel - 10)
+
+    def stalk(at, chords, vel, eighths=False):
+        step = 0.5 if eighths else 1.0
+        for b, name in enumerate(chords):
+            if b % 4 == 3: continue
+            r = CHORD[name]['bass']
+            for k in range(int(4 / step)):
+                p = r + (1 if k % 2 else 0)
+                s.add(BASS, p, at + b * 4 + k * step, step * 0.9, vel + (8 if k == 0 else 0))
+                s.add(CELLO, p + 12, at + b * 4 + k * step, step * 0.9, vel - 14)
+
+    def hits(at, bars, vel, every=1):
+        for b in range(0, bars, every):
+            t = at + b * 4 + 2.5
+            s.add(BONE, 38, t, 1.2, vel); s.add(BONE, 44, t, 1.2, vel)   # ре и ля-бемоль, октавой ниже «Hunted»
+            s.add(TIMP, 38, t, 0.8, vel + 4)
+
+    def low_shiver(at, bars, v0, v1):
+        for p in (50, 51):                      # ре и ми-бемоль малой октавы
+            s.add(TREM, p, at, bars * 4, 60)
+        s.swell(TREM, at, at + bars * 4, v0, v1)
+
+    A = ['Dm', 'Eb', 'Dm', 'Eb', 'Gm', 'Edim', 'Fm', 'A']
+    B = ['Dm', 'Gm', 'Eb', 'Dm', 'Gm', 'Dm', 'Eb', 'A']
+    # 1–8 «Подходят»: сердце, басы крадутся четвертями, низкая дрожь
+    heart(bar(1), 8, 80)
+    stalk(bar(1), A, 58)
+    low_shiver(bar(1), 8, 30, 70)
+    s.pads(STR, bar(1), A, 34)
+    s.roll(38, bar(8), 4, 50, 84)
+    # 9–16 «Рядом»: сердце бегом, басы восьмыми, удары тритоном через такт
+    heart(bar(9), 8, 82, double=True)
+    stalk(bar(9), B, 62, eighths=True)
+    hits(bar(9), 8, 74, every=2)
+    low_shiver(bar(9), 8, 60, 84)
+    # 17–24 «Затишье»: сердце реже, колокол рояля ре — и ля-бемоль; басы молчат
+    heart(bar(17), 8, 54, skip=2)
+    s.pads(STR, bar(17), ['Dm', 'Dm', 'Eb', 'Eb', 'Dm', 'Dm', 'Eb', 'A'], 30)   # фон, чтобы удар не стрелял в тишину
+    # Колокол и басы — тихо: после затишья ля-бемоль в полную силу прыгал на
+    # +20 дБ (master.py: «испуг», порог 14) — в бою это читается как событие.
+    s.add(PIANO, 26, bar(17), 8, 66); s.add(PIANO, 38, bar(17), 8, 60)
+    s.add(PIANO, 32, bar(21), 8, 54); s.add(PIANO, 44, bar(21), 8, 48)
+    low_shiver(bar(17), 8, 72, 62)
+    stalk(bar(21), ['Eb', 'Eb', 'C#dim', 'A'], 42)
+    # 25–32 «Сшиблись»: всё сразу, удары каждый такт, рокот литавр — в начало
+    heart(bar(25), 8, 86, double=True, skip=0)
+    stalk(bar(25), A, 68, eighths=True)
+    hits(bar(25), 8, 80)
+    low_shiver(bar(25), 8, 50, 90)
+    s.pads(STR, bar(25), A, 40)
+    cymbal(s, bar(25), 54)
+    s.roll(38, bar(32), 4, 56, 90)
+    return s, 112, bar(33)
+
+
+THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final, 'stalked': stalked,
           'hunted': hunted}
 
 if __name__ == '__main__':
