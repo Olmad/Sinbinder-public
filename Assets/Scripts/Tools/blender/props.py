@@ -178,6 +178,20 @@ def crate(b):
         b.add(*box((0, 0, z), (0.66, 0.66, 0.06)), bone="", mat=1)
 
 
+def order_crate(b):
+    """
+    Ящик Ордена — краденый (автор, 23 октября: «Ящики — думаю да, уместно»).
+    Тот же ящик, и на крышке и спереди — знак Ордена известью: крест,
+    как на табарде инквизитора (wear.py, tabard). Крест на крышке — потому
+    что камера смотрит сверху: бок под углом 70° почти не виден.
+    """
+    crate(b)
+    b.add(*box((0, -0.02, 0.606), (0.07, 0.40, 0.012)), bone="", mat=2)
+    b.add(*box((0, 0.07, 0.606), (0.28, 0.07, 0.012)), bone="", mat=2)
+    b.add(*box((0, -0.316, 0.30), (0.06, 0.012, 0.34)), bone="", mat=2)
+    b.add(*box((0, -0.316, 0.38), (0.24, 0.012, 0.06)), bone="", mat=2)
+
+
 def soul_shelf(b):
     """
     Полка с банками: доска на кронштейнах, невысокий бортик спереди —
@@ -818,6 +832,7 @@ PROPS = [
     Prop("ChestLid", chest_lid, [WOOD, IRON, DARK]),
     Prop("Barrel", barrel, [WOOD, IRON, DARK]),
     Prop("Crate", crate, [WOOD, DARK, IRON]),
+    Prop("OrderCrate", order_crate, [WOOD, DARK, ("Lime Paint", (0.640, 0.615, 0.560, 1.0))]),
     Prop("LogBench", log_bench, [WOOD, BARK, DARK]),
     Prop("Banner", banner, [CRIMSON, WOOD, GOLD]),
     Prop("Palisade", palisade, [WOOD, DARK, IRON]),
