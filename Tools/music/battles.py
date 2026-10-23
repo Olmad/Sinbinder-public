@@ -724,7 +724,66 @@ def stalked():
     return s, 112, bar(33)
 
 
-THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final, 'stalked': stalked,
+def dominion():
+    """Первая волна — «мрачная сила» (23 октября), вариант к «барабанам охоты».
+    Автор: охотники первой волны «побитые» и бегут при приближении, а
+    «барабаны охоты» «звучат страшно». По правилу пролога (09-PROLOGUE §1:
+    эпика — контраст, «игрок должен успеть поверить, что он бог») страх —
+    второй волне, а первая — сила: побитых гонят. Без подмигивания марша
+    (после шара, где гасли отряды, оно не к месту) и без жути: тяжёлые
+    барабаны войны, тема Владыки у низкой меди — его войско у своего огня.
+    Выше ре первой октавы почти ничего — середина свободна для голосов.
+    32 такта, около 1:17."""
+    s = Orchestra({STR: 72, HORN: 96, BONE: 92, CELLO: 96, BASS: 104, TIMP: 112,
+                   DRUMS: 108})
+    ORDER = ['Dm', 'Dm', 'Bb', 'Bb', 'Gm', 'A', 'Dm', 'A']
+
+    def war(at, bars, vel, heavy=False):
+        """Барабаны войны: большой на раз и три, низкий том на «четыре-и»;
+        тяжело — литавры ре и ля под большим."""
+        for b in range(bars):
+            t = at + b * 4
+            drum(s, BD, t, vel + 8); drum(s, BD, t + 2, vel)
+            drum(s, 43, t + 3.5, vel - 12)
+            if heavy:
+                s.add(TIMP, 38, t, 0.8, vel - 4); s.add(TIMP, 45, t + 2, 0.8, vel - 10)
+
+    def tread(at, chords, vel):
+        """Басы шагом: корень на раз и три — контрабас и виолончель."""
+        for i, name in enumerate(chords):
+            c = CHORD[name]
+            for half in (0, 2):
+                t = at + i * 4 + half
+                s.add(BASS, c['bass'], t, 1.8, vel + (6 if half == 0 else 0))
+                s.add(CELLO, c['cello'], t, 1.8, vel - 12)
+
+    # 1–8 «Встали»: барабаны, басы шагом, низкие струнные
+    war(bar(1), 8, 78)
+    tread(bar(1), ORDER, 72)
+    s.pads(STR, bar(1), ORDER, 40)
+    s.roll(38, bar(8), 4, 50, 86)
+    # 9–16 «Владыка»: тема автора у валторн
+    war(bar(9), 8, 82, heavy=True)
+    tread(bar(9), ORDER, 76)
+    s.pads(STR, bar(9), ORDER, 46)
+    s.line(HORN, lord_theme(), bar(9), 92)
+    # 17–24 «Гоним»: тема у тромбонов октавой ниже, валторны держат аккорды
+    war(bar(17), 8, 84, heavy=True)
+    tread(bar(17), ORDER, 78)
+    s.pads(HORN, bar(17), ORDER, 56)
+    s.line(BONE, lord_theme(), bar(17), 94, shift=-12)
+    # 25–32 «Наша земля»: тема у всей меди, тарелка, рокот — в начало
+    war(bar(25), 8, 86, heavy=True)
+    tread(bar(25), ORDER, 80)
+    s.pads(STR, bar(25), ORDER, 50)
+    s.line(HORN, lord_theme(), bar(25), 96)
+    s.line(BONE, lord_theme(), bar(25), 86, shift=-12)
+    cymbal(s, bar(25), 60)
+    s.roll(38, bar(32), 4, 56, 90)
+    return s, 100, bar(33)
+
+
+THEMES = {'rat': rat, 'raid': raid, 'hunt': hunt, 'gate': gate, 'war': war, 'final': final, 'stalked': stalked, 'dominion': dominion,
           'hunted': hunted}
 
 if __name__ == '__main__':
