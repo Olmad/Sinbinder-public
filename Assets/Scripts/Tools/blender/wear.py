@@ -246,7 +246,7 @@ def legend_banner(b, k=1.0):
     b.add(v, f, bone="Chest", mat=0)
 
 
-def rat_banner(b):
+def rat_banner(b, k=1.0):
     """
     Знамя «Крыс» за спиной Хоря (автор, 23 октября: «кто-то из лагеря стоял
     со знаменем, где изображена голова крысы»). Больше флажка легенды и с другой
@@ -256,7 +256,7 @@ def rat_banner(b):
     вытянутая морда, два уха, светлый глаз — силуэт читается и вблизи
     разговора, и сверху боком. Материалы: 0 — ткань, 1 — уголь, 2 — дерево.
     """
-    x, y = -0.040, 0.118
+    x, y = -0.040, 0.118 * k
     z0, z1 = P["hip"] - 0.020, P["skull"] + 0.500
     b.add(*tube((x, y, z0), (x, y, z1), 0.010, 0.009, segs=8), bone="Chest", mat=2)
     w, h = 0.280, 0.260
@@ -1109,6 +1109,8 @@ SKELETON_ITEMS = [
     ("Cloak", None, hug(0.74, y0=0.010)),
     ("RavenMantle", raven_mantle_skeleton, None),
     ("LegendBanner", lambda b: legend_banner(b, k=0.82), None),
+    # Знамя «Крыс» на скелете — ближе к узкой спине: его несёт Греховод, если поднял.
+    ("RatBanner", lambda b: rat_banner(b, k=0.82), None),
     ("LegendEyes", legend_eyes_skeleton, None),
     # Оружие — то же, но на суставах скелета: кулак у него свой.
     ("Sword", None, None),
