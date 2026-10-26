@@ -37,6 +37,7 @@ namespace Sinbinder.Utilets
         private static readonly (string Id, float Tiling, float Smoothness)[] Wanted =
         {
             ("Ground048", 14f, 0.04f),
+            ("Ground077", 14f, 0.04f),    // бор: хвоя и шишки (26.10)
             ("Ground110", 14f, 0.05f),
             ("Gravel043", 18f, 0.05f),
             ("Rock050", 3f, 0.08f),
@@ -90,6 +91,9 @@ namespace Sinbinder.Utilets
                 material.shader = shader;
                 Set(material, "_BaseMap", colour);
                 Set(material, "_MainTex", colour);
+                var tint = TintOf(id);
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", tint);
+                if (material.HasProperty("_Color")) material.SetColor("_Color", tint);
 
                 var normal = Load(id, "NormalGL");
                 if (normal != null)
@@ -128,6 +132,14 @@ namespace Sinbinder.Utilets
             AssetDatabase.SaveAssets();
             Debug.Log($"[МАТЕРИАЛЫ] Готово: {made} из {Wanted.Length}.");
         }
+
+        /// <summary>
+        /// Оттенок поверх скана. Почти у всех — белый (скан как есть). Хвоя бора
+        /// (Ground077) — сухая рыжая подстилка при дневном свете: на плане 26.10
+        /// легла песком, ярче и рыжее прежней земли. Темнее и серее — ночной бор.
+        /// </summary>
+        private static Color TintOf(string id)
+            => id == "Ground077" ? new Color(0.46f, 0.40f, 0.37f) : Color.white;
 
         /// <summary>Что рисуется с обеих сторон: тонкое, у чего видна изнанка.</summary>
         private static bool DoubleSided(string id) => id.StartsWith("Fabric");
