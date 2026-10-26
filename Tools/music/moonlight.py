@@ -15,10 +15,15 @@
 # до-диез миноре: до-диез — ми — соль — ре-диез — до-диез, с их тревожной
 # уменьшённой терцией: вот чья это пластинка.
 #
-#   python3 Tools/music/moonlight.py выход.mid
+# Вторая версия (--rat), 26 октября. Автор о первой: «Мелодия интересная.
+# Возможно, хотелось бы более крысиную версию». Первая сохраняется, вторая —
+# отдельной пьесой `scurry()`: те же ноты Бетховена, но играют «Крысы».
+#
+#   python3 Tools/music/moonlight.py выход.mid [--rat]
 import sys
-from orchestra import Orchestra, bar, CELLO, BASS, PIANO
-from rats import BSN, CLAR, PIZZ, OBOE, FOREST, MOTIF
+from orchestra import Orchestra, bar, CELLO, BASS, PIANO, DRUMS, WOOD_HI, WOOD_LO
+from rats import BSN, CLAR, PIZZ, FLUTE, OBOE, FOREST, MOTIF
+from battles import drum
 
 # Бетховен, соната №14 op. 27 №2, ч. 1, такты 1–22 (общественное достояние).
 # Сверено по изданию Berners, 1908. Триоли — по такту; LOWS — бас, MELODY — мелодия:
@@ -126,7 +131,88 @@ def sonata():
     return s, TEMPO, at(end + 2)
 
 
+# ---------- Вторая версия: «Крысы» ----------
+
+TEMPO_RAT = 72      # не Adagio: та же песня, но на цыпочках и бегом
+LOW_PIZZ = PIANO    # канал рояля свободен — на нём низкое пиццикато
+# Сбег кларнета из «Шуганули» (battles.py): полутоны вниз шестнадцатыми.
+FLEE = [(62, 0, 0.25), (61, 0.25, 0.25), (60, 0.5, 0.25), (59, 0.75, 0.25),
+        (58, 1, 0.25), (57, 1.25, 0.75)]
+
+
+def rat_who(b):
+    """Кто ведёт мелодию во второй версии: фагот, кларнет, флейта внизу, фагот.
+    По фразам, не вместе."""
+    if b <= 9:  return BSN, 84
+    if b <= 14: return CLAR, 76
+    if b <= 20: return FLUTE, 80
+    return BSN, 82
+
+
+def scurry():
+    """«Лунная соната», вторая версия: что в ней от «Крыс».
+    Триоли — сухое пиццикато вместо арфы: лапки бегут. Бас — пиццикато
+    шагом, виолончели под ним держат тихо. Мелодия — на цыпочках: долгие
+    ноты чуть короче, точка острее (подскок). На стыках фраз — по одному
+    крысиному жесту, каждый раз новому и в паузе мелодии: мотив выглядывает
+    во вступлении, лапки по коробочкам, смешок кларнета, сбег из «Шуганули».
+    Конец — мотив «Крыс» от до-диез, сбег — и огрызнулись."""
+    # Первый замер: флейта −36,5 против −34,5 дБ(A) у фагота и кларнета,
+    # бас пиццикато −59 — его не было слышно; громче.
+    s = Orchestra({BSN: 108, CLAR: 98, FLUTE: 118, PIZZ: 116, LOW_PIZZ: 127,
+                   CELLO: 76, DRUMS: 92},
+                  program={**FOREST, LOW_PIZZ: 45})
+
+    # Триоли — пиццикато. Первая нота тройки — громче: шаг лапок.
+    for b, row in TRIPLETS.items():
+        for i, p in enumerate(row):
+            s.add(PIZZ, p, at(b, i / 3), 0.3, 58 + (10 if i % 3 == 0 else 0) + (4 if i == 0 else 0))
+
+    # Бас: нижняя нота — пиццикато, долгая перещипывается каждые две доли;
+    # верхняя — виолончели, тихо держат пол.
+    for b, st, d, p in LOWS:
+        if p < 40:
+            for k in range(max(1, int(d // 2))):
+                s.add(LOW_PIZZ, p, at(b, st + k * 2), 0.8, 90 - k * 6)
+        else:
+            s.add(CELLO, p, at(b, st), d, 48)
+
+    # Мелодия на цыпочках.
+    for b, st, d, p in MELODY:
+        ch, vel = rat_who(b)
+        if d == 0.75: d = 0.55                      # точка острее: подскок
+        elif d >= 1: d *= 0.82                      # долгие — не до конца
+        s.add(ch, p, at(b, st), d, vel - (8 if d < 0.5 else 0))
+
+    # Стыки фраз — по одному жесту.
+    # такт 2: мотив выглядывает — фагот внизу, восьмыми, от до-диез
+    for p, st, d in MOTIF:
+        s.add(BSN, p - 50 + 49, at(2, 1 + st * 0.5), d * 0.4, 70 + (6 if st == 0 else 0))
+    # такт 9: фагот допел — лапки убежали по коробочкам
+    for k in range(5):
+        drum(s, WOOD_HI if k % 2 == 0 else WOOD_LO, at(9, 1.5 + k * 0.25), 66 - k * 4, 0.25)
+    # такт 10: смешок кларнета — и он же берёт песню
+    for k in (1, 1.75):
+        s.add(CLAR, 65, at(10, k), 0.1, 66); s.add(CLAR, 64, at(10, k + 0.1), 0.3, 74)
+    # такт 15: кларнет допел — сбег из «Шуганули» от си, и вступает флейта
+    s.line(CLAR, FLEE, at(15, 0.5), 78, shift=-3)
+
+    # Конец. Такт 23 — до-диез минор пиццикато, фагот — мотив «Крыс».
+    end = BARS + 1
+    for i in range(12):
+        s.add(PIZZ, (56, 61, 64)[i % 3], at(end, i / 3), 0.3, 54 + (8 if i % 3 == 0 else 0) - i)
+    s.add(CELLO, 49, at(end), 6, 46)
+    for p, st, d in MOTIF:
+        s.add(BSN, p - 50 + 49, at(end, st), d * 0.82, 80 + (6 if st == 0 else 0))
+    # такт 24: сбег кларнета от до-диез — к соль-диез
+    s.line(CLAR, FLEE, at(end + 1, 2), 80, shift=-1)
+    # такт 25: огрызнулись — пиццикато октавой и коробочка, один раз
+    s.add(LOW_PIZZ, 37, at(end + 2), 1.0, 96); s.add(LOW_PIZZ, 49, at(end + 2), 1.0, 90)
+    drum(s, WOOD_LO, at(end + 2), 84, 0.25)
+    return s, TEMPO_RAT, at(end + 3)
+
+
 if __name__ == '__main__':
-    s, bpm, length = sonata()
+    s, bpm, length = scurry() if '--rat' in sys.argv else sonata()
     s.save(sys.argv[1], bpm)
     print(f'{sys.argv[1]}: нот {s.count()}, темп {bpm}, конец на {s.end() * 60 / bpm:.1f} с')
