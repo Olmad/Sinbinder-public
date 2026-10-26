@@ -39,6 +39,9 @@ namespace Sinbinder.UI
         [Header("Душа")]
         [SerializeField] private Image _flameOuter;
         [SerializeField] private Image _flameInner;
+
+        /// <summary>Банка души поверх капли (26.10: «огонёк должен гореть, в 3D»); нет модели — капля.</summary>
+        private SoulJarView _jar;
         [SerializeField] private Text _nameLine;
         [SerializeField] private Text _craftLine;
         [SerializeField] private Text _sinLine;
@@ -157,6 +160,9 @@ namespace Sinbinder.UI
                 flame.sprite = UiStyle.Drop;
                 flame.preserveAspect = true;
             }
+
+            // Живая банка души — поверх капли; капля гаснет, пока банка есть.
+            if (_jar == null) _jar = SoulJarView.Over(_flameOuter);
 
             foreach (var plate in new[] { _talkPlate, _harvestPlate })
             {
@@ -486,6 +492,13 @@ namespace Sinbinder.UI
         {
             if (_flameOuter == null || _flameInner == null) return;
 
+            if (_jar != null)
+            {
+                _jar.Show(soul);
+                _flameOuter.color = _flameInner.color = new Color(0f, 0f, 0f, 0f);
+                return;
+            }
+
             if (soul == null)
             {
                 _flameOuter.color = Faint;
@@ -516,8 +529,12 @@ namespace Sinbinder.UI
             Set(_sinLine, "", Bone);
             Set(_bodyLine, BodyLine(who), Muted);
 
-            if (_flameOuter != null) _flameOuter.color = Faint;
-            if (_flameInner != null) _flameInner.color = new Color(0.10f, 0.08f, 0.07f, 1f);
+            if (_jar != null) _jar.Show(null);   // пустая банка: своей души он не носит
+            else
+            {
+                if (_flameOuter != null) _flameOuter.color = Faint;
+                if (_flameInner != null) _flameInner.color = new Color(0.10f, 0.08f, 0.07f, 1f);
+            }
 
             // Голосов у него нет — есть вещи (42-INTERFACE §3, «Греховод»):
             // сума по банкам словами и кошель числом (§2: числом — только то,

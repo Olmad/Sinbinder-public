@@ -520,6 +520,9 @@ namespace Sinbinder.EditorTools
                 // у ямки на краю поляны. Кадр — портрет, пока копает.
                 S("лагерь: Марга копает у края", null, DiggerSeen, 90f),
 
+                // Огонь души выделенного — банка в 3D (26.10). Кадр панели.
+                S("панель: банка души у выделенного", SelectOneOwn, JarShot, 6f),
+
                 // «Все видят знамя по-разному» (28-ORDERS, 26.10): раз в 9 с —
                 // строка над головой у того, кто ближе 12 м к Хорю. Кадр — первое
                 // облачко (снимает сам шаг, когда готов).
@@ -2345,6 +2348,23 @@ namespace Sinbinder.EditorTools
                 if (head != null) Close("Карган — глаза", head.position, w.transform.forward);
                 break;
             }
+            return true;
+        }
+
+        private static float _jarSince = -1f;
+
+        /// <summary>Выделен — через полторы секунды кадр экрана с панелью, и выделение снять.</summary>
+        private static bool JarShot()
+        {
+            var manager = SelectionManager.Instance;
+            if (_clicked == null || manager == null) return true;
+            if (_jarSince < 0f) _jarSince = Time.realtimeSinceStartup;
+            if (Time.realtimeSinceStartup - _jarSince < 1.5f) return false;
+
+            var jar = UnityEngine.Object.FindFirstObjectByType<UI.SoulJarView>();
+            Write($"  [ПАНЕЛЬ] банка души: {(jar != null ? "есть" : "нет — капля")}, выделен {_clicked.name}");
+            Snap("панель — банка души");
+            manager.Drop(_clicked);
             return true;
         }
 

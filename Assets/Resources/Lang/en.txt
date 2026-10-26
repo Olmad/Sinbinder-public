@@ -8060,3 +8060,22 @@ msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under he
 #: UI/StaminaHintUI.cs
 msgid "{0} выдохлась: уставшая бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока она стоит."
 msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while she stands still."
+#: UI/ViewHintUI.cs
+msgid "Вид сверху. V — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
+msgstr "View from above. V — back to the Sinbinder's eyes. Look around the camp: there is something to find."
+
+#: Gameplay/DiggerHabit.cs
+msgid "{0} что-то выкопал — и сунул в карман."
+msgstr "{0} dug something up — and pocketed it."
+
+#: Gameplay/DiggerHabit.cs
+msgid "{0} копает. Пока пусто."
+msgstr "{0} is digging. Nothing yet."
+
+#: Gameplay/DiggerHabit.cs
+msgid "Ага…"
+msgstr "Aha…"
+
+#: Gameplay/CampLife.cs
+msgid "копает"
+msgstr "digging"
