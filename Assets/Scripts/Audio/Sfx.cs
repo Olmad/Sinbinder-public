@@ -158,7 +158,11 @@ namespace Sinbinder.Audio
             _stepArmed = false;
         }
 
-        void Update() => Steps();
+        void Update()
+        {
+            Steps();
+            Digs();
+        }
 
         // ---------- что звучит ----------
 
@@ -335,6 +339,66 @@ namespace Sinbinder.Audio
             string set = Surface(SceneManager.GetActiveScene().name);
             if (set == null) return;
             Play(Pick(set), me.transform.position, set == "Step/Grass" ? 0.4f : 0.3f, 0.6f, Pitch());
+        }
+
+        /// <summary>Клип Dig (Tools/blender/motion/Dig.json): 126 кадров при 30 в секунду.</summary>
+        private const float DigLoop = 4.2f;
+
+        /// <summary>Лопата входит в землю: рывок рук на 84-м кадре клипа.</summary>
+        private const float DigStrike = 2.8f;
+
+        private class Digger
+        {
+            public Warrior Who;
+            public WarriorAnimation Body;
+            public float Since = -1f;
+            public int Strikes;
+            public int Gold = -1;
+        }
+
+        private readonly List<Digger> _diggers = new();
+        private float _nextDiggerLook;
+
+        /// <summary>
+        /// Примета Марги Копателя на слух (<see cref="DiggerHabit"/>): лопата
+        /// в землю — в такт клипу, найденное — звон монет у него в руках.
+        /// Привычку видно сверху, но взгляд бывает в другой стороне; звук
+        /// приводит его к ямке. Шаг по траве Kenney на треть ниже — это и есть
+        /// хруст земли под лопатой. Следит за телом, а не правит привычку: она
+        /// решает, когда копать, звук только слушает (<c>WarriorAnimation.Digging</c>).
+        /// </summary>
+        private void Digs()
+        {
+            if (Time.unscaledTime >= _nextDiggerLook)
+            {
+                _nextDiggerLook = Time.unscaledTime + 3f;
+                _diggers.RemoveAll(d => d.Who == null || d.Body == null);
+                foreach (var habit in Object.FindObjectsByType<DiggerHabit>(FindObjectsSortMode.InstanceID))
+                {
+                    var who = habit.GetComponent<Warrior>();
+                    var body = habit.GetComponent<WarriorAnimation>();
+                    if (who != null && body != null && !_diggers.Exists(d => d.Who == who))
+                        _diggers.Add(new Digger { Who = who, Body = body });
+                }
+            }
+
+            foreach (var d in _diggers)
+            {
+                if (d.Who == null || d.Body == null) continue;
+                var at = d.Who.transform.position;
+
+                if (d.Gold >= 0 && d.Who.PocketGold > d.Gold && d.Body.Digging) Coins(at);
+                d.Gold = d.Who.PocketGold;
+
+                if (!d.Body.Digging) { d.Since = -1f; continue; }
+                if (d.Since < 0f) { d.Since = Time.time; d.Strikes = 0; }
+
+                float t = Time.time - d.Since;
+                int due = t < DigStrike ? 0 : 1 + Mathf.FloorToInt((t - DigStrike) / DigLoop);
+                if (due <= d.Strikes) continue;
+                d.Strikes = due;
+                Play(Pick("Step/Grass"), at, 0.45f, 0.85f, 0.72f);
+            }
         }
 
         /// <summary>По чему идёт Греховод: в лагере — трава, в склепе — камень, в прочих сценах — тихо.</summary>
