@@ -50,6 +50,22 @@ namespace Sinbinder.Gameplay
         /// <summary>Копает — ставит и снимает <see cref="DiggerHabit"/> (примета Марги).</summary>
         public bool Digging { get; set; }
 
+        /// <summary>Сколько длится вызов: клип 64 кадра при 30 в секунду и стоит позой.</summary>
+        private const float ChallengeFor = 2.4f;
+
+        private float _challengeUntil = -1f;
+
+        /// <summary>
+        /// Бросить вызов: три удара мечом в щит и руки в стороны — один раз
+        /// (28-ORDERS, 26.10: арьергард Каргана, «миг ставит его на первую секунду»).
+        /// По реальному времени: миг замедляет мир, а вызов — его первая секунда.
+        /// </summary>
+        public void Challenge()
+        {
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+            _challengeUntil = Time.unscaledTime + ChallengeFor;
+        }
+
         /// <summary>
         /// Поставить позу из <see cref="BodyMotion"/> поверх решения души.
         /// Зовёт только съёмка из консоли (<c>Dev.Shooting</c>): для кадра
@@ -112,6 +128,7 @@ namespace Sinbinder.Gameplay
             // Сидит за картами — сидит, что бы ни решала душа (CardTable).
             if (Seated) return BodyMotion.Sit;
             if (Digging) return BodyMotion.Dig;
+            if (Time.unscaledTime < _challengeUntil) return BodyMotion.Challenge;
 
             // Достаёт или убирает оружие — стоя; клип короткий и доигрывается.
             if (_armsClip != null) return _armsClip;

@@ -71,9 +71,15 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public const string Dig = "Dig";
 
+        /// <summary>
+        /// Вызов — удары мечом в щит и руки в стороны (арьергард Каргана, 26.10;
+        /// <see cref="WarriorAnimation.Challenge"/>). Свой клип <c>bodies.py</c>, не зациклен.
+        /// </summary>
+        public const string Challenge = "Challenge";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig, Challenge };
 
         /// <summary>
         /// Во что превращается решение.

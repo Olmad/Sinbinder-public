@@ -516,6 +516,10 @@ namespace Sinbinder.EditorTools
 
                 S("лагерь: балалайка у костра, глаза Каргана", null, CampLooks, 5f),
 
+                // Клип «вызов» для арьергарда Каргана (28-ORDERS, 26.10): удары в щит,
+                // руки в стороны. Кадр — через две секунды, когда руки разведены.
+                S("лагерь: Карган — вызов (клип)", RavenChallenge, RavenChallengeShot, 6f),
+
                 // Примета Марги Копателя (28-ORDERS, 26.10): в свой час — на коленях
                 // у ямки на краю поляны. Кадр — портрет, пока копает.
                 S("лагерь: Марга копает у края", null, DiggerSeen, 90f),
@@ -2374,6 +2378,28 @@ namespace Sinbinder.EditorTools
         /// полторы секунды (раньше кадр шага выходил чёрным: затемнение);
         /// потом «начать заново», как и прежде.
         /// </summary>
+        private static Warrior _challenger;
+        private static float _challengeSince = -1f;
+
+        private static void RavenChallenge()
+        {
+            _challenger = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (CrowStep.Raven(w) && !w.IsDead) { _challenger = w; break; }
+            if (_challenger != null && _challenger.TryGetComponent<WarriorAnimation>(out var body)) body.Challenge();
+            _challengeSince = Time.realtimeSinceStartup;
+        }
+
+        /// <summary>Через две секунды вызова — портрет Каргана (руки разведены).</summary>
+        private static bool RavenChallengeShot()
+        {
+            if (_challenger == null) { Write("  [ВЫЗОВ] Каргана в лагере нет"); return true; }
+            if (Time.realtimeSinceStartup - _challengeSince < 2.0f) return false;
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Карган — вызов", _challenger.transform, Vector3.zero);
+            Write("  [ВЫЗОВ] Карган бросил вызов — кадр снят");
+            return true;
+        }
+
         /// <summary>
         /// Два кадра вблизи: балалайка у костра (28-ORDERS §8.2) и голова Каргана —
         /// горят ли глаза цветом Гордыни, не уходя в белый (§135.51). Портрет целится
