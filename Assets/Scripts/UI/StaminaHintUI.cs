@@ -71,6 +71,10 @@ namespace Sinbinder.UI
             _nextLook = Time.unscaledTime + 0.5f;
 
             if (Lesson.Holding) return;
+            // Только в бою — там же, где полоса сил видна у всех (StaminaBarUI).
+            // Ходьба тоже тратит силы, и в лагере строка о бое вполсилы вставала
+            // на того, кто просто долго шёл (прогон 26.10).
+            if (!StaminaBarUI.Fighting()) return;
 
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {

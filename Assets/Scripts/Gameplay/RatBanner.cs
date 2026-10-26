@@ -124,6 +124,8 @@ namespace Sinbinder.Gameplay
         private const float QuietFor = 4f;       // сколько секунд в лагере должно быть тихо, прежде чем Хорь пойдёт
         private const float TalkReach = 3.5f;    // с какого расстояния он заговаривает, метров
         private const float StepBack = 1.6f;     // где встаёт перед Греховодом, метров
+        private const float StuckFor = 4f;       // сколько не подходить ближе, чтобы заговорить оттуда, секунд
+        private const float TalkFrom = 8f;       // откуда ещё можно заговорить, если ближе не пройти, метров
         private const float PickReach = 1.4f;    // с какого расстояния Греховод поднимает знамя, метров
         private const float PlantDepth = 0.25f;  // насколько древко ушло в землю, метров
         private const float PlantLean = 9f;      // наклон воткнутого древка, градусов
@@ -291,9 +293,18 @@ namespace Sinbinder.Gameplay
 
             // Подходит сам, как провожатый. Приказ — через настоящий конвейер:
             // не дошёл с первого раза — просим снова, пока не окажется рядом.
-            float nextAsk = 0f;
+            // Не подходит ближе — значит, ближе не пройти: точка перед Греховодом
+            // на холме у шатра бывала за краем навмеша (путь PathPartial, сторож
+            // «ЗАСТРЯЛ» в двух прогонах 23 и 26.10). Тогда — говорить оттуда, где
+            // стоит, если недалеко; камера наедет на него сама.
+            float nextAsk = 0f, best = float.MaxValue, bestAt = Time.unscaledTime;
             while (bearer != null && !bearer.IsDead && !Near(bearer))
             {
+                float d = SinbinderPlayer.Exists
+                    ? CampFocus.GroundDistance(bearer.transform.position, SinbinderPlayer.Where) : 0f;
+                if (d < best - 0.3f) { best = d; bestAt = Time.unscaledTime; }
+                else if (!Busy() && Time.unscaledTime - bestAt > StuckFor && d <= TalkFrom) break;
+
                 if (Time.unscaledTime >= nextAsk && !Busy())
                 {
                     nextAsk = Time.unscaledTime + 2f;
@@ -301,6 +312,7 @@ namespace Sinbinder.Gameplay
                 }
                 yield return null;
             }
+            if (bearer != null) bearer.ClearCommand();
 
             while (Busy()) yield return null;
             if (bearer == null || bearer.IsDead) yield break;
@@ -397,7 +409,12 @@ namespace Sinbinder.Gameplay
             step.y = 0f;
             if (step.sqrMagnitude < 0.01f) return from;
             var at = from + step.normalized * Mathf.Max(0f, step.magnitude - StepBack);
-            at.y = from.y;
+            // Высота — Греховода, не подходящего, и на навмеш: Греховод на холме
+            // у шатра стоит на 1,8 м, и точка «на высоте Хоря» уходила внутрь холма —
+            // путь выходил неполным, и Хорь стоял у костра (сторож «ЗАСТРЯЛ», 26.10).
+            at.y = to.y;
+            if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 2.5f, UnityEngine.AI.NavMesh.AllAreas))
+                at = hit.position;
             return at;
         }
 

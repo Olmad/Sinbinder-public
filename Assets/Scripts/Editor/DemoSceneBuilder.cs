@@ -3184,6 +3184,8 @@ namespace Sinbinder.Utilets
             var line = Label("Строка", panel, 26, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
+            // Прилетает из центра экрана (автор, 26.10: «чтобы игрок не мог НЕ заметить»).
+            panel.gameObject.AddComponent<Sinbinder.UI.HintArrival>();
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.MovementHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
@@ -3355,6 +3357,8 @@ namespace Sinbinder.Utilets
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
+            // Прилетает из центра экрана (автор, 26.10: «чтобы игрок не мог НЕ заметить»).
+            panel.gameObject.AddComponent<Sinbinder.UI.HintArrival>();
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.CommandHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
@@ -3527,6 +3531,8 @@ namespace Sinbinder.Utilets
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
+            // Прилетает из центра экрана (автор, 26.10: «чтобы игрок не мог НЕ заметить»).
+            panel.gameObject.AddComponent<Sinbinder.UI.HintArrival>();
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.HarvestHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
@@ -3544,6 +3550,8 @@ namespace Sinbinder.Utilets
             var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
+            // Прилетает из центра экрана (автор, 26.10: «чтобы игрок не мог НЕ заметить»).
+            panel.gameObject.AddComponent<Sinbinder.UI.HintArrival>();
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.StaminaHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
