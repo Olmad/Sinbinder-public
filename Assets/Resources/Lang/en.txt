@@ -5372,6 +5372,10 @@ msgid "Знамя «Крыс» осталось там, где пал {0}."
 msgstr "The Rats' banner stands where {0} fell."
 
 #: Gameplay/RatBanner.cs
+msgid "F — поднять знамя «Крыс»"
+msgstr "F — take up the Rats' banner"
+
+#: Gameplay/RatBanner.cs
 msgid "Греховод поднял знамя «Крыс»."
 msgstr "The Sinbinder took up the Rats' banner."
 

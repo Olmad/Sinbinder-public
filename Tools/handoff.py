@@ -89,6 +89,21 @@ def missing_meta():
     return sorted(out)
 
 
+def windows_names():
+    """
+    Файлы, которые Windows не запишет: в имени < > : " | ? * или точка
+    и пробел в конце. 23 октября облако выложило запись склепа с двоеточием
+    в имени — на D не проходил git pull. Запускать до коммита.
+    """
+    out = git('-c', 'core.quotepath=false', 'ls-files')
+    bad = []
+    for path in out.splitlines():
+        name = path.split('/')[-1]
+        if any(c in path for c in '<>:"|?*\\') or name.endswith(('.', ' ')):
+            bad.append(path)
+    return bad
+
+
 def behind():
     """Сколько коммитов ветки ещё не забрано."""
     git('fetch', 'origin', BRANCH)
@@ -125,6 +140,11 @@ def report():
                       'Меню Sinbinder → Собрать сцены демо.')
     elif stale is None:
         lines.append('Свежесть сцен определить не удалось.')
+
+    w = windows_names()
+    if w:
+        urgent.append('Имена, которых не запишет Windows (git pull на D не пройдёт): '
+                      + ', '.join(w[:6]) + (f' и ещё {len(w) - 6}' if len(w) > 6 else ''))
 
     m = missing_meta()
     if m:
