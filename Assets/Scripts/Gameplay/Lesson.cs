@@ -37,6 +37,15 @@ namespace Sinbinder.Gameplay
         /// можно: это первый тактический глагол — «одним сковать, вторым обойти».
         /// </summary>
         Backstab,
+
+        /// <summary>
+        /// Отказ: первый отказ своего на виду. Решение автора, 26 октября: отказ
+        /// «нельзя НЕ заметить» — остановка времени и плашка. Кончается делом:
+        /// навёл мышь на отказавшего и прочёл, что перевесило. Так урок учит
+        /// заодно второй ступени прозрачности — «почему» живёт в подсказке,
+        /// а до 26 октября об этом не говорила ни одна строка игры.
+        /// </summary>
+        Refusal,
     }
 
     /// <summary>
@@ -113,6 +122,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private const float Gap = 10f;
 
+        /// <summary>
+        /// Урок отказа: сколько подсказка должна провисеть над отказавшим,
+        /// секунд реального времени, — прочесть две строки.
+        /// </summary>
+        private const float ReadSeconds = 2.5f;
+
         // ──────────────────────────────────
         // Кому и когда
         // ──────────────────────────────────
@@ -166,7 +181,7 @@ namespace Sinbinder.Gameplay
         public static Vector3 Target => _instance != null && _instance._leash != null
             ? _instance._leash.Center : Vector3.zero;
 
-        /// <summary>Воин урока обмена. Автопрогону: с кем говорить.</summary>
+        /// <summary>Воин урока: с кем говорить (обмен) или кто отказал (отказ). Автопрогону.</summary>
         public static Warrior Partner => _instance != null ? _instance._partner : null;
 
         /// <summary>Урок спины: кого послать за спину. Автопрогону.</summary>
@@ -178,6 +193,45 @@ namespace Sinbinder.Gameplay
         /// <summary>Радиус кольца сейчас. Самопроверке и автопрогону.</summary>
         public static float Radius => _instance != null && _instance._leash != null
             ? _instance._leash.Radius : 0f;
+
+        /// <summary>
+        /// Можно ли учить отказу: уроки разрешены и подсказка при наведении
+        /// видна. Урок кончается чтением подсказки; на ступени без неё
+        /// («значки») он ждал бы дела, которого нет, и мир стоял бы насовсем.
+        /// </summary>
+        public static bool RefusalTeachable => Allowed && Transparency.Shows(Clarity.Tooltips);
+
+        /// <summary>
+        /// Свой отказал на виду (<see cref="AOS.RefusalPresenter"/>). Первый такой
+        /// миг за игру — урок, в тот же кадр: мир встаёт на самом отказе,
+        /// а не пятую долю секунды спустя, когда воин уже отвернулся.
+        /// Не вышло сейчас (панель открыта, воин за краем экрана) — урок ждёт
+        /// следующего отказа.
+        /// </summary>
+        public static void Refused(Warrior w)
+        {
+            if (_instance == null || _instance._now.HasValue || _given.Contains(LessonKind.Refusal)) return;
+            if (!RefusalTeachable || !Calm() || w == null || w.IsDead) return;
+            if (Time.unscaledTime - _instance._endedAt < Gap) return;
+
+            // Навести можно только на видимого — и только если подсказке
+            // есть где появиться: без неё урок не кончился бы никогда.
+            if (!OnScreen(w) || Object.FindFirstObjectByType<UI.WarriorTooltipUI>() == null) return;
+
+            _instance._partner = w;
+            _instance._read = 0f;
+            _instance._since = Time.unscaledTime;
+            _instance.Begin(LessonKind.Refusal, w.transform.position);
+        }
+
+        /// <summary>Виден ли воин на экране, с запасом от края.</summary>
+        private static bool OnScreen(Warrior w)
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+            var v = cam.WorldToViewportPoint(w.transform.position + Vector3.up);
+            return v.z > 0f && v.x > 0.05f && v.x < 0.95f && v.y > 0.05f && v.y < 0.95f;
+        }
 
         /// <summary>Новая игра: уроки впереди снова.</summary>
         public static void Forget()
@@ -297,6 +351,9 @@ namespace Sinbinder.Gameplay
         private Warrior _partner;
         private Crypt.BindingDevice _device;
         private bool _talked;
+
+        // Урок отказа: сколько подсказка провисела над отказавшим и когда урок встал.
+        private float _read, _since;
 
         // Урок спины: кто держит врага, кто его обходит, куда идти.
         private Warrior _foe, _pinner, _flanker;
@@ -659,7 +716,8 @@ namespace Sinbinder.Gameplay
             GamePauseController.Instance.Hold(true);
 
             ShowRing(kind == LessonKind.Exchange ? WarriorColor
-                   : kind == LessonKind.Backstab ? FoeColor : SoulColor);
+                   : kind == LessonKind.Backstab ? FoeColor
+                   : kind == LessonKind.Refusal ? SinOf(_partner) : SoulColor);
             ShowPlate(true);
             Debug.Log("[УРОК] " + kind + ": мир стоит, кольцо по Греховоду.");
         }
@@ -676,6 +734,7 @@ namespace Sinbinder.Gameplay
                 || (_now == LessonKind.Exchange && (_partner == null || _partner.IsDead || RaidEvent.Running))
                 || (_now == LessonKind.Harvest && !SoulStillThere())
                 || (_now == LessonKind.Raising && _device == null)
+                || (_now == LessonKind.Refusal && (_partner == null || _partner.IsDead))
                 || (_now == LessonKind.Backstab && (_foe == null || _foe.IsDead
                                                     || _flanker == null || _flanker.IsDead)))
             {
@@ -698,6 +757,8 @@ namespace Sinbinder.Gameplay
             // Панель поверх урока — руки у неё: ни шага, ни плашки поверх экрана.
             if (Paused) { ShowPlate(false); return; }
 
+            if (_now == LessonKind.Refusal && Read()) { End(); return; }
+
             Walk(hero);
             _leash.Tighten(hero.transform.position);
             DrawRing();
@@ -714,6 +775,25 @@ namespace Sinbinder.Gameplay
         private void Harvested(FadingSoul any)
         {
             if (_now == LessonKind.Harvest) End();
+        }
+
+        /// <summary>
+        /// Прочёл, почему: подсказка провисела над отказавшим столько, сколько
+        /// нужно на две строки. Отвёл мышь — счёт стоит, а не сбрасывается.
+        /// Прогон мышь не наводит и «читает» сам, как отвечает Хорю у огня.
+        /// </summary>
+        private bool Read()
+        {
+            if (UI.WarriorTooltipUI.Hovered == _partner) _read += Time.unscaledDeltaTime;
+            return _read >= ReadSeconds || (OpeningReveal.Autopilot && Time.unscaledTime - _since > 3f);
+        }
+
+        /// <summary>Цвет греха отказавшего — тот же, что вспыхнул у его ног.</summary>
+        private static Color SinOf(Warrior w)
+        {
+            var c = w != null && w.Soul != null ? SinPalette.Of(w.Soul.Sin) : WarriorColor;
+            c.a = 0.75f;
+            return c;
         }
 
         /// <summary>Поговорил вблизи и закрыл экран — вещь отдана или нет, глагол выучен.</summary>
@@ -733,6 +813,7 @@ namespace Sinbinder.Gameplay
             _device = null;
             _foe = _pinner = _flanker = null;
             _frontal = false;
+            _read = 0f;
             _endedAt = Time.unscaledTime;
             _road.Clear();
             _walking = false;
@@ -940,6 +1021,7 @@ namespace Sinbinder.Gameplay
 
             if (_now == LessonKind.Raising) return RaisingStep();
             if (_now == LessonKind.Backstab) return BackstabStep();
+            if (_now == LessonKind.Refusal) return RefusalStep();
 
             // Разговор — только от первого лица, вблизи и глядя на воина.
             // Сверху плашка сперва говорит, как посмотреть его глазами;
@@ -988,6 +1070,35 @@ namespace Sinbinder.Gameplay
                   + "\n" + (_frontal
                         ? Loc.T("Это приказ бить в лоб. Чтобы ударить в спину, пошлите его на отметку.")
                         : Loc.T("Удар в спину сильнее обычного.")));
+        }
+
+        /// <summary>
+        /// Отказ — два шага: куда смотреть за «почему» и что с этим делать.
+        /// Сверху — навести мышь; от первого лица — посмотреть: подсказка ищет
+        /// воина под курсором, а курсор там стоит в середине экрана.
+        /// </summary>
+        private (string key, string words) RefusalStep()
+        {
+            var w = _partner;
+            string name = w != null ? Loc.Name(w.DisplayName) : "";
+            var g = w != null ? w.Gender : Gender.Male;
+
+            if (_read > 0f)
+                return ("?", Loc.T("Это и есть «почему». То же самое записано в журнале слева внизу.")
+                           + "\n" + Loc.T("Уберите то, что перевесило, — и приказ услышат."));
+
+            var view = Object.FindFirstObjectByType<RTS_Camera>();
+            bool eyes = view != null && view.FirstPersonNow;
+            string look = eyes
+                ? Grammar.Pick(g, Loc.T("Посмотрите на него — увидите, что перевесило."),
+                                  Loc.T("Посмотрите на неё — увидите, что перевесило."))
+                : Grammar.Pick(g, Loc.T("Наведите на него мышь — увидите, что перевесило."),
+                                  Loc.T("Наведите на неё мышь — увидите, что перевесило."));
+
+            return ("?", Grammar.Pick(g,
+                             Loc.F("{0} не послушал приказа: приказ — лишь один голос в его душе.", name),
+                             Loc.F("{0} не послушала приказа: приказ — лишь один голос в её душе.", name))
+                       + "\n" + look);
         }
 
         /// <summary>

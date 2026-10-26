@@ -5108,6 +5108,38 @@ msgid "Удар в спину сильнее обычного."
 msgstr "A blow to the back hits harder than usual."
 
 #: Gameplay/Lesson.cs
+msgid "Это и есть «почему». То же самое записано в журнале слева внизу."
+msgstr "That is the \"why\". The log at the bottom left says the same."
+
+#: Gameplay/Lesson.cs
+msgid "Уберите то, что перевесило, — и приказ услышат."
+msgstr "Remove what outweighed it, and the order will be heard."
+
+#: Gameplay/Lesson.cs
+msgid "Посмотрите на него — увидите, что перевесило."
+msgstr "Look at him to see what outweighed it."
+
+#: Gameplay/Lesson.cs
+msgid "Посмотрите на неё — увидите, что перевесило."
+msgstr "Look at her to see what outweighed it."
+
+#: Gameplay/Lesson.cs
+msgid "Наведите на него мышь — увидите, что перевесило."
+msgstr "Hover the mouse over him to see what outweighed it."
+
+#: Gameplay/Lesson.cs
+msgid "Наведите на неё мышь — увидите, что перевесило."
+msgstr "Hover the mouse over her to see what outweighed it."
+
+#: Gameplay/Lesson.cs
+msgid "{0} не послушал приказа: приказ — лишь один голос в его душе."
+msgstr "{0} ignored the order: an order is only one voice in his soul."
+
+#: Gameplay/Lesson.cs
+msgid "{0} не послушала приказа: приказ — лишь один голос в её душе."
+msgstr "{0} ignored the order: an order is only one voice in her soul."
+
+#: Gameplay/Lesson.cs
 msgid "F у ложа тела — забрать тело и взять со стола другое."
 msgstr "F at the body cradle — take the body back and pick another from the table."
 

@@ -28,11 +28,22 @@ namespace Sinbinder.UI
         private Camera _cam;
         private Warrior _shown;
 
+        /// <summary>
+        /// Над кем подсказка сейчас. Урок отказа (<see cref="Lesson"/>) ждёт,
+        /// пока её прочтут над отказавшим.
+        /// </summary>
+        public static Warrior Hovered { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() => Hovered = null;
+
         void Awake()
         {
             _cam = Camera.main;
             Hide();
         }
+
+        void OnDisable() => Hide();
 
         void Update()
         {
@@ -47,6 +58,7 @@ namespace Sinbinder.UI
             if (warrior == null) { Hide(); return; }
 
             if (warrior != _shown) { _shown = warrior; Refresh(warrior); }
+            Hovered = _shown;
 
             if (_panel != null)
                 _panel.position = (Vector2)Input.mousePosition + _offset;
@@ -78,6 +90,7 @@ namespace Sinbinder.UI
         private void Hide()
         {
             _shown = null;
+            Hovered = null;
             if (_panel != null) _panel.gameObject.SetActive(false);
         }
 

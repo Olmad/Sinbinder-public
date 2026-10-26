@@ -1369,6 +1369,10 @@ namespace Sinbinder.EditorTools
             var hero = SinbinderPlayer.Instance;
             if (hero == null) return;
 
+            // Отказ: глагол — прочесть подсказку над отказавшим. Мышь прогону
+            // не навести, а идти никуда не нужно: урок «прочтёт» сам (Autopilot).
+            if (Lesson.Now == LessonKind.Refusal) return;
+
             // Спина: глагол — приказ, а не шаг Греховода. Послать обходящего
             // на отметку тем же вызовом, что правая кнопка по земле.
             if (Lesson.Now == LessonKind.Backstab)

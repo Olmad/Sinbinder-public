@@ -2522,6 +2522,14 @@ namespace Sinbinder.Tests
                 Transparency.Set(Clarity.Log);
                 Check(Lesson.Allowed, "уроки включены и ступень с журналом — а урока нет");
 
+                // Урок отказа кончается чтением подсказки (26.10): на ступени
+                // без подсказок он ждал бы дела, которого нет, — мир стоял бы насовсем.
+                Check(Lesson.RefusalTeachable, "уроки и подсказки включены — а отказу не учат");
+                Transparency.Set(Clarity.Icons);
+                Check(Lesson.Allowed && !Lesson.RefusalTeachable,
+                      "урок отказа встал бы на ступени без подсказок — и не кончился бы");
+                Transparency.Set(Clarity.Log);
+
                 Lesson.Restore(new List<string> { "Harvest", "Unknown" });
                 Check(Lesson.Given(LessonKind.Harvest) && !Lesson.Given(LessonKind.Exchange),
                       "запись не вернула пройденный урок");
