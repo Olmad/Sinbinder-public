@@ -2659,6 +2659,7 @@ namespace Sinbinder.Utilets
             // подпись предмета у самой панели выделенного, выше — уроки.
             var stack = BuildStack(canvasGO.transform);
             BuildHarvestHint(canvasGO.transform, stack);
+            BuildStaminaHint(canvasGO.transform, stack);
             BuildCommandHint(canvasGO.transform, stack);
             BuildHint(canvasGO.transform, stack);
             BuildPlateLine(stack);
@@ -3527,6 +3528,23 @@ namespace Sinbinder.Utilets
             line.color = new Color(0.88f, 0.86f, 0.82f);
 
             var ui = parent.gameObject.AddComponent<Sinbinder.UI.HarvestHintUI>();
+            Wire(ui, ("_panel", panel.gameObject), ("_text", line));
+        }
+
+        /// <summary>
+        /// Подсказка о силах — при первом «выдохся» своего (36-LESSONS §7, 26.10).
+        /// Та же плашка, что у жатвы: строка длинная, ширина та же.
+        /// </summary>
+        private static void BuildStaminaHint(Transform parent, RectTransform stack)
+        {
+            var panel = StackRow("О силах", stack, new Vector2(960f, 76f));
+
+            Backdrop(panel, Weight.Strip);
+
+            var line = Label("Строка", panel, 24, TextAnchor.MiddleCenter);
+            line.color = new Color(0.88f, 0.86f, 0.82f);
+
+            var ui = parent.gameObject.AddComponent<Sinbinder.UI.StaminaHintUI>();
             Wire(ui, ("_panel", panel.gameObject), ("_text", line));
         }
 

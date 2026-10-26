@@ -8052,3 +8052,11 @@ msgstr "Order — to the whole squad"
 #. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
+
+#: UI/StaminaHintUI.cs
+msgid "{0} выдохся: уставший бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока он стоит."
+msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while he stands still."
+
+#: UI/StaminaHintUI.cs
+msgid "{0} выдохлась: уставшая бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока она стоит."
+msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while she stands still."
