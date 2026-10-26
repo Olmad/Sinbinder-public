@@ -623,6 +623,10 @@ namespace Sinbinder.Gameplay
             if (Wardrobe.Digger(warrior) && go.GetComponent<DiggerHabit>() == null)
                 go.AddComponent<DiggerHabit>();
 
+            // Навык Каргана Старого Ворона — «Вороньим следом» (CrowStep, 26.10).
+            if (CrowStep.Raven(warrior) && go.GetComponent<CrowStep>() == null)
+                go.AddComponent<CrowStep>();
+
             return warrior;
         }
 

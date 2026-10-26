@@ -49,6 +49,12 @@ namespace Sinbinder.Gameplay
             Taunting.Add(w);
         }
 
+        /// <summary>Перестать звать — кончился навык (<see cref="CrowStep"/>).</summary>
+        public static void End(Warrior w)
+        {
+            if (w != null) Taunting.Remove(w);
+        }
+
         /// <summary>Забыть всех зовущих: сцена кончилась.</summary>
         public static void Clear()
         {

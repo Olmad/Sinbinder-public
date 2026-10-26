@@ -56,6 +56,9 @@ namespace Sinbinder.Gameplay
         {
             if (IsDead) return;
 
+            // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
+            if (Bodyguard.Absorb(this, attacker, damage)) return;
+
             // Кто ударил, тот в бою участвовал. Без этой отметки «Тень»
             // не отличить от остальных (AOSWarriorWrapper.Struck).
             if (attacker != null

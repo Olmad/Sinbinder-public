@@ -161,7 +161,9 @@ namespace Sinbinder.UI
                 s.Face.color = !usable ? Dim : _hover == s ? Lit : Plain;
             }
 
-            _tip.text = _stanceList.gameObject.activeSelf ? "" : Tip(manager, heroOnly);
+            string skillTip = SkillTick(manager);
+            _tip.text = _stanceList.gameObject.activeSelf ? ""
+                      : !string.IsNullOrEmpty(skillTip) ? skillTip : Tip(manager, heroOnly);
         }
 
         private string Tip(SelectionManager manager, bool heroOnly)
@@ -316,6 +318,7 @@ namespace Sinbinder.UI
             Place(keys.rectTransform, 0f, 122f, ZoneSize.x, 22f);
 
             BuildStance(font);
+            BuildSkill(font);
 
             // Подсказка с прогнозом — на тонкой табличке по своему тексту
             // (46-UI §2.1): до 15 октября висела голым текстом поверх мира.
@@ -407,6 +410,89 @@ namespace Sinbinder.UI
             }
 
             _stanceList.gameObject.SetActive(false);
+        }
+
+        // ---------- навык выделенного: просьба (26.10) ----------
+
+        private RectTransform _skillCell;
+        private Image _skillFace;
+        private Text _skillLine;
+        private bool _skillHover;
+        private IAskableSkill _skill;
+        private Warrior _skillOwner;
+
+        /// <summary>
+        /// Навык выделенного — кнопкой между строками клавиш и установкой. Автор,
+        /// 26 октября: навыки «в полусвободном формате» и «в интерфейсе — в панели
+        /// управления справа». Видна, когда выделен один свой воин с навыком,
+        /// который можно попросить (<see cref="IAskableSkill"/>). Нажатие — просьба:
+        /// она голосуется; неуместная — воин отвечает, почему незачем.
+        /// </summary>
+        private void BuildSkill(Font font)
+        {
+            _skillCell = Rect("Навык", _grid, new Vector2(0f, 1f), Vector2.zero, new Vector2(ZoneSize.x, 36f));
+            _skillCell.pivot = new Vector2(0f, 1f);
+            _skillCell.anchoredPosition = new Vector2(0f, -148f);
+
+            _skillFace = _skillCell.gameObject.AddComponent<Image>();
+            _skillFace.color = Plain;
+            var b = _skillCell.gameObject.AddComponent<Button>();
+            b.targetGraphic = _skillFace;
+            b.onClick.AddListener(() => _skill?.Ask());
+
+            Key(_skillCell, font, "Q", 12f);
+            _skillLine = Label(_skillCell, UiStyle.BodyBold, "", 18, TextAnchor.MiddleLeft);
+            _skillLine.rectTransform.offsetMin = new Vector2(46f, 0f);
+            _skillLine.rectTransform.offsetMax = new Vector2(-8f, 0f);
+
+            var trigger = _skillCell.gameObject.AddComponent<EventTrigger>();
+            var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ => _skillHover = true);
+            var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exit.callback.AddListener(_ => _skillHover = false);
+            trigger.triggers.Add(enter);
+            trigger.triggers.Add(exit);
+
+            _skillCell.gameObject.SetActive(false);
+        }
+
+        /// <summary>Навык одного выделенного своего; нет — null.</summary>
+        private static IAskableSkill SkillOf(SelectionManager manager, out Warrior owner)
+        {
+            owner = null;
+            IAskableSkill found = null;
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                if (unit == null) continue;
+                var w = unit.GetComponentInParent<Warrior>();
+                if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) continue;
+                if (owner != null) return null;              // выделено больше одного — навыка не показываем
+                owner = w;
+                found = w.GetComponent<IAskableSkill>();
+            }
+            return found;
+        }
+
+        /// <summary>Кнопка навыка: видна ли, готов ли, подсказка с прогнозом.</summary>
+        private string SkillTick(SelectionManager manager)
+        {
+            if (_skillCell == null) return "";
+            _skill = SkillOf(manager, out _skillOwner);
+            _skillCell.gameObject.SetActive(_skill != null);
+            if (_skill == null) return "";
+
+            bool ready = _skill.Ready;
+            _skillLine.text = ready ? _skill.Word : Loc.F("{0} — ещё не готов", _skill.Word);
+            _skillFace.color = !ready ? Dim : _skillHover ? Lit : Plain;
+            _skillCell.GetComponent<Button>().interactable = ready;
+
+            if (Input.GetKeyDown(KeyCode.Q) && ready) _skill.Ask();
+
+            if (!_skillHover) return "";
+            string tip = $"{_skill.Word} · Q\n{_skill.Tip}";
+            if (!_skill.Fits(out string why)) return tip + "\n" + why;
+            string forecast = Predict(manager, CommandKind.Move);
+            return string.IsNullOrEmpty(forecast) ? tip : tip + "\n" + forecast;
         }
 
         /// <summary>Плашка клавиши: светлая кость, тёмная буква (макет: клавиши не мелкие и не бледные).</summary>

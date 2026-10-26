@@ -104,6 +104,7 @@ namespace Sinbinder.Dev
             foreach (var b in Find<UI.ClarityPanel>()) yield return b;
             foreach (var b in Find<UI.CheatSpawner>()) yield return b;
             foreach (var b in Find<UI.GearPanel>()) yield return b;
+            foreach (var b in Find<UI.CommandPanel>()) yield return b;   // Q — навык выделенного (26.10)
             foreach (var b in Find<AOS.DebugAOS>()) yield return b;
             foreach (var b in Find<Crypt.CryptInteractable>()) yield return b;
         }
