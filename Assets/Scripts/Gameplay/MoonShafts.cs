@@ -47,9 +47,18 @@ namespace Sinbinder.Gameplay
         private GraphicsOptions.MoonLevel _built = (GraphicsOptions.MoonLevel)(-1);
         private Vector3 _down;
 
+        private Light _rim;
+
         void Update()
         {
-            if (_built != GraphicsOptions.Moon) Build(GraphicsOptions.Moon);
+            if (_built != GraphicsOptions.Moon)
+            {
+                Build(GraphicsOptions.Moon);
+                // Лунный контур — только на высоком: второй направленный свет в URP
+                // считается на каждой точке экрана, замер 26.10 — 4,5 мс кадра лагеря.
+                if (_rim == null) _rim = GameObject.Find("Лунный контур")?.GetComponent<Light>();
+                if (_rim != null) _rim.enabled = GraphicsOptions.Moon == GraphicsOptions.MoonLevel.High;
+            }
             if (_shafts.Length == 0) return;
 
             var cam = Camera.main;

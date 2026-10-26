@@ -168,8 +168,15 @@ namespace Sinbinder.Core
             var want = GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Hard
                 ? LightShadows.Hard : LightShadows.Soft;
 
+            // Точечные огни — всегда жёсткие: у них шесть граней карты теней, мягкие
+            // края на каждой — замер 26.10 «Костёр» с жёсткими −2,5…−4 мс, а на глаз
+            // у огня разницы почти нет. Мягкость — у луны.
             foreach (var l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
-                if (l.shadows != LightShadows.None && l.shadows != want) l.shadows = want;
+            {
+                if (l.shadows == LightShadows.None) continue;
+                var edge = l.type == LightType.Point ? LightShadows.Hard : want;
+                if (l.shadows != edge) l.shadows = edge;
+            }
         }
 
         /// <summary>Сглаживание — свойство камеры, не файла настроек: можно и в редакторе.</summary>
@@ -202,7 +209,10 @@ namespace Sinbinder.Core
 
             float scale = GraphicsOptions.Scale;
             if (!Mathf.Approximately(pipe.renderScale, scale)) pipe.renderScale = scale;
-            var filter = scale < 1f ? UpscalingFilterSelection.STP : _filterWas;
+            // Пиксельная чёткость — растяжение без сглаживания, крупным чётким пикселем
+            // (автор, 26.10: «пикселизация… запустить игру даже на картошке»).
+            var filter = GraphicsOptions.Pixelated ? UpscalingFilterSelection.Point
+                       : scale < 1f ? UpscalingFilterSelection.STP : _filterWas;
             if (pipe.upscalingFilter != filter) pipe.upscalingFilter = filter;
         }
 

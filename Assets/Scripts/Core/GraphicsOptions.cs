@@ -24,7 +24,16 @@ namespace Sinbinder.Core
     {
         public enum ShadowMode { Off, Soft, Hard }
         public enum Smoothing { Off, Fast, Sharp, Temporal }
-        public enum Sharpness { Full, High, Medium }
+        /// <summary>
+        /// Чёткость. С 26.10 — и пиксельная (автор: «добавить пикселизацию — это бы
+        /// позволило запустить игру даже на картошке»): мир в половине и в трети
+        /// разрешения, растянут без сглаживания — крупным пикселем; интерфейс чёткий.
+        /// Дописано в конец: число лежит в PlayerPrefs.
+        /// </summary>
+        public enum Sharpness { Full, High, Medium, Pixel, BigPixel }
+
+        /// <summary>Пиксельная ли чёткость — растягивать без сглаживания.</summary>
+        public static bool Pixelated => Detail == Sharpness.Pixel || Detail == Sharpness.BigPixel;
         public enum FrameCap { Thirty, Sixty, None, Sync }
 
         /// <summary>
@@ -133,10 +142,12 @@ namespace Sinbinder.Core
         {
             Sharpness.High => Loc.T("высокая — мир чуть мягче, кадр легче"),
             Sharpness.Medium => Loc.T("средняя — для слабой видеокарты"),
+            Sharpness.Pixel => Loc.T("пиксельная — мир крупным пикселем, кадр вчетверо легче"),
+            Sharpness.BigPixel => Loc.T("крупный пиксель — для самой слабой машины"),
             _ => Loc.T("полная"),
         };
 
-        public static void CycleDetail() { Detail = (Sharpness)(((int)Detail + 1) % 3); Save(); }
+        public static void CycleDetail() { Detail = (Sharpness)(((int)Detail + 1) % 5); Save(); }
 
         public static string GrainName() => Grain ? Loc.T("включены") : Loc.T("выключены");
 
@@ -181,6 +192,8 @@ namespace Sinbinder.Core
         {
             Sharpness.High => 0.85f,
             Sharpness.Medium => 0.7f,
+            Sharpness.Pixel => 0.5f,
+            Sharpness.BigPixel => 0.34f,
             _ => 1f,
         };
 

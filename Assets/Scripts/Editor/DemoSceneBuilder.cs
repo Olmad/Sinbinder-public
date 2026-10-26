@@ -681,6 +681,9 @@ namespace Sinbinder.Utilets
             r.color = new Color(0.62f, 0.72f, 1.00f);
             r.intensity = warm ? 0.38f : 0.55f;
             r.shadows = LightShadows.None;
+            // Выключен в сцене: включает «Объёмный свет: высокий» (MoonShafts) —
+            // второй направленный свет стоит 4,5 мс кадра лагеря (замер 26.10).
+            r.enabled = false;
         }
 
         private static void Ground(string name, float scale, string soil = null)
@@ -1418,7 +1421,9 @@ namespace Sinbinder.Utilets
             // холодным светом лагерь читается тёплым пятном во тьме.
             l.intensity = 6.0f;
             l.range = 22f;
-            l.shadows = LightShadows.Soft;
+            // Жёсткие: у точечного огня шесть граней теней, мягкие края на каждой —
+            // замер 26.10 −2,5…−4 мс кадра лагеря; у огня разницы почти не видно.
+            l.shadows = LightShadows.Hard;
 
             // Живой огонь: дышит и пляшет, тени палаток шевелятся.
             light.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.22f, 2.6f, 0.06f);
@@ -2245,7 +2250,7 @@ namespace Sinbinder.Utilets
             light.color = new Color(1f, 0.68f, 0.38f);
             light.range = range;
             light.intensity = intensity;
-            light.shadows = shadows ? LightShadows.Soft : LightShadows.None;
+            light.shadows = shadows ? LightShadows.Hard : LightShadows.None;   // жёсткие — дешевле (26.10)
 
             // Фонарь — огонь под стеклом: дышит едва, на месте.
             lamp.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.08f, 1.8f, 0f);
