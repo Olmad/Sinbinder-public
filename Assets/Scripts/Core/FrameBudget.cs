@@ -194,9 +194,9 @@ namespace Sinbinder.Core
         }
 
         /// <summary>
-        /// Чёткость — доля разрешения мира и масштабатор STP: мир рисуется
-        /// мельче, а STP собирает кадр в полный размер (свой у Unity, на любой
-        /// видеокарте). Файл настроек — только в собранной игре.
+        /// Чёткость — доля разрешения мира и простое растяжение: мир рисуется
+        /// мельче и растягивается в полный размер (STP Unity в сборке падал), на любой
+        /// видеокарте. Файл настроек — только в собранной игре.
         /// </summary>
         private void Detail()
         {
@@ -211,8 +211,12 @@ namespace Sinbinder.Core
             if (!Mathf.Approximately(pipe.renderScale, scale)) pipe.renderScale = scale;
             // Пиксельная чёткость — растяжение без сглаживания, крупным чётким пикселем
             // (автор, 26.10: «пикселизация… запустить игру даже на картошке»).
+            // Не STP: в собранной игре он падал (NullReferenceException в STP.Execute
+            // каждый кадр — серый экран и зависание, автор 26.10 на «пиксельной»).
+            // Простое растяжение — на любой машине.
             var filter = GraphicsOptions.Pixelated ? UpscalingFilterSelection.Point
-                       : scale < 1f ? UpscalingFilterSelection.STP : _filterWas;
+                       : scale < 1f ? UpscalingFilterSelection.Linear : _filterWas;
+            if (filter == UpscalingFilterSelection.STP) filter = UpscalingFilterSelection.Auto;
             if (pipe.upscalingFilter != filter) pipe.upscalingFilter = filter;
         }
 
