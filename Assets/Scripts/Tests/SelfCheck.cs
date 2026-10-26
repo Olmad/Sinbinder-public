@@ -1209,6 +1209,9 @@ namespace Sinbinder.Tests
             Check(RatBanner.BySinbinder && !RatBanner.Fell(RatBanner.Bearer),
                   "знамя «Крыс»: поднял Греховод — несёт он");
             Check(Wardrobe.Knows(RatBanner.Item), "знамя «Крыс» — вещь гардероба, на кость ей есть место");
+            Check(RatBanner.Opinion(SinType.Pride) != null && RatBanner.Opinion(SinType.Greed) != null
+                  && RatBanner.Opinion(SinType.Sloth) != null && RatBanner.Opinion(SinType.Wrath) == null,
+                  "знамя «Крыс»: у трёх грехов демо — свои слова о нём, у прочих — молчание");
             RatBanner.Reset();
         }
 

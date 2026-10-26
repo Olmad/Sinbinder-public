@@ -302,6 +302,69 @@ namespace Sinbinder.Gameplay
             if (bearer == null || bearer.IsDead) yield break;
 
             yield return Talk(bearer);
+            StartCoroutine(Opinions(bearer));
+        }
+
+        // ---------- все видят по-разному ----------
+
+        // Автор, 23.10: «кто-то будет прям носить гордо знамя „Крыс“. Все видят это
+        // по-разному»; строки — 47-TEXTS §9 (автор: «да», 26.10). По главному греху
+        // говорящего — три греха демо; немой Гурт кивает.
+        private static readonly string PrideSees = Loc.N("Крысы… Под такой тряпкой я в бой не пойду. Пойду, конечно. Но не под ней.");
+        private static readonly string GreedSees = Loc.N("Крыса своего не упустит. Мне нравится.");
+        private static readonly string SlothSees = Loc.N("Крысы так крысы. Всё одно бежать.");
+
+        private const float OpinionEvery = 9f;   // секунд игры между строками — лагерь не лента новостей
+        private const float SeesBanner = 12f;    // с какого расстояния до Хоря знамя видно, метров
+
+        /// <summary>Что о знамени скажет душа с этим главным грехом; нет строки — промолчит.</summary>
+        public static string Opinion(SinType sin)
+        {
+            switch (sin)
+            {
+                case SinType.Pride: return PrideSees;
+                case SinType.Greed: return GreedSees;
+                case SinType.Sloth: return SlothSees;
+                default:            return null;
+            }
+        }
+
+        /// <summary>
+        /// После имени каждый, кто видит знамя, раз говорит о нём — строкой над
+        /// головой, по одному, раз в <see cref="OpinionEvery"/> секунд, по имени, без
+        /// жребия. Только пока лагерь живёт: разгром обрывает разговоры.
+        /// </summary>
+        private IEnumerator Opinions(Warrior bearer)
+        {
+            var said = new HashSet<string>();
+            while (CampLife.Enabled && bearer != null && !bearer.IsDead)
+            {
+                yield return new WaitForSeconds(OpinionEvery);
+                if (Busy()) continue;
+
+                Warrior next = null;
+                int left = 0;
+                foreach (var w in FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                {
+                    if (w == null || w.IsDead || w == bearer || w is SinbinderPlayer || w.Team != Team.Player) continue;
+                    if (w.Soul == null || said.Contains(w.DisplayName)) continue;
+                    bool mute = Dialogue.CampLines.Mute(w);
+                    if (!mute && Opinion(w.Soul.Sin) == null) continue;
+                    left++;
+                    if (!CampLife.Idle(w) || CampTalk.Partner(w, out _)) continue;
+                    if (CampFocus.GroundDistance(w.transform.position, bearer.transform.position) > SeesBanner) continue;
+                    if (next == null || string.CompareOrdinal(w.DisplayName, next.DisplayName) < 0) next = w;
+                }
+                if (left == 0) yield break;
+                if (next == null) continue;
+
+                said.Add(next.DisplayName);
+                SpeechBubbles.Say(next, Dialogue.CampLines.Mute(next)
+                    ? Dialogue.CampLines.Gesture(next)
+                    : Loc.T(Opinion(next.Soul.Sin)));
+                var body = next.GetComponent<WarriorAnimation>();
+                if (body != null) body.TalkFor(3f);
+            }
         }
 
         private static bool Busy()

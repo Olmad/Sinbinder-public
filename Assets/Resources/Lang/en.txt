@@ -5380,6 +5380,18 @@ msgid "Греховод поднял знамя «Крыс»."
 msgstr "The Sinbinder took up the Rats' banner."
 
 #: Gameplay/RatBanner.cs
+msgid "Крысы… Под такой тряпкой я в бой не пойду. Пойду, конечно. Но не под ней."
+msgstr "Rats… I won't go to battle under that rag. I'll go, of course. Just not under it."
+
+#: Gameplay/RatBanner.cs
+msgid "Крыса своего не упустит. Мне нравится."
+msgstr "A rat never lets go of what's his. I like it."
+
+#: Gameplay/RatBanner.cs
+msgid "Крысы так крысы. Всё одно бежать."
+msgstr "Rats it is. We're running either way."
+
+#: Gameplay/RatBanner.cs
 msgid "Отряд назвал себя Крысами."
 msgstr "The squad named itself the Rats."
 

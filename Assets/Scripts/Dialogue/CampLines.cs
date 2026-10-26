@@ -53,7 +53,7 @@ namespace Sinbinder.Dialogue
 
         private static bool IsLiska(Warrior w) => w.DisplayName == "Лиска";
 
-        private static string Gesture(Warrior w) => Loc.T("(молча кивает)");
+        public static string Gesture(Warrior w) => Loc.T("(молча кивает)");
 
         // ──────────────────────────────────
         // Первая строка
