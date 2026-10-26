@@ -203,6 +203,43 @@ namespace Sinbinder.Audio
         }
 
         /// <summary>
+        /// Полено в костёр (<see cref="CampfireStoke"/>): глухой стук дерева
+        /// о дрова — удар по кости Kenney ниже на треть, это и есть дерево
+        /// (`impactWood`), — и треск огня густеет на четыре секунды.
+        /// </summary>
+        public static void Stoke(Transform fire, Vector3 where)
+        {
+            if (_instance == null) return;
+            _instance.Play(Pick("Hit/Bone"), where, 0.5f, 0.8f, 0.68f);
+
+            var crackle = fire != null ? fire.Find("Треск") : null;
+            var src = crackle != null ? crackle.GetComponent<AudioSource>() : null;
+            if (src == null) return;
+
+            if (_instance._swells.TryGetValue(src, out var running) && running != null)
+                _instance.StopCoroutine(running);
+            _instance._swells[src] = _instance.StartCoroutine(_instance.Swell(src));
+        }
+
+        private readonly Dictionary<AudioSource, float> _crackleBase = new();
+        private readonly Dictionary<AudioSource, Coroutine> _swells = new();
+
+        private IEnumerator Swell(AudioSource src)
+        {
+            if (!_crackleBase.TryGetValue(src, out float calm)) _crackleBase[src] = calm = src.volume;
+
+            const float Seconds = 4f;
+            for (float t = 0f; t < Seconds && src != null; t += Time.deltaTime)
+            {
+                float k = 1f - t / Seconds;
+                src.volume = Mathf.Min(1f, calm * (1f + 1.3f * k * k));
+                yield return null;
+            }
+            if (src != null) src.volume = calm;
+            _swells.Remove(src);
+        }
+
+        /// <summary>
         /// Ворон Каргана каркает — там, где Карган: одно, два или три карканья
         /// по кругу. Голос — серая ворона на четыре полутона ниже (docs/43-SOUND.md §1).
         /// </summary>

@@ -355,6 +355,8 @@ namespace Sinbinder.UI
                     ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
                 return;
             }
+            var fire = CampfireStoke.Nearest();
+            if (fire != null) { _prompt.text = fire.Prompt; return; }
             var weapon = WeaponPickup.Nearest();
             if (weapon != null) { _prompt.text = weapon.Prompt; return; }
             var thing = Inspectable.Nearest();
@@ -431,6 +433,10 @@ namespace Sinbinder.UI
 
             var chest = TrophyChest.Reachable();
             if (chest != null) { OpenChest(chest); return; }
+
+            // Полено в костёр — «лагерь отзывается» (автор, 26.10).
+            var fire = CampfireStoke.Nearest();
+            if (fire != null) { fire.Feed(); return; }
 
             // Оружие со стойки у входа в шатёр (п. 23 отзыва 21.10).
             var weapon = WeaponPickup.Nearest();

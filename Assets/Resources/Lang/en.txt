@@ -1427,6 +1427,18 @@ msgstr "match the monitor"
 msgid "шестьдесят в секунду"
 msgstr "sixty per second"
 
+#: Core/GraphicsOptions.cs
+msgid "низкий — без лучей луны"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
+msgid "высокий — лучи луны гуще и дышат, тени дальше"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
+msgid "средний — редкие лучи луны сквозь кроны"
+msgstr ""
+
 #: Core/Preferences.cs
 msgid "как задумано"
 msgstr "as intended"
@@ -4251,9 +4263,17 @@ msgstr "A stranger's blade"
 msgid "Родовой клинок"
 msgstr "Family blade"
 
+#: Gameplay/Bodyguard.cs
+msgid "{0} принял удар на себя."
+msgstr ""
+
 #: Gameplay/CameraPullback.cs
 msgid "Отсюда видно, как далеко до края."
 msgstr "From here you can see how far it is to the edge."
+
+#: Gameplay/CampLife.cs
+msgid "копает"
+msgstr "digging"
 
 #: Gameplay/CampLife.cs
 msgid "у сундука"
@@ -4291,7 +4311,7 @@ msgstr "warms up by the fire"
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к столу без него."
 msgstr "The guide never came along — Kargan calls you to the table without him."
 
-#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs Gameplay/CryptArrival.cs Gameplay/PrologueCampSpawner.cs
+#: Gameplay/CampMuster.cs Gameplay/CampOpening.cs Gameplay/CampfireStoke.cs Gameplay/CryptArrival.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
 msgid "Карган Старый Ворон"
 msgstr "Kargan Old Raven"
 
@@ -4383,6 +4403,78 @@ msgstr "a raid"
 msgid "много вылазок"
 msgstr "many raids"
 
+#: Gameplay/CampfireStoke.cs
+msgid "Хорошо горит. Ворон тоже греется — только виду не подаёт."
+msgstr "Burns well. The raven's warming up too — he just won't show it."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Вейн Тихий"
+msgstr "Vein the Quiet"
+
+#: Gameplay/CampfireStoke.cs
+msgid "(шёпотом) Светлее. Теперь и почитать можно."
+msgstr "(whispering) Brighter. Now I can read."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Марга Копатель"
+msgstr "Marga the Digger"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Полено-то моё, владыка. Я его нашёл. Ну да ладно — грейтесь."
+msgstr "That log was mine, master. I found it. Well, never mind — warm yourself."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Брат Хальд"
+msgstr "Brother Hald"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Не так близко к котелку, владыка. Жар портит отвар."
+msgstr "Not so close to the pot, master. Heat spoils the brew."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/RatBanner.cs Gameplay/Signature.cs
+msgid "Одноглазый Хорь"
+msgstr "One-Eyed Khor"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Ярко. Такой огонь в бору видно далеко. Даже одним глазом."
+msgstr "Bright. A fire like that shows far through the pines. Even to one eye."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Толстый Ю"
+msgstr "Fat Yu"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Вот и похлёбка оживёт. Спасибо, владыка."
+msgstr "Now the stew will come back to life. Thank you, master."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Лиска"
+msgstr "Liska"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Я считаю поленья, владыка. На всякий случай."
+msgstr "I'm counting the logs, master. Just in case."
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Немой Гурт"
+msgstr "Mute Gurt"
+
+#: Gameplay/CampfireStoke.cs
+msgid "(молча подвигается ближе к огню)"
+msgstr "(silently shifts closer to the fire)"
+
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+msgid "Косой Ждан"
+msgstr "Squint Zhdan"
+
+#: Gameplay/CampfireStoke.cs
+msgid "Дайте я брошу, владыка. Отсюда точно попаду. Наверное."
+msgstr "Let me throw one, master. I won't miss from here. Probably."
+
+#: Gameplay/CampfireStoke.cs
+msgid "F — подбросить полено"
+msgstr "F — add a log"
+
 #: Gameplay/CardTable.cs
 msgid "За картами никого: играть не с кем."
 msgstr "Nobody at the cards: no one to play with."
@@ -4451,6 +4543,38 @@ msgstr "Your move."
 msgid "Пас."
 msgstr "Pass."
 
+#: Gameplay/CrowStep.cs
+msgid "Вороньим следом"
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "Рассыпается перьями и встаёт рядом с Греховодом: принимает удар на себя и зовёт врага. Это просьба — может и не прийти."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "Некого прикрывать."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "Я обещал их задержать."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "Я и так рядом, Владыка."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "Сначала добью этого."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "{0} рассыпался перьями — и встал рядом с Греховодом."
+msgstr ""
+
+#: Gameplay/CrowStep.cs
+msgid "{0} пришёл на зов вороньим следом."
+msgstr ""
+
 #: Gameplay/CryptArrival.cs
 msgid "Заставка склепа не ушла — склеп встречает поверх неё."
 msgstr "The crypt title did not go away — the crypt greets the squad over it."
@@ -4502,6 +4626,18 @@ msgstr "Kargan: “My lord, the orb. Quickly.”"
 #: Gameplay/CrystalBall.cs
 msgid "Карган: «Дело плохо, владыка. Кто-то щёлкает наших ребят, как крысиные косточки»."
 msgstr "Kargan: “It's bad, my lord. Someone is cracking our lads like rat bones.”"
+
+#: Gameplay/DiggerHabit.cs
+msgid "{0} что-то выкопал — и сунул в карман."
+msgstr "{0} dug something up — and pocketed it."
+
+#: Gameplay/DiggerHabit.cs
+msgid "{0} копает. Пока пусто."
+msgstr "{0} is digging. Nothing yet."
+
+#: Gameplay/DiggerHabit.cs
+msgid "Ага…"
+msgstr "Aha…"
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -5228,38 +5364,6 @@ msgid "телохранитель, не отходит от вас"
 msgstr "bodyguard, never leaves your side"
 
 #: Gameplay/PrologueCampSpawner.cs
-msgid "Вейн Тихий"
-msgstr "Vein the Quiet"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Марга Копатель"
-msgstr "Marga the Digger"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Брат Хальд"
-msgstr "Brother Hald"
-
-#: Gameplay/PrologueCampSpawner.cs Gameplay/RatBanner.cs
-msgid "Одноглазый Хорь"
-msgstr "One-Eyed Khor"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Толстый Ю"
-msgstr "Fat Yu"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Лиска"
-msgstr "Liska"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Немой Гурт"
-msgstr "Mute Gurt"
-
-#: Gameplay/PrologueCampSpawner.cs
-msgid "Косой Ждан"
-msgstr "Squint Zhdan"
-
-#: Gameplay/PrologueCampSpawner.cs
 msgid "Щит Старого Ворона"
 msgstr "Old Raven's Shield"
 
@@ -5578,6 +5682,110 @@ msgstr "Pulls toward: {0}"
 #: Gameplay/ShellData.cs
 msgid "Отнимает: {0}"
 msgstr "Takes away: {0}"
+
+#: Gameplay/Signature.cs
+msgid "Старше всех в отряде. Ворон прибился к нему ещё при жизни и не ушёл после смерти."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Ворона не гоните, владыка. Он со мной дольше, чем вы."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Ворон сидит у огня один."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Говорит шёпотом и читает при свече, пока лагерь спит."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Тише, владыка. Свеча гаснет от громких слов."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "В палатке Вейна догорает свеча. Задуть её некому."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Копает везде, где встаёт лагерь, — и где-нибудь да находит. Найденное считает своим."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Земля всегда что-то прячет, владыка. Надо только не лениться."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Копать теперь некому."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Бывший брат обители. Варит у огня снадобья и верит в них больше, чем в богов."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Не трогайте котелок, владыка. Это не похлёбка."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Котелок Хальда выкипел. Что он варил, так никто и не узнал."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Одним глазом видит больше, чем другие двумя, — особенно чужое. Носит знамя «Крыс»."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Глаз я отдал за кошелёк, владыка. Кошелёк того стоил."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Гурт стоит над братом и не уходит."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Ест, даже когда есть уже нечем: у котла его найдёшь всегда."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Сядьте, владыка, похлёбка ещё тёплая. Хуже от неё не станет."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "У котла пусто. Похлёбка стынет."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Хитёр и неслышен, как лис, а теперь ещё и ходит сквозь стены. Чужое пересчитывает — на всякий случай."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Я знаю, сколько у вас в сундуке, владыка. Не брал — считал."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Чужое лежит непересчитанным."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Не говорит ни с кем, кроме брата, — и с братом тоже молча. Ходит за Хорем тенью."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Хорь оглядывается, а за спиной никого."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Лучник, который бьёт мимо и всякий раз говорит, что метил не туда."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "В шишку не попал — так я и не в шишку целился, владыка."
+msgstr ""
+
+#: Gameplay/Signature.cs
+msgid "Шишки на соснах висят целыми."
+msgstr ""
 
 #: Gameplay/SinbinderPlayer.cs
 msgid "Греховод пал."
@@ -6054,6 +6262,10 @@ msgstr "RMB — go · on an enemy — strike · Shift+RMB — fall back"
 #: UI/CommandPanel.cs
 msgid "P — патруль · C — отмена · I — вещи · V — вид"
 msgstr "P — patrol · C — cancel · I — gear · V — view"
+
+#: UI/CommandPanel.cs
+msgid "{0} — ещё не готов"
+msgstr ""
 
 #: UI/CommanderCouncilUI.cs
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к шару без него."
@@ -6707,6 +6919,10 @@ msgstr "Grain and vignette"
 msgid "Кадры"
 msgstr "Frame rate"
 
+#: UI/PauseMenu.cs
+msgid "Объёмный свет"
+msgstr ""
+
 #: UI/PauseMenu.cs UI/QuickSave.cs UI/SaveSlotsPanel.cs UI/StartPanel.cs
 msgid "Эта запись не от нынешней игры."
 msgstr "This save is not from the current game."
@@ -7067,6 +7283,14 @@ msgstr "“{0}”"
 msgid "Отряд: {0}"
 msgstr "Squad: {0}"
 
+#: UI/StaminaHintUI.cs
+msgid "{0} выдохся: уставший бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока он стоит."
+msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while he stands still."
+
+#: UI/StaminaHintUI.cs
+msgid "{0} выдохлась: уставшая бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока она стоит."
+msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while she stands still."
+
 #: UI/StartPanel.cs
 msgid "Язык игры — щелчок, чтобы сменить. Сейчас: {0}."
 msgstr "Game language — click to change. Now: {0}."
@@ -7134,6 +7358,10 @@ msgstr "Lead the squad to the circle in the east — along the torch road"
 #: UI/TaskList.cs
 msgid "Задачи"
 msgstr "Tasks"
+
+#: UI/ViewHintUI.cs
+msgid "Вид сверху. V — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
+msgstr "View from above. V — back to the Sinbinder's eyes. Look around the camp: there is something to find."
 
 #: Resources/DialogueDatabase.asset
 msgid "У тебя есть кошель. Скоро он будет мой."
@@ -8052,30 +8280,3 @@ msgstr "Order — to the whole squad"
 #. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
-
-#: UI/StaminaHintUI.cs
-msgid "{0} выдохся: уставший бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока он стоит."
-msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while he stands still."
-
-#: UI/StaminaHintUI.cs
-msgid "{0} выдохлась: уставшая бьёт вполсилы. Полоса под здоровьем — силы; они возвращаются, только пока она стоит."
-msgstr "{0} is spent: a tired fighter strikes at half strength. The bar under health is stamina; it comes back only while she stands still."
-#: UI/ViewHintUI.cs
-msgid "Вид сверху. V — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
-msgstr "View from above. V — back to the Sinbinder's eyes. Look around the camp: there is something to find."
-
-#: Gameplay/DiggerHabit.cs
-msgid "{0} что-то выкопал — и сунул в карман."
-msgstr "{0} dug something up — and pocketed it."
-
-#: Gameplay/DiggerHabit.cs
-msgid "{0} копает. Пока пусто."
-msgstr "{0} is digging. Nothing yet."
-
-#: Gameplay/DiggerHabit.cs
-msgid "Ага…"
-msgstr "Aha…"
-
-#: Gameplay/CampLife.cs
-msgid "копает"
-msgstr "digging"

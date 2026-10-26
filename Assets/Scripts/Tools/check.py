@@ -52,6 +52,9 @@ UNITY_TYPES = {
     'Gradient', 'GradientColorKey', 'GradientAlphaKey', 'Volume', 'VolumeProfile',
     'VolumeComponent', 'Bounds', 'Matrix4x4', 'Mesh', 'SkinnedMeshRenderer',
     'MeshRenderer', 'MeshFilter', 'Animator', 'RuntimeAnimatorController',
+    # Цвет одного объекта без копии материала — полено чернеет в костре
+    # (Gameplay/CampfireStoke, 26 октября; компилятор его принял).
+    'MaterialPropertyBlock',
     'AnimationClip', 'RenderSettings', 'QualitySettings', 'TextureImporter',
     'AssetImporter', 'ModelImporter', 'EditorApplication',
     'RenderTexture', 'RenderTextureFormat', 'Texture', 'Graphics', 'TextureFormat',
