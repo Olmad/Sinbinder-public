@@ -392,9 +392,23 @@ namespace Sinbinder.UI
             // «Лиска Лучник». Тело осталось: от него с 15 октября зависят
             // удар и защита, это знание для приказа.
             _nameLine.text = Loc.Name(who.ShownName);
-            Set(_craftLine, ShellLine(who), Muted);
+            // Примета — под именем: почему так зовут (28-ORDERS, 26.10; Gameplay/Signature).
+            // Есть — тело уходит в строку здоровья; нет — как прежде.
+            string named = Signature.Why(who);
+            Set(_craftLine, string.IsNullOrEmpty(named) ? ShellLine(who) : named, Muted);
+            // Примета длиннее строки ремесла (400 точек): в две строки, мельче —
+            // в одну её обрезало посередине слова (кадр 26.10).
+            if (_craftLine != null)
+            {
+                bool longLine = !string.IsNullOrEmpty(named);
+                _craftLine.horizontalOverflow = longLine ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
+                _craftLine.resizeTextForBestFit = longLine;
+                _craftLine.resizeTextMinSize = 11;
+                _craftLine.resizeTextMaxSize = 20;
+                _craftLine.lineSpacing = longLine ? 0.9f : 1f;
+            }
             Set(_sinLine, soul != null ? SinsLine(soul) : Loc.T("Душа неизвестна"), Bone);
-            Set(_bodyLine, BodyLine(who), Muted);
+            Set(_bodyLine, string.IsNullOrEmpty(named) ? BodyLine(who) : ShellLine(who) + " · " + BodyLine(who), Muted);
             Flame(soul);
 
             Set(_voicesTitle, Grammar.For(who.Gender, Loc.T("Что тянет его сейчас")), Bone);

@@ -49,13 +49,39 @@ namespace Sinbinder.Gameplay
         {
             why = "";
             if (!SinbinderPlayer.Exists) { why = Loc.T("Некого прикрывать."); return false; }
+
+            // Прикрывает отход — пост не бросает (28-ORDERS, 26.10: «CrowStep ломает
+            // арьергард»): развилка «подошёл или нет» — его сцена, и она одна.
+            if (_warrior != null && EscapeZone.Rearguard == _warrior.DisplayName)
+            {
+                why = Loc.T("Я обещал их задержать.");
+                return false;
+            }
             if (CampFocus.GroundDistance(transform.position, SinbinderPlayer.Where) <= Far)
             {
                 why = Loc.T("Я и так рядом, Владыка.");
                 return false;
             }
+
+            // Свою почти выигранную драку ради слабого у Греховода не бросает (облачная, 26.10).
+            var own = NearestEnemy(transform.position, out float ownAt);
+            var theirs = NearestEnemy(SinbinderPlayer.Where, out _);
+            if (own != null && ownAt <= 2.5f && own.HP <= own.MaxHP * 0.25f
+                && theirs != null && theirs != own && theirs.HP <= theirs.MaxHP * 0.35f)
+            {
+                why = Loc.T("Сначала добью этого.");
+                return false;
+            }
             return true;
         }
+
+        /// <summary>
+        /// Кнопка — после того, как он хоть раз перелетел сам (28-ORDERS, 26.10:
+        /// «игрок сперва видит, потом узнаёт, что можно попросить»).
+        /// </summary>
+        public bool Known => _selfUsed;
+
+        private bool _selfUsed;
 
         /// <summary>
         /// Попросить — значит позвать к Греховоду издалека: приказ идти к нему,
@@ -117,6 +143,8 @@ namespace Sinbinder.Gameplay
                 _heroHp = heroBody.HP;
             }
             if (far <= Far) return;
+            // Уместность — та же, что у просьбы: арьергард, своя драка (Fits).
+            if (!Fits(out _)) return;
 
             var enemy = NearestEnemy(SinbinderPlayer.Where, out float enemyAt);
             bool danger = hit || (enemy != null && enemyAt <= Danger);
@@ -188,25 +216,21 @@ namespace Sinbinder.Gameplay
             Feathers(to + Vector3.up * 0.9f);
 
             Used++;
+            if (!byCall) _selfUsed = true;
             string line = Loc.F(byCall ? CalledLine : SelfLine, Loc.Name(_warrior.DisplayName));
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
             Debug.Log($"[ВОРОН] {_warrior.DisplayName} вороньим следом: {(byCall ? "по зову" : "сам")}");
 
             // Встал — и первый удар по Греховоду его (автор, 26.10: «блокировал первую
-            // атаку по Греховоду, а дальше перенять внимание атакующего на себя»).
-            // Принял удар — зовёт на себя (Bodyguard); удара не было — зовёт всё равно,
-            // раз враг рядом: он здесь затем, чтобы на Греховода не смотрели.
+            // атаку по Греховоду»). Звать на себя после перелёта — нет: «Карган разгружен —
+            // одно действие» (28-ORDERS, облачная 26.10), провокация — только в арьергарде.
             var heroBody = SinbinderPlayer.Exists ? SinbinderPlayer.Instance.GetComponent<Damageable>() : null;
             Bodyguard.Guard(heroBody, _warrior, GuardFor);
             yield return new WaitForSeconds(GuardFor);
-            if (enemy != null && !enemy.IsDead && !Provocation.IsTaunting(_warrior)) Provocation.Begin(_warrior);
-            yield return new WaitForSeconds(TauntFor);
-            Provocation.End(_warrior);
             _stepping = false;
         }
 
         private const float GuardFor = 4f;     // сколько сторожит первый удар по Греховоду, секунд
-        private const float TauntFor = 6f;     // сколько потом зовёт на себя, секунд
 
         private static Material _featherMat;
 

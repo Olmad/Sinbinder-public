@@ -139,7 +139,9 @@ namespace Sinbinder.Utilets
         /// легла песком, ярче и рыжее прежней земли. Темнее и серее — ночной бор.
         /// </summary>
         private static Color TintOf(string id)
-            => id == "Ground077" ? new Color(0.46f, 0.40f, 0.37f) : Color.white;
+            => id == "Ground077" ? new Color(0.27f, 0.30f, 0.24f) : Color.white;
+        // 26.10, вечер (облачная, «Красота сейчас», п. 5): «земля бора — тёмная, не рыжая;
+        // рыжий цвет сверху читается пустыней» — красный приглушён сильнее зелёного.
 
         /// <summary>Что рисуется с обеих сторон: тонкое, у чего видна изнанка.</summary>
         private static bool DoubleSided(string id) => id.StartsWith("Fabric");

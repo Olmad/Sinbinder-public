@@ -469,6 +469,7 @@ namespace Sinbinder.UI
                 if (owner != null) return null;              // выделено больше одного — навыка не показываем
                 owner = w;
                 found = w.GetComponent<IAskableSkill>();
+                if (found != null && !found.Known) found = null;   // сперва увидеть, потом просить
             }
             return found;
         }

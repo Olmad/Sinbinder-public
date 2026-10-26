@@ -245,7 +245,9 @@ namespace Sinbinder.UI
         /// <summary>Разговор вблизи: воин здоровается, игрок выбирает, что сказать.</summary>
         private void OpenMenu(Warrior w)
         {
-            OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), Dialogue.TalkLines.Greet(w)), near: true);
+            // Первый разговор — его фраза-примета вместо приветствия (Gameplay/Signature, 26.10).
+            string hello = Signature.FirstLine(w) ?? Dialogue.TalkLines.Greet(w);
+            OpenFor(w, Loc.F("{0}: «{1}»", Loc.Name(w.DisplayName), hello), near: true);
             _menu = true;
 
             // Наезд на лицо — разговор как в Skyrim и Fallout (TalkView).

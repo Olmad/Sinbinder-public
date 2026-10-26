@@ -53,10 +53,9 @@ namespace Sinbinder.Gameplay
             if (w.Guard.TryGetComponent<WarriorAnimation>(out var arm)) arm.Struck();
             guardBody.TakeDamage(damage * Blocked, attacker);
 
-            // И зовёт нападавшего на себя.
-            Provocation.Begin(w.Guard);
+            // Звать на себя — нет: только в арьергарде (28-ORDERS, «Карган разгружен»).
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F(Took, Loc.Name(w.Guard.DisplayName)));
-            Debug.Log($"[ВОРОН] {w.Guard.DisplayName} принял удар по {target.name} на себя и зовёт врага.");
+            Debug.Log($"[ВОРОН] {w.Guard.DisplayName} принял удар по {target.name} на себя.");
             Blocks++;
             return true;
         }
