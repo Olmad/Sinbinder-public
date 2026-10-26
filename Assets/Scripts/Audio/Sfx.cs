@@ -11,7 +11,8 @@ namespace Sinbinder.Audio
 {
     /// <summary>
     /// Звуки мира: удары, колокол тревоги, монеты, треск огня, шаги
-    /// Греховода, ночь лагеря (курс п. 3,
+    /// Греховода, ночь лагеря — сверчки, ветер в соснах, скрип стволов,
+    /// филин вдали, ворон Каргана (курс п. 3,
     /// docs/41-SHOWCASE.md). Записи — <c>Assets/Resources/Sounds</c>, все
     /// CC0, откуда каждая — docs/43-SOUND.md. Автор, 2 октября: «можешь
     /// искать и скачивать подходящие звуки».
@@ -48,6 +49,41 @@ namespace Sinbinder.Audio
         /// </summary>
         private const float NightVolume = 0.08f;
 
+        /// <summary>
+        /// Ветер в соснах — под сверчками и тише их на слух: петля 160 с, порывы
+        /// в самой записи. Автор, 26.10: «тихо — воздух, а не звук».
+        /// </summary>
+        private const float WindVolume = 0.07f;
+
+        /// <summary>
+        /// С какой секунды петли ветра начинается лагерь: там затишье, первый
+        /// порыв — через полминуты, когда игрок уже огляделся.
+        /// </summary>
+        private const float WindStart = 40f;
+
+        private enum Call { Creak, Owl, Raven }
+
+        /// <summary>
+        /// Голоса бора — по таблице, а не жребием: через сколько секунд после
+        /// предыдущего и кто. Круг — 207 с: скрип примерно раз в сорок секунд,
+        /// ворон раз в минуту с небольшим, филин раз в три. Реже — и лес молчит,
+        /// чаще — и он становится часами, которые слышно.
+        /// </summary>
+        private static readonly (float After, Call What)[] Calls =
+        {
+            (14f, Call.Creak), (12f, Call.Raven), (19f, Call.Creak), (23f, Call.Owl),
+            (17f, Call.Creak), (26f, Call.Raven), (21f, Call.Creak), (33f, Call.Owl),
+            (18f, Call.Creak), (24f, Call.Raven),
+        };
+
+        /// <summary>
+        /// Где скрипит и где ухает — по кругу от слушателя на его высоте: громкость
+        /// не зависит от того, сверху смотрит игрок или глазами Греховода.
+        /// Скрип — в бору за палатками; филин — далеко, за краем леса.
+        /// </summary>
+        private const float CreakRing = 24f;
+        private const float OwlRing = 55f;
+
         private const string CampScene = "Prologue_Camp";
 
         private static Sfx _instance;
@@ -61,7 +97,12 @@ namespace Sinbinder.Audio
         private int _thisFrame;
 
         private AudioSource _night;
+        private AudioSource _wind;
         private Coroutine _nightFade;
+        private Coroutine _calls;
+
+        /// <summary>Вся ночь разом, от 0 до 1: сверчки и ветер вступают и затихают вместе.</summary>
+        private float _nightLevel;
         private Vector3 _lastStep;
         private bool _stepArmed;
         private float _walked;
@@ -162,14 +203,25 @@ namespace Sinbinder.Audio
         }
 
         /// <summary>
-        /// Ночь замолкает: перед бедой сверчки затихают — мир затаил дыхание,
-        /// и колокол тревоги бьёт уже в настоящей тишине. Зовёт
-        /// <see cref="CrystalBall"/> на тревоге. До новой загрузки лагеря
-        /// ночь не вернётся: после разгрома ей петь не о чем.
+        /// Ворон Каргана каркает — там, где Карган: одно, два или три карканья
+        /// по кругу. Голос — серая ворона на четыре полутона ниже (docs/43-SOUND.md §1).
+        /// </summary>
+        public static void Caw(Vector3 where)
+        {
+            if (_instance == null) return;
+            _instance.Play(Pick("Raven/Call"), where, 0.4f, 0.8f, 1f);
+        }
+
+        /// <summary>
+        /// Ночь замолкает: перед бедой сверчки затихают, ветер стихает, бор
+        /// перестаёт скрипеть и ухать — мир затаил дыхание, и колокол тревоги
+        /// бьёт уже в настоящей тишине. Зовёт <see cref="CrystalBall"/> на тревоге.
+        /// До новой загрузки лагеря ночь не вернётся: после разгрома ей петь не о чем.
         /// </summary>
         public static void Hush(float fade = 1.5f)
         {
-            if (_instance == null || _instance._night == null || !_instance._night.isPlaying) return;
+            if (_instance == null || _instance._nightLevel <= 0f) return;
+            _instance.StopCalls();
             _instance.FadeNight(0f, fade);
         }
 
@@ -261,7 +313,9 @@ namespace Sinbinder.Audio
         }
 
         /// <summary>
-        /// Ночь лагеря — сверчки, тихо, без пространства. Только в лагере:
+        /// Ночь лагеря слоями (автор, 26.10: «атмосфера, музыка»): сверчки и ветер
+        /// в соснах — постель без пространства; поверх неё бор — скрип стволов,
+        /// филин вдали, ворон Каргана (<see cref="NightCalls"/>). Только в лагере:
         /// в склепе своя музыка звучит всё время, а гул подземелья спорил бы
         /// с ней (docs/43-SOUND.md §3).
         /// </summary>
@@ -269,28 +323,58 @@ namespace Sinbinder.Audio
         {
             if (scene != CampScene)
             {
-                if (_night != null) { if (_nightFade != null) StopCoroutine(_nightFade); _night.Stop(); }
+                if (_nightFade != null) StopCoroutine(_nightFade);
+                StopCalls();
+                _nightLevel = 0f;
+                if (_night != null) _night.Stop();
+                if (_wind != null) _wind.Stop();
                 return;
             }
 
             var night = Load("Night");
-            if (night.Length == 0) return;
+            var wind = Load("Forest/Wind");
+            if (night.Length == 0 && wind.Length == 0) return;
 
-            if (_night == null)
+            if (_night == null) _night = Bed("Ночь");
+            if (_wind == null) _wind = Bed("Ветер");
+
+            _nightLevel = 0f;
+            ApplyNight();
+
+            if (night.Length > 0)
             {
-                var go = new GameObject("Ночь");
-                go.transform.SetParent(transform, false);
-                _night = go.AddComponent<AudioSource>();
-                _night.loop = true;
-                _night.playOnAwake = false;
-                _night.spatialBlend = 0f;
-                _night.dopplerLevel = 0f;
+                _night.clip = night[0];
+                _night.Play();
             }
 
-            _night.clip = night[0];
-            _night.volume = 0f;
-            _night.Play();
-            FadeNight(NightVolume, 3f);
+            if (wind.Length > 0)
+            {
+                _wind.clip = wind[0];
+                _wind.Play();
+                if (wind[0].length > WindStart) _wind.time = WindStart;
+            }
+
+            FadeNight(1f, 3f);
+            StopCalls();
+            _calls = StartCoroutine(NightCalls());
+        }
+
+        private AudioSource Bed(string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var src = go.AddComponent<AudioSource>();
+            src.loop = true;
+            src.playOnAwake = false;
+            src.spatialBlend = 0f;
+            src.dopplerLevel = 0f;
+            return src;
+        }
+
+        private void ApplyNight()
+        {
+            if (_night != null) _night.volume = NightVolume * _nightLevel;
+            if (_wind != null) _wind.volume = WindVolume * _nightLevel;
         }
 
         private void FadeNight(float to, float seconds)
@@ -301,15 +385,75 @@ namespace Sinbinder.Audio
 
         private IEnumerator NightFade(float to, float seconds)
         {
-            float from = _night.volume;
+            float from = _nightLevel;
             for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
             {
-                _night.volume = Mathf.Lerp(from, to, t / seconds);
+                _nightLevel = Mathf.Lerp(from, to, t / seconds);
+                ApplyNight();
                 yield return null;
             }
-            _night.volume = to;
-            if (to <= 0f) _night.Stop();
+            _nightLevel = to;
+            ApplyNight();
+            if (to <= 0f)
+            {
+                if (_night != null) _night.Stop();
+                if (_wind != null) _wind.Stop();
+            }
             _nightFade = null;
+        }
+
+        private void StopCalls()
+        {
+            if (_calls != null) StopCoroutine(_calls);
+            _calls = null;
+        }
+
+        /// <summary>
+        /// Голоса бора по таблице <see cref="Calls"/>. Время — игровое: в паузе
+        /// бор ждёт вместе с миром. В тишине первого отказа (<c>RefusalSilence</c>)
+        /// голос пропускается, а не копится: тишина — событие, лес её не перебивает.
+        /// </summary>
+        private IEnumerator NightCalls()
+        {
+            for (int i = 0; ; i++)
+            {
+                var (after, what) = Calls[i % Calls.Length];
+                yield return new WaitForSeconds(after);
+                if (_nightLevel < 0.5f || AudioListener.volume <= 0f) continue;
+
+                var ear = Object.FindAnyObjectByType<AudioListener>();
+                if (ear == null) continue;
+
+                // Направление — золотым углом от номера: два скрипа подряд
+                // никогда не из одного места, и каждый прогон — те же места.
+                float a = i * 137.5f * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                var at = ear.transform.position;
+
+                switch (what)
+                {
+                    case Call.Creak:
+                        Play(Pick("Forest/Creak"), at + dir * CreakRing, 0.35f, 0.8f, Pitch());
+                        break;
+
+                    case Call.Owl:
+                        Play(Pick("Forest/Owl"), at + dir * OwlRing, 0.3f, 0.6f, 1f);
+                        break;
+
+                    case Call.Raven:
+                        var raven = Kargan();
+                        if (raven != null) Caw(raven.transform.position + Vector3.up * 1.6f);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>Карган, если он жив и в лагере: ворон каркает у него на плече.</summary>
+        private static Warrior Kargan()
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (CrowStep.Raven(w) && !w.IsDead) return w;
+            return null;
         }
 
         // ---------- как звучит ----------
