@@ -20,7 +20,7 @@ namespace Sinbinder.Gameplay
         /// решение.
         /// </summary>
         private float FadeTime => _fadeTime * Crypt.CryptUpgrades.FadeMultiplier;
-        [SerializeField] private float _harvestRadius = 3f;
+        [SerializeField] private float _harvestRadius = 1.8f;
         [SerializeField] private GameObject _soulIndicatorPrefab;
 
         private List<FadingSoul> _fadingSouls = new();

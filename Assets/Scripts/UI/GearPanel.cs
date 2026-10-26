@@ -224,9 +224,9 @@ namespace Sinbinder.UI
         }
 
         /// <summary>
-        /// Разговор от первого лица: Греховод смотрит на воина рядом и жмёт F.
+        /// Разговор вблизи: Греховод смотрит на воина рядом (сверху — наводит мышь) и жмёт F.
         /// Воин отвечает на «как ты?» по своей душе (<see cref="Dialogue.TalkLines"/>),
-        /// а ниже — тот же обмен вещами. Сверху разговора нет: туда приходят
+        /// а ниже — тот же обмен вещами. Вдали — только обмен (I): туда приходят
         /// за вещами, а сюда — ногами, и за это здесь больше слов.
         /// </summary>
         private bool TryTalk()
@@ -303,17 +303,23 @@ namespace Sinbinder.UI
             Redraw();
         }
 
-        /// <summary>Свой воин, на которого Греховод смотрит вблизи от первого лица. Нет — null.</summary>
+        /// <summary>
+        /// Свой воин вблизи, с которым говорить: от первого лица — на кого Греховод смотрит,
+        /// сверху — на кого наведена мышь (автор, 26.10: «хочется, чтобы взаимодействовать
+        /// Греховод с предметами мог в тактическом режиме вблизи»). Нет — null.
+        /// </summary>
         private Warrior LookedAt()
         {
             var view = FindFirstObjectByType<RTS_Camera>();
-            if (view == null || !view.FirstPersonNow) return null;
+            if (view == null) return null;
 
             var cam = Camera.main;
             if (cam == null) return null;
 
-            var ray = new Ray(cam.transform.position, cam.transform.forward);
-            if (!Physics.Raycast(ray, out var hit, _talkReach + 2f)) return null;
+            bool eyes = view.FirstPersonNow;
+            var ray = eyes ? new Ray(cam.transform.position, cam.transform.forward)
+                           : cam.ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out var hit, eyes ? _talkReach + 2f : 200f)) return null;
 
             var w = hit.collider.GetComponentInParent<Warrior>();
             if (w == null || w is SinbinderPlayer || w.IsDead || w.Team != Team.Player) return null;

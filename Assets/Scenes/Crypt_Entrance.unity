@@ -8325,7 +8325,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Sinbinder.Gameplay.SoulManager
   _fadeTime: 60
-  _harvestRadius: 3
+  _harvestRadius: 1.8
   _soulIndicatorPrefab: {fileID: 0}
 --- !u!114 &591737502
 MonoBehaviour:

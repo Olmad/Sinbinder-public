@@ -1405,7 +1405,7 @@ namespace Sinbinder.EditorTools
                 return;
             }
 
-            float reach = Lesson.Now == LessonKind.Harvest ? 2f : 2.5f;
+            float reach = Lesson.Now == LessonKind.Harvest ? 1.2f : 2.5f;
             float left = CampFocus.GroundDistance(hero.transform.position, Lesson.Target);
 
             if (left > reach)
