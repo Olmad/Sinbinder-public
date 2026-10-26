@@ -526,10 +526,13 @@ namespace Sinbinder.Gameplay
             // стоит не там, где кисть, по которой собрано оружие (wear.py).
             if (warrior.Shell != ShellType.Ghost && warrior.Shell != ShellType.Golem)
             {
-                // Копатель — с лопатой: примета прозвища (автор, 26.10: «копателю
-                // в качестве оружия подойдёт лопата»). Надел другое — то, что надел.
-                string weapon = WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name)
-                             ?? (Digger(warrior) ? "Shovel" : TradeWeapon(trade));
+                // В руке — то, что надето в «Оружии», и только оно (автор, 26.10: «даже у тех,
+                // у кого нет оружия, — есть оружие в руках… нужно, чтобы то, что в руках, —
+                // отображалось в руках»). Надето, но вид по имени не узнан — меч; не надето —
+                // руки пусты. Исключение — лопата Копателя: примета прозвища, она его своя.
+                var worn = warrior.Worn(Inventory.GearSlot.Weapon);
+                string weapon = worn != null ? (WeaponOf(worn.Name) ?? "Sword")
+                              : Digger(warrior) ? "Shovel" : null;
                 foreach (var part in Carried(weapon)) yield return part;
 
                 var off = warrior.Worn(Inventory.GearSlot.Offhand);
