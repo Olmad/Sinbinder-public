@@ -677,6 +677,51 @@ def shield(b):
 # отпустила рука, и подмена в игре не видна (`Armament`).
 
 
+def shovel(b):
+    """
+    Лопата Марги Копателя (автор, 26.10: «копателю в качестве оружия подойдёт
+    лопата»). Примета, которую видно сверху: длинное древко с поперечной
+    ручкой и железный штык — ни с мечом, ни с дубиной не спутать. Держится
+    у середины древка; штык — вперёд, по удару.
+    """
+    bone = "RightHand"
+    # Древко: от ручки за кулаком до штыка.
+    b.add(*tube(held(-0.300), held(0.560), 0.0105, 0.0115, segs=8), bone=bone, mat=1, smooth=True)
+    # Поперечная ручка на конце — по ней лопату узнают.
+    b.add(*tube(held(-0.300, -0.040), held(-0.300, 0.040), 0.0085, 0.0085, segs=8), bone=bone, mat=1,
+          smooth=True)
+    # Штык — плоский, чуть сужен к краю; плечики под ногу — тёмные.
+    for a0, a1, w in ((0.560, 0.660, 0.105), (0.660, 0.740, 0.085)):
+        # Оси тела: вдоль рукояти — −Y, вбок (c) — X, к костяшкам (b) — Z.
+        verts, faces = box(held((a0 + a1) * 0.5), (w, a1 - a0, 0.012))
+        b.add(verts, faces, bone=bone, mat=0)
+    b.add(*box(held(0.565), (0.115, 0.020, 0.016)), bone=bone, mat=2)
+
+
+def shovel_back(b):
+    """
+    Лопата за спиной — убранная. На тазу, как меч, она торчала вбок копьём
+    (кадр 26.10): древко втрое длиннее клинка. За спиной наискосок, штыком
+    вверх над плечом — сверху её видно, и она не цепляет землю.
+    """
+    sh, hip = P["shoulder"], P["hip"]
+    foot = (0.070, 0.092, hip - 0.020)
+    neck = (-0.090, 0.098, sh + 0.260)
+    b.add(*tube(foot, neck, 0.0105, 0.0115, segs=8), bone="Chest", mat=1, smooth=True)
+    # Поперечная ручка — внизу, у бедра.
+    b.add(*tube((foot[0] - 0.035, foot[1], foot[2] - 0.010), (foot[0] + 0.035, foot[1], foot[2] + 0.010),
+                0.0085, 0.0085, segs=8), bone="Chest", mat=1, smooth=True)
+    # Штык — над плечом, плашмя к спине.
+    d = (neck[0] - foot[0], neck[2] - foot[2])
+    ln = math.hypot(*d)
+    ux, uz = d[0] / ln, d[1] / ln
+    for t0, t1, w in ((0.00, 0.10, 0.105), (0.10, 0.18, 0.085)):
+        c = (neck[0] + ux * (t0 + t1) * 0.5, neck[1] + 0.004, neck[2] + uz * (t0 + t1) * 0.5)
+        verts, faces = box(c, (w, 0.012, t1 - t0))
+        verts = tilt(verts, c, "y", -math.degrees(math.atan2(ux, uz)))
+        b.add(verts, faces, bone="Chest", mat=0)
+
+
 def settled():
     """
     Перевод точки, привязанной к правой кисти, в точку, привязанную
@@ -977,6 +1022,7 @@ ITEMS = [
     Item("Dagger",         "RightHand",    dagger,   [STEEL, LEATHER, IRON]),
     Item("Axe",            "RightHand",    axe,      [STEEL, WOOD, IRON]),
     Item("Club",           "RightHand",    club,     [WOOD, IRON, DARK]),
+    Item("Shovel",         "RightHand",    shovel,   [IRON, WOOD, DARK]),
     Item("Shield",         "LeftLowerArm", shield,   [WOOD, IRON, DARK]),
     Item("Katana",         "RightHand",    katana,   [STEEL, DARK, IRON]),
 
@@ -986,6 +1032,7 @@ ITEMS = [
     Item("DaggerStowed",   "Hips", stowed(dagger),   [STEEL, LEATHER, IRON]),
     Item("AxeStowed",      "Hips", stowed(axe),      [STEEL, WOOD, IRON]),
     Item("ClubStowed",     "Hips", stowed(club),     [WOOD, IRON, DARK]),
+    Item("ShovelStowed",   "Chest", shovel_back,     [IRON, WOOD, DARK]),
     Item("Scabbard",       "Hips", scabbard,         [LEATHER, IRON, DARK]),
     Item("KatanaStowed",   "Hips", stowed(katana),   [STEEL, DARK, IRON]),
     Item("KatanaSaya",     "Hips", katana_saya,      [("Lacquer", (0.045, 0.030, 0.030, 1.0)), IRON, LEATHER]),
@@ -1228,6 +1275,8 @@ SKELETON_ITEMS = [
     ("DaggerStowed", None, None),
     ("AxeStowed", None, None),
     ("ClubStowed", None, None),
+    ("Shovel", None, None),
+    ("ShovelStowed", None, None),
     ("Scabbard", None, None),
     ("Katana", None, None),
     ("KatanaStowed", None, None),

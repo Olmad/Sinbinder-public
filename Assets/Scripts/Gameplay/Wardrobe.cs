@@ -88,6 +88,7 @@ namespace Sinbinder.Gameplay
             { "Dagger", "RightHand" },
             { "Axe", "RightHand" },
             { "Club", "RightHand" },
+            { "Shovel", "RightHand" },        // лопата Марги Копателя (26.10)
             { "Shield", "LeftLowerArm" },
             // Катана Греховода — со стойки у входа в шатёр (WeaponPickup).
             { "Katana", "RightHand" },
@@ -100,6 +101,7 @@ namespace Sinbinder.Gameplay
             { "DaggerStowed", "Hips" },
             { "AxeStowed", "Hips" },
             { "ClubStowed", "Hips" },
+            { "ShovelStowed", "Chest" },      // лопата за спиной, не на тазу: длинная (26.10)
             { "Scabbard", "Hips" },
             { "DaggerSheath", "Hips" },
         };
@@ -124,6 +126,7 @@ namespace Sinbinder.Gameplay
             if (n.Contains("нож") || n.Contains("кинжал") || n.Contains("стилет")) return "Dagger";
             if (n.Contains("дубин") || n.Contains("палиц") || n.Contains("булав") || n.Contains("молот"))
                 return "Club";
+            if (n.Contains("лопат") || n.Contains("заступ")) return "Shovel";
             return null;
         }
 
@@ -183,7 +186,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Оружие в руке — то, что уходит в ножны (<see cref="Armament"/>).</summary>
-        private static readonly HashSet<string> Hands = new() { "Sword", "Dagger", "Axe", "Club", "Katana" };
+        private static readonly HashSet<string> Hands = new() { "Sword", "Dagger", "Axe", "Club", "Katana", "Shovel" };
 
         /// <summary>Та же вещь в ножнах — имя оружия с этим хвостом.</summary>
         private const string StowedSuffix = "Stowed";
@@ -523,8 +526,10 @@ namespace Sinbinder.Gameplay
             // стоит не там, где кисть, по которой собрано оружие (wear.py).
             if (warrior.Shell != ShellType.Ghost && warrior.Shell != ShellType.Golem)
             {
+                // Копатель — с лопатой: примета прозвища (автор, 26.10: «копателю
+                // в качестве оружия подойдёт лопата»). Надел другое — то, что надел.
                 string weapon = WeaponOf(warrior.Worn(Inventory.GearSlot.Weapon)?.Name)
-                             ?? TradeWeapon(trade);
+                             ?? (Digger(warrior) ? "Shovel" : TradeWeapon(trade));
                 foreach (var part in Carried(weapon)) yield return part;
 
                 var off = warrior.Worn(Inventory.GearSlot.Offhand);
@@ -532,6 +537,14 @@ namespace Sinbinder.Gameplay
                     yield return "Shield";
             }
         }
+
+        /// <summary>
+        /// Копатель ли — по прозвищу в имени, а не по ремеслу: ремесло у Марги —
+        /// крестьянин, как у Ю и Гурта, а лопата — его, не их. Имя не меняется,
+        /// и лопата всегда у того же (22-LOOK.md §3: ни одного жребия).
+        /// </summary>
+        public static bool Digger(Warrior warrior)
+            => warrior != null && warrior.DisplayName != null && warrior.DisplayName.Contains("Копатель");
 
         private static bool Brother(Warrior warrior)
         {

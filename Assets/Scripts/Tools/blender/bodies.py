@@ -948,7 +948,10 @@ MOTION = Path(__file__).resolve().parent / "motion"
 # У всех: достать и убрать оружие (набор «Sword and Shield»).
 ALWAYS = {"Draw": "Draw", "Sheathe": "Sheathe",
           # Сидя — за картами (22 октября): Quaternius UAL, CC0, `retarget.py --rig rigify`.
-          "Sit": "SitIdle"}
+          "Sit": "SitIdle",
+          # Копает на коленях — примета Марги Копателя (26 октября, автор: «Марга
+          # постоянно находит закопанные сокровища»): UAL «Fixing_Kneeling».
+          "Dig": "Dig"}
 
 # По оболочкам. Автор, 29 сентября: «займись оружием и анимациями» —
 # удар был взмахом пустой руки, а в руке теперь оружие. Из наборов Mixamo

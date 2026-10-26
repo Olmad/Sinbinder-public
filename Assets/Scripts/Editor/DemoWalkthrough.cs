@@ -516,6 +516,10 @@ namespace Sinbinder.EditorTools
 
                 S("лагерь: балалайка у костра, глаза Каргана", null, CampLooks, 5f),
 
+                // Примета Марги Копателя (28-ORDERS, 26.10): в свой час — на коленях
+                // у ямки на краю поляны. Кадр — портрет, пока копает.
+                S("лагерь: Марга копает у края", null, DiggerSeen, 90f),
+
                 // «Все видят знамя по-разному» (28-ORDERS, 26.10): раз в 9 с —
                 // строка над головой у того, кто ближе 12 м к Хорю. Кадр — первое
                 // облачко (снимает сам шаг, когда готов).
@@ -2341,6 +2345,28 @@ namespace Sinbinder.EditorTools
                 if (head != null) Close("Карган — глаза", head.position, w.transform.forward);
                 break;
             }
+            return true;
+        }
+
+        private static float _digSince = -1f;
+
+        /// <summary>
+        /// Копатель стоит на коленях у ямки — портрет; до тех пор ждём. Через
+        /// две секунды после начала: в первый миг он ещё стоит (переход позы).
+        /// </summary>
+        private static bool DiggerSeen()
+        {
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (!Wardrobe.Digger(w) || !w.TryGetComponent<WarriorAnimation>(out var body)) continue;
+                if (!body.Digging) { _digSince = -1f; return false; }
+                if (_digSince < 0f) _digSince = Time.time;
+                if (Time.time - _digSince < 2f) return false;
+                Write($"  [ПРИМЕТА] {w.DisplayName} копает у ({w.transform.position.x:0.0}; {w.transform.position.z:0.0})");
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Марга копает", w.transform, Vector3.zero);
+                return true;
+            }
+            Write("  [ПРИМЕТА] копателя в лагере нет");
             return true;
         }
 

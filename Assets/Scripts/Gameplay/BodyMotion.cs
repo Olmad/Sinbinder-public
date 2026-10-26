@@ -65,9 +65,15 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public const string Sit = "Sit";
 
+        /// <summary>
+        /// Копает на коленях — примета Марги Копателя (<see cref="DiggerHabit"/>,
+        /// 26 октября). Клип — «Fixing_Kneeling» той же библиотеки Quaternius.
+        /// </summary>
+        public const string Dig = "Dig";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig };
 
         /// <summary>
         /// Во что превращается решение.

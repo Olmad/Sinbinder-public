@@ -47,6 +47,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Сидит на сиденье за картами — ставит и снимает <see cref="CardTable"/>.</summary>
         public bool Seated { get; set; }
 
+        /// <summary>Копает — ставит и снимает <see cref="DiggerHabit"/> (примета Марги).</summary>
+        public bool Digging { get; set; }
+
         /// <summary>
         /// Поставить позу из <see cref="BodyMotion"/> поверх решения души.
         /// Зовёт только съёмка из консоли (<c>Dev.Shooting</c>): для кадра
@@ -108,6 +111,7 @@ namespace Sinbinder.Gameplay
 
             // Сидит за картами — сидит, что бы ни решала душа (CardTable).
             if (Seated) return BodyMotion.Sit;
+            if (Digging) return BodyMotion.Dig;
 
             // Достаёт или убирает оружие — стоя; клип короткий и доигрывается.
             if (_armsClip != null) return _armsClip;

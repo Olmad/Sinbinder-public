@@ -619,6 +619,10 @@ namespace Sinbinder.Gameplay
             // в склепе — тот, кто донёс (RatBanner).
             RatBanner.Dress(warrior);
 
+            // Примета Марги Копателя — копает у края лагеря (DiggerHabit, 26.10).
+            if (Wardrobe.Digger(warrior) && go.GetComponent<DiggerHabit>() == null)
+                go.AddComponent<DiggerHabit>();
+
             return warrior;
         }
 

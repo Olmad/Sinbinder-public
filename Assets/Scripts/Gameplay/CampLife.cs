@@ -79,6 +79,9 @@ namespace Sinbinder.Gameplay
 
             if (!Alive(w)) return false;
 
+            // Примета прежде места (28-ORDERS, 26.10): копатель в свой час — к ямке.
+            if (DiggerHabit.Point(w, out point)) { word = Loc.T("копает"); return true; }
+
             var spot = Pick(w);
             if (!Place(spot, w, out point)) return false;
 
