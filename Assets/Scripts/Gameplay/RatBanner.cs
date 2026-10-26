@@ -54,6 +54,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Где воткнуто — у древка, на земле. Для прогона.</summary>
         public static Vector3 PlantedAt => _droppedAt;
 
+        /// <summary>Сколько уже сказали о знамени над головой (<see cref="Opinions"/>). Для прогона.</summary>
+        public static int OpinionsSaid { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Reset();
 
@@ -63,6 +66,7 @@ namespace Sinbinder.Gameplay
             Holder = Bearer;
             BySinbinder = false;
             Named = false;
+            OpinionsSaid = 0;
             _worn = null;
             _dropped = null;
         }
@@ -359,9 +363,12 @@ namespace Sinbinder.Gameplay
                 if (next == null) continue;
 
                 said.Add(next.DisplayName);
-                SpeechBubbles.Say(next, Dialogue.CampLines.Mute(next)
+                string line = Dialogue.CampLines.Mute(next)
                     ? Dialogue.CampLines.Gesture(next)
-                    : Loc.T(Opinion(next.Soul.Sin)));
+                    : Loc.T(Opinion(next.Soul.Sin));
+                SpeechBubbles.Say(next, line);
+                OpinionsSaid++;
+                Debug.Log($"[ЗНАМЯ] {next.DisplayName} о знамени: {line}");
                 var body = next.GetComponent<WarriorAnimation>();
                 if (body != null) body.TalkFor(3f);
             }

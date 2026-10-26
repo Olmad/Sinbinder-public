@@ -64,6 +64,7 @@ namespace Sinbinder.Gameplay
             // Облачение Греховода (21 октября, wear.py «Греховод»).
             { "SinRobe", "Spine" },
             { "SinSkirt", "Hips" },
+            { "SinCloak", "Chest" },        // плащ с истрёпанным краем (26.10)
             { "SinSleeveLeft", "LeftUpperArm" },
             { "SinSleeveRight", "RightUpperArm" },
             { "SinCuffLeft", "LeftLowerArm" },

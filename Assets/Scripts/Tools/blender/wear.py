@@ -768,13 +768,48 @@ def stowed_mesh(b, tmp):
 # до пояса и юбка от пояса (силуэт, а не конус), багрец темнее, золото —
 # только кромкой ворота и пряжкой, длинные шипы оплечья, посох — вдоль руки:
 # в стойке рука висит, и он стоит отвесно, выше головы.
+#
+# 26 октября, третья редакция (28-ORDERS, «бывшая пешка Смерти в бегах, не маг»;
+# ответы автора 23.10): ряса до середины икры с разрезом спереди, подол и край
+# плаща истрёпаны, пыль, заплаты — «вечная спешка с ношей»; гримуар убран;
+# золото — тусклая старая бронза, только кромка ворота и пряжка; посох — свой,
+# костяной, «ближе к Греховоду, не дорожный». Пешки на нём нет: «игрок должен
+# сам его понять». Шипы оплечья и плащ — остаются.
 ROBE = ("Robe", (0.175, 0.030, 0.045, 1.0))
-GOLD = ("Gold", (0.400, 0.310, 0.125, 1.0))
+GOLD = ("Bronze", (0.255, 0.190, 0.105, 1.0))
 SOULFIRE = ("Soulfire", (0.900, 0.420, 0.180, 1.0))
+# Пыль дороги у подола и заплаты — тот же багрец, выгоревший и серый.
+DUST = ("Dust", (0.200, 0.130, 0.115, 1.0))
+PATCH = ("Patch", (0.120, 0.060, 0.060, 1.0))
+STAFF_BONE = ("Staff Bone", (0.520, 0.470, 0.390, 1.0))
+
+
+def tatters(b, z, r, spread, n, bone, mat, ymul=0.88, gap=0.0):
+    """
+    Истрёпанный край: лоскуты разной длины по кромке ткани. Длины — по кругу
+    из ряда, не жребием: тот же Греховод выглядит так же при каждом запуске.
+    gap — пропуск спереди в градусах (разрез рясы).
+    """
+    lengths = (0.030, 0.052, 0.022, 0.044, 0.060, 0.026, 0.038, 0.050, 0.018, 0.046)
+    # Ширина — тоже по ряду, и лоскуты внахлёст: ровные и через промежуток
+    # они читались гребёнкой (первое превью 26.10).
+    widths = (0.030, 0.022, 0.036, 0.026, 0.032, 0.020, 0.034)
+    a0 = 90.0 - spread * 0.5
+    for k in range(n):
+        a = a0 + spread * (k + 0.5) / n
+        # Спереди (270°, −Y) — разрез: лоскутов нет.
+        if gap > 0.0 and abs(((a - 270.0 + 180.0) % 360.0) - 180.0) < gap * 0.5:
+            continue
+        ra = math.radians(a)
+        x, y = math.cos(ra) * r, math.sin(ra) * r * ymul
+        ln = lengths[k % len(lengths)]
+        verts, faces = box((x, y, z - ln * 0.5), (widths[k % len(widths)], 0.006, ln))
+        verts = tilt(verts, (x, y, z), "z", a - 90.0)
+        b.add(verts, faces, bone=bone, mat=mat)
 
 
 def sin_robe(b):
-    """Верх рясы: от плеч до пояса, по фигуре; кромка ворота — золото."""
+    """Верх рясы: от плеч до пояса, по фигуре; кромка ворота — бронза."""
     b.add(*drape(P["shoulder"] - 0.004, P["waist"] - 0.010, 0.110, 0.102,
                  spread=359.9, thick=0.010, segs=28, rows=5), bone="Spine", mat=0)
     b.add(*ring((0, 0, P["shoulder"] - 0.004), 0.110, 0.005, scale=(1.0, 0.88, 1.0), segs=26, rsegs=5),
@@ -782,9 +817,43 @@ def sin_robe(b):
 
 
 def sin_skirt(b):
-    """Юбка рясы: от пояса до щиколоток, книзу умеренно шире — ноги внутри."""
-    b.add(*drape(P["waist"] + 0.004, P["ankle"] + 0.010, 0.106, 0.165,
-                 spread=359.9, thick=0.010, segs=28, rows=9), bone="Hips", mat=0)
+    """
+    Юбка рясы: от пояса до середины икры, книзу шире. Выше колена — целая,
+    ниже — с разрезом спереди: в ней ходят, а не стоят у алтаря. Подол
+    истрёпан, у подола — пыль дороги, на боку и сзади — заплаты.
+    """
+    top, slit = P["waist"] + 0.004, P["knee"] + 0.040
+    hem = (P["knee"] + P["ankle"]) * 0.5
+    r_top, r_hem = 0.106, 0.160
+    r_slit = r_top + (r_hem - r_top) * (top - slit) / (top - hem)
+    b.add(*drape(top, slit, r_top, r_slit, spread=359.9, thick=0.010, segs=28, rows=6),
+          bone="Hips", mat=0)
+    # Ниже колена — разрез спереди в 36°; последняя полоса — пыльная.
+    dust = hem + 0.030
+    b.add(*drape(slit, dust, r_slit, r_hem - 0.006, spread=324.0, thick=0.010, segs=26, rows=3),
+          bone="Hips", mat=0)
+    b.add(*drape(dust, hem, r_hem - 0.006, r_hem, spread=324.0, thick=0.010, segs=26, rows=1),
+          bone="Hips", mat=3)
+    tatters(b, hem + 0.004, r_hem + 0.002, 324.0, 44, "Hips", 0, gap=40.0)
+
+    # Заплаты — на левом боку и сзади справа, чуть поверх ткани.
+    for a, z, w, h in ((200.0, P["knee"] + 0.090, 0.040, 0.034), (65.0, P["hip"] - 0.020, 0.034, 0.040)):
+        ra = math.radians(a)
+        t = (top - z) / (top - hem)
+        r = r_top + (r_hem - r_top) * t + 0.004
+        x, y = math.cos(ra) * r, math.sin(ra) * r * 0.88
+        verts, faces = box((x, y, z), (w, 0.004, h))
+        verts = tilt(verts, (x, y, z), "z", a - 90.0)
+        b.add(verts, faces, bone="Hips", mat=4)
+
+
+def sin_cloak(b):
+    """
+    Плащ Греховода: тот же, что у следопыта, но край истрёпан — плащ того,
+    кто давно в пути (28-ORDERS, 23.10: «подол и край плаща истрёпаны»).
+    """
+    cloak(b)
+    tatters(b, P["knee"] + 0.034, 0.150, 152.0, 18, "Spine", 1)
 
 
 def sin_sleeve(b, side):
@@ -819,60 +888,65 @@ def sin_mantle(b):
 
 def sin_belt(b):
     """
-    Кушак тёмной кожи с золотой пряжкой; «Гримуар порока» на цепи у левого
-    бедра; три банки душ справа сзади.
+    Кушак тёмной кожи с бронзовой пряжкой; три банки душ справа сзади.
+    Гримуара на цепи больше нет (автор, 23.10: «да» — убрать): Греховод
+    не маг, его сила — в тех, кого он поднял, а не в книге.
     """
     z = P["waist"] + 0.004
     b.add(*ring((0, 0, z), 0.110, 0.010, scale=(1.0, 0.88, 0.9), segs=26, rsegs=5), bone="Hips", mat=2)
     b.add(*box((0, -0.098, z), (0.026, 0.010, 0.022)), bone="Hips", mat=1)
 
-    links = [(0.100, -0.050, z - 0.010), (0.112, -0.052, z - 0.038), (0.122, -0.050, z - 0.066)]
-    for p0, p1 in zip(links, links[1:]):
-        b.add(*tube(p0, p1, 0.0035, 0.0035, segs=5), bone="Hips", mat=1)
-    book = (0.132, -0.046, z - 0.112)
-    b.add(*box(book, (0.028, 0.076, 0.096)), bone="Hips", mat=2)
-    for dy in (-0.034, 0.034):
-        for dz in (-0.043, 0.043):
-            b.add(*box((book[0] + 0.011, book[1] + dy, book[2] + dz), (0.009, 0.012, 0.012)), bone="Hips", mat=1)
-
+    # Крышки банок — тёмные: бронза только на вороте и пряжке.
     for a in (205, 230, 255):
         r = math.radians(a)
         x, y = math.cos(r) * 0.122, -math.sin(r) * 0.108
         b.add(*tube((x, y, z - 0.066), (x, y, z - 0.020), 0.015, 0.013, segs=10), bone="Hips", mat=0)
-        b.add(*box((x, y, z - 0.015), (0.012, 0.012, 0.009)), bone="Hips", mat=1)
+        b.add(*box((x, y, z - 0.015), (0.012, 0.012, 0.009)), bone="Hips", mat=2)
 
 
 def sin_staff(b):
     """
     Посох вдоль левой руки, чуть впереди кулака: в Т-позе он лежит по руке,
     в стойке рука висит — и посох стоит отвесно, навершием выше головы.
-    Навершие — огонёк души («Soulfire», светится) в кованой клетке.
+
+    С 26 октября — свой, не дорожный (автор: «ближе к Греховоду»): тёмное
+    древко в костяных кольцах, как позвонки, и огонёк души («Soulfire»,
+    светится), который держат три костяных когтя — не кованая клетка
+    фонаря. Он поднимает мёртвых — и посох из того же, из чего они.
+    Ось посоха — X тела (в Т-позе вдоль руки): к небу — минус X.
     """
     bone = "LeftHand"
     gx, _, gz = anatomy.grip(P, 1)
     y = -0.028                                  # впереди кулака, не сквозь кисть
     foot = (gx + 0.36, y, gz)                   # к земле
-    head = (gx - 0.88, y, gz)                   # к небу
+    head = (gx - 0.86, y, gz)                   # к небу
     b.add(*tube(foot, head, 0.010, 0.012, segs=8), bone=bone, mat=2)
-    top = (gx - 0.93, y, gz)
-    b.add(*sphere(top, 0.030, segs=14, rings=10), bone=bone, mat=0)
-    for k in range(4):
-        a = math.radians(45 + 90 * k)
-        p0 = (top[0] + 0.040, y + math.cos(a) * 0.036, gz + math.sin(a) * 0.036)
-        p1 = (top[0] - 0.040, y + math.cos(a) * 0.036, gz + math.sin(a) * 0.036)
-        b.add(*tube(p0, p1, 0.0035, 0.0035, segs=5), bone=bone, mat=1)
-    b.add(*sphere((top[0] - 0.050, y, gz), 0.011, segs=8, rings=6), bone=bone, mat=1)
+    # Позвонки — костяные кольца по древку, чаще к навершию.
+    for x in (gx + 0.24, gx + 0.06, gx - 0.12, gx - 0.36, gx - 0.56, gx - 0.70, gx - 0.80):
+        b.add(*tube((x + 0.012, y, gz), (x - 0.012, y, gz), 0.0165, 0.0165, segs=8), bone=bone, mat=1)
+    top = (gx - 0.95, y, gz)
+    b.add(*sphere(top, 0.028, segs=14, rings=10), bone=bone, mat=0)
+    # Три когтя: от древка наружу и вверх, кончиками — над огоньком.
+    for k in range(3):
+        a = math.radians(90 + 120 * k)
+        cy, cz = math.cos(a), math.sin(a)
+        p0 = (gx - 0.85, y + cy * 0.012, gz + cz * 0.012)
+        p1 = (gx - 0.92, y + cy * 0.040, gz + cz * 0.040)
+        p2 = (gx - 1.00, y + cy * 0.022, gz + cz * 0.022)
+        b.add(*tube(p0, p1, 0.0060, 0.0045, segs=6), bone=bone, mat=1)
+        b.add(*tube(p1, p2, 0.0045, 0.0012, segs=6), bone=bone, mat=1)
 
 ITEMS = [
     Item("SinRobe",        "Spine",         sin_robe,                   [ROBE, GOLD, DARK]),
-    Item("SinSkirt",       "Hips",          sin_skirt,                  [ROBE, GOLD, DARK]),
+    Item("SinSkirt",       "Hips",          sin_skirt,                  [ROBE, GOLD, DARK, DUST, PATCH]),
+    Item("SinCloak",       "Chest",         sin_cloak,                  [CLOTH, CLOTH, DARK]),
     Item("SinSleeveLeft",  "LeftUpperArm",  lambda b: sin_sleeve(b, 1), [ROBE, GOLD, DARK]),
     Item("SinSleeveRight", "RightUpperArm", lambda b: sin_sleeve(b, -1), [ROBE, GOLD, DARK]),
     Item("SinCuffLeft",    "LeftLowerArm",  lambda b: sin_cuff(b, 1),   [ROBE, GOLD, DARK]),
     Item("SinCuffRight",   "RightLowerArm", lambda b: sin_cuff(b, -1),  [ROBE, GOLD, DARK]),
     Item("SinMantle",      "Chest",         sin_mantle,                 [ROBE, GOLD, IRON]),
     Item("SinBelt",        "Hips",          sin_belt,                   [GLASS, GOLD, DARK]),
-    Item("SinStaff",       "LeftHand",      sin_staff,                  [SOULFIRE, IRON, DARK]),
+    Item("SinStaff",       "LeftHand",      sin_staff,                  [SOULFIRE, STAFF_BONE, DARK]),
 
     Item("Hood",           "Head",  hood,            [CLOTH, LEATHER, DARK]),
     Item("WideHat",        "Head",  wide_hat,        [LEATHER, DARK, DARK]),
@@ -1118,6 +1192,7 @@ SKELETON_ITEMS = [
     # Облачение Греховода — на узком скелете поджато к оси.
     ("SinRobe", None, hug(0.86, y0=0.004)),
     ("SinSkirt", None, hug(0.90, y0=0.004)),
+    ("SinCloak", None, hug(0.74, y0=0.010)),
     ("SinSleeveLeft", None, None),
     ("SinSleeveRight", None, None),
     ("SinCuffLeft", None, None),

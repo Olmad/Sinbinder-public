@@ -190,12 +190,16 @@ namespace Sinbinder.Gameplay
             {
                 Wardrobe.Tint(model.gameObject, BodyCrimson);
                 Wardrobe.Wear(model.gameObject, "Hood", MantleCrimson);
-                Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
+                // Плащ свой — с истрёпанным краем (28-ORDERS, 26.10); нет его
+                // в сборке — общий плащ следопыта, как прежде.
+                if (Wardrobe.Wear(model.gameObject, "SinCloak", MantleCrimson) == null)
+                    Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
 
                 // Облачение (автор, 21 октября: «сделать его более… Греховодом»,
-                // «он не должен быть голым»): ряса до земли с золотой нитью,
-                // рукава, оплечье с шипами — пешка логотипа, — пояс с гримуаром
-                // и банками душ, посох с огоньком души. Цвета — в самих вещах.
+                // «он не должен быть голым»; 23 октября: «бывшая пешка Смерти
+                // в бегах, не маг»): ряса до середины икры с разрезом, истрёпанная,
+                // рукава, оплечье с шипами, кушак с банками душ (гримуара нет),
+                // костяной посох с огоньком души. Цвета — в самих вещах.
                 foreach (var item in new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
                                              "SinCuffLeft", "SinCuffRight", "SinMantle",
                                              "SinBelt", "SinStaff" })
@@ -217,6 +221,8 @@ namespace Sinbinder.Gameplay
                 // Огонёк души на посохе — тот же тёплый, что у костра.
                 Wardrobe.Tint(model.gameObject, "Soulfire", new Color(1f, 0.55f, 0.22f), glow: 1.0f);
                 Wardrobe.Matte(model.gameObject, "Robe");
+                Wardrobe.Matte(model.gameObject, "Dust");
+                Wardrobe.Matte(model.gameObject, "Patch");
                 // Шипы оплечья светились белыми иглами на портрете (22.10).
                 Wardrobe.Tint(model.gameObject, "Iron", DarkIron);
 
