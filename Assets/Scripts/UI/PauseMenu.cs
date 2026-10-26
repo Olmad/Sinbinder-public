@@ -235,6 +235,12 @@ namespace Sinbinder.UI
             Row(Loc.T("Зерно и виньетка"), Core.GraphicsOptions.GrainName(), Core.GraphicsOptions.ToggleGrain);
             Row(Loc.T("Кадры"), Core.GraphicsOptions.FramesName(), Core.GraphicsOptions.CycleFrames);
 
+            // Отдельно от наборов (автор, 26.10): лучи луны сквозь кроны и дальность её теней.
+            // «Объёмный свет», а не «RTX» / «трассировка лучей»: это не трассировка, а её
+            // обманка, и такое имя было бы неправдой игроку (и чужая торговая марка).
+            y -= MenuRows.Height * 0.5f;
+            Row(Loc.T("Объёмный свет"), Core.GraphicsOptions.MoonName(), Core.GraphicsOptions.CycleMoon);
+
             Fit(y);
         }
 

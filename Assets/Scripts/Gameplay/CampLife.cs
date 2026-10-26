@@ -372,6 +372,18 @@ namespace Sinbinder.Gameplay
         /// под «Палатки», брошенные — «Палатка павшего»: к павшим не ходят.
         /// Какая чья — по имени, без жребия.
         /// </summary>
+        /// <summary>
+        /// Чья палатка — по имени, та же, у входа в которую он стоит. Спрашивает свеча
+        /// Вейна (<see cref="CandleHabit"/>). Нет палаток — null.
+        /// </summary>
+        public static Transform TentOf(Warrior w)
+        {
+            if (w == null) return null;
+            Tent(w, Vector3.zero, out _);
+            if (_tents == null || _tents.Count == 0) return null;
+            return _tents[Stable(w.DisplayName) % _tents.Count];
+        }
+
         private static bool Tent(Warrior w, Vector3 fire, out Vector3 point)
         {
             point = default;

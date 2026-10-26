@@ -112,9 +112,12 @@ namespace Sinbinder.Utilets
             // мглой — лагерь не читался вовсе.
             var split = Grab<SplitToning>(profile);
             split.shadows.overrideState = true;
-            split.shadows.value = new Color(0.42f, 0.48f, 0.56f);
+            // 26 октября (облачная, «Красота», п. 6: «тёплое/холодное — огонь против
+            // луны»): тени синее, света золотее — на кадрах набега встреча почти
+            // не читалась. Середина та же, сдвиг сильнее на треть.
+            split.shadows.value = new Color(0.38f, 0.46f, 0.60f);
             split.highlights.overrideState = true;
-            split.highlights.value = new Color(0.63f, 0.54f, 0.41f);
+            split.highlights.value = new Color(0.68f, 0.54f, 0.36f);
             split.balance.overrideState = true;
             split.balance.value = 0f;
 
@@ -151,9 +154,9 @@ namespace Sinbinder.Utilets
             // костёр и шар, а не вся картинка разом.
             var bloom = Grab<Bloom>(profile);
             bloom.threshold.overrideState = true;
-            bloom.threshold.value = 0.9f;
+            bloom.threshold.value = 0.85f;   // 26.10: огонь светит заметнее (облачная, «Красота», п. 6)
             bloom.intensity.overrideState = true;
-            bloom.intensity.value = 0.85f;
+            bloom.intensity.value = 1.0f;
             bloom.scatter.overrideState = true;
             bloom.scatter.value = 0.7f;
 

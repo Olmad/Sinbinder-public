@@ -667,6 +667,20 @@ namespace Sinbinder.Utilets
             // а не только его яркостью; костёр при этом шире (Campfire).
             l.intensity = warm ? 0.72f : 1.15f;
             l.shadows = LightShadows.Soft;
+
+            // Лунный контур (облачная, «Красота сейчас», п. 6: «лунный контровой свет —
+            // силуэты читаются ночью»). Тактическая камера смотрит на север; этот свет
+            // идёт с севера ей навстречу, низко: лица, обращённые к камере, он не трогает,
+            // а края — плечи, макушки, кромки палаток и стволов — загораются холодной
+            // каймой, и тёмная фигура отделяется от тёмной земли. Без теней: вторые тени
+            // спорили бы с длинными тенями ключевого света.
+            var rim = new GameObject("Лунный контур");
+            rim.transform.rotation = Quaternion.Euler(14f, 180f, 0f);
+            var r = rim.AddComponent<Light>();
+            r.type = LightType.Directional;
+            r.color = new Color(0.62f, 0.72f, 1.00f);
+            r.intensity = warm ? 0.38f : 0.55f;
+            r.shadows = LightShadows.None;
         }
 
         private static void Ground(string name, float scale, string soil = null)

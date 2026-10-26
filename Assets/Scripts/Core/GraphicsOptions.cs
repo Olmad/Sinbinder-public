@@ -27,6 +27,16 @@ namespace Sinbinder.Core
         public enum Sharpness { Full, High, Medium }
         public enum FrameCap { Thirty, Sixty, None, Sync }
 
+        /// <summary>
+        /// Лунный свет — отдельно от наборов (автор, 26.10: «сделай отдельную возможность
+        /// переключать именно степени, чтобы можно было отдельно настраивать от основной
+        /// граф. настройки»). Трассировки лучей в URP нет — её обманка: лучи луны сквозь
+        /// кроны (<see cref="Gameplay.MoonShafts"/>) и дальность лунных теней.
+        /// </summary>
+        public enum MoonLevel { Low, Medium, High }
+
+        public static MoonLevel Moon { get; private set; } = MoonLevel.Low;
+
         public static ShadowMode Shadows { get; private set; } = ShadowMode.Soft;
         public static bool Occlusion { get; private set; } = true;
         public static Smoothing Antialias { get; private set; } = Smoothing.Sharp;
@@ -47,6 +57,11 @@ namespace Sinbinder.Core
         {
             // Первый запуск: набор по видеокарте, как раньше (Preferences.Integrated).
             // Порядок двух BeforeSceneLoad не задан — прежний выбор читаем сами.
+            // Луна — своя, не из набора: читается до раннего выхода ниже.
+            // По умолчанию — низкий, пока кадр не уложен в 60 (автор, 26.10: «у нас и сейчас
+            // огромные проблемы с производительностью»); выше — сам, в паузе.
+            Moon = (MoonLevel)PlayerPrefs.GetInt(Key + "moon", (int)MoonLevel.Low);
+
             if (!PlayerPrefs.HasKey(Key + "shadows"))
             {
                 bool light = PlayerPrefs.HasKey("sinbinder.graphics.light")
@@ -137,6 +152,15 @@ namespace Sinbinder.Core
 
         public static void CycleFrames() { Frames = (FrameCap)(((int)Frames + 1) % 4); Save(); }
 
+        public static string MoonName() => Moon switch
+        {
+            MoonLevel.Low => Loc.T("низкий — без лучей луны"),
+            MoonLevel.High => Loc.T("высокий — лучи луны гуще и дышат, тени дальше"),
+            _ => Loc.T("средний — редкие лучи луны сквозь кроны"),
+        };
+
+        public static void CycleMoon() { Moon = (MoonLevel)(((int)Moon + 1) % 3); Save(); }
+
         private static void Save()
         {
             PlayerPrefs.SetInt(Key + "shadows", (int)Shadows);
@@ -145,6 +169,7 @@ namespace Sinbinder.Core
             PlayerPrefs.SetInt(Key + "scale", (int)Detail);
             PlayerPrefs.SetInt(Key + "grain", Grain ? 1 : 0);
             PlayerPrefs.SetInt(Key + "fps", (int)Frames);
+            PlayerPrefs.SetInt(Key + "moon", (int)Moon);
             PlayerPrefs.Save();
             FrameBudget.Apply();
         }

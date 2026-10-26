@@ -1730,6 +1730,38 @@ namespace Sinbinder.EditorTools
                     if (moon != null && moon.shadows == LightShadows.Soft)
                         configs.Add(("луна с жёсткими тенями", () => moon.shadows = LightShadows.Hard, () => moon.shadows = LightShadows.Soft));
 
+                    // 26.10, оптимизация (автор: «у нас и сейчас огромные проблемы
+                    // с производительностью»): что стоит бор, частицы, лучи луны и контровой
+                    // свет — включать и выключать целиком, по корню сцены.
+                    void Whole(string label, Func<GameObject, bool> pick)
+                    {
+                        var hit = new List<Renderer>();
+                        foreach (var r in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                            if (r.enabled && pick(r.gameObject)) hit.Add(r);
+                        if (hit.Count == 0) return;
+                        configs.Add(($"{label} ({hit.Count})",
+                            () => { foreach (var r in hit) if (r != null) r.enabled = false; },
+                            () => { foreach (var r in hit) if (r != null) r.enabled = true; }));
+                    }
+                    bool Under(GameObject g, string root)
+                    {
+                        for (var t = g.transform; t != null; t = t.parent) if (t.name == root) return true;
+                        return false;
+                    }
+                    Whole("без бора", g => Under(g, "Лес"));
+                    Whole("без частиц", g => g.GetComponent<ParticleSystemRenderer>() != null);
+                    Whole("без лучей луны", g => Under(g, "Лучи луны"));
+                    var rimLight = GameObject.Find("Лунный контур")?.GetComponent<Light>();
+                    if (rimLight != null && rimLight.enabled)
+                        configs.Add(("без лунного контура", () => rimLight.enabled = false, () => rimLight.enabled = true));
+                    var plain = new List<Light>();
+                    foreach (var l in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+                        if (l.isActiveAndEnabled && l.type == LightType.Point && l.shadows == LightShadows.None) plain.Add(l);
+                    if (plain.Count > 0)
+                        configs.Add(($"без точечных огней без теней ({plain.Count})",
+                            () => { foreach (var l in plain) if (l != null) l.enabled = false; },
+                            () => { foreach (var l in plain) if (l != null) l.enabled = true; }));
+
                     // Облегчённая (Core.FrameBudget): без теней и без затенения углов.
                     if (extra != null)
                         configs.Add(("облегчённая",
@@ -1780,6 +1812,18 @@ namespace Sinbinder.EditorTools
                 string line = $"  [КАДР] {where}: отрисовка {best[0]:F1} мс на кадр 1920×1080";
                 for (int i = 1; i < configs.Count; i++) line += $"; {configs[i].Name} {best[i]:F1}";
                 Write(line + $" (лучшее из {rounds} кругов)");
+
+                // Счётчики последнего кадра основной камеры (редактор): вызовы,
+                // смены материала, треугольники; сколько всего рисующихся объектов.
+                if (parts)
+                {
+                    Render(cam);
+                    int renderers = 0;
+                    foreach (var r in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None)) if (r.enabled) renderers++;
+                    Write($"  [КАДР] {where}: вызовов {UnityEditor.UnityStats.batches}, смен материала "
+                        + $"{UnityEditor.UnityStats.setPassCalls}, треугольников {UnityEditor.UnityStats.triangles / 1000} тыс., "
+                        + $"теней — вызовов {UnityEditor.UnityStats.shadowCasters}; рисующихся объектов в сцене {renderers}");
+                }
             }
             catch (Exception e)
             {

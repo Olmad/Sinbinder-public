@@ -36,7 +36,7 @@ namespace Sinbinder.Utilets
         /// <summary>Не предметы: земля, свет, камера, интерфейс.</summary>
         private static readonly HashSet<string> Ignored = new()
         {
-            "Земля", "Камень", "Плиты", "Main Camera", "Холодный свет", "Взгляд",
+            "Земля", "Камень", "Плиты", "Main Camera", "Холодный свет", "Лунный контур", "Взгляд",
         };
 
         /// <summary>Пары, которые срослись нарочно (порядок не важен).</summary>

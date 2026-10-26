@@ -131,6 +131,27 @@ namespace Sinbinder.Core
             Smoothing();
             GraphicsOptions.ApplyGrain();
             Frames();
+            MoonShadows();
+        }
+
+        /// <summary>
+        /// Лунные тени по степени «Лунный свет»: ступени и дальность (URP — в файле
+        /// настроек графики). Только в собранной игре: в редакторе правка ушла бы
+        /// в сам файл проекта и в git. Лучи луны — <see cref="Gameplay.MoonShafts"/>.
+        /// </summary>
+        private static void MoonShadows()
+        {
+#if !UNITY_EDITOR
+            if (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset urp) return;
+            var (cascades, distance) = GraphicsOptions.Moon switch
+            {
+                GraphicsOptions.MoonLevel.Low => (1, 28f),
+                GraphicsOptions.MoonLevel.High => (4, 45f),
+                _ => (2, 36f),
+            };
+            if (urp.shadowCascadeCount != cascades) urp.shadowCascadeCount = cascades;
+            if (!Mathf.Approximately(urp.shadowDistance, distance)) urp.shadowDistance = distance;
+#endif
         }
 
         private void Frames()
