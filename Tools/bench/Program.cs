@@ -5307,9 +5307,61 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  Моменты: чисто." : $"  Моменты: провалов {bad}.");
     }
 
+    /// <summary>
+    /// Генератор воинов (docs/53-GENERATOR.md): образцы по каждому происхождению
+    /// и сводка по тысяче отрядов по девять — разные ли выходят люди.
+    ///   dotnet run -- генератор
+    /// </summary>
+    static void GeneratorReport()
+    {
+        foreach (SoulOrigin origin in Enum.GetValues(typeof(SoulOrigin)))
+        {
+            Console.WriteLine($"=== {origin} ===");
+            var present = new List<string> { "Карган Старый Ворон", "Марга Копатель" };
+            for (int i = 1; i <= 4; i++)
+            {
+                var k = WarriorGenerator.Make(i, origin, present);
+                present.Add(k.Name);
+                Console.WriteLine($"  {k.Name} — {Trades.Name(k.Trade)}, {k.Shell}, {k.Sin} + {k.Second}, {k.Moral}");
+                Console.WriteLine($"    {k.Why}");
+                Console.WriteLine($"    «{k.First}»");
+                Console.WriteLine($"    {k.Seed?.Story}");
+            }
+        }
+
+        int squads = 1000, size = 9, noNick = 0, dupName = 0, dupNick = 0;
+        var sins = new Dictionary<SinType, int>();
+        var nicks = new Dictionary<string, int>();
+        for (int s = 0; s < squads; s++)
+        {
+            var present = new List<string>();
+            var givenSeen = new HashSet<string>();
+            var nickSeen = new HashSet<string>();
+            for (int i = 0; i < size; i++)
+            {
+                var k = WarriorGenerator.Make(s * size + i + 1, (SoulOrigin)(i % 4), present);
+                present.Add(k.Name);
+                sins[k.Sin] = sins.TryGetValue(k.Sin, out var c) ? c + 1 : 1;
+                if (string.IsNullOrEmpty(k.Nickname)) noNick++;
+                else
+                {
+                    nicks[k.Nickname] = nicks.TryGetValue(k.Nickname, out var n) ? n + 1 : 1;
+                    if (!nickSeen.Add(k.Nickname)) dupNick++;
+                }
+                if (!givenSeen.Add(k.Given)) dupName++;
+            }
+        }
+        int total = squads * size;
+        Console.WriteLine($"\n=== СВОДКА: {squads} отрядов по {size} ===");
+        Console.WriteLine($"Грехи: {string.Join(", ", sins.OrderByDescending(x => x.Value).Select(x => $"{x.Key} {x.Value * 100 / total}%"))}");
+        Console.WriteLine($"Прозвищ разных: {nicks.Count}; без прозвища: {noNick * 100.0 / total:F1}%");
+        Console.WriteLine($"В одном отряде повторилось имя: {dupName}; прозвище: {dupNick}");
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
+        if (args.Length > 0 && args[0] == "генератор") { GeneratorReport(); return; }
         int n = args.Length > 0 ? int.Parse(args[0]) : 200000;
         var cfg = ScriptableObject.CreateInstance<AOSConfig>();
         ApplyAsset(cfg);
