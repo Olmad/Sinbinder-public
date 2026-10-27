@@ -330,7 +330,11 @@ namespace Sinbinder.Gameplay
         private static readonly string GreedSees = Loc.N("Крыса своего не упустит. Мне нравится.");
         private static readonly string SlothSees = Loc.N("Крысы так крысы. Всё одно бежать.");
 
-        private const float OpinionEvery = 9f;   // секунд игры между строками — лагерь не лента новостей
+        // Реже и короче (автор, отзыв 26.10, п. 19: «все довольно долго обсуждают знамя…
+        // странно, но в общем интересно»): было — все по очереди раз в 9 с, восемь человек
+        // тремя строками больше минуты. Теперь каждая строка — один раз, от первого с этим
+        // грехом, и кивок Гурта: не больше четырёх реплик.
+        private const float OpinionEvery = 14f;  // секунд игры между строками — лагерь не лента новостей
         private const float SeesBanner = 12f;    // с какого расстояния до Хоря знамя видно, метров
 
         /// <summary>Что о знамени скажет душа с этим главным грехом; нет строки — промолчит.</summary>
@@ -346,13 +350,15 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// После имени каждый, кто видит знамя, раз говорит о нём — строкой над
-        /// головой, по одному, раз в <see cref="OpinionEvery"/> секунд, по имени, без
-        /// жребия. Только пока лагерь живёт: разгром обрывает разговоры.
+        /// После имени о знамени говорят по одному на грех — строкой над головой,
+        /// раз в <see cref="OpinionEvery"/> секунд, первый по имени, без жребия; та же
+        /// строка вторым ртом не повторяется. Немой Гурт кивает. Только пока лагерь
+        /// живёт: разгром обрывает разговоры.
         /// </summary>
         private IEnumerator Opinions(Warrior bearer)
         {
             var said = new HashSet<string>();
+            var heard = new HashSet<SinType>();
             while (CampLife.Enabled && bearer != null && !bearer.IsDead)
             {
                 yield return new WaitForSeconds(OpinionEvery);
@@ -365,7 +371,7 @@ namespace Sinbinder.Gameplay
                     if (w == null || w.IsDead || w == bearer || w is SinbinderPlayer || w.Team != Team.Player) continue;
                     if (w.Soul == null || said.Contains(w.DisplayName)) continue;
                     bool mute = Dialogue.CampLines.Mute(w);
-                    if (!mute && Opinion(w.Soul.Sin) == null) continue;
+                    if (!mute && (Opinion(w.Soul.Sin) == null || heard.Contains(w.Soul.Sin))) continue;
                     left++;
                     if (!CampLife.Idle(w) || CampTalk.Partner(w, out _)) continue;
                     if (CampFocus.GroundDistance(w.transform.position, bearer.transform.position) > SeesBanner) continue;
@@ -375,6 +381,7 @@ namespace Sinbinder.Gameplay
                 if (next == null) continue;
 
                 said.Add(next.DisplayName);
+                if (!Dialogue.CampLines.Mute(next)) heard.Add(next.Soul.Sin);
                 string line = Dialogue.CampLines.Mute(next)
                     ? Dialogue.CampLines.Gesture(next)
                     : Loc.T(Opinion(next.Soul.Sin));
@@ -441,7 +448,7 @@ namespace Sinbinder.Gameplay
             var none = new List<TalkView.Option>();
 
             // «Мы тут с Гуртом подумали…»
-            TalkView.Show(name, Loc.T(Offer), none, null);
+            TalkView.Show(name, Loc.T(Offer), none, null, bearer);
             yield return Hold(Loc.T(Offer));
 
             // Поворачивается спиной — камера стоит перед ним, и в кадр входит
@@ -453,7 +460,7 @@ namespace Sinbinder.Gameplay
                 new TalkView.Option { Text = "1. " + Loc.T(Yes), Act = () => answer = 1 },
                 new TalkView.Option { Text = "2. " + Loc.T(No),  Act = () => answer = 2 },
             };
-            TalkView.Show(name, Loc.T(Show), options, Loc.T("Выберите ответ — цифрой или мышью."));
+            TalkView.Show(name, Loc.T(Show), options, Loc.T("Выберите ответ — цифрой или мышью."), bearer);
 
             float auto = Time.unscaledTime + 3f;
             while (answer == 0)
@@ -467,7 +474,7 @@ namespace Sinbinder.Gameplay
             // Обернулся обратно — отвечает. Имя остаётся при обоих ответах.
             Face(bearer, SinbinderPlayer.Exists ? SinbinderPlayer.Where : bearer.transform.position - bearer.transform.forward);
             string reply = Loc.T(answer == 1 ? OnYes : OnNo);
-            TalkView.Show(name, reply, none, null);
+            TalkView.Show(name, reply, none, null, bearer);
             yield return Hold(reply);
 
             // Последнее слово — мысль Греховода: про него, а не про ответ.

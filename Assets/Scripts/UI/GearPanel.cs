@@ -698,7 +698,8 @@ namespace Sinbinder.UI
             string speaker = "", line = _answer ?? "";
             int colon = line.IndexOf(": ", System.StringComparison.Ordinal);
             if (colon > 0 && line.StartsWith(name)) { speaker = name; line = line.Substring(colon + 2).Trim('«', '»'); }
-            TalkView.Show(speaker, line, options, footer);
+            // Голос — только у его слов; строка без имени — пересказ, не он.
+            TalkView.Show(speaker, line, options, footer, string.IsNullOrEmpty(speaker) ? null : _warrior);
         }
 
         /// <summary>Долг словами. Без чисел: «три вылазки без платы», а не «3».</summary>

@@ -2025,18 +2025,17 @@ namespace Sinbinder.Utilets
             }
             Look(shelf, "Jars", focus: 0.9f, distance: 1.1f, reach: 1.6f);
 
-            // Банки души (сессия моделей, 27 сентября: Props/SoulJar,
-            // SoulJarFull). Пустые все, кроме одной: в ней тлеет последняя,
-            // кого он не донёс. Грехи её — Уныние с Жадностью, тлеет
-            // слабо: не донёс — значит, гасла. Нет моделей — прежние
-            // цилиндры: палатка без полки хуже палатки с заглушками.
-            // Доска полки — на 0,97 (props.py), здесь ×0,75 = 0,73; банка
-            // стоит дном на доске (опора модели — у дна).
+            // Банки души (сессия моделей, 27 сентября: Props/SoulJar). Все
+            // пустые: до 27.10 в одной тлела «последняя, кого он не донёс», —
+            // автор, отзыв 26.10, п. 16: «одна из банок не пуста» — читалось
+            // ошибкой; и душа, которую нельзя взять, — обещание без дела
+            // (InspectTexts.Jars). Нет модели — прежние цилиндры: палатка без
+            // полки хуже палатки с заглушками. Доска полки — на 0,97 (props.py),
+            // здесь ×0,75 = 0,73; банка стоит дном на доске (опора модели — у дна).
             for (int i = 0; i < 4; i++)
             {
                 var at = new Vector3(-0.55f + i * 0.36f, 0.73f, 0.02f);
-                bool full = i == 2;
-                var jar = Prop(full ? "SoulJarFull" : "SoulJar", shelf.transform,
+                var jar = Prop("SoulJar", shelf.transform,
                                shelf.transform.TransformPoint(at), shelf.transform.eulerAngles.y);
 
                 if (jar == null)
@@ -2046,17 +2045,10 @@ namespace Sinbinder.Utilets
                     jar.transform.localPosition = at + new Vector3(0f, 0.11f, 0f);
                     jar.transform.localScale = new Vector3(0.16f, 0.11f, 0.16f);
                     Object.DestroyImmediate(jar.GetComponent<Collider>());
-                    jar.GetComponent<Renderer>().sharedMaterial = full
-                        ? Plain("Банка с душой", new Color(0.24f, 0.34f, 0.31f), new Color(0.22f, 0.52f, 0.44f))
-                        : Plain("Банка", new Color(0.20f, 0.25f, 0.24f));
-                }
-                else if (full)
-                {
-                    jar.AddComponent<SoulJarGlow>().Set(Sinbinder.Core.SinType.Sloth,
-                                                        Sinbinder.Core.SinType.Greed, 0.35f);
+                    jar.GetComponent<Renderer>().sharedMaterial = Plain("Банка", new Color(0.20f, 0.25f, 0.24f));
                 }
 
-                jar.name = full ? "Банка с душой" : "Банка для души";
+                jar.name = "Банка для души";
             }
 
             // Стойка с оружием у правого ската, у входа. Оружие — дело

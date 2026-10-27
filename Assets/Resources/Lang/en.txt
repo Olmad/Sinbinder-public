@@ -1408,6 +1408,14 @@ msgid "средняя — для слабой видеокарты"
 msgstr "medium — for a weak graphics card"
 
 #: Core/GraphicsOptions.cs
+msgid "пиксельная — мир крупным пикселем, кадр вчетверо легче"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
+msgid "крупный пиксель — для самой слабой машины"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
 msgid "включены"
 msgstr "on"
 
@@ -5024,16 +5032,20 @@ msgid "Карта на коже"
 msgstr "Map on hide"
 
 #: Gameplay/InspectTexts.cs
-msgid "Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."
-msgstr "The crypt is circled in charcoal. A note beside it: “Only if all is lost.”"
+msgid "Углём, рукой Каргана: наш лагерь — кружок в самой чаще. Дороги к нему не нарисовано. Нарочно."
+msgstr "In charcoal, in Kargan's hand: our camp is a circle deep in the thicket. No road to it is drawn. On purpose."
 
 #: Gameplay/InspectTexts.cs
-msgid "У заставы за холмами — крест: брошена. Знак охотников над ней перечёркнут."
-msgstr "A cross by the outpost beyond the hills: abandoned. The hunters' sign above it is struck through."
+msgid "За холмами — застава Ордена, перечёркнута: брошена. Туда и пойдёт вылазка."
+msgstr "Beyond the hills — an Order outpost, crossed out: abandoned. That's where the sortie will go."
 
 #: Gameplay/InspectTexts.cs
-msgid "На краю — три фигурки: три отряда. Одну стёрли пальцем — тот, что лёг у моста."
-msgstr "On the edge, three little figures: three squads. One rubbed out with a finger — the one that fell at the bridge."
+msgid "У края — три фигурки, три отряда. Одну стёрли пальцем: те, что легли у моста."
+msgstr "At the edge — three figures, three squads. One was rubbed out with a finger: those who fell at the bridge."
+
+#: Gameplay/InspectTexts.cs
+msgid "В самом углу, мелко: склеп. И приписка: «Только если всё потеряно»."
+msgstr "In the very corner, small: a crypt. And a note: “Only if all is lost.”"
 
 #: Gameplay/InspectTexts.cs
 msgid "F — взглянуть на банки"
@@ -7532,6 +7544,18 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."
+msgstr "The crypt is circled in charcoal. A note beside it: “Only if all is lost.”"
+
+#. нет в коде
+msgid "У заставы за холмами — крест: брошена. Знак охотников над ней перечёркнут."
+msgstr "A cross by the outpost beyond the hills: abandoned. The hunters' sign above it is struck through."
+
+#. нет в коде
+msgid "На краю — три фигурки: три отряда. Одну стёрли пальцем — тот, что лёг у моста."
+msgstr "On the edge, three little figures: three squads. One rubbed out with a finger — the one that fell at the bridge."
 
 #. нет в коде
 msgid "Пешки не разговаривают. Значит, говорила не она."

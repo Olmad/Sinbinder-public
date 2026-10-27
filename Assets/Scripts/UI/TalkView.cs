@@ -54,8 +54,14 @@ namespace Sinbinder.UI
             return _instance;
         }
 
-        /// <summary>Показать: что сказал воин (субтитром) и что можно ответить.</summary>
-        public static void Show(string speaker, string line, IList<Option> options, string footer)
+        /// <summary>
+        /// Показать: что сказал воин (субтитром) и что можно ответить.
+        /// <paramref name="voice"/> — кто говорит: его голос звучит, пока
+        /// строка печатается (автор, отзыв 26.10, п. 20: «при диалоге про
+        /// знамя нет голоса» — его не было ни в одном разговоре вблизи).
+        /// </summary>
+        public static void Show(string speaker, string line, IList<Option> options, string footer,
+                                Gameplay.Warrior voice = null)
         {
             var v = Get();
             v._canvas.enabled = true;
@@ -67,6 +73,7 @@ namespace Sinbinder.UI
             {
                 v._lastLine = said;
                 Letterbox.Instance?.Say(speaker, line);
+                Voice(voice, line);
             }
 
             foreach (var r in v._rows) if (r != null) Destroy(r);
@@ -79,6 +86,21 @@ namespace Sinbinder.UI
             }
             v._list.sizeDelta = new Vector2(v._list.sizeDelta.x, -y);
             v._footer.text = footer ?? "";
+        }
+
+        /// <summary>
+        /// Голос под строкой — бип на букву (<see cref="Audio.VoiceGenerator"/>),
+        /// столько, сколько строка печатается на полосе: голос кончается вместе
+        /// с буквами. Ремарка в скобках — «(молча кивает)» у Гурта — без голоса:
+        /// это не слова.
+        /// </summary>
+        private static void Voice(Gameplay.Warrior who, string line)
+        {
+            if (who == null || string.IsNullOrEmpty(line) || line.TrimStart().StartsWith("(")) return;
+            if (!who.TryGetComponent<Audio.VoiceGenerator>(out var voice)) return;
+
+            float pace = Letterbox.Instance != null ? Letterbox.Instance.LettersPerSecond : 40f;
+            voice.Babble(line, Mathf.Min(6f, line.Length / pace + 0.3f), 0.8f);
         }
 
         public static void Hide()
