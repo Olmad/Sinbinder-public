@@ -1409,11 +1409,11 @@ msgstr "medium — for a weak graphics card"
 
 #: Core/GraphicsOptions.cs
 msgid "пиксельная — мир крупным пикселем, кадр вчетверо легче"
-msgstr ""
+msgstr "pixelated — the world in big pixels, a frame four times lighter"
 
 #: Core/GraphicsOptions.cs
 msgid "крупный пиксель — для самой слабой машины"
-msgstr ""
+msgstr "big pixel — for the weakest machine"
 
 #: Core/GraphicsOptions.cs
 msgid "включены"
@@ -1437,15 +1437,15 @@ msgstr "sixty per second"
 
 #: Core/GraphicsOptions.cs
 msgid "низкий — без лучей луны"
-msgstr ""
+msgstr "low — no moonbeams"
 
 #: Core/GraphicsOptions.cs
 msgid "высокий — лучи луны гуще и дышат, тени дальше"
-msgstr ""
+msgstr "high — denser, breathing moonbeams, longer shadows"
 
 #: Core/GraphicsOptions.cs
 msgid "средний — редкие лучи луны сквозь кроны"
-msgstr ""
+msgstr "medium — sparse moonbeams through the crowns"
 
 #: Core/Preferences.cs
 msgid "как задумано"
@@ -2470,6 +2470,258 @@ msgstr "The treasury doesn't hold that much. We'll have to go on owing."
 #: Crypt/UpgradeSocket.cs
 msgid "Отряду заплачено. Долгов за вами нет."
 msgstr "The squad has been paid. You owe nothing."
+
+#: Crypt/WarriorForge.cs
+msgid "Бран"
+msgstr "Bran"
+
+#: Crypt/WarriorForge.cs
+msgid "Ольст"
+msgstr "Olst"
+
+#: Crypt/WarriorForge.cs
+msgid "Тихон"
+msgstr "Tikhon"
+
+#: Crypt/WarriorForge.cs
+msgid "Ратко"
+msgstr "Ratko"
+
+#: Crypt/WarriorForge.cs
+msgid "Сбыслав"
+msgstr "Sbyslav"
+
+#: Crypt/WarriorForge.cs
+msgid "Ивар"
+msgstr "Ivar"
+
+#: Crypt/WarriorForge.cs
+msgid "Мирош"
+msgstr "Mirosh"
+
+#: Crypt/WarriorForge.cs
+msgid "Гостята"
+msgstr "Gostyata"
+
+#: Crypt/WarriorForge.cs
+msgid "Ульв"
+msgstr "Ulv"
+
+#: Crypt/WarriorForge.cs
+msgid "Добрыня"
+msgstr "Dobrynya"
+
+#: Crypt/WarriorForge.cs
+msgid "Хотен"
+msgstr "Khoten"
+
+#: Crypt/WarriorForge.cs
+msgid "Свен"
+msgstr "Sven"
+
+#: Crypt/WarriorForge.cs
+msgid "Будимир"
+msgstr "Budimir"
+
+#: Crypt/WarriorForge.cs
+msgid "Кнут"
+msgstr "Knut"
+
+#: Crypt/WarriorForge.cs
+msgid "Ярош"
+msgstr "Yarosh"
+
+#: Crypt/WarriorForge.cs
+msgid "Нежата"
+msgstr "Nezhata"
+
+#: Crypt/WarriorForge.cs
+msgid "Торн"
+msgstr "Thorn"
+
+#: Crypt/WarriorForge.cs
+msgid "Вышата"
+msgstr "Vyshata"
+
+#: Crypt/WarriorForge.cs
+msgid "Ерш"
+msgstr "Yorsh"
+
+#: Crypt/WarriorForge.cs
+msgid "Олаф"
+msgstr "Olaf"
+
+#: Crypt/WarriorForge.cs
+msgid "Житко"
+msgstr "Zhitko"
+
+#: Crypt/WarriorForge.cs
+msgid "Ставр"
+msgstr "Stavr"
+
+#: Crypt/WarriorForge.cs
+msgid "Хёгни"
+msgstr "Högni"
+
+#: Crypt/WarriorForge.cs
+msgid "Путята"
+msgstr "Putyata"
+
+#: Crypt/WarriorForge.cs
+msgid "Имя: {0}"
+msgstr "Name: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Щелчок — следующее имя."
+msgstr "Click for the next name."
+
+#: Crypt/WarriorForge.cs
+msgid "Грех: {0}"
+msgstr "Sin: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Что ведёт его в спорах души."
+msgstr "What leads him when his soul argues."
+
+#: Crypt/WarriorForge.cs
+msgid "Второй грех: {0}"
+msgstr "Second sin: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Слабее главного — с ним он спорит сам с собой."
+msgstr "Weaker than the first — he argues with himself over it."
+
+#: Crypt/WarriorForge.cs
+msgid "Сила греха: {0}"
+msgstr "Sin strength: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Насколько грех громче остальных голосов."
+msgstr "How much louder the sin is than the other voices."
+
+#: Crypt/WarriorForge.cs
+msgid "Мораль: {0}"
+msgstr "Morals: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Чего он не сделает никогда — или сделает охотно."
+msgstr "What he will never do — or will do gladly."
+
+#: Crypt/WarriorForge.cs
+msgid "Ремесло: {0}"
+msgstr "Trade: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Кем был до смерти: тянет душу, даёт оружие и слова."
+msgstr "Who he was before death: it pulls the soul, gives a weapon and words."
+
+#: Crypt/WarriorForge.cs
+msgid "Тело: {0}"
+msgstr "Body: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Скелет, зомби, призрак или голем."
+msgstr "Skeleton, zombie, ghost or golem."
+
+#: Crypt/WarriorForge.cs
+msgid "Верность: {0}"
+msgstr "Loyalty: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Насколько ваш приказ весит в его душе."
+msgstr "How much your order weighs in his soul."
+
+#: Crypt/WarriorForge.cs
+msgid "Создать"
+msgstr "Create"
+
+#: Crypt/WarriorForge.cs
+msgid "Встанет на площадке и будет жить, как в лагере."
+msgstr "He will stand in the yard and live as in camp."
+
+#: Crypt/WarriorForge.cs
+msgid "Убрать созданных"
+msgstr "Remove the created"
+
+#: Crypt/WarriorForge.cs
+msgid "Площадка снова пуста — девять лагеря остаются."
+msgstr "The yard is empty again — the camp's nine stay."
+
+#: Crypt/WarriorForge.cs
+msgid "Закрыть"
+msgstr "Close"
+
+#: Crypt/WarriorForge.cs
+msgid "{0} или Esc."
+msgstr "{0} or Esc."
+
+#: Crypt/WarriorForge.cs
+msgid "Младший"
+msgstr "the Younger"
+
+#: Crypt/WarriorForge.cs
+msgid "едва заметен"
+msgstr "barely there"
+
+#: Crypt/WarriorForge.cs
+msgid "заметен"
+msgstr "noticeable"
+
+#: Crypt/WarriorForge.cs
+msgid "силён"
+msgstr "strong"
+
+#: Crypt/WarriorForge.cs
+msgid "себе на уме"
+msgstr "his own man"
+
+#: Crypt/WarriorForge.cs
+msgid "верен"
+msgstr "loyal"
+
+#: Crypt/WarriorForge.cs
+msgid "предан"
+msgstr "devoted"
+
+#: Crypt/WarriorForge.cs
+msgid "благочестивый"
+msgstr "pious"
+
+#: Crypt/WarriorForge.cs
+msgid "порочный"
+msgstr "vicious"
+
+#: Crypt/WarriorForge.cs
+msgid "ни то ни сё"
+msgstr "neither"
+
+#: Crypt/WarriorForge.cs
+msgid "без ремесла"
+msgstr "no trade"
+
+#: Crypt/WarriorForge.cs
+msgid "зомби"
+msgstr "zombie"
+
+#: Crypt/WarriorForge.cs
+msgid "призрак"
+msgstr "ghost"
+
+#: Crypt/WarriorForge.cs
+msgid "голем"
+msgstr "golem"
+
+#: Crypt/WarriorForge.cs
+msgid "скелет"
+msgstr "skeleton"
+
+#: Crypt/WarriorForge.cs
+msgid "{0} встал на площадке."
+msgstr "{0} stands in the yard."
+
+#: Crypt/WarriorForge.cs
+msgid "Создатель воинов"
+msgstr "Warrior Maker"
 
 #: Dialogue/CampLines.cs
 msgid "(молча кивает)"
@@ -4273,7 +4525,7 @@ msgstr "Family blade"
 
 #: Gameplay/Bodyguard.cs
 msgid "{0} принял удар на себя."
-msgstr ""
+msgstr "{0} took the blow."
 
 #: Gameplay/CameraPullback.cs
 msgid "Отсюда видно, как далеко до края."
@@ -4553,35 +4805,35 @@ msgstr "Pass."
 
 #: Gameplay/CrowStep.cs
 msgid "Вороньим следом"
-msgstr ""
+msgstr "Crow's Trail"
 
 #: Gameplay/CrowStep.cs
 msgid "Рассыпается перьями и встаёт рядом с Греховодом: принимает удар на себя и зовёт врага. Это просьба — может и не прийти."
-msgstr ""
+msgstr "Scatters into feathers and rises beside the Sinbinder: takes the blow and calls the enemy on. It is a request — he may not come."
 
 #: Gameplay/CrowStep.cs
 msgid "Некого прикрывать."
-msgstr ""
+msgstr "No one to cover."
 
 #: Gameplay/CrowStep.cs
 msgid "Я обещал их задержать."
-msgstr ""
+msgstr "I promised to hold them."
 
 #: Gameplay/CrowStep.cs
 msgid "Я и так рядом, Владыка."
-msgstr ""
+msgstr "I'm already close, my lord."
 
 #: Gameplay/CrowStep.cs
 msgid "Сначала добью этого."
-msgstr ""
+msgstr "Let me finish this one first."
 
 #: Gameplay/CrowStep.cs
 msgid "{0} рассыпался перьями — и встал рядом с Греховодом."
-msgstr ""
+msgstr "{0} scattered into feathers — and rose beside the Sinbinder."
 
 #: Gameplay/CrowStep.cs
 msgid "{0} пришёл на зов вороньим следом."
-msgstr ""
+msgstr "{0} answered the call by the crow's trail."
 
 #: Gameplay/CryptArrival.cs
 msgid "Заставка склепа не ушла — склеп встречает поверх неё."
@@ -5705,107 +5957,107 @@ msgstr "Takes away: {0}"
 
 #: Gameplay/Signature.cs
 msgid "Старше всех в отряде. Ворон прибился к нему ещё при жизни и не ушёл после смерти."
-msgstr ""
+msgstr "Oldest in the band. A crow took to him in life and did not leave after his death."
 
 #: Gameplay/Signature.cs
 msgid "Ворона не гоните, владыка. Он со мной дольше, чем вы."
-msgstr ""
+msgstr "Don't chase the crow off, my lord. He's been with me longer than you."
 
 #: Gameplay/Signature.cs
 msgid "Ворон сидит у огня один."
-msgstr ""
+msgstr "The crow sits by the fire alone."
 
 #: Gameplay/Signature.cs
 msgid "Говорит шёпотом и читает при свече, пока лагерь спит."
-msgstr ""
+msgstr "Speaks in a whisper and reads by candlelight while the camp sleeps."
 
 #: Gameplay/Signature.cs
 msgid "Тише, владыка. Свеча гаснет от громких слов."
-msgstr ""
+msgstr "Quiet, my lord. Loud words put the candle out."
 
 #: Gameplay/Signature.cs
 msgid "В палатке Вейна догорает свеча. Задуть её некому."
-msgstr ""
+msgstr "A candle burns down in Vein's tent. No one is left to blow it out."
 
 #: Gameplay/Signature.cs
 msgid "Копает везде, где встаёт лагерь, — и где-нибудь да находит. Найденное считает своим."
-msgstr ""
+msgstr "Digs wherever the camp stands — and finds something somewhere. What he finds, he counts as his."
 
 #: Gameplay/Signature.cs
 msgid "Земля всегда что-то прячет, владыка. Надо только не лениться."
-msgstr ""
+msgstr "The earth always hides something, my lord. You just have to dig."
 
 #: Gameplay/Signature.cs
 msgid "Копать теперь некому."
-msgstr ""
+msgstr "No one left to dig."
 
 #: Gameplay/Signature.cs
 msgid "Бывший брат обители. Варит у огня снадобья и верит в них больше, чем в богов."
-msgstr ""
+msgstr "A former brother of the cloister. Brews draughts by the fire and believes in them more than in gods."
 
 #: Gameplay/Signature.cs
 msgid "Не трогайте котелок, владыка. Это не похлёбка."
-msgstr ""
+msgstr "Don't touch the pot, my lord. That's not stew."
 
 #: Gameplay/Signature.cs
 msgid "Котелок Хальда выкипел. Что он варил, так никто и не узнал."
-msgstr ""
+msgstr "Hald's pot has boiled dry. No one ever learned what he was brewing."
 
 #: Gameplay/Signature.cs
 msgid "Одним глазом видит больше, чем другие двумя, — особенно чужое. Носит знамя «Крыс»."
-msgstr ""
+msgstr "Sees more with one eye than others with two — especially what isn't his. Carries the banner of the Rats."
 
 #: Gameplay/Signature.cs
 msgid "Глаз я отдал за кошелёк, владыка. Кошелёк того стоил."
-msgstr ""
+msgstr "I gave an eye for a purse, my lord. The purse was worth it."
 
 #: Gameplay/Signature.cs
 msgid "Гурт стоит над братом и не уходит."
-msgstr ""
+msgstr "Gurt stands over his brother and does not leave."
 
 #: Gameplay/Signature.cs
 msgid "Ест, даже когда есть уже нечем: у котла его найдёшь всегда."
-msgstr ""
+msgstr "Eats even when there's nothing left to eat with: you'll always find him at the pot."
 
 #: Gameplay/Signature.cs
 msgid "Сядьте, владыка, похлёбка ещё тёплая. Хуже от неё не станет."
-msgstr ""
+msgstr "Sit, my lord, the stew is still warm. It won't make you worse."
 
 #: Gameplay/Signature.cs
 msgid "У котла пусто. Похлёбка стынет."
-msgstr ""
+msgstr "No one at the pot. The stew goes cold."
 
 #: Gameplay/Signature.cs
 msgid "Хитёр и неслышен, как лис, а теперь ещё и ходит сквозь стены. Чужое пересчитывает — на всякий случай."
-msgstr ""
+msgstr "Sly and silent as a fox, and now he walks through walls. Counts what's not his — just in case."
 
 #: Gameplay/Signature.cs
 msgid "Я знаю, сколько у вас в сундуке, владыка. Не брал — считал."
-msgstr ""
+msgstr "I know what's in your chest, my lord. I didn't take — I counted."
 
 #: Gameplay/Signature.cs
 msgid "Чужое лежит непересчитанным."
-msgstr ""
+msgstr "What's not his lies uncounted."
 
 #: Gameplay/Signature.cs
 msgid "Не говорит ни с кем, кроме брата, — и с братом тоже молча. Ходит за Хорем тенью."
-msgstr ""
+msgstr "Speaks to no one but his brother — and to his brother in silence too. Follows Khor like a shadow."
 
 #: Gameplay/Signature.cs
 msgid "Хорь оглядывается, а за спиной никого."
-msgstr ""
+msgstr "Khor looks back, and no one is behind him."
 
 #: Gameplay/Signature.cs
 msgid "Лучник, который бьёт мимо и всякий раз говорит, что метил не туда."
-msgstr ""
+msgstr "An archer who misses and says every time he was aiming elsewhere."
 
 #: Gameplay/Signature.cs
 msgid "В шишку не попал — так я и не в шишку целился, владыка."
-msgstr ""
+msgstr "Missed the pinecone — well, I wasn't aiming at the pinecone, my lord."
 
 #: Gameplay/Signature.cs
 msgid "Шишки на соснах висят целыми."
-msgstr ""
+msgstr "The pinecones hang on the pines untouched."
 
 #: Gameplay/SinbinderPlayer.cs
 msgid "Греховод пал."
@@ -6285,7 +6537,7 @@ msgstr "P — patrol · C — cancel · I — gear · V — view"
 
 #: UI/CommandPanel.cs
 msgid "{0} — ещё не готов"
-msgstr ""
+msgstr "{0} — not ready yet"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Провожатый так и не пошёл рядом — Карган зовёт к шару без него."
@@ -6941,7 +7193,7 @@ msgstr "Frame rate"
 
 #: UI/PauseMenu.cs
 msgid "Объёмный свет"
-msgstr ""
+msgstr "Volumetric light"
 
 #: UI/PauseMenu.cs UI/QuickSave.cs UI/SaveSlotsPanel.cs UI/StartPanel.cs
 msgid "Эта запись не от нынешней игры."
@@ -8266,16 +8518,8 @@ msgid "Память: Дремлет...\n"
 msgstr "Memory: Dormant...\n"
 
 #. нет в коде
-msgid "Грех: {0}"
-msgstr "Sin: {0}"
-
-#. нет в коде
 msgid "Характер: {0}"
 msgstr "Character: {0}"
-
-#. нет в коде
-msgid "Мораль: {0}"
-msgstr "Morals: {0}"
 
 #. нет в коде
 msgid "Предан вам"
@@ -8288,10 +8532,6 @@ msgstr "Ready to betray"
 #. нет в коде
 msgid "Нейтральна"
 msgstr "Indifferent"
-
-#. нет в коде
-msgid "Верность: {0}"
-msgstr "Loyalty: {0}"
 
 #. нет в коде
 msgid "Своё я уже посчитала."
