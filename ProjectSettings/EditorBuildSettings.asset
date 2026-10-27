@@ -17,18 +17,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/Scenes/Tug/Tug_2.unity
-    guid: 9a7a113532207974098dbd45b6e3740d
-  - enabled: 1
-    path: Assets/Scenes/Tug/Tug_4.unity
-    guid: 2f66973b2dfecb741aff3b5d7e6082c7
-  - enabled: 1
-    path: Assets/Scenes/Tug/Field.unity
-    guid: 168dd53c90aa7de4aa9eeb0feee559f2
-  - enabled: 1
-    path: Assets/Scenes/Tug/MapEditor.unity
-    guid: 1ed0ce10d41efdd47a835abb9e454a0b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
