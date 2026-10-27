@@ -898,6 +898,23 @@ def cauldron(b):
         b.add(*sphere((math.cos(a) * 0.22, math.sin(a) * 0.22, 0.05), 0.07, segs=8, rings=5), bone="", mat=4)
 
 
+def crow(b):
+    """
+    Ворон на плече Каргана (приметы: «ворон прибился к нему ещё при жизни и не ушёл после
+    смерти»). Сидит, крылья сложены, клювом вперёд (−Y), хвостом назад. 28 см.
+    """
+    b.add(*sphere((0.0, 0.01, 0.10), 0.06, scale=(0.8, 1.4, 0.9), segs=12, rings=8), bone="", mat=0, smooth=True)
+    b.add(*sphere((0.0, -0.075, 0.175), 0.038, segs=10, rings=7), bone="", mat=0, smooth=True)
+    b.add(*tube((0.0, -0.105, 0.172), (0.0, -0.165, 0.160), 0.014, 0.002, segs=6), bone="", mat=1)
+    for s in (-1, 1):
+        b.add(*sphere((s * 0.022, -0.098, 0.186), 0.006, segs=6, rings=4), bone="", mat=2)
+        # Сложенное крыло — вытянутая капля вдоль бока.
+        b.add(*sphere((s * 0.045, 0.03, 0.105), 0.045, scale=(0.35, 1.6, 0.75), segs=10, rings=6), bone="", mat=0, smooth=True)
+        b.add(*tube((s * 0.018, 0.0, 0.05), (s * 0.02, -0.01, 0.0), 0.005, 0.004, segs=4), bone="", mat=1)
+    # Хвост — клин назад и вниз.
+    b.add(*tube((0.0, 0.08, 0.09), (0.0, 0.16, 0.05), 0.03, 0.012, segs=6), bone="", mat=0)
+
+
 def record(b):
     """Пластинка в бумажном конверте — скрытая, лежит рядом с граммофоном («Лунная соната»)."""
     b.add(*box((0.0, 0.0, 0.003), (0.31, 0.31, 0.006)), bone="", mat=0)
@@ -967,6 +984,7 @@ SOUL_DIM = ("Soul Dim", (0.600, 0.590, 0.570, 1.0))
 
 
 PROPS = [
+    Prop("Crow", crow, [("Raven Black", (0.035, 0.035, 0.045, 1.0)), DARK, EMBER]),
     Prop("Cauldron", cauldron, [IRON, WOOD, ("Stew", (0.160, 0.095, 0.050, 1.0)), EMBER, STONE]),
     Prop("Gramophone", gramophone, [WOOD, GOLD, DARK, ("Shellac", (0.030, 0.028, 0.030, 1.0)), CRIMSON]),
     Prop("Record", record, [("Sleeve Paper", (0.560, 0.500, 0.400, 1.0)), ("Shellac", (0.030, 0.028, 0.030, 1.0)), CRIMSON]),

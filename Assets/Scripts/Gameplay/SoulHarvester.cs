@@ -104,6 +104,11 @@ namespace Sinbinder.Gameplay
             var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
             if (kept.Soul != null) Core.Satchel.Fill(jar, kept.Soul, kept.Quality);
 
+            // Тем же наклоном — кошель убитого (автор, 26.10: «я не могу собрать деньги, которые
+            // собирают воины с трупов»; решение 27.10: «одним наклоном с душой, без новой кнопки»).
+            // Кто быстрее — того и монеты: обобранный воинами труп пуст.
+            if (GetComponent<SinbinderPlayer>() != null) TakePurse();
+
             // Вот и весь урок: одно и то же действие названо по-разному
             // в зависимости от того, насколько игрок промедлил.
             // «Некромант» стоит на DigMostSouls, и писать его было некому.
@@ -125,5 +130,25 @@ namespace Sinbinder.Gameplay
 
         private static void Log(string line)
             => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
+
+        /// <summary>Кошель ближайшего убитого врага (в двух метрах) — в кошель Греховода.</summary>
+        private void TakePurse()
+        {
+            if (CombatManager.Instance == null || Inventory.PlayerInventory.Instance == null) return;
+            HarvestableBody near = null;
+            float best = 2f;
+            foreach (var body in CombatManager.Instance.BodiesOnField)
+            {
+                if (body == null || body.IsCollected || !body.Foe || body.GoldValue <= 0) continue;
+                float d = CampFocus.GroundDistance(transform.position, body.transform.position);
+                if (d < best) { best = d; near = body; }
+            }
+            if (near == null) return;
+
+            int gold = near.CollectGold();
+            if (gold <= 0) return;
+            Inventory.PlayerInventory.Instance.AddGold(gold);
+            Log(Loc.F("Кошель убитого — в ваш: +{0}.", gold));
+        }
     }
 }

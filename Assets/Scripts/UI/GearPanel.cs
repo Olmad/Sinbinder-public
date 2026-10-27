@@ -351,8 +351,8 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
-            if (TrophyChest.Unopened() != null) { _prompt.text = Loc.T("F — открыть сундук Марги"); return; }
-            if (TrophyChest.Reachable() != null) { _prompt.text = Loc.T("F — сундук Марги"); return; }
+            if (TrophyChest.Unopened() != null && Seen(TrophyChest.Unopened().transform)) { _prompt.text = Loc.T("F — открыть сундук Марги"); return; }
+            if (TrophyChest.Reachable() != null && Seen(TrophyChest.Reachable().transform)) { _prompt.text = Loc.T("F — сундук Марги"); return; }
             // У стола с картами F — его (CardTable), но сказать об этом некому было:
             // автор, 21.10: «пропало взаимодействие с картами».
             if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
@@ -361,17 +361,19 @@ namespace Sinbinder.UI
                     ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
                 return;
             }
+            var sack = FallenBag.Nearest();
+            if (sack != null && Seen(sack.transform)) { _prompt.text = sack.Prompt; return; }
             var pot = Cauldron.Nearest();
-            if (pot != null) { _prompt.text = pot.Prompt; return; }
+            if (pot != null && Seen(pot.transform)) { _prompt.text = pot.Prompt; return; }
             var fire = CampfireStoke.Nearest();
-            if (fire != null) { _prompt.text = fire.Prompt; return; }
+            if (fire != null && Seen(fire.transform)) { _prompt.text = fire.Prompt; return; }
             var weapon = WeaponPickup.Nearest();
-            if (weapon != null) { _prompt.text = weapon.Prompt; return; }
+            if (weapon != null && Seen(weapon.transform)) { _prompt.text = weapon.Prompt; return; }
             var disc = HiddenRecord.Nearest();
-            if (disc != null) { _prompt.text = disc.Prompt; return; }
+            if (disc != null && Seen(disc.transform)) { _prompt.text = disc.Prompt; return; }
             var music = RecordTarget();
-            if (music.gramophone != null) { _prompt.text = music.gramophone.Prompt; return; }
-            if (music.shelf != null) { _prompt.text = music.shelf.Prompt; return; }
+            if (music.gramophone != null && Seen(music.gramophone.transform)) { _prompt.text = music.gramophone.Prompt; return; }
+            if (music.shelf != null && Seen(music.shelf.transform)) { _prompt.text = music.shelf.Prompt; return; }
             var thing = Inspectable.Nearest();
             _prompt.text = thing != null ? thing.Prompt : "";
         }
@@ -381,6 +383,25 @@ namespace Sinbinder.UI
         /// (поставить; стоявшая перейдёт в руки), с пустыми руками — полке (взять).
         /// Один из них — null.
         /// </summary>
+        /// <summary>
+        /// Видно ли вещь взглядом: от первого лица F — только тому, на что смотришь (в конусе
+        /// <see cref="GazeCone"/>° от середины экрана), как разговор и Inspectable; сверху взгляда
+        /// нет — по близости, как прежде (автор, 26.10: «взаимодействие в некоторых местах всё
+        /// ещё не зависит от взгляда»).
+        /// </summary>
+        private static bool Seen(Transform thing)
+        {
+            if (thing == null) return false;
+            var cam = Camera.main;
+            var view = cam != null ? cam.GetComponent<RTS_Camera>() : null;
+            if (view == null || !view.FirstPersonNow) return true;
+            var to = thing.position + Vector3.up * 0.5f - cam.transform.position;
+            return Vector3.Angle(cam.transform.forward, to) <= GazeCone;
+        }
+
+        /// <summary>Полуугол взгляда для F от первого лица, градусы.</summary>
+        private const float GazeCone = 35f;
+
         private static (Gramophone gramophone, RecordShelf shelf) RecordTarget()
         {
             var g = Gramophone.Nearest();
@@ -455,29 +476,33 @@ namespace Sinbinder.UI
 
             // Закрытый сундук Марги — открыть (раньше открывался сам на подходе).
             var shut = TrophyChest.Unopened();
-            if (shut != null) { shut.Open(); return; }
+            if (shut != null && Seen(shut.transform)) { shut.Open(); return; }
 
             var chest = TrophyChest.Reachable();
-            if (chest != null) { OpenChest(chest); return; }
+            if (chest != null && Seen(chest.transform)) { OpenChest(chest); return; }
 
             // Котёл — прежде костра: он стоит у огня, и F ушло бы полену (27.10).
+            // Мешок павшего — F (облачная, 26.10): всё ему, и памятная вещь.
+            var sack = FallenBag.Nearest();
+            if (sack != null && Seen(sack.transform)) { sack.Take(); return; }
+
             var pot = Cauldron.Nearest();
-            if (pot != null) { pot.Taste(); return; }
+            if (pot != null && Seen(pot.transform)) { pot.Taste(); return; }
 
             // Полено в костёр — «лагерь отзывается» (автор, 26.10).
             var fire = CampfireStoke.Nearest();
-            if (fire != null) { fire.Feed(); return; }
+            if (fire != null && Seen(fire.transform)) { fire.Feed(); return; }
 
             // Оружие со стойки у входа в шатёр (п. 23 отзыва 21.10).
             var weapon = WeaponPickup.Nearest();
-            if (weapon != null) { weapon.Take(); return; }
+            if (weapon != null && Seen(weapon.transform)) { weapon.Take(); return; }
 
             // Пластинка прежде граммофона: она лежит рядом, и F ушло бы игле (37-DEMO §8).
             var disc = HiddenRecord.Nearest();
-            if (disc != null) { disc.Take(); return; }
+            if (disc != null && Seen(disc.transform)) { disc.Take(); return; }
             var music = RecordTarget();
-            if (music.gramophone != null) { music.gramophone.Use(); return; }
-            if (music.shelf != null) { music.shelf.Use(); return; }
+            if (music.gramophone != null && Seen(music.gramophone.transform)) { music.gramophone.Use(); return; }
+            if (music.shelf != null && Seen(music.shelf.transform)) { music.shelf.Use(); return; }
 
             // Последним — вещь, которую рассматривают (дерево с топором, пешка).
             Inspectable.Nearest()?.Inspect();

@@ -174,6 +174,28 @@ namespace Sinbinder.Dialogue
         /// <see cref="UI.DialogueUI"/>, и подставлять её целиком заранее
         /// значило бы показать реплику до того, как её произнесли.
         /// </summary>
+        private readonly System.Collections.Generic.List<Renderer> _hiddenHero = new();
+
+        /// <summary>Спрятать тело Греховода, если оно между камерой и говорящим (ближе 0,7 м к лучу взгляда).</summary>
+        private void HideHeroIfInFrame(Vector3 from, Vector3 look, Transform speaker)
+        {
+            if (!Gameplay.SinbinderPlayer.Exists || speaker == Gameplay.SinbinderPlayer.Instance.transform) return;
+            var hero = Gameplay.SinbinderPlayer.Instance;
+            var chest = hero.transform.position + Vector3.up * 1.2f;
+            var ray = look - from;
+            float k = Mathf.Clamp01(Vector3.Dot(chest - from, ray) / Mathf.Max(1e-4f, ray.sqrMagnitude));
+            if ((from + ray * k - chest).magnitude > 0.7f) return;
+
+            foreach (var r in hero.GetComponentsInChildren<Renderer>())
+                if (r.enabled) { r.enabled = false; _hiddenHero.Add(r); }
+        }
+
+        private void ShowHeroAgain()
+        {
+            foreach (var r in _hiddenHero) if (r != null) r.enabled = true;
+            _hiddenHero.Clear();
+        }
+
         public IEnumerator FocusOn(Transform target, string caption = null)
         {
             if (target == null) yield break;
@@ -208,6 +230,11 @@ namespace Sinbinder.Dialogue
 
             Vector3 lookTarget = anchor + Vector3.up * (_lookHeight * _scale);
             Vector3 baseCamPos = Frame(anchor, face, side, _cameraDistance * _scale, 0f);
+
+            // Греховод стоит ровно там, где встаёт камера, — он и подошёл поговорить, — и кадр
+            // закрывала его спина (автор, 26.10: «при выборе показывается спина Греховода»).
+            // Стоит между камерой и говорящим — тело на время наезда прячется (RestoreCamera вернёт).
+            HideHeroIfInFrame(baseCamPos, lookTarget, target);
 
             yield return MoveCamera(baseCamPos,
                 Quaternion.LookRotation((lookTarget - baseCamPos).normalized));
@@ -372,6 +399,7 @@ namespace Sinbinder.Dialogue
         {
             _inDialogue = false;
             Target = null;
+            ShowHeroAgain();
             if (_swayCoroutine != null)
             {
                 StopCoroutine(_swayCoroutine);

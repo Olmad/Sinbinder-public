@@ -136,9 +136,16 @@ namespace Sinbinder.UI
 
             var ray = _cam.ScreenPointToRay(from);
 
-            return Physics.Raycast(ray, out var hit, _range)
-                ? PlateOf(hit.collider.transform)
-                : null;
+            // Сверху камера висит выше двадцати метров, и луч в девять метров до земли
+            // не доставал: таблички сверху не читались вовсе (автор, 26.10: «нет возможности
+            // прочитать таблички»). Сверху луч длинный, а мерка дальности — от Греховода:
+            // читает тот, кто рядом, как и описание воина.
+            if (!Physics.Raycast(ray, out var hit, firstPerson ? _range : 200f)) return null;
+            var plate = PlateOf(hit.collider.transform);
+            if (plate != null && !firstPerson && Gameplay.SinbinderPlayer.Exists
+                && Gameplay.CampFocus.GroundDistance(Gameplay.SinbinderPlayer.Where, plate.transform.position) > _range)
+                return null;
+            return plate;
         }
 
         /// <summary>

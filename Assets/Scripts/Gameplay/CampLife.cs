@@ -85,6 +85,13 @@ namespace Sinbinder.Gameplay
             // Примета прежде места (28-ORDERS, 26.10): копатель в свой час — к ямке.
             if (DiggerHabit.Point(w, out point)) { word = Loc.T("копает"); return true; }
 
+            // Немой Гурт ходит за братом тенью (примета облачной, 26.10; автор: «Гурт не ходит
+            // за братом тенью»): в шаге за спиной Хоря, куда бы тот ни пошёл.
+            if (Shadow(w, out point)) { word = Loc.T("тенью за братом"); return true; }
+
+            // Ждан в свой час — к балалайке у огня (BalalaikaHabit, 27.10).
+            if (BalalaikaHabit.Point(w, out point)) { word = Loc.T("с балалайкой у огня"); return true; }
+
             var spot = Pick(w);
             if (!Place(spot, w, out point)) return false;
 
@@ -441,6 +448,26 @@ namespace Sinbinder.Gameplay
 
         private static List<Transform> _tents;
         private static int _tentsScene = -1;
+
+        /// <summary>
+        /// Где Гурту быть: за спиной брата, на полтора метра, чуть сбоку — не в затылок.
+        /// Ложь — это не Гурт, или брата нет в живых.
+        /// </summary>
+        private static bool Shadow(Warrior w, out Vector3 point)
+        {
+            point = default;
+            if (w.DisplayName == null || !w.DisplayName.Contains("Гурт")) return false;
+            foreach (var other in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (other == w || other.IsDead || other.DisplayName == null || !other.DisplayName.Contains("Хорь")) continue;
+                var t = other.transform;
+                point = t.position - t.forward * 1.5f + t.right * 0.6f;
+                if (UnityEngine.AI.NavMesh.SamplePosition(point, out var hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    point = hit.position;
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>Середина лагеря: костёр открытия; на полигоне — костёр двора (<see cref="CampYard"/>).</summary>
         public static bool Centre(out Vector3 centre)

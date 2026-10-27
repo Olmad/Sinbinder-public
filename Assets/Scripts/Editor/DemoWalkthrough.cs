@@ -529,6 +529,10 @@ namespace Sinbinder.EditorTools
                 // Котёл (автор, 27.10: «интерактивный») и палатки, в которые можно зайти («все»).
                 S("лагерь: котёл и палатки", null, PotAndTents, 3f),
 
+                // Приметы (облачная, 26.10; автор): ворон на плече Каргана, Гурт тенью за Хорем,
+                // Ждан с балалайкой — проверить, что встали.
+                S("лагерь: ворон, тень Гурта, балалайка Ждана", null, Habits, 3f),
+
                 // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
                 S("небо: глаза проступили", () => { SkyEyes.Summon(); _eyesAt = Time.realtimeSinceStartup; }, EyesShot, 12f),
 
@@ -2477,6 +2481,29 @@ namespace Sinbinder.EditorTools
             bool inHand = !RecordHands.Empty;
             RecordHands.Drop();                                       // и на полку
             Write($"  [ПЛАСТИНКИ] граммофон играл, тема лагеря молчала; снята в руки: {inHand}; на полке: {RecordShelf.OnShelf().Count}");
+            return true;
+        }
+
+        /// <summary>Ворон у Каргана, Гурт за Хорем (расстояние), привычка у Ждана.</summary>
+        private static bool Habits()
+        {
+            Warrior raven = null, gurt = null, khor = null, zhdan = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w.IsDead || w.DisplayName == null) continue;
+                if (CrowStep.Raven(w)) raven = w;
+                if (w.DisplayName.Contains("Гурт")) gurt = w;
+                if (w.DisplayName.Contains("Хорь")) khor = w;
+                if (w.DisplayName.Contains("Ждан")) zhdan = w;
+            }
+            bool bird = false;
+            if (raven != null) foreach (var t in raven.GetComponentsInChildren<Transform>(true)) if (t.name == "Ворон на плече") bird = true;
+            string shadow = gurt != null && khor != null
+                ? $"{Vector3.Distance(gurt.transform.position, khor.transform.position):F1} м"
+                : "кого-то нет";
+            bool lute = zhdan != null && zhdan.GetComponent<BalalaikaHabit>() != null;
+            Write($"  [ПРИМЕТЫ] ворон на плече: {(bird ? "сидит" : "НЕТ")}; Гурт от Хоря: {shadow}; привычка Ждана: {(lute ? "есть" : "НЕТ")}");
+            if (raven != null) Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Карган с вороном", raven.transform);
             return true;
         }
 

@@ -26,7 +26,24 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Instance = null;
 
-        void Awake() => Instance = this;
+        void Awake()
+        {
+            Instance = this;
+
+            // Угли под котлом тлеют сами (кадр 27.10: котёл ночью был тёмным пятном) —
+            // свечением материала, без лишнего света: огней в лагере и так тридцать восемь.
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.materials;
+                foreach (var m in mats)
+                {
+                    if (m == null || !m.name.StartsWith("Ember") || !m.HasProperty("_EmissionColor")) continue;
+                    m.EnableKeyword("_EMISSION");
+                    m.SetColor("_EmissionColor", new Color(1.0f, 0.42f, 0.14f) * 2.2f);
+                }
+                r.materials = mats;
+            }
+        }
         void OnDestroy() { if (Instance == this) Instance = null; }
 
         /// <summary>Котёл рядом с Греховодом. Нет — null.</summary>
