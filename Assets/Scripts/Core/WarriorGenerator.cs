@@ -214,11 +214,73 @@ namespace Sinbinder.Core
                     Why = Loc.N("Был охотником Ордена. Вздрагивает от колокола и чистит доспех, которого у него больше нет."),
                     First = Loc.N("Я вас ловил, владыка. Теперь — вот."),
                     Death = Loc.N("Колокол больше никого не пугает.") },
-            new() { Nick = Loc.N("Вёрстка"),
+            new() { Nick = Loc.N("Колея"),
                     Fits = k => k.Trade == Trade.Carter,
                     Why = Loc.N("Возил обозы, пока обоз не остановили. Всё ещё считает вёрсты."),
                     First = Loc.N("До места далеко, владыка? Я посчитаю."),
                     Death = Loc.N("Вёрсты больше никто не считает.") },
+            // По ремеслу — чтобы каждому нашлась своя, даже когда по греху всё занято.
+            new() { Nick = Loc.N("Следок"),
+                    Fits = k => k.Trade == Trade.Hunter,
+                    Why = Loc.N("Читает следы, как другие читают письма. Говорит, кто прошёл и когда."),
+                    First = Loc.N("Тут прошли трое, владыка. Один хромал."),
+                    Death = Loc.N("Следы теперь читать некому.") },
+            new() { Nick = Loc.N("Пахарь"),
+                    Fits = k => k.Trade == Trade.Peasant,
+                    Why = Loc.N("Ковыряет землю у палатки, будто собирается сеять. Привычка."),
+                    First = Loc.N("Земля тут худая, владыка. Ничего не вырастет."),
+                    Death = Loc.N("Земля у его палатки так и осталась вскопанной.") },
+            new() { Nick = Loc.N("Тетива"),
+                    Fits = k => k.Trade == Trade.Archer,
+                    Why = Loc.N("Перетягивает тетиву по десять раз на дню. Говорит, сыреет."),
+                    First = Loc.N("Сыро, владыка. Тетива не любит сырость."),
+                    Death = Loc.N("Его лук висит с ослабленной тетивой.") },
+            new() { Nick = Loc.N("Нюхач"),
+                    Fits = k => k.Trade == Trade.Alchemist,
+                    Why = Loc.N("Нюхает всё, что найдёт, и говорит, на что это годится."),
+                    First = Loc.N("Это не пейте, владыка. Это — для врагов."),
+                    Death = Loc.N("Его склянки стоят нетронутыми.") },
+            new() { Nick = Loc.N("Книжник"),
+                    Fits = k => k.Trade == Trade.Mage,
+                    Why = Loc.N("Бормочет над книгой без обложки. Страниц в ней всё меньше."),
+                    First = Loc.N("Не мешайте, владыка. Я почти вспомнил."),
+                    Death = Loc.N("Книга лежит раскрытой на последней странице.") },
+            new() { Nick = Loc.N("Постник"),
+                    Fits = k => k.Trade == Trade.Novice && k.Sin != SinType.Gluttony,
+                    Why = Loc.N("Бывший послушник. Держит пост и после смерти — от своей доли отказывается."),
+                    First = Loc.N("Мне не надо, владыка. Отдайте голодным."),
+                    Death = Loc.N("Его доля так и лежит нетронутой.") },
+            // Ещё по греху — чтобы двое жадных в одном отряде были разными.
+            new() { Nick = Loc.N("Меняла"),
+                    Fits = k => k.Sin == SinType.Greed && (k.Trade == Trade.Alchemist || k.Trade == Trade.Archer || k.Trade == Trade.Carter),
+                    Why = Loc.N("Меняет всё на всё и всегда остаётся в выгоде."),
+                    First = Loc.N("Поменяемся, владыка? Вам понравится. Мне — больше."),
+                    Death = Loc.N("Меняться больше не с кем.") },
+            new() { Nick = Loc.N("Первый"),
+                    Fits = k => k.Sin == SinType.Pride && k.Second == SinType.Wrath,
+                    Why = Loc.N("Всегда идёт первым — даже туда, куда не звали."),
+                    First = Loc.N("Я пойду первым, владыка. Как всегда."),
+                    Death = Loc.N("Первым теперь идёт кто-то другой.") },
+            new() { Nick = Loc.N("Кулак"),
+                    Fits = k => k.Sin == SinType.Wrath && (k.Trade == Trade.Peasant || k.Trade == Trade.Carter || k.Trade == Trade.Quarryman),
+                    Why = Loc.N("Решает споры кулаком. Споров у огня стало меньше."),
+                    First = Loc.N("Спорить будете, владыка? Нет? Вот и хорошо."),
+                    Death = Loc.N("У огня снова спорят.") },
+            new() { Nick = Loc.N("Соглядатай"),
+                    Fits = k => k.Sin == SinType.Envy && k.Moral == MoralType.Vicious,
+                    Why = Loc.N("Подслушивает у палаток и пересказывает — с прибавкой."),
+                    First = Loc.N("А про вас говорят, владыка… Нет, ничего."),
+                    Death = Loc.N("У палаток больше никто не подслушивает.") },
+            new() { Nick = Loc.N("Сват"),
+                    Fits = k => k.Sin == SinType.Lust && k.Moral != MoralType.Vicious,
+                    Why = Loc.N("Всех со всеми мирит и сводит у огня. Сам — один."),
+                    First = Loc.N("Вам бы тоже к огню, владыка. Одному тоскливо."),
+                    Death = Loc.N("У огня опять сидят порознь.") },
+            new() { Nick = Loc.N("Тихоход"),
+                    Fits = k => k.Sin == SinType.Sloth && k.Shell == ShellType.Ghost,
+                    Why = Loc.N("Плывёт, а не ходит, и всегда приходит последним."),
+                    First = Loc.N("Иду, владыка. Иду."),
+                    Death = Loc.N("Последним теперь приходит кто-то другой.") },
         };
 
         // ──────────────────────────────────
@@ -237,13 +299,13 @@ namespace Sinbinder.Core
             var k = new Sketch { Number = number, Origin = origin };
 
             // 1. Откуда душа — ремесло, тело и место.
-            string place = "";
+            int place = -1;   // 0 — обоз, 1 — часовня, 2 — каменоломня
             switch (origin)
             {
                 case SoulOrigin.Sortie:
                     int p = chain.Next(3);
                     k.Trade = p == 0 ? Trade.Carter : p == 1 ? Trade.Novice : Trade.Quarryman;
-                    place = p == 0 ? Loc.T("на обозе") : p == 1 ? Loc.T("в часовне") : Loc.T("в каменоломне");
+                    place = p;
                     k.Shell = chain.Next(2) == 0 ? ShellType.Zombie : ShellType.Skeleton;
                     break;
                 case SoulOrigin.Harvest:
@@ -308,7 +370,7 @@ namespace Sinbinder.Core
             return k;
         }
 
-        private static MemorySeed Story(Sketch k, ref Chain chain, string place, IList<string> present)
+        private static MemorySeed Story(Sketch k, ref Chain chain, int place, IList<string> present)
         {
             switch (k.Origin)
             {
@@ -320,13 +382,10 @@ namespace Sinbinder.Core
                                    : k.Sin == SinType.Pride ? Loc.T("Уважение")
                                    : k.Sin == SinType.Sloth ? Loc.T("Страх")
                                    : Loc.T("Обида");
-                    return new MemorySeed
-                    {
-                        Object = killer,
-                        Emotion = feeling,
-                        Trigger = killer,
-                        Story = Loc.F("Служил Ордену. Его убил {0} — и душу собрали на том же поле.", Loc.Name(killer)),
-                    };
+                    string story = chain.Next(2) == 0
+                        ? Loc.F("Служил Ордену. Его убил {0} — и душу собрали на том же поле.", Loc.Name(killer))
+                        : Loc.F("Пришёл с Орденом жечь наш лагерь. {0} свалил его, и душу взяли, пока не остыла.", Loc.Name(killer));
+                    return new MemorySeed { Object = killer, Emotion = feeling, Trigger = killer, Story = story };
                 }
                 case SoulOrigin.Pact:
                 {
@@ -345,21 +404,33 @@ namespace Sinbinder.Core
                     };
                 }
                 case SoulOrigin.Jar:
-                    return new MemorySeed
+                    // Собран давно, но сразу — иначе душа разошлась бы (§11).
+                    return chain.Next(4) switch
                     {
-                        Object = Loc.T("банка"),
-                        Emotion = Loc.T("Память"),
-                        Trigger = Loc.T("прежний хозяин"),
-                        Story = Loc.T("Его собрали давно и не здесь. Банка была старой; он помнит другого хозяина и говорит по-старому."),
+                        0 => new MemorySeed { Object = Loc.T("ладан"), Emotion = Loc.T("Память"), Trigger = Loc.T("ладан"),
+                                              Story = Loc.T("Его собрали давно — ещё до Ордена. Банку нашли в подвале сгоревшего монастыря; он помнит, как пахло ладаном.") },
+                        1 => new MemorySeed { Object = Loc.T("имя"), Emotion = Loc.T("Обида"), Trigger = Loc.T("номер"),
+                                              Story = Loc.T("Банка пролежала в крипте дольше, чем он жил. Прежний хозяин звал его по номеру, а не по имени — он этого не простил.") },
+                        2 => new MemorySeed { Object = Loc.T("теснота"), Emotion = Loc.T("Страх"), Trigger = Loc.T("теснота"),
+                                              Story = Loc.T("Его собрали в чуму, когда душ было больше, чем банок. Помнит, как делил банку с чужими.") },
+                        _ => new MemorySeed { Object = Loc.T("брошенная банка"), Emotion = Loc.T("Ожидание"), Trigger = Loc.T("прежний хозяин"),
+                                              Story = Loc.T("Прежний хозяин бросил его банку, уходя. Он до сих пор ждёт, что за ним вернутся.") },
                     };
                 default:
-                    return new MemorySeed
-                    {
-                        Object = place,
-                        Emotion = Loc.T("Последний час"),
-                        Trigger = place,
-                        Story = Loc.F("Умер {0} — там его и нашли, и принесли.", place),
-                    };
+                {
+                    // С вылазки — наши застали его последний час, и душу взяли сразу.
+                    bool other = chain.Next(2) == 1;
+                    string story = place == 0
+                        ? (other ? Loc.T("Обоз завяз в колее, его придавило телегой; наши подоспели к последнему вздоху.")
+                                 : Loc.T("Наши напали на обоз — он, возчик, не побежал. Душу взяли там же."))
+                        : place == 1
+                        ? (other ? Loc.T("Часовню жгли, он не вышел; наши вынули его душу из огня.")
+                                 : Loc.T("Наши вошли в часовню, когда он умирал на коленях. Молитву он так и не дочитал."))
+                        : (other ? Loc.T("В каменоломне его убили за долю — у наших на глазах. Душу взяли сразу.")
+                                 : Loc.T("Обвал в каменоломне случился при наших — его душу взяли из-под плиты."));
+                    string where = place == 0 ? Loc.T("обоз") : place == 1 ? Loc.T("часовня") : Loc.T("каменоломня");
+                    return new MemorySeed { Object = where, Emotion = Loc.T("Последний час"), Trigger = where, Story = story };
+                }
             }
         }
 
