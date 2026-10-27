@@ -11,7 +11,7 @@ namespace Sinbinder.Utilets
 {
     public static partial class DemoSceneBuilder
     {
-        /// <summary>Сцены стенда — не в списке сборки: в игру они не едут.</summary>
+        /// <summary>Сцены полей — в списке сборки с 27.10: по ним гуляют из паузы.</summary>
         private const string TugDir = "Assets/Scenes/Tug";
 
         [MenuItem("Sinbinder/Нагрузка/Собрать поля «Перетягивания» (2 и 4 стороны)")]
@@ -21,7 +21,32 @@ namespace Sinbinder.Utilets
             BuildTug(4);
         }
 
-        public static void BuildTugScenesBatch() => BuildTugScenes();
+        public static void BuildTugScenesBatch() { BuildTugScenes(); BuildField(); }
+
+        /// <summary>
+        /// Сцена «Поле» — пустая основа, в которой карта из файла собирается в игре
+        /// (<see cref="MapLoader"/>; 54-TUG.md): земля, свет, менеджеры, интерфейс, камера.
+        /// Всё остальное — из описания карты.
+        /// </summary>
+        [MenuItem("Sinbinder/Нагрузка/Собрать сцену «Поле» (карты из файлов)")]
+        public static void BuildField()
+        {
+            var scene = NewScene();
+            Atmosphere(warm: false);
+            Ground("Поле", 40f, AssetDatabase.IsValidFolder("Assets/Textures/Ground077") ? "Ground077" : "Ground048");
+            Look();
+            Managers();
+            Interface();
+            CameraRig(new Vector3(0f, 40f, -40f), new Vector3(55f, 0f, 0f), movable: true);
+            new GameObject("Карта").AddComponent<MapLoader>();
+
+            if (!AssetDatabase.IsValidFolder(TugDir)) AssetDatabase.CreateFolder("Assets/Scenes", "Tug");
+            string path = $"{TugDir}/Field.unity";
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, path);
+            RegisterInBuildSettings(path);
+            Debug.Log($"[НАГРУЗКА] Собрана: {path}");
+        }
 
         /// <summary>
         /// Поле на 2 или 4 стороны по сотне: 800 на 800 м плит (самая большая карта,
@@ -45,10 +70,18 @@ namespace Sinbinder.Utilets
             so.FindProperty("_perSide").intValue = 100;
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            // Прогулка по полю (автор, 27.10): Греховод — на диагонали, между сторонами,
+            // чтобы выпущенные по B армии шли не сквозь него. Камера следует за ним сама.
+            var entry = new GameObject("Появление Греховода");
+            entry.transform.position = new Vector3(40f, 0f, -40f);
+            entry.AddComponent<Sinbinder.Crypt.TestChamberEntry>();
+
             if (!AssetDatabase.IsValidFolder(TugDir)) AssetDatabase.CreateFolder("Assets/Scenes", "Tug");
             string path = $"{TugDir}/Tug_{sides}.unity";
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);
+            // В сборку — чтобы гулять по полю из паузы (PauseMenu, «Поля „Перетягивания“»).
+            RegisterInBuildSettings(path);
             Debug.Log($"[НАГРУЗКА] Собрана: {path}");
         }
     }

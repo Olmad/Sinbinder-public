@@ -188,8 +188,9 @@ namespace Sinbinder.Gameplay
         /// <param name="muffle">Насколько приглушён голос Греховода
         /// (<see cref="Voice.MuffleFor"/>). Сценарные приказы — провожатый,
         /// прогон демо — звучат в полную силу: это не голос игрока.</param>
+        /// <param name="lord">Чей приказ — имя Греховода (54-TUG.md); пусто — как в демо, Греховод один.</param>
         public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null,
-                                 float muffle = 0f)
+                                 float muffle = 0f, string lord = null)
         {
             _command = new PendingCommand
             {
@@ -198,6 +199,7 @@ namespace Sinbinder.Gameplay
                 Target = target,
                 IssuedAt = Time.time,
                 Muffle = Mathf.Clamp01(muffle),
+                Lord = lord,
             };
         }
 

@@ -138,6 +138,15 @@ public bool LastAlive;
         /// </summary>
         public float CommandVolume = 1f;
 
+        /// <summary>Чей приказ (54-TUG.md): имя Греховода; пусто — Греховод один, как в демо.</summary>
+        public string CommandLord;
+
+        /// <summary>
+        /// Верность воина к отдавшему приказ (<see cref="Core.Allegiance"/>); −1 — не названный:
+        /// голос верности берёт верность души, как было всегда.
+        /// </summary>
+        public float LordLoyalty = -1f;
+
         /// <summary>Приказ — патруль: ходить маршрутом (docs/33-COMMANDS.md).</summary>
         public bool CommandIsPatrol;
 

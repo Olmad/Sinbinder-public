@@ -754,6 +754,15 @@ namespace Sinbinder.EditorTools
                         && (SoulManager.Instance.FadingCount == 0
                             || Core.Satchel.FreeJar() < 0), 90f),
 
+                // Мешки павших (облачная, 26.10) и кошели убитых наклоном с душой (решение 27.10).
+                S("набег: мешки павших, кошель Греховода", null, () =>
+                {
+                    int bags = UnityEngine.Object.FindObjectsByType<FallenBag>(FindObjectsSortMode.None).Length;
+                    int gold = Sinbinder.Inventory.PlayerInventory.Instance != null ? Sinbinder.Inventory.PlayerInventory.Instance.Gold : -1;
+                    Write($"  [МЕШКИ] на поле мешков павших: {bags}; в кошеле Греховода: {gold}");
+                    return true;
+                }, 3f),
+
                 S("набег: подкрепление вышло и край открыт", null,
                   () => EscapeZone.Active != null && EscapeZone.Active.Open, 20f),
 

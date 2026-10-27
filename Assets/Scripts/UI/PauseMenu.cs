@@ -185,6 +185,11 @@ namespace Sinbinder.UI
             if (found > 0)
                 Add(ref y, Loc.T("Золотые пластинки"), Loc.F("{0} из {1}", found, total), () => { });
 
+            // Поля «Перетягивания» — прогуляться одному (автор, 27.10). Пока здесь, до меню
+            // карт из папки (28-ORDERS): там они станут первыми двумя картами списка.
+            Add(ref y, Loc.T("Поле на двоих"), Loc.T("прогулка; B — выпустить армии"), () => Field("Tug_2"));
+            Add(ref y, Loc.T("Поле на четверых"), Loc.T("прогулка; B — выпустить армии"), () => Field("Tug_4"));
+
             y -= MenuRows.Height * 0.5f;
             Add(ref y, Loc.T("Выйти из игры"), Commitment.On
                     ? Loc.T("Игра с обязательством — записывайте перед выходом")
@@ -259,6 +264,13 @@ namespace Sinbinder.UI
         /// выход всё равно надо на сборке.
         /// </summary>
         private static void Quit() => Application.Quit();
+
+        /// <summary>Уйти на поле «Перетягивания»: игра снимается с паузы, сцена — поле.</summary>
+        private static void Field(string scene)
+        {
+            Core.GamePauseController.Instance?.Resume();
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
+        }
 
         private void Add(ref float y, string title, string second, System.Action act)
         {

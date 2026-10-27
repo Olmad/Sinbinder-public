@@ -45,6 +45,9 @@ namespace Sinbinder.AOS.Modules
         {
             if (!context.HasCommand) return 0f;
 
+            // Верность — к тому, кто приказал (54-TUG.md); Греховод не назван (демо) — из души.
+            float loyalty = context.LordLoyalty >= 0f ? context.LordLoyalty : soul.Loyalty;
+
             float score = 0f;
 
             if (action == ActionType.ObeyCommand)
@@ -54,8 +57,8 @@ namespace Sinbinder.AOS.Modules
                 // тем меньше она теряет с расстоянием: верный идёт и на тихий
                 // приказ, неверный — только на громкий.
                 float heard = context.CommandVolume
-                            + (1f - context.CommandVolume) * Mathf.Clamp01(soul.Loyalty / 100f);
-                score += soul.Loyalty * _config.LoyaltyObeySinMultiplier * heard;
+                            + (1f - context.CommandVolume) * Mathf.Clamp01(loyalty / 100f);
+                score += loyalty * _config.LoyaltyObeySinMultiplier * heard;
 
                 // У приказа появилась цена. Уйти из ближнего боя — значит
                 // подставиться под удар вслед, и «отойди» перестаёт быть
@@ -83,7 +86,7 @@ namespace Sinbinder.AOS.Modules
                 // Действия, которые приказ и так исполняют, не трогаем:
                 // «отходи» исполняется Бегством, и мешать Бегству значило
                 // бы наказывать за послушание.
-                score -= (soul.Loyalty - _config.LoyaltyIndifferent)
+                score -= (loyalty - _config.LoyaltyIndifferent)
                          * _config.LoyaltyDisobeyDrag;
             }
 

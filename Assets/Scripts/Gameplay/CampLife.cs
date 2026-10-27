@@ -461,7 +461,11 @@ namespace Sinbinder.Gameplay
             {
                 if (other == w || other.IsDead || other.DisplayName == null || !other.DisplayName.Contains("Хорь")) continue;
                 var t = other.transform;
-                point = t.position - t.forward * 1.5f + t.right * 0.6f;
+                // Туда, где брат будет через секунду, а не где он был: решение — раз в секунду,
+                // и Гурт отставал на шаг брата (6,7 м в прогоне 27.10).
+                var agent = other.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                var ahead = agent != null ? agent.velocity : Vector3.zero;
+                point = t.position + ahead - t.forward * 1.5f + t.right * 0.6f;
                 if (UnityEngine.AI.NavMesh.SamplePosition(point, out var hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
                     point = hit.position;
                 return true;

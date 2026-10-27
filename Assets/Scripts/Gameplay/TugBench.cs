@@ -47,9 +47,20 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Done = false;
 
+        /// <summary>Замер ли это (TugRun с -tugSides) — или прогулка по полю (автор, 27.10).</summary>
+        private static bool Bench => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugSides") >= 0;
+
         void Start()
         {
             Done = false;
+            if (!Bench)
+            {
+                // Прогулка (автор, 27.10: «возможность прогуляться по картам для 2 и 4 одному»):
+                // поле пустое, армии — по B, отчёта нет.
+                Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                    Loc.T("Поле «Перетягивания». B — выпустить армии, по сотне на сторону."));
+                return;
+            }
             Cost.On = true;
             Directory.CreateDirectory("Logs");
             File.WriteAllText(Report, Loc.F("=== НАГРУЗКА: сторон {0}, по {1} ===", _sides, _perSide) + "\n");
@@ -122,6 +133,12 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            // Прогулка: армии — по B, один раз; дальше поле живёт само, без замера.
+            if (!Bench)
+            {
+                if (_spawnedAt < 0f && Input.GetKeyDown(KeyCode.B)) Spawn();
+                return;
+            }
             if (_spawnedAt < 0f || Done) return;
 
             float dt = Time.unscaledDeltaTime * 1000f;
@@ -291,7 +308,7 @@ namespace Sinbinder.Gameplay
         private static void Line(string text)
         {
             Debug.Log("[НАГРУЗКА] " + text);
-            File.AppendAllText(Report, text + "\n");
+            if (Bench) File.AppendAllText(Report, text + "\n");
         }
     }
 }

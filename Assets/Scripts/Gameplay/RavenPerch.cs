@@ -55,8 +55,11 @@ namespace Sinbinder.Gameplay
 
             var bird = Object.Instantiate(prefab, shoulder, false);
             bird.name = "Ворон на плече";
-            bird.transform.position = shoulder.position + w.transform.up * 0.10f - w.transform.right * 0.02f;
-            bird.transform.rotation = w.transform.rotation * Quaternion.Euler(0f, 180f, 0f) * prefab.transform.rotation;
+            // Лапами на плечо, клювом по ходу: опора модели — у лап, нос — по −Y Blender, а корень
+            // FBX переводит −Y в «вперёд» (как у дерева с отметинами). Был разворот на 180° и
+            // подъём на 10 см — ворон висел над плечом клювом вниз (кадр 27.10).
+            bird.transform.position = shoulder.position + w.transform.up * 0.03f - w.transform.right * 0.03f;
+            bird.transform.rotation = w.transform.rotation * prefab.transform.rotation;
             float size = Mathf.Max(0.6f, w.transform.lossyScale.y);
             bird.transform.localScale = prefab.transform.localScale * (1.0f / Mathf.Max(0.01f, shoulder.lossyScale.x)) * size;
             foreach (var c in bird.GetComponentsInChildren<Collider>()) Object.Destroy(c);
