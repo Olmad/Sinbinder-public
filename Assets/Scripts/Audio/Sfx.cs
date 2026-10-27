@@ -244,6 +244,19 @@ namespace Sinbinder.Audio
         }
 
         /// <summary>
+        /// Удар мечом в щит — вызов в миг арьергарда (<see cref="RearguardMoment"/>):
+        /// железо Kenney (`impactPlate`), каждый следующий чуть ниже — три удара
+        /// читаются счётом, а не эхом одного. Камера рядом — пространства мало.
+        /// </summary>
+        public static void ShieldStrike(Vector3 where, int count)
+        {
+            if (_instance == null) return;
+            var set = Load("Hit/Shield");
+            if (set.Length == 0) return;
+            _instance.Play(set[count % set.Length], where, 0.75f, 0.4f, 1f - 0.04f * count);
+        }
+
+        /// <summary>
         /// Ворон Каргана каркает — там, где Карган: одно, два или три карканья
         /// по кругу. Голос — серая ворона на четыре полутона ниже (docs/43-SOUND.md §1).
         /// </summary>

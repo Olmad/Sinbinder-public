@@ -192,8 +192,10 @@ namespace Sinbinder.Gameplay
             _rearguard = w;
             Debug.Log($"[ПОБЕГ] Прикрывать отход остался {w.DisplayName} (приказ {(context.CommandVolume < 1f ? "издали" : "вблизи")}).");
 
+            // Миг, а не реплика (автор, 26.10: «да — на всё»): камера на нём, мир
+            // замедлен, вызов — удары мечом в щит и руки в стороны (RearguardMoment).
             string name = Loc.Name(w.DisplayName);
-            Herald.Line(context.CommandVolume < 1f
+            RearguardMoment.Play(w, context.CommandVolume < 1f
                 ? Loc.F("{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время».", name)
                 : Loc.F("{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время».", name));
 

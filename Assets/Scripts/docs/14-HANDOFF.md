@@ -11502,3 +11502,13 @@ D применил патчи облачной 26.10 (27a4cfd, 1f41ea7, 6324cb9)
   и `SoulJarGlow` там больше не ставятся). **D — пересобрать лагерь.**
 * п. 15, `Gameplay/InspectTexts.cs`: карта — четыре строки (28-ORDERS, п. 15). Перевод — 4.
 * `check.py`, `compile.py` — чисто; в Unity не смотрено.
+
+### 135.92 Миг арьергарда Каргана · 27 октября, облачная сессия
+
+Автор, 26.10: «да — на всё»; D сделал клип Challenge (3474ec4). `Gameplay/RearguardMoment.cs`
+(+ `.meta`): `EscapeZone.Refused` зовёт `RearguardMoment.Play` вместо `Herald.Line` — строка в журнал
+сразу; камера наезжает (`DialogueCameraController.FocusOn`), полосы, строка на полосе его голосом;
+мир ×0,35 (вернуть 1, только если время ещё наше); аниматор Каргана на миг — UnscaledTime, `Challenge()`;
+удары в щит `Sfx.ShieldStrike` (0,42/0,72/1,02 с), ворон `Sfx.Caw` на 0,45 с; через 3,5 с — возврат.
+Кадр занят, пауза или урок, `Herald` говорит — миг не ставится, строка идёт `Herald`, как раньше.
+`Provocation.Begin` — как было, сразу после. `check.py`, `compile.py` — чисто; в Unity не смотрено.
