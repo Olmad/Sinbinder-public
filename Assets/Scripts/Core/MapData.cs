@@ -108,12 +108,12 @@ namespace Sinbinder.Core
         /// </summary>
         public static List<MapData> Defaults()
         {
-            var two = new MapData { Name = "Перекрёсток", Author = "Sinbinder", Size = 300f };
+            var two = new MapData { Name = Loc.N("Перекрёсток"), Author = "Sinbinder", Size = 300f };
             two.Crypts.Add(new Crypt { X = 0, Z = -125, Yaw = 0 });
             two.Crypts.Add(new Crypt { X = 0, Z = 125, Yaw = 180 });
-            two.Locations.Add(new Location { Kind = "village", Name = "Деревня", X = 0, Z = 0, Radius = 22, People = 14 });
-            two.Locations.Add(new Location { Kind = "forest", Name = "Бор", X = -80, Z = 10, Radius = 26, People = 8 });
-            two.Locations.Add(new Location { Kind = "field", Name = "Поле", X = 80, Z = -10, Radius = 26, People = 8 });
+            two.Locations.Add(new Location { Kind = "village", Name = Loc.N("Деревня"), X = 0, Z = 0, Radius = 22, People = 14 });
+            two.Locations.Add(new Location { Kind = "forest", Name = Loc.N("Бор"), X = -80, Z = 10, Radius = 26, People = 8 });
+            two.Locations.Add(new Location { Kind = "field", Name = Loc.N("Поле"), X = 80, Z = -10, Radius = 26, People = 8 });
             two.Trails.Add(new Spot { Kind = "hunters", X = -145, Z = 0 });
             two.Trails.Add(new Spot { Kind = "hunters", X = 145, Z = 0 });
             two.Events.Add(new Spot { Kind = "caravan", X = -40, Z = -60 });
@@ -123,16 +123,16 @@ namespace Sinbinder.Core
             Grove(two, -80, 10, 26);
             Grove(two, 0, 0, 0, tents: 6);
 
-            var four = new MapData { Name = "Четыре склепа", Author = "Sinbinder", Size = 400f };
+            var four = new MapData { Name = Loc.N("Четыре склепа"), Author = "Sinbinder", Size = 400f };
             four.Crypts.Add(new Crypt { X = -165, Z = -165, Yaw = 45 });
             four.Crypts.Add(new Crypt { X = 165, Z = -165, Yaw = -45 });
             four.Crypts.Add(new Crypt { X = 165, Z = 165, Yaw = -135 });
             four.Crypts.Add(new Crypt { X = -165, Z = 165, Yaw = 135 });
-            four.Locations.Add(new Location { Kind = "village", Name = "Деревня", X = 0, Z = 0, Radius = 26, People = 16 });
-            four.Locations.Add(new Location { Kind = "forest", Name = "Бор", X = -110, Z = 0, Radius = 28, People = 10 });
-            four.Locations.Add(new Location { Kind = "forest", Name = "Ельник", X = 110, Z = 0, Radius = 28, People = 10 });
-            four.Locations.Add(new Location { Kind = "field", Name = "Северное поле", X = 0, Z = 110, Radius = 28, People = 10 });
-            four.Locations.Add(new Location { Kind = "field", Name = "Южное поле", X = 0, Z = -110, Radius = 28, People = 10 });
+            four.Locations.Add(new Location { Kind = "village", Name = Loc.N("Деревня"), X = 0, Z = 0, Radius = 26, People = 16 });
+            four.Locations.Add(new Location { Kind = "forest", Name = Loc.N("Бор"), X = -110, Z = 0, Radius = 28, People = 10 });
+            four.Locations.Add(new Location { Kind = "forest", Name = Loc.N("Ельник"), X = 110, Z = 0, Radius = 28, People = 10 });
+            four.Locations.Add(new Location { Kind = "field", Name = Loc.N("Северное поле"), X = 0, Z = 110, Radius = 28, People = 10 });
+            four.Locations.Add(new Location { Kind = "field", Name = Loc.N("Южное поле"), X = 0, Z = -110, Radius = 28, People = 10 });
             foreach (var (x, z) in new[] { (0f, -195f), (195f, 0f), (0f, 195f), (-195f, 0f) })
                 four.Trails.Add(new Spot { Kind = "hunters", X = x, Z = z });
             for (int i = 0; i < 8; i++)
