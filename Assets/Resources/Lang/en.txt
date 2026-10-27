@@ -4455,7 +4455,7 @@ msgstr "Fat Yu"
 msgid "Вот и похлёбка оживёт. Спасибо, владыка."
 msgstr "Now the stew will come back to life. Thank you, master."
 
-#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/Signature.cs
+#: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/PurseCounter.cs Gameplay/Signature.cs
 msgid "Лиска"
 msgstr "Liska"
 
@@ -5478,6 +5478,14 @@ msgstr "Chase him? Not likely."
 #: Gameplay/Provocation.cs
 msgid "Не поведусь."
 msgstr "Not falling for it."
+
+#: Gameplay/PurseCounter.cs
+msgid "Было {0} — стало {1}, владыка. Я считаю."
+msgstr "It was {0} — now it's {1}, master. I count."
+
+#: Gameplay/PurseCounter.cs
+msgid "Было {0} — стало {1}. Откуда, владыка?"
+msgstr "It was {0} — now it's {1}. Where from, master?"
 
 #: Gameplay/RaidEvent.cs
 msgid "Лагерь знали не только свои."
