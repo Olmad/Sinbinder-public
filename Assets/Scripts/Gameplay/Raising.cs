@@ -113,7 +113,11 @@ namespace Sinbinder.Gameplay
             UI.Letterbox.Instance?.Say(Core.Loc.Name(warrior.DisplayName), line);
             Debug.Log($"[ПОДНЯТИЕ] {warrior.DisplayName}: {line}");
 
-            yield return new WaitForSecondsRealtime(2.6f);
+            // Столько, чтобы успеть прочесть: печать (40 букв в секунду) и чтение (~12).
+            // Было ровно 2,6 с на любую строку (автор, 26.10: «фраза при поднятии
+            // воина быстро пропадает»).
+            int letters = string.IsNullOrEmpty(line) ? 0 : line.Length;
+            yield return new WaitForSecondsRealtime(Mathf.Clamp(1.8f + letters / 12f, 3.5f, 9f));
 
             if (camera != null) yield return camera.RestoreCamera();
         }

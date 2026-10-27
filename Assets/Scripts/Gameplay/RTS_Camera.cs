@@ -155,8 +155,10 @@ namespace Sinbinder.Gameplay
                 ? CameraView.FirstPerson
                 : CameraView.Tactical;
 
-            if (_mode == CameraView.Tactical) LookDown();
-            else _pitch = 0f;   // из-под потолка голова не начинает смотреть в пол
+            // Своё поле зрения у каждого вида (автор, 26.10: «при приближении в тактическом
+            // виде приближается и камера от первого лица»): зум сверху — только сверху.
+            if (_mode == CameraView.Tactical) { LookDown(); _cam.fieldOfView = _targetZoom; }
+            else { _pitch = 0f; _cam.fieldOfView = EyeFov; }   // из-под потолка голова не начинает смотреть в пол
 
             ShowHero(_mode == CameraView.Tactical);
         }
@@ -523,14 +525,23 @@ namespace Sinbinder.Gameplay
                 r.enabled = visible;
         }
 
+        /// <summary>Поле зрения от первого лица — глаза, не объектив.</summary>
+        private const float EyeFov = 60f;
+
+        /// <summary>Градусов на щелчок колеса сверху.</summary>
+        private const float ZoomPerNotch = 5f;
+
         private void HandleZoom()
         {
             // В первом лице колесо ничего не приближает: там не зум,
             // а шаг. Поле зрения трогать нельзя — оно и есть кадр.
             if (FirstPersonNow) return;
 
+            // Щелчок колеса — событие, а не скорость: на время кадра его не множим. Множили —
+            // и щелчок давал меньше градуса (автор, 26.10: «скорость прокрутки слишком мала»).
+            // Ось колеса — 0,1 на щелчок.
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            _targetZoom -= scroll * _scrollSpeed * Lesson.Delta;
+            _targetZoom -= scroll * 10f * ZoomPerNotch;
             _targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
 
             _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, _targetZoom, 0.35f);

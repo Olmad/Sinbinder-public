@@ -72,6 +72,10 @@ namespace Sinbinder.EditorTools
             im.useFileScale = true;
             im.globalScale = 1f;
 
+            // Читаемые: повязка Одноглазого ищет глазницу по вершинам глаза (SinEyes.Patch),
+            // а нечитаемый меш в собранной игре вершин не отдаёт. Тел пять — память копеечная.
+            im.isReadable = true;
+
             im.importNormals = ModelImporterNormals.Import;
             im.importBlendShapes = false;
             im.importCameras = false;

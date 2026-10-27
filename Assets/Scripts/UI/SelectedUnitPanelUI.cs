@@ -543,7 +543,14 @@ namespace Sinbinder.UI
             Set(_sinLine, "", Bone);
             Set(_bodyLine, BodyLine(who), Muted);
 
-            if (_jar != null) _jar.Show(null);   // пустая банка: своей души он не носит
+            // Пустая банка: своей души он не носит. Каплю гасим и здесь — иначе она
+            // оставалась белой поверх банки (скриншот автора, склеп, 26.10).
+            if (_jar != null)
+            {
+                _jar.Show(null);
+                if (_flameOuter != null) _flameOuter.color = new Color(0f, 0f, 0f, 0f);
+                if (_flameInner != null) _flameInner.color = new Color(0f, 0f, 0f, 0f);
+            }
             else
             {
                 if (_flameOuter != null) _flameOuter.color = Faint;

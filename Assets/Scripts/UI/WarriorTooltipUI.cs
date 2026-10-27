@@ -70,8 +70,19 @@ namespace Sinbinder.UI
             if (!Physics.Raycast(ray, out RaycastHit hit, 200f, _unitLayer)) return null;
 
             var warrior = hit.collider.GetComponentInParent<Warrior>();
-            return (warrior != null && !warrior.IsDead) ? warrior : null;
+            if (warrior == null || warrior.IsDead) return null;
+
+            // Описание — тому, кто рядом с Греховодом (автор, 26.10: «ограничить дальность
+            // показа описания воинов при наведении мыши»): о чём думает воин за полкарты,
+            // Греховоду не слышно.
+            if (Gameplay.SinbinderPlayer.Exists && !(warrior is Gameplay.SinbinderPlayer)
+                && Gameplay.CampFocus.GroundDistance(Gameplay.SinbinderPlayer.Where, warrior.transform.position) > Reach)
+                return null;
+            return warrior;
         }
+
+        /// <summary>Дальше этого от Греховода описание воина не показывается, метров.</summary>
+        private const float Reach = 10f;
 
         private void Refresh(Warrior warrior)
         {

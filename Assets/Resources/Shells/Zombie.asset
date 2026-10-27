@@ -17,7 +17,7 @@ MonoBehaviour:
   baseHP: 60
   baseDefense: 2
   baseAttack: 6
-  movementSpeed: 2.4
+  movementSpeed: 2
   canBeRevived: 1
   wear: 0.55
   spectrumBias:

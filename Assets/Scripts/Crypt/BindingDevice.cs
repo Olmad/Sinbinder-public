@@ -37,6 +37,12 @@ namespace Sinbinder.Crypt
         public bool HasSoul => _soul != null;
         public bool HasShell => _hasShell;
 
+        /// <summary>Что лежит в гнезде — для вида на устройстве (<see cref="BindingSocket"/>).</summary>
+        public SoulData SoulInside => _soul;
+
+        /// <summary>Какое тело на ложе — для вида на устройстве.</summary>
+        public ShellType ShellInside => _shell;
+
         /// <summary>Свежесть души в гнезде — примет ли её какое-нибудь тело.</summary>
         public SoulQuality Quality => _quality;
 

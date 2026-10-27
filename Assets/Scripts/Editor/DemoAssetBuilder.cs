@@ -242,9 +242,10 @@ namespace Sinbinder.Utilets
                 hp: 36f, defense: 1f, attack: 5f, speed: 3.6f, revivable: true, wear: 0.35f, bind: 0.30f,
                 (SinType.Sloth, 20f), (SinType.Lust, -25f));
 
-            // Гниющее тело помнит голод и не помнит, кем гордилось.
+            // Гниющее тело помнит голод и не помнит, кем гордилось. Ход 2 м/с, не 2,4:
+            // шарканье даже втрое быстрее не поспевало за телом (WarriorAnimation.Pace, 27.10).
             Shell(ShellType.Zombie, "Зомби",
-                hp: 60f, defense: 2f, attack: 6f, speed: 2.4f, revivable: true, wear: 0.55f, bind: 0.40f,
+                hp: 60f, defense: 2f, attack: 6f, speed: 2.0f, revivable: true, wear: 0.55f, bind: 0.40f,
                 (SinType.Gluttony, 25f), (SinType.Pride, -20f));
 
             // Бесплотный не может взять — только смотреть, как берут другие.

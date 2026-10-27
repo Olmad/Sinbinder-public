@@ -114,6 +114,44 @@ namespace Sinbinder.Gameplay
             HushIfSilent();
             Arms();
             Play(State());
+            Pace();
+        }
+
+        // ---------------------------------------------------------- шаг
+
+        /// <summary>
+        /// Сколько тело ростом в единицу проходит за секунду клипа Walk — замер стопы
+        /// в Блендере, 27.10 (размах стопы назад за полцикла). Зомби шаркает: цикл 3 с,
+        /// 0,28 в секунду, — а идёт тело 2,4 м/с (автор, 26.10: «Марга слишком быстро
+        /// передвигается относительно своей анимации»). Призрак плывёт — ног нет, темп 1.
+        /// </summary>
+        private static float WalkPace(Core.ShellType shell) => shell switch
+        {
+            Core.ShellType.Zombie => 0.28f,
+            Core.ShellType.Golem => 0.66f,
+            Core.ShellType.Ghost => 1.0f,
+            Core.ShellType.Living => 0.97f,
+            _ => 1.0f,
+        };
+
+        /// <summary>Темп клипа — не быстрее этого: шарканье втрое — уже обычный шаг, дальше — судорога.</summary>
+        private const float FastestPace = 3.2f;
+
+        /// <summary>
+        /// Ноги идут со скоростью тела: клип ходьбы — по настоящей скорости агента,
+        /// иначе тело скользит по земле. Остальные клипы — в своём темпе.
+        /// </summary>
+        private void Pace()
+        {
+            float want = 1f;
+            if (_now == BodyMotion.Walk && _warrior != null && !(_warrior is SinbinderPlayer && Lesson.HeroWalking))
+            {
+                var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+                float height = Mathf.Max(0.3f, _animator.transform.lossyScale.y);
+                if (agent != null && agent.isOnNavMesh)
+                    want = Mathf.Clamp(agent.velocity.magnitude / (WalkPace(_warrior.Shell) * height), 0.6f, FastestPace);
+            }
+            if (!Mathf.Approximately(_animator.speed, want)) _animator.speed = want;
         }
 
         private string State()

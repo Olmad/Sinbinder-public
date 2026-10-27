@@ -519,6 +519,7 @@ namespace Sinbinder.EditorTools
                 // Клип «вызов» для арьергарда Каргана (28-ORDERS, 26.10): удары в щит,
                 // руки в стороны. Кадр — через две секунды, когда руки разведены.
                 S("лагерь: Карган — вызов (клип)", RavenChallenge, RavenChallengeShot, 6f),
+                S("лагерь: Одноглазый Хорь — повязка", null, OneEyeShot, 3f),
 
                 // Примета Марги Копателя (28-ORDERS, 26.10): в свой час — на коленях
                 // у ямки на краю поляны. Кадр — портрет, пока копает.
@@ -2416,12 +2417,28 @@ namespace Sinbinder.EditorTools
             _challengeSince = Time.realtimeSinceStartup;
         }
 
+        /// <summary>Портрет Одноглазого Хоря — села ли повязка на глазницу (SinEyes.Patch).</summary>
+        private static bool OneEyeShot()
+        {
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w.IsDead || w.DisplayName == null || !w.DisplayName.Contains("Одноглаз")) continue;
+                bool patched = false;
+                foreach (var t in w.GetComponentsInChildren<Transform>(true)) if (t.name == "EyePatch") patched = true;
+                Write(patched ? "  [ПОВЯЗКА] у Хоря на глазу" : "  [ПОВЯЗКА] нет — повязка не села");
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Хорь — повязка", w.transform);
+                return true;
+            }
+            Write("  [ПОВЯЗКА] Хоря в лагере нет");
+            return true;
+        }
+
         /// <summary>Через две секунды вызова — портрет Каргана (руки разведены).</summary>
         private static bool RavenChallengeShot()
         {
             if (_challenger == null) { Write("  [ВЫЗОВ] Каргана в лагере нет"); return true; }
             if (Time.realtimeSinceStartup - _challengeSince < 2.0f) return false;
-            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Карган — вызов", _challenger.transform, Vector3.zero);
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Карган — вызов", _challenger.transform);
             Write("  [ВЫЗОВ] Карган бросил вызов — кадр снят");
             return true;
         }

@@ -1077,6 +1077,14 @@ namespace Sinbinder.Utilets
                     look.Configure(t.Prompt, t.Speaker, t.Lines,
                         focus: 1.45f, distance: 3.2f, reach: 2.8f, front: Vector3.down);
                     look.UseTexts("AxeTree");
+
+                    // Фонарь на суку над знаками (автор, 26.10: «я не нашёл дерево с отметинами»):
+                    // в бору ночью дерево было одним из сотни, теперь к нему ведёт огонёк.
+                    var hook = new GameObject("Фонарь на дереве").transform;
+                    hook.SetParent(root.transform, false);
+                    var face = toFire.sqrMagnitude > 1e-4f ? toFire.normalized : Vector3.forward;
+                    hook.position = at + face * 0.55f + Vector3.up * 2.1f;
+                    Lantern(hook, Vector3.zero, range: 4.5f, intensity: 1.1f, shadows: false);
                 }
                 Take(at, 3.5f);
             }

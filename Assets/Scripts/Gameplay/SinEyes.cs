@@ -75,6 +75,76 @@ namespace Sinbinder.Gameplay
 
             Paint(colour, force);
             Lamp(colour, force);
+
+            // Одноглазый — с одним глазом (автор, 26.10: «у Одноглазого Хоря — 2 глаза»).
+            if (warrior.DisplayName != null && warrior.DisplayName.Contains("Одноглаз")) Patch();
+        }
+
+        /// <summary>
+        /// Повязка на правую глазницу: тёмная кожаная накладка на кости Head, поверх
+        /// огонька. Где глаз — по вершинам материала «Глаз» (bodies.py кладёт их
+        /// в глазницы своей оболочки), так что повязка садится на любое тело.
+        /// Огонёк в глазнице остаётся — его закрывает повязка, а свет у головы
+        /// идёт от второго глаза.
+        /// </summary>
+        private void Patch()
+        {
+            foreach (var smr in GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                var mesh = smr.sharedMesh;
+                if (mesh == null) continue;
+
+                int slot = -1;
+                var shared = smr.sharedMaterials;
+                for (int i = 0; i < shared.Length && i < mesh.subMeshCount; i++)
+                    if (shared[i] != null && shared[i].name.StartsWith(Slot)) { slot = i; break; }
+                if (slot < 0) continue;
+
+                int head = -1;
+                for (int i = 0; i < smr.bones.Length; i++)
+                    if (smr.bones[i] != null && smr.bones[i].name == "Head") { head = i; break; }
+                if (head < 0) continue;
+
+                // Меш в осях Blender: вверх — +Z, взгляд — −Y (как знаки на AxeTree), правый — −X.
+                var verts = mesh.vertices;
+                var idx = mesh.GetTriangles(slot);
+                Vector3 sum = Vector3.zero, min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+                int n = 0;
+                foreach (int v in idx)
+                {
+                    var p = verts[v];
+                    if (p.x > 0f) continue;
+                    sum += p; n++;
+                    min = Vector3.Min(min, p); max = Vector3.Max(max, p);
+                }
+                if (n == 0) continue;
+
+                Vector3 centre = sum / n;
+                float size = Mathf.Max(max.x - min.x, max.z - min.z) * 2.4f;
+                // Глаз сидит в черепе на семи десятых радиуса — повязку выносим на лицо.
+                Vector3 onFace = centre + Vector3.down * size * 0.6f;
+
+                var bone = smr.bones[head];
+                var bind = mesh.bindposes[head];
+                var patch = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                patch.name = "EyePatch";
+                Object.Destroy(patch.GetComponent<Collider>());
+                patch.transform.SetParent(bone, false);
+                patch.transform.localPosition = bind.MultiplyPoint3x4(onFace);
+                patch.transform.localRotation = Quaternion.LookRotation(bind.MultiplyVector(Vector3.down),
+                                                                        bind.MultiplyVector(Vector3.forward));
+                // Размер — в единицах меша, через ту же привязку (у кости свой масштаб).
+                float local = bind.MultiplyVector(Vector3.right * size).magnitude;
+                patch.transform.localScale = new Vector3(local * 1.2f, local, local * 0.18f);
+
+                var r = patch.GetComponent<Renderer>();
+                var mat = new Material(smr.sharedMaterial.shader) { name = "EyePatch" };
+                mat.color = new Color(0.07f, 0.055f, 0.045f);
+                if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.15f);
+                r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                return;
+            }
         }
 
         /// <summary>
