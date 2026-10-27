@@ -55,6 +55,40 @@ namespace Sinbinder.Core
 
         private const string Key = "sinbinder.gfx.";
 
+        // ---------------------------------------------------------- подстройка под машину
+
+        /// <summary>
+        /// Подстраиваться ли под машину (автор, 27.10: «если фиксирует недостаток — переходить
+        /// на облегчённый вариант»). Сторож кадра (<see cref="FrameBudget"/>) двигает ступень
+        /// облегчения; выбор игрока он не трогает и не перезаписывает — только ограничивает
+        /// сверху, пока машине тяжело. Облегчается только видимое: как думают воины, от
+        /// машины не зависит (иначе на слабом ПК отряд вёл бы себя иначе).
+        /// </summary>
+        public static bool Adapt { get; private set; } = true;
+
+        /// <summary>Ступень облегчения: 0 — как выбрал игрок … <see cref="AdaptMax"/>. Не сохраняется.</summary>
+        public static int AdaptStep { get; set; }
+
+        /// <summary>
+        /// Лестница, от незаметного к заметному: 1 — без лучей луны и контура, 2 — тени жёсткие,
+        /// 3 — без затенения углов, 4 — мир в 85% разрешения, 5 — в 70%.
+        /// </summary>
+        public const int AdaptMax = 5;
+
+        private static int Step => Adapt ? AdaptStep : 0;
+
+        /// <summary>Действующие значения — выбор игрока с поправкой на ступень. Их и применяют.</summary>
+        public static MoonLevel MoonNow => Step >= 1 ? MoonLevel.Low : Moon;
+        public static ShadowMode ShadowsNow => Step >= 2 && Shadows == ShadowMode.Soft ? ShadowMode.Hard : Shadows;
+        public static bool OcclusionNow => Occlusion && Step < 3;
+        public static float ScaleNow => Mathf.Min(Scale, Step >= 5 ? 0.7f : Step >= 4 ? 0.85f : 1f);
+
+        public static string AdaptName() => Adapt
+            ? (AdaptStep > 0 ? Loc.T("да — сейчас облегчено") : Loc.T("да"))
+            : Loc.T("нет — как выставлено");
+
+        public static void ToggleAdapt() { Adapt = !Adapt; if (!Adapt) AdaptStep = 0; Save(); }
+
         /// <summary>Облегчённая ли вся картинка — как прежний набор.</summary>
         public static bool IsLight => Shadows == ShadowMode.Off && !Occlusion && Detail != Sharpness.Full;
 
@@ -70,6 +104,7 @@ namespace Sinbinder.Core
             // По умолчанию — низкий, пока кадр не уложен в 60 (автор, 26.10: «у нас и сейчас
             // огромные проблемы с производительностью»); выше — сам, в паузе.
             Moon = (MoonLevel)PlayerPrefs.GetInt(Key + "moon", (int)MoonLevel.Low);
+            Adapt = PlayerPrefs.GetInt(Key + "adapt", 1) != 0;
 
             if (!PlayerPrefs.HasKey(Key + "shadows"))
             {
@@ -181,6 +216,7 @@ namespace Sinbinder.Core
             PlayerPrefs.SetInt(Key + "grain", Grain ? 1 : 0);
             PlayerPrefs.SetInt(Key + "fps", (int)Frames);
             PlayerPrefs.SetInt(Key + "moon", (int)Moon);
+            PlayerPrefs.SetInt(Key + "adapt", Adapt ? 1 : 0);
             PlayerPrefs.Save();
             FrameBudget.Apply();
         }

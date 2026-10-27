@@ -96,10 +96,74 @@ namespace Sinbinder.Core
 
         void Update()
         {
+            Watch();
+
             // Камеры приходят со сценой; проверять раз в секунду — хватит.
             if (Time.unscaledTime < _nextLook) return;
             _nextLook = Time.unscaledTime + 1f;
             Enforce();
+        }
+
+        // ---------------------------------------------------------- сторож кадра
+
+        /// <summary>Окно, по которому судим, секунды.</summary>
+        private const float Window = 3f;
+
+        private float _windowFrom = -1f, _windowSum;
+        private int _windowFrames, _slow, _fast;
+        private bool _toldLighter;
+
+        /// <summary>
+        /// Сторож кадра (автор, 27.10: «система, если фиксирует недостаток, — переходит на
+        /// облегчённый вариант»). Среднее за три секунды: два окна подряд медленнее цели
+        /// на 15% — ступень облегчения вниз (<see cref="GraphicsOptions.AdaptStep"/>); пять
+        /// окон подряд с запасом в 30% — обратно вверх. Вниз быстро, вверх медленно, чтобы
+        /// картинка не мигала. Не судим: на паузе, без фокуса, первые секунды сцены (загрузка
+        /// и выпечка навмеша — не мерило машины).
+        /// </summary>
+        private void Watch()
+        {
+            if (!GraphicsOptions.Adapt) return;
+
+            bool paused = GamePauseController.Instance != null && GamePauseController.Instance.IsPaused;
+            if (!_focused || paused || Time.timeSinceLevelLoad < 5f) { _windowFrom = -1f; return; }
+
+            float now = Time.unscaledTime;
+            if (_windowFrom < 0f) { _windowFrom = now; _windowSum = 0f; _windowFrames = 0; return; }
+
+            _windowSum += Time.unscaledDeltaTime;
+            _windowFrames++;
+            if (now - _windowFrom < Window) return;
+
+            float ms = _windowSum / Mathf.Max(1, _windowFrames) * 1000f;
+            int target = GraphicsOptions.TargetFrames > 0 ? GraphicsOptions.TargetFrames : Target;
+            float budget = 1000f / target;
+            _windowFrom = now; _windowSum = 0f; _windowFrames = 0;
+
+            if (ms > budget * 1.15f) { _slow++; _fast = 0; }
+            else if (ms < budget * 0.7f) { _fast++; _slow = 0; }
+            else { _slow = 0; _fast = 0; }
+
+            if (_slow >= 2 && GraphicsOptions.AdaptStep < GraphicsOptions.AdaptMax)
+            {
+                GraphicsOptions.AdaptStep++;
+                _slow = 0;
+                Enforce();
+                Debug.Log($"[ГРАФИКА] кадр {ms:F1} мс при цели {budget:F1} — облегчаю: ступень {GraphicsOptions.AdaptStep}.");
+                if (!_toldLighter)
+                {
+                    _toldLighter = true;
+                    Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                        Loc.T("Графика упрощена: машине тяжело. Отключить — «Графика» в паузе."));
+                }
+            }
+            else if (_fast >= 5 && GraphicsOptions.AdaptStep > 0)
+            {
+                GraphicsOptions.AdaptStep--;
+                _fast = 0;
+                Enforce();
+                Debug.Log($"[ГРАФИКА] кадр {ms:F1} мс — запас есть: ступень {GraphicsOptions.AdaptStep}.");
+            }
         }
 
         void OnApplicationFocus(bool focused)
@@ -124,9 +188,9 @@ namespace Sinbinder.Core
         /// </summary>
         private void Enforce()
         {
-            Shadows(GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Off);
+            Shadows(GraphicsOptions.ShadowsNow == GraphicsOptions.ShadowMode.Off);
             ShadowEdges();
-            Occlusion(!GraphicsOptions.Occlusion);
+            Occlusion(!GraphicsOptions.OcclusionNow);
             Detail();
             Smoothing();
             GraphicsOptions.ApplyGrain();
@@ -143,7 +207,7 @@ namespace Sinbinder.Core
         {
 #if !UNITY_EDITOR
             if (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset urp) return;
-            var (cascades, distance) = GraphicsOptions.Moon switch
+            var (cascades, distance) = GraphicsOptions.MoonNow switch
             {
                 GraphicsOptions.MoonLevel.Low => (1, 28f),
                 GraphicsOptions.MoonLevel.High => (4, 45f),
@@ -164,8 +228,8 @@ namespace Sinbinder.Core
         /// <summary>Мягкие или чёткие края теней — у каждого света с тенью.</summary>
         private static void ShadowEdges()
         {
-            if (GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Off) return;
-            var want = GraphicsOptions.Shadows == GraphicsOptions.ShadowMode.Hard
+            if (GraphicsOptions.ShadowsNow == GraphicsOptions.ShadowMode.Off) return;
+            var want = GraphicsOptions.ShadowsNow == GraphicsOptions.ShadowMode.Hard
                 ? LightShadows.Hard : LightShadows.Soft;
 
             // Точечные огни — всегда жёсткие: у них шесть граней карты теней, мягкие
@@ -207,7 +271,7 @@ namespace Sinbinder.Core
 
             if (_scaleWas < 0f) { _scaleWas = pipe.renderScale; _filterWas = pipe.upscalingFilter; }
 
-            float scale = GraphicsOptions.Scale;
+            float scale = GraphicsOptions.ScaleNow;
             if (!Mathf.Approximately(pipe.renderScale, scale)) pipe.renderScale = scale;
             // Пиксельная чёткость — растяжение без сглаживания, крупным чётким пикселем
             // (автор, 26.10: «пикселизация… запустить игру даже на картошке»).

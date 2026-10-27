@@ -233,6 +233,8 @@ namespace Sinbinder.UI
             y -= MenuRows.Height * 0.5f;
 
             Row(Loc.T("Набор"), Core.GraphicsOptions.PresetName(), Core.Preferences.ToggleGraphics);
+            // Сторож кадра (FrameBudget.Watch): облегчает видимое, пока машине тяжело.
+            Row(Loc.T("Подстраивать под машину"), Core.GraphicsOptions.AdaptName(), Core.GraphicsOptions.ToggleAdapt);
             y -= MenuRows.Height * 0.5f;
 
             Row(Loc.T("Тени"), Core.GraphicsOptions.ShadowsName(), Core.GraphicsOptions.CycleShadows);

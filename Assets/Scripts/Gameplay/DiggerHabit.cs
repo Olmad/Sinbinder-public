@@ -29,7 +29,7 @@ namespace Sinbinder.Gameplay
         private const float DigFor = 24f;    // сколько из них — у ямки (дойти и копать)
         private const float Reach = 0.9f;    // ближе этого к ямке — копает
         private const float FindAfter = 8f;  // столько покопать, чтобы найти, секунд
-        private const float Edge = 13.4f;    // ямки — у края поляны, за палатками (до 12,5)
+        private const float Edge = 13.4f * CampFocus.Spread;    // ямки — у края поляны, за палатками (до 12,5)
 
         // Строки — черновик D; на сверку облаку (47-TEXTS, приметы).
         private static readonly string Found = Loc.N("{0} что-то выкопал — и сунул в карман.");

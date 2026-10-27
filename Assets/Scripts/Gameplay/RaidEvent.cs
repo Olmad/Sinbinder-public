@@ -62,8 +62,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public const Audio.Track SecondWaveMusic = Audio.Track.Hunted;
 
-        private static readonly Vector3 FirstWave = new Vector3(0f, 0f, 12f);
-        private static readonly Vector3 SecondWave = new Vector3(0f, 0f, 15f);
+        private static readonly Vector3 FirstWave = new Vector3(0f, 0f, 12f) * CampFocus.Spread;
+        private static readonly Vector3 SecondWave = new Vector3(0f, 0f, 15f) * CampFocus.Spread;
 
         // Круг выхода (до 27 сентября — ворота) — на востоке, за внешним
         // кольцом палаток (9.4 м), в проходе.
@@ -78,7 +78,7 @@ namespace Sinbinder.Gameplay
         // перенести выход из лагеря дальше, а то сейчас выглядит тупо» —
         // круг стоял впритык к палаткам. К нему ведёт дорога факелов
         // (DemoSceneBuilder.Outskirts).
-        private static readonly Vector3 Edge = new Vector3(26.6f, 0f, 4.65f);   // 21.10, вечер: 22 → 27 м, в конец тропинки (автор)
+        private static readonly Vector3 Edge = new Vector3(26.6f, 0f, 4.65f) * CampFocus.Spread;   // 21.10, вечер: 22 → 27 м, в конец тропинки (автор)
 
         /// <summary>Где круг выхода из лагеря. Сборщик ставит к нему дорогу.</summary>
         public static Vector3 ExitPoint => Edge;

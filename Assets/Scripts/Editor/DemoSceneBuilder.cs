@@ -88,7 +88,8 @@ namespace Sinbinder.Utilets
             // стоит в двадцати двух метрах и видит дальше сорока.
             // 26 октября — хвоя бора (Ground077: лесная земля с хвоей и шишками);
             // холм вожака — прежней землёй (Cover, Ground048). Нет текстуры — прежняя.
-            Ground("Земля", 9f, AssetDatabase.IsValidFolder("Assets/Textures/Ground077") ? "Ground077" : "Ground048");
+            // С 27.10 — ещё шире, по раздвижке лагеря (CampFocus.Spread): бор уходит дальше.
+            Ground("Земля", 9f * CampFocus.Spread, AssetDatabase.IsValidFolder("Assets/Textures/Ground077") ? "Ground077" : "Ground048");
             Look();
             Managers();
 
@@ -166,6 +167,17 @@ namespace Sinbinder.Utilets
             // на свету костра, к северо-западу, между очагом и палатками.
             CardTableProp(new Vector3(-1.0f, 0f, 3.9f));
 
+            // Котёл у огня — с востока, за кругом брёвен (автор, 27.10: «котла нигде нет,
+            // а все его так обсуждают» → «интерактивный»). Своя горстка углей под ним.
+            var potAt = new Vector3(3.3f, 0f, 1.2f);
+            var pot = Prop("Cauldron", null, potAt, TowardFire(potAt));
+            if (pot != null)
+            {
+                pot.name = "Котёл";
+                pot.AddComponent<Sinbinder.Gameplay.Cauldron>();
+                Embers(pot.transform, potAt + new Vector3(0f, 0.12f, 0f), 0.25f, 6f);
+            }
+
             // За кольцом палаток — не пустошь (автор, 21 октября: «сделать
             // больше окружения. Сейчас это просто пустошь») и дорога к выходу.
             Outskirts();
@@ -179,6 +191,11 @@ namespace Sinbinder.Utilets
 
             CheckCamp(table, chest, eye, look, TentPlaces(hill, hillRadius: 5f));
 
+            // Лагерь шире (автор, 27.10: «лагерь шире, чтобы было удобнее ходить» — «да»):
+            // собран, как прежде, и раздвинут от костра — проверки раскладки выше идут
+            // по прежним меркам, а отношения между местами от раздвижки не меняются.
+            SpreadCamp(scene, CampFocus.Spread);
+
             // Врагов в лагере нет: выступаем, когда назначен старший.
             // Здесь же пролог начинается — забываем прошлый отряд.
             // Дальше — разгром, событие этой же сцены (RaidEvent): своей
@@ -186,6 +203,38 @@ namespace Sinbinder.Utilets
             Director(RaidEvent.SceneName, waitForBattle: false, startsPrologue: true);
 
             Save(scene, "Prologue_Camp");
+        }
+
+        /// <summary>
+        /// Раздвинуть собранный лагерь от костра в <paramref name="k"/> раз по земле.
+        /// Двигаются места, не вещи: всё, что стоит в сцене само по себе (у чего есть
+        /// компоненты кроме Transform или своё место), уезжает от середины; пустые
+        /// папки в середине («Палатки», «Бор»…) — не двигаются сами, а раздвигают своих
+        /// детей тем же правилом. Земля, свет, интерфейс и менеджеры — на месте.
+        /// </summary>
+        private static void SpreadCamp(UnityEngine.SceneManagement.Scene scene, float k)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var t = root.transform;
+                if (root.name == "Managers" || root.GetComponent<Canvas>() != null
+                    || root.GetComponent<EventSystem>() != null || root.GetComponent<Light>() != null
+                    || root.name == "Земля") continue;
+                Spread(t, k);
+            }
+        }
+
+        private static void Spread(Transform t, float k)
+        {
+            bool folder = t.GetComponents<Component>().Length == 1
+                       && t.localPosition.sqrMagnitude < 1e-6f && t.childCount > 0;
+            if (folder)
+            {
+                foreach (Transform child in t) Spread(child, k);
+                return;
+            }
+            var p = t.position;
+            t.position = new Vector3(p.x * k, p.y, p.z * k);
         }
 
         /// <summary>Бой у входа в склеп — чужого, найденного, а не родового.</summary>
@@ -1718,8 +1767,13 @@ namespace Sinbinder.Utilets
                 var position = places[i];
                 float yaw = Mathf.Atan2(position.x, position.z) * Mathf.Rad2Deg + 180f;
 
+                // Живые палатки — в полтора раза крупнее (автор, 27.10: «нет возможности зайти
+                // в другие палатки» → «все»): при единице конёк ~1,9 м — ниже роста, и палатка
+                // закрывалась целиком (Furnish: closed). При 1,5 — конёк ~2,8 м, пол в рост
+                // ~0,9 м шириной: зайти можно. Место им дала раздвижка лагеря (CampFocus.Spread).
+                // Брошенные — прежние и просевшие: в них не заходят.
                 var tent = Tent(position, yaw, abandoned,
-                    abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", 1f,
+                    abandoned ? $"Палатка павшего {fallen}" : $"Палатка {i + 1}", abandoned ? 1f : 1.5f,
                     abandoned ? Fallen.NameFor(fallen - 1) : "", index: i);
                 tent.transform.SetParent(camp.transform);
             }
@@ -2207,7 +2261,8 @@ namespace Sinbinder.Utilets
             shelf.transform.SetParent(parent, true);
             shelf.transform.SetPositionAndRotation(new Vector3(at.x, top, at.z), Quaternion.Euler(0f, yaw, 0f));
             shelf.AddComponent<Sinbinder.Gameplay.RecordShelf>();
-            Plate(shelf.transform, Sinbinder.Core.Loc.N("Пластинки"), 0.6f);
+            // Без таблички: в шатре она торчала сквозь скат (OverlapCheck, 27.10), а полку
+            // и так видно по пластинкам на ней; F подскажет сам.
         }
 
         /// <summary>Постель: кожаная подстилка и свёрнутое в изголовье одеяло.</summary>

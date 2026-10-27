@@ -88,6 +88,17 @@ namespace Sinbinder.Gameplay
             var spot = Pick(w);
             if (!Place(spot, w, out point)) return false;
 
+            // У огня, но у котла: чревоугодник ест, алхимик варит (Cauldron, 27.10).
+            if (spot == CampSpot.Fire && Cauldron.Fits(w, out var pot))
+            {
+                float a = Stable(w.DisplayName) % 12 * 30f * Mathf.Deg2Rad;
+                point = pot + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 1.1f;
+                if (UnityEngine.AI.NavMesh.SamplePosition(point, out var near, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    point = near.position;
+                word = w.Soul.Trade == Trade.Alchemist ? Loc.T("варит у котла") : Loc.T("ест у котла");
+                return true;
+            }
+
             // Шаг по месту. Автор, 26 сентября: «Живой лагерь всё ещё
             // не живой — все становятся по своим точкам интереса и стоят».
             // Место меняется раз в несколько минут, а в промежутке воин
@@ -366,9 +377,9 @@ namespace Sinbinder.Gameplay
                 // Дозор — за внешним кольцом палаток, на северном краю: оттуда
                 // придут охотники. До 2 октября он стоял на девяти метрах —
                 // в ряду палаток, и ход вдоль края упирался в две из них.
-                case CampSpot.Watch: point = c + new Vector3(0f, 0f, 11.6f); return true;
-                case CampSpot.Apart: point = c + new Vector3(-7f, 0f, 1f); return true;
-                case CampSpot.Tents: point = c + new Vector3(0f, 0f, -9.5f); return true;
+                case CampSpot.Watch: point = c + new Vector3(0f, 0f, 11.6f) * CampFocus.Spread; return true;
+                case CampSpot.Apart: point = c + new Vector3(-7f, 0f, 1f) * CampFocus.Spread; return true;
+                case CampSpot.Tents: point = c + new Vector3(0f, 0f, -9.5f) * CampFocus.Spread; return true;
 
                 default: point = c; return true;
             }

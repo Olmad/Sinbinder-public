@@ -361,6 +361,8 @@ namespace Sinbinder.UI
                     ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
                 return;
             }
+            var pot = Cauldron.Nearest();
+            if (pot != null) { _prompt.text = pot.Prompt; return; }
             var fire = CampfireStoke.Nearest();
             if (fire != null) { _prompt.text = fire.Prompt; return; }
             var weapon = WeaponPickup.Nearest();
@@ -457,6 +459,10 @@ namespace Sinbinder.UI
 
             var chest = TrophyChest.Reachable();
             if (chest != null) { OpenChest(chest); return; }
+
+            // Котёл — прежде костра: он стоит у огня, и F ушло бы полену (27.10).
+            var pot = Cauldron.Nearest();
+            if (pot != null) { pot.Taste(); return; }
 
             // Полено в костёр — «лагерь отзывается» (автор, 26.10).
             var fire = CampfireStoke.Nearest();

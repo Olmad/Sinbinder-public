@@ -526,6 +526,12 @@ namespace Sinbinder.EditorTools
                 S("шатёр: пластинка поднята, граммофон играет", RecordAndPlay, RecordPlaying, 6f),
                 S("небо: луна глазами Греховода", null, MoonShot, 3f),
 
+                // Котёл (автор, 27.10: «интерактивный») и палатки, в которые можно зайти («все»).
+                S("лагерь: котёл и палатки", null, PotAndTents, 3f),
+
+                // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
+                S("небо: глаза проступили", () => { SkyEyes.Summon(); _eyesAt = Time.realtimeSinceStartup; }, EyesShot, 12f),
+
                 // Примета Марги Копателя (28-ORDERS, 26.10): в свой час — на коленях
                 // у ямки на краю поляны. Кадр — портрет, пока копает.
                 S("лагерь: Марга копает у края", null, DiggerSeen, 90f),
@@ -2471,6 +2477,56 @@ namespace Sinbinder.EditorTools
             bool inHand = !RecordHands.Empty;
             RecordHands.Drop();                                       // и на полку
             Write($"  [ПЛАСТИНКИ] граммофон играл, тема лагеря молчала; снята в руки: {inHand}; на полке: {RecordShelf.OnShelf().Count}");
+            return true;
+        }
+
+        /// <summary>Кто у котла, что ответят на F; в скольких живых палатках есть пол в рост.</summary>
+        private static bool PotAndTents()
+        {
+            var pot = Cauldron.Instance;
+            if (pot == null) Write("  [КОТЁЛ] котла в лагере нет");
+            else
+            {
+                var at = new List<string>();
+                foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (Cauldron.Fits(w, out _)) at.Add(w.DisplayName);
+                Warp(SinbinderPlayer.Instance.gameObject, pot.transform.position + Vector3.back * 1.2f);
+                pot.Taste();
+                Write($"  [КОТЁЛ] живут у котла: {string.Join(", ", at)}; F — сказано в журнал");
+                Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "котёл у огня", pot.transform);
+            }
+
+            int open = 0, total = 0;
+            foreach (var t in UnityEngine.Object.FindObjectsByType<TentInterior>(FindObjectsSortMode.None))
+            {
+                if (t.name.Contains("павшего") || t.name.Contains("Греховода")) continue;
+                total++;
+                if (UnityEngine.AI.NavMesh.SamplePosition(t.transform.position + Vector3.up * 0.1f, out _, 0.4f, UnityEngine.AI.NavMesh.AllAreas))
+                    open++;
+            }
+            Write($"  [ПАЛАТКИ] с полом в рост внутри: {open} из {total}");
+            return true;
+        }
+
+        private static float _eyesAt;
+
+        /// <summary>Через семь секунд после зова — кадр туда, где проступили глаза.</summary>
+        private static bool EyesShot()
+        {
+            if (Time.realtimeSinceStartup - _eyesAt < 7f) return false;
+            var dir = SkyEyes.Where();
+            var cam = Camera.main;
+            if (dir == Vector3.zero || cam == null || !SinbinderPlayer.Exists) { Write("  [ГЛАЗА] не проступили"); return false; }
+            var rig = cam.GetComponent<RTS_Camera>();
+            if (rig != null) rig.enabled = false;
+            var was = (cam.transform.position, cam.transform.rotation, cam.fieldOfView);
+            cam.transform.SetPositionAndRotation(SinbinderPlayer.Where + Vector3.up * 1.7f, Quaternion.LookRotation(dir));
+            cam.fieldOfView = 60f;
+            Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "глаза в небе");
+            cam.transform.SetPositionAndRotation(was.position, was.rotation);
+            cam.fieldOfView = was.fieldOfView;
+            if (rig != null) rig.enabled = true;
+            Write("  [ГЛАЗА] проступили; кадр снят");
             return true;
         }
 

@@ -11,7 +11,7 @@ namespace Sinbinder.Gameplay
     /// обманка: бледные полосы света, косо падающие между сосен по направлению
     /// холодного ключевого света («Холодный свет»), как в туманном лесу.
     ///
-    /// Степень — своя настройка «Лунный свет» (<see cref="GraphicsOptions.Moon"/>),
+    /// Степень — своя настройка «Лунный свет» (<see cref="GraphicsOptions.MoonNow"/>),
     /// отдельно от наборов графики: низкий — без лучей, средний — редкие,
     /// высокий — гуще, и они медленно дышат и колышутся.
     ///
@@ -51,20 +51,20 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
-            if (_built != GraphicsOptions.Moon)
+            if (_built != GraphicsOptions.MoonNow)
             {
-                Build(GraphicsOptions.Moon);
+                Build(GraphicsOptions.MoonNow);
                 // Лунный контур — только на высоком: второй направленный свет в URP
                 // считается на каждой точке экрана, замер 26.10 — 4,5 мс кадра лагеря.
                 if (_rim == null) _rim = GameObject.Find("Лунный контур")?.GetComponent<Light>();
-                if (_rim != null) _rim.enabled = GraphicsOptions.Moon == GraphicsOptions.MoonLevel.High;
+                if (_rim != null) _rim.enabled = GraphicsOptions.MoonNow == GraphicsOptions.MoonLevel.High;
             }
             if (_shafts.Length == 0) return;
 
             var cam = Camera.main;
             if (cam == null) return;
 
-            bool high = GraphicsOptions.Moon == GraphicsOptions.MoonLevel.High;
+            bool high = GraphicsOptions.MoonNow == GraphicsOptions.MoonLevel.High;
             float t = Time.time;
             for (int i = 0; i < _shafts.Length; i++)
             {
@@ -87,7 +87,7 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private float Alpha => GraphicsOptions.Moon == GraphicsOptions.MoonLevel.High ? 0.16f : 0.12f;
+        private float Alpha => GraphicsOptions.MoonNow == GraphicsOptions.MoonLevel.High ? 0.16f : 0.12f;
 
         private void Build(GraphicsOptions.MoonLevel level)
         {
