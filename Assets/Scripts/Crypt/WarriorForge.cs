@@ -284,8 +284,11 @@ namespace Sinbinder.Crypt
                 Seed = k.Seed,
             };
 
-            var warrior = spawner.Forge(member, Spot(spawner.transform.position, _made.Count));
+            // Как и «Создать»: встаёт во дворе уникальности и живёт им (CampYard).
+            var yard = CampYard.Instance;
+            var warrior = spawner.Forge(member, Spot(yard != null ? yard.Fire + new Vector3(0f, 0f, -6f) : spawner.transform.position, _made.Count));
             if (warrior == null) return;
+            CampYard.Admit(warrior);
             if (warrior.Soul != null)
                 warrior.Soul.Set(k.Second, Mathf.Max(warrior.Soul.Get(k.Second), k.Strength * 0.6f));
             Signature.Give(k.Name, k.Why, k.First, k.Death);
