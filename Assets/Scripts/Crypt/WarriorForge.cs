@@ -35,14 +35,8 @@ namespace Sinbinder.Crypt
     {
         private const KeyCode Key = KeyCode.N;
 
-        /// <summary>Имена нашей стороны — короткие, северные и славянские, как у девяти лагеря.</summary>
-        private static readonly string[] Names =
-        {
-            Loc.N("Бран"), Loc.N("Ольст"), Loc.N("Тихон"), Loc.N("Ратко"), Loc.N("Сбыслав"), Loc.N("Ивар"),
-            Loc.N("Мирош"), Loc.N("Гостята"), Loc.N("Ульв"), Loc.N("Добрыня"), Loc.N("Хотен"), Loc.N("Свен"),
-            Loc.N("Будимир"), Loc.N("Кнут"), Loc.N("Ярош"), Loc.N("Нежата"), Loc.N("Торн"), Loc.N("Вышата"),
-            Loc.N("Ерш"), Loc.N("Олаф"), Loc.N("Житко"), Loc.N("Ставр"), Loc.N("Хёгни"), Loc.N("Путята"),
-        };
+        /// <summary>Имена — те же, что у генератора: одна правда на двоих.</summary>
+        private static string[] Names => WarriorGenerator.Names;
 
         private static readonly Trade[] TradeList =
         {
@@ -57,7 +51,7 @@ namespace Sinbinder.Crypt
         private static readonly float[] Strength = { 30f, 55f, 80f };
         private static readonly float[] Faith = { 30f, 60f, 90f };
 
-        private int _number = 1, _sin, _second = 1, _strength = 1, _moral = 1, _trade, _shell, _faith = 1;
+        private int _number = 1, _sin, _second = 1, _strength = 1, _moral = 1, _trade, _shell, _faith = 1, _origin;
         private readonly List<Warrior> _made = new();
 
         private GameObject _canvas, _panel;
@@ -125,7 +119,7 @@ namespace Sinbinder.Crypt
             _spawned.Clear();
 
             var font = UI.UiStyle.Body;
-            float y = 0f, h = UI.MenuRows.Height * 1.4f;
+            float y = 0f, h = UI.MenuRows.Height * 1.3f;
 
             void Row(string title, string second, System.Action click)
             {
@@ -152,6 +146,13 @@ namespace Sinbinder.Crypt
 
             y -= h * 0.3f;
             Row(Loc.T("Создать"), Loc.T("Встанет на площадке и будет жить, как в лагере."), Make);
+
+            // Генератор (docs/53-GENERATOR.md): человек целиком — откуда душа, ремесло,
+            // два греха, мораль, примета, имя, история. Строки выше он не читает.
+            y -= h * 0.3f;
+            Row(Loc.F("Откуда душа: {0}", OriginWord()), Loc.T("Из этого генератор выводит всё остальное."),
+                () => { _origin = (_origin + 1) % 4; Draw(); });
+            Row(Loc.T("Собрать генератором"), Loc.T("Человек целиком: ремесло, грехи, примета, история."), MakeGenerated);
             if (_made.Count > 0)
                 Row(Loc.T("Убрать созданных"), Loc.T("Площадка снова пуста — девять лагеря остаются."), Clear);
             Row(Loc.T("Закрыть"), Loc.F("{0} или Esc.", Key), Close);
@@ -164,6 +165,14 @@ namespace Sinbinder.Crypt
             // по счёту носит прозвище «Младший», и это тоже часть имени.
             return _number > Names.Length ? name + " " + Loc.T("Младший") : name;
         }
+
+        private string OriginWord() => (SoulOrigin)_origin switch
+        {
+            SoulOrigin.Pact => Loc.T("сделка — отдал душу сам"),
+            SoulOrigin.Jar => Loc.T("банка с полки — собран давно"),
+            SoulOrigin.Sortie => Loc.T("вылазка — принесли с места"),
+            _ => Loc.T("жатва — пал в бою, где были мы"),
+        };
 
         private string StrengthWord() => _strength switch
         {
@@ -240,6 +249,52 @@ namespace Sinbinder.Crypt
             Draw();
         }
 
+        /// <summary>
+        /// Сложить человека генератором и поставить на площадку. Номер — тот же счёт,
+        /// что у имён: одинаковый номер и происхождение — один и тот же человек.
+        /// </summary>
+        private void MakeGenerated()
+        {
+            var spawner = Object.FindFirstObjectByType<PrologueCampSpawner>();
+            if (spawner == null)
+            {
+                Debug.LogWarning("[СОЗДАТЕЛЬ] На полигоне нет отряда (PrologueCampSpawner) — ставить некуда.");
+                return;
+            }
+
+            var present = new List<string>();
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (w != null && !w.IsDead && w.Team == Team.Player && !(w is SinbinderPlayer))
+                    present.Add(w.DisplayName);
+
+            var k = WarriorGenerator.Make(_number, (SoulOrigin)_origin, present);
+            var member = new SquadRoster.Member
+            {
+                Name = k.Name,
+                Sin = k.Sin,
+                Moral = k.Moral,
+                Gender = Gender.Male,
+                Intensity = k.Strength,
+                Loyalty = Faith[_faith],
+                Trade = k.Trade,
+                Shell = k.Shell,
+                Seed = k.Seed,
+            };
+
+            var warrior = spawner.Forge(member, Spot(spawner.transform.position, _made.Count));
+            if (warrior == null) return;
+            if (warrior.Soul != null)
+                warrior.Soul.Set(k.Second, Mathf.Max(warrior.Soul.Get(k.Second), k.Strength * 0.6f));
+            Signature.Give(k.Name, k.Why, k.First, k.Death);
+
+            _made.Add(warrior);
+            var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
+            log?.Write(Loc.F("{0} встал на площадке.", Loc.Name(k.Name)));
+            if (k.Seed != null && !string.IsNullOrEmpty(k.Seed.Story)) log?.Write(k.Seed.Story);
+            _number++;
+            Draw();
+        }
+
         private void Clear()
         {
             foreach (var w in _made) if (w != null) Destroy(w.gameObject);
@@ -274,7 +329,7 @@ namespace Sinbinder.Crypt
             var rt = (RectTransform)_panel.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 0.5f);
             rt.anchoredPosition = new Vector2(40f, 0f);
-            rt.sizeDelta = new Vector2(760f, 1080f);
+            rt.sizeDelta = new Vector2(760f, 1200f);
             var back = _panel.AddComponent<Image>();
             UI.UiStyle.Dress(back, UI.UiStyle.PlateWeight.Screen);
 
@@ -294,7 +349,7 @@ namespace Sinbinder.Crypt
             rows.transform.SetParent(_panel.transform, false);
             _rows = (RectTransform)rows.transform;
             _rows.anchorMin = new Vector2(0f, 1f); _rows.anchorMax = new Vector2(1f, 1f); _rows.pivot = new Vector2(0.5f, 1f);
-            _rows.anchoredPosition = new Vector2(0f, -100f); _rows.sizeDelta = new Vector2(-48f, 960f);
+            _rows.anchoredPosition = new Vector2(0f, -100f); _rows.sizeDelta = new Vector2(-48f, 1080f);
 
             _panel.SetActive(false);
         }
