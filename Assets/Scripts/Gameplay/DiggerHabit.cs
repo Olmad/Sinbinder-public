@@ -63,13 +63,16 @@ namespace Sinbinder.Gameplay
             float t = Time.time + Phase();
             if (t % Period > DigFor) return false;
 
-            var fire = Object.FindFirstObjectByType<CampOpening>();
-            if (fire == null) return false;
+            if (!CampLife.Centre(out var fire)) return false;
 
             // Три ямки по кругу у края поляны — по имени и номеру прохода.
+            // Во дворе полигона ямка одна, своя (CampYard.Pit).
             int cycle = Mathf.FloorToInt(t / Period);
             float angle = (Phase() * 7f + (cycle % 3) * 118f) * Mathf.Deg2Rad;
-            at = fire.transform.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Edge;
+            var yard = Object.FindFirstObjectByType<CampOpening>() == null ? CampYard.Instance : null;
+            var pit = yard != null ? yard.Pit : null;
+            at = pit != null ? pit.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 0.8f
+                             : fire + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Edge;
             if (UnityEngine.AI.NavMesh.SamplePosition(at, out var ground, 3f, UnityEngine.AI.NavMesh.AllAreas))
                 at = ground.position;
             return true;

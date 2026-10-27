@@ -1104,6 +1104,9 @@ class Checker:
             m = RE_NAMESPACE.search(s)
             ns = m.group(1) if m else ''
             for _, name in RE_TYPE_DECL.findall(s):
+                # partial-класс по частям в разных файлах — один тип, не два.
+                if re.search(r'\bpartial\s+class\s+' + re.escape(name) + r'\b', s):
+                    continue
                 seen[(ns, name)].append(p)
         for (ns, name), paths in sorted(seen.items()):
             if len(paths) > 1:

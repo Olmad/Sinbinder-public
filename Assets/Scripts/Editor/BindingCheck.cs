@@ -266,6 +266,14 @@ namespace Sinbinder.EditorTools
                     Done = () => Device() != null && Device().HasShell,
                 },
 
+                // Автор, 26.10: «при постановке души и тела на алтарь — они не отображаются».
+                new Step
+                {
+                    Name = "на устройстве видно положенное: банка и тело",
+                    Done = SeenOnDevice,
+                    Limit = 3f,
+                },
+
                 new Step
                 {
                     Name = "устройство готово и говорит, что выйдет",
@@ -296,7 +304,103 @@ namespace Sinbinder.EditorTools
                     Done = Walked,
                     Limit = 12f,
                 },
+
+                // Двор уникальности (53-GENERATOR §9): четверо разных из создателя —
+                // и каждый идёт, куда тянет душа.
+                new Step
+                {
+                    Name = "двор: созданные живут каждый по душе",
+                    Do = ForgeFour,
+                    Done = YardLived,
+                    Limit = 45f,
+                },
             };
+        }
+
+        // ───────────────────────────── двор и вид ─────────────────────────────
+
+        private static readonly List<Warrior> _forged = new();
+        private static float _forgedAt;
+
+        /// <summary>Видны ли на устройстве банка и тело (BindingSocket) — и кадр вблизи.</summary>
+        private static bool SeenOnDevice()
+        {
+            var jar = GameObject.Find("Банка в гнезде");
+            var body = GameObject.Find("Тело на ложе");
+            Write("  [ВИД] банка в гнезде: " + (jar != null ? "есть" : "НЕТ") + "; тело на ложе: " + (body != null ? "есть" : "НЕТ"));
+            if (jar == null || body == null) return false;
+
+            var device = Device();
+            if (device != null) Look(device.transform.position + new Vector3(0f, 2.4f, -3.0f), device.transform.position + Vector3.up * 0.9f,
+                                     "устройство — банка и тело");
+            return true;
+        }
+
+        /// <summary>Камеру — в точку, кадр, камеру — обратно хозяину.</summary>
+        private static void Look(Vector3 from, Vector3 at, string name)
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            var rig = cam.GetComponent<RTS_Camera>();
+            if (rig != null) rig.enabled = false;
+            var was = (cam.transform.position, cam.transform.rotation, cam.fieldOfView);
+            cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(at - from));
+            cam.fieldOfView = 55f;
+            // Кадр — мира, без надписей: заголовок полигона закрывал устройство.
+            var hidden = new List<Canvas>();
+            foreach (var c in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+                if (c.enabled) { c.enabled = false; hidden.Add(c); }
+            Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", name);
+            foreach (var c in hidden) c.enabled = true;
+            cam.transform.SetPositionAndRotation(was.position, was.rotation);
+            cam.fieldOfView = was.fieldOfView;
+            if (rig != null) rig.enabled = true;
+        }
+
+        /// <summary>Четверо из создателя: жадный, унылый, гневный, похотливый.</summary>
+        private static void ForgeFour()
+        {
+            _forged.Clear();
+            _forgedAt = Time.realtimeSinceStartup;
+
+            var forge = UnityEngine.Object.FindFirstObjectByType<WarriorForge>();
+            if (forge == null) { Write("  [ДВОР] создателя на полигоне нет"); return; }
+            if (CampYard.Instance == null) { Write("  [ДВОР] двора на полигоне нет — пересобрать полигон"); return; }
+
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var sin = typeof(WarriorForge).GetField("_sin", flags);
+            var make = typeof(WarriorForge).GetMethod("Make", flags);
+            var made = typeof(WarriorForge).GetField("_made", flags);
+
+            foreach (var s in new[] { SinType.Greed, SinType.Sloth, SinType.Wrath, SinType.Lust })
+            {
+                sin.SetValue(forge, (int)s);
+                make.Invoke(forge, null);
+            }
+
+            if (made.GetValue(forge) is List<Warrior> list) _forged.AddRange(list);
+            Write($"  [ДВОР] создано {_forged.Count}");
+        }
+
+        /// <summary>Через двадцать пять секунд — где кто и почему; кадр двора сверху.</summary>
+        private static bool YardLived()
+        {
+            if (Time.realtimeSinceStartup - _forgedAt < 25f) return false;
+            var yard = CampYard.Instance;
+            if (yard == null || _forged.Count == 0) return false;
+
+            int living = 0;
+            foreach (var w in _forged)
+            {
+                if (w == null) continue;
+                string now = CampLife.Now(w);
+                float d = Vector3.Distance(w.transform.position, yard.Fire);
+                Write($"  [ДВОР] {w.DisplayName} ({w.Soul?.Sin}): {(now == "" ? "стоит" : now)}, от костра {d:F1} м");
+                if (now != "") living++;
+            }
+
+            Look(yard.Fire + new Vector3(0f, 16f, -12f), yard.Fire + new Vector3(0f, 0f, -1f), "двор уникальности — сверху");
+            return living == _forged.Count;
         }
 
         // ───────────────────────────── шаги ─────────────────────────────

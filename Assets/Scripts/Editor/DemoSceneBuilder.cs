@@ -28,7 +28,7 @@ namespace Sinbinder.Utilets
     ///
     /// Сборка идемпотентна: повторный запуск даёт те же сцены.
     /// </summary>
-    public static class DemoSceneBuilder
+    public static partial class DemoSceneBuilder
     {
         private const string SceneDir = "Assets/Scenes";
 
@@ -275,8 +275,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            // Пол шире прежних 30 м (27.10): позади отряда встал двор уникальности.
-            Ground("Плиты", 6f, "PavingStones127");
+            // Плиты шире прежнего (±35 м): за отрядом — двор уникальности.
+            Ground("Плиты", 7f, "PavingStones127");
             Look();
             Managers();
 
@@ -340,11 +340,54 @@ namespace Sinbinder.Utilets
             spawn.transform.position = new Vector3(-4f, 0f, -3f);
             spawn.AddComponent<Sinbinder.Crypt.TestChamberEntry>();
 
-            // Двор уникальности (автор, 27.10: «место проверки уникальности с интерактивными
-            // объектами»): созданные на N живут здесь, как в лагере.
-            UniquenessYard(new Vector3(0f, 0f, -20f));
+            // Двор уникальности (53-GENERATOR §9): за отрядом, к югу, — там живут созданные.
+            Yard(new Vector3(0f, 0f, -21f));
 
             Save(scene, "Crypt_Test");
+        }
+
+        /// <summary>
+        /// Двор уникальности на полигоне: костёр, сундук, стол, карты, три палатки,
+        /// ямка копателя, дозор и край — места <see cref="CampLife"/>, расставленные
+        /// вокруг своего костра (<see cref="Sinbinder.Gameplay.CampYard"/>). Созданные
+        /// живут здесь, как в лагере, и видно, похожи двое или разные.
+        /// </summary>
+        private static void Yard(Vector3 c)
+        {
+            var fire = Campfire(c);
+            fire.name = "Костёр двора";
+
+            // Брёвна у огня — сидеть и стоять вокруг, как в лагере.
+            for (int i = 0; i < 4; i++)
+            {
+                float a = i * 90f + 45f;
+                var at = c + Quaternion.Euler(0f, a, 0f) * new Vector3(0f, 0f, 2.6f);
+                Prop("LogBench", fire.transform, at, a + 90f);
+            }
+
+            var chest = Spot(fire.transform, "Сундук двора", new Vector3(5f, 0f, 2f));
+            Prop("Chest", chest, chest.position, -110f);
+            var table = Spot(fire.transform, "Стол двора", new Vector3(-5f, 0f, 2.5f));
+            Prop("CouncilTable", table, table.position, 70f);
+            var watch = Spot(fire.transform, "Дозор двора", new Vector3(0f, 0f, 8.5f));
+            var apart = Spot(fire.transform, "Край двора", new Vector3(-8f, 0f, -4f));
+            var pit = Spot(fire.transform, "Ямка двора", new Vector3(7.5f, 0f, -5f));
+            Plate(pit, Sinbinder.Core.Loc.N("Ямка — копателю"), 1.0f);
+
+            CardTableProp(c + new Vector3(4.5f, 0f, -3.5f));
+
+            // Палатки — под «Палатки», как в лагере: CampLife ищет их по имени.
+            var tents = new GameObject("Палатки");
+            for (int i = 0; i < 3; i++)
+            {
+                var at = c + new Vector3(-6f + i * 6f, 0f, -9f);
+                var tent = Tent(at, 0f, false, $"Палатка {i + 1}", 0.85f, index: i);
+                tent.transform.SetParent(tents.transform, true);
+            }
+
+            var yard = fire.AddComponent<Sinbinder.Gameplay.CampYard>();
+            Wire(yard, ("_chest", chest), ("_table", table), ("_watch", watch), ("_apart", apart), ("_pit", pit));
+            Plate(fire.transform, Sinbinder.Core.Loc.N("Двор уникальности — здесь живут созданные"), 2.2f);
         }
 
         /// <summary>
@@ -1410,25 +1453,6 @@ namespace Sinbinder.Utilets
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-        }
-
-        /// <summary>
-        /// Двор полигона (docs/53-GENERATOR.md §9): костёр с двором (<see cref="Sinbinder.Gameplay.CampYard"/>),
-        /// три палатки за огнём, сундук и стол с картами по сторонам — те же места, куда
-        /// в лагере тянет душу (<see cref="Sinbinder.Gameplay.CampLife"/>). Дым, туман,
-        /// светлячки и полено на F ставят себя на этот костёр сами.
-        /// </summary>
-        private static void UniquenessYard(Vector3 c)
-        {
-            var fire = Campfire(c);
-            fire.AddComponent<Sinbinder.Gameplay.CampYard>();
-
-            Tent(c + new Vector3(-6f, 0f, -8f), 20f, false, "Палатка двора — запад", 1f, index: 0);
-            Tent(c + new Vector3(0f, 0f, -9.5f), 0f, false, "Палатка двора — середина", 1f, index: 1);
-            Tent(c + new Vector3(6f, 0f, -8f), -20f, false, "Палатка двора — восток", 1f, index: 2);
-
-            TrophyChestProp(c + new Vector3(6.5f, 0f, 1.5f), -90f);
-            CardTableProp(c + new Vector3(-6.5f, 0f, 1.5f));
         }
 
         private static GameObject Campfire(Vector3 position)

@@ -235,8 +235,11 @@ namespace Sinbinder.Crypt
                 Shell = ShellList[_shell],
             };
 
-            var warrior = spawner.Forge(member, Spot(spawner.transform.position, _made.Count));
+            // Встаёт во дворе уникальности, если он есть, и живёт им (CampYard).
+            var yard = CampYard.Instance;
+            var warrior = spawner.Forge(member, Spot(yard != null ? yard.Fire + new Vector3(0f, 0f, -6f) : spawner.transform.position, _made.Count));
             if (warrior == null) return;
+            CampYard.Admit(warrior);
 
             // Второй грех — слабее главного, но слышен.
             if (warrior.Soul != null)

@@ -154,9 +154,7 @@ namespace Sinbinder.Gameplay
 
             if (!Chosen.TryGetValue(w, out var c)) return false;
 
-            var fire = Hearth();
-            if (fire == null) return false;
-            var centre = fire.position;
+            if (!Centre(out var centre)) return false;
 
             switch (c.Spot)
             {
@@ -228,25 +226,13 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>
-        /// Огонь, вокруг которого живут: костёр лагеря (там, где идёт его открытие)
-        /// или двор полигона (<see cref="CampYard"/>, 27.10). Нет ни того ни другого —
-        /// лагерь не живёт.
-        /// </summary>
-        private static Transform Hearth()
-        {
-            var camp = Object.FindFirstObjectByType<CampOpening>();
-            if (camp != null) return camp.transform;
-            var yard = Object.FindFirstObjectByType<CampYard>();
-            return yard != null ? yard.transform : null;
-        }
-
         private static bool Alive(Warrior w)
         {
             if (!Enabled || w == null || w.IsDead) return false;
 
             // Лагерь — там, где идёт его открытие; сцена ведёт, пока она идёт.
-            if (Hearth() == null) return false;
+            // На полигоне — двор уникальности, и живут им только созданные (CampYard).
+            if (Object.FindFirstObjectByType<CampOpening>() == null && !CampYard.Lives(w)) return false;
             if (w.Team != Team.Player || w is SinbinderPlayer) return false;
             // Провожатого не ждём (автор, 21 октября: «лагерь оживает через
             // некоторое время, как игрок выходит»): лагерь живёт с первого
@@ -343,13 +329,15 @@ namespace Sinbinder.Gameplay
         private static bool Place(CampSpot spot, Warrior w, out Vector3 point)
         {
             point = default;
-            var fire = Hearth();
-            if (fire == null) return false;
-            var c = fire.position;
+            if (!Centre(out var c)) return false;
 
             // У каждого своя палатка, а не одна точка на всех: до 26 сентября
             // «дремлющие в палатке» толпились в одном месте на склоне холма.
             if (spot == CampSpot.Tents && Tent(w, c, out point)) return true;
+
+            // Двор полигона знает свои места сам — лагерные смещения от костра не его.
+            var yard = Object.FindFirstObjectByType<CampOpening>() == null ? CampYard.Instance : null;
+            if (yard != null && yard.Point(spot, out point)) return true;
 
             switch (spot)
             {
@@ -442,6 +430,16 @@ namespace Sinbinder.Gameplay
 
         private static List<Transform> _tents;
         private static int _tentsScene = -1;
+
+        /// <summary>Середина лагеря: костёр открытия; на полигоне — костёр двора (<see cref="CampYard"/>).</summary>
+        public static bool Centre(out Vector3 centre)
+        {
+            var fire = Object.FindFirstObjectByType<CampOpening>();
+            if (fire != null) { centre = fire.transform.position; return true; }
+            if (CampYard.Instance != null) { centre = CampYard.Instance.Fire; return true; }
+            centre = default;
+            return false;
+        }
 
         /// <summary>Число из имени — одно и то же в каждом запуске, в отличие от GetHashCode.</summary>
         private static int Stable(string s)
