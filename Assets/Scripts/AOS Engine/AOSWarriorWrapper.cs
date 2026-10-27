@@ -41,9 +41,11 @@ namespace Sinbinder.AOS
             // всегда оставался false, LoyaltyModule возвращал ноль,
             // и ObeyCommand не мог победить ни при каких условиях.
             var cmd = _warrior.Command;
-            var context = CombatDecisionContext.Create(_warrior, cmd.TypeName);
+            DecisionContext context;
+            using (Core.Cost.Of("decide.context")) context = CombatDecisionContext.Create(_warrior, cmd.TypeName);
 
-            var decision = _resolver.DecideDetailed(_warrior, context);
+            Decision decision;
+            using (Core.Cost.Of("decide.vote")) decision = _resolver.DecideDetailed(_warrior, context);
 
             // Смена действия — до присваивания: объявлять надо начало
             // поступка, а не каждый тик, пока он длится. Бежать можно
@@ -66,9 +68,9 @@ namespace Sinbinder.AOS
             }
 
             if (decision.RefusedCommand)
-                AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
+                using (Core.Cost.Of("decide.refused")) AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
             else if (changed)
-                AOSEventHub.Instance?.OnSelfWilled(_warrior, decision, context);
+                using (Core.Cost.Of("decide.selfwilled")) AOSEventHub.Instance?.OnSelfWilled(_warrior, decision, context);
 
             return LastDecision;
         }

@@ -72,6 +72,8 @@ namespace Sinbinder.UI
             bool on = _wanted && !Modal.Any
                    && !(Letterbox.Instance != null && Letterbox.Instance.Shown);
             _group.alpha = on ? 1f : 0f;
+
+            if (_scrollDue) { _scrollDue = false; Bottom(); }
         }
 
         void Awake()
@@ -192,8 +194,14 @@ namespace Sinbinder.UI
             // с первой записью и больше не прячется.
             Show();
 
-            Bottom();
+            // Прокрутка — раз за кадр (LateUpdate), а не на каждую строку: Bottom зовёт
+            // Canvas.ForceUpdateCanvases — пересборку всех холстов сцены с полосками над
+            // каждой головой. На поле в 400 строка журнала стоила ~20 мс, а строк в бою —
+            // десятки в секунду (замер 27.10, TugBench).
+            _scrollDue = true;
         }
+
+        private bool _scrollDue;
 
         /// <summary>
         /// Прокрутить к последней записи.

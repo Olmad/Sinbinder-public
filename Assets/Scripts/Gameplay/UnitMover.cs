@@ -70,7 +70,11 @@ namespace Sinbinder.Gameplay
 
                 if (dist > attackRange)
                 {
-                    _agent.SetDestination(_attackTarget.transform.position);
+                    // Путь — заново, только если цель ушла или пора: прокладывали каждый
+                    // кадр, и на поле в 400 это было 400 путей за кадр (замер 27.10).
+                    var at = _attackTarget.transform.position;
+                    if (Time.time >= _repathAt || (at - _pathTo).sqrMagnitude > RepathShift * RepathShift)
+                        Go(at);
                 }
                 else
                 {
@@ -114,9 +118,27 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
+            // Тот же приказ раз в секунду (решение повторяется) — не прокладывать путь заново.
+            // Сверяем с тем, куда агент правда идёт: путь мог задать и кто-то мимо нас.
+            var going = _agent.destination - destination;
+            going.y = 0f;
+            bool same = !_isAttacking && _agent.hasPath && going.sqrMagnitude < 0.25f;
             _isAttacking = false;
             _attackTarget = null;
-            _agent.SetDestination(destination);
+            if (!same) Go(destination);
+        }
+
+        private Vector3 _pathTo = new(float.MaxValue, 0f, 0f);
+        private float _repathAt;
+
+        /// <summary>Насколько цель удара должна сдвинуться, чтобы проложить путь заново, м.</summary>
+        private const float RepathShift = 0.75f;
+
+        private void Go(Vector3 to)
+        {
+            _pathTo = to;
+            _repathAt = Time.time + 0.25f;
+            _agent.SetDestination(to);
         }
 
         public void CommandAttack(GameObject target)
@@ -127,9 +149,11 @@ namespace Sinbinder.Gameplay
             // Бить замерших на уроке — не урок, а даровой удар.
             if (Lesson.Holding && GetComponent<SinbinderPlayer>() != null) return;
 
+            // Та же цель (решение «бить» повторяется раз в секунду) — путь уже проложен.
+            bool same = _isAttacking && _attackTarget == target && _agent.hasPath;
             _isAttacking = true;
             _attackTarget = target;
-            _agent.SetDestination(target.transform.position);
+            if (!same) Go(target.transform.position);
         }
 
         public void Stop()

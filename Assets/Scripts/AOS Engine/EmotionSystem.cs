@@ -41,7 +41,11 @@ namespace Sinbinder.AOS
             else
                 _emotions[warrior.Id].Add(new ActiveEmotion { Type = type, Intensity = intensity });
 
-            Debug.Log($"[EMOTION] {warrior.DisplayName}: {type} +{intensity}");
+            // Только разработчику: запись в журнал Unity дорога (стек вызовов на каждую),
+            // а чувств на гибель — по два на каждого свидетеля. На поле в 400 одна гибель
+            // стоила 20–40 мс кадра (замер 27.10, TugBench).
+            if (Core.Transparency.Shows(Core.Clarity.Trace))
+                Debug.Log($"[EMOTION] {warrior.DisplayName}: {type} +{intensity}");
         }
 
         /// <summary>

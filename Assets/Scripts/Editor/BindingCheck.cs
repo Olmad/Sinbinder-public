@@ -321,6 +321,7 @@ namespace Sinbinder.EditorTools
 
         private static readonly List<Warrior> _forged = new();
         private static float _forgedAt;
+        private static bool _yardTold;
 
         /// <summary>Видны ли на устройстве банка и тело (BindingSocket) — и кадр вблизи.</summary>
         private static bool SeenOnDevice()
@@ -391,12 +392,21 @@ namespace Sinbinder.EditorTools
 
             int living = 0;
             foreach (var w in _forged)
+                if (w != null && CampLife.Now(w) != "") living++;
+
+            // Строки — один раз: когда все живут или когда ждать уже нечего.
+            bool last = Time.realtimeSinceStartup - _forgedAt > 40f;
+            if (living < _forged.Count && !last) return false;
+            if (_yardTold) return false;
+            _yardTold = living < _forged.Count;
+
+            foreach (var w in _forged)
             {
                 if (w == null) continue;
                 string now = CampLife.Now(w);
                 float d = Vector3.Distance(w.transform.position, yard.Fire);
-                Write($"  [ДВОР] {w.DisplayName} ({w.Soul?.Sin}): {(now == "" ? "стоит" : now)}, от костра {d:F1} м");
-                if (now != "") living++;
+                var mind = w.GetComponent<Sinbinder.AOS.AOSWarriorWrapper>();
+                Write($"  [ДВОР] {w.DisplayName} ({w.Soul?.Sin}): {(now == "" ? "стоит" : now)}, от костра {d:F1} м; решение {(mind != null ? mind.LastDecision.ToString() : "—")}, приказ {(w.HasCommand ? w.Command.Kind.ToString() : "нет")}, во дворе {CampYard.Lives(w)}");
             }
 
             Look(yard.Fire + new Vector3(0f, 16f, -12f), yard.Fire + new Vector3(0f, 0f, -1f), "двор уникальности — сверху");

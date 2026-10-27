@@ -38,7 +38,7 @@ namespace Sinbinder.AOS
             if (killerWarrior != null)
             {
                 // Эмоции
-                EmotionSystem.Instance?.TriggerEmotion(killerWarrior, EmotionType.Joy, 0.3f);
+                using (Core.Cost.Of("death.emotion")) EmotionSystem.Instance?.TriggerEmotion(killerWarrior, EmotionType.Joy, 0.3f);
                 // Запись деяния "Убийство" для убийцы
                 killerWarrior.Reputation.Deeds.Add(new DeedRecord
                 {
@@ -70,10 +70,11 @@ namespace Sinbinder.AOS
                     }
                 }
                 // Обновляем титул убийцы
-                TitleManager.UpdateTitle(killerWarrior);
+                using (Core.Cost.Of("death.title")) TitleManager.UpdateTitle(killerWarrior);
             }
 
             // Реакция союзников на смерть
+            using var witnesses = Core.Cost.Of("death.witnesses");
             var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
@@ -165,7 +166,10 @@ namespace Sinbinder.AOS
                     commander, "AllyDisobeyed", warrior.Id, EmotionType.Anger, 0.5f);
             }
 
-            Debug.Log($"[AOS] ОТКАЗ: {PhraseGenerator.LogLine(warrior, context, decision)}");
+            // Строка лога — разработчику (четвёртая ступень): стек вызовов на каждую
+            // запись дорог, а на поле в сотни воинов отказов и своеволий — десятки в секунду.
+            if (Core.Transparency.Shows(Core.Clarity.Trace))
+                Debug.Log($"[AOS] ОТКАЗ: {PhraseGenerator.LogLine(warrior, context, decision)}");
             OnRefusal?.Invoke(warrior, decision, context);
         }
 
@@ -182,10 +186,16 @@ namespace Sinbinder.AOS
         public void OnSelfWilled(Warrior warrior, Decision decision, DecisionContext context)
         {
             if (warrior == null) return;
-            if (Moment.Worth(decision, context) == Notice.None) return;
+            Notice worth;
+            using (Core.Cost.Of("self.worth")) worth = Moment.Worth(decision, context);
+            if (worth == Notice.None) return;
 
-            Debug.Log($"[AOS] САМ: {PhraseGenerator.LogLine(warrior, context, decision)}");
-            OnSelfWill?.Invoke(warrior, decision, context);
+            if (Core.Transparency.Shows(Core.Clarity.Trace))
+                Debug.Log($"[AOS] САМ: {PhraseGenerator.LogLine(warrior, context, decision)}");
+            if (OnSelfWill == null) return;
+            foreach (var d in OnSelfWill.GetInvocationList())
+                using (Core.Cost.Of(Core.Cost.On ? "self>" + d.Method.DeclaringType?.Name : null))
+                    ((System.Action<Warrior, Decision, DecisionContext>)d)(warrior, decision, context);
         }
 
         public void OnBetrayal(Warrior traitor, Warrior betrayedCommander)
@@ -198,7 +208,6 @@ namespace Sinbinder.AOS
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Anger, 0.8f);
             EmotionSystem.Instance?.TriggerEmotion(betrayedCommander, EmotionType.Sadness, 0.5f);
             MemoryProcessor.Instance?.CreateMemory(betrayedCommander, "AllyBetrayedMe", traitor.Id, EmotionType.Anger, 1.0f);
-
             var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {
@@ -229,7 +238,6 @@ namespace Sinbinder.AOS
             if (CombatManager.Instance != null)
                 Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()
                       ?.ResetAllBattleDialogues();
-
             var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
             foreach (var w in allWarriors)
             {

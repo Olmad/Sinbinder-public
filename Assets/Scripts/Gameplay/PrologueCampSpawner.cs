@@ -527,7 +527,16 @@ namespace Sinbinder.Gameplay
         /// снаряжение, ноги, значок, — воин настоящий, а не кукла.
         /// </summary>
         public Warrior Forge(SquadRoster.Member member, Vector3 at)
-            => SpawnMember(member, at, transform.position);
+        {
+            var warrior = SpawnMember(member, at, transform.position);
+
+            // Сцена уже настроена (AOSSceneSetup — в своём Start): поздно рождённого
+            // движок решений не подхватит сам, как не подхватил бы вторую волну
+            // охотников. Без этого созданные стояли столбом — решения «—» (27.10).
+            var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
+            if (warrior != null && setup != null) setup.SetupWarrior(warrior.gameObject);
+            return warrior;
+        }
 
         /// <summary>
         /// Вернувшиеся с вылазки входят в склеп (docs/37-DEMO.md §0, часть 6):

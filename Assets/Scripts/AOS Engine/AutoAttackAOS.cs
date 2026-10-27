@@ -31,6 +31,13 @@ namespace Sinbinder.AOS
             _wrapper = GetComponent<AOSWarriorWrapper>();
             _presenter = GetComponent<RefusalPresenter>();
             _self = GetComponent<Gameplay.Damageable>();
+
+            // Свой такт у каждого: все думали в один и тот же кадр раз в секунду,
+            // и на поле в 400 этот кадр стоил секунду и больше (замер 27.10). Сдвиг —
+            // по имени объекта, без жребия: те же воины думают в те же доли секунды.
+            int stamp = 0;
+            foreach (char c in gameObject.name) stamp = (stamp * 31 + c) & 0x7fffffff;
+            _lastDecisionTime = Time.time - (stamp % 1000) / 1000f * _decisionInterval;
         }
 
         void Update()
@@ -45,7 +52,8 @@ namespace Sinbinder.AOS
             if (Time.time - _lastDecisionTime < _decisionInterval) return;
             _lastDecisionTime = Time.time;
 
-            var action = _wrapper.Decide();
+            ActionType action;
+            using (Core.Cost.Of("decide")) action = _wrapper.Decide();
 
             // Отказ исполняется не сразу. Без этой задержки значок
             // намерения появляется и тонет в бою: игрок физически
@@ -53,7 +61,7 @@ namespace Sinbinder.AOS
             if (_wrapper.LastDecisionDetail.RefusedCommand && _refusalPause > 0f)
                 StartCoroutine(ExecuteAfterBeat(action));
             else
-                _wrapper.Execute(action);
+                using (Core.Cost.Of("execute")) _wrapper.Execute(action);
         }
 
         private IEnumerator ExecuteAfterBeat(ActionType action)

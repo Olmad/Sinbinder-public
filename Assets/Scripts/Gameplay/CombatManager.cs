@@ -82,10 +82,14 @@ namespace Sinbinder.Gameplay
 
         public void OnUnitKilled(Damageable killed, GameObject killer)
         {
+            using var cost = Core.Cost.Of("death");
             UnregisterUnit(killed);
             if (killed.Warrior != null)
                 CreateLootOnField(killed);
-            OnAnyDeath?.Invoke(killed, killer);
+            if (OnAnyDeath != null)
+                foreach (var d in OnAnyDeath.GetInvocationList())
+                    using (Core.Cost.Of(Core.Cost.On ? "death>" + d.Method.DeclaringType?.Name : null))
+                        ((System.Action<Damageable, GameObject>)d)(killed, killer);
             CheckBattleEnd();
         }
 
