@@ -21,7 +21,29 @@ namespace Sinbinder.Utilets
             BuildTug(4);
         }
 
-        public static void BuildTugScenesBatch() { BuildTugScenes(); BuildField(); }
+        public static void BuildTugScenesBatch() { BuildTugScenes(); BuildField(); BuildMapEditor(); }
+
+        /// <summary>
+        /// Сцена редактора карт (<see cref="MapEditor"/>; автор, 27.10): земля, свет, камера сверху,
+        /// ни менеджеров боя, ни Греховода — только правка описания карты.
+        /// </summary>
+        [MenuItem("Sinbinder/Нагрузка/Собрать редактор карт")]
+        public static void BuildMapEditor()
+        {
+            var scene = NewScene();
+            Atmosphere(warm: false);
+            Ground("Поле", 40f, AssetDatabase.IsValidFolder("Assets/Textures/Ground077") ? "Ground077" : "Ground048");
+            Look();
+            CameraRig(new Vector3(0f, 70f, -25f), new Vector3(72f, 0f, 0f), movable: false);
+            new GameObject("Редактор карт").AddComponent<MapEditor>();
+
+            if (!AssetDatabase.IsValidFolder(TugDir)) AssetDatabase.CreateFolder("Assets/Scenes", "Tug");
+            string path = $"{TugDir}/MapEditor.unity";
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, path);
+            RegisterInBuildSettings(path);
+            Debug.Log($"[НАГРУЗКА] Собрана: {path}");
+        }
 
         /// <summary>
         /// Сцена «Поле» — пустая основа, в которой карта из файла собирается в игре

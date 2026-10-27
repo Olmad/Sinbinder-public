@@ -50,7 +50,7 @@ namespace Sinbinder.Gameplay
                 Place("Throne", crypt, at + rot * new Vector3(0f, 0f, -2f), c.Yaw, 1f);
             }
 
-            foreach (var l in map.Locations) Mark(root, Loc.F("Подлокация — {0}", l.Name), new Vector3(l.X, 0f, l.Z));
+            foreach (var l in map.Locations) Mark(root, Loc.F("Подлокация — {0}", Loc.T(l.Name)), new Vector3(l.X, 0f, l.Z));
             foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), new Vector3(s.X, 0f, s.Z));
             foreach (var s in map.Events) Mark(root, Loc.F("Событие — {0}", s.Kind), new Vector3(s.X, 0f, s.Z));
 

@@ -31,3 +31,15 @@ MonoBehaviour:
   - SceneName: Crypt_Test
     DisplayName: Crypt_Test
     Tag: Crypt
+  - SceneName: Tug_2
+    DisplayName: Tug_2
+    Tag: Tug_2
+  - SceneName: Tug_4
+    DisplayName: Tug_4
+    Tag: Tug_4
+  - SceneName: Field
+    DisplayName: Field
+    Tag: Field
+  - SceneName: MapEditor
+    DisplayName: MapEditor
+    Tag: MapEditor

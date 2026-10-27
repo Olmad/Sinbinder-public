@@ -65,6 +65,8 @@ namespace Sinbinder.UI
             _shown = this;
             _open = true;
             _graphics = false;
+            _maps = false;
+            _lobby = false;
             if (_panel != null) _panel.SetActive(true);
             GamePauseController.Instance?.Pause();
             Draw();
@@ -87,6 +89,8 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_graphics) { DrawGraphics(); return; }
+            if (_maps) { DrawMaps(); return; }
+            if (_lobby) { DrawLobby(); return; }
 
             if (_title != null)
                 _title.text = Commitment.On
@@ -187,8 +191,8 @@ namespace Sinbinder.UI
 
             // Поля «Перетягивания» — прогуляться одному (автор, 27.10). Пока здесь, до меню
             // карт из папки (28-ORDERS): там они станут первыми двумя картами списка.
-            Add(ref y, Loc.T("Поле на двоих"), Loc.T("прогулка; B — выпустить армии"), () => Field("Tug_2"));
-            Add(ref y, Loc.T("Поле на четверых"), Loc.T("прогулка; B — выпустить армии"), () => Field("Tug_4"));
+            Add(ref y, Loc.T("Карты «Перетягивания»"), Loc.T("выбрать карту, стороны — и на поле"), () => { _maps = true; Draw(); });
+            Add(ref y, Loc.T("Редактор карт"), Loc.T("новая карта или правка готовой"), () => { MapSession.Path = null; MapSession.Map = null; Field("MapEditor"); });
 
             y -= MenuRows.Height * 0.5f;
             Add(ref y, Loc.T("Выйти из игры"), Commitment.On
@@ -220,6 +224,72 @@ namespace Sinbinder.UI
         }
 
         private bool _graphics;
+        private bool _maps, _lobby;
+
+        /// <summary>
+        /// Страница карт «Перетягивания» (автор, 27.10: «меню, где отображаются карты в определённой
+        /// папке»): все карты из папки <see cref="MapData.Folder"/>; выбрал — лобби.
+        /// </summary>
+        private void DrawMaps()
+        {
+            if (_title != null) _title.text = Loc.T("Карты «Перетягивания»");
+
+            float y = 0f;
+            Add(ref y, Loc.T("Назад"), "", () => { _maps = false; Draw(); });
+            Add(ref y, Loc.T("Папка карт"), MapData.Folder, () => Application.OpenURL("file:///" + MapData.Folder.Replace('\\', '/')));
+            y -= MenuRows.Height * 0.5f;
+
+            foreach (var (path, map) in MapData.List())
+            {
+                var p = path; var m = map;
+                string who = string.IsNullOrEmpty(m.Author) ? "" : " · " + m.Author;
+                Add(ref y, Loc.T(m.Name), Loc.F("на {0}{1}", m.Players, who), () =>
+                {
+                    MapSession.Choose(p, m);
+                    _maps = false; _lobby = true;
+                    Draw();
+                });
+            }
+            Fit(y);
+        }
+
+        /// <summary>
+        /// Лобби, как в Warcraft III (автор, 27.10): по каждой стороне — игрок, ИИ (слабый, средний,
+        /// сильный) или пусто. ИИ пока только записывается в выбор — Греховод-ИИ придёт шагом 3 (54-TUG.md).
+        /// </summary>
+        private void DrawLobby()
+        {
+            var map = MapSession.Map;
+            if (_title != null) _title.text = map != null ? Loc.T(map.Name) : Loc.T("Лобби");
+
+            float y = 0f;
+            Add(ref y, Loc.T("Назад"), "", () => { _lobby = false; _maps = true; Draw(); });
+            y -= MenuRows.Height * 0.5f;
+
+            for (int i = 0; i < MapSession.Seats.Count; i++)
+            {
+                int k = i;
+                Add(ref y, Loc.F("Склеп {0}", i + 1), SeatName(MapSession.Seats[i]), () =>
+                {
+                    MapSession.Seats[k] = (MapSession.Seat)(((int)MapSession.Seats[k] + 1) % 5);
+                    Draw();
+                });
+            }
+
+            y -= MenuRows.Height * 0.5f;
+            Add(ref y, Loc.T("Начать"), Loc.T("на поле"), () => Field("Field"));
+            Add(ref y, Loc.T("Править в редакторе"), "", () => Field("MapEditor"));
+            Fit(y);
+        }
+
+        private static string SeatName(MapSession.Seat seat) => seat switch
+        {
+            MapSession.Seat.Player => Loc.T("игрок"),
+            MapSession.Seat.AiWeak => Loc.T("ИИ — слабый"),
+            MapSession.Seat.AiMedium => Loc.T("ИИ — средний"),
+            MapSession.Seat.AiStrong => Loc.T("ИИ — сильный"),
+            _ => Loc.T("пусто"),
+        };
 
         /// <summary>
         /// Страница «Графика»: каждый пункт отдельно, сразу в игру

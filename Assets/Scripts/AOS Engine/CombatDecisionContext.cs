@@ -102,8 +102,8 @@ namespace Sinbinder.AOS
             context.CommandVolume = command.IsSet ? 1f - command.Muffle : 1f;
             // Чей приказ и насколько воин верен именно ему (54-TUG.md); −1 — Греховод один, как в демо.
             context.CommandLord = command.Lord;
-            context.LordLoyalty = command.IsSet && warrior.Soul != null
-                ? Core.Allegiance.Of(warrior.Id, warrior.Soul.Loyalty, command.Lord) : -1f;
+            context.LordLoyalty = command.IsSet
+                ? Core.Allegiance.Of(warrior.Id, warrior.Loyalty, command.Lord) : -1f;
             context.CommandIsPatrol = command.Kind == CommandKind.Patrol;
             context.CommandIsAttackMove = command.Kind == CommandKind.AttackMove;
             context.CommandIntoFight = command.Kind == CommandKind.Attack
