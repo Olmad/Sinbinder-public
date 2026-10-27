@@ -520,6 +520,14 @@ namespace Sinbinder.Gameplay
             => SpawnMember(member, PlaceInCircle(index, total), transform.position);
 
         /// <summary>
+        /// Один воин по описанию — создатель полигона (<see cref="Crypt.WarriorForge"/>,
+        /// docs/53-GENERATOR.md §9). Тем же путём, что лагерь: душа, ремесло, тело,
+        /// снаряжение, ноги, значок, — воин настоящий, а не кукла.
+        /// </summary>
+        public Warrior Forge(SquadRoster.Member member, Vector3 at)
+            => SpawnMember(member, at, transform.position);
+
+        /// <summary>
         /// Вернувшиеся с вылазки входят в склеп (docs/37-DEMO.md §0, часть 6):
         /// встают рядом в ряд позади отряда, лицом в зал. До 10 октября они
         /// были только строкой эпилога — в склепе их не было, и после конца
