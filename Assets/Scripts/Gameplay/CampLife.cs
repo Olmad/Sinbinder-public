@@ -154,9 +154,9 @@ namespace Sinbinder.Gameplay
 
             if (!Chosen.TryGetValue(w, out var c)) return false;
 
-            var fire = Object.FindFirstObjectByType<CampOpening>();
+            var fire = Hearth();
             if (fire == null) return false;
-            var centre = fire.transform.position;
+            var centre = fire.position;
 
             switch (c.Spot)
             {
@@ -228,12 +228,25 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Огонь, вокруг которого живут: костёр лагеря (там, где идёт его открытие)
+        /// или двор полигона (<see cref="CampYard"/>, 27.10). Нет ни того ни другого —
+        /// лагерь не живёт.
+        /// </summary>
+        private static Transform Hearth()
+        {
+            var camp = Object.FindFirstObjectByType<CampOpening>();
+            if (camp != null) return camp.transform;
+            var yard = Object.FindFirstObjectByType<CampYard>();
+            return yard != null ? yard.transform : null;
+        }
+
         private static bool Alive(Warrior w)
         {
             if (!Enabled || w == null || w.IsDead) return false;
 
             // Лагерь — там, где идёт его открытие; сцена ведёт, пока она идёт.
-            if (Object.FindFirstObjectByType<CampOpening>() == null) return false;
+            if (Hearth() == null) return false;
             if (w.Team != Team.Player || w is SinbinderPlayer) return false;
             // Провожатого не ждём (автор, 21 октября: «лагерь оживает через
             // некоторое время, как игрок выходит»): лагерь живёт с первого
@@ -330,9 +343,9 @@ namespace Sinbinder.Gameplay
         private static bool Place(CampSpot spot, Warrior w, out Vector3 point)
         {
             point = default;
-            var fire = Object.FindFirstObjectByType<CampOpening>();
+            var fire = Hearth();
             if (fire == null) return false;
-            var c = fire.transform.position;
+            var c = fire.position;
 
             // У каждого своя палатка, а не одна точка на всех: до 26 сентября
             // «дремлющие в палатке» толпились в одном месте на склоне холма.

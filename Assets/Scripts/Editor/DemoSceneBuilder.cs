@@ -275,7 +275,8 @@ namespace Sinbinder.Utilets
         {
             var scene = NewScene();
             Atmosphere(warm: false);
-            Ground("Плиты", 3f, "PavingStones127");
+            // Пол шире прежних 30 м (27.10): позади отряда встал двор уникальности.
+            Ground("Плиты", 6f, "PavingStones127");
             Look();
             Managers();
 
@@ -338,6 +339,10 @@ namespace Sinbinder.Utilets
             var spawn = new GameObject("Появление Греховода");
             spawn.transform.position = new Vector3(-4f, 0f, -3f);
             spawn.AddComponent<Sinbinder.Crypt.TestChamberEntry>();
+
+            // Двор уникальности (автор, 27.10: «место проверки уникальности с интерактивными
+            // объектами»): созданные на N живут здесь, как в лагере.
+            UniquenessYard(new Vector3(0f, 0f, -20f));
 
             Save(scene, "Crypt_Test");
         }
@@ -1405,6 +1410,25 @@ namespace Sinbinder.Utilets
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+        }
+
+        /// <summary>
+        /// Двор полигона (docs/53-GENERATOR.md §9): костёр с двором (<see cref="Sinbinder.Gameplay.CampYard"/>),
+        /// три палатки за огнём, сундук и стол с картами по сторонам — те же места, куда
+        /// в лагере тянет душу (<see cref="Sinbinder.Gameplay.CampLife"/>). Дым, туман,
+        /// светлячки и полено на F ставят себя на этот костёр сами.
+        /// </summary>
+        private static void UniquenessYard(Vector3 c)
+        {
+            var fire = Campfire(c);
+            fire.AddComponent<Sinbinder.Gameplay.CampYard>();
+
+            Tent(c + new Vector3(-6f, 0f, -8f), 20f, false, "Палатка двора — запад", 1f, index: 0);
+            Tent(c + new Vector3(0f, 0f, -9.5f), 0f, false, "Палатка двора — середина", 1f, index: 1);
+            Tent(c + new Vector3(6f, 0f, -8f), -20f, false, "Палатка двора — восток", 1f, index: 2);
+
+            TrophyChestProp(c + new Vector3(6.5f, 0f, 1.5f), -90f);
+            CardTableProp(c + new Vector3(-6.5f, 0f, 1.5f));
         }
 
         private static GameObject Campfire(Vector3 position)
