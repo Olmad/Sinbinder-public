@@ -270,7 +270,7 @@ namespace Sinbinder.Gameplay
             if (t - _probeFrom < 4f) return;
 
             double ms = _probeFrames > 0 ? _probeSum / _probeFrames : 0;
-            string what = _kind < 0 ? Loc.T("всё включено") : Loc.F("без {0}", _kinds[_kind].Name);
+            string what = _kind < 0 ? Loc.T("всё включено") : Loc.F("без {0}", _kinds[_kind].FullName);
             Line(Loc.F("  проба: {0} — скрипты {1:F1} мс/кадр{2}", what, ms,
                        _was >= 0 ? Loc.F(" (−{0:F1})", _was - ms) : ""));
             _was = ms;

@@ -365,8 +365,26 @@ namespace Sinbinder.UI
             if (fire != null) { _prompt.text = fire.Prompt; return; }
             var weapon = WeaponPickup.Nearest();
             if (weapon != null) { _prompt.text = weapon.Prompt; return; }
+            var disc = HiddenRecord.Nearest();
+            if (disc != null) { _prompt.text = disc.Prompt; return; }
+            var music = RecordTarget();
+            if (music.gramophone != null) { _prompt.text = music.gramophone.Prompt; return; }
+            if (music.shelf != null) { _prompt.text = music.shelf.Prompt; return; }
             var thing = Inspectable.Nearest();
             _prompt.text = thing != null ? thing.Prompt : "";
+        }
+
+        /// <summary>
+        /// Граммофон или полка — кому F, если рядом оба: с пластинкой в руках — граммофону
+        /// (поставить; стоявшая перейдёт в руки), с пустыми руками — полке (взять).
+        /// Один из них — null.
+        /// </summary>
+        private static (Gramophone gramophone, RecordShelf shelf) RecordTarget()
+        {
+            var g = Gramophone.Nearest();
+            var s = RecordShelf.Nearest();
+            if (g != null && (!RecordHands.Empty || s == null)) return (g, null);
+            return s != null ? (null, s) : (g, null);
         }
 
         /// <summary>Нижний край строки F, когда над панелью выделенного пусто.</summary>
@@ -447,6 +465,13 @@ namespace Sinbinder.UI
             // Оружие со стойки у входа в шатёр (п. 23 отзыва 21.10).
             var weapon = WeaponPickup.Nearest();
             if (weapon != null) { weapon.Take(); return; }
+
+            // Пластинка прежде граммофона: она лежит рядом, и F ушло бы игле (37-DEMO §8).
+            var disc = HiddenRecord.Nearest();
+            if (disc != null) { disc.Take(); return; }
+            var music = RecordTarget();
+            if (music.gramophone != null) { music.gramophone.Use(); return; }
+            if (music.shelf != null) { music.shelf.Use(); return; }
 
             // Последним — вещь, которую рассматривают (дерево с топором, пешка).
             Inspectable.Nearest()?.Inspect();

@@ -242,6 +242,15 @@ namespace Sinbinder.Utilets
             // и плата. Плата и ведущий ждут, пока склеп встречает.
             new GameObject("Прибытие").AddComponent<CryptArrival>();
 
+            // Граммофон переехал с лагерем (37-DEMO §8.3): в склепе он есть всегда —
+            // единственная вещь «для души». На ящике у южной стены, в стороне от дела.
+            var corner = new GameObject("Угол с граммофоном").transform;
+            corner.position = new Vector3(-4.5f, 0f, -6f);
+            var stand = Prop("Crate", corner, corner.position, 15f, 0.6f);
+            Gramophone(corner, stand, corner.position, corner.position + new Vector3(0.9f, 0f, 0.3f), 200f);
+            RecordShelfProp(corner, corner.position + new Vector3(-1.3f, 0f, 0f), 90f);
+            // Скрытая пластинка в склепе одна — та же «Лунная соната»: нашли в шатре — её здесь нет.
+
             // Боя здесь больше нет: сцена 7 сценария вырезана вместе
             // со сценой 6. Склеп остался ради того единственного, ради чего
             // он в демо и был, — эпилога: игрок входит, и следом входит
@@ -2147,10 +2156,58 @@ namespace Sinbinder.Utilets
                              tent.eulerAngles.y + 20f, 0.6f);
             if (crate != null) crate.name = "Ящик";
 
+            // Граммофон на ящике, пластинка в конверте — у ящика на полу (37-DEMO §8;
+            // автор, 27.10: «скрытая пластинка рядом с граммофоном»). О себе молчат.
+            Gramophone(tent, crate, tent.TransformPoint(new Vector3(bedX - 0.05f, 0f, front - 0.75f)),
+                       tent.TransformPoint(new Vector3(bedX + 0.45f, 0f, front - 0.55f)), tent.eulerAngles.y + 200f);
+            RecordShelfProp(tent, tent.TransformPoint(new Vector3(bedX - 0.05f, 0f, front - 1.55f)), tent.eulerAngles.y + 90f);
+
             // Фонарь под коньком. С тенью: ткань держит свет внутри,
             // и палатка светится входом, а не стенами.
             Lantern(tent, new Vector3(0f, top - 0.80f, back + 1.9f),
                     range: 5.5f, intensity: 1.5f, shadows: true);
+        }
+
+        /// <summary>
+        /// Граммофон (<see cref="Sinbinder.Gameplay.Gramophone"/>) — на верх подставки, если
+        /// она есть, иначе на землю; рядом скрытая пластинка (<see cref="Sinbinder.Gameplay.HiddenRecord"/>).
+        /// </summary>
+        private static void Gramophone(Transform parent, GameObject stand, Vector3 at, Vector3 discAt, float yaw)
+        {
+            float top = at.y;
+            if (stand != null)
+                foreach (var r in stand.GetComponentsInChildren<Renderer>()) top = Mathf.Max(top, r.bounds.max.y);
+
+            var gramophone = Prop("Gramophone", parent, new Vector3(at.x, top, at.z), yaw, 0.75f);
+            if (gramophone != null)
+            {
+                gramophone.name = "Граммофон";
+                gramophone.AddComponent<Sinbinder.Gameplay.Gramophone>();
+            }
+
+            var disc = Prop("Record", parent, discAt, yaw + 25f);
+            if (disc != null)
+            {
+                disc.name = "Пластинка";
+                disc.AddComponent<Sinbinder.Gameplay.HiddenRecord>().Configure("Moonlight");
+            }
+        }
+
+        /// <summary>
+        /// Полка под пластинки (автор, 27.10): низкий ящик, на нём ребром стоят собранные
+        /// (<see cref="Sinbinder.Gameplay.RecordShelf"/> расставляет их сам, по коллекции).
+        /// </summary>
+        private static void RecordShelfProp(Transform parent, Vector3 at, float yaw)
+        {
+            var box = Prop("Crate", parent, at, yaw, 0.5f);
+            float top = at.y + 0.3f;
+            if (box != null) foreach (var r in box.GetComponentsInChildren<Renderer>()) top = Mathf.Max(top, r.bounds.max.y);
+
+            var shelf = new GameObject("Полка с пластинками");
+            shelf.transform.SetParent(parent, true);
+            shelf.transform.SetPositionAndRotation(new Vector3(at.x, top, at.z), Quaternion.Euler(0f, yaw, 0f));
+            shelf.AddComponent<Sinbinder.Gameplay.RecordShelf>();
+            Plate(shelf.transform, Sinbinder.Core.Loc.N("Пластинки"), 0.6f);
         }
 
         /// <summary>Постель: кожаная подстилка и свёрнутое в изголовье одеяло.</summary>

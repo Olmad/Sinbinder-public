@@ -147,6 +147,15 @@ namespace Sinbinder.Audio
         /// <summary>Музыка почти молчит, пока говорит Смерть (<see cref="DeathVoice"/>).</summary>
         public static bool Silenced { get; set; }
 
+        /// <summary>Играет граммофон (<see cref="Gameplay.Gramophone"/>) — тема сцены молчит.</summary>
+        public static bool Gramophone { get; set; }
+
+        /// <summary>Зазвучала запись темы (имя файла) — для пластинок (<see cref="Core.Records.Heard"/>).</summary>
+        public static event System.Action<string> Started;
+
+        /// <summary>Сцена сменила тему — граммофон поднимает иглу (37-DEMO §8.2: событие главнее).</summary>
+        public static event System.Action<Track> Switched;
+
         /// <summary>Как быстро музыка приседает и встаёт, долей громкости в секунду.</summary>
         private const float DuckSpeed = 1.5f;
 
@@ -262,6 +271,7 @@ namespace Sinbinder.Audio
         private void Switch(Track track, float fade)
         {
             Current = track;
+            Switched?.Invoke(track);
 
             // Звучащее — затихает.
             for (int i = 0; i < _decks.Length; i++)
@@ -302,6 +312,8 @@ namespace Sinbinder.Audio
             Aim(back, 1f, fade);
 
             Debug.Log($"[МУЗЫКА] {FileOf(track)}.");
+            Started?.Invoke(FileOf(track));
+            Core.Records.Heard(FileOf(track));
         }
 
         private void Aim(int deck, float to, float fade)
@@ -320,7 +332,7 @@ namespace Sinbinder.Audio
             // Говорит Смерть (пешка, DeathVoice) — музыка уходит совсем:
             // громкость ставится здесь каждый кадр, и чужая правка её не держала
             // (автор, 21.10: «пешка не заглушает музыку во время боя»).
-            float want = Silenced ? 0.03f : framed ? Duck : 1f;
+            float want = Silenced ? 0.03f : Gramophone ? 0f : framed ? Duck : 1f;
             _duck = Mathf.MoveTowards(_duck, want, DuckSpeed * dt);
 
             bool cueing = Time.unscaledTime < _cueUntil;
@@ -360,6 +372,8 @@ namespace Sinbinder.Audio
             deck.time = 0f;
             deck.Play();
             Debug.Log($"[МУЗЫКА] {files[_piece[i]]}.");
+            Started?.Invoke(files[_piece[i]]);
+            Core.Records.Heard(files[_piece[i]]);
         }
 
         /// <summary>

@@ -521,6 +521,11 @@ namespace Sinbinder.EditorTools
                 S("лагерь: Карган — вызов (клип)", RavenChallenge, RavenChallengeShot, 6f),
                 S("лагерь: Одноглазый Хорь — повязка", null, OneEyeShot, 3f),
 
+                // Пластинки (37-DEMO §8; автор, 27.10): скрытая «Лунная соната» у граммофона,
+                // F — играет, тема лагеря молчит; и сама луна в небе — кадр глазами.
+                S("шатёр: пластинка поднята, граммофон играет", RecordAndPlay, RecordPlaying, 6f),
+                S("небо: луна глазами Греховода", null, MoonShot, 3f),
+
                 // Примета Марги Копателя (28-ORDERS, 26.10): в свой час — на коленях
                 // у ямки на краю поляны. Кадр — портрет, пока копает.
                 S("лагерь: Марга копает у края", null, DiggerSeen, 90f),
@@ -613,6 +618,9 @@ namespace Sinbinder.EditorTools
                     UI.GearPanel.Dismiss();
                     return true;
                 }, 10f),
+
+                // Крышка — вверх, а не задняя стенка вниз (автор, 27.10). Кадр вблизи.
+                S("сундук Марги открыт — крышка поднята", null, ChestLidShot, 4f),
             });
 
             // Стык §93: «Мародёр» за клад ставит свою паузу, и экран сундука
@@ -2415,6 +2423,76 @@ namespace Sinbinder.EditorTools
                 if (CrowStep.Raven(w) && !w.IsDead) { _challenger = w; break; }
             if (_challenger != null && _challenger.TryGetComponent<WarriorAnimation>(out var body)) body.Challenge();
             _challengeSince = Time.realtimeSinceStartup;
+        }
+
+        /// <summary>
+        /// Открытый сундук Марги вблизи: край крышки, дальний от петли, должен быть выше
+        /// корпуса (крышка поднята), а не ниже (стенка откинута вниз).
+        /// </summary>
+        private static bool ChestLidShot()
+        {
+            var chest = Chest();
+            var lid = chest != null ? chest.transform.Find("Крышка") : null;
+            if (lid == null) { Write("  [КРЫШКА] нет сундука или крышки"); return true; }
+            float top = float.MinValue;
+            foreach (var r in lid.GetComponentsInChildren<Renderer>()) top = Mathf.Max(top, r.bounds.max.y);
+            float up = top - lid.position.y;
+            // Где крышка: поднятая на задней петле стоит над задней половиной (z < 0 в осях
+            // сундука; перед — +Z, там замок). Спереди — значит, откинулась не та сторона.
+            var b = new Bounds(lid.position, Vector3.zero);
+            foreach (var r in lid.GetComponentsInChildren<Renderer>()) b.Encapsulate(r.bounds);
+            float z = chest.transform.InverseTransformPoint(b.center).z;
+            Write($"  [КРЫШКА] верх над петлёй {up:F2} м, середина крышки по глубине {z:F2} — {(up > 0.3f && z < 0.05f ? "поднята сзади, как надо" : "НЕ ТАК")}");
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "сундук Марги — открыт, сбоку", chest.transform, chest.transform.right);
+            return true;
+        }
+
+        /// <summary>Поднять скрытую пластинку (если лежит) и поставить на граммофон.</summary>
+        private static void RecordAndPlay()
+        {
+            var disc = UnityEngine.Object.FindFirstObjectByType<HiddenRecord>();
+            if (disc != null) disc.Take();
+            var g = UnityEngine.Object.FindFirstObjectByType<Gramophone>();
+            if (g == null) { Write("  [ПЛАСТИНКИ] граммофона в лагере нет"); return; }
+
+            // В руках нет (собрана в прошлый прогон) — взять с полки, как игрок.
+            if (RecordHands.Empty) UnityEngine.Object.FindFirstObjectByType<RecordShelf>()?.Use();
+            string held = RecordHands.Empty ? "ничего" : RecordHands.Holding.Title;
+            g.Use();
+            var (found, total) = Core.Records.HiddenCount();
+            Write($"  [ПЛАСТИНКИ] собрано {Core.Records.Owned().Count}, золотых {found} из {total}; в руках было: {held}; играет: {Sinbinder.Audio.Music.Gramophone}");
+        }
+
+        private static bool RecordPlaying()
+        {
+            if (!Sinbinder.Audio.Music.Gramophone) return false;
+            var g = UnityEngine.Object.FindFirstObjectByType<Gramophone>();
+            g.Use();                                                  // снять в руки: прогону музыка ни к чему
+            bool inHand = !RecordHands.Empty;
+            RecordHands.Drop();                                       // и на полку
+            Write($"  [ПЛАСТИНКИ] граммофон играл, тема лагеря молчала; снята в руки: {inHand}; на полке: {RecordShelf.OnShelf().Count}");
+            return true;
+        }
+
+        /// <summary>Кадр луны: камера у глаз Греховода, смотрит на луну («Холодный свет»).</summary>
+        private static bool MoonShot()
+        {
+            var key = GameObject.Find("Холодный свет");
+            var cam = Camera.main;
+            if (key == null || cam == null || !SinbinderPlayer.Exists) { Write("  [ЛУНА] нечем снять"); return true; }
+            var rig = cam.GetComponent<RTS_Camera>();
+            if (rig != null) rig.enabled = false;
+            var was = (cam.transform.position, cam.transform.rotation, cam.fieldOfView);
+            var eye = SinbinderPlayer.Where + Vector3.up * 1.7f;
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(-key.transform.forward));
+            cam.fieldOfView = 60f;
+            bool moon = GameObject.Find("Луна") != null;
+            Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "луна глазами Греховода");
+            cam.transform.SetPositionAndRotation(was.position, was.rotation);
+            cam.fieldOfView = was.fieldOfView;
+            if (rig != null) rig.enabled = true;
+            Write(moon ? "  [ЛУНА] в небе; кадр снят" : "  [ЛУНА] нет в сцене");
+            return true;
         }
 
         /// <summary>Портрет Одноглазого Хоря — села ли повязка на глазницу (SinEyes.Patch).</summary>

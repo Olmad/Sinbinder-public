@@ -194,6 +194,11 @@ namespace Sinbinder.Crypt
                     Inventory.PlayerInventory.Instance?.AddGold(coin);
                     Log(Loc.F("Добычу ссыпали в ваш кошель: +{0}.", coin));
                 }
+
+                // Пластинка — награда вылазки песочницы (37-DEMO §8.4): тема по месту, не сила.
+                var record = Core.Records.FromMission(mission.Name);
+                if (record != null)
+                    Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
             }
 
             // Отряд вернулся — точка, к которой игрок захочет вернуться

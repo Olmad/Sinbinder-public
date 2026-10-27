@@ -45,19 +45,32 @@ namespace Sinbinder.Gameplay
 
         void Awake() => _warrior = GetComponent<Warrior>();
 
+        /// <summary>Как часто пересматривать, с кем сцеплен, секунды.</summary>
+        private const float Every = 0.1f;
+
+        private float _nextLook;
+
         void Update()
         {
             if (_warrior == null || _warrior.IsDead) { _engaged.Clear(); return; }
             if (CombatManager.Instance == null) return;
 
+            // Десять раз в секунду, а не каждый кадр: каждый сверялся со всеми врагами,
+            // и на поле в 400 это было 80 тысяч расстояний за кадр — 60 мс (проба 27.10).
+            // Шаг отхода за десятую секунды меньше дистанции удара: удар вслед не теряется.
+            if (Time.time < _nextLook) return;
+            _nextLook = Time.time + Every;
+
             _previous.Clear();
             _previous.AddRange(_engaged);
             _engaged.Clear();
 
+            var here = transform.position;
+            float reach = _range * _range;
             foreach (var dmg in CombatManager.Instance.GetEnemies(gameObject))
             {
                 if (dmg == null || dmg.IsDead) continue;
-                if (Vector3.Distance(transform.position, dmg.transform.position) <= _range)
+                if ((dmg.transform.position - here).sqrMagnitude <= reach)
                     _engaged.Add(dmg);
             }
 
@@ -82,8 +95,9 @@ namespace Sinbinder.Gameplay
             float damage = attack.AttackDamage * _freeStrikeMultiplier;
             self.TakeDamage(damage, enemy.gameObject);
 
-            Debug.Log($"[БОЙ] {_warrior.DisplayName} вышел из ближнего боя "
-                + $"и получил удар вслед от {enemy.name}.");
+            if (Core.Transparency.Shows(Core.Clarity.Trace))
+                Debug.Log($"[БОЙ] {_warrior.DisplayName} вышел из ближнего боя "
+                    + $"и получил удар вслед от {enemy.name}.");
         }
     }
 }
