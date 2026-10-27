@@ -1591,6 +1591,766 @@ msgstr "Everything, including internals — for the developer"
 msgid "Неизвестно"
 msgstr "Unknown"
 
+#: Core/WarriorGenerator.cs
+msgid "Бран"
+msgstr "Bran"
+
+#: Core/WarriorGenerator.cs
+msgid "Ольст"
+msgstr "Olst"
+
+#: Core/WarriorGenerator.cs
+msgid "Тихон"
+msgstr "Tikhon"
+
+#: Core/WarriorGenerator.cs
+msgid "Ратко"
+msgstr "Ratko"
+
+#: Core/WarriorGenerator.cs
+msgid "Сбыслав"
+msgstr "Sbyslav"
+
+#: Core/WarriorGenerator.cs
+msgid "Ивар"
+msgstr "Ivar"
+
+#: Core/WarriorGenerator.cs
+msgid "Мирош"
+msgstr "Mirosh"
+
+#: Core/WarriorGenerator.cs
+msgid "Гостята"
+msgstr "Gostyata"
+
+#: Core/WarriorGenerator.cs
+msgid "Ульв"
+msgstr "Ulv"
+
+#: Core/WarriorGenerator.cs
+msgid "Добрыня"
+msgstr "Dobrynya"
+
+#: Core/WarriorGenerator.cs
+msgid "Хотен"
+msgstr "Khoten"
+
+#: Core/WarriorGenerator.cs
+msgid "Свен"
+msgstr "Sven"
+
+#: Core/WarriorGenerator.cs
+msgid "Будимир"
+msgstr "Budimir"
+
+#: Core/WarriorGenerator.cs
+msgid "Кнут"
+msgstr "Knut"
+
+#: Core/WarriorGenerator.cs
+msgid "Ярош"
+msgstr "Yarosh"
+
+#: Core/WarriorGenerator.cs
+msgid "Нежата"
+msgstr "Nezhata"
+
+#: Core/WarriorGenerator.cs
+msgid "Торн"
+msgstr "Thorn"
+
+#: Core/WarriorGenerator.cs
+msgid "Вышата"
+msgstr "Vyshata"
+
+#: Core/WarriorGenerator.cs
+msgid "Ерш"
+msgstr "Yorsh"
+
+#: Core/WarriorGenerator.cs
+msgid "Олаф"
+msgstr "Olaf"
+
+#: Core/WarriorGenerator.cs
+msgid "Житко"
+msgstr "Zhitko"
+
+#: Core/WarriorGenerator.cs
+msgid "Ставр"
+msgstr "Stavr"
+
+#: Core/WarriorGenerator.cs
+msgid "Хёгни"
+msgstr "Högni"
+
+#: Core/WarriorGenerator.cs
+msgid "Путята"
+msgstr "Putyata"
+
+#: Core/WarriorGenerator.cs Gameplay/HunterSquadSpawner.cs
+msgid "Ульрих"
+msgstr "Ulrich"
+
+#: Core/WarriorGenerator.cs
+msgid "Конрад"
+msgstr "Konrad"
+
+#: Core/WarriorGenerator.cs
+msgid "Дитрих"
+msgstr "Dietrich"
+
+#: Core/WarriorGenerator.cs Gameplay/HunterSquadSpawner.cs
+msgid "Готфрид"
+msgstr "Gottfried"
+
+#: Core/WarriorGenerator.cs Gameplay/HunterSquadSpawner.cs
+msgid "Рупрехт"
+msgstr "Ruprecht"
+
+#: Core/WarriorGenerator.cs
+msgid "Вильгельм"
+msgstr "Wilhelm"
+
+#: Core/WarriorGenerator.cs
+msgid "Силок"
+msgstr "Snare"
+
+#: Core/WarriorGenerator.cs
+msgid "Ставит силки на краю лагеря и всегда что-нибудь приносит. Принесённое делит не со всеми."
+msgstr "Sets snares at the edge of camp and always brings something back. He doesn't share it with everyone."
+
+#: Core/WarriorGenerator.cs
+msgid "Заяц сегодня был, владыка. Был."
+msgstr "There was a hare today, my lord. There was."
+
+#: Core/WarriorGenerator.cs
+msgid "Силки на краю лагеря так и стоят."
+msgstr "The snares at the edge of camp are still set."
+
+#: Core/WarriorGenerator.cs
+msgid "Щипач"
+msgstr "Pickpocket"
+
+#: Core/WarriorGenerator.cs
+msgid "Шарит по чужим палаткам ночью. Говорит, что ищет своё."
+msgstr "Rummages through other tents at night. Says he's looking for his own things."
+
+#: Core/WarriorGenerator.cs
+msgid "Это не ваше, владыка? Тогда и не моё."
+msgstr "Not yours, my lord? Then not mine either."
+
+#: Core/WarriorGenerator.cs
+msgid "В палатках никто больше не шарит. Непривычно тихо."
+msgstr "No one rummages in the tents anymore. It's oddly quiet."
+
+#: Core/WarriorGenerator.cs
+msgid "Скопидом"
+msgstr "Hoarder"
+
+#: Core/WarriorGenerator.cs
+msgid "Копит всё, что блестит, в узелке под рубахой."
+msgstr "Keeps everything that glitters in a bundle under his shirt."
+
+#: Core/WarriorGenerator.cs
+msgid "Своё не отдам, владыка. А чужое — посмотрим."
+msgstr "I won't give up what's mine, my lord. As for the rest — we'll see."
+
+#: Core/WarriorGenerator.cs
+msgid "Узелок под рубахой так никто и не развязал."
+msgstr "No one ever untied the bundle under his shirt."
+
+#: Core/WarriorGenerator.cs
+msgid "Звездочёт"
+msgstr "Stargazer"
+
+#: Core/WarriorGenerator.cs
+msgid "Ночами стоит и смотрит на звёзды. По ним знает, куда идти — и куда не идти."
+msgstr "Stands at night watching the stars. They tell him where to go — and where not to."
+
+#: Core/WarriorGenerator.cs
+msgid "Звёзды сегодня против, владыка. Но вы ведь всё равно пойдёте."
+msgstr "The stars are against it tonight, my lord. But you'll go anyway."
+
+#: Core/WarriorGenerator.cs
+msgid "Звёзды на месте. Смотреть на них некому."
+msgstr "The stars are where they were. No one is left to watch them."
+
+#: Core/WarriorGenerator.cs
+msgid "Чистюля"
+msgstr "Spotless"
+
+#: Core/WarriorGenerator.cs
+msgid "Чистит оружие до блеска и никому не даёт его тронуть."
+msgstr "Polishes his weapon to a shine and lets no one touch it."
+
+#: Core/WarriorGenerator.cs
+msgid "Руки, владыка. Не трогайте клинок."
+msgstr "Hands off, my lord. Don't touch the blade."
+
+#: Core/WarriorGenerator.cs
+msgid "Его клинок так и блестит. Чистить его больше некому."
+msgstr "His blade still shines. No one is left to polish it."
+
+#: Core/WarriorGenerator.cs
+msgid "Кремень"
+msgstr "Flint"
+
+#: Core/WarriorGenerator.cs
+msgid "Каменотёс. Говорит мало, бьёт тяжело."
+msgstr "A stonecutter. Says little, hits hard."
+
+#: Core/WarriorGenerator.cs
+msgid "Камень не спорит, владыка. Я тоже."
+msgstr "Stone doesn't argue, my lord. Neither do I."
+
+#: Core/WarriorGenerator.cs
+msgid "Кремень раскололся."
+msgstr "The flint has cracked."
+
+#: Core/WarriorGenerator.cs
+msgid "Задира"
+msgstr "Brawler"
+
+#: Core/WarriorGenerator.cs
+msgid "Ищет, с кем подраться у огня. Находит всегда."
+msgstr "Looks for a fight by the fire. Always finds one."
+
+#: Core/WarriorGenerator.cs
+msgid "А вы, владыка, драться умеете? Нет? Жаль."
+msgstr "Can you fight, my lord? No? Pity."
+
+#: Core/WarriorGenerator.cs
+msgid "У огня тихо. Подраться не с кем."
+msgstr "It's quiet by the fire. No one to fight."
+
+#: Core/WarriorGenerator.cs
+msgid "Бешеный"
+msgstr "Mad Dog"
+
+#: Core/WarriorGenerator.cs
+msgid "Рубит пни и точит нож, пока другие спят. Злость надо куда-то девать."
+msgstr "Hacks at stumps and whets his knife while others sleep. The anger has to go somewhere."
+
+#: Core/WarriorGenerator.cs
+msgid "Кого бить, владыка? Только скажите — кого."
+msgstr "Who do I hit, my lord? Just tell me who."
+
+#: Core/WarriorGenerator.cs
+msgid "Пни на краю лагеря стоят целыми."
+msgstr "The stumps at the edge of camp stand whole."
+
+#: Core/WarriorGenerator.cs
+msgid "Глазастый"
+msgstr "Sharp-Eyed"
+
+#: Core/WarriorGenerator.cs
+msgid "Смотрит, кому что дали, и помнит, кому — больше."
+msgstr "Watches who got what, and remembers who got more."
+
+#: Core/WarriorGenerator.cs
+msgid "Другим вы давали, владыка. Я видел."
+msgstr "You gave to others, my lord. I saw."
+
+#: Core/WarriorGenerator.cs
+msgid "Никто больше не считает, кому что досталось."
+msgstr "No one counts who got what anymore."
+
+#: Core/WarriorGenerator.cs
+msgid "Певун"
+msgstr "Singer"
+
+#: Core/WarriorGenerator.cs
+msgid "Поёт у огня и тянет за собой всех, кто рядом."
+msgstr "Sings by the fire and pulls in everyone nearby."
+
+#: Core/WarriorGenerator.cs
+msgid "Споёте с нами, владыка? Нет? Тогда я за вас."
+msgstr "Will you sing with us, my lord? No? Then I'll sing for you."
+
+#: Core/WarriorGenerator.cs
+msgid "У огня никто не поёт."
+msgstr "No one sings by the fire."
+
+#: Core/WarriorGenerator.cs
+msgid "Сторож"
+msgstr "Watchman"
+
+#: Core/WarriorGenerator.cs
+msgid "Не отходит от котла. Говорит, что сторожит."
+msgstr "Never leaves the pot. Says he's guarding it."
+
+#: Core/WarriorGenerator.cs
+msgid "Похлёбка ещё не готова, владыка. Я проверяю."
+msgstr "The stew isn't ready yet, my lord. I'm checking."
+
+#: Core/WarriorGenerator.cs
+msgid "Котёл никто не сторожит."
+msgstr "No one guards the pot."
+
+#: Core/WarriorGenerator.cs
+msgid "Решето"
+msgstr "Sieve"
+
+#: Core/WarriorGenerator.cs
+msgid "Ест, хотя еда проваливается сквозь рёбра. Голод — не в желудке."
+msgstr "Eats though the food falls through his ribs. The hunger isn't in the stomach."
+
+#: Core/WarriorGenerator.cs
+msgid "Не смотрите, владыка. Я всё равно голоден."
+msgstr "Don't look, my lord. I'm hungry all the same."
+
+#: Core/WarriorGenerator.cs
+msgid "Его миска стоит у котла пустая."
+msgstr "His bowl sits empty by the pot."
+
+#: Core/WarriorGenerator.cs
+msgid "Голодный"
+msgstr "Hungry"
+
+#: Core/WarriorGenerator.cs
+msgid "Призрак, а всё голоден. Стоит у котла и смотрит."
+msgstr "A ghost, and still hungry. Stands by the pot and watches."
+
+#: Core/WarriorGenerator.cs
+msgid "Пахнет, владыка. Хоть запах мне оставьте."
+msgstr "It smells good, my lord. Leave me the smell at least."
+
+#: Core/WarriorGenerator.cs
+msgid "У котла больше никто не стоит."
+msgstr "No one stands by the pot anymore."
+
+#: Core/WarriorGenerator.cs
+msgid "Сонный"
+msgstr "Sleepy"
+
+#: Core/WarriorGenerator.cs
+msgid "Спит где придётся, днём и ночью. Просыпается не сразу."
+msgstr "Sleeps wherever he can, day and night. Wakes slowly."
+
+#: Core/WarriorGenerator.cs
+msgid "А? Уже? Я не спал, владыка."
+msgstr "Eh? Already? I wasn't asleep, my lord."
+
+#: Core/WarriorGenerator.cs
+msgid "Он спит. На этот раз — совсем."
+msgstr "He's asleep. For good this time."
+
+#: Core/WarriorGenerator.cs
+msgid "Лежебока"
+msgstr "Lazybones"
+
+#: Core/WarriorGenerator.cs
+msgid "Лежит, пока можно лежать, — а можно, по его словам, всегда."
+msgstr "Lies down whenever he can — and by his account, he always can."
+
+#: Core/WarriorGenerator.cs
+msgid "Успеется, владыка."
+msgstr "There's time, my lord."
+
+#: Core/WarriorGenerator.cs
+msgid "Лежебока лёг надолго."
+msgstr "Lazybones has lain down for a long while."
+
+#: Core/WarriorGenerator.cs
+msgid "Молельник"
+msgstr "Prayerful"
+
+#: Core/WarriorGenerator.cs
+msgid "Молится на краю лагеря на рассвете. Кому — не говорит."
+msgstr "Prays at the edge of camp at dawn. To whom, he won't say."
+
+#: Core/WarriorGenerator.cs
+msgid "Я помолюсь и за вас, владыка. Хоть вы и не просили."
+msgstr "I'll pray for you too, my lord. Though you didn't ask."
+
+#: Core/WarriorGenerator.cs
+msgid "На рассвете на краю лагеря никого."
+msgstr "At dawn there's no one at the edge of camp."
+
+#: Core/WarriorGenerator.cs
+msgid "Бывший"
+msgstr "Former"
+
+#: Core/WarriorGenerator.cs
+msgid "Был охотником Ордена. Вздрагивает от колокола и чистит доспех, которого у него больше нет."
+msgstr "He was a hunter of the Order. Flinches at the bell and polishes armor he no longer has."
+
+#: Core/WarriorGenerator.cs
+msgid "Я вас ловил, владыка. Теперь — вот."
+msgstr "I used to hunt you, my lord. And now — this."
+
+#: Core/WarriorGenerator.cs
+msgid "Колокол больше никого не пугает."
+msgstr "The bell frightens no one anymore."
+
+#: Core/WarriorGenerator.cs
+msgid "Колея"
+msgstr "Rut"
+
+#: Core/WarriorGenerator.cs
+msgid "Возил обозы, пока обоз не остановили. Всё ещё считает вёрсты."
+msgstr "Drove wagons until the convoy was stopped. Still counts the miles."
+
+#: Core/WarriorGenerator.cs
+msgid "До места далеко, владыка? Я посчитаю."
+msgstr "Is it far, my lord? I'll count."
+
+#: Core/WarriorGenerator.cs
+msgid "Вёрсты больше никто не считает."
+msgstr "No one counts the miles anymore."
+
+#: Core/WarriorGenerator.cs
+msgid "Следок"
+msgstr "Trailreader"
+
+#: Core/WarriorGenerator.cs
+msgid "Читает следы, как другие читают письма. Говорит, кто прошёл и когда."
+msgstr "Reads tracks the way others read letters. Says who passed and when."
+
+#: Core/WarriorGenerator.cs
+msgid "Тут прошли трое, владыка. Один хромал."
+msgstr "Three passed here, my lord. One was limping."
+
+#: Core/WarriorGenerator.cs
+msgid "Следы теперь читать некому."
+msgstr "No one is left to read the tracks."
+
+#: Core/WarriorGenerator.cs
+msgid "Пахарь"
+msgstr "Plowman"
+
+#: Core/WarriorGenerator.cs
+msgid "Ковыряет землю у палатки, будто собирается сеять. Привычка."
+msgstr "Turns the earth by his tent as if he meant to sow. Habit."
+
+#: Core/WarriorGenerator.cs
+msgid "Земля тут худая, владыка. Ничего не вырастет."
+msgstr "The soil's poor here, my lord. Nothing will grow."
+
+#: Core/WarriorGenerator.cs
+msgid "Земля у его палатки так и осталась вскопанной."
+msgstr "The earth by his tent stays dug."
+
+#: Core/WarriorGenerator.cs
+msgid "Тетива"
+msgstr "Bowstring"
+
+#: Core/WarriorGenerator.cs
+msgid "Перетягивает тетиву по десять раз на дню. Говорит, сыреет."
+msgstr "Restrings his bow ten times a day. Says it gets damp."
+
+#: Core/WarriorGenerator.cs
+msgid "Сыро, владыка. Тетива не любит сырость."
+msgstr "It's damp, my lord. A bowstring hates damp."
+
+#: Core/WarriorGenerator.cs
+msgid "Его лук висит с ослабленной тетивой."
+msgstr "His bow hangs with a slack string."
+
+#: Core/WarriorGenerator.cs
+msgid "Нюхач"
+msgstr "Sniffer"
+
+#: Core/WarriorGenerator.cs
+msgid "Нюхает всё, что найдёт, и говорит, на что это годится."
+msgstr "Sniffs everything he finds and tells you what it's good for."
+
+#: Core/WarriorGenerator.cs
+msgid "Это не пейте, владыка. Это — для врагов."
+msgstr "Don't drink that, my lord. That's for enemies."
+
+#: Core/WarriorGenerator.cs
+msgid "Его склянки стоят нетронутыми."
+msgstr "His vials stand untouched."
+
+#: Core/WarriorGenerator.cs
+msgid "Книжник"
+msgstr "Bookman"
+
+#: Core/WarriorGenerator.cs
+msgid "Бормочет над книгой без обложки. Страниц в ней всё меньше."
+msgstr "Mutters over a book without a cover. It has fewer pages every day."
+
+#: Core/WarriorGenerator.cs
+msgid "Не мешайте, владыка. Я почти вспомнил."
+msgstr "Don't interrupt, my lord. I almost remember."
+
+#: Core/WarriorGenerator.cs
+msgid "Книга лежит раскрытой на последней странице."
+msgstr "The book lies open at the last page."
+
+#: Core/WarriorGenerator.cs
+msgid "Постник"
+msgstr "Faster"
+
+#: Core/WarriorGenerator.cs
+msgid "Бывший послушник. Держит пост и после смерти — от своей доли отказывается."
+msgstr "A former novice. Keeps his fast even after death — refuses his share."
+
+#: Core/WarriorGenerator.cs
+msgid "Мне не надо, владыка. Отдайте голодным."
+msgstr "I don't need it, my lord. Give it to the hungry."
+
+#: Core/WarriorGenerator.cs
+msgid "Его доля так и лежит нетронутой."
+msgstr "His share lies untouched."
+
+#: Core/WarriorGenerator.cs
+msgid "Меняла"
+msgstr "Moneychanger"
+
+#: Core/WarriorGenerator.cs
+msgid "Меняет всё на всё и всегда остаётся в выгоде."
+msgstr "Trades anything for anything and always comes out ahead."
+
+#: Core/WarriorGenerator.cs
+msgid "Поменяемся, владыка? Вам понравится. Мне — больше."
+msgstr "Shall we trade, my lord? You'll like it. I'll like it more."
+
+#: Core/WarriorGenerator.cs
+msgid "Меняться больше не с кем."
+msgstr "No one left to trade with."
+
+#: Core/WarriorGenerator.cs
+msgid "Первый"
+msgstr "First"
+
+#: Core/WarriorGenerator.cs
+msgid "Всегда идёт первым — даже туда, куда не звали."
+msgstr "Always goes first — even where no one asked him."
+
+#: Core/WarriorGenerator.cs
+msgid "Я пойду первым, владыка. Как всегда."
+msgstr "I'll go first, my lord. As always."
+
+#: Core/WarriorGenerator.cs
+msgid "Первым теперь идёт кто-то другой."
+msgstr "Someone else goes first now."
+
+#: Core/WarriorGenerator.cs
+msgid "Кулак"
+msgstr "Fist"
+
+#: Core/WarriorGenerator.cs
+msgid "Решает споры кулаком. Споров у огня стало меньше."
+msgstr "Settles arguments with his fist. There are fewer arguments by the fire."
+
+#: Core/WarriorGenerator.cs
+msgid "Спорить будете, владыка? Нет? Вот и хорошо."
+msgstr "Going to argue, my lord? No? Good."
+
+#: Core/WarriorGenerator.cs
+msgid "У огня снова спорят."
+msgstr "They argue by the fire again."
+
+#: Core/WarriorGenerator.cs
+msgid "Соглядатай"
+msgstr "Eavesdropper"
+
+#: Core/WarriorGenerator.cs
+msgid "Подслушивает у палаток и пересказывает — с прибавкой."
+msgstr "Listens at tents and retells it — with extras."
+
+#: Core/WarriorGenerator.cs
+msgid "А про вас говорят, владыка… Нет, ничего."
+msgstr "They say things about you, my lord… No, nothing."
+
+#: Core/WarriorGenerator.cs
+msgid "У палаток больше никто не подслушивает."
+msgstr "No one listens at the tents anymore."
+
+#: Core/WarriorGenerator.cs
+msgid "Сват"
+msgstr "Matchmaker"
+
+#: Core/WarriorGenerator.cs
+msgid "Всех со всеми мирит и сводит у огня. Сам — один."
+msgstr "Makes peace between everyone and brings them together by the fire. He himself is alone."
+
+#: Core/WarriorGenerator.cs
+msgid "Вам бы тоже к огню, владыка. Одному тоскливо."
+msgstr "You should come to the fire too, my lord. It's dreary alone."
+
+#: Core/WarriorGenerator.cs
+msgid "У огня опять сидят порознь."
+msgstr "By the fire they sit apart again."
+
+#: Core/WarriorGenerator.cs
+msgid "Тихоход"
+msgstr "Laggard"
+
+#: Core/WarriorGenerator.cs
+msgid "Плывёт, а не ходит, и всегда приходит последним."
+msgstr "Drifts rather than walks, and always arrives last."
+
+#: Core/WarriorGenerator.cs
+msgid "Иду, владыка. Иду."
+msgstr "Coming, my lord. Coming."
+
+#: Core/WarriorGenerator.cs
+msgid "Последним теперь приходит кто-то другой."
+msgstr "Someone else arrives last now."
+
+#: Core/WarriorGenerator.cs Gameplay/SinbinderPlayer.cs UI/SelectedUnitPanelUI.cs
+msgid "Греховод"
+msgstr "Sinbinder"
+
+#: Core/WarriorGenerator.cs
+msgid "Ненависть"
+msgstr "Hatred"
+
+#: Core/WarriorGenerator.cs
+msgid "Уважение"
+msgstr "Respect"
+
+#: Core/WarriorGenerator.cs Crypt/TrialCatalog.cs UI/SelectedUnitPanelUI.cs
+msgid "Страх"
+msgstr "Fear"
+
+#: Core/WarriorGenerator.cs
+msgid "Обида"
+msgstr "Grudge"
+
+#: Core/WarriorGenerator.cs
+msgid "Служил Ордену. Его убил {0} — и душу собрали на том же поле."
+msgstr "He served the Order. {0} killed him — and his soul was gathered on that same field."
+
+#: Core/WarriorGenerator.cs
+msgid "Пришёл с Орденом жечь наш лагерь. {0} свалил его, и душу взяли, пока не остыла."
+msgstr "He came with the Order to burn our camp. {0} cut him down, and his soul was taken before it cooled."
+
+#: Core/WarriorGenerator.cs
+msgid "карты"
+msgstr "cards"
+
+#: Core/WarriorGenerator.cs
+msgid "Азарт"
+msgstr "Thrill"
+
+#: Core/WarriorGenerator.cs
+msgid "Отдал душу за карточный долг, ещё живым. Надеется отыграться."
+msgstr "Gave his soul away for a card debt while still alive. Hopes to win it back."
+
+#: Core/WarriorGenerator.cs
+msgid "Отдал душу за месть: {0} из Ордена должен умереть."
+msgstr "Gave his soul for revenge: {0} of the Order must die."
+
+#: Core/WarriorGenerator.cs
+msgid "сын"
+msgstr "son"
+
+#: Core/WarriorGenerator.cs
+msgid "Тоска"
+msgstr "Longing"
+
+#: Core/WarriorGenerator.cs
+msgid "Отдал душу за жизнь сына. Не знает, жив ли тот."
+msgstr "Gave his soul for his son's life. Doesn't know if the boy lives."
+
+#: Core/WarriorGenerator.cs
+msgid "сила"
+msgstr "strength"
+
+#: Core/WarriorGenerator.cs
+msgid "Гордость"
+msgstr "Pride"
+
+#: Core/WarriorGenerator.cs
+msgid "признание"
+msgstr "recognition"
+
+#: Core/WarriorGenerator.cs
+msgid "Отдал душу за силу — и хочет, чтобы все видели: не зря."
+msgstr "Gave his soul for strength — and wants everyone to see it wasn't for nothing."
+
+#: Core/WarriorGenerator.cs
+msgid "ладан"
+msgstr "incense"
+
+#: Core/WarriorGenerator.cs UI/SelectedUnitPanelUI.cs
+msgid "Память"
+msgstr "Memory"
+
+#: Core/WarriorGenerator.cs
+msgid "Его собрали давно — ещё до Ордена. Банку нашли в подвале сгоревшего монастыря; он помнит, как пахло ладаном."
+msgstr "He was gathered long ago — before the Order. The jar was found in the cellar of a burned monastery; he remembers the smell of incense."
+
+#: Core/WarriorGenerator.cs
+msgid "имя"
+msgstr "name"
+
+#: Core/WarriorGenerator.cs
+msgid "номер"
+msgstr "number"
+
+#: Core/WarriorGenerator.cs
+msgid "Банка пролежала в крипте дольше, чем он жил. Прежний хозяин звал его по номеру, а не по имени — он этого не простил."
+msgstr "The jar lay in a crypt longer than he ever lived. His former master called him by number, not by name — he never forgave it."
+
+#: Core/WarriorGenerator.cs
+msgid "теснота"
+msgstr "crowding"
+
+#: Core/WarriorGenerator.cs
+msgid "Его собрали в чуму, когда душ было больше, чем банок. Помнит, как делил банку с чужими."
+msgstr "He was gathered in the plague, when there were more souls than jars. He remembers sharing a jar with strangers."
+
+#: Core/WarriorGenerator.cs
+msgid "брошенная банка"
+msgstr "abandoned jar"
+
+#: Core/WarriorGenerator.cs
+msgid "Ожидание"
+msgstr "Waiting"
+
+#: Core/WarriorGenerator.cs
+msgid "прежний хозяин"
+msgstr "former master"
+
+#: Core/WarriorGenerator.cs
+msgid "Прежний хозяин бросил его банку, уходя. Он до сих пор ждёт, что за ним вернутся."
+msgstr "His former master left his jar behind. He still waits for someone to come back for him."
+
+#: Core/WarriorGenerator.cs
+msgid "Обоз завяз в колее, его придавило телегой; наши подоспели к последнему вздоху."
+msgstr "The convoy stuck in a rut and a cart crushed him; ours arrived for his last breath."
+
+#: Core/WarriorGenerator.cs
+msgid "Наши напали на обоз — он, возчик, не побежал. Душу взяли там же."
+msgstr "Ours struck the convoy — he, the carter, did not run. His soul was taken right there."
+
+#: Core/WarriorGenerator.cs
+msgid "Часовню жгли, он не вышел; наши вынули его душу из огня."
+msgstr "The chapel burned and he didn't come out; ours pulled his soul from the fire."
+
+#: Core/WarriorGenerator.cs
+msgid "Наши вошли в часовню, когда он умирал на коленях. Молитву он так и не дочитал."
+msgstr "Ours entered the chapel as he died on his knees. He never finished the prayer."
+
+#: Core/WarriorGenerator.cs
+msgid "В каменоломне его убили за долю — у наших на глазах. Душу взяли сразу."
+msgstr "He was killed in the quarry over a share — before our eyes. His soul was taken at once."
+
+#: Core/WarriorGenerator.cs
+msgid "Обвал в каменоломне случился при наших — его душу взяли из-под плиты."
+msgstr "The quarry collapsed while ours were there — his soul was taken from under a slab."
+
+#: Core/WarriorGenerator.cs
+msgid "обоз"
+msgstr "convoy"
+
+#: Core/WarriorGenerator.cs
+msgid "часовня"
+msgstr "chapel"
+
+#: Core/WarriorGenerator.cs
+msgid "каменоломня"
+msgstr "quarry"
+
+#: Core/WarriorGenerator.cs
+msgid "Последний час"
+msgstr "Last hour"
+
 #: Core/Soul/ShellChoice.cs
 msgid "Такого тела нет."
 msgstr "There is no such body."
@@ -1866,6 +2626,18 @@ msgstr "Inquisitor"
 #: Core/Soul/Trade.cs
 msgid "Ловчий"
 msgstr "Trapper"
+
+#: Core/Soul/Trade.cs
+msgid "Возчик"
+msgstr "Carter"
+
+#: Core/Soul/Trade.cs
+msgid "Послушник"
+msgstr "Novice"
+
+#: Core/Soul/Trade.cs
+msgid "Каменотёс"
+msgstr "Stonecutter"
 
 #: Crypt/Aftermath.cs
 msgid "не жалеет, что отпустили"
@@ -2419,10 +3191,6 @@ msgstr "Withhold pay"
 msgid "Добродетель"
 msgstr "Virtue"
 
-#: Crypt/TrialCatalog.cs UI/SelectedUnitPanelUI.cs
-msgid "Страх"
-msgstr "Fear"
-
 #: Crypt/TrialCatalog.cs
 msgid "Жадность — через долг"
 msgstr "Greed — through debt"
@@ -2470,102 +3238,6 @@ msgstr "The treasury doesn't hold that much. We'll have to go on owing."
 #: Crypt/UpgradeSocket.cs
 msgid "Отряду заплачено. Долгов за вами нет."
 msgstr "The squad has been paid. You owe nothing."
-
-#: Crypt/WarriorForge.cs
-msgid "Бран"
-msgstr "Bran"
-
-#: Crypt/WarriorForge.cs
-msgid "Ольст"
-msgstr "Olst"
-
-#: Crypt/WarriorForge.cs
-msgid "Тихон"
-msgstr "Tikhon"
-
-#: Crypt/WarriorForge.cs
-msgid "Ратко"
-msgstr "Ratko"
-
-#: Crypt/WarriorForge.cs
-msgid "Сбыслав"
-msgstr "Sbyslav"
-
-#: Crypt/WarriorForge.cs
-msgid "Ивар"
-msgstr "Ivar"
-
-#: Crypt/WarriorForge.cs
-msgid "Мирош"
-msgstr "Mirosh"
-
-#: Crypt/WarriorForge.cs
-msgid "Гостята"
-msgstr "Gostyata"
-
-#: Crypt/WarriorForge.cs
-msgid "Ульв"
-msgstr "Ulv"
-
-#: Crypt/WarriorForge.cs
-msgid "Добрыня"
-msgstr "Dobrynya"
-
-#: Crypt/WarriorForge.cs
-msgid "Хотен"
-msgstr "Khoten"
-
-#: Crypt/WarriorForge.cs
-msgid "Свен"
-msgstr "Sven"
-
-#: Crypt/WarriorForge.cs
-msgid "Будимир"
-msgstr "Budimir"
-
-#: Crypt/WarriorForge.cs
-msgid "Кнут"
-msgstr "Knut"
-
-#: Crypt/WarriorForge.cs
-msgid "Ярош"
-msgstr "Yarosh"
-
-#: Crypt/WarriorForge.cs
-msgid "Нежата"
-msgstr "Nezhata"
-
-#: Crypt/WarriorForge.cs
-msgid "Торн"
-msgstr "Thorn"
-
-#: Crypt/WarriorForge.cs
-msgid "Вышата"
-msgstr "Vyshata"
-
-#: Crypt/WarriorForge.cs
-msgid "Ерш"
-msgstr "Yorsh"
-
-#: Crypt/WarriorForge.cs
-msgid "Олаф"
-msgstr "Olaf"
-
-#: Crypt/WarriorForge.cs
-msgid "Житко"
-msgstr "Zhitko"
-
-#: Crypt/WarriorForge.cs
-msgid "Ставр"
-msgstr "Stavr"
-
-#: Crypt/WarriorForge.cs
-msgid "Хёгни"
-msgstr "Högni"
-
-#: Crypt/WarriorForge.cs
-msgid "Путята"
-msgstr "Putyata"
 
 #: Crypt/WarriorForge.cs
 msgid "Имя: {0}"
@@ -2640,6 +3312,22 @@ msgid "Встанет на площадке и будет жить, как в л
 msgstr "He will stand in the yard and live as in camp."
 
 #: Crypt/WarriorForge.cs
+msgid "Откуда душа: {0}"
+msgstr "Where the soul came from: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "Из этого генератор выводит всё остальное."
+msgstr "The generator derives everything else from this."
+
+#: Crypt/WarriorForge.cs
+msgid "Собрать генератором"
+msgstr "Build with the generator"
+
+#: Crypt/WarriorForge.cs
+msgid "Человек целиком: ремесло, грехи, примета, история."
+msgstr "A whole person: trade, sins, trait, story."
+
+#: Crypt/WarriorForge.cs
 msgid "Убрать созданных"
 msgstr "Remove the created"
 
@@ -2658,6 +3346,22 @@ msgstr "{0} or Esc."
 #: Crypt/WarriorForge.cs
 msgid "Младший"
 msgstr "the Younger"
+
+#: Crypt/WarriorForge.cs
+msgid "сделка — отдал душу сам"
+msgstr "pact — gave his soul himself"
+
+#: Crypt/WarriorForge.cs
+msgid "банка с полки — собран давно"
+msgstr "jar from the shelf — gathered long ago"
+
+#: Crypt/WarriorForge.cs
+msgid "вылазка — принесли с места"
+msgstr "sortie — brought from where he died"
+
+#: Crypt/WarriorForge.cs
+msgid "жатва — пал в бою, где были мы"
+msgstr "harvest — fell in a battle where we were"
 
 #: Crypt/WarriorForge.cs
 msgid "едва заметен"
@@ -5128,14 +5832,6 @@ msgid "Бертрам"
 msgstr "Bertram"
 
 #: Gameplay/HunterSquadSpawner.cs
-msgid "Ульрих"
-msgstr "Ulrich"
-
-#: Gameplay/HunterSquadSpawner.cs
-msgid "Готфрид"
-msgstr "Gottfried"
-
-#: Gameplay/HunterSquadSpawner.cs
 msgid "Кунрад"
 msgstr "Kunrad"
 
@@ -5154,10 +5850,6 @@ msgstr "Lothar"
 #: Gameplay/HunterSquadSpawner.cs
 msgid "Эберхард"
 msgstr "Eberhard"
-
-#: Gameplay/HunterSquadSpawner.cs
-msgid "Рупрехт"
-msgstr "Ruprecht"
 
 #: Gameplay/HunterSquadSpawner.cs
 msgid "Хаген"
@@ -6074,10 +6766,6 @@ msgstr "\n\nThe commitment is fulfilled: this game is no more."
 #: Gameplay/SinbinderPlayer.cs
 msgid "\n\nИгра окончена."
 msgstr "\n\nGame over."
-
-#: Gameplay/SinbinderPlayer.cs UI/SelectedUnitPanelUI.cs
-msgid "Греховод"
-msgstr "Sinbinder"
 
 #: Gameplay/SoulHarvester.cs
 msgid "Все банки полны. Поставьте душу на полку или оставьте эту."
@@ -7502,10 +8190,6 @@ msgstr "tired"
 #: UI/SelectedUnitPanelUI.cs
 msgid "тише, чем его душа"
 msgstr "quieter than his soul"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "Память"
-msgstr "Memory"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "Верность"
