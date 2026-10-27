@@ -484,6 +484,8 @@ namespace Sinbinder.Gameplay
 
         private static MemorySeed Memory(SquadRoster.Member member)
         {
+            if (member.Seed != null) return member.Seed;   // история сгенерированного
+
             foreach (var c in Squad)
                 if (c.Name == member.Name && c.Deed == Deed.Bridge)
                     return new MemorySeed

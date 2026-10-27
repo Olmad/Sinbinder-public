@@ -57,6 +57,12 @@ namespace Sinbinder.Gameplay
             /// а не свойство сцены, и переживает переход вместе с ней.</summary>
             public Core.Trade Trade;
 
+            /// <summary>
+            /// Память, пришедшая с ним: история сгенерированного (docs/53-GENERATOR.md §11 —
+            /// как умер и как душа попала к нам). Пусто — память по составу лагеря.
+            /// </summary>
+            public Core.MemorySeed Seed;
+
             /// <summary>Слава, пришедшая с ним. Не заработанный титул.</summary>
             public bool Legend;
 

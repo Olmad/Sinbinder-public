@@ -88,6 +88,30 @@ namespace Sinbinder.Gameplay
 
         private static readonly HashSet<string> Greeted = new();
 
+        /// <summary>
+        /// Приметы рождённых генератором (<see cref="Core.WarriorGenerator"/>): строки
+        /// уже сложены на языке игры. Девять ручных — в <see cref="Table"/>.
+        /// </summary>
+        private static readonly Dictionary<string, Lines> Born = new();
+
+        /// <summary>Примета сгенерированного: почему так зовут, первая фраза, гибель.</summary>
+        public static void Give(string name, string why, string first, string death)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            Born[name] = new Lines { Why = why, First = first, Death = death };
+        }
+
+        private static bool Find(Warrior w, out Lines l, out bool born)
+        {
+            l = default;
+            born = false;
+            if (w == null) return false;
+            var key = w.DisplayName ?? "";
+            if (Table.TryGetValue(key, out l)) return true;
+            born = Born.TryGetValue(key, out l);
+            return born;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Greeted.Clear();
 
@@ -96,11 +120,11 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Почему так зовут — строкой под именем; нет примет — пусто.</summary>
         public static string Why(Warrior w)
-            => w != null && Table.TryGetValue(w.DisplayName ?? "", out var l) ? Loc.T(l.Why) : "";
+            => Find(w, out var l, out bool born) && l.Why != null ? (born ? l.Why : Loc.T(l.Why)) : "";
 
         /// <summary>Строка о гибели; нет — пусто.</summary>
         public static string Death(Warrior w)
-            => w != null && Table.TryGetValue(w.DisplayName ?? "", out var l) && l.Death != null ? Loc.T(l.Death) : "";
+            => Find(w, out var l, out bool born) && l.Death != null ? (born ? l.Death : Loc.T(l.Death)) : "";
 
         /// <summary>
         /// Первый разговор с Греховодом — его фраза вместо приветствия, один раз
@@ -111,10 +135,10 @@ namespace Sinbinder.Gameplay
         public static string FirstLine(Warrior w)
         {
             if (w == null || w is SinbinderPlayer) return null;
-            if (!Table.TryGetValue(w.DisplayName ?? "", out var l) || l.First == null) return null;
+            if (!Find(w, out var l, out bool born) || l.First == null) return null;
             if (!Greeted.Add(w.DisplayName ?? "")) return null;
             Debug.Log($"[ПРИМЕТА] первая фраза {w.DisplayName}");
-            return Loc.T(l.First);
+            return born ? l.First : Loc.T(l.First);
         }
     }
 }
