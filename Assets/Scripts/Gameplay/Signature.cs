@@ -91,6 +91,9 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Greeted.Clear();
 
+        /// <summary>Новая игра: первые фразы — снова первые.</summary>
+        public static void Forget() => Greeted.Clear();
+
         /// <summary>Почему так зовут — строкой под именем; нет примет — пусто.</summary>
         public static string Why(Warrior w)
             => w != null && Table.TryGetValue(w.DisplayName ?? "", out var l) ? Loc.T(l.Why) : "";

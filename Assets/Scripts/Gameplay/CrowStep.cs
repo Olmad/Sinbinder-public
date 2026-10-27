@@ -120,6 +120,9 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Used = 0;
 
+        /// <summary>Новая игра — счёт перелётов с нуля.</summary>
+        public static void Forget() => Used = 0;
+
         /// <summary>Тот ли это, кому навык положен: Старый Ворон, по прозвищу.</summary>
         public static bool Raven(Warrior w)
             => w != null && w.DisplayName != null && w.DisplayName.Contains("Ворон") && !(w is SinbinderPlayer);

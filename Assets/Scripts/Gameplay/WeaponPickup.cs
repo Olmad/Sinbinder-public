@@ -32,6 +32,9 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Live.Clear(); _held = null; _worn.Clear(); Taken = ""; }
 
+        /// <summary>Новая игра: со стойки ничего не взято (Live — уже новой сцены, не трогаем).</summary>
+        public static void Forget() { _held = null; _worn.Clear(); Taken = ""; }
+
         /// <summary>Задать из сборщика сцены.</summary>
         public void Configure(string kind) => _kind = kind;
 

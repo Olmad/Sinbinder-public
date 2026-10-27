@@ -808,6 +808,9 @@ namespace Sinbinder.EditorTools
                   () => Scene("Prologue_Camp") && Sinbinder.UI.StartPanel.Waiting, 30f),
 
                 S("новая игра: лагерь встал заново, девять у костра", null, FreshCamp, 40f),
+
+                // Автор, 26.10: «если начать сначала — всё ломается: голоса, диалоги, предметы».
+                S("новая игра: прошлое забыто — мешок, стойка, звук, первые фразы", null, ForgotPast, 5f),
             });
 
             // Короткий прогон — только лагерь, до тревоги шара (автор, 22 октября:
@@ -959,6 +962,29 @@ namespace Sinbinder.EditorTools
         /// не стоит, конец игры снят, у костра девять — столько же, сколько
         /// в первый раз. Меньше — значит отряд прошлой игры пережил новую.
         /// </summary>
+        /// <summary>
+        /// Прошлая партия не пережила новую: мешок и кошель пусты, со стойки ничего
+        /// не взято, музыка не заглушена, звук не прибран, лагерь живёт, первые фразы — снова
+        /// первые. Что осталось — строкой, и шаг стоит (ЗАСТРЯЛО).
+        /// </summary>
+        private static bool _forgotTold;
+
+        private static bool ForgotPast()
+        {
+            var left = new List<string>();
+            var bag = Sinbinder.Inventory.PlayerInventory.Instance;
+            if (bag != null && bag.GetAllItems().Count > 0) left.Add("в мешке " + bag.GetAllItems().Count);
+            if (bag != null && bag.Gold > 0) left.Add("в кошеле " + bag.Gold);
+            if (!string.IsNullOrEmpty(WeaponPickup.Taken)) left.Add("со стойки взято " + WeaponPickup.Taken);
+            if (Sinbinder.Audio.Music.Silenced) left.Add("музыка заглушена");
+            if (AudioListener.volume < 0.99f) left.Add("звук прибран до " + AudioListener.volume.ToString("F2"));
+            if (!CampLife.Enabled) left.Add("лагерь не живёт");
+            if (RatBanner.Named) left.Add("знамя уже названо");
+
+            if (left.Count > 0) { if (!_forgotTold) Write("  [НОВАЯ ИГРА] осталось от прошлой: " + string.Join("; ", left)); _forgotTold = true; return false; }
+            Write("  [НОВАЯ ИГРА] прошлое забыто: мешок, стойка, звук, лагерь, знамя");
+            return true;
+        }
         private static bool FreshCamp()
         {
             Sinbinder.UI.StartPanel.ChooseFresh();

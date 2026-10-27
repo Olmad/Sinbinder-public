@@ -123,6 +123,25 @@ namespace Sinbinder.Gameplay
             // Второй прогон демо начинался бы с той, что игрок выбрал
             // в первом, и «по умолчанию» означало бы разное.
             SquadOrders.Reset();
+
+            // Всё, что запомнила прошлая партия и что не забывалось при «Начать сначала»
+            // (автор, 26.10: «если начать сначала — всё ломается: голоса, диалоги, предметы»).
+            Inventory.PlayerInventory.Instance?.Forget();
+            WeaponPickup.Forget();
+            Signature.Forget();
+            RaidEvent.Forget();
+            CampLife.Forget();
+            CrowStep.Forget();
+            Provocation.Clear();
+            RatBanner.Reset();
+            SinbinderTrail.Forget();
+            UI.ViewHintUI.Forget();
+            UI.StaminaHintUI.Forget();
+            AOS.RumourManager.Clear();
+            Crypt.CryptHands.Forget();
+            Crypt.MissionBoard.Forget();
+            Audio.Music.Silenced = false;
+            AudioListener.volume = 1f;
         }
 
         void Start()

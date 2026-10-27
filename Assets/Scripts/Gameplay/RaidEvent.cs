@@ -103,6 +103,9 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => _staged = false;
 
+        /// <summary>Новая игра: набег ещё не поставлен.</summary>
+        public static void Forget() => _staged = false;
+
         /// <summary>
         /// Какую сцену открыть ради доли. Доля «набег» своей сцены не имеет —
         /// её открывает лагерь; остальные доли и есть сцены.

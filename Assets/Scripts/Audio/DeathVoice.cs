@@ -108,6 +108,10 @@ namespace Sinbinder.Audio
             _beat = StartCoroutine(Beat());
         }
 
+        // Сцену закрыли посреди голоса смерти («Начать сначала» в эпилоге): Close не придёт,
+        // и музыка молчала бы всю следующую игру (автор, 26.10: «голоса… ломаются»).
+        void OnDestroy() => Music.Silenced = false;
+
         private void Close()
         {
             if (_beat != null) StopCoroutine(_beat);

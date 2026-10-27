@@ -69,6 +69,20 @@ namespace Sinbinder.Inventory
 
         public List<InventoryItem> GetAllItems() => _items;
 
+        /// <summary>
+        /// Новая игра: мешок пуст, кошель пуст (автор, 26.10: «если начать сначала — всё ломается:
+        /// … предметы»). Мешок живёт между сценами, и без этого новая партия начиналась
+        /// с добром прошлой.
+        /// </summary>
+        public void Forget()
+        {
+            _items.Clear();
+            _storage.Clear();
+            _gold = 0;
+            OnInventoryChanged?.Invoke();
+            OnStorageChanged?.Invoke();
+        }
+
         /// <summary>Мешок из записи: всё, что было, — заменить тем, что записано.</summary>
         public void ReplaceItems(IEnumerable<InventoryItem> items)
         {

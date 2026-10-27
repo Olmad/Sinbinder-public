@@ -32,6 +32,9 @@ namespace Sinbinder.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Shown = false;
 
+        /// <summary>Новая игра: строка о виде сверху — снова.</summary>
+        public static void Forget() => Shown = false;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
