@@ -360,8 +360,18 @@ namespace Sinbinder.EditorTools
         /// Учебник (автор, 28.10: «учебник с гифками»): серии кадров одна за другой — подарок
         /// жадному (и обида завистливого рядом), приказ гордому одному; потом — конец проверки.
         /// </summary>
+        private static Warrior _proud;
+        private static float _selectedAt;
+
         private static void Reels(SinbinderPlayer hero)
         {
+            // Приказ — через секунду после выделения: на гифке сперва кольцо, потом шаг (автор, 28.10:
+            // «выделение у воинов плохо видно в учебнике»).
+            if (_proud != null && Time.time - _selectedAt > 1.2f)
+            {
+                _proud.IssueCommand(CommandKind.Move, _proud.transform.position + _proud.transform.forward * 6f);
+                _proud = null;
+            }
             if (Sinbinder.Utilets.Reel.Rolling) return;
 
             if (_phase == 1)
@@ -390,9 +400,13 @@ namespace Sinbinder.EditorTools
                 hero.transform.position = near;
                 var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
                 if (legs != null && legs.isOnNavMesh) legs.Warp(near);
-                proud.IssueCommand(CommandKind.Move, proud.transform.position + proud.transform.forward * 6f);
-                Sinbinder.Utilets.Reel.Aim(proud.transform.position + proud.transform.forward * 3f, 8f);
-                Sinbinder.Utilets.Reel.Start("приказ", 5f);
+                // Выделить, как игрок щелчком: кольцо цвета кости — ничей.
+                var ring = proud.GetComponentInChildren<SelectionComponent>();
+                if (ring != null) ring.Select();
+                _proud = proud;
+                _selectedAt = Time.time;
+                Sinbinder.Utilets.Reel.Aim(proud.transform.position + proud.transform.forward * 3f, 7f);
+                Sinbinder.Utilets.Reel.Start("приказ", 6.5f);
                 Line("учебник: приказ гордому — одному, первым");
                 return;
             }
