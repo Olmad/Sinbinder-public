@@ -59,9 +59,11 @@ namespace Sinbinder.Gameplay
                 string title = Loc.T(Titles[(m + i) % Titles.Length]);
                 var w = home.Champion(m * 101 + i * 13 + 7, at, 88f, 3, title);
                 if (w == null) continue;
+                // Дар — один на всех титулованных партии: у каждой стороны свой человек, но равный.
+                Gift.Give(w, (Gift.Kind)(m % Gift.Titled));
                 Titled.Add(w);
                 Camp(at, i);
-                Debug.Log($"[ТИТУЛ] сторона {i + 1}: {w.DisplayName} «{title}» у ({at.x:0}, {at.z:0}), до склепа {CampFocus.GroundDistance(at, c):0} м");
+                Debug.Log($"[ТИТУЛ] сторона {i + 1}: {w.DisplayName} «{title}», дар — {w.GetComponent<Gift>()?.Word} у ({at.x:0}, {at.z:0}), до склепа {CampFocus.GroundDistance(at, c):0} м");
             }
 
             // Легенда — в середине, если там не склеп.
@@ -73,11 +75,25 @@ namespace Sinbinder.Gameplay
                 Legend = home.Champion(m * 211 + 3, centre, 110f, 4, title);
                 if (Legend != null)
                 {
+                    Gift.Give(Legend, Gift.Kind.Legend);
                     Legend.transform.localScale *= 1.12f;
                     Camp(centre, 9);
                     Debug.Log($"[ТИТУЛ] легенда: {Legend.DisplayName} «{title}» в середине");
                 }
             }
+        }
+
+        void OnEnable() => Invoke(nameof(Announce), 20f);
+
+        /// <summary>Журнал: кто титулованные и чем сильны — игрок знает, за кем идти.</summary>
+        private void Announce()
+        {
+            var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
+            if (log == null) return;
+            if (Titled.Count > 0 && Titled[0] != null && Titled[0].TryGetComponent<Gift>(out var g))
+                log.Write(Loc.F("Говорят, у каждого склепа объявился свой {0}: {1}.", g.Word, g.What));
+            if (Legend != null)
+                log.Write(Loc.T("И ещё говорят: в середине земли сидит легенда. Кому она верна — к тому тянутся и другие."));
         }
 
         /// <summary>Свой костёр у титулованного: видно, где он, и за чем идти.</summary>

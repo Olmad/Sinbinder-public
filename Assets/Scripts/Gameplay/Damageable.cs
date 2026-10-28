@@ -82,6 +82,10 @@ namespace Sinbinder.Gameplay
 
             damage = ApplyPosition(damage, attacker);
 
+            // Дары титулованных и легенды («Перетягивание», Gift): кто бьёт и кто рядом с ударенным.
+            if (_warrior == null) _warrior = GetComponent<Warrior>();
+            damage = Gift.Modify(damage, attacker, _warrior);
+
             // Защита тела: от оболочки и от вещей в руках (CombatMath).
             // Воина ищем и здесь: самопроверка идёт без Awake, а в игре
             // тело бывает собрано раньше души.

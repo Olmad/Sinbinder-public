@@ -120,6 +120,9 @@ namespace Sinbinder.UI
                 // Ничей («Перетягивание») — первым делом, как он к тебе: словом, без числа (Favor).
                 if (warrior.Team == Team.Neutral && Lords.Active)
                     _text.text = Favor.Attitude(warrior) + "\n" + _text.text;
+                // Титулованный или легенда — дар словами (Gift).
+                if (Lords.Active && warrior.TryGetComponent<Gift>(out var gift))
+                    _text.text = Core.Loc.F("Дар: {0}.", gift.What) + "\n" + _text.text;
             }
 
             if (_frame != null)
