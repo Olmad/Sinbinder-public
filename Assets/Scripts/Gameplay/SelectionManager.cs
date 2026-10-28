@@ -554,7 +554,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static bool Ours(Warrior warrior)
             => warrior != null && !warrior.IsDead
-               && (warrior.Team == Team.Player || (Lords.Active && warrior.Team == Team.Neutral));
+               && (warrior.Team == Team.Player || (Lords.Active && warrior.Team == Team.Neutral))
+               // Чужой Греховод (ИИ) — не ничей воин: приказывать ему нельзя (автор, 28.10: выделил его и отдал приказ).
+               && RivalLord.LordOf(warrior) == null;
         // «Перетягивание» (54-TUG.md): ничьему тоже приказывают — слушается он по верности к Греховоду.
 
         /// <summary>

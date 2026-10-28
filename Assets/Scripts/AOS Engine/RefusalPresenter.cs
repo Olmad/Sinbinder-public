@@ -59,9 +59,11 @@ namespace Sinbinder.AOS
 
         /// <summary>Когда можно замедлить мир снова — общее на всех воинов.</summary>
         private static float _nextBeat;
+        private static float _nextVoiceAny;
+        private float _voiceAt;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => _nextBeat = 0f;
+        private static void Rearm() { _nextBeat = 0f; _nextVoiceAny = 0f; }
 
         void Awake() => _warrior = GetComponent<Warrior>();
 
@@ -102,10 +104,13 @@ namespace Sinbinder.AOS
 
         private IEnumerator Routine(Decision decision, DecisionContext context)
         {
-            if (_speak)
+            // Голос отказа — не на каждом решении: отказывающий отказывает каждый ход, и писк шёл без конца
+            // (автор, 28.10: «постоянные отказы вызывают бесконечный писк»). Тот же воин — раз в 6 с, все — раз в 1,5 с.
+            float at = Time.unscaledTime;
+            if (_speak && at >= _voiceAt && at >= _nextVoiceAny)
             {
                 var voice = GetComponent<Audio.VoiceGenerator>();
-                if (voice != null) voice.Speak();
+                if (voice != null) { voice.Speak(); _voiceAt = at + 6f; _nextVoiceAny = at + 1.5f; }
             }
 
             var icon = GetComponentInChildren<UI.DecisionIconUI>();

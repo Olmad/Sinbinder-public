@@ -92,6 +92,9 @@ namespace Sinbinder.Gameplay
             Favor.Begin(Favor.StartPurse);
             Remains.Forget();
             Lords.Player = Loc.F("Греховод стороны {0}", Mathf.Max(0, MapSession.Seats.IndexOf(MapSession.Seat.Player)) + 1);
+            // Голос Греховода — на поле всегда (Voice): приказ слышат лишь те, кого он видит (автор, 28.10:
+            // «воинами можно командовать откуда угодно»). В демо выключатель остаётся, как был.
+            Voice.Enabled = true;
 
             // Подлокации с жителями — ничьими (Residents). Каждая партия — новые люди (автор, 28.10:
             // «каждый воин должен генерироваться по новой каждую игру»): номер партии растёт с каждой
@@ -193,6 +196,16 @@ namespace Sinbinder.Gameplay
             WarriorLook.Build(go, ShellType.Skeleton, 1.9f, 1f, 1.2f);
             go.GetComponent<Damageable>()?.Initialize(RivalStrength, 0f);
             go.AddComponent<RivalLord>().Configure(lord, side, level);
+            // Отличить от своего Греховода (тот же скелет): над чужим — багровый огонь (автор, 28.10: «мой Греховод
+            // стал мне противником» — свой и чужой были неотличимы).
+            var mark = new GameObject("Знак чужого Греховода");
+            mark.transform.SetParent(go.transform, false);
+            mark.transform.localPosition = Vector3.up * 2.4f;
+            var glow = mark.AddComponent<Light>();
+            glow.type = LightType.Point;
+            glow.color = new Color(0.85f, 0.12f, 0.10f);
+            glow.range = 5f;
+            glow.intensity = 2.2f;
             Debug.Log($"[ПАРТИЯ] {lord}: Греховод-ИИ ({level})");
         }
 
@@ -200,7 +213,7 @@ namespace Sinbinder.Gameplay
         private const float RivalStrength = 300f;
 
         /// <summary>Ушли с поля — «Перетягивания» больше нет: приказы снова без имени, как в демо.</summary>
-        void OnDestroy() => Lords.Player = null;
+        void OnDestroy() { Lords.Player = null; Voice.Enabled = false; }
 
         /// <summary>Запас прочности трона и двери склепа. Дверь держит натиск, трон — партию.</summary>
         private const float ThroneStrength = 1500f;

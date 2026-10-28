@@ -223,6 +223,8 @@ namespace Sinbinder.Gameplay
         public static string Attitude(Warrior w)
         {
             if (w == null || !Lords.Active) return "";
+            // Греховод другой стороны — не ничей: его не перетянуть, он соперник.
+            if (RivalLord.LordOf(w) is { } rival) return Loc.F("Соперник — {0}", rival);
             float v = Allegiance.Of(w.Id, w.Loyalty, Lords.Player);
             if (v <= Hostility.Despised) return Loc.T("К вам: враждебен");
             if (v < 25f) return Loc.T("К вам: сторонится");
