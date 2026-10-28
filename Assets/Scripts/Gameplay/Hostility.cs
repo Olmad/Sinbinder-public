@@ -47,7 +47,7 @@ namespace Sinbinder.Gameplay
         public const float Hate = -25f;
         public const float Despised = 10f;
         public const float Follows = 35f;
-        public const float ObeyHabit = 2f;
+        public const float ObeyHabit = 4f;
         public const float StruckByLord = -20f;
         public const float SentByLord = -8f;
         public const float Grudge = 20f;

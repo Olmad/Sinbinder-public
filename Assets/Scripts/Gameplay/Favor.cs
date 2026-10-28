@@ -53,6 +53,7 @@ namespace Sinbinder.Gameplay
         private const float GiftReach = 2.5f;
         private const float Witness = 8f;
         private const float Saved = 12f;
+        private const float Acquainted = 4f;
 
         private static readonly Dictionary<string, int> Gifts = new();
         private static readonly Dictionary<string, float> GiftedAt = new();
@@ -87,6 +88,9 @@ namespace Sinbinder.Gameplay
         {
             if (w == null || w.Soul == null || string.IsNullOrEmpty(cmd.Lord)) return;
             float d = Hostility.ObeyHabit;
+            // Первое послушание новому Греховоду — знакомство: дальше он уже не чужой (баланс 28.10:
+            // ИИ за четыре минуты отдал 174 приказа и собрал одного верного).
+            if (!Allegiance.Knows(w.Id, cmd.Lord)) d += Acquainted;
             string line = null;
             Groups.TryGetValue((cmd.Lord, cmd.IssuedAt), out var group);
             float far = CampFocus.GroundDistance(w.transform.position, cmd.Point);

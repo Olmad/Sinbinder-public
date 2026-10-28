@@ -39,6 +39,10 @@ namespace Sinbinder.Core
         }
 
         /// <summary>Сдвинуть верность к Греховоду (поступком: заплатил, спас, бросил, ударил). 0…100.</summary>
+        /// <summary>Знает ли воин этого Греховода — была ли уже между ними хоть одна сделка.</summary>
+        public static bool Knows(string warriorId, string lord)
+            => !string.IsNullOrEmpty(lord) && !string.IsNullOrEmpty(warriorId) && Toward.ContainsKey((warriorId, lord));
+
         public static float Change(string warriorId, float soulLoyalty, string lord, float delta)
         {
             if (string.IsNullOrEmpty(lord) || string.IsNullOrEmpty(warriorId)) return -1f;

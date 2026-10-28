@@ -61,7 +61,8 @@ namespace Sinbinder.Gameplay
         }
 
         private float Beat => Level switch { MapSession.Seat.AiStrong => 3.5f, MapSession.Seat.AiMedium => 6f, _ => 10f };
-        private int Need => Level switch { MapSession.Seat.AiStrong => 9, MapSession.Seat.AiMedium => 6, _ => 4 };
+        // На поле на двоих — тридцать жителей: девять верных одному было не собрать (длинная партия 28.10).
+        private int Need => Level switch { MapSession.Seat.AiStrong => 6, MapSession.Seat.AiMedium => 5, _ => 3 };
         private const float Voice = 16f;
 
         void Update()
@@ -149,12 +150,14 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>Кому дарит: слабый — никому, средний — жадным, сильный — жадным, завистливым, похотливым.</summary>
+        /// <summary>Кому дарит: слабый — жадным, средний — ещё завистливым и похотливым, сильный — всем, кроме гордых.</summary>
         private bool Gifts(SoulData soul)
         {
-            if (soul == null || Level == MapSession.Seat.AiWeak) return false;
+            if (soul == null) return false;
             if (soul.Sin == SinType.Greed) return true;
-            return Level == MapSession.Seat.AiStrong && (soul.Sin == SinType.Envy || soul.Sin == SinType.Lust);
+            if (Level == MapSession.Seat.AiWeak) return false;
+            if (soul.Sin == SinType.Envy || soul.Sin == SinType.Lust) return true;
+            return Level == MapSession.Seat.AiStrong && soul.Sin != SinType.Pride;
         }
 
         // ---------------------------------------------------------- напасть
