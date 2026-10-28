@@ -494,6 +494,10 @@ namespace Sinbinder.Gameplay
                 foreach (var e in CombatManager.Instance.GetEnemies(f.gameObject))
                 {
                     if (e == null || e.IsDead || CampFocus.GroundDistance(e.transform.position, near.transform.position) > 8f) continue;
+                    // Не Греховода и не стены: Греховод сидит за дверью склепа — двенадцать человек целились в него
+                    // сквозь закрытую дверь и стояли (замер 28.10); по нему бьёт охота (Prey), по стенам — приступ.
+                    var who = e.GetComponent<Warrior>();
+                    if (who == null || Lords.Of(who) != null) continue;
                     float share = e.HP / Mathf.Max(1f, e.MaxHP);
                     if (share < low) { low = share; weakest = e; }
                 }
