@@ -98,12 +98,28 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            if (!Attacking && followers.Count >= Need) Attacking = true;
-            else if (Attacking && followers.Count < Need / 2) Attacking = false;
+            // Нападать — когда верных хватает, или с четвёртой минуты — если набралась хотя бы половина:
+            // ждать полного отряда, пока верные остывают от скуки (Idleness), — проиграть время.
+            bool ready = followers.Count >= Need || (Time.time > LateStart && followers.Count >= (Need + 1) / 2);
+            if (!Attacking && ready) Attacking = true;
+            else if (Attacking && followers.Count < (Need + 1) / 2 - 1) Attacking = false;
 
-            if (Attacking) Attack(match, followers);
-            else Recruit(followers);
+            if (Attacking) { Attack(match, followers); return; }
+
+            // Верные без приказа — в караул перед своим склепом: при деле не остывают, и склеп не пуст.
+            var gate = match != null && Side < match.Crypts.Count ? match.Crypts[Side] : null;
+            for (int i = 0; i < followers.Count; i++)
+            {
+                var f = followers[i];
+                if (f.HasCommand || gate == null) continue;
+                var post = gate.position + gate.forward * 9f + gate.right * ((i % 5 - 2) * 1.6f) + gate.forward * (i / 5 * 1.6f);
+                Order(f, CommandKind.Hold, post, null);
+            }
+            Recruit(followers);
         }
+
+        /// <summary>С какой секунды ИИ идёт и с половиной отряда.</summary>
+        private const float LateStart = 240f;
 
         private static Warrior Recent(Sturdy s)
             => s != null && s.LastBy != null && !s.LastBy.IsDead && Time.time - s.LastHitAt < 6f ? s.LastBy : null;
@@ -121,15 +137,25 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- собрать
 
+        /// <summary>Сколько раз звал каждого и кому уже дарил: упрямых не уговаривает вечно (длинная партия 28.10).</summary>
+        private readonly Dictionary<string, int> _asked = new();
+        private readonly HashSet<string> _gifted = new();
+        private const int Stubborn = 4;
+
+        /// <summary>Стоит ли звать: не верен ещё, не упрям — меньше четырёх зовов или уже знаком (слушался).</summary>
+        private bool Worth(Warrior w, List<Warrior> followers)
+            => w != null && !w.IsDead && !followers.Contains(w) && w != _body
+               && (!_asked.TryGetValue(w.Id, out var n) || n < Stubborn || Allegiance.Of(w.Id, w.Loyalty, Lord) > Allegiance.Of(w.Id, w.Loyalty, Lords.Player));
+
         private void Recruit(List<Warrior> followers)
         {
-            // Ближний очаг, где ещё есть не его люди.
+            // Ближний очаг, где ещё есть кого звать.
             Residents best = null;
             float bestD = float.MaxValue;
             foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
             {
                 bool someone = false;
-                foreach (var w in r.Folk) if (w != null && !w.IsDead && !followers.Contains(w)) { someone = true; break; }
+                foreach (var w in r.Folk) if (Worth(w, followers)) { someone = true; break; }
                 if (!someone) continue;
                 float d = CampFocus.GroundDistance(transform.position, r.transform.position);
                 if (d < bestD) { bestD = d; best = r; }
@@ -138,14 +164,21 @@ namespace Sinbinder.Gameplay
 
             if (bestD > 10f) { _legs?.CommandMove(best.transform.position); return; }
 
-            // У очага: по трое за раз — кого подарком, кого зовом за собой.
-            int asked = 0;
+            // У очага: по трое за раз — сперва знакомых (слушались — слушаются охотней), потом прочих.
+            var queue = new List<Warrior>();
             foreach (var w in best.Folk)
+                if (Worth(w, followers) && CampFocus.GroundDistance(transform.position, w.transform.position) <= Voice) queue.Add(w);
+            queue.Sort((a, b) => Allegiance.Of(b.Id, b.Loyalty, Lord).CompareTo(Allegiance.Of(a.Id, a.Loyalty, Lord)));
+
+            int asked = 0;
+            foreach (var w in queue)
             {
-                if (w == null || w.IsDead || followers.Contains(w)) continue;
-                if (CampFocus.GroundDistance(transform.position, w.transform.position) > Voice) continue;
-                if (Gifts(w.Soul)) Favor.Give(w, Lord);
-                Order(w, CommandKind.Move, transform.position + (w.transform.position - transform.position).normalized * 2.5f, null);
+                if (Gifts(w.Soul) && _gifted.Add(w.Id)) Favor.Give(w, Lord);
+                _asked.TryGetValue(w.Id, out var n);
+                _asked[w.Id] = n + 1;
+                // Унылому — не идти, а стоять: «всё безразлично» он скажет любому зову, а пост ему по душе.
+                if (w.Soul != null && w.Soul.Sin == SinType.Sloth) Order(w, CommandKind.Hold, w.transform.position, null);
+                else Order(w, CommandKind.Move, transform.position + (w.transform.position - transform.position).normalized * 2.5f, null);
                 if (++asked >= 3) break;
             }
         }

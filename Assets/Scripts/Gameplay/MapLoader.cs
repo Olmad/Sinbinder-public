@@ -119,6 +119,8 @@ namespace Sinbinder.Gameplay
             var trails = new System.Collections.Generic.List<Vector3>();
             foreach (var s in map.Trails) trails.Add(new Vector3(s.X, 0f, s.Z));
             gameObject.AddComponent<HunterWaves>().Begin(trails);
+            // Армия без дела остывает — копить её вечно нельзя (Idleness).
+            gameObject.AddComponent<Idleness>();
         }
 
         private TugMatch _match;

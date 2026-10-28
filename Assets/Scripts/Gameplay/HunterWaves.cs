@@ -54,13 +54,30 @@ namespace Sinbinder.Gameplay
                 _subscribed = CombatManager.Instance;
                 _subscribed.OnAnyDeath += OnDeath;
             }
-            if (TugMatch.Over || Time.time < Next) return;
+            if (TugMatch.Over) return;
+
+            // Великая охота (автор, 28.10: «третье — можно включить/выключить»): на 25-й минуте Орден
+            // выходит главной силой на всех; через три минуты партию решают уцелевшие (TugMatch.Decide).
+            if (MapSession.GreatHunt && !_great && Time.time >= GreatAt)
+            {
+                _great = true;
+                Release(great: true);
+                TugMatch.Instance?.DecideAt(Time.time + GreatHold);
+                return;
+            }
+            if (Time.time < Next) return;
             Release();
         }
 
-        /// <summary>Выпустить волну сейчас (по часам; прогон зовёт сразу).</summary>
-        public int Release()
+        public const float GreatAt = 1500f;
+        public const float GreatHold = 180f;
+        private bool _great;
+        private bool _greatNow;
+
+        /// <summary>Выпустить волну сейчас (по часам; прогон зовёт сразу). Великая — втрое больше и крепче.</summary>
+        public int Release(bool great = false)
         {
+            _greatNow = great;
             var match = TugMatch.Instance;
             Next = Time.time + Period;
             if (match == null || _trails.Count == 0) return 0;
@@ -79,11 +96,16 @@ namespace Sinbinder.Gameplay
 
                 var gate = crypt.position + crypt.forward * 10f;
                 var across = Vector3.Cross(Vector3.up, (gate - trail).normalized);
-                int count = 2 + Wave;
+                // К сильнейшему — больше (автор, 28.10): на одного за каждые четыре верных этой стороны.
+                // Копить армию в склепе выгодно лишь до поры.
+                int count = 2 + Wave + Loyal(side) / 4;
+                if (great) count *= 3;
                 for (int i = 0; i < count; i++)
-                    if (Hunter(trail + across * ((i - (count - 1) * 0.5f) * 1.6f), gate, side) != null) sent++;
+                    if (Hunter(trail + across * ((i % 12 - (Mathf.Min(count, 12) - 1) * 0.5f) * 1.6f) - (gate - trail).normalized * (i / 12) * 1.8f, gate, side) != null) sent++;
             }
-            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("С троп вышли охотники — волна {0}.", Wave));
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(great
+                ? Loc.T("Великая охота: Орден вышел главной силой на все склепы.")
+                : Loc.F("С троп вышли охотники — волна {0}.", Wave));
             Debug.Log($"[ПАРТИЯ] охотники, волна {Wave}: {sent}");
             return sent;
         }
@@ -105,12 +127,23 @@ namespace Sinbinder.Gameplay
 
             // Каждая волна крепче прежней: запас тела — на четверть больше за волну.
             var body = go.GetComponent<Damageable>();
-            if (body != null) body.Initialize(body.MaxHP * (1f + 0.25f * (Wave - 1)), 0f);
+            if (body != null) body.Initialize(body.MaxHP * (1f + 0.25f * (Wave - 1)) * (_greatNow ? 1.5f : 1f), 0f);
 
             go.AddComponent<HunterGoal>().Configure(HunterGoal.Aim.CampCentre, gate);
             go.AddComponent<HunterSiege>().Configure(side);
             if (_setup != null) _setup.SetupWarrior(go);
             return warrior;
+        }
+
+        /// <summary>Сколько верных у стороны: верней всех её Греховоду и хотя бы на «следует».</summary>
+        public static int Loyal(int side)
+        {
+            string lord = Loc.F("Греховод стороны {0}", side + 1);
+            int n = 0;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w != null && !w.IsDead && w.Team == Team.Neutral && Allegiance.Dearest(w.Id) == lord
+                    && Allegiance.Of(w.Id, w.Loyalty, lord) >= Hostility.Follows) n++;
+            return n;
         }
 
         /// <summary>Убит охотник — монеты Греховоду, чей человек убил.</summary>

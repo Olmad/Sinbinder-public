@@ -187,6 +187,9 @@ namespace Sinbinder.Core
         public static MapData Map { get; set; }
         public static List<Seat> Seats { get; } = new();
 
+        /// <summary>Великая охота на 25-й минуте — включается в лобби (автор, 28.10: «можно включить/выключить»).</summary>
+        public static bool GreatHunt { get; set; } = true;
+
         public static void Choose(string path, MapData map)
         {
             Path = path;

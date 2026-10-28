@@ -76,6 +76,31 @@ namespace Sinbinder.Gameplay
             Fall(s.Side, Loc.F("Трон склепа {0} разрушен.", s.Side + 1));
         }
 
+        private float _decideAt = -1f;
+
+        /// <summary>Великая охота вышла — в этот миг партию решат уцелевшие (Decide).</summary>
+        public void DecideAt(float at) => _decideAt = at;
+
+        /// <summary>
+        /// Конец по Великой охоте: из сторон с целым троном побеждает та, у кого больше верных;
+        /// поровну — у кого крепче трон.
+        /// </summary>
+        public void Decide()
+        {
+            if (Over) return;
+            int best = -1;
+            float bestScore = -1f;
+            for (int i = 0; i < _out.Count; i++)
+            {
+                if (_out[i]) continue;
+                var (_, throne) = PartsOf(i);
+                float score = HunterWaves.Loyal(i) * 10000f + (throne != null ? throne.HP : 0f);
+                if (score > bestScore) { bestScore = score; best = i; }
+            }
+            string why = Loc.T("Великая охота отхлынула. Уцелевшие склепы сочтены: у кого больше верных — тот и выстоял.");
+            End(best == _player, why);
+        }
+
         /// <summary>Через сколько секунд павший Греховод встаёт у своего трона.</summary>
         public const float RiseAfter = 60f;
 
@@ -109,6 +134,7 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            if (!Over && _decideAt > 0f && Time.time >= _decideAt) { Decide(); return; }
             if (_down.Count == 0 || Over) return;
             foreach (var kv in new List<KeyValuePair<int, float>>(_down))
                 if (Time.time >= kv.Value) Rise(kv.Key);

@@ -276,6 +276,11 @@ namespace Sinbinder.UI
                 });
             }
 
+            // Великая охота — включается здесь (автор, 28.10): на 25-й минуте Орден идёт на всех, и через три
+            // минуты партию решают уцелевшие. Выключена — партия идёт до последнего трона.
+            Add(ref y, Loc.T("Великая охота"), MapSession.GreatHunt ? Loc.T("на 25-й минуте — включена") : Loc.T("выключена: до последнего трона"),
+                () => { MapSession.GreatHunt = !MapSession.GreatHunt; Draw(); });
+
             y -= MenuRows.Height * 0.5f;
             Add(ref y, Loc.T("Начать"), Loc.T("на поле"), () => Field("Field"));
             Add(ref y, Loc.T("Править в редакторе"), "", () => Field("MapEditor"));

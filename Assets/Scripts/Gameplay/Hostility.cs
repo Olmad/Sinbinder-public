@@ -46,7 +46,9 @@ namespace Sinbinder.Gameplay
     {
         public const float Hate = -25f;
         public const float Despised = 10f;
-        public const float Follows = 35f;
+        // «Верен» — с середины: к незнакомцу верность теперь 30–68 (Allegiance.StrangerShare), и при 35
+        // верными становились после первого же послушания.
+        public const float Follows = 50f;
         public const float ObeyHabit = 4f;
         public const float StruckByLord = -20f;
         public const float SentByLord = -8f;

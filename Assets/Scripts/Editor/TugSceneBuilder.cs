@@ -546,7 +546,12 @@ namespace Sinbinder.EditorTools
                 }
                 int crypts = 0;
                 for (int i = 0; i < TugMatch.Instance.Crypts.Count; i++) if (!TugMatch.Instance.Out(i)) crypts++;
-                Line($"охотники, волна {HunterWaves.Instance?.Wave}: вышло {sent} (по 3 на {crypts} склепа), на поле {hunters}, идут на склеп {aimed} — {(sent == 3 * crypts && aimed == hunters ? "как надо" : "НЕ ТАК")}");
+                int want = 0;
+                for (int i = 0; i < TugMatch.Instance.Crypts.Count; i++) if (!TugMatch.Instance.Out(i)) want += 3 + HunterWaves.Loyal(i) / 4;
+                Line($"охотники, волна {HunterWaves.Instance?.Wave}: вышло {sent} (по 3 на {crypts} склепа и по одному на каждые 4 верных), на поле {hunters}, идут на склеп {aimed} — {(sent == want && aimed == hunters ? "как надо" : "НЕ ТАК")}");
+
+                // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
+                Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");
             }
 
             // Шаг 3: что делал ИИ, чего добилась осада, и конец партии — трон ИИ рушим: победа.

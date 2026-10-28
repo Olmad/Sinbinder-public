@@ -18,8 +18,11 @@ namespace Sinbinder.Core
     /// </summary>
     public static class Allegiance
     {
-        /// <summary>К незнакомому Греховоду — доля верности души: чужому верят меньше.</summary>
-        public const float StrangerShare = 0.45f;
+        /// <summary>
+        /// К незнакомому Греховоду — доля верности души: чужому верят меньше. Было 0,45 — и приказ чужого
+        /// проигрывал собственной воле воина почти всегда (длинная партия 28.10: 299 отказов из 305).
+        /// </summary>
+        public const float StrangerShare = 0.75f;
 
         private static readonly Dictionary<(string warrior, string lord), float> Toward = new();
 

@@ -40,6 +40,17 @@ namespace Sinbinder.Gameplay
             Purses[lord] = PurseOf(lord) + coins;
         }
 
+        /// <summary>Заплатить из кошеля Греховода; не хватает — ничего не отдано.</summary>
+        public static bool Spend(string lord, int coins)
+        {
+            if (string.IsNullOrEmpty(lord) || PurseOf(lord) < coins) return false;
+            Purses[lord] = PurseOf(lord) - coins;
+            return true;
+        }
+
+        /// <summary>Сдвинуть верность со строкой вслух (скука, плата — Idleness).</summary>
+        public static void Nudge(Warrior w, string lord, float delta, string line) => Change(w, lord, delta, line);
+
         /// <summary>Отдать весь кошель Греховода (пал — кошель на землю). Возвращает, сколько было.</summary>
         public static int EmptyPurse(string lord)
         {
