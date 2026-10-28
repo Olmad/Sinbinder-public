@@ -111,9 +111,13 @@ namespace Sinbinder.Gameplay
             // События-экспедиции (MapEvent по ExpeditionBook) живут на карте одновременно, каждое — своё
             // время; где и какие — ведёт EventDirector. Трофеи — Trophies.
             Trophies.Forget();
-            var director = new GameObject("События экспедиций");
-            director.transform.SetParent(root, false);
-            director.AddComponent<EventDirector>().Configure(map);
+            // «-tugNoEvents» — партия без событий (замер: мешают ли события ИИ собирать людей).
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugNoEvents") < 0)
+            {
+                var director = new GameObject("События экспедиций");
+                director.transform.SetParent(root, false);
+                director.AddComponent<EventDirector>().Configure(map);
+            }
 
             // Греховод игрока — в склепе первой стороны с местом «Игрок»: перед троном, лицом к
             // двери (54-TUG.md: «Греховоды появляются в склепах с тронами»). Наружу — открыть дверь.

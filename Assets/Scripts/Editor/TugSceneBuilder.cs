@@ -415,7 +415,7 @@ namespace Sinbinder.EditorTools
                     if (Allegiance.Dearest(w.Id) == ai.Lord && Allegiance.Of(w.Id, w.Loyalty, ai.Lord) >= Hostility.Follows) loyal++;
                     if (w.HasCommand && w.Command.Lord == ai.Lord && w.Command.Kind == CommandKind.Attack) aimed++;
                 }
-                Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: {ai.Lord} ({ai.Level}) — приказов {ai.Orders}, верных {loyal}, с приказом бить {aimed}, нападает: {(ai.Attacking ? "да" : "нет")}; " +
+                Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: {ai.Lord} ({ai.Level}, стиль {ai.Way}/{ai.Second}, грех {ai.Sin}) — приказов {ai.Orders}, верных {loyal}, с приказом бить {aimed}, нападает: {(ai.Attacking ? "да" : "нет")}; " +
                           $"дверь игрока {(leaf != null ? leaf.HP : 0):F0}/{(leaf != null ? leaf.Max : 0):F0}, трон {(throne != null ? throne.HP : 0):F0}/{(throne != null ? throne.Max : 0):F0}; кошель ИИ {Favor.PurseOf(ai.Lord)}");
             }
 

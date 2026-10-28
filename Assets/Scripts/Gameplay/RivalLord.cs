@@ -30,6 +30,28 @@ namespace Sinbinder.Gameplay
         public int Orders { get; private set; }
         public bool Attacking { get; private set; }
 
+        /// <summary>
+        /// Стиль (54-TUG, «Стили ИИ»): по греху самого Греховода-ИИ — грех от номера партии и места, без жребия.
+        /// Гнев — натиск; уныние, гордыня — оборона; чревоугодие, зависть — некромант; похоть — переманщик;
+        /// жадность — искатель. Сильный подмешивает второй стиль (<see cref="Prefers"/>).
+        /// </summary>
+        public enum Style { Onslaught, Defence, Necromancer, Lurer, Seeker }
+        public SinType Sin { get; private set; }
+        public Style Way { get; private set; }
+        public Style Second { get; private set; }
+
+        public static Style WayOf(SinType sin) => sin switch
+        {
+            SinType.Wrath => Style.Onslaught,
+            SinType.Sloth or SinType.Pride => Style.Defence,
+            SinType.Gluttony or SinType.Envy => Style.Necromancer,
+            SinType.Lust => Style.Lurer,
+            _ => Style.Seeker,
+        };
+
+        public bool Prefers(Style s) => Way == s || (Level == MapSession.Seat.AiStrong && Second == s);
+        private bool _rumoured;
+
         private Warrior _body;
         private UnitMover _legs;
         private float _next;
@@ -67,11 +89,16 @@ namespace Sinbinder.Gameplay
             _body = GetComponent<Warrior>();
             _legs = GetComponent<UnitMover>();
             _next = Time.time + 2f + side;   // не все разом
+            Sin = (SinType)(Mathf.Abs(MapLoader.Match * 3 + side * 5) % 7);
+            Way = WayOf(Sin);
+            Second = (Style)(((int)Way + 1 + side) % 5);
+            if (Second == Way) Second = (Style)(((int)Way + 1) % 5);
         }
 
         private float Beat => Level switch { MapSession.Seat.AiStrong => 3.5f, MapSession.Seat.AiMedium => 6f, _ => 10f };
         // На поле на двоих — тридцать жителей: девять верных одному было не собрать (длинная партия 28.10).
-        private int Need => Level switch { MapSession.Seat.AiStrong => 6, MapSession.Seat.AiMedium => 5, _ => 3 };
+        private int Need => Level switch { MapSession.Seat.AiStrong => 6, MapSession.Seat.AiMedium => 5, _ => 3 }
+                            - (Prefers(Style.Onslaught) ? 1 : 0) + (Way == Style.Defence ? 2 : 0);
         private const float Voice = 16f;
 
         void Update()
@@ -90,6 +117,9 @@ namespace Sinbinder.Gameplay
             // Обучение держит ИИ, пока не дошло до своего урока (TugTutorial).
             if (TugMatch.Over || Hold || Time.time < _next) return;
             _next = Time.time + Beat;
+
+            // Слух о стиле: жители говорят, чем занят Греховод, — игроку есть чем готовить ответ.
+            if (!_rumoured && Time.time > 90f) { _rumoured = true; Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Rumour()); }
 
             var match = TugMatch.Instance;
             (CryptDoor door, Sturdy throne) mine = match != null ? match.PartsOf(Side) : default;
@@ -139,6 +169,15 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- экспедиции
 
+        public string Rumour() => Way switch
+        {
+            Style.Onslaught => Loc.F("Жители шепчутся: {0} точит топоры — скоро пойдёт на соседей.", Lord),
+            Style.Defence => Loc.F("Жители шепчутся: {0} строит стены и никуда не спешит.", Lord),
+            Style.Necromancer => Loc.F("Жители шепчутся: {0} собирает мёртвых.", Lord),
+            Style.Lurer => Loc.F("Жители шепчутся: {0} щедр — сманивает чужих людей.", Lord),
+            _ => Loc.F("Жители шепчутся: люди {0} рыщут по дорогам за добычей.", Lord),
+        };
+
         /// <summary>
         /// Отряд в экспедицию — как игрок, ПКМ у знака: верных не меньше трёх — уходит половина (двое–четверо),
         /// к ближнему живому событию, мирное — если хватит монет на первую развилку или вторая даром. Отряд
@@ -148,20 +187,29 @@ namespace Sinbinder.Gameplay
         {
             _away.RemoveWhere(w => w == null || w.IsDead);
             if (_out != null && (_out.Done || Time.time - _outSince > 120f)) { _out = null; _away.Clear(); }
-            if (_out != null || followers.Count < 3) return;
+            // Стиль: искатель ходит и вдвоём, дальше и большим отрядом; оборона — лишь с избытком людей;
+            // натиск — пока на приступ не хватает.
+            bool seeker = Prefers(Style.Seeker);
+            if (_out != null || followers.Count < (seeker ? 2 : 3)) return;
+            if (Way == Style.Defence && !seeker && followers.Count < Need) return;
+            if (Way == Style.Onslaught && followers.Count >= Need) return;
 
             MapEvent best = null;
-            float near = ExpeditionRange;
+            float near = float.MaxValue, range = seeker ? 170f : ExpeditionRange;
             foreach (var e in MapEvent.All)
             {
                 if (e == null || e.Done || e.Entry == null) continue;
                 if (e.Parley && e.Entry.A.Cost > Favor.PurseOf(Lord) && e.Entry.B.Cost > Favor.PurseOf(Lord)) continue;
                 float d = CampFocus.GroundDistance(transform.position, e.transform.position);
+                if (d > range) continue;
+                // Некромант — к бою (тела), переманщик — туда, где есть люди.
+                if (Prefers(Style.Necromancer) && !e.Parley) d *= 0.6f;
+                if (Prefers(Style.Lurer) && (e.Entry.A.Recruits > 0 || e.Entry.B.Recruits > 0 || e.Entry.A.Deserters)) d *= 0.5f;
                 if (d < near) { near = d; best = e; }
             }
             if (best == null) return;
 
-            int take = Mathf.Clamp(followers.Count / 2, 2, 4);
+            int take = seeker ? Mathf.Clamp(followers.Count * 2 / 3, 2, 5) : Mathf.Clamp(followers.Count / 2, 2, 4);
             var squad = new List<Warrior>();
             foreach (var f in followers)
             {
@@ -184,7 +232,11 @@ namespace Sinbinder.Gameplay
         private BuildSite Build(List<Warrior> followers)
         {
             BuildSite next = null;
-            foreach (var kind in new[] { BuildSite.Kind.Fire, BuildSite.Kind.Gate, BuildSite.Kind.Tower })
+            // Оборона строит всё, сперва ворота и вышки; натиск — только костёр (зов своих); прочие — по порядку.
+            var order = Way == Style.Defence ? new[] { BuildSite.Kind.Gate, BuildSite.Kind.Tower, BuildSite.Kind.Fire }
+                      : Way == Style.Onslaught && !Prefers(Style.Defence) ? new[] { BuildSite.Kind.Fire }
+                      : new[] { BuildSite.Kind.Fire, BuildSite.Kind.Gate, BuildSite.Kind.Tower };
+            foreach (var kind in order)
             {
                 foreach (var s in BuildSite.All)
                 {
@@ -201,13 +253,13 @@ namespace Sinbinder.Gameplay
                     if (!s.Laid && next == null) next = s;
                 }
             }
-            if (next == null || followers.Count < 2 || Favor.PurseOf(Lord) < next.Cost) return null;
+            if (next == null || followers.Count < (Way == Style.Defence ? 1 : 2) || Favor.PurseOf(Lord) < next.Cost) return null;
             next.Lay(Lord);
             return next;
         }
 
-        /// <summary>С какой секунды ИИ идёт и с половиной отряда.</summary>
-        private const float LateStart = 240f;
+        /// <summary>С какой секунды ИИ идёт и с половиной отряда: натиск — раньше, оборона — позже.</summary>
+        private float LateStart => Way == Style.Onslaught ? 160f : Way == Style.Defence ? 360f : 240f;
 
         private static Warrior Recent(Sturdy s)
             => s != null && s.LastBy != null && !s.LastBy.IsDead && Time.time - s.LastHitAt < 6f ? s.LastBy : null;
@@ -228,7 +280,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Сколько раз звал каждого и кому уже дарил: упрямых не уговаривает вечно (длинная партия 28.10).</summary>
         private readonly Dictionary<string, int> _asked = new();
         private readonly HashSet<string> _gifted = new();
-        private const int Stubborn = 4;
+        private int Stubborn => Prefers(Style.Lurer) ? 6 : 4;
 
         /// <summary>Стоит ли звать: не верен ещё, не упрям — меньше четырёх зовов или уже знаком (слушался).</summary>
         private bool Worth(Warrior w, List<Warrior> followers)
@@ -267,7 +319,7 @@ namespace Sinbinder.Gameplay
                 // Унылому — не идти, а стоять: «всё безразлично» он скажет любому зову, а пост ему по душе.
                 if (w.Soul != null && w.Soul.Sin == SinType.Sloth) Order(w, CommandKind.Hold, w.transform.position, null);
                 else Order(w, CommandKind.Move, transform.position + (w.transform.position - transform.position).normalized * 2.5f, null);
-                if (++asked >= 3) break;
+                if (++asked >= (Prefers(Style.Lurer) ? 5 : 3)) break;
             }
         }
 
@@ -276,6 +328,7 @@ namespace Sinbinder.Gameplay
         {
             if (soul == null) return false;
             if (soul.Sin == SinType.Greed) return true;
+            if (Prefers(Style.Lurer)) return soul.Sin != SinType.Pride;   // переманщик дарит всем, кроме гордых
             if (Level == MapSession.Seat.AiWeak) return false;
             if (soul.Sin == SinType.Envy || soul.Sin == SinType.Lust) return true;
             return Level == MapSession.Seat.AiStrong && soul.Sin != SinType.Pride;

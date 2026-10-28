@@ -600,7 +600,9 @@ namespace Sinbinder.Gameplay
     public class EventDirector : MonoBehaviour
     {
         public const float Pause = 60f;
-        private const float FromCrypt = 30f, Apart = 16f;
+        // От деревни — дальше, чем видит страж: иначе стража ввязывается в драку с жителями, те не слышат зова, и
+        // Греховод-ИИ бросает их как упрямых (длинная партия 28.10: сильный ИИ застрял на двух верных).
+        private const float FromCrypt = 30f, Apart = 16f, FromVillage = 26f;
 
         private readonly List<Vector3> _places = new();
         private readonly List<float> _due = new();
@@ -633,7 +635,7 @@ namespace Sinbinder.Gameplay
                 for (int k = 0; k < 2; k++)
                 {
                     float a = (i * 73f + k * 180f + 45f) * Mathf.Deg2Rad;
-                    wish.Add(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (l.Radius + 14f));
+                    wish.Add(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (l.Radius + FromVillage + 4f));
                 }
             }
             foreach (var p in wish)
@@ -641,6 +643,7 @@ namespace Sinbinder.Gameplay
                 if (Mathf.Abs(p.x) > edge || Mathf.Abs(p.z) > edge) continue;
                 bool ok = true;
                 foreach (var c in crypts) if (CampFocus.GroundDistance(p, c) < FromCrypt) ok = false;
+                foreach (var l in map.Locations) if (CampFocus.GroundDistance(p, new Vector3(l.X, 0f, l.Z)) < l.Radius + FromVillage) ok = false;
                 foreach (var q in _places) if (CampFocus.GroundDistance(p, q) < Apart) ok = false;
                 if (ok) _places.Add(p);
             }
