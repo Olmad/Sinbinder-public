@@ -593,22 +593,18 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>Мирное событие рядом: что это и чем кончится каждая развилка.</summary>
-        void OnGUI()
+        /// <summary>Событие рядом или под мышью: что это и чем кончится каждая развилка — плашкой (EventPlaque).</summary>
+        void LateUpdate()
         {
             if (_done || _entry == null || TugMatch.Over) return;
             bool decide = _near && (_entry.Parley || _waiting);
             if (!decide && !_hover) return;
-            var box = new Rect(Screen.width * 0.5f - 300f, Screen.height - 250f, 600f, 160f);
-            GUILayout.BeginArea(box, GUI.skin.box);
-            GUILayout.Label(Loc.T(_entry.Title), new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold });
-            GUILayout.Label(Loc.T(_entry.Story), new GUIStyle(GUI.skin.label) { wordWrap = true });
-            GUILayout.Label(Option(1, _entry.A) + (_suggest == 0 && !decide ? Loc.T("  ← предложено") : ""));
-            GUILayout.Label(Option(2, _entry.B) + (_suggest == 1 && !decide ? Loc.T("  ← предложено") : ""));
-            if (!decide)
-                GUILayout.Label(Loc.T("ПКМ с отрядом — отправить. Решит лидер — по своему греху; 1 или 2 — твоё слово ему."),
-                                new GUIStyle(GUI.skin.label) { wordWrap = true, fontStyle = FontStyle.Italic });
-            GUILayout.EndArea();
+            string body = Loc.T(_entry.Story) + "\n"
+                        + Option(1, _entry.A) + (_suggest == 0 && !decide ? Loc.T("  ← твоё слово") : "") + "\n"
+                        + Option(2, _entry.B) + (_suggest == 1 && !decide ? Loc.T("  ← твоё слово") : "");
+            if (!decide) body += "\n" + Loc.T("ПКМ с отрядом — отправить. Решит лидер — по своему греху; 1 или 2 — твоё слово ему.");
+            else if (_waiting) body += "\n" + Loc.T("Стража пала. Решай сам — 1 или 2; уйдёшь — решит лидер.");
+            EventPlaque.Ask(Loc.T(_entry.Title), body);
         }
 
         private static string Option(int key, ExpeditionBook.Option o)
