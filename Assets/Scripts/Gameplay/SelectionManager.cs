@@ -643,8 +643,25 @@ namespace Sinbinder.Gameplay
                     // Греховод указал — его верные бьют и без приказа (Hostility, «кого бить»).
                     if (isAttackOrder && Lords.Active) Hostility.Mark(Lords.Player, foe);
 
+                    // Экспедиция («Перетягивание»): ПКМ у знака события — отряд идёт туда; на месте решит лидер.
+                    var expedition = !isAttackOrder && Lords.Active ? MapEvent.Near(hit.point, MapEvent.Reach) : null;
+                    if (expedition != null)
+                    {
+                        var squad = new List<Warrior>();
+                        foreach (var unit in _selectedUnits)
+                        {
+                            var w = unit != null ? unit.GetComponent<Warrior>() : null;
+                            if (!Ours(w) || w is SinbinderPlayer || !Hear(w, out float hush)) continue;
+                            w.IssueCommand(CommandKind.Move, expedition.transform.position, null, hush);
+                            squad.Add(w);
+                        }
+                        TellUnheard();
+                        if (squad.Count > 0) { expedition.Send(Lords.Player, squad); OnPlayerOrder?.Invoke(CommandKind.Move, squad.Count); }
+                        return;
+                    }
+
                     // Чужой трон или дверь («Перетягивание»): ПКМ — осада, те же голосование и голос.
-                    var wall = !isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    var wall =!isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
                     if (wall != null && !wall.Mine && !wall.Broken)
                     {
                         int laid = 0;

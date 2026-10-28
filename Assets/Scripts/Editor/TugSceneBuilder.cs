@@ -727,15 +727,17 @@ namespace Sinbinder.EditorTools
                         if (legs != null && legs.isOnNavMesh) legs.Warp(near);
                         foreach (var g in caravan.Guards) if (g != null && !g.IsDead) g.GetComponent<Damageable>().TakeDamage(99999f, fighter.gameObject);
                     }
+                    if (fighter != null) { caravan.Send(Lords.Player, new System.Collections.Generic.List<Warrior> { fighter }); caravan.Suggest(1); }
                     caravan.Resolve();
                 }
                 bool fought = caravan != null && caravan.Done;
+                string leader = caravan != null && caravan.LastLeader != null ? caravan.LastLeader.DisplayName + " (" + caravan.LastLeader.Soul?.Sin + ")" : "—";
                 // Мирное: Греховод выбирает бесплатную развилку.
                 var talk = Fresh(true);
                 string talkKind = talk != null ? talk.Kind : "—";
                 bool chose = talk != null && talk.Choose(talk.Entry.A.Cost == 0 ? 0 : talk.Entry.B.Cost == 0 ? 1 : 0, Lords.Player);
                 int waiting = director != null ? director.Waiting : 0;
-                Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; мест {places}, живут разом {alive} из {target}; боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новых ждут паузы {waiting} — {(kinds.Count == ExpeditionBook.All.Length && target >= 2 && alive == target && guarded == fights && fought && chose && waiting >= 2 ? "как надо" : "НЕ ТАК")}");
+                Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; мест {places}, живут разом {alive} из {target}; боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}, решал лидер {leader}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новых ждут паузы {waiting} — {(kinds.Count == ExpeditionBook.All.Length && target >= 2 && alive == target && guarded == fights && fought && leader != "—" && chose && waiting >= 2 ? "как надо" : "НЕ ТАК")}");
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");

@@ -169,20 +169,163 @@ namespace Sinbinder.Gameplay
                 light.intensity = 0.8f + 2.2f * Mathf.Clamp01((_endsAt - Time.time) / (_entry.Parley ? ParleyLife : FightLife));
             if (Time.time >= _endsAt) { Expire(); return; }
 
+            // Греховод у места решает сам (1/2); мышь над знаком издали — предложить лидеру отряда.
+            _near = SinbinderPlayer.Exists && CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) <= Talk;
+            _hover = !_near && Hover();
+            if (_hover && Input.GetKeyDown(KeyCode.Alpha1)) _suggest = _suggest == 0 ? -1 : 0;
+            else if (_hover && Input.GetKeyDown(KeyCode.Alpha2)) _suggest = _suggest == 1 ? -1 : 1;
+
+            if (_waiting)
+            {
+                // Стража пала при Греховоде: ждём его слова, ушёл или замешкался — решает лидер.
+                if (_near && Input.GetKeyDown(KeyCode.Alpha1)) { _waiting = false; Choose(0, Lords.Player); }
+                else if (_near && Input.GetKeyDown(KeyCode.Alpha2)) { _waiting = false; Choose(1, Lords.Player); }
+                else if (!_near || Time.time >= _waitUntil) { _waiting = false; Lead(Lords.Player); }
+                return;
+            }
+
             if (_entry.Parley)
             {
-                _near = SinbinderPlayer.Exists && CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) <= Talk;
                 if (_near && Input.GetKeyDown(KeyCode.Alpha1)) Choose(0, Lords.Player);
                 else if (_near && Input.GetKeyDown(KeyCode.Alpha2)) Choose(1, Lords.Player);
-                else
-                    foreach (var rl in RivalLord.All)
-                        if (rl != null && CampFocus.GroundDistance(rl.transform.position, transform.position) <= Talk)
-                        { Choose(Favor.PurseOf(rl.Lord) >= _entry.A.Cost ? 0 : 1, rl.Lord); break; }
+                else if (_near) return;
+                foreach (var rl in RivalLord.All)
+                    if (rl != null && CampFocus.GroundDistance(rl.transform.position, transform.position) <= Talk)
+                    { Choose(Favor.PurseOf(rl.Lord) >= _entry.A.Cost ? 0 : 1, rl.Lord); return; }
+                // Посланный отряд дошёл, а Греховода при нём нет — решает лидер.
+                foreach (var kv in _sent)
+                    foreach (var w in kv.Value)
+                        if (w != null && !w.IsDead && CampFocus.GroundDistance(w.transform.position, transform.position) <= Talk)
+                        { Lead(kv.Key); return; }
                 return;
             }
             if (_guards.Count == 0) return;
             foreach (var g in _guards) if (g != null && !g.IsDead) return;
             Resolve();
+        }
+
+        // ---------------------------------------------------------- отряд и лидер
+
+        public const float Reach = 6f;
+        private readonly Dictionary<string, List<Warrior>> _sent = new();
+        private int _suggest = -1;
+        private bool _hover, _waiting;
+        private float _waitUntil;
+
+        /// <summary>Кто решал последним (лидер отряда; Греховод сам — null).</summary>
+        public Warrior LastLeader { get; private set; }
+
+        /// <summary>Живое событие у этой точки — ПКМ с отрядом отправляет туда (SelectionManager).</summary>
+        public static MapEvent Near(Vector3 point, float radius)
+        {
+            foreach (var e in Live)
+                if (e != null && !e.Done && e._entry != null && CampFocus.GroundDistance(e.transform.position, point) <= radius) return e;
+            return null;
+        }
+
+        /// <summary>Отряд Греховода идёт в экспедицию: на месте решит лидер, если Греховода там нет.</summary>
+        public void Send(string lord, List<Warrior> squad)
+        {
+            if (lord == null || squad == null || squad.Count == 0) return;
+            if (!_sent.TryGetValue(lord, out var list)) _sent[lord] = list = new List<Warrior>();
+            foreach (var w in squad) if (w != null && !list.Contains(w)) list.Add(w);
+            var lead = Leader(list, lord);
+            if (lord == Lords.Player && lead != null)
+                Log(Loc.F("{0}: отряд выступил, ведёт {1}.", Loc.T(_entry.Title), Loc.Name(lead.DisplayName)));
+        }
+
+        /// <summary>Предложить лидеру: 0 — первое, 1 — второе, −1 — ничего (прогон; игрок — клавишами у знака).</summary>
+        public void Suggest(int which) => _suggest = Mathf.Clamp(which, -1, 1);
+
+        /// <summary>Лидер: старшая душа; равны — кто вернее Греховоду.</summary>
+        private static Warrior Leader(List<Warrior> went, string lord)
+        {
+            Warrior best = null;
+            float top = float.MinValue;
+            foreach (var w in went)
+            {
+                if (w == null || w.IsDead || w.Soul == null) continue;
+                float score = w.Soul.Level * 1000f + Allegiance.Of(w.Id, w.Loyalty, lord);
+                if (score > top) { top = score; best = w; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Решает лидер — тем же слоем, что командир на развилке вылазки демо
+        /// (<see cref="AOS.BehaviourResolver.DecideMission"/>): грех, мораль, черты. Каждая развилка книги
+        /// названа поступком (<see cref="Act"/>); предложение Греховода — один голос (LoyaltyModule), его
+        /// можно перекричать.
+        /// </summary>
+        private void Lead(string lord)
+        {
+            if (_done || _entry == null) return;
+            var went = Went(lord, Witness);
+            var leader = Leader(went, lord);
+            LastLeader = leader;
+            int which = leader != null ? Decide(leader, lord) : 0;
+            var pick = which == 0 ? _entry.A : _entry.B;
+            if (pick.Cost > 0 && Favor.PurseOf(lord) < pick.Cost) { which = 1 - which; pick = which == 0 ? _entry.A : _entry.B; }
+            if (pick.Cost > 0 && !Favor.Spend(lord, pick.Cost)) { Finish(); Log(Loc.F("{0}: не хватило монет — ушли ни с чем.", Loc.T(_entry.Title))); return; }
+
+            bool against = lord == Lords.Player && _suggest >= 0 && _suggest != which;
+            string got = Apply(lord, pick, went);
+            string who = leader != null ? Loc.Name(leader.DisplayName) : lord;
+            Log(against
+                ? Loc.F("{0}: решал {1} — «{2}», вопреки твоему слову. {3}", Loc.T(_entry.Title), who, Loc.T(pick.Label), got)
+                : Loc.F("{0}: решал {1} — «{2}». {3}", Loc.T(_entry.Title), who, Loc.T(pick.Label), got));
+            Debug.Log($"[СОБЫТИЯ] {_entry.Id}: {lord}, решал {leader?.DisplayName ?? "—"} ({leader?.Soul?.Sin}), выбрано {(which == 0 ? "A" : "B")}, предложено {_suggest}");
+        }
+
+        private int Decide(Warrior leader, string lord)
+        {
+            var a = Act(_entry.A);
+            var b = Act(_entry.B);
+            if (a == b)
+            {
+                // Один и тот же поступок — решает грех лидера по записи книги.
+                var sin = leader.Soul.Sin;
+                return System.Array.IndexOf(_entry.B.Favour, sin) >= 0 && System.Array.IndexOf(_entry.A.Favour, sin) < 0 ? 1 : 0;
+            }
+            var ctx = new AOS.MissionContext
+            {
+                HasInnocentVictims = _entry.A.Residents != 0f || _entry.B.Residents != 0f || _entry.A.Recruits > 0 || _entry.B.Recruits > 0,
+                HasTreasure = Loot(_entry.A) || Loot(_entry.B),
+                HasGuiltyParty = _entry.Guards > 0,
+                HasAltar = _entry.A.Pious != 0f || _entry.B.Pious != 0f,
+                IsVillageIntact = true,
+                RecentMemories = new List<AOS.MemoryRecord>(),
+                CommandLord = lord,
+                LordLoyalty = Allegiance.Of(leader.Id, leader.Loyalty, lord),
+                HasSuggestion = lord == Lords.Player && _suggest >= 0,
+                SuggestedAction = _suggest == 1 ? b : a,
+            };
+            var act = new AOS.BehaviourResolver().DecideMission(leader, ctx, new List<AOS.MissionAction> { a, b });
+            return act == a ? 0 : 1;
+        }
+
+        private static bool Loot(ExpeditionBook.Option o)
+            => o.CoinsMax > 0 || o.Trophy.Length > 0 || o.Jars > 0 || o.Stone > 0 || o.Souls > 0 || o.Bones > 0;
+
+        /// <summary>Каким поступком развилка звучит для характера (MissionAction демо).</summary>
+        public static AOS.MissionAction Act(ExpeditionBook.Option o)
+        {
+            if (o.Pious < 0f) return AOS.MissionAction.DestroyAltar;
+            if (o.Pious > 0f && !Loot(o) && o.Residents <= 0f) return AOS.MissionAction.SanctifyAltar;
+            if (o.Recruits > 0 || o.Deserters) return AOS.MissionAction.TakePeople;
+            if (o.Residents < 0f) return AOS.MissionAction.TaxVillage;
+            if (o.Residents > 0f) return AOS.MissionAction.HelpVillage;
+            if (!Loot(o) && System.Array.IndexOf(o.PleasedSins, SinType.Wrath) >= 0) return AOS.MissionAction.KillEveryone;
+            if (Loot(o)) return o.CoinsMax >= 10 ? AOS.MissionAction.TakeEverything : AOS.MissionAction.TakeGoodsSparePeople;
+            return AOS.MissionAction.LetThemPass;
+        }
+
+        private bool Hover()
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+            return Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit, 200f)
+                   && CampFocus.GroundDistance(hit.point, transform.position) <= Reach;
         }
 
         /// <summary>Время вышло: стража уходит, вещи увозят; люди у огня остаются ничьими на карте.</summary>
@@ -203,10 +346,13 @@ namespace Sinbinder.Gameplay
             Destroy(gameObject);
         }
 
-        /// <summary>Стража пала: чьи люди бились — того и добыча; развилку решают пошедшие голосом греха.</summary>
+        /// <summary>
+        /// Стража пала: чьи люди бились — того и добыча. Греховод при них — ждём его слова (1/2); нет — решает
+        /// лидер отряда (<see cref="Lead"/>).
+        /// </summary>
         public void Resolve()
         {
-            if (_done || _entry == null) return;
+            if (_done || _entry == null || _waiting) return;
             string lord = Winner();
             if (lord == null)
             {
@@ -214,19 +360,13 @@ namespace Sinbinder.Gameplay
                 Log(Loc.F("{0}: стража перебита, но никто не взял своё.", Loc.T(_entry.Title)));
                 return;
             }
-            var went = Went(lord, Witness);
-            int a = 0, b = 0;
-            foreach (var w in went)
+            if (lord == Lords.Player && _near)
             {
-                if (w.Soul == null) continue;
-                if (System.Array.IndexOf(_entry.A.Favour, w.Soul.Sin) >= 0) a++;
-                else if (System.Array.IndexOf(_entry.B.Favour, w.Soul.Sin) >= 0) b++;
+                _waiting = true;
+                _waitUntil = Time.time + 30f;
+                return;
             }
-            var pick = a >= b ? _entry.A : _entry.B;
-            string got = Apply(lord, pick, went);
-            Log(Loc.F("{0}: взял {1}. Пошедших {2}: «{3}» — {4}, «{5}» — {6}. {7}", Loc.T(_entry.Title), lord, went.Count,
-                      Loc.T(_entry.A.Label), a, Loc.T(_entry.B.Label), b, got));
-            Debug.Log($"[СОБЫТИЯ] {_entry.Id}: взял {lord}, пошедших {went.Count}, голоса {a}:{b}, выбрано {(pick == _entry.A ? "A" : "B")}");
+            Lead(lord);
         }
 
         /// <summary>Мирное: Греховод у места выбирает сам. Не хватило монет — событие ждёт.</summary>
@@ -431,13 +571,18 @@ namespace Sinbinder.Gameplay
         /// <summary>Мирное событие рядом: что это и чем кончится каждая развилка.</summary>
         void OnGUI()
         {
-            if (!_near || _done || _entry == null || !_entry.Parley || TugMatch.Over) return;
-            var box = new Rect(Screen.width * 0.5f - 300f, Screen.height - 230f, 600f, 140f);
+            if (_done || _entry == null || TugMatch.Over) return;
+            bool decide = _near && (_entry.Parley || _waiting);
+            if (!decide && !_hover) return;
+            var box = new Rect(Screen.width * 0.5f - 300f, Screen.height - 250f, 600f, 160f);
             GUILayout.BeginArea(box, GUI.skin.box);
             GUILayout.Label(Loc.T(_entry.Title), new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold });
             GUILayout.Label(Loc.T(_entry.Story), new GUIStyle(GUI.skin.label) { wordWrap = true });
-            GUILayout.Label(Option(1, _entry.A));
-            GUILayout.Label(Option(2, _entry.B));
+            GUILayout.Label(Option(1, _entry.A) + (_suggest == 0 && !decide ? Loc.T("  ← предложено") : ""));
+            GUILayout.Label(Option(2, _entry.B) + (_suggest == 1 && !decide ? Loc.T("  ← предложено") : ""));
+            if (!decide)
+                GUILayout.Label(Loc.T("ПКМ с отрядом — отправить. Решит лидер — по своему греху; 1 или 2 — твоё слово ему."),
+                                new GUIStyle(GUI.skin.label) { wordWrap = true, fontStyle = FontStyle.Italic });
             GUILayout.EndArea();
         }
 
