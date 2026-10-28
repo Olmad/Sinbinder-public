@@ -164,8 +164,99 @@ namespace Sinbinder.Gameplay
                 var post = gate.position + gate.forward * 9f + gate.right * ((i % 5 - 2) * 1.6f) + gate.forward * (i / 5 * 1.6f);
                 Order(f, CommandKind.Hold, post, null);
             }
+            // Некромант сперва — тела и души рядом; нечего нести — зовёт живых, как все.
+            if (Prefers(Style.Necromancer) && Necro(gate)) return;
             Recruit(followers);
         }
+
+        // ---------------------------------------------------------- некромант
+
+        private readonly Dictionary<Remains.Stuff, int> _stock = new();
+        private readonly List<SoulData> _souls = new();
+        private ShellType? _carry;
+        private float _speed = -1f;
+        private RelationshipSystem _relations;
+        private const float BodyRange = 40f;
+
+        /// <summary>
+        /// Некромант — как игрок на алтаре (Remains, BindingDevice), только своим счётом: собрать душу павшего
+        /// (SoulManager), взвалить тело (шаг ×0.6), донести до своего склепа — в материал; душа и материал есть —
+        /// поднять: голем — по рецепту из экспедиции, зомби — плоть и кости, скелет — кости, призрак — одна душа.
+        /// Поднятый ничей, «готов слушать» поднявшего. Банок — три, как у игрока, плюс добытые.
+        /// Ложь — делать нечего, пусть зовёт живых.
+        /// </summary>
+        private bool Necro(Transform gate)
+        {
+            if (gate == null || _body == null) return false;
+            var home = gate.position;
+            var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+
+            // Душа под ногами — в банку.
+            int jars = Satchel.StartingJars + (Trophies.Has(Lord, Trophies.Kind.Jar) ? 1 : 0);
+            var souls = SoulManager.Instance;
+            if (souls != null && _souls.Count < jars && souls.TryHarvestSoul(transform.position) is { } fading)
+            {
+                souls.RemoveIndicator(fading);
+                var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
+                if (kept.Soul != null) _souls.Add(kept.Soul);
+            }
+
+            // Несёт — домой; дошёл — тело в материал.
+            if (_carry.HasValue)
+            {
+                if (CampFocus.GroundDistance(transform.position, home) > 8f) { _legs?.CommandMove(home); return true; }
+                foreach (var s in Remains.From(_carry.Value)) { _stock.TryGetValue(s, out var n); _stock[s] = n + 1; }
+                _carry = null;
+                if (agent != null && _speed > 0f) agent.speed = _speed;
+                return true;
+            }
+
+            // Дома, есть душа — поднять лучшее, на что хватит материала.
+            if (_souls.Count > 0 && CampFocus.GroundDistance(transform.position, home) <= 12f)
+            {
+                var shell = Have(Remains.Stuff.Stone) && Trophies.Has(Lord, Trophies.Kind.GolemRecipe) ? ShellType.Golem
+                          : Have(Remains.Stuff.Flesh) && Have(Remains.Stuff.Bones) ? ShellType.Zombie
+                          : Have(Remains.Stuff.Bones) ? ShellType.Skeleton : ShellType.Ghost;
+                var soul = _souls[0];
+                _relations ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
+                var risen = Raising.Rise(soul, shell, home + gate.forward * 3f, gate.rotation, _relations);
+                if (risen != null)
+                {
+                    _souls.RemoveAt(0);
+                    foreach (var s in Remains.Needs(shell)) _stock[s] = Mathf.Max(0, (_stock.TryGetValue(s, out var n) ? n : 0) - 1);
+                    float trust = Hostility.KillerOf(soul.Name) == _body.DisplayName ? 40f : 62f;
+                    Allegiance.Change(risen.Id, risen.Loyalty, Lord, trust - Allegiance.Of(risen.Id, risen.Loyalty, Lord));
+                    Debug.Log($"[ИИ] {Lord}: поднял {risen.DisplayName} ({shell})");
+                    return true;
+                }
+            }
+
+            // Ближнее тело — взвалить; душа рядом с ним — по пути.
+            HarvestableBody best = null;
+            float near = BodyRange;
+            foreach (var b in Object.FindObjectsByType<HarvestableBody>(FindObjectsSortMode.None))
+            {
+                if (b == null || b.IsCollected) continue;
+                float d = CampFocus.GroundDistance(transform.position, b.transform.position);
+                if (d < near) { near = d; best = b; }
+            }
+            if (best == null) return _souls.Count > 0 && CampFocus.GroundDistance(transform.position, home) > 12f && Go(home);
+            if (near > 2.2f) { _legs?.CommandMove(best.transform.position); return true; }
+
+            _carry = best.Shell;
+            best.MarkCollected();
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w != null && w.IsDead && CampFocus.GroundDistance(w.transform.position, best.transform.position) < 3f)
+                { Object.Destroy(w.gameObject); break; }
+            Object.Destroy(best.gameObject);
+            if (agent != null) { _speed = agent.speed; agent.speed *= Remains.Burden; }
+            Debug.Log($"[ИИ] {Lord}: взвалил тело ({_carry})");
+            return true;
+        }
+
+        private bool Have(Remains.Stuff s) => _stock.TryGetValue(s, out var n) && n > 0;
+
+        private bool Go(Vector3 at) { _legs?.CommandMove(at); return true; }
 
         // ---------------------------------------------------------- экспедиции
 
