@@ -150,7 +150,15 @@ namespace Sinbinder.Gameplay
             if (!Attacking && ready) Attacking = true;
             else if (Attacking && followers.Count < (Need + 1) / 2 - 1) Attacking = false;
 
-            if (Attacking) { _away.Clear(); Attack(match, followers); return; }
+            if (Attacking)
+            {
+                _away.Clear();
+                Attack(match, followers);
+                // Средний и сильный, пока отряд на приступе, зовут подкрепление (замер 29.10: приступ впятером
+                // ломал дверь, но трона не добивал — люди гибли, а новых никто не звал).
+                if (Level != MapSession.Seat.AiWeak) Recruit(followers);
+                return;
+            }
 
             // Экспедиция (MapEvent): ближнее живое событие — туда часть верных; решит на месте их лидер.
             Expedition(followers);
@@ -291,22 +299,34 @@ namespace Sinbinder.Gameplay
             if (Way == Style.Defence && !seeker && followers.Count < Need) return;
             if (Way == Style.Onslaught && followers.Count >= Need) return;
 
+            // Сколько можно увести, не оголяя вышки; на бой — хотя бы на одного больше живой стражи
+            // (замер 29.10: уходили по двое против трёх-четырёх и гибли — верные таяли без единого приступа).
+            int free = 0;
+            foreach (var f in followers) if (f != null && !f.IsDead && !TowerPost.Guards(f)) free++;
+            int cap = Mathf.Min(free, seeker ? 6 : 5);
+
             MapEvent best = null;
+            int bestNeed = 2;
             float near = float.MaxValue, range = seeker ? 170f : ExpeditionRange;
             foreach (var e in MapEvent.All)
             {
                 if (e == null || e.Done || e.Entry == null) continue;
                 if (e.Parley && e.Entry.A.Cost > Favor.PurseOf(Lord) && e.Entry.B.Cost > Favor.PurseOf(Lord)) continue;
+                int guards = 0;
+                foreach (var g in e.Guards) if (g != null && !g.IsDead) guards++;
+                int need = Mathf.Max(2, guards + 1);
+                if (need > cap) continue;
                 float d = CampFocus.GroundDistance(transform.position, e.transform.position);
                 if (d > range) continue;
                 // Некромант — к бою (тела), переманщик — туда, где есть люди.
                 if (Prefers(Style.Necromancer) && !e.Parley) d *= 0.6f;
                 if (Prefers(Style.Lurer) && (e.Entry.A.Recruits > 0 || e.Entry.B.Recruits > 0 || e.Entry.A.Deserters)) d *= 0.5f;
-                if (d < near) { near = d; best = e; }
+                if (d < near) { near = d; best = e; bestNeed = need; }
             }
             if (best == null) return;
 
             int take = seeker ? Mathf.Clamp(followers.Count * 2 / 3, 2, 5) : Mathf.Clamp(followers.Count / 2, 2, 4);
+            take = Mathf.Min(Mathf.Max(take, bestNeed), cap);
             var squad = new List<Warrior>();
             foreach (var f in followers)
             {
@@ -457,7 +477,8 @@ namespace Sinbinder.Gameplay
             foreach (var f in followers)
                 if (!(f.HasCommand && f.Command.Target == target)) Order(f, CommandKind.Attack, target.transform.position, target);
 
-            // Сам — домой, к трону.
+            // Сам — домой, к трону; средний и сильный — зовут подкрепление (Update).
+            if (Level != MapSession.Seat.AiWeak) return;
             var home = match.PartsOf(Side).throne;
             if (home != null && CampFocus.GroundDistance(transform.position, home.transform.position) > 4f)
                 _legs?.CommandMove(home.transform.position + home.transform.forward * 2f);
