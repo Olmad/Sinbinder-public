@@ -938,6 +938,21 @@ def make_actions(arm, g, shell_name=""):
         (64, s(wide, (24, 2, -2, 12), proud, 0.012)),
     ]
 
+    # --- Gather: сбор души (автор, 28.10: «сбор души — анимация и замирание»). Присел над павшим,
+    #     рука тянется вниз — и держит: душа идёт в банку не сразу, сборщик замер и открыт удару.
+    #     Потом рука к груди (банка у пояса), встал. Не зациклен (BodyImport): последний кадр — покой.
+    crouch = (-46, 86, -38, -34, 74, -36)
+    reach = (34, -6, -30, 18)
+    bend = (34, 2, 0, -14)
+    gather = [
+        (1,  s((-2, 4, -1, 2, 4, 1), (78, 1, -1, 12), (2, 1, 1, 0), 0.0)),
+        (10, s(crouch, reach, bend, -0.30)),
+        (18, s(crouch, (30, -6, -34, 10), (36, 2, 0, -18), -0.32)),
+        (30, s(crouch, (32, -6, -32, 14), (35, 2, 0, -16), -0.31)),
+        (38, s((-26, 50, -22, -18, 42, -20), (62, 0, -54, 96), (16, 1, 0, 4), -0.14)),
+        (48, s((-2, 4, -1, 2, 4, 1), (78, 1, -1, 12), (2, 1, 1, 0), 0.0)),
+    ]
+
     # Имена обязаны совпасть буква в букву с BodyMotion: Animator.Play
     # по чужому имени молча ничего не делает — худший вид поломки,
     # потому что выглядит как «анимация просто не сделана».
@@ -952,7 +967,7 @@ def make_actions(arm, g, shell_name=""):
             print("[ТЕЛА] движения «{}» нет в {} — {}: свой клип".format(name, MOTION, clip))
 
     handmade = {"Idle": idle, "Walk": walk, "Flee": flee, "Die": die, "Attack": attack, "Talk": talk,
-                "Challenge": challenge}
+                "Challenge": challenge, "Gather": gather}
     made = [action(arm, clip, keys) for clip, keys in handmade.items() if clip not in have]
 
     # Перенесённые с Mixamo (`retarget.py`).
@@ -1317,6 +1332,8 @@ def preview(shell, folder):
     shot("8-attack-wind", "Attack", 7, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("9-attack-hit", "Attack", 12, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("a-talk-front", "Talk", 14, (0.0, -2.2, 0.62), (0.0, 0.0, 0.52))
+    shot("e-gather-hold", "Gather", 24, (2.0, -1.0, 0.55), (0.0, 0.0, 0.35))
+    shot("f-gather-chest", "Gather", 38, (2.0, -1.0, 0.60), (0.0, 0.0, 0.45))
     if "Draw" in bpy.data.actions:
         shot("b-draw-mid", "Draw", 12, (1.5, -1.7, 0.72), (0.0, 0.0, 0.52))
     if "Sheathe" in bpy.data.actions:

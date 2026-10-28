@@ -54,6 +54,20 @@ namespace Sinbinder.Gameplay
         private const float ChallengeFor = 2.4f;
 
         private float _challengeUntil = -1f;
+        private float _gatherUntil = -1f;
+
+        /// <summary>Сколько длится сбор души: 48 кадров клипа при 30 в секунду.</summary>
+        public const float GatherFor = 1.6f;
+
+        /// <summary>Собрать душу: присел, рука к павшему, замер — и к груди. Один раз.</summary>
+        public void Gather()
+        {
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+            _gatherUntil = Time.time + GatherFor;
+        }
+
+        /// <summary>Собирает душу сейчас — стоит, где стоял (SoulHarvester держит ноги).</summary>
+        public bool Gathering => Time.time < _gatherUntil;
 
         /// <summary>
         /// Бросить вызов: три удара мечом в щит и руки в стороны — один раз
@@ -167,6 +181,7 @@ namespace Sinbinder.Gameplay
             if (Seated) return BodyMotion.Sit;
             if (Digging) return BodyMotion.Dig;
             if (Time.unscaledTime < _challengeUntil) return BodyMotion.Challenge;
+            if (Time.time < _gatherUntil) return BodyMotion.Gather;
 
             // Достаёт или убирает оружие — стоя; клип короткий и доигрывается.
             if (_armsClip != null) return _armsClip;

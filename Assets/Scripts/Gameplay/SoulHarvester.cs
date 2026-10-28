@@ -104,6 +104,10 @@ namespace Sinbinder.Gameplay
             var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
             if (kept.Soul != null) Core.Satchel.Fill(jar, kept.Soul, kept.Quality);
 
+            // «Перетягивание» (автор, 28.10: «сбор души — анимация и замирание»): присел, замер —
+            // в эти полторы секунды сборщик открыт удару. Демо не трогаем: там жатва — урок, а не риск.
+            if (Lords.Active) Freeze(this);
+
             // Тем же наклоном — кошель убитого (автор, 26.10: «я не могу собрать деньги, которые
             // собирают воины с трупов»; решение 27.10: «одним наклоном с душой, без новой кнопки»).
             // Кто быстрее — того и монеты: обобранный воинами труп пуст.
@@ -130,6 +134,28 @@ namespace Sinbinder.Gameplay
 
         private static void Log(string line)
             => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
+
+        /// <summary>
+        /// Сбор души: клип Gather (WarriorAnimation) и ноги стоят, пока он идёт. Зовут жатва игрока и
+        /// некромант-ИИ (RivalLord.Necro) — одно правило для обоих.
+        /// </summary>
+        public static void Freeze(Component who)
+        {
+            if (who == null) return;
+            var body = who.GetComponent<WarriorAnimation>() ?? who.GetComponentInChildren<WarriorAnimation>();
+            body?.Gather();
+            var legs = who.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (legs == null || !legs.enabled || !legs.isOnNavMesh) return;
+            legs.isStopped = true;
+            legs.ResetPath();
+            who.GetComponent<MonoBehaviour>()?.StartCoroutine(Release(legs));
+        }
+
+        private static System.Collections.IEnumerator Release(UnityEngine.AI.NavMeshAgent legs)
+        {
+            yield return new WaitForSeconds(WarriorAnimation.GatherFor);
+            if (legs != null && legs.enabled && legs.isOnNavMesh) legs.isStopped = false;
+        }
 
         /// <summary>Кошель ближайшего убитого врага (в двух метрах) — в кошель Греховода.</summary>
         private void TakePurse()

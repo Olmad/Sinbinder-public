@@ -98,6 +98,11 @@ namespace Sinbinder.Gameplay
             // игрой и входит в формулу — без жребия, и в сетевой партии хозяин передаст его всем.
             Match = PlayerPrefs.GetInt(MatchKey, 0) + 1;
             PlayerPrefs.SetInt(MatchKey, Match);
+            // «-tugMatch 7» — номер партии задан (замер «стиль против стиля» на одних и тех же людях;
+            // в сети его так же передаст хозяин).
+            var given = System.Environment.GetCommandLineArgs();
+            for (int a = 0; a + 1 < given.Length; a++)
+                if (given[a] == "-tugMatch" && int.TryParse(given[a + 1], out var fixedMatch)) Match = fixedMatch;
             int stamp = Wardrobe.Stamp(map.Name) ^ (Match * 7919);
             for (int i = 0; i < map.Locations.Count; i++)
             {

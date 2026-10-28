@@ -93,6 +93,12 @@ namespace Sinbinder.Gameplay
             Way = WayOf(Sin);
             Second = (Style)(((int)Way + 1 + side) % 5);
             if (Second == Way) Second = (Style)(((int)Way + 1) % 5);
+
+            // Замер «стиль против стиля» (MatchRun): «-tugStyle Lurer» — стиль задан, второй — следующий по кругу.
+            var args = System.Environment.GetCommandLineArgs();
+            for (int a = 0; a + 1 < args.Length; a++)
+                if (args[a] == "-tugStyle" && System.Enum.TryParse<Style>(args[a + 1], out var forced))
+                { Way = forced; Second = (Style)(((int)forced + 1) % 5); }
         }
 
         private float Beat => Level switch { MapSession.Seat.AiStrong => 3.5f, MapSession.Seat.AiMedium => 6f, _ => 10f };
@@ -198,7 +204,7 @@ namespace Sinbinder.Gameplay
             {
                 souls.RemoveIndicator(fading);
                 var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
-                if (kept.Soul != null) _souls.Add(kept.Soul);
+                if (kept.Soul != null) { _souls.Add(kept.Soul); SoulHarvester.Freeze(this); return true; }
             }
 
             // Несёт — домой; дошёл — тело в материал.

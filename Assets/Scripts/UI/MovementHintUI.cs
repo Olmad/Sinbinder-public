@@ -101,6 +101,8 @@ namespace Sinbinder.UI
         void Update()
         {
             if (Shown && !_showing) { enabled = false; return; }
+            // Камеру сменили (поле «Перетягивания» ставит свою): следить не за чем.
+            if (_eye == null) { enabled = false; return; }
 
             float went = Vector3.Distance(_eye.position, _wasAt);
 

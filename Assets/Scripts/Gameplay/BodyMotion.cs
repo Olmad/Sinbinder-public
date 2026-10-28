@@ -77,9 +77,15 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public const string Challenge = "Challenge";
 
+        /// <summary>
+        /// Сбор души — присел над павшим, рука вниз и замер, потом к груди (автор, 28.10: «сбор души —
+        /// анимация и замирание»; <see cref="WarriorAnimation.Gather"/>). Свой клип <c>bodies.py</c>, не зациклен.
+        /// </summary>
+        public const string Gather = "Gather";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig, Challenge };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig, Challenge, Gather };
 
         /// <summary>
         /// Во что превращается решение.
