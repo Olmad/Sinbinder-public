@@ -2564,6 +2564,9 @@ namespace Sinbinder.EditorTools
 
             var away = best.Centre - fire; away.y = 0f;
             Warp(SinbinderPlayer.Instance.gameObject, best.Centre + away.normalized * 0.9f);
+            // Скрытое тело (от первого лица) Unity не анимирует — таз остался бы стоячим, и замер врал бы.
+            var anim = SinbinderPlayer.Instance.GetComponentInChildren<Animator>();
+            if (anim != null) anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             best.Sit();
             _satAt = Time.realtimeSinceStartup;
         }
@@ -2578,8 +2581,10 @@ namespace Sinbinder.EditorTools
             foreach (var t in hero.GetComponentsInChildren<Transform>()) if (t.name == "Hips") { hips = t; break; }
             float top = seat.GetComponent<Renderer>().bounds.max.y;
             float lift = hips != null ? hips.position.y - top : float.NaN;
-            bool ok = hips != null && Mathf.Abs(lift) < 0.25f;
-            Write($"  [БРЕВНО] сел: да; таз над верхом бревна {lift:F2} м — {(ok ? "сидит на бревне" : "НЕ ТАК")}");
+            var anim = hero.GetComponentInChildren<Animator>();
+            bool sitClip = anim != null && anim.GetCurrentAnimatorStateInfo(0).IsName(BodyMotion.Sit);
+            bool ok = hips != null && Mathf.Abs(lift) < 0.25f && sitClip;
+            Write($"  [БРЕВНО] сел: да; клип «сидя»: {(sitClip ? "да" : "НЕТ")}; таз над верхом бревна {lift:F2} м — {(ok ? "сидит на бревне" : "НЕ ТАК")}");
             Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Греховод на бревне", hero.transform);
             return true;
         }

@@ -292,7 +292,7 @@ namespace Sinbinder.EditorTools
                 foreach (var s in Object.FindObjectsByType<Sturdy>(FindObjectsSortMode.None))
                 {
                     if (s.GetComponentInParent<CryptDoor>() == null) thrones++;
-                    if (s.Mine) Line($"наведение: {s.Describe().Replace('\n', ' · ')}");
+                    if (s.Mine) Line("наведение: " + s.Describe().Replace("\n", " · "));
                 }
                 Line($"склепов на карте {MapLoader.Current?.Crypts.Count}, дверей {doors.Length}, тронов {thrones}");
                 float inside = mine != null ? CampFocus.GroundDistance(hero.transform.position, mine.transform.parent.position) : -1f;
