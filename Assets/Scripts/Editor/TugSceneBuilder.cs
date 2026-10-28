@@ -108,6 +108,13 @@ namespace Sinbinder.Utilets
                 throne.AddComponent<Sturdy>();
             }
 
+            // Алтарь (автор, 28.10: «в склепе нужен алтарь… поднимать новых, но более послушных воинов»;
+            // «собирать как в демо и на полигоне — расставляя по местам»): то же устройство связывания —
+            // гнёзда души и тела, рычаг, полка банок, стол тел. Тела на столе — из принесённых (Remains).
+            var altar = BindingZone(new Vector3(0f, 0.12f, 2.6f), seed: false);
+            altar.name = "Алтарь";
+            altar.transform.SetParent(root.transform, true);
+
             var lamp = new GameObject("Свет склепа");
             lamp.transform.SetParent(root.transform, false);
             lamp.transform.localPosition = new Vector3(0f, 2.8f, -2f);
@@ -519,6 +526,13 @@ namespace Sinbinder.EditorTools
                 Line($"Греховод встал: жив — {(!hero.IsDead ? "да" : "НЕТ")}, от трона {off:F1} м — {(!hero.IsDead && off >= 0f && off < 4f ? "у трона, как надо" : "НЕ ТАК")}; корона убрана — {(mineThrone != null && mineThrone.transform.Find("Корона на троне") == null ? "да" : "НЕТ")}");
             }
 
+            // Алтарь (автор, 28.10): убил — тело на плечи — на стол — душу в гнездо, тело на ложе — рычаг.
+            if (_phase == 5)
+            {
+                _phase = 6;
+                Altar(hero);
+            }
+
             // Шаг 3: что делал ИИ, чего добилась осада, и конец партии — трон ИИ рушим: победа.
             var rival = RivalLord.All.Count > 0 ? RivalLord.All[0] : null;
             if (rival != null)
@@ -536,6 +550,50 @@ namespace Sinbinder.EditorTools
             SessionState.SetBool(Active, false);
             EditorApplication.isPlaying = false;
             EditorApplication.Exit(0);
+        }
+
+        /// <summary>Алтарь целиком, как игрок: убить, взвалить, положить на стол, собрать на устройстве.</summary>
+        private static void Altar(SinbinderPlayer hero)
+        {
+            var device = TugMatch.Instance.Crypts[TugMatch.Instance.PlayerSide].GetComponentInChildren<Sinbinder.Crypt.BindingDevice>();
+            if (device == null) { Line("алтарь: устройства в склепе НЕТ"); return; }
+
+            Warrior victim = null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w.Team == Team.Neutral && !w.IsDead && (w.Shell == ShellType.Zombie || (victim == null && w.Shell == ShellType.Skeleton)) && RivalLord.LordOf(w) == null) { victim = w; if (w.Shell == ShellType.Zombie) break; }
+            if (victim == null) { Line("алтарь: ничьего с телом для проверки нет"); return; }
+            var raise = victim.Shell == ShellType.Zombie ? ShellType.Zombie : ShellType.Skeleton;
+            int fleshWant = raise == ShellType.Zombie ? 1 : 0;
+
+            var soul = victim.Soul;
+            victim.GetComponent<Damageable>().TakeDamage(99999f, hero.gameObject);
+            HarvestableBody body = null;
+            foreach (var b in CombatManager.Instance.BodiesOnField) if (b != null && b.name == "Body_" + victim.DisplayName) body = b;
+            if (body == null) { Line("алтарь: тела убитого НЕТ"); return; }
+
+            Remains.Take(body);
+            bool slow = Remains.Carrying;
+            Remains.Lay();
+            int bones = Remains.Count(Remains.Stuff.Bones), flesh = Remains.Count(Remains.Stuff.Flesh);
+
+            Sinbinder.Crypt.CryptHands.TakeSoul(soul, SoulQuality.Acceptance);
+            device.PutSoul();
+            bool enough = Remains.Enough(raise);
+            Remains.Spend(raise);
+            Sinbinder.Crypt.CryptHands.TakeShell(raise);
+            device.PutShell();
+            int before = device.Raised;
+            device.Bind();
+
+            Warrior risen = null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && w.DisplayName == soul.Name) risen = w;
+            float trust = risen != null ? Allegiance.Of(risen.Id, risen.Loyalty, Lords.Player) : -1f;
+            bool ok = slow && flesh == fleshWant && bones == 1 && enough && device.Raised == before + 1 && risen != null
+                      && risen.Team == Team.Neutral && trust > 30f && trust < 50f;
+            Line($"алтарь: ноша — {(slow ? "на плечах" : "НЕТ")}; на столе стало плоть {flesh}, кости {bones}; " +
+                 $"поднят — {(risen != null ? $"{risen.DisplayName} ({risen.Shell}, {risen.Team})" : "НЕТ")}; верность к поднявшему {trust:F0} " +
+                 $"(убил его сам — меньше «готов слушать»); материала осталось: кости {Remains.Count(Remains.Stuff.Bones)} — {(ok ? "как надо" : "НЕ ТАК")}");
         }
 
         /// <summary>Ничей с этим грехом; такого нет — любой, кроме <paramref name="not"/>.</summary>

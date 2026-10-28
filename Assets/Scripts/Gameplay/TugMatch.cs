@@ -98,6 +98,7 @@ namespace Sinbinder.Gameplay
             if (side < 0 || m._down.ContainsKey(side)) return;
 
             LordPurse.Drop(body.transform.position, Favor.EmptyPurse(lord), lord);
+            if (body is SinbinderPlayer) Remains.Drop();   // ноша с плеч — пропала вместе с ним
             m._down[side] = Time.time + RiseAfter;
             // Корона на пустом троне — видна всем; полоса до восстания — только своей стороне.
             ThroneVigil.Begin(m.PartsOf(side).throne, Time.time + RiseAfter, side == m._player);

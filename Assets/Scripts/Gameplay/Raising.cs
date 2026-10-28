@@ -34,7 +34,8 @@ namespace Sinbinder.Gameplay
             go.transform.rotation = rotation;
 
             var warrior = go.AddComponent<Warrior>();
-            warrior.Initialize(soul, shell, relations, false, Team.Player);
+            // «Перетягивание»: своих отрядов нет — поднятый ничей, но верен поднявшему (BindingDevice).
+            warrior.Initialize(soul, shell, relations, false, Lords.Active ? Team.Neutral : Team.Player);
 
             // Душа донесла имя через смерть (SoulData.EarnedTitle) — и в новом
             // теле его носят снова. Первая фраза так и просит: «Зовите снова».

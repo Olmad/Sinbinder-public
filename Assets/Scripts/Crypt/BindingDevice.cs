@@ -1,4 +1,4 @@
-// Assets/Scripts/Crypt/BindingDevice.cs
+﻿// Assets/Scripts/Crypt/BindingDevice.cs
 // Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
@@ -164,6 +164,14 @@ namespace Sinbinder.Crypt
             if (risen == null) return false;
             Raised++;
 
+            // «Перетягивание» (автор, 28.10: «поднимать новых, но более послушных воинов»): поднятый —
+            // ничей, но сразу «готов слушать» того, кто поднял; убил его сам поднявший — помнит, верен меньше.
+            if (Lords.Active)
+            {
+                float trust = KilledBy(Lords.Player) ? RisenTrust - KillerDebt : RisenTrust;
+                Allegiance.Change(risen.Id, risen.Loyalty, Lords.Player, trust - Allegiance.Of(risen.Id, risen.Loyalty, Lords.Player));
+            }
+
             // «Spark of Eternity» автора — «Новая душа»: душа получила тело.
             Audio.Music.Play(Audio.Cue.Spark);
 
@@ -193,6 +201,14 @@ namespace Sinbinder.Crypt
             SoulManager.Instance?.PutBack(new SoulManager.Kept(_soul, _quality));
             _soul = null;
         }
+
+        /// <summary>Верность поднятого к поднявшему — «готов слушать»; минус долг, если тот же и убил.</summary>
+        private const float RisenTrust = 62f;
+        private const float KillerDebt = 22f;
+
+        /// <summary>Убил ли его Греховод с этим голосом: душа помнит последний удар (Hostility).</summary>
+        private bool KilledBy(string lord)
+            => _soul != null && SinbinderPlayer.Exists && lord == Lords.Player && Hostility.KillerOf(_soul.Name) == SinbinderPlayer.Instance.DisplayName;
 
         private static void Log(string line)
             => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);

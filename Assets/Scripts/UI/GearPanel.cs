@@ -408,6 +408,8 @@ namespace Sinbinder.UI
             foreach (var shelf in RecordShelf.InReach()) shelf.Offer(Offer);
             foreach (var seat in LogSeat.InReach()) Offer(Gaze.Miss(seat.Centre, 0.7f), seat.Prompt, seat.Sit);
             foreach (var door in CryptDoor.InReach()) Offer(Gaze.Miss(door.Leaf), door.Prompt, door.Toggle);
+            // «Перетягивание»: тело павшего — взвалить на плечи и нести к алтарю (Remains).
+            foreach (var b in Remains.Bodies()) { var body = b; Offer(Gaze.Miss(body.transform.position + Vector3.up * 0.3f, 0.7f), Remains.TakePrompt(body), () => Remains.Take(body)); }
             // «Перетягивание»: кошель павшего Греховода — поднять (LordPurse).
             foreach (var p in LordPurse.InReach()) { var bag = p; Offer(Gaze.Miss(bag.transform), bag.Prompt, () => bag.Take(Lords.Player)); }
             // «Перетягивание»: монета ничьему, на которого смотришь (Favor).

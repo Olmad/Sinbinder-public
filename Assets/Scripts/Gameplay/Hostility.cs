@@ -69,6 +69,7 @@ namespace Sinbinder.Gameplay
             Blows.Clear();
             Foes.Clear();
             Friends.Clear();
+            Killers.Clear();
         }
 
         /// <summary>Греховод указал на него — бить: так слышат все, кто ему верен.</summary>
@@ -94,6 +95,18 @@ namespace Sinbinder.Gameplay
             else if (attacker.HasCommand && !string.IsNullOrEmpty(attacker.Command.Lord))
                 Allegiance.Change(victim.Id, victim.Loyalty, attacker.Command.Lord, SentByLord);
         }
+
+        private static readonly Dictionary<string, string> Killers = new();
+
+        /// <summary>Душа помнит, кто её убил (алтарь: поднятый своим убийцей верен ему меньше).</summary>
+        public static void NoteKill(Warrior dead, Warrior killer)
+        {
+            if (!Lords.Active || dead == null || killer == null || string.IsNullOrEmpty(dead.DisplayName)) return;
+            Killers[dead.DisplayName] = killer.DisplayName;
+        }
+
+        public static string KillerOf(string soulName)
+            => !string.IsNullOrEmpty(soulName) && Killers.TryGetValue(soulName, out var k) ? k : null;
 
         /// <summary>Бил ли <paramref name="attacker"/> этого воина недавно (за <see cref="Grudge"/> секунд).</summary>
         public static bool StruckRecently(Warrior victim, Warrior attacker)

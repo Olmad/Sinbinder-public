@@ -82,6 +82,7 @@ namespace Sinbinder.Gameplay
             Allegiance.Forget();
             Hostility.Forget();
             Favor.Begin(Favor.StartPurse);
+            Remains.Forget();
             Lords.Player = Loc.F("Греховод стороны {0}", Mathf.Max(0, MapSession.Seats.IndexOf(MapSession.Seat.Player)) + 1);
 
             // Подлокации с жителями — ничьими (Residents). Каждая партия — новые люди (автор, 28.10:

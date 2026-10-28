@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using UnityEngine;
 using Sinbinder.Core;
+using Sinbinder.Gameplay;
 
 namespace Sinbinder.Crypt
 {
@@ -30,6 +31,8 @@ namespace Sinbinder.Crypt
             {
                 var data = ShellLibrary.Get(_shell);
                 string pull = data != null ? data.DescribeBias() : Loc.T("Тело ничего не навязывает.");
+                // «Перетягивание»: из чего это тело и что есть на столе (Remains).
+                if (Remains.Counted) pull += "\n" + Remains.Ledger();
                 return $"{CryptHands.ShellName(_shell)}\n{pull}";
             }
         }
@@ -41,10 +44,19 @@ namespace Sinbinder.Crypt
 
         protected override void Use()
         {
+            // «Перетягивание»: стол — склад. Ноша на плечах — положить; тело с подставки — из материала (Remains).
+            if (Remains.Counted && Remains.Carrying) { Remains.Lay(); return; }
+
             if (!CryptHands.Empty)
             {
                 Say(Loc.F("Руки заняты: {0}.", CryptHands.What));
                 return;
+            }
+
+            if (Remains.Counted)
+            {
+                if (!Remains.Enough(_shell)) { Say(Loc.F("Не из чего: {0}. Принесите тела с поля.", Remains.Ledger())); return; }
+                Remains.Spend(_shell);
             }
 
             CryptHands.TakeShell(_shell);
