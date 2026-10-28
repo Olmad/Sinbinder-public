@@ -440,7 +440,7 @@ namespace Sinbinder.Gameplay
                 foreach (var w in _camp)
                 {
                     if (w == null || w.IsDead) continue;
-                    Allegiance.Change(w.Id, w.Loyalty, lord, 62f - Allegiance.Of(w.Id, w.Loyalty, lord));
+                    Allegiance.Change(w.Id, w.Loyalty, lord, o.RecruitTrust - Allegiance.Of(w.Id, w.Loyalty, lord));
                     if (_owner != null) Allegiance.Change(w.Id, w.Loyalty, _owner, -30f);
                     said.Add(Loc.F("перешёл {0}", Loc.Name(w.DisplayName)));
                 }
@@ -602,7 +602,7 @@ namespace Sinbinder.Gameplay
         public const float Pause = 60f;
         // От деревни — дальше, чем видит страж: иначе стража ввязывается в драку с жителями, те не слышат зова, и
         // Греховод-ИИ бросает их как упрямых (длинная партия 28.10: сильный ИИ застрял на двух верных).
-        private const float FromCrypt = 30f, Apart = 16f, FromVillage = 26f;
+        private const float FromCrypt = 30f, Apart = 16f, FromVillage = 26f, OwnReach = 70f;
 
         private readonly List<Vector3> _places = new();
         private readonly List<float> _due = new();
@@ -628,6 +628,16 @@ namespace Sinbinder.Gameplay
             foreach (var s in map.Events) wish.Add(new Vector3(s.X, 0f, s.Z));
             for (int i = 0; i < crypts.Count; i++)
                 for (int k = i + 1; k < crypts.Count; k++) wish.Add((crypts[i] + crypts[k]) * 0.5f);
+            // У каждого склепа — два своих места на равных: от склепа к середине, ±40°, одно расстояние
+            // (баланс 28.10: на «Четырёх склепах» до ближнего события одному склепу было 165 м, прочим — 116).
+            foreach (var c in crypts)
+            {
+                var to = -c;
+                to.y = 0f;
+                if (to.sqrMagnitude < 1f) to = Vector3.forward;
+                float reach = Mathf.Min(OwnReach, to.magnitude * 0.55f);
+                foreach (float turn in new[] { -40f, 40f }) wish.Add(c + Quaternion.Euler(0f, turn, 0f) * to.normalized * reach);
+            }
             for (int i = 0; i < map.Locations.Count; i++)
             {
                 var l = map.Locations[i];
