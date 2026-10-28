@@ -45,6 +45,15 @@ namespace Sinbinder.Gameplay
 
         private const float Reach = 1.8f;
 
+        /// <summary>Всё оружие в пределах руки: меч и катана стоят рядом — F тому, на что смотрят.</summary>
+        public static IEnumerable<WeaponPickup> InReach()
+        {
+            if (!SinbinderPlayer.Exists) yield break;
+            foreach (var p in Live)
+                if (p != null && CampFocus.GroundDistance(SinbinderPlayer.Where, p.transform.position) < Reach)
+                    yield return p;
+        }
+
         /// <summary>Оружие на стойке в пределах руки; ближайшее. Нет — null.</summary>
         public static WeaponPickup Nearest()
         {

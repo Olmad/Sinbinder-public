@@ -81,11 +81,11 @@ namespace Sinbinder.Gameplay
                 if (!cookNear && d < best) { best = d; who = w; }
             }
 
-            string line = who == null
-                ? Loc.T("Похлёбка густая, с костями. Есть можно.")
-                : Loc.F("{0}: «{1}»", Loc.Name(who.DisplayName), Says(who));
-            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
-            if (who != null && who.TryGetComponent<WarriorAnimation>(out var body)) body.TalkFor(3f);
+            // Вслух, над головой того, кто ответил, — не строкой в журнале боя (автор, 27.10:
+            // «при взаимодействии кто-то комментирует в логе»). Рядом никого — Греховод сам.
+            if (who == null) { UI.SpeechBubbles.Say(SinbinderPlayer.Instance, Loc.T("Похлёбка густая, с костями. Есть можно.")); return; }
+            UI.SpeechBubbles.Say(who, Says(who));
+            if (who.TryGetComponent<WarriorAnimation>(out var body)) body.TalkFor(3f);
         }
 
         /// <summary>Что скажет тот, кто рядом, — по ремеслу и греху. Без чисел.</summary>

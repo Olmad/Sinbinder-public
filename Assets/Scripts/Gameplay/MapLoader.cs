@@ -38,37 +38,68 @@ namespace Sinbinder.Gameplay
             var root = new GameObject(Loc.F("Карта — {0}", map.Name)).transform;
             foreach (var t in map.Things) Place(t.Prop, root, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
 
+            // Склеп — пол, стены, дверь на петле и трон (автор, 27.10: «у склепа не хватает стен и
+            // возможности открывать дверь и пола»), префабом сборщика (TugSceneBuilder.BuildCrypt).
+            var built = Resources.Load<GameObject>("MapProps/Crypt");
             for (int i = 0; i < map.Crypts.Count; i++)
             {
                 var c = map.Crypts[i];
                 var at = new Vector3(c.X, 0f, c.Z);
                 var rot = Quaternion.Euler(0f, c.Yaw, 0f);
-                var crypt = new GameObject(Loc.F("Склеп {0}", i + 1)).transform;
-                crypt.SetParent(root, false);
-                crypt.SetPositionAndRotation(at, rot);
-                Place("CryptGate", crypt, at + rot * new Vector3(0f, 0f, 6f), c.Yaw, 1f);
-                Place("Throne", crypt, at + rot * new Vector3(0f, 0f, -2f), c.Yaw, 1f);
+                if (built == null)
+                {
+                    var bare = new GameObject(Loc.F("Склеп {0}", i + 1)).transform;
+                    bare.SetParent(root, false);
+                    bare.SetPositionAndRotation(at, rot);
+                    Place("CryptGate", bare, at + rot * new Vector3(0f, 0f, 6f), c.Yaw, 1f);
+                    Place("Throne", bare, at + rot * new Vector3(0f, 0f, -2f), c.Yaw, 1f);
+                    continue;
+                }
+                var crypt = Instantiate(built, at, rot, root);
+                crypt.name = Loc.F("Склеп {0}", i + 1);
+                foreach (var part in crypt.GetComponentsInChildren<Sturdy>())
+                {
+                    bool door = part.GetComponentInParent<CryptDoor>() != null;
+                    part.Configure(door ? Loc.F("Дверь склепа {0}", i + 1) : Loc.F("Трон склепа {0}", i + 1),
+                                   door ? DoorStrength : ThroneStrength, i);
+                }
             }
 
             foreach (var l in map.Locations) Mark(root, Loc.F("Подлокация — {0}", Loc.T(l.Name)), new Vector3(l.X, 0f, l.Z));
             foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), new Vector3(s.X, 0f, s.Z));
             foreach (var s in map.Events) Mark(root, Loc.F("Событие — {0}", s.Kind), new Vector3(s.X, 0f, s.Z));
 
-            // Греховод игрока — в склепе первой стороны с местом «Игрок».
+            // Греховод игрока — в склепе первой стороны с местом «Игрок»: перед троном, лицом к
+            // двери (54-TUG.md: «Греховоды появляются в склепах с тронами»). Наружу — открыть дверь.
             int seat = Mathf.Max(0, MapSession.Seats.IndexOf(MapSession.Seat.Player));
             if (seat < map.Crypts.Count)
             {
                 var c = map.Crypts[seat];
                 var entry = new GameObject("Появление Греховода");
-                entry.transform.position = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * new Vector3(0f, 0f, 9f);
+                var inside = built != null ? new Vector3(0f, 0.12f, 1.5f) : new Vector3(0f, 0f, 9f);
+                entry.transform.position = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * inside;
                 entry.AddComponent<Crypt.TestChamberEntry>();
             }
         }
 
-        /// <summary>Модель из Resources/Props — как ставит сборщик сцен: поворот импорта сохраняется.</summary>
+        /// <summary>Запас прочности трона и двери склепа. Дверь держит натиск, трон — партию.</summary>
+        private const float ThroneStrength = 1500f;
+        private const float DoorStrength = 400f;
+
+        /// <summary>
+        /// Одетая модель: из Resources/MapProps (тот же материал, что в лагере, — TugSceneBuilder.BuildMapProps),
+        /// нет такой — голая из Props.
+        /// </summary>
+        public static GameObject Prefab(string prop)
+        {
+            var dressed = Resources.Load<GameObject>("MapProps/" + prop);
+            return dressed != null ? dressed : Resources.Load<GameObject>("Props/" + prop);
+        }
+
+        /// <summary>Модель — как ставит сборщик сцен: поворот импорта сохраняется.</summary>
         private static void Place(string prop, Transform parent, Vector3 at, float yaw, float scale)
         {
-            var prefab = Resources.Load<GameObject>("Props/" + prop);
+            var prefab = Prefab(prop);
             if (prefab == null) { Debug.LogWarning($"[КАРТЫ] Нет модели «{prop}» в Resources/Props."); return; }
             var go = Instantiate(prefab, parent);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);

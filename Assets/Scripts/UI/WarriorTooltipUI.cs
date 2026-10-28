@@ -47,12 +47,18 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            if (_cam == null) _cam = Camera.main;
+            if (_cam == null) return;
+
+            // Трон и дверь склепа (автор, 27.10: «нельзя посмотреть трон на количество здоровья,
+            // то же самое с дверью склепа»): прочность — при любой ступени прозрачности: это вещь,
+            // а не чьи-то мысли.
+            var sturdy = SturdyUnderCursor();
+            if (sturdy != null) { ShowSturdy(sturdy); return; }
+
             // Вторая ступень прозрачности. Игрок, выбравший только значки,
             // причин не спрашивает — и подсказка ему не мешает.
             if (!Core.Transparency.Shows(Core.Clarity.Tooltips)) { Hide(); return; }
-
-            if (_cam == null) _cam = Camera.main;
-            if (_cam == null) return;
 
             var warrior = WarriorUnderCursor();
             if (warrior == null) { Hide(); return; }
@@ -83,6 +89,25 @@ namespace Sinbinder.UI
 
         /// <summary>Дальше этого от Греховода описание воина не показывается, метров.</summary>
         private const float Reach = 10f;
+
+        private Sturdy SturdyUnderCursor()
+        {
+            Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out RaycastHit hit, 400f, _unitLayer)) return null;
+            return hit.collider.GetComponentInParent<Sturdy>();
+        }
+
+        /// <summary>Подпись вещи склепа: имя, чья и прочность; рамка — золотом своя, серым чужая.</summary>
+        private void ShowSturdy(Sturdy sturdy)
+        {
+            _shown = null;
+            Hovered = null;
+            if (_text != null) _text.text = sturdy.Describe();
+            if (_frame != null) _frame.color = sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f);
+            if (_panel == null) return;
+            _panel.gameObject.SetActive(true);
+            _panel.position = (Vector2)Input.mousePosition + _offset;
+        }
 
         private void Refresh(Warrior warrior)
         {

@@ -214,9 +214,17 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Вершины моделей props.py — в сотых долях метра: Unity кладёт множитель единиц файла
+        /// (×100) в узел меша (DemoSceneBuilder.Prop). Точку и радиус в метрах Blender переводим
+        /// в единицы меша этим множителем — без него ярлык выходил в 100 раз больше и висел
+        /// над лагерем кругом в несколько метров (кадр прогона 27.10, «пластинка на полу лагеря»).
+        /// </summary>
+        private const float FileUnit = 0.01f;
+
+        /// <summary>
         /// Положить картинку ярлыка (автор, 27.10: «картинка в центре, как у крутых дорогих
-        /// пластинок») поверх красного кружка модели. Точка — в осях Blender: вершины меша
-        /// лежат в них, и <c>TransformPoint</c> меша переводит их в мир при любом повороте.
+        /// пластинок») поверх красного кружка модели. Точка — в метрах и осях Blender; в оси меша
+        /// её переводит <see cref="FileUnit"/>, в мир — <c>TransformPoint</c> меша, при любом повороте.
         /// </summary>
         public static Renderer Label(GameObject prop, Vector3 blenderAt, float radius, string label)
         {
@@ -230,10 +238,10 @@ namespace Sinbinder.Gameplay
             quad.name = "Ярлык";
             Object.Destroy(quad.GetComponent<Collider>());
             quad.transform.SetParent(prop.transform, true);
-            quad.transform.position = t.TransformPoint(blenderAt) + up * 0.0015f;
+            quad.transform.position = t.TransformPoint(blenderAt * FileUnit) + up * 0.0015f;
             quad.transform.rotation = Quaternion.LookRotation(-up, t.TransformDirection(Vector3.up));
-            // Размер в мире — радиус в осях меша, умноженный на масштаб меша; масштаб родителя снимаем.
-            float size = radius * 2f * t.lossyScale.x;
+            // Размер в мире — радиус в единицах меша, умноженный на масштаб меша; масштаб родителя снимаем.
+            float size = radius * FileUnit * 2f * t.lossyScale.x;
             quad.transform.localScale = Vector3.one * (size / Mathf.Max(1e-5f, prop.transform.lossyScale.x));
 
             var mat = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "Record Label" };

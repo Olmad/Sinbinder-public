@@ -262,7 +262,9 @@ namespace Sinbinder.Gameplay
             _pitch = Mathf.Clamp(_pitch, -limit, _pitchLimit);
 
             transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            transform.position = SinbinderPlayer.Where + Vector3.up * Mathf.Lerp(Eye(), 0.32f, Lying);
+            // Сидя на бревне (LogSeat) — глаза на высоте сидящего, а не стоячего.
+            float eye = LogSeat.Sitting ? SeatedEye : Eye();
+            transform.position = SinbinderPlayer.Where + Vector3.up * Mathf.Lerp(eye, 0.32f, Lying);
 
             // Тело поворачивается туда, куда смотрит голова. Курс задаёт
             // камера, а не шаг: иначе шаг поворачивал бы героя, поворот
@@ -274,6 +276,9 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Сколько оставлять между глазом и скатом.</summary>
         private const float UnderRoof = 0.15f;
+
+        /// <summary>Глаза сидящего над его ступнями, м: тело на бревне опущено на ладонь ниже земли.</summary>
+        private const float SeatedEye = 1.15f;
 
         /// <summary>Ниже этого не пригибается: дальше он уже ползёт.</summary>
         private const float Crouched = 0.9f;

@@ -148,7 +148,8 @@ namespace Sinbinder.Gameplay
             if (ground != null) ground.transform.localScale = new Vector3(_map.Size / 10f, 1f, _map.Size / 10f);
 
             foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
-            foreach (var c in _map.Crypts) Model("Throne", new Vector3(c.X, 0f, c.Z), c.Yaw, 1f, new Color(0.85f, 0.75f, 0.45f));
+            // Склеп — тот же, что встанет на поле: пол, стены, дверь, трон (MapLoader).
+            foreach (var c in _map.Crypts) Model("Crypt", new Vector3(c.X, 0f, c.Z), c.Yaw, 1f);
             foreach (var l in _map.Locations) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
             foreach (var s in _map.Trails) Disc(new Vector3(s.X, 0.06f, s.Z), 3f, new Color(0.8f, 0.15f, 0.12f));
             foreach (var s in _map.Events) Disc(new Vector3(s.X, 0.07f, s.Z), 2.5f, new Color(0.95f, 0.8f, 0.2f));
@@ -161,14 +162,13 @@ namespace Sinbinder.Gameplay
             _ => new Color(0.45f, 0.30f, 0.18f),
         };
 
-        private void Model(string prop, Vector3 at, float yaw, float scale, Color? tint = null)
+        private void Model(string prop, Vector3 at, float yaw, float scale)
         {
-            var prefab = Resources.Load<GameObject>("Props/" + prop);
+            var prefab = MapLoader.Prefab(prop);
             if (prefab == null) return;
             var go = Instantiate(prefab);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
             go.transform.localScale = prefab.transform.localScale * scale;
-            if (tint.HasValue) foreach (var r in go.GetComponentsInChildren<Renderer>()) r.material.color = tint.Value;
             _shown.Add(go);
         }
 

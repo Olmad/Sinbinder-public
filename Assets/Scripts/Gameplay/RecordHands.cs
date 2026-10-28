@@ -49,6 +49,20 @@ namespace Sinbinder.Gameplay
             _shown = go.AddComponent<RecordHands>();
         }
 
+        /// <summary>
+        /// Положить пластинку из рук на землю перед собой (автор, 27.10: «нельзя убрать пластинку
+        /// из рук»). Лежит, пока её не поднимут F (<see cref="HiddenRecord"/>); ушёл из сцены — она на полке.
+        /// </summary>
+        public static void PutDown()
+        {
+            if (Holding == null || !SinbinderPlayer.Exists) return;
+            var hero = SinbinderPlayer.Instance.transform;
+            var record = Drop();
+            var flat = hero.forward; flat.y = 0f;
+            if (flat.sqrMagnitude < 0.01f) flat = Vector3.forward;
+            HiddenRecord.Put(record, hero.position + flat.normalized * 0.55f + Vector3.up * 0.005f, hero.eulerAngles.y + 25f);
+        }
+
         /// <summary>Отдать из рук (на граммофон или на полку — решает зовущий). Возвращает, что было.</summary>
         public static Records.Record Drop()
         {

@@ -529,9 +529,16 @@ namespace Sinbinder.EditorTools
                 // Котёл (автор, 27.10: «интерактивный») и палатки, в которые можно зайти («все»).
                 S("лагерь: котёл и палатки", null, PotAndTents, 3f),
 
+                // Бревно у огня (автор, 26.10 и 27.10: «на брёвна по-прежнему нельзя сесть»).
+                S("лагерь: Греховод на бревне у огня", SitOnLog, SatOnLog, 5f),
+                S("лагерь: встал с бревна", LogSeat.Rise, RoseFromLog, 2f),
+
                 // Приметы (облачная, 26.10; автор): ворон на плече Каргана, Гурт тенью за Хорем,
                 // Ждан с балалайкой — проверить, что встали.
                 S("лагерь: ворон, тень Гурта, балалайка Ждана", null, Habits, 3f),
+
+                // Ворон летает (автор, 27.10: «ворон не улетает и не прилетает»): поднять и снять в полёте.
+                S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
 
                 // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
                 S("небо: глаза проступили", () => { SkyEyes.Summon(); _eyesAt = Time.realtimeSinceStartup; }, EyesShot, 12f),
@@ -2480,6 +2487,12 @@ namespace Sinbinder.EditorTools
             g.Use();
             var (found, total) = Core.Records.HiddenCount();
             Write($"  [ПЛАСТИНКИ] собрано {Core.Records.Owned().Count}, золотых {found} из {total}; в руках было: {held}; играет: {Sinbinder.Audio.Music.Gramophone}");
+
+            // Ярлык — с ладонь, а не круг на полдвора (автор, 27.10: «пластинка на пол лагеря»).
+            float widest = 0f;
+            foreach (var r in UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+                if (r.name == "Ярлык" && r.enabled) widest = Mathf.Max(widest, r.bounds.size.x, r.bounds.size.z);
+            Write($"  [ЯРЛЫК] шире всех ярлыков — {widest * 100f:F0} см: {(widest > 0.01f && widest < 0.2f ? "с ладонь, как надо" : "НЕ ТАК")}");
         }
 
         private static bool RecordPlaying()
@@ -2490,6 +2503,18 @@ namespace Sinbinder.EditorTools
             bool inHand = !RecordHands.Empty;
             RecordHands.Drop();                                       // и на полку
             Write($"  [ПЛАСТИНКИ] граммофон играл, тема лагеря молчала; снята в руки: {inHand}; на полке: {RecordShelf.OnShelf().Count}");
+
+            // На землю и обратно (автор, 27.10: «нельзя убрать пластинку из рук»).
+            var shelf = UnityEngine.Object.FindFirstObjectByType<RecordShelf>();
+            shelf?.Use();
+            var held = RecordHands.Holding;
+            RecordHands.PutDown();
+            bool lying = held != null && HiddenRecord.Lying(held) && !RecordShelf.OnShelf().Contains(held);
+            foreach (var h in UnityEngine.Object.FindObjectsByType<HiddenRecord>(FindObjectsSortMode.None))
+                if (h.name == "Пластинка на земле") { h.Take(); break; }
+            bool back = held != null && RecordHands.Holding == held;
+            shelf?.PutBack();
+            Write($"  [ПЛАСТИНКИ] на землю: {(lying ? "легла" : "НЕТ")}; поднята снова: {(back ? "да" : "НЕТ")}; на полку: {(RecordHands.Empty ? "да" : "НЕТ")}");
             return true;
         }
 
@@ -2505,14 +2530,94 @@ namespace Sinbinder.EditorTools
                 if (w.DisplayName.Contains("Хорь")) khor = w;
                 if (w.DisplayName.Contains("Ждан")) zhdan = w;
             }
-            bool bird = false;
-            if (raven != null) foreach (var t in raven.GetComponentsInChildren<Transform>(true)) if (t.name == "Ворон на плече") bird = true;
+            // Ворон летает (автор, 27.10: «не улетает и не прилетает») — на плече он или в полёте, он есть.
+            bool has = raven != null && RavenFlight.Has(raven);
+            string bird = has ? RavenFlight.State(raven) : "НЕТ";
+            bool wings = false;
+            if (raven != null)
+                foreach (var f in UnityEngine.Object.FindObjectsByType<RavenFlight>(FindObjectsSortMode.None))
+                    foreach (var t in f.GetComponentsInChildren<Transform>(true)) if (t.name == RavenFlight.LeftWingPart) wings = true;
             string shadow = gurt != null && khor != null
                 ? $"{Vector3.Distance(gurt.transform.position, khor.transform.position):F1} м"
                 : "кого-то нет";
             bool lute = zhdan != null && zhdan.GetComponent<BalalaikaHabit>() != null;
-            Write($"  [ПРИМЕТЫ] ворон на плече: {(bird ? "сидит" : "НЕТ")}; Гурт от Хоря: {shadow}; привычка Ждана: {(lute ? "есть" : "НЕТ")}");
+            Write($"  [ПРИМЕТЫ] ворон: {bird}, крылья для полёта: {(wings ? "есть" : "НЕТ")}; Гурт от Хоря: {shadow}; привычка Ждана: {(lute ? "есть" : "НЕТ")}");
             if (raven != null) Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Карган с вороном", raven.transform);
+            return true;
+        }
+
+        private static float _satAt;
+
+        /// <summary>Подвести Греховода к бревну у главного костра и посадить, как по F.</summary>
+        private static void SitOnLog()
+        {
+            var stoke = UnityEngine.Object.FindFirstObjectByType<CampfireStoke>();
+            var fire = stoke != null ? stoke.Centre : Vector3.zero;
+            LogSeat best = null;
+            float bestD = float.MaxValue;
+            foreach (var s in UnityEngine.Object.FindObjectsByType<LogSeat>(FindObjectsSortMode.None))
+            {
+                float d = Vector3.Distance(s.transform.position, fire);
+                if (d < bestD) { bestD = d; best = s; }
+            }
+            if (best == null || SinbinderPlayer.Instance == null) { Write("  [БРЕВНО] брёвен в лагере нет"); return; }
+
+            var away = best.Centre - fire; away.y = 0f;
+            Warp(SinbinderPlayer.Instance.gameObject, best.Centre + away.normalized * 0.9f);
+            best.Sit();
+            _satAt = Time.realtimeSinceStartup;
+        }
+
+        private static bool SatOnLog()
+        {
+            if (Time.realtimeSinceStartup - _satAt < 1.5f) return false;
+            var hero = SinbinderPlayer.Instance;
+            var seat = LogSeat.Taken;
+            if (hero == null || seat == null) { Write("  [БРЕВНО] сел: НЕТ"); return true; }
+            Transform hips = null;
+            foreach (var t in hero.GetComponentsInChildren<Transform>()) if (t.name == "Hips") { hips = t; break; }
+            float top = seat.GetComponent<Renderer>().bounds.max.y;
+            float lift = hips != null ? hips.position.y - top : float.NaN;
+            bool ok = hips != null && Mathf.Abs(lift) < 0.25f;
+            Write($"  [БРЕВНО] сел: да; таз над верхом бревна {lift:F2} м — {(ok ? "сидит на бревне" : "НЕ ТАК")}");
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Греховод на бревне", hero.transform);
+            return true;
+        }
+
+        private static bool RoseFromLog()
+        {
+            var hero = SinbinderPlayer.Instance;
+            var agent = hero != null ? hero.GetComponent<UnityEngine.AI.NavMeshAgent>() : null;
+            Write($"  [БРЕВНО] встал: {(!LogSeat.Sitting ? "да" : "НЕТ")}; на навмеше: {(agent != null && agent.isOnNavMesh ? "да" : "НЕТ")}");
+            return true;
+        }
+
+        private static RavenFlight _bird;
+        private static float _birdAt;
+
+        private static void RavenUp()
+        {
+            Warrior raven = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && CrowStep.Raven(w)) raven = w;
+            _bird = raven != null ? RavenFlight.Launch(raven) : null;
+            _birdAt = Time.realtimeSinceStartup;
+        }
+
+        private static bool RavenAloft()
+        {
+            if (Time.realtimeSinceStartup - _birdAt < 3.5f) return false;
+            if (_bird == null) { Write("  [ВОРОН] ворона нет — не взлетел: НЕТ"); return true; }
+            Warrior master = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && CrowStep.Raven(w)) master = w;
+            float up = master != null ? _bird.transform.position.y - master.transform.position.y : 0f;
+            bool open = false;
+            foreach (var t in _bird.GetComponentsInChildren<Transform>()) if (t.name == RavenFlight.LeftWingPart && t.gameObject.activeInHierarchy) open = true;
+            bool flying = master != null && RavenFlight.Flying(master);
+            string state = master != null ? RavenFlight.State(master) : "нет";
+            Write($"  [ВОРОН] {state}, над Карганом {up:F1} м, крылья раскрыты: {(open ? "да" : "НЕТ")} — {(flying && up > 2f && open ? "летает" : "НЕ ТАК")}");
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "ворон в полёте", _bird.transform);
             return true;
         }
 
@@ -2528,7 +2633,7 @@ namespace Sinbinder.EditorTools
                     if (Cauldron.Fits(w, out _)) at.Add(w.DisplayName);
                 Warp(SinbinderPlayer.Instance.gameObject, pot.transform.position + Vector3.back * 1.2f);
                 pot.Taste();
-                Write($"  [КОТЁЛ] живут у котла: {string.Join(", ", at)}; F — сказано в журнал");
+                Write($"  [КОТЁЛ] живут у котла: {string.Join(", ", at)}; F — сказано вслух, над головой");
                 Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "котёл у огня", pot.transform);
             }
 

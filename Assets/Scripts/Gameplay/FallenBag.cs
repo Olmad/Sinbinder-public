@@ -111,6 +111,15 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- Греховод
 
+        /// <summary>Все мешки, до которых достаёт рука: F — тому, на который смотрят (UI.GearPanel).</summary>
+        public static IEnumerable<FallenBag> InReach()
+        {
+            if (!SinbinderPlayer.Exists) yield break;
+            foreach (var b in Live)
+                if (b != null && CampFocus.GroundDistance(SinbinderPlayer.Where, b.transform.position) <= Reach)
+                    yield return b;
+        }
+
         public static FallenBag Nearest()
         {
             if (!SinbinderPlayer.Exists) return null;

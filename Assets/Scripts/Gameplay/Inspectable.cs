@@ -95,6 +95,19 @@ namespace Sinbinder.Gameplay
         /// <summary>Насколько вбок от взгляда ещё «смотрит на вещь», градусов.</summary>
         private const float LookCone = 22f;
 
+        /// <summary>Куда смотрят, разглядывая вещь: её точка, поднятая на высоту знаков.</summary>
+        public Vector3 Focus => transform.position + Vector3.up * _focus;
+
+        /// <summary>Все вещи, до которых достаёт рука: F — той, на которую смотрят (UI.GearPanel, Gaze).</summary>
+        public static IEnumerable<Inspectable> InReach()
+        {
+            if (!SinbinderPlayer.Exists || Telling) yield break;
+            foreach (var i in Live)
+                if (i != null && i._lines.Length > 0
+                    && CampFocus.GroundDistance(SinbinderPlayer.Where, i.transform.position) <= i._reach)
+                    yield return i;
+        }
+
         /// <summary>
         /// Какую вещь Греховод сейчас рассматривал бы. Автор, 21 октября:
         /// «игрок взаимодействует с объектом, на который смотрит, или который

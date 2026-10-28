@@ -7,11 +7,11 @@ namespace Sinbinder.Gameplay
     /// <summary>
     /// Ворон на плече Каргана (примета облачной, 26.10: «ворон прибился к нему ещё при жизни
     /// и не ушёл после смерти»; кадр «Приметы: ворон на плече Каргана»). Сидит на левом плече,
-    /// клювом по ходу; Карган пал — ворон слетает к огню (строка гибели — <see cref="Signature"/>).
+    /// клювом по ходу. Модель — своя (raven.py; автор, 27.10: «ворон у Каргана странный»),
+    /// и он летает (<see cref="RavenFlight"/>; «ворон не улетает и не прилетает»).
     ///
     /// Ставит себя сам: раз в две секунды ищет Старого Ворона (<see cref="CrowStep.Raven"/>)
-    /// без птицы. Вороньим следом Карган рассыпается — ворон пропадает вместе с телом, потому
-    /// что сидит на кости, а не в мире.
+    /// без птицы. Метка «Ворон» на корне воина — птица у него уже есть, где бы она ни летала.
     /// </summary>
     public class RavenPerch : MonoBehaviour
     {
@@ -46,23 +46,30 @@ namespace Sinbinder.Gameplay
                 if (t.name == "LeftUpperArm") { shoulder = t; break; }
             if (shoulder == null) return;   // тела ещё нет — в следующий раз
 
-            var prefab = Resources.Load<GameObject>("Props/Crow");
+            // Своя модель с крыльями; нет её — прежняя, сидячая.
+            var prefab = Resources.Load<GameObject>("Props/Raven");
+            if (prefab == null) prefab = Resources.Load<GameObject>("Props/Crow");
             if (prefab == null) return;
 
-            // Метка «Ворон» — на корне воина: по ней видно, что птица уже сидит.
             var mark = new GameObject("Ворон").transform;
             mark.SetParent(w.transform, false);
 
-            var bird = Object.Instantiate(prefab, shoulder, false);
-            bird.name = "Ворон на плече";
-            // Лапами на плечо, клювом по ходу: опора модели — у лап, нос — по −Y Blender, а корень
-            // FBX переводит −Y в «вперёд» (как у дерева с отметинами). Был разворот на 180° и
-            // подъём на 10 см — ворон висел над плечом клювом вниз (кадр 27.10).
-            bird.transform.position = shoulder.position + w.transform.up * 0.03f - w.transform.right * 0.03f;
-            bird.transform.rotation = w.transform.rotation * prefab.transform.rotation;
+            // Своя опора птицы: вперёд — клювом, вверх — спиной. Модель внутри — со своим поворотом
+            // импорта (корень FBX переводит −Y Blender во «вперёд», как у дерева с отметинами).
+            var rig = new GameObject("Ворон на плече").transform;
+            rig.SetParent(shoulder, false);
+            var model = Object.Instantiate(prefab, rig, false);
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = prefab.transform.rotation;
+            model.transform.localScale = prefab.transform.localScale;
+            foreach (var c in model.GetComponentsInChildren<Collider>()) Object.Destroy(c);
+
+            rig.position = shoulder.position + w.transform.up * 0.03f - w.transform.right * 0.03f;
+            rig.rotation = w.transform.rotation;
             float size = Mathf.Max(0.6f, w.transform.lossyScale.y);
-            bird.transform.localScale = prefab.transform.localScale * (1.0f / Mathf.Max(0.01f, shoulder.lossyScale.x)) * size;
-            foreach (var c in bird.GetComponentsInChildren<Collider>()) Object.Destroy(c);
+            rig.localScale = Vector3.one * (size / Mathf.Max(0.01f, shoulder.lossyScale.x));
+
+            rig.gameObject.AddComponent<RavenFlight>().Configure(w, shoulder);
         }
     }
 }

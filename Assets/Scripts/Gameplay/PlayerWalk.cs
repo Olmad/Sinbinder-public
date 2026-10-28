@@ -104,6 +104,9 @@ namespace Sinbinder.Gameplay
 
             Vector3 step = (forward * wish.z + right * wish.x).normalized;
 
+            // Сидел на бревне — шаг поднимает (LogSeat): встаёт перед бревном и идёт оттуда.
+            if (LogSeat.Sitting) LogSeat.Rise();
+
             // Приказ идти, отданный мышью, и ходьба с клавиш — два хозяина
             // одного агента. Клавиши главнее: игрок жмёт их прямо сейчас.
             if (_agent.hasPath) _agent.ResetPath();

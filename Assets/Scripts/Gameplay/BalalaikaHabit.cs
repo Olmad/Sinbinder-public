@@ -9,8 +9,9 @@ namespace Sinbinder.Gameplay
     /// «балалайка не используема — ни игроком, ни воинами»). В свой час, когда свободен, Ждан
     /// идёт к балалайке у огня, садится и берёт её на колени; час прошёл — кладёт на место.
     ///
-    /// Звука пока нет: мелодию мимо нот автор слушает до того, как она встанет в игру
-    /// (28-ORDERS, решение 18). Когда будет — играть её отсюда, пока он сидит.
+    /// Звук — пока сидит с балалайкой (автор, 27.10: «Ждан брынькает без звука»): свой напев мимо
+    /// нот (Tools/audio/balalaika.py → Sounds/Balalaika), из его рук, по кругу; слышно метров на
+    /// восемнадцать. Молчит, когда поднят шар (тишина ритуала), и в набеге.
     ///
     /// Часы — по имени, без жребия, как у копателя (<see cref="DiggerHabit"/>).
     /// Ставит себя сам: раз в две секунды ищет Ждана без привычки.
@@ -69,7 +70,7 @@ namespace Sinbinder.Gameplay
         private bool Now(out Vector3 at)
         {
             at = default;
-            if (_warrior == null || _warrior.IsDead || _warrior.HasCommand || RaidEvent.Running) return false;
+            if (_warrior == null || _warrior.IsDead || _warrior.HasCommand || RaidEvent.Running || CrystalBall.Raised) return false;
             if (_lute == null)
             {
                 var found = GameObject.Find("Balalaika");
@@ -92,10 +93,38 @@ namespace Sinbinder.Gameplay
             else if (!there && _holding) Put();
         }
 
+        private AudioSource _sound;
+
+        /// <summary>Напев — из его рук: по кругу, пока сидит; дальше 18 м не слышно.</summary>
+        private void Strum(bool on)
+        {
+            if (!on) { if (_sound != null) _sound.Stop(); return; }
+            var clip = Resources.Load<AudioClip>("Sounds/Balalaika");
+            if (clip == null) return;
+            if (_sound == null)
+            {
+                _sound = gameObject.AddComponent<AudioSource>();
+                _sound.playOnAwake = false;
+                _sound.loop = true;
+                _sound.spatialBlend = 1f;
+                _sound.rolloffMode = AudioRolloffMode.Linear;
+                _sound.minDistance = 2f;
+                _sound.maxDistance = 18f;
+                _sound.dopplerLevel = 0f;
+                _sound.volume = 0.55f;
+            }
+            _sound.clip = clip;
+            _sound.Play();
+        }
+
+        public static bool Playing(Warrior w)
+            => w != null && w.TryGetComponent<BalalaikaHabit>(out var h) && h._sound != null && h._sound.isPlaying;
+
         private void Take()
         {
             _holding = true;
             if (_body != null) _body.Seated = true;
+            Strum(true);
             if (_lute == null) return;
             // На колени: поперёк, грифом влево — как держат.
             _lute.SetParent(transform, true);
@@ -107,6 +136,7 @@ namespace Sinbinder.Gameplay
         {
             _holding = false;
             if (_body != null) _body.Seated = false;
+            Strum(false);
             if (_lute == null) return;
             _lute.SetParent(_luteParent, true);
             _lute.SetPositionAndRotation(_lutePos, _luteRot);

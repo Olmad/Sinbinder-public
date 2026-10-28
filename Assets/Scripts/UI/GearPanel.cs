@@ -342,7 +342,9 @@ namespace Sinbinder.UI
             Rise();
 
             var pause = Core.GamePauseController.Instance;
-            if ((pause != null && pause.IsPaused) || PlayerInventory.Instance == null
+            // Мешка может и не быть (поле «Перетягивания»), а дверь склепа открыть надо — подсказке
+            // нужен Греховод, а не мешок.
+            if ((pause != null && pause.IsPaused) || !SinbinderPlayer.Exists
                 || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
 
             // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.
@@ -351,8 +353,6 @@ namespace Sinbinder.UI
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
-            if (TrophyChest.Unopened() != null && Seen(TrophyChest.Unopened().transform)) { _prompt.text = Loc.T("F — открыть сундук Марги"); return; }
-            if (TrophyChest.Reachable() != null && Seen(TrophyChest.Reachable().transform)) { _prompt.text = Loc.T("F — сундук Марги"); return; }
             // У стола с картами F — его (CardTable), но сказать об этом некому было:
             // автор, 21.10: «пропало взаимодействие с картами».
             if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
@@ -361,53 +361,68 @@ namespace Sinbinder.UI
                     ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
                 return;
             }
-            var sack = FallenBag.Nearest();
-            if (sack != null && Seen(sack.transform)) { _prompt.text = sack.Prompt; return; }
+            _prompt.text = Best(out var target) ? target.Prompt : "";
+        }
+
+        /// <summary>Что сделает F: насколько взгляд промахнулся мимо вещи, подпись и само дело.</summary>
+        private readonly struct Target
+        {
+            public readonly float Miss;
+            public readonly string Prompt;
+            public readonly System.Action Act;
+
+            public Target(float miss, string prompt, System.Action act) { Miss = miss; Prompt = prompt; Act = act; }
+        }
+
+        private static readonly List<Target> Targets = new();
+
+        private static void Offer(float miss, string prompt, System.Action act)
+        {
+            if (miss < Gaze.Away) Targets.Add(new Target(miss, prompt, act));
+        }
+
+        /// <summary>
+        /// Кому F — тому, на что смотрит Греховод (автор, 27.10: «по-прежнему РАДИУС взаимодействия,
+        /// а не взгляд»; п. 2 отзыва 26.10). Радиус каждой вещи — только предел руки: из всего, до чего
+        /// она достаёт, F получает ближайшее к взгляду (<see cref="Gaze"/>) — глазами середина кадра,
+        /// сверху мышь. Ни на что не смотрит, а в руках пластинка — положить её на землю (автор, 27.10:
+        /// «нельзя убрать пластинку из рук»).
+        /// </summary>
+        private static bool Best(out Target best)
+        {
+            Targets.Clear();
+
+            var shut = TrophyChest.Unopened();
+            if (shut != null) Offer(Gaze.Miss(shut.transform), Loc.T("F — открыть сундук Марги"), shut.Open);
+            var chest = TrophyChest.Reachable();
+            if (chest != null) Offer(Gaze.Miss(chest.transform), Loc.T("F — сундук Марги"), () => OpenChest(chest));
+            foreach (var sack in FallenBag.InReach()) Offer(Gaze.Miss(sack.transform), sack.Prompt, sack.Take);
             var pot = Cauldron.Nearest();
-            if (pot != null && Seen(pot.transform)) { _prompt.text = pot.Prompt; return; }
+            if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var fire = CampfireStoke.Nearest();
-            if (fire != null && Seen(fire.transform)) { _prompt.text = fire.Prompt; return; }
-            var weapon = WeaponPickup.Nearest();
-            if (weapon != null && Seen(weapon.transform)) { _prompt.text = weapon.Prompt; return; }
-            var disc = HiddenRecord.Nearest();
-            if (disc != null && Seen(disc.transform)) { _prompt.text = disc.Prompt; return; }
-            var music = RecordTarget();
-            if (music.gramophone != null && Seen(music.gramophone.transform)) { _prompt.text = music.gramophone.Prompt; return; }
-            if (music.shelf != null && Seen(music.shelf.transform)) { _prompt.text = music.shelf.Prompt; return; }
-            var thing = Inspectable.Nearest();
-            _prompt.text = thing != null ? thing.Prompt : "";
-        }
+            if (fire != null) Offer(Gaze.Miss(fire.Centre, 0.9f), fire.Prompt, fire.Feed);
+            foreach (var weapon in WeaponPickup.InReach()) Offer(Gaze.Miss(weapon.transform), weapon.Prompt, weapon.Take);
+            foreach (var disc in HiddenRecord.InReach()) Offer(Gaze.Miss(disc.transform), disc.Prompt, disc.Take);
+            var gramophone = Gramophone.Nearest();
+            if (gramophone != null) Offer(Gaze.Miss(gramophone.transform), gramophone.Prompt, gramophone.Use);
+            foreach (var shelf in RecordShelf.InReach()) shelf.Offer(Offer);
+            foreach (var seat in LogSeat.InReach()) Offer(Gaze.Miss(seat.Centre, 0.7f), seat.Prompt, seat.Sit);
+            foreach (var door in CryptDoor.InReach()) Offer(Gaze.Miss(door.Leaf), door.Prompt, door.Toggle);
+            foreach (var thing in Inspectable.InReach())
+                Offer(Mathf.Min(Gaze.Miss(thing.transform), Gaze.Miss(thing.Focus, 0.6f)), thing.Prompt, thing.Inspect);
 
-        /// <summary>
-        /// Граммофон или полка — кому F, если рядом оба: с пластинкой в руках — граммофону
-        /// (поставить; стоявшая перейдёт в руки), с пустыми руками — полке (взять).
-        /// Один из них — null.
-        /// </summary>
-        /// <summary>
-        /// Видно ли вещь взглядом: от первого лица F — только тому, на что смотришь (в конусе
-        /// <see cref="GazeCone"/>° от середины экрана), как разговор и Inspectable; сверху взгляда
-        /// нет — по близости, как прежде (автор, 26.10: «взаимодействие в некоторых местах всё
-        /// ещё не зависит от взгляда»).
-        /// </summary>
-        private static bool Seen(Transform thing)
-        {
-            if (thing == null) return false;
-            var cam = Camera.main;
-            var view = cam != null ? cam.GetComponent<RTS_Camera>() : null;
-            if (view == null || !view.FirstPersonNow) return true;
-            var to = thing.position + Vector3.up * 0.5f - cam.transform.position;
-            return Vector3.Angle(cam.transform.forward, to) <= GazeCone;
-        }
-
-        /// <summary>Полуугол взгляда для F от первого лица, градусы.</summary>
-        private const float GazeCone = 35f;
-
-        private static (Gramophone gramophone, RecordShelf shelf) RecordTarget()
-        {
-            var g = Gramophone.Nearest();
-            var s = RecordShelf.Nearest();
-            if (g != null && (!RecordHands.Empty || s == null)) return (g, null);
-            return s != null ? (null, s) : (g, null);
+            best = default;
+            if (Targets.Count == 0)
+            {
+                // Сидя на бревне — до огня рука достаёт (полено), а ни на что не смотрит — встать.
+                if (LogSeat.Sitting && !LogSeat.JustSat) { best = new Target(0f, Loc.T("F — встать"), LogSeat.Rise); return true; }
+                if (RecordHands.Empty || !SinbinderPlayer.Exists) return false;
+                best = new Target(0f, Loc.T("F — положить пластинку на землю"), RecordHands.PutDown);
+                return true;
+            }
+            best = Targets[0];
+            foreach (var t in Targets) if (t.Miss < best.Miss) best = t;
+            return true;
         }
 
         /// <summary>Нижний край строки F, когда над панелью выделенного пусто.</summary>
@@ -474,38 +489,9 @@ namespace Sinbinder.UI
             var pause = Core.GamePauseController.Instance;
             if (pause != null && pause.IsPaused) return;
 
-            // Закрытый сундук Марги — открыть (раньше открывался сам на подходе).
-            var shut = TrophyChest.Unopened();
-            if (shut != null && Seen(shut.transform)) { shut.Open(); return; }
-
-            var chest = TrophyChest.Reachable();
-            if (chest != null && Seen(chest.transform)) { OpenChest(chest); return; }
-
-            // Котёл — прежде костра: он стоит у огня, и F ушло бы полену (27.10).
-            // Мешок павшего — F (облачная, 26.10): всё ему, и памятная вещь.
-            var sack = FallenBag.Nearest();
-            if (sack != null && Seen(sack.transform)) { sack.Take(); return; }
-
-            var pot = Cauldron.Nearest();
-            if (pot != null && Seen(pot.transform)) { pot.Taste(); return; }
-
-            // Полено в костёр — «лагерь отзывается» (автор, 26.10).
-            var fire = CampfireStoke.Nearest();
-            if (fire != null && Seen(fire.transform)) { fire.Feed(); return; }
-
-            // Оружие со стойки у входа в шатёр (п. 23 отзыва 21.10).
-            var weapon = WeaponPickup.Nearest();
-            if (weapon != null && Seen(weapon.transform)) { weapon.Take(); return; }
-
-            // Пластинка прежде граммофона: она лежит рядом, и F ушло бы игле (37-DEMO §8).
-            var disc = HiddenRecord.Nearest();
-            if (disc != null && Seen(disc.transform)) { disc.Take(); return; }
-            var music = RecordTarget();
-            if (music.gramophone != null && Seen(music.gramophone.transform)) { music.gramophone.Use(); return; }
-            if (music.shelf != null && Seen(music.shelf.transform)) { music.shelf.Use(); return; }
-
-            // Последним — вещь, которую рассматривают (дерево с топором, пешка).
-            Inspectable.Nearest()?.Inspect();
+            // Сундук Марги, мешок павшего, котёл, полено в костёр, оружие со стойки, пластинки,
+            // бревно у огня, вещь, которую рассматривают, — что под взглядом, тому и F (Best).
+            if (Best(out var target)) target.Act();
         }
 
         /// <summary>Открыть сундук лагеря: слева он, справа мешок Греховода.</summary>
