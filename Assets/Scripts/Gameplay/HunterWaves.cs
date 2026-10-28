@@ -115,13 +115,13 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Страж события (обоз, деревня в беде): человек Ордена, что стоит у места и бьётся с подошедшими.</summary>
-        public Warrior Guard(Vector3 at, Vector3 post)
+        public Warrior Guard(Vector3 at, Vector3 post, ShellType shell = ShellType.Living)
         {
             _relations ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
             if (_setup == null) _setup = FindFirstObjectByType<AOS.AOSSceneSetup>();
             int keep = Wave;
             Wave = Mathf.Max(1, Wave);
-            var w = Hunter(at, post, -1);
+            var w = Hunter(at, post, -1, shell);
             Wave = keep;
             if (w == null) return null;
             Destroy(w.GetComponent<HunterSiege>());
@@ -130,7 +130,10 @@ namespace Sinbinder.Gameplay
             return w;
         }
 
-        private Warrior Hunter(Vector3 at, Vector3 gate, int side)
+        /// <summary>Отложить следующую волну (гадалка, испорченный тайник экспедиции).</summary>
+        public void Delay(float seconds) => Next += Mathf.Max(0f, seconds);
+
+        private Warrior Hunter(Vector3 at, Vector3 gate, int side, ShellType shell = ShellType.Living)
         {
             if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 6f, UnityEngine.AI.NavMesh.AllAreas)) at = hit.position;
             int n = _born++;
@@ -140,10 +143,10 @@ namespace Sinbinder.Gameplay
 
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(name, (SinType)(n % 7), MoralType.Pious, 1 + Wave / 2, 40f + Wave * 8f);
-            warrior.Initialize(soul, ShellType.Living, _relations, n % 6 == 0, Team.Enemy);
-            var data = ShellLibrary.Get(ShellType.Living);
+            warrior.Initialize(soul, shell, _relations, n % 6 == 0, Team.Enemy);
+            var data = ShellLibrary.Get(shell);
             WarriorRig.Attach(go, data != null ? data.movementSpeed : 3.5f);
-            WarriorLook.Build(go, ShellType.Living, 1.7f + n % 5 * 0.03f, 1f, 1.05f);
+            WarriorLook.Build(go, shell, 1.7f + n % 5 * 0.03f, 1f, 1.05f);
 
             // Каждая волна крепче прежней: запас тела — на четверть больше за волну.
             var body = go.GetComponent<Damageable>();

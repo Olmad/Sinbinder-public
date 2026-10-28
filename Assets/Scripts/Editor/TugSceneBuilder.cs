@@ -695,11 +695,15 @@ namespace Sinbinder.EditorTools
                 if (gateSite != null) Sinbinder.Utilets.Reel.Aim(gateSite.transform.position, 16f);
                 if (gateSite != null) Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/постройки", "000");
 
-                // Экспедиции (MapEvent): события на местах карты, у обоза стража; перебили — трофей и развилка.
+                // Экспедиции (MapEvent по ExpeditionBook): роды по перестановке номера партии; боевое —
+                // перебили стражу, развилку решили пошедшие; мирное — выбор Греховода; место не пустеет.
+                var kinds = new System.Collections.Generic.HashSet<int>();
+                for (int j = 0; j < ExpeditionBook.All.Length; j++) kinds.Add(MapEvent.Pick(j));
                 MapEvent caravan = null;
-                foreach (var e in MapEvent.All) if (e != null && e.Kind == "caravan" && !e.Done && caravan == null) caravan = e;
-                int events = MapEvent.All.Count, guarded = 0;
-                foreach (var e in MapEvent.All) if (e != null && e.Guards.Count > 0) guarded++;
+                foreach (var e in MapEvent.All) if (e != null && !e.Parley && !e.Done && caravan == null) caravan = e;
+                int events = MapEvent.All.Count, guarded = 0, fights = 0;
+                foreach (var e in MapEvent.All) if (e != null && !e.Parley) { fights++; if (e.Guards.Count == e.Entry.Guards) guarded++; }
+                string fightKind = caravan != null ? caravan.Kind : "—";
                 if (caravan != null)
                 {
                     Warrior fighter = null;
@@ -716,11 +720,18 @@ namespace Sinbinder.EditorTools
                     }
                     caravan.Resolve();
                 }
-                int idx = 0;
-                for (int i = 0; i < MapEvent.All.Count; i++) if (MapEvent.All[i] == caravan) idx = i;
-                var cargoKind = Trophies.Cargo(idx);
-                bool got = caravan != null && caravan.Done && Trophies.Has(Lords.Player, cargoKind);
-                Line($"экспедиции: событий {events} (по карте {MapLoader.Current?.Events.Count}), со стражей {guarded}; обоз взят — {(caravan != null && caravan.Done ? "да" : "НЕТ")}, трофей игроку — {cargoKind}: {(got ? "есть" : "НЕТ")} — {(events == MapLoader.Current?.Events.Count && guarded == events && got ? "как надо" : "НЕ ТАК")}");
+                bool fought = caravan != null && caravan.Done;
+                // Мирное: листаем место, пока не встанет мирный род, и выбираем бесплатную развилку.
+                MapEvent talk = null;
+                foreach (var e in MapEvent.All) if (e != null && e.Parley && !e.Done) talk = e;
+                var spot = caravan ?? (MapEvent.All.Count > 0 ? MapEvent.All[0] : null);
+                for (int k = 0; talk == null && spot != null && k < ExpeditionBook.All.Length; k++) { spot.Next(); if (spot.Parley) talk = spot; }
+                string talkKind = talk != null ? talk.Kind : "—";
+                bool chose = talk != null && talk.Choose(talk.Entry.A.Cost == 0 ? 0 : talk.Entry.B.Cost == 0 ? 1 : 0, Lords.Player);
+                string before = spot != null ? spot.Kind : "";
+                spot?.Next();
+                bool again = spot != null && !spot.Done && spot.Kind != before;
+                Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; событий {events} (по карте {MapLoader.Current?.Events.Count}), боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новое на месте — {(again ? "да" : "НЕТ")} — {(kinds.Count == ExpeditionBook.All.Length && events == MapLoader.Current?.Events.Count && guarded == fights && fought && chose && again ? "как надо" : "НЕ ТАК")}");
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");

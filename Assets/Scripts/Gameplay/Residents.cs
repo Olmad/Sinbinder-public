@@ -66,6 +66,23 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[КАРТЫ] {name}: жителей {_folk.Count}");
         }
 
+        /// <summary>
+        /// Новый человек у этого места — пленник, беженец, дезертир экспедиции (MapEvent). Сгенерирован
+        /// так же, как жители: по номеру, без жребия.
+        /// </summary>
+        public Warrior Newcomer(int seed, Vector3 at)
+        {
+            _relations ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            var present = new List<string>();
+            foreach (var r in FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                foreach (var w in r._folk) if (w != null) present.Add(w.DisplayName);
+            var k = WarriorGenerator.Make(seed, SoulOrigin.Sortie, present);
+            if (NavMesh.SamplePosition(at, out var hit, 4f, NavMesh.AllAreas)) at = hit.position;
+            var made = Make(k, at, FindFirstObjectByType<AOS.AOSSceneSetup>());
+            if (made != null) _folk.Add(made);
+            return made;
+        }
+
         /// <summary>Место у очага: кольцами вокруг середины, по номеру.</summary>
         private Vector3 Home(int i)
         {

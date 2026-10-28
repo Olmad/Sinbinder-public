@@ -45,6 +45,9 @@ namespace Sinbinder.Gameplay
 
         public static int Count(Stuff s) => Stock.TryGetValue(s, out var n) ? n : 0;
 
+        /// <summary>Материал на стол — добыча экспедиции (MapEvent): камень кургана, кости могилы.</summary>
+        public static void Add(Stuff s, int n) { if (n > 0) Stock[s] = Count(s) + n; }
+
         public static bool Carrying => _load != null;
 
         /// <summary>Что даёт тело этой оболочки.</summary>
