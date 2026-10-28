@@ -260,7 +260,7 @@ namespace Sinbinder.EditorTools
     public static class MatchRun
     {
         private const string Active = "Sinbinder.MatchRun.Active";
-        private const float Length = 240f;
+        private const float Length = 420f;   // первая волна охотников — на пятой минуте
         private static float _nextNote = -1f;
 
         static MatchRun()
@@ -290,6 +290,9 @@ namespace Sinbinder.EditorTools
             var match = TugMatch.Instance;
             var (door, throne) = match.PartsOf(match.PlayerSide);
             var leaf = door != null ? door.Leaf.GetComponent<Sturdy>() : null;
+            int hunters = 0;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None)) if (w.Team == Team.Enemy && !w.IsDead) hunters++;
+            Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: охотников на поле {hunters}, волна {HunterWaves.Instance?.Wave}, кошель игрока {Favor.Purse}");
             foreach (var ai in RivalLord.All)
             {
                 if (ai == null) continue;
@@ -531,6 +534,19 @@ namespace Sinbinder.EditorTools
             {
                 _phase = 6;
                 Altar(hero);
+
+                // Охотники (54-TUG.md): волна — к каждому живому склепу, с ближней тропы, на склеп.
+                int sent = HunterWaves.Instance != null ? HunterWaves.Instance.Release() : 0;
+                int hunters = 0, aimed = 0;
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                {
+                    if (w.Team != Team.Enemy || w.IsDead) continue;
+                    hunters++;
+                    if (w.GetComponent<HunterSiege>() != null && w.GetComponent<HunterGoal>() != null) aimed++;
+                }
+                int crypts = 0;
+                for (int i = 0; i < TugMatch.Instance.Crypts.Count; i++) if (!TugMatch.Instance.Out(i)) crypts++;
+                Line($"охотники, волна {HunterWaves.Instance?.Wave}: вышло {sent} (по 3 на {crypts} склепа), на поле {hunters}, идут на склеп {aimed} — {(sent == 3 * crypts && aimed == hunters ? "как надо" : "НЕ ТАК")}");
             }
 
             // Шаг 3: что делал ИИ, чего добилась осада, и конец партии — трон ИИ рушим: победа.

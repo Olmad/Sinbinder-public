@@ -114,6 +114,11 @@ namespace Sinbinder.Gameplay
                 entry.AddComponent<Crypt.TestChamberEntry>();
             }
             _match.Begin(seat);
+
+            // Охотники — с троп карты, раз в пять минут к каждому склепу (HunterWaves).
+            var trails = new System.Collections.Generic.List<Vector3>();
+            foreach (var s in map.Trails) trails.Add(new Vector3(s.X, 0f, s.Z));
+            gameObject.AddComponent<HunterWaves>().Begin(trails);
         }
 
         private TugMatch _match;
