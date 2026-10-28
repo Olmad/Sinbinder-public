@@ -35,6 +35,12 @@ namespace Sinbinder.Gameplay
         private float _next;
         private bool _muted;
 
+        // Экспедиция: кто в отряде, куда ушёл, когда (Expedition).
+        private readonly HashSet<Warrior> _away = new();
+        private MapEvent _out;
+        private float _outSince;
+        private const float ExpeditionRange = 110f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
 
@@ -108,7 +114,10 @@ namespace Sinbinder.Gameplay
             if (!Attacking && ready) Attacking = true;
             else if (Attacking && followers.Count < (Need + 1) / 2 - 1) Attacking = false;
 
-            if (Attacking) { Attack(match, followers); return; }
+            if (Attacking) { _away.Clear(); Attack(match, followers); return; }
+
+            // Экспедиция (MapEvent): ближнее живое событие — туда часть верных; решит на месте их лидер.
+            Expedition(followers);
 
             // Строить — как игрок (BuildSite): по порядку костёр, ворота, вышки; на стройку — свободных верных,
             // на готовую вышку — унылого.
@@ -120,12 +129,52 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < followers.Count; i++)
             {
                 var f = followers[i];
-                if (f.HasCommand || gate == null || TowerPost.Guards(f)) continue;
+                if (f.HasCommand || gate == null || TowerPost.Guards(f) || _away.Contains(f)) continue;
                 if (site != null && builders < 3) { builders++; Order(f, CommandKind.Hold, site.transform.position + site.transform.right * (builders - 2) * 1.2f, null); continue; }
                 var post = gate.position + gate.forward * 9f + gate.right * ((i % 5 - 2) * 1.6f) + gate.forward * (i / 5 * 1.6f);
                 Order(f, CommandKind.Hold, post, null);
             }
             Recruit(followers);
+        }
+
+        // ---------------------------------------------------------- экспедиции
+
+        /// <summary>
+        /// Отряд в экспедицию — как игрок, ПКМ у знака: верных не меньше трёх — уходит половина (двое–четверо),
+        /// к ближнему живому событию, мирное — если хватит монет на первую развилку или вторая даром. Отряд
+        /// вернулся (событие кончилось, две минуты прошло) — снова в караул.
+        /// </summary>
+        public void Expedition(List<Warrior> followers)
+        {
+            _away.RemoveWhere(w => w == null || w.IsDead);
+            if (_out != null && (_out.Done || Time.time - _outSince > 120f)) { _out = null; _away.Clear(); }
+            if (_out != null || followers.Count < 3) return;
+
+            MapEvent best = null;
+            float near = ExpeditionRange;
+            foreach (var e in MapEvent.All)
+            {
+                if (e == null || e.Done || e.Entry == null) continue;
+                if (e.Parley && e.Entry.A.Cost > Favor.PurseOf(Lord) && e.Entry.B.Cost > Favor.PurseOf(Lord)) continue;
+                float d = CampFocus.GroundDistance(transform.position, e.transform.position);
+                if (d < near) { near = d; best = e; }
+            }
+            if (best == null) return;
+
+            int take = Mathf.Clamp(followers.Count / 2, 2, 4);
+            var squad = new List<Warrior>();
+            foreach (var f in followers)
+            {
+                if (squad.Count >= take) break;
+                if (f == null || f.IsDead || TowerPost.Guards(f)) continue;
+                squad.Add(f);
+            }
+            if (squad.Count < 2) return;
+            foreach (var f in squad) { Order(f, CommandKind.Move, best.transform.position, null); _away.Add(f); }
+            best.Send(Lord, squad);
+            _out = best;
+            _outSince = Time.time;
+            Debug.Log($"[ИИ] {Lord}: отряд {squad.Count} — в экспедицию «{best.Kind}»");
         }
 
         /// <summary>
