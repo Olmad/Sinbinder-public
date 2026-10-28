@@ -223,6 +223,16 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        /// <summary>Живые люди чужих отрядов, посланных к этому событию (ИИ спорит за добычу — RivalLord.Expedition).</summary>
+        public List<Warrior> SentOthers(string lord)
+        {
+            var got = new List<Warrior>();
+            foreach (var kv in _sent)
+                if (kv.Key != lord)
+                    foreach (var w in kv.Value) if (w != null && !w.IsDead) got.Add(w);
+            return got;
+        }
+
         /// <summary>Отряд Греховода идёт в экспедицию: на месте решит лидер, если Греховода там нет.</summary>
         public void Send(string lord, List<Warrior> squad)
         {

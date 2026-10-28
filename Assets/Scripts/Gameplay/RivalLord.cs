@@ -326,6 +326,7 @@ namespace Sinbinder.Gameplay
 
             MapEvent best = null;
             int bestNeed = 2;
+            List<Warrior> bestRivals = null;
             float near = float.MaxValue, range = seeker ? 170f : ExpeditionRange;
             foreach (var e in MapEvent.All)
             {
@@ -340,7 +341,17 @@ namespace Sinbinder.Gameplay
                 // Некромант — к бою (тела), переманщик — туда, где есть люди.
                 if (Prefers(Style.Necromancer) && !e.Parley) d *= 0.6f;
                 if (Prefers(Style.Lurer) && (e.Entry.A.Recruits > 0 || e.Entry.B.Recruits > 0 || e.Entry.A.Deserters)) d *= 0.5f;
-                if (d < near) { near = d; best = e; bestNeed = need; }
+                // Туда уже идёт чужой отряд — поспорить за добычу (оборона не спорит): нужно больше людей,
+                // зато и цель заманчивей.
+                var others = e.SentOthers(Lord);
+                if (others.Count > 0)
+                {
+                    if (Way == Style.Defence && !seeker) continue;
+                    need = Mathf.Max(need, guards + others.Count + 1);
+                    if (need > cap) continue;
+                    d *= 0.5f;
+                }
+                if (d < near) { near = d; best = e; bestNeed = need; bestRivals = others; }
             }
             if (best == null) return;
 
@@ -356,6 +367,8 @@ namespace Sinbinder.Gameplay
             if (squad.Count < 2) return;
             foreach (var f in squad) { Order(f, CommandKind.Move, best.transform.position, null); _away.Add(f); }
             best.Send(Lord, squad);
+            // Чужой отряд там — своим велено бить его (Hostility: на кого Греховод указал, того бьют и без приказа).
+            if (bestRivals != null) foreach (var r in bestRivals) Hostility.Mark(Lord, r);
             _out = best;
             _outSince = Time.time;
             Debug.Log($"[ИИ] {Lord}: отряд {squad.Count} — в экспедицию «{best.Kind}»");
