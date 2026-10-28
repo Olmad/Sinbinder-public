@@ -1,4 +1,4 @@
-// Assets/Scripts/Gameplay/FogOfWar.cs
+﻿// Assets/Scripts/Gameplay/FogOfWar.cs
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -283,10 +283,24 @@ namespace Sinbinder.Gameplay
             // перестаёт быть глазами в тот же такт, когда меняет сторону.
             foreach (var w in all)
             {
-                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+                if (w == null || w.IsDead) continue;
+                // «Перетягивание»: своих отрядов нет — глаза игрока ещё и верные ему ничьи (54-TUG.md).
+                if (w.Team == Team.Neutral && Lords.Active)
+                {
+                    if (Core.Allegiance.Dearest(w.Id) == Lords.Player && Core.Allegiance.Of(w.Id, w.Loyalty, Lords.Player) >= Hostility.Follows)
+                        Stamp(w.transform.position, Sight, seen: true);
+                    continue;
+                }
+                if (w.Team != Team.Player) continue;
                 float r = w is SinbinderPlayer ? HeroSight : Sight;
                 Stamp(w.transform.position, r, seen: true);
             }
+
+            // Дозорный на своей вышке смотрит далеко (BuildSite, TowerPost).
+            if (Lords.Active && TugMatch.Instance != null)
+                foreach (var post in TowerPost.All)
+                    if (post != null && post.Guard != null && post.Side == TugMatch.Instance.PlayerSide)
+                        Stamp(post.Top, TowerPost.Sight, seen: true);
 
             // Сменилось только там, куда смотрели сейчас или прошлым тактом.
             var where = _looked;

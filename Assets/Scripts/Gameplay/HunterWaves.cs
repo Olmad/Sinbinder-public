@@ -181,11 +181,17 @@ namespace Sinbinder.Gameplay
             if (manager != null && manager.GetClosestEnemy(transform.position, Busy, gameObject) != null) return;
 
             var (door, throne) = TugMatch.Instance.PartsOf(_side);
-            var goal = GetComponent<HunterGoal>();
-            if (goal != null && goal.TryGet(transform.position, out _)) return;   // ещё идёт к склепу
 
+            // Ворота перед склепом (BuildSite) — первыми: цель охотника за ними, и путь упирается в частокол.
             Sturdy target = null;
-            if (door != null && !door.Open) target = door.Leaf.GetComponent<Sturdy>();
+            var gate = BuildSite.GateOf(_side);
+            if (gate != null && !gate.Open && CampFocus.GroundDistance(transform.position, gate.Leaf.position) < 14f)
+                target = gate.Leaf.GetComponent<Sturdy>();
+
+            var goal = GetComponent<HunterGoal>();
+            if (target == null && goal != null && goal.TryGet(transform.position, out _)) return;   // ещё идёт к склепу
+
+            if (target == null && door != null && !door.Open) target = door.Leaf.GetComponent<Sturdy>();
             if (target == null || target.Broken) target = throne;
             if (target == null || target.Broken) return;
 

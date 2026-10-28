@@ -550,6 +550,39 @@ namespace Sinbinder.EditorTools
                 for (int i = 0; i < TugMatch.Instance.Crypts.Count; i++) if (!TugMatch.Instance.Out(i)) want += 3 + HunterWaves.Loyal(i) / 4;
                 Line($"охотники, волна {HunterWaves.Instance?.Wave}: вышло {sent} (по 3 на {crypts} склепа и по одному на каждые 4 верных), на поле {hunters}, идут на склеп {aimed} — {(sent == want && aimed == hunters ? "как надо" : "НЕ ТАК")}");
 
+                // Постройки (54-TUG.md): места перед каждым склепом; заложить — монеты; достроить; дозорный — наверх.
+                int side0 = TugMatch.Instance.PlayerSide, sites = 0;
+                BuildSite tower = null, gateSite = null, fireSite = null;
+                foreach (var s in BuildSite.All)
+                {
+                    if (s == null) continue;
+                    sites++;
+                    if (s.Side != side0) continue;
+                    if (s.What == BuildSite.Kind.Tower && tower == null) tower = s;
+                    if (s.What == BuildSite.Kind.Gate) gateSite = s;
+                    if (s.What == BuildSite.Kind.Fire) fireSite = s;
+                }
+                Favor.AddCoins(Lords.Player, 20);
+                int purse = Favor.Purse;
+                tower?.Lay(); gateSite?.Lay(); fireSite?.Lay();
+                bool paid = Favor.Purse == purse - 17;
+                tower?.Finish(); gateSite?.Finish(); fireSite?.Finish();
+                var post = tower != null ? tower.GetComponent<TowerPost>() : null;
+                Warrior lookout = null;
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (w.Team == Team.Neutral && !w.IsDead && RivalLord.LordOf(w) == null && w.Soul != null && w.Soul.Sin == SinType.Sloth) { lookout = w; break; }
+                if (lookout != null && post != null)
+                {
+                    Allegiance.Change(lookout.Id, lookout.Loyalty, Lords.Player, 70f - Allegiance.Of(lookout.Id, lookout.Loyalty, Lords.Player));
+                    post.Take(lookout);
+                }
+                bool up = lookout != null && post != null && post.Guard == lookout && Mathf.Abs(lookout.transform.position.y - post.Top.y) < 0.2f;
+                Line($"постройки: мест {sites} (по 4 на склеп), заложены вышка, ворота, костёр — плачено {(paid ? "17 мон., как надо" : "НЕ ТАК")}; " +
+                     $"вышка — {(post != null ? "стоит" : "НЕТ")}, дозорный наверху — {(up ? "да" : "НЕТ")}; ворота — {(BuildSite.GateOf(side0) != null ? "стоят" : "НЕТ")}; " +
+                     $"костёр — {(fireSite != null && BuildSite.NearFire(side0, fireSite.transform.position, 1f) ? "горит" : "НЕТ")} — {(sites == 4 * TugMatch.Instance.Crypts.Count && paid && up && BuildSite.GateOf(side0) != null ? "как надо" : "НЕ ТАК")}");
+                if (gateSite != null) Sinbinder.Utilets.Reel.Aim(gateSite.transform.position, 16f);
+                if (gateSite != null) Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/постройки", "000");
+
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");
             }

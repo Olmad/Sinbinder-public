@@ -70,6 +70,8 @@ namespace Sinbinder.Gameplay
                 var crypt = Instantiate(built, at, rot, root);
                 crypt.name = Loc.F("Склеп {0}", i + 1);
                 _match.Crypts.Add(crypt.transform);
+                // Места построек перед склепом: две вышки, ворота с частоколом, сигнальный костёр (BuildSite).
+                BuildSite.Plant(crypt.transform, i);
                 foreach (var part in crypt.GetComponentsInChildren<Sturdy>())
                 {
                     bool door = part.GetComponentInParent<CryptDoor>() != null;

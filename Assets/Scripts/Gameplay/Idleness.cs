@@ -40,9 +40,21 @@ namespace Sinbinder.Gameplay
                 string lord = Allegiance.Dearest(w.Id);
                 if (lord == null || Allegiance.Of(w.Id, w.Loyalty, lord) < Hostility.Follows) continue;
 
-                bool busy = w.HasCommand || (manager != null && manager.GetClosestEnemy(w.transform.position, 12f, w.gameObject) != null);
+                // На посту (вышка) — при деле: что ему там по душе, решает сам пост (TowerPost).
+                bool busy = w.HasCommand || TowerPost.Guards(w)
+                            || (manager != null && manager.GetClosestEnemy(w.transform.position, 12f, w.gameObject) != null);
                 if (busy || !_busyAt.ContainsKey(w.Id)) { _busyAt[w.Id] = Time.time; if (busy) continue; }
                 if (Time.time - _busyAt[w.Id] < Bored) continue;
+
+                // У своего сигнального костра не скучают; унылым и чревоугодным там и верности прибывает.
+                int side = -1;
+                if (TugMatch.Instance != null)
+                    for (int i = 0; i < TugMatch.Instance.Crypts.Count; i++) if (lord == Loc.F("Греховод стороны {0}", i + 1)) side = i;
+                if (side >= 0 && BuildSite.NearFire(side, w.transform.position, 6f))
+                {
+                    if (w.Soul.Sin == SinType.Sloth || w.Soul.Sin == SinType.Gluttony) Favor.Nudge(w, lord, 0.5f, null);
+                    continue;
+                }
 
                 switch (w.Soul.Sin)
                 {
