@@ -170,7 +170,7 @@ namespace Sinbinder.Gameplay
                     if (mats[i].HasProperty("_EmissionColor"))
                     {
                         mats[i].EnableKeyword("_EMISSION");
-                        mats[i].SetColor("_EmissionColor", colour * (1.4f + force * 3.0f));
+                        mats[i].SetColor("_EmissionColor", colour * (0.7f + force * 1.1f));   // было до 4,4 — у сильных глаза слепили (автор, 28.10)
                     }
                 }
 
@@ -208,7 +208,7 @@ namespace Sinbinder.Gameplay
             light.type = LightType.Point;
             light.color = colour;
             light.range = 1.9f;
-            light.intensity = 0.55f + force * 0.9f;
+            light.intensity = 0.35f + force * 0.45f;
             light.shadows = LightShadows.None;
         }
     }

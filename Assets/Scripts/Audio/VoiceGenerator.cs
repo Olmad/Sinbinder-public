@@ -61,9 +61,9 @@ namespace Sinbinder.Audio
 
             EmotionType emotion = EmotionType.Calm;
             VoiceType voiceType = Timbre();
-            float pitch = _basePitch * Height();
+            float pitch = _basePitch * Height() * Personal();
             float variation = _pitchVariation;
-            float duration = _duration;
+            float duration = _duration * Pace();
 
             if (_useEmotions && _warrior != null && EmotionSystem.Instance != null)
             {
@@ -210,7 +210,27 @@ namespace Sinbinder.Audio
         /// бесплотный звенит высоко — это слышно раньше, чем игрок
         /// успевает посмотреть, кто говорит.
         /// </summary>
-        private float Height()
+        private float Height() => Shelled();
+
+        /// <summary>
+        /// Свой голос у каждого (автор, 28.10: «при разговоре на второй фразе одинаковые голоса»): высота —
+        /// от души по формуле, ±15 %, у женщин выше на пятую часть. Без жребия: тот же человек звучит одинаково.
+        /// </summary>
+        private float Personal()
+        {
+            if (_warrior == null || _warrior.Soul == null) return 1f;
+            float k = 0.85f + (Wardrobe.Stamp(_warrior.Soul.Name) % 31) / 100f;
+            return Grammar.Pick(_warrior.Gender, "m", "f") == "f" ? k * 1.2f : k;
+        }
+
+        /// <summary>Свой темп: одни тянут слоги, другие частят (±20 %).</summary>
+        private float Pace()
+        {
+            if (_warrior == null || _warrior.Soul == null) return 1f;
+            return 0.8f + (Wardrobe.Stamp(_warrior.Soul.Name) / 31 % 41) / 100f;
+        }
+
+        private float Shelled()
         {
             if (_warrior == null) return 1f;
 

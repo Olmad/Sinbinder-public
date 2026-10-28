@@ -139,6 +139,16 @@ namespace Sinbinder.UI
 
                 if (cam == null) { b.Line.enabled = false; continue; }
 
+                // Слова самого Греховода — строкой внизу, золотом: камера у него за плечом или сверху, и над его
+                // головой строку не видно (автор, 28.10: «то, что говорит сам Греховод, не видно — он ведь на голове»).
+                if (b.Who is Gameplay.SinbinderPlayer)
+                {
+                    b.Line.enabled = true;
+                    b.Line.color = new Color(0.90f, 0.76f, 0.45f);
+                    b.Line.rectTransform.position = new Vector3(Screen.width * 0.5f, Screen.height * 0.27f, 0f);
+                    continue;
+                }
+
                 var screen = cam.WorldToScreenPoint(Head(b.Who));
                 b.Line.enabled = screen.z > 0f;
                 if (b.Line.enabled) b.Line.rectTransform.position = Inside(b.Line, screen);
@@ -165,7 +175,7 @@ namespace Sinbinder.UI
         {
             _order.Clear();
             foreach (var b in _live)
-                if (b.Line != null && b.Line.enabled) _order.Add(b);
+                if (b.Line != null && b.Line.enabled && !(b.Who is Gameplay.SinbinderPlayer)) _order.Add(b);   // строка Греховода — своя, внизу
 
             if (_order.Count < 2) return;
 

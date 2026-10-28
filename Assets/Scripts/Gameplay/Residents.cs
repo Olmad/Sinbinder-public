@@ -29,6 +29,8 @@ namespace Sinbinder.Gameplay
         private readonly List<Warrior> _folk = new();
         private RelationshipSystem _relations;
         private float _nextWalk;
+        private readonly Dictionary<Warrior, float> _ordered = new();
+        private const float StayAfterOrder = 90f;
 
         public IReadOnlyList<Warrior> Folk => _folk;
 
@@ -140,7 +142,12 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < _folk.Count; i++)
             {
                 var w = _folk[i];
-                if (w == null || w.IsDead || w.HasCommand) continue;
+                if (w == null || w.IsDead || w.HasCommand) { if (w != null && w.HasCommand) _ordered[w] = Time.time; continue; }
+                // Чей-то верный или недавно с приказом — стоит, где его поставили, а не бежит к очагу
+                // (автор, 28.10: «воины быстро возвращаются на места — секунд через десять»).
+                if (_ordered.TryGetValue(w, out var told) && Time.time - told < StayAfterOrder) continue;
+                string lord = Allegiance.Dearest(w.Id);
+                if (lord != null && Allegiance.Of(w.Id, w.Loyalty, lord) >= Hostility.Follows) continue;
                 var agent = w.GetComponent<NavMeshAgent>();
                 if (agent == null || !agent.enabled || !agent.isOnNavMesh) continue;
                 var dmg = w.GetComponent<Damageable>();

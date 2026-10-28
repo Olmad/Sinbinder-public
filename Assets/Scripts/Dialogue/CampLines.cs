@@ -39,9 +39,68 @@ namespace Sinbinder.Dialogue
             if (a == null || b == null || a.Soul == null || b.Soul == null) return ("", "");
 
             string first = Opening(a, b);
-            string answer = Mute(b) ? Gesture(b) : Answer(b, a);
+            // Ответ — на то, что сказано, а не просто грех на грех (автор, 28.10: «Старший — Вейн. Посмотрим,
+            // куда заведёт» — «Будто? Подожди.»: ответ был на другую фразу).
+            var topic = TopicOf(a, b);
+            string answer = Mute(b) ? Gesture(b) : (OnTopic(b, a, topic) ?? Answer(b, a));
             if (Mute(a)) first = Gesture(a);
             return (first, answer);
+        }
+
+        private enum Topic { Unpaid, Took, Gave, Gold, LeadSelf, LeadOther, Brothers, Liska, Sin, Quiet }
+
+        /// <summary>О чём первая строка — тем же порядком, что <see cref="Opening"/>.</summary>
+        private static Topic TopicOf(Warrior a, Warrior b)
+        {
+            var sin = a.Soul.Sin;
+            if (sin == SinType.Greed && a.UnpaidMissions >= 2) return Topic.Unpaid;
+            if (Remembers(a, "SinbinderTookFromMe")) return Topic.Took;
+            if (Remembers(a, "SinbinderGaveMe")) return Topic.Gave;
+            if (a.PocketGold > 0 && sin == SinType.Greed) return Topic.Gold;
+            if (!string.IsNullOrEmpty(SquadRoster.CommanderName))
+            {
+                if (a.IsCommander) return Topic.LeadSelf;
+                if (sin == SinType.Pride) return Topic.LeadOther;
+            }
+            if (Brother(a) && Brother(b)) return Topic.Brothers;
+            if (IsLiska(a)) return Topic.Liska;
+            bool pair = (sin == SinType.Pride || sin == SinType.Greed || sin == SinType.Sloth)
+                        && (b.Soul.Sin == SinType.Pride || b.Soul.Sin == SinType.Greed || b.Soul.Sin == SinType.Sloth);
+            return pair ? Topic.Sin : Topic.Quiet;
+        }
+
+        /// <summary>Ответ на тему, которой у <see cref="Answer"/> нет; null — пусть отвечает он.</summary>
+        private static string OnTopic(Warrior b, Warrior a, Topic topic)
+        {
+            var sin = b.Soul.Sin;
+            switch (topic)
+            {
+                case Topic.Gave:
+                    if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Дали — не значит заслужил."), Loc.T("Дали — не значит заслужила."));
+                    if (sin == SinType.Greed) return Loc.T("Покажи хоть, что дали.");
+                    return Loc.T("Носи. Мне бы не дали — и ладно.");
+                case Topic.Gold:
+                    if (sin == SinType.Pride) return Loc.T("Звон — не честь.");
+                    if (sin == SinType.Greed) return Loc.T("Звенит. И у меня звенит.");
+                    return Loc.T("Звени потише, я сплю.");
+                case Topic.LeadSelf:
+                    if (sin == SinType.Pride) return Loc.T("Посмотрим, надолго ли.");
+                    if (sin == SinType.Greed) return Loc.T("Старший — значит, и платит старший?");
+                    return Loc.T("Слушаю. Лёжа.");
+                case Topic.LeadOther:
+                    if (b.IsCommander) return Loc.T("Я здесь. И всё слышу.");
+                    if (sin == SinType.Pride) return Loc.T("Заведёт — так выведем сами.");
+                    if (sin == SinType.Greed) return Loc.T("Лишь бы платил, а вести пусть ведёт.");
+                    return Loc.T("Куда бы ни завёл — лишь бы недалеко.");
+                case Topic.Liska:
+                    if (sin == SinType.Pride) return Loc.T("Мне кошель не нужен. Мне враг нужен.");
+                    if (sin == SinType.Greed) return Loc.T("Мой пояс — моя забота.");
+                    return Loc.T("Бери, если донесёшь.");
+                case Topic.Quiet:
+                    return Loc.T("Пока тихо.");
+                default:
+                    return null;
+            }
         }
 
         /// <summary>
