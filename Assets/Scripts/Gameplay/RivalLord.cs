@@ -66,6 +66,7 @@ namespace Sinbinder.Gameplay
         // Раненые, что отходят к трону (Retreat), и как близко к склепу чужой — уже угроза (Threat).
         private readonly HashSet<Warrior> _resting = new();
         private const float ThreatRange = 30f;
+        private const float PreyRange = 25f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
@@ -150,6 +151,20 @@ namespace Sinbinder.Gameplay
 
             // Раненые — домой (сильный и средний берегут людей).
             Retreat(followers, mine.throne);
+
+            // Охота на Греховода: чужой Греховод бродит рядом с моими, а охраны при нём меньше, чем моих рядом, —
+            // бить его (сильный; средний — лишь натиском). Падёт — кошель на земле, а сам он минуту не помеха.
+            if (!Attacking && (Level == MapSession.Seat.AiStrong || (Level == MapSession.Seat.AiMedium && Prefers(Style.Onslaught)))
+                && Prey(followers) is { } prey)
+            {
+                Hostility.Mark(Lord, prey);
+                foreach (var f in followers)
+                    if (!_away.Contains(f) && !_resting.Contains(f) && !TowerPost.Guards(f)
+                        && CampFocus.GroundDistance(f.transform.position, prey.transform.position) <= PreyRange
+                        && !(f.HasCommand && f.Command.Target == prey.gameObject))
+                        Order(f, CommandKind.Attack, prey.transform.position, prey.gameObject);
+                return;
+            }
 
             // Встретить заранее: чужие у склепа — верные (кроме ушедших в экспедицию и раненых) выходят
             // навстречу, не дожидаясь удара по двери.
@@ -454,6 +469,33 @@ namespace Sinbinder.Gameplay
         }
 
         // ---------------------------------------------------------- угроза и раненые
+
+        /// <summary>
+        /// Чужой Греховод, на которого стоит охотиться: рядом с моими (до <see cref="PreyRange"/>), и моих рядом с
+        /// ним больше, чем его верных при нём (10 м). Иначе — null.
+        /// </summary>
+        private Warrior Prey(List<Warrior> followers)
+        {
+            var lords = new List<Warrior>();
+            if (SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead) lords.Add(SinbinderPlayer.Instance);
+            foreach (var r in Live) if (r != null && r != this && r._body != null && !r._body.IsDead) lords.Add(r._body);
+            foreach (var target in lords)
+            {
+                string theirs = Lords.Of(target);
+                if (theirs == null || theirs == Lord) continue;
+                int mine = 0;
+                foreach (var f in followers)
+                    if (!_away.Contains(f) && !_resting.Contains(f) && CampFocus.GroundDistance(f.transform.position, target.transform.position) <= PreyRange) mine++;
+                if (mine < 2) continue;
+                int guards = 0;
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (w != null && !w.IsDead && w.Team == Team.Neutral && Allegiance.Dearest(w.Id) == theirs
+                        && Allegiance.Of(w.Id, w.Loyalty, theirs) >= Hostility.Follows
+                        && CampFocus.GroundDistance(w.transform.position, target.transform.position) <= 10f) guards++;
+                if (mine > guards) return target;
+            }
+            return null;
+        }
 
         /// <summary>Чужой у склепа: Греховод другой стороны, верный другому Греховоду, охотник. Ближайший.</summary>
         private Warrior Threat(Vector3 crypt)
