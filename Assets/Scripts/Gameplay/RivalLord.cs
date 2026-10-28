@@ -67,6 +67,7 @@ namespace Sinbinder.Gameplay
         private readonly HashSet<Warrior> _resting = new();
         private const float ThreatRange = 30f;
         private const float PreyRange = 25f;
+        private readonly HashSet<Warrior> _focused = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
@@ -151,6 +152,8 @@ namespace Sinbinder.Gameplay
 
             // Раненые — домой (сильный и средний берегут людей).
             Retreat(followers, mine.throne);
+            // В схватке — все в одного: самого раненого врага рядом (сильный).
+            Focus(followers);
 
             // Охота на Греховода: чужой Греховод бродит рядом с моими, а охраны при нём меньше, чем моих рядом, —
             // бить его (сильный; средний — лишь натиском). Падёт — кошель на земле, а сам он минуту не помеха.
@@ -471,6 +474,44 @@ namespace Sinbinder.Gameplay
         // ---------------------------------------------------------- угроза и раненые
 
         /// <summary>
+        /// Удар в одну цель: у кого из моих враг ближе 12 м — все мои в 15 м от него бьют одного, самого
+        /// раненого из врагов рядом. Сильный — так; прочие дерутся каждый сам. Отмеченных в этот ход приступ
+        /// (Attack) не перенацеливает на дверь — сперва защитники.
+        /// </summary>
+        private void Focus(List<Warrior> followers)
+        {
+            _focused.Clear();
+            if (Level != MapSession.Seat.AiStrong || CombatManager.Instance == null) return;
+            foreach (var f in followers)
+            {
+                if (f == null || f.IsDead || _resting.Contains(f) || _focused.Contains(f)) continue;
+                var near = CombatManager.Instance.GetClosestEnemy(f.transform.position, 12f, f.gameObject);
+                if (near == null) continue;
+
+                // Самый раненый враг в схватке — вокруг того, кого увидел этот.
+                Damageable weakest = null;
+                float low = float.MaxValue;
+                foreach (var e in CombatManager.Instance.GetEnemies(f.gameObject))
+                {
+                    if (e == null || e.IsDead || CampFocus.GroundDistance(e.transform.position, near.transform.position) > 8f) continue;
+                    float share = e.HP / Mathf.Max(1f, e.MaxHP);
+                    if (share < low) { low = share; weakest = e; }
+                }
+                if (weakest == null) continue;
+                var foe = weakest.GetComponent<Warrior>();
+                if (foe != null) Hostility.Mark(Lord, foe);
+                foreach (var g in followers)
+                {
+                    if (g == null || g.IsDead || _resting.Contains(g) || TowerPost.Guards(g)) continue;
+                    if (CampFocus.GroundDistance(g.transform.position, weakest.transform.position) > 15f) continue;
+                    _focused.Add(g);
+                    if (!(g.HasCommand && g.Command.Target == weakest.gameObject))
+                        Order(g, CommandKind.Attack, weakest.transform.position, weakest.gameObject);
+                }
+            }
+        }
+
+        /// <summary>
         /// Чужой Греховод, на которого стоит охотиться: рядом с моими (до <see cref="PreyRange"/>), и моих рядом с
         /// ним больше, чем его верных при нём (10 м). Иначе — null.
         /// </summary>
@@ -614,7 +655,7 @@ namespace Sinbinder.Gameplay
             foreach (var r in Live) if (r != null && r.Side == foe && r._body != null) Hostility.Mark(Lord, r._body);
 
             foreach (var f in followers)
-                if (!_resting.Contains(f) && !(f.HasCommand && f.Command.Target == target)) Order(f, CommandKind.Attack, target.transform.position, target);
+                if (!_resting.Contains(f) && !_focused.Contains(f) && !(f.HasCommand && f.Command.Target == target)) Order(f, CommandKind.Attack, target.transform.position, target);
 
             // Сам — домой, к трону; средний и сильный — зовут подкрепление (Update).
             if (Level != MapSession.Seat.AiWeak) return;
