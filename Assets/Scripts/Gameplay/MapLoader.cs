@@ -46,6 +46,7 @@ namespace Sinbinder.Gameplay
             // Склеп — пол, стены, дверь на петле и трон (автор, 27.10: «у склепа не хватает стен и
             // возможности открывать дверь и пола»), префабом сборщика (TugSceneBuilder.BuildCrypt).
             var built = Resources.Load<GameObject>("MapProps/Crypt");
+            _match = gameObject.AddComponent<TugMatch>();
             for (int i = 0; i < map.Crypts.Count; i++)
             {
                 var c = map.Crypts[i];
@@ -58,10 +59,12 @@ namespace Sinbinder.Gameplay
                     bare.SetPositionAndRotation(at, rot);
                     Place("CryptGate", bare, at + rot * new Vector3(0f, 0f, 6f), c.Yaw, 1f);
                     Place("Throne", bare, at + rot * new Vector3(0f, 0f, -2f), c.Yaw, 1f);
+                    _match.Crypts.Add(bare);
                     continue;
                 }
                 var crypt = Instantiate(built, at, rot, root);
                 crypt.name = Loc.F("Склеп {0}", i + 1);
+                _match.Crypts.Add(crypt.transform);
                 foreach (var part in crypt.GetComponentsInChildren<Sturdy>())
                 {
                     bool door = part.GetComponentInParent<CryptDoor>() != null;
@@ -104,7 +107,49 @@ namespace Sinbinder.Gameplay
                 entry.transform.position = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * inside;
                 entry.AddComponent<Crypt.TestChamberEntry>();
             }
+            _match.Begin(seat);
         }
+
+        private TugMatch _match;
+
+        /// <summary>
+        /// Греховоды-ИИ — в склепах мест «ИИ» лобби (шаг 3, 54-TUG.md). В Start: навмеш уже испечён
+        /// (GroundNavMesh, порядок −900), и ноги встанут на него.
+        /// </summary>
+        void Start()
+        {
+            var map = Current;
+            if (map == null || _match == null) return;
+            for (int i = 0; i < map.Crypts.Count && i < MapSession.Seats.Count; i++)
+            {
+                var level = MapSession.Seats[i];
+                if (level != MapSession.Seat.AiWeak && level != MapSession.Seat.AiMedium && level != MapSession.Seat.AiStrong) continue;
+                var c = map.Crypts[i];
+                var at = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * new Vector3(0f, 0.12f, 1.5f);
+                Rival(i, level, at, Quaternion.Euler(0f, c.Yaw, 0f));
+            }
+        }
+
+        /// <summary>Тело Греховода-ИИ: скелет, как Греховод игрока; решает не душа, а его ум (RivalLord).</summary>
+        public static void Rival(int side, MapSession.Seat level, Vector3 at, Quaternion facing)
+        {
+            string lord = Loc.F("Греховод стороны {0}", side + 1);
+            var go = new GameObject(lord);
+            if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas)) at = hit.position;
+            go.transform.SetPositionAndRotation(at, facing);
+            var warrior = go.AddComponent<Warrior>();
+            var soul = new SoulData(lord, SinType.Pride, MoralType.Neutral, 3, 60f);
+            warrior.Initialize(soul, ShellType.Skeleton, new RelationshipSystem(AOS.MemoryProcessor.Instance), true, Team.Neutral);
+            var data = ShellLibrary.Get(ShellType.Skeleton);
+            WarriorRig.Attach(go, data != null ? data.movementSpeed : 3.5f);
+            WarriorLook.Build(go, ShellType.Skeleton, 1.9f, 1f, 1.2f);
+            go.GetComponent<Damageable>()?.Initialize(RivalStrength, 0f);
+            go.AddComponent<RivalLord>().Configure(lord, side, level);
+            Debug.Log($"[ПАРТИЯ] {lord}: Греховод-ИИ ({level})");
+        }
+
+        /// <summary>Запас тела Греховода-ИИ — как у Греховода игрока на поле: убить можно, но не с одного удара.</summary>
+        private const float RivalStrength = 300f;
 
         /// <summary>Ушли с поля — «Перетягивания» больше нет: приказы снова без имени, как в демо.</summary>
         void OnDestroy() => Lords.Player = null;

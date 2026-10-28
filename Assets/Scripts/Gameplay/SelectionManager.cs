@@ -643,6 +643,23 @@ namespace Sinbinder.Gameplay
                     // Греховод указал — его верные бьют и без приказа (Hostility, «кого бить»).
                     if (isAttackOrder && Lords.Active) Hostility.Mark(Lords.Player, foe);
 
+                    // Чужой трон или дверь («Перетягивание»): ПКМ — осада, те же голосование и голос.
+                    var wall = !isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    if (wall != null && !wall.Mine && !wall.Broken)
+                    {
+                        int laid = 0;
+                        foreach (var unit in _selectedUnits)
+                        {
+                            var w = unit != null ? unit.GetComponent<Warrior>() : null;
+                            if (!Ours(w) || w is SinbinderPlayer || !Hear(w, out float hush)) continue;
+                            w.IssueCommand(CommandKind.Attack, wall.transform.position, wall.gameObject, hush);
+                            laid++;
+                        }
+                        TellUnheard();
+                        if (laid > 0) OnPlayerOrder?.Invoke(CommandKind.Attack, laid);
+                        return;
+                    }
+
                     // «Отходи», а не «иди туда»: разница не в ногах. Отход
                     // звучит для характера иначе, и исполнить его воин может
                     // по-своему — побежав.

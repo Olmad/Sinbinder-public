@@ -111,6 +111,14 @@ namespace Sinbinder.Gameplay
             UnregisterUnit(killed);
             // «Перетягивание»: спас, победа под началом Греховода (Favor); в демо — ничего.
             if (Lords.Active && killer != null) Favor.Killed(killed.Warrior, killer.GetComponent<Warrior>());
+
+            // Пал Греховод («Перетягивание», автор 28.10): ни тела для жатвы, ни души — только кошель
+            // на земле, и через минуту он встаёт у трона (TugMatch).
+            if (Lords.Active && killed.Warrior != null && Lords.Of(killed.Warrior) != null)
+            {
+                TugMatch.LordDown(killed.Warrior);
+                return;
+            }
             if (killed.Warrior != null)
                 CreateLootOnField(killed);
             if (OnAnyDeath != null)

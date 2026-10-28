@@ -75,6 +75,10 @@ namespace Sinbinder.Gameplay
             if (_fallen || !IsDead) return;
             _fallen = true;
 
+            // «Перетягивание»: пал — встанет у трона через минуту (TugMatch.LordDown зовёт бой),
+            // это не конец игры. Сохранение демо (и обязательство) не трогаем.
+            if (Lords.Active) return;
+
             bool bound = Core.Commitment.On;
             if (bound) Core.SaveSystem.EraseBound();
 

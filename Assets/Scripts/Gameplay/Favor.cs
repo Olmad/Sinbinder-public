@@ -24,8 +24,30 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public static class Favor
     {
-        /// <summary>Монеты Греховода в этой партии — свои, не лагерные.</summary>
-        public static int Purse { get; private set; }
+        /// <summary>Монеты Греховода игрока в этой партии — свои, не лагерные.</summary>
+        public static int Purse => PurseOf(Lords.Player);
+
+        /// <summary>Кошель Греховода партии; у каждого — свой, в начале одинаковый.</summary>
+        public static int PurseOf(string lord)
+            => string.IsNullOrEmpty(lord) ? 0 : Purses.TryGetValue(lord, out var n) ? n : _start;
+
+        private static readonly Dictionary<string, int> Purses = new();
+
+        /// <summary>Добавить монет Греховоду (поднял кошель павшего).</summary>
+        public static void AddCoins(string lord, int coins)
+        {
+            if (string.IsNullOrEmpty(lord) || coins <= 0) return;
+            Purses[lord] = PurseOf(lord) + coins;
+        }
+
+        /// <summary>Отдать весь кошель Греховода (пал — кошель на землю). Возвращает, сколько было.</summary>
+        public static int EmptyPurse(string lord)
+        {
+            int n = PurseOf(lord);
+            if (!string.IsNullOrEmpty(lord)) Purses[lord] = 0;
+            return n;
+        }
+        private static int _start;
 
         public const int StartPurse = 20;
         private const float GiftReach = 2.5f;
@@ -42,7 +64,8 @@ namespace Sinbinder.Gameplay
 
         public static void Begin(int purse)
         {
-            Purse = purse;
+            _start = purse;
+            Purses.Clear();
             Gifts.Clear();
             GiftedAt.Clear();
             SaidAt.Clear();
@@ -128,11 +151,14 @@ namespace Sinbinder.Gameplay
         public static string GiftPrompt(Warrior w)
             => Loc.F("F — дать монету: {0} (в кошеле {1})", Loc.Name(w.DisplayName), Purse);
 
-        /// <summary>Дать монету. Каждый грех берёт по-своему; завистливые рядом, кому не дали, — обижены.</summary>
-        public static void Give(Warrior w)
+        /// <summary>Дать монету от игрока.</summary>
+        public static void Give(Warrior w) => Give(w, Lords.Player);
+
+        /// <summary>Дать монету от Греховода. Каждый грех берёт по-своему; завистливые рядом, кому не дали, — обижены.</summary>
+        public static void Give(Warrior w, string lord)
         {
-            if (w == null || w.Soul == null || Purse <= 0 || !Lords.Active) return;
-            Purse--;
+            if (w == null || w.Soul == null || !Lords.Active || PurseOf(lord) <= 0) return;
+            Purses[lord] = PurseOf(lord) - 1;
             Gifts.TryGetValue(w.Id, out var n);
             Gifts[w.Id] = n + 1;
             GiftedAt[w.Id] = Time.time;
@@ -148,8 +174,8 @@ namespace Sinbinder.Gameplay
                 SinType.Pride => (1f, Loc.T("Я не нищий, владыка. Но возьму.")),
                 _ => (2f, Loc.T("Хм. Ладно.")),
             };
-            Change(w, Lords.Player, gain * worth, line, force: true);
-            Envy(w, Lords.Player, -3f);
+            Change(w, lord, gain * worth, line, force: true);
+            Envy(w, lord, -3f);
         }
 
         /// <summary>Завистливые рядом с тем, кого выделили, и кому не дали за минуту, — обижены.</summary>

@@ -323,6 +323,20 @@ namespace Sinbinder.EditorTools
                     _order.IssueCommand(CommandKind.Move, _order.transform.position + Vector3.forward * 4f);
                     Line($"приказ ничьему: голос «{_order.Command.Lord}», игрок — «{Lords.Player}» — {(_order.Command.Lord == Lords.Player && Lords.Active ? "как надо" : "НЕ ТАК")}; верность к игроку {Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player):F0}");
                 }
+
+                // Шаг 3: Греховод-ИИ встал в своём склепе; осада его двери — по приказу.
+                var ai = RivalLord.All.Count > 0 ? RivalLord.All[0] : null;
+                Line($"Греховод-ИИ: {(ai != null ? $"{ai.Lord} ({ai.Level}), сторона {ai.Side + 1}" : "НЕТ")}");
+                if (ai != null && TugMatch.Instance != null && folk.Count > 1)
+                {
+                    var (aiDoor, _) = TugMatch.Instance.PartsOf(ai.Side);
+                    if (aiDoor != null)
+                    {
+                        _siege = folk[1];
+                        _siegeDoor = aiDoor.Leaf.GetComponent<Sturdy>();
+                        _siege.IssueCommand(CommandKind.Attack, aiDoor.Leaf.position, aiDoor.Leaf.gameObject);
+                    }
+                }
                 if (mine != null)
                 {
                     mine.Toggle();
@@ -361,6 +375,8 @@ namespace Sinbinder.EditorTools
         /// жадному (и обида завистливого рядом), приказ гордому одному; потом — конец проверки.
         /// </summary>
         private static Warrior _proud;
+        private static Warrior _siege;
+        private static Sturdy _siegeDoor;
         private static float _selectedAt;
 
         private static void Reels(SinbinderPlayer hero)
@@ -409,6 +425,46 @@ namespace Sinbinder.EditorTools
                 Sinbinder.Utilets.Reel.Start("приказ", 6.5f);
                 Line("учебник: приказ гордому — одному, первым");
                 return;
+            }
+
+            // Гибель Греховода (автор, 28.10): кошель — на землю, души нет, сторона в игре; встаёт у трона.
+            if (_phase == 3)
+            {
+                _phase = 4;
+                int had = Favor.Purse;
+                hero.GetComponent<Damageable>().TakeDamage(99999f, null);
+                int lying = 0;
+                foreach (var p in LordPurse.All) if (p != null) lying += p.Coins;
+                bool down = TugMatch.Instance != null && TugMatch.Instance.Down(TugMatch.Instance.PlayerSide);
+                bool soul = CombatManager.Instance != null && CombatManager.Instance.BodiesOnField.Exists(b => b != null && b.name.Contains(hero.DisplayName));
+                Line($"Греховод пал: ждёт у трона — {(down ? "да" : "НЕТ")}, кошель на земле {lying} мон. (было {had}), в кошеле {Favor.Purse}, тело для жатвы — {(soul ? "ЕСТЬ" : "нет")}, партия идёт — {(!TugMatch.Over ? "да" : "НЕТ")} — {(down && lying == had && Favor.Purse == 0 && !soul && !TugMatch.Over ? "как надо" : "НЕ ТАК")}");
+                var (_, ownThrone) = TugMatch.Instance.PartsOf(TugMatch.Instance.PlayerSide);
+                bool crown = ownThrone != null && ownThrone.transform.Find("Корона на троне") != null;
+                bool bar = ownThrone != null && ownThrone.transform.Find("Полоса до восстания") != null;
+                Line($"на троне корона — {(crown ? "да" : "НЕТ")}, полоса до восстания своей стороне — {(bar ? "да" : "НЕТ")}");
+                // Учебник: корона и полоса над пустым троном.
+                if (ownThrone != null) Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/корона", "000");
+                TugMatch.Instance?.Rise(TugMatch.Instance.PlayerSide);
+                return;
+            }
+            if (_phase == 4)
+            {
+                _phase = 5;
+                var (_, mineThrone) = TugMatch.Instance.PartsOf(TugMatch.Instance.PlayerSide);
+                float off = mineThrone != null ? CampFocus.GroundDistance(hero.transform.position, mineThrone.transform.position) : -1f;
+                Line($"Греховод встал: жив — {(!hero.IsDead ? "да" : "НЕТ")}, от трона {off:F1} м — {(!hero.IsDead && off >= 0f && off < 4f ? "у трона, как надо" : "НЕ ТАК")}; корона убрана — {(mineThrone != null && mineThrone.transform.Find("Корона на троне") == null ? "да" : "НЕТ")}");
+            }
+
+            // Шаг 3: что делал ИИ, чего добилась осада, и конец партии — трон ИИ рушим: победа.
+            var rival = RivalLord.All.Count > 0 ? RivalLord.All[0] : null;
+            if (rival != null)
+            {
+                Line($"Греховод-ИИ за {Time.time:F0} с: приказов {rival.Orders}, нападает: {(rival.Attacking ? "да" : "нет")}, жив: {(!rival.GetComponent<Warrior>().IsDead ? "да" : "нет")}");
+                if (_siegeDoor != null)
+                    Line($"осада двери ИИ: прочность {_siegeDoor.HP:F0} из {_siegeDoor.Max:F0}, осаждающий {(_siege != null ? (_siege.HasCommand ? "при приказе" : "приказ снял/отказал") : "—")} (отказ возможен: голосует сам)");
+                var (_, throne) = TugMatch.Instance.PartsOf(rival.Side);
+                if (throne != null) throne.TakeDamage(throne.Max * 2f);
+                Line($"трон ИИ разрушен — {(TugMatch.Over && TugMatch.Won ? "победа, как надо" : "НЕ ТАК")}");
             }
 
             Line("ГОТОВО");

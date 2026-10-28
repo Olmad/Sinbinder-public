@@ -18,8 +18,8 @@ namespace Sinbinder.Gameplay
 
         public static bool Active => !string.IsNullOrEmpty(Player);
 
-        /// <summary>Чей это Греховод; не Греховод — null. Греховоды-ИИ — шаг 3.</summary>
-        public static string Of(Warrior w) => w is SinbinderPlayer ? Player : null;
+        /// <summary>Чей это Греховод: игрок или Греховод-ИИ (RivalLord); не Греховод — null.</summary>
+        public static string Of(Warrior w) => w is SinbinderPlayer ? Player : RivalLord.LordOf(w);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Player = null;

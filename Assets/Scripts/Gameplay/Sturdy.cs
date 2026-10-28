@@ -47,9 +47,15 @@ namespace Sinbinder.Gameplay
             _side = side;
         }
 
-        public void TakeDamage(float damage)
+        /// <summary>Кто бил последним и когда — склеп зовёт своих на защиту (RivalLord).</summary>
+        public Warrior LastBy { get; private set; }
+        public float LastHitAt { get; private set; } = -100f;
+
+        public void TakeDamage(float damage, Warrior by = null)
         {
             if (Broken || damage <= 0f) return;
+            LastBy = by;
+            LastHitAt = Time.time;
             _hp = Mathf.Max(0f, HP - damage);
             if (!Broken) return;
             Debug.Log($"[СКЛЕП] разрушено: {_title}");

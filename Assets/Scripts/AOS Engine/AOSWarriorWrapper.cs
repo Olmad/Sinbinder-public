@@ -152,6 +152,31 @@ namespace Sinbinder.AOS
         /// То есть подчинение исполнялось как «стоять на месте».
         /// </summary>
         private float _obeyedAt = -1f;
+        private float _siegeReady;
+
+        /// <summary>
+        /// Бить трон или дверь (54-TUG.md: «конец партии — уничтожение тронов»): дойти до вещи и бить её
+        /// тем же уроном и темпом, что и тело (AutoAttack), — у вещи нет ни защиты, ни сдачи.
+        /// </summary>
+        private void Siege(Sturdy target, UnitMover mover)
+        {
+            var hit = target.GetComponentInChildren<Collider>();
+            var near = hit != null ? hit.ClosestPoint(transform.position) : target.transform.position;
+            var auto = GetComponent<AutoAttack>();
+            float range = (auto != null ? auto.AttackRange : 2f) + 0.4f;
+            bool reach = Vector3.Distance(new Vector3(transform.position.x, near.y, transform.position.z), near) <= range;
+            if (mover != null) { if (reach) mover.Stop(); else mover.CommandMove(near); }
+            if (!reach || Time.time < _siegeReady) return;
+
+            _siegeReady = Time.time + SiegeBeat;
+            target.TakeDamage(auto != null ? auto.AttackDamage : 6f, _warrior);
+            var to = near - transform.position; to.y = 0f;
+            if (to.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(to);
+            GetComponent<WarriorAnimation>()?.Struck();
+        }
+
+        /// <summary>Удар по трону или двери — раз в столько секунд.</summary>
+        private const float SiegeBeat = 1.3f;
 
         private void ExecuteCommand()
         {
@@ -187,6 +212,14 @@ namespace Sinbinder.AOS
                             }
                             // Деяние за убийство — когда клинок дойдёт (AutoAttack.Land).
                             if (reach) autoAttack.ForceAttack(dmg);
+                            return;
+                        }
+
+                        // Осада: трон или дверь склепа («Перетягивание», Sturdy) — не тело, а вещь.
+                        var sturdy = cmd.Target.GetComponentInParent<Sturdy>();
+                        if (sturdy != null && !sturdy.Broken)
+                        {
+                            Siege(sturdy, mover);
                             return;
                         }
                     }
