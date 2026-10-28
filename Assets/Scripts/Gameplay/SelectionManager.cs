@@ -553,7 +553,9 @@ namespace Sinbinder.Gameplay
         /// охотнику ушёл бы в его голосование как ObeyCommand.
         /// </summary>
         private static bool Ours(Warrior warrior)
-            => warrior != null && !warrior.IsDead && warrior.Team == Team.Player;
+            => warrior != null && !warrior.IsDead
+               && (warrior.Team == Team.Player || (Lords.Active && warrior.Team == Team.Neutral));
+        // «Перетягивание» (54-TUG.md): ничьему тоже приказывают — слушается он по верности к Греховоду.
 
         /// <summary>
         /// Снять выделение с одного. Зовёт туман войны: враг, ушедший
@@ -637,6 +639,9 @@ namespace Sinbinder.Gameplay
                     var enemyUnit = hit.collider.GetComponentInParent<SelectionComponent>();
                     var foe = enemyUnit != null ? enemyUnit.GetComponentInParent<Warrior>() : null;
                     bool isAttackOrder = foe != null && !foe.IsDead && foe.Team != Team.Player;
+
+                    // Греховод указал — его верные бьют и без приказа (Hostility, «кого бить»).
+                    if (isAttackOrder && Lords.Active) Hostility.Mark(Lords.Player, foe);
 
                     // «Отходи», а не «иди туда»: разница не в ногах. Отход
                     // звучит для характера иначе, и исполнить его воин может

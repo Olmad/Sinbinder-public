@@ -5,6 +5,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 namespace Sinbinder.Utilets
@@ -253,6 +254,14 @@ namespace Sinbinder.EditorTools
     {
         private const string Active = "Sinbinder.FieldRun.Active";
         private static float _start = -1f, _opened = -1f;
+        private static Warrior _order;
+
+        private static int People()
+        {
+            int n = 0;
+            if (MapLoader.Current != null) foreach (var l in MapLoader.Current.Locations) n += l.People;
+            return n;
+        }
 
         static FieldRun()
         {
@@ -300,6 +309,20 @@ namespace Sinbinder.EditorTools
                 bool through = PathOut(hero, mine, out var shut);
                 Line($"наружу при закрытой двери: {shut} — {(!through ? "заперто, как надо" : "НЕ ТАК")}");
                 Line($"палатки одеты: {Dressed("Tent", "Fabric")}");
+
+                // Ничьи (54-TUG.md, шаг 2): жители есть, зря не враждуют, приказ игрока несёт его голос.
+                var folk = new System.Collections.Generic.List<Warrior>();
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (w.Team == Team.Neutral && !w.IsDead) folk.Add(w);
+                int wars = 0;
+                foreach (var a in folk) foreach (var b in folk) if (Hostility.Wants(a, b)) wars++;
+                Line($"ничьих жителей {folk.Count} (по карте {People()}), враждуют меж собой без причины: {wars} — {(folk.Count > 0 && wars == 0 ? "как надо" : "НЕ ТАК")}");
+                if (folk.Count > 0)
+                {
+                    _order = folk[0];
+                    _order.IssueCommand(CommandKind.Move, _order.transform.position + Vector3.forward * 4f);
+                    Line($"приказ ничьему: голос «{_order.Command.Lord}», игрок — «{Lords.Player}» — {(_order.Command.Lord == Lords.Player && Lords.Active ? "как надо" : "НЕ ТАК")}; верность к игроку {Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player):F0}");
+                }
                 if (mine != null) mine.Toggle();
                 _opened = Time.realtimeSinceStartup;
                 return;
@@ -308,6 +331,8 @@ namespace Sinbinder.EditorTools
 
             bool open = PathOut(hero, mine, out var wide);
             Line($"наружу при открытой двери: {wide} — {(open ? "выход есть" : "НЕ ТАК")}");
+            if (_order != null)
+                Line($"ничей после приказа: верность к игроку {Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player):F0}, к кому верней всех — «{Allegiance.Dearest(_order.Id) ?? "ни к кому"}» (послушал — растёт, нет — та же)");
             Line("ГОТОВО");
             EditorApplication.update -= Tick;
             SessionState.SetBool(Active, false);

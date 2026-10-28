@@ -151,10 +151,19 @@ namespace Sinbinder.AOS
         /// не находил подходящего умения и вырождался в Idle.
         /// То есть подчинение исполнялось как «стоять на месте».
         /// </summary>
+        private float _obeyedAt = -1f;
+
         private void ExecuteCommand()
         {
             var cmd = _warrior.Command;
             if (!cmd.IsSet) { Execute(ActionType.Idle); return; }
+
+            // Послушал Греховода — привыкает слушать его (54-TUG.md): раз на приказ, а не каждый такт.
+            if (!string.IsNullOrEmpty(cmd.Lord) && !Mathf.Approximately(_obeyedAt, cmd.IssuedAt))
+            {
+                _obeyedAt = cmd.IssuedAt;
+                Core.Allegiance.Change(_warrior.Id, _warrior.Loyalty, cmd.Lord, Hostility.ObeyHabit);
+            }
 
             var mover = GetComponent<UnitMover>();
 

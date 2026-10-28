@@ -20,6 +20,11 @@ namespace Sinbinder.Gameplay
     {
         public static MapData Current { get; private set; }
 
+        /// <summary>Номер партии «Перетягивания» — из него и имени карты складываются её люди.</summary>
+        public static int Match { get; private set; }
+
+        private const string MatchKey = "Sinbinder.TugMatch";
+
         void Awake()
         {
             var map = MapSession.Map;
@@ -65,7 +70,25 @@ namespace Sinbinder.Gameplay
                 }
             }
 
-            foreach (var l in map.Locations) Mark(root, Loc.F("Подлокация — {0}", Loc.T(l.Name)), new Vector3(l.X, 0f, l.Z));
+            // Новая партия: верности и обиды — с нуля; голос игрока — его сторона (54-TUG.md).
+            Allegiance.Forget();
+            Hostility.Forget();
+            Lords.Player = Loc.F("Греховод стороны {0}", Mathf.Max(0, MapSession.Seats.IndexOf(MapSession.Seat.Player)) + 1);
+
+            // Подлокации с жителями — ничьими (Residents). Каждая партия — новые люди (автор, 28.10:
+            // «каждый воин должен генерироваться по новой каждую игру»): номер партии растёт с каждой
+            // игрой и входит в формулу — без жребия, и в сетевой партии хозяин передаст его всем.
+            Match = PlayerPrefs.GetInt(MatchKey, 0) + 1;
+            PlayerPrefs.SetInt(MatchKey, Match);
+            int stamp = Wardrobe.Stamp(map.Name) ^ (Match * 7919);
+            for (int i = 0; i < map.Locations.Count; i++)
+            {
+                var l = map.Locations[i];
+                var home = new GameObject(Loc.F("Подлокация — {0}", Loc.T(l.Name)));
+                home.transform.SetParent(root, false);
+                home.transform.position = new Vector3(l.X, 0f, l.Z);
+                home.AddComponent<Residents>().Configure(l.Kind, l.Radius, l.People, Mathf.Abs(stamp % 10000) * 10 + i * 100);
+            }
             foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), new Vector3(s.X, 0f, s.Z));
             foreach (var s in map.Events) Mark(root, Loc.F("Событие — {0}", s.Kind), new Vector3(s.X, 0f, s.Z));
 
@@ -81,6 +104,9 @@ namespace Sinbinder.Gameplay
                 entry.AddComponent<Crypt.TestChamberEntry>();
             }
         }
+
+        /// <summary>Ушли с поля — «Перетягивания» больше нет: приказы снова без имени, как в демо.</summary>
+        void OnDestroy() => Lords.Player = null;
 
         /// <summary>Запас прочности трона и двери склепа. Дверь держит натиск, трон — партию.</summary>
         private const float ThroneStrength = 1500f;

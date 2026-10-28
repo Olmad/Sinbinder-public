@@ -11,6 +11,7 @@ namespace Sinbinder.Gameplay
 
         private List<Damageable> _playerUnits = new();
         private List<Damageable> _enemyUnits = new();
+        private readonly List<Damageable> _neutralUnits = new();
         private List<HarvestableBody> _bodiesOnField = new();
 
         public System.Action<Damageable, GameObject> OnAnyDeath;
@@ -27,10 +28,14 @@ namespace Sinbinder.Gameplay
         public void RegisterPlayerUnit(Damageable unit) { _playerUnits.Add(unit); OnUnitsChanged?.Invoke(); }
         public void RegisterEnemyUnit(Damageable unit) { _enemyUnits.Add(unit); OnUnitsChanged?.Invoke(); }
 
+        /// <summary>Ничьи («Перетягивание», 54-TUG.md): своих и чужих у них нет — враги по отношениям.</summary>
+        public void RegisterNeutralUnit(Damageable unit) { _neutralUnits.Add(unit); OnUnitsChanged?.Invoke(); }
+
         public void UnregisterUnit(Damageable unit)
         {
             _playerUnits.Remove(unit);
             _enemyUnits.Remove(unit);
+            _neutralUnits.Remove(unit);
             OnUnitsChanged?.Invoke();
         }
 
@@ -38,28 +43,48 @@ namespace Sinbinder.Gameplay
         {
             UnregisterUnit(unit);
             if (newTeam == Team.Player) _playerUnits.Add(unit);
+            else if (newTeam == Team.Neutral) _neutralUnits.Add(unit);
             else _enemyUnits.Add(unit);
             OnUnitsChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Враги спросившего. Пока ничьих нет (демо) — как всегда: два списка друг против друга.
+        /// С ничьими (54-TUG.md): охотник бьёт всех; ничей — кого сам считает врагом
+        /// (<see cref="Hostility"/>); Греховод и его люди — охотников и тех ничьих, кто враждует с ними.
+        /// Ответ ничьему держится полсекунды (<see cref="Hostility.EnemiesOf"/>): спрашивают его десятки раз за такт.
+        /// </summary>
         public List<Damageable> GetEnemies(GameObject asker)
         {
             var askerDmg = asker.GetComponent<Damageable>();
             if (askerDmg == null) return new List<Damageable>();
-            return _playerUnits.Contains(askerDmg) ? _enemyUnits : _playerUnits;
+            if (_neutralUnits.Count == 0) return _playerUnits.Contains(askerDmg) ? _enemyUnits : _playerUnits;
+
+            if (_enemyUnits.Contains(askerDmg))
+            {
+                var all = new List<Damageable>(_playerUnits.Count + _neutralUnits.Count);
+                all.AddRange(_playerUnits);
+                all.AddRange(_neutralUnits);
+                return all;
+            }
+            return Hostility.EnemiesOf(askerDmg, _playerUnits, _enemyUnits, _neutralUnits);
         }
 
         /// <summary>
         /// Свои — с точки зрения спросившего. <see cref="GetAliveAllies"/>
         /// отвечает «свои игрока» кому угодно, и охотник, спросивший его,
-        /// считал своими наш отряд (14-HANDOFF §62).
+        /// считал своими наш отряд (14-HANDOFF §62). Ничьему свои — те, кто верней всех
+        /// тому же Греховоду; никому не верен — один.
         /// </summary>
         public List<Damageable> GetAllies(GameObject asker)
         {
             var askerDmg = asker.GetComponent<Damageable>();
             if (askerDmg == null) return new List<Damageable>();
+            if (_neutralUnits.Contains(askerDmg)) return Hostility.FriendsOf(askerDmg, _neutralUnits);
             return _playerUnits.Contains(askerDmg) ? _playerUnits : _enemyUnits;
         }
+
+        public int NeutralCount { get { _neutralUnits.RemoveAll(u => u == null || u.IsDead); return _neutralUnits.Count; } }
 
         /// <summary> Возвращает ближайшего живого врага в радиусе. </summary>
         public Damageable GetClosestEnemy(Vector3 position, float radius, GameObject asker)
@@ -143,6 +168,7 @@ namespace Sinbinder.Gameplay
             List<Warrior> all = new();
             foreach (var d in _playerUnits) if (d.Warrior != null) all.Add(d.Warrior);
             foreach (var d in _enemyUnits) if (d.Warrior != null) all.Add(d.Warrior);
+            foreach (var d in _neutralUnits) if (d.Warrior != null) all.Add(d.Warrior);
             return all;
         }
     }

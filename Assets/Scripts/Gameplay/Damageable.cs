@@ -41,6 +41,8 @@ namespace Sinbinder.Gameplay
             {
                 if (_warrior != null && _warrior.Team == Team.Enemy)
                     CombatManager.Instance.RegisterEnemyUnit(this);
+                else if (_warrior != null && _warrior.Team == Team.Neutral)
+                    CombatManager.Instance.RegisterNeutralUnit(this);
                 else
                     CombatManager.Instance.RegisterPlayerUnit(this);
             }
@@ -64,6 +66,11 @@ namespace Sinbinder.Gameplay
             if (attacker != null
                 && attacker.TryGetComponent<AOS.AOSWarriorWrapper>(out var striker))
                 striker.MarkStruck();
+
+            // Кто ударил — тот враг ударенному, а Греховод, который его послал, теряет его верность
+            // («Перетягивание», Hostility; в демо ничьих нет — ничего не меняется).
+            if (_warrior == null) _warrior = GetComponent<Warrior>();
+            if (attacker != null) Hostility.Struck(_warrior, attacker.GetComponent<Warrior>());
 
             // И взмах у того, кто ударил: удар идёт тремя путями (AutoAttack,
             // Engagement, умения), а ловить его надёжно — здесь, где он

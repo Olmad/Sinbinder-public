@@ -10,7 +10,12 @@ namespace Sinbinder.Gameplay
     public enum Team
     {
         Player,
-        Enemy
+        Enemy,
+        /// <summary>
+        /// Ничей — «Перетягивание каната» (54-TUG.md): живёт в подлокации, слушается того, кто
+        /// приказал, по верности к нему; кого бить — решает сам (<see cref="Hostility"/>). В демо нет.
+        /// </summary>
+        Neutral,
     }
 
     public class Warrior : MonoBehaviour
@@ -199,7 +204,8 @@ namespace Sinbinder.Gameplay
                 Target = target,
                 IssuedAt = Time.time,
                 Muffle = Mathf.Clamp01(muffle),
-                Lord = lord,
+                // Не назван — голос игрока, если идёт «Перетягивание» (Lords); в демо пусто, как прежде.
+                Lord = lord ?? Lords.Player,
             };
         }
 

@@ -101,6 +101,7 @@ namespace Sinbinder.Gameplay
         // кольцо — сторона, а не грех, и путать их нельзя (42-INTERFACE §4).
         private static readonly Color Ours = new Color(0.35f, 0.92f, 0.38f);
         private static readonly Color Theirs = new Color(0.95f, 0.24f, 0.18f);
+        private static readonly Color Bone = new Color(0.86f, 0.82f, 0.72f);
 
         /// <summary>В покое — тускло: десять ярких красных колец в бою перекричали бы отказы.</summary>
         private const float RestAlpha = 0.30f;
@@ -128,9 +129,11 @@ namespace Sinbinder.Gameplay
 
             if (_warrior == null) _warrior = GetComponent<Warrior>();
             bool enemy = _warrior != null && _warrior.Team == Team.Enemy;
-            _paintedTeam = enemy ? Team.Enemy : Team.Player;
+            bool none = _warrior != null && _warrior.Team == Team.Neutral;
+            _paintedTeam = enemy ? Team.Enemy : none ? Team.Neutral : Team.Player;
 
-            var color = enemy ? Theirs : Ours;
+            // Ничьи («Перетягивание») — цвета кости, как задумано в 42-INTERFACE §4.
+            var color = enemy ? Theirs : none ? Bone : Ours;
             if (!_isSelected) color.a = RestAlpha;
 
             var line = _selectionCircle.GetComponent<LineRenderer>();
