@@ -45,8 +45,9 @@ namespace Sinbinder.Gameplay
     /// <summary>
     /// Событие-экспедиция на месте карты «Перетягивания» — по записи <see cref="ExpeditionBook"/> (тридцать
     /// родов). Какой род где — перестановка по номеру партии (<see cref="Pick"/>): без жребия, каждая партия —
-    /// новый расклад, в сети — одинаковый у всех; подряд роды не повторяются, пока не кончатся все. Событие
-    /// разрешилось — через <see cref="Again"/> с на месте встаёт следующее.
+    /// новый расклад, в сети — одинаковый у всех; подряд роды не повторяются, пока не кончатся все. События
+    /// живут на карте одновременно, у каждого свой срок (<see cref="FightLife"/>, <see cref="ParleyLife"/>);
+    /// где и сколько — <see cref="EventDirector"/>.
     ///
     /// Боевое: стража пала — добыча тому Греховоду, чьи люди бились; развилку решают пошедшие (верные этого
     /// Греховода ближе 20 м) голосом своего греха. Мирное: Греховод у места выбирает сам — 1 или 2.
@@ -57,15 +58,19 @@ namespace Sinbinder.Gameplay
         private static readonly List<MapEvent> Live = new();
         private const float Witness = 20f;
         private const float Talk = 6f;
-        public const float Again = 180f;
 
-        private int _spot, _spots = 1, _gen, _j;
+        /// <summary>Сколько событие ждёт: обоз проходит, торговец уходит, пленника казнят.</summary>
+        public const float FightLife = 300f;
+        public const float ParleyLife = 240f;
+
+        private int _j;
+        private float _endsAt;
+        private EventDirector _director;
         private ExpeditionBook.Entry _entry;
         private readonly List<Warrior> _guards = new();
         private readonly List<Warrior> _camp = new();
         private string _owner;           // дезертиры — чьи были
         private bool _done;
-        private float _againAt = -1f;
         private GameObject _mark, _things;
         private Residents _home;
         private bool _near;
@@ -83,8 +88,10 @@ namespace Sinbinder.Gameplay
         void OnEnable() => Live.Add(this);
         void OnDisable() => Live.Remove(this);
 
-        /// <summary>Род на карте не задаётся — его даёт перестановка; место помнит свой номер.</summary>
-        public void Configure(string kind, int index) => _spot = index;
+        /// <summary>Номер события в партии: от него — род (перестановка) и награды в рамках.</summary>
+        public void Configure(EventDirector director, int j) { _director = director; _j = j; }
+
+        public int Number => _j;
 
         /// <summary>
         /// Какой род у j-го события партии: шаг перестановки взаимно прост с числом родов, сдвиг и шаг — от
@@ -105,21 +112,22 @@ namespace Sinbinder.Gameplay
         private int Within(int min, int max, int salt) => max <= min ? min : min + Mathf.Abs(MapLoader.Match * 31 + _j * 17 + salt) % (max - min + 1);
 
         // После выпечки навмеша (Start): стража встаёт на навмеш.
-        void Start()
+        void Start() => Ensure();
+
+        /// <summary>Встать событию (Start; прогон зовёт сразу, не дожидаясь кадра). Повторный вызов — ничего.</summary>
+        public void Ensure()
         {
-            _spots = Mathf.Max(1, MapLoader.Current != null ? MapLoader.Current.Events.Count : 1);
+            if (_entry != null) return;
             _home = gameObject.AddComponent<Residents>();
             _home.Configure("village", 6f, 0, 0);
             Open();
         }
 
-        /// <summary>Встать следующему событию на этом месте.</summary>
         private void Open()
         {
-            _j = _spot + _gen * _spots;
             _entry = ExpeditionBook.All[Pick(_j)];
             _done = false;
-            _againAt = -1f;
+            _endsAt = Time.time + (_entry.Parley ? ParleyLife : FightLife);
             _guards.Clear();
             _camp.Clear();
             _owner = null;
@@ -149,18 +157,17 @@ namespace Sinbinder.Gameplay
             }
             Props();
             Beacon();
-            Debug.Log($"[СОБЫТИЯ] место {_spot}, событие {_j}: {_entry.Id} — стражи {_guards.Count}, у огня {_camp.Count}");
+            Debug.Log($"[СОБЫТИЯ] событие {_j} у ({transform.position.x:0}, {transform.position.z:0}): {_entry.Id} — стражи {_guards.Count}, у огня {_camp.Count}");
         }
 
         void Update()
         {
-            if (_entry == null) return;
-            if (_done)
-            {
-                if (_againAt > 0f && Time.time >= _againAt) Next();
-                return;
-            }
-            if (TugMatch.Over) return;
+            if (_entry == null || _done || TugMatch.Over) return;
+
+            // Время уходит: знак тускнеет (без цифр), вышло — событие ушло без тех, кто не успел.
+            if (_mark != null && _mark.TryGetComponent<Light>(out var light))
+                light.intensity = 0.8f + 2.2f * Mathf.Clamp01((_endsAt - Time.time) / (_entry.Parley ? ParleyLife : FightLife));
+            if (Time.time >= _endsAt) { Expire(); return; }
 
             if (_entry.Parley)
             {
@@ -178,12 +185,22 @@ namespace Sinbinder.Gameplay
             Resolve();
         }
 
-        /// <summary>Сразу встать следующему (прогон проверяет, что место не пустеет).</summary>
-        public void Next()
+        /// <summary>Время вышло: стража уходит, вещи увозят; люди у огня остаются ничьими на карте.</summary>
+        public void Expire()
         {
-            if (_things != null) Destroy(_things);
-            _gen++;
-            Open();
+            if (_done) return;
+            Log(Loc.F("{0}: не успели — ушло.", Loc.T(_entry.Title)));
+            Debug.Log($"[СОБЫТИЯ] {_entry.Id}: ушло по времени");
+            foreach (var g in _guards) if (g != null && !g.IsDead) Destroy(g.gameObject);
+            Finish();
+        }
+
+        /// <summary>Убрать место: люди события (пришедшие, дезертиры) остаются на карте, место — пустеет.</summary>
+        private void Close()
+        {
+            var keep = transform.parent;
+            foreach (var w in _home.Folk) if (w != null) w.transform.SetParent(keep, true);
+            Destroy(gameObject);
         }
 
         /// <summary>Стража пала: чьи люди бились — того и добыча; развилку решают пошедшие голосом греха.</summary>
@@ -333,8 +350,9 @@ namespace Sinbinder.Gameplay
         private void Finish()
         {
             _done = true;
-            _againAt = Time.time + Again;
             if (_mark != null) Destroy(_mark);
+            _director?.Ended(this);
+            Invoke(nameof(Close), 8f);
         }
 
         private static void Log(string text) => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(text);
@@ -425,5 +443,114 @@ namespace Sinbinder.Gameplay
 
         private static string Option(int key, ExpeditionBook.Option o)
             => o.Cost > 0 ? Loc.F("{0} — {1} (монет: {2})", key, Loc.T(o.Label), o.Cost) : Loc.F("{0} — {1}", key, Loc.T(o.Label));
+    }
+
+    /// <summary>
+    /// Ведёт события экспедиций на карте (автор, 28.10: «странно, что меняется целая карта, чтобы появилось
+    /// новое событие… они должны параллельно существовать»). Одновременно — по два на игрока. Места: те, что
+    /// поставил автор карты, и по формуле — у подлокаций и между склепами (спорная земля). Кончилось событие —
+    /// через <see cref="Pause"/> с новое встаёт на другом свободном месте. Без жребия: порядок мест и родов —
+    /// от номера партии.
+    /// </summary>
+    public class EventDirector : MonoBehaviour
+    {
+        public const float Pause = 60f;
+        private const float FromCrypt = 30f, Apart = 16f;
+
+        private readonly List<Vector3> _places = new();
+        private readonly List<float> _due = new();
+        private int _target = 2, _next, _cursor;
+
+        public static EventDirector Instance { get; private set; }
+        public IReadOnlyList<Vector3> Places => _places;
+        public int Target => _target;
+        /// <summary>Сколько новых событий ждут своей паузы.</summary>
+        public int Waiting => _due.Count;
+
+        void Awake() => Instance = this;
+        void OnDestroy() { if (Instance == this) Instance = null; }
+
+        public void Configure(MapData map)
+        {
+            _places.Clear();
+            var crypts = new List<Vector3>();
+            foreach (var c in map.Crypts) crypts.Add(new Vector3(c.X, 0f, c.Z));
+            float edge = map.Size * 0.5f - 12f;
+
+            var wish = new List<Vector3>();
+            foreach (var s in map.Events) wish.Add(new Vector3(s.X, 0f, s.Z));
+            for (int i = 0; i < crypts.Count; i++)
+                for (int k = i + 1; k < crypts.Count; k++) wish.Add((crypts[i] + crypts[k]) * 0.5f);
+            for (int i = 0; i < map.Locations.Count; i++)
+            {
+                var l = map.Locations[i];
+                var at = new Vector3(l.X, 0f, l.Z);
+                for (int k = 0; k < 2; k++)
+                {
+                    float a = (i * 73f + k * 180f + 45f) * Mathf.Deg2Rad;
+                    wish.Add(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (l.Radius + 14f));
+                }
+            }
+            foreach (var p in wish)
+            {
+                if (Mathf.Abs(p.x) > edge || Mathf.Abs(p.z) > edge) continue;
+                bool ok = true;
+                foreach (var c in crypts) if (CampFocus.GroundDistance(p, c) < FromCrypt) ok = false;
+                foreach (var q in _places) if (CampFocus.GroundDistance(p, q) < Apart) ok = false;
+                if (ok) _places.Add(p);
+            }
+            _target = Mathf.Min(_places.Count, Mathf.Max(2, map.Players * 2));
+            _cursor = Mathf.Abs(MapLoader.Match * 5) % Mathf.Max(1, _places.Count);
+            for (int i = 0; i < _target; i++) _due.Add(0f);
+            Debug.Log($"[СОБЫТИЯ] мест {_places.Count}, разом {_target}");
+        }
+
+        void Update()
+        {
+            if (TugMatch.Over) return;
+            for (int i = _due.Count - 1; i >= 0; i--)
+                if (Time.time >= _due[i]) { _due.RemoveAt(i); Spawn(); }
+        }
+
+        /// <summary>Событие кончилось — через паузу встанет новое.</summary>
+        public void Ended(MapEvent e) => _due.Add(Time.time + Pause);
+
+        /// <summary>Поставить следующее событие на ближайшее по кругу свободное место; номер — следующий.</summary>
+        public MapEvent Spawn() => Spawn(_next);
+
+        /// <summary>Поставить событие с этим номером (прогон берёт нужный род).</summary>
+        public MapEvent Spawn(int j)
+        {
+            if (_places.Count == 0) return null;
+            for (int tries = 0; tries < _places.Count; tries++)
+            {
+                var p = _places[_cursor];
+                _cursor = (_cursor + 3) % _places.Count;
+                if (Taken(p)) continue;
+                var go = new GameObject("Событие");
+                go.transform.SetParent(transform, false);
+                go.transform.position = p;
+                var e = go.AddComponent<MapEvent>();
+                e.Configure(this, j);
+                _next = Mathf.Max(_next, j + 1);
+                return e;
+            }
+            return null;
+        }
+
+        private static bool Taken(Vector3 p)
+        {
+            foreach (var e in MapEvent.All)
+                if (e != null && !e.Done && CampFocus.GroundDistance(e.transform.position, p) < 1f) return true;
+            return false;
+        }
+
+        /// <summary>Сейчас живых (не решённых) событий.</summary>
+        public static int Alive()
+        {
+            int n = 0;
+            foreach (var e in MapEvent.All) if (e != null && !e.Done) n++;
+            return n;
+        }
     }
 }

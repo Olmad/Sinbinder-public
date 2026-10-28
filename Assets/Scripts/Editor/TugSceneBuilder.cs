@@ -696,13 +696,22 @@ namespace Sinbinder.EditorTools
                 if (gateSite != null) Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/постройки", "000");
 
                 // Экспедиции (MapEvent по ExpeditionBook): роды по перестановке номера партии; боевое —
-                // перебили стражу, развилку решили пошедшие; мирное — выбор Греховода; место не пустеет.
+                // перебили стражу, развилку решили пошедшие; мирное — выбор Греховода; события живут разом,
+                // кончилось — новое ждёт паузы (EventDirector).
                 var kinds = new System.Collections.Generic.HashSet<int>();
                 for (int j = 0; j < ExpeditionBook.All.Length; j++) kinds.Add(MapEvent.Pick(j));
-                MapEvent caravan = null;
-                foreach (var e in MapEvent.All) if (e != null && !e.Parley && !e.Done && caravan == null) caravan = e;
-                int events = MapEvent.All.Count, guarded = 0, fights = 0;
-                foreach (var e in MapEvent.All) if (e != null && !e.Parley) { fights++; if (e.Guards.Count == e.Entry.Guards) guarded++; }
+                var director = EventDirector.Instance;
+                int alive = EventDirector.Alive(), target = director != null ? director.Target : -1, places = director != null ? director.Places.Count : 0;
+                MapEvent Fresh(bool parley)
+                {
+                    foreach (var e in MapEvent.All) if (e != null && !e.Done && e.Parley == parley) return e;
+                    for (int j = 0; director != null && j < ExpeditionBook.All.Length * 2; j++)
+                        if (ExpeditionBook.All[MapEvent.Pick(j)].Parley == parley) { var e = director.Spawn(j); e?.Ensure(); return e; }
+                    return null;
+                }
+                MapEvent caravan = Fresh(false);
+                int guarded = 0, fights = 0;
+                foreach (var e in MapEvent.All) if (e != null && !e.Parley && !e.Done) { fights++; if (e.Guards.Count == e.Entry.Guards) guarded++; }
                 string fightKind = caravan != null ? caravan.Kind : "—";
                 if (caravan != null)
                 {
@@ -721,17 +730,12 @@ namespace Sinbinder.EditorTools
                     caravan.Resolve();
                 }
                 bool fought = caravan != null && caravan.Done;
-                // Мирное: листаем место, пока не встанет мирный род, и выбираем бесплатную развилку.
-                MapEvent talk = null;
-                foreach (var e in MapEvent.All) if (e != null && e.Parley && !e.Done) talk = e;
-                var spot = caravan ?? (MapEvent.All.Count > 0 ? MapEvent.All[0] : null);
-                for (int k = 0; talk == null && spot != null && k < ExpeditionBook.All.Length; k++) { spot.Next(); if (spot.Parley) talk = spot; }
+                // Мирное: Греховод выбирает бесплатную развилку.
+                var talk = Fresh(true);
                 string talkKind = talk != null ? talk.Kind : "—";
                 bool chose = talk != null && talk.Choose(talk.Entry.A.Cost == 0 ? 0 : talk.Entry.B.Cost == 0 ? 1 : 0, Lords.Player);
-                string before = spot != null ? spot.Kind : "";
-                spot?.Next();
-                bool again = spot != null && !spot.Done && spot.Kind != before;
-                Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; событий {events} (по карте {MapLoader.Current?.Events.Count}), боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новое на месте — {(again ? "да" : "НЕТ")} — {(kinds.Count == ExpeditionBook.All.Length && events == MapLoader.Current?.Events.Count && guarded == fights && fought && chose && again ? "как надо" : "НЕ ТАК")}");
+                int waiting = director != null ? director.Waiting : 0;
+                Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; мест {places}, живут разом {alive} из {target}; боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новых ждут паузы {waiting} — {(kinds.Count == ExpeditionBook.All.Length && target >= 2 && alive == target && guarded == fights && fought && chose && waiting >= 2 ? "как надо" : "НЕ ТАК")}");
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");
