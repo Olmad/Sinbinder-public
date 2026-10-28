@@ -111,6 +111,11 @@ namespace Sinbinder.Gameplay
             // События-экспедиции (MapEvent по ExpeditionBook) живут на карте одновременно, каждое — своё
             // время; где и какие — ведёт EventDirector. Трофеи — Trophies.
             Trophies.Forget();
+            // Титулованные — по одному на сторону на равных местах, легенда — в середине (Champions).
+            var champions = new GameObject("Титулованные и легенда");
+            champions.transform.SetParent(root, false);
+            champions.AddComponent<Champions>().Configure(map);
+
             // «-tugNoEvents» — партия без событий (замер: мешают ли события ИИ собирать людей).
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugNoEvents") < 0)
             {

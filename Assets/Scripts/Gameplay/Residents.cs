@@ -92,7 +92,26 @@ namespace Sinbinder.Gameplay
             return NavMesh.SamplePosition(at, out var hit, 4f, NavMesh.AllAreas) ? hit.position : at;
         }
 
-        private Warrior Make(Sketch k, Vector3 at, AOS.AOSSceneSetup setup)
+        /// <summary>
+        /// Титулованный или легенда (Champions): тот же генератор, но душа старше и сильнее, и титул — с рождения.
+        /// </summary>
+        public Warrior Champion(int seed, Vector3 at, float strength, int level, string title)
+        {
+            _relations ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            var present = new List<string>();
+            foreach (var r in FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                foreach (var w in r._folk) if (w != null) present.Add(w.DisplayName);
+            var k = WarriorGenerator.Make(seed, SoulOrigin.Sortie, present);
+            k.Strength = strength;
+            if (NavMesh.SamplePosition(at, out var hit, 4f, NavMesh.AllAreas)) at = hit.position;
+            var made = Make(k, at, FindFirstObjectByType<AOS.AOSSceneSetup>(), level);
+            if (made == null) return null;
+            made.Soul.Remember(title);
+            _folk.Add(made);
+            return made;
+        }
+
+        private Warrior Make(Sketch k, Vector3 at, AOS.AOSSceneSetup setup, int level = 0)
         {
             var go = new GameObject(k.Name);
             go.transform.SetParent(transform, true);
@@ -100,7 +119,7 @@ namespace Sinbinder.Gameplay
             go.transform.rotation = Quaternion.LookRotation((transform.position - at).sqrMagnitude > 0.01f ? transform.position - at : Vector3.forward);
 
             var warrior = go.AddComponent<Warrior>();
-            var soul = new SoulData(k.Name, k.Sin, k.Moral, 1 + k.Number % 3, k.Strength, k.Seed);
+            var soul = new SoulData(k.Name, k.Sin, k.Moral, level > 0 ? level : 1 + k.Number % 3, k.Strength, k.Seed);
             soul.Set(k.Second, k.Strength * 0.6f);
             warrior.Initialize(soul, k.Shell, _relations, false, Team.Neutral);
 
