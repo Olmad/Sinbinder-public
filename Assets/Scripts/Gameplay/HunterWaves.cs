@@ -114,6 +114,22 @@ namespace Sinbinder.Gameplay
             return sent;
         }
 
+        /// <summary>Страж события (обоз, деревня в беде): человек Ордена, что стоит у места и бьётся с подошедшими.</summary>
+        public Warrior Guard(Vector3 at, Vector3 post)
+        {
+            _relations ??= new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            if (_setup == null) _setup = FindFirstObjectByType<AOS.AOSSceneSetup>();
+            int keep = Wave;
+            Wave = Mathf.Max(1, Wave);
+            var w = Hunter(at, post, -1);
+            Wave = keep;
+            if (w == null) return null;
+            Destroy(w.GetComponent<HunterSiege>());
+            Destroy(w.GetComponent<HunterGoal>());
+            w.gameObject.AddComponent<EventGuard>();
+            return w;
+        }
+
         private Warrior Hunter(Vector3 at, Vector3 gate, int side)
         {
             if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 6f, UnityEngine.AI.NavMesh.AllAreas)) at = hit.position;
@@ -153,7 +169,8 @@ namespace Sinbinder.Gameplay
         /// <summary>Убит охотник — монеты Греховоду, чей человек убил.</summary>
         private static void OnDeath(Damageable killed, GameObject killer)
         {
-            if (!Lords.Active || killed == null || killer == null || killed.GetComponent<HunterSiege>() == null) return;
+            if (!Lords.Active || killed == null || killer == null
+                || (killed.GetComponent<HunterSiege>() == null && killed.GetComponent<EventGuard>() == null)) return;
             var by = killer.GetComponent<Warrior>();
             if (by == null) return;
             string lord = Lords.Of(by) ?? (by.HasCommand ? by.Command.Lord : null) ?? Allegiance.Dearest(by.Id);
@@ -161,6 +178,9 @@ namespace Sinbinder.Gameplay
             Favor.AddCoins(lord, Bounty);
         }
     }
+
+    /// <summary>Метка стража события (MapEvent): за него, как за охотника, — монеты убившему.</summary>
+    public class EventGuard : MonoBehaviour { }
 
     /// <summary>
     /// Охотник у склепа: дошёл (HunterGoal), рядом бить некого — ломает дверь, а за ней трон.

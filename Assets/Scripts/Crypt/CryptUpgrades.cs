@@ -57,11 +57,17 @@ namespace Sinbinder.Crypt
         /// Голем — только с оковами; остальные — всегда.
         /// </summary>
         public static bool AllowsShell(Sinbinder.Core.ShellType shell)
-            => shell != Sinbinder.Core.ShellType.Golem || Installed(Upgrade.Shackles);
+            => shell != Sinbinder.Core.ShellType.Golem
+               // «Перетягивание»: голем — только по рецепту из экспедиции (автор, 28.10), а не оковами склепа демо.
+               || (Sinbinder.Gameplay.Lords.Active
+                   ? Sinbinder.Gameplay.Trophies.Has(Sinbinder.Gameplay.Lords.Player, Sinbinder.Gameplay.Trophies.Kind.GolemRecipe)
+                   : Installed(Upgrade.Shackles));
 
         /// <summary>Почему нельзя — словами, для журнала и устройства.</summary>
         public static string WhyNot(Sinbinder.Core.ShellType shell)
-            => AllowsShell(shell) ? "" : Loc.T("Устройство не выдержит камня. Нужны каменные оковы.");
+            => AllowsShell(shell) ? ""
+               : Sinbinder.Gameplay.Lords.Active ? Loc.T("Голема не поднять без рецепта. Его добывают в экспедициях — на обозах Ордена.")
+               : Loc.T("Устройство не выдержит камня. Нужны каменные оковы.");
 
         /// <summary>Поставлено ли.</summary>
         public static bool Installed(Upgrade what) => _installed[(int)what];

@@ -109,6 +109,19 @@ namespace Sinbinder.Core
         public static bool Anything() => Jars > 0;
 
         /// <summary>
+        /// Ещё одна пустая банка при себе — трофей экспедиции «Перетягивания» (Trophies). Больше
+        /// <see cref="Max"/> не унести: ложь.
+        /// </summary>
+        public static bool AddJar()
+        {
+            Ensure();
+            if (_count >= Max) return false;
+            _jars[_count] = new Slot { Kind = CarryKind.Jar };
+            _count++;
+            return true;
+        }
+
+        /// <summary>
         /// Куда положить свежую душу: первая пустая банка.
         /// Минус один — пустых банок нет, и жать некуда.
         /// </summary>

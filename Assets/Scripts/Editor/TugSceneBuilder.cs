@@ -652,7 +652,7 @@ namespace Sinbinder.EditorTools
                 int hunters = 0, aimed = 0;
                 foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
                 {
-                    if (w.Team != Team.Enemy || w.IsDead) continue;
+                    if (w.Team != Team.Enemy || w.IsDead || w.GetComponent<EventGuard>() != null) continue;   // стражи событий — не охотники
                     hunters++;
                     if (w.GetComponent<HunterSiege>() != null && w.GetComponent<HunterGoal>() != null) aimed++;
                 }
@@ -694,6 +694,33 @@ namespace Sinbinder.EditorTools
                      $"костёр — {(fireSite != null && BuildSite.NearFire(side0, fireSite.transform.position, 1f) ? "горит" : "НЕТ")} — {(sites == 4 * TugMatch.Instance.Crypts.Count && paid && up && BuildSite.GateOf(side0) != null ? "как надо" : "НЕ ТАК")}");
                 if (gateSite != null) Sinbinder.Utilets.Reel.Aim(gateSite.transform.position, 16f);
                 if (gateSite != null) Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/постройки", "000");
+
+                // Экспедиции (MapEvent): события на местах карты, у обоза стража; перебили — трофей и развилка.
+                MapEvent caravan = null;
+                foreach (var e in MapEvent.All) if (e != null && e.Kind == "caravan" && !e.Done && caravan == null) caravan = e;
+                int events = MapEvent.All.Count, guarded = 0;
+                foreach (var e in MapEvent.All) if (e != null && e.Guards.Count > 0) guarded++;
+                if (caravan != null)
+                {
+                    Warrior fighter = null;
+                    foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                        if (w.Team == Team.Neutral && !w.IsDead && RivalLord.LordOf(w) == null && w != lookout) { fighter = w; break; }
+                    if (fighter != null)
+                    {
+                        Allegiance.Change(fighter.Id, fighter.Loyalty, Lords.Player, 70f - Allegiance.Of(fighter.Id, fighter.Loyalty, Lords.Player));
+                        var near = caravan.transform.position + Vector3.right * 2f;
+                        fighter.transform.position = near;
+                        var legs = fighter.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                        if (legs != null && legs.isOnNavMesh) legs.Warp(near);
+                        foreach (var g in caravan.Guards) if (g != null && !g.IsDead) g.GetComponent<Damageable>().TakeDamage(99999f, fighter.gameObject);
+                    }
+                    caravan.Resolve();
+                }
+                int idx = 0;
+                for (int i = 0; i < MapEvent.All.Count; i++) if (MapEvent.All[i] == caravan) idx = i;
+                var cargoKind = Trophies.Cargo(idx);
+                bool got = caravan != null && caravan.Done && Trophies.Has(Lords.Player, cargoKind);
+                Line($"экспедиции: событий {events} (по карте {MapLoader.Current?.Events.Count}), со стражей {guarded}; обоз взят — {(caravan != null && caravan.Done ? "да" : "НЕТ")}, трофей игроку — {cargoKind}: {(got ? "есть" : "НЕТ")} — {(events == MapLoader.Current?.Events.Count && guarded == events && got ? "как надо" : "НЕ ТАК")}");
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");

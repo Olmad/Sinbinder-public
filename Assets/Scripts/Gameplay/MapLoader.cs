@@ -108,7 +108,16 @@ namespace Sinbinder.Gameplay
                 home.AddComponent<Residents>().Configure(l.Kind, l.Radius, l.People, Mathf.Abs(stamp % 10000) * 10 + i * 100);
             }
             foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), new Vector3(s.X, 0f, s.Z));
-            foreach (var s in map.Events) Mark(root, Loc.F("Событие — {0}", s.Kind), new Vector3(s.X, 0f, s.Z));
+            // События-экспедиции на местах карты: обозы и деревни в беде (MapEvent), трофеи — Trophies.
+            Trophies.Forget();
+            for (int i = 0; i < map.Events.Count; i++)
+            {
+                var s = map.Events[i];
+                var spot = new GameObject(Loc.F("Событие — {0}", s.Kind == "village" ? Loc.T("деревня в беде") : Loc.T("обоз")));
+                spot.transform.SetParent(root, false);
+                spot.transform.position = new Vector3(s.X, 0f, s.Z);
+                spot.AddComponent<MapEvent>().Configure(s.Kind, i);
+            }
 
             // Греховод игрока — в склепе первой стороны с местом «Игрок»: перед троном, лицом к
             // двери (54-TUG.md: «Греховоды появляются в склепах с тронами»). Наружу — открыть дверь.
