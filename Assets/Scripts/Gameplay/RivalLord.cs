@@ -43,6 +43,9 @@ namespace Sinbinder.Gameplay
 
         public static IReadOnlyList<RivalLord> All => Live;
 
+        /// <summary>Все Греховоды-ИИ ждут (обучение, пока не дошло до урока о чужом троне).</summary>
+        public static bool Hold { get; set; }
+
         /// <summary>Чей голос у этого тела; не Греховод-ИИ — null.</summary>
         public static string LordOf(Warrior w)
         {
@@ -78,7 +81,8 @@ namespace Sinbinder.Gameplay
             var purse = LordPurse.Near(transform.position);
             if (purse != null) purse.Take(Lord);
 
-            if (TugMatch.Over || Time.time < _next) return;
+            // Обучение держит ИИ, пока не дошло до своего урока (TugTutorial).
+            if (TugMatch.Over || Hold || Time.time < _next) return;
             _next = Time.time + Beat;
 
             var match = TugMatch.Instance;

@@ -190,8 +190,32 @@ namespace Sinbinder.Core
         /// <summary>Великая охота на 25-й минуте — включается в лобби (автор, 28.10: «можно включить/выключить»).</summary>
         public static bool GreatHunt { get; set; } = true;
 
+        /// <summary>Идёт обучение (Gameplay.TugTutorial): уроки ведут партию, ИИ и охотники ждут своего урока.</summary>
+        public static bool Tutorial { get; set; }
+
+        /// <summary>
+        /// Обучение «Перетягиванию» (автор, 28.10: «новому игроку нужно объяснять все правила… отдельный
+        /// одиночный обучающий уровень с плашками, уроками»): маленькое поле, свой склеп на юге, деревня рядом,
+        /// слабый Греховод-ИИ на севере. Картой из кода, а не из папки: в папке уже лежат карты игрока.
+        /// </summary>
+        public static void ChooseTutorial()
+        {
+            var map = new MapData { Name = Loc.N("Обучение"), Author = "Sinbinder", Size = 220f };
+            map.Crypts.Add(new MapData.Crypt { X = 0, Z = -85, Yaw = 0 });
+            map.Crypts.Add(new MapData.Crypt { X = 0, Z = 85, Yaw = 180 });
+            map.Locations.Add(new MapData.Location { Kind = "village", Name = Loc.N("Деревня"), X = -30, Z = -40, Radius = 16, People = 10 });
+            map.Locations.Add(new MapData.Location { Kind = "forest", Name = Loc.N("Бор"), X = 35, Z = 20, Radius = 18, People = 6 });
+            map.Trails.Add(new MapData.Spot { Kind = "hunters", X = 100, Z = -40 });
+            map.Trails.Add(new MapData.Spot { Kind = "hunters", X = -100, Z = 40 });
+            Choose(null, map);
+            Seats[1] = Seat.AiWeak;
+            GreatHunt = false;
+            Tutorial = true;
+        }
+
         public static void Choose(string path, MapData map)
         {
+            Tutorial = false;
             Path = path;
             Map = map;
             Seats.Clear();

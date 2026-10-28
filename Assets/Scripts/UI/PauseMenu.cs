@@ -237,6 +237,9 @@ namespace Sinbinder.UI
             float y = 0f;
             Add(ref y, Loc.T("Назад"), "", () => { _maps = false; Draw(); });
             Add(ref y, Loc.T("Папка карт"), MapData.Folder, () => Application.OpenURL("file:///" + MapData.Folder.Replace('\\', '/')));
+            // Обучение — первым из партий: новичку правила показывают, а не перечисляют (TugTutorial).
+            Add(ref y, Loc.T("Обучение «Перетягиванию»"), Loc.T("девять уроков против слабого ИИ"),
+                () => { MapSession.ChooseTutorial(); Field("Field"); });
             y -= MenuRows.Height * 0.5f;
 
             foreach (var (path, map) in MapData.List())

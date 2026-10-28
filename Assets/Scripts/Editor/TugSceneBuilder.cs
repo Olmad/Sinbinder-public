@@ -251,6 +251,117 @@ namespace Sinbinder.Utilets
 namespace Sinbinder.EditorTools
 {
     /// <summary>
+    /// Проход обучения пакетно (TugTutorial): девять уроков подряд, каждый — как сделал бы игрок, и снимок
+    /// плашки урока в учебник (Docs/Учебник/кадры/обучение). Строки «[ОБУЧЕНИЕ]» — сделан ли урок и пошёл ли следующий.
+    /// </summary>
+    [InitializeOnLoad]
+    public static class TutorialRun
+    {
+        private const string Active = "Sinbinder.TutorialRun.Active";
+        private static float _start = -1f, _at = -1f;
+        private static int _seen = -1;
+
+        static TutorialRun()
+        {
+            if (SessionState.GetBool(Active, false)) EditorApplication.update += Tick;
+        }
+
+        public static void RunBatch()
+        {
+            EditorUtility.audioMasterMute = true;
+            SessionState.SetBool(Active, true);
+            EditorSceneManager.OpenScene("Assets/Scenes/Tug/Field.unity");
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += Tick;
+        }
+
+        private static void Note(string s) => Debug.Log("[ОБУЧЕНИЕ] " + s);
+
+        private static void Tick()
+        {
+            if (!SessionState.GetBool(Active, false) || !EditorApplication.isPlaying) return;
+            Sinbinder.UI.StartPanel.ChooseFresh();
+            var tut = TugTutorial.Instance;
+            if (!SinbinderPlayer.Exists || tut == null || TugMatch.Instance == null) return;
+            if (_start < 0f) { _start = Time.realtimeSinceStartup; return; }
+            if (Time.realtimeSinceStartup - _start < 3f) return;
+
+            // Новый урок — снимок плашки и действие игрока; дальше ждём, пока урок сам скажет «готово».
+            if (tut.Step != _seen)
+            {
+                _seen = tut.Step;
+                _at = Time.realtimeSinceStartup;
+                if (_seen >= 9) { Finish(true); return; }
+                Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/обучение", $"урок {_seen + 1}");
+                Act(_seen, SinbinderPlayer.Instance);
+                return;
+            }
+            if (Time.realtimeSinceStartup - _at > 25f) { Note($"урок {_seen + 1} не сделан за 25 с — НЕ ТАК"); Finish(false); }
+        }
+
+        /// <summary>Что делает игрок на уроке.</summary>
+        private static void Act(int step, SinbinderPlayer hero)
+        {
+            var m = TugMatch.Instance;
+            int me = m.PlayerSide;
+            var folk = new System.Collections.Generic.List<Warrior>();
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w.Team == Team.Neutral && !w.IsDead && RivalLord.LordOf(w) == null) folk.Add(w);
+
+            switch (step)
+            {
+                case 0: { var (door, _) = m.PartsOf(me); if (door != null && !door.Open) door.Toggle(); break; }
+                case 1:
+                    foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                    {
+                        var at = r.transform.position + Vector3.back * 4f;
+                        hero.transform.position = at;
+                        var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                        if (legs != null && legs.isOnNavMesh) legs.Warp(at);
+                        break;
+                    }
+                    break;
+                case 2: if (folk.Count > 0) folk[0].IssueCommand(CommandKind.Move, folk[0].transform.position + Vector3.forward * 3f); break;
+                case 3: if (folk.Count > 1) Favor.Give(folk[1]); break;
+                case 4:
+                    for (int i = 0; i < 3 && i < folk.Count; i++)
+                        Allegiance.Change(folk[i].Id, folk[i].Loyalty, Lords.Player, 70f - Allegiance.Of(folk[i].Id, folk[i].Loyalty, Lords.Player));
+                    break;
+                case 5:
+                    // Отбить: охотники вышли с началом урока — пусть падут (как от наших клинков).
+                    foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                        if (w.Team == Team.Enemy && !w.IsDead) w.GetComponent<Damageable>()?.TakeDamage(99999f, folk.Count > 0 ? folk[0].gameObject : null);
+                    break;
+                case 6: FieldRun.Altar(hero); break;
+                case 7:
+                    foreach (var s in BuildSite.All)
+                        if (s != null && s.Side == me && s.What == BuildSite.Kind.Fire)
+                        { Favor.AddCoins(Lords.Player, s.Cost); s.Lay(); s.Finish(); break; }
+                    break;
+                case 8:
+                    foreach (var r in RivalLord.All)
+                    {
+                        if (r == null) continue;
+                        var (_, throne) = m.PartsOf(r.Side);
+                        throne?.TakeDamage(throne.Max * 2f);
+                    }
+                    break;
+            }
+            Note($"урок {step + 1}: сделано, что сделал бы игрок");
+        }
+
+        private static void Finish(bool all)
+        {
+            Note(all ? "все девять уроков пройдены — как надо" : "обучение не пройдено");
+            EditorApplication.update -= Tick;
+            SessionState.SetBool(Active, false);
+            Time.timeScale = 1f;
+            EditorApplication.isPlaying = false;
+            EditorApplication.Exit(0);
+        }
+    }
+
+    /// <summary>
     /// Длинная партия пакетно: поле, против — ИИ силой из <c>-tugAi Weak|Medium|Strong</c>, игрок стоит
     /// в склепе за закрытой дверью; время ×4, четыре минуты игрового. Каждые 30 с — сводка «[ПАРТИЯ]»:
     /// сколько приказов отдал ИИ, сколько верных собрал, нападает ли, что с дверью и троном игрока.
@@ -608,7 +719,7 @@ namespace Sinbinder.EditorTools
         }
 
         /// <summary>Алтарь целиком, как игрок: убить, взвалить, положить на стол, собрать на устройстве.</summary>
-        private static void Altar(SinbinderPlayer hero)
+        internal static void Altar(SinbinderPlayer hero)
         {
             var device = TugMatch.Instance.Crypts[TugMatch.Instance.PlayerSide].GetComponentInChildren<Sinbinder.Crypt.BindingDevice>();
             if (device == null) { Line("алтарь: устройства в склепе НЕТ"); return; }
@@ -695,7 +806,7 @@ namespace Sinbinder.EditorTools
             return $"{dressed} из {all}";
         }
 
-        private static void Line(string s) => Debug.Log("[ПОЛЕ] " + s);
+        internal static void Line(string s) => Debug.Log("[ПОЛЕ] " + s);
     }
 
     /// <summary>

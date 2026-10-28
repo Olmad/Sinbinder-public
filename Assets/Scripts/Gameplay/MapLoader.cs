@@ -28,6 +28,12 @@ namespace Sinbinder.Gameplay
         void Awake()
         {
             var map = MapSession.Map;
+            // Пакетный проход обучения (TugSceneBuilder.TutorialRun): «-tugTutorial».
+            if (map == null && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugTutorial") >= 0)
+            {
+                MapSession.ChooseTutorial();
+                map = MapSession.Map;
+            }
             if (map == null)
             {
                 var all = MapData.List();
@@ -123,6 +129,14 @@ namespace Sinbinder.Gameplay
             gameObject.AddComponent<HunterWaves>().Begin(trails);
             // Армия без дела остывает — копить её вечно нельзя (Idleness).
             gameObject.AddComponent<Idleness>();
+
+            // Обучение: уроки ведут партию — ИИ и охотники ждут своего урока (TugTutorial).
+            RivalLord.Hold = MapSession.Tutorial;
+            if (MapSession.Tutorial)
+            {
+                GetComponent<HunterWaves>().Paused = true;
+                gameObject.AddComponent<TugTutorial>();
+            }
         }
 
         private TugMatch _match;

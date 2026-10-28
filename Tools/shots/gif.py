@@ -105,6 +105,19 @@ def page():
                      else "<div class='none'>Кадров этой серии ещё нет — снимет следующий прогон.</div>")
         parts.append("<dl><dt>Что делаешь</dt><dd>{}</dd><dt>Что происходит</dt><dd>{}</dd>"
                      "<dt>Почему</dt><dd>{}</dd></dl></section>".format(*map(html.escape, (do, see, why))))
+    # Обучение «Перетягиванию» — кадры плашек девяти уроков (TutorialRun).
+    lessons = os.path.join(FRAMES, "обучение")
+    if os.path.isdir(lessons):
+        parts.append("<h2>Обучение «Перетягиванию» — девять уроков</h2>")
+        for i in range(1, 10):
+            src = os.path.join(lessons, "урок %d.png" % i)
+            if not os.path.exists(src):
+                continue
+            im = Image.open(src).convert("RGB")
+            im = im.resize((WIDTH, round(im.height * WIDTH / im.width)), Image.LANCZOS)
+            name = "урок-%d.jpg" % i
+            im.save(os.path.join(BOOK, name), quality=86)
+            parts.append("<section><img src='{}' alt='урок {}'></section>".format(name, i))
     parts.append("</main></body></html>")
     out = os.path.join(BOOK, "учебник.html")
     with open(out, "w", encoding="utf-8") as f:

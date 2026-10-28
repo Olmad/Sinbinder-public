@@ -24,6 +24,9 @@ namespace Sinbinder.Gameplay
         private const int Bounty = 2;
 
         public int Wave { get; private set; }
+
+        /// <summary>Волны по часам не выходят (обучение выпускает их своим уроком).</summary>
+        public bool Paused { get; set; }
         public float Next { get; private set; }
 
         private readonly List<Vector3> _trails = new();
@@ -54,7 +57,8 @@ namespace Sinbinder.Gameplay
                 _subscribed = CombatManager.Instance;
                 _subscribed.OnAnyDeath += OnDeath;
             }
-            if (TugMatch.Over) return;
+            // Обучение ведёт волны само (TugTutorial): по часам они не выходят.
+            if (TugMatch.Over || Paused) return;
 
             // Великая охота (автор, 28.10: «третье — можно включить/выключить»): на 25-й минуте Орден
             // выходит главной силой на всех; через три минуты партию решают уцелевшие (TugMatch.Decide).
