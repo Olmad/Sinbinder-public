@@ -106,16 +106,51 @@ namespace Sinbinder.Gameplay
 
             if (Attacking) { Attack(match, followers); return; }
 
-            // Верные без приказа — в караул перед своим склепом: при деле не остывают, и склеп не пуст.
+            // Строить — как игрок (BuildSite): по порядку костёр, ворота, вышки; на стройку — свободных верных,
+            // на готовую вышку — унылого.
+            var site = Build(followers);
+
+            // Прочие верные без приказа — в караул перед своим склепом: при деле не остывают, и склеп не пуст.
             var gate = match != null && Side < match.Crypts.Count ? match.Crypts[Side] : null;
+            int builders = 0;
             for (int i = 0; i < followers.Count; i++)
             {
                 var f = followers[i];
-                if (f.HasCommand || gate == null) continue;
+                if (f.HasCommand || gate == null || TowerPost.Guards(f)) continue;
+                if (site != null && builders < 3) { builders++; Order(f, CommandKind.Hold, site.transform.position + site.transform.right * (builders - 2) * 1.2f, null); continue; }
                 var post = gate.position + gate.forward * 9f + gate.right * ((i % 5 - 2) * 1.6f) + gate.forward * (i / 5 * 1.6f);
                 Order(f, CommandKind.Hold, post, null);
             }
             Recruit(followers);
+        }
+
+        /// <summary>
+        /// Стройка ИИ: заложенное и недостроенное — вернуть его (туда идут строители); нет — заложить следующее,
+        /// если хватает монет и верных хотя бы двое. Готовая вышка без дозорного — унылого туда.
+        /// </summary>
+        private BuildSite Build(List<Warrior> followers)
+        {
+            BuildSite next = null;
+            foreach (var kind in new[] { BuildSite.Kind.Fire, BuildSite.Kind.Gate, BuildSite.Kind.Tower })
+            {
+                foreach (var s in BuildSite.All)
+                {
+                    if (s == null || s.Side != Side || s.What != kind) continue;
+                    if (s.Laid && !s.Done) return s;
+                    if (s.Done && s.What == BuildSite.Kind.Tower)
+                    {
+                        var post = s.GetComponent<TowerPost>();
+                        if (post != null && post.Guard == null)
+                            foreach (var f in followers)
+                                if (f.Soul != null && f.Soul.Sin == SinType.Sloth && !f.HasCommand && !TowerPost.Guards(f))
+                                { Order(f, CommandKind.Move, s.transform.position, null); break; }
+                    }
+                    if (!s.Laid && next == null) next = s;
+                }
+            }
+            if (next == null || followers.Count < 2 || Favor.PurseOf(Lord) < next.Cost) return null;
+            next.Lay(Lord);
+            return next;
         }
 
         /// <summary>С какой секунды ИИ идёт и с половиной отряда.</summary>

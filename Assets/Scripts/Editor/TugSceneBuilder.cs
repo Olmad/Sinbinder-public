@@ -292,7 +292,8 @@ namespace Sinbinder.EditorTools
             var leaf = door != null ? door.Leaf.GetComponent<Sturdy>() : null;
             int hunters = 0;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None)) if (w.Team == Team.Enemy && !w.IsDead) hunters++;
-            Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: охотников на поле {hunters}, волна {HunterWaves.Instance?.Wave}, кошель игрока {Favor.Purse}");
+            int built = 0; foreach (var s in BuildSite.All) if (s != null && s.Done && s.Side != match.PlayerSide) built++;
+            Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: охотников на поле {hunters}, волна {HunterWaves.Instance?.Wave}, кошель игрока {Favor.Purse}, построек у ИИ {built}");
             foreach (var ai in RivalLord.All)
             {
                 if (ai == null) continue;
