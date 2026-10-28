@@ -158,11 +158,12 @@ namespace Sinbinder.AOS
             var cmd = _warrior.Command;
             if (!cmd.IsSet) { Execute(ActionType.Idle); return; }
 
-            // Послушал Греховода — привыкает слушать его (54-TUG.md): раз на приказ, а не каждый такт.
+            // Послушал Греховода — привыкает слушать его, а приказ по душе — сильнее (Favor, 54-TUG.md):
+            // раз на приказ, а не каждый такт.
             if (!string.IsNullOrEmpty(cmd.Lord) && !Mathf.Approximately(_obeyedAt, cmd.IssuedAt))
             {
                 _obeyedAt = cmd.IssuedAt;
-                Core.Allegiance.Change(_warrior.Id, _warrior.Loyalty, cmd.Lord, Hostility.ObeyHabit);
+                Favor.Obeyed(_warrior, cmd);
             }
 
             var mover = GetComponent<UnitMover>();

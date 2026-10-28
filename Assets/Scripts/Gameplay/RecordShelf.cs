@@ -87,7 +87,7 @@ namespace Sinbinder.Gameplay
                 var at = transform.TransformPoint(new Vector3(FirstX + k * Step, 0f, 0f)) + up * DiscMiddle;
                 string title = Loc.T(r.Title);
                 offer(Gaze.Miss(at, 0.06f),
-                      RecordHands.Empty ? Loc.F("F — взять «{0}»", title) : Loc.F("F — поменять на «{0}»", title),
+                      RecordHands.Empty ? Loc.F("F — взять: {0}", title) : Loc.F("F — поменять на: {0}", title),
                       () => Take(r));
             }
 
@@ -95,6 +95,12 @@ namespace Sinbinder.Gameplay
             var gap = transform.TransformPoint(new Vector3(FirstX + _shown.Count * Step + 0.04f, 0f, 0f)) + up * DiscMiddle;
             offer(Gaze.Miss(gap, 0.12f), Loc.T("F — поставить пластинку на полку"), PutBack);
         }
+
+        /// <summary>Что стоит на полке по порядку слева — для учебника и прогона.</summary>
+        public IReadOnlyList<Records.Record> Shown { get { Redraw(); return _shown; } }
+
+        /// <summary>Середина пластинки на месте <paramref name="k"/> — туда смотрят, чтобы взять её.</summary>
+        public Vector3 DiscAt(int k) => transform.TransformPoint(new Vector3(FirstX + k * Step, 0f, 0f)) + transform.up * DiscMiddle;
 
         /// <summary>Взять с полки эту; в руках была другая — она встаёт на полку.</summary>
         public void Take(Records.Record take)

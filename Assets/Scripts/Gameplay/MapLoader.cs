@@ -73,6 +73,7 @@ namespace Sinbinder.Gameplay
             // Новая партия: верности и обиды — с нуля; голос игрока — его сторона (54-TUG.md).
             Allegiance.Forget();
             Hostility.Forget();
+            Favor.Begin(Favor.StartPurse);
             Lords.Player = Loc.F("Греховод стороны {0}", Mathf.Max(0, MapSession.Seats.IndexOf(MapSession.Seat.Player)) + 1);
 
             // Подлокации с жителями — ничьими (Residents). Каждая партия — новые люди (автор, 28.10:

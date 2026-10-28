@@ -115,7 +115,12 @@ namespace Sinbinder.UI
             if (wrapper == null || wrapper.LastContext == null) { Hide(); return; }
 
             if (_text != null)
+            {
                 _text.text = PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail);
+                // Ничей («Перетягивание») — первым делом, как он к тебе: словом, без числа (Favor).
+                if (warrior.Team == Team.Neutral && Lords.Active)
+                    _text.text = Favor.Attitude(warrior) + "\n" + _text.text;
+            }
 
             if (_frame != null)
                 _frame.color = SinColor(warrior.Soul.Sin);

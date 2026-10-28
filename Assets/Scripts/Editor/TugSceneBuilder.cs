@@ -323,21 +323,98 @@ namespace Sinbinder.EditorTools
                     _order.IssueCommand(CommandKind.Move, _order.transform.position + Vector3.forward * 4f);
                     Line($"приказ ничьему: голос «{_order.Command.Lord}», игрок — «{Lords.Player}» — {(_order.Command.Lord == Lords.Player && Lords.Active ? "как надо" : "НЕ ТАК")}; верность к игроку {Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player):F0}");
                 }
-                if (mine != null) mine.Toggle();
-                _opened = Time.realtimeSinceStartup;
+                if (mine != null)
+                {
+                    mine.Toggle();
+                    // Учебник: дверь распахивается — сверху, изнутри склепа.
+                    Sinbinder.Utilets.Reel.Aim(mine.Leaf.position, 9f);
+                    Sinbinder.Utilets.Reel.Start("дверь", 5f);
+                }
+                _opened = Time.time;   // игровое время: съёмка тормозит кадры, а дверь и навмеш живут им
                 return;
             }
-            if (Time.realtimeSinceStartup - _opened < 1.5f) return;
+            if (Time.time - _opened < 1.5f) return;
+            if (_phase > 0) { Reels(hero); return; }
+            _phase = 1;
 
             bool open = PathOut(hero, mine, out var wide);
             Line($"наружу при открытой двери: {wide} — {(open ? "выход есть" : "НЕ ТАК")}");
             if (_order != null)
+            {
                 Line($"ничей после приказа: верность к игроку {Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player):F0}, к кому верней всех — «{Allegiance.Dearest(_order.Id) ?? "ни к кому"}» (послушал — растёт, нет — та же)");
+
+                // Подарок (Favor): жадному дороже всех, второй — вдвое дешевле, кошель убывает.
+                float before = Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player);
+                int purse = Favor.Purse;
+                Favor.Give(_order);
+                float first = Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player) - before;
+                Favor.Give(_order);
+                float second = Allegiance.Of(_order.Id, _order.Loyalty, Lords.Player) - before - first;
+                Line($"подарок ({_order.Soul.Sin}): первый +{first:F1}, второй +{second:F1}, кошель {purse}→{Favor.Purse}; «{Favor.Attitude(_order)}» — {(first > 0f && second < first && Favor.Purse == purse - 2 ? "как надо" : "НЕ ТАК")}");
+            }
+        }
+
+        private static int _phase;
+
+        /// <summary>
+        /// Учебник (автор, 28.10: «учебник с гифками»): серии кадров одна за другой — подарок
+        /// жадному (и обида завистливого рядом), приказ гордому одному; потом — конец проверки.
+        /// </summary>
+        private static void Reels(SinbinderPlayer hero)
+        {
+            if (Sinbinder.Utilets.Reel.Rolling) return;
+
+            if (_phase == 1)
+            {
+                _phase = 2;
+                var taker = Pick(SinType.Greed, null);
+                if (taker == null) return;
+                var front = taker.transform.position + taker.transform.forward * 1.6f;
+                hero.transform.position = front;
+                var agent = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (agent != null && agent.isOnNavMesh) agent.Warp(front);
+                Sinbinder.Utilets.Reel.Aim(taker.transform.position, 6f);
+                Sinbinder.Utilets.Reel.Start("подарок", 4.5f);
+                Favor.Give(taker);
+                Line($"учебник: подарок — {taker.Soul.Sin}, «{Favor.Attitude(taker)}»");
+                return;
+            }
+
+            if (_phase == 2)
+            {
+                _phase = 3;
+                var proud = Pick(SinType.Pride, _order);
+                if (proud == null) return;
+                // Рядом — иначе туман войны: видит только Греховод, и голос слышен вблизи.
+                var near = proud.transform.position - proud.transform.forward * 2.5f;
+                hero.transform.position = near;
+                var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (legs != null && legs.isOnNavMesh) legs.Warp(near);
+                proud.IssueCommand(CommandKind.Move, proud.transform.position + proud.transform.forward * 6f);
+                Sinbinder.Utilets.Reel.Aim(proud.transform.position + proud.transform.forward * 3f, 8f);
+                Sinbinder.Utilets.Reel.Start("приказ", 5f);
+                Line("учебник: приказ гордому — одному, первым");
+                return;
+            }
+
             Line("ГОТОВО");
             EditorApplication.update -= Tick;
             SessionState.SetBool(Active, false);
             EditorApplication.isPlaying = false;
             EditorApplication.Exit(0);
+        }
+
+        /// <summary>Ничей с этим грехом; такого нет — любой, кроме <paramref name="not"/>.</summary>
+        private static Warrior Pick(SinType sin, Warrior not)
+        {
+            Warrior any = null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w.Team != Team.Neutral || w.IsDead || w == not || w.Soul == null) continue;
+                if (w.Soul.Sin == sin) return w;
+                any ??= w;
+            }
+            return any;
         }
 
         /// <summary>Есть ли путь от Греховода за дверь его склепа — на 11 м перед ней.</summary>

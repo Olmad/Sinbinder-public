@@ -95,6 +95,11 @@ namespace Sinbinder.Gameplay
                 Allegiance.Change(victim.Id, victim.Loyalty, attacker.Command.Lord, SentByLord);
         }
 
+        /// <summary>Бил ли <paramref name="attacker"/> этого воина недавно (за <see cref="Grudge"/> секунд).</summary>
+        public static bool StruckRecently(Warrior victim, Warrior attacker)
+            => victim != null && attacker != null
+               && Blows.TryGetValue((victim.Id, attacker.Id), out var at) && Time.time - at < Grudge;
+
         /// <summary>Хочет ли <paramref name="a"/> бить <paramref name="b"/>.</summary>
         public static bool Wants(Warrior a, Warrior b) => Wants(a, b, null, null);
 

@@ -207,6 +207,7 @@ namespace Sinbinder.Gameplay
                 // Не назван — голос игрока, если идёт «Перетягивание» (Lords); в демо пусто, как прежде.
                 Lord = lord ?? Lords.Player,
             };
+            Favor.Issued(_command.Lord, _command.IssuedAt);
         }
 
         public void ClearCommand() => _command = default;

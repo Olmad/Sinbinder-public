@@ -533,12 +533,18 @@ namespace Sinbinder.EditorTools
                 S("лагерь: Греховод на бревне у огня", SitOnLog, SatOnLog, 5f),
                 S("лагерь: встал с бревна", LogSeat.Rise, RoseFromLog, 2f),
 
+                // Учебник с гифками (автор, 28.10): серии кадров — Reel, гифки — Tools/shots/gif.py.
+                S("учебник: сесть на бревно", ReelLog, () => ReelDone(LogSeat.Rise), 10f),
+                S("учебник: полено в костёр", ReelStoke, () => ReelDone(null), 9f),
+                S("учебник: полка по взгляду", ReelShelf, ReelShelfTick, 12f),
+
                 // Приметы (облачная, 26.10; автор): ворон на плече Каргана, Гурт тенью за Хорем,
                 // Ждан с балалайкой — проверить, что встали.
                 S("лагерь: ворон, тень Гурта, балалайка Ждана", null, Habits, 3f),
 
                 // Ворон летает (автор, 27.10: «ворон не улетает и не прилетает»): поднять и снять в полёте.
                 S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
+                S("учебник: ворон кружит", ReelRaven, () => ReelDone(null), 10f),
 
                 // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
                 S("небо: глаза проступили", () => { SkyEyes.Summon(); _eyesAt = Time.realtimeSinceStartup; }, EyesShot, 12f),
@@ -2594,6 +2600,86 @@ namespace Sinbinder.EditorTools
             var hero = SinbinderPlayer.Instance;
             var agent = hero != null ? hero.GetComponent<UnityEngine.AI.NavMeshAgent>() : null;
             Write($"  [БРЕВНО] встал: {(!LogSeat.Sitting ? "да" : "НЕТ")}; на навмеше: {(agent != null && agent.isOnNavMesh ? "да" : "НЕТ")}");
+            return true;
+        }
+
+        // ---------------------------------------------------------- учебник: серии кадров
+
+        private static float _reelAt;
+        private static bool _reelEyes;
+        private static RecordShelf _reelShelf;
+        private static bool _reelTook;
+
+        /// <summary>Серия кончилась — доделать (встать с бревна…) и идти дальше.</summary>
+        private static bool ReelDone(Action after)
+        {
+            if (Sinbinder.Utilets.Reel.Rolling) return false;
+            after?.Invoke();
+            return true;
+        }
+
+        private static void ReelLog()
+        {
+            SitOnLog();
+            if (LogSeat.Taken != null) Sinbinder.Utilets.Reel.Aim(LogSeat.Taken.Centre, 6f);
+            Sinbinder.Utilets.Reel.Start("бревно", 4.5f);
+        }
+
+        private static void ReelStoke()
+        {
+            var stoke = UnityEngine.Object.FindFirstObjectByType<CampfireStoke>();
+            if (stoke == null || SinbinderPlayer.Instance == null) return;
+            var c = stoke.Centre;
+            Warp(SinbinderPlayer.Instance.gameObject, new Vector3(c.x, 0f, c.z) + Vector3.back * 2.2f);
+            Sinbinder.Utilets.Reel.Aim(c, 8f);
+            Sinbinder.Utilets.Reel.Start("полено", 4.5f);
+            stoke.Feed();
+        }
+
+        private static void ReelRaven()
+        {
+            RavenUp();
+            Warrior master = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && CrowStep.Raven(w)) master = w;
+            if (master != null) Sinbinder.Utilets.Reel.Aim(master.transform.position + Vector3.up * 3f, 20f);
+            Sinbinder.Utilets.Reel.Start("ворон", 6f);
+        }
+
+        /// <summary>Глазами у полки: взгляд на одну пластинку, на другую — подсказка меняется; F — та, на которую смотрит.</summary>
+        private static void ReelShelf()
+        {
+            _reelShelf = UnityEngine.Object.FindFirstObjectByType<RecordShelf>();
+            _reelTook = false;
+            _reelAt = Time.realtimeSinceStartup;
+            var hero = SinbinderPlayer.Instance;
+            if (_reelShelf == null || hero == null || _reelShelf.Shown.Count < 3) { Write("  [УЧЕБНИК] полка: мало пластинок — без серии"); _reelShelf = null; return; }
+            // Встать перед полкой — с той стороны, что ближе к середине шатра.
+            var s = _reelShelf.transform;
+            var tent = TentInterior.Around(s.position);
+            var mid = tent != null ? tent.transform.position : s.position - s.forward;
+            var a = s.position + s.forward * 1.1f;
+            var b = s.position - s.forward * 1.1f;
+            Warp(hero.gameObject, (a - mid).sqrMagnitude < (b - mid).sqrMagnitude ? a : b);
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            _reelEyes = view != null && view.FirstPersonNow;
+            Sinbinder.Utilets.Reel.Eyes(_reelShelf.DiscAt(0));
+            Sinbinder.Utilets.Reel.Start("полка", 6.5f);
+        }
+
+        private static bool ReelShelfTick()
+        {
+            if (_reelShelf == null) return true;
+            float t = Time.realtimeSinceStartup - _reelAt;
+            if (t < 2.2f) Sinbinder.Utilets.Reel.Eyes(_reelShelf.DiscAt(0));
+            else if (t < 4.4f) Sinbinder.Utilets.Reel.Eyes(_reelShelf.DiscAt(2));
+            else if (!_reelTook && _reelShelf.Shown.Count > 2) { _reelTook = true; _reelShelf.Take(_reelShelf.Shown[2]); }
+            if (Sinbinder.Utilets.Reel.Rolling) return false;
+            // Вернуть, как было: пластинку — на полку, взгляд — сверху, если смотрел сверху.
+            _reelShelf.PutBack();
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (view != null && view.FirstPersonNow && !_reelEyes) view.Switch();
+            Write($"  [УЧЕБНИК] полка: взята по взгляду — {(_reelTook ? "да" : "НЕТ")}");
             return true;
         }
 

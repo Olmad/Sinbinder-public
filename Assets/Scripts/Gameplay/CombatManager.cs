@@ -109,6 +109,8 @@ namespace Sinbinder.Gameplay
         {
             using var cost = Core.Cost.Of("death");
             UnregisterUnit(killed);
+            // «Перетягивание»: спас, победа под началом Греховода (Favor); в демо — ничего.
+            if (Lords.Active && killer != null) Favor.Killed(killed.Warrior, killer.GetComponent<Warrior>());
             if (killed.Warrior != null)
                 CreateLootOnField(killed);
             if (OnAnyDeath != null)
