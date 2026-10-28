@@ -2,7 +2,6 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
@@ -26,7 +25,7 @@ namespace Sinbinder.Gameplay
 
         private readonly List<bool> _out = new();
         private int _player = -1;
-        private string _title, _body;
+        private string _title;
 
         public static bool Over => Instance != null && Instance._title != null;
         public static bool Won { get; private set; }
@@ -189,24 +188,10 @@ namespace Sinbinder.Gameplay
         {
             Won = won;
             _title = won ? Loc.T("Победа") : Loc.T("Поражение");
-            _body = why + "\n" + (won ? Loc.T("Ваш трон стоит. Других — нет.") : Loc.T("Ваша сторона выбыла из партии."));
+            // Экран конца — плашка с итогом словами (MatchEnd); итог — ещё и в лог прогона.
+            Debug.Log($"[ПАРТИЯ] {_title}: {why}\n{MatchEnd.Story(won, why)}");
+            MatchEnd.Show(won, why);
             Time.timeScale = 0f;
-            Debug.Log($"[ПАРТИЯ] {_title}: {why}");
-        }
-
-        void OnGUI()
-        {
-            if (_title == null) return;
-            float w = 420f, h = 200f;
-            var box = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
-            GUILayout.BeginArea(box, GUI.skin.box);
-            var big = new GUIStyle(GUI.skin.label) { fontSize = 28, alignment = TextAnchor.MiddleCenter };
-            GUILayout.Label(_title, big);
-            GUILayout.Label(_body, new GUIStyle(GUI.skin.label) { wordWrap = true, alignment = TextAnchor.MiddleCenter });
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Loc.T("Ещё партию"))) { Time.timeScale = 1f; SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
-            if (GUILayout.Button(Loc.T("В меню"))) { Time.timeScale = 1f; SceneManager.LoadScene(0); }
-            GUILayout.EndArea();
         }
     }
 }

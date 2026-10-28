@@ -24,6 +24,21 @@ namespace Sinbinder.Gameplay
 
         public static bool Has(string lord, Kind k) => lord != null && Got.TryGetValue(lord, out var s) && s.Contains(k);
 
+        /// <summary>Что добыл Греховод (экран конца партии — MatchEnd).</summary>
+        public static IEnumerable<Kind> Of(string lord)
+            => lord != null && Got.TryGetValue(lord, out var s) ? s : (IEnumerable<Kind>)System.Array.Empty<Kind>();
+
+        /// <summary>Трофей словом.</summary>
+        public static string Word(Kind k) => k switch
+        {
+            Kind.Jar => Loc.T("банка для душ"),
+            Kind.Coins => Loc.T("монеты"),
+            Kind.GolemRecipe => Loc.T("рецепт голема"),
+            Kind.Treasury => Loc.T("схема казны"),
+            Kind.Forge => Loc.T("схема кузни"),
+            _ => Loc.T("схема позорного столба"),
+        };
+
         /// <summary>Отдать трофей: банка — сразу в сумку (только игроку), монеты — в кошель, остальное — знание.</summary>
         public static string Give(string lord, Kind k)
         {
