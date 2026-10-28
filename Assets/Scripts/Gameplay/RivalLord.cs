@@ -33,6 +33,7 @@ namespace Sinbinder.Gameplay
         private Warrior _body;
         private UnitMover _legs;
         private float _next;
+        private bool _muted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
@@ -66,9 +67,9 @@ namespace Sinbinder.Gameplay
         void Update()
         {
             if (_body == null) return;
-            // Решает не душа, а ум Греховода: голосование обычного воина (если движок его выдал) — снять.
-            var brain = GetComponent<AOS.AOSWarriorWrapper>();
-            if (brain != null) Destroy(brain);
+            // Решает не душа, а ум Греховода: голосование обычного воина (если движок его выдал) —
+            // выключить, один раз. Снять нельзя: за него держится удар (AutoAttackAOS).
+            if (!_muted && TryGetComponent<AOS.AOSWarriorWrapper>(out var brain)) { brain.enabled = false; _muted = true; }
             // Пал — лежит до восстания у трона (TugMatch.Rise ставит новое тело).
             if (_body.IsDead) return;
 

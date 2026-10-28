@@ -34,6 +34,11 @@ namespace Sinbinder.Gameplay
                 if (all.Count == 0) { Debug.LogError("[КАРТЫ] В папке карт нет ни одной карты."); return; }
                 MapSession.Choose(all[0].path, all[0].map);
                 map = all[0].map;
+                // Пакетная партия (TugSceneBuilder.MatchRun) просит силу ИИ из командной строки: «-tugAi Strong».
+                var args = System.Environment.GetCommandLineArgs();
+                for (int a = 0; a < args.Length - 1; a++)
+                    if (args[a] == "-tugAi" && System.Enum.TryParse<MapSession.Seat>("Ai" + args[a + 1], out var level))
+                        for (int s = 1; s < MapSession.Seats.Count; s++) MapSession.Seats[s] = level;
             }
             Current = map;
 

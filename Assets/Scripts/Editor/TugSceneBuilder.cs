@@ -244,6 +244,70 @@ namespace Sinbinder.Utilets
 namespace Sinbinder.EditorTools
 {
     /// <summary>
+    /// Длинная партия пакетно: поле, против — ИИ силой из <c>-tugAi Weak|Medium|Strong</c>, игрок стоит
+    /// в склепе за закрытой дверью; время ×4, четыре минуты игрового. Каждые 30 с — сводка «[ПАРТИЯ]»:
+    /// сколько приказов отдал ИИ, сколько верных собрал, нападает ли, что с дверью и троном игрока.
+    /// Так видно то, чего короткая проверка поля не успевает: сбор отряда, поход, осаду.
+    /// </summary>
+    [InitializeOnLoad]
+    public static class MatchRun
+    {
+        private const string Active = "Sinbinder.MatchRun.Active";
+        private const float Length = 240f;
+        private static float _nextNote = -1f;
+
+        static MatchRun()
+        {
+            if (SessionState.GetBool(Active, false)) EditorApplication.update += Tick;
+        }
+
+        public static void RunBatch()
+        {
+            EditorUtility.audioMasterMute = true;
+            SessionState.SetBool(Active, true);
+            EditorSceneManager.OpenScene("Assets/Scenes/Tug/Field.unity");
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += Tick;
+        }
+
+        private static void Tick()
+        {
+            if (!SessionState.GetBool(Active, false) || !EditorApplication.isPlaying) return;
+            Sinbinder.UI.StartPanel.ChooseFresh();
+            if (!SinbinderPlayer.Exists || TugMatch.Instance == null) return;
+            if (_nextNote < 0f) { Time.timeScale = 4f; _nextNote = Time.time + 2f; return; }
+            if (!TugMatch.Over) Time.timeScale = 4f;
+            if (Time.time < _nextNote && Time.time < Length && !TugMatch.Over) return;
+            _nextNote = Time.time + 30f;
+
+            var match = TugMatch.Instance;
+            var (door, throne) = match.PartsOf(match.PlayerSide);
+            var leaf = door != null ? door.Leaf.GetComponent<Sturdy>() : null;
+            foreach (var ai in RivalLord.All)
+            {
+                if (ai == null) continue;
+                int loyal = 0, aimed = 0;
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                {
+                    if (w.IsDead || w.Team != Team.Neutral) continue;
+                    if (Allegiance.Dearest(w.Id) == ai.Lord && Allegiance.Of(w.Id, w.Loyalty, ai.Lord) >= Hostility.Follows) loyal++;
+                    if (w.HasCommand && w.Command.Lord == ai.Lord && w.Command.Kind == CommandKind.Attack) aimed++;
+                }
+                Debug.Log($"[ПАРТИЯ] {Time.time:F0} с: {ai.Lord} ({ai.Level}) — приказов {ai.Orders}, верных {loyal}, с приказом бить {aimed}, нападает: {(ai.Attacking ? "да" : "нет")}; " +
+                          $"дверь игрока {(leaf != null ? leaf.HP : 0):F0}/{(leaf != null ? leaf.Max : 0):F0}, трон {(throne != null ? throne.HP : 0):F0}/{(throne != null ? throne.Max : 0):F0}; кошель ИИ {Favor.PurseOf(ai.Lord)}");
+            }
+
+            if (Time.time < Length && !TugMatch.Over) return;
+            Debug.Log($"[ПАРТИЯ] ИТОГ за {Time.time:F0} с: {(TugMatch.Over ? (TugMatch.Won ? "победа игрока" : "поражение игрока") : "партия идёт")}");
+            EditorApplication.update -= Tick;
+            SessionState.SetBool(Active, false);
+            Time.timeScale = 1f;
+            EditorApplication.isPlaying = false;
+            EditorApplication.Exit(0);
+        }
+    }
+
+    /// <summary>
     /// Поле из файла — пакетно (автор, 27.10: склеп без стен, пола и двери; прочность трона и двери):
     /// открыть сцену Field, войти в игру и через три секунды проверить — склепы и троны на месте,
     /// Греховод внутри своего, наружу при закрытой двери не пройти, а при открытой — можно; палатки
