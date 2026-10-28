@@ -63,6 +63,10 @@ namespace Sinbinder.Gameplay
         private float _outSince;
         private const float ExpeditionRange = 110f;
 
+        // Раненые, что отходят к трону (Retreat), и как близко к склепу чужой — уже угроза (Threat).
+        private readonly HashSet<Warrior> _resting = new();
+        private const float ThreatRange = 30f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
 
@@ -141,6 +145,21 @@ namespace Sinbinder.Gameplay
             {
                 Hostility.Mark(Lord, hit);
                 foreach (var f in followers) Order(f, CommandKind.Attack, hit.transform.position, hit.gameObject);
+                return;
+            }
+
+            // Раненые — домой (сильный и средний берегут людей).
+            Retreat(followers, mine.throne);
+
+            // Встретить заранее: чужие у склепа — верные (кроме ушедших в экспедицию и раненых) выходят
+            // навстречу, не дожидаясь удара по двери.
+            if (!Attacking && Level != MapSession.Seat.AiWeak && match != null && Side < match.Crypts.Count && match.Crypts[Side] != null
+                && Threat(match.Crypts[Side].position) is { } threat)
+            {
+                Hostility.Mark(Lord, threat);
+                foreach (var f in followers)
+                    if (!_away.Contains(f) && !_resting.Contains(f) && !TowerPost.Guards(f) && !(f.HasCommand && f.Command.Target == threat.gameObject))
+                        Order(f, CommandKind.Attack, threat.transform.position, threat.gameObject);
                 return;
             }
 
@@ -396,8 +415,73 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Сколько раз звал каждого и кому уже дарил: упрямых не уговаривает вечно (длинная партия 28.10).</summary>
         private readonly Dictionary<string, int> _asked = new();
-        private readonly HashSet<string> _gifted = new();
+        private readonly Dictionary<string, float> _giftedAt = new();
         private int Stubborn => Prefers(Style.Lurer) ? 6 : 4;
+
+        /// <summary>
+        /// Дарить ли снова: монеты лежат без дела — дари (замер 29.10: ИИ копил 15–19 монет и дарил каждому
+        /// лишь раз). Тому же — не чаще раза в полторы минуты (сильный — в минуту); запас на постройку — не трогать
+        /// (кроме натиска: ему стены ни к чему); слабый дарит лишь раз.
+        /// </summary>
+        private bool Generous(Warrior w)
+        {
+            if (_giftedAt.TryGetValue(w.Id, out var at))
+            {
+                if (Level == MapSession.Seat.AiWeak) return false;
+                if (Time.time - at < (Level == MapSession.Seat.AiStrong ? 60f : 90f)) return false;
+            }
+            int keep = Way == Style.Onslaught ? 0 : NextSiteCost();
+            return Favor.PurseOf(Lord) - keep >= 2;
+        }
+
+        private int NextSiteCost()
+        {
+            foreach (var s in BuildSite.All) if (s != null && s.Side == Side && !s.Laid) return s.Cost;
+            return 0;
+        }
+
+        // ---------------------------------------------------------- угроза и раненые
+
+        /// <summary>Чужой у склепа: Греховод другой стороны, верный другому Греховоду, охотник. Ближайший.</summary>
+        private Warrior Threat(Vector3 crypt)
+        {
+            Warrior best = null;
+            float near = ThreatRange;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || w == _body) continue;
+                float d = CampFocus.GroundDistance(w.transform.position, crypt);
+                if (d >= near) continue;
+                string lord = Lords.Of(w);
+                bool foe = w.Team == Team.Enemy
+                           || (lord != null && lord != Lord)
+                           || (w.Team == Team.Neutral && Allegiance.Dearest(w.Id) is { } other && other != Lord
+                               && Allegiance.Of(w.Id, w.Loyalty, other) >= Hostility.Follows && w.HasCommand);
+                if (foe) { near = d; best = w; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Раненого (меньше трети тела) — к своему трону, пока не оправится до двух третей: живой верный дороже
+        /// одного удара. Слабый так не бережёт.
+        /// </summary>
+        private void Retreat(List<Warrior> followers, Sturdy throne)
+        {
+            _resting.RemoveWhere(w => w == null || w.IsDead);
+            if (Level == MapSession.Seat.AiWeak || throne == null) return;
+            foreach (var f in followers)
+            {
+                var body = f.GetComponent<Damageable>();
+                if (body == null) continue;
+                if (_resting.Contains(f)) { if (body.HP >= body.MaxHP * 0.66f) _resting.Remove(f); continue; }
+                if (body.HP < body.MaxHP * 0.33f && CampFocus.GroundDistance(f.transform.position, throne.transform.position) > 10f)
+                {
+                    _resting.Add(f);
+                    Order(f, CommandKind.FallBack, throne.transform.position + throne.transform.forward * 3f, null);
+                }
+            }
+        }
 
         /// <summary>Стоит ли звать: не верен ещё, не упрям — меньше четырёх зовов или уже знаком (слушался).</summary>
         private bool Worth(Warrior w, List<Warrior> followers)
@@ -430,7 +514,7 @@ namespace Sinbinder.Gameplay
             int asked = 0;
             foreach (var w in queue)
             {
-                if (Gifts(w.Soul) && _gifted.Add(w.Id)) Favor.Give(w, Lord);
+                if (Gifts(w.Soul) && Generous(w)) { Favor.Give(w, Lord); _giftedAt[w.Id] = Time.time; }
                 _asked.TryGetValue(w.Id, out var n);
                 _asked[w.Id] = n + 1;
                 // Унылому — не идти, а стоять: «всё безразлично» он скажет любому зову, а пост ему по душе.
@@ -475,7 +559,7 @@ namespace Sinbinder.Gameplay
             foreach (var r in Live) if (r != null && r.Side == foe && r._body != null) Hostility.Mark(Lord, r._body);
 
             foreach (var f in followers)
-                if (!(f.HasCommand && f.Command.Target == target)) Order(f, CommandKind.Attack, target.transform.position, target);
+                if (!_resting.Contains(f) && !(f.HasCommand && f.Command.Target == target)) Order(f, CommandKind.Attack, target.transform.position, target);
 
             // Сам — домой, к трону; средний и сильный — зовут подкрепление (Update).
             if (Level != MapSession.Seat.AiWeak) return;
