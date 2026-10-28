@@ -331,11 +331,13 @@ namespace Sinbinder.AOS
         {
             if (CombatManager.Instance == null) return null;
             var enemies = CombatManager.Instance.GetEnemies(gameObject);
+            var leash = GetComponent<EventGuard>();   // страж события — на привязи у места
             Damageable best = null;
             float bestScore = float.MinValue;
             foreach (var w in enemies)
             {
                 if (w == null || w.IsDead) continue;
+                if (leash != null && !leash.Within(w.transform.position)) continue;
                 float dist = Vector3.Distance(transform.position, w.transform.position);
 
                 // Тот же радиус, в котором враг виден для голоса. Было 15:

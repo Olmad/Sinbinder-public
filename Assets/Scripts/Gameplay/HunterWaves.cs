@@ -125,8 +125,9 @@ namespace Sinbinder.Gameplay
             Wave = keep;
             if (w == null) return null;
             Destroy(w.GetComponent<HunterSiege>());
-            Destroy(w.GetComponent<HunterGoal>());
-            w.gameObject.AddComponent<EventGuard>();
+            // Страж стоит у своего места: туда и возвращается (HunterGoal), бьёт лишь подошедших (EventGuard.Leash).
+            w.GetComponent<HunterGoal>()?.Configure(HunterGoal.Aim.CampCentre, post);
+            w.gameObject.AddComponent<EventGuard>().Post = post;
             return w;
         }
 
@@ -182,8 +183,28 @@ namespace Sinbinder.Gameplay
         }
     }
 
-    /// <summary>Метка стража события (MapEvent): за него, как за охотника, — монеты убившему.</summary>
-    public class EventGuard : MonoBehaviour { }
+    /// <summary>
+    /// Страж события (MapEvent): за него, как за охотника, — монеты убившему. На привязи у места: бьёт лишь тех,
+    /// кто ближе <see cref="Leash"/> к месту (AOSWarriorWrapper.FindBestTarget), отошёл — возвращается.
+    /// Без привязи стража цепочкой уходила в деревни, жители ввязывались в бой и не слышали зова — сильный
+    /// Греховод-ИИ собирал одного верного вместо десяти (замер 28.10, партия с событиями и без).
+    /// </summary>
+    public class EventGuard : MonoBehaviour
+    {
+        public const float Leash = 12f;
+        public Vector3 Post;
+        private float _next;
+
+        public bool Within(Vector3 p) => CampFocus.GroundDistance(p, Post) <= Leash;
+
+        void Update()
+        {
+            if (Time.time < _next) return;
+            _next = Time.time + 1f;
+            if (CampFocus.GroundDistance(transform.position, Post) > HunterGoal.ArriveRadius + 1f)
+                GetComponent<HunterGoal>()?.Configure(HunterGoal.Aim.CampCentre, Post);
+        }
+    }
 
     /// <summary>
     /// Охотник у склепа: дошёл (HunterGoal), рядом бить некого — ломает дверь, а за ней трон.

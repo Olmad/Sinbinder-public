@@ -602,7 +602,7 @@ namespace Sinbinder.Gameplay
         public const float Pause = 60f;
         // От деревни — дальше, чем видит страж: иначе стража ввязывается в драку с жителями, те не слышат зова, и
         // Греховод-ИИ бросает их как упрямых (длинная партия 28.10: сильный ИИ застрял на двух верных).
-        private const float FromCrypt = 30f, Apart = 16f, FromVillage = 26f, OwnReach = 70f;
+        private const float FromCrypt = 30f, Apart = 16f, FromVillage = 36f, OwnReach = 70f;   // FromVillage — дальше, чем видит страж (SightRadius 30)
 
         private readonly List<Vector3> _places = new();
         private readonly List<float> _due = new();

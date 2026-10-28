@@ -96,7 +96,7 @@ def book():
 
 
 # ---------------------------------------------------------------- места событий (как EventDirector.Configure)
-FROM_CRYPT, APART, FROM_VILLAGE, OWN_REACH = 30, 16, 26, 70
+FROM_CRYPT, APART, FROM_VILLAGE, OWN_REACH = 30, 16, 36, 70
 
 
 def places(m):
