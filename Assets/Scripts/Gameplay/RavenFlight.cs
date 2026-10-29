@@ -61,6 +61,16 @@ namespace Sinbinder.Gameplay
         private bool _orphan;
         private Vector3 _fire;
         private Vector3 _last;
+        private float _restingUntil = -1f;
+
+        /// <summary>Сидит ли ворон этого хозяина на привале (ветка или конёк) — и где (прогон снимает кадр).</summary>
+        public static bool Perched(Warrior master, out Transform bird)
+        {
+            bird = null;
+            foreach (var r in Live)
+                if (r != null && r._master == master && r._aloft && Time.time < r._restingUntil) { bird = r.transform; return true; }
+            return false;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
@@ -193,8 +203,9 @@ namespace Sinbinder.Gameplay
             }
             else if (t < restEnd)
             {
-                // На коньке: крылья сложены, клювом к хозяину; изредка поворачивает голову — всем телом.
+                // На коньке или на ветке: крылья сложены, клювом к хозяину; изредка поворачивает голову — всем телом.
                 Wings(false);
+                _restingUntil = Time.time + 0.2f;
                 transform.position = _ridge;
                 var look = _master.transform.position - _ridge; look.y = 0f;
                 if (look.sqrMagnitude > 0.01f)
@@ -301,8 +312,78 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- куда
 
-        /// <summary>Конёк ближней палатки (не дальше 30 м от хозяина): верх её рамки, над серединой.</summary>
+        /// <summary>Где посидеть: через раз — ветка сухого дерева, иначе конёк палатки; чего нет — другое.</summary>
         private bool FindRidge(out Vector3 ridge)
+        {
+            // Автор, 28.10: «было бы ещё лучше, если бы ворон садился на ветки».
+            bool branchTurn = ((int)((Time.time + _offset) / Period)) % 2 == 0;
+            if (branchTurn && FindBranch(out ridge)) return true;
+            return FindTent(out ridge) || FindBranch(out ridge);
+        }
+
+        private static readonly Dictionary<Mesh, List<Vector3>> Perches = new();
+
+        /// <summary>
+        /// Ветка ближнего сухого дерева (props.py: DeadTree, AxeTree), не дальше 30 м от хозяина: из вершин модели —
+        /// точки на средней части ветвей (45–85 % высоты, 0,7–1,7 м от ствола, верх ветви), та, что смотрит на хозяина.
+        /// Модели читаемы (isReadable); считается раз на модель.
+        /// </summary>
+        private bool FindBranch(out Vector3 perch)
+        {
+            perch = default;
+            float best = 30f;
+            bool found = false;
+            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
+            {
+                var n = mf.gameObject.name;
+                if (!(n.StartsWith("DeadTree") || n.StartsWith("AxeTree")) || mf.sharedMesh == null) continue;
+                float d = CampFocus.GroundDistance(mf.transform.position, _master.transform.position);
+                if (d >= best) continue;
+                var points = PerchesOf(mf.sharedMesh);
+                if (points.Count == 0) continue;
+                var toward = _master.transform.position - mf.transform.position; toward.y = 0f;
+                Vector3 pick = mf.transform.TransformPoint(points[0]);
+                float face = float.MinValue;
+                foreach (var p in points)
+                {
+                    var w = mf.transform.TransformPoint(p);
+                    var side = w - mf.transform.position; side.y = 0f;
+                    float f = Vector3.Dot(side.normalized, toward.normalized);
+                    if (f > face) { face = f; pick = w; }
+                }
+                best = d;
+                perch = pick + Vector3.up * 0.04f;
+                found = true;
+            }
+            return found;
+        }
+
+        private static List<Vector3> PerchesOf(Mesh mesh)
+        {
+            if (Perches.TryGetValue(mesh, out var got)) return got;
+            got = new List<Vector3>();
+            if (mesh.isReadable)
+            {
+                var b = mesh.bounds;
+                float h = b.size.y, y0 = b.min.y;
+                // Верх ветви: из вершин в одной ячейке (треть метра) — самая высокая: сидят на ветке, а не под ней.
+                var cells = new Dictionary<long, Vector3>();
+                foreach (var p in mesh.vertices)
+                {
+                    float up = (p.y - y0) / Mathf.Max(0.01f, h);
+                    float r = new Vector2(p.x - b.center.x, p.z - b.center.z).magnitude;
+                    if (up < 0.45f || up > 0.85f || r < 0.7f || r > 1.7f) continue;
+                    long cell = Mathf.RoundToInt(p.x * 3f) * 100000L + Mathf.RoundToInt(p.z * 3f);
+                    if (!cells.TryGetValue(cell, out var top) || p.y > top.y) cells[cell] = p;
+                }
+                got.AddRange(cells.Values);
+            }
+            Perches[mesh] = got;
+            return got;
+        }
+
+        /// <summary>Конёк ближней палатки (не дальше 30 м от хозяина): верх её рамки, над серединой.</summary>
+        private bool FindTent(out Vector3 ridge)
         {
             ridge = default;
             float best = 30f;

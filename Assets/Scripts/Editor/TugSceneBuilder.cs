@@ -739,6 +739,13 @@ namespace Sinbinder.EditorTools
                 int waiting = director != null ? director.Waiting : 0;
                 Line($"экспедиции: родов в книге {ExpeditionBook.All.Length}, перестановка даёт разных {kinds.Count}; мест {places}, живут разом {alive} из {target} (ждут паузы {(director != null ? director.Waiting : 0)} — ИИ мог решить своё); боевых {fights}, стража на месте у {guarded}; боевое «{fightKind}» взято — {(fought ? "да" : "НЕТ")}, решал лидер {leader}; мирное «{talkKind}» решено — {(chose ? "да" : "НЕТ")}; новых ждут паузы {waiting} — {(kinds.Count == ExpeditionBook.All.Length && target >= 2 && alive + (director != null ? director.Waiting : 0) >= target && guarded == fights && fought && leader != "—" && chose && waiting >= 2 ? "как надо" : "НЕ ТАК")}");
 
+                // Жители — каждый одет по-своему (автор, 28.10: «все воины очень похожи»): три портрета — смотреть глазами.
+                int dressed = 0;
+                foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                    foreach (var w in r.Folk)
+                        if (w != null && !w.IsDead && dressed < 3 && RivalLord.LordOf(w) == null)
+                        { Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "житель " + (dressed + 1), w.transform); dressed++; }
+
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");
             }

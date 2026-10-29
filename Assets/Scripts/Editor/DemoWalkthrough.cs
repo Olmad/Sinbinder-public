@@ -546,6 +546,8 @@ namespace Sinbinder.EditorTools
 
                 // Ворон летает (автор, 27.10: «ворон не улетает и не прилетает»): поднять и снять в полёте.
                 S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
+                // Сел на ветку или на конёк (автор, 28.10: «садился бы на ветки») — кадр смотреть глазами.
+                S("лагерь: ворон сел посидеть", null, RavenPerched, 30f),
                 S("учебник: ворон кружит", ReelRaven, () => ReelDone(null), 10f),
 
                 // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
@@ -2727,6 +2729,24 @@ namespace Sinbinder.EditorTools
                 if (!w.IsDead && CrowStep.Raven(w)) raven = w;
             _bird = raven != null ? RavenFlight.Launch(raven) : null;
             _birdAt = Time.realtimeSinceStartup;
+        }
+
+        private static bool RavenPerched()
+        {
+            Warrior master = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && CrowStep.Raven(w)) master = w;
+            if (master == null) { Write("  [ВОРОН] хозяина нет"); return true; }
+            if (!RavenFlight.Perched(master, out var bird)) return false;
+            bool tree = false;
+            foreach (var mf in UnityEngine.Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
+                if ((mf.name.StartsWith("DeadTree") || mf.name.StartsWith("AxeTree")) && Vector3.Distance(mf.transform.position, bird.position) < 2.5f) tree = true;
+            Write($"  [ВОРОН] сел: {(tree ? "на ветку" : "на конёк")}, на высоте {bird.position.y:F1} м");
+            var mark = new GameObject("метка кадра");
+            mark.transform.position = bird.position - Vector3.up * 1.0f;
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", tree ? "ворон на ветке" : "ворон на коньке", mark.transform, Vector3.zero);
+            UnityEngine.Object.Destroy(mark);
+            return true;
         }
 
         private static bool RavenAloft()
