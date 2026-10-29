@@ -18,10 +18,17 @@ namespace Sinbinder.Utilets
     ///
     ///     Unity -batchmode -projectPath … -executeMethod Sinbinder.Utilets.TrailerShoot.CampBatch
     /// </summary>
+    [InitializeOnLoad]
     public static class TrailerShoot
     {
         private const string Folder = "D:/Claude/трейлер/кадры";
         private const string Active = "Sinbinder.TrailerShoot.Active";
+
+        // Вход в Play перезагружает домен: подписка из CampBatch не доживает — подписаться снова (как прогоны).
+        static TrailerShoot()
+        {
+            if (SessionState.GetBool(Active, false)) EditorApplication.update += Tick;
+        }
         private static float _since = -1f;
         private static bool _hour;
         private static TrailerCam _rig;
