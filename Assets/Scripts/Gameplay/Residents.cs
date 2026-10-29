@@ -119,8 +119,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void Izba(GameObject root, Vector3 at, Quaternion face, int stamp)
         {
-            var walls = MapLoader.Prefab("IzbaWalls");
-            var roofP = MapLoader.Prefab("IzbaRoof");
+            // Вид избы — по её номеру (village.py: тёсовая, соломенная с наличниками, ветхая; одинаковые избы
+            // читались поделкой). Ветхих меньше: одна из пяти. Нет модели вида — обычная.
+            string kind = new[] { "", "B", "", "C", "B" }[((stamp % 5) + 5) % 5];
+            var walls = MapLoader.Prefab("IzbaWalls" + kind);
+            var roofP = MapLoader.Prefab("IzbaRoof" + kind);
+            if (walls == null || roofP == null) { walls = MapLoader.Prefab("IzbaWalls"); roofP = MapLoader.Prefab("IzbaRoof"); }
             if (walls == null || roofP == null) { Place(root, "Izba", at, face, new Vector3(5.6f, 4f, 4.6f)); return; }
             if (NavMesh.SamplePosition(at, out var hit, 3f, NavMesh.AllAreas)) at.y = hit.position.y;
             var house = new GameObject("Изба");

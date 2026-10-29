@@ -139,6 +139,17 @@ namespace Sinbinder.Core
             return null;
         }
 
+        /// <summary>Новая игра: забыть золотые (скрытые) — тайники снова полны. Медные и серебряные остаются.</summary>
+        public static void ForgetHidden()
+        {
+            bool changed = false;
+            foreach (var r in All)
+                if (r.How == Way.Hidden && Have.Remove(r.Id)) changed = true;
+            if (!changed) return;
+            PlayerPrefs.SetString(Key, string.Join(",", Have));
+            PlayerPrefs.Save();
+        }
+
         public static bool Open(Record r)
         {
             if (r == null || !Have.Add(r.Id)) return false;

@@ -117,6 +117,11 @@ namespace Sinbinder.Gameplay
         /// половина бревна, лицом к огню, таз — над корой. stand — где встать перед бревном.
         /// </summary>
         public bool PoseFor(Transform who, out Vector3 stand, out Vector3 sat, out Quaternion facing)
+            => PoseFor(who, who != null ? who.position : default, out stand, out sat, out facing);
+
+        /// <summary>То же, но половину бревна выбирает точка <paramref name="from"/>, а не сам садящийся: Ждан
+        /// примеряет и дальнюю половину, если ближняя занята.</summary>
+        public bool PoseFor(Transform who, Vector3 from, out Vector3 stand, out Vector3 sat, out Quaternion facing)
         {
             stand = sat = default; facing = Quaternion.identity;
             if (who == null || _renderer == null) return false;
@@ -126,9 +131,9 @@ namespace Sinbinder.Gameplay
             var mf = GetComponent<MeshFilter>();
             float length = mf != null && mf.sharedMesh != null ? mf.sharedMesh.bounds.size.x * Mathf.Abs(transform.lossyScale.x) : 1.9f;
             var middle = Centre; middle.y = transform.position.y;
-            float along = Mathf.Clamp(Vector3.Dot(who.position - middle, axis), -length * 0.25f, length * 0.25f);
+            float along = Mathf.Clamp(Vector3.Dot(from - middle, axis), -length * 0.25f, length * 0.25f);
             var seat = middle + axis * along;
-            var toward = who.position - seat;
+            var toward = from - seat;
             var fire = NearestFire(seat);
             if (fire.HasValue) toward = fire.Value - seat;
             var across = Vector3.Cross(Vector3.up, axis);

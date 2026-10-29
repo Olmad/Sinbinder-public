@@ -140,6 +140,9 @@ namespace Sinbinder.Gameplay
             AOS.RumourManager.Clear();
             Crypt.CryptHands.Forget();
             Crypt.MissionBoard.Forget();
+            // Золотые пластинки — найденные в тайниках — ищут заново (автор, 29.10: «при „Начать заново“
+            // скидывались золотые пластинки»). Медные и серебряные — коллекция игрока, остаются.
+            Core.Records.ForgetHidden();
             Audio.Music.Silenced = false;
             AudioListener.volume = 1f;
         }

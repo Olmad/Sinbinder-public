@@ -175,6 +175,7 @@ namespace Sinbinder.Utilets
             {
                 pot.name = "Котёл";
                 pot.AddComponent<Sinbinder.Gameplay.Cauldron>();
+                EffectsBuilder.Fire(pot.transform, potAt + new Vector3(0f, 0.04f, 0f), 0.3f, 10f, smoke: false);
                 Embers(pot.transform, potAt + new Vector3(0f, 0.12f, 0f), 0.25f, 6f);
             }
 
@@ -1424,6 +1425,7 @@ namespace Sinbinder.Utilets
             fire.range = range;
             fire.shadows = LightShadows.None;
             glow.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.25f, 3f, 0.04f);
+            EffectsBuilder.Fire(parent, top + new Vector3(0f, 0.38f, 0f), 0.36f, 16f);
             Embers(parent, top + new Vector3(0f, 0.45f, 0f), 0.4f, 10f);
         }
 
@@ -1527,6 +1529,7 @@ namespace Sinbinder.Utilets
             campfire.transform.position = position;
 
             Prop("Campfire", campfire.transform, position);
+            EffectsBuilder.Fire(campfire.transform, position + new Vector3(0f, 0.12f, 0f), 1f, 28f);
             Embers(campfire.transform, position + new Vector3(0f, 0.35f, 0f), 1f, 26f);
 
             var light = new GameObject("Тёплый свет");
@@ -2808,6 +2811,7 @@ namespace Sinbinder.Utilets
                 fire.range = 9f;
                 glow.AddComponent<Sinbinder.Gameplay.FireFlicker>().Tune(0.25f, 3f, 0.05f);
 
+                EffectsBuilder.Fire(gate.transform, at + new Vector3(0f, 0.64f, -0.2f), 0.34f, 16f);
                 Embers(gate.transform, at + new Vector3(0f, 0.72f, -0.2f), 0.5f, 14f);
             }
         }

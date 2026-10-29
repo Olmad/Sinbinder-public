@@ -1025,9 +1025,10 @@ namespace Sinbinder.EditorTools
             if (AudioListener.volume < 0.99f) left.Add("звук прибран до " + AudioListener.volume.ToString("F2"));
             if (!CampLife.Enabled) left.Add("лагерь не живёт");
             if (RatBanner.Named) left.Add("знамя уже названо");
+            if (Core.Records.HiddenCount().found > 0) left.Add("золотые пластинки не сброшены: " + Core.Records.HiddenCount().found);
 
             if (left.Count > 0) { if (!_forgotTold) Write("  [НОВАЯ ИГРА] осталось от прошлой: " + string.Join("; ", left)); _forgotTold = true; return false; }
-            Write("  [НОВАЯ ИГРА] прошлое забыто: мешок, стойка, звук, лагерь, знамя");
+            Write("  [НОВАЯ ИГРА] прошлое забыто: мешок, стойка, звук, лагерь, знамя, золотые пластинки");
             return true;
         }
         private static bool FreshCamp()

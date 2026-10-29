@@ -126,8 +126,17 @@ namespace Sinbinder.Gameplay
             if (!_holding && hour && there) Take();
             else if (_holding && hour && _seat != null && there) SitDown();
             else if (_holding && !hour && there) Put();
-            else if (_holding && hour && _seat == null) { SitDown(); }   // брёвен нет — играет стоя
+            else if (_holding && hour && _seat == null)
+            {
+                // Места не нашлось — искать снова раз в две секунды (проход 29.10: однажды все места показались
+                // занятыми, и Ждан так и играл стоя). Брёвен у огня нет вовсе — играет стоя.
+                if (Time.time >= _retry) { _retry = Time.time + 2f; Take(); }
+                if (_seat == null && LogSeat.Near(transform.position, 14f).Count == 0) SitDown();
+            }
         }
+
+        private float _retry;
+        private float _crowded;
 
         /// <summary>Сесть на бревно: те же ноги, что у Греховода (LogSeat.PoseFor), — тело на кору, не в воздух.</summary>
         private void SitDown()
@@ -156,13 +165,16 @@ namespace Sinbinder.Gameplay
         {
             if (_seat != null) transform.SetPositionAndRotation(_sat, _facing);
             InHands();
-            // Сел кто-то вплотную (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и Вейн
-            // в одной точке) — встать и искать другое бревно.
-            if (_seat != null && Time.frameCount % 15 == 0 && Taken(_sat))
-            {
-                Stand();
-                Take();
-            }
+            // Встал кто-то вплотную и стоит (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и
+            // Вейн в одной точке) — встать и искать другое бревно. Прошёл мимо — не повод: полторы секунды подряд.
+            if (_seat == null || Time.frameCount % 15 != 0) return;
+            if (!Taken(_sat, true)) { _crowded = 0f; return; }
+            if (_crowded == 0f) { _crowded = Time.time; return; }
+            if (Time.time - _crowded < 1.5f) return;
+            _crowded = 0f;
+            Debug.Log($"[ЖДАН] место занято — пересаживается с «{_seat.name}»");
+            Stand();
+            Take();
         }
 
         private Transform _left, _right;
@@ -263,23 +275,34 @@ namespace Sinbinder.Gameplay
             _seat = null;
             foreach (var log in LogSeat.Near(transform.position, 14f))
             {
-                if (!log.PoseFor(transform, out var stand, out var sat, out var facing)) continue;
-                if (Taken(sat)) continue;
-                float ground = log.transform.position.y;
-                var middle = log.Centre; middle.y = ground;
-                if (Ground(stand, ground, out var here)) stand = here;
-                else if (Ground(middle * 2f - stand, ground, out var there)) stand = there;
-                else continue;
-                _seat = log; _stand = stand; _sat = sat; _facing = facing;
-                break;
+                // Ближняя половина бревна, потом дальняя — точка, отражённая через середину бревна.
+                var middle = log.Centre; middle.y = log.transform.position.y;
+                foreach (var from in new[] { transform.position, middle * 2f - transform.position })
+                {
+                    if (!log.PoseFor(transform, from, out var stand, out var sat, out var facing)) continue;
+                    if (Taken(sat, false)) continue;
+                    float ground = log.transform.position.y;
+                    if (Ground(stand, ground, out var here)) stand = here;
+                    else if (Ground(middle * 2f - stand, ground, out var there)) stand = there;
+                    else continue;
+                    _seat = log; _stand = stand; _sat = sat; _facing = facing;
+                    Debug.Log($"[ЖДАН] берёт балалайку — к бревну «{log.name}»");
+                    return;
+                }
             }
         }
 
-        /// <summary>Занято ли место: кто-то из живых ближе 0,9 м к нему.</summary>
-        private bool Taken(Vector3 sat)
+        /// <summary>
+        /// Занято ли место: кто-то из живых ближе 0,9 м к нему. still — только те, кто стоит (идущий мимо — не занял).
+        /// </summary>
+        private bool Taken(Vector3 sat, bool still)
         {
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
-                if (w != null && w != _warrior && !w.IsDead && CampFocus.GroundDistance(w.transform.position, sat) < 0.9f) return true;
+            {
+                if (w == null || w == _warrior || w.IsDead || CampFocus.GroundDistance(w.transform.position, sat) >= 0.9f) continue;
+                if (still && w.TryGetComponent<NavMeshAgent>(out var a) && a.enabled && a.velocity.sqrMagnitude > 0.04f) continue;
+                return true;
+            }
             return false;
         }
 

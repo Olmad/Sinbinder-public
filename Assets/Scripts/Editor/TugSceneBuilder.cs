@@ -28,7 +28,7 @@ namespace Sinbinder.Utilets
         private static readonly string[] MapPropNames =
         {
             "Pine", "TallPineA", "TallPineB", "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "Bush",
-            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft", "Izba", "IzbaWalls", "IzbaRoof", "Well", "Wattle", "Woodpile", "Pechka", "IzbaTable", "IzbaBed", "PotShelf", "Spinner", "Cradle", "Chest", "SoulJar",
+            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft", "Izba", "IzbaWalls", "IzbaRoof", "IzbaWallsB", "IzbaRoofB", "IzbaWallsC", "IzbaRoofC","Well", "Wattle", "Woodpile", "Pechka", "IzbaTable", "IzbaBed", "PotShelf", "Spinner", "Cradle", "Chest", "SoulJar",
         };
 
         private const string MapPropsDir = "Assets/Resources/MapProps";
@@ -51,12 +51,38 @@ namespace Sinbinder.Utilets
             {
                 var go = Prop(name, null, Vector3.zero);
                 if (go == null) { Debug.LogWarning($"[КАРТЫ] Нет модели {name} в Resources/Props"); continue; }
+                Kindle(go, name);
                 PrefabUtility.SaveAsPrefabAsset(go, $"{MapPropsDir}/{name}.prefab");
                 Object.DestroyImmediate(go);
             }
             BuildCrypt();
             AssetDatabase.SaveAssets();
             Debug.Log($"[НАГРУЗКА] Собраны вещи карт: {MapPropNames.Length} и склеп");
+        }
+
+        /// <summary>
+        /// Огонь в костре и стоячем факеле карты (автор, 29.10: «поднять бы качество огня»): до того в «Перетягивании»
+        /// костёр деревни и факел у дороги были голыми моделями — ни пламени, ни света. Пламя и дым — те же, что
+        /// в лагере (<see cref="EffectsBuilder.Fire"/>); свет без теней — костров на карте много.
+        /// </summary>
+        private static void Kindle(GameObject go, string name)
+        {
+            Vector3 at; float scale, rate, intensity, range;
+            if (name == "Campfire") { at = new Vector3(0f, 0.12f, 0f); scale = 1f; rate = 28f; intensity = 4f; range = 12f; }
+            else if (name == "TorchStand") { at = new Vector3(0f, 1.79f, 0f); scale = 0.36f; rate = 16f; intensity = 1.6f; range = 5.5f; }
+            else return;
+            EffectsBuilder.Fire(go.transform, go.transform.position + at, scale, rate);
+            // В мире, а не в осях модели: корень модели повёрнут (Z-вверх Blender) и умножен на 100.
+            var glow = new GameObject("Свет огня");
+            glow.transform.position = go.transform.position + at + Vector3.up * (0.6f * scale + 0.2f);
+            glow.transform.SetParent(go.transform, true);
+            var light = glow.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.6f, 0.27f);
+            light.intensity = intensity;
+            light.range = range;
+            light.shadows = LightShadows.None;
+            glow.AddComponent<FireFlicker>().Tune(0.22f, 2.6f, 0.05f);
         }
 
         /// <summary>
