@@ -109,6 +109,24 @@ namespace Sinbinder.Gameplay
             Shift = Period - t % Period;
         }
 
+        /// <summary>
+        /// Сесть играть сейчас — его час с этого мига, балалайка в руках, сам — на бревне (съёмка трейлера: ждать,
+        /// пока дойдёт, ролик не может — в дубле 1 он шёл с балалайкой в руке, когда до него дошла камера).
+        /// </summary>
+        public static void SitNow(Warrior w)
+        {
+            if (w == null || !w.TryGetComponent<BalalaikaHabit>(out var h)) return;
+            HourNow(w);
+            if (!h.Now(out _) && h._lute == null) return;
+            if (h._seated) return;
+            if (!h._holding || h._seat == null) h.Take();
+            if (h._seat == null) return;
+            var legs = h.GetComponent<NavMeshAgent>();
+            if (legs != null && legs.enabled && legs.isOnNavMesh) legs.Warp(h._stand);
+            h.transform.position = h._stand;
+            h.SitDown();
+        }
+
         private LogSeat _seat;
         private Vector3 _stand, _sat;
         private Quaternion _facing;

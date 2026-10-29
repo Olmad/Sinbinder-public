@@ -59,10 +59,10 @@ namespace Sinbinder.Utilets
             var pause = Core.GamePauseController.Instance;
             if (pause != null && (pause.IsPaused || pause.Halted)) return;
             // Лагерю — время встать по местам, Ждану — его час.
-            // Час Ждана — за 13 с до съёмки: к его плану (13–17 с) он дошёл и сел, а час (35 с) ещё не кончился.
+            // Ждан — сразу на бревне с балалайкой (SitNow), за 5 с до съёмки: в дубле 1 он к своему плану ещё шёл.
             if (_since < 0f) _since = Time.realtimeSinceStartup;
             float settled = Time.realtimeSinceStartup - _since;
-            if (!_hour && settled >= 12f) { _hour = true; var z = Zhdan(); if (z != null) BalalaikaHabit.HourNow(z); }
+            if (!_hour && settled >= 20f) { _hour = true; var z = Zhdan(); if (z != null) BalalaikaHabit.SitNow(z); }
             if (settled < 25f) return;
 
             var go = new GameObject("Съёмка трейлера");
@@ -96,8 +96,37 @@ namespace Sinbinder.Utilets
             return t != null ? t.transform.position : new Vector3(-8f, 0f, -12f);
         }
 
+        private static Light _rim;
+
+        /// <summary>Холодный контровой свет у ворона: чёрная птица на ночном небе иначе не видна (дубль 1).</summary>
+        private static void Rim(Transform bird, Vector3 camera)
+        {
+            if (_rim == null)
+            {
+                _rim = new GameObject("свет ворона").AddComponent<Light>();
+                _rim.type = LightType.Point; _rim.color = new Color(0.62f, 0.72f, 1f); _rim.range = 4f; _rim.shadows = LightShadows.None;
+            }
+            _rim.intensity = bird != null ? 2.2f : 0f;
+            if (bird != null) _rim.transform.position = bird.position + (bird.position - camera).normalized * 1.2f + Vector3.up * 0.8f;
+        }
+
+        /// <summary>
+        /// Поставить воина и держать: ноги выключены, сам стоит, где сказано, лицом куда сказано. В дубле 1
+        /// Греховода переставили в начале — и он ушёл к своей палатке: в конце ролика камера сняла холм.
+        /// </summary>
+        private static void Pin(Warrior w, Vector3 at, Vector3 face)
+        {
+            if (w == null) return;
+            if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas)) at = hit.position;
+            var legs = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (legs != null && legs.enabled) { if (legs.isOnNavMesh) legs.ResetPath(); legs.enabled = false; }
+            var look = face - at; look.y = 0f;
+            w.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look.sqrMagnitude > 1e-4f ? look : Vector3.forward));
+        }
+
         private static List<TrailerCam.Shot> Camp()
         {
+            var greh = Vector3.zero + new Vector3(0.6f, 0f, -3.4f);
             var fire = Vector3.zero;
             var list = new List<TrailerCam.Shot>();
             void Add(string name, float seconds, System.Func<float, (Vector3, Vector3, float)> cam, System.Action begin = null)
@@ -105,41 +134,35 @@ namespace Sinbinder.Utilets
 
             // ---- Костёр, 0–13 с: сверху вниз к огню, потом кругом у огня.
             Add("сверху к огню", 7f, t => (TrailerCam.Glide(fire + new Vector3(-6f, 22f, -24f), fire + new Vector3(-1.5f, 2.6f, -7f), t),
-                                           fire + Vector3.up * 0.6f, 40f),
-                () =>
-                {
-                    // Греховод — к огню, лицом к нему: его лицо — в конце ролика.
-                    var p = SinbinderPlayer.Instance;
-                    var at = fire + new Vector3(0.6f, 0f, -3.4f);
-                    if (UnityEngine.AI.NavMesh.SamplePosition(at, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas)) at = hit.position;
-                    var legs = p.GetComponent<UnityEngine.AI.NavMeshAgent>();
-                    if (legs != null && legs.isOnNavMesh) { legs.Warp(at); legs.ResetPath(); }
-                    p.transform.SetPositionAndRotation(at, Quaternion.LookRotation(fire - at));
-                });
+                                           fire + Vector3.up * 0.6f, 40f), () => Rim(null, Vector3.zero));
             Add("кругом у огня", 6f, t => (TrailerCam.Orbit(fire, 235f + t * 40f, 3.6f, 1.0f) + TrailerCam.Breath(t * 6f, 0.04f),
                                            fire + Vector3.up * 0.7f, 38f));
             Add("Ждан с балалайкой", 4f, t =>
             {
                 var z = Zhdan();
                 if (z == null) return (TrailerCam.Orbit(fire, 120f, 2.6f, 0.9f), fire, 34f);
-                var from = z.transform.position + z.transform.forward * (1.9f - t * 0.35f) + z.transform.right * 0.6f + Vector3.up * 0.95f;
-                return (from, z.transform.position + Vector3.up * 0.7f, 32f);
+                // Шире, чем в дубле 1 (балалайка закрывала весь кадр): три с лишним метра, сбоку, огонь — в кадре.
+                var from = z.transform.position + z.transform.forward * (3.4f - t * 0.4f) + z.transform.right * 1.6f + Vector3.up * 1.2f;
+                return (from, z.transform.position + Vector3.up * 0.65f - z.transform.right * 0.6f, 36f);
             });
             // ---- Пролёт ворона сбоку, 17–25 с.
             Add("ворон сбоку", 8f, t =>
             {
                 var r = Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 300f, 8f, 4f), fire, 40f);
-                return (r.position + r.right * 3.2f + Vector3.up * 0.4f - r.forward * 0.8f, r.position + r.forward * 0.6f, 45f);
+                // Вдвое ближе дубля 1 (птица была с ноготь): 1,7 м сбоку, поле уже.
+                var cam = r.position + r.right * 1.7f + Vector3.up * 0.25f - r.forward * 0.4f;
+                Rim(r, cam);
+                return (cam, r.position + r.forward * 0.3f, 38f);
             }, () => RavenFlight.LaunchAny());
 
             // ---- Охота, 25–44,2 с: короткие планы, ниже и ближе.
-            Add("из леса", 4f, t => (TrailerCam.Glide(new Vector3(-34f, 0.9f, -26f), new Vector3(-24f, 1.0f, -18f), t) + TrailerCam.Breath(t * 4f, 0.06f),
-                                     fire + Vector3.up, 45f));
+            Add("из леса", 4f, t => (TrailerCam.Glide(new Vector3(-30f, 1.6f, -24f), new Vector3(-20f, 1.5f, -15f), t) + TrailerCam.Breath(t * 4f, 0.06f),
+                                     fire + Vector3.up * 1.4f, 40f), () => Rim(null, Vector3.zero));
             Add("факел", 3f, t =>
             {
                 var c = Torch() + Vector3.up * 1.85f;
-                return (TrailerCam.Glide(c + new Vector3(1.4f, -0.1f, -1.2f), c + new Vector3(0.9f, 0.0f, -0.8f), t), c, 35f);
+                return (TrailerCam.Glide(c + new Vector3(2.6f, 0.1f, -2.2f), c + new Vector3(2.0f, 0.2f, -1.7f), t), c, 30f);
             });
             Add("лица у огня", 4f, t => (TrailerCam.Orbit(fire, 80f + t * 30f, 4.6f, 1.25f), fire + Vector3.up, 30f));
             Add("Карган", 3.2f, t =>
@@ -154,16 +177,25 @@ namespace Sinbinder.Utilets
             // ---- Удар, 44,2–47,2: лагерь сверху.
             Add("лагерь сверху", 3f, t => (TrailerCam.Orbit(fire, 260f + t * 6f, 6f, 30f), fire, 50f));
             // ---- Путь, 47,2–59,8: облёт лагеря.
-            Add("облёт лагеря", 12.6f, t => (TrailerCam.Orbit(fire, 200f + t * 100f, 26f, 13f), fire + Vector3.up, 42f));
+            bool launched = false;
+            Add("облёт лагеря", 12.6f, t =>
+            {
+                // Ворону — взлететь заранее: к своему плану он уже в воздухе (в дубле 1 сидел на плече у Каргана).
+                if (!launched && t > 0.8f) { launched = true; RavenFlight.Launch(Named("Карган")); }
+                return (TrailerCam.Orbit(fire, 200f + t * 100f, 26f, 13f), fire + Vector3.up, 42f);
+            });
             // ---- Слияние, 59,8–71,8: ворон сзади — и к дороге.
             Add("ворон сзади", 7f, t =>
             {
                 var r = Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 40f, 14f, 7f), fire, 45f);
-                return (r.position - r.forward * 3f + Vector3.up * 1.0f, r.position + r.forward * 4f, 50f);
-            }, () => RavenFlight.LaunchAny());
+                var cam = r.position - r.forward * 2.2f + Vector3.up * 0.7f;
+                Rim(r, cam);
+                return (cam, r.position + r.forward * 5f, 48f);
+            });
             Add("к дороге", 5f, t =>
             {
+                Rim(null, Vector3.zero);
                 var c = Torch();
                 return (TrailerCam.Glide(fire + new Vector3(0f, 8f, -5f), c + new Vector3(0f, 4f, -6f), t), c + Vector3.up * 1.5f, 42f);
             });
@@ -171,11 +203,13 @@ namespace Sinbinder.Utilets
             Add("Греховод", 3.2f, t =>
             {
                 var p = SinbinderPlayer.Instance;
+                Pin(p, greh, fire);
                 return (Head(p) + Vector3.up * 0.35f + p.transform.forward * (3f - t * 1.7f), Head(p) + Vector3.up * 0.35f, 28f);
             });
             Add("глаза", 0.8f, t =>
             {
                 var p = SinbinderPlayer.Instance;
+                Pin(p, greh, fire);
                 return (Head(p) + Vector3.up * 0.4f + p.transform.forward * (1.1f - t * 0.2f), Head(p) + Vector3.up * 0.4f, 26f);
             });
             return list;
