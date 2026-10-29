@@ -18,7 +18,9 @@ namespace Sinbinder.Gameplay
     public class CandleHabit : MonoBehaviour
     {
         private static readonly Color Flame = new Color(1.00f, 0.62f, 0.28f);
-        private const float Glow = 0.55f;          // свечение ткани в покое
+        // 0,55 до 29.10: сверху полог горел плоским жёлтым листом (автор: «некоторые предметы иногда загораются
+        // жёлтым»), — тлеет, а не светит.
+        private const float Glow = 0.3f;           // свечение ткани в покое
         private const float BurnOut = 25f;         // сколько догорает после гибели, секунд
 
         private Warrior _warrior;

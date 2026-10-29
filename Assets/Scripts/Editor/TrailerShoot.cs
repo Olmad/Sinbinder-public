@@ -127,6 +127,56 @@ namespace Sinbinder.Utilets
             foreach (var r in w.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
 
+        /// <summary>Середина живых охотников (n — сколько их); нет — огонь.</summary>
+        private static Vector3 Enemies(out int n)
+        {
+            n = 0; var sum = Vector3.zero;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w.Team == Team.Enemy && !w.IsDead) { sum += w.transform.position; n++; }
+            return n == 0 ? Vector3.zero : sum / n;
+        }
+
+        private static Warrior Nearest(Team team, Vector3 to)
+        {
+            Warrior best = null; float d = float.MaxValue;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w.Team != team || w.IsDead || w is SinbinderPlayer) continue;
+                float k = (w.transform.position - to).sqrMagnitude;
+                if (k < d) { d = k; best = w; }
+            }
+            return best;
+        }
+
+        /// <summary>Где бьются: между охотником, ближним к огню, и ближним к нему своим; набега нет — огонь.</summary>
+        private static Vector3 Fight()
+        {
+            var e = Nearest(Team.Enemy, Vector3.zero);
+            if (e == null) return Vector3.zero;
+            var ally = Nearest(Team.Player, e.transform.position);
+            var at = ally != null && (ally.transform.position - e.transform.position).sqrMagnitude < 100f
+                   ? (e.transform.position + ally.transform.position) * 0.5f : e.transform.position;
+            // Сглаживание: середина схватки прыгает, когда сменяется ближний, — камера за ней тянется, не дёргается.
+            _fight = _fightSet ? Vector3.Lerp(_fight, at, 0.06f) : at;
+            _fightSet = true;
+            return _fight;
+        }
+
+        private static Vector3 _fight;
+        private static bool _fightSet;
+
+        /// <summary>
+        /// Набег — сейчас, без строки на чёрном: пока она на экране, мир стоит, а в ролике её не видно (холсты
+        /// выключены) — вышло бы три секунды застывшего кадра.
+        /// </summary>
+        private static void Raid()
+        {
+            var title = Object.FindFirstObjectByType<UI.PrologueTitleUI>();
+            if (title != null) title.gameObject.SetActive(false);
+            var director = Object.FindFirstObjectByType<PrologueDirector>();
+            Debug.Log($"[ТРЕЙЛЕР] набег: {(RaidEvent.Stage(director) ? "развёрнут" : "НЕ развёрнут")}");
+        }
+
         private static List<TrailerCam.Shot> Camp()
         {
             var greh = Vector3.zero + new Vector3(0.6f, 0f, -3.4f);
@@ -137,7 +187,7 @@ namespace Sinbinder.Utilets
 
             // ---- Костёр, 0–13 с: сверху вниз к огню, потом кругом у огня.
             Add("сверху к огню", 7f, t => (TrailerCam.Glide(fire + new Vector3(-6f, 22f, -24f), fire + new Vector3(-1.5f, 2.6f, -7f), t),
-                                           fire + Vector3.up * 0.6f, 40f), () => Rim(null, Vector3.zero));
+                                           fire + Vector3.up * 0.6f, 40f), () => { Rim(null, Vector3.zero); Damageable.Untouchable = SinbinderPlayer.Instance.GetComponent<Damageable>(); });
             Add("кругом у огня", 6f, t => (TrailerCam.Orbit(fire, 235f + t * 40f, 3.6f, 1.0f) + TrailerCam.Breath(t * 6f, 0.04f),
                                            fire + Vector3.up * 0.7f, 38f));
             Add("Ждан с балалайкой", 4f, t =>
@@ -149,58 +199,99 @@ namespace Sinbinder.Utilets
                 return (from, z.transform.position + Vector3.up * 0.65f - z.transform.right * 0.6f, 36f);
             });
             // ---- Пролёт ворона сбоку, 17–25 с.
+            bool raided = false;
             Add("ворон сбоку", 8f, t =>
             {
                 var r = Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 300f, 8f, 4f), fire, 40f);
+                if (!raided && t > 0.3f) { raided = true; Raid(); }
                 // Вдвое ближе дубля 1 (птица была с ноготь): 1,7 м сбоку, поле уже.
                 var cam = r.position + r.right * 1.7f + Vector3.up * 0.25f - r.forward * 0.4f;
                 Rim(r, cam);
                 return (cam, r.position + r.forward * 0.3f, 38f);
             }, () => RavenFlight.LaunchAny());
 
-            // ---- Охота, 25–44,2 с: короткие планы, ниже и ближе.
-            Add("из леса", 4f, t => (TrailerCam.Glide(new Vector3(-30f, 1.6f, -24f), new Vector3(-20f, 1.5f, -15f), t) + TrailerCam.Breath(t * 4f, 0.06f),
-                                     fire + Vector3.up * 1.4f, 40f), () => Rim(null, Vector3.zero));
+            // ---- Охота, 25–44,2 с: набег (автор, 29.10, дубль 3: «а где нападение?»). Охотники вышли ещё под
+            //      вороном (Raid); здесь — они, схватка у огня, Карган в бою, охотник крупно.
+            Add("охотники выходят", 4f, t =>
+            {
+                var c = Enemies(out int n);
+                if (n == 0) return (TrailerCam.Glide(new Vector3(-30f, 1.6f, -24f), new Vector3(-20f, 1.5f, -15f), t), fire + Vector3.up * 1.4f, 40f);
+                var back = c - fire; back.y = 0f; back = back.normalized;
+                return (c + back * (4.5f - t * 1.2f) + Vector3.up * 1.3f + Vector3.Cross(Vector3.up, back) * 1.2f, fire + Vector3.up * 1.2f, 40f);
+            }, () => Rim(null, Vector3.zero));
             Add("факел", 3f, t =>
             {
                 var c = Torch() + Vector3.up * 1.85f;
                 return (TrailerCam.Glide(c + new Vector3(2.6f, 0.1f, -2.2f), c + new Vector3(2.0f, 0.2f, -1.7f), t), c, 30f);
             });
-            Add("лица у огня", 4f, t => (TrailerCam.Orbit(fire, 80f + t * 30f, 4.6f, 1.25f), fire + Vector3.up, 30f));
-            Add("Карган", 3.2f, t =>
+            Add("схватка", 4f, t =>
+            {
+                var f = Fight();
+                return (TrailerCam.Orbit(f, 30f + t * 45f, 3.4f, 1.3f) + TrailerCam.Breath(t * 4f, 0.05f), f + Vector3.up * 0.9f, 36f);
+            });
+            Add("Карган в бою", 3.2f, t =>
             {
                 var k = Named("Карган");
-                if (k == null) return (TrailerCam.Orbit(fire, 20f, 4f, 1.4f), fire, 30f);
-                return (Head(k) + k.transform.forward * (2.2f - t * 0.6f) + Vector3.up * 0.1f, Head(k), 30f);
+                if (k == null) { var f = Fight(); return (TrailerCam.Orbit(f, 200f, 3f, 1.4f), f + Vector3.up, 32f); }
+                return (Head(k) + k.transform.forward * (2.4f - t * 0.6f) + k.transform.right * 0.5f + Vector3.up * 0.1f, Head(k), 32f);
             });
-            Add("палатки", 2.5f, t => (TrailerCam.Orbit(fire, 150f + t * 15f, 12f, 2.2f), fire + Vector3.up, 40f));
-            Add("вверх перед ударом", 2.5f, t => (TrailerCam.Glide(fire + new Vector3(0f, 1.6f, -3.5f), fire + new Vector3(0f, 13f, -8f), t), fire, 45f));
-
-            // ---- Удар, 44,2–47,2: лагерь сверху.
-            Add("лагерь сверху", 3f, t => (TrailerCam.Orbit(fire, 260f + t * 6f, 6f, 30f), fire, 50f));
-            // ---- Путь, 47,2–59,8: облёт лагеря.
-            bool launched = false;
-            Add("облёт лагеря", 12.6f, t =>
+            Add("охотник крупно", 2.5f, t =>
             {
-                // Ворону — взлететь заранее: к своему плану он уже в воздухе (в дубле 1 сидел на плече у Каргана).
-                if (!launched && t > 0.8f) { launched = true; RavenFlight.Launch(Named("Карган")); }
-                return (TrailerCam.Orbit(fire, 200f + t * 100f, 26f, 13f), fire + Vector3.up, 42f);
+                var e = Nearest(Team.Enemy, fire);
+                if (e == null) return (TrailerCam.Orbit(fire, 150f, 6f, 1.5f), fire + Vector3.up, 40f);
+                return (Head(e) + e.transform.forward * (2.0f - t * 0.4f) - e.transform.right * 0.4f, Head(e), 30f);
             });
-            // ---- Слияние, 59,8–71,8: ворон сзади — и к дороге.
-            Add("ворон сзади", 7f, t =>
+            Add("вверх перед ударом", 2.5f, t =>
+            {
+                var f = Fight();
+                return (TrailerCam.Glide(f + new Vector3(0f, 1.6f, -3.5f), f + new Vector3(0f, 13f, -8f), t), f, 45f);
+            });
+
+            // ---- Удар, 44,2–47,2: камера падает сверху в схватку — не стоит, как в дубле 3 («в середине всё замирает»).
+            Add("удар — в схватку", 3f, t =>
+            {
+                var f = Fight();
+                float k = 1f - (1f - t) * (1f - t) * (1f - t);   // резко в начале, мягко в конце
+                return (Vector3.Lerp(f + new Vector3(0f, 16f, -7f), f + new Vector3(1.5f, 2.2f, -3.2f), k), f + Vector3.up * 0.8f, 44f);
+            });
+            // ---- Путь, 47,2–59,8: бой сбоку проездом, Греховод в бою, ворон над боем.
+            Add("бой сбоку", 4.6f, t =>
+            {
+                var f = Fight();
+                var side = new Vector3(1f, 0f, 0.35f).normalized;
+                return (f + side * (-5f + t * 10f) + new Vector3(0f, 1.4f, -5f), f + Vector3.up * 0.9f, 38f);
+            });
+            Add("Греховод в бою", 4f, t =>
+            {
+                var p = SinbinderPlayer.Instance;
+                foreach (var r in p.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+                return (Head(p) - p.transform.forward * (3f - t * 0.6f) + p.transform.right * 0.9f + Vector3.up * 0.7f,
+                        Head(p) + p.transform.forward * 6f, 44f);
+            });
+            Add("ворон над боем", 4f, t =>
+            {
+                var r = Raven();
+                if (r == null) { var f = Fight(); return (TrailerCam.Orbit(f, 90f + t * 30f, 10f, 6f), f, 42f); }
+                var cam = r.position + r.right * 1.8f + Vector3.up * 0.3f - r.forward * 0.4f;
+                Rim(r, cam);
+                return (cam, r.position + r.forward * 0.3f, 40f);
+            }, () => RavenFlight.Launch(Named("Карган")));
+            // ---- Слияние, 59,8–71,8: ворон сзади — и вторая волна, широко.
+            Add("ворон сзади", 6f, t =>
             {
                 var r = Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 40f, 14f, 7f), fire, 45f);
                 var cam = r.position - r.forward * 2.2f + Vector3.up * 0.35f;
                 Rim(r, cam);
-                return (cam, r.position + r.forward * 6f + Vector3.up * 0.6f, 48f);   // вперёд и к горизонту, а не в землю (дубль 2)
+                return (cam, r.position + r.forward * 6f + Vector3.up * 0.6f, 48f);
             });
-            Add("к дороге", 5f, t =>
+            Add("вторая волна", 6f, t =>
             {
                 Rim(null, Vector3.zero);
-                var c = Torch();
-                return (TrailerCam.Glide(fire + new Vector3(0f, 8f, -5f), c + new Vector3(0f, 4f, -6f), t), c + Vector3.up * 1.5f, 42f);
+                var c = Enemies(out int n);
+                if (n == 0) c = Fight();
+                return (TrailerCam.Orbit(c, 250f + t * 35f, 11f, 3.2f), c + Vector3.up, 40f);
             });
             // ---- Конец, 71,8–75,8: лицо Греховода — ближе и ближе; на последнем ударе — тьма (её кладёт cut.py).
             Add("Греховод", 3.2f, t =>

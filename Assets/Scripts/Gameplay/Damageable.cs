@@ -54,9 +54,16 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.UnregisterUnit(this);
         }
 
+        /// <summary>
+        /// Не берёт урона — только съёмка трейлера (Editor/TrailerShoot): посреди набега Греховод нужен живым
+        /// до последнего кадра. В игре не ставится никем.
+        /// </summary>
+        public static Damageable Untouchable;
+
         public void TakeDamage(float damage, GameObject attacker)
         {
             if (IsDead) return;
+            if (Untouchable != null && this == Untouchable) return;
 
             // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
             if (Bodyguard.Absorb(this, attacker, damage)) return;

@@ -963,21 +963,31 @@ def sin_staff(b):
     bone = "LeftHand"
     gx, _, gz = anatomy.grip(P, 1)
     y = -0.028                                  # впереди кулака, не сквозь кисть
-    foot = (gx + 0.36, y, gz)                   # к земле
-    head = (gx - 0.86, y, gz)                   # к небу
+
+    def at(x, dy=0.0, dz=0.0):
+        """
+        Точка древка: в кулаке — как было, выше — наклон наружу и вперёд. Отвесный посох шёл
+        сквозь оплечье с шипами (автор, 29.10, трейлер: «у Греховода по-прежнему посох в плече»).
+        В Т-позе +Z кисти — наружу, когда рука висит; −Y — вперёд.
+        """
+        s = gx - x                              # сколько выше кулака (к небу — минус X)
+        return (x, y + dy - 0.07 * s, gz + dz + 0.14 * s)
+
+    foot = at(gx + 0.36)                        # к земле
+    head = at(gx - 0.86)                        # к небу
     b.add(*tube(foot, head, 0.010, 0.012, segs=8), bone=bone, mat=2)
     # Позвонки — костяные кольца по древку, чаще к навершию.
     for x in (gx + 0.24, gx + 0.06, gx - 0.12, gx - 0.36, gx - 0.56, gx - 0.70, gx - 0.80):
-        b.add(*tube((x + 0.012, y, gz), (x - 0.012, y, gz), 0.0165, 0.0165, segs=8), bone=bone, mat=1)
-    top = (gx - 0.95, y, gz)
+        b.add(*tube(at(x + 0.012), at(x - 0.012), 0.0165, 0.0165, segs=8), bone=bone, mat=1)
+    top = at(gx - 0.95)
     b.add(*sphere(top, 0.028, segs=14, rings=10), bone=bone, mat=0)
     # Три когтя: от древка наружу и вверх, кончиками — над огоньком.
     for k in range(3):
         a = math.radians(90 + 120 * k)
         cy, cz = math.cos(a), math.sin(a)
-        p0 = (gx - 0.85, y + cy * 0.012, gz + cz * 0.012)
-        p1 = (gx - 0.92, y + cy * 0.040, gz + cz * 0.040)
-        p2 = (gx - 1.00, y + cy * 0.022, gz + cz * 0.022)
+        p0 = at(gx - 0.85, cy * 0.012, cz * 0.012)
+        p1 = at(gx - 0.92, cy * 0.040, cz * 0.040)
+        p2 = at(gx - 1.00, cy * 0.022, cz * 0.022)
         b.add(*tube(p0, p1, 0.0060, 0.0045, segs=6), bone=bone, mat=1)
         b.add(*tube(p1, p2, 0.0045, 0.0012, segs=6), bone=bone, mat=1)
 

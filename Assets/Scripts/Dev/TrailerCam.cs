@@ -46,6 +46,7 @@ namespace Sinbinder.Dev
         {
             Directory.CreateDirectory(Folder);
             foreach (var f in Directory.GetFiles(Folder, "*.jpg")) File.Delete(f);
+            File.Delete(Path.Combine(Folder, "снято.txt"));
             Time.captureFramerate = Fps;
             _rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             _read = new Texture2D(W, H, TextureFormat.RGB24, false);
@@ -99,6 +100,8 @@ namespace Sinbinder.Dev
         {
             Finished = true;
             Time.captureFramerate = 0;
+            // Сколько снято — для монтажа (Tools/trailer/cut.py): заставку он дописывает в ту же папку.
+            File.WriteAllText(Path.Combine(Folder, "снято.txt"), _frame.ToString());
             Debug.Log($"[ТРЕЙЛЕР] снято кадров {_frame} ({_frame / (float)Fps:F1} с) в {Folder}");
             Done?.Invoke();
         }
