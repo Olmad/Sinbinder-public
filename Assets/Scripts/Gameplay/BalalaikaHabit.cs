@@ -21,7 +21,9 @@ namespace Sinbinder.Gameplay
     {
         private const float Period = 110f;   // раз в столько секунд
         private const float PlayFor = 35f;   // столько сидит с балалайкой
-        private const float Reach = 1.0f;
+        // Шире, чем «остановиться» у ног (WarriorRig: 1,2 м) с запасом: при 1,0 Ждан вставал у бревна в 1,2 м
+        // и ждал, что дойдёт, — не садился никогда (проход демо 29.10, «ЗАСТРЯЛО: Ждан сел…»).
+        private const float Reach = 1.6f;
 
         private Warrior _warrior;
         private WarriorAnimation _body;
