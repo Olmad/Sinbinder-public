@@ -744,7 +744,16 @@ namespace Sinbinder.EditorTools
                 foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
                     foreach (var w in r.Folk)
                         if (w != null && !w.IsDead && dressed < 3 && RivalLord.LordOf(w) == null)
-                        { Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "житель " + (dressed + 1), w.transform); dressed++; }
+                        {
+                            // Ночь и туман: без света кадр выходил чёрным (29.10) — открыть место и подсветить.
+                            FogOfWar.Reveal(w.transform.position, 8f);
+                            var lamp = new GameObject("свет кадра").AddComponent<Light>();
+                            lamp.type = LightType.Point; lamp.range = 6f; lamp.intensity = 3f;
+                            lamp.transform.position = w.transform.position + w.transform.forward * 1.5f + Vector3.up * 2f;
+                            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "житель " + (dressed + 1), w.transform);
+                            Object.DestroyImmediate(lamp.gameObject);
+                            dressed++;
+                        }
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");

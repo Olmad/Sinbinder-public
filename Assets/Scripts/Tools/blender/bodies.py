@@ -953,6 +953,30 @@ def make_actions(arm, g, shell_name=""):
         (48, s((-2, 4, -1, 2, 4, 1), (78, 1, -1, 12), (2, 1, 1, 0), 0.0)),
     ]
 
+    # --- Strum: играет на балалайке сидя (автор, 28.10: Ждан «должен брать балалайку и садиться на
+    #     бревно»; кадр 29.10 — сидит, а руки висят, балалайка лежит на бревне). Бёдра вперёд, колени
+    #     согнуты — как на бревне; руки подняты к груди: левая вытянута к грифу, правая у живота бьёт по
+    #     струнам, корпус чуть покачивается в такт. Зациклен (BodyImport.Looping).
+    seated = (-84, 88, -6, -84, 88, -6)
+
+    def playing(beat, nod):
+        # Руки — каждая своя (stance даёт обеим одно «опущены» и один локоть): левая к грифу — поднята
+        # вперёд, локоть почти прямой; правая — вдоль тела, локоть согнут, кисть у живота и ходит по струнам.
+        pose = s(seated, (60, 0, 0, 0), (8, 2, nod, -6), 0.0)
+        pose["LeftUpperArm"] = ([(Y, 48 + g.down), (X, -48)], None)
+        pose["LeftLowerArm"] = ([(Z, -(22 + g.elbow))], None)
+        pose["RightUpperArm"] = ([(Y, -(66 + g.down)), (X, -22)], None)
+        pose["RightLowerArm"] = ([(Z, 104 + 12 * beat + g.elbow)], None)
+        return pose
+
+    strum = [
+        (1,  playing(0.0, 6)),
+        (7,  playing(1.0, 8)),
+        (13, playing(0.0, 6)),
+        (19, playing(1.0, 4)),
+        (25, playing(0.0, 6)),
+    ]
+
     # Имена обязаны совпасть буква в букву с BodyMotion: Animator.Play
     # по чужому имени молча ничего не делает — худший вид поломки,
     # потому что выглядит как «анимация просто не сделана».
@@ -967,7 +991,7 @@ def make_actions(arm, g, shell_name=""):
             print("[ТЕЛА] движения «{}» нет в {} — {}: свой клип".format(name, MOTION, clip))
 
     handmade = {"Idle": idle, "Walk": walk, "Flee": flee, "Die": die, "Attack": attack, "Talk": talk,
-                "Challenge": challenge, "Gather": gather}
+                "Challenge": challenge, "Gather": gather, "Strum": strum}
     made = [action(arm, clip, keys) for clip, keys in handmade.items() if clip not in have]
 
     # Перенесённые с Mixamo (`retarget.py`).
@@ -1333,6 +1357,8 @@ def preview(shell, folder):
     shot("9-attack-hit", "Attack", 12, (2.2, -0.2, 0.62), (0.0, 0.0, 0.50))
     shot("a-talk-front", "Talk", 14, (0.0, -2.2, 0.62), (0.0, 0.0, 0.52))
     shot("e-gather-hold", "Gather", 24, (2.0, -1.0, 0.55), (0.0, 0.0, 0.35))
+    shot("g-strum-front", "Strum", 7, (0.6, -2.0, 0.55), (0.0, 0.0, 0.40))
+    shot("h-strum-side", "Strum", 1, (2.0, -0.4, 0.55), (0.0, 0.0, 0.40))
     shot("f-gather-chest", "Gather", 38, (2.0, -1.0, 0.60), (0.0, 0.0, 0.45))
     if "Draw" in bpy.data.actions:
         shot("b-draw-mid", "Draw", 12, (1.5, -1.7, 0.72), (0.0, 0.0, 0.52))

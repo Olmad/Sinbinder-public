@@ -50,7 +50,7 @@ namespace Sinbinder.EditorTools
         /// сколько нужно разговору, а не фиксированное время клипа.</summary>
         private static readonly HashSet<string> Looping = new HashSet<string>
         {
-            BodyMotion.Idle, BodyMotion.Walk, BodyMotion.Flee, BodyMotion.Talk,
+            BodyMotion.Idle, BodyMotion.Walk, BodyMotion.Flee, BodyMotion.Talk, BodyMotion.Strum,
         };
 
         private static bool Ours(string path)

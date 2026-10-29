@@ -139,24 +139,61 @@ namespace Sinbinder.Gameplay
                 if (agent != null && agent.enabled && agent.isOnNavMesh) agent.ResetPath();
                 if (agent != null) agent.enabled = false;
                 transform.SetPositionAndRotation(_sat, _facing);
-                if (_body != null) _body.Seated = true;
+                if (_body != null) { _body.Seated = true; _body.Strumming = true; }
                 _seated = true;
             }
             Strum(true);
-            if (_lute != null)
-            {
-                _lute.localPosition = new Vector3(0.05f, 0.55f, 0.32f);
-                _lute.localRotation = Quaternion.Euler(-20f, -70f, 0f) * Quaternion.Inverse(transform.rotation) * _luteRot;
-            }
+            InHands();
         }
 
-        private void HoldSeat() { if (_seat != null) transform.SetPositionAndRotation(_sat, _facing); }
+        private void HoldSeat()
+        {
+            if (_seat != null) transform.SetPositionAndRotation(_sat, _facing);
+            InHands();
+        }
+
+        private Transform _left, _right;
+        private Quaternion _luteBasis;
+        private bool _basisReady;
+
+        /// <summary>
+        /// Балалайка — в руках, а не на бревне (кадр 29.10: лежала перед ним, руки висели): корпус у правой кисти,
+        /// гриф — к левой, дека — от груди. Оси инструмента берутся из его модели: длинная — гриф (в ту сторону,
+        /// куда смещена рамка от корпуса), тонкая — дека. Каждый кадр — руки ходят клипом Strum.
+        /// </summary>
+        private void InHands()
+        {
+            if (_lute == null) return;
+            if (_left == null || _right == null)
+                foreach (var t in GetComponentsInChildren<Transform>())
+                {
+                    if (t.name == "LeftHand") _left = t;
+                    else if (t.name == "RightHand") _right = t;
+                }
+            if (_left == null || _right == null) return;
+            if (!_basisReady)
+            {
+                var mf = _lute.GetComponentInChildren<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) return;
+                var b = mf.sharedMesh.bounds;
+                var e = b.extents;
+                Vector3 neck = e.x >= e.y && e.x >= e.z ? Vector3.right : e.y >= e.z ? Vector3.up : Vector3.forward;
+                Vector3 deck = e.x <= e.y && e.x <= e.z ? Vector3.right : e.y <= e.z ? Vector3.up : Vector3.forward;
+                if (Vector3.Dot(b.center, neck) < 0f) neck = -neck;
+                _luteBasis = Quaternion.Inverse(Quaternion.LookRotation(neck, deck));
+                _basisReady = true;
+            }
+            var along = _left.position - _right.position;
+            if (along.sqrMagnitude < 1e-4f) return;
+            _lute.rotation = Quaternion.LookRotation(along.normalized, transform.forward) * _luteBasis;
+            _lute.position = _right.position + transform.forward * 0.06f;
+        }
 
         private void Stand()
         {
             _seated = false;
             Strum(false);
-            if (_body != null) _body.Seated = false;
+            if (_body != null) { _body.Seated = false; _body.Strumming = false; }
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             transform.position = _stand;
             if (agent != null)

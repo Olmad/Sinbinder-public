@@ -83,9 +83,12 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public const string Gather = "Gather";
 
+        /// <summary>Сидя играет на балалайке — левая к грифу, правая по струнам (Косой Ждан; свой клип bodies.py, зациклен).</summary>
+        public const string Strum = "Strum";
+
         /// <summary>Все состояния, которые обязан знать аниматор.</summary>
         public static string[] All()
-            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig, Challenge, Gather };
+            => new[] { Idle, Walk, Attack, Flee, Die, Talk, Draw, Sheathe, Sit, Dig, Challenge, Gather, Strum };
 
         /// <summary>
         /// Во что превращается решение.

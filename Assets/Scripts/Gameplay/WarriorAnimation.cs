@@ -47,6 +47,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Сидит на сиденье за картами — ставит и снимает <see cref="CardTable"/>.</summary>
         public bool Seated { get; set; }
 
+        /// <summary>Сидя — играет на балалайке (BalalaikaHabit): клип Strum вместо Sit.</summary>
+        public bool Strumming { get; set; }
+
         /// <summary>Копает — ставит и снимает <see cref="DiggerHabit"/> (примета Марги).</summary>
         public bool Digging { get; set; }
 
@@ -178,7 +181,7 @@ namespace Sinbinder.Gameplay
             if (_posed != null) return _posed;
 
             // Сидит за картами — сидит, что бы ни решала душа (CardTable).
-            if (Seated) return BodyMotion.Sit;
+            if (Seated) return Strumming ? BodyMotion.Strum : BodyMotion.Sit;
             if (Digging) return BodyMotion.Dig;
             if (Time.unscaledTime < _challengeUntil) return BodyMotion.Challenge;
             if (Time.time < _gatherUntil) return BodyMotion.Gather;
