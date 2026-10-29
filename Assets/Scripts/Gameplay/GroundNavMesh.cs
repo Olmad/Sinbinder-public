@@ -36,6 +36,18 @@ namespace Sinbinder.Gameplay
             var surface = GetComponent<NavMeshSurface>();
             if (surface == null) return;
 
+            // Брошенные палатки закрыты целиком (DemoSceneBuilder.Furnish: closed) — к павшим не ходят, — но
+            // вещи внутри пеклись ступенькой в шаг агента (0,4 м), и воин шёл поверх палатки (проход демо
+            // 29.10: Косой Ждан у «Палатки павшего 2» на 0,40 м). Всё под такой палаткой — не дорога.
+            foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (!t.name.StartsWith("Палатка павшего") || t.GetComponent<NavMeshModifier>() != null) continue;   // ключ: имя сборщика сцены
+                var not = t.gameObject.AddComponent<NavMeshModifier>();
+                not.overrideArea = true;
+                not.area = UnityEngine.AI.NavMesh.GetAreaFromName("Not Walkable");
+                not.applyToChildren = true;
+            }
+
             surface.BuildNavMesh();
             Debug.Log("[ЗЕМЛЯ] Навмеш испечён.");
         }

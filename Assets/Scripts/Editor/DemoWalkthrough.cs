@@ -2535,6 +2535,8 @@ namespace Sinbinder.EditorTools
             return null;
         }
 
+        private static float _zhdanSatAt = -1f;
+
         /// <summary>Час Ждана — сейчас (BalalaikaHabit.HourNow).</summary>
         private static void ZhdanHour()
         {
@@ -2548,7 +2550,11 @@ namespace Sinbinder.EditorTools
         {
             var z = Zhdan();
             if (z == null) return true;
-            if (!BalalaikaHabit.SeatedWith(z)) return false;
+            if (!BalalaikaHabit.SeatedWith(z)) { _zhdanSatAt = -1f; return false; }
+            // Поза входит плавно (переход аниматора) — снимать не в миг посадки, а когда сел (кадр 29.10 вышел
+            // со стойкой вместо игры).
+            if (_zhdanSatAt < 0f) _zhdanSatAt = Time.realtimeSinceStartup;
+            if (Time.realtimeSinceStartup - _zhdanSatAt < 1.5f) return false;
             var lute = GameObject.Find("Balalaika");
             bool held = lute != null && lute.transform.IsChildOf(z.transform);
             Write($"  [ЖДАН] сел на бревно; балалайка у него: {(held ? "да" : "НЕТ")}; звук: {(BalalaikaHabit.Playing(z) ? "есть" : "НЕТ")}");

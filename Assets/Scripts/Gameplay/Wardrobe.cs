@@ -406,33 +406,37 @@ namespace Sinbinder.Gameplay
             // поперёк посоха на портрете 22 октября. Меч он поднимет сам.
             if (warrior is SinbinderPlayer) yield break;
 
+            // Жители «Перетягивания» — живые и мёртвые: до 29.10 живые шли охотниками Ордена (капюшон, колчан,
+            // топор), а мёртвые без ремесла — голым костяком, и деревня была на одно лицо (автор, 28.10: «все
+            // воины очень похожи друг на друга»; кадры поля 29.10 — три одинаковых скелета). Своё — по имени,
+            // без жребия: голова, плечи, что в руках. Ремесло, если есть, — своё, ниже.
+            var trade0 = warrior.Soul != null ? warrior.Soul.Trade : Trade.None;
+            if (Lords.Active && warrior.Team == Team.Neutral && trade0 == Trade.None
+                && warrior.Shell != ShellType.Golem && warrior.Shell != ShellType.Ghost)
+            {
+                int s = Stamp(warrior.Soul != null ? warrior.Soul.Name : warrior.DisplayName);
+                string head = (s % 5) switch { 0 => "StrawHat", 1 => "Hood", 2 => "WideHat", _ => null };
+                if (head != null) yield return head;
+                if (s / 5 % 3 == 0) yield return "Cloak";
+                if (s / 15 % 6 == 0) yield return "Flasks";
+                else if (s / 15 % 6 == 1) yield return "Quiver";
+                if (warrior.Reputation != null && warrior.Reputation.LegendaryUnlocked)
+                {
+                    yield return "Cloak";
+                    yield return "LegendBanner";
+                }
+                string tool = (s / 90 % 6) switch { 0 => "Shovel", 1 => "Club", 2 => "Axe", 3 => "Dagger", 4 => "Sword", _ => null };
+                if (tool != null) foreach (var part in Carried(tool)) yield return part;
+                if (warrior.Soul != null && warrior.Shell != ShellType.Living) yield return "Charm";
+                yield break;
+            }
+
             // Живые: охотники узнаются по чину — ремеслу души. До 16 октября —
             // по имени, которое и было видом («Ловчий»); теперь имя своё
             // («Дитмар»), а вид в душе. Четыре вида, и каждый отличим сверху.
             if (warrior.Shell == ShellType.Living)
             {
                 var rank = warrior.Soul != null ? warrior.Soul.Trade : Trade.None;
-
-                // Жители «Перетягивания» — не охотники Ордена: до 29.10 все шли сюда в капюшоне, с колчаном
-                // и топором, и деревня была на одно лицо (автор, 28.10: «все воины очень похожи друг на друга»).
-                // Своё — по имени, без жребия: голова, плечи, что в руках.
-                if (Lords.Active && warrior.Team == Team.Neutral && rank == Trade.None)
-                {
-                    int s = Stamp(warrior.Soul != null ? warrior.Soul.Name : warrior.DisplayName);
-                    string head = (s % 5) switch { 0 => "StrawHat", 1 => "Hood", 2 => "WideHat", _ => null };
-                    if (head != null) yield return head;
-                    if (s / 5 % 3 == 0) yield return "Cloak";
-                    if (s / 15 % 6 == 0) yield return "Flasks";
-                    else if (s / 15 % 6 == 1) yield return "Quiver";
-                    if (warrior.Reputation != null && warrior.Reputation.LegendaryUnlocked)
-                    {
-                        yield return "Cloak";
-                        yield return "LegendBanner";
-                    }
-                    string tool = (s / 90 % 6) switch { 0 => "Shovel", 1 => "Club", 2 => "Axe", 3 => "Dagger", 4 => "Sword", _ => null };
-                    if (tool != null) foreach (var part in Carried(tool)) yield return part;
-                    yield break;
-                }
 
                 // Оружие вида — последним: сверху его видно после головы
                 // и плеч, и так же его и перечисляем.
