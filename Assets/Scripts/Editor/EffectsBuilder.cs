@@ -443,8 +443,9 @@ namespace Sinbinder.Utilets
         /// <summary>
         /// Огонь в точке: языки пламени (лицом к камере с любой стороны — у огня нет стороны) и дым над ними.
         /// scale — 1 у костра, ~0,35 у факела. Свет и искры ставит зовущий: у костра и факела они разные.
+        /// bright — насколько светит (1 — костёр); угли под котлом — тусклее (автор, 29.10: «ярко-жёлтый огонь под котлом»).
         /// </summary>
-        public static void Fire(Transform parent, Vector3 at, float scale, float rate, bool smoke = true)
+        public static void Fire(Transform parent, Vector3 at, float scale, float rate, bool smoke = true, float bright = 1f)
         {
             // Сборщик сцен зовёт без «Собрать эффекты» — листы пламени и дыма рисуются при первой нужде.
             if (AssetDatabase.LoadAssetAtPath<Material>(FlameMaterial) == null) Flame();
@@ -485,8 +486,8 @@ namespace Sinbinder.Utilets
                     new[] { new GradientColorKey(new Color(1f, 0.86f, 0.55f), 0f),
                             new GradientColorKey(new Color(1f, 0.52f, 0.16f), 0.45f),
                             new GradientColorKey(new Color(0.55f, 0.10f, 0.03f), 1f) },
-                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f, 0.12f),
-                            new GradientAlphaKey(0.55f, 0.6f), new GradientAlphaKey(0f, 1f) });
+                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f * bright, 0.12f),
+                            new GradientAlphaKey(0.55f * bright, 0.6f), new GradientAlphaKey(0f, 1f) });
                 colour.color = new ParticleSystem.MinMaxGradient(g);
 
                 var size = ps.sizeOverLifetime;

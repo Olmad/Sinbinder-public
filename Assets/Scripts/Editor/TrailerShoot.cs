@@ -203,6 +203,8 @@ namespace Sinbinder.Utilets
                 var foe = Nearest(w.Team == Team.Enemy ? Team.Player : Team.Enemy, w.transform.position);
                 if (foe == null || (foe.transform.position - w.transform.position).sqrMagnitude > 900f) continue;
                 if (w.Team != Team.Player && w.Team != Team.Enemy) continue;
+                // Бой — у лагеря, на свету: в дубле 5 драка ушла за охотниками в тёмное поле.
+                if (w.Team == Team.Player && foe.transform.position.sqrMagnitude > 144f) continue;
                 w.IssueCommand(CommandKind.Attack, foe.transform.position, foe.gameObject);
             }
         }
@@ -302,10 +304,11 @@ namespace Sinbinder.Utilets
             Add("Греховод в бою", 4f, t =>
             {
                 Engage();
+                // У огня, на открытом месте, лицом к схватке: в дублях 4–5 камера за его спиной снимала нутро палатки.
                 var p = SinbinderPlayer.Instance;
-                foreach (var r in p.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
-                return (Head(p) - p.transform.forward * (3f - t * 0.6f) + p.transform.right * 0.9f + Vector3.up * 0.7f,
-                        Head(p) + p.transform.forward * 6f, 44f);
+                Pin(p, greh, Fight());
+                return (Head(p) + p.transform.forward * (3.2f - t * 0.8f) - p.transform.right * 1.2f + Vector3.up * 0.3f,
+                        Head(p) + Vector3.up * 0.3f, 34f);
             });
             Add("ворон над боем", 4f, t =>
             {

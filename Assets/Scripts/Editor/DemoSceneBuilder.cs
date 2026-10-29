@@ -175,7 +175,7 @@ namespace Sinbinder.Utilets
             {
                 pot.name = "Котёл";
                 pot.AddComponent<Sinbinder.Gameplay.Cauldron>();
-                EffectsBuilder.Fire(pot.transform, potAt + new Vector3(0f, 0.04f, 0f), 0.3f, 10f, smoke: false);
+                EffectsBuilder.Fire(pot.transform, potAt + new Vector3(0f, 0.04f, 0f), 0.24f, 8f, smoke: false, bright: 0.45f);
                 Embers(pot.transform, potAt + new Vector3(0f, 0.12f, 0f), 0.25f, 6f);
             }
 

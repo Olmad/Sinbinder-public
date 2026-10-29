@@ -39,7 +39,9 @@ namespace Sinbinder.Gameplay
                 {
                     if (m == null || !m.name.StartsWith("Ember") || !m.HasProperty("_EmissionColor")) continue;
                     m.EnableKeyword("_EMISSION");
-                    m.SetColor("_EmissionColor", new Color(1.0f, 0.42f, 0.14f) * 2.2f);
+                    // ×0,7, а не ×2,2: выше порога свечения (1,05) угли горели ярко-жёлтым пятном (автор, 29.10:
+                    // «ярко-жёлтый огонь под котлом с похлёбкой»); тлеют тёмно-оранжевым.
+                    m.SetColor("_EmissionColor", new Color(1.0f, 0.42f, 0.14f) * 0.7f);
                 }
                 r.materials = mats;
             }
