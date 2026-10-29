@@ -122,6 +122,9 @@ namespace Sinbinder.Utilets
             if (legs != null && legs.enabled) { if (legs.isOnNavMesh) legs.ResetPath(); legs.enabled = false; }
             var look = face - at; look.y = 0f;
             w.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look.sqrMagnitude > 1e-4f ? look : Vector3.forward));
+            // Тело — видно: от первого лица RTS_Camera прячет Греховода (ShowHero), и в дубле 2 камера,
+            // глядя ему в лицо, сняла холм за ним.
+            foreach (var r in w.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
 
         private static List<TrailerCam.Shot> Camp()
@@ -189,9 +192,9 @@ namespace Sinbinder.Utilets
             {
                 var r = Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 40f, 14f, 7f), fire, 45f);
-                var cam = r.position - r.forward * 2.2f + Vector3.up * 0.7f;
+                var cam = r.position - r.forward * 2.2f + Vector3.up * 0.35f;
                 Rim(r, cam);
-                return (cam, r.position + r.forward * 5f, 48f);
+                return (cam, r.position + r.forward * 6f + Vector3.up * 0.6f, 48f);   // вперёд и к горизонту, а не в землю (дубль 2)
             });
             Add("к дороге", 5f, t =>
             {
