@@ -963,8 +963,9 @@ def make_actions(arm, g, shell_name=""):
         # Руки — каждая своя (stance даёт обеим одно «опущены» и один локоть): левая к грифу — поднята
         # вперёд, локоть почти прямой; правая — вдоль тела, локоть согнут, кисть у живота и ходит по струнам.
         pose = s(seated, (60, 0, 0, 0), (8, 2, nod, -6), 0.0)
-        pose["LeftUpperArm"] = ([(Y, 48 + g.down), (X, -48)], None)
-        pose["LeftLowerArm"] = ([(Z, -(22 + g.elbow))], None)
+        # Кадр 29.10: «вытянутая рука слишком прямая» — плечо ниже и вперёд, локоть согнут: кисть на грифе у плеча.
+        pose["LeftUpperArm"] = ([(Y, 50 + g.down), (X, -56)], None)
+        pose["LeftLowerArm"] = ([(Z, -(64 + g.elbow))], None)
         pose["RightUpperArm"] = ([(Y, -(66 + g.down)), (X, -22)], None)
         pose["RightLowerArm"] = ([(Z, 104 + 12 * beat + g.elbow)], None)
         return pose
@@ -1467,6 +1468,10 @@ def main():
     audit_primitives()
 
     out_dir = unity_root() / "Assets" / "Resources" / "Bodies"
+    # --out — писать FBX не в проект: пока идёт пакетный Unity, проект не трогают, а позу смотреть надо.
+    if opt("--out"):
+        out_dir = Path(opt("--out"))
+        out_dir.mkdir(parents=True, exist_ok=True)
 
     chosen = [s for s in SHELLS if only is None or s.name == only]
     if not chosen:
