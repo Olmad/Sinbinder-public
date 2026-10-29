@@ -65,7 +65,75 @@ namespace Sinbinder.Gameplay
                 var w = Make(k, Home(i), setup);
                 if (w != null) _folk.Add(w);
             }
-            Debug.Log($"[КАРТЫ] {name}: жителей {_folk.Count}");
+            if (_people > 0) Build();
+            Debug.Log($"[КАРТЫ] {name}: жителей {_folk.Count}, построек {_built}");
+        }
+
+        private int _built;
+
+        /// <summary>
+        /// Строения очага (автор, 28.10: «не хватает строений и окружения для деревень»; модели — village.py):
+        /// деревня — избы кругом за краем, где ходят жители, входом к очагу, у каждой поленница сбоку и угол
+        /// плетня; колодец у середины. Поле — изб меньше, вместо колодца — поленницы. Бор — без изб: костёр и
+        /// поленница. Всё по формуле от номера очага, без жребия. Ставится после выпечки навмеша, поэтому каждая
+        /// постройка — препятствием, что вырезает себя из навмеша (сквозь избу не ходят).
+        /// </summary>
+        private void Build()
+        {
+            var centre = transform.position;
+            var root = new GameObject("Строения");
+            root.transform.SetParent(transform, false);
+
+            if (_kind != "forest")
+            {
+                int houses = Mathf.Clamp(_people / (_kind == "field" ? 5 : 3), 2, 7);
+                float ring = _radius + 4.5f;
+                float a0 = _seed % 360;
+                for (int i = 0; i < houses; i++)
+                {
+                    float a = (a0 + i * 360f / houses + 9f * ((i * 7) % 3 - 1)) * Mathf.Deg2Rad;
+                    var at = centre + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * ring;
+                    var face = Quaternion.LookRotation(centre - at);      // входом — к очагу
+                    Place(root, "Izba", at, face, new Vector3(5.6f, 4f, 4.6f));
+                    // Поленница — у правого бока, плетень — уголком от левого.
+                    var right = face * Vector3.right;
+                    var back = face * Vector3.back;
+                    Place(root, "Woodpile", at + right * 3.6f + back * 0.6f, face * Quaternion.Euler(0f, 90f, 0f), new Vector3(2.2f, 1.4f, 1f));
+                    Place(root, "Wattle", at - right * 3.8f + back * 1.2f, face * Quaternion.Euler(0f, 90f, 0f), new Vector3(2f, 1.1f, 0.2f));
+                    Place(root, "Wattle", at - right * 2.8f + back * 2.3f, face, new Vector3(2f, 1.1f, 0.2f));
+                }
+                if (_kind == "village")
+                    Place(root, "Well", centre + new Vector3(Mathf.Cos(a0 * Mathf.Deg2Rad), 0f, Mathf.Sin(a0 * Mathf.Deg2Rad)) * 2.5f,
+                          Quaternion.Euler(0f, a0, 0f), new Vector3(1.4f, 1.4f, 1.4f));
+            }
+            else
+            {
+                Place(root, "Campfire", centre, Quaternion.identity, Vector3.zero);
+                Place(root, "Woodpile", centre + new Vector3(3f, 0f, 1.5f), Quaternion.Euler(0f, 30f, 0f), new Vector3(2.2f, 1.4f, 1f));
+            }
+        }
+
+        /// <summary>Поставить вещь из MapProps; size — коробка препятствия навмеша (ноль — без него).</summary>
+        private void Place(GameObject root, string prop, Vector3 at, Quaternion facing, Vector3 size)
+        {
+            var p = MapLoader.Prefab(prop);
+            if (p == null) return;
+            if (NavMesh.SamplePosition(at, out var hit, 3f, NavMesh.AllAreas)) at.y = hit.position.y;
+            var go = Instantiate(p, root.transform);
+            go.transform.SetPositionAndRotation(at, facing * p.transform.rotation);
+            go.transform.localScale = p.transform.localScale;
+            if (size != Vector3.zero)
+            {
+                var block = new GameObject("Препятствие");
+                block.transform.SetParent(go.transform.parent, false);
+                block.transform.SetPositionAndRotation(at + Vector3.up * size.y * 0.5f, facing);
+                var obstacle = block.AddComponent<NavMeshObstacle>();
+                obstacle.shape = NavMeshObstacleShape.Box;
+                obstacle.size = size;
+                obstacle.carving = true;
+                obstacle.carveOnlyStationary = true;
+            }
+            _built++;
         }
 
         /// <summary>

@@ -28,7 +28,7 @@ namespace Sinbinder.Utilets
         private static readonly string[] MapPropNames =
         {
             "Pine", "TallPineA", "TallPineB", "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "Bush",
-            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft",
+            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft", "Izba", "Well", "Wattle", "Woodpile",
         };
 
         private const string MapPropsDir = "Assets/Resources/MapProps";
@@ -754,6 +754,27 @@ namespace Sinbinder.EditorTools
                             Object.DestroyImmediate(lamp.gameObject);
                             dressed++;
                         }
+
+                // Деревня сверху — избы, колодец, плетни, поленницы (village.py, Residents.Build): кадр смотреть глазами.
+                foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                {
+                    if (r.Folk.Count < 4 || r.transform.Find("Строения") == null) continue;
+                    var cam = Camera.main;
+                    if (cam == null) break;
+                    var c = r.transform.position;
+                    FogOfWar.Reveal(c, 45f);
+                    var sun = new GameObject("свет кадра").AddComponent<Light>();
+                    sun.type = LightType.Directional; sun.intensity = 0.7f;
+                    sun.transform.rotation = Quaternion.Euler(55f, 30f, 0f);
+                    var keep = (cam.transform.position, cam.transform.rotation);
+                    cam.transform.position = c + new Vector3(0f, 26f, -20f);
+                    cam.transform.LookAt(c);
+                    Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "деревня сверху");
+                    cam.transform.SetPositionAndRotation(keep.Item1, keep.Item2);
+                    Object.DestroyImmediate(sun.gameObject);
+                    Line($"деревня: построек {r.transform.Find("Строения").childCount}");
+                    break;
+                }
 
                 // Великая охота: в лобби по умолчанию включена; конец по ней — у кого больше верных.
                 Line($"Великая охота: {(MapSession.GreatHunt ? "включена" : "выключена")}, на {HunterWaves.GreatAt / 60f:F0}-й минуте, решает через {HunterWaves.GreatHold / 60f:F0} мин.");
