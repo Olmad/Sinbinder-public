@@ -74,12 +74,48 @@ class _Mute:
         pass
 
 
-def izba(b, part="all"):
+def _window(b, x, wz, win, win_z, side, carved, shutters=2):
+    """
+    Окошко в стене x = const (side — куда наружу, ±1): тёмный проём, подоконник и верхняя доска, ставни
+    (shutters: 2 — обе раскрыты, 1 — одна, вторая сорвана). carved — наличник: боковые доски, низ с подзором
+    и «кокошник» — две доски домиком над окном с серёжкой в середине.
+    """
+    w = win[1] - win[0]
+    h = win_z[1] - win_z[0]
+    b.add(*box((x - 0.02 * side, 0, wz), (0.06, w, h)), bone="", mat=2)
+    b.add(*box((x + 0.05 * side, 0, wz - h / 2 - 0.04), (0.05, w + 0.12, 0.08)), bone="", mat=1)
+    b.add(*box((x + 0.05 * side, 0, wz + h / 2 + 0.04), (0.05, w + 0.12, 0.08)), bone="", mat=1)
+    for k, y in enumerate(win):
+        if k >= shutters: break
+        b.add(*box((x + 0.12 * side, y + math.copysign(0.24, y), wz), (0.05, 0.42, 0.60)), bone="", mat=3)
+    if not carved:
+        return
+    for y in win:
+        b.add(*box((x + 0.07 * side, y + math.copysign(0.05, y), wz), (0.04, 0.09, h + 0.22)), bone="", mat=1)
+    # Подзор — зубцы под подоконником.
+    for i in range(5):
+        y = win[0] + (i + 0.5) * w / 5
+        b.add(*box((x + 0.07 * side, y, wz - h / 2 - 0.15), (0.03, 0.06, 0.12)), bone="", mat=1)
+    # Кокошник: две доски домиком и серёжка.
+    for s in (-1, 1):
+        v, f = box((0, 0, 0), (0.04, w * 0.62, 0.08))
+        v = _tilted(v, -s * math.radians(28), (x + 0.07 * side, s * w * 0.27, wz + h / 2 + 0.20))
+        b.add(v, f, bone="", mat=1)
+    b.add(*sphere((x + 0.08 * side, 0, wz + h / 2 + 0.16), 0.045, scale=(0.6, 1.0, 1.4), segs=8, rings=5), bone="", mat=1)
+
+
+def izba(b, part="all", kind=0):
     """
     Изба: сруб «в обло» (брёвна перекрещены на углах с выпуском), десять венцов; дверь в торце с крыльцом,
     окошко со ставнями сбоку; двускатная крыша из тёса с охлупнем, фронтоны зашиты досками; каменная труба;
     валуны под углами. Материалы: 0 — бревно, 1 — торцы и тёс светлее, 2 — тёмное (проёмы, дверь), 3 — крыша,
-    4 — камень.
+    4 — камень, 5 — железо, 6 — тёмный тёс, 7 — солома.
+
+    Три вида (автор, 29.10: «качество как у поделки новичка» — деревня из одинаковых изб). Сруб и пол у всех
+    один, 5×4 м: убранство (IzbaInterior) встаёт по тем же меркам.
+      0 — тёсовая крыша, окошко со ставнями;
+      1 — соломенная крыша круче, два окна с резными наличниками, труба у другого ската;
+      2 — ветхая: двух досок крыши нет, ставня одна, труба осыпалась, нижней ступени нет.
     """
     W, D = 5.0, 4.0                    # по X — длина, по Y — ширина; дверь — в торце -Y
     r = 0.12
@@ -109,7 +145,7 @@ def izba(b, part="all"):
         _wall_x(bw, -hd, -hw, hw, z, r, gaps=front_gap)
         _wall_x(bw, hd, -hw, hw, z, r)
         side_gap = [win] if win_z[0] < zy < win_z[1] else []
-        _wall_y(bw, -hw, -hd, hd, zy, r)
+        _wall_y(bw, -hw, -hd, hd, zy, r, gaps=side_gap if kind == 1 else [])
         _wall_y(bw, hw, -hd, hd, zy, r, gaps=side_gap)
 
     top = 0.30 + courses * step       # верх сруба
@@ -128,44 +164,79 @@ def izba(b, part="all"):
         bw.add(*box((x, -hd, 0.30 + door_top / 2), (0.10, 0.26, door_top)), bone="", mat=1)
     bw.add(*box((0, -hd, 0.30 + door_top + 0.04), (1.10, 0.26, 0.10)), bone="", mat=1)
 
-    # Крыльцо: две ступени и площадка.
+    # Крыльцо: две ступени и площадка (у ветхой нижней ступени нет).
     bw.add(*box((0, -hd - 0.55, 0.22), (1.4, 0.9, 0.12)), bone="", mat=1)
-    bw.add(*box((0, -hd - 1.15, 0.10), (1.2, 0.35, 0.10)), bone="", mat=1)
+    if kind != 2:
+        bw.add(*box((0, -hd - 1.15, 0.10), (1.2, 0.35, 0.10)), bone="", mat=1)
 
-    # Окошко: тёмный проём, рама, ставни раскрыты.
+    # Окошко: тёмный проём, рама, ставни раскрыты; у второго вида — с наличником и ещё одно напротив.
     wz = (win_z[0] + win_z[1]) / 2 - 0.08
-    bw.add(*box((hw - 0.02, 0, wz), (0.06, win[1] - win[0], win_z[1] - win_z[0])), bone="", mat=2)
-    bw.add(*box((hw + 0.05, 0, wz), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)       # подоконник
-    bw.add(*box((hw + 0.05, 0, wz + (win_z[1] - win_z[0]) / 2 + 0.04), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)
-    for y in win:
-        bw.add(*box((hw + 0.12, y + math.copysign(0.24, y), wz), (0.05, 0.42, 0.60)), bone="", mat=3)   # ставни — тёс крыши
+    _window(bw, hw, wz, win, win_z, 1, carved=kind == 1, shutters=1 if kind == 2 else 2)
+    if kind == 1:
+        _window(bw, -hw, wz, win, win_z, -1, carved=True)
 
-    # Крыша: два ската из тёса (продольные доски), угол 38°, свес 0,45; конёк вдоль X.
-    pitch = math.radians(38)
-    over = 0.45
+    # Крыша: два ската, конёк вдоль X. Тёс — 38°, свес 0,45; солома — круче (46°) и толще, свес шире.
+    thatch = kind == 1
+    pitch = math.radians(46 if thatch else 38)
+    over = 0.60 if thatch else 0.45
     run = hd + over
     # Скат кладётся от свеса: у края крыши (hd + over) — на уровне верха сруба, и выпуски брёвен под ним.
     rise = math.tan(pitch) * (hd + over)
     ridge_z = top + rise
     slope = run / math.cos(pitch)
-    boards = 9
-    for side in (-1, 1):
-        for i in range(boards):
-            t = (i + 0.5) / boards
-            dy = side * (t * run)
-            dz = ridge_z - t * run * math.tan(pitch)
-            w = slope / boards * 1.05
-            v, f = box((0, 0, 0), (W + 2 * over, w * 1.02, 0.09))
-            v = _tilted(v, -side * pitch, (0.0, dy, dz))
-            br.add(v, f, bone="", mat=3 if i % 2 == 0 else 6)   # через доску — темнее: тёс читается полосами
-    # Причелины — доски по краю ската над фронтонами: закрывают торцы тёса, край крыши читается.
-    for x in (-hw - over, hw + over):
+    if thatch:
+        # Солома: пласт на скат, по свесу и по краям — увязанные снопы, на коньке — толстый валик.
+        # Пласт тонкий, под ним ничего не видно; поверх — ряды снопов внахлёст, как черепица: каждый ряд —
+        # валик вдоль ската, чуть волной (по номеру ряда, не наугад). Пласт один (было: только он — читался доской).
+        rows = 8
         for side in (-1, 1):
-            v, f = box((0, 0, 0), (0.07, slope + 0.1, 0.22))
-            v = _tilted(v, -side * pitch, (x, side * run * 0.5, ridge_z - run * 0.5 * math.tan(pitch) + 0.02))
-            br.add(v, f, bone="", mat=1)
-    # Охлупень — тёсаное бревно на коньке, с выпуском.
-    br.add(*tube((-hw - over - 0.15, 0, ridge_z + 0.08), (hw + over + 0.15, 0, ridge_z + 0.08), 0.15, 0.15, segs=8), bone="", mat=1)
+            v, f = box((0, 0, 0), (W + 2 * over + 0.2, slope * 1.02, 0.10))
+            v = _tilted(v, -side * pitch, (0.0, side * run * 0.5, ridge_z - run * 0.5 * math.tan(pitch) + 0.04))
+            br.add(v, f, bone="", mat=7)
+            for i in range(rows):
+                t = (i + 0.7) / rows
+                y = side * t * run
+                z = ridge_z - t * run * math.tan(pitch) + 0.10
+                sag = 0.03 * _wobble(i, 3 + side)
+                br.add(*tube((-hw - over - 0.1, y, z + sag), (hw + over + 0.1, y, z - sag), 0.13, 0.13, segs=7), bone="", mat=7)
+            br.add(*tube((-hw - over - 0.1, side * run, top + 0.02), (hw + over + 0.1, side * run, top + 0.02), 0.17, 0.17, segs=8), bone="", mat=7)
+            for x in (-hw - over - 0.08, hw + over + 0.08):
+                br.add(*tube((x, 0, ridge_z + 0.14), (x, side * run, top + 0.04), 0.15, 0.15, segs=7), bone="", mat=7)
+        br.add(*tube((-hw - over - 0.2, 0, ridge_z + 0.22), (hw + over + 0.2, 0, ridge_z + 0.22), 0.24, 0.24, segs=10), bone="", mat=7)
+        # Прижимные жерди поверх соломы на коньке — по ним солома читается увязанной, а не пластом.
+        for i in range(5):
+            x = -hw - over + (i + 0.5) * (W + 2 * over) / 5
+            for side in (-1, 1):
+                br.add(*tube((x, 0, ridge_z + 0.30), (x, side * 0.9, ridge_z + 0.30 - 0.9 * math.tan(pitch)), 0.035, 0.035, segs=5), bone="", mat=0)
+    else:
+        boards = 9
+        # У ветхой двух досок нет — сквозь крышу видно стропила и небо.
+        missing = {(-1, 3), (1, 6)} if kind == 2 else set()
+        for side in (-1, 1):
+            for i in range(boards):
+                if (side, i) in missing: continue
+                t = (i + 0.5) / boards
+                dy = side * (t * run)
+                dz = ridge_z - t * run * math.tan(pitch)
+                w = slope / boards * 1.05
+                v, f = box((0, 0, 0), (W + 2 * over, w * 1.02, 0.09))
+                v = _tilted(v, -side * pitch, (0.0, dy, dz))
+                br.add(v, f, bone="", mat=3 if i % 2 == 0 else 6)   # через доску — темнее: тёс читается полосами
+        if kind == 2:
+            # Стропила под сорванными досками.
+            for x in (-hw * 0.5, 0.0, hw * 0.5):
+                for side in (-1, 1):
+                    v, f = box((0, 0, 0), (0.08, slope, 0.10))
+                    v = _tilted(v, -side * pitch, (x, side * run * 0.5, ridge_z - run * 0.5 * math.tan(pitch) - 0.10))
+                    br.add(v, f, bone="", mat=0)
+        # Причелины — доски по краю ската над фронтонами: закрывают торцы тёса, край крыши читается.
+        for x in (-hw - over, hw + over):
+            for side in (-1, 1):
+                v, f = box((0, 0, 0), (0.07, slope + 0.1, 0.22))
+                v = _tilted(v, -side * pitch, (x, side * run * 0.5, ridge_z - run * 0.5 * math.tan(pitch) + 0.02))
+                br.add(v, f, bone="", mat=1)
+        # Охлупень — тёсаное бревно на коньке, с выпуском.
+        br.add(*tube((-hw - over - 0.15, 0, ridge_z + 0.08), (hw + over + 0.15, 0, ridge_z + 0.08), 0.15, 0.15, segs=8), bone="", mat=1)
 
     # Фронтоны — над короткими стенами (x = ±hw): вертикальные доски треугольником под скаты.
     for x in (-hw, hw):
@@ -180,9 +251,17 @@ def izba(b, part="all"):
                 h0 = h1 = ridge_z - top - 0.08 - 0.02
             bw.add(*_board(x, y0, y1, top, max(0.03, h0), max(0.03, h1), 0.06), bone="", mat=1)
 
-    # Труба: камень, выше конька.
-    br.add(*box((hw * 0.45, hd * 0.35, top + rise * 0.5 + 0.4), (0.55, 0.55, rise + 1.0)), bone="", mat=4)
-    br.add(*box((hw * 0.45, hd * 0.35, ridge_z + 0.95), (0.68, 0.68, 0.12)), bone="", mat=4)
+    # Труба: камень, выше конька. У соломенной — над другим скатом; у ветхой осыпалась ниже конька, без шапки.
+    cy = -hd * 0.35 if kind == 1 else hd * 0.35
+    tall = rise * 0.95 if kind == 2 else rise + 1.0
+    br.add(*box((hw * 0.45, cy, top + tall / 2 - 0.1), (0.55, 0.55, tall)), bone="", mat=4)
+    if kind != 2:
+        br.add(*box((hw * 0.45, cy, ridge_z + 0.95), (0.68, 0.68, 0.12)), bone="", mat=4)
+    else:
+        # Осыпавшийся камень лежит на скате — высота по скату, а не наугад.
+        for dx, dy in ((0.55, 0.35), (0.85, 0.75), (0.30, 1.15)):
+            y = cy + dy
+            br.add(*box((hw * 0.45 + dx, y, ridge_z - abs(y) * math.tan(pitch) + 0.14), (0.22, 0.18, 0.12)), bone="", mat=4)
 
 
 def well(b):
@@ -342,6 +421,8 @@ def cradle(b):
             b.add(*tube((x, y, 0.88), (x * 0.2, y * 0.2, 2.1), 0.008, 0.008, segs=4), bone="", mat=2)
 
 
+IZBA_MATS = [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK, STRAW]
+
 VILLAGE = [
     Prop("Pechka", pechka, [CLAY, SOOT, IRON, LOG]),
     Prop("IzbaTable", table, [LOG, LINEN, POT]),
@@ -349,9 +430,15 @@ VILLAGE = [
     Prop("PotShelf", pot_shelf, [LOG, POT, SOOT]),
     Prop("Spinner", spinner, [LOG, LINEN, DARK]),
     Prop("Cradle", cradle, [LOG, CLOTH_RED, DARK]),
-    Prop("Izba", izba, [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
-    Prop("IzbaWalls", lambda b: izba(b, "walls"), [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
-    Prop("IzbaRoof", lambda b: izba(b, "roof"), [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
+    Prop("Izba", izba, IZBA_MATS),
+    Prop("IzbaWalls", lambda b: izba(b, "walls"), IZBA_MATS),
+    Prop("IzbaRoof", lambda b: izba(b, "roof"), IZBA_MATS),
+    Prop("IzbaB", lambda b: izba(b, kind=1), IZBA_MATS),
+    Prop("IzbaWallsB", lambda b: izba(b, "walls", 1), IZBA_MATS),
+    Prop("IzbaRoofB", lambda b: izba(b, "roof", 1), IZBA_MATS),
+    Prop("IzbaC", lambda b: izba(b, kind=2), IZBA_MATS),
+    Prop("IzbaWallsC", lambda b: izba(b, "walls", 2), IZBA_MATS),
+    Prop("IzbaRoofC", lambda b: izba(b, "roof", 2), IZBA_MATS),
     Prop("Well", well, [LOG, LOG_END, DARK, STONE, IRON]),
     Prop("Wattle", wattle, [LOG, ("Withy", (0.300, 0.240, 0.165, 1.0)), DARK]),
     Prop("Woodpile", woodpile, [LOG, LOG_END, DARK, ROOF]),
