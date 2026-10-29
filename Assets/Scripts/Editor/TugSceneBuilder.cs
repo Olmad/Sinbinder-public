@@ -28,7 +28,7 @@ namespace Sinbinder.Utilets
         private static readonly string[] MapPropNames =
         {
             "Pine", "TallPineA", "TallPineB", "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "Bush",
-            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "LogBench", "GrassTuft",
+            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft",
         };
 
         private const string MapPropsDir = "Assets/Resources/MapProps";

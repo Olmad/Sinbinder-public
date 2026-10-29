@@ -325,6 +325,33 @@ def torch(b):
           bone="", mat=2)
 
 
+def torch_stand(b):
+    """
+    Стоячий факел — шест в земле (автор, 29.10: «они односторонние сейчас, а у стоячих факелов не должно быть
+    стороны»). Со всех сторон одинаковый: шест 1,7 м с упором у земли (три клина), железная корзинка из четырёх
+    прутьев с обручем, в ней — пук смоляной лучины и огонь. Огонь рисует свет и частицы игры, здесь — огарок.
+    Материалы: 0 — шест, 1 — железо, 2 — тлеющее.
+    """
+    b.add(*tube((0, 0, -0.15), (0, 0, 1.62), 0.045, 0.035, segs=8), bone="", mat=0)
+    for k in range(3):
+        a = math.radians(k * 120 + 15)
+        b.add(*tube((math.cos(a) * 0.05, math.sin(a) * 0.05, 0.22), (math.cos(a) * 0.20, math.sin(a) * 0.20, -0.02),
+                    0.025, 0.018, segs=5), bone="", mat=0)
+    # Корзинка: четыре прута от шеста вверх-вширь и обруч.
+    for k in range(4):
+        a = math.radians(k * 90 + 45)
+        b.add(*tube((math.cos(a) * 0.03, math.sin(a) * 0.03, 1.55), (math.cos(a) * 0.11, math.sin(a) * 0.11, 1.80),
+                    0.009, 0.009, segs=4), bone="", mat=1)
+    b.add(*ring((0, 0, 1.80), 0.11, 0.010, segs=14, rsegs=4), bone="", mat=1)
+    b.add(*ring((0, 0, 1.62), 0.055, 0.010, segs=12, rsegs=4), bone="", mat=1)
+    # Лучина пуком и огарок.
+    for k in range(5):
+        a = math.radians(k * 72)
+        b.add(*tube((math.cos(a) * 0.03, math.sin(a) * 0.03, 1.60), (math.cos(a) * 0.05, math.sin(a) * 0.05, 1.86),
+                    0.014, 0.010, segs=4), bone="", mat=0)
+    b.add(*sphere((0, 0, 1.86), 0.07, scale=(1.0, 1.0, 0.8), segs=10, rings=6), bone="", mat=2)
+
+
 # ---------------------------------------------------------------- склеп
 
 def crypt_gate(b):
@@ -1002,6 +1029,7 @@ PROPS = [
     Prop("Banner", banner, [CRIMSON, WOOD, GOLD]),
     Prop("Palisade", palisade, [WOOD, DARK, IRON]),
     Prop("Torch", torch, [WOOD, IRON, EMBER]),
+    Prop("TorchStand", torch_stand, [WOOD, IRON, EMBER]),
 
     Prop("CryptGate", crypt_gate, [STONE, DARK, DARK]),
     Prop("Throne", throne, [STONE, DARK, DARK]),

@@ -1395,16 +1395,24 @@ namespace Sinbinder.Utilets
             parent.SetParent(basket);
             parent.position = ground;
 
-            var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            pole.name = "Шест";
-            pole.transform.SetParent(parent);
-            pole.transform.position = ground + new Vector3(0f, 0.75f, 0f);
-            pole.transform.localScale = new Vector3(0.09f, 0.75f, 0.09f);
-            Cover(pole, "Ground048");
-            Object.DestroyImmediate(pole.GetComponent<Collider>());
-
-            var top = ground + new Vector3(0f, 1.55f, 0f);
-            Prop("Torch", parent, top, 0f, 0.8f);
+            // Стоячий факел — шест в земле, со всех сторон одинаковый (props.py: TorchStand). До 29.10 здесь
+            // стоял цилиндр-шест, а на нём — настенный факел с держателем: у дороги он смотрел в одну сторону
+            // (автор: «они односторонние сейчас»). Нет модели — прежний шест с факелом.
+            Vector3 top;
+            if (Prop("TorchStand", parent, ground, 0f) != null)
+                top = ground + new Vector3(0f, 1.86f - 0.45f, 0f);
+            else
+            {
+                var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                pole.name = "Шест";
+                pole.transform.SetParent(parent);
+                pole.transform.position = ground + new Vector3(0f, 0.75f, 0f);
+                pole.transform.localScale = new Vector3(0.09f, 0.75f, 0.09f);
+                Cover(pole, "Ground048");
+                Object.DestroyImmediate(pole.GetComponent<Collider>());
+                top = ground + new Vector3(0f, 1.55f, 0f);
+                Prop("Torch", parent, top, 0f, 0.8f);
+            }
 
             var glow = new GameObject("Огонь у дороги");
             glow.transform.SetParent(parent);
@@ -4105,6 +4113,7 @@ namespace Sinbinder.Utilets
                 case "LogBench":
                 case "TentPeg":
                 case "Torch":
+                case "TorchStand":
                     return "Planks037A";
 
                 case "Rock":
