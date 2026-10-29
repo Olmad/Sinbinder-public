@@ -77,6 +77,13 @@ namespace Sinbinder.Dev
             (Vector3 from, Vector3 at, float fov) pose;
             try { pose = Shots[_shot].Camera(t); }
             catch (Exception e) { Debug.LogWarning($"[ТРЕЙЛЕР] камера «{Shots[_shot].Name}»: {e.Message}"); pose = (_cam.transform.position, _cam.transform.position + _cam.transform.forward, 40f); }
+            // Между тем, на что смотрим, и камерой — стена (палатка, изба)? Камера — перед ней (дубль 4: «Греховод
+            // в бою» снят изнутри палатки — чёрный кадр). Воины не в счёт: прошедший мимо не двигает камеру.
+            var back = pose.from - pose.at;
+            float reach = back.magnitude;
+            if (reach > 0.6f && Physics.Raycast(pose.at, back / reach, out var wall, reach, ~0, QueryTriggerInteraction.Ignore)
+                && wall.collider.GetComponentInParent<Warrior>() == null)
+                pose.from = wall.point - back / reach * 0.3f;
             _cam.transform.position = pose.from;
             var dir = pose.at - pose.from;
             if (dir.sqrMagnitude > 1e-6f) _cam.transform.rotation = Quaternion.LookRotation(dir.normalized);

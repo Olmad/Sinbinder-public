@@ -177,6 +177,36 @@ namespace Sinbinder.Utilets
             Debug.Log($"[ТРЕЙЛЕР] набег: {(RaidEvent.Stage(director) ? "развёрнут" : "НЕ развёрнут")}");
         }
 
+        private static int _engagedAt = -999;
+        private static Light _fightLight;
+
+        /// <summary>
+        /// В бой — приказом (дубль 4: охотники и наши стояли друг против друга — воины в драку без приказа не
+        /// лезут, это и есть игра, но ролику нужна схватка). Свои бьют ближнего охотника, охотники — ближнего
+        /// своего (не Греховода); раз в секунду. И тёплый свет над схваткой: бьются на краю лагеря, в темноте.
+        /// </summary>
+        private static void Engage()
+        {
+            var f = Fight();
+            if (_fightLight == null)
+            {
+                _fightLight = new GameObject("свет схватки").AddComponent<Light>();
+                _fightLight.type = LightType.Point; _fightLight.color = new Color(1f, 0.62f, 0.32f);
+                _fightLight.range = 9f; _fightLight.intensity = 2.6f; _fightLight.shadows = LightShadows.None;
+            }
+            _fightLight.transform.position = f + new Vector3(0.8f, 3.2f, -0.6f);
+            if (Time.frameCount - _engagedAt < TrailerCam.Fps) return;
+            _engagedAt = Time.frameCount;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w is SinbinderPlayer) continue;
+                var foe = Nearest(w.Team == Team.Enemy ? Team.Player : Team.Enemy, w.transform.position);
+                if (foe == null || (foe.transform.position - w.transform.position).sqrMagnitude > 900f) continue;
+                if (w.Team != Team.Player && w.Team != Team.Enemy) continue;
+                w.IssueCommand(CommandKind.Attack, foe.transform.position, foe.gameObject);
+            }
+        }
+
         private static List<TrailerCam.Shot> Camp()
         {
             var greh = Vector3.zero + new Vector3(0.6f, 0f, -3.4f);
@@ -215,6 +245,7 @@ namespace Sinbinder.Utilets
             //      вороном (Raid); здесь — они, схватка у огня, Карган в бою, охотник крупно.
             Add("охотники выходят", 4f, t =>
             {
+                Engage();
                 var c = Enemies(out int n);
                 if (n == 0) return (TrailerCam.Glide(new Vector3(-30f, 1.6f, -24f), new Vector3(-20f, 1.5f, -15f), t), fire + Vector3.up * 1.4f, 40f);
                 var back = c - fire; back.y = 0f; back = back.normalized;
@@ -227,23 +258,27 @@ namespace Sinbinder.Utilets
             });
             Add("схватка", 4f, t =>
             {
+                Engage();
                 var f = Fight();
                 return (TrailerCam.Orbit(f, 30f + t * 45f, 3.4f, 1.3f) + TrailerCam.Breath(t * 4f, 0.05f), f + Vector3.up * 0.9f, 36f);
             });
             Add("Карган в бою", 3.2f, t =>
             {
+                Engage();
                 var k = Named("Карган");
                 if (k == null) { var f = Fight(); return (TrailerCam.Orbit(f, 200f, 3f, 1.4f), f + Vector3.up, 32f); }
                 return (Head(k) + k.transform.forward * (2.4f - t * 0.6f) + k.transform.right * 0.5f + Vector3.up * 0.1f, Head(k), 32f);
             });
             Add("охотник крупно", 2.5f, t =>
             {
+                Engage();
                 var e = Nearest(Team.Enemy, fire);
                 if (e == null) return (TrailerCam.Orbit(fire, 150f, 6f, 1.5f), fire + Vector3.up, 40f);
                 return (Head(e) + e.transform.forward * (2.0f - t * 0.4f) - e.transform.right * 0.4f, Head(e), 30f);
             });
             Add("вверх перед ударом", 2.5f, t =>
             {
+                Engage();
                 var f = Fight();
                 return (TrailerCam.Glide(f + new Vector3(0f, 1.6f, -3.5f), f + new Vector3(0f, 13f, -8f), t), f, 45f);
             });
@@ -251,6 +286,7 @@ namespace Sinbinder.Utilets
             // ---- Удар, 44,2–47,2: камера падает сверху в схватку — не стоит, как в дубле 3 («в середине всё замирает»).
             Add("удар — в схватку", 3f, t =>
             {
+                Engage();
                 var f = Fight();
                 float k = 1f - (1f - t) * (1f - t) * (1f - t);   // резко в начале, мягко в конце
                 return (Vector3.Lerp(f + new Vector3(0f, 16f, -7f), f + new Vector3(1.5f, 2.2f, -3.2f), k), f + Vector3.up * 0.8f, 44f);
@@ -258,12 +294,14 @@ namespace Sinbinder.Utilets
             // ---- Путь, 47,2–59,8: бой сбоку проездом, Греховод в бою, ворон над боем.
             Add("бой сбоку", 4.6f, t =>
             {
+                Engage();
                 var f = Fight();
                 var side = new Vector3(1f, 0f, 0.35f).normalized;
                 return (f + side * (-5f + t * 10f) + new Vector3(0f, 1.4f, -5f), f + Vector3.up * 0.9f, 38f);
             });
             Add("Греховод в бою", 4f, t =>
             {
+                Engage();
                 var p = SinbinderPlayer.Instance;
                 foreach (var r in p.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
                 return (Head(p) - p.transform.forward * (3f - t * 0.6f) + p.transform.right * 0.9f + Vector3.up * 0.7f,
