@@ -496,5 +496,15 @@ namespace Sinbinder.Gameplay
             if (_instance == null) return;
             _instance.Stamp(at, radius, seen: false);
         }
+
+        /// <summary>
+        /// Снимок прогона без тумана (кадр деревни и избы выходил чёрным: Reveal ложится в текстуру к следующему
+        /// кадру, а снимок — в этом): на время съёмки шейдер видит чистую текстуру, потом — свою.
+        /// </summary>
+        public static void ShotClear(bool clear)
+        {
+            if (_instance == null) return;
+            Shader.SetGlobalTexture(TexId, clear ? Texture2D.whiteTexture : (Texture)_instance._texture);
+        }
     }
 }

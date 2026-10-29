@@ -750,7 +750,9 @@ namespace Sinbinder.EditorTools
                             var lamp = new GameObject("свет кадра").AddComponent<Light>();
                             lamp.type = LightType.Point; lamp.range = 6f; lamp.intensity = 3f;
                             lamp.transform.position = w.transform.position + w.transform.forward * 1.5f + Vector3.up * 2f;
+                            FogOfWar.ShotClear(true);
                             Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "житель " + (dressed + 1), w.transform);
+                            FogOfWar.ShotClear(false);
                             Object.DestroyImmediate(lamp.gameObject);
                             dressed++;
                         }
@@ -769,6 +771,9 @@ namespace Sinbinder.EditorTools
                     var keep = (cam.transform.position, cam.transform.rotation);
                     cam.transform.position = c + new Vector3(0f, 26f, -20f);
                     cam.transform.LookAt(c);
+                    FogOfWar.ShotClear(true);
+                    var canvases = new System.Collections.Generic.List<Canvas>();
+                    foreach (var cv in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None)) if (cv.enabled) { cv.enabled = false; canvases.Add(cv); }
                     Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "деревня сверху");
                     cam.transform.SetPositionAndRotation(keep.Item1, keep.Item2);
                     Object.DestroyImmediate(sun.gameObject);
@@ -786,11 +791,14 @@ namespace Sinbinder.EditorTools
                         cam.transform.position = izba.transform.position + izba.transform.forward * 3.5f + Vector3.up * 6.5f;
                         cam.transform.LookAt(izba.transform.position);
                         Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "изба изнутри");
+                        if (roof != null) foreach (var rr in roof.GetComponentsInChildren<Renderer>()) rr.enabled = true;
                         cam.transform.SetPositionAndRotation(keep2.Item1, keep2.Item2);
                         Object.DestroyImmediate(lamp.gameObject);
                         int things = izba.GetComponentsInChildren<IzbaThing>().Length;
                         Line($"изба изнутри: вещей под F {things}");
                     }
+                    foreach (var cv in canvases) if (cv != null) cv.enabled = true;
+                    FogOfWar.ShotClear(false);
                     break;
                 }
 

@@ -140,7 +140,8 @@ namespace Sinbinder.Gameplay
                 if (agent != null && agent.enabled && agent.isOnNavMesh) agent.ResetPath();
                 if (agent != null) agent.enabled = false;
                 // Сидящего обходят: ноги выключены, но препятствие — на месте (без него в него садились и шли).
-                var block = GetComponent<NavMeshObstacle>() ?? gameObject.AddComponent<NavMeshObstacle>();
+                // TryGetComponent, а не «??»: пустой компонент в Unity — не null для «??» (поток ошибок 29.10).
+                if (!TryGetComponent<NavMeshObstacle>(out var block)) block = gameObject.AddComponent<NavMeshObstacle>();
                 block.shape = NavMeshObstacleShape.Capsule; block.radius = 0.35f; block.height = 1.2f; block.carving = false;
                 block.enabled = true;
                 transform.SetPositionAndRotation(_sat, _facing);

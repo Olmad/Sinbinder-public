@@ -372,12 +372,25 @@ namespace Sinbinder.Dialogue
                 float distance = Mathf.Lerp(_cameraDistance, _cameraDistance - _pushIn, k) * _scale;
                 float sway = Mathf.Sin(t) * _swayAmount * direction;
 
-                Vector3 pos = Frame(anchor, face, side, distance, sway);
-
                 // Камера может уйти посреди плана вместе со сценой.
                 var cam = Cam();
                 if (cam == null) yield break;
 
+                // Говорящий жив — кадр за ним: сдвинулся — план следом; повернулся — лицом к камере (автор, 29.10:
+                // Хорь при разговоре с ответами отворачивался, при «Вызове» Каргана камера снимала не то — план
+                // стоял там, где говорящий был в начале).
+                if (Target != null)
+                {
+                    var now = new Vector3(Target.position.x, anchor.y, Target.position.z);
+                    var moved = now - anchor;
+                    if (moved.sqrMagnitude > 0.0004f) { anchor = now; lookTarget += moved; }
+                    var toCam = cam.transform.position - Target.position; toCam.y = 0f;
+                    if (toCam.sqrMagnitude > 0.01f)
+                        Target.rotation = Quaternion.Slerp(Target.rotation, Quaternion.LookRotation(toCam),
+                                                           1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                }
+
+                Vector3 pos = Frame(anchor, face, side, distance, sway);
                 cam.transform.position = pos;
                 cam.transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
 

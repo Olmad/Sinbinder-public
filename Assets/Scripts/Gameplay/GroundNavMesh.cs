@@ -66,6 +66,12 @@ namespace Sinbinder.Gameplay
             _again = false;
             var surface = GetComponent<NavMeshSurface>();
             if (surface == null) return;
+            // Подвижное — не земля: двери склепов и прочее с препятствием (NavMeshObstacle) вырезают себя сами;
+            // запёкшись, открытая створка становилась стеной (поле 29.10: «наружу при открытой двери: PathPartial»).
+            foreach (var o in FindObjectsByType<UnityEngine.AI.NavMeshObstacle>(FindObjectsSortMode.None))
+                if (o.GetComponent<NavMeshModifier>() == null) o.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+            foreach (var d in FindObjectsByType<CryptDoor>(FindObjectsSortMode.None))
+                if (d.Leaf != null && d.Leaf.GetComponent<NavMeshModifier>() == null) d.Leaf.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             surface.BuildNavMesh();
             Debug.Log("[ЗЕМЛЯ] Навмеш перепечён: встали постройки.");
         }
