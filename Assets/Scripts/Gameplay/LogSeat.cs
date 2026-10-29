@@ -88,6 +88,52 @@ namespace Sinbinder.Gameplay
 
         public string Prompt => Loc.T("F — сесть на бревно");
 
+        /// <summary>Ближнее бревно к точке (не дальше <paramref name="max"/>); нет — null. Зовёт Ждан с балалайкой.</summary>
+        public static LogSeat Nearest(Vector3 from, float max)
+        {
+            LogSeat best = null;
+            float d = max;
+            foreach (var s in Live)
+            {
+                if (s == null || s == Taken) continue;
+                float k = CampFocus.GroundDistance(from, s.transform.position);
+                if (k < d) { d = k; best = s; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Как сесть на это бревно тому, кто подходит, — та же мерка, что у Греховода (<see cref="Sit"/>): ближняя
+        /// половина бревна, лицом к огню, таз — над корой. stand — где встать перед бревном.
+        /// </summary>
+        public bool PoseFor(Transform who, out Vector3 stand, out Vector3 sat, out Quaternion facing)
+        {
+            stand = sat = default; facing = Quaternion.identity;
+            if (who == null || _renderer == null) return false;
+            var axis = transform.right; axis.y = 0f;
+            if (axis.sqrMagnitude < 1e-4f) axis = Vector3.right;
+            axis.Normalize();
+            var mf = GetComponent<MeshFilter>();
+            float length = mf != null && mf.sharedMesh != null ? mf.sharedMesh.bounds.size.x * Mathf.Abs(transform.lossyScale.x) : 1.9f;
+            var middle = Centre; middle.y = transform.position.y;
+            float along = Mathf.Clamp(Vector3.Dot(who.position - middle, axis), -length * 0.25f, length * 0.25f);
+            var seat = middle + axis * along;
+            var toward = who.position - seat;
+            var fire = NearestFire(seat);
+            if (fire.HasValue) toward = fire.Value - seat;
+            var across = Vector3.Cross(Vector3.up, axis);
+            var forward = Vector3.Dot(toward, across) >= 0f ? across : -across;
+            float hip = 0.95f;
+            var hips = Find(who, "Hips");
+            if (hips != null) hip = Mathf.Max(0.3f, hips.position.y - who.position.y);
+            sat = seat + forward * 0.12f;
+            sat.y = _renderer.bounds.max.y + 0.02f - hip * SeatedHips;
+            facing = Quaternion.LookRotation(forward);
+            stand = seat + forward * 0.6f;
+            stand.y = transform.position.y;
+            return true;
+        }
+
         public void Sit()
         {
             var hero = SinbinderPlayer.Instance;

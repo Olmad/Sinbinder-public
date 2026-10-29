@@ -541,6 +541,8 @@ namespace Sinbinder.EditorTools
                 // Приметы (облачная, 26.10; автор): ворон на плече Каргана, Гурт тенью за Хорем,
                 // Ждан с балалайкой — проверить, что встали.
                 S("лагерь: ворон, тень Гурта, балалайка Ждана", null, Habits, 3f),
+                // Ждан берёт балалайку и садится на бревно, а не в воздух (автор, 28.10) — ждём и снимаем.
+                S("лагерь: Ждан сел с балалайкой на бревно", ZhdanHour, ZhdanSeated, 40f),
 
                 // Ворон летает (автор, 27.10: «ворон не улетает и не прилетает»): поднять и снять в полёте.
                 S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
@@ -2521,6 +2523,38 @@ namespace Sinbinder.EditorTools
             bool back = held != null && RecordHands.Holding == held;
             shelf?.PutBack();
             Write($"  [ПЛАСТИНКИ] на землю: {(lying ? "легла" : "НЕТ")}; поднята снова: {(back ? "да" : "НЕТ")}; на полку: {(RecordHands.Empty ? "да" : "НЕТ")}");
+            return true;
+        }
+
+        private static Warrior Zhdan()
+        {
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w.DisplayName.Contains("Ждан") && !w.IsDead) return w;
+            return null;
+        }
+
+        /// <summary>Час Ждана — сейчас (BalalaikaHabit.HourNow).</summary>
+        private static void ZhdanHour()
+        {
+            var z = Zhdan();
+            if (z == null) { Write("  [ЖДАН] Ждана нет"); return; }
+            BalalaikaHabit.HourNow(z);
+        }
+
+        /// <summary>Сидит на бревне с балалайкой: таз над корой, балалайка у него; кадр вблизи — смотреть глазами.</summary>
+        private static bool ZhdanSeated()
+        {
+            var z = Zhdan();
+            if (z == null) return true;
+            if (!BalalaikaHabit.SeatedWith(z)) return false;
+            var lute = GameObject.Find("Balalaika");
+            bool held = lute != null && lute.transform.IsChildOf(z.transform);
+            Write($"  [ЖДАН] сел на бревно; балалайка у него: {(held ? "да" : "НЕТ")}; звук: {(BalalaikaHabit.Playing(z) ? "есть" : "НЕТ")}");
+            var mark = new GameObject("метка кадра");
+            mark.transform.position = z.transform.position - Vector3.up * 0.4f;
+            Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Ждан на бревне с балалайкой", mark.transform, z.transform.forward);
+            UnityEngine.Object.Destroy(mark);
+            BalalaikaHabit.Shift = 0f;
             return true;
         }
 

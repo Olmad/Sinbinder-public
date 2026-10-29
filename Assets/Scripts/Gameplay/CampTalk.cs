@@ -61,11 +61,15 @@ namespace Sinbinder.Gameplay
             // Лагерь живёт и под открытием (21 октября), но молча: облачко
             // поверх надписи над лагерем — не жизнь, а помеха кадру.
             if (OpeningReveal.Busy) return;
-            _next = Time.time + Every;
+            // «Перетягивание»: говорят жители у очагов — чаще и о своём (VillageLines), и только на виду у Греховода.
+            bool village = Lords.Active;
+            _next = Time.time + (village ? VillageEvery : Every);
 
-            if (!Pick(out var first, out var second)) return;
+            Warrior first, second;
+            bool found = village ? PickVillage(out first, out second) : Pick(out first, out second);
+            if (!found) return;
 
-            var (line, answer) = Dialogue.CampLines.Exchange(first, second);
+            var (line, answer) = village ? Dialogue.VillageLines.Exchange(first, second) : Dialogue.CampLines.Exchange(first, second);
             UI.SpeechBubbles.Say(first, line);
             Mouth(first);
             StartCoroutine(AnswerLater(second, answer));
@@ -149,6 +153,42 @@ namespace Sinbinder.Gameplay
         }
 
         private float Last(Warrior w) => _spoke.TryGetValue(w, out float t) ? t : float.MinValue;
+
+        /// <summary>Раз во сколько секунд говорят жители «Перетягивания».</summary>
+        public const float VillageEvery = 30f;
+        private const float VillageSight = 40f;
+
+        /// <summary>
+        /// Пара жителей «Перетягивания»: ничьи, не Греховоды, без приказа и не в бою, ближе 3,5 м друг к другу,
+        /// на виду у Греховода (до 40 м, не в тумане); из пар — дольше всех молчавшая.
+        /// </summary>
+        private bool PickVillage(out Warrior first, out Warrior second)
+        {
+            first = second = null;
+            if (!SinbinderPlayer.Exists) return false;
+            var idle = new List<Warrior>();
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+            {
+                if (w == null || w.IsDead || w.Team != Team.Neutral || w.HasCommand || RivalLord.LordOf(w) != null) continue;
+                if (CampFocus.GroundDistance(w.transform.position, SinbinderPlayer.Where) > VillageSight || FogOfWar.Hides(w)) continue;
+                idle.Add(w);
+            }
+            idle.Sort((x, y) => string.CompareOrdinal(x.DisplayName, y.DisplayName));
+            float best = float.MaxValue;
+            for (int i = 0; i < idle.Count; i++)
+                for (int j = i + 1; j < idle.Count; j++)
+                {
+                    var a = idle[i];
+                    var b = idle[j];
+                    if (CampFocus.GroundDistance(a.transform.position, b.transform.position) > Near) continue;
+                    float heard = Mathf.Max(Last(a), Last(b));
+                    if (heard >= best) continue;
+                    best = heard;
+                    first = Last(a) <= Last(b) ? a : b;
+                    second = first == a ? b : a;
+                }
+            return first != null;
+        }
 
         private static bool Together(Warrior a, Warrior b)
         {

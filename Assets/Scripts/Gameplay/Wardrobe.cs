@@ -413,6 +413,27 @@ namespace Sinbinder.Gameplay
             {
                 var rank = warrior.Soul != null ? warrior.Soul.Trade : Trade.None;
 
+                // Жители «Перетягивания» — не охотники Ордена: до 29.10 все шли сюда в капюшоне, с колчаном
+                // и топором, и деревня была на одно лицо (автор, 28.10: «все воины очень похожи друг на друга»).
+                // Своё — по имени, без жребия: голова, плечи, что в руках.
+                if (Lords.Active && warrior.Team == Team.Neutral && rank == Trade.None)
+                {
+                    int s = Stamp(warrior.Soul != null ? warrior.Soul.Name : warrior.DisplayName);
+                    string head = (s % 5) switch { 0 => "StrawHat", 1 => "Hood", 2 => "WideHat", _ => null };
+                    if (head != null) yield return head;
+                    if (s / 5 % 3 == 0) yield return "Cloak";
+                    if (s / 15 % 6 == 0) yield return "Flasks";
+                    else if (s / 15 % 6 == 1) yield return "Quiver";
+                    if (warrior.Reputation != null && warrior.Reputation.LegendaryUnlocked)
+                    {
+                        yield return "Cloak";
+                        yield return "LegendBanner";
+                    }
+                    string tool = (s / 90 % 6) switch { 0 => "Shovel", 1 => "Club", 2 => "Axe", 3 => "Dagger", 4 => "Sword", _ => null };
+                    if (tool != null) foreach (var part in Carried(tool)) yield return part;
+                    yield break;
+                }
+
                 // Оружие вида — последним: сверху его видно после головы
                 // и плеч, и так же его и перечисляем.
                 string held;
