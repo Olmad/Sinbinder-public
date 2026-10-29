@@ -61,7 +61,7 @@ namespace Sinbinder.Audio
 
             EmotionType emotion = EmotionType.Calm;
             VoiceType voiceType = Timbre();
-            float pitch = _basePitch * Height() * Personal();
+            float pitch = _basePitch * Height() * Personal() * Brew.Pitch;   // варево Хальда: голоса выше
             float variation = _pitchVariation;
             float duration = _duration * Pace();
 

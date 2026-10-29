@@ -65,43 +65,55 @@ namespace Sinbinder.Gameplay
 
         public string Prompt => Loc.T("F — попробовать из котла");
 
+        /// <summary>Сколько раз Греховод пробовал варево — за всю игру (эффект копится: <see cref="Brew"/>).</summary>
+        public static int Sips { get; private set; }
+
+        /// <summary>Новая игра — прошлое забыто (зовёт сброс новой игры).</summary>
+        public static void Forget() => Sips = 0;
+
+        /// <summary>
+        /// F у котла — глоток. Автор, 28.10: «зачем вообще обсуждать похлёбку? ладно Ю и Алхимик. Зачем это
+        /// Греховоду? какую-нибудь одну фразу можно. По утверждению Алхимика там не похлёбка — было бы забавно
+        /// добавлять какой-нибудь странный эффект при пробе. И чтобы он накапливался с каждым использованием».
+        /// Отзываются только двое, кому котёл свой: Хальд (это его варево) и Толстый Ю; прочие молчат. Греховод —
+        /// одно слово, при первом глотке.
+        /// </summary>
         public void Taste()
         {
-            Warrior who = null;
-            float best = Hear;
-            bool cookNear = false;
+            Sips++;
+            if (Sips == 1) UI.SpeechBubbles.Say(SinbinderPlayer.Instance, Loc.T("Горько."));
+            Brew.Sip(Sips, transform.position);
+
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
             {
-                if (w == null || w.IsDead || w is SinbinderPlayer || w.Team != Team.Player || w.Soul == null) continue;
-                float d = CampFocus.GroundDistance(w.transform.position, transform.position);
-                if (d > Hear) continue;
-                bool cook = w.Soul.Trade == Trade.Alchemist;
-                // Алхимик рядом — говорит он: это его варево.
-                if (cook && !cookNear) { cookNear = true; who = w; best = d; continue; }
-                if (!cookNear && d < best) { best = d; who = w; }
+                if (w == null || w.IsDead || w is SinbinderPlayer || w.Soul == null) continue;
+                if (CampFocus.GroundDistance(w.transform.position, transform.position) > Hear) continue;
+                string line = w.Soul.Trade == Trade.Alchemist ? Cook(Sips)
+                            : w.Soul.Sin == SinType.Gluttony ? Glutton(Sips) : null;
+                if (line == null) continue;
+                UI.SpeechBubbles.Say(w, line);
+                if (w.TryGetComponent<WarriorAnimation>(out var body)) body.TalkFor(3f);
             }
-
-            // Вслух, над головой того, кто ответил, — не строкой в журнале боя (автор, 27.10:
-            // «при взаимодействии кто-то комментирует в логе»). Рядом никого — Греховод сам.
-            if (who == null) { UI.SpeechBubbles.Say(SinbinderPlayer.Instance, Loc.T("Похлёбка густая, с костями. Есть можно.")); return; }
-            UI.SpeechBubbles.Say(who, Says(who));
-            if (who.TryGetComponent<WarriorAnimation>(out var body)) body.TalkFor(3f);
         }
 
-        /// <summary>Что скажет тот, кто рядом, — по ремеслу и греху. Без чисел.</summary>
-        private static string Says(Warrior w)
+        /// <summary>Хальд — тревожнее с каждым глотком: он знает, что сварил.</summary>
+        private static string Cook(int sip) => sip switch
         {
-            if (w.Soul.Trade == Trade.Alchemist) return Loc.T("Не трогайте котелок, владыка. Это не похлёбка.");
-            return w.Soul.Sin switch
-            {
-                SinType.Gluttony => Loc.T("Сядьте, владыка, похлёбка ещё тёплая. Хуже от неё не станет."),
-                SinType.Greed => Loc.T("Мясо в похлёбке — моё, владыка. Я его нашёл."),
-                SinType.Envy => Loc.T("Ему положили больше. Всегда ему больше."),
-                SinType.Pride => Loc.T("Я из общего котла не ем, владыка."),
-                SinType.Wrath => Loc.T("Опять одна вода."),
-                SinType.Sloth => Loc.T("Мешайте сами, владыка. Я мешал вчера."),
-                _ => Loc.T("Пахнет как дома. Почти."),
-            };
-        }
+            1 => Loc.T("Владыка! Это не похлёбка."),
+            2 => Loc.T("Не пейте больше. Я серьёзно."),
+            3 => Loc.T("Голоса тонкие? Пройдёт. Наверное."),
+            4 => Loc.T("Ноги сами несут? Это корень. Он такой."),
+            5 => Loc.T("Глаза… Я же говорил — не трогайте."),
+            _ => Loc.T("Вы тоже его видите? У огня?"),
+        };
+
+        /// <summary>Толстый Ю — завидует, чем дальше, тем сильнее.</summary>
+        private static string Glutton(int sip) => sip switch
+        {
+            1 => Loc.T("Мне оставьте!"),
+            2 => Loc.T("Вкусно ведь? Вкусно."),
+            3 => Loc.T("А мне не плохо. А вам?"),
+            _ => Loc.T("Я тоже хочу так светиться."),
+        };
     }
 }
