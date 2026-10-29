@@ -82,6 +82,8 @@ def main():
     if "--stems" in sys.argv:
         for stem in sorted(Path(sys.argv[sys.argv.index("--stems") + 1]).glob("*.wav")):
             y, r = read(stem)
+            if len(y) < len(x): y = np.concatenate([y, np.zeros((len(x) - len(y),) + y.shape[1:], dtype=y.dtype)])   # одна шкала времени с общим
+            y = y[:len(x)]
             panels.append(panel(y, r, stem.stem, ref))
     sheet = Image.new("RGB", (panels[0].width, sum(p.height for p in panels)), (0, 0, 0))
     yy = 0
