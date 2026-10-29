@@ -156,6 +156,13 @@ namespace Sinbinder.Gameplay
         {
             if (_seat != null) transform.SetPositionAndRotation(_sat, _facing);
             InHands();
+            // Сел кто-то вплотную (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и Вейн
+            // в одной точке) — встать и искать другое бревно.
+            if (_seat != null && Time.frameCount % 15 == 0 && Taken(_sat))
+            {
+                Stand();
+                Take();
+            }
         }
 
         private Transform _left, _right;

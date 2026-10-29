@@ -72,6 +72,10 @@ namespace Sinbinder.Gameplay
                 if (o.GetComponent<NavMeshModifier>() == null) o.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             foreach (var d in FindObjectsByType<CryptDoor>(FindObjectsSortMode.None))
                 if (d.Leaf != null && d.Leaf.GetComponent<NavMeshModifier>() == null) d.Leaf.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+            // И те, кто ходит: первая выпечка была до людей, а к перепечке воины и Греховод уже стоят — в том
+            // числе в проёме двери склепа, — и их тела пеклись стенами.
+            foreach (var a in FindObjectsByType<UnityEngine.AI.NavMeshAgent>(FindObjectsSortMode.None))
+                if (a.GetComponent<NavMeshModifier>() == null) a.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             surface.BuildNavMesh();
             Debug.Log("[ЗЕМЛЯ] Навмеш перепечён: встали постройки.");
         }
