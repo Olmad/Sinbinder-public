@@ -118,6 +118,14 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        /// <summary>Поднять первого ворона, что на плече, — фоторежим (L): ждать его часа на съёмке незачем.</summary>
+        public static RavenFlight LaunchAny()
+        {
+            foreach (var r in Live)
+                if (r != null && !r._orphan && r._master != null && !r._aloft) return Launch(r._master);
+            return null;
+        }
+
         public void Configure(Warrior master, Transform shoulder)
         {
             _master = master;

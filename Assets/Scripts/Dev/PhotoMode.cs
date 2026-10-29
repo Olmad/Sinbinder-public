@@ -16,6 +16,8 @@ namespace Sinbinder.Dev
     /// * <b>T</b> — время: обычное → медленно → стоп → обычное.
     /// * <b>Ctrl+1…9</b> — запомнить камеру; <b>1…9</b> — плавно перейти к ней. Камеры помнятся между запусками.
     /// * <b>Пробел</b> — проезд по запомненным камерам по порядку, плавной кривой; <b>[ ]</b> — медленнее/быстрее.
+    /// * <b>R</b> — камера привязана к ворону (держит то положение, в каком привязали: встань сбоку — снимет сбоку);
+    ///   <b>G</b> — к тому, что под мышью; ещё раз — отвязать.
     /// * <b>P</b> — снимок в двойном разрешении в папку Screenshots рядом с игрой; <b>H</b> — подсказка.
     /// </summary>
     public class PhotoMode : MonoBehaviour
@@ -75,8 +77,13 @@ namespace Sinbinder.Dev
                 if (ctrl) Save(i); else BlendTo(i);
             }
 
+            if (Input.GetKeyDown(KeyCode.R)) { if (_follow != null) Unfollow(); else FollowRaven(); }
+            if (Input.GetKeyDown(KeyCode.L)) { var bird = Sinbinder.Gameplay.RavenFlight.LaunchAny(); _note = bird != null ? Loc.T("Ворон поднят") : Loc.T("Ворон уже в полёте или его нет"); _helpUntil = Time.unscaledTime + 1.5f; }
+            if (Input.GetKeyDown(KeyCode.G)) { if (_follow != null) Unfollow(); else FollowUnderMouse(); }
+
             if (_playing) { Playing(); return; }
             if (_blendT >= 0f) { Blending(); return; }
+            if (_follow != null) { Following(); return; }
             Fly(ctrl);
         }
 
@@ -225,6 +232,66 @@ namespace Sinbinder.Dev
             return 0.5f * (2f * p1 + (p2 - p0) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 + (3f * p1 - p0 - 3f * p2 + p3) * t3);
         }
 
+        // ---------------------------------------------------------- привязка
+
+        // Автор, 29.10: «сбоку снять полёт ворона, чтобы камера была к нему привязана». Камера держит то
+        // положение относительно цели, в каком её привязали (смещение — в осях цели по курсу), и смотрит
+        // туда же; догоняет плавно — без дрожи от взмахов.
+        private Transform _follow;
+        private Vector3 _offset;
+        private Quaternion _look;
+
+        private void FollowRaven()
+        {
+            var bird = Object.FindFirstObjectByType<Sinbinder.Gameplay.RavenFlight>();
+            if (bird == null) { _note = Loc.T("Ворона в сцене нет"); _helpUntil = Time.unscaledTime + 2f; return; }
+            Follow(bird.transform);
+        }
+
+        private void FollowUnderMouse()
+        {
+            if (!Physics.Raycast(_cam.ScreenPointToRay(Input.mousePosition), out var hit, 400f)) return;
+            var w = hit.collider.GetComponentInParent<Sinbinder.Gameplay.Warrior>();
+            Follow(w != null ? w.transform : hit.collider.transform);
+        }
+
+        private void Follow(Transform target)
+        {
+            _follow = target;
+            var heading = Heading(target);
+            _offset = Quaternion.Inverse(heading) * (_cam.transform.position - target.position);
+            _look = Quaternion.Inverse(heading) * _cam.transform.rotation;
+            _note = Loc.F("Камера привязана: {0} (R или G — отвязать)", target.name);
+            _helpUntil = Time.unscaledTime + 2f;
+        }
+
+        private void Unfollow()
+        {
+            _follow = null;
+            SyncAngles();
+            _note = Loc.T("Камера отвязана");
+            _helpUntil = Time.unscaledTime + 1.5f;
+        }
+
+        /// <summary>Курс цели — только поворот вокруг вертикали: птица клюёт и кренится, а камера не качается.</summary>
+        private static Quaternion Heading(Transform t)
+        {
+            var f = t.forward; f.y = 0f;
+            return f.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(f) : Quaternion.identity;
+        }
+
+        private void Following()
+        {
+            if (_follow == null || !_follow.gameObject.activeInHierarchy) { Unfollow(); return; }
+            var heading = Heading(_follow);
+            var want = _follow.position + heading * _offset;
+            float k = 1f - Mathf.Exp(-6f * Time.unscaledDeltaTime);
+            _cam.transform.position = Vector3.Lerp(_cam.transform.position, want, k);
+            _cam.transform.rotation = Quaternion.Slerp(_cam.transform.rotation, heading * _look, k);
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > 0.01f) _cam.fieldOfView = Mathf.Clamp(_cam.fieldOfView - wheel * 2f, 12f, 100f);
+        }
+
         // ---------------------------------------------------------- снимок
 
         private void Shot()
@@ -244,7 +311,7 @@ namespace Sinbinder.Dev
         void OnGUI()
         {
             if (!Active || Time.unscaledTime > _helpUntil) return;
-            var box = new Rect(16f, 16f, 520f, _note != null && Time.unscaledTime < _helpUntil - 25f ? 60f : 220f);
+            var box = new Rect(16f, 16f, 600f, _note != null && Time.unscaledTime < _helpUntil - 25f ? 60f : 240f);
             GUILayout.BeginArea(box, GUI.skin.box);
             if (!string.IsNullOrEmpty(_note) && _helpUntil - Time.unscaledTime < 3.5f) GUILayout.Label(_note);
             else
@@ -255,6 +322,7 @@ namespace Sinbinder.Dev
                 GUILayout.Label(Loc.T("T — время: обычное / медленно / стоп"));
                 GUILayout.Label(Loc.T("Ctrl+1…9 — запомнить камеру, 1…9 — перейти к ней"));
                 GUILayout.Label(Loc.T("Пробел — проезд по камерам, [ ] — медленнее / быстрее"));
+                GUILayout.Label(Loc.T("L — поднять ворона, R — привязать камеру к ворону, G — к тому, что под мышью"));
                 GUILayout.Label(Loc.T("P — снимок, H — подсказка"));
             }
             GUILayout.EndArea();
