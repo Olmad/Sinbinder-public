@@ -63,6 +63,9 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
+            // Ноги выключены (сидит на бревне — BalalaikaHabit): ни пути, ни поворотов.
+            if (!_agent.enabled) return;
+
             if (_isAttacking && _attackTarget != null)
             {
                 float dist = Vector3.Distance(transform.position, _attackTarget.transform.position);

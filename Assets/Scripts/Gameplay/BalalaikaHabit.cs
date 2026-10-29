@@ -134,8 +134,10 @@ namespace Sinbinder.Gameplay
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (_seat != null)
             {
-                if (agent != null && agent.enabled && agent.isOnNavMesh) { agent.ResetPath(); agent.isStopped = true; }
-                if (agent != null) { agent.updatePosition = false; agent.updateRotation = false; }
+                // Сидящий — не помеха идущим: ноги из толпы вон, пока сидит (проход демо 29.10: Хорь стоял,
+                // упершись в Ждана на бревне у прохода).
+                if (agent != null && agent.enabled && agent.isOnNavMesh) agent.ResetPath();
+                if (agent != null) agent.enabled = false;
                 transform.SetPositionAndRotation(_sat, _facing);
                 if (_body != null) _body.Seated = true;
                 _seated = true;
@@ -159,8 +161,8 @@ namespace Sinbinder.Gameplay
             transform.position = _stand;
             if (agent != null)
             {
+                agent.enabled = true;
                 agent.Warp(_stand);
-                agent.updatePosition = true; agent.updateRotation = true;
                 if (agent.isOnNavMesh) agent.isStopped = false;
             }
             _seat = null;
@@ -207,6 +209,25 @@ namespace Sinbinder.Gameplay
             }
             _seat = LogSeat.Nearest(transform.position, 14f);
             if (_seat != null && !_seat.PoseFor(transform, out _stand, out _sat, out _facing)) _seat = null;
+            // Встать перед бревном — на землю, не на палатку (проход демо 29.10: шёл по палатке на 0,4 м):
+            // не вышло с той стороны — с другой; ни с какой — играть стоя.
+            if (_seat != null)
+            {
+                float ground = _seat.transform.position.y;
+                var middle = _seat.Centre; middle.y = ground;
+                if (Ground(_stand, ground, out var here)) _stand = here;
+                else if (Ground(middle * 2f - _stand, ground, out var there)) _stand = there;
+                else _seat = null;
+            }
+        }
+
+        private static bool Ground(Vector3 at, float ground, out Vector3 hit)
+        {
+            hit = at;
+            if (!UnityEngine.AI.NavMesh.SamplePosition(at, out var h, 0.6f, UnityEngine.AI.NavMesh.AllAreas)) return false;
+            if (Mathf.Abs(h.position.y - ground) > 0.15f) return false;
+            hit = h.position;
+            return true;
         }
 
         private void Put()
@@ -221,7 +242,11 @@ namespace Sinbinder.Gameplay
 
         void OnDisable()
         {
-            if (_holding) Put();
+            if (!_holding) return;
+            // Ждана выключают целиком (сцена, набег) — переносить балалайку нельзя, пока он гаснет
+            // (проход демо 29.10: «Cannot set the parent… while deactivating»): она уйдёт вместе с ним.
+            if (!gameObject.activeInHierarchy) { Strum(false); return; }
+            Put();
         }
     }
 }
