@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 W, H, BAR = 1600, 360, 60
 LO, HI = 40.0, 12000.0
@@ -25,7 +25,7 @@ def spectrum(x, sr, cols):
     hop = max(1, (len(x) - n) // cols)
     win = np.hanning(n)
     frames = [x[i:i + n] * win for i in range(0, max(1, len(x) - n), hop)][:cols]
-    mag = np.abs(np.fft.rfft(np.array(frames), axis=1))
+    mag = np.abs(np.fft.rfft(np.array(frames), axis=1)) / (win.sum() / 2)   # синус в полную шкалу — 0 дБ
     freqs = np.fft.rfftfreq(n, 1 / sr)
     rows = np.geomspace(LO, HI, H)
     idx = np.clip(np.searchsorted(freqs, rows), 1, len(freqs) - 1)
@@ -48,7 +48,9 @@ def panel(x, sr, title, ref):
     pic = Image.fromarray(colour(db.T[::-1]))
     img.paste(pic.resize((W, H)), (60, BAR + 24))
     d = ImageDraw.Draw(img)
-    d.text((6, 4), title, fill=(230, 220, 200))
+    try: font = ImageFont.truetype("arial.ttf", 14)   # кириллица: шрифт PIL по умолчанию рисует квадраты
+    except OSError: font = None
+    d.text((6, 4), title, fill=(230, 220, 200), font=font)
     # Громкость по времени.
     l = np.clip((loud - ref - FLOOR) / -FLOOR, 0, 1)
     xs = np.linspace(0, W - 1, len(l))

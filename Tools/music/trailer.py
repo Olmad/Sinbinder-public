@@ -15,11 +15,11 @@
 #   python Tools/music/trailer.py выход.mid
 import sys
 from orchestra import (Orchestra, CHORD, bar, HORN, STR, PAD, CELLO, BASS, BONE, CHOIR, TIMP,
-                       HARP, OOHS, CEL, HARPSI, PIANO, BD, CYM)
+                       HARP, OOHS, CEL, HARPSI, PIANO, PICC, BD, CYM)
 from battles import drum, cymbal, low_pulse
 from rats import MOTIF, motif
 
-BALA, BSN, CLAR, PIZZ = PIANO, CEL, HARPSI, HARP
+BALA, BSN, CLAR, PIZZ = PIANO, CEL, HARPSI, PICC   # пиццикато — на канале пикколо: арфа нужна своя
 PROGRAM = {BALA: 105, BSN: 70, CLAR: 71, PIZZ: 45}
 ROAD = [(62, 0, 1), (64, 1, 1), (65, 2, 1), (67, 3, 1), (69, 4, 2), (67, 6, 1), (65, 7, 1),
         (62, 8, 1), (67, 9, 1), (69, 10, 1), (71, 11, 1), (74, 12, 2), (71, 14, 1), (69, 15, 1),
@@ -36,21 +36,21 @@ def tremolo(s, ch, pitch, at, beats, vel, rate=0.125):
 
 
 def build():
-    s = Orchestra({BALA: 104, BSN: 110, CLAR: 96, PIZZ: 96, HORN: 108, STR: 104, PAD: 70, CELLO: 100,
+    s = Orchestra({BALA: 104, BSN: 110, CLAR: 96, PIZZ: 96, HARP: 84, HORN: 108, STR: 104, PAD: 70, CELLO: 100,
                    BASS: 100, BONE: 104, CHOIR: 88, TIMP: 104, OOHS: 74, 9: 104}, program=PROGRAM)
 
     # 1. Костёр — 1–4: мотив вдвое медленнее тремоло балалайки; ре внизу у виолончели, еле слышно.
     for p, st, d in MOTIF:
-        tremolo(s, BALA, p + 12, bar(1) + st * 2, d * 2 - 0.25, 70)
-    tremolo(s, BALA, 62, bar(4) - 2 + 2, 4, 62)
+        tremolo(s, BALA, p + 12, bar(1) + st * 2, d * 2 - 0.25, 50)
+    tremolo(s, BALA, 62, bar(4), 4, 44)
     s.add(CELLO, 38, bar(2), 12, 40)
-    s.swell(CELLO, bar(2), bar(5), 30, 70)
+    s.swell(CELLO, bar(2), bar(5), 24, 56)
 
     # 2. Крысы — 5–8: фагот, ответ кларнета на кварту выше, пиццикато шагом, тихий подклад.
-    motif(s, BSN, bar(5), 92)
-    motif(s, CLAR, bar(6) + 2, 84, root=55)
-    motif(s, BSN, bar(7), 94, root=46)
-    s.line(CLAR, [(69, 0, 1), (67, 1, 1), (65, 2, 1), (64, 3, 1)], bar(8), 82)
+    motif(s, BSN, bar(5), 78)
+    motif(s, CLAR, bar(6) + 2, 70, root=55)
+    motif(s, BSN, bar(7), 80, root=46)
+    s.line(CLAR, [(69, 0, 1), (67, 1, 1), (65, 2, 1), (64, 3, 1)], bar(8), 70)
     for b, r in enumerate([38, 38, 34, 33]):
         for q in range(4):
             s.add(PIZZ, r if q % 2 == 0 else r + 7, bar(5) + b * 4 + q, 0.45, 64 + (8 if q == 0 else 0))
@@ -60,7 +60,7 @@ def build():
     #    с каждым тактом, струнные тремоло нарастают, к удару — дробь литавр.
     hunt = ['Dm', 'Dm', 'Bb', 'Bb', 'Gm', 'A']
     for b in range(6):
-        v = 64 + b * 7
+        v = 48 + b * 13
         drum(s, BD, bar(9) + b * 4, v, 0.5); drum(s, BD, bar(9) + b * 4 + 0.6, v - 14, 0.5)
         s.add(TIMP, 38, bar(9) + b * 4, 1, v - 6)
         if b >= 3:
@@ -74,7 +74,7 @@ def build():
         for p in CHORD[name]['mid']:
             for i in range(16):
                 s.add(STR, p + 12, bar(9) + b * 4 + i * 0.25, 0.25, 50)
-    s.swell(STR, bar(9), bar(15), 40, 118)
+    s.swell(STR, bar(9), bar(15), 22, 122)
     s.roll(45, bar(14), 4, 60, 118)
 
     # 4. Удар — 15: все на ре минор, держат две доли; дальше — тишина до 16-го такта на третьей доле.
@@ -89,14 +89,14 @@ def build():
 
     # 5. Путь — 17–24: тема Безымянного широко. Валторны и скрипки в октаву, хор и струнные аккордами,
     #    арфа перебором, контрабас корнями, литавры шагами. Выход после тишины — мягче удара, но полнее.
-    road = bar(16) + 3
+    road = bar(16) - 1   # тишина после удара — две доли, не полтора такта (спектр черновика 1: 4 с)
     s.line(HORN, [(p - 12, st, d) for p, st, d in ROAD], road + 1, 100)
     s.line(STR, [(p + 12, st, d) for p, st, d in ROAD], road + 1, 92)
     s.pads(PAD, road + 1, ROAD_CH, 70)
     s.pads(OOHS, road + 1, ROAD_CH, 66)
     s.harp(road + 1, ROAD_CH, 62, 74)
-    s.roots(road + 1, ROAD_CH, 92)
-    s.ostinato(road + 1, ROAD_CH, 60, 74)
+    s.roots(road + 1, ROAD_CH, 80)
+    # без шага виолончелей: низ и так полон (спектр черновика 1: каша ниже до малой)
     s.steps(road + 1, ROAD_CH, 92, both=True)
     s.swell(HORN, road + 1, road + 1 + 32, 90, 120)
 
@@ -111,4 +111,17 @@ if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "trailer.mid"
     s, bpm = build()
     s.save(out, bpm)
+    # --stems папка — каждый канал своим файлом: отрисовать порознь и смотреть спектром (spectro.py --stems),
+    # кто где звучит и кто кого закрывает. Имена — по инструменту.
+    if "--stems" in sys.argv:
+        from pathlib import Path
+        names = {BALA: "балалайка", BSN: "фагот", CLAR: "кларнет", PIZZ: "пиццикато", HORN: "валторны", STR: "скрипки",
+                 PAD: "струнные аккорды", CELLO: "виолончели", BASS: "контрабасы", BONE: "тромбоны", CHOIR: "хор",
+                 TIMP: "литавры", OOHS: "хор без слов", 9: "ударные", HARP: "арфа"}
+        folder = Path(sys.argv[sys.argv.index("--stems") + 1]); folder.mkdir(parents=True, exist_ok=True)
+        for ch in list(s.events):
+            one = Orchestra(s.volume, program=PROGRAM)
+            one.events = {ch: s.events[ch]}
+            one.controls = {ch: s.controls.get(ch, [])}
+            one.save(str(folder / "{:02d} {}.mid".format(ch, names.get(ch, "канал {}".format(ch)))), bpm)
     print("[ТРЕЙЛЕР] {}: нот {}, долей {:.0f}, {:.0f} с".format(out, s.count(), s.end(), s.end() * 60 / bpm))
