@@ -407,6 +407,8 @@ namespace Sinbinder.UI
             if (gramophone != null) Offer(Gaze.Miss(gramophone.transform), gramophone.Prompt, gramophone.Use);
             foreach (var shelf in RecordShelf.InReach()) shelf.Offer(Offer);
             foreach (var seat in LogSeat.InReach()) Offer(Gaze.Miss(seat.Centre, 0.7f), seat.Prompt, seat.Sit);
+            // Убранство избы (IzbaThing): печь, стол, крынки, сундук, банка…
+            foreach (var t in IzbaThing.InReach()) { var thing = t; Offer(Gaze.Miss(thing.transform.position + Vector3.up * 0.5f, 0.8f), thing.Prompt, thing.Use); }
             foreach (var door in CryptDoor.InReach()) Offer(Gaze.Miss(door.Leaf), door.Prompt, door.Toggle);
             // «Перетягивание»: место постройки перед своим склепом — заложить (BuildSite).
             foreach (var s in BuildSite.InReach()) { var site = s; Offer(Gaze.Miss(site.transform.position + Vector3.up * 0.5f, 1.4f), site.Prompt, site.Lay); }

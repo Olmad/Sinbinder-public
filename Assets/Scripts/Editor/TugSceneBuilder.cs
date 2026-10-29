@@ -28,7 +28,7 @@ namespace Sinbinder.Utilets
         private static readonly string[] MapPropNames =
         {
             "Pine", "TallPineA", "TallPineB", "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "Bush",
-            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft", "Izba", "Well", "Wattle", "Woodpile",
+            "Rock", "Stump", "Tent", "Campfire", "Palisade", "Barrel", "Crate", "Torch", "TorchStand", "LogBench", "GrassTuft", "Izba", "IzbaWalls", "IzbaRoof", "Well", "Wattle", "Woodpile", "Pechka", "IzbaTable", "IzbaBed", "PotShelf", "Spinner", "Cradle", "Chest", "SoulJar",
         };
 
         private const string MapPropsDir = "Assets/Resources/MapProps";
@@ -773,6 +773,24 @@ namespace Sinbinder.EditorTools
                     cam.transform.SetPositionAndRotation(keep.Item1, keep.Item2);
                     Object.DestroyImmediate(sun.gameObject);
                     Line($"деревня: построек {r.transform.Find("Строения").childCount}");
+                    // Изба изнутри — крыша снята, сверху: убранство своё (IzbaInterior); кадр смотреть глазами.
+                    var izba = r.GetComponentInChildren<IzbaInterior>();
+                    if (izba != null)
+                    {
+                        var roof = izba.transform.childCount > 1 ? izba.transform.GetChild(1) : null;
+                        if (roof != null) foreach (var rr in roof.GetComponentsInChildren<Renderer>()) rr.enabled = false;
+                        var lamp = new GameObject("свет кадра").AddComponent<Light>();
+                        lamp.type = LightType.Point; lamp.range = 8f; lamp.intensity = 4f;
+                        lamp.transform.position = izba.transform.position + Vector3.up * 3f;
+                        var keep2 = (cam.transform.position, cam.transform.rotation);
+                        cam.transform.position = izba.transform.position + izba.transform.forward * 3.5f + Vector3.up * 6.5f;
+                        cam.transform.LookAt(izba.transform.position);
+                        Sinbinder.Utilets.Snapshot.Now("Docs/Образцы/облик в игре", "изба изнутри");
+                        cam.transform.SetPositionAndRotation(keep2.Item1, keep2.Item2);
+                        Object.DestroyImmediate(lamp.gameObject);
+                        int things = izba.GetComponentsInChildren<IzbaThing>().Length;
+                        Line($"изба изнутри: вещей под F {things}");
+                    }
                     break;
                 }
 

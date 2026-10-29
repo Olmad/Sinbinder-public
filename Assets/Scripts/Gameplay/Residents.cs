@@ -94,7 +94,7 @@ namespace Sinbinder.Gameplay
                     float a = (a0 + i * 360f / houses + 9f * ((i * 7) % 3 - 1)) * Mathf.Deg2Rad;
                     var at = centre + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * ring;
                     var face = Quaternion.LookRotation(centre - at);      // входом — к очагу
-                    Place(root, "Izba", at, face, new Vector3(5.6f, 4f, 4.6f));
+                    Izba(root, at, face, _seed + i * 31);
                     // Поленница — у правого бока, плетень — уголком от левого.
                     var right = face * Vector3.right;
                     var back = face * Vector3.back;
@@ -111,6 +111,28 @@ namespace Sinbinder.Gameplay
                 Place(root, "Campfire", centre, Quaternion.identity, Vector3.zero);
                 Place(root, "Woodpile", centre + new Vector3(3f, 0f, 1.5f), Quaternion.Euler(0f, 30f, 0f), new Vector3(2.2f, 1.4f, 1f));
             }
+        }
+
+        /// <summary>
+        /// Изба, в которую входят (IzbaInterior): стены с полом и крыша — отдельно, убранство своё; навмеш
+        /// перепекается после стройки (GroundNavMesh.Rebake) — стены не пройти, в дверь — войти.
+        /// </summary>
+        private void Izba(GameObject root, Vector3 at, Quaternion face, int stamp)
+        {
+            var walls = MapLoader.Prefab("IzbaWalls");
+            var roofP = MapLoader.Prefab("IzbaRoof");
+            if (walls == null || roofP == null) { Place(root, "Izba", at, face, new Vector3(5.6f, 4f, 4.6f)); return; }
+            if (NavMesh.SamplePosition(at, out var hit, 3f, NavMesh.AllAreas)) at.y = hit.position.y;
+            var house = new GameObject("Изба");
+            house.transform.SetParent(root.transform, false);
+            house.transform.SetPositionAndRotation(at, face);
+            var w = Instantiate(walls, house.transform);
+            w.transform.localPosition = Vector3.zero; w.transform.localRotation = walls.transform.rotation; w.transform.localScale = walls.transform.localScale;
+            var r = Instantiate(roofP, house.transform);
+            r.transform.localPosition = Vector3.zero; r.transform.localRotation = roofP.transform.rotation; r.transform.localScale = roofP.transform.localScale;
+            house.AddComponent<IzbaInterior>().Configure(stamp, r);
+            GroundNavMesh.Rebake();
+            _built++;
         }
 
         /// <summary>Поставить вещь из MapProps; size — коробка препятствия навмеша (ноль — без него).</summary>

@@ -88,6 +88,16 @@ namespace Sinbinder.Gameplay
 
         public string Prompt => Loc.T("F — сесть на бревно");
 
+        /// <summary>Брёвна у точки от ближнего к дальнему (не дальше <paramref name="max"/>) — Ждан ищет свободное.</summary>
+        public static List<LogSeat> Near(Vector3 from, float max)
+        {
+            var got = new List<LogSeat>();
+            foreach (var s in Live)
+                if (s != null && s != Taken && CampFocus.GroundDistance(from, s.transform.position) <= max) got.Add(s);
+            got.Sort((a, b) => CampFocus.GroundDistance(from, a.transform.position).CompareTo(CampFocus.GroundDistance(from, b.transform.position)));
+            return got;
+        }
+
         /// <summary>Ближнее бревно к точке (не дальше <paramref name="max"/>); нет — null. Зовёт Ждан с балалайкой.</summary>
         public static LogSeat Nearest(Vector3 from, float max)
         {

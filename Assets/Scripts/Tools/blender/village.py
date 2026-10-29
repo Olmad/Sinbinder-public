@@ -68,7 +68,13 @@ def _wall_y(b, x, y0, y1, z, r, gaps=(), extend=0.28):
     if e > cur: b.add(*tube((x, cur, z), (x, e, z), r, r, segs=8), bone="", mat=0)
 
 
-def izba(b):
+class _Mute:
+    """Тело, что ничего не берёт: чтобы из одной избы собрать только стены или только крышу."""
+    def add(self, *a, **k):
+        pass
+
+
+def izba(b, part="all"):
     """
     Изба: сруб «в обло» (брёвна перекрещены на углах с выпуском), десять венцов; дверь в торце с крыльцом,
     окошко со ставнями сбоку; двускатная крыша из тёса с охлупнем, фронтоны зашиты досками; каменная труба;
@@ -85,20 +91,26 @@ def izba(b):
     win = (-0.35, 0.35)                # по Y на стене +X
     win_z = (0.95, 1.45)
 
+    # Части: стены с полом и крыша — раздельно (IzbaWalls, IzbaRoof): крыша гаснет, когда Греховод внутри.
+    bw = b if part != "roof" else _Mute()
+    br = b if part != "walls" else _Mute()
+    # Пол — тёс по лагам, вровень с нижним венцом: внутри ходят.
+    bw.add(*box((0, 0, 0.31), (W - 0.18, D - 0.18, 0.05)), bone="", mat=1)
+
     # Валуны-подкладки под углами и серединами — сруб стоит не на земле.
     for i, (x, y) in enumerate(((-hw, -hd), (hw, -hd), (hw, hd), (-hw, hd), (0, -hd), (0, hd))):
-        b.add(*sphere((x, y, 0.10), 0.26, scale=(1.2, 1.0, 0.6), segs=8, rings=5), bone="", mat=4)
+        bw.add(*sphere((x, y, 0.10), 0.26, scale=(1.2, 1.0, 0.6), segs=8, rings=5), bone="", mat=4)
 
     # Венцы: длинные стены (вдоль X) и короткие (вдоль Y) — со сдвигом на полвенца, чтобы углы сцепились.
     for k in range(courses):
         z = 0.30 + k * step
         zy = z + step * 0.5
         front_gap = [door] if z < door_top else []
-        _wall_x(b, -hd, -hw, hw, z, r, gaps=front_gap)
-        _wall_x(b, hd, -hw, hw, z, r)
+        _wall_x(bw, -hd, -hw, hw, z, r, gaps=front_gap)
+        _wall_x(bw, hd, -hw, hw, z, r)
         side_gap = [win] if win_z[0] < zy < win_z[1] else []
-        _wall_y(b, -hw, -hd, hd, zy, r)
-        _wall_y(b, hw, -hd, hd, zy, r, gaps=side_gap)
+        _wall_y(bw, -hw, -hd, hd, zy, r)
+        _wall_y(bw, hw, -hd, hd, zy, r, gaps=side_gap)
 
     top = 0.30 + courses * step       # верх сруба
     # Торцы брёвен на углах — светлые кружки: по ним сруб узнаётся сверху.
@@ -106,27 +118,27 @@ def izba(b):
         z = 0.30 + k * step
         for x in (-hw - 0.28, hw + 0.28):
             for y in (-hd, hd):
-                b.add(*tube((x - 0.01 * math.copysign(1, x), y, z), (x + 0.005 * math.copysign(1, x), y, z), r * 0.92, r * 0.92, segs=8), bone="", mat=1)
+                bw.add(*tube((x - 0.01 * math.copysign(1, x), y, z), (x + 0.005 * math.copysign(1, x), y, z), r * 0.92, r * 0.92, segs=8), bone="", mat=1)
 
     # Дверь: доски тёмные, две железные полосы; косяки.
-    b.add(*box((0, -hd + 0.02, 0.30 + door_top / 2 - 0.05), (0.88, 0.06, door_top - 0.1)), bone="", mat=2)
+    bw.add(*box((door[0] + 0.05, -hd + 0.47, 0.30 + door_top / 2 - 0.05), (0.06, 0.88, door_top - 0.1)), bone="", mat=2)   # распахнута внутрь
     for z in (0.75, 1.55):
-        b.add(*box((0, -hd - 0.02, z), (0.80, 0.02, 0.06)), bone="", mat=5)
+        bw.add(*box((door[0] + 0.09, -hd + 0.47, z), (0.02, 0.80, 0.06)), bone="", mat=5)
     for x in door:
-        b.add(*box((x, -hd, 0.30 + door_top / 2), (0.10, 0.26, door_top)), bone="", mat=1)
-    b.add(*box((0, -hd, 0.30 + door_top + 0.04), (1.10, 0.26, 0.10)), bone="", mat=1)
+        bw.add(*box((x, -hd, 0.30 + door_top / 2), (0.10, 0.26, door_top)), bone="", mat=1)
+    bw.add(*box((0, -hd, 0.30 + door_top + 0.04), (1.10, 0.26, 0.10)), bone="", mat=1)
 
     # Крыльцо: две ступени и площадка.
-    b.add(*box((0, -hd - 0.55, 0.22), (1.4, 0.9, 0.12)), bone="", mat=1)
-    b.add(*box((0, -hd - 1.15, 0.10), (1.2, 0.35, 0.10)), bone="", mat=1)
+    bw.add(*box((0, -hd - 0.55, 0.22), (1.4, 0.9, 0.12)), bone="", mat=1)
+    bw.add(*box((0, -hd - 1.15, 0.10), (1.2, 0.35, 0.10)), bone="", mat=1)
 
     # Окошко: тёмный проём, рама, ставни раскрыты.
     wz = (win_z[0] + win_z[1]) / 2 - 0.08
-    b.add(*box((hw - 0.02, 0, wz), (0.06, win[1] - win[0], win_z[1] - win_z[0])), bone="", mat=2)
-    b.add(*box((hw + 0.05, 0, wz), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)       # подоконник
-    b.add(*box((hw + 0.05, 0, wz + (win_z[1] - win_z[0]) / 2 + 0.04), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)
+    bw.add(*box((hw - 0.02, 0, wz), (0.06, win[1] - win[0], win_z[1] - win_z[0])), bone="", mat=2)
+    bw.add(*box((hw + 0.05, 0, wz), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)       # подоконник
+    bw.add(*box((hw + 0.05, 0, wz + (win_z[1] - win_z[0]) / 2 + 0.04), (0.05, win[1] - win[0] + 0.12, 0.08)), bone="", mat=1)
     for y in win:
-        b.add(*box((hw + 0.12, y + math.copysign(0.24, y), wz), (0.05, 0.42, 0.60)), bone="", mat=3)   # ставни — тёс крыши
+        bw.add(*box((hw + 0.12, y + math.copysign(0.24, y), wz), (0.05, 0.42, 0.60)), bone="", mat=3)   # ставни — тёс крыши
 
     # Крыша: два ската из тёса (продольные доски), угол 38°, свес 0,45; конёк вдоль X.
     pitch = math.radians(38)
@@ -145,15 +157,15 @@ def izba(b):
             w = slope / boards * 1.05
             v, f = box((0, 0, 0), (W + 2 * over, w * 1.02, 0.09))
             v = _tilted(v, -side * pitch, (0.0, dy, dz))
-            b.add(v, f, bone="", mat=3 if i % 2 == 0 else 6)   # через доску — темнее: тёс читается полосами
+            br.add(v, f, bone="", mat=3 if i % 2 == 0 else 6)   # через доску — темнее: тёс читается полосами
     # Причелины — доски по краю ската над фронтонами: закрывают торцы тёса, край крыши читается.
     for x in (-hw - over, hw + over):
         for side in (-1, 1):
             v, f = box((0, 0, 0), (0.07, slope + 0.1, 0.22))
             v = _tilted(v, -side * pitch, (x, side * run * 0.5, ridge_z - run * 0.5 * math.tan(pitch) + 0.02))
-            b.add(v, f, bone="", mat=1)
+            br.add(v, f, bone="", mat=1)
     # Охлупень — тёсаное бревно на коньке, с выпуском.
-    b.add(*tube((-hw - over - 0.15, 0, ridge_z + 0.08), (hw + over + 0.15, 0, ridge_z + 0.08), 0.15, 0.15, segs=8), bone="", mat=1)
+    br.add(*tube((-hw - over - 0.15, 0, ridge_z + 0.08), (hw + over + 0.15, 0, ridge_z + 0.08), 0.15, 0.15, segs=8), bone="", mat=1)
 
     # Фронтоны — над короткими стенами (x = ±hw): вертикальные доски треугольником под скаты.
     for x in (-hw, hw):
@@ -166,11 +178,11 @@ def izba(b):
             h1 = ridge_z - abs(y1) * math.tan(pitch) - top - 0.08
             if y0 < 0 < y1:
                 h0 = h1 = ridge_z - top - 0.08 - 0.02
-            b.add(*_board(x, y0, y1, top, max(0.03, h0), max(0.03, h1), 0.06), bone="", mat=1)
+            bw.add(*_board(x, y0, y1, top, max(0.03, h0), max(0.03, h1), 0.06), bone="", mat=1)
 
     # Труба: камень, выше конька.
-    b.add(*box((hw * 0.45, hd * 0.35, top + rise * 0.5 + 0.4), (0.55, 0.55, rise + 1.0)), bone="", mat=4)
-    b.add(*box((hw * 0.45, hd * 0.35, ridge_z + 0.95), (0.68, 0.68, 0.12)), bone="", mat=4)
+    br.add(*box((hw * 0.45, hd * 0.35, top + rise * 0.5 + 0.4), (0.55, 0.55, rise + 1.0)), bone="", mat=4)
+    br.add(*box((hw * 0.45, hd * 0.35, ridge_z + 0.95), (0.68, 0.68, 0.12)), bone="", mat=4)
 
 
 def well(b):
@@ -243,8 +255,103 @@ def woodpile(b):
     b.add(_tilted(v, -math.radians(10), (0.0, 0.0, 1.17)), f, bone="", mat=3)
 
 
+# ---------------------------------------------------------------- убранство избы
+# Автор, 29.10: «в избу нужна возможность входить, а значит и внутренний интерьер (интерактивный)… разнообразный».
+# Каждая вещь — своя модель: набор и места подбирает игра по избе (IzbaInterior), без жребия.
+
+CLAY = ("Clay", (0.520, 0.470, 0.400, 1.0))          # побелка печи, затёртая сажей
+SOOT = ("Soot", (0.060, 0.055, 0.052, 1.0))
+CLOTH_RED = ("Red Cloth", (0.300, 0.080, 0.070, 1.0))
+LINEN = ("Linen", (0.560, 0.520, 0.440, 1.0))
+POT = ("Pot", (0.380, 0.230, 0.140, 1.0))
+
+
+def pechka(b):
+    """
+    Русская печь: массив 1,6×1,9 м, высота 1,6; сверху лежанка (тёплое место), спереди устье с заслонкой и шесток,
+    дымоход вверх до потолка. Материалы: 0 — побелка, 1 — сажа (устье, края), 2 — заслонка (железо), 3 — дерево
+    (опечек, лавка у печи).
+    """
+    b.add(*box((0, 0, 0.30), (1.62, 1.92, 0.60)), bone="", mat=3)          # опечек — деревянное основание
+    b.add(*box((0, 0, 1.08), (1.58, 1.88, 0.96)), bone="", mat=0)          # тело печи
+    b.add(*box((0, 0.10, 1.62), (1.50, 1.60, 0.12)), bone="", mat=0)       # лежанка — верх
+    b.add(*box((0, -0.96, 1.00), (0.62, 0.04, 0.46)), bone="", mat=1)      # устье — тёмный проём
+    b.add(*box((0, -1.02, 0.98), (0.56, 0.03, 0.40)), bone="", mat=2)      # заслонка
+    b.add(*box((0, -1.05, 0.70), (1.10, 0.25, 0.06)), bone="", mat=0)      # шесток
+    b.add(*box((-0.45, -0.70, 2.20), (0.48, 0.48, 1.30)), bone="", mat=0)  # дымоход
+    b.add(*box((-0.45, -0.70, 1.56), (0.50, 0.50, 0.05)), bone="", mat=1)  # закопчённый край
+    b.add(*box((0.98, 0.0, 0.42), (0.34, 1.80, 0.06)), bone="", mat=3)     # лавка у печи
+
+
+def table(b):
+    """Стол из тёса на козлах и две лавки по бокам; на столе — краюха и миска. 0 — дерево, 1 — светлое (хлеб), 2 — горшок."""
+    b.add(*box((0, 0, 0.76), (1.70, 0.80, 0.06)), bone="", mat=0)
+    for x in (-0.65, 0.65):
+        for s in (-1, 1):
+            b.add(*tube((x, s * 0.28, 0.0), (x, -s * 0.28, 0.73), 0.035, 0.035, segs=6), bone="", mat=0)
+    for y in (-0.70, 0.70):
+        b.add(*box((0, y, 0.44), (1.60, 0.28, 0.05)), bone="", mat=0)
+        for x in (-0.65, 0.65):
+            b.add(*box((x, y, 0.21), (0.06, 0.22, 0.42)), bone="", mat=0)
+    b.add(*sphere((0.35, 0.05, 0.84), 0.11, scale=(1.4, 1.0, 0.6), segs=10, rings=6), bone="", mat=1)   # краюха
+    b.add(*tube((-0.30, -0.05, 0.79), (-0.30, -0.05, 0.86), 0.12, 0.15, segs=12), bone="", mat=2)        # миска
+
+
+def bed(b):
+    """Полати — дощатый настил на столбах с тюфяком и свёрнутым тулупом. 0 — дерево, 1 — тюфяк, 2 — тулуп (тёмная шерсть)."""
+    b.add(*box((0, 0, 0.55), (1.95, 0.95, 0.07)), bone="", mat=0)
+    for x in (-0.92, 0.92):
+        for y in (-0.42, 0.42):
+            b.add(*box((x, y, 0.27), (0.08, 0.08, 0.55)), bone="", mat=0)
+    b.add(*box((0.05, 0, 0.65), (1.80, 0.85, 0.12)), bone="", mat=1)
+    b.add(*tube((-0.70, -0.35, 0.78), (-0.70, 0.35, 0.78), 0.13, 0.13, segs=10), bone="", mat=2)
+
+
+def pot_shelf(b):
+    """Полка на стене с горшками и крынками — разной высоты, по номеру. 0 — дерево, 1 — глина, 2 — тёмное (горлышки)."""
+    for z in (0.9, 1.45):
+        b.add(*box((0, 0, z), (1.40, 0.30, 0.04)), bone="", mat=0)
+        for i in range(5):
+            x = -0.55 + i * 0.27
+            h = 0.16 + 0.07 * ((i * 7 + int(z * 10)) % 3)
+            r = 0.07 + 0.015 * (i % 2)
+            # Крынка точёная, пузатая: дно, брюхо, узкое горло, отогнутый край (было конусом — читалось стаканом).
+            shape = [(0.0, 0.0), (0.62, 0.0), (0.92, 0.18), (1.0, 0.42), (0.86, 0.68), (0.55, 0.84),
+                     (0.52, 0.92), (0.64, 1.0), (0.50, 1.0), (0.0, 0.97)]
+            v, f = props.lathe([(rr * r, zz * h) for rr, zz in shape], 14)
+            b.add([(vx + x, vy, vz + z + 0.02) for vx, vy, vz in v], f, bone="", mat=1 if (i + int(z * 10)) % 3 else 2)
+    for x in (-0.66, 0.66):
+        b.add(*box((x, 0.10, 1.15), (0.04, 0.10, 0.85)), bone="", mat=0)
+
+
+def spinner(b):
+    """Прялка: донце-лавочка, стойка и лопасть с куделью. 0 — дерево, 1 — кудель (светлая), 2 — резьба тёмная."""
+    b.add(*box((0, 0, 0.15), (0.60, 0.22, 0.05)), bone="", mat=0)
+    b.add(*box((0.22, 0, 0.55), (0.06, 0.06, 0.80)), bone="", mat=0)
+    b.add(*box((0.22, 0, 1.08), (0.05, 0.26, 0.34)), bone="", mat=0)
+    b.add(*box((0.20, 0, 1.08), (0.02, 0.18, 0.06)), bone="", mat=2)
+    b.add(*sphere((0.17, 0, 1.12), 0.12, scale=(0.6, 1.0, 1.6), segs=10, rings=6), bone="", mat=1)
+
+
+def cradle(b):
+    """Колыбель-зыбка на верёвках к потолку (пустая). 0 — дерево (лубяной короб), 1 — пелёнка, 2 — верёвки."""
+    b.add(*box((0, 0, 0.75), (0.80, 0.45, 0.26)), bone="", mat=0)
+    b.add(*box((0, 0, 0.82), (0.70, 0.36, 0.06)), bone="", mat=1)
+    for x in (-0.38, 0.38):
+        for y in (-0.20, 0.20):
+            b.add(*tube((x, y, 0.88), (x * 0.2, y * 0.2, 2.1), 0.008, 0.008, segs=4), bone="", mat=2)
+
+
 VILLAGE = [
+    Prop("Pechka", pechka, [CLAY, SOOT, IRON, LOG]),
+    Prop("IzbaTable", table, [LOG, LINEN, POT]),
+    Prop("IzbaBed", bed, [LOG, LINEN, DARK]),
+    Prop("PotShelf", pot_shelf, [LOG, POT, SOOT]),
+    Prop("Spinner", spinner, [LOG, LINEN, DARK]),
+    Prop("Cradle", cradle, [LOG, CLOTH_RED, DARK]),
     Prop("Izba", izba, [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
+    Prop("IzbaWalls", lambda b: izba(b, "walls"), [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
+    Prop("IzbaRoof", lambda b: izba(b, "roof"), [LOG, LOG_END, DARK, ROOF, STONE, IRON, ROOF_DARK]),
     Prop("Well", well, [LOG, LOG_END, DARK, STONE, IRON]),
     Prop("Wattle", wattle, [LOG, ("Withy", (0.300, 0.240, 0.165, 1.0)), DARK]),
     Prop("Woodpile", woodpile, [LOG, LOG_END, DARK, ROOF]),

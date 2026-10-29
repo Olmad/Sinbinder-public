@@ -1,6 +1,7 @@
 // Assets/Scripts/Gameplay/BalalaikaHabit.cs
 // Перевод: текст через Loc
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Sinbinder.Gameplay
 {
@@ -138,6 +139,10 @@ namespace Sinbinder.Gameplay
                 // упершись в Ждана на бревне у прохода).
                 if (agent != null && agent.enabled && agent.isOnNavMesh) agent.ResetPath();
                 if (agent != null) agent.enabled = false;
+                // Сидящего обходят: ноги выключены, но препятствие — на месте (без него в него садились и шли).
+                var block = GetComponent<NavMeshObstacle>() ?? gameObject.AddComponent<NavMeshObstacle>();
+                block.shape = NavMeshObstacleShape.Capsule; block.radius = 0.35f; block.height = 1.2f; block.carving = false;
+                block.enabled = true;
                 transform.SetPositionAndRotation(_sat, _facing);
                 if (_body != null) { _body.Seated = true; _body.Strumming = true; }
                 _seated = true;
@@ -195,6 +200,7 @@ namespace Sinbinder.Gameplay
             Strum(false);
             if (_body != null) { _body.Seated = false; _body.Strumming = false; }
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (TryGetComponent<NavMeshObstacle>(out var block)) block.enabled = false;
             transform.position = _stand;
             if (agent != null)
             {
@@ -244,18 +250,29 @@ namespace Sinbinder.Gameplay
                 _lute.localPosition = new Vector3(0.28f, 0.95f, 0.12f);
                 _lute.localRotation = Quaternion.Euler(0f, 0f, 70f);
             }
-            _seat = LogSeat.Nearest(transform.position, 14f);
-            if (_seat != null && !_seat.PoseFor(transform, out _stand, out _sat, out _facing)) _seat = null;
-            // Встать перед бревном — на землю, не на палатку (проход демо 29.10: шёл по палатке на 0,4 м):
-            // не вышло с той стороны — с другой; ни с какой — играть стоя.
-            if (_seat != null)
+            // Бревно — ближнее свободное (проход демо 29.10: сел в ту же точку, где сидел Вейн Тихий): место на
+            // нём не занято другим; встать перед ним — на землю, не на палатку (там же: шёл по палатке на 0,4 м).
+            _seat = null;
+            foreach (var log in LogSeat.Near(transform.position, 14f))
             {
-                float ground = _seat.transform.position.y;
-                var middle = _seat.Centre; middle.y = ground;
-                if (Ground(_stand, ground, out var here)) _stand = here;
-                else if (Ground(middle * 2f - _stand, ground, out var there)) _stand = there;
-                else _seat = null;
+                if (!log.PoseFor(transform, out var stand, out var sat, out var facing)) continue;
+                if (Taken(sat)) continue;
+                float ground = log.transform.position.y;
+                var middle = log.Centre; middle.y = ground;
+                if (Ground(stand, ground, out var here)) stand = here;
+                else if (Ground(middle * 2f - stand, ground, out var there)) stand = there;
+                else continue;
+                _seat = log; _stand = stand; _sat = sat; _facing = facing;
+                break;
             }
+        }
+
+        /// <summary>Занято ли место: кто-то из живых ближе 0,9 м к нему.</summary>
+        private bool Taken(Vector3 sat)
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w != null && w != _warrior && !w.IsDead && CampFocus.GroundDistance(w.transform.position, sat) < 0.9f) return true;
+            return false;
         }
 
         private static bool Ground(Vector3 at, float ground, out Vector3 hit)

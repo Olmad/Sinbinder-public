@@ -51,5 +51,23 @@ namespace Sinbinder.Gameplay
             surface.BuildNavMesh();
             Debug.Log("[ЗЕМЛЯ] Навмеш испечён.");
         }
+
+        private static bool _again;
+
+        /// <summary>
+        /// Испечь заново в конце кадра — встали постройки (Residents: избы, в которые входят). Сколько бы
+        /// их ни встало за кадр — печём один раз.
+        /// </summary>
+        public static void Rebake() => _again = true;
+
+        void LateUpdate()
+        {
+            if (!_again) return;
+            _again = false;
+            var surface = GetComponent<NavMeshSurface>();
+            if (surface == null) return;
+            surface.BuildNavMesh();
+            Debug.Log("[ЗЕМЛЯ] Навмеш перепечён: встали постройки.");
+        }
     }
 }
