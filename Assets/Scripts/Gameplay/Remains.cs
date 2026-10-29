@@ -159,6 +159,35 @@ namespace Sinbinder.Gameplay
                 : Loc.T("С этого тела взять нечего."));
         }
 
+        /// <summary>
+        /// Положить тело с плеч на землю (автор, 29.10: «отпускание предмета в руках на G») — лежит перед
+        /// Греховодом, поднять снова — F, как любое тело. Не пропадает, как при <see cref="Drop"/>.
+        /// </summary>
+        public static void PutDown()
+        {
+            if (!Carrying || !SinbinderPlayer.Exists) return;
+            var hero = SinbinderPlayer.Instance.transform;
+            var flat = hero.forward; flat.y = 0f;
+            if (flat.sqrMagnitude < 0.01f) flat = Vector3.forward;
+            var at = hero.position + flat.normalized * 0.9f;
+            if (NavMesh.SamplePosition(at, out var hit, 1.5f, NavMesh.AllAreas)) at = hit.position;
+
+            var body = new GameObject("Body_" + _carriedName);   // ключ: так тела зовёт Who
+            body.transform.position = at;
+            var look = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            look.name = "Тело";
+            Object.Destroy(look.GetComponent<Collider>());
+            look.transform.SetParent(body.transform, false);
+            look.transform.localPosition = new Vector3(0f, 0.18f, 0f);
+            look.transform.localRotation = Quaternion.Euler(90f, hero.eulerAngles.y, 0f);
+            look.transform.localScale = new Vector3(0.32f, 0.75f, 0.32f);
+            look.GetComponent<Renderer>().material.color = new Color(0.22f, 0.19f, 0.17f);
+            body.AddComponent<HarvestableBody>().Initialize(_carriedShell, 0, false, "");
+            string who = _carriedName;
+            Drop();
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("Тело положено на землю: {0}.", Loc.Name(who)));
+        }
+
         /// <summary>Сбросить ношу (пал, ушёл со сцены) — без материала.</summary>
         public static void Drop()
         {

@@ -206,7 +206,8 @@ namespace Sinbinder.Gameplay
             // Оборона на G, а не на D: D одновременно ведёт камеру вправо
             // (RTS_Camera), и при выделенном отряде одно нажатие делало
             // и то и другое. WASD принадлежат камере целиком.
-            else if (Input.GetKeyDown(KeyCode.G)) Stance(CommandKind.Defend);
+            // G с вещью в руках — отпустить её (HandsDrop), а не «оборона».
+            else if (Input.GetKeyDown(KeyCode.G) && !HandsDrop.Busy) Stance(CommandKind.Defend);
             else if (Input.GetKeyDown(KeyCode.C)) Stance(CommandKind.None);
 
             // Приказы с точкой — через прицел, как на панели (UI.CommandPanel).
