@@ -26,6 +26,7 @@ namespace Sinbinder.Utilets
     {
         private const string Folder = "Build/Sinbinder";
         private const string Exe = Folder + "/Sinbinder.exe";
+        private const string IconPath = "Assets/Textures/Иконка.png";
 
         [MenuItem("Sinbinder/Собрать игру")]
         public static void Build()
@@ -45,6 +46,11 @@ namespace Sinbinder.Utilets
             Debug.Log($"[СБОРКА] Сцен в сборке: {paths.Length}. Первая — {paths[0]}.");
 
             Directory.CreateDirectory(Folder);
+
+            // Иконка — банка души (Tools/blender/icon.py; автор, 29.10: «может стоит сделать иконку?»).
+            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(IconPath);
+            if (icon != null) PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.Unknown, new[] { icon }, IconKind.Any);
+            else Debug.LogWarning($"[СБОРКА] Нет иконки {IconPath} — сборка с иконкой Unity.");
 
             var options = new BuildPlayerOptions
             {

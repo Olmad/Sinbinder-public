@@ -1529,7 +1529,7 @@ namespace Sinbinder.Utilets
             campfire.transform.position = position;
 
             Prop("Campfire", campfire.transform, position);
-            EffectsBuilder.Fire(campfire.transform, position + new Vector3(0f, 0.12f, 0f), 1f, 28f);
+            EffectsBuilder.Fire(campfire.transform, position + new Vector3(0f, 0.12f, 0f), 1.25f, 34f);
             Embers(campfire.transform, position + new Vector3(0f, 0.35f, 0f), 1f, 26f);
 
             var light = new GameObject("Тёплый свет");

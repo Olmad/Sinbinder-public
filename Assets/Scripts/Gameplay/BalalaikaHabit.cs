@@ -168,7 +168,8 @@ namespace Sinbinder.Gameplay
             // Встал кто-то вплотную и стоит (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и
             // Вейн в одной точке) — встать и искать другое бревно. Прошёл мимо — не повод: полторы секунды подряд.
             if (_seat == null || Time.frameCount % 15 != 0) return;
-            if (!Taken(_sat, true)) { _crowded = 0f; return; }
+            // Вплотную — ближе 0,4 м: сосед на своём месте у костра в метре — не повод вставать.
+            if (Room(_sat, true) >= 0.4f) { _crowded = 0f; return; }
             if (_crowded == 0f) { _crowded = Time.time; return; }
             if (Time.time - _crowded < 1.5f) return;
             _crowded = 0f;
@@ -272,7 +273,12 @@ namespace Sinbinder.Gameplay
             }
             // Бревно — ближнее свободное (проход демо 29.10: сел в ту же точку, где сидел Вейн Тихий): место на
             // нём не занято другим; встать перед ним — на землю, не на палатку (там же: шёл по палатке на 0,4 м).
+            // Свободное место — где до соседа не меньше 0,9 м. Такого нет (проход 29.10: в час Ждана все уже
+            // стоят у брёвен на своих местах у костра — и каждая половина бревна «занята») — самое просторное,
+            // если там хоть полметра: сидеть тесно лучше, чем играть стоя.
             _seat = null;
+            float best = 0.5f;
+            int tried = 0;
             foreach (var log in LogSeat.Near(transform.position, 14f))
             {
                 // Ближняя половина бревна, потом дальняя — точка, отражённая через середину бревна.
@@ -280,30 +286,34 @@ namespace Sinbinder.Gameplay
                 foreach (var from in new[] { transform.position, middle * 2f - transform.position })
                 {
                     if (!log.PoseFor(transform, from, out var stand, out var sat, out var facing)) continue;
-                    if (Taken(sat, false)) continue;
+                    tried++;
+                    float room = Room(sat, false);
+                    if (room <= best) continue;
                     float ground = log.transform.position.y;
                     if (Ground(stand, ground, out var here)) stand = here;
                     else if (Ground(middle * 2f - stand, ground, out var there)) stand = there;
                     else continue;
                     _seat = log; _stand = stand; _sat = sat; _facing = facing;
-                    Debug.Log($"[ЖДАН] берёт балалайку — к бревну «{log.name}»");
-                    return;
+                    best = room;
+                    if (room >= 0.9f) break;
                 }
+                if (best >= 0.9f) break;
             }
+            Debug.Log(_seat != null ? $"[ЖДАН] берёт балалайку — к бревну «{_seat.name}», до соседа {best:F1} м"
+                                    : $"[ЖДАН] берёт балалайку — места нет (мест у брёвен {tried})");
         }
 
-        /// <summary>
-        /// Занято ли место: кто-то из живых ближе 0,9 м к нему. still — только те, кто стоит (идущий мимо — не занял).
-        /// </summary>
-        private bool Taken(Vector3 sat, bool still)
+        /// <summary>До ближнего живого от места, м (не дальше 9). still — только стоящие (идущий мимо — не занял).</summary>
+        private float Room(Vector3 sat, bool still)
         {
+            float near = 9f;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
             {
-                if (w == null || w == _warrior || w.IsDead || CampFocus.GroundDistance(w.transform.position, sat) >= 0.9f) continue;
+                if (w == null || w == _warrior || w.IsDead) continue;
                 if (still && w.TryGetComponent<NavMeshAgent>(out var a) && a.enabled && a.velocity.sqrMagnitude > 0.04f) continue;
-                return true;
+                near = Mathf.Min(near, CampFocus.GroundDistance(w.transform.position, sat));
             }
-            return false;
+            return near;
         }
 
         private static bool Ground(Vector3 at, float ground, out Vector3 hit)

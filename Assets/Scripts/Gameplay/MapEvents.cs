@@ -704,7 +704,11 @@ namespace Sinbinder.Gameplay
             for (int tries = 0; tries < _places.Count; tries++)
             {
                 var p = _places[_cursor];
-                _cursor = (_cursor + 3) % _places.Count;
+                // Шагом через несколько — события расходятся по карте; шаг взаимно прост с числом мест, иначе
+                // обход ходит по части мест (поле 29.10: мест 9, шаг 3 — обходились три, и все три заняты).
+                int step = 3;
+                while (Gcd(step, _places.Count) != 1) step++;
+                _cursor = (_cursor + step) % _places.Count;
                 if (Taken(p)) continue;
                 var go = new GameObject("Событие");
                 go.transform.SetParent(transform, false);
@@ -716,6 +720,8 @@ namespace Sinbinder.Gameplay
             }
             return null;
         }
+
+        private static int Gcd(int a, int b) { while (b != 0) { int t = a % b; a = b; b = t; } return a; }
 
         private static bool Taken(Vector3 p)
         {

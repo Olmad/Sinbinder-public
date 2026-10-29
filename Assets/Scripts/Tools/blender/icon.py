@@ -49,7 +49,7 @@ def main():
     gold = node(material(obj, "Old Gold"))
     gold.inputs["Metallic"].default_value = 1.0
     gold.inputs["Roughness"].default_value = 0.32
-    for name, colour, power in (("Soul Dim", (1.0, 0.42, 0.12, 1.0), 14.0), ("Soul", (1.0, 0.78, 0.38, 1.0), 40.0)):
+    for name, colour, power in (("Soul Dim", (1.0, 0.30, 0.05, 1.0), 2.6), ("Soul", (1.0, 0.58, 0.14, 1.0), 3.6)):
         b = node(material(obj, name))
         b.inputs["Base Color"].default_value = colour
         b.inputs["Emission Color"].default_value = colour
@@ -66,17 +66,16 @@ def main():
     sc.cycles.samples = 160
     sc.cycles.use_denoising = True
     sc.render.resolution_x = sc.render.resolution_y = size
-    sc.view_settings.view_transform = "AgX"
-    sc.view_settings.look = "AgX - Punchy" if "AgX - Punchy" in [i.identifier for i in sc.view_settings.bl_rna.properties["look"].enum_items] else "None"
+    sc.view_settings.view_transform = "Standard"   # AgX выбеливал золото души до розового
 
     world = bpy.data.worlds.new("W"); sc.world = world
     world.use_nodes = True
-    world.node_tree.nodes["Background"].inputs[0].default_value = (0.010, 0.009, 0.012, 1.0)
+    world.node_tree.nodes["Background"].inputs[0].default_value = (0.0012, 0.0010, 0.0014, 1.0)
     world.node_tree.nodes["Background"].inputs[1].default_value = 1.0
 
     # Свет души — точечный внутри банки, тёплый: он и красит стекло изнутри.
     inner = bpy.data.objects.new("Inner", bpy.data.lights.new("Inner", "POINT"))
-    inner.data.energy = 9.0; inner.data.color = (1.0, 0.66, 0.30); inner.data.shadow_soft_size = 0.02
+    inner.data.energy = 4.0; inner.data.color = (1.0, 0.66, 0.30); inner.data.shadow_soft_size = 0.02
     inner.location = mid + Vector((0, 0, -tall * 0.05))
     sc.collection.objects.link(inner)
     # Контровой холодный — сзади слева: край стекла и обод читаются на чёрном.
@@ -94,9 +93,9 @@ def main():
 
     # Земля под банкой — тёмная, ловит отсвет души.
     ground = bpy.data.meshes.new("Ground")
-    ground.from_pydata([(-2, -2, lo.z), (2, -2, lo.z), (2, 2, lo.z), (-2, 2, lo.z)], [], [(0, 1, 2, 3)])
+    ground.from_pydata([(-40, -40, lo.z), (40, -40, lo.z), (40, 40, lo.z), (-40, 40, lo.z)], [], [(0, 1, 2, 3)])
     gm = bpy.data.materials.new("Ground"); gm.use_nodes = True
-    node(gm).inputs["Base Color"].default_value = (0.03, 0.025, 0.022, 1)
+    node(gm).inputs["Base Color"].default_value = (0.012, 0.010, 0.010, 1)
     node(gm).inputs["Roughness"].default_value = 0.9
     ground.materials.append(gm)
     sc.collection.objects.link(bpy.data.objects.new("Ground", ground))
@@ -106,7 +105,7 @@ def main():
     cam = bpy.data.objects.new("Cam", cam_data)
     sc.collection.objects.link(cam); sc.camera = cam
     # Чуть снизу и сбоку: банка выглядит вещью, а не чертежом; кадр — квадрат с полями.
-    dist = tall * 5.0
+    dist = tall * 3.7
     cam.location = mid + Vector((dist * 0.35, -dist * 0.93, -tall * 0.05))
     aim = mid + Vector((0, 0, tall * 0.02))
     cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()

@@ -68,7 +68,7 @@ namespace Sinbinder.Utilets
         private static void Kindle(GameObject go, string name)
         {
             Vector3 at; float scale, rate, intensity, range;
-            if (name == "Campfire") { at = new Vector3(0f, 0.12f, 0f); scale = 1f; rate = 28f; intensity = 4f; range = 12f; }
+            if (name == "Campfire") { at = new Vector3(0f, 0.12f, 0f); scale = 1.25f; rate = 34f; intensity = 4f; range = 12f; }
             else if (name == "TorchStand") { at = new Vector3(0f, 1.79f, 0f); scale = 0.36f; rate = 16f; intensity = 1.6f; range = 5.5f; }
             else return;
             EffectsBuilder.Fire(go.transform, go.transform.position + at, scale, rate);
@@ -784,9 +784,13 @@ namespace Sinbinder.EditorTools
                         }
 
                 // Деревня сверху — избы, колодец, плетни, поленницы (village.py, Residents.Build): кадр смотреть глазами.
-                foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
+                // Самое большое поселение, а не первое найденное (поле 29.10: порядок поиска выдал бор — три постройки).
+                var villages = new System.Collections.Generic.List<Residents>(Object.FindObjectsByType<Residents>(FindObjectsSortMode.None));
+                villages.RemoveAll(v => v.transform.Find("Строения") == null);
+                villages.Sort((a, b) => b.transform.Find("Строения").childCount.CompareTo(a.transform.Find("Строения").childCount));
+                foreach (var r in villages)
                 {
-                    if (r.Folk.Count < 4 || r.transform.Find("Строения") == null) continue;
+                    if (r.Folk.Count < 4) continue;
                     var cam = Camera.main;
                     if (cam == null) break;
                     var c = r.transform.position;
