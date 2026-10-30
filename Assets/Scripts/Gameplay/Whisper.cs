@@ -70,10 +70,22 @@ namespace Sinbinder.Gameplay
             return d.Hesitated || d.RefusedCommand;
         }
 
+        private static Whisper _one;
+
+        /// <summary>Чем кончился последний шёпот — словом (прогон демо пишет его в отчёт). Сброс — null.</summary>
+        public static string LastResult;
+
+        void Awake() => _one = this;
+
         void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.Z) || Time.timeScale <= 0f) return;
-            // Кому — ближнему к Греховоду из тех, кому можно.
+            if (Input.GetKeyDown(KeyCode.Z) && Time.timeScale > 0f) TryAny();
+        }
+
+        /// <summary>Шепнуть ближнему к Греховоду из тех, кому можно. Ложь — некому.</summary>
+        public static bool TryAny()
+        {
+            if (_one == null) return false;
             Warrior best = null;
             float near = float.MaxValue;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
@@ -82,7 +94,9 @@ namespace Sinbinder.Gameplay
                 float d = CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position);
                 if (d < near) { near = d; best = w; }
             }
-            if (best != null) StartCoroutine(Moment(best));
+            if (best == null) return false;
+            _one.StartCoroutine(_one.Moment(best));
+            return true;
         }
 
         /// <summary>Что шепчет Греховод греху и что отвечает поддавшийся.</summary>
@@ -147,7 +161,8 @@ namespace Sinbinder.Gameplay
                 float now = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
                 if (now < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - now));
             }
-            Debug.Log($"[ШЁПОТ] {w.DisplayName} ({sin}): {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")}");
+            LastResult = $"{w.DisplayName} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")}";
+            Debug.Log("[ШЁПОТ] " + LastResult);
 
             if (focus != null) StopCoroutine(focus);
             if (slowed && Mathf.Approximately(Time.timeScale, Slow)) Time.timeScale = 1f;

@@ -579,6 +579,8 @@ namespace Sinbinder.EditorTools
                 steps.Add(S("лагерь: пять минут игры — ходят и говорят", WatchCamp, CampDone, 400f));
                 steps.Add(S("лагерь: за картами — подсесть посмотреть", GoToCards, AtCards, 40f));
                 steps.Add(S("приказ издали: прогноз, отказы, причины", OrderFromAfar, FarOrderDone, 60f));
+                // Шёпот отказавшему (60-TEMPTATION): мягко — отказов может и не быть.
+                steps.Add(S("шёпот: отказавшему — по его греху", null, Whispered, 12f));
             }
 
             // Дерево с топором — и в обычном прогоне: F у вещи не за выключателем.
@@ -3362,6 +3364,34 @@ namespace Sinbinder.EditorTools
                   + (string.IsNullOrEmpty(d.DecisiveVoice) ? "" : ", голос " + d.DecisiveVoice));
 
             if (_refusalAt < 0f) _refusalAt = Time.realtimeSinceStartup;
+        }
+
+        private static float _whisperSince = -1f;
+        private static bool _whisperStarted;
+
+        /// <summary>
+        /// Шепнуть отказавшему или колеблющемуся (Whisper): кому можно — тому и шепчем, ждём ответа, снимаем кадр.
+        /// Некому (отказов не было) — шаг пройден с пометкой: отказ — вероятность, а не долг.
+        /// </summary>
+        private static bool Whispered()
+        {
+            if (_whisperSince < 0f) { _whisperSince = Time.realtimeSinceStartup; _whisperStarted = false; Gameplay.Whisper.LastResult = null; }
+            if (!_whisperStarted)
+            {
+                _whisperStarted = Gameplay.Whisper.TryAny();
+                if (!_whisperStarted && Time.realtimeSinceStartup - _whisperSince > 8f)
+                {
+                    Write("  [ШЁПОТ] шептать некому — отказов и колебаний рядом не было");
+                    _whisperSince = -1f;
+                    return true;
+                }
+                if (!_whisperStarted) return false;
+                Snap("шёпот — миг");
+            }
+            if (Gameplay.Whisper.LastResult == null) return false;
+            Write("  [ШЁПОТ] " + Gameplay.Whisper.LastResult);
+            _whisperSince = -1f;
+            return true;
         }
 
         private static bool FarOrderDone()
