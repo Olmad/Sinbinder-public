@@ -108,12 +108,20 @@ namespace Sinbinder.UI
             text.color = Idle;
             text.raycastTarget = false;
             text.text = Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку");
+            _keys = text;
         }
+
+        private Text _keys;
 
         void Update()
         {
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + _refreshEvery;
+
+            // В руках что-то есть — сказать, как отпустить (КТ1 п. 17; автор, 29.10: «отпускание на G»).
+            if (_keys != null)
+                _keys.text = Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку")
+                           + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
 
             Refresh();
         }

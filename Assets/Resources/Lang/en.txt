@@ -9287,3 +9287,6 @@ msgstr "Half of what? The purse is empty."
 
 msgid "Z — шепнуть"
 msgstr "Z — whisper"
+
+msgid "G — отпустить"
+msgstr "G — let go"
