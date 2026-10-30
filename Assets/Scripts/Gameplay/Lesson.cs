@@ -451,7 +451,7 @@ namespace Sinbinder.Gameplay
             {
                 if (s == null) continue;
                 float d = Vector3.Distance(hero, s.Position);
-                if (d < bestDist && Reachable(s.Position)) { bestDist = d; best = s; }
+                if (d < bestDist && Reachable(s.Position) && Standable(s.Position)) { bestDist = d; best = s; }
             }
 
             // Урок, которого нельзя пройти, запер бы игру: мир стоит, пока
@@ -684,6 +684,20 @@ namespace Sinbinder.Gameplay
                 && path.status == NavMeshPathStatus.PathComplete;
         }
 
+        /// <summary>
+        /// Можно встать так близко, чтобы собрать: дорога (<see cref="Road"/>) кончается в ближайшей точке сетки
+        /// в двух метрах от души, а жатва берёт с 1,8 м. Беглец, павший у края поля, лёг в полутора-двух метрах
+        /// от сетки — дойти можно, собрать нельзя, и мир стоял насовсем (проход 31.10, w3110b).
+        /// </summary>
+        private float _begun;
+
+        private static bool Standable(Vector3 soul)
+        {
+            if (!NavMesh.SamplePosition(soul, out var hit, 2f, NavMesh.AllAreas)) return false;
+            var d = hit.position - soul; d.y = 0f;
+            return d.magnitude <= 1.3f;
+        }
+
         private void Begin(LessonKind kind, Vector3 centre, float floor = Inner)
         {
             var hero = SinbinderPlayer.Instance;
@@ -692,6 +706,7 @@ namespace Sinbinder.Gameplay
             // прерванный сменой сцены, не должен начинаться снова и снова.
             _given.Add(kind);
             _now = kind;
+            _begun = Time.unscaledTime;
             _leash = new Leash(centre, hero.transform.position, floor);
             _road.Clear();
             _walking = false;
@@ -732,12 +747,21 @@ namespace Sinbinder.Gameplay
             // значит остановить игру насовсем.
             if (!Allowed || hero == null || hero.IsDead
                 || (_now == LessonKind.Exchange && (_partner == null || _partner.IsDead || RaidEvent.Running))
-                || (_now == LessonKind.Harvest && !SoulStillThere())
+                || (_now == LessonKind.Harvest && (!SoulStillThere() || !Standable(_soul.Position)))
                 || (_now == LessonKind.Raising && _device == null)
                 || (_now == LessonKind.Refusal && (_partner == null || _partner.IsDead))
                 || (_now == LessonKind.Backstab && (_foe == null || _foe.IsDead
                                                     || _flanker == null || _flanker.IsDead)))
             {
+                End();
+                return;
+            }
+
+            // Последняя страховка жатвы: минуту стоит и не собрал — значит, не может (сетку под душой пересекло
+            // что-то, чего не предвидели). Мир отпустить, первую душу объяснит подсказка.
+            if (_now == LessonKind.Harvest && !_walking && Time.unscaledTime - _begun > 60f)
+            {
+                Debug.LogWarning("[УРОК] Жатва: минута без сбора — отпускаю мир, объяснит подсказка.");
                 End();
                 return;
             }

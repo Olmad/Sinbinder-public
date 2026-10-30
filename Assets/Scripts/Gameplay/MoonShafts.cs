@@ -140,7 +140,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Квадрат 1×1, ось Y — вдоль луча, середина в нуле.</summary>
-        private static Mesh Quad()
+        internal static Mesh Quad()
         {
             var m = new Mesh { name = "Луч" };
             m.vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f),
@@ -152,7 +152,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Мягкая полоса: гаснет к краям поперёк и к обоим концам вдоль.</summary>
-        private static Texture2D Ray()
+        internal static Texture2D Ray()
         {
             const int w = 32, h = 128;
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Луч" };

@@ -72,6 +72,8 @@ namespace Sinbinder.Gameplay
 
         private Light _light;
         private ParticleSystem _sparks;
+        private ParticleSystem _flame;
+        private float _flameSize, _flameRate;
         private Material _wood;
         private float _flare;
         private float _ready;
@@ -119,7 +121,15 @@ namespace Sinbinder.Gameplay
             // дерево полена — то же, из чего сложены дрова в огне.
             var root = transform.parent != null ? transform.parent : transform;
             foreach (var ps in root.GetComponentsInChildren<ParticleSystem>(true))
-                if (ps.name == "Искры") { _sparks = ps; break; }
+            {
+                if (ps.name == "Искры" && _sparks == null) _sparks = ps;
+                if (ps.name == "Пламя" && _flame == null)
+                {
+                    _flame = ps;
+                    _flameSize = ps.main.startSizeMultiplier;
+                    _flameRate = ps.emission.rateOverTimeMultiplier;
+                }
+            }
             foreach (var r in root.GetComponentsInChildren<MeshRenderer>(true))
                 if (r.sharedMaterials.Length > 0 && r.sharedMaterials[0] != null) { _wood = r.sharedMaterials[0]; break; }
         }
@@ -128,6 +138,9 @@ namespace Sinbinder.Gameplay
         {
             if (_instance == this) _instance = null;
         }
+
+        /// <summary>Вспышка от полена сейчас: 1 — только что бросили, 0 — догорела. Ей разгораются угли (EmberBed).</summary>
+        public static float Flare => _instance != null ? _instance._flare : 0f;
 
         /// <summary>Костёр, до которого Греховод дотянется сейчас. Нет — null.</summary>
         public static CampfireStoke Nearest()
@@ -285,11 +298,20 @@ namespace Sinbinder.Gameplay
 
         // Поверх дыхания огня (FireFlicker ставит яркость в Update) — вспышка
         // от полена: сразу ярче и гаснет за пять секунд.
+        // И само пламя выше и гуще, а не только свет (КТ1 п. 16: «пламя растёт»).
         void LateUpdate()
         {
-            if (_flare <= 0f || _light == null) return;
+            if (_flare <= 0f) return;
             _flare = Mathf.Max(0f, _flare - Time.deltaTime / FlareSeconds);
-            _light.intensity *= 1f + FlareGain * _flare * _flare;
+            float f = _flare * _flare;
+            if (_light != null) _light.intensity *= 1f + FlareGain * f;
+            if (_flame != null)
+            {
+                var main = _flame.main;
+                main.startSizeMultiplier = _flameSize * (1f + 0.45f * f);
+                var emission = _flame.emission;
+                emission.rateOverTimeMultiplier = _flameRate * (1f + 0.8f * f);
+            }
         }
     }
 }

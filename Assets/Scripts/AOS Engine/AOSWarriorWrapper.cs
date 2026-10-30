@@ -88,7 +88,11 @@ namespace Sinbinder.AOS
             // Охотник бежит и оторвался — дальше 30 м от всех, кто его бьёт: он сбежал, поле его больше не держит.
             // Иначе раненый уходил в лес живым, «поле чисто» не наступало, и вторая волна набега не выходила
             // никогда (проход демо 31.10: «первая волна положена — не дождались», Ульрих и Бертрам у z≈66).
-            if (_goal != null && action == ActionType.Flee && Escaped())
+            // Или бежит уже восемь секунд кряду: у края поля его не догонят — он ушёл в лес (проход 31.10, w3110b:
+            // беглецы стояли у края, за ними гнались, и душа павшего там легла туда, куда не дойти).
+            if (_goal != null && action != ActionType.Flee) _fleeSince = -1f;
+            else if (_goal != null && _fleeSince < 0f) _fleeSince = Time.time;
+            if (_goal != null && action == ActionType.Flee && (Escaped() || Time.time - _fleeSince > FleeOut))
             {
                 Debug.Log($"[НАБЕГ] {_warrior.DisplayName} сбежал с поля");
                 Destroy(gameObject);
@@ -324,6 +328,8 @@ namespace Sinbinder.AOS
         }
 
         private HunterGoal _goal;
+        private float _fleeSince = -1f;
+        private const float FleeOut = 8f;
 
         /// <summary>Никого из тех, кто его бьёт, ближе 30 м — сбежал.</summary>
         private bool Escaped()

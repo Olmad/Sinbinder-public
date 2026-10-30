@@ -53,7 +53,9 @@ namespace Sinbinder.Gameplay
             mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
 
+            // Новая система сразу играет, а длительность играющей менять нельзя (ошибка в проходе 31.10).
             var ps = gameObject.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = ps.main;
             main.loop = true;
             main.prewarm = true;
@@ -93,6 +95,7 @@ namespace Sinbinder.Gameplay
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             r.sortingFudge = 10f;   // позади огня и искр
+            ps.Play();
         }
 
         /// <summary>Мягкое пятно с рваным краем — формулой, как искра и пламя.</summary>
