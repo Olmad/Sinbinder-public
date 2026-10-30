@@ -37,7 +37,25 @@ namespace Sinbinder.Utilets
         {
             EditorUtility.audioMasterMute = true;
             SessionState.SetBool(Active, true);
+            SessionState.SetBool(TugFlag, false);
             EditorSceneManager.OpenScene("Assets/Scenes/Prologue_Camp.unity");
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += Tick;
+        }
+
+        private const string TugFlag = "Sinbinder.TrailerShoot.Tug";
+        private const string FolderTug = "D:/Claude/трейлер/кадры-поле";
+
+        /// <summary>
+        /// Трейлер «Перетягивания» (автор, 29.10: «и потом сделаем трейлер „Перетягивания“»): поле, туман снят,
+        /// планы — по раскладке D:\Claude\трейлер\План — трейлер Перетягивания.md, под ту же музыку.
+        /// </summary>
+        public static void TugBatch()
+        {
+            EditorUtility.audioMasterMute = true;
+            SessionState.SetBool(Active, true);
+            SessionState.SetBool(TugFlag, true);
+            EditorSceneManager.OpenScene("Assets/Scenes/Tug/Field.unity");
             EditorApplication.isPlaying = true;
             EditorApplication.update += Tick;
         }
@@ -65,10 +83,12 @@ namespace Sinbinder.Utilets
             if (!_hour && settled >= 20f) { _hour = true; var z = Zhdan(); if (z != null) BalalaikaHabit.SitNow(z); }
             if (settled < 25f) return;
 
+            bool tug = SessionState.GetBool(TugFlag, false);
+            if (tug) FogOfWar.ShotClear(true);   // на поле туман войны — в ролике видно всё
             var go = new GameObject("Съёмка трейлера");
             _rig = go.AddComponent<TrailerCam>();
-            _rig.Folder = Folder;
-            _rig.Shots = Camp();
+            _rig.Folder = tug ? FolderTug : Folder;
+            _rig.Shots = tug ? Tug() : Camp();
             Debug.Log($"[ТРЕЙЛЕР] планов {_rig.Shots.Count}, {_rig.Shots.Sum(s => s.Seconds):F1} с");
         }
 
@@ -346,6 +366,94 @@ namespace Sinbinder.Utilets
                 var p = SinbinderPlayer.Instance;
                 Pin(p, greh, fire);
                 return (Head(p) + Vector3.up * 0.4f + p.transform.forward * (1.1f - t * 0.2f), Head(p) + Vector3.up * 0.4f, 26f);
+            });
+            return list;
+        }
+
+        // ---------------------------------------------------------------- «Перетягивание»
+
+        /// <summary>Самая большая деревня (больше всего строений); нет — null.</summary>
+        private static Residents Village()
+        {
+            Residents best = null; int most = -1;
+            foreach (var r in Object.FindObjectsByType<Residents>(FindObjectsSortMode.None))
+            {
+                var b = r.transform.Find("Строения");
+                int n = b != null ? b.childCount : 0;
+                if (n > most) { most = n; best = r; }
+            }
+            return best;
+        }
+
+        private static Vector3 Centre(Residents r)
+        {
+            if (r == null) return Vector3.zero;
+            var b = r.transform.Find("Строения");
+            if (b == null || b.childCount == 0) return r.transform.position;
+            var sum = Vector3.zero;
+            foreach (Transform c in b) sum += c.position;
+            return sum / b.childCount;
+        }
+
+        private static List<TrailerCam.Shot> Tug()
+        {
+            var list = new List<TrailerCam.Shot>();
+            void Add(string name, float seconds, System.Func<float, (Vector3, Vector3, float)> cam, System.Action begin = null)
+                => list.Add(new TrailerCam.Shot { Name = name, Seconds = seconds, Camera = cam, Begin = begin });
+            var v = Village();
+            var vc = Centre(v);
+            Transform lord = RivalLord.All.Count > 0 ? RivalLord.All[0].transform : null;
+            Transform crypt = TugMatch.Instance != null && TugMatch.Instance.Crypts.Count > 0 ? TugMatch.Instance.Crypts[0] : null;
+            Vector3 Lord() => lord != null ? lord.position : vc;
+            Vector3 Crypt() => crypt != null ? crypt.position : vc;
+            Vector3 Event()
+            {
+                foreach (var e in MapEvent.All) if (e != null && !e.Done) return e.transform.position;
+                return vc;
+            }
+
+            // ---- 0–25: мир — карта, деревня, изба изнутри, жители.
+            Add("над картой", 7f, t => (TrailerCam.Glide(vc + new Vector3(-20f, 60f, -50f), vc + new Vector3(-6f, 14f, -18f), t), vc, 42f));
+            Add("деревня", 6f, t => (TrailerCam.Orbit(vc, 200f + t * 50f, 14f, 6f), vc + Vector3.up, 40f));
+            Add("изба изнутри", 4f, t =>
+            {
+                var izba = v != null ? v.GetComponentInChildren<IzbaInterior>() : null;
+                if (izba == null) return (TrailerCam.Orbit(vc, 250f, 10f, 5f), vc, 40f);
+                var roof = izba.transform.childCount > 1 ? izba.transform.GetChild(1) : null;
+                if (roof != null) foreach (var r in roof.GetComponentsInChildren<Renderer>()) r.enabled = false;
+                var c = izba.transform.position;
+                return (c + izba.transform.forward * (3.5f - t) + Vector3.up * (6.5f - t), c + Vector3.up * 0.5f, 40f);
+            });
+            Add("жители", 8f, t =>
+            {
+                var folk = v != null && v.Folk.Count > 0 ? v.Folk[0] : null;
+                var c = folk != null ? folk.transform.position : vc;
+                return (c + new Vector3(-4f + t * 8f, 1.5f, -4f), c + Vector3.up, 36f);
+            });
+            // ---- 25–44,2: соперники — владыка, его отряд, экспедиция, склеп, взлёт.
+            Add("соперник", 4f, t => (Head(lord != null ? lord.GetComponent<Warrior>() : null) + (lord != null ? lord.forward : Vector3.forward) * (2.4f - t * 0.6f), Head(lord != null ? lord.GetComponent<Warrior>() : null), 32f));
+            Add("его отряд", 3f, t => (TrailerCam.Orbit(Lord(), 30f + t * 40f, 7f, 2.2f), Lord() + Vector3.up, 40f));
+            Add("экспедиция", 4f, t => (TrailerCam.Orbit(Event(), 120f + t * 40f, 8f, 3f), Event() + Vector3.up, 40f));
+            Add("склеп", 3.2f, t => (TrailerCam.Glide(Crypt() + new Vector3(0f, 2f, 14f), Crypt() + new Vector3(0f, 2.5f, 9f), t), Crypt() + Vector3.up * 1.5f, 40f));
+            Add("охотники", 2.5f, t =>
+            {
+                var c = Enemies(out int n);
+                if (n == 0) c = Crypt();
+                return (TrailerCam.Orbit(c, 300f + t * 20f, 9f, 2.5f), c + Vector3.up, 40f);
+            });
+            Add("вверх", 2.5f, t => (TrailerCam.Glide(Crypt() + new Vector3(0f, 3f, 10f), Crypt() + new Vector3(0f, 20f, 16f), t), Crypt(), 45f));
+            // ---- 44,2–47,2: удар — склеп сверху.
+            Add("склеп сверху", 3f, t => (Crypt() + new Vector3(0f, 26f, 6f), Crypt(), 48f));
+            // ---- 47,2–71,8: путь — облёт деревни, соперник, общий план карты.
+            Add("облёт деревни", 8.6f, t => (TrailerCam.Orbit(vc, 90f + t * 120f, 22f, 12f), vc, 42f));
+            Add("соперник у деревни", 4f, t => (TrailerCam.Orbit(Lord(), 200f + t * 30f, 5f, 1.8f), Lord() + Vector3.up, 36f));
+            Add("над полем", 12f, t => (TrailerCam.Orbit(vc, 0f + t * 90f, 60f, 45f), vc, 50f));
+            // ---- 71,8–75,8: свой Греховод у своего склепа.
+            Add("Греховод", 4f, t =>
+            {
+                var p = SinbinderPlayer.Instance;
+                foreach (var r in p.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+                return (Head(p) + Vector3.up * 0.35f + p.transform.forward * (3f - t * 1.8f), Head(p) + Vector3.up * 0.35f, 28f);
             });
             return list;
         }
