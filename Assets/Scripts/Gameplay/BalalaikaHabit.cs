@@ -177,6 +177,10 @@ namespace Sinbinder.Gameplay
                 block.enabled = true;
                 transform.SetPositionAndRotation(_sat, _facing);
                 if (_body != null) { _body.Seated = true; _body.Strumming = true; }
+                // Аниматор — всегда, пока играет: с отсечением «кости — только на экране» кисти застывали в позе
+                // «сижу», и балалайка цеплялась к ним у колен (замер 30.10: клип Strum, CullUpdateTransforms).
+                _animator = GetComponentInChildren<Animator>();
+                if (_animator != null) { _culling = _animator.cullingMode; _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; }
                 _seated = true;
                 _satAt = Time.time;
             }
@@ -209,6 +213,8 @@ namespace Sinbinder.Gameplay
 
         private Transform _left, _right;
         private Renderer _luteBody;
+        private Animator _animator;
+        private AnimatorCullingMode _culling;
         private bool _toldHands;
 
         private string Path(Transform t)
@@ -301,6 +307,7 @@ namespace Sinbinder.Gameplay
         private void Stand()
         {
             _seated = false;
+            if (_animator != null) _animator.cullingMode = _culling;
             Strum(false);
             if (_body != null) { _body.Seated = false; _body.Strumming = false; }
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
