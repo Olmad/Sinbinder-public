@@ -171,20 +171,29 @@ namespace Sinbinder.Gameplay
                 // Сидящего обходят: ноги выключены, но препятствие — на месте (без него в него садились и шли).
                 // TryGetComponent, а не «??»: пустой компонент в Unity — не null для «??» (поток ошибок 29.10).
                 if (!TryGetComponent<NavMeshObstacle>(out var block)) block = gameObject.AddComponent<NavMeshObstacle>();
-                block.shape = NavMeshObstacleShape.Capsule; block.radius = 0.35f; block.height = 1.2f; block.carving = false;
+                // Вырезает дорогу (было без вырезания): путь проходящего ложился сквозь место Ждана у бревна, и тот упирался
+                // (прогон лагеря 30.10: «ЗАСТРЯЛ Одноглазый Хорь… у (-0,6; 6,0)», путь есть). Вырезанное обходят ещё на карте пути.
+                block.shape = NavMeshObstacleShape.Capsule; block.radius = 0.35f; block.height = 1.2f; block.carving = true; block.carveOnlyStationary = true;
                 block.enabled = true;
                 transform.SetPositionAndRotation(_sat, _facing);
                 if (_body != null) { _body.Seated = true; _body.Strumming = true; }
                 _seated = true;
+                _satAt = Time.time;
             }
             Strum(true);
             InHands();
         }
 
+        void LateUpdate()
+        {
+            if (_seated || (_holding && _sound != null && _sound.isPlaying)) InHands();
+        }
+
         private void HoldSeat()
         {
             if (_seat != null) transform.SetPositionAndRotation(_sat, _facing);
-            InHands();
+            // Балалайку в руки — в LateUpdate: там кости уже в позе этого кадра (анимация считается между Update и
+            // LateUpdate); из Update кисти читались ещё «на коленях» (замер 30.10).
             // Встал кто-то вплотную и стоит (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и
             // Вейн в одной точке) — встать и искать другое бревно. Прошёл мимо — не повод: полторы секунды подряд.
             if (_seat == null || Time.frameCount % 15 != 0) return;
@@ -202,6 +211,7 @@ namespace Sinbinder.Gameplay
         private Renderer _luteBody;
         private bool _toldHands;
         private string _bodyName = "—";
+        private float _satAt;
         private Quaternion _luteBasis;
         private bool _basisReady;
 
@@ -260,7 +270,7 @@ namespace Sinbinder.Gameplay
             var want = Vector3.Lerp(_right.position, _left.position, 0.4f) + transform.forward * 0.10f;
             if (_luteBody == null) _luteBody = _lute.GetComponentInChildren<Renderer>();
             _lute.position = _luteBody != null ? _lute.position + (want - _luteBody.bounds.center) : want;
-            if (!_toldHands && Time.frameCount % 150 == 0)
+            if (!_toldHands && _seated && Time.time - _satAt > 2f)
             {
                 _toldHands = true;
                 Debug.Log($"[ЖДАН] руки (кожа «{_bodyName}»): левая {_left.position} ({_left.parent?.name}), правая {_right.position}; " +
