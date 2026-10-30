@@ -1,5 +1,6 @@
 // Assets/Scripts/Gameplay/CardTable.cs
 // Перевод: текст через Loc
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;
@@ -156,15 +157,35 @@ namespace Sinbinder.Gameplay
             float top = seat.position.y;
             var pos = seat.position;
             pos.y = top + 0.04f - hip * SeatedHips;
-            w.transform.position = pos;
-
             var to = transform.position - pos;
             to.y = 0f;
-            if (to.sqrMagnitude > 1e-4f) w.transform.rotation = Quaternion.LookRotation(to);
+            var rot = to.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(to) : w.transform.rotation;
 
             var body = w.GetComponent<WarriorAnimation>();
             if (body != null) body.Seated = true;
             _seated[w] = seat;
+            StartCoroutine(Settle(w, pos, rot));   // после записи: Settle проверяет, что он всё ещё сидит
+        }
+
+        /// <summary>
+        /// Сесть за полсекунды, а не рывком (КТ1 п. 6: «подойти, развернуться, сесть — без телепорта»): воин
+        /// встаёт у сиденья в шаге от него, и перенос на сиденье читался прыжком. Плавно, как Греховод на бревне.
+        /// </summary>
+        private IEnumerator Settle(Warrior w, Vector3 pos, Quaternion rot)
+        {
+            var from = w.transform.position;
+            var fromRot = w.transform.rotation;
+            for (float t = 0f; t < 0.5f; t += Time.deltaTime)
+            {
+                if (w == null || !_seated.ContainsKey(w)) yield break;
+                float k = Mathf.SmoothStep(0f, 1f, t / 0.5f);
+                w.transform.position = Vector3.Lerp(from, pos, k);
+                w.transform.rotation = Quaternion.Slerp(fromRot, rot, k);
+                yield return null;
+            }
+            if (w == null || !_seated.ContainsKey(w)) yield break;
+            w.transform.position = pos;
+            w.transform.rotation = rot;
         }
 
         private void StandUp(Warrior w)

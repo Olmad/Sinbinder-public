@@ -229,7 +229,7 @@ namespace Sinbinder.Gameplay
         private Collider Blocker(Vector3 at)
         {
             var fire = transform.parent != null ? transform.parent : transform;
-            foreach (var c in Physics.OverlapSphere(at + Vector3.up * 0.6f, 0.6f, ~0, QueryTriggerInteraction.Ignore))
+            foreach (var c in Physics.OverlapSphere(at + Vector3.up * 0.6f, 0.8f, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (c == null || c.transform.IsChildOf(fire)) continue;
                 var size = c.bounds.size;
@@ -289,6 +289,8 @@ namespace Sinbinder.Gameplay
             var along = fire - best; along.y = 0f;
             _pile.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, along.normalized));
 
+            // Модель поленницы из деревни (Woodpile) пробовали (w3110g): у неё своя крыша, и сверху она читалась
+            // тёмным ящиком. Чурки видно — дрова узнаются с тактической камеры.
             int n = 0;
             int[] rows = { 4, 3, 2 };
             for (int r = 0; r < rows.Length; r++)
