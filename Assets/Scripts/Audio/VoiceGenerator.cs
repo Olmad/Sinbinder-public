@@ -220,14 +220,24 @@ namespace Sinbinder.Audio
         {
             if (_warrior == null || _warrior.Soul == null) return 1f;
             float k = 0.85f + (Wardrobe.Stamp(_warrior.Soul.Name) % 31) / 100f;
+            if (Elder()) k *= 0.88f;
             return Grammar.Pick(_warrior.Gender, "m", "f") == "f" ? k * 1.2f : k;
         }
+
+        /// <summary>
+        /// Старый — ниже и медленнее (КТ1 п. 11: «голоса различаются по телу и возрасту»). Возраста в душе нет;
+        /// старость названа в имени — «Карган Старый Ворон». Без этого Карган и Вейн, два скелета, звучали одним
+        /// голосом: высота 1,08 и 1,04, темп 1,19 и 1,18 (расчёт 31.10).
+        /// </summary>
+        private bool Elder() => _warrior != null && _warrior.Soul != null && _warrior.Soul.Name != null
+                                && _warrior.Soul.Name.Contains("Стар");
 
         /// <summary>Свой темп: одни тянут слоги, другие частят (±20 %).</summary>
         private float Pace()
         {
             if (_warrior == null || _warrior.Soul == null) return 1f;
-            return 0.8f + (Wardrobe.Stamp(_warrior.Soul.Name) / 31 % 41) / 100f;
+            float pace = 0.8f + (Wardrobe.Stamp(_warrior.Soul.Name) / 31 % 41) / 100f;
+            return Elder() ? pace * 0.85f : pace;
         }
 
         private float Shelled()

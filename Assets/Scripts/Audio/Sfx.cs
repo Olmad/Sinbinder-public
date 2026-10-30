@@ -349,9 +349,29 @@ namespace Sinbinder.Audio
             if (_walked < Stride) return;
             _walked -= Stride;
 
+            // По доскам — глухой стук: камень Kenney на треть ниже звучит деревом, как полено о дрова
+            // (КТ1 п. 20: «шаги по земле и по дереву звучат по-разному»). Пол избы, настил, помост.
+            if (OnWood(me.transform.position))
+            {
+                Play(Pick("Step/Stone"), me.transform.position, 0.32f, 0.6f, Pitch() * 0.68f);
+                return;
+            }
+
             string set = Surface(SceneManager.GetActiveScene().name);
             if (set == null) return;
             Play(Pick(set), me.transform.position, set == "Step/Grass" ? 0.4f : 0.3f, 0.6f, Pitch());
+        }
+
+        /// <summary>Под ногами дерево: луч вниз попал в доски (материал Planks/Wood) или в пол избы.</summary>
+        private static bool OnWood(Vector3 feet)
+        {
+            if (!Physics.Raycast(feet + Vector3.up * 0.4f, Vector3.down, out var hit, 0.8f, ~0, QueryTriggerInteraction.Ignore))
+                return false;
+            var name = hit.collider.name;
+            if (name.Contains("Izba") || name.Contains("Изба") || name.StartsWith("Пол")) return true;
+            var r = hit.collider.GetComponent<Renderer>();
+            var m = r != null ? r.sharedMaterial : null;
+            return m != null && (m.name.Contains("Planks") || m.name.Contains("Wood"));
         }
 
         /// <summary>Клип Dig (Tools/blender/motion/Dig.json): 126 кадров при 30 в секунду.</summary>

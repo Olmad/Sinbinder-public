@@ -89,7 +89,7 @@ namespace Sinbinder.Gameplay
 
             Bucket();
             _placed = true;
-            Debug.Log($"[КОЛОДЕЦ] стоит в {Vector3.Distance(at, _fire):F1} м от огня");
+            Debug.Log($"[КОЛОДЕЦ] стоит в {Vector3.Distance(at, _fire):F1} м от огня, у ({at.x:F1}; {at.z:F1}); огонь ({_fire.x:F1}; {_fire.z:F1})");
         }
 
         /// <summary>Шестнадцать сторон по кругу от огня: первая, где стоять можно и ничто не мешает.</summary>
@@ -134,10 +134,13 @@ namespace Sinbinder.Gameplay
             return false;
         }
 
-        /// <summary>Занято вещью — не землёй, холмом или зоной: всё шире восьми метров не мешает.</summary>
+        /// <summary>
+        /// Занято вещью — не землёй, холмом или зоной: всё шире восьми метров не мешает. Простор 1,8 м, а не 0,95:
+        /// колодец у палатки закрывал проход, и Хорь стоял перед ним (w3110h, w3110i).
+        /// </summary>
         private static Collider Blocker(Vector3 p)
         {
-            foreach (var c in Physics.OverlapSphere(p + Vector3.up * 1.0f, 0.95f, ~0, QueryTriggerInteraction.Ignore))
+            foreach (var c in Physics.OverlapSphere(p + Vector3.up * 1.0f, 1.8f, ~0, QueryTriggerInteraction.Ignore))
             {
                 var size = c.bounds.size;
                 if (size.x > 8f || size.z > 8f) continue;
