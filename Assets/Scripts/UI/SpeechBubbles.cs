@@ -26,6 +26,7 @@ namespace Sinbinder.UI
         {
             public Warrior Who;
             public Text Line;
+            public Image Back;
 
             /// <summary>Сама реплика, без имени и кавычек — её читает прогон.</summary>
             public string Words;
@@ -96,6 +97,21 @@ namespace Sinbinder.UI
                 go.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.9f);
 
                 bubble = new Bubble { Who = who, Line = text };
+
+                // Строка Греховода внизу — шире и на тёмной подложке (КТ1 п. 13): золото на огне и палатках
+                // терялось. Подложка — отдельный объект перед строкой, чтобы рисовалась под ней.
+                if (who is Gameplay.SinbinderPlayer)
+                {
+                    rt.sizeDelta = new Vector2(760f, 90f);
+                    var back = new GameObject("Подложка", typeof(RectTransform), typeof(Image));
+                    back.transform.SetParent(_canvas.transform, false);
+                    back.transform.SetSiblingIndex(go.transform.GetSiblingIndex());
+                    var img = back.GetComponent<Image>();
+                    img.color = new Color(0.02f, 0.02f, 0.03f, 0.55f);
+                    img.raycastTarget = false;
+                    ((RectTransform)back.transform).pivot = new Vector2(0.5f, 0f);
+                    bubble.Back = img;
+                }
                 _live.Add(bubble);
             }
 
@@ -106,7 +122,8 @@ namespace Sinbinder.UI
             // Так же, как на нижней полосе наезда: имя над репликой.
             bubble.Words = line;
             bubble.Line.text = $"<size=15><color=#B9AF99>{Loc.Name(who.DisplayName)}</color></size>\n" + Loc.F("«{0}»", line);
-            bubble.Until = Time.unscaledTime + seconds;
+            // Держится столько, сколько нужно её прочесть (КТ1 п. 13): длинная строка уходила недочитанной.
+            bubble.Until = Time.unscaledTime + Mathf.Max(seconds, 1.4f + line.Length / 15f);
             bubble.Said = ++_said;
 
             // Реплика над головой — и голосом (разговоры лагеря, слова
@@ -133,6 +150,7 @@ namespace Sinbinder.UI
                 if (b.Who == null || b.Who.IsDead || Time.unscaledTime > b.Until || b.Line == null)
                 {
                     if (b.Line != null) Destroy(b.Line.gameObject);
+                    if (b.Back != null) Destroy(b.Back.gameObject);
                     _live.RemoveAt(i);
                     continue;
                 }
@@ -146,6 +164,12 @@ namespace Sinbinder.UI
                     b.Line.enabled = true;
                     b.Line.color = new Color(0.90f, 0.76f, 0.45f);
                     b.Line.rectTransform.position = new Vector3(Screen.width * 0.5f, Screen.height * 0.27f, 0f);
+                    if (b.Back != null)
+                    {
+                        var size = new Vector2(Mathf.Min(800f, b.Line.preferredWidth + 56f), b.Line.preferredHeight + 16f);
+                        b.Back.rectTransform.sizeDelta = size;
+                        b.Back.rectTransform.position = b.Line.rectTransform.position - new Vector3(0f, 8f, 0f);
+                    }
                     continue;
                 }
 

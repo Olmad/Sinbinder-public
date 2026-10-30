@@ -85,6 +85,16 @@ namespace Sinbinder.AOS
             if (_goal != null && action == ActionType.Idle && LastContext != null && LastContext.NearbyEnemies > 0)
                 action = ActionType.Attack;
 
+            // Охотник бежит и оторвался — дальше 30 м от всех, кто его бьёт: он сбежал, поле его больше не держит.
+            // Иначе раненый уходил в лес живым, «поле чисто» не наступало, и вторая волна набега не выходила
+            // никогда (проход демо 31.10: «первая волна положена — не дождались», Ульрих и Бертрам у z≈66).
+            if (_goal != null && action == ActionType.Flee && Escaped())
+            {
+                Debug.Log($"[НАБЕГ] {_warrior.DisplayName} сбежал с поля");
+                Destroy(gameObject);
+                return;
+            }
+
             // Поддался шёпоту Греховода (Whisper, 60-TEMPTATION) — исполняет приказ, что бы ни решил сам.
             if (action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded(_warrior))
                 action = ActionType.ObeyCommand;
@@ -314,6 +324,15 @@ namespace Sinbinder.AOS
         }
 
         private HunterGoal _goal;
+
+        /// <summary>Никого из тех, кто его бьёт, ближе 30 м — сбежал.</summary>
+        private bool Escaped()
+        {
+            if (CombatManager.Instance == null) return false;
+            foreach (var w in CombatManager.Instance.GetEnemies(gameObject))
+                if (w != null && !w.IsDead && (w.transform.position - transform.position).sqrMagnitude < 900f) return false;
+            return true;
+        }
 
         /// <summary>
         /// Идёт ли охотник к цели вместо выбранного. Только когда рядом
