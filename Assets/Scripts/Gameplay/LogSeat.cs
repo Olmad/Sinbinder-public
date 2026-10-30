@@ -40,6 +40,9 @@ namespace Sinbinder.Gameplay
         private Vector3 _sat;
         private Quaternion _facing;
         private int _satFrame;
+        private Vector3 _from;
+        private Quaternion _fromRot = Quaternion.identity;
+        private float _blend = 1f;
         private bool _updatedPosition, _updatedRotation;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -191,7 +194,8 @@ namespace Sinbinder.Gameplay
                 agent.updatePosition = false;
                 agent.updateRotation = false;
             }
-            hero.transform.SetPositionAndRotation(_sat, _facing);
+            // Садится, а не прыгает (КТ1 п. 6): от того места, где стоял, к коре — за полсекунды (Update ведёт).
+            _from = hero.transform.position; _fromRot = hero.transform.rotation; _blend = 0f;
             if (hero.TryGetComponent<WarriorAnimation>(out var body)) body.Seated = true;
 
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
@@ -244,8 +248,10 @@ namespace Sinbinder.Gameplay
 
             // Тело держим на бревне: от первого лица курс задаёт голова (RTS_Camera), сверху — бревно.
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
-            hero.transform.position = _sat;
-            if (view == null || !view.FirstPersonNow) hero.transform.rotation = _facing;
+            _blend = Mathf.Min(1f, _blend + Time.deltaTime / 0.5f);
+            float k = _blend * _blend * (3f - 2f * _blend);
+            hero.transform.position = Vector3.Lerp(_from, _sat, k);
+            if (view == null || !view.FirstPersonNow) hero.transform.rotation = Quaternion.Slerp(_fromRot, _facing, k);
         }
 
         /// <summary>Нажали F в тот же кадр, что сели, — это то же нажатие, а не «встать».</summary>

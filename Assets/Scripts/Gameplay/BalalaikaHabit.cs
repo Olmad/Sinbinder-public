@@ -175,7 +175,8 @@ namespace Sinbinder.Gameplay
                 // (прогон лагеря 30.10: «ЗАСТРЯЛ Одноглазый Хорь… у (-0,6; 6,0)», путь есть). Вырезанное обходят ещё на карте пути.
                 block.shape = NavMeshObstacleShape.Capsule; block.radius = 0.35f; block.height = 1.2f; block.carving = true; block.carveOnlyStationary = true;
                 block.enabled = true;
-                transform.SetPositionAndRotation(_sat, _facing);
+                // Садится, а не прыгает (КТ1 п. 5): от места «встать» к коре — за полсекунды, разворот туда же.
+                _sitFrom = transform.position; _sitFromRot = transform.rotation; _sitBlend = 0f;
                 if (_body != null) { _body.Seated = true; _body.Strumming = true; }
                 // Аниматор — всегда, пока играет: с отсечением «кости — только на экране» кисти застывали в позе
                 // «сижу», и балалайка цеплялась к ним у колен (замер 30.10: клип Strum, CullUpdateTransforms).
@@ -195,7 +196,12 @@ namespace Sinbinder.Gameplay
 
         private void HoldSeat()
         {
-            if (_seat != null) transform.SetPositionAndRotation(_sat, _facing);
+            if (_seat != null)
+            {
+                _sitBlend = Mathf.Min(1f, _sitBlend + Time.deltaTime / SitSeconds);
+                float k = _sitBlend * _sitBlend * (3f - 2f * _sitBlend);
+                transform.SetPositionAndRotation(Vector3.Lerp(_sitFrom, _sat, k), Quaternion.Slerp(_sitFromRot, _facing, k));
+            }
             // Балалайку в руки — в LateUpdate: там кости уже в позе этого кадра (анимация считается между Update и
             // LateUpdate); из Update кисти читались ещё «на коленях» (замер 30.10).
             // Встал кто-то вплотную и стоит (у костра своё место — и оно бывает тем же, проход демо 29.10: Ждан и
@@ -225,6 +231,10 @@ namespace Sinbinder.Gameplay
         }
         private string _bodyName = "—";
         private float _satAt;
+        private const float SitSeconds = 0.5f;
+        private Vector3 _sitFrom;
+        private Quaternion _sitFromRot = Quaternion.identity;
+        private float _sitBlend = 1f;
         private Quaternion _luteBasis;
         private bool _basisReady;
 
