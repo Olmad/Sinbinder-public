@@ -113,15 +113,17 @@ namespace Sinbinder.UI
 
         private Text _keys;
 
+        /// <summary>Строка клавиш над сумой сейчас: с «G — отпустить», пока в руках что-то есть. Её же читает проход.</summary>
+        public static string KeysLine() => Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку")
+                                         + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
+
         void Update()
         {
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + _refreshEvery;
 
             // В руках что-то есть — сказать, как отпустить (КТ1 п. 17; автор, 29.10: «отпускание на G»).
-            if (_keys != null)
-                _keys.text = Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку")
-                           + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
+            if (_keys != null) _keys.text = KeysLine();
 
             Refresh();
         }

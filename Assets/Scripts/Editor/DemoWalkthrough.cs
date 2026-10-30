@@ -2514,6 +2514,7 @@ namespace Sinbinder.EditorTools
             var g = UnityEngine.Object.FindFirstObjectByType<Gramophone>();
             g.Use();                                                  // снять в руки: прогону музыка ни к чему
             bool inHand = !RecordHands.Empty;
+            Write("  [РУКИ] строка клавиш с пластинкой в руках: «" + UI.SatchelUI.KeysLine() + "» — " + (UI.SatchelUI.KeysLine().Contains("G") ? "G видно" : "G НЕТ"));
             RecordHands.Drop();                                       // и на полку
             Write($"  [ПЛАСТИНКИ] граммофон играл, тема лагеря молчала; снята в руки: {inHand}; на полке: {RecordShelf.OnShelf().Count}");
 
