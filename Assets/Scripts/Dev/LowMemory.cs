@@ -10,17 +10,18 @@ namespace Sinbinder.Dev
     /// шейдеры, текстуры в полный размер, копия сцены в игре; на встроенной графике текстуры лежат в той же памяти.
     /// Половинные текстуры — заметно меньше, а проверкам (пути, шаги, ошибки) они не мешают.
     ///
-    /// Только пакетный режим (прогоны без окна) и только меньше 10 ГБ: в игре игрока не срабатывает никогда, а кадры
-    /// для оценки красоты снимаются на машине, где памяти хватает.
+    /// Режим, а не правило (автор, 30.10: «можешь сделать это как режим и включать, если обычный прогон не
+    /// получается?»): включается переменной окружения SINBINDER_LOWMEM=1 — её ставит цепочка прогона, если обычный
+    /// убила нехватка памяти. Только пакетный режим: в игре игрока не срабатывает никогда.
     /// </summary>
     public static class LowMemory
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Trim()
         {
-            if (!Application.isBatchMode || SystemInfo.systemMemorySize >= 10000) return;
+            if (!Application.isBatchMode || System.Environment.GetEnvironmentVariable("SINBINDER_LOWMEM") != "1") return;
             QualitySettings.globalTextureMipmapLimit = 1;
-            Debug.Log($"[ПАМЯТЬ] пакетный прогон на {SystemInfo.systemMemorySize} МБ — текстуры вдвое мельче");
+            Debug.Log($"[ПАМЯТЬ] экономный прогон ({SystemInfo.systemMemorySize} МБ) — текстуры вдвое мельче");
         }
     }
 }
