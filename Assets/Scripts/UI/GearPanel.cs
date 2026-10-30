@@ -399,6 +399,8 @@ namespace Sinbinder.UI
             foreach (var sack in FallenBag.InReach()) Offer(Gaze.Miss(sack.transform), sack.Prompt, sack.Take);
             var pot = Cauldron.Nearest();
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
+            var well = CampWell.Nearest();
+            if (well != null) Offer(Gaze.Miss(well.Centre, 0.9f), well.Prompt, well.Wash);
             var fire = CampfireStoke.Nearest();
             if (fire != null) Offer(Gaze.Miss(fire.Centre, 0.9f), fire.Prompt, fire.Feed);
             var pile = CampfireStoke.PileInReach();

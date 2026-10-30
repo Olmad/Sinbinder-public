@@ -9294,3 +9294,15 @@ msgstr "Z — whisper"
 
 msgid "G — отпустить"
 msgstr "G — let go"
+
+#: Gameplay/CampWell.cs
+msgid "F — умыться у колодца"
+msgstr "F — wash at the well"
+
+#: Gameplay/CampWell.cs
+msgid "Ледяная. Отпустило."
+msgstr "Ice-cold. It's passed."
+
+#: Gameplay/CampWell.cs
+msgid "Ледяная."
+msgstr "Ice-cold."

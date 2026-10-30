@@ -536,6 +536,7 @@ namespace Sinbinder.EditorTools
                 // Учебник с гифками (автор, 28.10): серии кадров — Reel, гифки — Tools/shots/gif.py.
                 S("учебник: сесть на бревно", ReelLog, () => ReelDone(LogSeat.Rise), 10f),
                 S("учебник: полено в костёр", ReelStoke, () => ReelDone(null), 9f),
+                S("учебник: колодец смывает варево", ReelWell, () => ReelDone(null), 9f),
                 S("учебник: полка по взгляду", ReelShelf, ReelShelfTick, 12f),
 
                 // Приметы (облачная, 26.10; автор): ворон на плече Каргана, Гурт тенью за Хорем,
@@ -2685,6 +2686,23 @@ namespace Sinbinder.EditorTools
             stoke.TakeLog();
             Write("  [ПОЛЕННИЦА] полено в руках: " + (CampfireStoke.Carrying ? "да" : "нет"));
             stoke.Feed();
+        }
+
+        /// <summary>Колодец (КТ1 п. 15): глоток варева — зелень; F у колодца — ведро, всплеск, зелень уходит.</summary>
+        private static void ReelWell()
+        {
+            var well = CampWell.Instance;
+            if (well == null || SinbinderPlayer.Instance == null) { Write("  [КОЛОДЕЦ] НЕТ — места на краю лагеря не нашлось"); return; }
+            var c = well.transform.position;
+            var fire = UnityEngine.Object.FindFirstObjectByType<CampfireStoke>();
+            var toFire = fire != null ? fire.Centre - c : Vector3.back; toFire.y = 0f;
+            Warp(SinbinderPlayer.Instance.gameObject, c + toFire.normalized * 1.6f);
+            Sinbinder.Utilets.Reel.Aim(c + Vector3.up * 0.8f, 7f);
+            Sinbinder.Utilets.Reel.Start("колодец", 4.5f);
+            Brew.Sip(2, c);
+            bool before = Brew.Active;
+            well.Wash();
+            Write($"  [КОЛОДЕЦ] в {(fire != null ? Vector3.Distance(c, fire.Centre) : 0f):F1} м от огня; варево до умывания: {(before ? "действует" : "НЕТ")}");
         }
 
         private static void ReelRaven()

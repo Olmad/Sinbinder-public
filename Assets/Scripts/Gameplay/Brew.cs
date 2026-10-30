@@ -28,6 +28,23 @@ namespace Sinbinder.Gameplay
         public static float Pitch => _one != null && Time.time < _one._voicesUntil ? _one._voiceRise : 1f;
 
         private float _voicesUntil = -1f, _voiceRise = 1f;
+        private float _washedAt = -1f;
+        private float _tintUntil = -1f, _quickUntil = -1f;
+
+        /// <summary>Варево ещё действует: зелень, тонкие голоса или быстрые ноги. Глаза — навсегда, их не считаем.</summary>
+        public static bool Active => _one != null && (Time.time < _one._voicesUntil || Time.time < _one._tintUntil || Time.time < _one._quickUntil);
+
+        /// <summary>
+        /// Колодец смывает варево (КТ1 п. 15; <see cref="CampWell"/>): зелень уходит за секунду, голоса и шаг —
+        /// как были. Глаза остаются зелёными: пятый глоток — навсегда, так и задумано (автор, 28.10).
+        /// </summary>
+        public static void Wash()
+        {
+            if (_one == null) return;
+            _one._washedAt = Time.time;
+            _one._voicesUntil = -1f;
+            Debug.Log("[КОТЁЛ] варево смыто у колодца");
+        }
         private Image _tint;
         private static readonly Color Green = new(0.35f, 0.95f, 0.45f);
 
@@ -79,11 +96,14 @@ namespace Sinbinder.Gameplay
                 _tint = go.GetComponent<Image>();
                 _tint.raycastTarget = false;
             }
-            float t = 0f;
+            float t = 0f, start = Time.time;
+            _tintUntil = Mathf.Max(_tintUntil, start + seconds);
             while (t < seconds)
             {
                 t += Time.deltaTime;
-                float k = Mathf.Min(1f, t / 2f) * Mathf.Min(1f, (seconds - t) / 4f);
+                // Смыто — уйти за секунду с той яркости, что была.
+                if (_washedAt >= start) { seconds = Mathf.Min(seconds, t + 1f); _tintUntil = -1f; }
+                float k = Mathf.Min(1f, t / 2f) * Mathf.Min(1f, (seconds - t) / (_washedAt >= start ? 1f : 4f));
                 _tint.color = new Color(Green.r * 0.4f, Green.g * 0.6f, Green.b * 0.4f, alpha * k);
                 yield return null;
             }
@@ -98,7 +118,10 @@ namespace Sinbinder.Gameplay
             if (legs == null) yield break;
             float was = legs.speed;
             legs.speed = was * k;
-            yield return new WaitForSeconds(seconds);
+            float start = Time.time;
+            _quickUntil = Mathf.Max(_quickUntil, start + seconds);
+            while (Time.time - start < seconds && _washedAt < start) yield return null;
+            if (_washedAt >= start) _quickUntil = -1f;
             if (legs != null) legs.speed = was;
         }
 
