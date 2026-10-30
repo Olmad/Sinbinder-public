@@ -210,6 +210,13 @@ namespace Sinbinder.Gameplay
         private Transform _left, _right;
         private Renderer _luteBody;
         private bool _toldHands;
+
+        private string Path(Transform t)
+        {
+            var s = t.name;
+            for (var p = t.parent; p != null && p != transform; p = p.parent) s = p.name + "/" + s;
+            return s;
+        }
         private string _bodyName = "—";
         private float _satAt;
         private Quaternion _luteBasis;
@@ -276,6 +283,18 @@ namespace Sinbinder.Gameplay
                 Debug.Log($"[ЖДАН] руки (кожа «{_bodyName}»): левая {_left.position} ({_left.parent?.name}), правая {_right.position}; " +
                           $"балалайка «{_lute.name}» {_lute.position}, середина {(_luteBody != null ? _luteBody.bounds.center.ToString() : "—")} " +
                           $"({(_luteBody != null ? _luteBody.name : "нет кожи")}), сам {transform.position}");
+                // Все кисти, аниматоры и кожи — какие из них двигаются (кисти выше стоят на коленях, а видимые руки
+                // в позе игры: где-то второе тело или кости не те).
+                foreach (var t in GetComponentsInChildren<Transform>(true))
+                    if (t.name == "LeftHand" || t.name == "RightHand")
+                        Debug.Log($"[ЖДАН] кость {Path(t)} {t.position} активна {t.gameObject.activeInHierarchy}");
+                foreach (var a in GetComponentsInChildren<Animator>(true))
+                    Debug.Log($"[ЖДАН] аниматор {Path(a.transform)} вкл {a.enabled}/{a.isActiveAndEnabled}, " +
+                              $"клип {(a.isActiveAndEnabled && a.runtimeAnimatorController != null && a.GetCurrentAnimatorClipInfoCount(0) > 0 ? a.GetCurrentAnimatorClipInfo(0)[0].clip.name : "—")}, " +
+                              $"отсечение {a.cullingMode}, обновление {a.updateMode}, корень {a.applyRootMotion}");
+                foreach (var s in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    Debug.Log($"[ЖДАН] кожа {Path(s.transform)} вкл {s.enabled}, костей {s.bones?.Length}, " +
+                              $"корень {(s.rootBone != null ? Path(s.rootBone) : "—")}, вне экрана {s.updateWhenOffscreen}");
             }
         }
 
