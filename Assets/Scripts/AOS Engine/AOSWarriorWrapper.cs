@@ -85,6 +85,10 @@ namespace Sinbinder.AOS
             if (_goal != null && action == ActionType.Idle && LastContext != null && LastContext.NearbyEnemies > 0)
                 action = ActionType.Attack;
 
+            // Поддался шёпоту Греховода (Whisper, 60-TEMPTATION) — исполняет приказ, что бы ни решил сам.
+            if (action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded(_warrior))
+                action = ActionType.ObeyCommand;
+
             // Охотник без врага рядом идёт к своей цели, что бы ни выбрал голос
             // (HunterGoal): первая волна — к костру, вторая — по следу
             // Инквизитора. Рядом кто-то есть — решает голос, как у всех.

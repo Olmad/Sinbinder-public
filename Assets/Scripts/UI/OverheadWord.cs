@@ -121,7 +121,9 @@ namespace Sinbinder.UI
             if (d == null || d.LastContext == null) return null;
 
             var detail = d.LastDecisionDetail;
-            if (detail.Hesitated) return Loc.T("Колеблется…");
+            // Можно шепнуть (60-TEMPTATION) — сказать как: без подсказки глагол «искушай» никто не найдёт.
+            string whisper = Gameplay.Whisper.Can(w) ? "\n" + Loc.T("Z — шепнуть") : "";
+            if (detail.Hesitated) return Loc.T("Колеблется…") + whisper;
 
             bool deviates = detail.RefusedCommand
                          || detail.Action == ActionType.Flee
@@ -131,7 +133,7 @@ namespace Sinbinder.UI
 
             string word = PhraseGenerator.Short(detail.Action, d.LastContext);
             if (string.IsNullOrEmpty(word)) return null;
-            return char.ToUpper(word[0]) + word.Substring(1);
+            return char.ToUpper(word[0]) + word.Substring(1) + whisper;
         }
     }
 }

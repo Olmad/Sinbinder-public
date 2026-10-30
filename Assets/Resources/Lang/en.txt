@@ -9236,3 +9236,54 @@ msgstr "Order — to the whole squad"
 #. нет в коде
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
+
+msgid "Половина добычи — твоя."
+msgstr "Half the spoils are yours."
+
+msgid "…Половина. Запомню."
+msgstr "…Half. I'll remember."
+
+msgid "Пусть все видят — первым будешь ты."
+msgstr "Let them all see — you go first."
+
+msgid "Смотрите же."
+msgstr "Watch, then."
+
+msgid "Он смеялся над тобой у огня."
+msgstr "He laughed at you by the fire."
+
+msgid "Смеялся?!"
+msgstr "Laughed?!"
+
+msgid "Карган бы смог. А ты?"
+msgstr "Kargan could. Can you?"
+
+msgid "Я — не хуже."
+msgstr "I'm no worse."
+
+msgid "Она смотрит."
+msgstr "She's watching."
+
+msgid "…Ну, раз смотрит."
+msgstr "…Well, if she's watching."
+
+msgid "После — котёл твой."
+msgstr "After this, the pot is yours."
+
+msgid "Весь котёл."
+msgstr "The whole pot."
+
+msgid "Сделаешь — до утра никто не тронет."
+msgstr "Do this and no one bothers you till morning."
+
+msgid "До утра. Ладно."
+msgstr "Till morning. Fine."
+
+msgid "Не купишь."
+msgstr "You can't buy me."
+
+msgid "Половина чего? Кошель-то пуст."
+msgstr "Half of what? The purse is empty."
+
+msgid "Z — шепнуть"
+msgstr "Z — whisper"
