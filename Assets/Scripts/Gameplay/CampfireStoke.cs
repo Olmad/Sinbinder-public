@@ -152,7 +152,8 @@ namespace Sinbinder.Gameplay
         {
             if (_instance == null || !SinbinderPlayer.Exists || Inspectable.Telling) return null;
             if (CrystalBall.Raised || RaidEvent.Running) return null;
-            if (Time.time < _instance._ready || !Carrying) return null;
+            // С поленницей — только с поленом в руках; поленнице не нашлось места — по-старому, из воздуха.
+            if (Time.time < _instance._ready || (!Carrying && _instance._pile != null)) return null;
             var pause = GamePauseController.Instance;
             if (pause != null && pause.IsPaused) return null;
 
