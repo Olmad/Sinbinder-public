@@ -348,6 +348,8 @@ namespace Sinbinder.Gameplay
         private bool FindRidge(out Vector3 ridge)
         {
             // Автор, 28.10: «было бы ещё лучше, если бы ворон садился на ветки».
+            // Воткнутое знамя «Крыс» (носящий пал) — первым: ворон садится на древко над павшим (КТ1 п. 7).
+            if (FindBanner(out ridge)) return true;
             bool branchTurn = ((int)((Time.time + _offset) / Period)) % 2 == 0;
             if (branchTurn && FindBranch(out ridge)) return true;
             return FindTent(out ridge) || FindBranch(out ridge);
@@ -412,6 +414,19 @@ namespace Sinbinder.Gameplay
             }
             Perches[mesh] = got;
             return got;
+        }
+
+        /// <summary>Верх древка воткнутого знамени (<see cref="RatBanner.Planted"/>), не дальше 30 м от хозяина.</summary>
+        private bool FindBanner(out Vector3 top)
+        {
+            top = default;
+            var banner = RatBanner.Planted;
+            if (banner == null || CampFocus.GroundDistance(banner.transform.position, _master.transform.position) > 30f) return false;
+            var box = new Bounds(banner.transform.position, Vector3.zero);
+            foreach (var r in banner.GetComponentsInChildren<Renderer>()) box.Encapsulate(r.bounds);
+            if (box.size.y < 0.8f) return false;
+            top = new Vector3(banner.transform.position.x, box.max.y + 0.02f, banner.transform.position.z);
+            return true;
         }
 
         /// <summary>Конёк ближней палатки (не дальше 30 м от хозяина): верх её рамки, над серединой.</summary>

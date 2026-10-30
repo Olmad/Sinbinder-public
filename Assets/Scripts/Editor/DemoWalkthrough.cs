@@ -549,6 +549,7 @@ namespace Sinbinder.EditorTools
                 S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
                 // Сел на ветку или на конёк (автор, 28.10: «садился бы на ветки») — кадр смотреть глазами.
                 S("лагерь: ворон сел посидеть", null, RavenPerched, 30f),
+                S("учебник: ворон чистит перья", ReelPreen, () => ReelDone(null), 13f),
                 S("учебник: ворон кружит", ReelRaven, () => ReelDone(null), 10f),
 
                 // Глаза в небе (автор, 27.10) — загадка без слов. Позвать раньше часа и снять.
@@ -2703,6 +2704,17 @@ namespace Sinbinder.EditorTools
             bool before = Brew.Active;
             well.Wash();
             Write($"  [КОЛОДЕЦ] в {(fire != null ? Vector3.Distance(c, fire.Centre) : 0f):F1} м от огня; варево до умывания: {(before ? "действует" : "НЕТ")}");
+        }
+
+        /// <summary>Ворон на насесте вблизи, восемь секунд — дольше одного круга «почистил перья, встряхнулся» (КТ1 п. 7).</summary>
+        private static void ReelPreen()
+        {
+            Warrior master = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (!w.IsDead && CrowStep.Raven(w)) master = w;
+            if (master == null || !RavenFlight.Perched(master, out var bird)) { Write("  [ВОРОН] не на насесте — крупно не снять"); return; }
+            Sinbinder.Utilets.Reel.Aim(bird.position, 2.2f);
+            Sinbinder.Utilets.Reel.Start("ворон на насесте", 8f);
         }
 
         private static void ReelRaven()
