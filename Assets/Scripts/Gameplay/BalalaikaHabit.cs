@@ -200,6 +200,8 @@ namespace Sinbinder.Gameplay
 
         private Transform _left, _right;
         private Renderer _luteBody;
+        private bool _toldHands;
+        private string _bodyName = "—";
         private Quaternion _luteBasis;
         private bool _basisReady;
 
@@ -216,8 +218,12 @@ namespace Sinbinder.Gameplay
                 // Кисти — из костей самого тела (самая большая кожа), а не первые попавшиеся по имени: у надетых вещей
                 // свои копии «LeftHand»/«RightHand», стоячие, и балалайка висела между ними — у колен (кадры 30.10).
                 SkinnedMeshRenderer body = null;
+                // Только видимая кожа: у воина бывает и скрытое тело другой оболочки — его кисти стоят на коленях
+                // (замер 30.10: обе кисти на одной высоте, а на кадре левая поднята к грифу).
                 foreach (var s in GetComponentsInChildren<SkinnedMeshRenderer>())
-                    if (s.bones != null && (body == null || s.bones.Length > body.bones.Length)) body = s;
+                    if (s.enabled && s.gameObject.activeInHierarchy && s.bones != null
+                        && (body == null || s.bones.Length > body.bones.Length)) body = s;
+                if (body != null) _bodyName = body.name;
                 if (body != null)
                     foreach (var t in body.bones)
                     {
@@ -254,6 +260,13 @@ namespace Sinbinder.Gameplay
             var want = Vector3.Lerp(_right.position, _left.position, 0.4f) + transform.forward * 0.10f;
             if (_luteBody == null) _luteBody = _lute.GetComponentInChildren<Renderer>();
             _lute.position = _luteBody != null ? _lute.position + (want - _luteBody.bounds.center) : want;
+            if (!_toldHands && Time.frameCount % 150 == 0)
+            {
+                _toldHands = true;
+                Debug.Log($"[ЖДАН] руки (кожа «{_bodyName}»): левая {_left.position} ({_left.parent?.name}), правая {_right.position}; " +
+                          $"балалайка «{_lute.name}» {_lute.position}, середина {(_luteBody != null ? _luteBody.bounds.center.ToString() : "—")} " +
+                          $"({(_luteBody != null ? _luteBody.name : "нет кожи")}), сам {transform.position}");
+            }
         }
 
         private void Stand()
