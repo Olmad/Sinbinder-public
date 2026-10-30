@@ -19,8 +19,9 @@ namespace Sinbinder.Gameplay
     public class EmberBed : MonoBehaviour
     {
         private const int Coals = 54;
-        private const float CoalRadius = 0.55f;
-        private const float AshRadius = 0.95f;
+        // Шире пламени: при 0,55 м угли целиком лежали под языками и сверху не читались (кадр 31.10).
+        private const float CoalRadius = 0.78f;
+        private const float AshRadius = 1.15f;
 
         private Mesh _mesh;
         private Color[] _colors;
@@ -104,7 +105,7 @@ namespace Sinbinder.Gameplay
                 // У середины — жар жёлто-оранжевый, к краю — багровый и тусклый; каждый седьмой — уже чёрный.
                 float heat = 1f - k * 0.75f;
                 _base[i] = i % 7 == 3 ? new Color(0.06f, 0.04f, 0.035f)
-                         : Color.Lerp(new Color(0.55f, 0.08f, 0.02f), new Color(1f, 0.55f, 0.16f), heat);
+                         : Color.Lerp(new Color(0.80f, 0.17f, 0.04f), new Color(1f, 0.60f, 0.20f), heat);
                 _phase[i] = (i * 0.618f) % 1f * 6.283f;
                 _speed[i] = 0.5f + 0.9f * ((i * 0.414f) % 1f);
                 for (int j = 0; j < 4; j++) _colors[i * 4 + j] = _base[i];

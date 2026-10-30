@@ -47,6 +47,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Поленьев в огне разом — старшее догорает первым.</summary>
         private const int MaxLogs = 3;
 
+        /// <summary>Свежее полено — тёплое дерево, а не белый материал очага.</summary>
+        private static readonly Color Fresh = new(0.50f, 0.34f, 0.21f);
+
         /// <summary>
         /// Что скажет у огня каждый из девяти. Черновик облачной, 26 октября
         /// (28-ORDERS, «Полено в костёр» — таблицей автору). Ключ — имя, как
@@ -217,6 +220,13 @@ namespace Sinbinder.Gameplay
             if (_wood != null) renderer.sharedMaterial = _wood;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
+            // Первый материал модели костра светлый, как камень очага: полено в огне белело (кадр 31.10).
+            // Тонируем его в дерево сразу, ещё в падении.
+            var block = new MaterialPropertyBlock();
+            block.SetColor("_BaseColor", Fresh);
+            block.SetColor("_Color", Fresh);
+            renderer.SetPropertyBlock(block);
+
             log.transform.SetParent(transform.parent != null ? transform.parent : transform, true);
             log.transform.position = Ground() + Vector3.up * 0.3f;
             log.transform.rotation = Quaternion.Euler(0f, n * 137.5f, 0f) * Quaternion.Euler(0f, 0f, 90f - 12f);
@@ -284,7 +294,7 @@ namespace Sinbinder.Gameplay
 
             for (float t = 0f; t < 50f && log != null; t += Time.deltaTime)
             {
-                var c = Color.Lerp(Color.white, charred, Mathf.Clamp01(t / 30f));
+                var c = Color.Lerp(Fresh, charred, Mathf.Clamp01(t / 30f));
                 renderer.GetPropertyBlock(block);
                 block.SetColor("_BaseColor", c);
                 block.SetColor("_Color", c);
