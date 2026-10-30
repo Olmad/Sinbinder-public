@@ -212,11 +212,26 @@ namespace Sinbinder.Gameplay
         {
             if (_lute == null) return;
             if (_left == null || _right == null)
-                foreach (var t in GetComponentsInChildren<Transform>())
-                {
-                    if (t.name == "LeftHand") _left = t;
-                    else if (t.name == "RightHand") _right = t;
-                }
+            {
+                // Кисти — из костей самого тела (самая большая кожа), а не первые попавшиеся по имени: у надетых вещей
+                // свои копии «LeftHand»/«RightHand», стоячие, и балалайка висела между ними — у колен (кадры 30.10).
+                SkinnedMeshRenderer body = null;
+                foreach (var s in GetComponentsInChildren<SkinnedMeshRenderer>())
+                    if (s.bones != null && (body == null || s.bones.Length > body.bones.Length)) body = s;
+                if (body != null)
+                    foreach (var t in body.bones)
+                    {
+                        if (t == null) continue;
+                        if (t.name == "LeftHand") _left = t;
+                        else if (t.name == "RightHand") _right = t;
+                    }
+                if (_left == null || _right == null)
+                    foreach (var t in GetComponentsInChildren<Transform>())
+                    {
+                        if (_left == null && t.name == "LeftHand") _left = t;
+                        else if (_right == null && t.name == "RightHand") _right = t;
+                    }
+            }
             if (_left == null || _right == null) return;
             if (!_basisReady)
             {
