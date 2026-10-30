@@ -199,6 +199,7 @@ namespace Sinbinder.Gameplay
         }
 
         private Transform _left, _right;
+        private Renderer _luteBody;
         private Quaternion _luteBasis;
         private bool _basisReady;
 
@@ -232,7 +233,12 @@ namespace Sinbinder.Gameplay
             var along = _left.position - _right.position;
             if (along.sqrMagnitude < 1e-4f) return;
             _lute.rotation = Quaternion.LookRotation(along.normalized, transform.forward) * _luteBasis;
-            _lute.position = _right.position + transform.forward * 0.06f;
+            // Середина инструмента — между руками, ближе к правой (она бьёт по струнам над корпусом), и впереди груди.
+            // Было «край корпуса у правой кисти»: после уменьшения до 0,7 балалайка сползла к коленям (кадр 30.10).
+            // По середине рамки — размер модели больше не важен.
+            var want = Vector3.Lerp(_right.position, _left.position, 0.4f) + transform.forward * 0.10f;
+            if (_luteBody == null) _luteBody = _lute.GetComponentInChildren<Renderer>();
+            _lute.position = _luteBody != null ? _lute.position + (want - _luteBody.bounds.center) : want;
         }
 
         private void Stand()
