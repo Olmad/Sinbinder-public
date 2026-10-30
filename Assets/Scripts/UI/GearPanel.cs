@@ -401,6 +401,8 @@ namespace Sinbinder.UI
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var fire = CampfireStoke.Nearest();
             if (fire != null) Offer(Gaze.Miss(fire.Centre, 0.9f), fire.Prompt, fire.Feed);
+            var pile = CampfireStoke.PileInReach();
+            if (pile != null) Offer(Gaze.Miss(pile.PileCentre, 0.7f), pile.PilePrompt, pile.TakeLog);
             foreach (var weapon in WeaponPickup.InReach()) Offer(Gaze.Miss(weapon.transform), weapon.Prompt, weapon.Take);
             foreach (var disc in HiddenRecord.InReach()) Offer(Gaze.Miss(disc.transform), disc.Prompt, disc.Take);
             var gramophone = Gramophone.Nearest();

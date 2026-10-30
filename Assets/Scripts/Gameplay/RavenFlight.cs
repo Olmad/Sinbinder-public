@@ -217,8 +217,17 @@ namespace Sinbinder.Gameplay
                 transform.position = _ridge;
                 var look = _master.transform.position - _ridge; look.y = 0f;
                 if (look.sqrMagnitude > 0.01f)
-                    transform.rotation = Quaternion.LookRotation(look) * Quaternion.Euler(0f, 25f * Mathf.Sin((t - glideEnd) * 0.7f), 0f);
+                    transform.rotation = Quaternion.LookRotation(look) * Quaternion.Euler(0f, 25f * Mathf.Sin((t - glideEnd) * 0.7f), 0f)
+                                       * Preen(t - glideEnd);
                 _last = transform.position;
+
+                // Встряхнулся: на миг приоткрыл крылья и сложил (КТ1 п. 7: «складывает крылья, чистит перья»).
+                float shake = Mathf.Repeat(t - glideEnd, PreenEvery) - 5.0f;
+                if (shake > 0f && shake < 0.35f)
+                {
+                    Wings(true);
+                    Beat(12f + 10f * Mathf.Sin(shake * 40f));
+                }
             }
             else
             {
@@ -292,6 +301,21 @@ namespace Sinbinder.Gameplay
             _last = at;
             Wings(true);
             Beat(wing);
+        }
+
+        /// <summary>Раз в столько секунд на насесте — чистит перья и встряхивается.</summary>
+        private const float PreenEvery = 7f;
+
+        /// <summary>
+        /// Чистит перья: клюв под крыло — наклон вперёд и вбок на секунду, потом снова прямо. Головы-кости
+        /// у модели нет, клонится всем телом, как и поворачивает голову. По времени на насесте, без жребия.
+        /// </summary>
+        private static Quaternion Preen(float sat)
+        {
+            float p = Mathf.Repeat(sat, PreenEvery) - 3.2f;
+            if (p <= 0f || p >= 1.2f) return Quaternion.identity;
+            float k = Mathf.Sin(Mathf.PI * p / 1.2f);
+            return Quaternion.Euler(28f * k, 0f, 18f * k * Mathf.Sin(p * 9f));
         }
 
         /// <summary>Взмах: угол крыла вверх от горизонта, градусы; машет с частотой и размахом.</summary>

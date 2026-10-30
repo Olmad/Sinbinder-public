@@ -137,6 +137,8 @@ namespace Sinbinder.Gameplay
                 if (r.sharedMaterials.Length > 0 && r.sharedMaterials[0] != null) { _wood = r.sharedMaterials[0]; break; }
         }
 
+        void Start() => Pile();
+
         void OnDestroy()
         {
             if (_instance == this) _instance = null;
@@ -150,7 +152,7 @@ namespace Sinbinder.Gameplay
         {
             if (_instance == null || !SinbinderPlayer.Exists || Inspectable.Telling) return null;
             if (CrystalBall.Raised || RaidEvent.Running) return null;
-            if (Time.time < _instance._ready) return null;
+            if (Time.time < _instance._ready || !Carrying) return null;
             var pause = GamePauseController.Instance;
             if (pause != null && pause.IsPaused) return null;
 
@@ -165,7 +167,138 @@ namespace Sinbinder.Gameplay
         {
             if (Time.time < _ready) return;
             _ready = Time.time + Cooldown;
+            if (_held != null) { Destroy(_held); _held = null; }
             StartCoroutine(Throw(_thrown++));
+        }
+
+        // ---------- поленница (КТ1 п. 16: «взять полено, подкинуть в костёр») ----------
+        // Полено бралось из воздуха: F у огня — и оно падало в костёр. Теперь у огня сложена поленница:
+        // F у неё — полено в руках, F у огня — в огонь, G — положить обратно (HandsDrop).
+
+        /// <summary>С какого расстояния по земле дотянуться до поленницы, м.</summary>
+        private const float PileReach = 1.8f;
+
+        /// <summary>Поленница от середины огня, м: за кругом брёвен, но в его свете.</summary>
+        private const float PileDistance = 3.4f;
+
+        private Transform _pile;
+        private GameObject _held;
+
+        /// <summary>Греховод несёт полено от поленницы к огню.</summary>
+        public static bool Carrying => _instance != null && _instance._held != null;
+
+        /// <summary>Поленница, до которой Греховод дотянется сейчас, с пустыми руками. Нет — null.</summary>
+        public static CampfireStoke PileInReach()
+        {
+            if (_instance == null || _instance._pile == null || Carrying) return null;
+            if (!SinbinderPlayer.Exists || Inspectable.Telling || !HandsFree()) return null;
+            if (CrystalBall.Raised || RaidEvent.Running) return null;
+            var pause = GamePauseController.Instance;
+            if (pause != null && pause.IsPaused) return null;
+            return CampFocus.GroundDistance(SinbinderPlayer.Where, _instance._pile.position) <= PileReach ? _instance : null;
+        }
+
+        private static bool HandsFree() => RecordHands.Empty && !Remains.Carrying;
+
+        public Vector3 PileCentre => _pile.position + Vector3.up * 0.35f;
+        public string PilePrompt => Loc.T("F — взять полено");
+
+        /// <summary>Взять полено: поперёк груди, пока не бросит в огонь или не положит обратно.</summary>
+        public void TakeLog()
+        {
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null || _held != null) return;
+            _held = Billet("Полено в руках", 0);
+            _held.transform.SetParent(hero.transform, false);
+            _held.transform.localPosition = new Vector3(0f, 1.05f, 0.42f);
+            _held.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            Audio.Sfx.Stoke(hero.transform, hero.transform.position);
+            Debug.Log("[КОСТЁР] полено из поленницы — в руках");
+        }
+
+        /// <summary>G: положить полено обратно на поленницу.</summary>
+        public static void PutBack()
+        {
+            if (_instance == null || _instance._held == null) return;
+            Destroy(_instance._held);
+            _instance._held = null;
+        }
+
+        /// <summary>Что стоит на месте поленницы: вещь не шире восьми метров и не сам костёр. Свободно — null.</summary>
+        private Collider Blocker(Vector3 at)
+        {
+            var fire = transform.parent != null ? transform.parent : transform;
+            foreach (var c in Physics.OverlapSphere(at + Vector3.up * 0.6f, 0.6f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (c == null || c.transform.IsChildOf(fire)) continue;
+                var size = c.bounds.size;
+                if (size.x > 8f || size.z > 8f) continue;
+                return c;
+            }
+            return null;
+        }
+
+        /// <summary>Чурка без коллайдера, тонированная деревом; n — на сколько отличается от соседних.</summary>
+        private GameObject Billet(string name, int n)
+        {
+            var log = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            log.name = name;
+            var col = log.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            var renderer = log.GetComponent<MeshRenderer>();
+            if (_wood != null) renderer.sharedMaterial = _wood;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var tint = Fresh * (0.85f + 0.3f * ((n * 0.618f) % 1f));
+            tint.a = 1f;
+            var block = new MaterialPropertyBlock();
+            block.SetColor("_BaseColor", tint);
+            block.SetColor("_Color", tint);
+            renderer.SetPropertyBlock(block);
+            log.transform.localScale = new Vector3(0.13f, 0.34f, 0.13f);
+            return log;
+        }
+
+        /// <summary>
+        /// Сложить поленницу: где у огня свободно и дальше всего от брёвен для сидения. Восемь сторон по кругу,
+        /// без жребия; занято (палатка, котёл) — следующая. Три ряда: четыре, три, два.
+        /// </summary>
+        private void Pile()
+        {
+            var fire = Ground();
+            Vector3 best = Vector3.zero;
+            float bestScore = -1f;
+            for (int i = 0; i < 8; i++)
+            {
+                float a = (200f + i * 45f) * Mathf.Deg2Rad;
+                var at = fire + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * PileDistance;
+                // Занято — вещью, а не землёй, холмом или зоной: всё шире восьми метров не мешает
+                // (проход w3110e: простая проверка сферой находила занятым каждое место).
+                var blocker = Blocker(at);
+                if (blocker != null) { Debug.Log($"[КОСТЁР] поленница: сторона {i} занята «{blocker.name}»"); continue; }
+                float score = float.MaxValue;
+                foreach (var seat in Object.FindObjectsByType<LogSeat>(FindObjectsSortMode.None))
+                    score = Mathf.Min(score, CampFocus.GroundDistance(seat.Centre, at));
+                if (score > bestScore) { bestScore = score; best = at; }
+            }
+            if (bestScore < 0f) { Debug.LogWarning("[КОСТЁР] поленнице нет места у огня — все восемь сторон заняты"); return; }
+
+            _pile = new GameObject("Поленница").transform;
+            _pile.SetParent(transform.parent != null ? transform.parent : transform, true);
+            _pile.position = best;
+            var along = fire - best; along.y = 0f;
+            _pile.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, along.normalized));
+
+            int n = 0;
+            int[] rows = { 4, 3, 2 };
+            for (int r = 0; r < rows.Length; r++)
+                for (int k = 0; k < rows[r]; k++)
+                {
+                    var log = Billet("Полено", n++);
+                    log.transform.SetParent(_pile, false);
+                    log.transform.localPosition = new Vector3((k - (rows[r] - 1) * 0.5f) * 0.135f, 0.065f + r * 0.115f, 0f);
+                    log.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    log.transform.localScale = new Vector3(0.13f, 0.30f + 0.04f * ((n * 0.382f) % 1f), 0.13f);
+                }
         }
 
         /// <summary>Земля под огнём: свет висит над поленьями на метр с лишним.</summary>
@@ -211,21 +344,9 @@ namespace Sinbinder.Gameplay
                 if (old != null) Destroy(old);
             }
 
-            var log = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            log.name = "Полено";
-            var col = log.GetComponent<Collider>();
-            if (col != null) Destroy(col);
-
-            var renderer = log.GetComponent<MeshRenderer>();
-            if (_wood != null) renderer.sharedMaterial = _wood;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
             // Первый материал модели костра светлый, как камень очага: полено в огне белело (кадр 31.10).
-            // Тонируем его в дерево сразу, ещё в падении.
-            var block = new MaterialPropertyBlock();
-            block.SetColor("_BaseColor", Fresh);
-            block.SetColor("_Color", Fresh);
-            renderer.SetPropertyBlock(block);
+            // Billet тонирует его в дерево сразу, ещё в падении.
+            var log = Billet("Полено", n);
 
             log.transform.SetParent(transform.parent != null ? transform.parent : transform, true);
             log.transform.position = Ground() + Vector3.up * 0.3f;

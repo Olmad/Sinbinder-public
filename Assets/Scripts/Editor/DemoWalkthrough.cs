@@ -2678,6 +2678,11 @@ namespace Sinbinder.EditorTools
             Warp(SinbinderPlayer.Instance.gameObject, new Vector3(c.x, 0f, c.z) + Vector3.back * 2.2f);
             Sinbinder.Utilets.Reel.Aim(c, 8f);
             Sinbinder.Utilets.Reel.Start("полено", 4.5f);
+            // Как игрок: полено из поленницы — в руки, из рук — в огонь (КТ1 п. 16).
+            var pile = GameObject.Find("Поленница");
+            Write("  [ПОЛЕННИЦА] " + (pile != null ? "сложена у огня в " + Vector3.Distance(pile.transform.position, c).ToString("F1") + " м" : "НЕТ — сложить было негде"));
+            stoke.TakeLog();
+            Write("  [ПОЛЕННИЦА] полено в руках: " + (CampfireStoke.Carrying ? "да" : "нет"));
             stoke.Feed();
         }
 

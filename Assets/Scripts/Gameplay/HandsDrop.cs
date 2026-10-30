@@ -13,7 +13,7 @@ namespace Sinbinder.Gameplay
     public class HandsDrop : MonoBehaviour
     {
         /// <summary>Что-то в руках — G отпускает, а не командует.</summary>
-        public static bool Busy => !RecordHands.Empty || Remains.Carrying;
+        public static bool Busy => !RecordHands.Empty || Remains.Carrying || CampfireStoke.Carrying;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -30,6 +30,7 @@ namespace Sinbinder.Gameplay
             if (Core.GamePauseController.Instance != null && Core.GamePauseController.Instance.IsPaused) return;
             if (!RecordHands.Empty) RecordHands.PutDown();
             else if (Remains.Carrying) Remains.PutDown();
+            else if (CampfireStoke.Carrying) CampfireStoke.PutBack();
         }
     }
 }

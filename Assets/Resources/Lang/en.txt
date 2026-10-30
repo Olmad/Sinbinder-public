@@ -5439,6 +5439,10 @@ msgstr "Let me throw one, master. I won't miss from here. Probably."
 msgid "F — подбросить полено"
 msgstr "F — add a log"
 
+#: Gameplay/CampfireStoke.cs
+msgid "F — взять полено"
+msgstr "F — take a log"
+
 #: Gameplay/CardTable.cs
 msgid "За картами никого: играть не с кем."
 msgstr "Nobody at the cards: no one to play with."
