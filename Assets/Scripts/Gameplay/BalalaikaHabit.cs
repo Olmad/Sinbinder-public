@@ -242,11 +242,17 @@ namespace Sinbinder.Gameplay
             if (_body != null) { _body.Seated = false; _body.Strumming = false; }
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (TryGetComponent<NavMeshObstacle>(out var block)) block.enabled = false;
-            transform.position = _stand;
+            // Встать — за бревном, снаружи круга, если там земля: сидел он лицом к огню, и «встать перед бревном»
+            // ставило его внутрь круга брёвен, а проходы между ними заняты теми, кто стоит на своих местах у
+            // костра (проход демо 29.10, ночь: «ЗАСТРЯЛ Косой Ждан… шесть секунд стоит у (-1,4; 1,8)», путь есть).
+            var at = _stand;
+            var forward = _facing * Vector3.forward; forward.y = 0f;
+            if (forward.sqrMagnitude > 1e-4f && Ground(_stand - forward.normalized * 1.3f, _stand.y, out var behind)) at = behind;
+            transform.position = at;
             if (agent != null)
             {
                 agent.enabled = true;
-                agent.Warp(_stand);
+                agent.Warp(at);
                 if (agent.isOnNavMesh) agent.isStopped = false;
             }
             _seat = null;
