@@ -214,6 +214,7 @@ namespace Sinbinder.AOS
                 case Counterfactual.Factor.Wounds:       return Grammar.Pick(gender, Loc.T("Я ранен!"), Loc.T("Я ранена!"));
                 case Counterfactual.Factor.Surrounded:   return Loc.T("Их слишком много!");
                 case Counterfactual.Factor.Fatigue:      return Loc.T("Сил нет…");
+                case Counterfactual.Factor.Murderer:     return Loc.T("Это они меня убили!");
             }
 
             // Не взвешено: долг и даль игрок исправит сам — их и называем.

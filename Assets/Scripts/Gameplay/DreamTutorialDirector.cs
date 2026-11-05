@@ -8,6 +8,18 @@ using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
 {
+    /// <summary>
+    /// Сон Бога Смерти: обучение до лагеря. Его ядро (автор, 05.11: «нужно один раз
+    /// КОНКРЕТНО, на сто процентов понятно показать AOS») — один приказ, которого
+    /// воин может не исполнить, и суд души (<see cref="SoulCourt"/>), который
+    /// показывает изнутри, кто в нём решал.
+    ///
+    /// Ничего не подстроено (автор: «игра должна показать, что она не скриптовая»):
+    /// душа каждый раз новая, решение принимает движок, а после боя тот же приказ
+    /// звучит ещё раз — уже без убийц на глазах, — и игрок видит, что решение
+    /// держалось на причине. Подстроено только положение: эти двое его убили,
+    /// и они стоят перед ним.
+    /// </summary>
     public class DreamTutorialDirector : MonoBehaviour
     {
         public static DreamTutorialDirector Instance { get; private set; }
@@ -21,7 +33,41 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Battle, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, Retreat, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, Return, Finished }
+
+        /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
+        public static string StageName => Instance != null ? Instance._stage.ToString() : "";
+
+        /// <summary>Поднятый — для прогона.</summary>
+        public Warrior Zombie => _zombie;
+        public Warrior Wounded => _wounded;
+        public IReadOnlyList<Warrior> Killers => _killers;
+        public Vector3 WoundedAt => _woundedAt;
+        public Vector3 Gate => _allowed;
+        public SinbinderPlayer Hero => _hero;
+
+        /// <summary>Как кончился миг приказа при убийцах — для прогона: «отказал», «колебался», «послушался».</summary>
+        public static string RefusalResult;
+
+        /// <summary>Как кончилась проверка тем же приказом без убийц: «послушался», «снова нет».</summary>
+        public static string RetestResult;
+
+        /// <summary>Клавиша, нажатая прогоном (без людей Input молчит). Живёт один кадр.</summary>
+        private KeyCode _testKey;
+        private int _testKeyFrame = -1;
+        public void TestPress(KeyCode key) { _testKey = key; _testKeyFrame = Time.frameCount; }
+        private bool Pressed(KeyCode key)
+            => Input.GetKeyDown(key) || (_testKey == key && Time.frameCount - _testKeyFrame <= 1);
+
+        /// <summary>Прогон: управление (Tab, V, J) проверено в лагере — сразу к воротам.</summary>
+        public void TestSkipControls()
+        {
+            if (_stage >= Stage.FirstPerson && _stage < Stage.Return)
+                Set(Stage.Return, "Вернись к воротам и нажми F, чтобы проснуться.");
+        }
+
+        private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
+
         private Stage _stage;
         private SinbinderPlayer _hero;
         private Warrior _wounded, _zombie;
@@ -30,13 +76,18 @@ namespace Sinbinder.Gameplay
         private bool _handBusy, _battleStarted;
         private int _backAttempts;
         private int _swingsBefore, _blockFramesBefore;
-        private bool _squadOrdered, _retreatOrdered, _whisperHint;
+        private bool _squadOrdered;
         private int _selectedJarBefore;
-        private float _commandSince;
+        private float _commandSince, _orderedAt = -1f;
+        private float _standoffSince, _decideSince, _retestSince;
+        private bool _courtRunning, _retestOrdered, _contrastRunning;
+        private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
         private DreamHandCursor _hand;
-        private int _tutorialSeed;
+        private int _tutorialSeed, _dreamNo;
+        private bool _counterfactualWas;
+        private float _retestPrompted;
 
         // Only intercept commands inside this optional dream. Other scenes are untouched.
         public static bool PermitDestination(Vector3 worldPoint)
@@ -66,25 +117,47 @@ namespace Sinbinder.Gameplay
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
-            _tutorialSeed = Random.Range(10000, 999999);
+            // Душа — новая в каждой новой игре (автор, 05.11: «одна и та же душа
+            // может выглядеть скриптово»; «разные души повышают заметность AOS
+            // при переигровке»). Без жребия: по счёту снов на этом ПК.
+            // Неизменен только факт сцены — эти двое его убили.
+            int dreams = PlayerPrefs.GetInt(DreamsKey, 0);
+            PlayerPrefs.SetInt(DreamsKey, dreams + 1);
+            _tutorialSeed = 4242 + dreams * 7919;
+            _dreamNo = dreams + 1;
+            RefusalResult = null;
+            RetestResult = null;
+
+            // Причина отказа «от противного» — на весь сон: суд называет то,
+            // без чего воин поступил бы иначе, и это должно быть посчитано.
+            _counterfactualWas = AOS.Counterfactual.Enabled;
+            AOS.Counterfactual.Enabled = true;
         }
 
         private void OnEnable() { SelectionManager.OnPlayerOrder += TrackOrder; }
         private void OnDisable() { SelectionManager.OnPlayerOrder -= TrackOrder; }
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+        private void OnDestroy()
+        {
+            if (Instance != this) return;
+            Instance = null;
+            AOS.Counterfactual.Enabled = _counterfactualWas;
+        }
 
         private void TrackOrder(CommandKind kind, int count)
         {
             if (count <= 0 || SelectionManager.Instance == null) return;
             if (_stage == Stage.Command && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
                 _squadOrdered = true;
-            if (_stage == Stage.Retreat && kind == CommandKind.FallBack
-                && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
-                _retreatOrdered = true;
         }
 
         private IEnumerator Start()
         {
+            // Перебранки перед боем во сне нет: сон ведёт свои мгновения сам, а
+            // перебранка, начавшись при убийцах, забирала камеру и, уходя,
+            // выбрасывала её из суда души в мир (прогон 05.11).
+            foreach (var talk in FindObjectsByType<Dialogue.DialogueTrigger>(FindObjectsSortMode.None))
+                talk.enabled = false;
+
             // The existing camp is still the real first scene for the public demo.
             // Память душ живёт в MemoryProcessor этой сцены и уходит вместе с ней.
             SquadRoster.Clear();
@@ -107,11 +180,15 @@ namespace Sinbinder.Gameplay
                 Object = _killerSketches[0].Name, Trigger = _killerSketches[0].Name,
                 Emotion = "Ненависть", Story = "Эти люди оставили его умирать на дороге."
             };
+            // Грех — его собственный, но не добродетель: искусить можно только
+            // то, что в душе звучит (спектр выше нуля), — иначе урок «Z» упёрся бы
+            // в «Не купишь». Память об убийцах — у каждого, это факт сцены.
             var soul = new SoulData(dying.Name, dying.Sin, dying.Moral, 1,
-                                    dying.Strength, seed);
+                                    Mathf.Max(45f, Mathf.Abs(dying.Strength)), seed);
             soul.SetTrade(dying.Trade);
             _wounded = CreateLiving(soul, _woundedAt, Team.Neutral);
             if (_wounded == null) { enabled = false; yield break; }
+            Debug.Log($"[СОН] Душа сна №{_dreamNo}: {soul.Name}, грех {soul.Sin}, сила {soul.SinIntensity:F0}");
             yield return null;
             var hp = _wounded.GetComponent<Damageable>();
             if (hp != null) hp.Wound(0.12f);
@@ -177,7 +254,7 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             if (_hero == null || _stage == Stage.Finished) return;
-            if (Time.unscaledTime >= _nextPrompt)
+            if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting)
             {
                 Log(_line);
                 _nextPrompt = Time.unscaledTime + 25f;
@@ -199,29 +276,88 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 case Stage.Rebind:
-                    if (Input.GetKeyDown(KeyCode.R) && GroundDistance(_hero.transform.position, _woundedAt) < 4f)
+                    if (Pressed(KeyCode.R) && GroundDistance(_hero.transform.position, _woundedAt) < 4f)
                         TryRebind();
                     break;
                 case Stage.Command:
-                    // A real refusal/hesitation exposes the temptation key, but does not force AOS to refuse.
-                    if (!_whisperHint && _zombie != null && !_zombie.IsDead && Whisper.Can(_zombie))
+                    // Первый приказ — любой. Он его исполнит: послушание — фон,
+                    // на котором отказ потом читается характером, а не поломкой.
+                    if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame)))
+                        _orderedAt = Time.unscaledTime;
+                    if ((_orderedAt >= 0f && Time.unscaledTime - _orderedAt > 3.5f)
+                        || Time.unscaledTime - _commandSince > 20f)
+                        BeginStandoff();
+                    break;
+                case Stage.Standoff:
+                    if (_zombie == null || _zombie.IsDead) { StartBattle("Первый воин пал."); break; }
+                    if (_killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
                     {
-                        _whisperHint = true;
-                        Log("Воин колеблется. Z — попытаться искушать его (не гарантирует согласия).");
+                        // Игрок сразил их сам раньше приказа — тоже выбор; миг отказа ушёл.
+                        Hold(_zombie, false);
+                        Set(Stage.FirstPerson, "Убийцы пали. Tab: перейди от тактического вида к первому лицу.");
+                        break;
                     }
-                    // The victim's next decision is his own, even if commanded.
-                    if (_squadOrdered || Time.unscaledTime - _commandSince > 18f)
+                    if (_killers.Count > 0 && Ordered(_standoffSince))
                     {
-                        if (!_squadOrdered) Log("Можно вернуться к приказам в лагере.");
-                        Set(Stage.Battle, "Убийцы возвращаются. Зомби помнит их и принимает решение сам.");
-                        StartCoroutine(ReleaseKillers());
+                        var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
+                        _mindBefore = mind != null ? mind.LastContext : null;
+                        _decideSince = Time.unscaledTime;
+                        Hold(_zombie, false);   // теперь решает он
+                        _stage = Stage.Deciding;
                     }
                     break;
+                case Stage.Deciding:
+                {
+                    var mind = _zombie != null ? _zombie.GetComponent<AOS.AOSWarriorWrapper>() : null;
+                    if (mind == null || _zombie.IsDead) { StartBattle("Решение не дошло до суда."); break; }
+                    if (_courtRunning) break;
+                    if (mind.LastContext != null && mind.LastContext != _mindBefore)
+                    {
+                        _courtRunning = true;
+                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext));
+                    }
+                    else if (Time.unscaledTime - _decideSince > 6f)
+                    {
+                        Debug.LogWarning("[СОН QA] Воин не принял решения за 6 с после приказа — суда не будет.");
+                        StartBattle("Убийцы идут.");
+                    }
+                    break;
+                }
                 case Stage.Battle:
                     KeepHeroAlive();
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
+                    {
+                        if (_zombie != null && !_zombie.IsDead && RefusalResult != "послушался")
+                        {
+                            _retestSince = Time.time;
+                            _retestPrompted = Time.unscaledTime;
+                            _retestOrdered = false;
+                            Set(Stage.Retest, "Убийц больше нет. Отдай ему тот же приказ — отступить (X).");
+                        }
+                        else
+                            Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу.");
+                    }
+                    break;
+                case Stage.Retest:
+                {
+                    if (_zombie == null || _zombie.IsDead) { Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу."); break; }
+                    var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
+                    if (!_retestOrdered && Ordered(_retestSince))
+                    {
+                        _retestOrdered = true;
+                        _mindBefore = mind != null ? mind.LastContext : null;
+                        _decideSince = Time.unscaledTime;
+                    }
+                    if (_retestOrdered && !_contrastRunning && mind != null
+                        && mind.LastContext != null && mind.LastContext != _mindBefore)
+                    {
+                        _contrastRunning = true;
+                        StartCoroutine(Contrast(mind.LastDecisionDetail));
+                    }
+                    else if (!_retestOrdered && Time.unscaledTime - _retestPrompted > 40f)
                         Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу.");
                     break;
+                }
                 case Stage.FirstPerson:
                 {
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
@@ -265,23 +401,20 @@ namespace Sinbinder.Gameplay
                 case Stage.Jars:
                     // Confirm that the real SatchelHands changed the selected jar, not merely a J key press.
                     if (Satchel.Jars < 2 || Satchel.Selected != _selectedJarBefore)
-                    {
-                        if (_zombie != null && !_zombie.IsDead)
-                            Set(Stage.Retreat, "Tab — тактика, выбери зомби, прикажи отход. F — пропустить урок.");
-                        else
-                            Set(Stage.Return, "Первый воин пал. Вернись к воротам и нажми F, чтобы проснуться.");
-                    }
-                    break;
-                case Stage.Retreat:
-                    if (_retreatOrdered || _zombie == null || _zombie.IsDead || Input.GetKeyDown(KeyCode.F))
                         Set(Stage.Return, "Вернись к воротам и нажми F, чтобы проснуться.");
                     break;
                 case Stage.Return:
-                    if (GroundDistance(_hero.transform.position, _allowed) < 5f && Input.GetKeyDown(KeyCode.F))
+                    if (GroundDistance(_hero.transform.position, _allowed) < 5f && Pressed(KeyCode.F))
                         Finish();
                     break;
             }
         }
+
+        /// <summary>Отдан ли поднятому приказ после этого мига (игровое время).</summary>
+        private bool Ordered(float since)
+            => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.Command.IssuedAt > since;
+
+        private float _commandSinceGame;
 
         private void BeginPractice(string line)
         {
@@ -338,22 +471,41 @@ namespace Sinbinder.Gameplay
                     AOS.MemoryProcessor.Instance.CreateMemory(_zombie, "MurderedMe", killer.Name,
                         AOS.EmotionType.Anger, 0.95f);
             _commandSince = Time.unscaledTime;
-            Set(Stage.Command, "Выдели зомби и отдай приказ ПКМ. Его воля остаётся его собственной.");
+            _commandSinceGame = Time.time;
+            Set(Stage.Command, "Выдели его и отдай приказ ПКМ по земле — он пойдёт.");
+        }
+
+        /// <summary>
+        /// Убийцы возвращаются и встают на дороге. И они, и он замирают:
+        /// миг ждёт приказа игрока. Решать воин начнёт, когда приказ прозвучит.
+        /// </summary>
+        private void BeginStandoff()
+        {
+            _standoffSince = Time.time;
+            Hold(_zombie, true);
+            Set(Stage.Standoff, "Его убийцы вернулись. Прикажи ему отступить: выдели его, нажми X и щёлкни по земле позади (или Shift + ПКМ).");
+            StartCoroutine(ReleaseKillers());
         }
 
         private IEnumerator ReleaseKillers()
         {
-            yield return new WaitForSeconds(1.3f);
+            yield return new WaitForSeconds(0.6f);
+            Vector3 near = _zombie != null ? _zombie.transform.position : _woundedAt;
             for (int i = 0; i < _killerSketches.Count; i++)
             {
                 var k = _killerSketches[i];
                 var soul = new SoulData(k.Name, k.Sin, k.Moral, 1, k.Strength, k.Seed);
                 soul.SetTrade(k.Trade);
-                var enemy = CreateLiving(soul, _woundedAt + new Vector3(-4f + i * 2f, 0f, 9f), Team.Enemy);
+                // Перед ним, в десяти-одиннадцати шагах: видно, но не вплотную.
+                var at = new Vector3(Mathf.Clamp(near.x, -4f, 4f) - 1.3f + i * 2.6f, 0f,
+                                     Mathf.Min(near.z + 10.5f, 12f));
+                var enemy = CreateLiving(soul, at, Team.Enemy);
                 if (enemy == null) continue;
                 enemy.Attack = Mathf.Min(enemy.Attack, 2.5f); // Weaker than the hero.
                 var hp = enemy.GetComponent<Damageable>();
                 if (hp != null) hp.Initialize(9f, 0f);
+                enemy.transform.rotation = Quaternion.LookRotation(Flat(near - at));
+                Hold(enemy, true);
                 _killers.Add(enemy);
                 // Link memory to concrete actor identity as well as the old mortal name.
                 if (_zombie != null && AOS.MemoryProcessor.Instance != null)
@@ -363,10 +515,94 @@ namespace Sinbinder.Gameplay
             if (_killers.Count == 0)
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
+                Hold(_zombie, false);
                 Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. Вернись к воротам и нажми F.");
-                yield break;
             }
+        }
+
+        /// <summary>
+        /// Суд над решением — каким бы оно ни было. Отказ, колебание, послушание —
+        /// суд показывает, чьи голоса это решили.
+        /// </summary>
+        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
+        {
+            RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался" : "послушался";
+            int murders = 0;
+            if (c != null && c.RecentMemories != null)
+                foreach (var m in c.RecentMemories) if (m != null && m.EventType == "MurderedMe") murders++;
+            Debug.Log($"[СОН] Решение при убийцах: {RefusalResult} ({d.Action}, причина {d.Decisive}, голос {d.DecisiveVoice}); "
+                + $"убийцы на глазах {(c != null && c.KnownMurdererInSight ? "да" : "нет")}, памяти об убийстве {murders}");
+
+            // Миг на его слово над головой (RefusalPresenter) — потом суд.
+            yield return new WaitForSecondsRealtime(0.8f);
+            if (_zombie != null && !_zombie.IsDead)
+                yield return SoulCourt.Convene(_zombie, d, c);
+            _courtRunning = false;
+
+            var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            if (d.RefusedCommand || d.Hesitated)
+                StartBattle(Grammar.Pick(g,
+                    "Он решил сам. Убери причину — срази убийц. Или искуси его: подойди и нажми Z.",
+                    "Она решила сама. Убери причину — срази убийц. Или искуси её: подойди и нажми Z."));
+            else
+                StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
+        }
+
+        private void StartBattle(string line)
+        {
+            foreach (var k in _killers) Hold(k, false);
+            if (_zombie != null) Hold(_zombie, false);
             _battleStarted = true;
+            Set(Stage.Battle, line);
+        }
+
+        /// <summary>
+        /// Тот же приказ без убийц на глазах. Послушался — значит, отказ держался
+        /// на причине, а не на сцене: это и есть довод, что сценария нет.
+        /// </summary>
+        private IEnumerator Contrast(AOS.Decision d)
+        {
+            bool obeyed = !d.RefusedCommand && !d.Hesitated;
+            RetestResult = obeyed ? "послушался" : "снова нет";
+            Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action})");
+
+            var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            string line = obeyed
+                ? Grammar.Pick(g, Loc.T("Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."),
+                                  Loc.T("Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."))
+                : Grammar.Pick(g, Loc.T("И снова нет: у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."),
+                                  Loc.T("И снова нет: у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."));
+
+            var camera = Dialogue.DialogueCameraController.Instance;
+            if (camera != null && _zombie != null && UI.Letterbox.Instance != null)
+            {
+                yield return camera.WaitUntilFree(4f);
+                camera.SaveCameraPosition();
+                yield return camera.FocusOn(_zombie.transform);
+                UI.Letterbox.Instance?.Say(null, line);
+                yield return UI.Letterbox.Hold(Herald.Hold(line) + 0.5f);
+                yield return camera.RestoreCamera();
+            }
+            Log(line);
+            _contrastRunning = false;
+            Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу.");
+        }
+
+        /// <summary>
+        /// Замереть или ожить: ум (такт решения) и ноги. Замерший не решает
+        /// ничего — его решение начнётся, когда отпустят.
+        /// </summary>
+        private static void Hold(Warrior w, bool hold)
+        {
+            if (w == null) return;
+            var mind = w.GetComponent<AOS.AutoAttackAOS>();
+            if (mind != null) mind.enabled = !hold;
+            var legs = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (legs != null && legs.enabled && legs.isOnNavMesh)
+            {
+                legs.isStopped = hold;
+                if (hold) legs.ResetPath();
+            }
         }
 
         private void KeepHeroAlive()
@@ -394,9 +630,17 @@ namespace Sinbinder.Gameplay
             return Vector3.Distance(a, b);
         }
 
+        private static Vector3 Flat(Vector3 v)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude < 1e-4f ? Vector3.forward : v.normalized;
+        }
+
         private void OnGUI()
         {
-            if (_stage == Stage.Finished || _handBusy) return;
+            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting) return;
+            // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
+            if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
             var style = GUI.skin.box;
             GUI.Box(new Rect(16, Screen.height - 106, Mathf.Min(Screen.width - 32, 720), 80),
                 "Воспоминание\n" + _line, style);

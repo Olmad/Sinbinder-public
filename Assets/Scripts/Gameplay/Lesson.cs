@@ -212,6 +212,11 @@ namespace Sinbinder.Gameplay
         {
             if (_instance == null || _instance._now.HasValue || _given.Contains(LessonKind.Refusal)) return;
             if (!RefusalTeachable || !Calm() || w == null || w.IsDead) return;
+
+            // Во сне отказ объясняет суд души, а урок держал бы мир до наведения
+            // мыши — бой и проверка тем же приказом стояли (прогон 05.11). Урок
+            // дождётся первого отказа в лагере.
+            if (DreamTutorialDirector.Instance != null) return;
             if (Time.unscaledTime - _instance._endedAt < Gap) return;
 
             // Навести можно только на видимого — и только если подсказке

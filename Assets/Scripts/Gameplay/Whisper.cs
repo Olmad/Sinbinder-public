@@ -200,7 +200,7 @@ namespace Sinbinder.Gameplay
             }
             // Итог — и в журнал: перечитать, кого и чем купили.
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T("Шёпот") + ": " + outcome);
-            LastResult = $"{(w != null ? w.DisplayName : "?")} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")}; итог: {outcome}";
+            LastResult = $"{(w != null ? w.DisplayName : "?")} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")} => {outcome}";
             Debug.Log("[ШЁПОТ] " + LastResult);
 
             if (focus != null) StopCoroutine(focus);

@@ -9433,3 +9433,309 @@ msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry 
 
 msgid "{0}: «{1} вас не расслышали, владыка: далеко. Голос не долетает — подойдите ближе»."
 msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
+
+msgid "его убийцы у него на глазах"
+msgstr "his killers are right before his eyes"
+
+msgid "её убийцы у неё на глазах"
+msgstr "her killers are right before her eyes"
+
+msgid "его убийцы на виду"
+msgstr "his killers are in sight"
+
+msgid "Это они меня убили!"
+msgstr "They're the ones who killed me!"
+
+msgid "он помнит, кто его убил"
+msgstr "he remembers who killed him"
+
+msgid "она помнит, кто её убил"
+msgstr "she remembers who killed her"
+
+msgid "Суд души"
+msgstr "The Court of the Soul"
+
+msgid "Вердикт"
+msgstr "Verdict"
+
+msgid "Это суд его души. За столом — его голоса; огонь перед каждым — сила голоса. Решит самый громкий."
+msgstr "This is the court of his soul. At the table sit his voices; the flame before each is that voice's strength. The loudest decides."
+
+msgid "На столе — приказ владыки: «{0}»."
+msgstr "On the table lies the lord's order: “{0}”."
+
+msgid "Я — за приказ."
+msgstr "I am for the order."
+
+msgid "Я — против."
+msgstr "I am against."
+
+msgid "Отказ. {0} не исполнил приказ."
+msgstr "Refusal. {0} did not carry out the order."
+
+msgid "Отказ. {0} не исполнила приказ."
+msgstr "Refusal. {0} did not carry out the order."
+
+msgid "{0} замер: приказ не исполнен."
+msgstr "{0} froze: the order is not carried out."
+
+msgid "{0} замерла: приказ не исполнен."
+msgstr "{0} froze: the order is not carried out."
+
+msgid "{0} исполнил приказ."
+msgstr "{0} carried out the order."
+
+msgid "{0} исполнила приказ."
+msgstr "{0} carried out the order."
+
+msgid "отступить"
+msgstr "fall back"
+
+msgid "идти, куда велено"
+msgstr "go where told"
+
+msgid "бить, кого велено"
+msgstr "strike whom told"
+
+msgid "идти и бить по дороге"
+msgstr "advance and strike on the way"
+
+msgid "стоять на месте"
+msgstr "hold position"
+
+msgid "исполнить"
+msgstr "obey"
+
+msgid "Владыка велел. Надо идти."
+msgstr "The lord commanded. We must go."
+
+msgid "Уходи, пока цел."
+msgstr "Leave while you're whole."
+
+msgid "Уходи, пока цела."
+msgstr "Leave while you're whole."
+
+msgid "Не сейчас. Их час ещё придёт."
+msgstr "Not now. Their hour will come."
+
+msgid "Ослушаться — грех."
+msgstr "To disobey is a sin."
+
+msgid "Велено — сделай."
+msgstr "You were told — do it."
+
+msgid "Уйти проще, чем драться."
+msgstr "Leaving is easier than fighting."
+
+msgid "Не о себе думай."
+msgstr "Don't think of yourself."
+
+msgid "Даром драться? Уходи."
+msgstr "Fight for nothing? Leave."
+
+msgid "Послушай владыку."
+msgstr "Listen to the lord."
+
+msgid "Это они нас убили. Я их помню."
+msgstr "They are the ones who killed us. I remember them."
+
+msgid "Стой за своих."
+msgstr "Stand by your own."
+
+msgid "Бей. Пусть ответят кровью."
+msgstr "Strike. Let them answer in blood."
+
+msgid "Не мне решать — но я не уйду."
+msgstr "It's not mine to decide — but I won't leave."
+
+msgid "Бежать от них? Никогда."
+msgstr "Run from them? Never."
+
+msgid "Не уйду."
+msgstr "I won't leave."
+
+msgid "Они живы, а мы — нет."
+msgstr "They live, and we do not."
+
+msgid "Не за себя — за правду."
+msgstr "Not for myself — for what's right."
+
+msgid "Своё надо вернуть."
+msgstr "What's ours must be taken back."
+
+msgid "Не уйду, пока они здесь."
+msgstr "I won't leave while they're here."
+
+msgid "Мало. Хочу ещё."
+msgstr "Not enough. I want more."
+
+msgid "Спиной к ним не повернусь."
+msgstr "I won't turn my back on them."
+
+msgid "Бей!"
+msgstr "Strike!"
+
+msgid "Никуда я не пойду."
+msgstr "I'm not going anywhere."
+
+msgid "Стой, где стоишь."
+msgstr "Stay where you stand."
+
+msgid "Беги!"
+msgstr "Run!"
+
+msgid "Сначала добыча."
+msgstr "Loot first."
+
+msgid "Своих не бросают."
+msgstr "You don't abandon your own."
+
+msgid "Не уходи."
+msgstr "Don't leave."
+
+msgid "Я — {0}. Я слышу владыку."
+msgstr "I am {0}. I hear the lord."
+
+msgid "Я — {0}. Я помню всё, что было."
+msgstr "I am {0}. I remember all that was."
+
+msgid "Я — {0}. Я берегу жизнь."
+msgstr "I am {0}. I guard life."
+
+msgid "Я — {0}. Я знаю, что хорошо и что дурно."
+msgstr "I am {0}. I know good from bad."
+
+msgid "Я — {0}. Я не прохожу мимо чужой беды."
+msgstr "I am {0}. I don't pass by another's trouble."
+
+msgid "Я — {0}. Я умею ждать."
+msgstr "I am {0}. I know how to wait."
+
+msgid "Я — {0}. Я гашу вспышки."
+msgstr "I am {0}. I put out flare-ups."
+
+msgid "Я — {0}. Я не прощаю обид."
+msgstr "I am {0}. I don't forgive wrongs."
+
+msgid "Я — {0}. Я знаю своё место."
+msgstr "I am {0}. I know my place."
+
+msgid "Я — {0}. Я не склоняю головы."
+msgstr "I am {0}. I bow my head to no one."
+
+msgid "Я — {0}. Я отдаю, не считая."
+msgstr "I am {0}. I give without counting."
+
+msgid "Я — {0}. Я считаю, что нам достанется."
+msgstr "I am {0}. I count what we'll get."
+
+msgid "Я — {0}. Я радуюсь чужому."
+msgstr "I am {0}. I rejoice in others' good."
+
+msgid "Я — {0}. Я вижу, у кого больше."
+msgstr "I am {0}. I see who has more."
+
+msgid "Я — {0}. Я никого не держу."
+msgstr "I am {0}. I hold no one back."
+
+msgid "Я — {0}. Я держусь за тех, кто рядом."
+msgstr "I am {0}. I cling to those nearby."
+
+msgid "Я — {0}. Мне хватает малого."
+msgstr "I am {0}. A little is enough for me."
+
+msgid "Я — {0}. Мне всегда мало."
+msgstr "I am {0}. It's never enough for me."
+
+msgid "Я — {0}. Я не бросаю дела."
+msgstr "I am {0}. I don't abandon the task."
+
+msgid "Я — {0}. Я берегу силы."
+msgstr "I am {0}. I save my strength."
+
+msgid "Я — {0}."
+msgstr "I am {0}."
+
+msgid "Голоса вровень — душа не выбрала ничего."
+msgstr "The voices are even — the soul chose nothing."
+
+msgid "Приказ отвергнут: {0} громче, чем {1}."
+msgstr "The order is rejected: {0} is louder than {1}."
+
+msgid "Приказ отвергнут."
+msgstr "The order is rejected."
+
+msgid "Приказ исполнен: {0} громче, чем {1}."
+msgstr "The order is carried out: {0} is louder than {1}."
+
+msgid "Приказ исполнен."
+msgstr "The order is carried out."
+
+msgid "он бы послушался"
+msgstr "he would have obeyed"
+
+msgid "она бы послушалась"
+msgstr "she would have obeyed"
+
+msgid "Другая душа на его месте могла решить иначе."
+msgstr "Another soul in his place might have decided otherwise."
+
+msgid "Решило одно: {0}. Не будь этого — {1}."
+msgstr "One thing decided it: {0}. Without it, {1}."
+
+msgid "Решил один голос — {0}. Без него {1}."
+msgstr "One voice decided it — {0}. Without it, {1}."
+
+msgid "Одной причины нет — так решила вся душа разом."
+msgstr "There is no single reason — the whole soul decided at once."
+
+msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and he goes. The reason is gone: the killers are dead."
+
+msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and she goes. The reason is gone: the killers are dead."
+
+msgid "И снова нет: у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
+msgstr "No again: his soul found another reason. Hover over him to learn which."
+
+msgid "И снова нет: у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
+msgstr "No again: her soul found another reason. Hover over her to learn which."
+
+msgid "Это суд его души. За столом — его голоса; огонь перед каждым — сила голоса."
+msgstr "This is the court of his soul. At the table sit his voices; the flame before each is that voice's strength."
+
+msgid "Это суд её души. За столом — её голоса; огонь перед каждым — сила голоса."
+msgstr "This is the court of her soul. At the table sit her voices; the flame before each is that voice's strength."
+
+msgid "Позади — его моральный компас. Слева — голоса за приказ, справа — против. Куда склонится стрелка, так он и поступит."
+msgstr "Behind them is his moral compass. On the left, the voices for the order; on the right, those against. Where the needle leans, so he will act."
+
+msgid "Позади — её моральный компас. Слева — голоса за приказ, справа — против. Куда склонится стрелка, так она и поступит."
+msgstr "Behind them is her moral compass. On the left, the voices for the order; on the right, those against. Where the needle leans, so she will act."
+
+msgid "Приказ отвергнут. Против — {0}. За приказ — никто."
+msgstr "The order is rejected. Against: {0}. For the order: no one."
+
+msgid "Приказ отвергнут. Против — {0}. За — {1}. Стрелка склонилась к «против»."
+msgstr "The order is rejected. Against: {0}. For: {1}. The needle leaned to “against”."
+
+msgid "Приказ исполнен. За — {0}. Против — никто."
+msgstr "The order is carried out. For: {0}. Against: no one."
+
+msgid "Приказ исполнен. За — {0}. Против — {1}. Стрелка склонилась к «за»."
+msgstr "The order is carried out. For: {0}. Against: {1}. The needle leaned to “for”."
+
+msgid "{0} и {1}"
+msgstr "{0} and {1}"
+
+msgid "Убийц нельзя отпускать."
+msgstr "Killers must not be let go."
+
+msgid "Уйдём — они убьют ещё кого-то."
+msgstr "If we leave, they will kill someone else."
+
+msgid "Это суд его души. Голосов в нём много, но за стол сели те, кого задел этот приказ. Огонь перед каждым — сила голоса; кто молчит — стоит в тени."
+msgstr "This is the court of his soul. It holds many voices, but only those this order touched sat at the table. The flame before each is that voice's strength; the silent ones stand in the shadow."
+
+msgid "Это суд её души. Голосов в ней много, но за стол сели те, кого задел этот приказ. Огонь перед каждым — сила голоса; кто молчит — стоит в тени."
+msgstr "This is the court of her soul. It holds many voices, but only those this order touched sat at the table. The flame before each is that voice's strength; the silent ones stand in the shadow."

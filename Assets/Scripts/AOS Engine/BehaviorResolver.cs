@@ -8,6 +8,21 @@ using Sinbinder.Gameplay;
 
 namespace Sinbinder.AOS
 {
+    /// <summary>Один голос души за одно действие — строка раскладки (<see cref="BehaviourResolver.Ballot"/>).</summary>
+    public readonly struct Vote
+    {
+        public readonly string Module;
+        public readonly ActionType Action;
+        public readonly float Voice;
+
+        public Vote(string module, ActionType action, float voice)
+        {
+            Module = module;
+            Action = action;
+            Voice = voice;
+        }
+    }
+
     public class BehaviourResolver
     {
         /// <summary>
@@ -269,6 +284,22 @@ namespace Sinbinder.AOS
         }
 
         /// <summary>
+        /// Голоса поимённо: сколько каждый модуль души дал каждому действию —
+        /// тот же подсчёт, что в решении (<see cref="Tally"/>), без его
+        /// последствий. Для «суда души» (<see cref="Gameplay.SoulCourt"/>):
+        /// судьи за столом — эти голоса, а не придуманные (автор, 05.11:
+        /// «игра должна показать, что она не скриптовая»). Вещи, перки
+        /// и установка отряда в раскладку не входят: они не голоса души.
+        /// </summary>
+        public List<Vote> Ballot(Warrior warrior, DecisionContext context)
+        {
+            var votes = new List<Vote>();
+            if (warrior == null || context == null) return votes;
+            Tally(warrior, context, Soul.FromWarrior(warrior), null, null, votes);
+            return votes;
+        }
+
+        /// <summary>
         /// Ведётся ли воин на зов (<see cref="Gameplay.Provocation"/>): бить
         /// того, кто зовёт на себя, или того, кого выбрал бы сам. Решено
         /// уже, что бить, — вопрос только кого. Поэтому не кандидат
@@ -313,7 +344,8 @@ namespace Sinbinder.AOS
         /// который молчит (второй круг «от противного»); null — говорят все.
         /// </summary>
         private Dictionary<ActionType, float> Tally(Warrior warrior, DecisionContext context, Soul soul,
-            Dictionary<ActionType, (string module, float value)> loudest, string silenced = null)
+            Dictionary<ActionType, (string module, float value)> loudest, string silenced = null,
+            List<Vote> ledger = null)
         {
             var scores = BuildCandidates(warrior, context);
             float maxVoice = AOSConfig.Load().MaxVoice;
@@ -347,6 +379,7 @@ namespace Sinbinder.AOS
                     if (maxVoice > 0f) voice = Mathf.Clamp(voice, -maxVoice, maxVoice);
 
                     scores[action] += voice;
+                    ledger?.Add(new Vote(module.ModuleID, action, voice));
 
                     if (loudest != null
                         && (!loudest.TryGetValue(action, out var current) || voice > current.value))

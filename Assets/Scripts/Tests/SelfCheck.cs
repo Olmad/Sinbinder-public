@@ -85,6 +85,7 @@ namespace Sinbinder.Tests
                 PaydayInPerson();
                 Provoke();
                 ReasonByContrast();
+                DreamBench();
                 PrideHalves();
                 ChestStore();
                 LootToHands();
@@ -519,6 +520,88 @@ namespace Sinbinder.Tests
             {
                 Counterfactual.Enabled = was;
             }
+        }
+
+        /// <summary>
+        /// Стенд сна (05.11): семь грехов в положении «Сна Бога Смерти» — приказ
+        /// отступить, двое убийц на глазах. Таблица — кто отказал и почему — идёт
+        /// в журнал: разные души решают по-разному, и это видно числом. Проверяется
+        /// то, на чём стоит суд души (SoulCourt): голоса есть с обеих сторон,
+        /// а названная причина — правда.
+        /// </summary>
+        private static void DreamBench()
+        {
+            bool was = Counterfactual.Enabled;
+            try
+            {
+                Counterfactual.Enabled = true;
+                var resolver = new BehaviourResolver();
+                var table = new StringBuilder("[СОН-СТЕНД] приказ «отступить», убийцы на глазах:");
+                int refused = 0, total = 0;
+                foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+                    foreach (float force in new[] { 45f, 85f })
+                    {
+                        var w = MakeWarrior($"Сон {sin} {force:F0}", sin, force, ShellType.Zombie);
+                        if (w == null) continue;
+                        var c = DreamContext(w, murderer: true);
+                        var d = resolver.DecideDetailed(w, c);
+                        var votes = resolver.Ballot(w, c);
+                        total++;
+                        if (d.RefusedCommand) refused++;
+
+                        Check(votes.Exists(v => v.Action == ActionType.ObeyCommand)
+                              && votes.Exists(v => v.Action == ActionType.Attack),
+                              $"сон, {sin}: в раскладке есть голоса и за приказ, и за удар");
+                        if (d.RefusedCommand && d.Decisive != Counterfactual.Factor.None)
+                        {
+                            var without = Counterfactual.Without(c, d.Decisive);
+                            if (d.DecisiveAlso != Counterfactual.Factor.None)
+                                without = Counterfactual.Without(without, d.DecisiveAlso);
+                            Check(resolver.WouldObey(w, without),
+                                  $"сон, {sin}: без названной причины он и правда послушался бы");
+                        }
+
+                        bool calm = resolver.WouldObey(w, DreamContext(w, murderer: false));
+                        table.Append($"\n  {sin} {force:F0}: ")
+                             .Append(d.RefusedCommand ? "отказ" : d.Hesitated ? "колеблется" : "исполняет")
+                             .Append($" ({d.Action}, причина {d.Decisive}")
+                             .Append(string.IsNullOrEmpty(d.DecisiveVoice) ? "" : ", голос " + d.DecisiveVoice)
+                             .Append($"); без убийц на глазах — {(calm ? "исполнил бы" : "нет")}");
+                    }
+                table.Append($"\n  отказали {refused} из {total}");
+                Debug.Log(table.ToString());
+            }
+            finally
+            {
+                Counterfactual.Enabled = was;
+            }
+        }
+
+        /// <summary>Положение сна: приказ отступить в полный голос, враги видны, но не рядом.</summary>
+        private static DecisionContext DreamContext(Warrior w, bool murderer)
+        {
+            var c = BaseContext(w);
+            c.NearbyEnemies = 0;
+            c.EnemiesInSight = 2;
+            c.DangerLevel = 0f;
+            c.HasCommand = true;
+            c.CommandType = CommandKind.FallBack.ToString();
+            c.CommandIsFallBack = true;
+            c.CommandLeavesFight = true;
+            c.CommandVolume = 1f;
+            c.KnownMurdererInSight = murderer;
+            c.RecentMemories = new List<MemoryRecord>
+            {
+                new MemoryRecord("убийца-1", "MurderedMe", EmotionType.Anger, 1f),
+                new MemoryRecord("убийца-2", "MurderedMe", EmotionType.Anger, 1f),
+            };
+            // Есть процессор памяти — решение спросит у него, а не у положения.
+            if (MemoryProcessor.Instance != null)
+            {
+                MemoryProcessor.Instance.CreateMemory(w, "MurderedMe", "убийца-1", EmotionType.Anger, 1f);
+                MemoryProcessor.Instance.CreateMemory(w, "MurderedMe", "убийца-2", EmotionType.Anger, 1f);
+            }
+            return c;
         }
 
         /// <summary>

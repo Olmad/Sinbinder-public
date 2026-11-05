@@ -50,6 +50,13 @@ namespace Sinbinder.Gameplay
                 TryHarvest();
         }
 
+        /// <summary>Жатва без клавиши — для прогона сна (DreamWalkthrough): в пакетном Unity Input молчит.</summary>
+        public void HarvestNow()
+        {
+            _cooldownTimer = 0f;
+            TryHarvest();
+        }
+
         /// <summary>Кадр последней жалобы на полные банки: жнец висит
         /// на каждом своём воине, и без этого жаловались бы все разом.</summary>
         private int _lastFullFrame = -1;

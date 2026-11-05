@@ -23,6 +23,13 @@ namespace Sinbinder.AOS
             InvokeRepeating(nameof(CleanupWeakMemories), _cleanupInterval, _cleanupInterval);
         }
 
+        // Ушедшая память не должна отвечать за живую: «?.» у Instance не видит
+        // уничтоженного объекта Unity и звал бы его методы.
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         public void CreateMemory(Warrior warrior, string eventType, string targetId, EmotionType emotion, float importance)
         {
             if (!_memories.ContainsKey(warrior.Id))

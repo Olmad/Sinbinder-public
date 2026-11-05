@@ -246,5 +246,46 @@ namespace Sinbinder.Gameplay
             // а выбранный — тем же кругом, что у всех (SelectionComponent).
         }
 
+        /// <summary>Сукно судьи: тьма, едва отличимая от темноты зала.</summary>
+        private static readonly Color JudgeCloth = new Color(0.045f, 0.040f, 0.050f);
+
+        /// <summary>
+        /// Судья «суда души» (<see cref="SoulCourt"/>). Облик Греховода (автор,
+        /// 05.11: «самих судей сделать на основе Греховода модели») — тот же
+        /// капюшон, плащ и ряса, но тьма в плаще: сукно чёрное, посоха нет,
+        /// под капюшоном провал, глаза — цветом своего голоса. Души у судьи
+        /// нет: он голос, а не воин, — поэтому глаза красятся здесь, а не
+        /// <see cref="SinEyes"/> (тот ищет душу и ругается, не найдя).
+        /// </summary>
+        public static GameObject Judge(Transform root, Color eye)
+        {
+            var model = WarriorLook.Build(root.gameObject, ShellType.Skeleton,
+                                           height: 1.60f, girth: 0.55f, lift: 0.95f);
+            if (model == null) return null;
+
+            var sinEyes = model.GetComponent<SinEyes>();
+            if (sinEyes != null) Object.DestroyImmediate(sinEyes);
+
+            Wardrobe.Wear(model.gameObject, "Hood");
+            if (Wardrobe.Wear(model.gameObject, "SinCloak") == null)
+                Wardrobe.Wear(model.gameObject, "Cloak");
+            foreach (var item in new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
+                                         "SinCuffLeft", "SinCuffRight", "SinMantle" })
+                Wardrobe.Wear(model.gameObject, item);
+
+            // Всё — в тьму, потом провал и глаза поверх: порядок тот же, что у Греховода.
+            Wardrobe.Tint(model.gameObject, JudgeCloth);
+            Wardrobe.Wear(model.gameObject, "Shade");
+            Wardrobe.Tint(model.gameObject, "Void", Color.black);
+            foreach (var slot in new[] { "Void", "Cloth", "Robe", "Dust", "Patch" })
+                Wardrobe.Matte(model.gameObject, slot);
+            Wardrobe.Tint(model.gameObject, "Iron", DarkIron);
+            // Глаза — цвета его голоса, без пересвета: при glow 1 у полного цвета
+            // все судьи смотрели одинаково белым (кадры 05.11).
+            Wardrobe.Tint(model.gameObject, "Eye", eye * 0.3f, glow: 2.8f);
+            HoodVoid.Make(model.gameObject);
+
+            return model.gameObject;
+        }
     }
 }

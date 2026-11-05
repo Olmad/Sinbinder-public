@@ -318,6 +318,8 @@ namespace Sinbinder.AOS
                     return P(Loc.T("он поступает, как привык"), Loc.T("она поступает, как привыкла"));
 
                 case "Memory":
+                    if (context.KnownMurdererInSight)
+                        return P(Loc.T("он помнит, кто его убил"), Loc.T("она помнит, кто её убил"));
                     return Loc.T("он помнит, чем это кончилось в прошлый раз");
 
                 case "Virtue":

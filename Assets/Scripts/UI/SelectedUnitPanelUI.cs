@@ -654,6 +654,7 @@ namespace Sinbinder.UI
                 case Counterfactual.Factor.AllyInDanger: return Loc.T("свой в беде");
                 case Counterfactual.Factor.Wounds:       return Loc.T("он ранен");
                 case Counterfactual.Factor.Surrounded:   return Loc.T("его обступили");
+                case Counterfactual.Factor.Murderer:     return Loc.T("его убийцы на виду");
                 case Counterfactual.Factor.Fatigue:
                     // Те же ступени, что у причины в журнале (Counterfactual.Reason).
                     if (c.IsExhausted) return Loc.T("выдохся");
@@ -692,6 +693,7 @@ namespace Sinbinder.UI
                 case Counterfactual.Factor.Wounds:
                 case Counterfactual.Factor.Surrounded:   return "Fear";
                 case Counterfactual.Factor.AllyInDanger: return "Morality";
+                case Counterfactual.Factor.Murderer:     return "Memory";
                 default:                                 return d.TopModule;
             }
         }
@@ -717,7 +719,7 @@ namespace Sinbinder.UI
         /// Имя голоса. У греха — имя той половины шкалы, что голосовала:
         /// у щедрого голосует не «Жадность», а щедрость.
         /// </summary>
-        private static string VoiceName(string module, SoulData soul)
+        public static string VoiceName(string module, SoulData soul)
         {
             var sin = SinOf(module);
             if (sin.HasValue)

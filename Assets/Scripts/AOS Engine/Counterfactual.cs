@@ -62,6 +62,7 @@ namespace Sinbinder.AOS
             Wounds,        // ранен
             Surrounded,    // обступили
             Fatigue,       // устал
+            Murderer,      // его убийца на глазах (сон, 05.11: «игра должна показать, что она не скриптовая»)
         }
 
         /// <summary>
@@ -70,7 +71,7 @@ namespace Sinbinder.AOS
         /// </summary>
         private static readonly Factor[] Order =
         {
-            Factor.Distance, Factor.Debt, Factor.Pocket, Factor.Temptation, Factor.Loot,
+            Factor.Distance, Factor.Murderer, Factor.Debt, Factor.Pocket, Factor.Temptation, Factor.Loot,
             Factor.Patrol, Factor.AllyInDanger, Factor.Wounds, Factor.Surrounded, Factor.Fatigue,
         };
 
@@ -89,6 +90,7 @@ namespace Sinbinder.AOS
                 case Factor.Wounds:       return c.MaxHP > 0f && c.CurrentHP < c.MaxHP * 0.6f;
                 case Factor.Surrounded:   return c.Surrounded;
                 case Factor.Fatigue:      return c.Fatigue > 0.2f || c.IsExhausted;
+                case Factor.Murderer:     return c.KnownMurdererInSight;
                 default:                  return false;
             }
         }
@@ -111,6 +113,7 @@ namespace Sinbinder.AOS
                 case Factor.Wounds:       x.CurrentHP = x.MaxHP; break;
                 case Factor.Surrounded:   x.Surrounded = false; break;
                 case Factor.Fatigue:      x.Fatigue = 0f; x.IsExhausted = false; break;
+                case Factor.Murderer:     x.KnownMurdererInSight = false; break;
                 case Factor.Temptation:
                     var plain = new List<InventoryItem>();
                     if (c.CarriedItems != null)
@@ -237,6 +240,8 @@ namespace Sinbinder.AOS
                     if (c.IsExhausted) return P(Loc.T("он выдохся и больше не может"), Loc.T("она выдохлась и больше не может"));
                     if (c.Fatigue > 0.5f) return Loc.T("силы у него на исходе");
                     return P(Loc.T("он устал"), Loc.T("она устала"));
+                case Factor.Murderer:
+                    return P(Loc.T("его убийцы у него на глазах"), Loc.T("её убийцы у неё на глазах"));
                 default: return "";
             }
         }
