@@ -9739,3 +9739,12 @@ msgstr "This is the court of his soul. It holds many voices, but only those this
 
 msgid "Это суд её души. Голосов в ней много, но за стол сели те, кого задел этот приказ. Огонь перед каждым — сила голоса; кто молчит — стоит в тени."
 msgstr "This is the court of her soul. It holds many voices, but only those this order touched sat at the table. The flame before each is that voice's strength; the silent ones stand in the shadow."
+
+msgid "Сон Бога Смерти"
+msgstr "Dream of the God of Death"
+
+msgid "обучение и суд души"
+msgstr "tutorial and the court of the soul"
+
+msgid "Сон Греховода"
+msgstr "The Sinbinder's Dream"
