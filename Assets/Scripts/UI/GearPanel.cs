@@ -425,6 +425,9 @@ namespace Sinbinder.UI
             foreach (var taker in Favor.Takers()) { var w = taker; Offer(Gaze.Miss(w.transform), Favor.GiftPrompt(w), () => Favor.Give(w)); }
             foreach (var thing in Inspectable.InReach())
                 Offer(Mathf.Min(Gaze.Miss(thing.transform), Gaze.Miss(thing.Focus, 0.6f)), thing.Prompt, thing.Inspect);
+            // Крысиное семейство (v306): общий F, кто ближе к взгляду — тот и ответит.
+            foreach (var rat in RatFamilyActor.InReach())
+                Offer(Gaze.Miss(rat.Focus, 0.32f), rat.Prompt, rat.Interact);
 
             best = default;
             if (Targets.Count == 0)

@@ -198,7 +198,8 @@ namespace Sinbinder.Gameplay
                 box?.Say(who, line);
                 float hold = Herald.Hold(line) + 0.6f;
                 if (_death) hold = Mathf.Max(hold, Audio.DeathVoice.Say(line) + 1.6f);
-                yield return new WaitForSecondsRealtime(hold);
+                // Щелчок — следующая строка; голос Смерти обрывает её же Say.
+                yield return UI.Letterbox.Hold(hold);
             }
 
             if (_death)
@@ -213,7 +214,7 @@ namespace Sinbinder.Gameplay
             {
                 string thought = Loc.T(_thought);
                 UI.Letterbox.Instance?.Think(thought);
-                yield return new WaitForSecondsRealtime(Herald.Hold(thought) + 0.6f);
+                yield return UI.Letterbox.Hold(Herald.Hold(thought) + 0.6f);
             }
 
             camera.StopSway();

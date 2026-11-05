@@ -194,9 +194,18 @@ namespace Sinbinder.UI
                             listener != null ? listener.transform : null);
                     }
 
-                    // Печатаем текст с голосом
-                    foreach (char c in Loc.T(line.Text))
+                    // Печатаем текст с голосом. Щелчок — строка целиком
+                    // (Letterbox.Nexts), дальше срок чтения, щелчок — следующая.
+                    string full = Loc.T(line.Text);
+                    int hurry = Letterbox.Nexts;
+                    foreach (char c in full)
                     {
+                        if (Letterbox.Nexts != hurry)
+                        {
+                            if (_dialogueText != null) _dialogueText.text = full;
+                            break;
+                        }
+
                         if (_dialogueText != null)
                             _dialogueText.text += c;
 
@@ -213,8 +222,8 @@ namespace Sinbinder.UI
                     _dialogueText.text = Loc.T(line.Text);
                 }
 
-                yield return new WaitForSecondsRealtime(line.Duration);
-                yield return new WaitForSecondsRealtime(_fadeDelay);
+                // Щелчок «дальше» — следующая реплика сразу, без срока и паузы.
+                yield return Letterbox.Hold(line.Duration + _fadeDelay);
 
                 if (speaker != null)
                 {

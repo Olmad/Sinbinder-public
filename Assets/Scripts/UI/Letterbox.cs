@@ -71,6 +71,79 @@ namespace Sinbinder.UI
         /// <summary>Напечатано ли что-нибудь на нижней полосе. Спрашивает прогон: снимать кадр.</summary>
         public bool Typed => _line != null && !string.IsNullOrEmpty(_line.text) && _typing == null;
 
+        /// <summary>
+        /// Щелчков «дальше»: строка дочитана, игрок просит следующую
+        /// (автор, 05.11: «переходить на диалоге к следующей фразе при клике
+        /// мыши»). Кто держит реплику, ждёт через <see cref="Hold"/>: срок
+        /// вышел или счёт сменился — пора.
+        /// </summary>
+        public static int Nexts { get; private set; }
+
+        /// <summary>
+        /// Щелчков вообще — и «дальше», и «допечатать». Голос по нему
+        /// замолкает (<see cref="Audio.VoiceGenerator"/>): строка уже
+        /// на полосе целиком, бормотать её дальше незачем.
+        /// </summary>
+        public static int Clicks { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() { Nexts = 0; Clicks = 0; }
+
+        /// <summary>
+        /// Держать реплику: столько-то секунд настоящего времени (под наездом
+        /// игра стоит) — или пока игрок не щёлкнет «дальше». Щелчок по
+        /// печатающейся строке только допечатывает её, и срок идёт дальше:
+        /// прочесть её всё равно надо.
+        /// </summary>
+        public static IEnumerator Hold(float seconds)
+        {
+            int next = Nexts;
+            float end = Time.realtimeSinceStartup + seconds;
+            while (Time.realtimeSinceStartup < end && Nexts == next) yield return null;
+        }
+
+        void Update()
+        {
+            if (!_shown || !Input.GetMouseButtonDown(0) || OverButton()) return;
+
+            // Разговор вблизи ждёт ответа, а не срока: щелчок мимо ответов
+            // только допечатывает реплику.
+            if (_typing != null)
+            {
+                StopCoroutine(_typing);
+                _typing = null;
+                if (_line != null) _line.text = _full ?? "";
+                Clicks++;
+                return;
+            }
+
+            // Пустая полоса тоже считается: окно разговора отряда (DialogueUI)
+            // печатает строку само, мимо Type, и спрашивает этот же счёт.
+            // Щелчок до реплики никому не мешает: Hold считает от своего начала.
+            if (TalkView.Shown) return;
+            Clicks++;
+            Nexts++;
+        }
+
+        private static readonly System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult> _hits = new();
+
+        /// <summary>
+        /// Под курсором кнопка: ответ в разговоре, вопрос под полосами
+        /// (совет, плата). Её щелчок — её, а не «дальше». Погашенные панели
+        /// кнопок не держат (<see cref="Others"/>), так что ищем именно кнопку,
+        /// а не «что-нибудь интерфейсное».
+        /// </summary>
+        private static bool OverButton()
+        {
+            var events = UnityEngine.EventSystems.EventSystem.current;
+            if (events == null) return false;
+            _hits.Clear();
+            events.RaycastAll(new UnityEngine.EventSystems.PointerEventData(events) { position = Input.mousePosition }, _hits);
+            foreach (var hit in _hits)
+                if (hit.gameObject != null && hit.gameObject.GetComponentInParent<Selectable>() != null) return true;
+            return false;
+        }
+
         void Awake()
         {
             Instance = this;
@@ -213,6 +286,7 @@ namespace Sinbinder.UI
             if (_line == null) return;
 
             if (_typing != null) { StopCoroutine(_typing); _typing = null; }
+            _full = line;
 
             // По букве, как в Undertale (автор, 21 октября: «сейчас это
             // выглядит очень тупо» — строка падала на полосу целиком).
@@ -264,6 +338,7 @@ namespace Sinbinder.UI
         [SerializeField] private float _lettersPerSecond = 40f;
 
         private Coroutine _typing;
+        private string _full;
 
         /// <summary>Скорость печати. Голос Смерти печатает медленнее (Inspectable).</summary>
         public float LettersPerSecond

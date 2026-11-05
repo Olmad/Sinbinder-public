@@ -3700,8 +3700,8 @@ msgid "Сначала поедим, потом всё остальное."
 msgstr "First we eat, then everything else."
 
 #: Dialogue/EncounterLines.cs
-msgid "Голодным не воюют. Поешь, и ты тоже."
-msgstr "No one fights hungry. You eat too."
+msgid "На пустой желудок не воюют. Поешь и ты."
+msgstr "No one fights on an empty stomach. Eat, you too."
 
 #: Dialogue/EncounterLines.cs
 msgid "Всё равно все сдохнем. Ты первый."
@@ -3760,8 +3760,8 @@ msgid "Тебе я не завидую. Тебе — нет."
 msgstr "I don't envy you. Not you."
 
 #: Dialogue/EncounterLines.cs
-msgid "Ты единственный, кого я не считаю."
-msgstr "You're the only one I don't keep count of."
+msgid "С тобой одним я себя не меряю."
+msgstr "You're the only one I don't measure myself against."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты мой. Кто тронет — пожалеет."
@@ -3948,7 +3948,7 @@ msgid "Паук. С тебя даже шкуры путной не выйдет.
 msgstr "A spider. Not even a decent hide to be had from you."
 
 #: Dialogue/EncounterLines.cs
-msgid "Паук? Это вообще торгуется?"
+msgid "Паук? Такое вообще продаётся?"
 msgstr "A spider? Does that even sell?"
 
 #: Dialogue/EncounterLines.cs
@@ -4140,8 +4140,8 @@ msgid "Знаешь больше — потому и ненавижу."
 msgstr "You know more — that's why I hate you."
 
 #: Dialogue/EncounterLines.cs
-msgid "Алхимик. Учили тебя, не меня."
-msgstr "An alchemist. They taught you, not me."
+msgid "Алхимик. Книги читал, пока я пахал."
+msgstr "An alchemist. You read books while I ploughed."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебя учили. Меня никто."
@@ -4160,8 +4160,8 @@ msgid "У тебя дар. Я бы всё отдал за такой."
 msgstr "You have a gift. I'd give anything for one like it."
 
 #: Dialogue/EncounterLines.cs
-msgid "Паук. И тому больше досталось, чем мне."
-msgstr "A spider. Even that got more than I did."
+msgid "Паук. Даже тебе больше досталось, чем мне."
+msgstr "A spider. Even you got more than I did."
 
 #: Dialogue/EncounterLines.cs
 msgid "Паук. Хоть кто-то ниже меня."
@@ -4272,7 +4272,7 @@ msgid "Лучник. Худой. С тебя и навара нет."
 msgstr "An archer. Skinny. You wouldn't even make a broth."
 
 #: Dialogue/EncounterLines.cs
-msgid "Лучник. Тощий, как своя стрела."
+msgid "Лучник. Тощий, как твоя же стрела."
 msgstr "An archer. Thin as your own arrow."
 
 #: Dialogue/EncounterLines.cs
@@ -4376,7 +4376,7 @@ msgid "Ты умеешь многое. Хоть кто-то умеет."
 msgstr "You can do a lot. At least someone can."
 
 #: Dialogue/EncounterLines.cs
-msgid "Паук. Тебе-то хоть всё равно по-честному."
+msgid "Паук. Тебе хоть честно всё равно."
 msgstr "A spider. At least you honestly don't care."
 
 #: Dialogue/EncounterLines.cs
@@ -4712,8 +4712,8 @@ msgid "Поделись. Хоть раз поделись."
 msgstr "Share. Just once, share."
 
 #: Dialogue/EncounterLines.cs
-msgid "Тебе можно ничего. Значит, и тебе не будет."
-msgstr "You're allowed nothing. So you'll get nothing."
+msgid "Тебе ничего не надо. Вот ничего и не получишь."
+msgstr "You want nothing. So nothing is what you'll get."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе можно ничего не делать. Везёт."
@@ -4824,8 +4824,8 @@ msgid "Гордостью не наешься. Тобой — попробую."
 msgstr "Pride won't fill you up. You might — I'll try."
 
 #: Dialogue/EncounterLines.cs
-msgid "Гордостью не наешься."
-msgstr "Pride won't fill your belly."
+msgid "Гордость в миску не нальёшь."
+msgstr "You can't ladle pride into a bowl."
 
 #: Dialogue/EncounterLines.cs
 msgid "Поел бы — подобрел. Садись."
@@ -4836,8 +4836,8 @@ msgid "Злой, потому что голодный. Накормлю желе
 msgstr "Angry because you're hungry. I'll feed you iron."
 
 #: Dialogue/EncounterLines.cs
-msgid "Злой, потому что голодный. Всегда так."
-msgstr "Angry because you're hungry. It's always like that."
+msgid "Ты не злой, ты голодный. Всегда так."
+msgstr "You're not angry, you're hungry. Always the way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сядь, поешь. Потом решим, кто кого."
@@ -4920,8 +4920,8 @@ msgid "Бей уже. Может, хоть что-то почувствую."
 msgstr "Strike already. Maybe I'll feel something."
 
 #: Dialogue/EncounterLines.cs
-msgid "Бей уже, чего тянешь."
-msgstr "Strike already, what are you waiting for."
+msgid "Ну давай. Чего тянешь."
+msgstr "Go on, then. What are you waiting for."
 
 #: Dialogue/EncounterLines.cs
 msgid "Столько злости. И всё на ветер."
@@ -9339,3 +9339,55 @@ msgstr "Warrior: LMB — strike, RMB — block. V — back to Commander."
 #: Gameplay/RTS_Camera.cs
 msgid "Командир: мышь отдаёт приказы. V — Воин."
 msgstr "Commander: the mouse gives orders. V — Warrior."
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к маме-крысе"
+msgstr "F — crouch by the mother rat"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к Пискуну"
+msgstr "F — crouch by Squeaker"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к Пятнышку"
+msgstr "F — crouch by Speckle"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к Прыгу"
+msgstr "F — crouch by Hopper"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к Моху"
+msgstr "F — crouch by Moss"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "F — присесть к Соне"
+msgstr "F — crouch by Sleepy"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Мама-крыса обнюхивает руку Греховода и оглядывается: все ли малыши рядом."
+msgstr "The mother rat sniffs the Sinbinder's hand and looks round: are all her little ones close?"
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Пискун забирается Греховоду на сапог — и тут же спрыгивает."
+msgstr "Squeaker climbs onto the Sinbinder's boot — and hops straight off."
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Пятнышко трогает пальцы Греховода носом, будто впервые видит человека."
+msgstr "Speckle noses the Sinbinder's fingers as if seeing a man for the first time."
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Прыг крутится на месте и ловит собственный хвост."
+msgstr "Hopper spins on the spot, chasing his own tail."
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Мох прячется за маму и выглядывает одним глазом."
+msgstr "Moss hides behind his mother and peeks out with one eye."
+
+#: Gameplay/RatFamilyActor.cs
+msgid "Соня зевает. На сегодня с неё хватит приключений."
+msgstr "Sleepy yawns. Enough adventures for one day."
+
+#: UI/OverheadWord.cs
+msgid "подойдите — Z, шепнуть"
+msgstr "come closer — Z, whisper"

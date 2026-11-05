@@ -133,8 +133,34 @@ namespace Sinbinder.Gameplay
             if (UnityEngine.AI.NavMesh.SamplePosition(point, out var ground, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
                 point = ground.position;
 
+            point = Elbow(w, point, seed);
             word = Word(spot);
             return true;
+        }
+
+        /// <summary>
+        /// Не вставать в другого. Кольца разных мест сходятся у края сетки
+        /// в одну точку — прогон 05.11: Ждан «в стороне» и Вейн у своей палатки
+        /// стояли друг в друге, 0,00 м. Стоящие агенты друг друга не расталкивают,
+        /// поэтому место занято — шаг в сторону, по имени, без жребия.
+        /// </summary>
+        private static Vector3 Elbow(Warrior w, Vector3 point, int seed)
+        {
+            foreach (var other in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (other == w || other.IsDead) continue;
+                var d = other.transform.position - point;
+                d.y = 0f;
+                if (d.sqrMagnitude > 0.5f * 0.5f) continue;
+
+                float a = seed % 8 * 45f * Mathf.Deg2Rad;
+                var aside = point + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 0.8f;
+                if (UnityEngine.AI.NavMesh.SamplePosition(aside, out var hit, 1f, UnityEngine.AI.NavMesh.AllAreas)
+                    && (hit.position - other.transform.position).sqrMagnitude > 0.5f * 0.5f)
+                    return hit.position;
+                return aside;
+            }
+            return point;
         }
 
         /// <summary>На сколько градусов по кругу места уходит шаг.</summary>

@@ -57,11 +57,20 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Кому сейчас можно шепнуть: свой, жив, колеблется или отказал, рядом с Греховодом.</summary>
-        public static bool Can(Warrior w)
+        public static bool Can(Warrior w) => Can(w, anyDistance: false);
+
+        /// <summary>
+        /// Шепнуть можно было бы, подойди Греховод ближе. Приказ чаще всего отдают
+        /// издали, сверху — и подсказка «Z — шепнуть» над отказавшим не появлялась
+        /// вовсе: глагол «искушай» оставался ненайденным (аудит 04.11, P0-2).
+        /// </summary>
+        public static bool CanIfCloser(Warrior w) => !Can(w, anyDistance: false) && Can(w, anyDistance: true);
+
+        private static bool Can(Warrior w, bool anyDistance)
         {
             if (w == null || w.IsDead || w is SinbinderPlayer || w.Team != Team.Player || _busy) return false;
             if (!SinbinderPlayer.Exists || SinbinderPlayer.Instance.IsDead) return false;
-            if (CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > Reach) return false;
+            if (!anyDistance && CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position) > Reach) return false;
             if (Persuaded(w)) return false;
             if (Last.TryGetValue(w, out var at) && Time.time - at < Again) return false;
             var mind = w.GetComponent<AOS.AOSWarriorWrapper>();

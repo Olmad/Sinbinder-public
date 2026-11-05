@@ -1,0 +1,33 @@
+newmtl Belly
+Kd 0.427 0.398 0.361
+
+newmtl Ear
+Kd 0.216 0.200 0.184
+
+newmtl EarInner
+Kd 0.500 0.380 0.370
+
+newmtl Paws
+Kd 0.520 0.420 0.400
+
+newmtl Eyes
+Kd 0.030 0.030 0.030
+
+newmtl Glint
+Kd 0.900 0.900 0.850
+
+newmtl Nose
+Kd 0.500 0.360 0.360
+
+newmtl Whiskers
+Kd 0.550 0.530 0.500
+
+newmtl Tail
+Kd 0.480 0.400 0.380
+
+newmtl Spot
+Kd 0.660 0.640 0.590
+
+newmtl Fur
+Kd 0.270 0.250 0.230
+

@@ -567,7 +567,72 @@ namespace Sinbinder.Dialogue
             if (hits == _frameHits.Length) return false;
             for (int i = 0; i < hits; i++)
                 if (!IgnoreInFrame(_frameHits[i].collider, speaker, listener)) return false;
-            return true;
+            return !ThroughTent(from, to, speaker, listener) && !BodyInTheWay(from, to, speaker, listener);
+        }
+
+        private static readonly System.Collections.Generic.List<(Transform root, Bounds body)> Bodies = new();
+        private static int _bodiesFrame = -1;
+
+        /// <summary>
+        /// Чужое тело между камерой и лицом. Модели приходят без коллайдеров, а капсула
+        /// WarriorRig лучом ловится не всегда: в w0511a наезд на Ждана снял вплотную
+        /// затылок Брата Хальда. Тело — сердцевина рамки его сетки, раз в кадр на всех.
+        /// Греховода не считаем: его на время плана прячет HideHeroIfInFrame.
+        /// </summary>
+        private static bool BodyInTheWay(Vector3 from, Vector3 to, Transform speaker, Transform listener)
+        {
+            if (_bodiesFrame != Time.frameCount)
+            {
+                _bodiesFrame = Time.frameCount;
+                Bodies.Clear();
+                var fight = Gameplay.CombatManager.Instance;
+                if (fight != null)
+                    foreach (var w in fight.GetAllWarriors())
+                    {
+                        if (w == null || w is Gameplay.SinbinderPlayer) continue;
+                        var mesh = w.GetComponentInChildren<SkinnedMeshRenderer>();
+                        if (mesh == null || !mesh.enabled) continue;
+                        var b = mesh.bounds;
+                        // Рамка скелетной сетки щедрая — руки, оружие, плащ. Берём сердцевину.
+                        b.size = new Vector3(b.size.x * 0.6f, b.size.y * 0.95f, b.size.z * 0.6f);
+                        Bodies.Add((w.transform, b));
+                    }
+            }
+
+            Vector3 delta = to - from;
+            float length = delta.magnitude;
+            if (length < 0.5f) return false;
+            var ray = new Ray(from, delta / length);
+            foreach (var (root, body) in Bodies)
+            {
+                if (root == null) continue;
+                if ((speaker != null && (root == speaker || root.IsChildOf(speaker) || speaker.IsChildOf(root)))
+                    || (listener != null && (root == listener || root.IsChildOf(listener) || listener.IsChildOf(root))))
+                    continue;
+                if (body.Contains(from)) return true;
+                if (body.IntersectRay(ray, out float hit) && hit < length - 0.4f) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Палатка — ткань без коллайдера (<see cref="Gameplay.TentInterior"/>): луч её не видит,
+        /// и камера ставила между собой и лицом скат «Палатки 3» (проход w0511a, разговор
+        /// о долге с Маргой). Отрезок проверяем по объёму палаток, как DemoWalkthrough.
+        /// Палатку, где стоит сам говорящий или слушающий, не считаем.
+        /// </summary>
+        private static bool ThroughTent(Vector3 from, Vector3 to, Transform speaker, Transform listener)
+        {
+            var own = speaker != null ? Gameplay.TentInterior.Around(speaker.position + Vector3.up * 0.1f) : null;
+            var theirs = listener != null ? Gameplay.TentInterior.Around(listener.position + Vector3.up * 0.1f) : null;
+            for (int i = 0; i <= 24; i++)
+            {
+                var p = Vector3.Lerp(from, to, i / 24f);
+                if (Vector3.Distance(p, to) < 0.4f) break;
+                var tent = Gameplay.TentInterior.Around(p);
+                if (tent != null && tent != own && tent != theirs) return true;
+            }
+            return false;
         }
 
         /// <summary>

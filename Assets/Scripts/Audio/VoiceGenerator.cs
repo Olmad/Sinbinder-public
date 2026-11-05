@@ -156,10 +156,14 @@ namespace Sinbinder.Audio
             float step = 1f / LettersPerSecond;
             float spent = 0f;
             int bips = 0;
+            // Щелчок по полосе — строка уже целиком (или следующая): голос молкнет.
+            int click = UI.Letterbox.Clicks;
+            bool framed = UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown;
 
             foreach (char c in words)
             {
                 if (spent >= seconds || bips >= MostBips) break;
+                if (framed && UI.Letterbox.Clicks != click) break;
 
                 float wait;
                 if (char.IsLetterOrDigit(c)) { Speak(c); bips++; wait = step; }

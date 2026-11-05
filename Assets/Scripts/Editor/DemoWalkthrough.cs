@@ -492,6 +492,10 @@ namespace Sinbinder.EditorTools
 
                 S("Греховод с мечом наголо", null, SwordPortrait, 5f),
 
+                // Крысиное семейство (v306): мать и пятеро выходят к порогу через
+                // 2,45 с после подъёма. Кадр — глазами Греховода, на мать.
+                S("крысы: мать и пятеро у палатки", null, RatsShown, 40f),
+
                 // ── Мышь ──
                 // До 24 сентября прогон не касался мыши вовсе, и двенадцать
                 // дней без коллайдеров у воинов (13-DRIFT, восьмая) прошли
@@ -519,6 +523,12 @@ namespace Sinbinder.EditorTools
                 // Клип «вызов» для арьергарда Каргана (28-ORDERS, 26.10): удары в щит,
                 // руки в стороны. Кадр — через две секунды, когда руки разведены.
                 S("лагерь: Карган — вызов (клип)", RavenChallenge, RavenChallengeShot, 6f),
+
+                // КТ1, п. 10: «Вызов» Каргана по мерке шара — свет, пауза, крупный
+                // план. В прогоне Карган в побеге не отказывается, и мига не бывает;
+                // показываем его здесь, в тихом лагере: в набеге глашатай держит мир
+                // на паузе очередью строк дольше двадцати секунд (w0511c).
+                S("вызов: миг арьергарда — кадры", null, ChallengeShown, 40f),
                 S("лагерь: Одноглазый Хорь — повязка", null, OneEyeShot, 3f),
 
                 // Пластинки (37-DEMO §8; автор, 27.10): скрытая «Лунная соната» у граммофона,
@@ -707,11 +717,11 @@ namespace Sinbinder.EditorTools
                 // С 24 сентября разгром — событие лагеря, а не новая сцена
                 // (RaidEvent); отдельной сцены набега нет вовсе.
                 S("Греховод у горящего шара", () => HeroTo(Ball()?.transform, 1.5f),
-                  () => RaidEvent.Running, 60f),
+                  () => RaidEvent.Running && !Paused() && Faced(Ball() != null ? Ball().transform.position : (Vector3?)null), 60f),
 
                 // ── Набег ──
                 S("набег: охотники вышли", null,
-                  () => Enemies() > 0, 30f),
+                  () => Enemies() > 0 && Faced(NearestEnemy()), 30f),
 
                 // Приказ «бить» — луч в охотника. Только в видимого: того,
                 // кто в тумане, щелчком не достать, и так задумано (§67).
@@ -2418,11 +2428,11 @@ namespace Sinbinder.EditorTools
             if (who != _seenTarget) { _seenTarget = who; _seenSince = now; return; }
             if (now - _seenSince < 1f) return;
 
-            HiddenSpeaker(who, cam, talk.Partner != null);
-            if (talk.Partner != null) HiddenSpeaker(talk.Partner, cam, true);
+            HiddenSpeaker(who, cam, talk.Partner != null, talk.Partner);
+            if (talk.Partner != null) HiddenSpeaker(talk.Partner, cam, true, who);
         }
 
-        private static void HiddenSpeaker(Transform who, Camera cam, bool pair)
+        private static void HiddenSpeaker(Transform who, Camera cam, bool pair, Transform other)
         {
             var face =new Vector3(who.position.x, Top(who) - 0.15f, who.position.z);
             var eye = cam.transform.position;
@@ -2450,6 +2460,23 @@ namespace Sinbinder.EditorTools
                 if (tent == null || tent == own) continue;
                 Guard("ЗАСЛОНЁН", name + "|" + tent.name,
                     $"{name} говорит, а между камерой и лицом — «{tent.name}» ({length:0.0} м)");
+                break;
+            }
+
+            // Чужое тело во весь кадр (w0511a: затылок Брата Хальда в наезде на Ждана).
+            // Мерка та же, что у камеры: сердцевина рамки сетки, Греховода камера прячет сама.
+            if (CombatManager.Instance == null || length < 0.5f) return;
+            var ray = new Ray(eye, (face - eye) / length);
+            foreach (var body in CombatManager.Instance.GetAllWarriors())
+            {
+                if (body == null || body is SinbinderPlayer || body.transform == who || body.transform == other) continue;
+                var mesh = body.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (mesh == null || !mesh.enabled) continue;
+                var b = mesh.bounds;
+                b.size = new Vector3(b.size.x * 0.6f, b.size.y * 0.95f, b.size.z * 0.6f);
+                if (!b.Contains(eye) && !(b.IntersectRay(ray, out float hit) && hit < length - 0.4f)) continue;
+                Guard("ЗАСЛОНЁН", name + "|" + body.DisplayName,
+                    $"{name} говорит, а между камерой и лицом — {body.DisplayName} ({length:0.0} м)");
                 break;
             }
         }
@@ -4102,6 +4129,133 @@ namespace Sinbinder.EditorTools
 
         private static int Enemies()
             => CombatManager.Instance != null ? CombatManager.Instance.GetAliveEnemyCount() : 0;
+
+        /// <summary>
+        /// Повернуть голову Греховода к точке и дать камере два кадра на поворот.
+        /// Прогон переносит героя, но не поворачивает: «у горящего шара» снимался
+        /// в стену палатки, «охотники вышли» — без единого охотника (05.11).
+        /// </summary>
+        private static bool Faced(Vector3? at)
+        {
+            if (at == null) return true;
+            if (_facedAt < 0)
+            {
+                var cam = UnityEngine.Object.FindFirstObjectByType<RTS_Camera>();
+                if (cam == null) return true;
+                cam.Face(at.Value);
+                // И наклон — к самой точке: крыса в 2 м от ног при взгляде
+                // прямо уходит под нижний край кадра.
+                var d = at.Value - cam.transform.position;
+                float flat = new Vector2(d.x, d.z).magnitude;
+                if (flat > 0.1f) cam.Pitch = Mathf.Clamp(Mathf.Atan2(-d.y, flat) * Mathf.Rad2Deg, -10f, 45f);
+                // На паузе (глашатай в начале набега) камера свой Update пропускает,
+                // и поворот доходил до кадра только после неё (w0511c) — ставим сразу.
+                if (cam.FirstPersonNow && flat > 0.1f)
+                    cam.transform.rotation = Quaternion.Euler(cam.Pitch,
+                        Quaternion.LookRotation(new Vector3(d.x, 0f, d.z)).eulerAngles.y, 0f);
+                _facedAt = Time.frameCount;
+                return false;
+            }
+            if (Time.frameCount < _facedAt + 2) return false;
+            _facedAt = -1;
+            return true;
+        }
+
+        private static int _facedAt = -1;
+
+        private static Vector3? _ratsLookBack;
+
+        private static bool RatsShown()
+        {
+            // После крана над лагерем: в нём камера — не глаза Греховода (w0511c).
+            if (OpeningReveal.Busy || Sinbinder.UI.PrologueTitleUI.Showing || Paused()) return false;
+            var rats = UnityEngine.Object.FindObjectsByType<RatFamilyActor>(FindObjectsSortMode.None);
+            RatFamilyActor mother = null;
+            foreach (var r in rats) if (r.IsMother) mother = r;
+            if (rats.Length < 6 || mother == null || SinbinderPlayer.Instance == null) return false;
+
+            if (_ratsLookBack == null)
+                _ratsLookBack = SinbinderPlayer.Where + SinbinderPlayer.Instance.transform.forward * 5f;
+            if (!Faced(mother.transform.position)) return false;
+
+            int moving = 0;
+            foreach (var r in rats) if (r.Moving) moving++;
+            Write($"  [КРЫСЫ] семья: {rats.Length}, идут {moving}; мать в "
+                + $"{Vector3.Distance(mother.transform.position, SinbinderPlayer.Where):0.0} м от Греховода");
+
+            // Кадр шага снимается сразу, камера повернётся обратно только в своём
+            // LateUpdate. Вернуть взгляд: следующие шаги (луч мыши) снимают туда,
+            // куда он смотрел.
+            var cam = UnityEngine.Object.FindFirstObjectByType<RTS_Camera>();
+            if (cam != null) { cam.Face(_ratsLookBack.Value); cam.Pitch = 0f; }
+            _ratsLookBack = null;
+            return true;
+        }
+
+        private static float _challengeAt = -1f;
+        private static float _challengeWait = -1f;
+        private static int _challengeShots;
+
+        /// <summary>
+        /// Миг арьергарда на Каргане и два кадра: удары в щит (общий план со
+        /// светом) и крупный план после 1,65 с жеста. Карган пал — нечего
+        /// показывать, шаг проходит с пометкой.
+        /// </summary>
+        private static bool ChallengeShown()
+        {
+            var moment = UnityEngine.Object.FindFirstObjectByType<RearguardMoment>();
+            if (_challengeAt < 0f)
+            {
+                if (moment == null)
+                {
+                    var talk = Dialogue.DialogueCameraController.Instance;
+                    if (talk == null || talk.InDialogue || Herald.Busy || Core.GamePauseController.Stopped)
+                    {
+                        if (_challengeWait < 0f) _challengeWait = Time.realtimeSinceStartup;
+                        if (Time.realtimeSinceStartup - _challengeWait < 30f) return false;
+                        Write("  [ВЫЗОВ] кадр занят 30 с (разговор, глашатай или пауза) — миг не показан");
+                        _challengeWait = -1f;
+                        return true;
+                    }
+                    _challengeWait = -1f;
+                    Warrior kargan = null;
+                    foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                        if (w.DisplayName.StartsWith("Карган") && !w.IsDead) { kargan = w; break; }
+                    if (kargan == null) { Write("  [ВЫЗОВ] Карган пал — миг показать не на ком"); return true; }
+                    RearguardMoment.Play(kargan, Core.Loc.F("{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время».",
+                        Core.Loc.Name(kargan.DisplayName)));
+                    if (UnityEngine.Object.FindFirstObjectByType<RearguardMoment>() == null)
+                    { Write("  [ВЫЗОВ] миг не начался — строка ушла глашатаю"); return true; }
+                }
+                _challengeAt = Time.realtimeSinceStartup;
+                _challengeShots = 0;
+                return false;
+            }
+
+            float t = Time.realtimeSinceStartup - _challengeAt;
+            if (_challengeShots == 0 && t > 1.25f) { Snap("вызов — удары в щит"); _challengeShots++; }
+            if (_challengeShots == 1 && t > 2.75f) { Snap("вызов — крупный план"); _challengeShots++; }
+            if (_challengeShots < 2 || (moment != null && t < 6f)) return false;
+            Write($"  [ВЫЗОВ] миг шёл {t:0.0} с; время после него {Time.timeScale:0.##}");
+            _challengeAt = -1f;
+            return true;
+        }
+
+        /// <summary>Ближайший живой охотник — куда смотреть, когда набег начался.</summary>
+        private static Vector3? NearestEnemy()
+        {
+            var hero = SinbinderPlayer.Instance;
+            if (hero == null || CombatManager.Instance == null) return null;
+            Vector3? best = null;
+            float bestSq = float.MaxValue;
+            foreach (var w in CombatManager.Instance.GetAllWarriors())
+            {
+                if (w == null || w.Team != Team.Enemy || w.IsDead) continue;
+                float sq = (w.transform.position - hero.transform.position).sqrMagnitude;
+                if (sq < bestSq) { bestSq = sq; best = w.transform.position; }
+            }
+            return best;
+        }
 
         private static bool SalaryOpen()
         {

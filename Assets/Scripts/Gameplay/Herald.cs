@@ -216,8 +216,9 @@ namespace Sinbinder.Gameplay
                 if (speaker.TryGetComponent<Audio.VoiceGenerator>(out var voice))
                     voice.Babble(words, Mathf.Min(Hold(words) - 0.4f, words.Length / 40f * 1.2f + 0.3f));
 
-                // Реальное время: игровое стоит.
-                yield return new WaitForSecondsRealtime(Hold(words));
+                // Реальное время: игровое стоит. Щелчок мыши — следующая
+                // реплика (первый щелчок допечатывает строку).
+                yield return UI.Letterbox.Hold(Hold(words));
 
                 float lingered = 0f;
                 while (_queue.Count == 0 && lingered < Linger)

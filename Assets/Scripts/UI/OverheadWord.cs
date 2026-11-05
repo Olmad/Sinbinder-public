@@ -122,7 +122,9 @@ namespace Sinbinder.UI
 
             var detail = d.LastDecisionDetail;
             // Можно шепнуть (60-TEMPTATION) — сказать как: без подсказки глагол «искушай» никто не найдёт.
-            string whisper = Gameplay.Whisper.Can(w) ? "\n" + Loc.T("Z — шепнуть") : "";
+            // Издали — тоже: сказать, что глагол есть и что для него нужно подойти.
+            string whisper = Gameplay.Whisper.Can(w) ? "\n" + Loc.T("Z — шепнуть")
+                           : Gameplay.Whisper.CanIfCloser(w) ? "\n" + Loc.T("подойдите — Z, шепнуть") : "";
             if (detail.Hesitated) return Loc.T("Колеблется…") + whisper;
 
             bool deviates = detail.RefusedCommand

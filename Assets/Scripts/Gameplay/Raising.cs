@@ -118,7 +118,7 @@ namespace Sinbinder.Gameplay
             // Было ровно 2,6 с на любую строку (автор, 26.10: «фраза при поднятии
             // воина быстро пропадает»).
             int letters = string.IsNullOrEmpty(line) ? 0 : line.Length;
-            yield return new WaitForSecondsRealtime(Mathf.Clamp(1.8f + letters / 12f, 3.5f, 9f));
+            yield return UI.Letterbox.Hold(Mathf.Clamp(1.8f + letters / 12f, 3.5f, 9f));
 
             if (camera != null) yield return camera.RestoreCamera();
         }

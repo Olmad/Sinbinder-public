@@ -142,13 +142,13 @@ namespace Sinbinder.AOS
                 // титул — приговор окружающих, и услышать его игрок должен
                 // от них, а не от самого получившего.
                 UI.Letterbox.Instance?.Say(Loc.T("Отряд"), shout);
-                yield return new WaitForSecondsRealtime(1.4f);
+                yield return UI.Letterbox.Hold(1.4f);
 
                 UI.Letterbox.Instance?.Say(Loc.Name(warrior.DisplayName), line);
             }
 
             Debug.Log($"[TITLE CEREMONY] [{warrior.DisplayName}]: {line}");
-            yield return new WaitForSecondsRealtime(3f);
+            yield return UI.Letterbox.Hold(3f);
             if (cameraController != null)
                 yield return cameraController.RestoreCamera();
             GamePauseController.Instance?.Resume();

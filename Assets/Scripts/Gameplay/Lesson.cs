@@ -438,6 +438,26 @@ namespace Sinbinder.Gameplay
             return !UI.PrologueTitleUI.Showing && !UI.GearPanel.Open;
         }
 
+        /// <summary>Дальше этого за душой на уроке не идут, м.</summary>
+        private const float SafeHarvestReach = 30f;
+
+        /// <summary>
+        /// У души охотников больше, чем своих (в 8 м): дойдёт — и останется
+        /// там один, когда мир пойдёт.
+        /// </summary>
+        private static bool Hunted(Vector3 at)
+        {
+            if (CombatManager.Instance == null) return false;
+            int foes = 0, friends = 0;
+            foreach (var w in CombatManager.Instance.GetAllWarriors())
+            {
+                if (w == null || w.IsDead || w is SinbinderPlayer) continue;
+                if (CampFocus.GroundDistance(w.transform.position, at) > 8f) continue;
+                if (w.Team == Team.Player) friends++; else foes++;
+            }
+            return foes > friends;
+        }
+
         /// <summary>Жатва: первая угасающая душа — ближайшая к Греховоду.</summary>
         private void TryHarvest()
         {
@@ -447,12 +467,20 @@ namespace Sinbinder.Gameplay
             var hero = SinbinderPlayer.Where;
             FadingSoul best = null;
             float bestDist = float.MaxValue;
+            bool waitForSafer = false;
             foreach (var s in souls.GetAllFadingSouls())
             {
                 if (s == null) continue;
                 float d = Vector3.Distance(hero, s.Position);
-                if (d < bestDist && Reachable(s.Position) && Standable(s.Position)) { bestDist = d; best = s; }
+                if (d >= bestDist || !Reachable(s.Position) || !Standable(s.Position)) continue;
+                if (d > SafeHarvestReach || Hunted(s.Position)) { waitForSafer = true; continue; }
+                bestDist = d; best = s;
             }
+
+            // Урок не ведёт в толпу (прогон 05.11): Карган положил охотника в 66 м
+            // от лагеря, мир встал, Греховод дошёл до души среди шестерых — и пал,
+            // едва мир пошёл. Такую душу пропускаем и ждём ближе и тише.
+            if (best == null && waitForSafer) return;
 
             // Урок, которого нельзя пройти, запер бы игру: мир стоит, пока
             // душа не собрана. Нет банки или дороги — миг урока прошёл,
