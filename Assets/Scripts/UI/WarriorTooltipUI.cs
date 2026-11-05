@@ -27,6 +27,7 @@ namespace Sinbinder.UI
 
         private Camera _cam;
         private Warrior _shown;
+        private float _nextRefresh;
 
         /// <summary>
         /// Над кем подсказка сейчас. Урок отказа (<see cref="Lesson"/>) ждёт,
@@ -48,7 +49,7 @@ namespace Sinbinder.UI
         void Update()
         {
             if (_cam == null) _cam = Camera.main;
-            if (_cam == null) return;
+            if (_cam == null) { Hide(); return; }
 
             // Трон и дверь склепа (автор, 27.10: «нельзя посмотреть трон на количество здоровья,
             // то же самое с дверью склепа»): прочность — при любой ступени прозрачности: это вещь,
@@ -58,13 +59,26 @@ namespace Sinbinder.UI
 
             // Вторая ступень прозрачности. Игрок, выбравший только значки,
             // причин не спрашивает — и подсказка ему не мешает.
-            if (!Core.Transparency.Shows(Core.Clarity.Tooltips)) { Hide(); return; }
+            bool tutorialNeedsAttitude = TugTutorial.Instance != null && TugTutorial.Instance.Step == 1;
+            if (!Core.Transparency.Shows(Core.Clarity.Tooltips) && !tutorialNeedsAttitude)
+            {
+                Hide();
+                return;
+            }
 
             var warrior = WarriorUnderCursor();
             if (warrior == null) { Hide(); return; }
 
-            if (warrior != _shown) { _shown = warrior; Refresh(warrior); }
-            Hovered = _shown;
+            // При подарке или приказе отношение меняется, даже если мышь не сдвинулась.
+            // Не перерисовываем сложное объяснение каждый кадр: достаточно 3 раз в секунду.
+            if (warrior != _shown || Time.unscaledTime >= _nextRefresh)
+            {
+                _shown = warrior;
+                Refresh(warrior);
+                _nextRefresh = Time.unscaledTime + 0.35f;
+            }
+            // Подсказку можно считать прочитанной лишь когда панель действительно видна.
+            Hovered = _panel != null && _panel.gameObject.activeInHierarchy ? _shown : null;
 
             if (_panel != null)
                 _panel.position = (Vector2)Input.mousePosition + _offset;
@@ -112,20 +126,29 @@ namespace Sinbinder.UI
         private void Refresh(Warrior warrior)
         {
             var wrapper = warrior.GetComponent<AOSWarriorWrapper>();
-            if (wrapper == null || wrapper.LastContext == null) { Hide(); return; }
+            bool hasDecision = wrapper != null && wrapper.LastContext != null;
+            bool isNeutralInMatch = warrior.Team == Team.Neutral && Lords.Active;
+            // У только появившегося ничьего ещё нет решения ИИ, но отношение к нему уже есть.
+            // Без этой ветки подсказка не появлялась и второй урок мог стать непроходимым.
+            if (!hasDecision && !isNeutralInMatch) { Hide(); return; }
 
             if (_text != null)
             {
-                _text.text = PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail);
-                // Ничей («Перетягивание») — первым делом, как он к тебе: словом, без числа (Favor).
-                if (warrior.Team == Team.Neutral && Lords.Active)
-                    _text.text = Favor.Attitude(warrior) + "\n" + _text.text;
+                _text.text = hasDecision
+                    ? PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail)
+                    : string.Empty;
+                if (isNeutralInMatch)
+                    _text.text = Favor.Attitude(warrior) + (hasDecision ? "\n" + _text.text : string.Empty);
                 // Титулованный или легенда — дар словами (Gift).
                 if (Lords.Active && warrior.TryGetComponent<Gift>(out var gift))
-                    _text.text = Core.Loc.F("Дар: {0}.", gift.What) + "\n" + _text.text;
+                {
+                    var giftLine = Core.Loc.F("Дар: {0}.", gift.What);
+                    // В уроке подсказка отношения должна оставаться первой строкой.
+                    _text.text = isNeutralInMatch ? _text.text + "\n" + giftLine : giftLine + "\n" + _text.text;
+                }
             }
 
-            if (_frame != null)
+            if (_frame != null && warrior.Soul != null)
                 _frame.color = SinColor(warrior.Soul.Sin);
 
             if (_panel != null) _panel.gameObject.SetActive(true);

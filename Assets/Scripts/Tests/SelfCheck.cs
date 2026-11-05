@@ -90,6 +90,7 @@ namespace Sinbinder.Tests
                 LootToHands();
                 CampSpots();
                 CampTalkLines();
+                ContextualTalkLines();
                 PatrolAndRush();
                 Titles();
                 Pursuit();
@@ -102,6 +103,7 @@ namespace Sinbinder.Tests
                 VoiceOfSinbinder();
                 Fog();
                 OverheadNearLens();
+                DialoguePairFraming();
                 ExitMarkerPlace();
                 HeraldLines();
                 SatchelJars();
@@ -129,6 +131,40 @@ namespace Sinbinder.Tests
             }
 
             return _report;
+        }
+
+        /// <summary>Разный рост и формат экрана: оба торса помещаются между полосами и рядом с меню.</summary>
+        private static void DialoguePairFraming()
+        {
+            var go = new GameObject("Проверка общего плана");
+            _temp.Add(go);
+            var camera = go.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.orthographic = false;
+            camera.fieldOfView = 36f;
+            var a = new Bounds(new Vector3(-1f, 0.9f, 0.5f), new Vector3(0.55f, 1.2f, 0.55f));
+            var b = new Bounds(new Vector3(2f, 1.5f, -0.6f), new Vector3(1f, 2f, 1f));
+            foreach (float aspect in new[] { 9f / 16f, 1f, 16f / 9f, 32f / 9f })
+                foreach (bool menu in new[] { false, true })
+                    foreach (var side in new[] { Vector3.forward, Vector3.right, new Vector3(1f, 0f, -1f) })
+                    {
+                        camera.aspect = aspect;
+                        Dialogue.DialogueCameraController.ComposePair(a, b, side, camera.fieldOfView, aspect,
+                            menu, out var from, out var look);
+                        camera.transform.SetPositionAndRotation(from, Quaternion.LookRotation(look - from));
+                        bool fits = true;
+                        foreach (var body in new[] { a, b })
+                            for (int corner = 0; corner < 8; corner++)
+                            {
+                                var offset = new Vector3((corner & 1) == 0 ? -body.extents.x : body.extents.x,
+                                    (corner & 2) == 0 ? -body.extents.y : body.extents.y,
+                                    (corner & 4) == 0 ? -body.extents.z : body.extents.z);
+                                var p = camera.WorldToViewportPoint(body.center + offset);
+                                fits &= p.z > 0f && p.x >= 0.05f && p.x <= (menu ? 0.55f : 0.95f)
+                                    && p.y >= 0.19f && p.y <= 0.81f;
+                            }
+                        Check(fits, $"камера разговора: оба собеседника в кадре, формат {aspect:F2}, меню {menu}, сторона {side}");
+                    }
         }
 
         // ================= правки 24 сентября =================
@@ -624,6 +660,59 @@ namespace Sinbinder.Tests
                           && !Regex.IsMatch(l1 + l2, "[0-9]"),
                           $"разговор {x} с {y} — есть и без чисел");
                 }
+        }
+
+        /// <summary>Реплика отвечает услышанному и не выдумывает долг, монеты или голос немого.</summary>
+        private static void ContextualTalkLines()
+        {
+            var debtor = MakeWarrior("Должник", SinType.Greed, 60f);
+            debtor.UnpaidMissions = 3;
+            var liska = MakeWarrior("Лиска", SinType.Greed, 60f);
+            Check(Dialogue.CampLines.Exchange(debtor, liska).Answer == Loc.T("Тебе должны — с владыки и спрашивай."),
+                  "Лиска отвечает на долг собеседника и не выдумывает свой");
+            liska.UnpaidMissions = 2;
+            Check(Dialogue.CampLines.Exchange(debtor, liska).Answer == Loc.T("И мне не платят. Считай за двоих."),
+                  "свой долг звучит только когда он действительно есть");
+            debtor.UnpaidMissions = 4;
+            Check(Dialogue.CampLines.Exchange(debtor, liska).First == Loc.T("Давно без платы. Я запоминаю."),
+                  "четвёртая неоплаченная вылазка не называется третьей");
+            debtor.UnpaidMissions = 3;
+            Check(Dialogue.CampLines.Exchange(debtor, liska).First == Loc.T("Третья вылазка без платы. Я запоминаю."),
+                  "три неоплаченные вылазки всё ещё названы точно");
+
+            debtor.UnpaidMissions = 0;
+            debtor.Pocket(1);
+            Check(Dialogue.CampLines.Exchange(debtor, liska).Answer == Loc.T("У меня пока не звенит."),
+                  "пустой карман не звенит в ответ на чужие монеты");
+            liska.Pocket(1);
+            Check(Dialogue.CampLines.Exchange(debtor, liska).Answer == Loc.T("Звенит. И у меня звенит."),
+                  "ответ о собственных монетах появляется вместе с монетами");
+
+            var mute = MakeWarrior("Немой Проба", SinType.Greed, 60f);
+            mute.UnpaidMissions = 3;
+            string gesture = Dialogue.CampLines.Gesture(mute);
+            var exchange = Dialogue.CampLines.Exchange(mute, liska);
+            Check(exchange.First == gesture && exchange.Answer == Loc.T("Пока тихо."),
+                  "собеседник немого не отвечает на невысказанную жалобу");
+            Check(Dialogue.TalkLines.Greet(mute) == gesture, "немой здоровается жестом даже при долге");
+            Check(Dialogue.TalkLines.Attitude(mute) == gesture, "немой не произносит рассказ об отношении");
+            Check(Dialogue.TalkLines.Paid(mute, 3) == gesture, "немой принимает плату без слов");
+            Check(Dialogue.TalkLines.HowAreYou(mute) == gesture, "немой отвечает на вопрос о себе жестом");
+            Check(Dialogue.EncounterLines.Say(mute, liska, "PRE_01") == gesture,
+                  "немой не получает боевую реплику из общего банка");
+
+            foreach (var sin in new[] { SinType.Pride, SinType.Wrath, SinType.Sloth })
+            {
+                var virtue = MakeWarrior("Добродетель " + sin, sin, -80f);
+                Check(Dialogue.TalkLines.Greet(virtue) == Loc.T("Владыка?"),
+                      $"приветствие не приписывает добродетели порок: {sin}");
+            }
+            var angry = MakeWarrior("Гневный", SinType.Wrath, 80f);
+            Check(Dialogue.TalkLines.Greet(angry) == Loc.T("Что? Кого бить?"),
+                  "характерное приветствие гневного сохранено");
+            var envious = MakeWarrior("Завистливый", SinType.Envy, 60f);
+            Check(Dialogue.TalkLines.Paid(envious) == Loc.T("Мне? …Спасибо."),
+                  "получивший плату не утверждает неизвестный порядок выплат");
         }
 
         /// <summary>

@@ -47,6 +47,15 @@ namespace Sinbinder.Gameplay
         /// <summary>Ворон срывается с плеча — на первом ударе.</summary>
         private const float RavenAt = 0.45f;
 
+        private Animator _animator;
+        private AnimatorUpdateMode _oldMode;
+        private AnimatorCullingMode _oldCulling;
+        private bool _slowed;
+        private Light _fill;
+        private Dialogue.DialogueCameraController _camera;
+        private Transform _target;
+        private bool _ownsFrame;
+
         /// <summary>
         /// Показать миг. <paramref name="line"/> — реплика вида «Имя: «слова»»,
         /// как её пишет журнал; в журнал она уходит сразу, как у <see cref="Herald"/>.
@@ -71,24 +80,46 @@ namespace Sinbinder.Gameplay
         {
             var camera = Dialogue.DialogueCameraController.Instance;
             var target = who.transform;
+            _camera = camera;
+            _target = target;
+            float began = Time.realtimeSinceStartup;
 
             // Мир — медленнее; запоминаем, что ставили мы: вернём, только если
             // время всё ещё наше (пауза или урок поверх — их хозяева сами).
             // Замедление отказа (RefusalPresenter, 0,3 на полсекунды) могло уже
             // стоять — наше его сменяет, а своё оно вернёт, только если 0,3 ещё стоит.
-            bool slowed = Time.timeScale > 0f;
-            if (slowed) Time.timeScale = Slow;
+            _slowed = Time.timeScale > 0f;
+            if (_slowed) Time.timeScale = Slow;
 
-            var animator = who.GetComponentInChildren<Animator>();
-            var mode = animator != null ? animator.updateMode : AnimatorUpdateMode.Normal;
-            if (animator != null) animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            _animator = who.GetComponentInChildren<Animator>();
+            if (_animator != null)
+            {
+                _oldMode = _animator.updateMode;
+                _oldCulling = _animator.cullingMode;
+                _animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            }
 
-            var body = who.GetComponent<WarriorAnimation>();
-            if (body != null) body.Challenge();
             Debug.Log($"[ПОБЕГ] Миг арьергарда: {who.DisplayName}");
 
             camera.SaveCameraPosition();
-            var focus = StartCoroutine(camera.FocusOn(target));
+            _ownsFrame = true;
+            // Жест начинается в готовом кадре: первый удар больше не уходит в переезд.
+            yield return camera.FocusOn(target, distanceMultiplier: 1.25f);
+            if (target == null) { Destroy(gameObject); yield break; }
+            float scale = Dialogue.DialogueCameraController.Scale(target, out _);
+            _fill = new GameObject("Свет вызова").AddComponent<Light>();
+            _fill.transform.SetParent(transform, false);
+            _fill.type = LightType.Point;
+            _fill.color = new Color(0.78f, 0.84f, 1f);
+            _fill.range = 3f * scale;
+            _fill.intensity = 0f;
+            _fill.shadows = LightShadows.None;
+            PlaceLight(target, scale);
+            yield return new WaitForSecondsRealtime(0.22f);
+            if (who == null || who.IsDead) { Destroy(gameObject); yield break; }
+            var body = who.GetComponent<WarriorAnimation>();
+            if (body != null) body.Challenge();
             UI.Letterbox.Instance?.Say(name, words);
             if (who.TryGetComponent<Audio.VoiceGenerator>(out var voice))
                 voice.Babble(words, Mathf.Min(Seconds - 0.8f, words.Length / 40f * 1.2f + 0.3f));
@@ -97,27 +128,69 @@ namespace Sinbinder.Gameplay
             float t = 0f;
             int strike = 0;
             bool raven = false;
-            while (t < Seconds)
+            bool close = false;
+            Coroutine focus = null;
+            while (Time.realtimeSinceStartup - began < Seconds)
             {
-                if (target == null) break;
-                if (strike < Strikes.Length && t >= Strikes[strike])
+                if (target == null || who.IsDead || !camera.InDialogue || camera.Target != target) break;
+                while (strike < Strikes.Length && t >= Strikes[strike])
                     Audio.Sfx.ShieldStrike(target.position + Vector3.up * 1.1f, strike++);
                 if (!raven && t >= RavenAt)
                 {
                     raven = true;
                     Audio.Sfx.Caw(target.position + Vector3.up * 1.6f);
                 }
+                if (!close && t >= 1.65f)
+                {
+                    close = true;
+                    focus = StartCoroutine(camera.FocusOn(target, distanceMultiplier: 0.85f));
+                }
+                PlaceLight(target, scale);
+                _fill.intensity = 0.65f * Mathf.Clamp01(t / 0.25f)
+                    * Mathf.Clamp01((Seconds - (Time.realtimeSinceStartup - began)) / 0.3f);
                 t += Time.unscaledDeltaTime;
                 yield return null;
             }
 
             if (focus != null) StopCoroutine(focus);
-            camera.StopSway();
-            if (animator != null) animator.updateMode = mode;
-            if (slowed && Mathf.Approximately(Time.timeScale, Slow)) Time.timeScale = 1f;
+            RestoreWorld();
 
-            yield return camera.RestoreCamera();
+            if (camera != null && camera.InDialogue && camera.Target == target)
+                yield return camera.RestoreCamera();
+            _ownsFrame = false;
             Destroy(gameObject);
+        }
+
+        private void PlaceLight(Transform target, float scale)
+        {
+            var eye = Camera.main;
+            var toward = eye != null ? eye.transform.position - target.position : target.forward;
+            toward.y = 0f;
+            _fill.transform.position = target.position + Vector3.up * (1.6f * scale)
+                + toward.normalized * (0.75f * scale);
+        }
+
+        private void RestoreWorld()
+        {
+            if (_animator != null)
+            {
+                _animator.updateMode = _oldMode;
+                _animator.cullingMode = _oldCulling;
+                _animator = null;
+            }
+            // Предыдущее замедление отказа уже закончилось за время сцены.
+            // Возвращать его долю времени нельзя: она осталась бы навсегда.
+            if (_slowed && Mathf.Approximately(Time.timeScale, Slow)) Time.timeScale = 1f;
+            _slowed = false;
+            if (_fill != null) { Destroy(_fill.gameObject); _fill = null; }
+        }
+
+        private void OnDestroy()
+        {
+            RestoreWorld();
+            if (_ownsFrame && _camera != null && _camera.isActiveAndEnabled
+                && _camera.InDialogue && _camera.Target == _target)
+                _camera.StartCoroutine(_camera.RestoreCamera());
         }
     }
 }

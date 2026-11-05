@@ -255,7 +255,8 @@ namespace Sinbinder.UI
             if (cam != null && !cam.InDialogue)
             {
                 cam.SaveCameraPosition();
-                cam.StartCoroutine(cam.FocusOn(w.transform));
+                cam.StartCoroutine(cam.FocusConversation(w.transform,
+                    SinbinderPlayer.Exists ? SinbinderPlayer.Instance.transform : null, menu: true));
                 _framed = true;
             }
             Redraw();

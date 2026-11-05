@@ -54,6 +54,7 @@ namespace Sinbinder.Gameplay
         private string _say = "";
         private Vector2 _scroll;
         private readonly List<GameObject> _shown = new();
+        private readonly List<Material> _previewMaterials = new();
         private Camera _cam;
         private float _height = 70f;
 
@@ -64,7 +65,10 @@ namespace Sinbinder.Gameplay
             var rig = _cam != null ? _cam.GetComponent<RTS_Camera>() : null;
             if (rig != null) rig.enabled = false;
 
-            _map = MapSession.Map ?? new MapData { Name = Loc.T("Новая карта"), Size = 300f };
+            // Правки не попадают в лобби до успешного сохранения.
+            _map = MapSession.Map == null
+                ? new MapData { Name = Loc.T("Новая карта"), Size = 300f }
+                : JsonUtility.FromJson<MapData>(JsonUtility.ToJson(MapSession.Map));
             _path = MapSession.Path;
             _name = _map.Name;
             if (_cam != null) _cam.transform.SetPositionAndRotation(new Vector3(0f, _height, -_height * 0.35f), Quaternion.Euler(72f, 0f, 0f));
@@ -139,10 +143,19 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- вид
 
-        private void Redraw()
+        private void ClearPreview()
         {
             foreach (var go in _shown) if (go != null) Destroy(go);
             _shown.Clear();
+            foreach (var material in _previewMaterials) if (material != null) Destroy(material);
+            _previewMaterials.Clear();
+        }
+
+        void OnDestroy() => ClearPreview();
+
+        private void Redraw()
+        {
+            ClearPreview();
 
             var ground = GameObject.Find("Поле");
             if (ground != null) ground.transform.localScale = new Vector3(_map.Size / 10f, 1f, _map.Size / 10f);
@@ -180,7 +193,9 @@ namespace Sinbinder.Gameplay
             go.transform.position = at;
             go.transform.localScale = new Vector3(radius * 2f, 0.01f, radius * 2f);
             var r = go.GetComponent<Renderer>();
-            r.material = new Material(Shader.Find("Sprites/Default")) { color = colour };
+            var material = new Material(Shader.Find("Sprites/Default")) { color = colour };
+            r.sharedMaterial = material;
+            _previewMaterials.Add(material);
             _shown.Add(go);
         }
 
@@ -221,13 +236,36 @@ namespace Sinbinder.Gameplay
         {
             if (_map.Crypts.Count < 2) { _say = Loc.T("Нужно хотя бы два склепа — по одному на игрока."); return; }
             _map.Name = string.IsNullOrWhiteSpace(_name) ? Loc.T("Новая карта") : _name.Trim();
-            if (string.IsNullOrEmpty(_path))
+            try
             {
-                string file = string.Join("_", _map.Name.Split(Path.GetInvalidFileNameChars()));
-                _path = Path.Combine(MapData.Folder, file + ".json");
+                string destination = _path;
+                if (string.IsNullOrEmpty(destination))
+                {
+                    string file = string.Join("_", _map.Name.Split(Path.GetInvalidFileNameChars())).Trim().Trim('.');
+                    if (string.IsNullOrEmpty(file)) file = "SinbinderMap";
+                    destination = Path.Combine(MapData.Folder, file + ".json");
+                    int suffix = 2;
+                    while (File.Exists(destination))
+                        destination = Path.Combine(MapData.Folder, file + "_" + suffix++ + ".json");
+                }
+                var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
+                if (File.Exists(destination)) File.Copy(destination, destination + ".bak", true);
+                _map.Save(destination);
+                _path = destination;
+                if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
+                {
+                    MapSession.Path = _path;
+                    MapSession.Map = savedMap;
+                    MapSession.Tutorial = false;
+                }
+                else MapSession.Choose(_path, savedMap);
+                _say = Loc.F("Записано: {0}", Path.GetFileName(_path));
             }
-            _map.Save(_path);
-            _say = Loc.F("Записано: {0}", Path.GetFileName(_path));
+            catch (System.Exception error)
+            {
+                _say = Loc.F("Не удалось сохранить карту: {0}", error.Message);
+                Debug.LogError("[Редактор карт] " + error);
+            }
         }
     }
 }

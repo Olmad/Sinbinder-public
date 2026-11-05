@@ -79,7 +79,8 @@ namespace Sinbinder.Gameplay
         private bool _greatNow;
 
         /// <summary>Выпустить волну сейчас (по часам; прогон зовёт сразу). Великая — втрое больше и крепче.</summary>
-        public int Release(bool great = false)
+        // По запросу возвращаем точных участников волны: нужно для честной проверки обучения.
+        public int Release(bool great = false, IList<Warrior> spawned = null)
         {
             _greatNow = great;
             var match = TugMatch.Instance;
@@ -105,7 +106,13 @@ namespace Sinbinder.Gameplay
                 int count = 2 + Wave + Loyal(side) / 4;
                 if (great) count *= 3;
                 for (int i = 0; i < count; i++)
-                    if (Hunter(trail + across * ((i % 12 - (Mathf.Min(count, 12) - 1) * 0.5f) * 1.6f) - (gate - trail).normalized * (i / 12) * 1.8f, gate, side) != null) sent++;
+                {
+                    var warrior = Hunter(trail + across * ((i % 12 - (Mathf.Min(count, 12) - 1) * 0.5f) * 1.6f)
+                                                - (gate - trail).normalized * (i / 12) * 1.8f, gate, side);
+                    if (warrior == null) continue;
+                    sent++;
+                    spawned?.Add(warrior);
+                }
             }
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(great
                 ? Loc.T("Великая охота: Орден вышел главной силой на все склепы.")
@@ -140,7 +147,10 @@ namespace Sinbinder.Gameplay
             int n = _born++;
             string name = HunterSquadSpawner.HunterName(n);
             var go = new GameObject(name);
-            go.transform.SetPositionAndRotation(at, Quaternion.LookRotation(gate - at));
+            // На карте с совпадающими тропой и целью LookRotation(0) даёт ошибку.
+            var towards = gate - at;
+            go.transform.SetPositionAndRotation(at, towards.sqrMagnitude > 0.001f
+                ? Quaternion.LookRotation(towards) : Quaternion.identity);
 
             var warrior = go.AddComponent<Warrior>();
             var soul = new SoulData(name, (SinType)(n % 7), MoralType.Pious, 1 + Wave / 2, 40f + Wave * 8f);

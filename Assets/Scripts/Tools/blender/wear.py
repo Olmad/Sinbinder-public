@@ -36,6 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import anatomy
 import bodies
+from model_shapes import hat_brim, cloth_tabard, bow_path, assert_mesh
 from bodies import BASE, Body, box, ring, sphere, tilt, tube
 from sdf import Ball, Bar, Brick, Disc, Egg, Field, Plate, chain, loop, turn
 
@@ -88,33 +89,37 @@ def hood(b):
 
 
 def wide_hat(b):
-    """Широкополая шляпа ловчего: сверху видно её одну."""
+    """Шляпа ловчего: не тор-ореол, а настоящие широкие поля."""
     z = P["skull"] + 0.052
-    b.add(*ring((0, 0.010, z), 0.100, 0.013, scale=(1.0, 1.0, 0.45), segs=24), bone="Head")
-    b.add(*tube((0, 0.010, z - 0.006), (0, 0.010, z + 0.058), 0.062, 0.050, segs=18),
-          bone="Head")
-    b.add(*ring((0, 0.010, z + 0.010), 0.062, 0.009, scale=(1.0, 1.0, 0.8), segs=20),
-          bone="Head", mat=1)
+    b.add(*hat_brim(z, outer=0.108, inner=0.057, thickness=0.005,
+                    upturn=0.002, segments=32), bone="Head")
+    b.add(*tube((0, 0.010, z - 0.006), (0, 0.010, z + 0.058),
+                0.062, 0.050, segs=18), bone="Head")
+    # Тёмная лента вокруг тульи (место прежнего воздушного обруча).
+    b.add(*ring((0, 0.010, z + 0.010), 0.062, 0.006,
+                scale=(1.0, 1.0, 0.8), segs=24), bone="Head", mat=1)
 
 
 def straw_hat(b):
-    """Соломенная шляпа крестьянина: поля шире, тулья ниже."""
+    """Шляпа крестьянина: полные слегка неровные соломенные поля."""
     z = P["skull"] + 0.046
-    b.add(*ring((0, 0.010, z), 0.108, 0.012, scale=(1.0, 1.0, 0.40), segs=24), bone="Head")
-    b.add(*tube((0, 0.010, z - 0.004), (0, 0.010, z + 0.038), 0.064, 0.057, segs=16),
-          bone="Head")
+    b.add(*hat_brim(z, outer=0.116, inner=0.058, thickness=0.007,
+                    upturn=0.005, segments=32, wave=0.002), bone="Head")
+    b.add(*tube((0, 0.010, z - 0.004), (0, 0.010, z + 0.038),
+                0.064, 0.057, segs=18), bone="Head")
+    b.add(*ring((0, 0.010, z + 0.006), 0.063, 0.005,
+                scale=(1.0, 1.0, 0.8), segs=20), bone="Head", mat=1)
 
 
 def inquisitor_cap(b):
-    """
-    Высокий колпак инквизитора. Он рангом выше охотников, и сверху
-    это видно раньше всего остального: колпак — самая высокая точка
-    силуэта.
-    """
+    """Колпак инквизитора с настоящими полями вместо проволочного кольца."""
     z = P["skull"] + 0.040
-    b.add(*ring((0, 0.010, z), 0.074, 0.011, scale=(1.0, 1.0, 0.55), segs=22), bone="Head")
-    b.add(*tube((0, 0.010, z), (0, 0.010, z + 0.150), 0.061, 0.035, segs=16), bone="Head")
-    b.add(*box((0, -0.058, z + 0.070), (0.030, 0.014, 0.090)), bone="Head", mat=1)
+    b.add(*hat_brim(z, outer=0.077, inner=0.054, thickness=0.005,
+                    upturn=0.0015, segments=28), bone="Head")
+    b.add(*tube((0, 0.010, z), (0, 0.010, z + 0.150),
+                0.061, 0.035, segs=16), bone="Head")
+    b.add(*box((0, -0.058, z + 0.070), (0.030, 0.014, 0.090)),
+          bone="Head", mat=1)
 
 
 def circlet(b):
@@ -339,27 +344,43 @@ def charm(b):
 
 
 def quiver(b):
-    """Колчан за спиной — охотник и лучник."""
+    """Колчан с видимым горлом, четырьмя стрелами и оперением."""
     sh = P["shoulder"]
-    b.add(*tube((-0.045, 0.085, sh - 0.075), (0.055, 0.105, sh + 0.075), 0.032, 0.036, segs=12),
-          bone="Chest")
+    low = (-0.045, 0.095, sh - 0.075)
+    top = (0.055, 0.105, sh + 0.075)
+    b.add(*tube(low, top, 0.027, 0.035, segs=12), bone="Chest")
+    # Верхний кожаный рант, чтобы колчан выглядел полым, а не трубой.
+    b.add(*ring(top, 0.033, 0.0045, scale=(1.0, 1.0, 0.65), segs=20),
+          bone="Chest", mat=2)
+    # У каждой стрелы древко выступает из горла, оперение наверху.
     for i in range(4):
-        b.add(*tube((0.040 + i * 0.012, 0.104, sh + 0.070),
-                    (0.046 + i * 0.012, 0.108, sh + 0.145), 0.004, 0.004, segs=6),
+        dx = (i - 1.5) * 0.013
+        y = 0.097 + (i % 2) * 0.013
+        x = top[0] + dx
+        z0 = top[2] - 0.008
+        z1 = top[2] + 0.070 + (i % 2) * 0.013
+        b.add(*tube((x, y, z0), (x, y, z1), 0.0024, 0.0019, segs=6),
               bone="Chest", mat=1)
+        # Два маленьких пера на каждом древке.
+        for s in (-1, 1):
+            leaf(b, (x, y, z1 - 0.030), (s*0.35, 0.0, 1.0),
+                 (0.0, 1.0, 0.0), 0.029, 0.008, thick=0.0025,
+                 bone="Chest", mat=1)
 
 
 def bow(b):
-    """Лук за спиной. Дуга, а не палка: сверху читается сразу."""
-    sh = P["shoulder"]
-    for i in range(9):
-        t = i / 8.0
-        a = math.radians(-70 + t * 140)
-        x = math.sin(a) * 0.150
-        z = sh + math.cos(a) * 0.150 - 0.030
-        nx = math.sin(math.radians(-70 + (t + 0.14) * 140)) * 0.150
-        nz = sh + math.cos(math.radians(-70 + (t + 0.14) * 140)) * 0.150 - 0.030
-        b.add(*tube((x, 0.092, z), (nx, 0.092, nz), 0.010, 0.010, segs=6), bone="Chest")
+    """Изогнутый длинный лук с натянутой тетивой, видимой сверху."""
+    path, (lower, upper) = bow_path(P["shoulder"])
+    for i, (a, c) in enumerate(zip(path, path[1:])):
+        t = (i + 0.5) / (len(path)-1)
+        rad = 0.0055 + 0.0045 * math.sin(math.pi*t)
+        b.add(*tube(a, c, rad, rad, segs=8), bone="Chest")
+    b.add(*tube(lower, upper, 0.0015, 0.0015, segs=6),
+          bone="Chest", mat=1)
+    middle = path[len(path)//2]
+    b.add(*tube((middle[0], middle[1], middle[2]-0.018),
+                (middle[0], middle[1], middle[2]+0.018),
+                0.012, 0.012, segs=10), bone="Chest", mat=1)
 
 
 def net(b):
@@ -381,14 +402,24 @@ def flasks(b):
 
 
 def tabard(b):
+    """Табард инквизитора: изогнутая ткань, швы, крест поверх полотна.
+
+    Размеры и единственная кость Spine сохранены, так что генерация
+    одежды и старые анимации продолжают пользоваться теми же точками.
     """
-    Табард инквизитора: полотнище с знаком ордена спереди.
-    Знак — простой крест из двух брусков: сверху видно не рисунок,
-    а то, что на груди что-то есть.
-    """
-    b.add(*box((0, -0.096, P["chest"] - 0.030), (0.150, 0.016, 0.230)), bone="Spine")
-    b.add(*box((0, -0.106, P["chest"] + 0.010), (0.024, 0.010, 0.120)), bone="Spine", mat=1)
-    b.add(*box((0, -0.106, P["chest"] + 0.040), (0.090, 0.010, 0.024)), bone="Spine", mat=1)
+    top, bottom = P["chest"] + 0.085, P["chest"] - 0.145
+    panel = cloth_tabard(top, bottom, half_width=0.075, y=-0.097)
+    assert_mesh(*panel)
+    b.add(*panel, bone="Spine")
+    # Крест выступает из ткани, а не мерцает внутри её поверхности.
+    b.add(*box((0, -0.111, P["chest"] + 0.010),
+               (0.023, 0.009, 0.120)), bone="Spine", mat=1)
+    b.add(*box((0, -0.111, P["chest"] + 0.040),
+               (0.092, 0.009, 0.023)), bone="Spine", mat=1)
+    for side in (-1, 1):
+        b.add(*tube((side*0.075, -0.092, top),
+                    (side*0.0855, -0.092, bottom),
+                    0.0032, 0.0032, segs=6), bone="Spine", mat=1)
 
 
 def drape(z0, z1, r0, r1, spread=205.0, thick=0.010, segs=15, rows=6):
@@ -1316,7 +1347,15 @@ def build(item, fit=None):
         bsdf = m.node_tree.nodes.get("Principled BSDF")
         if bsdf is not None:
             bsdf.inputs["Base Color"].default_value = rgba
-            bsdf.inputs["Roughness"].default_value = 0.66
+            # Ткань не должна блестеть как металл; кости и дерево матовые.
+            name = label.lower()
+            rough = (0.35 if any(k in name for k in ("iron", "steel"))
+                     else 0.83 if any(k in name for k in ("cloth", "straw", "bone", "feather"))
+                     else 0.72)
+            bsdf.inputs["Roughness"].default_value = rough
+            if "Metallic" in bsdf.inputs:
+                bsdf.inputs["Metallic"].default_value = (0.65 if any(k in name for k in
+                    ("iron", "steel")) else 0.0)
         mesh.materials.append(m)
 
     for i, mat in enumerate(b.mats):
@@ -1487,7 +1526,10 @@ def main():
     only = opt("--item")
     shots = opt("--preview")
 
-    out = bodies.unity_root() / "Assets" / "Resources" / "Wear"
+    # --out направляет экспериментальную сборку вне Assets. Не стираем
+    # текущий каталог Resources, пока модель не проверена в Unity.
+    out = Path(opt("--out")) if opt("--out") else (
+        bodies.unity_root() / "Assets" / "Resources" / "Wear")
 
     chosen = [i for i in ITEMS if only is None or i.name == only]
     if not chosen and not any(e[0] == only for _, es in SHELL_ITEMS.values() for e in es):

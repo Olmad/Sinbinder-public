@@ -148,7 +148,9 @@ namespace Sinbinder.Gameplay
             if (legs == null || !legs.enabled || !legs.isOnNavMesh) return;
             legs.isStopped = true;
             legs.ResetPath();
-            who.GetComponent<MonoBehaviour>()?.StartCoroutine(Release(legs));
+            // Запускать корутину на собственном компоненте жнеца, а не на случайном
+            // первом MonoBehaviour воина (им может оказаться выключенный скрипт).
+            StartCoroutine(Release(legs));
         }
 
         private static System.Collections.IEnumerator Release(UnityEngine.AI.NavMeshAgent legs)

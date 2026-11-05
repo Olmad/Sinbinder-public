@@ -57,7 +57,7 @@ namespace Sinbinder.Audio
         /// </summary>
         public void Speak(char letter = '\0')
         {
-            if (_audioSource == null) return;
+            if (_audioSource == null || Dialogue.CampLines.Mute(_warrior)) return;
 
             EmotionType emotion = EmotionType.Calm;
             VoiceType voiceType = Timbre();
@@ -144,7 +144,8 @@ namespace Sinbinder.Audio
         /// </summary>
         public void Babble(string words, float seconds, float loud = 1f)
         {
-            if (string.IsNullOrEmpty(words) || seconds <= 0f || !isActiveAndEnabled) return;
+            if (string.IsNullOrEmpty(words) || seconds <= 0f || !isActiveAndEnabled
+                || Dialogue.CampLines.Mute(_warrior)) return;
             _loud = Mathf.Clamp01(loud);
             if (_babble != null) StopCoroutine(_babble);
             _babble = StartCoroutine(BabbleRoutine(words, seconds));

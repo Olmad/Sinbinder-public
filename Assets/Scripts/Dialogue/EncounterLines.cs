@@ -51,6 +51,7 @@ namespace Sinbinder.Dialogue
         public static string Say(Warrior speaker, Warrior target, string situation)
         {
             if (speaker?.Soul == null) return string.Empty;
+            if (CampLines.Mute(speaker)) return CampLines.Gesture(speaker);
 
             var lines = Pick(speaker, target);
             if (lines == null || lines.Length != 3) return string.Empty;

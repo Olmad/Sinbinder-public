@@ -1,5 +1,6 @@
 // Assets/Scripts/Gameplay/TugTutorial.cs
 // Перевод: текст через Loc
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Sinbinder.Core;
@@ -41,6 +42,12 @@ namespace Sinbinder.Gameplay
         private float _since, _doneAt = -1f;
         private int _raisedBefore;
         private bool _released;
+        // Этот урок проверяет только охотников, выпущенных им самим.
+        private readonly List<Warrior> _trainingHunters = new();
+        private Warrior _attitudeTarget;
+        private float _attitudeReadFor;
+        private bool _attitudeRead;
+        private const float AttitudeReadSeconds = 0.8f;
 
         private Text _title, _body;
         private GameObject _panel;
@@ -65,6 +72,7 @@ namespace Sinbinder.Gameplay
                 if (Time.unscaledTime - _doneAt > 1.6f) Next();
                 return;
             }
+            if (_step == 1) WatchAttitude();
             if (Done()) { _doneAt = Time.unscaledTime; _title.text = Loc.F("Урок {0} из {1} — готово", _step + 1, Lessons.Length); }
         }
 
@@ -77,12 +85,15 @@ namespace Sinbinder.Gameplay
             switch (_step)
             {
                 case 0: { var (door, _) = match.PartsOf(me); return door != null && door.Open; }
-                case 1: return NearVillage() && Time.time - _since > 2f;
+                case 1: return _attitudeRead;
                 case 2: return AnyOrdered();
-                case 3: return HunterWaves.Loyal(me) >= 1 || Favor.Purse < Favor.StartPurse;
+                // Монета сама по себе не делает воина верным. Проверяем результат, а не расход.
+                case 3: return HunterWaves.Loyal(me) >= 1;
                 case 4: return HunterWaves.Loyal(me) >= 3;
-                case 5: return _released && Hunters() == 0;
-                case 6: return Device() != null && Device().Raised > _raisedBefore;
+                // Посторонний враг или страж события не должны задерживать обучающую волну.
+                case 5: return _released && _trainingHunters.Count > 0
+                              && _trainingHunters.TrueForAll(w => w == null || w.IsDead);
+                case 6: { var device = Device(); return device != null && device.Raised > _raisedBefore; }
                 case 7:
                     foreach (var s in BuildSite.All)
                         if (s != null && s.Side == me && s.What == BuildSite.Kind.Fire && s.Done) return true;
@@ -103,9 +114,16 @@ namespace Sinbinder.Gameplay
                 _body.text = Loc.T("Ты знаешь всё, что нужно для настоящей партии. Карты — в паузе, «Карты „Перетягивания“».");
                 return;
             }
-            // Урок начинает своё: охотников выпускает, ИИ будит, счёт поднятых запоминает.
-            if (_step == 5 && HunterWaves.Instance != null) { HunterWaves.Instance.Release(); _released = true; }
-            if (_step == 6) _raisedBefore = Device() != null ? Device().Raised : 0;
+            // Счётчик чтения сбрасывается при повторном прохождении шага.
+            if (_step == 1) { _attitudeTarget = null; _attitudeReadFor = 0f; _attitudeRead = false; }
+            // Запоминаем именно воинов обучающей волны, а не всех врагов карты.
+            if (_step == 5 && HunterWaves.Instance != null)
+            {
+                _trainingHunters.Clear();
+                _released = HunterWaves.Instance.Release(false, _trainingHunters) > 0;
+                if (!_released) Debug.LogWarning("[ОБУЧЕНИЕ] не удалось выпустить обучающую волну: проверьте тропы карты.");
+            }
+            if (_step == 6) { var device = Device(); _raisedBefore = device != null ? device.Raised : 0; }
             if (_step == 8) RivalLord.Hold = false;
 
             _title.text = Loc.F("Урок {0} из {1}: {2}", _step + 1, Lessons.Length, Loc.T(Lessons[_step].title));
@@ -116,7 +134,32 @@ namespace Sinbinder.Gameplay
         /// <summary>Перейти к уроку сразу (прогон обучения).</summary>
         public void Skip() { if (_step < Lessons.Length) { _doneAt = -1f; Next(); } }
 
-        public bool Complete => Done();
+        // Complete означает завершение всех девяти уроков, а не условие очередного шага.
+        public bool Complete => _step >= Lessons.Length;
+
+        /// <summary>Игрок действительно задержал взгляд на подсказке отношения к ничьему.</summary>
+        private void WatchAttitude()
+        {
+            var hovered = UI.WarriorTooltipUI.Hovered;
+            if (hovered == null || hovered.IsDead || hovered.Team != Team.Neutral || !NearVillage())
+            {
+                _attitudeTarget = null;
+                _attitudeReadFor = 0f;
+                return;
+            }
+            if (_attitudeTarget != hovered) { _attitudeTarget = hovered; _attitudeReadFor = 0f; }
+            _attitudeReadFor += Time.unscaledDeltaTime;
+            if (_attitudeReadFor >= AttitudeReadSeconds) _attitudeRead = true;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>Только для пакетного прогона, который не может двигать системный курсор.</summary>
+        public void TestRecordAttitude(Warrior warrior)
+        {
+            if (_step == 1 && warrior != null && !warrior.IsDead && warrior.Team == Team.Neutral)
+                _attitudeRead = true;
+        }
+#endif
 
         // ---------------------------------------------------------- приметы уроков
 
@@ -132,13 +175,6 @@ namespace Sinbinder.Gameplay
             foreach (var w in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
                 if (w.Team == Team.Neutral && !w.IsDead && w.HasCommand && w.Command.Lord == Lords.Player) return true;
             return false;
-        }
-
-        private static int Hunters()
-        {
-            int n = 0;
-            foreach (var w in FindObjectsByType<Warrior>(FindObjectsSortMode.None)) if (w.Team == Team.Enemy && !w.IsDead) n++;
-            return n;
         }
 
         private static Crypt.BindingDevice Device()

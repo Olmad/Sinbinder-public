@@ -2418,9 +2418,24 @@ namespace Sinbinder.EditorTools
             if (who != _seenTarget) { _seenTarget = who; _seenSince = now; return; }
             if (now - _seenSince < 1f) return;
 
+            HiddenSpeaker(who, cam, talk.Partner != null);
+            if (talk.Partner != null) HiddenSpeaker(talk.Partner, cam, true);
+        }
+
+        private static void HiddenSpeaker(Transform who, Camera cam, bool pair)
+        {
             var face =new Vector3(who.position.x, Top(who) - 0.15f, who.position.z);
             var eye = cam.transform.position;
             string name = who.TryGetComponent<Warrior>(out var w) ? w.DisplayName : who.name;
+
+            if (pair)
+            {
+                float scale = Dialogue.DialogueCameraController.Scale(who, out float ground);
+                var head = new Vector3(who.position.x, ground + 1.56f * scale, who.position.z);
+                var p = cam.WorldToViewportPoint(head);
+                if (p.z <= 0f || p.x < 0.04f || p.x > 0.96f || p.y < 0.18f || p.y > 0.82f)
+                    Guard("ОБЩИЙ ПЛАН", name, $"{name}: лицо вне общего кадра разговора ({p})");
+            }
 
             var own = TentInterior.Around(who.position + Vector3.up * 0.1f);
             if (own != null)

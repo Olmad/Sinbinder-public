@@ -50,11 +50,25 @@ namespace Sinbinder.Dialogue
         private float _originalFOV;
         private bool _inDialogue = false;
         private Coroutine _swayCoroutine;
+        private int _frameRevision;
+
+        // Проверки кадра без выделения памяти на каждом шаге наезда.
+        // Если буфер заполнен, место считаем занятым: пропуск стены хуже отказа от наезда.
+        private readonly Collider[] _frameOverlaps = new Collider[32];
+        private readonly RaycastHit[] _frameHits = new RaycastHit[32];
+        private static readonly float[] FrameAngles = { 0f, 30f, -30f, 60f, -60f, 90f, -90f, 180f };
+        private float _frameYaw;
+        private float _frameReach = 1f;
+        private float _distanceMultiplier = 1f;
 
         public bool InDialogue => _inDialogue;
 
         /// <summary>На кого наехали последним. Спрашивает прогон: не заслонён ли он.</summary>
         public Transform Target { get; private set; }
+        /// <summary>Второй участник общего плана; null у одиночной реплики.</summary>
+        public Transform Partner { get; private set; }
+        private Transform _pairFirst, _pairSecond;
+        private Vector3 _pairSide;
 
         void Awake()
         {
@@ -132,6 +146,7 @@ namespace Sinbinder.Dialogue
             _originalPosition = cam.transform.position;
             _originalRotation = cam.transform.rotation;
             _originalFOV = cam.fieldOfView;
+            _pairFirst = _pairSecond = null;
         }
 
         /// <summary>
@@ -179,12 +194,21 @@ namespace Sinbinder.Dialogue
         /// <summary>Спрятать тело Греховода, если оно между камерой и говорящим (ближе 0,7 м к лучу взгляда).</summary>
         private void HideHeroIfInFrame(Vector3 from, Vector3 look, Transform speaker)
         {
-            if (!Gameplay.SinbinderPlayer.Exists || speaker == Gameplay.SinbinderPlayer.Instance.transform) return;
+            if (!Gameplay.SinbinderPlayer.Exists || speaker == Gameplay.SinbinderPlayer.Instance.transform)
+            {
+                ShowHeroAgain();
+                return;
+            }
             var hero = Gameplay.SinbinderPlayer.Instance;
             var chest = hero.transform.position + Vector3.up * 1.2f;
             var ray = look - from;
             float k = Mathf.Clamp01(Vector3.Dot(chest - from, ray) / Mathf.Max(1e-4f, ray.sqrMagnitude));
-            if ((from + ray * k - chest).magnitude > 0.7f) return;
+            if ((from + ray * k - chest).magnitude > 0.7f)
+            {
+                ShowHeroAgain();
+                return;
+            }
+            if (_hiddenHero.Count > 0) return;
 
             foreach (var r in hero.GetComponentsInChildren<Renderer>())
                 if (r.enabled) { r.enabled = false; _hiddenHero.Add(r); }
@@ -196,7 +220,7 @@ namespace Sinbinder.Dialogue
             _hiddenHero.Clear();
         }
 
-        public IEnumerator FocusOn(Transform target, string caption = null)
+        public IEnumerator FocusOn(Transform target, string caption = null, float distanceMultiplier = 1f)
         {
             if (target == null) yield break;
 
@@ -206,8 +230,16 @@ namespace Sinbinder.Dialogue
             // тела при выгрузке лагеря).
             if (Cam() == null) yield break;
 
+            int revision = ++_frameRevision;
+            if (_swayCoroutine != null) StopCoroutine(_swayCoroutine);
+            _swayCoroutine = null;
             _inDialogue = true;
             Target = target;
+            Partner = null;
+            ShowHeroAgain();
+            _frameYaw = 0f;
+            _frameReach = 1f;
+            _distanceMultiplier = Mathf.Clamp(distanceMultiplier, 0.7f, 1.5f);
             Cam().fieldOfView = _dialogueFOV;
 
             // Полосы живут на Canvas и умирают со сценой, а контроллер
@@ -229,7 +261,15 @@ namespace Sinbinder.Dialogue
             Vector3 side = Flat(target.right);
 
             Vector3 lookTarget = anchor + Vector3.up * (_lookHeight * _scale);
-            Vector3 baseCamPos = Frame(anchor, face, side, _cameraDistance * _scale, 0f);
+            if (!TrySpeakerFrame(anchor, face, side, lookTarget, _cameraDistance * _scale * _distanceMultiplier, 0f,
+                                 target, out Vector3 baseCamPos))
+            {
+                // В тесноте оставляем прежний обзор и реплику на полосе.
+                // Нельзя заменять отсутствие свободного ракурса камерой внутри стены.
+                Overview();
+                Debug.LogWarning("[КАМЕРА] Свободного ракурса для разговора нет: оставлен прежний обзор.");
+                yield break;
+            }
 
             // Греховод стоит ровно там, где встаёт камера, — он и подошёл поговорить, — и кадр
             // закрывала его спина (автор, 26.10: «при выборе показывается спина Греховода»).
@@ -237,13 +277,146 @@ namespace Sinbinder.Dialogue
             HideHeroIfInFrame(baseCamPos, lookTarget, target);
 
             yield return MoveCamera(baseCamPos,
-                Quaternion.LookRotation((lookTarget - baseCamPos).normalized));
+                Quaternion.LookRotation((lookTarget - baseCamPos).normalized), target, lookTarget);
+
+            if (!_inDialogue || Target != target || revision != _frameRevision) yield break;
 
             // Дальше живём на числах, а не на ссылке: говорящий может
             // погибнуть посреди собственной реплики, и наезд, тянущийся
             // к уничтоженному transform, упал бы вместе с разговором.
             // На этом уже обожглись в DialogueUI.
             _swayCoroutine = StartCoroutine(PushIn(anchor, face, side, lookTarget));
+        }
+
+        /// <summary>
+        /// Двое в кадре. Сторона оси разговора сохраняется между ответами,
+        /// а акцент смещается к говорящему. Под меню справа оставляем место.
+        /// </summary>
+        public IEnumerator FocusConversation(Transform speaker, Transform listener, bool menu = false)
+        {
+            if (speaker == null) yield break;
+            if (listener == null || speaker == listener)
+            {
+                yield return FocusOn(speaker);
+                yield break;
+            }
+            var cam = Cam();
+            if (cam == null) yield break;
+            bool samePair = (speaker == _pairFirst && listener == _pairSecond)
+                         || (speaker == _pairSecond && listener == _pairFirst);
+            if (!samePair)
+            {
+                _pairFirst = speaker;
+                _pairSecond = listener;
+                _pairSide = Vector3.Cross(Vector3.up, Flat(listener.position - speaker.position));
+                if (Vector3.Dot(_pairSide, cam.transform.position - (speaker.position + listener.position) * 0.5f) < 0f)
+                    _pairSide = -_pairSide;
+            }
+            int revision = ++_frameRevision;
+            if (_swayCoroutine != null) StopCoroutine(_swayCoroutine);
+            _swayCoroutine = null;
+            ShowHeroAgain();
+            _inDialogue = true;
+            Target = speaker;
+            Partner = listener;
+            cam.fieldOfView = _dialogueFOV;
+            UI.Letterbox.Instance?.Show();
+
+            if (!TryPairFrame(speaker, listener, menu, out var from, out var look))
+            {
+                yield return FocusOn(speaker);
+                yield break;
+            }
+            var rotation = Quaternion.LookRotation(look - from);
+            if (samePair) cam.transform.SetPositionAndRotation(from, rotation);
+            else yield return MoveCamera(from, rotation, speaker, look, listener: listener);
+            if (!_inDialogue || revision != _frameRevision) yield break;
+            _swayCoroutine = StartCoroutine(FollowPair(speaker, listener, menu));
+        }
+
+        private IEnumerator FollowPair(Transform speaker, Transform listener, bool menu)
+        {
+            while (_inDialogue)
+            {
+                var cam = Cam();
+                if (cam == null) yield break;
+                if (speaker == null || listener == null
+                    || !TryPairFrame(speaker, listener, menu, out var from, out var look))
+                {
+                    Partner = null;
+                    Overview();
+                    yield break;
+                }
+                cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(look - from));
+                // Смотрят друг на друга, а не вслед за движением объектива.
+                var direction = Flat(listener.position - speaker.position);
+                speaker.rotation = Quaternion.Slerp(speaker.rotation, Quaternion.LookRotation(direction),
+                    1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                yield return null;
+            }
+        }
+
+        private static Bounds ConversationBody(Transform who)
+        {
+            float scale = Scale(who, out float ground);
+            // От пояса до макушки, с запасом на плечи; оружие не раздувает кадр.
+            return new Bounds(new Vector3(who.position.x, ground + 1.2f * scale, who.position.z),
+                              new Vector3(0.8f, 1.2f, 0.8f) * scale);
+        }
+
+        /// <summary>Геометрия общего плана с учётом широкого/узкого экрана и меню.</summary>
+        public static void ComposePair(Bounds first, Bounds second, Vector3 side, float fov, float aspect,
+                                       bool menu, out Vector3 from, out Vector3 look)
+        {
+            side = Flat(side);
+            var forward = -side;
+            var right = Vector3.Cross(Vector3.up, forward);
+            var centre = Vector3.Lerp(first.center, second.center, 0.42f);
+            float vertical = Mathf.Tan(Mathf.Clamp(fov, 10f, 100f) * Mathf.Deg2Rad * 0.5f);
+            float horizontal = vertical * Mathf.Max(0.3f, aspect);
+            float width = menu ? 0.46f : 0.8f;
+            float shift = menu ? 0.4f : 0f;
+            float distance = Mathf.Max(PairDistance(first, centre, forward, right, horizontal, vertical * 0.6f, width, shift),
+                                       PairDistance(second, centre, forward, right, horizontal, vertical * 0.6f, width, shift));
+            distance = Mathf.Max(0.8f, distance) + 0.12f;
+            look = centre + right * (distance * horizontal * shift);
+            from = look + side * distance;
+        }
+
+        private static float PairDistance(Bounds body, Vector3 centre, Vector3 forward, Vector3 right,
+                                          float horizontal, float vertical, float width, float shift)
+        {
+            var offset = body.center - centre;
+            var ext = body.extents;
+            float x = Vector3.Dot(offset, right);
+            float radius = Mathf.Abs(right.x) * ext.x + Mathf.Abs(right.z) * ext.z;
+            float y = Mathf.Abs(offset.y) + ext.y;
+            float depth = Vector3.Dot(offset, forward) - Mathf.Abs(forward.x) * ext.x - Mathf.Abs(forward.z) * ext.z;
+            // Сдвиг под меню зависит от расстояния камеры, а перспектива — ещё и
+            // от глубины тела. Проверяем левую и правую границы отдельно.
+            float rightEdge = ((x + radius) / horizontal - (width - shift) * depth) / width;
+            float leftEdge = ((-x + radius) / horizontal - (width + shift) * depth) / width;
+            return Mathf.Max(Mathf.Max(leftEdge, rightEdge), y / vertical - depth);
+        }
+
+        private bool TryPairFrame(Transform speaker, Transform listener, bool menu,
+                                  out Vector3 from, out Vector3 look)
+        {
+            var a = ConversationBody(speaker);
+            var b = ConversationBody(listener);
+            var cam = Cam();
+            float bias = speaker == _pairFirst ? -12f : 12f;
+            foreach (float angle in FrameAngles)
+            {
+                var side = Quaternion.AngleAxis(bias + angle, Vector3.up) * _pairSide;
+                ComposePair(a, b, side, _dialogueFOV, cam.aspect, menu, out from, out look);
+                if (!ClearFrame(from, a.center + Vector3.up * (a.extents.y * 0.6f), speaker, listener)
+                    || !ClearFrame(from, b.center + Vector3.up * (b.extents.y * 0.6f), speaker, listener)) continue;
+                _pairSide = Quaternion.AngleAxis(angle, Vector3.up) * _pairSide;
+                return true;
+            }
+            from = look = Vector3.zero;
+            return false;
         }
 
         /// <summary>
@@ -262,13 +435,19 @@ namespace Sinbinder.Dialogue
         {
             if (Cam() == null) yield break;
 
+            int revision = ++_frameRevision;
+            if (_swayCoroutine != null) StopCoroutine(_swayCoroutine);
+            _swayCoroutine = null;
+            ShowHeroAgain();
             _inDialogue = true;
             Target = null;   // точка, а не говорящий
+            Partner = null;
             Cam().fieldOfView = _dialogueFOV;
             UI.Letterbox.Instance?.Show(caption);
 
             yield return MoveCamera(from, Quaternion.LookRotation((look - from).normalized));
 
+            if (!_inDialogue || revision != _frameRevision) yield break;
             _swayCoroutine = StartCoroutine(PushTowards(look, from,
                 push > 0f ? push : _pushSeconds));
         }
@@ -340,6 +519,85 @@ namespace Sinbinder.Dialogue
                  + Vector3.up * (_cameraHeight * _scale);
         }
 
+        /// <summary>Объём у камеры включает ближнюю плоскость, а не только её центр.</summary>
+        private float FrameRadius()
+        {
+            var cam = Cam();
+            float halfHeight = cam.nearClipPlane * Mathf.Tan(cam.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float halfWidth = halfHeight * cam.aspect;
+            return Mathf.Max(0.12f, Mathf.Sqrt(cam.nearClipPlane * cam.nearClipPlane
+                + halfHeight * halfHeight + halfWidth * halfWidth) + 0.03f);
+        }
+
+        /// <summary>Реплика продолжается, даже если рядом с говорящим нет места для камеры.</summary>
+        private void Overview()
+        {
+            ShowHeroAgain();
+            var cam = Cam();
+            if (cam == null) return;
+            cam.transform.SetPositionAndRotation(_originalPosition, _originalRotation);
+            cam.fieldOfView = _originalFOV;
+        }
+
+        private static bool IgnoreInFrame(Collider obstacle, Transform speaker, Transform listener)
+        {
+            if (obstacle == null) return true;
+            if (speaker != null && obstacle.transform.IsChildOf(speaker)) return true;
+            if (listener != null && obstacle.transform.IsChildOf(listener)) return true;
+            // Тело Греховода при необходимости скрывает HideHeroIfInFrame.
+            return Gameplay.SinbinderPlayer.Exists
+                && obstacle.transform.IsChildOf(Gameplay.SinbinderPlayer.Instance.transform);
+        }
+
+        /// <summary>Свободны и сама камера, и отрезок до лица либо следующей позиции.</summary>
+        private bool ClearFrame(Vector3 from, Vector3 to, Transform speaker, Transform listener = null)
+        {
+            float radius = FrameRadius();
+            int overlaps = Physics.OverlapSphereNonAlloc(from, radius, _frameOverlaps,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            if (overlaps == _frameOverlaps.Length) return false;
+            for (int i = 0; i < overlaps; i++)
+                if (!IgnoreInFrame(_frameOverlaps[i], speaker, listener)) return false;
+
+            Vector3 delta = to - from;
+            float length = delta.magnitude;
+            if (length < 0.001f) return true;
+            int hits = Physics.SphereCastNonAlloc(from, radius, delta / length, _frameHits,
+                length, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            if (hits == _frameHits.Length) return false;
+            for (int i = 0; i < hits; i++)
+                if (!IgnoreInFrame(_frameHits[i].collider, speaker, listener)) return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Держим выбранную сторону, пока она свободна. При помехе ищем другой ракурс,
+        /// затем более близкий план. Порядок фиксирован; стены и палатки не прячем.
+        /// </summary>
+        private bool TrySpeakerFrame(Vector3 anchor, Vector3 face, Vector3 side, Vector3 look,
+                                     float distance, float sway, Transform speaker, out Vector3 position)
+        {
+            var turn = Quaternion.AngleAxis(_frameYaw, Vector3.up);
+            position = Frame(anchor, turn * face, turn * side, distance * _frameReach, sway);
+            if (ClearFrame(position, look, speaker)) return true;
+
+            for (int near = 0; near < 3; near++)
+            {
+                float reach = 1f - near * 0.2f;
+                foreach (float angle in FrameAngles)
+                {
+                    turn = Quaternion.AngleAxis(angle, Vector3.up);
+                    var candidate = Frame(anchor, turn * face, turn * side, distance * reach, sway);
+                    if (!ClearFrame(candidate, look, speaker)) continue;
+                    _frameYaw = angle;
+                    _frameReach = reach;
+                    position = candidate;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Медленный наезд на верх туловища, с еле заметной качкой.
         ///
@@ -369,7 +627,7 @@ namespace Sinbinder.Dialogue
                 // как движение техники, сглаженный — как внимание.
                 k = k * k * (3f - 2f * k);
 
-                float distance = Mathf.Lerp(_cameraDistance, _cameraDistance - _pushIn, k) * _scale;
+                float distance = Mathf.Lerp(_cameraDistance, _cameraDistance - _pushIn, k) * _scale * _distanceMultiplier;
                 float sway = Mathf.Sin(t) * _swayAmount * direction;
 
                 // Камера может уйти посреди плана вместе со сценой.
@@ -390,7 +648,14 @@ namespace Sinbinder.Dialogue
                                                            1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
                 }
 
-                Vector3 pos = Frame(anchor, face, side, distance, sway);
+                if (!TrySpeakerFrame(anchor, face, side, lookTarget, distance, sway, Target,
+                                     out Vector3 pos))
+                {
+                    // Новая помеха перекрыла все планы — возвращаем обзор.
+                    Overview();
+                    yield break;
+                }
+                HideHeroIfInFrame(pos, lookTarget, Target);
                 cam.transform.position = pos;
                 cam.transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
 
@@ -400,6 +665,7 @@ namespace Sinbinder.Dialogue
 
         public void StopSway()
         {
+            _frameRevision++;
             _inDialogue = false;
             if (_swayCoroutine != null)
             {
@@ -410,8 +676,11 @@ namespace Sinbinder.Dialogue
 
         public IEnumerator RestoreCamera()
         {
+            _frameRevision++;
             _inDialogue = false;
             Target = null;
+            Partner = null;
+            _pairFirst = _pairSecond = null;
             ShowHeroAgain();
             if (_swayCoroutine != null)
             {
@@ -428,11 +697,14 @@ namespace Sinbinder.Dialogue
             if (Cam() == null) yield break;
 
             Cam().fieldOfView = _originalFOV;
-            yield return MoveCamera(_originalPosition, _originalRotation);
+            yield return MoveCamera(_originalPosition, _originalRotation, avoidObstacles: true);
         }
 
-        private IEnumerator MoveCamera(Vector3 targetPos, Quaternion targetRot)
+        private IEnumerator MoveCamera(Vector3 targetPos, Quaternion targetRot,
+                                       Transform speaker = null, Vector3? look = null,
+                                       bool avoidObstacles = false, Transform listener = null)
         {
+            int revision = _frameRevision;
             float duration = 1f / _transitionSpeed;
             float elapsed = 0f;
 
@@ -442,6 +714,14 @@ namespace Sinbinder.Dialogue
             Vector3 startPos = cam.transform.position;
             Quaternion startRot = cam.transform.rotation;
 
+            // Перебивка через стену — сразу на проверенный план. Плавный перелёт
+            // разрешён лишь там, где помещается ближняя плоскость камеры.
+            if ((speaker != null || avoidObstacles) && !ClearFrame(startPos, targetPos, speaker, listener))
+            {
+                cam.transform.SetPositionAndRotation(targetPos, targetRot);
+                yield break;
+            }
+
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
@@ -449,14 +729,20 @@ namespace Sinbinder.Dialogue
                 t = t * t * (3f - 2f * t);
 
                 // Сцена может уйти посреди переезда — и камера с ней.
-                if (cam == null) yield break;
+                if (cam == null || revision != _frameRevision) yield break;
 
-                cam.transform.position = Vector3.Lerp(startPos, targetPos, t);
+                Vector3 pos = Vector3.Lerp(startPos, targetPos, t);
+                if (look.HasValue && !ClearFrame(pos, look.Value, speaker, listener))
+                {
+                    cam.transform.SetPositionAndRotation(targetPos, targetRot);
+                    yield break;
+                }
+                cam.transform.position = pos;
                 cam.transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
                 yield return null;
             }
 
-            if (cam == null) yield break;
+            if (cam == null || revision != _frameRevision) yield break;
             cam.transform.position = targetPos;
             cam.transform.rotation = targetRot;
         }

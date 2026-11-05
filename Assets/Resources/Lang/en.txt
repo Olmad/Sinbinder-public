@@ -9306,3 +9306,24 @@ msgstr "Ice-cold. It's passed."
 #: Gameplay/CampWell.cs
 msgid "Ледяная."
 msgstr "Ice-cold."
+
+#. Context corrections, 3 November 2026
+msgid "Тебе должны — с владыки и спрашивай."
+msgstr "It is the lord who owes you. Ask him."
+
+#. Context corrections, 3 November 2026
+msgid "У меня пока не звенит."
+msgstr "No jingle in my purse yet."
+
+#. Context corrections, 3 November 2026
+msgid "Давно без платы. Я запоминаю."
+msgstr "It has been a long time without pay. I remember."
+
+#. Context corrections, 3 November 2026
+msgid "Мне? …Спасибо."
+msgstr "For me? ...Thank you."
+
+
+#. Map editor save error, 4 November 2026
+msgid "Не удалось сохранить карту: {0}"
+msgstr "Could not save the map: {0}"

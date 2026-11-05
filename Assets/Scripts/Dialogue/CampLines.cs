@@ -38,12 +38,14 @@ namespace Sinbinder.Dialogue
         {
             if (a == null || b == null || a.Soul == null || b.Soul == null) return ("", "");
 
+            // На кивок нельзя отвечать так, будто немой рассказал о долге или старшем.
+            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Loc.T("Пока тихо."));
+
             string first = Opening(a, b);
             // Ответ — на то, что сказано, а не просто грех на грех (автор, 28.10: «Старший — Вейн. Посмотрим,
             // куда заведёт» — «Будто? Подожди.»: ответ был на другую фразу).
             var topic = TopicOf(a, b);
             string answer = Mute(b) ? Gesture(b) : (OnTopic(b, a, topic) ?? Answer(b, a));
-            if (Mute(a)) first = Gesture(a);
             return (first, answer);
         }
 
@@ -75,13 +77,26 @@ namespace Sinbinder.Dialogue
             var sin = b.Soul.Sin;
             switch (topic)
             {
+                case Topic.Unpaid:
+                    if (sin == SinType.Greed) return b.UnpaidMissions > 0
+                        ? Loc.T("И мне не платят. Считай за двоих.")
+                        : Loc.T("Тебе должны — с владыки и спрашивай.");
+                    if (sin == SinType.Pride) return Loc.T("Плату просят, а не считают.");
+                    return Loc.T("Мне бы и без платы полежать.");
+                case Topic.Took:
+                    if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
+                    if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Значит, не заслужил держать."), Loc.T("Значит, не заслужила держать."));
+                    return Loc.T("Меньше нести.");
+                case Topic.Brothers:
+                    return Loc.T("А где ж мне ещё.");
                 case Topic.Gave:
                     if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Дали — не значит заслужил."), Loc.T("Дали — не значит заслужила."));
                     if (sin == SinType.Greed) return Loc.T("Покажи хоть, что дали.");
                     return Loc.T("Носи. Мне бы не дали — и ладно.");
                 case Topic.Gold:
                     if (sin == SinType.Pride) return Loc.T("Звон — не честь.");
-                    if (sin == SinType.Greed) return Loc.T("Звенит. И у меня звенит.");
+                    if (sin == SinType.Greed) return b.PocketGold > 0
+                        ? Loc.T("Звенит. И у меня звенит.") : Loc.T("У меня пока не звенит.");
                     return Loc.T("Звени потише, я сплю.");
                 case Topic.LeadSelf:
                     if (sin == SinType.Pride) return Loc.T("Посмотрим, надолго ли.");
@@ -123,7 +138,8 @@ namespace Sinbinder.Dialogue
             var sin = a.Soul.Sin;
 
             // 1. Что знает лагерь.
-            if (sin == SinType.Greed && a.UnpaidMissions >= 3) return Loc.T("Третья вылазка без платы. Я запоминаю.");
+            if (sin == SinType.Greed && a.UnpaidMissions >= 4) return Loc.T("Давно без платы. Я запоминаю.");
+            if (sin == SinType.Greed && a.UnpaidMissions == 3) return Loc.T("Третья вылазка без платы. Я запоминаю.");
             if (sin == SinType.Greed && a.UnpaidMissions == 2) return Loc.T("Вторая вылазка без платы. Я считаю.");
 
             if (Remembers(a, "SinbinderTookFromMe")) return Loc.T("Он забрал моё. Запомни, как это бывает.");
@@ -212,21 +228,6 @@ namespace Sinbinder.Dialogue
                     default:            return Loc.T("Своё я уже посчитал.");
                 }
             }
-
-            // На то, что знает лагерь.
-            if (asks == SinType.Greed && a.UnpaidMissions >= 2)
-            {
-                if (sin == SinType.Greed) return Loc.T("И мне не платят. Считай за двоих.");
-                if (sin == SinType.Pride) return Loc.T("Плату просят, а не считают.");
-                return Loc.T("Мне бы и без платы полежать.");
-            }
-            if (Remembers(a, "SinbinderTookFromMe"))
-            {
-                if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
-                if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Значит, не заслужил держать."), Loc.T("Значит, не заслужила держать."));
-                return Loc.T("Меньше нести.");
-            }
-            if (Brother(a) && Brother(b)) return Loc.T("А где ж мне ещё.");
 
             // Грех на грех.
             switch (sin)

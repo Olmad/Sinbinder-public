@@ -187,7 +187,12 @@ namespace Sinbinder.UI
 
                     var voice = speaker.GetComponent<VoiceGenerator>();
                     if (_cameraController != null)
-                        yield return _cameraController.FocusOn(speaker.transform);
+                    {
+                        var listener = string.IsNullOrEmpty(line.ListenerId) ? null
+                            : _allWarriors.Find(w => w.Id == line.ListenerId && !w.IsDead);
+                        yield return _cameraController.FocusConversation(speaker.transform,
+                            listener != null ? listener.transform : null);
+                    }
 
                     // Печатаем текст с голосом
                     foreach (char c in Loc.T(line.Text))

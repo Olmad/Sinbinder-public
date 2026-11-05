@@ -11,6 +11,7 @@ namespace Sinbinder.Dialogue
     public class DialogueLine
     {
         public string SpeakerId;
+        public string ListenerId;
         public string SpeakerName;
         public string Text;
         public float Duration;
@@ -134,8 +135,8 @@ namespace Sinbinder.Dialogue
             var firstSpeaker = allies[0].Warrior;
             var firstTarget = enemies[0].Warrior;
 
-            lines.Add(new DialogueLine { SpeakerId = firstSpeaker.Id, SpeakerName = firstSpeaker.DisplayName, Text = GetDialogueLine(firstSpeaker, firstTarget, "PRE_01"), Duration = 3f });
-            lines.Add(new DialogueLine { SpeakerId = firstTarget.Id, SpeakerName = firstTarget.DisplayName, Text = GetDialogueLine(firstTarget, firstSpeaker, "PRE_01"), Duration = 3f });
+            lines.Add(new DialogueLine { SpeakerId = firstSpeaker.Id, ListenerId = firstTarget.Id, SpeakerName = firstSpeaker.DisplayName, Text = GetDialogueLine(firstSpeaker, firstTarget, "PRE_01"), Duration = 3f });
+            lines.Add(new DialogueLine { SpeakerId = firstTarget.Id, ListenerId = firstSpeaker.Id, SpeakerName = firstTarget.DisplayName, Text = GetDialogueLine(firstTarget, firstSpeaker, "PRE_01"), Duration = 3f });
 
             firstSpeaker.MarkSpokenWith(firstTarget.Id);
             firstTarget.MarkSpokenWith(firstSpeaker.Id);
@@ -206,6 +207,7 @@ namespace Sinbinder.Dialogue
             var line1 = new DialogueLine
             {
                 SpeakerId = speaker.Id,
+                ListenerId = target.Id,
                 SpeakerName = speaker.DisplayName,
                 Text = GetDialogueLine(speaker, target, "JOIN_01"),
                 Duration = 2.5f
@@ -221,6 +223,7 @@ namespace Sinbinder.Dialogue
                 var line2 = new DialogueLine
                 {
                     SpeakerId = target.Id,
+                    ListenerId = speaker.Id,
                     SpeakerName = target.DisplayName,
                     Text = GetDialogueLine(target, speaker, "JOIN_01"),
                     Duration = 2.5f

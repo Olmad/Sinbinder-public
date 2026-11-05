@@ -301,6 +301,8 @@ namespace Sinbinder.EditorTools
             EditorApplication.update += Tick;
         }
 
+        private static float _nextPersuade;
+
         private static void Note(string s) => Debug.Log("[ОБУЧЕНИЕ] " + s);
 
         private static void Tick()
@@ -320,7 +322,14 @@ namespace Sinbinder.EditorTools
                 if (_seen >= 9) { Finish(true); return; }
                 Sinbinder.Utilets.Snapshot.Now(Sinbinder.Utilets.Reel.Root + "/обучение", $"урок {_seen + 1}");
                 Act(_seen, SinbinderPlayer.Instance);
+                _nextPersuade = Time.realtimeSinceStartup + 2f;
                 return;
+            }
+            // Повторяем настоящие подарок и приказ; верность напрямую не выставляем.
+            if (_seen == 3 && Time.realtimeSinceStartup >= _nextPersuade)
+            {
+                _nextPersuade = Time.realtimeSinceStartup + 2f;
+                Act(3, SinbinderPlayer.Instance);
             }
             if (Time.realtimeSinceStartup - _at > 25f) { Note($"урок {_seen + 1} не сделан за 25 с — НЕ ТАК"); Finish(false); }
         }
@@ -344,11 +353,36 @@ namespace Sinbinder.EditorTools
                         hero.transform.position = at;
                         var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
                         if (legs != null && legs.isOnNavMesh) legs.Warp(at);
+                        Warrior nearest = null;
+                        foreach (var w in folk)
+                            if (nearest == null || (w.transform.position - at).sqrMagnitude < (nearest.transform.position - at).sqrMagnitude)
+                                nearest = w;
+                        // Только симуляция наведения в редакторском прогоне.
+                        if (nearest != null) TugTutorial.Instance?.TestRecordAttitude(nearest);
                         break;
                     }
                     break;
                 case 2: if (folk.Count > 0) folk[0].IssueCommand(CommandKind.Move, folk[0].transform.position + Vector3.forward * 3f); break;
-                case 3: if (folk.Count > 1) Favor.Give(folk[1]); break;
+                case 3:
+                {
+                    Warrior candidate = null;
+                    float best = float.MinValue;
+                    foreach (var w in folk)
+                    {
+                        float loyalty = Allegiance.Of(w.Id, w.Loyalty, Lords.Player);
+                        if (loyalty > best) { best = loyalty; candidate = w; }
+                    }
+                    if (candidate != null)
+                    {
+                        var at = candidate.transform.position + Vector3.back;
+                        var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                        if (legs != null && legs.isOnNavMesh) legs.Warp(at);
+                        else hero.transform.position = at;
+                        Favor.Give(candidate);
+                        candidate.IssueCommand(CommandKind.Hold, candidate.transform.position);
+                    }
+                    break;
+                }
                 case 4:
                     for (int i = 0; i < 3 && i < folk.Count; i++)
                         Allegiance.Change(folk[i].Id, folk[i].Loyalty, Lords.Player, 70f - Allegiance.Of(folk[i].Id, folk[i].Loyalty, Lords.Player));

@@ -264,7 +264,7 @@ namespace Sinbinder.Gameplay
         /// дрался бы с нами за один <c>Animator</c>. Хозяин тела один,
         /// и это мы.
         /// </summary>
-        public void Talk(bool on) => _talking = on;
+        public void Talk(bool on) => _talking = on && !Dialogue.CampLines.Mute(_warrior);
 
         private float _talkUntil = -1f;
 
@@ -275,7 +275,10 @@ namespace Sinbinder.Gameplay
         /// Своё время, а не флаг: разговору его гасит страховка, которой
         /// у строки лагеря нет.
         /// </summary>
-        public void TalkFor(float seconds) => _talkUntil = Time.time + seconds;
+        public void TalkFor(float seconds)
+        {
+            if (!Dialogue.CampLines.Mute(_warrior)) _talkUntil = Time.time + seconds;
+        }
 
         /// <summary>
         /// Страховка от застрявшего рта: разговор мог оборваться

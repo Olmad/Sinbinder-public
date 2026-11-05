@@ -104,6 +104,8 @@ namespace Sinbinder.Gameplay
         public const float RiseAfter = 60f;
 
         private readonly Dictionary<int, float> _down = new();
+        // Не создаём новый List из словаря каждый кадр, пока Греховод ждёт восстания.
+        private readonly List<int> _readyToRise = new();
 
         /// <summary>Лежит ли Греховод стороны — ждёт, когда встанет.</summary>
         public bool Down(int side) => _down.ContainsKey(side);
@@ -135,8 +137,10 @@ namespace Sinbinder.Gameplay
         {
             if (!Over && _decideAt > 0f && Time.time >= _decideAt) { Decide(); return; }
             if (_down.Count == 0 || Over) return;
-            foreach (var kv in new List<KeyValuePair<int, float>>(_down))
-                if (Time.time >= kv.Value) Rise(kv.Key);
+            _readyToRise.Clear();
+            foreach (var kv in _down)
+                if (Time.time >= kv.Value) _readyToRise.Add(kv.Key);
+            foreach (var side in _readyToRise) Rise(side);
         }
 
         /// <summary>Встать у трона — сейчас (по часам; прогон зовёт сразу).</summary>

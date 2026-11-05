@@ -27,6 +27,7 @@ namespace Sinbinder.Dialogue
         /// </summary>
         public static string Remembers(Warrior w)
         {
+            if (CampLines.Mute(w)) return "";
             var memory = AOS.MemoryProcessor.Instance;
             if (memory == null || w == null || !SinbinderPlayer.Exists) return "";
 
@@ -52,7 +53,11 @@ namespace Sinbinder.Dialogue
         /// </summary>
         public static string Greet(Warrior w)
         {
+            if (CampLines.Mute(w)) return CampLines.Gesture(w);
+
             if (w.UnpaidMissions >= 2) return Loc.T("Владыка. Если о монетах — я слушаю.");
+
+            if (w.Soul.Get(w.Soul.Sin) < 0f) return Loc.T("Владыка?");
 
             switch (w.Soul.Sin)
             {
@@ -70,6 +75,8 @@ namespace Sinbinder.Dialogue
         /// </summary>
         public static string Attitude(Warrior w)
         {
+            if (CampLines.Mute(w)) return CampLines.Gesture(w);
+
             string toMe;
             if (w.UnpaidMissions >= 4) toMe = Loc.T("Давно без платы, владыка. Сами считайте, как я к вам.");
             else if (w.UnpaidMissions == 3) toMe = Loc.T("Третью вылазку без платы, владыка. Сами считайте, как я к вам.");
@@ -99,6 +106,8 @@ namespace Sinbinder.Dialogue
         /// </summary>
         public static string Paid(Warrior w, int owed = 1)
         {
+            if (CampLines.Mute(w)) return CampLines.Gesture(w);
+
             var soul = w.Soul;
             bool virtue = soul.Get(soul.Sin) < 0f;
             string P(string he, string she) => Grammar.Pick(w.Gender, he, she);
@@ -130,7 +139,7 @@ namespace Sinbinder.Dialogue
                                                 Loc.T("Пересчитала. Сходится. Теперь мы в расчёте."));
                 case SinType.Pride:    return Loc.T("Служу не за деньги. Но раз положено — возьму.");
                 case SinType.Wrath:    return Loc.T("Монеты. Лучше бы дали кого ударить. Но спасибо.");
-                case SinType.Envy:     return Loc.T("Мне? Раньше других? …Спасибо.");
+                case SinType.Envy:     return Loc.T("Мне? …Спасибо.");
                 case SinType.Lust:     return Loc.T("Потрачу на приятное. Спасибо, владыка.");
                 case SinType.Gluttony: return Loc.T("Вечером будет мясо. Спасибо, владыка.");
                 default:               return Loc.T("Спасибо. Можно я их просто подержу?");
@@ -139,6 +148,8 @@ namespace Sinbinder.Dialogue
 
         public static string HowAreYou(Warrior w)
         {
+            if (CampLines.Mute(w)) return CampLines.Gesture(w);
+
             var soul = w.Soul;
             var sin = soul.Sin;
             bool virtue = soul.Get(sin) < 0f;

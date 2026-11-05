@@ -25,27 +25,39 @@ namespace Sinbinder.Gameplay
             else Destroy(gameObject);
         }
 
-        public void RegisterPlayerUnit(Damageable unit) { _playerUnits.Add(unit); OnUnitsChanged?.Invoke(); }
-        public void RegisterEnemyUnit(Damageable unit) { _enemyUnits.Add(unit); OnUnitsChanged?.Invoke(); }
+        public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
+        public void RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits);
+        public void RegisterNeutralUnit(Damageable unit) => Register(unit, _neutralUnits);
 
-        /// <summary>Ничьи («Перетягивание», 54-TUG.md): своих и чужих у них нет — враги по отношениям.</summary>
-        public void RegisterNeutralUnit(Damageable unit) { _neutralUnits.Add(unit); OnUnitsChanged?.Invoke(); }
+        private void Register(Damageable unit, List<Damageable> destination)
+        {
+            if (unit == null) return;
+            if (destination.Contains(unit)
+                && (destination == _playerUnits || !_playerUnits.Contains(unit))
+                && (destination == _enemyUnits || !_enemyUnits.Contains(unit))
+                && (destination == _neutralUnits || !_neutralUnits.Contains(unit))) return;
+            RemoveFromTeams(unit);
+            destination.Add(unit);
+            OnUnitsChanged?.Invoke();
+        }
+
+        private bool RemoveFromTeams(Damageable unit)
+        {
+            return _playerUnits.RemoveAll(u => ReferenceEquals(u, unit))
+                 + _enemyUnits.RemoveAll(u => ReferenceEquals(u, unit))
+                 + _neutralUnits.RemoveAll(u => ReferenceEquals(u, unit)) > 0;
+        }
 
         public void UnregisterUnit(Damageable unit)
         {
-            _playerUnits.Remove(unit);
-            _enemyUnits.Remove(unit);
-            _neutralUnits.Remove(unit);
-            OnUnitsChanged?.Invoke();
+            if (!ReferenceEquals(unit, null) && RemoveFromTeams(unit)) OnUnitsChanged?.Invoke();
         }
 
         public void UpdateTeam(Damageable unit, Team newTeam)
         {
-            UnregisterUnit(unit);
-            if (newTeam == Team.Player) _playerUnits.Add(unit);
-            else if (newTeam == Team.Neutral) _neutralUnits.Add(unit);
-            else _enemyUnits.Add(unit);
-            OnUnitsChanged?.Invoke();
+            if (newTeam == Team.Player) RegisterPlayerUnit(unit);
+            else if (newTeam == Team.Neutral) RegisterNeutralUnit(unit);
+            else RegisterEnemyUnit(unit);
         }
 
         /// <summary>
@@ -180,9 +192,9 @@ namespace Sinbinder.Gameplay
         public List<Warrior> GetAllWarriors()
         {
             List<Warrior> all = new();
-            foreach (var d in _playerUnits) if (d.Warrior != null) all.Add(d.Warrior);
-            foreach (var d in _enemyUnits) if (d.Warrior != null) all.Add(d.Warrior);
-            foreach (var d in _neutralUnits) if (d.Warrior != null) all.Add(d.Warrior);
+            foreach (var d in _playerUnits) if (d != null && d.Warrior != null) all.Add(d.Warrior);
+            foreach (var d in _enemyUnits) if (d != null && d.Warrior != null) all.Add(d.Warrior);
+            foreach (var d in _neutralUnits) if (d != null && d.Warrior != null) all.Add(d.Warrior);
             return all;
         }
     }

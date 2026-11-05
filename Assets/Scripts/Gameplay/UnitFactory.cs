@@ -140,10 +140,15 @@ namespace Sinbinder.Gameplay
             else
             {
                 if (CombatManager.Instance != null)
-                    CombatManager.Instance.RegisterPlayerUnit(damageable);
+                {
+                    // Не записываем ничьего в армию игрока даже на один кадр:
+                    // Damageable.Start раньше позднее поправлял это повторной регистрацией.
+                    if (team == Team.Neutral) CombatManager.Instance.RegisterNeutralUnit(damageable);
+                    else CombatManager.Instance.RegisterPlayerUnit(damageable);
+                }
                 if (SelectionManager.Instance != null)
                     SelectionManager.Instance.RegisterUnit(selection);
-                go.name = $"[СОЮЗ] {soul.Name}";
+                go.name = team == Team.Neutral ? $"[НИЧЕЙ] {soul.Name}" : $"[СОЮЗ] {soul.Name}";
             }
         }
 
