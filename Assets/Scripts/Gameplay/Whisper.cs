@@ -37,7 +37,7 @@ namespace Sinbinder.Gameplay
         private static bool _busy;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { Until.Clear(); Last.Clear(); _busy = false; }
+        private static void Rearm() { Until.Clear(); Last.Clear(); _busy = false; ShowingOutcome = false; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
@@ -83,6 +83,9 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Чем кончился последний шёпот — словом (прогон демо пишет его в отчёт). Сброс — null.</summary>
         public static string LastResult;
+
+        /// <summary>Итог шёпота сейчас на полосе — прогон снимает кадр.</summary>
+        public static bool ShowingOutcome { get; private set; }
 
         void Awake() => _one = this;
 
@@ -136,6 +139,9 @@ namespace Sinbinder.Gameplay
             bool yielded = !virtuous && !broke;
             string answer = virtuous ? Loc.T("Не купишь.") : broke ? Loc.T("Половина чего? Кошель-то пуст.") : yes;
 
+            float before = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
+            string outcome = Outcome(w, sin, yielded, virtuous, louder: yielded && before < Ceiling);
+
             bool slowed = Time.timeScale > 0f;
             if (slowed) Time.timeScale = Slow;
             var camera = Dialogue.DialogueCameraController.Instance;
@@ -145,32 +151,56 @@ namespace Sinbinder.Gameplay
                 camera.SaveCameraPosition();
                 focus = StartCoroutine(camera.FocusOn(w.transform));
             }
-            UI.SpeechBubbles.Say(hero, offer, 2.6f);
-            if (yielded) StartCoroutine(Flare(w, SinPalette.Of(sin)));
 
-            float t = 0f;
-            bool answered = false;
-            while (t < Seconds)
+            // Искушение — на полосе кино, тремя строками: что шепнул Греховод,
+            // что ответил воин, чем это кончилось. Аудит 03.11, п. 1 (П0): «событие
+            // искушения с ценой, откликом, последствиями» — цена и след в душе
+            // прежде списывались молча, а слова висели мелкими пузырями.
+            // Щелчок мыши — следующая строка (Letterbox.Hold).
+            var box = focus != null ? UI.Letterbox.Instance : null;
+            if (box != null)
             {
-                if (!answered && t >= 1.0f)
+                box.Say(Loc.T("Греховод, шёпотом"), offer);
+                yield return UI.Letterbox.Hold(1.9f);
+                UI.Letterbox.Instance?.Say(Loc.Name(w.DisplayName), answer);
+                if (w != null && w.TryGetComponent<Audio.VoiceGenerator>(out var said)) said.Babble(answer, 0.9f);
+                if (yielded && w != null) StartCoroutine(Flare(w, SinPalette.Of(sin)));
+                yield return UI.Letterbox.Hold(1.9f);
+                UI.Letterbox.Instance?.Say(null, outcome);
+                ShowingOutcome = true;
+                yield return UI.Letterbox.Hold(Herald.Hold(outcome));
+                ShowingOutcome = false;
+            }
+            else
+            {
+                // Кадр занят — по-старому, пузырями над головами.
+                UI.SpeechBubbles.Say(hero, offer, 2.6f);
+                if (yielded) StartCoroutine(Flare(w, SinPalette.Of(sin)));
+                float t = 0f;
+                bool answered = false;
+                while (t < Seconds)
                 {
-                    answered = true;
-                    UI.SpeechBubbles.Say(w, answer, 2.4f);
-                    if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
+                    if (!answered && t >= 1.0f && w != null)
+                    {
+                        answered = true;
+                        UI.SpeechBubbles.Say(w, answer, 2.4f);
+                        if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
+                    }
+                    t += Time.unscaledDeltaTime;
+                    yield return null;
                 }
-                t += Time.unscaledDeltaTime;
-                yield return null;
             }
 
-            if (yielded)
+            if (yielded && w != null)
             {
                 if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
                 Until[w] = Time.time + Holds;
                 // Развращение: поддался — грех громче, мягко и с потолком.
-                float now = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
-                if (now < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - now));
+                if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
             }
-            LastResult = $"{w.DisplayName} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")}";
+            // Итог — и в журнал: перечитать, кого и чем купили.
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T("Шёпот") + ": " + outcome);
+            LastResult = $"{(w != null ? w.DisplayName : "?")} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")}; итог: {outcome}";
             Debug.Log("[ШЁПОТ] " + LastResult);
 
             if (focus != null) StopCoroutine(focus);
@@ -181,6 +211,33 @@ namespace Sinbinder.Gameplay
                 yield return camera.RestoreCamera();
             }
             _busy = false;
+        }
+
+        /// <summary>
+        /// Чем кончился шёпот — одной строкой, словами: пошёл ли, чем заплачено,
+        /// что осталось в душе. Без цифр, кроме монет: монеты игрок считает сам.
+        /// </summary>
+        public static string Outcome(Warrior w, SinType sin, bool yielded, bool virtuous, bool louder)
+        {
+            string name = w != null ? Loc.Name(w.DisplayName) : "";
+            var gender = w != null ? w.Gender : default;
+            if (yielded)
+            {
+                string done = Grammar.Pick(gender,
+                    Loc.F("{0} поддался — исполнит приказ.", name),
+                    Loc.F("{0} поддалась — исполнит приказ.", name));
+                if (louder)
+                    done += " " + Grammar.Pick(gender,
+                        Loc.F("{0} в нём теперь громче.", SoulData.GetSinName(sin)),
+                        Loc.F("{0} в ней теперь громче.", SoulData.GetSinName(sin)));
+                if (sin == SinType.Greed) done += " " + Loc.F("Из кошеля — {0} монеты.", GreedCoins);
+                return done;
+            }
+            if (virtuous)
+                return Grammar.Pick(gender,
+                    Loc.F("{0} не поддался: {1} в нём сильнее греха.", name, SoulData.GetVirtueName(sin)),
+                    Loc.F("{0} не поддалась: {1} в ней сильнее греха.", name, SoulData.GetVirtueName(sin)));
+            return Loc.T("Жадному нечего обещать: кошель пуст.");
         }
 
         /// <summary>Глаза вспыхивают цветом греха и гаснут к своему — за полторы секунды реального времени.</summary>

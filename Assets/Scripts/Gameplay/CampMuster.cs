@@ -76,6 +76,23 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private readonly HashSet<Warrior> _ordered = new HashSet<Warrior>();
 
+        /// <summary>
+        /// Кого звали, а он не расслышал (голос Греховода не долетел). Без этого
+        /// Карган молчал, а журнал писал «Греховод далеко» мелко внизу, — и
+        /// первое «почему не пошли» оставалось непрочитанным.
+        /// </summary>
+        private readonly HashSet<Warrior> _unheard = new HashSet<Warrior>();
+
+        void OnEnable() => SelectionManager.Unheard += NotHeard;
+        void OnDisable() => SelectionManager.Unheard -= NotHeard;
+
+        private void NotHeard(IReadOnlyList<Warrior> who)
+        {
+            if (!_asked || _reported) return;
+            foreach (var w in who)
+                if (w != null && _wasFar.TryGetValue(w, out bool far) && far) _unheard.Add(w);
+        }
+
         void Start()
         {
             // Посреди разгрома, открытого записью, к столу не зовут.
@@ -106,8 +123,11 @@ namespace Sinbinder.Gameplay
             // Приказ живёт недолго: воин его исполняет или отбрасывает,
             // и к моменту совета от него не остаётся следа. Поэтому
             // замечаем его, пока он есть.
+            // Только приказ к столу. Прогон 05.11: трое послушно шли к Греховоду
+            // по другому приказу, а Карган отчитался «слышали все — и решили
+            // по-своему» — игрок видел послушание и слышал про отказ.
             foreach (var pair in _wasFar)
-                if (pair.Key != null && pair.Key.HasCommand)
+                if (ToTable(pair.Key))
                     _ordered.Add(pair.Key);
 
             // Итог подводится один раз, в тот момент, когда совет открылся:
@@ -169,19 +189,36 @@ namespace Sinbinder.Gameplay
                 if (!pair.Value) continue;
 
                 float d = CampFocus.GroundDistance(w.transform.position, table.position);
-                if (d <= _gathered) { came.Add(w.DisplayName); continue; }
+                // Ещё идёт к столу по приказу — послушался, просто не дошёл:
+                // назвать его «решившим по-своему» значило бы соврать.
+                if (d <= _gathered || ToTable(w)) { came.Add(w.DisplayName); continue; }
 
                 // Остался — но упрекать за это можно только того, кого
                 // звали. Прочие просто стояли, где стояли.
                 if (_ordered.Contains(w)) { stayed.Add(w.DisplayName); lone = w.Gender; }
             }
 
-            // Никого не звали и никто не пришёл — молчим. Отчёт о том,
-            // чего игрок не делал, прозвучал бы упрёком ни за что.
-            if (came.Count == 0 && stayed.Count == 0) return;
+            // Звали, но не расслышали — и потом так и не получили приказа к столу.
+            var deaf = new List<string>();
+            var deafGender = Gender.Male;
+            foreach (var w in _unheard)
+                if (w != null && !w.IsDead && !_ordered.Contains(w) && !came.Contains(w.DisplayName))
+                { deaf.Add(w.DisplayName); deafGender = w.Gender; }
 
             var keeper = Bodyguard();
             string who = Loc.Name(keeper ?? Loc.N("Карган Старый Ворон"));
+
+            // Причина, которую исправляют ногами, — вслух и первой: она проще всех.
+            if (deaf.Count == 1)
+                Herald.Line(Grammar.Pick(deafGender,
+                    Loc.F("{0}: «{1} вас не расслышал, владыка: далеко. Голос не долетает — подойдите ближе».", who, Join(deaf)),
+                    Loc.F("{0}: «{1} вас не расслышала, владыка: далеко. Голос не долетает — подойдите ближе».", who, Join(deaf))));
+            else if (deaf.Count > 1)
+                Herald.Line(Loc.F("{0}: «{1} вас не расслышали, владыка: далеко. Голос не долетает — подойдите ближе».", who, Join(deaf)));
+
+            // Никого не звали и никто не пришёл — молчим. Отчёт о том,
+            // чего игрок не делал, прозвучал бы упрёком ни за что.
+            if (came.Count == 0 && stayed.Count == 0) return;
 
             if (stayed.Count == 0)
             {
@@ -189,7 +226,8 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            if (came.Count == 0)
+            // «Слышали все» — только если и правда все: иначе — по именам ниже.
+            if (came.Count == 0 && deaf.Count == 0)
             {
                 Herald.Line(Loc.F("{0}: «Никто не подошёл, владыка. Слышали все — и решили по-своему».", who));
                 return;
@@ -207,6 +245,19 @@ namespace Sinbinder.Gameplay
 
             Herald.Line(Loc.F("{0}: «{1} остались на месте. "
               + "Они вас слышали, владыка, — и решили по-своему».", who, Join(stayed)));
+        }
+
+        /// <summary>
+        /// Приказ у воина — к столу совета: идти туда или биться там. Приказ
+        /// «к Греховоду» или в другой угол лагеря — не зов к столу.
+        /// </summary>
+        private bool ToTable(Warrior w)
+        {
+            var table = Table();
+            if (w == null || w.IsDead || !w.HasCommand || table == null) return false;
+            var c = w.Command;
+            Vector3 at = c.Target != null ? c.Target.transform.position : c.Point;
+            return CampFocus.GroundDistance(at, table.position) <= _gathered + 2f;
         }
 
         private Transform Table()

@@ -167,6 +167,17 @@ namespace Sinbinder.Utilets
             Shot(name, from, at, folder, withUi: false);
         }
 
+        /// <summary>
+        /// Кадр с заданной точки на заданную, без интерфейса — для мелкого, чего
+        /// сверху не видно (крысы ростом в ладонь, 05.11). Камера сцены
+        /// возвращается на место.
+        /// </summary>
+        public static void Look(string folder, string name, Vector3 from, Vector3 at)
+        {
+            Directory.CreateDirectory(folder);
+            Shot(name, from, at, folder, withUi: false);
+        }
+
         private static bool Shot(string name, Vector3 from, Vector3 at, string folder = Out,
                                  bool withUi = true)
         {

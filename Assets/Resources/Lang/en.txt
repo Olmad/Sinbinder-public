@@ -6204,12 +6204,12 @@ msgid "Удар в спину сильнее обычного."
 msgstr "A blow to the back hits harder than usual."
 
 #: Gameplay/Lesson.cs
-msgid "Это и есть «почему». То же самое записано в журнале слева внизу."
-msgstr "That is the \"why\". The log at the bottom left says the same."
+msgid "Это и есть «почему»: что перевесило приказ."
+msgstr "That is the “why”: what outweighed the order."
 
 #: Gameplay/Lesson.cs
-msgid "Уберите то, что перевесило, — и приказ услышат."
-msgstr "Remove what outweighed it, and the order will be heard."
+msgid "Уберите помеху — или искусите: подойдите к нему и нажмите Z."
+msgstr "Remove the obstacle — or tempt him: go up to him and press Z."
 
 #: Gameplay/Lesson.cs
 msgid "Посмотрите на него — увидите, что перевесило."
@@ -9391,3 +9391,45 @@ msgstr "Sleepy yawns. Enough adventures for one day."
 #: UI/OverheadWord.cs
 msgid "подойдите — Z, шепнуть"
 msgstr "come closer — Z, whisper"
+
+msgid "Греховод, шёпотом"
+msgstr "Sinbinder, whispering"
+
+msgid "Шёпот"
+msgstr "Whisper"
+
+msgid "{0} поддался — исполнит приказ."
+msgstr "{0} gave in and will carry out the order."
+
+msgid "{0} поддалась — исполнит приказ."
+msgstr "{0} gave in and will carry out the order."
+
+msgid "{0} в нём теперь громче."
+msgstr "{0} speaks louder in him now."
+
+msgid "{0} в ней теперь громче."
+msgstr "{0} speaks louder in her now."
+
+msgid "Из кошеля — {0} монеты."
+msgstr "{0} coins from the purse."
+
+msgid "{0} не поддался: {1} в нём сильнее греха."
+msgstr "{0} did not give in: {1} is stronger in him than sin."
+
+msgid "{0} не поддалась: {1} в ней сильнее греха."
+msgstr "{0} did not give in: {1} is stronger in her than sin."
+
+msgid "Жадному нечего обещать: кошель пуст."
+msgstr "Nothing to promise the greedy: the purse is empty."
+
+msgid "Уберите помеху — или искусите: подойдите к ней и нажмите Z."
+msgstr "Remove the obstacle — or tempt her: go up to her and press Z."
+
+msgid "{0}: «{1} вас не расслышал, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
+
+msgid "{0}: «{1} вас не расслышала, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
+
+msgid "{0}: «{1} вас не расслышали, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"

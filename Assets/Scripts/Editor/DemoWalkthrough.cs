@@ -3446,6 +3446,7 @@ namespace Sinbinder.EditorTools
 
         private static float _whisperSince = -1f;
         private static bool _whisperStarted;
+        private static bool _whisperOutcomeShot;
 
         /// <summary>
         /// Шепнуть отказавшему или колеблющемуся (Whisper): кому можно — тому и шепчем, ждём ответа, снимаем кадр.
@@ -3465,6 +3466,14 @@ namespace Sinbinder.EditorTools
                 }
                 if (!_whisperStarted) return false;
                 Snap("шёпот — миг");
+                _whisperOutcomeShot = false;
+            }
+            // Итог на полосе — цена и след в душе (аудит 03.11, п. 1): кадром, когда допечатан.
+            if (!_whisperOutcomeShot && Gameplay.Whisper.ShowingOutcome
+                && UI.Letterbox.Instance != null && UI.Letterbox.Instance.Typed)
+            {
+                _whisperOutcomeShot = true;
+                Snap("шёпот — итог");
             }
             if (Gameplay.Whisper.LastResult == null) return false;
             Write("  [ШЁПОТ] " + Gameplay.Whisper.LastResult);
@@ -4183,6 +4192,19 @@ namespace Sinbinder.EditorTools
             Write($"  [КРЫСЫ] семья: {rats.Length}, идут {moving}; мать в "
                 + $"{Vector3.Distance(mother.transform.position, SinbinderPlayer.Where):0.0} м от Греховода");
 
+            // Сверху крыса в ладонь — точка (кадр w0511d): ещё кадр вблизи,
+            // с метра, чуть сверху, со стороны Греховода.
+            try
+            {
+                var toHero = SinbinderPlayer.Where - mother.transform.position;
+                toHero.y = 0f;
+                if (toHero.sqrMagnitude < 0.01f) toHero = Vector3.back;
+                var side = Quaternion.Euler(0f, 30f, 0f) * toHero.normalized;
+                Sinbinder.Utilets.Snapshot.Look("Docs/Образцы/прохождение", "крысы — вблизи",
+                    mother.Focus + side * 1.1f + Vector3.up * 0.45f, mother.Focus);
+            }
+            catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] крысы вблизи: " + e.Message); }
+
             // Кадр шага снимается сразу, камера повернётся обратно только в своём
             // LateUpdate. Вернуть взгляд: следующие шаги (луч мыши) снимают туда,
             // куда он смотрел.
@@ -4195,6 +4217,8 @@ namespace Sinbinder.EditorTools
         private static float _challengeAt = -1f;
         private static float _challengeWait = -1f;
         private static int _challengeShots;
+        private static float _challengeShotAt;
+        private static int _challengeShotFrame;
 
         /// <summary>
         /// Миг арьергарда на Каргане и два кадра: удары в щит (общий план со
@@ -4232,9 +4256,16 @@ namespace Sinbinder.EditorTools
                 return false;
             }
 
+            // Кадры — по тому, что на экране, а не по секундам: редактор подвисал,
+            // и оба кадра выходили в одном такте, до первой строки (w0511d).
             float t = Time.realtimeSinceStartup - _challengeAt;
-            if (_challengeShots == 0 && t > 1.25f) { Snap("вызов — удары в щит"); _challengeShots++; }
-            if (_challengeShots == 1 && t > 2.75f) { Snap("вызов — крупный план"); _challengeShots++; }
+            var box = UI.Letterbox.Instance;
+            bool said = box != null && box.Shown && box.Typed;
+            if (_challengeShots == 0 && (said || t > 4f))
+            { Snap("вызов — удары в щит"); _challengeShots++; _challengeShotAt = Time.realtimeSinceStartup; _challengeShotFrame = Time.frameCount; }
+            if (_challengeShots == 1 && Time.realtimeSinceStartup - _challengeShotAt > 1.2f
+                && Time.frameCount > _challengeShotFrame + 20)
+            { Snap("вызов — крупный план"); _challengeShots++; }
             if (_challengeShots < 2 || (moment != null && t < 6f)) return false;
             Write($"  [ВЫЗОВ] миг шёл {t:0.0} с; время после него {Time.timeScale:0.##}");
             _challengeAt = -1f;

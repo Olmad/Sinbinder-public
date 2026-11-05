@@ -283,10 +283,17 @@ namespace Sinbinder.Gameplay
             return false;
         }
 
+        /// <summary>
+        /// Кто не расслышал последний приказ. Слушает сбор у стола (<see cref="CampMuster"/>):
+        /// Карган называет их вслух, а не только журнал.
+        /// </summary>
+        public static event System.Action<IReadOnlyList<Warrior>> Unheard;
+
         /// <summary>Одна строка на приказ, а не по строке на глухого.</summary>
         private void TellUnheard()
         {
             if (_unheard.Count == 0) return;
+            Unheard?.Invoke(_unheard);
 
             string line;
             if (_unheard.Count == 1)

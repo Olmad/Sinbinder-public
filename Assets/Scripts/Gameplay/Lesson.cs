@@ -126,7 +126,7 @@ namespace Sinbinder.Gameplay
         /// Урок отказа: сколько подсказка должна провисеть над отказавшим,
         /// секунд реального времени, — прочесть две строки.
         /// </summary>
-        private const float ReadSeconds = 2.5f;
+        private const float ReadSeconds = 5f;
 
         // ──────────────────────────────────
         // Кому и когда
@@ -836,7 +836,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private bool Read()
         {
-            if (UI.WarriorTooltipUI.Hovered == _partner) _read += Time.unscaledDeltaTime;
+            // Навёл раз — дальше время идёт само: второй шаг (что делать) надо
+            // успеть прочесть, а не держать мышь на воине.
+            if (_read > 0f || UI.WarriorTooltipUI.Hovered == _partner) _read += Time.unscaledDeltaTime;
             return _read >= ReadSeconds || (OpeningReveal.Autopilot && Time.unscaledTime - _since > 3f);
         }
 
@@ -1135,9 +1137,14 @@ namespace Sinbinder.Gameplay
             string name = w != null ? Loc.Name(w.DisplayName) : "";
             var g = w != null ? w.Gender : Gender.Male;
 
+            // Второй шаг — что с этим делать. Два пути, и второй — глагол игры
+            // («Не командуй. Искушай.»): до 05.11 урок отказа о шёпоте молчал,
+            // и Z находили разве что случайно (аудит 03.11, п. 18).
             if (_read > 0f)
-                return ("?", Loc.T("Это и есть «почему». То же самое записано в журнале слева внизу.")
-                           + "\n" + Loc.T("Уберите то, что перевесило, — и приказ услышат."));
+                return ("Z", Loc.T("Это и есть «почему»: что перевесило приказ.")
+                           + "\n" + Grammar.Pick(g,
+                               Loc.T("Уберите помеху — или искусите: подойдите к нему и нажмите Z."),
+                               Loc.T("Уберите помеху — или искусите: подойдите к ней и нажмите Z.")));
 
             var view = Object.FindFirstObjectByType<RTS_Camera>();
             bool eyes = view != null && view.FirstPersonNow;

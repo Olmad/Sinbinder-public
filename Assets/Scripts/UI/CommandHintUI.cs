@@ -80,7 +80,10 @@ namespace Sinbinder.UI
             // Щелчки по воинам — дело вида сверху. От первого лица (и пока идёт
             // открытие) строка не к месту: автор видел её в шатре над пешкой
             // (скриншоты 21.10). Прячем на это время, не забывая урок.
-            bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson();
+            // И не поверх кино: наезд камеры снимает «первое лицо», и панель
+            // включалась заново посреди мига, мимо полос (кадры 05.11).
+            bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson()
+                       && !(Letterbox.Instance != null && Letterbox.Instance.Shown);
             if (_showing && _panel != null && _panel.activeSelf != fit) _panel.SetActive(fit);
             if (!fit) return;
 
