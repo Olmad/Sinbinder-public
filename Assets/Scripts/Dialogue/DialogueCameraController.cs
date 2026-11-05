@@ -77,6 +77,18 @@ namespace Sinbinder.Dialogue
         }
 
         /// <summary>
+        /// Двойник на Managers новой сцены гибнет (выживает Managers прежней),
+        /// но Awake уже успел назвать его Instance. Передать имя живому.
+        /// </summary>
+        void OnDestroy()
+        {
+            if (Instance != this) return;
+            Instance = null;
+            foreach (var other in FindObjectsByType<DialogueCameraController>(FindObjectsSortMode.None))
+                if (other != this) { Instance = other; break; }
+        }
+
+        /// <summary>
         /// Камера, найденная заново, если прежней не стало.
         ///
         /// Контроллер стоит на Managers, а тот переживает смену сцен:

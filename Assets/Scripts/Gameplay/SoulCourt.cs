@@ -174,10 +174,19 @@ namespace Sinbinder.Gameplay
         {
             if (w == null || c == null || Sitting) yield break;
 
+            // Сон, открытый из лагеря (меню паузы): Managers лагеря переживает
+            // смену сцен, а Managers сна гибнет как двойник — и Instance мог
+            // остаться на погибшем. Сборка 05.11 так молча пропустила суд.
             var camera = Dialogue.DialogueCameraController.Instance;
+            if (camera == null) camera = Object.FindFirstObjectByType<Dialogue.DialogueCameraController>();
             var box = UI.Letterbox.Instance;
+            if (box == null) box = Object.FindFirstObjectByType<UI.Letterbox>(FindObjectsInactive.Include);
             var eye = Camera.main;
-            if (camera == null || box == null || eye == null) yield break;
+            if (camera == null || box == null || eye == null)
+            {
+                Debug.LogWarning($"[СУД] не собрался: камера наезда {(camera != null)}, полосы {(box != null)}, главная камера {(eye != null)}");
+                yield break;
+            }
 
             Sitting = true;
             Step = "enter";
