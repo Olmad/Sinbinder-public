@@ -8,57 +8,59 @@ using Sinbinder.Gameplay;
 namespace Sinbinder.EditorTools
 {
     /// <summary>
-    /// Две сцены с залом суда души — сравнить в редакторе, не играя сон (автор,
-    /// 05.11: «суд в двух вариациях… с 5 судьями и с 13»): только сидящие за
-    /// столом — и они же плюс молчащие голоса в тени. Обе — в миг вердикта.
-    /// В игре зал строится на время суда и уходит с ним; здесь он стоит в нуле,
-    /// камера — на общем плане суда. Строит <see cref="SoulCourt.Preview"/>.
+    /// Сцена с залом суда души — посмотреть в редакторе, не играя сон.
+    /// 05.11 их было две («с 5 судьями и с 13»); после «голосов очень мало»
+    /// за кафедрой всегда тринадцать, и сцена одна. Миг — вердикт.
+    /// В игре зал строится на время суда и уходит с ним; здесь он стоит в нуле.
+    /// Строит <see cref="SoulCourt.Preview"/>; снимки — в D:/Claude/court.
     ///
     /// Меню: Sinbinder → Soul Court Preview Scenes. Пакетно:
     /// Unity -batchmode -executeMethod Sinbinder.EditorTools.CourtPreview.BuildBatch
     /// </summary>
     public static class CourtPreview
     {
-        private const string FivePath = "Assets/Scenes/SoulCourt_5.unity";
-        private const string ThirteenPath = "Assets/Scenes/SoulCourt_13.unity";
-        private const string OldPath = "Assets/Scenes/SoulCourt_Preview.unity";
+        private const string ScenePath = "Assets/Scenes/SoulCourt.unity";
+        private static readonly string[] OldPaths =
+        {
+            "Assets/Scenes/SoulCourt_Preview.unity", "Assets/Scenes/SoulCourt_5.unity", "Assets/Scenes/SoulCourt_13.unity",
+        };
 
         [MenuItem("Sinbinder/Soul Court Preview Scenes")]
         public static void Build()
         {
-            Save(false, FivePath);
-            Save(true, ThirteenPath);
-
-            // Первая сцена 05.11 была одна; её место заняли две для сравнения.
-            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(OldPath) != null)
-                AssetDatabase.DeleteAsset(OldPath);
-        }
-
-        private static void Save(bool shadows, string path)
-        {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var hall = SoulCourt.Preview(shadows);
+            var hall = SoulCourt.Preview(true);
             hall.transform.position = Vector3.zero;
 
             var cam = new GameObject("Court Camera", typeof(Camera), typeof(AudioListener)).GetComponent<Camera>();
             cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Color.black;
-            cam.fieldOfView = 36f;
-            cam.transform.position = SoulCourt.PreviewFrom;
-            cam.transform.LookAt(SoulCourt.PreviewLook);
+            cam.fieldOfView = 55f;   // как у камеры сна
 
-            // Свет зала — как в игре на время суда: мира нет, только свечи и компас.
+            // Свет зала — как в игре на время суда: мира нет, только свечи, весы и компас.
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.018f, 0.016f, 0.024f);
             RenderSettings.reflectionIntensity = 0f;
             RenderSettings.fog = false;
 
-            EditorSceneManager.SaveScene(scene, path);
-            Debug.Log("[СУД] Сцена для просмотра сохранена: " + path);
-            Shot(cam, System.IO.Path.GetFileNameWithoutExtension(path));
+            foreach (var (name, from, look) in SoulCourt.PreviewShots(1))
+            {
+                cam.transform.position = from;
+                cam.transform.LookAt(look);
+                Shot(cam, "SoulCourt_" + name);
+            }
+            cam.transform.position = SoulCourt.PreviewFrom;
+            cam.transform.LookAt(SoulCourt.PreviewLook);
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            Debug.Log("[СУД] Сцена для просмотра сохранена: " + ScenePath);
+
+            foreach (var old in OldPaths)
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(old) != null)
+                    AssetDatabase.DeleteAsset(old);
         }
 
         /// <summary>Снимок общего плана в D:/Claude/court — глянуть, не открывая редактор.</summary>

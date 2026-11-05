@@ -9748,3 +9748,60 @@ msgstr "tutorial and the court of the soul"
 
 msgid "Сон Греховода"
 msgstr "The Sinbinder's Dream"
+
+msgid "Это суд его души. Судьи — его голоса, все тринадцать. Перед ними — он сам."
+msgstr "This is the court of his soul. The judges are his voices, all thirteen. Before them stands he himself."
+
+msgid "Это суд её души. Судьи — её голоса, все тринадцать. Перед ними — она сама."
+msgstr "This is the court of her soul. The judges are her voices, all thirteen. Before them stands she herself."
+
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so he will act."
+
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
+
+msgid "Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь."
+msgstr "Before the court is the master's order: “{0}”. Judges, rise and name yourselves."
+
+msgid "Судьи, ваше слово. Тише — первыми, громче — последними."
+msgstr "Judges, speak. The quiet first, the loud last."
+
+msgid "Воздерживаюсь."
+msgstr "I abstain."
+
+msgid "Меня это не касается."
+msgstr "This does not concern me."
+
+msgid "Мне нечего сказать."
+msgstr "I have nothing to say."
+
+msgid "Пусть решают другие."
+msgstr "Let the others decide."
+
+msgid "Это не мой вопрос."
+msgstr "This is not my question."
+
+msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против»."
+msgstr "The order is rejected. Against: {0}. For: {1}. The scales tipped to “against”."
+
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
+msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
+
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: он благочестив."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: he is pious."
+
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: она благочестива."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: she is pious."
+
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: он злобен."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: he is vicious."
+
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: она злобна."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: she is vicious."
+
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: он ни добр, ни зол."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: he is neither good nor evil."
+
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: она ни добра, ни зла."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: she is neither good nor evil."
