@@ -23,7 +23,7 @@ namespace Sinbinder.UI
     public class ViewHintUI : MonoBehaviour
     {
         private static readonly string Line =
-            Loc.N("Вид сверху. V — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти.");
+            Loc.N("Вид сверху. Tab — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти.");
 
         private const float FadeIn = 0.8f, Hold = 6.5f, FadeOut = 1.4f;
 

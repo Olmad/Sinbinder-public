@@ -107,14 +107,14 @@ namespace Sinbinder.UI
             text.alignment = TextAnchor.MiddleRight;
             text.color = Idle;
             text.raycastTarget = false;
-            text.text = Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку");
+            text.text = Loc.T("J — следующая банка · R — душу в руку или обратно в банку");
             _keys = text;
         }
 
         private Text _keys;
 
         /// <summary>Строка клавиш над сумой сейчас: с «G — отпустить», пока в руках что-то есть. Её же читает проход.</summary>
-        public static string KeysLine() => Loc.T("Tab — следующая банка · R — душу в руку или обратно в банку")
+        public static string KeysLine() => Loc.T("J — следующая банка · R — душу в руку или обратно в банку")
                                          + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
 
         void Update()

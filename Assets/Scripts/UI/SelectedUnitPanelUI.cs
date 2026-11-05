@@ -578,8 +578,8 @@ namespace Sinbinder.UI
             {
                 var purse = Inventory.PlayerInventory.Instance;
                 _purseText.text = purse != null
-                    ? Loc.F("Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка", purse.Gold)
-                    : Loc.T("R — в руку и обратно\nTab — следующая банка");
+                    ? Loc.F("Кошель: {0}\n\nR — в руку и обратно\nJ — следующая банка", purse.Gold)
+                    : Loc.T("R — в руку и обратно\nJ — следующая банка");
                 _purseText.color = Muted;
             }
         }

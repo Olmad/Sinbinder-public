@@ -117,6 +117,11 @@ namespace Sinbinder.Gameplay
             // На уроке мир стоит, а Греховод идёт: шаг — по реальному
             // времени и через кольцо урока (Lesson, docs/36-LESSONS.md).
             var move = Lesson.Rein(transform.position, step * (_speed * (Remains.Carrying ? Remains.Burden : 1f) * Lesson.Delta));
+            if (!DreamTutorialDirector.PermitWalking(transform.position + move))
+            {
+                Walking = false;
+                return;
+            }
 
             if (_agent.isOnNavMesh)
                 _agent.Move(move);

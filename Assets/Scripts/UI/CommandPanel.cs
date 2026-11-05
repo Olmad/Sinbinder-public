@@ -312,7 +312,7 @@ namespace Sinbinder.UI
             mouse.color = Muted;
             Place(mouse.rectTransform, 0f, 98f, ZoneSize.x, 22f);
 
-            var keys = Label(_grid, font, Loc.T("P — патруль · C — отмена · I — вещи · V — вид"),
+            var keys = Label(_grid, font, Loc.T("P — патруль · C — отмена · I — вещи · Tab — вид"),
                              16, TextAnchor.MiddleLeft);
             keys.color = Muted;
             Place(keys.rectTransform, 0f, 122f, ZoneSize.x, 22f);

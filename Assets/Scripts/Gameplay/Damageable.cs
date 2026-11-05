@@ -102,6 +102,16 @@ namespace Sinbinder.Gameplay
                 if (_warrior != null) damage = CombatMath.Absorb(damage, _warrior.Defense);
             }
 
+            // Блок — только у Греховода, только в ручном режиме первого лица.
+            if (_warrior is SinbinderPlayer &&
+                TryGetComponent<FirstPersonCombat>(out var manualCombat))
+                damage = manualCombat.ReduceIncoming(damage, attacker);
+
+            // In the optional dream only: Death preserves his own pawn.
+            // Never protects the newly risen zombie or other characters.
+            if (_warrior is SinbinderPlayer && DreamTutorialDirector.ProtectingHero)
+                damage = Mathf.Min(damage, Mathf.Max(0f, _hp - 1f));
+
             _hp -= damage;
 
             // Удар слышно — по телу того, кого ударили (Audio.Sfx).

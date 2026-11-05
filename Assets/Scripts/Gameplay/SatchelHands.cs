@@ -24,8 +24,15 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public class SatchelHands : MonoBehaviour
     {
+        // С 05.11 J, а не Tab: Tab меняет взгляд (RTS_Camera), V — Командир/Воин.
         [Tooltip("Перейти к следующей ячейке сумы.")]
-        [SerializeField] private KeyCode _next = KeyCode.Tab;
+        [SerializeField] private KeyCode _next = KeyCode.J;
+
+        void Awake()
+        {
+            // Сохранённые сцены и префабы могли запомнить прежний Tab.
+            if (_next == KeyCode.Tab) _next = KeyCode.J;
+        }
 
         [Tooltip("Переложить: из руки в ячейку или из ячейки в руку.")]
         [SerializeField] private KeyCode _swap = KeyCode.R;

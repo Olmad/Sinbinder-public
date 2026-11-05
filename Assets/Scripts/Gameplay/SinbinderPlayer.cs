@@ -131,6 +131,10 @@ namespace Sinbinder.Gameplay
             // неприятно вести камеру.
             WarriorRig.Attach(go, speed: 4.2f);
 
+            // Личный удар и блок в первом лице, роль Воина (V). Бьёт через тот же
+            // AutoAttack, что повесил WarriorRig: урон, темп и звук общие.
+            go.AddComponent<FirstPersonCombat>();
+
             // Жатва — его заклинание, а не отрядное. Связывание с него
             // снято: воин создаётся у устройства руками, а не клавишей
             // из любой точки мира (SoulBinding.cs.later).

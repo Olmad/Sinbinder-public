@@ -37,6 +37,10 @@ namespace Sinbinder.AOS
         public string CommandType;
         public int UnpaidMissions;
         public Warrior TargetWarrior;
+
+        // One of the visible hostile warriors has an ID recorded as my killer.
+        // Separate from TargetWarrior, which is a wounded ally.
+        public bool KnownMurdererInSight;
         public Warrior Commander;
 
         /// <summary>

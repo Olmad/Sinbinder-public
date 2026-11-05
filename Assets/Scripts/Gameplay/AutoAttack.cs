@@ -54,6 +54,10 @@ namespace Sinbinder.Gameplay
 
             _cooldownTimer -= Time.deltaTime;
 
+            // Греховод в роли Воина бьёт только по клику (FirstPersonCombat):
+            // сам цель не ищет и по прежней не добивает.
+            if (_manualOnly) return;
+
             if (_currentTarget != null)
             {
                 if (_currentTarget.IsDead) { _currentTarget = null; return; }
@@ -144,6 +148,21 @@ namespace Sinbinder.Gameplay
             _attackDamage = damage;
             _attackRange = range;
             _attackCooldown = cooldown;
+        }
+
+        private bool _manualOnly;
+
+        /// <summary>
+        /// Личный бой (<see cref="FirstPersonCombat"/>): включено — удар только
+        /// по <see cref="ForceAttack"/>, одним взмахом за клик. Переключение
+        /// забывает цель, чтобы ни одна роль не доигрывала чужой бой.
+        /// </summary>
+        public void SetManualOnly(bool on)
+        {
+            if (_manualOnly == on) return;
+            _manualOnly = on;
+            _currentTarget = null;
+            _isPlayerControlled = false;
         }
 
         public void ForceAttack(Damageable target)

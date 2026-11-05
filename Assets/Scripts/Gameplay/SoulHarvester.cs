@@ -146,11 +146,16 @@ namespace Sinbinder.Gameplay
             body?.Gather();
             var legs = who.GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (legs == null || !legs.enabled || !legs.isOnNavMesh) return;
+            // Корутину ведёт сам позвавший компонент, если он включён, иначе — первый
+            // включённый скрипт воина: на выключенном она бы не дошла до Release,
+            // и ноги стояли бы до конца боя. Некого попросить — ноги не останавливаем.
+            var host = who as MonoBehaviour;
+            if (host == null || !host.isActiveAndEnabled)
+                host = System.Array.Find(who.GetComponents<MonoBehaviour>(), m => m != null && m.isActiveAndEnabled);
+            if (host == null) return;
             legs.isStopped = true;
             legs.ResetPath();
-            // Запускать корутину на собственном компоненте жнеца, а не на случайном
-            // первом MonoBehaviour воина (им может оказаться выключенный скрипт).
-            StartCoroutine(Release(legs));
+            host.StartCoroutine(Release(legs));
         }
 
         private static System.Collections.IEnumerator Release(UnityEngine.AI.NavMeshAgent legs)

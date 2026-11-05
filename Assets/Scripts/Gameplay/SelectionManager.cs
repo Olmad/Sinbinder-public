@@ -52,6 +52,7 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            if (DreamTutorialDirector.InputLocked) return;
             // Фоторежим (F8): мышь и клавиши — камере, не отряду.
             if (Sinbinder.Dev.PhotoMode.Active) return;
 
@@ -62,8 +63,17 @@ namespace Sinbinder.Gameplay
             // мимо себя: щелчок по строке панели попадал заодно и в землю
             // за ней, а Esc «назад» снимал приказы с отряда. Панель ставит
             // паузу, значит пауза и есть признак того, что руки заняты.
-            if (Core.GamePauseController.Instance != null
-                && Core.GamePauseController.Instance.IsPaused) return;
+            if ((Core.GamePauseController.Instance != null &&
+                 Core.GamePauseController.Instance.IsPaused) || UI.Modal.Any || OpeningReveal.Busy) return;
+            if (Dialogue.DialogueCameraController.Instance != null &&
+                Dialogue.DialogueCameraController.Instance.InDialogue) return;
+
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (Input.GetKeyDown(KeyCode.Tab) ||
+                (view != null && view.FirstPersonNow && Input.GetKeyDown(KeyCode.V)))
+            { CancelGesture(); return; }
+            if (view != null && (view.WarriorModeNow || !view.MouseActionsReady))
+            { CancelGesture(); return; }
 
             if (Aiming != CommandKind.None)
             {
@@ -88,6 +98,19 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Отпущенная кнопка мыши принадлежит прицелу или панели, а не выделению.</summary>
         private bool _swallowUp;
+
+        private void CancelGesture()
+        {
+            bool hadBox = _isSelecting;
+            _isSelecting = false;
+            _swallowUp = false;
+            if (hadBox)
+            {
+                var box = Box();
+                if (box != null) box.gameObject.SetActive(false);
+            }
+            // Выделенные воины и их приказы не изменяются.
+        }
 
         public void Aim(CommandKind kind)
         {
@@ -143,6 +166,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void OrderPoint(Vector3 point, CommandKind kind)
         {
+            if (!DreamTutorialDirector.PermitDestination(point)) return;
             int given = 0;
 
             foreach (var unit in _selectedUnits)
@@ -631,6 +655,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void OrderAt(RaycastHit hit, bool isFallBack)
         {
+            if (!DreamTutorialDirector.PermitDestination(hit.point)) return;
                 {
                     // Приказ записывается на воина и уходит в голосование.
                     // Раньше он шёл прямо в NavMeshAgent, минуя AOS, и

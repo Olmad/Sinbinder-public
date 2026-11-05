@@ -3136,8 +3136,8 @@ msgid "Чужой {0}"
 msgstr "Stranger's {0}"
 
 #: Crypt/TestChamberEntry.cs
-msgid "W A S D — идти. F — взять или дёрнуть. V — сменить взгляд: за плечом или сверху."
-msgstr "W A S D — walk. F — take or pull. V — change view: over the shoulder or from above."
+msgid "W A S D — идти. F — взять или дёрнуть. Tab — сменить взгляд: за плечом или сверху."
+msgstr "W A S D — walk. F — take or pull. Tab — change view: over the shoulder or from above."
 
 #: Crypt/TestLever.cs
 msgid "Повторить\nтот же опыт"
@@ -6252,8 +6252,8 @@ msgid "Подойдите к ложу тела на устройстве и на
 msgstr "Walk up to the body cradle on the device and press F to lay the body down."
 
 #: Gameplay/Lesson.cs
-msgid "R — душа из сумы в руки. Tab — выбрать другую банку."
-msgstr "R — take a soul from the satchel into your hands. Tab — pick another jar."
+msgid "R — душа из сумы в руки. J — выбрать другую банку."
+msgstr "R — take a soul from the satchel into your hands. J — pick another jar."
 
 #: Gameplay/Lesson.cs
 msgid "Душа встанет в теле, которое вы ей дадите."
@@ -7224,8 +7224,8 @@ msgid "ПКМ — идти · по врагу — бить · Shift+ПКМ — �
 msgstr "RMB — go · on an enemy — strike · Shift+RMB — fall back"
 
 #: UI/CommandPanel.cs
-msgid "P — патруль · C — отмена · I — вещи · V — вид"
-msgstr "P — patrol · C — cancel · I — gear · V — view"
+msgid "P — патруль · C — отмена · I — вещи · Tab — вид"
+msgstr "P — patrol · C — cancel · I — gear · Tab — view"
 
 #: UI/CommandPanel.cs
 msgid "{0} — ещё не готов"
@@ -7964,8 +7964,8 @@ msgid "Золото осталось в мешке. Отряд это запом
 msgstr "The gold stayed in the bag. The squad will remember."
 
 #: UI/SatchelUI.cs
-msgid "Tab — следующая банка · R — душу в руку или обратно в банку"
-msgstr "Tab — next jar · R — soul to hand or back into the jar"
+msgid "J — следующая банка · R — душу в руку или обратно в банку"
+msgstr "J — next jar · R — soul to hand or back into the jar"
 
 #: UI/SaveSlotsPanel.cs
 msgid "Вернуться к записанному.  F9 или Esc — закрыть"
@@ -8120,12 +8120,12 @@ msgid "Банок при себе нет"
 msgstr "You carry no jars"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "Кошель: {0}\n\nR — в руку и обратно\nTab — следующая банка"
-msgstr "Purse: {0}\n\nR — to hand and back\nTab — next jar"
+msgid "Кошель: {0}\n\nR — в руку и обратно\nJ — следующая банка"
+msgstr "Purse: {0}\n\nR — to hand and back\nJ — next jar"
 
 #: UI/SelectedUnitPanelUI.cs
-msgid "R — в руку и обратно\nTab — следующая банка"
-msgstr "R — to hand and back\nTab — next jar"
+msgid "R — в руку и обратно\nJ — следующая банка"
+msgstr "R — to hand and back\nJ — next jar"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "звучит почти вровень с другим"
@@ -8320,8 +8320,8 @@ msgid "Задачи"
 msgstr "Tasks"
 
 #: UI/ViewHintUI.cs
-msgid "Вид сверху. V — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
-msgstr "View from above. V — back to the Sinbinder's eyes. Look around the camp: there is something to find."
+msgid "Вид сверху. Tab — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
+msgstr "View from above. Tab — back to the Sinbinder's eyes. Look around the camp: there is something to find."
 
 #: Resources/DialogueDatabase.asset
 msgid "У тебя есть кошель. Скоро он будет мой."
@@ -9327,3 +9327,15 @@ msgstr "For me? ...Thank you."
 #. Map editor save error, 4 November 2026
 msgid "Не удалось сохранить карту: {0}"
 msgstr "Could not save the map: {0}"
+
+#: UI/PauseMenu.cs
+msgid "Командир или Воин (первое лицо)"
+msgstr "Commander or Warrior (first person)"
+
+#: Gameplay/RTS_Camera.cs
+msgid "Воин: ЛКМ — удар, ПКМ — блок. V — снова Командир."
+msgstr "Warrior: LMB — strike, RMB — block. V — back to Commander."
+
+#: Gameplay/RTS_Camera.cs
+msgid "Командир: мышь отдаёт приказы. V — Воин."
+msgstr "Commander: the mouse gives orders. V — Warrior."

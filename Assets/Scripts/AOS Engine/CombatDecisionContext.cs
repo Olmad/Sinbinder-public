@@ -73,6 +73,13 @@ namespace Sinbinder.AOS
                 Commander = commander // ← новое поле
             };
 
+            // Match the soul's grievance with actual visible enemy IDs, not with any nearby target.
+            // TargetWarrior refers to a wounded ally and must not be used for revenge.
+            var visibleEnemies = GetNearbyEnemies(warrior, SightRadius);
+            context.KnownMurdererInSight = visibleEnemies.Any(enemy => enemy != null && !enemy.IsDead
+                && context.RecentMemories.Any(memory => memory != null
+                    && memory.EventType == "MurderedMe" && memory.TargetID == enemy.Id));
+
             // Положение на поле: усталость, зацепление, открытая спина.
             var fatigue = warrior.GetComponent<Fatigue>();
             if (fatigue != null)

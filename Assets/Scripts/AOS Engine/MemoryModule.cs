@@ -50,7 +50,8 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             foreach (var memory in context.RecentMemories)
             {
-                float strength = memory.Strength;
+                // Strength is signed for relationships. Behaviour multipliers decide direction.
+                float strength = Mathf.Abs(memory.Strength);
                 switch (memory.EventType)
                 {
                     // Меня спасли. Привязчивый помнит долг, гордый — что был должен.
@@ -68,6 +69,9 @@ namespace Sinbinder.AOS.Modules
                         break;
 
                     // Убили моего. Мстит гнев.
+                    // A murdered soul retains its own grievance after reanimation.
+                    // This affects AOS attack voting, not a scripted Attack(killer) command.
+                    case "MurderedMe" when action == ActionType.Attack && context.KnownMurdererInSight:
                     case "EnemyKilledAlly" when action == ActionType.Attack:
                         score += strength * _config.MemoryKillStrengthMultiplier
                                * Recall(soul.Get(SinType.Wrath) * _config.RecallVengeanceShare);

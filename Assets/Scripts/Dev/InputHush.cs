@@ -42,6 +42,9 @@ namespace Sinbinder.Dev
             Was.Clear();
         }
 
+        /// <summary>Клавиши игры сейчас у консоли или съёмки. Для тех, кого нет в <see cref="Listeners"/>.</summary>
+        public static bool Held => Holders.Count > 0;
+
         /// <summary>Заглушить игру. <paramref name="menuToo"/> — и меню паузы на Esc.</summary>
         public static void Hold(object owner, bool menuToo)
         {

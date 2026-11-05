@@ -11917,3 +11917,22 @@ com.unity.editor.headless entitlement не найден. ДО компиляци
 Повторных запусков, GUI/Hub, активации лицензии и сборок не делалось.
 Подготовка копии заняла чрезмерно долго; не повторять копирование кэша.
 Следующий запуск возможен после доступности лицензии; использовать готовую копию.
+
+## 5 ноября 2026 — пакет «Сон» v304+v305 принят и доделан (Claude, флешка)
+Архив D:\Claude\305+304.zip (полный v305, внутри v304) собран на копии v3 от 03.11
+плюс промежуточном пакете, которого на диске нет (FirstPersonCombat, Tab/V). Наши
+MemoryModule/Damageable/RTS_Camera/SelectionManager были равны v3, поэтому файлы
+пакета легли целиком, без потери правок. Доделано то, без чего пакет не работал:
+- AutoAttack.SetManualOnly (в роли Воина герой бьёт только по клику) — метода не было;
+- FirstPersonCombat вешается в SinbinderPlayer.Spawn — раньше его не вешал никто,
+  урок застревал, блок не работал; .meta создан;
+- без оружия со стойки (Armament) бьёт посох; во сне урок B пропускается;
+- InputHush.Held вместо несуществующего IsHeld; убран вызов MemoryProcessor.ResetForNewGame;
+- банки: Tab → J (Tab теперь камера), подсказки Tab/V/J в SatchelUI, SelectedUnitPanelUI,
+  Lesson, TestChamberEntry, ViewHintUI, CommandPanel, PauseMenu, en.txt; V пишет роль в журнал;
+- SoulHarvester.Freeze: StartCoroutine из статического метода (правка 03.11) не собиралась.
+MemoryModule берёт |Strength|: у EnemyKilledAlly/AllyBetrayedMe знак гнева переворачивал
+месть и обиду. Это меняет баланс всех боёв — смотреть в ближайшем проходе.
+Проверка: новый Tools/compile/unity_csc.ps1 (Roslyn и DLL Unity 6 из папки редактора,
+пакеты из Library) — три прохода чисты. Unity, сцена сна, Play Mode и проход НЕ запускались.
+Сцена сна создаётся вручную: Sinbinder → Сон Бога Смерти → Создать отдельную сцену.

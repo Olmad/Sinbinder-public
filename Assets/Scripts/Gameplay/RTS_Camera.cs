@@ -31,10 +31,62 @@ namespace Sinbinder.Gameplay
         [Tooltip("С какого взгляда начинается сцена. Склеп — от первого лица, бой — тактический.")]
         [SerializeField] private CameraView _mode = CameraView.Tactical;
 
-        [SerializeField] private KeyCode _switchKey = KeyCode.V;
+        [SerializeField] private KeyCode _switchKey = KeyCode.Tab;
 
-        /// <summary>Клавиша смены взгляда. Плашке урока обмена: «V — глазами Греховода».</summary>
+        /// <summary>Tab — камера; V — Командир/Воин только в первом лице.</summary>
         public KeyCode SwitchKey => _switchKey;
+
+        public enum FirstPersonRole { Commander, Warrior }
+        [SerializeField] private FirstPersonRole _role = FirstPersonRole.Commander;
+        public FirstPersonRole Role => _role;
+        public bool WarriorModeNow => FirstPersonNow && _role == FirstPersonRole.Warrior;
+        public bool CommanderModeNow => FirstPersonNow && _role == FirstPersonRole.Commander;
+
+        // После переключения сначала отпустить обе кнопки. Чужой зажатый
+        // клик не должен стать ударом, блоком или приказом после смены режима.
+        private bool _mouseLatched = true;
+        private bool _hasFocus = true;
+        private int _lastChangeFrame = -1;
+        private int _lastReleasedFrame = -1;
+        public bool MouseActionsReady
+        {
+            get
+            {
+                if (!_hasFocus || Input.GetKeyDown(KeyCode.Tab) ||
+                    (FirstPersonNow && Input.GetKeyDown(KeyCode.V)) ||
+                    Time.frameCount == _lastChangeFrame) return false;
+
+                // Несколько компонентов читают это свойство за один кадр.
+                // Результат должен быть ОДИНАКОВЫМ для всех читателей,
+                // даже если именно первый запрос увидел отпускание мыши.
+                if (_mouseLatched)
+                {
+                    if (Input.GetMouseButton(0) || Input.GetMouseButton(1)) return false;
+                    _mouseLatched = false;
+                    _lastReleasedFrame = Time.frameCount;
+                }
+                return Time.frameCount > _lastReleasedFrame;
+            }
+        }
+
+        private void LatchMouse()
+        {
+            _mouseLatched = true;
+            _lastChangeFrame = Time.frameCount;
+        }
+
+        public void SwitchRole()
+        {
+            if (!FirstPersonNow) return;
+            _role = _role == FirstPersonRole.Commander
+                ? FirstPersonRole.Warrior : FirstPersonRole.Commander;
+            SelectionManager.Instance?.StopAiming();
+            LatchMouse();
+            // Индикатора роли на экране пока нет — говорим словами.
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_role == FirstPersonRole.Warrior
+                ? Core.Loc.T("Воин: ЛКМ — удар, ПКМ — блок. V — снова Командир.")
+                : Core.Loc.T("Командир: мышь отдаёт приказы. V — Воин."));
+        }
 
         [Header("Первое лицо")]
         [Tooltip("Высота глаз над ногами.")]
@@ -87,6 +139,8 @@ namespace Sinbinder.Gameplay
 
         void Awake()
         {
+            // Миграция значений из существующих сериализованных сцен.
+            if (_switchKey == KeyCode.V) _switchKey = KeyCode.Tab;
             _cam = Camera.main;
             _targetPosition = transform.position;
             _targetZoom = _cam.fieldOfView;
@@ -109,8 +163,16 @@ namespace Sinbinder.Gameplay
             if (_mode == CameraView.Tactical) LookDown();
         }
 
+        void OnApplicationFocus(bool focus)
+        {
+            _hasFocus = focus;
+            LatchMouse();
+            if (!focus) Release();
+        }
+
         void OnDisable()
         {
+            LatchMouse();
             // Отдать мышь. Компонент выключают на время разговора и при
             // смене сцены, и захваченный курсор пережил бы и то и другое:
             // игрок остался бы без указателя в панели, которую сам открыл.
@@ -119,20 +181,26 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
-            if (_craning) return;
+            if (DreamTutorialDirector.InputLocked) { LatchMouse(); return; }
+            if (!_hasFocus) { LatchMouse(); Release(); return; }
+            if (_craning) { LatchMouse(); return; }
 
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue)
-                return;
+            { LatchMouse(); return; }
+            if (Sinbinder.Dev.PhotoMode.Active || UI.Modal.Any)
+            { LatchMouse(); Release(); return; }
 
             // На паузе игрок разговаривает с панелью, и мышь нужна ему,
             // а не камере.
             bool paused = Core.GamePauseController.Instance != null
                        && Core.GamePauseController.Instance.IsPaused;
 
-            if (paused) { Release(); return; }
+            if (paused) { LatchMouse(); Release(); return; }
 
-            if (Input.GetKeyDown(_switchKey)) Switch();
+            if (OpeningReveal.Busy) LatchMouse();
+            else if (Input.GetKeyDown(_switchKey)) Switch();
+            else if (Input.GetKeyDown(KeyCode.V) && FirstPersonNow) SwitchRole();
 
             ApplyCursor();
 
@@ -149,6 +217,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Switch()
         {
+            LatchMouse();
+            SelectionManager.Instance?.StopAiming();
             if (!Following) { _mode = CameraView.Tactical; LookDown(); return; }
 
             _mode = _mode == CameraView.Tactical
@@ -189,6 +259,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Задать взгляд из сборщика сцены.</summary>
         public void SetView(CameraView view)
         {
+            LatchMouse();
             _mode = view;
             if (view == CameraView.Tactical) LookDown();
         }
@@ -209,6 +280,7 @@ namespace Sinbinder.Gameplay
             if (!FirstPersonNow) yield break;
 
             _craning = true;
+            LatchMouse();
             _mode = CameraView.Tactical;
             ShowHero(true);
             Release();
