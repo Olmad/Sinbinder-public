@@ -9931,3 +9931,9 @@ msgstr "More voices are for the order, but {0} is the loudest: the scales weigh 
 
 msgid "Голосов против больше, но {0} — громче всех: весы решает сила голоса, а не число."
 msgstr "More voices are against, but {0} is the loudest: the scales weigh strength, not numbers."
+
+msgid "вровень"
+msgstr "even"
+
+msgid "за приказ"
+msgstr "for the order"

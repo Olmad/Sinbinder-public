@@ -345,8 +345,10 @@ namespace Sinbinder.UI
             var pause = Core.GamePauseController.Instance;
             // Мешка может и не быть (поле «Перетягивания»), а дверь склепа открыть надо — подсказке
             // нужен Греховод, а не мешок.
+            // И не в сцене с полосами: «F — поговорить» под репликой воина — шум (кадр сна 06.11).
             if ((pause != null && pause.IsPaused) || !SinbinderPlayer.Exists
-                || CommanderCouncilUI.AtTable) { _prompt.text = ""; return; }
+                || CommanderCouncilUI.AtTable || (Letterbox.Instance != null && Letterbox.Instance.Shown))
+            { _prompt.text = ""; return; }
 
             // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.
             if (RatBanner.Reachable) { _prompt.text = RatBanner.Prompt; return; }

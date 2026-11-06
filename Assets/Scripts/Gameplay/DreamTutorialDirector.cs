@@ -665,8 +665,11 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[СОН] Решение при убийцах: {RefusalResult} ({d.Action}, причина {d.Decisive}, голос {d.DecisiveVoice}); "
                 + $"убийцы на глазах {(c != null && c.KnownMurdererInSight ? "да" : "нет")}, памяти об убийстве {murders}");
 
-            // Миг на его слово над головой (RefusalPresenter) — потом суд.
-            yield return new WaitForSecondsRealtime(0.8f);
+            // Миг на его слово и малые весы над головой — потом суд, который их объяснит.
+            // В лагере игрок узнает эти весы над отказавшим (63-TEACHING, п. 3).
+            // Во сне — при любом решении: суд разбирает любое (в лагере — только отказ).
+            if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
+            yield return new WaitForSecondsRealtime(1.8f);
             if (_zombie != null && !_zombie.IsDead)
                 yield return SoulCourt.Convene(_zombie, d, c, _courtOrder);
             _courtRunning = false;

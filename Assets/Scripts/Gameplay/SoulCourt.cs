@@ -113,8 +113,8 @@ namespace Sinbinder.Gameplay
         private static readonly Vector3 ScalesAt = new Vector3(0f, 2.95f, WallZ - 0.2f);
         private static readonly Vector3 ScalesFrom = new Vector3(0f, 2.85f, -0.6f);
         private const float MaxTilt = 70f;
-        private static readonly Color ForOrderTone = new Color(0.95f, 0.76f, 0.30f);
-        private static readonly Color AgainstTone = new Color(0.82f, 0.22f, 0.20f);
+        public static readonly Color ForOrderTone = new Color(0.95f, 0.76f, 0.30f);   // и малые весы над головой
+        public static readonly Color AgainstTone = new Color(0.82f, 0.22f, 0.20f);
 
         /// <summary>
         /// Моральный компас — выше весов (автор, 05.11: «я говорил про моральный
@@ -390,6 +390,7 @@ namespace Sinbinder.Gameplay
             yield return UI.Letterbox.Hold(2.8f);
 
             // 2. Влёт в голову: к лицу — и в темноту.
+            Step = "dive";
             var fader = Fader.Make(box);
             host.Tags(box);
             Color Bright(Color c) => Color.Lerp(c, Color.white, 0.35f);
@@ -412,7 +413,7 @@ namespace Sinbinder.Gameplay
             Vector3 head = Head(w);
             Vector3 back = eye.transform.position - head;
             back = back.sqrMagnitude < 0.01f ? -w.transform.forward : back.normalized;
-            host.StartCoroutine(fader.To(1f, 0.75f));
+            host.StartCoroutine(fader.Dive(eye, head, 0.75f));
             yield return camera.FocusOnPoint(head, head + back * 0.22f, null, push: 0.6f);
             yield return fader.To(1f, 0.2f);
 
@@ -668,14 +669,7 @@ namespace Sinbinder.Gameplay
         public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3)
         {
             if (w == null || c == null || !c.HasCommand) return null;
-            var rival = Rival(d);
-            var sum = new Dictionary<string, float>();
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
-            {
-                if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
-                sum.TryGetValue(v.Module, out float net);
-                sum[v.Module] = net + (v.Action == ActionType.ObeyCommand ? -v.Voice : v.Voice);
-            }
+            var sum = Sums(w, d, c);
             var pro = new List<KeyValuePair<string, float>>();
             var con = new List<KeyValuePair<string, float>>();
             foreach (var kv in sum)
@@ -693,6 +687,45 @@ namespace Sinbinder.Gameplay
             }
             return Loc.F("Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}",
                          Hex(ForOrderTone), Names(pro), Hex(AgainstTone), Names(con));
+        }
+
+        /// <summary>Голос каждого модуля: минус — за приказ, плюс — против (как Net судьи).</summary>
+        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c)
+        {
+            var rival = Rival(d);
+            var sum = new Dictionary<string, float>();
+            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            {
+                if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
+                sum.TryGetValue(v.Module, out float net);
+                sum[v.Module] = net + (v.Action == ActionType.ObeyCommand ? -v.Voice : v.Voice);
+            }
+            return sum;
+        }
+
+        /// <summary>
+        /// Малые весы над головой (<see cref="UI.ScalesOverhead"/>): куда встанет стрелка —
+        /// тем же счётом, что в зале, — и кто громче всех на стороне решения.
+        /// </summary>
+        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
+        {
+            lean = 0f; voice = null; colour = Color.white;
+            if (w == null || c == null || !c.HasCommand) return false;
+            bool against = d.RefusedCommand || d.Hesitated;
+            float total = 0f, reach = 1f, loud = 0f;
+            string top = null;
+            foreach (var kv in Sums(w, d, c))
+            {
+                total += kv.Value;
+                reach += Mathf.Abs(kv.Value);
+                bool winning = against ? kv.Value > 0f : kv.Value < 0f;
+                if (winning && Mathf.Abs(kv.Value) > loud) { loud = Mathf.Abs(kv.Value); top = kv.Key; }
+            }
+            if (top == null) return false;
+            lean = Final(d, total, reach);
+            voice = UI.SelectedUnitPanelUI.VoiceName(top, w.Soul);
+            colour = Glow(top);
+            return true;
         }
 
         /// <summary>Что душа выбрала вместо приказа — или что тянуло её прочь.</summary>
@@ -1867,6 +1900,29 @@ namespace Sinbinder.Gameplay
                 f._black.color = new Color(0f, 0f, 0f, 0f);
                 f._black.raycastTarget = false;
                 return f;
+            }
+
+            /// <summary>
+            /// Влёт в голову: темнеет и со временем, и с близостью — черно раньше, чем камера
+            /// войдёт в лицо. Автор, 06.11: «в голове должно быть темно», а была прозрачность:
+            /// изнутри голова не рисуется, и сквозь неё на миг проступали мир и суд.
+            /// </summary>
+            public IEnumerator Dive(Camera eye, Vector3 head, float seconds)
+            {
+                if (_black == null) yield break;
+                float from = _black.color.a;
+                // Лицо — в ~0.15 м от середины головы; черно, пока до него дальше ближней плоскости камеры.
+                float dark = Mathf.Max(0.5f, (eye != null ? eye.nearClipPlane : 0.3f) + 0.25f);
+                for (float t = 0f; ; t += Time.unscaledDeltaTime)
+                {
+                    if (_black == null || eye == null) yield break;
+                    float byTime = Mathf.Lerp(from, 1f, Mathf.SmoothStep(0f, 1f, t / seconds));
+                    float byNear = 1f - Mathf.InverseLerp(dark, dark + 0.7f, Vector3.Distance(eye.transform.position, head));
+                    float a = Mathf.Max(byTime, byNear);
+                    _black.color = new Color(0f, 0f, 0f, a);
+                    if (a >= 0.999f) yield break;
+                    yield return null;
+                }
             }
 
             public IEnumerator To(float alpha, float seconds)

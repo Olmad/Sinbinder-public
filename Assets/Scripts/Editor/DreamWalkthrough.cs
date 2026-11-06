@@ -33,8 +33,9 @@ namespace Sinbinder.EditorTools
         private static float _t0 = -1f, _stepAt, _lastPoke;
         private static string _step = "";
         private static int _errors, _spokenShot = -1, _spokenSeen = -1;
-        private static float _spokenAt;
-        private static bool _killersShot, _retestShot, _retestIssued, _harvestTold, _done;
+        private static float _spokenAt, _diveAt = -1f;
+        private static int _diveShots;
+        private static bool _killersShot, _retestShot, _scalesShot, _retestIssued, _harvestTold, _done;
         private static string NL => Environment.NewLine;
 
         static DreamWalkthrough()
@@ -168,6 +169,9 @@ namespace Sinbinder.EditorTools
                     break;
                 case "Deciding":
                     if (_step != "решение") Go("решение");
+                    if (!_scalesShot && DreamTutorialDirector.RefusalResult != null
+                        && !SoulCourt.Sitting && now - _stepAt > 0.9f)
+                    { _scalesShot = true; Snap("сон — весы над головой"); }
                     break;
                 case "Battle":
                     if (_step != "бой")
@@ -218,6 +222,13 @@ namespace Sinbinder.EditorTools
         private static void CourtShots(float now)
         {
             if (!SoulCourt.Sitting || SoulCourt.Spoken == 0) return;
+            // Влёт в голову (автор 06.11: в голове была прозрачность) — два кадра посреди влёта.
+            if (SoulCourt.Step == "dive")
+            {
+                if (_diveAt < 0f) _diveAt = now;
+                if (_diveShots == 0 && now - _diveAt > 0.3f) { _diveShots = 1; Snap("суд 00а — влёт в голову"); }
+                else if (_diveShots == 1 && now - _diveAt > 0.6f) { _diveShots = 2; Snap("суд 00б — влёт в голову"); }
+            }
             if (SoulCourt.Spoken != _spokenSeen) { _spokenSeen = SoulCourt.Spoken; _spokenAt = now; }
             var box = UI.Letterbox.Instance;
             if (_spokenShot == _spokenSeen || box == null || !box.Typed || now - _spokenAt < 1.3f) return;
