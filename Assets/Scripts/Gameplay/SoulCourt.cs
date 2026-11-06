@@ -631,7 +631,7 @@ namespace Sinbinder.Gameplay
 
             // Воздержавшиеся — быстрым кругом (прогон 06.11: одиннадцать «мне нечего
             // сказать» подряд — две минуты скуки). Каждый встаёт в свет, кивает
-            // и говорит одно слово; его подпись становится «воздерж.».
+            // и одной строкой говорит, почему молчит; его подпись становится «воздерж.».
             // В коротком суде — разом, молча: подписи «воздерж.» и кивок.
             if (shortly)
                 foreach (var j in order.FindAll(x => x.Abstains))
@@ -642,6 +642,12 @@ namespace Sinbinder.Gameplay
                         quietTag.Text.text = j.Title + "\n" + $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>";
                 }
             Count();
+
+            // Полный суд (обучение) представляет и молчащих: что значит «воздержался» —
+            // и почему каждый из них молчит (автор, 06.11).
+            if (!shortly && order.Exists(x => x.Abstains))
+                yield return Death(box, court, Loc.T("Кого вопрос не задел, тот воздерживается: весы он не качает."));
+
             foreach (var j in order.FindAll(x => x.Abstains && !shortly))
             {
                 host.StartCoroutine(SpotOn(spot, j));
@@ -650,12 +656,13 @@ namespace Sinbinder.Gameplay
                 Count();
                 if (j.Tag is Tag quietTag)
                     quietTag.Text.text = j.Title + "\n" + $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>";
-                box.Say(j.Title, Loc.T("Воздерживаюсь."));
+                string idle = SoulCourtReasons.Idle(j.Module, w);
+                box.Say(j.Title, idle);
                 Spoken++;
-                Debug.Log($"[СУД] {j.Title}: воздерживается");
+                Debug.Log($"[СУД] {j.Title}: воздерживается — {idle}");
                 if (j.Voice != null && j.Voice.TryGetComponent<Audio.VoiceGenerator>(out var murmur))
-                    murmur.Babble(Loc.T("Воздерживаюсь."), 0.45f);
-                yield return UI.Letterbox.Hold(0.95f);
+                    murmur.Babble(idle, 1.2f);
+                yield return UI.Letterbox.Hold(2.0f);
             }
 
             foreach (var j in order.FindAll(x => !x.Abstains))

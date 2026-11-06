@@ -32,6 +32,35 @@ namespace Sinbinder.Gameplay
                                            : Grammar.For(w.Gender, s);
         }
 
+        /// <summary>
+        /// Почему судья воздерживается — одной строкой, по его сути (автор, 06.11: «в обучении
+        /// показать и представить недействующих судей»). Звучит в полном суде, во сне: потом
+        /// короткие суды метят воздержавшихся молча, и игрок уже знает, кто они и почему молчат.
+        /// </summary>
+        public static string Idle(string module, Warrior w)
+        {
+            if (w == null) return Loc.T("Воздерживаюсь.");
+            switch (module)
+            {
+                case "Loyalty":  return P(w, Loc.T("Воздерживаюсь: владыке он ни предан, ни чужд."),
+                                             Loc.T("Воздерживаюсь: владыке она ни предана, ни чужда."));
+                case "Fear":     return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: его жизни этот приказ не грозит."));
+                case "Memory":   return Loc.T("Воздерживаюсь: обид и долгов тут нет.");
+                case "Morality": return Loc.T("Воздерживаюсь: ни добра, ни зла тут нет.");
+                case "Virtue":   return Loc.T("Воздерживаюсь: добрые и грешные черты тут не спорят.");
+                case "Patience": return Loc.T("Воздерживаюсь: ждать тут нечего.");
+                case "Greed":    return Loc.T("Воздерживаюсь: делить тут нечего.");
+                case "Pride":    return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: честь его тут не задета."));
+                case "Wrath":    return Sin(w, SinType.Wrath) < 0f ? Loc.T("Воздерживаюсь: гасить тут нечего.")
+                                                                   : Loc.T("Воздерживаюсь: мстить тут некому.");
+                case "Envy":     return Loc.T("Воздерживаюсь: сравнивать тут не с кем.");
+                case "Lust":     return Loc.T("Воздерживаюсь: соблазна тут нет.");
+                case "Gluttony": return Loc.T("Воздерживаюсь: о брюхе тут речи нет.");
+                case "Sloth":    return Loc.T("Воздерживаюсь: труд тут невелик.");
+                default:         return Loc.T("Воздерживаюсь.");
+            }
+        }
+
         // ── что в душе ──
         private static float Sin(Warrior w, SinType s) => w.Soul != null ? w.Soul.Get(s) : 0f;
         private static bool Pious(Warrior w) => w.Soul != null && w.Soul.Moral == MoralType.Pious;
