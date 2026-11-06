@@ -342,6 +342,7 @@ namespace Sinbinder.EditorTools
             }
             else if (_lessonSince >= 0f)
             {
+                UI.WarriorTooltipUI.Pinned = null;
                 Write("  [УРОК] кончился за " + (now - _lessonSince).ToString("F0") + " с — мир идёт");
                 _lessonSince = -1f;
             }
@@ -710,6 +711,11 @@ namespace Sinbinder.EditorTools
                 }, 5f),
 
                 S("прогноз на панели приказов", ForecastSquad, ForecastShown, 5f),
+
+                // Язык суда в лагере (63-TEACHING, п. 3–4): малые весы над головой и строка
+                // весов в подсказке — кадром. Отказа в лагере может и не случиться, а увидеть
+                // их глазами надо: весы показываются над тем, кто только что решил по приказу.
+                S("опись: весы над головой и подсказка", CampScales, CampScalesShown, 10f),
 
                 S("тревога после сундука", null,
                   () => Ball() != null && Ball().IsAlarmed, 30f),
@@ -1457,7 +1463,7 @@ namespace Sinbinder.EditorTools
         }
 
         private static float _lessonSince = -1f;
-        private static bool _lessonWarped;
+        private static bool _lessonWarped, _tooltipShot;
         private static bool _lessonStuckTold;
         private static float _lessonNext;
 
@@ -1478,7 +1484,18 @@ namespace Sinbinder.EditorTools
 
             // Отказ: глагол — прочесть подсказку над отказавшим. Мышь прогону
             // не навести, а идти никуда не нужно: урок «прочтёт» сам (Autopilot).
-            if (Lesson.Now == LessonKind.Refusal) return;
+            // С 06.11 прогон «наводит» подсказку на отказавшего, как игрок, и снимает её:
+            // под объяснением — строка весов языком суда (63-TEACHING, п. 4).
+            if (Lesson.Now == LessonKind.Refusal)
+            {
+                UI.WarriorTooltipUI.Pinned = Lesson.Partner;
+                if (!_tooltipShot && spent > 1.4f && UI.WarriorTooltipUI.Hovered != null)
+                {
+                    _tooltipShot = true;
+                    Snap("опись — подсказка отказавшего");
+                }
+                return;
+            }
 
             // Спина: глагол — приказ, а не шаг Греховода. Послать обходящего
             // на отметку тем же вызовом, что правая кнопка по земле.
@@ -4002,6 +4019,58 @@ namespace Sinbinder.EditorTools
         }
 
         private static float _forecastAt;
+
+        private static Warrior _scalesWho;
+        private static float _scalesSince = -1f, _scalesShownAt = -1f;
+
+        /// <summary>Ближнему к Греховоду своему — короткий приказ: весам нужно решение по приказу.</summary>
+        private static void CampScales()
+        {
+            _scalesWho = null;
+            _scalesShownAt = -1f;
+            _scalesSince = Time.realtimeSinceStartup;
+            Vector3 hero = SinbinderPlayer.Exists ? SinbinderPlayer.Where : Vector3.zero;
+            float best = float.MaxValue;
+            foreach (var w in Own())
+            {
+                float d = (w.transform.position - hero).sqrMagnitude;
+                if (d < best) { best = d; _scalesWho = w; }
+            }
+            if (_scalesWho == null) return;
+            var wrapper = _scalesWho.GetComponent<AOS.AOSWarriorWrapper>();
+            // Шагов на пять: на полутора метрах воин доходил раньше, чем решал (прогон 06.11),
+            // и решение по приказу не успевало случиться. И решить — сразу, а не в свой черёд.
+            if (wrapper == null || wrapper.LastContext == null || !wrapper.LastContext.HasCommand)
+                _scalesWho.IssueCommand(CommandKind.Move, _scalesWho.transform.position + new Vector3(3.5f, 0f, 3.5f));
+            if (wrapper != null && _scalesWho.HasCommand) wrapper.Decide();
+        }
+
+        private static bool CampScalesShown()
+        {
+            float now = Time.realtimeSinceStartup;
+            var wrapper = _scalesWho != null ? _scalesWho.GetComponent<AOS.AOSWarriorWrapper>() : null;
+            if (wrapper == null || wrapper.LastContext == null || !wrapper.LastContext.HasCommand)
+            {
+                if (wrapper != null && _scalesWho.HasCommand) wrapper.Decide();
+                if (now - _scalesSince < 6f) return false;
+                Write("  [ВЕСЫ] решения по приказу так и не было — кадра нет");
+                return true;
+            }
+            if (_scalesShownAt < 0f)
+            {
+                UI.ScalesOverhead.Show(_scalesWho, wrapper.LastDecisionDetail, wrapper.LastContext, force: true);
+                UI.WarriorTooltipUI.Pinned = _scalesWho;
+                _scalesShownAt = now;
+                return false;
+            }
+            if (now - _scalesShownAt < 1.0f) return false;
+            Snap("опись — весы над головой и подсказка");
+            string line = SoulCourt.ScalesLine(_scalesWho, wrapper.LastDecisionDetail, wrapper.LastContext) ?? "(строки весов нет)";
+            Write($"  [ВЕСЫ] {_scalesWho.DisplayName}: подсказка {(UI.WarriorTooltipUI.Hovered == _scalesWho ? "видна" : "НЕ видна")}; "
+                  + System.Text.RegularExpressions.Regex.Replace(line, "<[^>]+>", ""));
+            UI.WarriorTooltipUI.Pinned = null;
+            return true;
+        }
 
         /// <summary>
         /// Номер кнопки «Оборона» на панели приказов — вторая из двух (с 1 октября

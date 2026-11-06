@@ -26,6 +26,7 @@ namespace Sinbinder.UI
         [SerializeField] private Vector2 _offset = new Vector2(18f, -18f);
 
         private Camera _cam;
+        private Outline _edge;
         private Warrior _shown;
         private float _nextRefresh;
 
@@ -39,8 +40,22 @@ namespace Sinbinder.UI
         /// </summary>
         public static Warrior Hovered { get; private set; }
 
+        /// <summary>
+        /// Прогон лагеря (пакетный режим, мыши нет): «навести» подсказку на этого воина,
+        /// чтобы снять её кадром. В игре всегда пусто.
+        /// </summary>
+        public static Warrior Pinned;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => Hovered = null;
+        private static void Rearm() { Hovered = null; Pinned = null; }
+
+        /// <summary>Где «мышь»: у прогона — у груди воина, в игре — сама мышь.</summary>
+        private Vector2 Pointer()
+        {
+            if (Pinned == null || _cam == null) return Input.mousePosition;
+            Vector3 p = _cam.WorldToScreenPoint(Pinned.transform.position + Vector3.up * 1.2f);
+            return new Vector2(p.x, p.y);
+        }
 
         void Awake()
         {
@@ -70,7 +85,7 @@ namespace Sinbinder.UI
                 return;
             }
 
-            var warrior = WarriorUnderCursor();
+            var warrior = Pinned != null && !Pinned.IsDead ? Pinned : WarriorUnderCursor();
             if (warrior == null) { Hide(); return; }
 
             // При подарке или приказе отношение меняется, даже если мышь не сдвинулась.
@@ -85,7 +100,7 @@ namespace Sinbinder.UI
             Hovered = _panel != null && _panel.gameObject.activeInHierarchy ? _shown : null;
 
             if (_panel != null)
-                _panel.position = (Vector2)Input.mousePosition + _offset;
+                _panel.position = Pointer() + _offset;
         }
 
         private Warrior WarriorUnderCursor()
@@ -121,10 +136,10 @@ namespace Sinbinder.UI
             _shown = null;
             Hovered = null;
             if (_text != null) _text.text = sturdy.Describe();
-            if (_frame != null) _frame.color = sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f);
+            Tint(sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f));
             if (_panel == null) return;
             _panel.gameObject.SetActive(true);
-            _panel.position = (Vector2)Input.mousePosition + _offset;
+            _panel.position = Pointer() + _offset;
         }
 
         private void Refresh(Warrior warrior)
@@ -162,10 +177,29 @@ namespace Sinbinder.UI
                 }
             }
 
-            if (_frame != null && warrior.Soul != null)
-                _frame.color = SinColor(warrior.Soul.Sin);
+            if (warrior.Soul != null) Tint(SinColor(warrior.Soul.Sin));
 
             if (_panel != null) _panel.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// Фон — тёмный, цвет — рамкой. До 06.11 цвет греха красил весь фон подсказки:
+        /// на жёлтом Уныния белый текст и цветные имена голосов в строке весов не читались
+        /// (кадр лагеря 06.11). Теперь фон лишь чуть тронут этим цветом.
+        /// </summary>
+        private void Tint(Color edge)
+        {
+            if (_frame == null) return;
+            _frame.color = new Color(Mathf.Lerp(0.06f, edge.r, 0.12f), Mathf.Lerp(0.06f, edge.g, 0.12f),
+                                     Mathf.Lerp(0.07f, edge.b, 0.12f), 0.92f);
+            if (_edge == null)
+            {
+                _edge = _frame.GetComponent<Outline>();
+                if (_edge == null) _edge = _frame.gameObject.AddComponent<Outline>();
+                _edge.effectDistance = new Vector2(2f, -2f);
+                _edge.useGraphicAlpha = false;
+            }
+            _edge.effectColor = new Color(edge.r, edge.g, edge.b, 1f);
         }
 
         private void Hide()

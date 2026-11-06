@@ -1,5 +1,6 @@
 // Assets/Scripts/UI/HintArrival.cs
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sinbinder.UI
@@ -33,6 +34,12 @@ namespace Sinbinder.UI
         /// <summary>Копия создаётся из этой же плашки — у копии свой OnEnable не должен лететь.</summary>
         private static bool _copying;
 
+        /// <summary>Какие плашки уже прилетали: второй раз игрок знает, куда смотреть (прогон 06.11: «Как приказывать» — 10 прилётов).</summary>
+        private static readonly HashSet<string> Flown = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Rearm() => Flown.Clear();
+
         private CanvasGroup _group;
         private GameObject _copy;
 
@@ -60,6 +67,15 @@ namespace Sinbinder.UI
 
             var canvas = GetComponentInParent<Canvas>();
             if (canvas == null) { _group.alpha = 1f; yield break; }
+
+            // Один канал на одно сообщение (63-TEACHING, правило 2): пока стоит круг обучения
+            // или идёт сцена с полосами, взгляд уже занят — плашка встаёт на место без прилёта.
+            if (Gameplay.Lesson.Holding || (Letterbox.Instance != null && Letterbox.Instance.Shown) || !Flown.Add(name))
+            {
+                Debug.Log($"[ПОДСКАЗКА] без прилёта (урок, сцена или уже прилетала): «{name}»");
+                _group.alpha = 1f;
+                yield break;
+            }
             var root = canvas.rootCanvas.transform as RectTransform;
             var self = (RectTransform)transform;
 
