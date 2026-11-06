@@ -100,6 +100,12 @@ namespace Sinbinder.EditorTools
             float now = Time.realtimeSinceStartup;
             if (_t0 < 0f) { _t0 = now; Go("ждём сон"); }
 
+            // Экран пакетного прогона — 640×480, кадр (Snapshot) — 1600×900: подписи суда
+            // считались под 4:3, а мир рисовался под 16:9, и на кадрах подписи разъезжались
+            // шире фигур (06.11). В игре экран и кадр одни — здесь делаем так же.
+            var eye = Camera.main;
+            if (eye != null && Mathf.Abs(eye.aspect - 16f / 9f) > 0.01f) eye.aspect = 16f / 9f;
+
             if (now - _t0 > Limit) { End(false, $"ЗАСТРЯЛО на шаге «{_step}», стадия сна {DreamTutorialDirector.StageName}"); return; }
 
             if (SceneManager.GetActiveScene().name == "Prologue_Camp")

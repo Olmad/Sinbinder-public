@@ -471,7 +471,7 @@ namespace Sinbinder.Gameplay
             // громче — последними. Каждое «за» и «против» качает весы.
             Step = "stance";
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
-            yield return Line(box, host, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними."));
+            yield return Line(box, host, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."));
 
             var order = new List<Judge>(judges);
             order.Sort((a, b) => Mathf.Abs(a.Net).CompareTo(Mathf.Abs(b.Net)));
@@ -551,6 +551,9 @@ namespace Sinbinder.Gameplay
                 host.StartCoroutine(refused ? Die(orderFire, orderFlame) : Blaze(orderFire));
 
             yield return Line(box, host, Loc.T("Вердикт"), Sentence(w, d, voting));
+            // Голосов «за» больше, а приказ отвергнут — новичок решит, что суд считает неправильно.
+            string weight = Weight(d, voting);
+            if (weight != null) yield return Line(box, host, Loc.T("Вердикт"), weight);
 
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
@@ -915,6 +918,25 @@ namespace Sinbinder.Gameplay
             return hair
                 ? Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок.", pro, against)
                 : Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за».", pro, against);
+        }
+
+        /// <summary>
+        /// Когда число и сила расходятся: «за — 3, против — 1», а приказ отвергнут
+        /// (прогон 06.11: память −80 против 48 у трёх). Без этой строки счёт внизу
+        /// кадра спорит с вердиктом.
+        /// </summary>
+        private static string Weight(Decision d, List<Judge> voting)
+        {
+            if (d.Hesitated) return null;
+            bool refused = d.RefusedCommand;
+            var winners = voting.FindAll(j => refused ? !j.ForOrder : j.ForOrder);
+            var losers = voting.FindAll(j => refused ? j.ForOrder : !j.ForOrder);
+            if (winners.Count == 0 || losers.Count <= winners.Count) return null;
+            var loud = winners[0];
+            foreach (var j in winners) if (Mathf.Abs(j.Net) > Mathf.Abs(loud.Net)) loud = j;
+            return refused
+                ? Loc.F("Голосов за приказ больше, но {0} — громче всех: весы решает сила голоса, а не число.", Lower(loud.Title))
+                : Loc.F("Голосов против больше, но {0} — громче всех: весы решает сила голоса, а не число.", Lower(loud.Title));
         }
 
         /// <summary>Что показал компас — натура души, а не это решение.</summary>

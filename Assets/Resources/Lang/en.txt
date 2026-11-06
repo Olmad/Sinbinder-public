@@ -9922,3 +9922,12 @@ msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>against
 
 msgid "никто"
 msgstr "no one"
+
+msgid "Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."
+msgstr "Judges, speak. The quiet first, the loud last. The stronger the voice, the brighter its candle and the further the scales swing."
+
+msgid "Голосов за приказ больше, но {0} — громче всех: весы решает сила голоса, а не число."
+msgstr "More voices are for the order, but {0} is the loudest: the scales weigh strength, not numbers."
+
+msgid "Голосов против больше, но {0} — громче всех: весы решает сила голоса, а не число."
+msgstr "More voices are against, but {0} is the loudest: the scales weigh strength, not numbers."
