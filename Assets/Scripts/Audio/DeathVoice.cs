@@ -71,18 +71,17 @@ namespace Sinbinder.Audio
 
         // ───────────────────────────────────────── Бог Смерти на суде души
 
-        /// <summary>Насколько ниже человека голос Смерти (<see cref="VoiceGenerator.Depth"/>): около 65 Гц.</summary>
-        private const float Depth = 0.55f;
-
         private Coroutine _hush;
 
         /// <summary>
         /// Бог Смерти ведёт суд души (автор, 06.11: «Вместо Голоса Суда — сделай
-        /// Голос Бога Смерти»). Голос тот же, что у пешки, но речью: под гулом и
-        /// шёпотом идут слоги очень низкого голоса, и шёпот дышит с ними в такт,
-        /// а не по буквам. Мир не замолкает и сердце не бьётся: в зале суда и так
-        /// тихо, а Смерть говорит много строк подряд. Возвращает, сколько звучит
-        /// строка до хвоста.
+        /// Голос Бога Смерти»). Голос — ровно тот, что у пешки: гул, шёпот на гласных,
+        /// эхо склепа. Мир не замолкает и сердце не бьётся: в зале суда и так тихо,
+        /// а Смерть говорит много строк подряд. Возвращает, сколько звучит строка до хвоста.
+        ///
+        /// Пробовали подложить под гул слоги очень низкого голоса и убрать эхо назад —
+        /// слог на 65 Гц с резким началом и спадом звучит ударом, и речь стала
+        /// «хлопушкой» (автор, 06.11: «Я очень расстроен… звучит как хлопушка»).
         /// </summary>
         public static float Utter(string line)
         {
@@ -129,89 +128,8 @@ namespace Sinbinder.Audio
             source.volume = 1f;
         }
 
-        /// <summary>
-        /// Строка Бога Смерти — отсчётами (образцы: Editor/VoiceSamples). Время — как
-        /// у печати полосы в темпе Смерти (<see cref="Letters"/>); слоги — голосом
-        /// без души глубины <see cref="Depth"/>, глухим и медленным; шёпот — полоса
-        /// шума около 700 Гц по огибающей слогов; гул — как у пешки; эхо склепа.
-        /// </summary>
-        public static float[] Speech(string line, out float spoken)
-        {
-            const float lead = 0.35f;
-            float at = lead, step = 1f / Letters;
-            foreach (char c in line)
-            {
-                at += step;
-                if (".!?…".IndexOf(c) >= 0) at += 0.5f;
-                else if (",;:—".IndexOf(c) >= 0) at += 0.22f;
-            }
-            spoken = at;
-
-            var go = new GameObject("Гортань Смерти");
-            var throat = go.AddComponent<VoiceGenerator>();
-            throat.Depth = Depth;
-            throat.Kind = VoiceGenerator.VoiceType.Triangle;
-            throat.Tempo = 1.0f;
-            var voiced = throat.Render(line, Mathf.Max(0.5f, at - lead - 0.2f), out _);
-            if (Application.isPlaying) Object.Destroy(go); else Object.DestroyImmediate(go);
-
-            float most = 0f;
-            foreach (float v in voiced) most = Mathf.Max(most, Mathf.Abs(v));
-            float vk = most > 0f ? 1f / most : 0f;
-
-            int start = Mathf.RoundToInt(lead * Rate);
-            int n = Mathf.Max(start + voiced.Length, Mathf.RoundToInt(Rate * at)) + Mathf.RoundToInt(Rate * Tail);
-            var dry = new float[n];
-            uint seed = 2166136261u;
-            foreach (char c in line) seed = (seed ^ c) * 16777619u;
-
-            float lp = 0f, bp1 = 0f, bp2 = 0f, phase = 0f, sub = 0f, env = 0f, peak = 0f;
-            for (int i = 0; i < n; i++)
-            {
-                float t = (float)i / Rate;
-
-                // Гул пешки — тише: он основа, а говорят слоги.
-                float f = 42f * (1f + 0.035f * Mathf.Sin(2f * Mathf.PI * 0.31f * t));
-                phase += f / Rate; if (phase > 1f) phase -= 1f;
-                sub += f * 0.5f / Rate; if (sub > 1f) sub -= 1f;
-                lp += 0.035f * (2f * phase - 1f - lp);
-                float body = lp * 0.9f + 0.6f * Mathf.Sin(2f * Mathf.PI * sub);
-                float swell = Mathf.Clamp01(t / 0.6f) * Mathf.Clamp01((at - t + 0.4f) / 0.8f);
-                float breath = 0.75f + 0.25f * Mathf.Sin(2f * Mathf.PI * 0.18f * t);
-
-                int k = i - start;
-                float v = k >= 0 && k < voiced.Length ? voiced[k] * vk : 0f;
-
-                // Огибающая слогов: быстро встаёт, медленно опадает — шёпот тянется за словом.
-                float a = Mathf.Abs(v);
-                env += (a > env ? 0.01f : 0.0015f) * (a - env);
-
-                seed = seed * 1664525u + 1013904223u;
-                float noise = ((seed >> 9) / 4194304f) - 1f;
-                bp1 += 0.18f * (noise - bp1);
-                bp2 += 0.05f * (bp1 - bp2);
-                float hiss = bp1 - bp2;
-
-                float x = body * 0.18f * breath * swell + v * 0.8f + hiss * 1.5f * Mathf.Min(1f, env * 1.6f);
-                dry[i] = x;
-                peak = Mathf.Max(peak, Mathf.Abs(x));
-            }
-
-            // Эхо склепа — фоном, голос впереди. Целиком через эхо (как у пешки) слоги
-            // тонули: на спектре 06.11 огибающая шла ровной стеной, слогов не было видно.
-            float pre = peak > 0f ? 0.36f / peak : 0f;
-            for (int i = 0; i < n; i++) dry[i] *= pre;
-            var wet = Reverb(dry);
-            float top = 0f;
-            for (int i = 0; i < n; i++)
-            {
-                wet[i] = dry[i] * 0.9f + wet[i] * 0.4f;
-                top = Mathf.Max(top, Mathf.Abs(wet[i]));
-            }
-            // Чуть громче судей (у них пик около 0,35): говорит Бог.
-            if (top > 0f) for (int i = 0; i < n; i++) wet[i] *= 0.5f / top;
-            return wet;
-        }
+        /// <summary>Строка Бога Смерти — отсчётами (образцы: Editor/VoiceSamples), голосом пешки.</summary>
+        public static float[] Speech(string line, out float spoken) => Track(line, out spoken);
 
         void Awake()
         {
@@ -335,6 +253,15 @@ namespace Sinbinder.Audio
         /// <summary>Строка — в одну дорожку. <paramref name="spoken"/> — секунды до хвоста.</summary>
         private static AudioClip Make(string line, out float spoken)
         {
+            var wet = Track(line, out spoken);
+            var clip = AudioClip.Create("Death", wet.Length, 1, Rate, false);
+            clip.SetData(wet, 0);
+            return clip;
+        }
+
+        /// <summary>Строка — отсчётами: гул, шёпот на гласных, эхо склепа.</summary>
+        private static float[] Track(string line, out float spoken)
+        {
             // Время букв — как у полосы, но в темпе Смерти.
             var hits = new List<float>();
             float at = 0.35f, step = 1f / Letters;
@@ -386,10 +313,7 @@ namespace Sinbinder.Audio
                 dry[i] = (body * 0.55f * breath * swell + hiss * 1.6f * Mathf.Min(1f, whisper)) * Gain;
             }
 
-            var wet = Reverb(dry);
-            var clip = AudioClip.Create("Death", n, 1, Rate, false);
-            clip.SetData(wet, 0);
-            return clip;
+            return Reverb(dry);
         }
 
         /// <summary>Эхо склепа: три гребёнки с затуханием и рассеиватель.</summary>

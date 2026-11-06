@@ -30,6 +30,14 @@ namespace Sinbinder.Core
         private const string SensitivityKey = "sinbinder.sensitivity";
         private const string GraphicsKey = "sinbinder.graphics.light";
         private const string MusicKey = "sinbinder.music";
+        private const string CourtKey = "sinbinder.court";
+
+        /// <summary>
+        /// Показывать ли Суд Души (автор, 06.11: «нужна настройка "Показывать Суд
+        /// Души"»): «по делу» — когда отказ того стоит (<see cref="Gameplay.CourtCaller"/>),
+        /// «нет» — никогда, и во сне тоже. Прогон в пакетном режиме — всегда «по делу».
+        /// </summary>
+        public static bool Court { get; private set; } = true;
 
         /// <summary>
         /// Облегчённая графика: без теней и без затенения углов
@@ -76,6 +84,7 @@ namespace Sinbinder.Core
         {
             SensitivityScale = PlayerPrefs.GetFloat(SensitivityKey, 1f);
             MusicScale = PlayerPrefs.GetFloat(MusicKey, 1f);
+            Court = Application.isBatchMode || PlayerPrefs.GetInt(CourtKey, 1) != 0;
 
             LightGraphics = PlayerPrefs.HasKey(GraphicsKey)
                 ? PlayerPrefs.GetInt(GraphicsKey, 0) != 0
@@ -160,6 +169,15 @@ namespace Sinbinder.Core
 
             MusicScale = MusicSteps[(at + 1) % MusicSteps.Length].Scale;
             PlayerPrefs.SetFloat(MusicKey, MusicScale);
+            PlayerPrefs.Save();
+        }
+
+        public static string CourtName() => Court ? Loc.T("по делу") : Loc.T("нет");
+
+        public static void ToggleCourt()
+        {
+            Court = !Court;
+            PlayerPrefs.SetInt(CourtKey, Court ? 1 : 0);
             PlayerPrefs.Save();
         }
 

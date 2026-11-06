@@ -679,7 +679,8 @@ namespace Sinbinder.Gameplay
             if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
             yield return new WaitForSecondsRealtime(1.8f);
             if (_zombie != null && !_zombie.IsDead)
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder);
+                // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false);
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;

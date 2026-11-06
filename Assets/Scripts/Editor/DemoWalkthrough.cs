@@ -71,6 +71,11 @@ namespace Sinbinder.EditorTools
         /// <summary>С какого мига кадр занят подряд; −1 — свободен.</summary>
         private static float _framedSince = -1f;
 
+        // Суд по делу (06.11): когда начался, шаг суда и с какого мига, снятые кадры.
+        private static float _courtSince = -1f, _courtStepSince;
+        private static string _courtStep = "";
+        private static readonly HashSet<string> _courtShots = new();
+
         /// <summary>Шаг видел наезд — после него действие стоит повторить.</summary>
         private static bool _framedInStep;
 
@@ -205,6 +210,9 @@ namespace Sinbinder.EditorTools
                 _errors = 0;
                 _late = 0;
                 _framedSince = -1f;
+                _courtSince = -1f;
+                _courtStep = "";
+                _courtShots.Clear();
                 _heraldShot = false;
                 _ballShot = false;
                 _startSeen = -1f;
@@ -266,6 +274,32 @@ namespace Sinbinder.EditorTools
             float now = Time.realtimeSinceStartup;
             float tick = Mathf.Max(0f, now - _lastTick);
             _lastTick = now;
+
+            // Суд по делу (Gameplay.CourtCaller): мир стоит, пока суд идёт. Прогон
+            // ждёт с игроком и срок шага не тратит; кадры — слово судей и вердикт.
+            if (SoulCourt.Sitting)
+            {
+                if (_courtSince < 0f)
+                {
+                    _courtSince = now;
+                    Write("  [СУД ПО ДЕЛУ] " + CourtCaller.Last + (SoulCourt.Brief ? " — короткий" : " — полный"));
+                }
+                if (SoulCourt.Step != _courtStep) { _courtStep = SoulCourt.Step; _courtStepSince = now; }
+                float wait = _courtStep == "verdict" ? 5f : 2.5f;
+                if ((_courtStep == "stance" || _courtStep == "verdict") && now - _courtStepSince > wait
+                    && _courtShots.Add(_courtStep))
+                    Snap("суд по делу — " + (_courtStep == "stance" ? "слово судей" : "вердикт"));
+                if (now - _courtSince < 240f)
+                {
+                    if (_entered) _startedAt += tick;
+                    return;
+                }
+            }
+            else if (_courtSince >= 0f)
+            {
+                Write($"  [СУД ПО ДЕЛУ] кончился за {now - _courtSince:F0} с; итог — {SoulCourt.Outcome}; голосовали: {SoulCourt.Bench}");
+                _courtSince = -1f;
+            }
 
             var frame = Dialogue.DialogueCameraController.Instance;
             bool framed = (frame != null && frame.InDialogue) || Herald.Busy;

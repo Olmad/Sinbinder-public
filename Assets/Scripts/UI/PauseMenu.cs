@@ -167,6 +167,13 @@ namespace Sinbinder.UI
                 Draw();
             });
 
+            // Суд Души: по делу или никогда (автор, 06.11; пояснять не нужно).
+            Add(ref y, Loc.T("Показывать Суд Души"), Core.Preferences.CourtName(), () =>
+            {
+                Core.Preferences.ToggleCourt();
+                Draw();
+            });
+
             // Язык — названием на самом языке (LocSetup.Languages): включивший
             // чужой по ошибке узнает свой, не читая чужого.
             Add(ref y, Loc.T("Язык"), Core.LocSetup.CurrentName(), () =>

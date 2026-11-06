@@ -47,10 +47,29 @@ namespace Sinbinder.Gameplay
         /// <summary>Сколько реплик суд сказал с запуска — прогон снимает кадр на каждую.</summary>
         public static int Spoken { get; private set; }
 
+        /// <summary>Сколько судов прошло с запуска.</summary>
+        public static int Held { get; private set; }
+
+        /// <summary>Последний суд был коротким — для прогона.</summary>
+        public static bool Brief { get; private set; }
+
+        private const string SeenKey = "sinbinder.court.seen";
+
+        /// <summary>
+        /// Видел ли игрок полный суд — хоть раз, хоть в прошлый запуск. Полный объясняет
+        /// себя целиком (компас, весы, тринадцать судей); после него суды по делу идут
+        /// коротко: приказ, голоса, вердикт. Иначе загрузка записи снова учила бы три минуты.
+        /// </summary>
+        public static bool Seen => Held > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
+
+        /// <summary>Какие голоса уже решали суд на глазах у игрока: новый — интереснее.</summary>
+        private static readonly HashSet<string> Decided = new();
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm()
         {
             Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0;
+            Held = 0; Decided.Clear();
             // Суд, оборванный сменой сцены (выход в меню посреди суда), запирал
             // все следующие до перезапуска игры: Sitting оставался true.
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Unstick;
@@ -421,9 +440,9 @@ namespace Sinbinder.Gameplay
         /// <paramref name="c"/>. Зовёт тот, кто ведёт миг (сон), — и ждёт конца:
         /// мир стоит, пока суд идёт.
         /// </summary>
-        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c, CommandKind? given = null)
+        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c, CommandKind? given = null, bool? brief = null)
         {
-            if (w == null || c == null || Sitting) yield break;
+            if (w == null || c == null || Sitting || !Preferences.Court) yield break;
 
             // Сон, открытый из лагеря (меню паузы): Managers лагеря переживает
             // смену сцен, а Managers сна гибнет как двойник — и Instance мог
@@ -441,6 +460,9 @@ namespace Sinbinder.Gameplay
 
             Sitting = true;
             Step = "enter";
+            bool shortly = brief ?? Seen;
+            Brief = shortly;
+            Held++;
 
             // Чужой наезд (перебранка перед боем) должен кончиться сам: уходя,
             // он возвращает камеру в мир — прогон 05.11 так выбросило из зала.
@@ -459,6 +481,8 @@ namespace Sinbinder.Gameplay
             var judges = Seat(w, c, rival, out float total);
             Seated = judges.Count;
             var voting = judges.FindAll(j => !j.Abstains);
+            var decisive = Loudest(judges, d.RefusedCommand || d.Hesitated);
+            if (decisive != null) Decided.Add(decisive);
             Bench = string.Join(", ", voting.ConvertAll(j => $"{j.Module} {(j.ForOrder ? "+" : "-")} {Mathf.Abs(j.Net):F0}"));
             Debug.Log($"[СУД] {w.DisplayName}: {Outcome}; против приказа — {rival}; голосуют: {Bench}; "
                     + $"воздержались: {string.Join(", ", judges.FindAll(j => j.Abstains).ConvertAll(j => j.Module))}");
@@ -517,9 +541,25 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(RiseHold + 0.5f - 0.35f - 1.6f);
             Step = "hall";
 
-            // Суд показывается один раз за игру (автор, 05.11) — и потому объясняет
-            // себя сам: кто судьи, кто перед ними, что значат компас, весы и огонь.
             string court = Loc.T("Бог Смерти");
+            var spot = Spotlight(host.transform);
+            if (shortly)
+            {
+                // Не первый суд (автор, 06.11: «показывать чаще, но по делу»): что значат
+                // компас и весы, игрок уже слышал. Все на местах, подписи видны, Смерть
+                // называет приказ и отказ — и сразу слово судьям.
+                Show(accusedTag);
+                Show(goodTag); Show(midTag); Show(evilTag);
+                Show(forTag); Show(againstTag);
+                foreach (var j in judges) Show(j.Tag as Tag);
+                host._cSwing = 180f;
+                host._cAim = MoralAngle(moral);
+                yield return Death(box, court, Summon(w, d, given));
+                goto Stances;
+            }
+
+            // Первый суд объясняет себя сам: кто судьи, кто перед ними, что значат
+            // компас, весы и огонь.
             Show(accusedTag);
             yield return Death(box, court, Opening(w, d));
 
@@ -547,7 +587,6 @@ namespace Sinbinder.Gameplay
             // 4. Знакомство (автор, 05.11: «сначала познакомить с персонажами,
             // чтобы при знакомстве проиграли приветственные анимации, желательно
             // разные»): слева направо, каждый — крупно, под светом, своим жестом.
-            var spot = Spotlight(host.transform);
             foreach (var j in judges)
             {
                 Step = "judge";
@@ -565,6 +604,9 @@ namespace Sinbinder.Gameplay
             Step = "stance";
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             yield return Death(box, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."));
+
+            Stances:
+            Step = "stance";
 
             var order = new List<Judge>(judges);
             order.Sort((a, b) => Mathf.Abs(a.Net).CompareTo(Mathf.Abs(b.Net)));
@@ -590,7 +632,17 @@ namespace Sinbinder.Gameplay
             // Воздержавшиеся — быстрым кругом (прогон 06.11: одиннадцать «мне нечего
             // сказать» подряд — две минуты скуки). Каждый встаёт в свет, кивает
             // и говорит одно слово; его подпись становится «воздерж.».
-            foreach (var j in order.FindAll(x => x.Abstains))
+            // В коротком суде — разом, молча: подписи «воздерж.» и кивок.
+            if (shortly)
+                foreach (var j in order.FindAll(x => x.Abstains))
+                {
+                    host.StartCoroutine(Nod(j));
+                    quiet++;
+                    if (j.Tag is Tag quietTag)
+                        quietTag.Text.text = j.Title + "\n" + $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>";
+                }
+            Count();
+            foreach (var j in order.FindAll(x => x.Abstains && !shortly))
             {
                 host.StartCoroutine(SpotOn(spot, j));
                 host.StartCoroutine(Nod(j));
@@ -655,12 +707,14 @@ namespace Sinbinder.Gameplay
             if (!string.IsNullOrEmpty(why))
                 yield return Death(box, verdict, why);
 
-            // Что это значит для игры — одной строкой, напоследок.
-            yield return Death(box, court,
-                Loc.T("Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."));
+            // Что это значит для игры — одной строкой, напоследок. Короткий суд её не повторяет.
+            if (!shortly)
+                yield return Death(box, court,
+                    Loc.T("Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."));
 
             // 6. Назад, в мир.
             Step = "exit";
+            if (!shortly) { PlayerPrefs.SetInt(SeenKey, 1); PlayerPrefs.Save(); }
             Audio.DeathVoice.Quiet();
             yield return fader.To(1f, 0.6f);
             world.Rise();
@@ -870,6 +924,92 @@ namespace Sinbinder.Gameplay
                 colour = Glow(top);
             }
             return true;
+        }
+
+        /// <summary>
+        /// Слово Смерти в коротком суде: приказ и что сделал воин — и слово судьям.
+        /// </summary>
+        private static string Summon(Warrior w, Decision d, CommandKind? given)
+        {
+            string order = OrderWords(given ?? w.Command.Kind), name = Loc.Name(w.DisplayName);
+            if (d.RefusedCommand)
+                return Grammar.Pick(w.Gender,
+                    Loc.F("Приказ владыки — «{0}». {1} отказал. Судьи, ваше слово.", order, name),
+                    Loc.F("Приказ владыки — «{0}». {1} отказала. Судьи, ваше слово.", order, name));
+            if (d.Hesitated)
+                return Grammar.Pick(w.Gender,
+                    Loc.F("Приказ владыки — «{0}». {1} замешкался. Судьи, ваше слово.", order, name),
+                    Loc.F("Приказ владыки — «{0}». {1} замешкалась. Судьи, ваше слово.", order, name));
+            return Grammar.Pick(w.Gender,
+                Loc.F("Приказ владыки — «{0}». {1} исполнил. Судьи, ваше слово.", order, name),
+                Loc.F("Приказ владыки — «{0}». {1} исполнила. Судьи, ваше слово.", order, name));
+        }
+
+        /// <summary>Самый громкий голос стороны, что победила: он и решил.</summary>
+        private static string Loudest(List<Judge> judges, bool refused)
+        {
+            Judge top = null;
+            foreach (var j in judges)
+            {
+                if (j.Abstains || j.ForOrder == refused) continue;
+                if (top == null || Mathf.Abs(j.Net) > Mathf.Abs(top.Net)) top = j;
+            }
+            return top?.Module;
+        }
+
+        /// <summary>
+        /// Важен ли отказ настолько, чтобы созвать суд (автор, 06.11: «эту сцену нужно
+        /// показывать чаще, но по делу»). От 0 до 1, сумма поводов:
+        /// <list type="bullet">
+        /// <item>на кону жизнь — бой (0,3), не отходит из боя (0,2), ранен (0,15),
+        /// окружён или последний (0,15);</item>
+        /// <item>отказал старший отряда (0,15);</item>
+        /// <item>суд чему-то учит — один голос перевесил многих (0,2) или весы на
+        /// волоске (0,15); решил голос, который суд ещё не показывал (0,3).</item>
+        /// </list>
+        /// Вне боя одной новизны мало: нужен ещё повод. <paramref name="why"/> — поводы словами, для журнала.
+        /// </summary>
+        public static float Importance(Warrior w, Decision d, DecisionContext c, out string why)
+        {
+            why = "";
+            if (w == null || c == null || !c.HasCommand || !d.RefusedCommand) return 0f;
+
+            var parts = new List<string>();
+            float score = 0f;
+            bool fight = c.NearbyEnemies > 0 || c.EnemiesInSight > 0 || c.IsEngaged;
+            if (fight) { score += 0.3f; parts.Add("бой"); }
+            if (fight && c.CommandIsFallBack) { score += 0.2f; parts.Add("не отходит из боя"); }
+            if (fight && c.MaxHP > 0f && c.CurrentHP < c.MaxHP * 0.4f) { score += 0.15f; parts.Add("ранен"); }
+            if (c.Surrounded || c.LastAlive) { score += 0.15f; parts.Add(c.LastAlive ? "последний" : "окружён"); }
+            if (!string.IsNullOrEmpty(SquadRoster.CommanderName) && w.DisplayName == SquadRoster.CommanderName)
+            { score += 0.15f; parts.Add("старший"); }
+
+            // Как решила душа — те же голоса, что сядут за кафедру.
+            var rival = Rival(d);
+            var net = new Dictionary<string, float>();
+            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            {
+                if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
+                net.TryGetValue(v.Module, out float was);
+                net[v.Module] = was + (v.Action == ActionType.ObeyCommand ? -v.Voice : v.Voice);
+            }
+            int pro = 0, con = 0;
+            float sum = 0f, total = 0f, loud = 0f;
+            string top = null;
+            foreach (var kv in net)
+            {
+                if (Mathf.Abs(kv.Value) < Audible) continue;
+                sum += Mathf.Abs(kv.Value);
+                total += kv.Value;
+                if (kv.Value < 0f) pro++;
+                else { con++; if (kv.Value > loud) { loud = kv.Value; top = kv.Key; } }
+            }
+            if (con == 1 && pro >= 2) { score += 0.2f; parts.Add("один голос против многих"); }
+            else if (sum > 0f && Mathf.Abs(total) < sum * 0.15f) { score += 0.15f; parts.Add("на волоске"); }
+            if (top != null && !Decided.Contains(top)) { score += 0.3f; parts.Add("новый голос — " + top); }
+
+            why = parts.Count > 0 ? string.Join(", ", parts) : "поводов нет";
+            return Mathf.Clamp01(score);
         }
 
         /// <summary>Что душа выбрала вместо приказа — или что тянуло её прочь.</summary>

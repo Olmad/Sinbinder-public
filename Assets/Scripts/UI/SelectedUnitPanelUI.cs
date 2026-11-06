@@ -725,6 +725,9 @@ namespace Sinbinder.UI
             if (sin.HasValue)
             {
                 bool virtue = module == "Patience" || (soul != null && soul.Get(sin.Value) < 0f);
+                // Добрая сторона гнева — «Кротость», а не «Терпение»: Терпение — свой голос,
+                // и у доброй души за кафедрой сидели два «Терпения» (суд по делу, 06.11).
+                if (virtue && module == "Wrath") return Loc.T("Кротость");
                 return virtue ? SoulData.GetVirtueName(sin.Value) : SoulData.GetSinName(sin.Value);
             }
 
