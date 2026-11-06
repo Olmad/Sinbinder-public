@@ -223,9 +223,23 @@ namespace Sinbinder.Gameplay
 
         private static string Hex(Color c) => ColorUtility.ToHtmlStringRGB(c);
 
+        /// <summary>Свечи суда: свет, его дальность, огонёк, место огонька, своё зерно шума.</summary>
+        private readonly List<(Light light, float range, Transform flame, Vector3 at, float seed)> _candles = new();
+
         private void Update()
         {
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            // Свечи дышат: свет то ближе, то дальше, огонёк чуть ходит. Силу света не трогаем —
+            // её ведут слово судьи и вердикт (Flare, Settle).
+            float now = Time.unscaledTime;
+            foreach (var (light, range, flame, at, seed) in _candles)
+            {
+                if (light == null) continue;
+                light.range = range * (1f + 0.22f * (Mathf.PerlinNoise(seed, now * 5.5f) - 0.5f));
+                if (flame != null)
+                    flame.localPosition = at + new Vector3(0.012f * (Mathf.PerlinNoise(seed + 9f, now * 3.2f) - 0.5f), 0f,
+                                                           0.012f * (Mathf.PerlinNoise(seed + 19f, now * 3.2f) - 0.5f));
+            }
             if (_needle != null)
             {
                 _swing += ((_aim - _angle) * 28f - _swing * 6.5f) * dt;
@@ -642,6 +656,41 @@ namespace Sinbinder.Gameplay
         // ──────────────────────────────────
         // Кто за столом
         // ──────────────────────────────────
+
+        /// <summary>
+        /// Весы решения вне суда — тем же счётом, что за кафедрой (63-TEACHING, п. 4):
+        /// «Весы: за приказ — Верность, Страх · против — Память». Имена — цветами голосов,
+        /// стороны — цветами сторон весов, как в зале. Пусто — приказа не было или голоса молчат.
+        /// </summary>
+        public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3)
+        {
+            if (w == null || c == null || !c.HasCommand) return null;
+            var rival = Rival(d);
+            var sum = new Dictionary<string, float>();
+            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            {
+                if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
+                sum.TryGetValue(v.Module, out float net);
+                sum[v.Module] = net + (v.Action == ActionType.ObeyCommand ? -v.Voice : v.Voice);
+            }
+            var pro = new List<KeyValuePair<string, float>>();
+            var con = new List<KeyValuePair<string, float>>();
+            foreach (var kv in sum)
+                if (Mathf.Abs(kv.Value) >= Audible) (kv.Value < 0f ? pro : con).Add(kv);
+            if (pro.Count == 0 && con.Count == 0) return null;
+            pro.Sort((a, b) => Mathf.Abs(b.Value).CompareTo(Mathf.Abs(a.Value)));
+            con.Sort((a, b) => Mathf.Abs(b.Value).CompareTo(Mathf.Abs(a.Value)));
+
+            string Names(List<KeyValuePair<string, float>> side)
+            {
+                if (side.Count == 0) return Loc.T("никто");
+                var names = side.GetRange(0, Mathf.Min(most, side.Count))
+                    .ConvertAll(kv => $"<color=#{Hex(Glow(kv.Key))}>{UI.SelectedUnitPanelUI.VoiceName(kv.Key, w.Soul)}</color>");
+                return string.Join(", ", names);
+            }
+            return Loc.F("Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}",
+                         Hex(ForOrderTone), Names(pro), Hex(AgainstTone), Names(con));
+        }
 
         /// <summary>Что душа выбрала вместо приказа — или что тянуло её прочь.</summary>
         private static ActionType Rival(Decision d)
@@ -1067,6 +1116,14 @@ namespace Sinbinder.Gameplay
 
             host._needle = Dial(t);
             host._compass = Compass(t);
+
+            float seed = 0f;
+            foreach (var j in judges)
+                if (j.Fire != null)
+                    host._candles.Add((j.Fire, j.Fire.range, j.Flame, j.Flame != null ? j.Flame.localPosition : Vector3.zero, seed += 3.1f));
+            if (orderFire != null)
+                host._candles.Add((orderFire, orderFire.range, orderFlame, orderFlame != null ? orderFlame.localPosition : Vector3.zero, 101f));
+            Atmosphere(t);
             return hall;
         }
 
@@ -1209,6 +1266,7 @@ namespace Sinbinder.Gameplay
 
         private static void Shaft(Light spot)
         {
+            if (!Application.isPlaying) return;   // в сцене просмотра материал из кода не сохранится — был бы розовый клин
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader == null) return;
             var mat = new Material(shader) { name = "Луч" };
@@ -1233,7 +1291,8 @@ namespace Sinbinder.Gameplay
             {
                 float k = r / (float)rows;
                 float half = Mathf.Lerp(0.07f, 0.62f, k);
-                float fade = Mathf.Lerp(1f, 0.25f, k) * Mathf.Clamp01(k * 6f);   // у фонаря — не обрубком
+                // Верх гаснет: над средними судьями луч шёл прямо перед весами. Свет собирается вокруг судьи.
+                float fade = Mathf.Lerp(1f, 0.35f, k) * Mathf.Clamp01((k - 0.3f) * 3.3f);
                 for (int c = 0; c < across.Length; c++)
                 {
                     verts.Add(new Vector3(across[c] * half, 0f, k * ShaftLength));
@@ -1263,6 +1322,163 @@ namespace Sinbinder.Gameplay
             _shaft = go.transform;
             _shaftLight = spot;
             _shaftMat = mat;
+            _dustMat = Dust(spot.transform, shader);
+        }
+
+        // Пылинки в луче говорящего — только вокруг него: красиво, и взгляд сам идёт к тому, кто говорит.
+        private static Material _dustMat;
+
+        private static Material Dust(Transform spot, Shader shader)
+        {
+            var mat = new Material(shader) { name = "Пылинки" };
+            var tex = Soft(16, false);
+            mat.SetTexture("_BaseMap", tex);
+            mat.mainTexture = tex;
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 2f);
+            mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            mat.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0f));
+
+            var go = new GameObject("Пылинки в луче");
+            go.transform.SetParent(spot, false);
+            go.transform.localPosition = new Vector3(0f, 0f, 1.9f);   // у головы судьи
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.loop = true;
+            main.prewarm = true;
+            main.duration = 6f;
+            main.useUnscaledTime = true;   // суд идёт при стоящем мире
+            main.startLifetime = new ParticleSystem.MinMaxCurve(3f, 5.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0f, 0.03f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.012f, 0.032f);
+            main.startColor = new Color(1f, 0.95f, 0.85f, 1f);
+            main.maxParticles = 90;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;   // свет переехал — и пыль с ним
+            var emission = ps.emission;
+            emission.rateOverTime = 18f;
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.6f;
+            var noise = ps.noise;
+            noise.enabled = true;
+            noise.strength = 0.06f;
+            noise.frequency = 0.6f;
+            var colour = ps.colorOverLifetime;
+            colour.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.25f), new GradientAlphaKey(0.6f, 0.6f), new GradientAlphaKey(0f, 1f) });
+            colour.color = new ParticleSystem.MinMaxGradient(g);
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.sharedMaterial = mat;
+            r.renderMode = ParticleSystemRenderMode.Billboard;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            ps.Play();
+            return mat;
+        }
+
+        /// <summary>Мягкое пятно: ровное (пылинка) или с рваным краем (туман).</summary>
+        private static Texture2D Soft(int size, bool ragged)
+        {
+            var t = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size - 0.5f, dy = (y + 0.5f) / size - 0.5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy) * 2f;
+                    float n = ragged ? Mathf.Lerp(0.35f, 1f, Mathf.PerlinNoise(x * 0.08f, y * 0.08f) * 0.65f
+                                                            + Mathf.PerlinNoise(x * 0.21f + 3f, y * 0.21f) * 0.35f) : 1f;
+                    float a = Mathf.Clamp01(1f - d) * n;
+                    t.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+                }
+            t.Apply();
+            return t;
+        }
+
+        /// <summary>
+        /// Туман у пола и свет кадра: свечение огней и тёмные края (автор, 06.11: «накинуть
+        /// эфектов, чтобы выглядело красиво и загадочно» — «но главное, чтобы было понятно»).
+        /// Туман — ниже кафедр, края — темнее середины: весы, компас и подписи остаются
+        /// самым ясным в кадре. Подписи — поверх кадра, их свет кадра не трогает.
+        /// </summary>
+        private static void Atmosphere(Transform t)
+        {
+            if (!Application.isPlaying) return;
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader != null)
+            {
+                var mat = new Material(shader) { name = "Туман суда" };
+                var tex = Soft(64, true);
+                mat.SetTexture("_BaseMap", tex);
+                mat.mainTexture = tex;
+                mat.SetFloat("_Surface", 1f);
+                mat.SetFloat("_Blend", 0f);
+                mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                mat.SetFloat("_ZWrite", 0f);
+                mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+
+                var go = new GameObject("Туман у пола");
+                go.transform.SetParent(t, false);
+                go.transform.position = Hall + new Vector3(0f, 0.12f, 1.4f);
+                var ps = go.AddComponent<ParticleSystem>();
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                var main = ps.main;
+                main.loop = true;
+                main.prewarm = true;
+                main.duration = 20f;
+                main.useUnscaledTime = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(14f, 22f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.01f, 0.05f);
+                main.startSize = new ParticleSystem.MinMaxCurve(1.2f, 2.0f);
+                main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.startColor = new Color(0.55f, 0.60f, 0.78f, 0.08f);
+                main.maxParticles = 70;
+                var emission = ps.emission;
+                emission.rateOverTime = 3.5f;
+                var shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Box;
+                shape.scale = new Vector3(9f, 0.1f, 5.5f);
+                shape.randomDirectionAmount = 1f;
+                var colour = ps.colorOverLifetime;
+                colour.enabled = true;
+                var g = new Gradient();
+                g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                          new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.3f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f) });
+                colour.color = new ParticleSystem.MinMaxGradient(g);
+                var spin = ps.rotationOverLifetime;
+                spin.enabled = true;
+                spin.z = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+                var r = go.GetComponent<ParticleSystemRenderer>();
+                r.sharedMaterial = mat;
+                r.renderMode = ParticleSystemRenderMode.Billboard;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                ps.Play();
+            }
+
+            // Свет кадра — на время суда: объём уходит вместе с залом.
+            var vol = new GameObject("Свет кадра суда").AddComponent<UnityEngine.Rendering.Volume>();
+            vol.transform.SetParent(t, false);
+            vol.isGlobal = true;
+            vol.priority = 200f;
+            var profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
+            var bloom = profile.Add<UnityEngine.Rendering.Universal.Bloom>(true);
+            bloom.intensity.Override(0.9f);
+            bloom.threshold.Override(0.85f);
+            bloom.scatter.Override(0.7f);
+            var vignette = profile.Add<UnityEngine.Rendering.Universal.Vignette>(true);
+            vignette.intensity.Override(0.24f);
+            vignette.smoothness.Override(0.55f);
+            vignette.color.Override(Color.black);
+            vol.sharedProfile = profile;
         }
 
         /// <summary>Луч — лицом к камере (вокруг своей оси) и ярок, как сам свет.</summary>
@@ -1275,8 +1491,15 @@ namespace Sinbinder.Gameplay
             Vector3 toEye = Vector3.ProjectOnPlane(eye.transform.position - _shaft.position, axis);
             if (toEye.sqrMagnitude > 1e-4f) _shaft.rotation = Quaternion.LookRotation(axis, toEye);
             Color c = _shaftLight.color;
-            c.a = ShaftAlpha * Mathf.Clamp01(_shaftLight.intensity / SpotPower);
+            float k = Mathf.Clamp01(_shaftLight.intensity / SpotPower);
+            c.a = ShaftAlpha * k;
             _shaftMat.SetColor("_BaseColor", c);
+            if (_dustMat != null)
+            {
+                Color dust = Color.Lerp(Color.white, _shaftLight.color, 0.5f);
+                dust.a = 0.85f * k;
+                _dustMat.SetColor("_BaseColor", dust);
+            }
         }
 
         /// <summary>Поставить свет над судьёй: сверху и чуть спереди, его цвета.</summary>
@@ -1553,6 +1776,8 @@ namespace Sinbinder.Gameplay
             private float _ambientIntensity, _reflections;
             private bool _fog;
             private readonly List<(Light light, bool on)> _suns = new();
+            private UnityEngine.Rendering.Universal.UniversalAdditionalCameraData _data;
+            private bool _post;
 
             public static Darkness Fall(Camera eye)
             {
@@ -1568,6 +1793,8 @@ namespace Sinbinder.Gameplay
                 d._fog = RenderSettings.fog;
 
                 if (eye != null) { eye.clearFlags = CameraClearFlags.SolidColor; eye.backgroundColor = Color.black; }
+                // Свечение и тёмные края суда — через обработку кадра; вернуть, как была.
+                if (eye != null && eye.TryGetComponent(out d._data)) { d._post = d._data.renderPostProcessing; d._data.renderPostProcessing = true; }
                 RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
                 RenderSettings.ambientLight = new Color(0.018f, 0.016f, 0.024f);
                 RenderSettings.reflectionIntensity = 0f;
@@ -1580,6 +1807,7 @@ namespace Sinbinder.Gameplay
             public void Rise()
             {
                 if (_eye != null) { _eye.clearFlags = _clear; _eye.backgroundColor = _background; }
+                if (_data != null) _data.renderPostProcessing = _post;
                 RenderSettings.ambientMode = _ambientMode;
                 RenderSettings.ambientLight = _ambient;
                 RenderSettings.ambientSkyColor = _sky;

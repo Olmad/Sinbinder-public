@@ -9910,3 +9910,15 @@ msgstr "No again. The court judged that moment; the world has changed since — 
 
 msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
 msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
+
+msgid "Он пал. Своё решение стоило ему второй жизни."
+msgstr "He fell. His own decision cost him his second life."
+
+msgid "Она пала. Своё решение стоило ей второй жизни."
+msgstr "She fell. Her own decision cost her her second life."
+
+msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}"
+msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>against</color> — {3}"
+
+msgid "никто"
+msgstr "no one"

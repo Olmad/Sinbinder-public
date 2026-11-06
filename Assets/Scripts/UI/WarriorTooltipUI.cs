@@ -29,6 +29,10 @@ namespace Sinbinder.UI
         private Warrior _shown;
         private float _nextRefresh;
 
+        // Строка весов — на решение, а не на кадр: голоса считаются заново, только когда воин решил снова.
+        private DecisionContext _scalesFor;
+        private string _scales;
+
         /// <summary>
         /// Над кем подсказка сейчас. Урок отказа (<see cref="Lesson"/>) ждёт,
         /// пока её прочтут над отказавшим.
@@ -137,6 +141,16 @@ namespace Sinbinder.UI
                 _text.text = hasDecision
                     ? PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail)
                     : string.Empty;
+                // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
+                if (hasDecision)
+                {
+                    if (_scalesFor != wrapper.LastContext)
+                    {
+                        _scalesFor = wrapper.LastContext;
+                        _scales = SoulCourt.ScalesLine(warrior, wrapper.LastDecisionDetail, wrapper.LastContext);
+                    }
+                    if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
+                }
                 if (isNeutralInMatch)
                     _text.text = Favor.Attitude(warrior) + (hasDecision ? "\n" + _text.text : string.Empty);
                 // Титулованный или легенда — дар словами (Gift).
