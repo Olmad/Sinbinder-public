@@ -105,6 +105,22 @@ namespace Sinbinder.Gameplay
         private const float OverviewPush = 0.07f;
 
         /// <summary>
+        /// Первый кадр зала — снизу, из-за спины подсудимого, чуть слева: он мал,
+        /// суд и стена над ним, окна и колонны уходят во тьму (автор, 06.11:
+        /// «суду не хватает грандиозности, возвышенности, величественности»).
+        /// Отсюда камера поднимается на общий план.
+        /// </summary>
+        private static readonly Vector3 RiseFrom = new Vector3(-1.3f, 0.35f, -5.6f);
+        private static readonly Vector3 RiseLook = new Vector3(0.5f, 3.9f, 4.9f);
+        private const float RiseFov = 56f, RiseHold = 3.0f, RiseSeconds = 4.5f;
+
+        /// <summary>Высота зала: стена и колонны выше любого кадра — свод теряется во тьме.</summary>
+        private const float HallHeight = 18f;
+
+        /// <summary>Окна: низ — выше весов и голов судей, верх — за краем общего плана.</summary>
+        private const float WindowFrom = 3.7f, WindowTall = 7.0f;
+
+        /// <summary>
         /// Весы — то, что 05.11 было «компасом»: часы со стрелкой (автор: «идея
         /// с часами как признаком согласия или нет — гениально… назовём весами»).
         /// Слева — «за приказ» (там и сидят такие судьи), справа — «против».
@@ -417,13 +433,21 @@ namespace Sinbinder.Gameplay
             yield return camera.FocusOnPoint(head, head + back * 0.22f, null, push: 0.6f);
             yield return fader.To(1f, 0.2f);
 
-            // 3. Зал: свет мира гаснет, камера над столом.
-            Step = "hall";
+            // 3. Зал: свет мира гаснет. Сначала — снизу, из-за спины подсудимого: он мал,
+            // суд над ним, колонны и окна уходят во тьму, луч с высоты — на него; бьёт
+            // колокол. Потом камера поднимается на общий план, луч гаснет.
+            Step = "rise";
+            box.Say(null, "");   // строка поля («…исполнил приказ») в зал не идёт: первый кадр — без слов
             var world = Darkness.Fall(eye);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
+            camera.Crane(Hall + RiseLook, Hall + RiseFrom, RiseFov, look, overview, WideFov,
+                         RiseHold, RiseSeconds, 20f, OverviewPush);
+            host.StartCoroutine(SunbeamFade(RiseHold + 0.4f, RiseSeconds * 0.7f));
             yield return new WaitForSecondsRealtime(0.35f);
-            yield return fader.To(0f, 0.9f);
+            Toll(hall.transform, 0.62f, 0.5f);
+            yield return fader.To(0f, 1.6f);
+            yield return new WaitForSecondsRealtime(RiseHold + 0.5f - 0.35f - 1.6f);
+            Step = "hall";
 
             // Суд показывается один раз за игру (автор, 05.11) — и потому объясняет
             // себя сам: кто судьи, кто перед ними, что значат компас, весы и огонь.
@@ -524,8 +548,9 @@ namespace Sinbinder.Gameplay
                 Play(j, j.Abstains ? "Idle" : "Talk");
                 running += j.Net;
                 host._aim = Tilt(running, reach);
+                // «Поэтому» — связь причины с голосом (автор 06.11: «при чём тут тот или иной судья»).
                 string stance = j.Abstains ? Loc.T("Воздерживаюсь.")
-                              : j.ForOrder ? Loc.T("Я — за приказ.") : Loc.T("Я — против.");
+                              : j.ForOrder ? Loc.T("Поэтому я — за приказ.") : Loc.T("Поэтому я — против.");
                 if (j.ForOrder) ayes++; else nays++;
                 Count();
                 if (j.Tag is Tag tag)
@@ -542,6 +567,7 @@ namespace Sinbinder.Gameplay
             // 6. Вердикт: весы встают по решению, сильная сторона разгорается,
             // слабая никнет, свеча приказа гаснет — или вспыхивает.
             Step = "verdict";
+            Toll(hall.transform, 0.5f, 0.55f);   // ниже первого: решено
             host.StartCoroutine(SpotOff(spot));
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             bool refused = d.RefusedCommand || d.Hesitated;
@@ -896,8 +922,6 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static string Words(Judge j, ActionType rival, DecisionContext c, Warrior w)
         {
-            bool virtue = w.Soul != null && IsVirtue(j.Module, w.Soul);
-
             if (j.Abstains)
             {
                 switch (System.Array.IndexOf(Voices, j.Module) % 4)
@@ -909,6 +933,11 @@ namespace Sinbinder.Gameplay
                 }
             }
 
+            // Причина — из кода его модуля: что в душе и как это тянет сейчас (SoulCourtReasons).
+            string why = SoulCourtReasons.Reason(j.Module, j.Obey, j.Rival, rival, c, w);
+            if (!string.IsNullOrEmpty(why)) return why;
+
+            bool virtue = w.Soul != null && IsVirtue(j.Module, w.Soul);
             if (j.ForOrder)
             {
                 switch (j.Module)
@@ -1117,13 +1146,49 @@ namespace Sinbinder.Gameplay
             var paper = Lit(new Color(0.82f, 0.76f, 0.62f), 0.05f);
             var t = hall.transform;
 
-            // Пол и стена за кафедрой.
-            Piece(t, PrimitiveType.Cube, "Пол", Hall + new Vector3(0f, -0.05f, 1.2f), new Vector3(12f, 0.1f, 9f), stone);
-            Piece(t, PrimitiveType.Cube, "Стена", Hall + new Vector3(0f, 3.6f, WallZ + 0.15f), new Vector3(12f, 7.2f, 0.3f), wall);
+            // Пол и стена за кафедрой. Зал выше любого кадра (автор, 06.11: «суду не хватает
+            // грандиозности, возвышенности, величественности»): стена, колонны и окна
+            // уходят во тьму, свода не видно.
+            Piece(t, PrimitiveType.Cube, "Пол", Hall + new Vector3(0f, -0.05f, 1.0f), new Vector3(22f, 0.1f, 14f), stone);
+            Piece(t, PrimitiveType.Cube, "Стена", Hall + new Vector3(0f, HallHeight * 0.5f, WallZ + 0.15f), new Vector3(22f, HallHeight, 0.3f), wall);
             // Полотнище под весами и компасом — как герб над судом.
             Piece(t, PrimitiveType.Cube, "Полотнище", Hall + new Vector3(0f, 3.75f, WallZ - 0.02f), new Vector3(1.9f, 3.3f, 0.04f), cloth);
-            foreach (float x in new[] { -4.6f, 4.6f })
-                Piece(t, PrimitiveType.Cube, "Колонна", Hall + new Vector3(x, 3.4f, WallZ - 0.4f), new Vector3(0.6f, 6.8f, 0.6f), wall);
+            // Колоннада по бокам: толстые столбы на базах — до самого свода.
+            foreach (float x in new[] { -4.9f, 4.9f })
+                foreach (float z in new[] { WallZ - 0.5f, 1.9f, -0.7f })
+                {
+                    Piece(t, PrimitiveType.Cube, "Колонна", Hall + new Vector3(x, HallHeight * 0.5f, z), new Vector3(0.9f, HallHeight, 0.9f), wall);
+                    Piece(t, PrimitiveType.Cube, "База колонны", Hall + new Vector3(x, 0.22f, z), new Vector3(1.25f, 0.44f, 1.25f), stone);
+                }
+            // Окна — узкие, высокие, стрельчатые, по два с каждой стороны от весов и компаса.
+            // Ниже весов не спускаются и стоят в стороне: середина кадра — циферблатам.
+            // Стекло светлее кверху (кадр 06.11: ровные синие полосы читались плоскими
+            // плашками): свет идёт с высоты, у весов окна тусклые, верх — в сиянии.
+            Color sky = new Color(0.34f, 0.42f, 0.64f);
+            float[] glow = { 0.30f, 0.42f, 0.60f, 0.90f, 1.35f };
+            foreach (float x in new[] { -3.9f, -2.45f, 2.45f, 3.9f })
+            {
+                for (int k = 0; k < glow.Length; k++)
+                    Piece(t, PrimitiveType.Cube, "Окно", Hall + new Vector3(x, WindowFrom + WindowTall * (k + 0.5f) / glow.Length, WallZ - 0.02f),
+                          new Vector3(0.42f, WindowTall / glow.Length, 0.03f), Glowing(sky, glow[k]));
+                Piece(t, PrimitiveType.Cube, "Окно, остриё", Hall + new Vector3(x, WindowFrom + WindowTall, WallZ - 0.02f),
+                      new Vector3(0.297f, 0.297f, 0.03f), Glowing(sky, glow[glow.Length - 1])).transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+                for (int k = 1; k < 5; k++)
+                    Piece(t, PrimitiveType.Cube, "Переплёт", Hall + new Vector3(x, WindowFrom + WindowTall * k / 5f, WallZ - 0.05f),
+                          new Vector3(0.46f, 0.05f, 0.03f), chair);
+            }
+            // Холодный свет от окон — на стену вокруг них и на колонны; до весов и компаса не достаёт.
+            foreach (float x in new[] { -3.2f, 3.2f })
+            {
+                var pane = new GameObject("Свет от окон").AddComponent<Light>();
+                pane.transform.SetParent(t, false);
+                pane.transform.position = Hall + new Vector3(x, 6.6f, WallZ - 1.2f);
+                pane.type = LightType.Point;
+                pane.range = 6f;
+                pane.intensity = 1.4f;
+                pane.color = new Color(0.50f, 0.60f, 0.90f);
+                pane.shadows = LightShadows.None;
+            }
 
             // Кафедра: на каждого судью — помост, своя доска стойки и высокое кресло за спиной.
             for (int i = 0; i < judges.Count; i++)
@@ -1138,9 +1203,12 @@ namespace Sinbinder.Gameplay
                 Piece(t, PrimitiveType.Cube, "Кафедра, верх", j.Seat - dir * 0.44f + Vector3.up * (DeskTop + 0.02f),
                       new Vector3(0.84f, 0.04f, 0.42f), dark).transform.rotation = face;
                 // Спинка тёмная и матовая: светлые спинки на кадре 05.11 стояли забором.
-                Piece(t, PrimitiveType.Cube, "Спинка кресла", j.Seat + dir * 0.42f + Vector3.up * (Dais + 0.93f),
-                      new Vector3(0.56f, 1.86f, 0.08f), chair).transform.rotation = face;
-                Piece(t, PrimitiveType.Cube, "Навершие", j.Seat + dir * 0.42f + Vector3.up * (Dais + 1.9f),
+                // К краям — выше, как троны: дуга идёт вверх, к колоннам. Средние — не выше
+                // прежнего: над ними весы.
+                float tall = 1.86f + 0.95f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.9f, 3.3f, Mathf.Abs(j.Seat.x - Hall.x)));
+                Piece(t, PrimitiveType.Cube, "Спинка кресла", j.Seat + dir * 0.42f + Vector3.up * (Dais + tall * 0.5f),
+                      new Vector3(0.56f, tall, 0.08f), chair).transform.rotation = face;
+                Piece(t, PrimitiveType.Cube, "Навершие", j.Seat + dir * 0.42f + Vector3.up * (Dais + tall + 0.04f),
                       new Vector3(0.16f, 0.16f, 0.10f), wood).transform.rotation = face * Quaternion.Euler(0f, 0f, 45f);
 
                 var root = new GameObject("Судья — " + j.Module);
@@ -1160,7 +1228,18 @@ namespace Sinbinder.Gameplay
                 if (body != null)
                 {
                     j.Anims = body.GetComponentsInChildren<Animator>();
-                    foreach (var a in j.Anims) a.updateMode = AnimatorUpdateMode.UnscaledTime;
+                    // Не в такт (автор, 06.11: «у всех одновременно включена анимация idle,
+                    // и поэтому они стоят синхронно»): своя фаза покоя и чуть свой темп —
+                    // по месту за кафедрой, без жребия: суд одинаков при каждом показе.
+                    float phase = (i * 0.618034f) % 1f;
+                    float tempo = 0.84f + 0.32f * ((i * 0.381966f + 0.37f) % 1f);
+                    int idle = Animator.StringToHash("Idle");
+                    foreach (var a in j.Anims)
+                    {
+                        a.updateMode = AnimatorUpdateMode.UnscaledTime;
+                        a.speed = tempo;
+                        if (a.runtimeAnimatorController != null && a.HasState(0, idle)) a.Play(idle, 0, phase);
+                    }
                 }
 
                 // Свеча — на кафедре перед ним, его цвета: на общем плане видно, чей огонь чей.
@@ -1206,6 +1285,7 @@ namespace Sinbinder.Gameplay
             beam.intensity = 7f;
             beam.color = new Color(1f, 0.92f, 0.80f);
             beam.shadows = LightShadows.None;
+            Sunbeam(t, Hall + new Vector3(3.6f, 14f, 1.2f), Hall + new Vector3(0f, 0f, 0.1f));
 
             // Холодный верхний свет на кафедру — чтобы зал читался залом, а не кругом в темноте.
             var fill = new GameObject("Свет над кафедрой").AddComponent<Light>();
@@ -1372,16 +1452,7 @@ namespace Sinbinder.Gameplay
             if (!Application.isPlaying) return;   // в сцене просмотра материал из кода не сохранится — был бы розовый клин
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader == null) return;
-            var mat = new Material(shader) { name = "Луч" };
-            mat.SetFloat("_Surface", 1f);
-            mat.SetFloat("_Blend", 2f);   // сложение: луч светит, а не застилает
-            mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
-            mat.SetFloat("_ZWrite", 0f);
-            mat.SetFloat("_Cull", 0f);
-            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-            mat.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0f));
+            var mat = Additive(shader, "Луч");   // сложение: луч светит, а не застилает
 
             // Пять столбцов поперёк (края гаснут), шесть рядов вдоль (книзу тише).
             float[] across = { -1f, -0.45f, 0f, 0.45f, 1f };
@@ -1431,7 +1502,7 @@ namespace Sinbinder.Gameplay
         // Пылинки в луче говорящего — только вокруг него: красиво, и взгляд сам идёт к тому, кто говорит.
         private static Material _dustMat;
 
-        private static Material Dust(Transform spot, Shader shader)
+        private static Material Dust(Transform spot, Shader shader, float along = 1.9f, float radius = 0.6f, float rate = 18f)
         {
             var mat = new Material(shader) { name = "Пылинки" };
             var tex = Soft(16, false);
@@ -1448,7 +1519,7 @@ namespace Sinbinder.Gameplay
 
             var go = new GameObject("Пылинки в луче");
             go.transform.SetParent(spot, false);
-            go.transform.localPosition = new Vector3(0f, 0f, 1.9f);   // у головы судьи
+            go.transform.localPosition = new Vector3(0f, 0f, along);   // у головы судьи; у луча с высоты — у подсудимого
             var ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = ps.main;
@@ -1460,13 +1531,13 @@ namespace Sinbinder.Gameplay
             main.startSpeed = new ParticleSystem.MinMaxCurve(0f, 0.03f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.012f, 0.032f);
             main.startColor = new Color(1f, 0.95f, 0.85f, 1f);
-            main.maxParticles = 90;
+            main.maxParticles = Mathf.CeilToInt(rate * 5f);
             main.simulationSpace = ParticleSystemSimulationSpace.Local;   // свет переехал — и пыль с ним
             var emission = ps.emission;
-            emission.rateOverTime = 18f;
+            emission.rateOverTime = rate;
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.6f;
+            shape.radius = radius;
             var noise = ps.noise;
             noise.enabled = true;
             noise.strength = 0.06f;
@@ -1584,6 +1655,127 @@ namespace Sinbinder.Gameplay
             vol.sharedProfile = profile;
         }
 
+        /// <summary>Свет в воздухе: прозрачный, сложением цвета, виден с обеих сторон.</summary>
+        private static Material Additive(Shader shader, string name)
+        {
+            var mat = new Material(shader) { name = name };
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 2f);
+            mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetFloat("_Cull", 0f);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            mat.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0f));
+            return mat;
+        }
+
+        // Луч с высоты на подсудимого — для первого кадра, снизу. Две скрещённые
+        // полосы сложением цвета: объём виден с любой стороны, поворачивать к камере
+        // не надо. К общему плану гаснет (SunbeamFade): там он лёг бы поперёк весов.
+        private static readonly List<(Material mat, Color full)> _sunbeam = new();
+
+        private static void Sunbeam(Transform parent, Vector3 from, Vector3 to)
+        {
+            _sunbeam.Clear();
+            if (!Application.isPlaying) return;   // в сцене просмотра материал из кода не сохранится
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) return;
+            var mat = Additive(shader, "Луч с высоты");
+            float length = Vector3.Distance(from, to);
+
+            // Пять столбцов поперёк (края гаснут), восемь рядов вдоль: сверху выходит
+            // из тьмы, у пола слабеет — ни начала, ни конца не видно.
+            float[] across = { -1f, -0.4f, 0f, 0.4f, 1f };
+            float[] bright = { 0f, 0.6f, 1f, 0.6f, 0f };
+            const int rows = 8;
+            var verts = new List<Vector3>();
+            var cols = new List<Color>();
+            var tris = new List<int>();
+            int w = across.Length;
+            for (int plane = 0; plane < 2; plane++)
+            {
+                int start = verts.Count;
+                for (int r = 0; r <= rows; r++)
+                {
+                    float k = r / (float)rows;
+                    float half = Mathf.Lerp(0.32f, 0.62f, k);
+                    float fade = Mathf.Clamp01(k * 2.5f) * Mathf.Lerp(1f, 0.3f, Mathf.InverseLerp(0.85f, 1f, k));
+                    for (int c = 0; c < w; c++)
+                    {
+                        float a = across[c] * half;
+                        verts.Add(plane == 0 ? new Vector3(a, 0f, k * length) : new Vector3(0f, a, k * length));
+                        cols.Add(new Color(1f, 1f, 1f, bright[c] * fade));
+                    }
+                }
+                for (int r = 0; r < rows; r++)
+                    for (int c = 0; c < w - 1; c++)
+                    {
+                        int a = start + r * w + c;
+                        tris.AddRange(new[] { a, a + w, a + 1, a + 1, a + w, a + w + 1 });
+                    }
+            }
+            var mesh = new Mesh { name = "Луч с высоты" };
+            mesh.SetVertices(verts);
+            mesh.SetColors(cols);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateBounds();
+
+            var go = new GameObject("Луч с высоты");
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+
+            var full = new Color(0.78f, 0.85f, 1f, 0.12f);
+            mat.SetColor("_BaseColor", full);
+            _sunbeam.Add((mat, full));
+            var dust = Dust(go.transform, shader, length - 1.5f, 1.1f, 30f);
+            var mote = new Color(0.90f, 0.93f, 1f, 0.8f);
+            dust.SetColor("_BaseColor", mote);
+            _sunbeam.Add((dust, mote));
+        }
+
+        private static IEnumerator SunbeamFade(float hold, float seconds)
+        {
+            yield return new WaitForSecondsRealtime(hold);
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                float k = 1f - Mathf.SmoothStep(0f, 1f, t / seconds);
+                foreach (var (mat, full) in _sunbeam)
+                    if (mat != null) { var c = full; c.a *= k; mat.SetColor("_BaseColor", c); }
+                yield return null;
+            }
+            foreach (var (mat, full) in _sunbeam)
+                if (mat != null) { var c = full; c.a = 0f; mat.SetColor("_BaseColor", c); }
+        }
+
+        /// <summary>
+        /// Колокол суда: тот же, что бьёт тревогу в лагере, но ниже — и под сводами,
+        /// с долгим эхом. Бьёт, когда открывается зал, и на вердикте.
+        /// </summary>
+        private static void Toll(Transform hall, float pitch, float volume)
+        {
+            if (hall == null || !Application.isPlaying) return;
+            var clip = Resources.Load<AudioClip>("Sounds/Bell/Strike0");
+            if (clip == null) return;
+            var go = new GameObject("Колокол суда");
+            go.transform.SetParent(hall, false);
+            var src = go.AddComponent<AudioSource>();
+            src.playOnAwake = false;
+            src.spatialBlend = 0f;
+            src.ignoreListenerPause = true;
+            src.pitch = pitch;
+            src.volume = volume;
+            src.clip = clip;
+            go.AddComponent<AudioReverbFilter>().reverbPreset = AudioReverbPreset.Arena;
+            src.Play();
+        }
+
         /// <summary>Луч — лицом к камере (вокруг своей оси) и ярок, как сам свет.</summary>
         private static void Face()
         {
@@ -1678,9 +1870,11 @@ namespace Sinbinder.Gameplay
         {
             if (j.Anims == null) return;
             int hash = Animator.StringToHash(state);
+            // В покой — не с начала круга: иначе вернувшиеся разом снова дышат в такт.
+            float offset = state == "Idle" ? (System.Array.IndexOf(Voices, j.Module) * 0.618034f + 0.2f) % 1f : 0f;
             foreach (var a in j.Anims)
                 if (a != null && a.runtimeAnimatorController != null && a.HasState(0, hash))
-                    a.CrossFadeInFixedTime(hash, 0.25f);
+                    a.CrossFade(hash, 0.12f, 0, offset);   // доля длины клипа, не секунды
         }
 
         /// <summary>

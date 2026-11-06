@@ -115,6 +115,14 @@ msgstr "he is tired"
 msgid "она устала"
 msgstr "she is tired"
 
+#: AOS Engine/Counterfactual.cs
+msgid "его убийцы у него на глазах"
+msgstr "his killers are right before his eyes"
+
+#: AOS Engine/Counterfactual.cs
+msgid "её убийцы у неё на глазах"
+msgstr "her killers are right before her eyes"
+
 #: AOS Engine/FalseGodQuest.cs
 msgid "Ложный Бог"
 msgstr "The False God"
@@ -199,7 +207,7 @@ msgstr "{0} — and {1} instead."
 msgid "{0}: {1}. Вместо этого {2}."
 msgstr "{0} — {1} — and {2} instead."
 
-#: AOS Engine/PhraseGenerator.cs
+#: AOS Engine/PhraseGenerator.cs Gameplay/SoulCourt.cs
 msgid "{0}, и {1}"
 msgstr "{0}, and {1}"
 
@@ -314,6 +322,14 @@ msgstr "he does as he's used to"
 #: AOS Engine/PhraseGenerator.cs
 msgid "она поступает, как привыкла"
 msgstr "she does as she's used to"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "он помнит, кто его убил"
+msgstr "he remembers who killed him"
+
+#: AOS Engine/PhraseGenerator.cs
+msgid "она помнит, кто её убил"
+msgstr "she remembers who killed her"
 
 #: AOS Engine/PhraseGenerator.cs
 msgid "он помнит, чем это кончилось в прошлый раз"
@@ -747,7 +763,7 @@ msgstr "Retreat"
 msgid "Покой"
 msgstr "Rest"
 
-#: AOS Engine/PhraseGenerator.cs
+#: AOS Engine/PhraseGenerator.cs Gameplay/TugTutorial.cs
 msgid "Приказ"
 msgstr "The order"
 
@@ -798,6 +814,10 @@ msgstr "There are too many of them!"
 #: AOS Engine/RefusalPresenter.cs
 msgid "Сил нет…"
 msgstr "No strength left…"
+
+#: AOS Engine/RefusalPresenter.cs
+msgid "Это они меня убили!"
+msgstr "They're the ones who killed me!"
 
 #: AOS Engine/RefusalPresenter.cs
 msgid "Кому-то нужнее, чем мне."
@@ -855,7 +875,7 @@ msgstr "I'm not going there!"
 msgid "Этого я делать не стану."
 msgstr "I won't do that."
 
-#: AOS Engine/RefusalPresenter.cs
+#: AOS Engine/RefusalPresenter.cs Gameplay/SoulCourt.cs
 msgid "Помню, чем это кончилось."
 msgstr "I remember how that ended."
 
@@ -1003,7 +1023,7 @@ msgstr "An enemy has earned a name: {0}."
 msgid "Отряд"
 msgstr "The squad"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Убийца Охотников"
 msgstr "Hunter-Slayer"
 
@@ -1027,15 +1047,15 @@ msgstr "Avenger"
 msgid "Мстительница"
 msgstr "Avenger"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Каратель"
 msgstr "Punisher"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Карательница"
 msgstr "Punisher"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Берсерк"
 msgstr "Berserker"
 
@@ -1063,7 +1083,7 @@ msgstr "Guardian"
 msgid "Хранительница"
 msgstr "Guardian"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Щит Отряда"
 msgstr "Shield of the Squad"
 
@@ -1087,11 +1107,11 @@ msgstr "Defender"
 msgid "Защитница"
 msgstr "Defender"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Наставник"
 msgstr "Mentor"
 
-#: AOS Engine/TitleDatabase.cs
+#: AOS Engine/TitleDatabase.cs Gameplay/Gift.cs
 msgid "Наставница"
 msgstr "Mentor"
 
@@ -1343,6 +1363,14 @@ msgstr "Committed: one save, no second chances"
 msgid "Свободно: сохраняйтесь и грузитесь когда угодно"
 msgstr "Free: save and load whenever you like"
 
+#: Core/Cost.cs
+msgid "{0} {1:F0} мс/{2}"
+msgstr ""
+
+#: Core/FrameBudget.cs
+msgid "Графика упрощена: машине тяжело. Отключить — «Графика» в паузе."
+msgstr ""
+
 #: Core/Grammar.cs
 msgid "{0} монета"
 msgstr "{0} coin"
@@ -1354,6 +1382,18 @@ msgstr "{0} coins"
 #: Core/Grammar.cs
 msgid "{0} монеты"
 msgstr "{0} coins"
+
+#: Core/GraphicsOptions.cs
+msgid "да — сейчас облегчено"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
+msgid "да"
+msgstr ""
+
+#: Core/GraphicsOptions.cs
+msgid "нет — как выставлено"
+msgstr ""
 
 #: Core/GraphicsOptions.cs
 msgid "полная"
@@ -1447,6 +1487,42 @@ msgstr "high — denser, breathing moonbeams, longer shadows"
 msgid "средний — редкие лучи луны сквозь кроны"
 msgstr "medium — sparse moonbeams through the crowns"
 
+#: Core/MapData.cs
+msgid "Перекрёсток"
+msgstr ""
+
+#: Core/MapData.cs Gameplay/MapEditor.cs
+msgid "Деревня"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Бор"
+msgstr ""
+
+#: Core/MapData.cs Gameplay/MapEditor.cs
+msgid "Поле"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Четыре склепа"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Ельник"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Северное поле"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Южное поле"
+msgstr ""
+
+#: Core/MapData.cs
+msgid "Обучение"
+msgstr ""
+
 #: Core/Preferences.cs
 msgid "как задумано"
 msgstr "as intended"
@@ -1482,6 +1558,122 @@ msgstr "fullscreen"
 #: Core/Preferences.cs
 msgid "в окне"
 msgstr "windowed"
+
+#: Core/Records.cs
+msgid "«Лунная соната» составом «Крыс»"
+msgstr ""
+
+#: Core/Records.cs
+msgid "пластинка лежала у граммофона"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Колыбельная «Крыс»"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так звучала дверь в игру"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Крысиная песня"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так звучал лагерь"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Делят добычу"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так лагерь делил добычу"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Шуганули"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так звучал набег"
+msgstr ""
+
+#: Core/Records.cs
+msgid "The Hunted"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так звучало бегство из лагеря"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Нас мало"
+msgstr ""
+
+#: Core/Records.cs
+msgid "так звучал склеп"
+msgstr ""
+
+#: Core/Records.cs
+msgid "The Hunt Begins"
+msgstr ""
+
+#: Core/Records.cs
+msgid "привезли с Соляного обоза"
+msgstr ""
+
+#: Core/Records.cs Crypt/MissionCatalog.cs
+msgid "Соляной обоз"
+msgstr "The Salt Caravan"
+
+#: Core/Records.cs
+msgid "The Gate of Bone"
+msgstr ""
+
+#: Core/Records.cs
+msgid "привезли из Старого гарнизона"
+msgstr ""
+
+#: Core/Records.cs Crypt/MissionCatalog.cs
+msgid "Старый гарнизон"
+msgstr "The Old Garrison"
+
+#: Core/Records.cs
+msgid "The Rat Pack"
+msgstr ""
+
+#: Core/Records.cs
+msgid "привезли с Сожжённой заставы"
+msgstr ""
+
+#: Core/Records.cs Crypt/MissionCatalog.cs
+msgid "Сожжённая застава"
+msgstr "The Burnt Outpost"
+
+#: Core/Records.cs
+msgid "From Pawn to Queen"
+msgstr ""
+
+#: Core/Records.cs
+msgid "привезли из Придорожной часовни"
+msgstr ""
+
+#: Core/Records.cs Crypt/MissionCatalog.cs
+msgid "Придорожная часовня"
+msgstr "The Wayside Chapel"
+
+#: Core/Records.cs
+msgid "Золотая пластинка"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Серебряная пластинка"
+msgstr ""
+
+#: Core/Records.cs
+msgid "Медная пластинка"
+msgstr ""
 
 #: Core/Satchel.cs
 msgid "пустая банка"
@@ -2824,6 +3016,10 @@ msgid "{0} — нажмите {1}."
 msgstr "{0} — press {1}."
 
 #: Crypt/CryptUpgrades.cs
+msgid "Голема не поднять без рецепта. Его добывают в экспедициях — на обозах Ордена."
+msgstr ""
+
+#: Crypt/CryptUpgrades.cs
 msgid "Устройство не выдержит камня. Нужны каменные оковы."
 msgstr "The device can't bear stone. It needs stone shackles."
 
@@ -2916,6 +3112,10 @@ msgid "Добычу ссыпали в ваш кошель: +{0}."
 msgstr "The spoils were poured into your purse: +{0}."
 
 #: Crypt/MissionBoard.cs
+msgid "С вылазки привезли: {0} — «{1}». Граммофон в склепе."
+msgstr ""
+
+#: Crypt/MissionBoard.cs
 msgid "Не вернулся никто."
 msgstr "No one came back."
 
@@ -2956,16 +3156,8 @@ msgid "Оттуда принесли душу. Она на полке."
 msgstr "A soul was brought back from there. It is on the shelf."
 
 #: Crypt/MissionCatalog.cs
-msgid "Соляной обоз"
-msgstr "The Salt Caravan"
-
-#: Crypt/MissionCatalog.cs
 msgid "По старой соляной дороге ходит обоз. Охраны при нём двое, и те за деньги."
 msgstr "A caravan travels the old salt road. Two guards ride with it, and they're only in it for the money."
-
-#: Crypt/MissionCatalog.cs
-msgid "Придорожная часовня"
-msgstr "The Wayside Chapel"
 
 #: Crypt/MissionCatalog.cs
 msgid "Говорят, там кто-то ходит по ночам. Немного, но ходит."
@@ -2980,16 +3172,8 @@ msgid "Вода поднялась и вынесла наверх то, что �
 msgstr "The water rose and brought up what had been buried."
 
 #: Crypt/MissionCatalog.cs
-msgid "Сожжённая застава"
-msgstr "The Burnt Outpost"
-
-#: Crypt/MissionCatalog.cs
 msgid "Охотники были здесь первыми. Кто-то из них остался."
 msgstr "The hunters got here first. Some of them stayed."
-
-#: Crypt/MissionCatalog.cs
-msgid "Старый гарнизон"
-msgstr "The Old Garrison"
 
 #: Crypt/MissionCatalog.cs
 msgid "Место держали долго и держат до сих пор — по привычке."
@@ -3082,6 +3266,10 @@ msgstr "{0}. In your hands: {1}."
 #: Crypt/ShellStand.cs Crypt/SoulJar.cs
 msgid "Руки заняты: {0}."
 msgstr "Hands full: {0}."
+
+#: Crypt/ShellStand.cs
+msgid "Не из чего: {0}. Принесите тела с поля."
+msgstr ""
 
 #: Crypt/ShellStand.cs
 msgid "Взято тело: {0}."
@@ -3427,9 +3615,193 @@ msgstr "{0} stands in the yard."
 msgid "Создатель воинов"
 msgstr "Warrior Maker"
 
+#: Dev/PhotoMode.cs
+msgid "Ворон поднят"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Ворон уже в полёте или его нет"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Камера {0} запомнена"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Камеры {0} нет — Ctrl+{0}, чтобы запомнить"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Для проезда запомните хотя бы две камеры (Ctrl+1, Ctrl+2…)"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Ворона в сцене нет"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Камера привязана: {0} (R или G — отвязать)"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Камера отвязана"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Снимок: {0}"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Фоторежим — F8 выйти"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "WASD — лететь, Q/E — ниже/выше, Shift — быстрее, Ctrl — медленнее"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "ПКМ зажата — смотреть, колесо — угол обзора"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "T — время: обычное / медленно / стоп"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Ctrl+1…9 — запомнить камеру, 1…9 — перейти к ней"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "Пробел — проезд по камерам, [ ] — медленнее / быстрее"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "L — поднять ворона, R — привязать камеру к ворону, G — к тому, что под мышью"
+msgstr ""
+
+#: Dev/PhotoMode.cs
+msgid "P — снимок, H — подсказка"
+msgstr ""
+
+#: Dialogue/CampLines.cs Dialogue/VillageLines.cs
+msgid "Пока тихо."
+msgstr "Quiet, for now."
+
+#: Dialogue/CampLines.cs
+msgid "И мне не платят. Считай за двоих."
+msgstr "They don't pay me either. Count for two."
+
+#: Dialogue/CampLines.cs
+msgid "Тебе должны — с владыки и спрашивай."
+msgstr "It is the lord who owes you. Ask him."
+
+#: Dialogue/CampLines.cs
+msgid "Плату просят, а не считают."
+msgstr "Pay is asked for, not counted."
+
+#: Dialogue/CampLines.cs
+msgid "Мне бы и без платы полежать."
+msgstr "I'd lie down even without pay."
+
+#: Dialogue/CampLines.cs
+msgid "Моё он не заберёт."
+msgstr "He won't take mine."
+
+#: Dialogue/CampLines.cs
+msgid "Значит, не заслужил держать."
+msgstr "Then you didn't deserve to keep it."
+
+#: Dialogue/CampLines.cs
+msgid "Значит, не заслужила держать."
+msgstr "Then you didn't deserve to keep it."
+
+#: Dialogue/CampLines.cs
+msgid "Меньше нести."
+msgstr "Less to carry."
+
+#: Dialogue/CampLines.cs
+msgid "А где ж мне ещё."
+msgstr "Where else would I be."
+
+#: Dialogue/CampLines.cs
+msgid "Дали — не значит заслужил."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Дали — не значит заслужила."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Покажи хоть, что дали."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Носи. Мне бы не дали — и ладно."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Звон — не честь."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Звенит. И у меня звенит."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "У меня пока не звенит."
+msgstr "No jingle in my purse yet."
+
+#: Dialogue/CampLines.cs
+msgid "Звени потише, я сплю."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Посмотрим, надолго ли."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Старший — значит, и платит старший?"
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Слушаю. Лёжа."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Я здесь. И всё слышу."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Заведёт — так выведем сами."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Лишь бы платил, а вести пусть ведёт."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Куда бы ни завёл — лишь бы недалеко."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Мне кошель не нужен. Мне враг нужен."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Мой пояс — моя забота."
+msgstr ""
+
+#: Dialogue/CampLines.cs
+msgid "Бери, если донесёшь."
+msgstr ""
+
 #: Dialogue/CampLines.cs
 msgid "(молча кивает)"
 msgstr "(nods silently)"
+
+#: Dialogue/CampLines.cs
+msgid "Давно без платы. Я запоминаю."
+msgstr "It has been a long time without pay. I remember."
 
 #: Dialogue/CampLines.cs
 msgid "Третья вылазка без платы. Я запоминаю."
@@ -3535,7 +3907,7 @@ msgstr "Sit down. The coins won't run away."
 msgid "Разбуди, если что."
 msgstr "Wake me if anything happens."
 
-#: Dialogue/CampLines.cs
+#: Dialogue/CampLines.cs Dialogue/VillageLines.cs
 msgid "Тихо сегодня."
 msgstr "Quiet today."
 
@@ -3550,38 +3922,6 @@ msgstr "Lie there, lie there. I'll see what's in your bag."
 #: Dialogue/CampLines.cs
 msgid "Своё я уже посчитал."
 msgstr "I've already counted mine."
-
-#: Dialogue/CampLines.cs
-msgid "И мне не платят. Считай за двоих."
-msgstr "They don't pay me either. Count for two."
-
-#: Dialogue/CampLines.cs
-msgid "Плату просят, а не считают."
-msgstr "Pay is asked for, not counted."
-
-#: Dialogue/CampLines.cs
-msgid "Мне бы и без платы полежать."
-msgstr "I'd lie down even without pay."
-
-#: Dialogue/CampLines.cs
-msgid "Моё он не заберёт."
-msgstr "He won't take mine."
-
-#: Dialogue/CampLines.cs
-msgid "Значит, не заслужил держать."
-msgstr "Then you didn't deserve to keep it."
-
-#: Dialogue/CampLines.cs
-msgid "Значит, не заслужила держать."
-msgstr "Then you didn't deserve to keep it."
-
-#: Dialogue/CampLines.cs
-msgid "Меньше нести."
-msgstr "Less to carry."
-
-#: Dialogue/CampLines.cs
-msgid "А где ж мне ещё."
-msgstr "Where else would I be."
 
 #: Dialogue/CampLines.cs
 msgid "Будто? Подожди."
@@ -3626,10 +3966,6 @@ msgstr "If anything happens, I'll wake up myself. Maybe."
 #: Dialogue/CampLines.cs
 msgid "Если что — сама проснусь. Может быть."
 msgstr "If anything happens, I'll wake up myself. Maybe."
-
-#: Dialogue/CampLines.cs
-msgid "Пока тихо."
-msgstr "Quiet, for now."
 
 #: Dialogue/EncounterLines.cs
 msgid "Сдохнешь — обыщу. Не пропадать же добру."
@@ -4992,6 +5328,10 @@ msgid "Владыка. Если о монетах — я слушаю."
 msgstr "My lord. If it's about the coin — I'm listening."
 
 #: Dialogue/TalkLines.cs
+msgid "Владыка?"
+msgstr "My lord?"
+
+#: Dialogue/TalkLines.cs
 msgid "Слушаю."
 msgstr "I'm listening."
 
@@ -5002,10 +5342,6 @@ msgstr "What? Who do I hit?"
 #: Dialogue/TalkLines.cs
 msgid "М? Я тут."
 msgstr "Hm? I'm here."
-
-#: Dialogue/TalkLines.cs
-msgid "Владыка?"
-msgstr "My lord?"
 
 #: Dialogue/TalkLines.cs
 msgid "Давно без платы, владыка. Сами считайте, как я к вам."
@@ -5084,8 +5420,8 @@ msgid "Монеты. Лучше бы дали кого ударить. Но сп
 msgstr "Coins. I'd rather you gave me someone to hit. But thanks."
 
 #: Dialogue/TalkLines.cs
-msgid "Мне? Раньше других? …Спасибо."
-msgstr "Me? Before the others? …Thank you."
+msgid "Мне? …Спасибо."
+msgstr "For me? ...Thank you."
 
 #: Dialogue/TalkLines.cs
 msgid "Потрачу на приятное. Спасибо, владыка."
@@ -5179,6 +5515,166 @@ msgstr "Ready. Tell me what to do."
 msgid "Готова. Скажите, что делать."
 msgstr "Ready. Tell me what to do."
 
+#: Dialogue/VillageLines.cs
+msgid "Орден опять на тропах. К ночи будут здесь."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Там, у знака, — {0}. Кто-то да пойдёт."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Наш-то Греховод — не худший из них."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Опять этот Греховод тут ходит. Не к добру."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Греховод заходил. Звал за собой."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Звал — пусть платит."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Я сам решу, за кем идти."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Лишь бы дело дал, а не стоять."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Пусть зовёт. Я тут посижу."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Тебя звал, а меня — нет?"
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Звал? Ласково хоть?"
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "У него, говорят, котёл полный."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Поглядим."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Пусть приходят. Топор наточен."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Мы им не дичь."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Придут — тогда и встанем."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "С охотника снять есть что."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "К соседям бы сперва зашли."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Лишь бы не к нашим очагам."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Значит, спать вполглаза."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Пойдёт тот, кому заплатят."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Я бы пошёл. Позвал бы кто."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Без меня сходят."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Позовут лучших — пойду."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Сходят другие — и всё им достанется."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Не наше это дело. Пока."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Сколько у тебя припрятано? Только честно."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "В этой деревне я один стою чего-то."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Ещё день без дела — и я кого-нибудь пришибу."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Хорошо сидим. Не вставай."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Видал, что у соседа новое?"
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "У очага теплее, когда не один."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Что-то есть хочется. Опять."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Своё считай."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Говори, говори."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Не зли меня."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Угу."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Тебе-то что жаловаться."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Подсаживайся ближе."
+msgstr ""
+
+#: Dialogue/VillageLines.cs
+msgid "Хлеба бы."
+msgstr ""
+
 #: Editor/DemoSceneBuilder.cs
 msgid "Склеп давно заброшен. Здесь можно укрыться от Охотников."
 msgstr "The crypt has long been abandoned. Here you can hide from the hunters."
@@ -5190,6 +5686,14 @@ msgstr "At the far end of the hall stand an empty throne and an altar, and a cof
 #: Editor/DemoSceneBuilder.cs
 msgid "Полигон. Поставьте условие — и повторите."
 msgstr "The proving ground. Set a condition — and repeat."
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Ямка — копателю"
+msgstr ""
+
+#: Editor/DemoSceneBuilder.cs
+msgid "Двор уникальности — здесь живут созданные"
+msgstr ""
 
 #: Editor/DemoSceneBuilder.cs
 msgid "Карта вылазок"
@@ -5219,6 +5723,10 @@ msgstr "Stay in the crypt"
 msgid "Выйти из игры"
 msgstr "Quit the game"
 
+#: Editor/DemoWalkthrough.cs Gameplay/EscapeZone.cs
+msgid "{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время»."
+msgstr "{0}: “I don't run from them, my lord. Go — I'll buy you time.”"
+
 #: Gameplay/BodyWorth.cs
 msgid "Чужой клинок"
 msgstr "A stranger's blade"
@@ -5231,6 +5739,62 @@ msgstr "Family blade"
 msgid "{0} принял удар на себя."
 msgstr "{0} took the blow."
 
+#: Gameplay/BuildSite.cs
+msgid "вышку"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "ворота с частоколом"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "сигнальный костёр"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Место — {0}"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "вышка"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "ворота"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "костёр"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "F — заложить {0}: {1} мон. (в кошеле {2})"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Заложено: {0}. Строят верные, что стоят рядом."
+msgstr ""
+
+#: Gameplay/BuildSite.cs Gameplay/HunterWaves.cs Gameplay/Idleness.cs Gameplay/MapLoader.cs
+msgid "Греховод стороны {0}"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Я не плотник, владыка."
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Достроено: {0}."
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Ворота склепа {0}"
+msgstr ""
+
+#: Gameplay/BuildSite.cs
+msgid "Стоять и смотреть? Я не сова, владыка."
+msgstr ""
+
 #: Gameplay/CameraPullback.cs
 msgid "Отсюда видно, как далеко до края."
 msgstr "From here you can see how far it is to the edge."
@@ -5238,6 +5802,22 @@ msgstr "From here you can see how far it is to the edge."
 #: Gameplay/CampLife.cs
 msgid "копает"
 msgstr "digging"
+
+#: Gameplay/CampLife.cs
+msgid "тенью за братом"
+msgstr ""
+
+#: Gameplay/CampLife.cs
+msgid "с балалайкой у огня"
+msgstr ""
+
+#: Gameplay/CampLife.cs
+msgid "варит у котла"
+msgstr ""
+
+#: Gameplay/CampLife.cs
+msgid "ест у котла"
+msgstr ""
 
 #: Gameplay/CampLife.cs
 msgid "у сундука"
@@ -5282,6 +5862,18 @@ msgstr "Kargan Old Raven"
 #: Gameplay/CampMuster.cs
 msgid "{0}: «Владыка, позовите людей к столу. Придут не все: приказ они слышат, а решает каждый сам»."
 msgstr "{0}: “My lord, call the men to the table. Not all will come: they hear the order, but each decides for himself.”"
+
+#: Gameplay/CampMuster.cs
+msgid "{0}: «{1} вас не расслышал, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
+
+#: Gameplay/CampMuster.cs
+msgid "{0}: «{1} вас не расслышала, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
+
+#: Gameplay/CampMuster.cs
+msgid "{0}: «{1} вас не расслышали, владыка: далеко. Голос не долетает — подойдите ближе»."
+msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
 
 #: Gameplay/CampMuster.cs
 msgid "{0}: «Все пришли, владыка. Это редкость»."
@@ -5367,6 +5959,18 @@ msgstr "a raid"
 msgid "много вылазок"
 msgstr "many raids"
 
+#: Gameplay/CampWell.cs
+msgid "F — умыться у колодца"
+msgstr "F — wash at the well"
+
+#: Gameplay/CampWell.cs
+msgid "Ледяная. Отпустило."
+msgstr "Ice-cold. It's passed."
+
+#: Gameplay/CampWell.cs
+msgid "Ледяная."
+msgstr "Ice-cold."
+
 #: Gameplay/CampfireStoke.cs
 msgid "Хорошо горит. Ворон тоже греется — только виду не подаёт."
 msgstr "Burns well. The raven's warming up too — he just won't show it."
@@ -5392,8 +5996,8 @@ msgid "Брат Хальд"
 msgstr "Brother Hald"
 
 #: Gameplay/CampfireStoke.cs
-msgid "Не так близко к котелку, владыка. Жар портит отвар."
-msgstr "Not so close to the pot, master. Heat spoils the brew."
+msgid "Сосна трещит, владыка. Для отвара я беру берёзу — а греться и так сойдёт."
+msgstr ""
 
 #: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/RatBanner.cs Gameplay/Signature.cs
 msgid "Одноглазый Хорь"
@@ -5408,8 +6012,8 @@ msgid "Толстый Ю"
 msgstr "Fat Yu"
 
 #: Gameplay/CampfireStoke.cs
-msgid "Вот и похлёбка оживёт. Спасибо, владыка."
-msgstr "Now the stew will come back to life. Thank you, master."
+msgid "На таком жару и хлеб подрумянить можно. Был бы хлеб."
+msgstr ""
 
 #: Gameplay/CampfireStoke.cs Gameplay/PrologueCampSpawner.cs Gameplay/PurseCounter.cs Gameplay/Signature.cs
 msgid "Лиска"
@@ -5511,6 +6115,110 @@ msgstr "Your move."
 msgid "Пас."
 msgstr "Pass."
 
+#: Gameplay/Cauldron.cs
+msgid "F — попробовать из котла"
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Горько."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Владыка! Это не похлёбка."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Не пейте больше. Я серьёзно."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Голоса тонкие? Пройдёт. Наверное."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Ноги сами несут? Это корень. Он такой."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Глаза… Я же говорил — не трогайте."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Вы тоже его видите? У огня?"
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Мне оставьте!"
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Вкусно ведь? Вкусно."
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "А мне не плохо. А вам?"
+msgstr ""
+
+#: Gameplay/Cauldron.cs
+msgid "Я тоже хочу так светиться."
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Ломатель Щитов"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Последний с Заставы"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Ночной Волк"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Сжёгший Знамя"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Неспящий"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Тот, кто вернулся"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Кровник Ордена"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Бродячий Клинок"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Безымянный Князь"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Старая Ведьма Болот"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Первый Греховод"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Мать Воронов"
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "Говорят, у каждого склепа объявился свой {0}: {1}."
+msgstr ""
+
+#: Gameplay/Champions.cs
+msgid "И ещё говорят: в середине земли сидит легенда. Кому она верна — к тому тянутся и другие."
+msgstr ""
+
 #: Gameplay/CrowStep.cs
 msgid "Вороньим следом"
 msgstr "Crow's Trail"
@@ -5575,6 +6283,14 @@ msgstr "{0}: “We got away, my lord, but there are few of us left. The hunters 
 msgid "{0}: «Души, что вы собрали в лагере, при вас. Вложите их в пустые тела — и они будут драться за нас»."
 msgstr "{0}: “You carry the souls you gathered at the camp. Put them into empty bodies, and they will fight for us.”"
 
+#: Gameplay/CryptDoor.cs
+msgid "F — закрыть дверь склепа"
+msgstr ""
+
+#: Gameplay/CryptDoor.cs
+msgid "F — открыть дверь склепа"
+msgstr ""
+
 #: Gameplay/CrystalBall.cs
 msgid "Карган ждёт у сундука Марги."
 msgstr "Kargan is waiting at Marga's chest."
@@ -5607,13 +6323,101 @@ msgstr "{0} is digging. Nothing yet."
 msgid "Ага…"
 msgstr "Aha…"
 
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Подойдите к телу и нажмите R — душа вернётся в оболочку."
+msgstr "Walk up to the body and press R — the soul returns to its shell."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Поднятый встанет вашим воином."
+msgstr "The risen will stand as your warrior."
+
+#: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs
+msgid "ЛКМ"
+msgstr "LMB"
+
+#: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs
+msgid "Щёлкните по {0} — выделить."
+msgstr "Click {0} to select."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Это ваш первый воин."
+msgstr "This is your first warrior."
+
+#: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs
+msgid "ПКМ"
+msgstr "RMB"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Правой кнопкой — по земле: он пойдёт туда."
+msgstr "Right-click the ground: he will go there."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Правой кнопкой — по земле: она пойдёт туда."
+msgstr "Right-click the ground: she will go there."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Приказ отдаёте вы. Исполнит ли — решает душа."
+msgstr "You give the order. Whether it is carried out — the soul decides."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Его убийцы вернулись."
+msgstr "His killers have returned."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Её убийцы вернулись."
+msgstr "Her killers have returned."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "X, затем щелчок по земле позади него — приказ отступить."
+msgstr "X, then click the ground behind him — the order to fall back."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "X, затем щелчок по земле позади неё — приказ отступить."
+msgstr "X, then click the ground behind her — the order to fall back."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Послушается ли — решит душа. Смотрите."
+msgstr "Whether the order is obeyed — the soul decides. Watch."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Убийц больше нет."
+msgstr "The killers are gone."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ: X и щелчок позади."
+msgstr "The same order: X and a click behind."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Причины больше нет — что решит душа теперь?"
+msgstr "The reason is gone — what will the soul decide now?"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Он пал. Своё решение стоило ему второй жизни."
+msgstr "He fell. His own decision cost him his second life."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Она пала. Своё решение стоило ей второй жизни."
+msgstr "She fell. Her own decision cost her her second life."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and he goes. The reason is gone: the killers are dead."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and she goes. The reason is gone: the killers are dead."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
+msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
+msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
+
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
 msgstr "{0}: “You won't call me off with shouting, my lord. Go — I'll stay here and buy you time.”"
-
-#: Gameplay/EscapeZone.cs
-msgid "{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время»."
-msgstr "{0}: “I don't run from them, my lord. Go — I'll buy you time.”"
 
 #: Gameplay/EscapeZone.cs
 msgid "{0} поднимает щит и зовёт их на себя."
@@ -5679,6 +6483,534 @@ msgstr "Many were left behind."
 msgid "Кольцо"
 msgstr "Circle"
 
+#: Gameplay/ExpeditionBook.cs
+msgid "Обоз Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Телега под охраной. Что везут — узнаете, когда охраны не станет."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разделить добычу между пошедшими"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Вот это по-честному, владыка."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Всё — владыке"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Всё — ему. Как всегда."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Деревня в беде"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Охотники у очага. Жители смотрят, кто придёт на помощь."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Остаться и помочь"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать припасы и уйти"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Припасы — это дело."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Пленник Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Стража ведёт связанного. Он смотрит на вас."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Освободить и позвать с собой"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Ещё один рот, владыка?"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Отпустить на все четыре стороны"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Заброшенная часовня"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Призраки стерегут полку с банками. В банках — души."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Взять души"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Это святое место, владыка. Было."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Оставить мёртвым их покой"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Курган"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Насыпь древних. Камень в ней крепче любого — и мёртвые его стерегут."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Тревожить мёртвых"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Оставить курган"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разбойничий стан"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Награбленное свалено у костра. Хозяева у костра тоже."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать награбленное"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Вернуть деревне"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Засада на тропе"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Орден ждал кого-то другого. Дождался вас."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Обыскать павших"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сжечь тела — пусть Орден знает"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Пусть горят. Пусть видят."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Повозка с банками"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Орден свозит пустые банки — для чужих душ."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать банки"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разбить — Ордену не служить"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Брошенная кузня"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Горн ещё тёплый. Кузнецов охраняли — теперь охраняют кузню."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать чертежи"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Перековать оружие пошедшим"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Вот это клинок, владыка."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Знамя Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Знамя на шесте — знак, что здесь их земля."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сорвать и сжечь"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать — на обмен"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs UI/CommanderCouncilUI.cs
+msgid "Каменоломня"
+msgstr "Quarry"
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Големы Ордена гонят рабочих. Камень сложен грудой."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать камень"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Освободить рабочих"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сборщики десятины"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сундук с податью. Подать собрали с деревни."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Вернуть людям"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Оставить себе"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Расхитители могил"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Копают чужих мёртвых. Ваших — пока нет."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Отнять добро"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Похоронить заново"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Горящая мельница"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Орден поджёг мельницу и ждёт, кто придёт тушить."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Тушить"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Растащить мешки"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Мука! Целый мешок!"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Пленённая знахарка"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Её ведут на суд. Она знает травы — и души."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Освободить"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Отдать Ордену за награду"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Реликвия Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Её везут в склеп Ордена. Значит, она чего-то стоит."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Унести"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разбить на глазах у всех"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Ночной дозор"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Дозор Ордена обходит дороги. Сегодня — вашу."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Добить и забрать броню"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Отпустить последнего — пусть расскажет"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Пусть знают, кто здесь хозяин."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Застава у моста"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Орден берёт пошлину с каждого, кто идёт мимо."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Брать пошлину самим"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Открыть мост для всех"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Торговец"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Бродячий торговец разложил товар. Ему всё равно, кто платит."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Купить схему"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Дорого, владыка."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Купить банку"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Дезертиры"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сбежали от своего Греховода и греются у чужого огня."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Принять к себе"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Беглецов берём, владыка? Они и от нас сбегут."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Вернуть хозяину за выкуп"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Ссора у колодца"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Две стороны деревни делят воду. Ещё слово — и за топоры."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Встать за одних"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разнять подарками"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Проповедник Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Говорит деревне, что все Греховоды — одно зло."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Прогнать силой"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Перекупить"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Беженцы"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Бегут от Ордена. Просят крова."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Принять в склеп"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Ещё рты, владыка."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Указать дорогу в деревню"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Раненый воин Ордена"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Брошен своими. Ещё дышит."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Взять в плен"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Перевязать и отпустить"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Игрок в кости"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "«Сыграем, владыка? Ставка небольшая»."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сыграть"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Прогнать"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Гадалка"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Говорит, что знает, когда придут охотники."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Заплатить и выслушать"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Значит, время ещё есть."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Свежая могила"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Земля ещё мягкая."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Раскопать"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Помолиться и уйти"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Камень клятвы"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Здесь клялись князья. Камень помнит."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Принести клятву перед верными"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Разбить камень"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Потерявшийся ребёнок"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Сидит у дороги и не плачет — уже не может."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Отвести в деревню"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Пройти мимо"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Тайник охотников"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Орден прячет здесь припасы для следующей облавы."
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Забрать"
+msgstr ""
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Испортить — облава задержится"
+msgstr ""
+
 #: Gameplay/Fallen.cs
 msgid "Кир Бессонный"
 msgstr "Kir the Sleepless"
@@ -5698,6 +7030,210 @@ msgstr "Ovsey Empty-Palm"
 #: Gameplay/Fallen.cs
 msgid "Гуда Меньшой"
 msgstr "Guda the Younger"
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок {0}"
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Лопата Марги"
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Он копал ею везде, где вставал лагерь."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Воронье перо"
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Ворон прибился к нему ещё при жизни."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Огарок свечи Вейна"
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Он читал при ней, пока лагерь спал."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "F — поднять мешок {0}"
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Вы подняли мешок {0}. «{1}» — с вами."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "Вы подняли мешок {0}."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "{0} несёт вам вещи {1}."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "{0} обобрал {1}: не ладили."
+msgstr ""
+
+#: Gameplay/FallenBag.cs
+msgid "{0} не тронул мешок {1}: у мёртвых не берут."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Наконец-то дело!"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Опять назад?"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Опять идти… и далеко."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Я поведу."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Я вам не один из толпы, владыка."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Он был мой. Но спасибо, владыка."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Вы меня вытащили, владыка. Запомню."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Видели, владыка? Это был я."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "F — дать монету: {0} (в кошеле {1})"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Вот это разговор, владыка."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Наконец и мне."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Это мне? Ох, владыка."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Спасибо… Можно я присяду?"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Монета — хорошо. Хлеб был бы лучше."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Я не нищий, владыка. Но возьму."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Хм. Ладно."
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "{0} — а мне?"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "Соперник — {0}"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: враждебен"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: сторонится"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: присматривается"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: прислушивается"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: готов слушать"
+msgstr ""
+
+#: Gameplay/Favor.cs
+msgid "К вам: предан"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "легенда"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "охотников Ордена рубит, как никто"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "раненый — страшнее, чем целый"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "рядом с ним своих бьют слабее"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "рядом с ним свои крепнут в верности"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "Греховодам от него достаётся вдвойне"
+msgstr ""
+
+#: Gameplay/Gift.cs
+msgid "крепка, и к её владыке тянутся другие"
+msgstr ""
+
+#: Gameplay/Gramophone.cs
+msgid "F — поставить «{0}»"
+msgstr ""
+
+#: Gameplay/Gramophone.cs
+msgid "F — снять пластинку"
+msgstr ""
+
+#: Gameplay/Gramophone.cs
+msgid "Пластинки — на полке"
+msgstr ""
+
+#: Gameplay/Gramophone.cs
+msgid "«{0}» — {1}."
+msgstr ""
+
+#: Gameplay/Gramophone.cs
+msgid "Игла поднялась: не до музыки."
+msgstr ""
+
+#: Gameplay/HiddenRecord.cs
+msgid "F — поднять пластинку"
+msgstr ""
+
+#: Gameplay/HiddenRecord.cs
+msgid "{0}: «{1}». Скрытых найдено: {2} из {3}. Поставьте её на граммофон."
+msgstr ""
 
 #: Gameplay/Homecoming.cs
 msgid "опять берёг себя дольше всех"
@@ -5919,6 +7455,22 @@ msgstr "Consecrated breastplate"
 msgid "Железо с выжженным знаком Ордена. Святость — это железо, которому поверили."
 msgstr "Iron branded with the mark of the Order. Holiness is iron that someone believed in."
 
+#: Gameplay/HunterWaves.cs
+msgid "Великая охота: Орден вышел главной силой на все склепы."
+msgstr ""
+
+#: Gameplay/HunterWaves.cs
+msgid "С троп вышли охотники — волна {0}."
+msgstr ""
+
+#: Gameplay/Idleness.cs
+msgid "Без платы не стою, владыка."
+msgstr ""
+
+#: Gameplay/Idleness.cs
+msgid "Скучно, владыка. Дайте дело."
+msgstr ""
+
 #: Gameplay/InspectTexts.cs
 msgid "F — прочесть вырезанное"
 msgstr "F — read the carving"
@@ -6034,6 +7586,98 @@ msgstr "He will surely be angry that I took His last pawns."
 #: Gameplay/Inspectable.cs
 msgid "F — осмотреть"
 msgstr "F — examine"
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — погреться у печи"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — отломить хлеба"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — потрогать тюфяк"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — крынки (пусто)"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — заглянуть в крынки"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — тронуть кудель"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — качнуть колыбель"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — сундук (пуст)"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — открыть сундук"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "F — взять банку для душ"
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Тёплая ещё. Кто-то топил утром."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Хлеб чёрствый, но хлеб."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Ещё хранит чужое тепло."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Кудель брошена на середине."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Пустая. Давно пустая."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "В крынке — две монеты. Спрятали от Ордена."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Пусто."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Мука да прошлогодние грибы."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "На дне — три монеты, завёрнутые в тряпицу."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Пуст."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Тряпьё и старые лапти."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Банка для душ. Целая."
+msgstr ""
+
+#: Gameplay/IzbaInterior.cs
+msgid "Сумка полна — банку некуда."
+msgstr ""
 
 #: Gameplay/Leadership.cs
 msgid "водит впервые, уведёт {0}"
@@ -6176,20 +7820,8 @@ msgid "{0} — смотреть глазами Греховода."
 msgstr "{0} — see through the Sinbinder's eyes."
 
 #: Gameplay/Lesson.cs
-msgid "ЛКМ"
-msgstr "LMB"
-
-#: Gameplay/Lesson.cs
 msgid "{0} держит врага, и враг стоит к остальным спиной."
 msgstr "{0} is holding the enemy, and the enemy has its back to everyone else."
-
-#: Gameplay/Lesson.cs
-msgid "Щёлкните по {0} — выделить."
-msgstr "Click {0} to select."
-
-#: Gameplay/Lesson.cs
-msgid "ПКМ"
-msgstr "RMB"
 
 #: Gameplay/Lesson.cs
 msgid "Правой кнопкой — по светлой отметке за спиной врага: воин зайдёт сзади."
@@ -6210,6 +7842,10 @@ msgstr "That is the “why”: what outweighed the order."
 #: Gameplay/Lesson.cs
 msgid "Уберите помеху — или искусите: подойдите к нему и нажмите Z."
 msgstr "Remove the obstacle — or tempt him: go up to him and press Z."
+
+#: Gameplay/Lesson.cs
+msgid "Уберите помеху — или искусите: подойдите к ней и нажмите Z."
+msgstr "Remove the obstacle — or tempt her: go up to her and press Z."
 
 #: Gameplay/Lesson.cs
 msgid "Посмотрите на него — увидите, что перевесило."
@@ -6267,6 +7903,10 @@ msgstr "The bodies are on the table by the wall. Walk up and press F to take one
 msgid "Тело тянет душу к своему греху — прочтите табличку."
 msgstr "A body pulls the soul toward its own sin — read the plate."
 
+#: Gameplay/LogSeat.cs
+msgid "F — сесть на бревно"
+msgstr ""
+
 #: Gameplay/LootChain.cs
 msgid " Прежнее — {0} — уходит в мешок Греховода."
 msgstr " The old one — {0} — goes into the Sinbinder's bag."
@@ -6298,6 +7938,330 @@ msgstr "{0} picks up {1}: part goes to the Sinbinder's purse, the rest into his 
 #: Gameplay/LootChain.cs
 msgid "Снято с павшего. Тому, кто взял, — знак, что победил он."
 msgstr "Taken from the fallen. For whoever took it, a sign that he was the victor."
+
+#: Gameplay/LordPurse.cs
+msgid "Кошель — {0}"
+msgstr ""
+
+#: Gameplay/LordPurse.cs
+msgid "F — подобрать кошель ({0}): {1} мон."
+msgstr ""
+
+#: Gameplay/LordPurse.cs
+msgid "{0} поднял кошель: {1} мон."
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Сосна"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Высокая сосна"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Сухое дерево"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Куст"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Камень"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Пень"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Палатка"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Костёр"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Частокол"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Бочка"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Ящик"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Склеп игрока"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Лес"
+msgstr ""
+
+#: Gameplay/MapEditor.cs Gameplay/MapLoader.cs
+msgid "Тропа охотников"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Событие: обоз"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Событие: деревня"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Новая карта"
+msgstr ""
+
+#: Gameplay/MapEditor.cs UI/PauseMenu.cs
+msgid "Редактор карт"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Имя карты"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Поле: {0} м"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Склепов: {0}  ·  подлокаций: {1}  ·  событий: {2}"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Поворот (Q / E): {0}°"
+msgstr ""
+
+#: Gameplay/MapEditor.cs UI/PauseMenu.cs UI/SaveSlotsPanel.cs
+msgid "Записать"
+msgstr "Save"
+
+#: Gameplay/MapEditor.cs
+msgid "Очистить всё"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Выйти в игру"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "ЛКМ — поставить, ПКМ — убрать, W A S D — камера, колесо — высота"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Нужно хотя бы два склепа — по одному на игрока."
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Записано: {0}"
+msgstr ""
+
+#: Gameplay/MapEditor.cs
+msgid "Не удалось сохранить карту: {0}"
+msgstr "Could not save the map: {0}"
+
+#: Gameplay/MapEvents.cs
+msgid "банка для душ"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "монеты"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "рецепт голема"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "схема казны"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "схема кузни"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "схема позорного столба"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "восемь монет"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "Событие — {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: отряд выступил, ведёт {1}."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: не хватило монет — ушли ни с чем."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: решал {1} — «{2}», вопреки твоему слову. {3}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: решал {1} — «{2}». {3}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: не успели — ушло."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: стража перебита, но никто не взял своё."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: не хватает монет."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0}: {1} — «{2}». {3}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "монет {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "кости легли против"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "камня {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "костей {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "плоти {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "душ в банках {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "пришёл {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "перешёл {0}"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "жители запомнили добро"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "жители запомнили и это"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "одни запомнили добро, другие — обиду"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "охотники задержатся"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "  ← твоё слово"
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "ПКМ с отрядом — отправить. Решит лидер — по своему греху; 1 или 2 — твоё слово ему."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "Стража пала. Решай сам — 1 или 2; уйдёшь — решит лидер."
+msgstr ""
+
+#: Gameplay/MapEvents.cs
+msgid "{0} — {1} (монет: {2})"
+msgstr ""
+
+#: Gameplay/MapEvents.cs Gameplay/Sturdy.cs
+msgid "{0} — {1}"
+msgstr ""
+
+#: Gameplay/MapLoader.cs
+msgid "Карта — {0}"
+msgstr ""
+
+#: Gameplay/MapLoader.cs UI/PauseMenu.cs
+msgid "Склеп {0}"
+msgstr ""
+
+#: Gameplay/MapLoader.cs
+msgid "Дверь склепа {0}"
+msgstr ""
+
+#: Gameplay/MapLoader.cs
+msgid "Трон склепа {0}"
+msgstr ""
+
+#: Gameplay/MapLoader.cs
+msgid "Подлокация — {0}"
+msgstr ""
+
+#: Gameplay/MatchEnd.cs Gameplay/TugMatch.cs
+msgid "Победа"
+msgstr ""
+
+#: Gameplay/MatchEnd.cs Gameplay/TugMatch.cs
+msgid "Поражение"
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "Ещё партию"
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "В меню"
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "Ваш трон стоит. Других — нет."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "Ваша сторона выбыла из партии."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "Партия шла {0} мин."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "До конца с тобой не было никого."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "До конца с тобой: {0} — и другие."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "До конца с тобой: {0}."
+msgstr ""
+
+#: Gameplay/MatchEnd.cs
+msgid "Добыто в экспедициях: {0}."
+msgstr ""
 
 #: Gameplay/OpeningReveal.cs
 msgid "Не командуй. Искушай."
@@ -6435,6 +8399,14 @@ msgstr "It was {0} — now it's {1}, master. I count."
 msgid "Было {0} — стало {1}. Откуда, владыка?"
 msgstr "It was {0} — now it's {1}. Where from, master?"
 
+#: Gameplay/RTS_Camera.cs
+msgid "Воин: ЛКМ — удар, ПКМ — блок. V — снова Командир."
+msgstr "Warrior: LMB — strike, RMB — block. V — back to Commander."
+
+#: Gameplay/RTS_Camera.cs
+msgid "Командир: мышь отдаёт приказы. V — Воин."
+msgstr "Commander: the mouse gives orders. V — Warrior."
+
 #: Gameplay/RaidEvent.cs
 msgid "Лагерь знали не только свои."
 msgstr "Not only our own knew where the camp was."
@@ -6498,6 +8470,90 @@ msgstr "Rats it is. We're running either way."
 #: Gameplay/RatBanner.cs
 msgid "Отряд назвал себя Крысами."
 msgstr "The squad named itself the Rats."
+
+#: Gameplay/RavenFlight.cs
+msgid "у огня"
+msgstr ""
+
+#: Gameplay/RavenFlight.cs
+msgid "в полёте"
+msgstr ""
+
+#: Gameplay/RavenFlight.cs
+msgid "сидит на плече"
+msgstr ""
+
+#: Gameplay/RavenFlight.cs UI/GearPanel.cs
+msgid "нет"
+msgstr "none"
+
+#: Gameplay/RecordShelf.cs
+msgid "F — вернуть пластинку на полку и взять другую"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "F — взять пластинку с полки"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "Полка пуста"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "F — взять: {0}"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "F — поменять на: {0}"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "F — поставить пластинку на полку"
+msgstr ""
+
+#: Gameplay/RecordShelf.cs
+msgid "В руках: {0} — «{1}»."
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "плоть"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "камень"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "кости"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "на столе: плоть {0}, кости {1}, камень {2}"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "F — взвалить тело: {0}"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "Ноша — {0}"
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "На плечах — тело: {0}. Отнесите его к столу в склепе."
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "Тело на столе: {0}. {1}."
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "С этого тела взять нечего."
+msgstr ""
+
+#: Gameplay/Remains.cs
+msgid "Тело положено на землю: {0}."
+msgstr ""
 
 #: Gameplay/RetreatHorn.cs
 msgid "Рог трубит отход."
@@ -6594,6 +8650,26 @@ msgstr "I judged your kind. Who judges me now?"
 #: Gameplay/RisingWords.cs
 msgid "Сеть... Я ловил вас. Поймали меня."
 msgstr "The net... I caught your kind. Now I am the one caught."
+
+#: Gameplay/RivalLord.cs
+msgid "Жители шепчутся: {0} точит топоры — скоро пойдёт на соседей."
+msgstr ""
+
+#: Gameplay/RivalLord.cs
+msgid "Жители шепчутся: {0} строит стены и никуда не спешит."
+msgstr ""
+
+#: Gameplay/RivalLord.cs
+msgid "Жители шепчутся: {0} собирает мёртвых."
+msgstr ""
+
+#: Gameplay/RivalLord.cs
+msgid "Жители шепчутся: {0} щедр — сманивает чужих людей."
+msgstr ""
+
+#: Gameplay/RivalLord.cs
+msgid "Жители шепчутся: люди {0} рыщут по дорогам за добычей."
+msgstr ""
 
 #: Gameplay/SatchelHands.cs
 msgid "Банок при себе нет."
@@ -6771,6 +8847,890 @@ msgstr "\n\nThe commitment is fulfilled: this game is no more."
 msgid "\n\nИгра окончена."
 msgstr "\n\nGame over."
 
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я слышу владыку."
+msgstr "I am {0}. I hear the lord."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я помню всё, что было."
+msgstr "I am {0}. I remember all that was."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я берегу жизнь."
+msgstr "I am {0}. I guard life."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я знаю, что хорошо и что дурно."
+msgstr "I am {0}. I know good from bad."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я не прохожу мимо чужой беды."
+msgstr "I am {0}. I don't pass by another's trouble."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я умею ждать."
+msgstr "I am {0}. I know how to wait."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я гашу вспышки."
+msgstr "I am {0}. I put out flare-ups."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я не прощаю обид."
+msgstr "I am {0}. I don't forgive wrongs."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я знаю своё место."
+msgstr "I am {0}. I know my place."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я не склоняю головы."
+msgstr "I am {0}. I bow my head to no one."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я отдаю, не считая."
+msgstr "I am {0}. I give without counting."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я считаю, что нам достанется."
+msgstr "I am {0}. I count what we'll get."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я радуюсь чужому."
+msgstr "I am {0}. I rejoice in others' good."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я вижу, у кого больше."
+msgstr "I am {0}. I see who has more."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я никого не держу."
+msgstr "I am {0}. I hold no one back."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я держусь за тех, кто рядом."
+msgstr "I am {0}. I cling to those nearby."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Мне хватает малого."
+msgstr "I am {0}. A little is enough for me."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Мне всегда мало."
+msgstr "I am {0}. It's never enough for me."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я не бросаю дела."
+msgstr "I am {0}. I don't abandon the task."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}. Я берегу силы."
+msgstr "I am {0}. I save my strength."
+
+#: Gameplay/SoulCourt.cs
+msgid "Я — {0}."
+msgstr "I am {0}."
+
+#: Gameplay/SoulCourt.cs
+msgid "подсудимый"
+msgstr "the accused"
+
+#: Gameplay/SoulCourt.cs
+msgid "ЗА ПРИКАЗ"
+msgstr "FOR THE ORDER"
+
+#: Gameplay/SoulCourt.cs
+msgid "ПРОТИВ"
+msgstr "AGAINST"
+
+#: Gameplay/SoulCourt.cs
+msgid "ДОБРО"
+msgstr "GOOD"
+
+#: Gameplay/SoulCourt.cs
+msgid "СЕРЕДИНА"
+msgstr "MIDDLE"
+
+#: Gameplay/SoulCourt.cs
+msgid "ЗЛО"
+msgstr "EVIL"
+
+#: Gameplay/SoulCourt.cs
+msgid "Суд души"
+msgstr "The Court of the Soul"
+
+#: Gameplay/SoulCourt.cs
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so he will act."
+
+#: Gameplay/SoulCourt.cs
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
+
+#: Gameplay/SoulCourt.cs
+msgid "Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь."
+msgstr "Before the court is the master's order: “{0}”. Judges, rise and name yourselves."
+
+#: Gameplay/SoulCourt.cs
+msgid "Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."
+msgstr "Judges, speak. The quiet first, the loud last. The stronger the voice, the brighter its candle and the further the scales swing."
+
+#: Gameplay/SoulCourt.cs
+msgid "за — {0}    против — {1}    воздержались — {2}"
+msgstr "for — {0}    against — {1}    abstained — {2}"
+
+#: Gameplay/SoulCourt.cs
+msgid "воздерж."
+msgstr "abstains"
+
+#: Gameplay/SoulCourt.cs
+msgid "Воздерживаюсь."
+msgstr "I abstain."
+
+#: Gameplay/SoulCourt.cs
+msgid "Поэтому я — за приказ."
+msgstr "So I am for the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "Поэтому я — против."
+msgstr "So I am against."
+
+#: Gameplay/SoulCourt.cs
+msgid "за"
+msgstr "for"
+
+#: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
+msgid "против"
+msgstr "against"
+
+#: Gameplay/SoulCourt.cs
+msgid "Вердикт"
+msgstr "Verdict"
+
+#: Gameplay/SoulCourt.cs
+msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
+msgstr "This is how every warrior in your band decides: you give the order, their voices weigh it. Another soul has other voices — and another court."
+
+#: Gameplay/SoulCourt.cs
+msgid "никто"
+msgstr "no one"
+
+#: Gameplay/SoulCourt.cs
+msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}"
+msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>against</color> — {3}"
+
+#: Gameplay/SoulCourt.cs
+msgid "Отказ. {0} не исполнил приказ."
+msgstr "Refusal. {0} did not carry out the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "Отказ. {0} не исполнила приказ."
+msgstr "Refusal. {0} did not carry out the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} замер: приказ не исполнен."
+msgstr "{0} froze: the order is not carried out."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} замерла: приказ не исполнен."
+msgstr "{0} froze: the order is not carried out."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} исполнил приказ."
+msgstr "{0} carried out the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} исполнила приказ."
+msgstr "{0} carried out the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he disobey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему она не послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she disobey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему он замер? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he freeze? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she freeze? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he obey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему она послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she obey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+#: Gameplay/SoulCourt.cs
+msgid "отступить"
+msgstr "fall back"
+
+#: Gameplay/SoulCourt.cs
+msgid "идти, куда велено"
+msgstr "go where told"
+
+#: Gameplay/SoulCourt.cs
+msgid "бить, кого велено"
+msgstr "strike whom told"
+
+#: Gameplay/SoulCourt.cs
+msgid "идти и бить по дороге"
+msgstr "advance and strike on the way"
+
+#: Gameplay/SoulCourt.cs
+msgid "стоять на месте"
+msgstr "hold position"
+
+#: Gameplay/SoulCourt.cs
+msgid "исполнить"
+msgstr "obey"
+
+#: Gameplay/SoulCourt.cs
+msgid "Меня это не касается."
+msgstr "This does not concern me."
+
+#: Gameplay/SoulCourt.cs
+msgid "Мне нечего сказать."
+msgstr "I have nothing to say."
+
+#: Gameplay/SoulCourt.cs
+msgid "Пусть решают другие."
+msgstr "Let the others decide."
+
+#: Gameplay/SoulCourt.cs
+msgid "Это не мой вопрос."
+msgstr "This is not my question."
+
+#: Gameplay/SoulCourt.cs
+msgid "Владыка велел. Надо идти."
+msgstr "The lord commanded. We must go."
+
+#: Gameplay/SoulCourt.cs
+msgid "Уходи, пока цел."
+msgstr "Leave while you're whole."
+
+#: Gameplay/SoulCourt.cs
+msgid "Уходи, пока цела."
+msgstr "Leave while you're whole."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не сейчас. Их час ещё придёт."
+msgstr "Not now. Their hour will come."
+
+#: Gameplay/SoulCourt.cs
+msgid "Ослушаться — грех."
+msgstr "To disobey is a sin."
+
+#: Gameplay/SoulCourt.cs
+msgid "Велено — сделай."
+msgstr "You were told — do it."
+
+#: Gameplay/SoulCourt.cs
+msgid "Уйти проще, чем драться."
+msgstr "Leaving is easier than fighting."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не о себе думай."
+msgstr "Don't think of yourself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Даром драться? Уходи."
+msgstr "Fight for nothing? Leave."
+
+#: Gameplay/SoulCourt.cs
+msgid "Послушай владыку."
+msgstr "Listen to the lord."
+
+#: Gameplay/SoulCourt.cs
+msgid "Это они нас убили. Я их помню."
+msgstr "They are the ones who killed us. I remember them."
+
+#: Gameplay/SoulCourt.cs
+msgid "Стой за своих."
+msgstr "Stand by your own."
+
+#: Gameplay/SoulCourt.cs
+msgid "Бей. Пусть ответят кровью."
+msgstr "Strike. Let them answer in blood."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не мне решать — но я не уйду."
+msgstr "It's not mine to decide — but I won't leave."
+
+#: Gameplay/SoulCourt.cs
+msgid "Бежать от них? Никогда."
+msgstr "Run from them? Never."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не уйду."
+msgstr "I won't leave."
+
+#: Gameplay/SoulCourt.cs
+msgid "Они живы, а мы — нет."
+msgstr "They live, and we do not."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не за себя — за правду."
+msgstr "Not for myself — for what's right."
+
+#: Gameplay/SoulCourt.cs
+msgid "Своё надо вернуть."
+msgstr "What's ours must be taken back."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не уйду, пока они здесь."
+msgstr "I won't leave while they're here."
+
+#: Gameplay/SoulCourt.cs
+msgid "Мало. Хочу ещё."
+msgstr "Not enough. I want more."
+
+#: Gameplay/SoulCourt.cs
+msgid "Спиной к ним не повернусь."
+msgstr "I won't turn my back on them."
+
+#: Gameplay/SoulCourt.cs
+msgid "Убийц нельзя отпускать."
+msgstr "Killers must not be let go."
+
+#: Gameplay/SoulCourt.cs
+msgid "Уйдём — они убьют ещё кого-то."
+msgstr "If we leave, they will kill someone else."
+
+#: Gameplay/SoulCourt.cs
+msgid "Бей!"
+msgstr "Strike!"
+
+#: Gameplay/SoulCourt.cs
+msgid "Никуда я не пойду."
+msgstr "I'm not going anywhere."
+
+#: Gameplay/SoulCourt.cs
+msgid "Стой, где стоишь."
+msgstr "Stay where you stand."
+
+#: Gameplay/SoulCourt.cs
+msgid "Беги!"
+msgstr "Run!"
+
+#: Gameplay/SoulCourt.cs
+msgid "Сначала добыча."
+msgstr "Loot first."
+
+#: Gameplay/SoulCourt.cs
+msgid "Своих не бросают."
+msgstr "You don't abandon your own."
+
+#: Gameplay/SoulCourt.cs
+msgid "Не уходи."
+msgstr "Don't leave."
+
+#: Gameplay/SoulCourt.cs
+msgid "Голоса вровень — душа не выбрала ничего."
+msgstr "The voices are even — the soul chose nothing."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ отвергнут."
+msgstr "The order is rejected."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ отвергнут. Против — {0}. За приказ — никто."
+msgstr "The order is rejected. Against: {0}. For the order: no one."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против» — на волосок."
+msgstr "Order refused. Against: {0}. For: {1}. The scales tipped to “against” — by a hair."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против»."
+msgstr "The order is rejected. Against: {0}. For: {1}. The scales tipped to “against”."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ исполнен."
+msgstr "The order is carried out."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ исполнен. За — {0}. Против — никто."
+msgstr "The order is carried out. For: {0}. Against: no one."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
+msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for” — by a hair."
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
+msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
+
+#: Gameplay/SoulCourt.cs
+msgid "Голосов за приказ больше, но {0} — громче всех: весы решает сила голоса, а не число."
+msgstr "More voices are for the order, but {0} is the loudest: the scales weigh strength, not numbers."
+
+#: Gameplay/SoulCourt.cs
+msgid "Голосов против больше, но {0} — громче всех: весы решает сила голоса, а не число."
+msgstr "More voices are against, but {0} is the loudest: the scales weigh strength, not numbers."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: он благочестив."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: he is pious."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: она благочестива."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: she is pious."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: он злобен."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: he is vicious."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: она злобна."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: she is vicious."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: он ни добр, ни зол."
+msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: he is neither good nor evil."
+
+#: Gameplay/SoulCourt.cs
+msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: она ни добра, ни зла."
+msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: she is neither good nor evil."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} и {1}"
+msgstr "{0} and {1}"
+
+#: Gameplay/SoulCourt.cs
+msgid "он бы послушался"
+msgstr "he would have obeyed"
+
+#: Gameplay/SoulCourt.cs
+msgid "она бы послушалась"
+msgstr "she would have obeyed"
+
+#: Gameplay/SoulCourt.cs
+msgid "Другая душа на его месте могла решить иначе."
+msgstr "Another soul in his place might have decided otherwise."
+
+#: Gameplay/SoulCourt.cs
+msgid "Решило одно: {0}. Не будь этого — {1}."
+msgstr "One thing decided it: {0}. Without it, {1}."
+
+#: Gameplay/SoulCourt.cs
+msgid "Решил один голос — {0}. Без него {1}."
+msgstr "One voice decided it — {0}. Without it, {1}."
+
+#: Gameplay/SoulCourt.cs
+msgid "Одной причины нет — так решила вся душа разом."
+msgstr "There is no single reason — the whole soul decided at once."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Приказ еле слышен — но в нём верность, и он расслышал."
+msgstr "The order was barely audible — but he is loyal, and he heard it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Приказ еле слышен — но в ней верность, и она расслышала."
+msgstr "The order was barely audible — but she is loyal, and she heard it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём верность владыке. А владыка велел."
+msgstr "He is loyal to his lord. And the lord commanded."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Бросить бой посреди схватки — это не верность, а бегство."
+msgstr "Leaving a fight halfway is not loyalty. It is running away."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его благочестива. Велено — исполни."
+msgstr "His soul is pious. Ordered — then do it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его порочна. Чужая воля ему поперёк горла."
+msgstr "His soul is wicked. Another's will sticks in his throat."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он порочен, но добрых черт в нём больше, чем грешных. А добрый слушается."
+msgstr "He is wicked, but he has more good traits than sinful ones. And the good obey."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она порочна, но добрых черт в ней больше, чем грешных. А добрая слушается."
+msgstr "She is wicked, but she has more good traits than sinful ones. And the good obey."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Добрых черт в нём больше, чем грешных. А добрый слушается."
+msgstr "He has more good traits than sinful ones. And the good obey."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он благочестив, но грешных черт в нём больше, чем добрых. А грешник слушаться не привык."
+msgstr "He is pious, but he has more sinful traits than good ones. And a sinner is not used to obeying."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она благочестива, но грешных черт в ней больше, чем добрых. А грешница слушаться не привыкла."
+msgstr "She is pious, but she has more sinful traits than good ones. And a sinner is not used to obeying."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Грешных черт в нём больше, чем добрых. А грешник слушаться не привык."
+msgstr "He has more sinful traits than good ones. And a sinner is not used to obeying."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём смирение. Слушаться ему не обидно."
+msgstr "He is humble. Obeying does not hurt his pride."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Отступить на глазах у врага — позор."
+msgstr "He is proud. Retreating before the enemy's eyes is a disgrace."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Приказ, крикнутый издали, — не приказ."
+msgstr "He is proud. An order shouted from afar is no order."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Подчиняться ему противно."
+msgstr "He is proud. Submitting disgusts him."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он завидует владыке. А тому, кому завидуешь, не служат."
+msgstr "He envies his lord. And you do not serve the one you envy."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Ему не заплатили за прошлые дела. Жадность ведёт счёт."
+msgstr "He was not paid for his past work. Greed keeps count."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Рядом то, чего он жаждет. Приказа он не слышит."
+msgstr "What he craves is near. He does not hear the order."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём уныние. Ходить туда-сюда в дозоре — лень."
+msgstr "He is slothful. Walking back and forth on patrol is too much bother."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём уныние. Приказ далёкий, идти далеко — лень."
+msgstr "He is slothful. The order is far away, and walking that far is too much bother."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Приказ — бить. Гневу это по душе."
+msgstr "The order is to strike. Wrath likes that."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Верности владыке в нём нет. Своя воля ему ближе."
+msgstr "He has no loyalty to his lord. His own will is dearer to him."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём верность. Своевольничать при владыке он не станет."
+msgstr "He is loyal. He will not act on his own while his lord is watching."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Это они его убили. Я помню их лица."
+msgstr "They are the ones who killed him. I remember their faces."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Враг убил его товарищей. Я это помню."
+msgstr "The enemy killed his comrades. I remember that."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гнев. Гнев хочет крови, а враг рядом."
+msgstr "He is wrathful. Wrath wants blood, and the enemy is near."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём терпение. Терпеливому драка не к спеху."
+msgstr "He is patient. The patient are in no hurry to fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём терпение. Их час ещё придёт — не сейчас."
+msgstr "He is patient. Their hour will come — not now."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Гордый не поворачивается к врагу спиной."
+msgstr "He is proud. The proud do not turn their backs on the enemy."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём смирение. Ему незачем доказывать силу в драке."
+msgstr "He is humble. He has no need to prove his strength in a fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он завидует владыке и хочет показать, что он лучше."
+msgstr "He envies his lord and wants to show that he is better."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём щедрость. Он бьётся не за себя — за правду."
+msgstr "He is generous. He fights not for himself but for what is right."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Рядом добыча. Драться — значит её упустить."
+msgstr "There is loot nearby. Fighting means letting it slip away."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "У него полный кошель. Жалко рисковать им в драке."
+msgstr "His purse is full. A pity to risk it in a fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём жадность. Драться даром жадный не станет."
+msgstr "He is greedy. The greedy do not fight for free."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём воздержанность. Он лёгок и собран — драться готов."
+msgstr "He is temperate. He is light and focused — ready to fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В ней воздержанность. Она легка и собрана — драться готова."
+msgstr "She is temperate. She is light and focused — ready to fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём чревоугодие. Тяжёлому сытому брюху драка ни к чему."
+msgstr "He is gluttonous. A heavy, full belly has no use for a fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём усердие. Начатое дело надо доделать."
+msgstr "He is diligent. What has been started must be finished."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он выбился из сил. Какая уж тут драка."
+msgstr "He is worn out. A fight is out of the question."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она выбилась из сил. Какая уж тут драка."
+msgstr "She is worn out. A fight is out of the question."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём уныние. Драться — труд, а уйти проще."
+msgstr "He is slothful. Fighting is work, and leaving is easier."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он тяжело ранен. Ещё удар — и конец."
+msgstr "He is badly wounded. One more blow and it is over."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она тяжело ранена. Ещё удар — и конец."
+msgstr "She is badly wounded. One more blow and it is over."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Драка — это боль и смерть. Страх говорит: не лезь."
+msgstr "A fight means pain and death. Fear says: stay out of it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его порочна. Кровь ей мила."
+msgstr "His soul is wicked. It loves blood."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его благочестива. Без нужды кровь не льют."
+msgstr "His soul is pious. Blood is not spilled without need."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Его тянет туда, где жарко. Он не уйдёт, пока они здесь."
+msgstr "He is drawn to where the fighting is. He will not leave while they are here."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём усердие. Стоять без дела ему не по нутру."
+msgstr "He is diligent. Standing idle is not in his nature."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он устал. Уныние шепчет: постой, отдохни."
+msgstr "He is tired. Sloth whispers: stay, rest."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она устала. Уныние шепчет: постой, отдохни."
+msgstr "She is tired. Sloth whispers: stay, rest."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём уныние. Стоять проще, чем идти."
+msgstr "He is slothful. Standing is easier than walking."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём чревоугодие. Сытое брюхо тянет к покою."
+msgstr "He is gluttonous. A full belly pulls toward rest."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём воздержанность. Сытая лень ему чужда."
+msgstr "He is temperate. Well-fed idleness is foreign to him."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "У него полный кошель. Лучше переждать в стороне."
+msgstr "His purse is full. Better to wait it out on the side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Желанию некуда деться — и он застыл на месте."
+msgstr "His desire has nowhere to go — and he froze in place."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Желанию некуда деться — и она застыла на месте."
+msgstr "Her desire has nowhere to go — and she froze in place."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Стоять здесь опасно. Страх гонит прочь."
+msgstr "Standing here is dangerous. Fear drives him away."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гнев. Гневный на месте не стоит."
+msgstr "He is wrathful. The wrathful do not stand still."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Гордый не признается, что устал."
+msgstr "He is proud. The proud will not admit they are tired."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В ней гордыня. Гордая не признается, что устала."
+msgstr "She is proud. The proud will not admit they are tired."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Его окружили. Страх кричит: беги!"
+msgstr "He is surrounded. Fear screams: run!"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он тяжело ранен. Страх кричит: беги!"
+msgstr "He is badly wounded. Fear screams: run!"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Она тяжело ранена. Страх кричит: беги!"
+msgstr "She is badly wounded. Fear screams: run!"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Здесь смерть. Страх кричит: беги!"
+msgstr "Death is here. Fear screams: run!"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Опасно, а драться — труд. Уныние говорит: беги."
+msgstr "It is dangerous, and fighting is work. Sloth says: run."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём смирение. Бежать ему не стыдно."
+msgstr "He is humble. He is not ashamed to run."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Бегство — позор."
+msgstr "He is proud. Running away is a disgrace."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём терпение. Уйти от драки ему не стыдно."
+msgstr "He is patient. He is not ashamed to walk away from a fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гнев. Гневный не бежит."
+msgstr "He is wrathful. The wrathful do not run."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём терпение. Терпеливый без причины не бежит."
+msgstr "He is patient. The patient do not run without a reason."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его благочестива. Бросить своих и бежать — грех."
+msgstr "His soul is pious. Abandoning your own and running is a sin."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Рядом добыча, а в нём жадность."
+msgstr "There is loot nearby, and he is greedy."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём щедрость. Чужое добро ему не нужно."
+msgstr "He is generous. He has no need of other people's goods."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём чревоугодие. Рядом есть чем набить суму."
+msgstr "He is gluttonous. There is something nearby to stuff his bag with."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Рядом то, чего он жаждет. Руки сами тянутся."
+msgstr "What he craves is near. His hands reach out on their own."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Добыча достанется другим? Зависть этого не стерпит."
+msgstr "The loot will go to others? Envy will not stand for it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Он помнит: здесь бывала добыча."
+msgstr "He remembers: there used to be loot here."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его порочна. Обирать мёртвых ей не стыдно."
+msgstr "His soul is wicked. It is not ashamed to rob the dead."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его благочестива. Обирать мёртвых — грех."
+msgstr "His soul is pious. Robbing the dead is a sin."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Добра в нём много. Обирать мёртвых он не станет."
+msgstr "There is much good in him. He will not rob the dead."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Добра в нём много. Своих не бросают."
+msgstr "There is much good in him. You do not abandon your own."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его благочестива. Помоги ближнему."
+msgstr "His soul is pious. Help your neighbour."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Душа его порочна. Чужая беда — не его забота."
+msgstr "His soul is wicked. Another's trouble is not his concern."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Рядом тот, кто ему дорог. Привязанность сильнее приказа."
+msgstr "Someone dear to him is near. Attachment is stronger than the order."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Его однажды спасли. Он помнит долг."
+msgstr "He was saved once. He remembers the debt."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Его однажды предали. Он это помнит."
+msgstr "He was betrayed once. He remembers it."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Спасать даром? Жадность за чужую жизнь не платит."
+msgstr "Save someone for free? Greed does not pay for another's life."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Зависть шепчет: пусть пропадёт — одним соперником меньше."
+msgstr "Envy whispers: let them die — one rival fewer."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём гордыня. Спасать — значит признать, что кто-то важнее него."
+msgstr "He is proud. Saving someone means admitting they matter more than he does."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "В нём уныние. Бежать на помощь — труд."
+msgstr "He is slothful. Running to help is work."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "драка"
+msgstr "the fight"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "покой"
+msgstr "rest"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "бегство"
+msgstr "flight"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "добыча"
+msgstr "the loot"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "спасать своих"
+msgstr "saving his own"
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Приказ мне не по душе."
+msgstr "I do not like the order."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Приказ мне по душе."
+msgstr "I like the order."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Мне милее другое: {0}."
+msgstr "I prefer something else: {0}."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Мне не по душе {0}."
+msgstr "I do not like {0}."
+
 #: Gameplay/SoulHarvester.cs
 msgid "Все банки полны. Поставьте душу на полку или оставьте эту."
 msgstr "All jars are full. Put a soul on the shelf or leave this one."
@@ -6786,6 +9746,10 @@ msgstr "Soul gathered: {0}. {1}."
 #: Gameplay/SoulHarvester.cs
 msgid "От неё осталась одна воля. Такая поднимется зомби."
 msgstr "Only its will remains. A soul like that will rise as a zombie."
+
+#: Gameplay/SoulHarvester.cs
+msgid "Кошель убитого — в ваш: +{0}."
+msgstr ""
 
 #: Gameplay/SquadGear.cs
 msgid "Оружие"
@@ -7047,6 +10011,38 @@ msgstr "Protect their own and take no risks."
 msgid "Не останавливаются, даже когда стоило бы."
 msgstr "Don't stop, even when they should."
 
+#: Gameplay/Sturdy.cs
+msgid "ваш склеп"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "склеп стороны {0}"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "Прочность: {0} из {1}"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "Разрушено"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "Еле держится"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "В трещинах"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "Побито"
+msgstr ""
+
+#: Gameplay/Sturdy.cs
+msgid "Цело"
+msgstr ""
+
 #: Gameplay/TrophyChest.cs
 msgid "Карган: «Владыка, взглянем, что Марга Копатель принёс с вылазки. Готов спорить, половину он выкопал у самого лагеря»."
 msgstr "Kargan: “My lord, let's see what Marga the Digger brought back from the sortie. I'd wager he dug up half of it right by the camp.”"
@@ -7091,6 +10087,190 @@ msgstr "From the chest into the Sinbinder's bag: {0}."
 msgid "{0}: «Копал, не копал — а платы за вылазки я так и не видел»."
 msgstr "{0}: “Dug or didn't dig — I still haven't seen my pay for the sorties.”"
 
+#: Gameplay/TugBench.cs
+msgid "Поле «Перетягивания». B — выпустить армии, по сотне на сторону."
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "=== НАГРУЗКА: сторон {0}, по {1} ==="
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "Сторона {0}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "появились: {0} воинов"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "Сторона {0} — {1}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "{0,5:F0} с [{4}]: живых {1}, кадр {2:F1} мс в среднем, худший {3:F1} мс"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "      цена: {0}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "      движок: {0}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "ИТОГ: кадр {0:F1} мс в среднем ({1:F0} кадров/с), худший {2:F1} мс, живых в конце {3}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "всё"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "без теней"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "без тел"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "без аниматоров"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "без решений"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "— снято: {0}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "      решения: {0}; с приказом {1}; до середины в среднем {2:F0} м"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "{0} {1:F1}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "всё включено"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "без {0}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid "  проба: {0} — скрипты {1:F1} мс/кадр{2}"
+msgstr ""
+
+#: Gameplay/TugBench.cs
+msgid " (−{0:F1})"
+msgstr ""
+
+#: Gameplay/TugMatch.cs
+msgid "Трон склепа {0} разрушен."
+msgstr ""
+
+#: Gameplay/TugMatch.cs
+msgid "Великая охота отхлынула. Уцелевшие склепы сочтены: у кого больше верных — тот и выстоял."
+msgstr ""
+
+#: Gameplay/TugMatch.cs
+msgid "{0} пал. Встанет у трона через минуту; кошель остался, где он пал."
+msgstr ""
+
+#: Gameplay/TugMatch.cs
+msgid "Греховод стороны {0} встал у трона."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Склеп и трон"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Ты — Греховод. Это твой склеп, у задней стены — трон: падёт трон — партия проиграна. Сам ты не умираешь насовсем — встанешь у трона через минуту. Посмотри на дверь и нажми F."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Ничьи воины"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Воины на карте — ничьи. Дойди до деревни и наведи мышь на любого: первая строка подсказки — как он к тебе. Слушаются тех, к кому верны."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Выдели воина левой кнопкой и прикажи идти правой. Он может отказать: голосует сам, верностью к тебе — и в журнале будет сказано почему."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Расположить"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Каждый грех ценит своё. Жадному — монета: подойди, посмотри на него, F. Гордому — приказ ему одному. Унылому — стоять на месте. Добейся, чтобы кто-нибудь стал тебе верен."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Свои люди"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Собери троих верных. Спасай их в бою, давай им дело: без дела верные остывают."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Охотники"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "С троп идут охотники Ордена — враги всем. Отбей их. Каждые пять минут их будет больше, и к сильнейшему — больше всех."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Алтарь"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "С павшего возьми тело (F) и отнеси к столу в склепе. Душу собери в банку, подойдя к ней. На алтаре: банку — в гнездо, тело — на ложе, рычаг. Поднятый сразу почти предан тебе."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Постройка"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Перед склепом — места для построек. Заложи сигнальный костёр (F у колышков) и приведи к нему верных — построят сами. Склеп бьют — у костра верные бегут на помощь."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Чужой трон"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Греховод на севере проснулся. Веди верных на его склеп: правой кнопкой по двери, потом по трону. Разрушь его трон."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Урок {0} из {1} — готово"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Обучение пройдено"
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Ты знаешь всё, что нужно для настоящей партии. Карты — в паузе, «Карты „Перетягивания“»."
+msgstr ""
+
+#: Gameplay/TugTutorial.cs
+msgid "Урок {0} из {1}: {2}"
+msgstr ""
+
 #: Gameplay/WeaponPickup.cs
 msgid "F — взять катану"
 msgstr "F — take the katana"
@@ -7106,6 +10286,110 @@ msgstr "Katana at your belt. B — draw or sheathe."
 #: Gameplay/WeaponPickup.cs
 msgid "Меч на поясе. B — наголо или в ножны."
 msgstr "Sword at your belt. B — draw or sheathe."
+
+#: Gameplay/Whisper.cs
+msgid "Половина добычи — твоя."
+msgstr "Half the spoils are yours."
+
+#: Gameplay/Whisper.cs
+msgid "…Половина. Запомню."
+msgstr "…Half. I'll remember."
+
+#: Gameplay/Whisper.cs
+msgid "Пусть все видят — первым будешь ты."
+msgstr "Let them all see — you go first."
+
+#: Gameplay/Whisper.cs
+msgid "Смотрите же."
+msgstr "Watch, then."
+
+#: Gameplay/Whisper.cs
+msgid "Он смеялся над тобой у огня."
+msgstr "He laughed at you by the fire."
+
+#: Gameplay/Whisper.cs
+msgid "Смеялся?!"
+msgstr "Laughed?!"
+
+#: Gameplay/Whisper.cs
+msgid "Карган бы смог. А ты?"
+msgstr "Kargan could. Can you?"
+
+#: Gameplay/Whisper.cs
+msgid "Я — не хуже."
+msgstr "I'm no worse."
+
+#: Gameplay/Whisper.cs
+msgid "Она смотрит."
+msgstr "She's watching."
+
+#: Gameplay/Whisper.cs
+msgid "…Ну, раз смотрит."
+msgstr "…Well, if she's watching."
+
+#: Gameplay/Whisper.cs
+msgid "После — котёл твой."
+msgstr "After this, the pot is yours."
+
+#: Gameplay/Whisper.cs
+msgid "Весь котёл."
+msgstr "The whole pot."
+
+#: Gameplay/Whisper.cs
+msgid "Сделаешь — до утра никто не тронет."
+msgstr "Do this and no one bothers you till morning."
+
+#: Gameplay/Whisper.cs
+msgid "До утра. Ладно."
+msgstr "Till morning. Fine."
+
+#: Gameplay/Whisper.cs
+msgid "Не купишь."
+msgstr "You can't buy me."
+
+#: Gameplay/Whisper.cs
+msgid "Половина чего? Кошель-то пуст."
+msgstr "Half of what? The purse is empty."
+
+#: Gameplay/Whisper.cs
+msgid "Греховод, шёпотом"
+msgstr "Sinbinder, whispering"
+
+#: Gameplay/Whisper.cs
+msgid "Шёпот"
+msgstr "Whisper"
+
+#: Gameplay/Whisper.cs
+msgid "{0} поддался — исполнит приказ."
+msgstr "{0} gave in and will carry out the order."
+
+#: Gameplay/Whisper.cs
+msgid "{0} поддалась — исполнит приказ."
+msgstr "{0} gave in and will carry out the order."
+
+#: Gameplay/Whisper.cs
+msgid "{0} в нём теперь громче."
+msgstr "{0} speaks louder in him now."
+
+#: Gameplay/Whisper.cs
+msgid "{0} в ней теперь громче."
+msgstr "{0} speaks louder in her now."
+
+#: Gameplay/Whisper.cs
+msgid "Из кошеля — {0} монеты."
+msgstr "{0} coins from the purse."
+
+#: Gameplay/Whisper.cs
+msgid "{0} не поддался: {1} в нём сильнее греха."
+msgstr "{0} did not give in: {1} is stronger in him than sin."
+
+#: Gameplay/Whisper.cs
+msgid "{0} не поддалась: {1} в ней сильнее греха."
+msgstr "{0} did not give in: {1} is stronger in her than sin."
+
+#: Gameplay/Whisper.cs
+msgid "Жадному нечего обещать: кошель пуст."
+msgstr "Nothing to promise the greedy: the purse is empty."
 
 #: Inventory/TrophyCatalog.cs
 msgid "Кольчужный ворот"
@@ -7294,10 +10578,6 @@ msgstr "The party leaves at once and won't be back soon — only those you don't
 #: UI/CommanderCouncilUI.cs
 msgid "Часовня"
 msgstr "Chapel"
-
-#: UI/CommanderCouncilUI.cs
-msgid "Каменоломня"
-msgstr "Quarry"
 
 #: UI/CommanderCouncilUI.cs
 msgid "Застава"
@@ -7496,6 +10776,14 @@ msgid "F — поговорить: {0}"
 msgstr "F — talk: {0}"
 
 #: UI/GearPanel.cs
+msgid "F — подсесть к картам"
+msgstr "F — sit in on the cards"
+
+#: UI/GearPanel.cs
+msgid "За картами никого"
+msgstr "No one at the cards"
+
+#: UI/GearPanel.cs
 msgid "F — открыть сундук Марги"
 msgstr "F — open Marga's chest"
 
@@ -7504,12 +10792,12 @@ msgid "F — сундук Марги"
 msgstr "F — Marga's chest"
 
 #: UI/GearPanel.cs
-msgid "F — подсесть к картам"
-msgstr "F — sit in on the cards"
+msgid "F — встать"
+msgstr ""
 
 #: UI/GearPanel.cs
-msgid "За картами никого"
-msgstr "No one at the cards"
+msgid "F — положить пластинку на землю"
+msgstr ""
 
 #: UI/GearPanel.cs
 msgid "Снаряжение: {0}"
@@ -7648,10 +10936,6 @@ msgid "кошель: {0}"
 msgstr "purse: {0}"
 
 #: UI/GearPanel.cs
-msgid "нет"
-msgstr "none"
-
-#: UI/GearPanel.cs
 msgid "одна вылазка без платы"
 msgstr "one sortie unpaid"
 
@@ -7780,6 +11064,14 @@ msgid "Щёлкните по Греховоду, затем правой кно�
 msgstr "Click the Sinbinder, then right-click the ground — he'll go there."
 
 #: UI/OverheadWord.cs
+msgid "Z — шепнуть"
+msgstr "Z — whisper"
+
+#: UI/OverheadWord.cs
+msgid "подойдите — Z, шепнуть"
+msgstr "come closer — Z, whisper"
+
+#: UI/OverheadWord.cs
 msgid "Колеблется…"
 msgstr "Hesitates…"
 
@@ -7794,10 +11086,6 @@ msgstr "Paused"
 #: UI/PauseMenu.cs UI/StartPanel.cs
 msgid "Продолжить"
 msgstr "Continue"
-
-#: UI/PauseMenu.cs UI/SaveSlotsPanel.cs
-msgid "Записать"
-msgstr "Save"
 
 #: UI/PauseMenu.cs UI/QuickSave.cs
 msgid "Записано."
@@ -7828,6 +11116,10 @@ msgid "Сменить взгляд"
 msgstr "Change view"
 
 #: UI/PauseMenu.cs
+msgid "Командир или Воин (первое лицо)"
+msgstr "Commander or Warrior (first person)"
+
+#: UI/PauseMenu.cs
 msgid "Экран"
 msgstr "Screen"
 
@@ -7848,6 +11140,34 @@ msgid "Язык"
 msgstr "Language"
 
 #: UI/PauseMenu.cs
+msgid "Золотые пластинки"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "{0} из {1}"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Карты «Перетягивания»"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "выбрать карту, стороны — и на поле"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "новая карта или правка готовой"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Сон Греховода"
+msgstr "The Sinbinder's Dream"
+
+#: UI/PauseMenu.cs
+msgid "обучение и суд души"
+msgstr "tutorial and the court of the soul"
+
+#: UI/PauseMenu.cs
 msgid "Игра с обязательством — записывайте перед выходом"
 msgstr "A committed game — save before you quit"
 
@@ -7856,8 +11176,76 @@ msgid "Назад"
 msgstr "Back"
 
 #: UI/PauseMenu.cs
+msgid "Папка карт"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Обучение «Перетягиванию»"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "девять уроков против слабого ИИ"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "на {0}{1}"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Лобби"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Великая охота"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "на 25-й минуте — включена"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "выключена: до последнего трона"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Начать"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "на поле"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Править в редакторе"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "игрок"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "ИИ — слабый"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "ИИ — средний"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "ИИ — сильный"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "пусто"
+msgstr "empty"
+
+#: UI/PauseMenu.cs
 msgid "Набор"
 msgstr "Preset"
+
+#: UI/PauseMenu.cs
+msgid "Подстраивать под машину"
+msgstr ""
 
 #: UI/PauseMenu.cs
 msgid "Тени"
@@ -7967,6 +11355,10 @@ msgstr "The gold stayed in the bag. The squad will remember."
 msgid "J — следующая банка · R — душу в руку или обратно в банку"
 msgstr "J — next jar · R — soul to hand or back into the jar"
 
+#: UI/SatchelUI.cs
+msgid "G — отпустить"
+msgstr "G — let go"
+
 #: UI/SaveSlotsPanel.cs
 msgid "Вернуться к записанному.  F9 или Esc — закрыть"
 msgstr "Return to a save.  F9 or Esc — close"
@@ -7986,6 +11378,26 @@ msgstr "Saved to “{0}”."
 #: UI/SaveSlotsPanel.cs
 msgid "Вернулись к «{0}»."
 msgstr "Returned to “{0}”."
+
+#: UI/ScalesOverhead.cs
+msgid "вровень"
+msgstr "even"
+
+#: UI/ScalesOverhead.cs
+msgid "за приказ"
+msgstr "for the order"
+
+#: UI/ScalesOverhead.cs
+msgid "не услышит"
+msgstr "won't hear"
+
+#: UI/ScalesOverhead.cs
+msgid "послушается"
+msgstr "will obey"
+
+#: UI/ScalesOverhead.cs
+msgid "вряд ли"
+msgstr "unlikely"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "Выбрано {0} · что тянет его"
@@ -8180,6 +11592,10 @@ msgid "его обступили"
 msgstr "he is surrounded"
 
 #: UI/SelectedUnitPanelUI.cs
+msgid "его убийцы на виду"
+msgstr "his killers are in sight"
+
+#: UI/SelectedUnitPanelUI.cs
 msgid "выдохся"
 msgstr "spent"
 
@@ -8323,175 +11739,199 @@ msgstr "Tasks"
 msgid "Вид сверху. Tab — снова глазами Греховода. Осмотрите лагерь: в нём есть что найти."
 msgstr "View from above. Tab — back to the Sinbinder's eyes. Look around the camp: there is something to find."
 
-#: Resources/DialogueDatabase.asset
+#: UI/WarriorTooltipUI.cs
+msgid "Дар: {0}."
+msgstr ""
+
+# ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Добра в нём больше, чем греха. Добрый слушается."
+msgstr "There is more good in him than sin. The good obey."
+
+#. нет в коде
+msgid "Греха в нём больше, чем добра. Грешник слушаться не привык."
+msgstr "There is more sin in him than good. A sinner is not used to obeying."
+
+#. нет в коде
+msgid "Мне? Раньше других? …Спасибо."
+msgstr "Me? Before the others? …Thank you."
+
+#. нет в коде
+msgid "Не так близко к котелку, владыка. Жар портит отвар."
+msgstr "Not so close to the pot, master. Heat spoils the brew."
+
+#. нет в коде
+msgid "Вот и похлёбка оживёт. Спасибо, владыка."
+msgstr "Now the stew will come back to life. Thank you, master."
+
+#. нет в коде
 msgid "У тебя есть кошель. Скоро он будет мой."
 msgstr "You have a purse. Soon it'll be mine."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Дай пройти — и я не стану тебя обыскивать."
 msgstr "Let me pass — and I won't search you."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Отдай, что взял не своё, и разойдёмся."
 msgstr "Give back what isn't yours, and we'll part ways."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Ты даже не запомнишь, кто тебя убил. А я запомню."
 msgstr "You won't even remember who killed you. But I will."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Назовись. Я не бью безымянных."
 msgstr "Name yourself. I don't strike the nameless."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я дам тебе первый удар. Он тебе не поможет."
 msgstr "I'll give you the first blow. It won't help you."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Наконец-то. Я устал ждать."
 msgstr "At last. I'm tired of waiting."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Отойди. Второй раз просить не буду."
 msgstr "Step aside. I won't ask twice."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Не заставляй меня. Прошу — не заставляй."
 msgstr "Don't make me. Please — don't make me."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Хороший клинок. Тебе он больше не понадобится."
 msgstr "A fine blade. You won't need it anymore."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Тебе везло дольше, чем мне. Это кончилось."
 msgstr "You've been lucky longer than me. That's over."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Тебе дали больше. Но не право этим бить."
 msgstr "You were given more. But not the right to strike with it."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Ты красивее, чем стоило бы для такого дела."
 msgstr "You're prettier than this line of work calls for."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Жаль. Мы могли встретиться иначе."
 msgstr "A pity. We could have met differently."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я запомню твоё лицо. И помолюсь за него."
 msgstr "I'll remember your face. And pray for it."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я не ел с утра. Ты очень вовремя."
 msgstr "I haven't eaten since morning. You're right on time."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Давай быстрее. У меня стынет."
 msgstr "Hurry up. My food is getting cold."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Сначала дело, потом хлеб. Так положено."
 msgstr "Work first, then bread. That's how it's done."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Опять. Каждый раз одно и то же."
 msgstr "Again. The same thing every time."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Может, разойдёмся? Нет? Ну ладно."
 msgstr "Maybe we just part ways? No? Oh well."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я не хотел этого дня. Но он пришёл."
 msgstr "I didn't want this day. But it came."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "А делить будем на всех? Тогда я в деле."
 msgstr "And we'll share it among everyone? Then I'm in."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я услышал слово «кошель». Продолжайте."
 msgstr "I heard the word “purse”. Go on."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Хватит торговаться над живыми."
 msgstr "Enough haggling over the living."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Вы оба говорите слишком долго для мертвецов."
 msgstr "You both talk too much for dead men."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Договорите. Потом моя очередь."
 msgstr "Finish talking. Then it's my turn."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Дайте им сказать. Каждому положено слово."
 msgstr "Let them speak. Everyone is owed a word."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Хватит болтать. Начинайте уже."
 msgstr "Enough talk. Get on with it."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Ещё слово — и я начну без вас."
 msgstr "One more word and I'll start without you."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Замолчите оба. Кровь и так близко."
 msgstr "Both of you, be quiet. Blood is close enough already."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "А почему говорят с ним, а не со мной?"
 msgstr "Why are they talking to him and not to me?"
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я тоже здесь. На случай, если забыли."
 msgstr "I'm here too. In case you forgot."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Не мне завидовать чужому слову. И всё же."
 msgstr "It's not for me to envy another's words. And yet."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я послушаю. Мне нравится, как он говорит."
 msgstr "I'll listen. I like the way he talks."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Продолжай. Ты хорошо говоришь."
 msgstr "Go on. You speak well."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Слова красивы. Дела будут хуже."
 msgstr "The words are pretty. The deeds will be uglier."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Пока вы спорите, я успею перекусить."
 msgstr "While you argue, I'll have time for a bite."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Долго ещё? Я голоден."
 msgstr "Much longer? I'm hungry."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Поспешите. Мёртвые не едят."
 msgstr "Hurry up. The dead don't eat."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Разбудите, когда закончите."
 msgstr "Wake me when you're done."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Я постою. Мне и отсюда слышно."
 msgstr "I'll stand here. I can hear fine from here."
 
-#: Resources/DialogueDatabase.asset
+#. нет в коде
 msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
-
-# ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
 
 #. нет в коде
 msgid "Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."
@@ -8676,10 +12116,6 @@ msgstr "W, A, S, D — walk. The camera follows you."
 #. нет в коде
 msgid "Щёлкните по Греховоду, затем правой кнопкой — куда идти."
 msgstr "Click the Sinbinder, then right-click where to go."
-
-#. нет в коде
-msgid "пусто"
-msgstr "empty"
 
 #. нет в коде
 msgid "тело: скелет"
@@ -9241,708 +12677,130 @@ msgstr "Order — to the whole squad"
 msgid "Отряд слышит вас тем хуже, чем вы дальше"
 msgstr "The farther you are, the worse the squad hears you"
 
-msgid "Половина добычи — твоя."
-msgstr "Half the spoils are yours."
-
-msgid "…Половина. Запомню."
-msgstr "…Half. I'll remember."
-
-msgid "Пусть все видят — первым будешь ты."
-msgstr "Let them all see — you go first."
-
-msgid "Смотрите же."
-msgstr "Watch, then."
-
-msgid "Он смеялся над тобой у огня."
-msgstr "He laughed at you by the fire."
-
-msgid "Смеялся?!"
-msgstr "Laughed?!"
-
-msgid "Карган бы смог. А ты?"
-msgstr "Kargan could. Can you?"
-
-msgid "Я — не хуже."
-msgstr "I'm no worse."
-
-msgid "Она смотрит."
-msgstr "She's watching."
-
-msgid "…Ну, раз смотрит."
-msgstr "…Well, if she's watching."
-
-msgid "После — котёл твой."
-msgstr "After this, the pot is yours."
-
-msgid "Весь котёл."
-msgstr "The whole pot."
-
-msgid "Сделаешь — до утра никто не тронет."
-msgstr "Do this and no one bothers you till morning."
-
-msgid "До утра. Ладно."
-msgstr "Till morning. Fine."
-
-msgid "Не купишь."
-msgstr "You can't buy me."
-
-msgid "Половина чего? Кошель-то пуст."
-msgstr "Half of what? The purse is empty."
-
-msgid "Z — шепнуть"
-msgstr "Z — whisper"
-
-msgid "G — отпустить"
-msgstr "G — let go"
-
-#: Gameplay/CampWell.cs
-msgid "F — умыться у колодца"
-msgstr "F — wash at the well"
-
-#: Gameplay/CampWell.cs
-msgid "Ледяная. Отпустило."
-msgstr "Ice-cold. It's passed."
-
-#: Gameplay/CampWell.cs
-msgid "Ледяная."
-msgstr "Ice-cold."
-
-#. Context corrections, 3 November 2026
-msgid "Тебе должны — с владыки и спрашивай."
-msgstr "It is the lord who owes you. Ask him."
-
-#. Context corrections, 3 November 2026
-msgid "У меня пока не звенит."
-msgstr "No jingle in my purse yet."
-
-#. Context corrections, 3 November 2026
-msgid "Давно без платы. Я запоминаю."
-msgstr "It has been a long time without pay. I remember."
-
-#. Context corrections, 3 November 2026
-msgid "Мне? …Спасибо."
-msgstr "For me? ...Thank you."
-
-
-#. Map editor save error, 4 November 2026
-msgid "Не удалось сохранить карту: {0}"
-msgstr "Could not save the map: {0}"
-
-#: UI/PauseMenu.cs
-msgid "Командир или Воин (первое лицо)"
-msgstr "Commander or Warrior (first person)"
-
-#: Gameplay/RTS_Camera.cs
-msgid "Воин: ЛКМ — удар, ПКМ — блок. V — снова Командир."
-msgstr "Warrior: LMB — strike, RMB — block. V — back to Commander."
-
-#: Gameplay/RTS_Camera.cs
-msgid "Командир: мышь отдаёт приказы. V — Воин."
-msgstr "Commander: the mouse gives orders. V — Warrior."
-
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к маме-крысе"
 msgstr "F — crouch by the mother rat"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к Пискуну"
 msgstr "F — crouch by Squeaker"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к Пятнышку"
 msgstr "F — crouch by Speckle"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к Прыгу"
 msgstr "F — crouch by Hopper"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к Моху"
 msgstr "F — crouch by Moss"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "F — присесть к Соне"
 msgstr "F — crouch by Sleepy"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Мама-крыса обнюхивает руку Греховода и оглядывается: все ли малыши рядом."
 msgstr "The mother rat sniffs the Sinbinder's hand and looks round: are all her little ones close?"
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Пискун забирается Греховоду на сапог — и тут же спрыгивает."
 msgstr "Squeaker climbs onto the Sinbinder's boot — and hops straight off."
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Пятнышко трогает пальцы Греховода носом, будто впервые видит человека."
 msgstr "Speckle noses the Sinbinder's fingers as if seeing a man for the first time."
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Прыг крутится на месте и ловит собственный хвост."
 msgstr "Hopper spins on the spot, chasing his own tail."
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Мох прячется за маму и выглядывает одним глазом."
 msgstr "Moss hides behind his mother and peeks out with one eye."
 
-#: Gameplay/RatFamilyActor.cs
+#. нет в коде
 msgid "Соня зевает. На сегодня с неё хватит приключений."
 msgstr "Sleepy yawns. Enough adventures for one day."
 
-#: UI/OverheadWord.cs
-msgid "подойдите — Z, шепнуть"
-msgstr "come closer — Z, whisper"
-
-msgid "Греховод, шёпотом"
-msgstr "Sinbinder, whispering"
-
-msgid "Шёпот"
-msgstr "Whisper"
-
-msgid "{0} поддался — исполнит приказ."
-msgstr "{0} gave in and will carry out the order."
-
-msgid "{0} поддалась — исполнит приказ."
-msgstr "{0} gave in and will carry out the order."
-
-msgid "{0} в нём теперь громче."
-msgstr "{0} speaks louder in him now."
-
-msgid "{0} в ней теперь громче."
-msgstr "{0} speaks louder in her now."
-
-msgid "Из кошеля — {0} монеты."
-msgstr "{0} coins from the purse."
-
-msgid "{0} не поддался: {1} в нём сильнее греха."
-msgstr "{0} did not give in: {1} is stronger in him than sin."
-
-msgid "{0} не поддалась: {1} в ней сильнее греха."
-msgstr "{0} did not give in: {1} is stronger in her than sin."
-
-msgid "Жадному нечего обещать: кошель пуст."
-msgstr "Nothing to promise the greedy: the purse is empty."
-
-msgid "Уберите помеху — или искусите: подойдите к ней и нажмите Z."
-msgstr "Remove the obstacle — or tempt her: go up to her and press Z."
-
-msgid "{0}: «{1} вас не расслышал, владыка: далеко. Голос не долетает — подойдите ближе»."
-msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
-
-msgid "{0}: «{1} вас не расслышала, владыка: далеко. Голос не долетает — подойдите ближе»."
-msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
-
-msgid "{0}: «{1} вас не расслышали, владыка: далеко. Голос не долетает — подойдите ближе»."
-msgstr "{0}: “{1} didn't hear you, my lord: too far. Your voice doesn't carry — come closer.”"
-
-msgid "его убийцы у него на глазах"
-msgstr "his killers are right before his eyes"
-
-msgid "её убийцы у неё на глазах"
-msgstr "her killers are right before her eyes"
-
-msgid "его убийцы на виду"
-msgstr "his killers are in sight"
-
-msgid "Это они меня убили!"
-msgstr "They're the ones who killed me!"
-
-msgid "он помнит, кто его убил"
-msgstr "he remembers who killed him"
-
-msgid "она помнит, кто её убил"
-msgstr "she remembers who killed her"
-
-msgid "Суд души"
-msgstr "The Court of the Soul"
-
-msgid "Вердикт"
-msgstr "Verdict"
-
+#. нет в коде
 msgid "Это суд его души. За столом — его голоса; огонь перед каждым — сила голоса. Решит самый громкий."
 msgstr "This is the court of his soul. At the table sit his voices; the flame before each is that voice's strength. The loudest decides."
 
+#. нет в коде
 msgid "На столе — приказ владыки: «{0}»."
 msgstr "On the table lies the lord's order: “{0}”."
 
+#. нет в коде
 msgid "Я — за приказ."
 msgstr "I am for the order."
 
+#. нет в коде
 msgid "Я — против."
 msgstr "I am against."
 
-msgid "Отказ. {0} не исполнил приказ."
-msgstr "Refusal. {0} did not carry out the order."
-
-msgid "Отказ. {0} не исполнила приказ."
-msgstr "Refusal. {0} did not carry out the order."
-
-msgid "{0} замер: приказ не исполнен."
-msgstr "{0} froze: the order is not carried out."
-
-msgid "{0} замерла: приказ не исполнен."
-msgstr "{0} froze: the order is not carried out."
-
-msgid "{0} исполнил приказ."
-msgstr "{0} carried out the order."
-
-msgid "{0} исполнила приказ."
-msgstr "{0} carried out the order."
-
-msgid "отступить"
-msgstr "fall back"
-
-msgid "идти, куда велено"
-msgstr "go where told"
-
-msgid "бить, кого велено"
-msgstr "strike whom told"
-
-msgid "идти и бить по дороге"
-msgstr "advance and strike on the way"
-
-msgid "стоять на месте"
-msgstr "hold position"
-
-msgid "исполнить"
-msgstr "obey"
-
-msgid "Владыка велел. Надо идти."
-msgstr "The lord commanded. We must go."
-
-msgid "Уходи, пока цел."
-msgstr "Leave while you're whole."
-
-msgid "Уходи, пока цела."
-msgstr "Leave while you're whole."
-
-msgid "Не сейчас. Их час ещё придёт."
-msgstr "Not now. Their hour will come."
-
-msgid "Ослушаться — грех."
-msgstr "To disobey is a sin."
-
-msgid "Велено — сделай."
-msgstr "You were told — do it."
-
-msgid "Уйти проще, чем драться."
-msgstr "Leaving is easier than fighting."
-
-msgid "Не о себе думай."
-msgstr "Don't think of yourself."
-
-msgid "Даром драться? Уходи."
-msgstr "Fight for nothing? Leave."
-
-msgid "Послушай владыку."
-msgstr "Listen to the lord."
-
-msgid "Это они нас убили. Я их помню."
-msgstr "They are the ones who killed us. I remember them."
-
-msgid "Стой за своих."
-msgstr "Stand by your own."
-
-msgid "Бей. Пусть ответят кровью."
-msgstr "Strike. Let them answer in blood."
-
-msgid "Не мне решать — но я не уйду."
-msgstr "It's not mine to decide — but I won't leave."
-
-msgid "Бежать от них? Никогда."
-msgstr "Run from them? Never."
-
-msgid "Не уйду."
-msgstr "I won't leave."
-
-msgid "Они живы, а мы — нет."
-msgstr "They live, and we do not."
-
-msgid "Не за себя — за правду."
-msgstr "Not for myself — for what's right."
-
-msgid "Своё надо вернуть."
-msgstr "What's ours must be taken back."
-
-msgid "Не уйду, пока они здесь."
-msgstr "I won't leave while they're here."
-
-msgid "Мало. Хочу ещё."
-msgstr "Not enough. I want more."
-
-msgid "Спиной к ним не повернусь."
-msgstr "I won't turn my back on them."
-
-msgid "Бей!"
-msgstr "Strike!"
-
-msgid "Никуда я не пойду."
-msgstr "I'm not going anywhere."
-
-msgid "Стой, где стоишь."
-msgstr "Stay where you stand."
-
-msgid "Беги!"
-msgstr "Run!"
-
-msgid "Сначала добыча."
-msgstr "Loot first."
-
-msgid "Своих не бросают."
-msgstr "You don't abandon your own."
-
-msgid "Не уходи."
-msgstr "Don't leave."
-
-msgid "Я — {0}. Я слышу владыку."
-msgstr "I am {0}. I hear the lord."
-
-msgid "Я — {0}. Я помню всё, что было."
-msgstr "I am {0}. I remember all that was."
-
-msgid "Я — {0}. Я берегу жизнь."
-msgstr "I am {0}. I guard life."
-
-msgid "Я — {0}. Я знаю, что хорошо и что дурно."
-msgstr "I am {0}. I know good from bad."
-
-msgid "Я — {0}. Я не прохожу мимо чужой беды."
-msgstr "I am {0}. I don't pass by another's trouble."
-
-msgid "Я — {0}. Я умею ждать."
-msgstr "I am {0}. I know how to wait."
-
-msgid "Я — {0}. Я гашу вспышки."
-msgstr "I am {0}. I put out flare-ups."
-
-msgid "Я — {0}. Я не прощаю обид."
-msgstr "I am {0}. I don't forgive wrongs."
-
-msgid "Я — {0}. Я знаю своё место."
-msgstr "I am {0}. I know my place."
-
-msgid "Я — {0}. Я не склоняю головы."
-msgstr "I am {0}. I bow my head to no one."
-
-msgid "Я — {0}. Я отдаю, не считая."
-msgstr "I am {0}. I give without counting."
-
-msgid "Я — {0}. Я считаю, что нам достанется."
-msgstr "I am {0}. I count what we'll get."
-
-msgid "Я — {0}. Я радуюсь чужому."
-msgstr "I am {0}. I rejoice in others' good."
-
-msgid "Я — {0}. Я вижу, у кого больше."
-msgstr "I am {0}. I see who has more."
-
-msgid "Я — {0}. Я никого не держу."
-msgstr "I am {0}. I hold no one back."
-
-msgid "Я — {0}. Я держусь за тех, кто рядом."
-msgstr "I am {0}. I cling to those nearby."
-
-msgid "Я — {0}. Мне хватает малого."
-msgstr "I am {0}. A little is enough for me."
-
-msgid "Я — {0}. Мне всегда мало."
-msgstr "I am {0}. It's never enough for me."
-
-msgid "Я — {0}. Я не бросаю дела."
-msgstr "I am {0}. I don't abandon the task."
-
-msgid "Я — {0}. Я берегу силы."
-msgstr "I am {0}. I save my strength."
-
-msgid "Я — {0}."
-msgstr "I am {0}."
-
-msgid "Голоса вровень — душа не выбрала ничего."
-msgstr "The voices are even — the soul chose nothing."
-
+#. нет в коде
 msgid "Приказ отвергнут: {0} громче, чем {1}."
 msgstr "The order is rejected: {0} is louder than {1}."
 
-msgid "Приказ отвергнут."
-msgstr "The order is rejected."
-
+#. нет в коде
 msgid "Приказ исполнен: {0} громче, чем {1}."
 msgstr "The order is carried out: {0} is louder than {1}."
 
-msgid "Приказ исполнен."
-msgstr "The order is carried out."
-
-msgid "он бы послушался"
-msgstr "he would have obeyed"
-
-msgid "она бы послушалась"
-msgstr "she would have obeyed"
-
-msgid "Другая душа на его месте могла решить иначе."
-msgstr "Another soul in his place might have decided otherwise."
-
-msgid "Решило одно: {0}. Не будь этого — {1}."
-msgstr "One thing decided it: {0}. Without it, {1}."
-
-msgid "Решил один голос — {0}. Без него {1}."
-msgstr "One voice decided it — {0}. Without it, {1}."
-
-msgid "Одной причины нет — так решила вся душа разом."
-msgstr "There is no single reason — the whole soul decided at once."
-
-msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and he goes. The reason is gone: the killers are dead."
-
-msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and she goes. The reason is gone: the killers are dead."
-
+#. нет в коде
 msgid "И снова нет: у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
 msgstr "No again: his soul found another reason. Hover over him to learn which."
 
+#. нет в коде
 msgid "И снова нет: у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
 msgstr "No again: her soul found another reason. Hover over her to learn which."
 
+#. нет в коде
 msgid "Это суд его души. За столом — его голоса; огонь перед каждым — сила голоса."
 msgstr "This is the court of his soul. At the table sit his voices; the flame before each is that voice's strength."
 
+#. нет в коде
 msgid "Это суд её души. За столом — её голоса; огонь перед каждым — сила голоса."
 msgstr "This is the court of her soul. At the table sit her voices; the flame before each is that voice's strength."
 
+#. нет в коде
 msgid "Позади — его моральный компас. Слева — голоса за приказ, справа — против. Куда склонится стрелка, так он и поступит."
 msgstr "Behind them is his moral compass. On the left, the voices for the order; on the right, those against. Where the needle leans, so he will act."
 
+#. нет в коде
 msgid "Позади — её моральный компас. Слева — голоса за приказ, справа — против. Куда склонится стрелка, так она и поступит."
 msgstr "Behind them is her moral compass. On the left, the voices for the order; on the right, those against. Where the needle leans, so she will act."
 
-msgid "Приказ отвергнут. Против — {0}. За приказ — никто."
-msgstr "The order is rejected. Against: {0}. For the order: no one."
-
+#. нет в коде
 msgid "Приказ отвергнут. Против — {0}. За — {1}. Стрелка склонилась к «против»."
 msgstr "The order is rejected. Against: {0}. For: {1}. The needle leaned to “against”."
 
-msgid "Приказ исполнен. За — {0}. Против — никто."
-msgstr "The order is carried out. For: {0}. Against: no one."
-
+#. нет в коде
 msgid "Приказ исполнен. За — {0}. Против — {1}. Стрелка склонилась к «за»."
 msgstr "The order is carried out. For: {0}. Against: {1}. The needle leaned to “for”."
 
-msgid "{0} и {1}"
-msgstr "{0} and {1}"
-
-msgid "Убийц нельзя отпускать."
-msgstr "Killers must not be let go."
-
-msgid "Уйдём — они убьют ещё кого-то."
-msgstr "If we leave, they will kill someone else."
-
+#. нет в коде
 msgid "Это суд его души. Голосов в нём много, но за стол сели те, кого задел этот приказ. Огонь перед каждым — сила голоса; кто молчит — стоит в тени."
 msgstr "This is the court of his soul. It holds many voices, but only those this order touched sat at the table. The flame before each is that voice's strength; the silent ones stand in the shadow."
 
+#. нет в коде
 msgid "Это суд её души. Голосов в ней много, но за стол сели те, кого задел этот приказ. Огонь перед каждым — сила голоса; кто молчит — стоит в тени."
 msgstr "This is the court of her soul. It holds many voices, but only those this order touched sat at the table. The flame before each is that voice's strength; the silent ones stand in the shadow."
 
+#. нет в коде
 msgid "Сон Бога Смерти"
 msgstr "Dream of the God of Death"
 
-msgid "обучение и суд души"
-msgstr "tutorial and the court of the soul"
-
-msgid "Сон Греховода"
-msgstr "The Sinbinder's Dream"
-
+#. нет в коде
 msgid "Это суд его души. Судьи — его голоса, все тринадцать. Перед ними — он сам."
 msgstr "This is the court of his soul. The judges are his voices, all thirteen. Before them stands he himself."
 
+#. нет в коде
 msgid "Это суд её души. Судьи — её голоса, все тринадцать. Перед ними — она сама."
 msgstr "This is the court of her soul. The judges are her voices, all thirteen. Before them stands she herself."
 
-msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
-msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so he will act."
-
-msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит."
-msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
-
-msgid "Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь."
-msgstr "Before the court is the master's order: “{0}”. Judges, rise and name yourselves."
-
+#. нет в коде
 msgid "Судьи, ваше слово. Тише — первыми, громче — последними."
 msgstr "Judges, speak. The quiet first, the loud last."
-
-msgid "Воздерживаюсь."
-msgstr "I abstain."
-
-msgid "Меня это не касается."
-msgstr "This does not concern me."
-
-msgid "Мне нечего сказать."
-msgstr "I have nothing to say."
-
-msgid "Пусть решают другие."
-msgstr "Let the others decide."
-
-msgid "Это не мой вопрос."
-msgstr "This is not my question."
-
-msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против»."
-msgstr "The order is rejected. Against: {0}. For: {1}. The scales tipped to “against”."
-
-msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
-msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
-
-msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: он благочестив."
-msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: he is pious."
-
-msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на добро: она благочестива."
-msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on good: she is pious."
-
-msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: он злобен."
-msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: he is vicious."
-
-msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала на зло: она злобна."
-msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled on evil: she is vicious."
-
-msgid "Над всем — его моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: он ни добр, ни зол."
-msgstr "Above all is his moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: he is neither good nor evil."
-
-msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: она ни добра, ни зла."
-msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: she is neither good nor evil."
-
-msgid "подсудимый"
-msgstr "the accused"
-
-msgid "ЗА ПРИКАЗ"
-msgstr "FOR THE ORDER"
-
-msgid "ПРОТИВ"
-msgstr "AGAINST"
-
-msgid "ДОБРО"
-msgstr "GOOD"
-
-msgid "СЕРЕДИНА"
-msgstr "MIDDLE"
-
-msgid "ЗЛО"
-msgstr "EVIL"
-
-msgid "за — {0}    против — {1}    воздержались — {2}"
-msgstr "for — {0}    against — {1}    abstained — {2}"
-
-msgid "воздерж."
-msgstr "abstains"
-
-msgid "за"
-msgstr "for"
-
-msgid "против"
-msgstr "against"
-
-msgid "Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
-msgstr "Why did he disobey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
-
-msgid "Почему она не послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
-msgstr "Why did she disobey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
-
-msgid "Почему он замер? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
-msgstr "Why did he freeze? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
-
-msgid "Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
-msgstr "Why did she freeze? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
-
-msgid "Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
-msgstr "Why did he obey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
-
-msgid "Почему она послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
-msgstr "Why did she obey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
-
-msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
-msgstr "This is how every warrior in your band decides: you give the order, their voices weigh it. Another soul has other voices — and another court."
-
-msgid "Подойдите к телу и нажмите R — душа вернётся в оболочку."
-msgstr "Walk up to the body and press R — the soul returns to its shell."
-
-msgid "Поднятый встанет вашим воином."
-msgstr "The risen will stand as your warrior."
-
-msgid "Это ваш первый воин."
-msgstr "This is your first warrior."
-
-msgid "Правой кнопкой — по земле: он пойдёт туда."
-msgstr "Right-click the ground: he will go there."
-
-msgid "Правой кнопкой — по земле: она пойдёт туда."
-msgstr "Right-click the ground: she will go there."
-
-msgid "Приказ отдаёте вы. Исполнит ли — решает душа."
-msgstr "You give the order. Whether it is carried out — the soul decides."
-
-msgid "Его убийцы вернулись."
-msgstr "His killers have returned."
-
-msgid "Её убийцы вернулись."
-msgstr "Her killers have returned."
-
-msgid "X, затем щелчок по земле позади него — приказ отступить."
-msgstr "X, then click the ground behind him — the order to fall back."
-
-msgid "X, затем щелчок по земле позади неё — приказ отступить."
-msgstr "X, then click the ground behind her — the order to fall back."
-
-msgid "Послушается ли — решит душа. Смотрите."
-msgstr "Whether the order is obeyed — the soul decides. Watch."
-
-msgid "Убийц больше нет."
-msgstr "The killers are gone."
-
-msgid "Тот же приказ: X и щелчок позади."
-msgstr "The same order: X and a click behind."
-
-msgid "Причины больше нет — что решит душа теперь?"
-msgstr "The reason is gone — what will the soul decide now?"
-
-msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против» — на волосок."
-msgstr "Order refused. Against: {0}. For: {1}. The scales tipped to “against” — by a hair."
-
-msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
-msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for” — by a hair."
-
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
-msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
-
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
-msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
-
-msgid "Он пал. Своё решение стоило ему второй жизни."
-msgstr "He fell. His own decision cost him his second life."
-
-msgid "Она пала. Своё решение стоило ей второй жизни."
-msgstr "She fell. Her own decision cost her her second life."
-
-msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}"
-msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>against</color> — {3}"
-
-msgid "никто"
-msgstr "no one"
-
-msgid "Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."
-msgstr "Judges, speak. The quiet first, the loud last. The stronger the voice, the brighter its candle and the further the scales swing."
-
-msgid "Голосов за приказ больше, но {0} — громче всех: весы решает сила голоса, а не число."
-msgstr "More voices are for the order, but {0} is the loudest: the scales weigh strength, not numbers."
-
-msgid "Голосов против больше, но {0} — громче всех: весы решает сила голоса, а не число."
-msgstr "More voices are against, but {0} is the loudest: the scales weigh strength, not numbers."
-
-msgid "вровень"
-msgstr "even"
-
-msgid "за приказ"
-msgstr "for the order"
-
-msgid "послушается"
-msgstr "will obey"
-
-msgid "вряд ли"
-msgstr "unlikely"
-
-msgid "не услышит"
-msgstr "won't hear"

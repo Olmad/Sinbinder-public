@@ -35,6 +35,8 @@ namespace Sinbinder.EditorTools
         private static int _errors, _spokenShot = -1, _spokenSeen = -1;
         private static float _spokenAt, _diveAt = -1f, _aimAt = -1f;
         private static int _diveShots;
+        private static float _riseAt = -1f;
+        private static bool _riseShot;
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static string NL => Environment.NewLine;
 
@@ -251,6 +253,12 @@ namespace Sinbinder.EditorTools
                 if (_diveAt < 0f) _diveAt = now;
                 if (_diveShots == 0 && now - _diveAt > 0.3f) { _diveShots = 1; Snap("суд 00а — влёт в голову"); }
                 else if (_diveShots == 1 && now - _diveAt > 0.6f) { _diveShots = 2; Snap("суд 00б — влёт в голову"); }
+            }
+            // Зал снизу (автор 06.11: «не хватает грандиозности») — проявился, ещё не поднялись.
+            if (SoulCourt.Step == "rise")
+            {
+                if (_riseAt < 0f) _riseAt = now;
+                if (!_riseShot && now - _riseAt > 2.3f) { _riseShot = true; Snap("суд 01б — зал снизу"); }
             }
             if (SoulCourt.Spoken != _spokenSeen) { _spokenSeen = SoulCourt.Spoken; _spokenAt = now; }
             var box = UI.Letterbox.Instance;

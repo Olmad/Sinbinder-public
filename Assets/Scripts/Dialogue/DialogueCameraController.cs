@@ -467,6 +467,55 @@ namespace Sinbinder.Dialogue
         }
 
         /// <summary>
+        /// Кран: из одного кадра в другой плывут и место, и взгляд, и угол
+        /// (зал суда: сначала снизу, из-за спины подсудимого, — потом вверх,
+        /// на общий план). Камера ставится сразу, <paramref name="hold"/> секунд
+        /// стоит, за <paramref name="seconds"/> переезжает, дальше — подъезд,
+        /// как у <see cref="FocusOnPoint"/>.
+        /// </summary>
+        public void Crane(Vector3 lookFrom, Vector3 from, float fovFrom,
+                          Vector3 lookTo, Vector3 to, float fovTo,
+                          float hold, float seconds, float push, float reach)
+        {
+            var cam = Cam();
+            if (cam == null) return;
+
+            ++_frameRevision;
+            if (_swayCoroutine != null) StopCoroutine(_swayCoroutine);
+            ShowHeroAgain();
+            _inDialogue = true;
+            Target = null;
+            Partner = null;
+            UI.Letterbox.Instance?.Show(null);
+            cam.fieldOfView = fovFrom;
+            cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation((lookFrom - from).normalized));
+            _swayCoroutine = StartCoroutine(CraneMove(lookFrom, from, fovFrom, lookTo, to, fovTo, hold, seconds, push, reach));
+        }
+
+        private IEnumerator CraneMove(Vector3 lookFrom, Vector3 from, float fovFrom,
+                                      Vector3 lookTo, Vector3 to, float fovTo,
+                                      float hold, float seconds, float push, float reach)
+        {
+            for (float t = 0f; t < hold && _inDialogue; t += Time.unscaledDeltaTime) yield return null;
+            for (float t = 0f; t < seconds && _inDialogue; t += Time.unscaledDeltaTime)
+            {
+                var cam = Cam();
+                if (cam == null) yield break;
+                float k = Mathf.Clamp01(t / seconds);
+                k = k * k * k * (k * (k * 6f - 15f) + 10f);   // мягче smoothstep: кран трогается и встаёт без толчка
+                Vector3 pos = Vector3.Lerp(from, to, k);
+                Vector3 aim = Vector3.Lerp(lookFrom, lookTo, k);
+                cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation((aim - pos).normalized));
+                cam.fieldOfView = Mathf.Lerp(fovFrom, fovTo, k);
+                yield return null;
+            }
+            if (!_inDialogue) yield break;
+            var end = Cam();
+            if (end != null) end.fieldOfView = fovTo;
+            yield return PushTowards(lookTo, to, push, reach);
+        }
+
+        /// <summary>
         /// Подъезд к вещи: на пятую часть пути (или на <paramref name="reach"/>), плавно,
         /// и стоять. Общему плану суда пятая часть много: к вердикту крайние судьи
         /// уезжали за край кадра (прогон 06.11).

@@ -68,11 +68,17 @@ namespace Sinbinder.UI
             {
                 // Реальное время: панели пролога останавливают игру,
                 // а подсказка обязана дочитываться и на паузе.
-                if (Time.unscaledTime >= _hideAt) Hide();
+                // Встал круг обучения — у него своя плашка, две разом не читаются.
+                if (Time.unscaledTime >= _hideAt || Lesson.Holding) Hide();
                 return;
             }
 
             if (Shown) { enabled = false; return; }
+
+            // Во сне жатву учит свой круг; души убийц после боя гаснут, пока идёт
+            // проверка тем же приказом, и подсказка про банку вставала под её
+            // плашкой (кадр «сон — весы до приказа», 06.11).
+            if (DreamTutorialDirector.Instance != null) return;
 
             var souls = SoulManager.Instance;
             if (souls == null || souls.FadingCount == 0) return;

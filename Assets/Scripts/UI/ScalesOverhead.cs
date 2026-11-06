@@ -232,7 +232,11 @@ namespace Sinbinder.UI
                 Vector3 at = m.Who.transform.position;
                 float top = m.Body != null ? m.Body.bounds.max.y : at.y + 1.9f;
                 Vector3 v = eye.WorldToViewportPoint(new Vector3(at.x, top + Above, at.z));
-                bool seen = v.z > 0.5f && !FogOfWar.Hides(m.Who);
+                // Сам воин должен быть в кадре: весы, прижатые к краю, висели в пустоте,
+                // когда он ушёл за край (кадр «сон — весы до приказа», 06.11).
+                Vector3 body = eye.WorldToViewportPoint(at + Vector3.up);
+                bool seen = v.z > 0.5f && !FogOfWar.Hides(m.Who)
+                         && body.x > -0.02f && body.x < 1.02f && body.y > -0.02f && body.y < 1.02f;
                 float alpha = m.Preview
                     ? Mathf.Min(Mathf.Clamp01(age / 0.15f), Mathf.Clamp01(1f - (now - m.Touched - 0.1f) / 0.15f))
                     : Mathf.Min(Mathf.Clamp01(age / 0.15f), Mathf.Clamp01((Life - age) / FadeOut));
