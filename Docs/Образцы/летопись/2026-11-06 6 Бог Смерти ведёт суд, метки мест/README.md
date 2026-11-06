@@ -2,7 +2,7 @@
 
 По слову автора 06.11 («временами слышно шорканье… если есть конкретное место — показывать стрелкой как выход из лагеря… вместо Голоса Суда — Голос Бога Смерти»). Вступление, компас, весы, приказ и вердикт говорит Бог Смерти: подпись «Бог Смерти» и «Бог Смерти — вердикт», голос пешки речью — очень низкие слоги, шёпот в такт, гул и эхо склепа, печать медленнее. У задач лагеря над местом встаёт его имя, вне кадра — у края со стрелкой: «Стол с шаром →». Шум согласных в голосах в несколько раз тише и мягче.
 
-Записано: Assets/Scripts/Audio/DeathVoice.cs · Assets/Scripts/UI/PlaceMarker.cs · Assets/Scripts/Audio/VoiceGenerator.cs. Автор: ждём.
+Записано: Assets/Scripts/Audio/DeathVoice.cs · Assets/Scripts/UI/PlaceMarker.cs · Assets/Scripts/Audio/VoiceGenerator.cs. коммит [`8d88fc9`](https://github.com/Olmad/Sinbinder-public/commit/8d88fc9). Автор: ждём.
 
 [← летопись](../README.md)
 
