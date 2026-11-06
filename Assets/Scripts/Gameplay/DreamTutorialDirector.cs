@@ -38,6 +38,14 @@ namespace Sinbinder.Gameplay
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
 
+        /// <summary>
+        /// Весы до приказа во сне — только на проверке тем же приказом (63-TEACHING, п. 7):
+        /// суд их уже объяснил, плашка спрашивает «что решит душа теперь?» — и, пока игрок
+        /// целится приказом, весы над воином отвечают до щелчка. До суда — нет: там весы
+        /// ещё никто не объяснил.
+        /// </summary>
+        public static bool Foreseeing => Instance != null && Instance._stage == Stage.Retest;
+
         /// <summary>Поднятый — для прогона.</summary>
         public Warrior Zombie => _zombie;
         public Warrior Wounded => _wounded;

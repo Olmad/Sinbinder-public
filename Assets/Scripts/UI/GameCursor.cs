@@ -58,6 +58,9 @@ namespace Sinbinder.UI
         private float _nextLook;
         private string _want = "pointer";
 
+        /// <summary>Курсор на враге — весы до приказа «бить» над выделенными (ScalesOverhead.Foresee).</summary>
+        public static bool OverEnemy => _instance != null && _instance._want == "enemy";
+
         void Update()
         {
             if (Time.unscaledTime >= _nextLook)

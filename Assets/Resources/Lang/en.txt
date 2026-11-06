@@ -9937,3 +9937,12 @@ msgstr "even"
 
 msgid "за приказ"
 msgstr "for the order"
+
+msgid "послушается"
+msgstr "will obey"
+
+msgid "вряд ли"
+msgstr "unlikely"
+
+msgid "не услышит"
+msgstr "won't hear"

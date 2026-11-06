@@ -33,9 +33,9 @@ namespace Sinbinder.EditorTools
         private static float _t0 = -1f, _stepAt, _lastPoke;
         private static string _step = "";
         private static int _errors, _spokenShot = -1, _spokenSeen = -1;
-        private static float _spokenAt, _diveAt = -1f;
+        private static float _spokenAt, _diveAt = -1f, _aimAt = -1f;
         private static int _diveShots;
-        private static bool _killersShot, _retestShot, _scalesShot, _retestIssued, _harvestTold, _done;
+        private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static string NL => Environment.NewLine;
 
         static DreamWalkthrough()
@@ -189,8 +189,31 @@ namespace Sinbinder.EditorTools
                     break;
                 case "Retest":
                     if (_step != "тот же приказ") Go("тот же приказ");
+                    // Весы до приказа (63-TEACHING, п. 7): выделить, прицелиться отступлением,
+                    // как игрок по X, — и кадр, пока весы над ним отвечают до щелчка.
+                    if (!_foreseeShot && now - _stepAt > 0.5f && dream.Zombie != null)
+                    {
+                        var manager = SelectionManager.Instance;
+                        var unit = dream.Zombie.GetComponent<SelectionComponent>();
+                        if (manager == null || unit == null) _foreseeShot = true;
+                        else if (manager.Aiming != CommandKind.FallBack)
+                        {
+                            typeof(SelectionManager).GetMethod("SelectUnit",
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                ?.Invoke(manager, new object[] { unit });
+                            manager.Aim(CommandKind.FallBack);
+                            _aimAt = now;
+                            if (manager.Aiming != CommandKind.FallBack) { _foreseeShot = true; Write("  [ВЕСЫ ДО ПРИКАЗА] прицелиться не вышло"); }
+                        }
+                        else if (now - _aimAt > 0.9f)
+                        {
+                            _foreseeShot = true;
+                            Snap("сон — весы до приказа");
+                            manager.StopAiming();
+                        }
+                    }
                     // Через секунду, а не в кадр смены стадии: сон ждёт приказа «позже» своей отметки.
-                    if (!_retestIssued && now - _stepAt > 1f && dream.Zombie != null)
+                    if (!_retestIssued && _foreseeShot && now - _stepAt > 1f && dream.Zombie != null)
                     {
                         _retestIssued = true;
                         dream.Zombie.IssueCommand(CommandKind.FallBack, dream.Zombie.transform.position + new Vector3(0f, 0f, -6f));

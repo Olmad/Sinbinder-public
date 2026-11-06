@@ -728,6 +728,54 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
+        /// <summary>
+        /// Весы до приказа (63-TEACHING, п. 7; как Into the Breach — намерение видно до хода):
+        /// куда склонится душа, если отдать этот приказ сейчас. Без последствий для души —
+        /// WouldObey и Ballot, а не решение: ни памяти, ни статистики, ни съёмочного отказа.
+        /// Сторону решает WouldObey (в нём и вещи, и установка отряда), угол — голоса, как в зале.
+        /// </summary>
+        public static bool Foresee(Warrior w, DecisionContext c, out bool obeys, out float lean, out string voice, out Color colour)
+        {
+            obeys = false; lean = 0f; voice = null; colour = Color.white;
+            if (w == null || c == null || !c.HasCommand) return false;
+            var resolver = new BehaviourResolver();
+            obeys = resolver.WouldObey(w, c);
+            var votes = resolver.Ballot(w, c);
+
+            // Соперник приказа — то, что громче всего тянет прочь.
+            var pull = new Dictionary<ActionType, float>();
+            foreach (var v in votes)
+                if (v.Action != ActionType.ObeyCommand) { pull.TryGetValue(v.Action, out float s); pull[v.Action] = s + v.Voice; }
+            var rival = ActionType.ObeyCommand;
+            float strongest = float.NegativeInfinity;
+            foreach (var kv in pull) if (kv.Value > strongest) { strongest = kv.Value; rival = kv.Key; }
+
+            var sum = new Dictionary<string, float>();
+            foreach (var v in votes)
+            {
+                if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
+                sum.TryGetValue(v.Module, out float net);
+                sum[v.Module] = net + (v.Action == ActionType.ObeyCommand ? -v.Voice : v.Voice);
+            }
+            float total = 0f, reach = 1f, loud = 0f;
+            string top = null;
+            foreach (var kv in sum)
+            {
+                total += kv.Value;
+                reach += Mathf.Abs(kv.Value);
+                bool winning = obeys ? kv.Value < 0f : kv.Value > 0f;
+                if (winning && Mathf.Abs(kv.Value) > loud) { loud = Mathf.Abs(kv.Value); top = kv.Key; }
+            }
+            float a = Tilt(total, reach);
+            lean = obeys ? Mathf.Max(a, MinLean) : Mathf.Min(a, -MinLean);
+            if (top != null)
+            {
+                voice = UI.SelectedUnitPanelUI.VoiceName(top, w.Soul);
+                colour = Glow(top);
+            }
+            return true;
+        }
+
         /// <summary>Что душа выбрала вместо приказа — или что тянуло её прочь.</summary>
         private static ActionType Rival(Decision d)
         {

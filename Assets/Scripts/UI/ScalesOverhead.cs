@@ -18,6 +18,10 @@ namespace Sinbinder.UI
     /// Три с половиной секунды — и гаснут. Не чаще раза в 10 с на воина и не
     /// больше двух сразу: отказывающий отказывает на каждом решении, а весы над
     /// всеми — каша. В суде (мир — зал) не показываются.
+    ///
+    /// С 06.11 и до приказа (п. 7, <see cref="Foresee"/>): пока игрок наводит приказ,
+    /// над выделенными — куда склонится каждый. Те же весы, подпись — «послушается»,
+    /// «вряд ли: Гнев», «не услышит».
     /// </summary>
     public class ScalesOverhead : MonoBehaviour
     {
@@ -25,6 +29,10 @@ namespace Sinbinder.UI
         {
             public Warrior Who;
             public Collider Body;
+            public Text Label;
+            public bool Preview;            // весы до приказа: живут, пока игрок наводит
+            public CommandKind Kind;
+            public float Touched, NextLook;
             public RectTransform Root;
             public RectTransform Needle;
             public CanvasGroup Group;
@@ -33,7 +41,9 @@ namespace Sinbinder.UI
         }
 
         private const float Life = 3.5f, FadeOut = 0.5f, Cooldown = 10f, Size = 64f, Above = 0.35f;
-        private const int Most = 2;
+        private const int Most = 2, MostForeseen = 8;
+        private const float LookEvery = 0.3f;
+        private static readonly Color Faint = new Color(0.70f, 0.65f, 0.55f);
 
         private static ScalesOverhead _instance;
         private static readonly Dictionary<Warrior, float> NextFor = new();
@@ -66,6 +76,63 @@ namespace Sinbinder.UI
             Get().Add(w, lean, label);
         }
 
+        /// <summary>
+        /// Весы до приказа (63-TEACHING, п. 7; как Into the Breach — намерение видно до хода):
+        /// пока игрок наводит приказ — кнопку, прицел, курсор на враге, — над каждым выделенным
+        /// малые весы: куда склонится, если приказать сейчас. Звать каждый кадр, пока наводит;
+        /// перестал звать — гаснут сами. Счёт — без последствий для души (SoulCourt.Foresee).
+        /// </summary>
+        public static void Foresee(List<Warrior> who, CommandKind kind)
+        {
+            if (who == null || who.Count == 0 || SoulCourt.Sitting) return;
+            var self = Get();
+            float now = Time.unscaledTime;
+            int shown = 0;
+            foreach (var w in who)
+            {
+                if (w == null || w.IsDead) continue;
+                if (shown++ >= MostForeseen) break;
+                var m = self._marks.Find(x => x.Who == w && x.Preview && x.Kind == kind);
+                if (m != null)
+                {
+                    m.Touched = now;
+                    if (now < m.NextLook) continue;
+                }
+
+                float lean;
+                string label;
+                float muffle = Voice.MuffleFor(w);
+                if (!Voice.Heard(muffle))
+                {
+                    lean = 0f;
+                    label = Paint(Faint, Loc.T("не услышит"));
+                }
+                else
+                {
+                    var ctx = CombatDecisionContext.Imagine(w, kind, muffle);
+                    if (!SoulCourt.Foresee(w, ctx, out bool obeys, out lean, out string voice, out Color colour)) continue;
+                    label = obeys ? Paint(SoulCourt.ForOrderTone, Loc.T("послушается"))
+                          : voice != null ? Paint(SoulCourt.AgainstTone, Loc.T("вряд ли") + ":") + " " + Paint(colour, voice)
+                          : Paint(SoulCourt.AgainstTone, Loc.T("вряд ли"));
+                }
+
+                if (m == null)
+                {
+                    m = self.Add(w, lean, label, preview: true);
+                    m.Kind = kind;
+                }
+                else
+                {
+                    m.Aim = lean;
+                    if (m.Label != null) m.Label.text = label;
+                }
+                m.Touched = now;
+                m.NextLook = now + LookEvery;
+            }
+        }
+
+        private static string Paint(Color c, string s) => $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{s}</color>";
+
         private static ScalesOverhead Get()
         {
             if (_instance != null) return _instance;
@@ -82,11 +149,21 @@ namespace Sinbinder.UI
             return _instance;
         }
 
-        private void Add(Warrior w, float lean, string label)
+        private Mark Add(Warrior w, float lean, string label, bool preview = false)
         {
             for (int i = _marks.Count - 1; i >= 0; i--)
                 if (_marks[i].Who == w) Drop(i);
-            while (_marks.Count >= Most) Drop(0);
+            // Больше двух — только весов до приказа: их зовёт сам игрок, и гаснут они с наведением.
+            if (!preview)
+            {
+                int live = _marks.FindAll(x => !x.Preview).Count;
+                for (int i = 0; i < _marks.Count && live >= Most;)
+                {
+                    if (_marks[i].Preview) { i++; continue; }
+                    Drop(i);
+                    live--;
+                }
+            }
 
             var root = Rect("Весы — " + w.DisplayName, transform, Vector2.zero, new Vector2(Size * 3f, Size + 34f));
             root.anchorMin = root.anchorMax = Vector2.zero;
@@ -122,11 +199,13 @@ namespace Sinbinder.UI
             outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
             outline.effectDistance = new Vector2(1.5f, -1.5f);
 
-            _marks.Add(new Mark
+            var mark = new Mark
             {
                 Who = w, Body = w.GetComponentInChildren<Collider>(), Root = root, Needle = needle, Group = group,
-                Born = Time.unscaledTime, Aim = lean,
-            });
+                Label = text, Preview = preview, Born = Time.unscaledTime, Touched = Time.unscaledTime, Aim = lean,
+            };
+            _marks.Add(mark);
+            return mark;
         }
 
         void LateUpdate()
@@ -138,7 +217,8 @@ namespace Sinbinder.UI
             {
                 var m = _marks[i];
                 float age = now - m.Born;
-                if (m.Root == null || m.Who == null || m.Who.IsDead || age > Life || SoulCourt.Sitting || eye == null)
+                bool over = m.Preview ? now - m.Touched > 0.25f : age > Life;
+                if (m.Root == null || m.Who == null || m.Who.IsDead || over || SoulCourt.Sitting || eye == null)
                 {
                     Drop(i);
                     continue;
@@ -153,7 +233,9 @@ namespace Sinbinder.UI
                 float top = m.Body != null ? m.Body.bounds.max.y : at.y + 1.9f;
                 Vector3 v = eye.WorldToViewportPoint(new Vector3(at.x, top + Above, at.z));
                 bool seen = v.z > 0.5f && !FogOfWar.Hides(m.Who);
-                float alpha = Mathf.Min(Mathf.Clamp01(age / 0.15f), Mathf.Clamp01((Life - age) / FadeOut));
+                float alpha = m.Preview
+                    ? Mathf.Min(Mathf.Clamp01(age / 0.15f), Mathf.Clamp01(1f - (now - m.Touched - 0.1f) / 0.15f))
+                    : Mathf.Min(Mathf.Clamp01(age / 0.15f), Mathf.Clamp01((Life - age) / FadeOut));
                 m.Group.alpha = seen ? alpha : 0f;
                 if (!seen) continue;
                 // По долям экрана, как подписи суда: пиксели экрана и кадра в пакетном прогоне

@@ -161,9 +161,41 @@ namespace Sinbinder.UI
                 s.Face.color = !usable ? Dim : _hover == s ? Lit : Plain;
             }
 
+            Foresee(manager, heroOnly);
+
             string skillTip = SkillTick(manager);
             _tip.text = _stanceList.gameObject.activeSelf ? ""
                       : !string.IsNullOrEmpty(skillTip) ? skillTip : Tip(manager, heroOnly);
+        }
+
+        private static readonly List<Warrior> Picked = new();
+
+        /// <summary>
+        /// Весы до приказа над выделенными (63-TEACHING, п. 7), пока игрок наводит приказ:
+        /// кнопка под мышью, прицел приказа или курсор на враге («бить»). Та же ступень,
+        /// что подсказка воина. Не поверх круга обучения; во сне — только
+        /// на проверке тем же приказом (весы уже объяснил суд, <see cref="DreamTutorialDirector.Foreseeing"/>).
+        /// </summary>
+        private void Foresee(SelectionManager manager, bool heroOnly)
+        {
+            // Выключатель «причина» (Counterfactual) весам не нужен: счёт — голосами, не «от противного».
+            if (heroOnly || !Core.Transparency.Shows(Core.Clarity.Tooltips)) return;
+            if (DreamTutorialDirector.Instance != null ? !DreamTutorialDirector.Foreseeing : Lesson.Holding) return;
+            if (_stanceList != null && _stanceList.gameObject.activeSelf) return;
+
+            var kind = manager.Aiming != CommandKind.None ? manager.Aiming
+                     : _hover != null && _hover.Act == null && _hover.Kind != CommandKind.None ? _hover.Kind
+                     : GameCursor.OverEnemy ? CommandKind.Attack
+                     : CommandKind.None;
+            if (kind == CommandKind.None) return;
+
+            Picked.Clear();
+            foreach (var unit in manager.GetSelectedUnits())
+            {
+                var w = unit != null ? unit.GetComponentInParent<Warrior>() : null;
+                if (w != null && !(w is SinbinderPlayer) && !w.IsDead && w.Team == Team.Player) Picked.Add(w);
+            }
+            ScalesOverhead.Foresee(Picked, kind);
         }
 
         private string Tip(SelectionManager manager, bool heroOnly)
