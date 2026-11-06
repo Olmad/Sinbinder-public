@@ -295,7 +295,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Реплика суда: строка на полосе и голос говорящего (тот же писк, что
+        /// Реплика суда: строка на полосе и голос говорящего (то же бормотание, что
         /// у Каргана на наезде, — <see cref="Audio.VoiceGenerator"/>). Щелчок —
         /// дальше (<see cref="UI.Letterbox.Hold"/>).
         /// </summary>
@@ -309,12 +309,31 @@ namespace Sinbinder.Gameplay
             yield return UI.Letterbox.Hold(Herald.Hold(words) + 0.5f);
         }
 
-        /// <summary>Голос судьи: ниже человеческого, у каждого свой.</summary>
-        private static MonoBehaviour Throat(GameObject who, float pitch)
+        /// <summary>
+        /// Голос судьи: ниже человеческого, у каждого свой, — и под сводами, с эхом
+        /// (автор, 06.11: «нужно переработать голоса — они раздражают»). Глубина —
+        /// самим голосом (<see cref="Audio.VoiceGenerator.Depth"/>), а не высотой
+        /// источника: та тянула и звук, и слоги налезали друг на друга.
+        /// </summary>
+        private static MonoBehaviour Throat(GameObject who, float depth)
         {
             var voice = who.AddComponent<Audio.VoiceGenerator>();
+            voice.Depth = depth;
             var source = who.GetComponent<AudioSource>();
-            if (source != null) { source.pitch = pitch; source.spatialBlend = 0f; }
+            if (source != null) { source.pitch = 1f; source.spatialBlend = 0f; source.ignoreListenerPause = true; }
+            var echo = who.AddComponent<AudioReverbFilter>();
+            echo.reverbPreset = AudioReverbPreset.User;
+            echo.dryLevel = 0f;
+            echo.room = -1100f;
+            echo.roomHF = -600f;
+            echo.decayTime = 2.2f;
+            echo.decayHFRatio = 0.6f;
+            echo.reflectionsLevel = -1600f;
+            echo.reflectionsDelay = 0.02f;
+            echo.reverbLevel = -700f;
+            echo.reverbDelay = 0.03f;
+            echo.diffusion = 100f;
+            echo.density = 100f;
             return voice;
         }
 
