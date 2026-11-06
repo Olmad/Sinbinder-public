@@ -1,4 +1,4 @@
-﻿// Assets/Scripts/Gameplay/SoulCourt.cs
+// Assets/Scripts/Gameplay/SoulCourt.cs
 // Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
@@ -48,7 +48,20 @@ namespace Sinbinder.Gameplay
         public static int Spoken { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0; }
+        private static void Rearm()
+        {
+            Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0;
+            // Суд, оборванный сменой сцены (выход в меню посреди суда), запирал
+            // все следующие до перезапуска игры: Sitting оставался true.
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Unstick;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += Unstick;
+        }
+
+        private static void Unstick(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            Sitting = false;
+            Step = "";
+        }
 
         /// <summary>Где стоит зал: под сценой, куда не смотрит ни одна камера.</summary>
         private static readonly Vector3 Hall = new Vector3(0f, -400f, 0f);
@@ -79,8 +92,14 @@ namespace Sinbinder.Gameplay
         private const float WallZ = 4.9f;
 
         /// <summary>Общий план: из-за спины подсудимого — кафедра, весы, компас.</summary>
-        private static readonly Vector3 OverviewFrom = new Vector3(0f, 2.4f, -3.9f);
-        private static readonly Vector3 OverviewLook = new Vector3(0f, 2.7f, 3.0f);
+        private static readonly Vector3 OverviewFrom = new Vector3(0f, 2.6f, -4.4f);
+        private static readonly Vector3 OverviewLook = new Vector3(0f, 3.1f, 3.5f);
+
+        /// <summary>
+        /// Угол общего плана. Узкий угол наездов (36°) под полосами брал только
+        /// весы и головы судей: компас уходил за верх кадра (прогон 06.11).
+        /// </summary>
+        private const float WideFov = 50f;
 
         /// <summary>
         /// Весы — то, что 05.11 было «компасом»: часы со стрелкой (автор: «идея
@@ -88,8 +107,8 @@ namespace Sinbinder.Gameplay
         /// Слева — «за приказ» (там и сидят такие судьи), справа — «против».
         /// Стрелка — сумма сказанного.
         /// </summary>
-        private static readonly Vector3 ScalesAt = new Vector3(0f, 3.35f, WallZ - 0.2f);
-        private static readonly Vector3 ScalesFrom = new Vector3(0f, 3.0f, 1.7f);
+        private static readonly Vector3 ScalesAt = new Vector3(0f, 2.95f, WallZ - 0.2f);
+        private static readonly Vector3 ScalesFrom = new Vector3(0f, 2.85f, -0.6f);
         private const float MaxTilt = 70f;
         private static readonly Color ForOrderTone = new Color(0.95f, 0.76f, 0.30f);
         private static readonly Color AgainstTone = new Color(0.82f, 0.22f, 0.20f);
@@ -99,8 +118,8 @@ namespace Sinbinder.Gameplay
         /// компас персонажа: добрый, нейтральный, злой. Компас можешь сделать
         /// выше весов»). Слева — добро, вверху — середина, справа — зло.
         /// </summary>
-        private static readonly Vector3 CompassAt = new Vector3(0f, 5.05f, WallZ - 0.2f);
-        private static readonly Vector3 CompassFrom = new Vector3(0f, 4.5f, 2.0f);
+        private static readonly Vector3 CompassAt = new Vector3(0f, 4.45f, WallZ - 0.2f);
+        private static readonly Vector3 CompassFrom = new Vector3(0f, 4.2f, -0.6f);
         private static readonly Color PiousTone = new Color(0.98f, 0.90f, 0.62f);
         private static readonly Color NeutralTone = new Color(0.55f, 0.56f, 0.62f);
         private static readonly Color ViciousTone = new Color(0.85f, 0.10f, 0.08f);
@@ -113,6 +132,92 @@ namespace Sinbinder.Gameplay
         private Transform _needle, _compass;
         private float _angle, _swing, _aim;
         private float _cAngle, _cSwing, _cAim;
+
+        // ──────────────────────────────────
+        // Подписи (автор, 06.11: «чтобы даже самый незаинтересованный и глупый
+        // пользователь понял и проникся AOS»): имя над каждым судьёй и его «за»,
+        // стороны весов и компаса, счёт голосов — словами прямо в зале.
+        // ──────────────────────────────────
+
+        private sealed class Tag
+        {
+            public Vector3 At;
+            /// <summary>Место на экране (доли), если подпись не привязана к залу.</summary>
+            public Vector2? Fixed;
+            public RectTransform Rect;
+            public Text Text;
+            public float Size;
+            public bool Shown;
+        }
+
+        private readonly List<Tag> _tags = new List<Tag>();
+        private Transform _tagLayer;
+        private Font _font;
+
+        private void Tags(UI.Letterbox box)
+        {
+            var root = new GameObject("Суд души — подписи", typeof(Canvas));
+            root.transform.SetParent(transform, false);
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var under = box != null ? box.GetComponentInParent<Canvas>() : null;
+            // Под темнотой влёта (она — на ступень ниже полос): в черноте подписей нет.
+            canvas.sortingOrder = under != null ? under.rootCanvas.sortingOrder - 2 : 89;
+            _tagLayer = root.transform;
+            var sample = box != null ? box.GetComponentInChildren<Text>(true) : null;
+            _font = sample != null ? sample.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        }
+
+        private Tag AddTag(Vector3 at, string text, Color colour, float size, bool bold = false)
+        {
+            if (_tagLayer == null) return null;
+            var go = new GameObject("Подпись", typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(_tagLayer, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(420f, 80f);
+            var tx = go.GetComponent<Text>();
+            tx.font = _font;
+            tx.text = text;
+            tx.color = colour;
+            tx.alignment = TextAnchor.MiddleCenter;
+            tx.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
+            tx.horizontalOverflow = HorizontalWrapMode.Overflow;
+            tx.verticalOverflow = VerticalWrapMode.Overflow;
+            tx.supportRichText = true;
+            tx.raycastTarget = false;
+            tx.enabled = false;
+            var edge = go.AddComponent<Outline>();
+            edge.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            edge.effectDistance = new Vector2(1.6f, -1.6f);
+            var tag = new Tag { At = at, Rect = rt, Text = tx, Size = size };
+            _tags.Add(tag);
+            return tag;
+        }
+
+        private static void Show(Tag tag, bool on = true) { if (tag != null) tag.Shown = on; }
+
+        private void LateUpdate()
+        {
+            if (_tags.Count == 0) return;
+            var eye = Camera.main;
+            if (eye == null) return;
+            foreach (var t in _tags)
+            {
+                if (t.Rect == null) continue;
+                Vector3 v = t.Fixed.HasValue ? new Vector3(t.Fixed.Value.x, t.Fixed.Value.y, 1f)
+                                             : eye.WorldToViewportPoint(t.At);
+                bool on = t.Shown && v.z > 0.3f;
+                if (t.Text.enabled != on) t.Text.enabled = on;
+                if (!on) continue;
+                t.Rect.anchorMin = t.Rect.anchorMax = new Vector2(v.x, v.y);
+                t.Rect.anchoredPosition = Vector2.zero;
+                t.Text.fontSize = Mathf.Max(11, Mathf.RoundToInt(Screen.height * t.Size));
+            }
+        }
+
+        private static string Hex(Color c) => ColorUtility.ToHtmlStringRGB(c);
 
         private void Update()
         {
@@ -151,6 +256,8 @@ namespace Sinbinder.Gameplay
             /// <summary>Шарнир в поясе: поклон, кивок, откидывание — весь верх тела.</summary>
             public Transform Waist;
             public Animator[] Anims;
+            /// <summary>Подпись над судьёй: имя, после слова — «за», «против», «воздерж.».</summary>
+            public object Tag;
         }
 
         /// <summary>
@@ -212,7 +319,7 @@ namespace Sinbinder.Gameplay
         /// <paramref name="c"/>. Зовёт тот, кто ведёт миг (сон), — и ждёт конца:
         /// мир стоит, пока суд идёт.
         /// </summary>
-        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c)
+        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c, CommandKind? given = null)
         {
             if (w == null || c == null || Sitting) yield break;
 
@@ -266,6 +373,24 @@ namespace Sinbinder.Gameplay
 
             // 2. Влёт в голову: к лицу — и в темноту.
             var fader = Fader.Make(box);
+            host.Tags(box);
+            Color Bright(Color c) => Color.Lerp(c, Color.white, 0.35f);
+            for (int i = 0; i < judges.Count; i++)
+            {
+                var j = judges[i];
+                // Через одного — выше: имена соседей на общем плане не налезают друг на друга.
+                j.Tag = host.AddTag(j.Seat + Vector3.up * (Dais + 1.98f + (i % 2) * 0.26f), j.Title, Bright(Glow(j.Module)), 0.021f);
+            }
+            var accusedTag = host.AddTag(Hall + Vector3.up * 2.0f,
+                Loc.Name(w.DisplayName) + "\n<color=#B8B0A0>" + Loc.T("подсудимый") + "</color>", new Color(1f, 0.95f, 0.85f), 0.022f, true);
+            var forTag = host.AddTag(Hall + ScalesAt + new Vector3(-1.1f, 0.05f, -0.15f), Loc.T("ЗА ПРИКАЗ"), ForOrderTone, 0.026f, true);
+            var againstTag = host.AddTag(Hall + ScalesAt + new Vector3(1.1f, 0.05f, -0.15f), Loc.T("ПРОТИВ"), AgainstTone, 0.026f, true);
+            // Счёт — внизу кадра, над подсудимым: у весов ему тесно между головами судей и компасом.
+            var tally = host.AddTag(Vector3.zero, "", new Color(0.95f, 0.93f, 0.88f), 0.024f, true);
+            if (tally != null) tally.Fixed = new Vector2(0.5f, 0.21f);
+            var goodTag = host.AddTag(Hall + CompassAt + new Vector3(-1.02f, 0.42f, -0.15f), Loc.T("ДОБРО"), PiousTone, 0.024f, true);
+            var midTag = host.AddTag(Hall + CompassAt + new Vector3(0f, 0.9f, -0.15f), Loc.T("СЕРЕДИНА"), Color.Lerp(NeutralTone, Color.white, 0.3f), 0.024f, true);
+            var evilTag = host.AddTag(Hall + CompassAt + new Vector3(1.02f, 0.42f, -0.15f), Loc.T("ЗЛО"), ViciousTone, 0.024f, true);
             Vector3 head = Head(w);
             Vector3 back = eye.transform.position - head;
             back = back.sqrMagnitude < 0.01f ? -w.transform.forward : back.normalized;
@@ -277,19 +402,19 @@ namespace Sinbinder.Gameplay
             Step = "hall";
             var world = Darkness.Fall(eye);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
             yield return new WaitForSecondsRealtime(0.35f);
             yield return fader.To(0f, 0.9f);
 
             // Суд показывается один раз за игру (автор, 05.11) — и потому объясняет
             // себя сам: кто судьи, кто перед ними, что значат компас, весы и огонь.
             string court = Loc.T("Суд души");
-            yield return Line(box, host, court, Grammar.Pick(w.Gender,
-                Loc.T("Это суд его души. Судьи — его голоса, все тринадцать. Перед ними — он сам."),
-                Loc.T("Это суд её души. Судьи — её голоса, все тринадцать. Перед ними — она сама.")));
+            Show(accusedTag);
+            yield return Line(box, host, court, Opening(w, d));
 
             // Компас — кто он по натуре: крутится и встаёт на своё.
             Step = "compass";
+            Show(goodTag); Show(midTag); Show(evilTag);
             host._cSwing = 540f;
             host._cAim = MoralAngle(moral);
             host.StartCoroutine(camera.FocusOnPoint(Hall + CompassAt, Hall + CompassFrom, null, push: 12f));
@@ -297,15 +422,16 @@ namespace Sinbinder.Gameplay
 
             // Весы — как он поступит сейчас.
             Step = "scales";
+            Show(forTag); Show(againstTag);
             host.StartCoroutine(camera.FocusOnPoint(Hall + ScalesAt, Hall + ScalesFrom, null, push: 12f));
             yield return Line(box, host, court, Grammar.Pick(w.Gender,
                 Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."),
                 Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит.")));
 
             Step = "hall";
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
             yield return Line(box, host, court,
-                Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(w.Command.Kind)));
+                Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(given ?? w.Command.Kind)));
 
             // 4. Знакомство (автор, 05.11: «сначала познакомить с персонажами,
             // чтобы при знакомстве проиграли приветственные анимации, желательно
@@ -319,13 +445,14 @@ namespace Sinbinder.Gameplay
                     j.Seat - dir * 1.25f + Vector3.up * (Dais + 1.55f), null, push: 9f));
                 host.StartCoroutine(SpotOn(spot, j));
                 host.StartCoroutine(Greet(j));
+                Show(j.Tag as Tag);
                 yield return Line(box, j.Voice, j.Title, Introduce(j, w));
             }
 
             // 5. Слово каждого (автор: «а после каждый высказался»): тише — первыми,
             // громче — последними. Каждое «за» и «против» качает весы.
             Step = "stance";
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
             yield return Line(box, host, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними."));
 
             var order = new List<Judge>(judges);
@@ -339,12 +466,40 @@ namespace Sinbinder.Gameplay
             }
             reach = Mathf.Max(1f, reach * 1.1f);
             running = 0f;
+            int ayes = 0, nays = 0, quiet = 0;
+            Show(accusedTag, false);
+            void Count()
+            {
+                if (tally == null) return;
+                tally.Text.text = Loc.F("за — {0}    против — {1}    воздержались — {2}", ayes, nays, quiet);
+            }
+            Count();
+            Show(tally);
 
-            foreach (var j in order)
+            // Воздержавшиеся — быстрым кругом (прогон 06.11: одиннадцать «мне нечего
+            // сказать» подряд — две минуты скуки). Каждый встаёт в свет, кивает
+            // и говорит одно слово; его подпись становится «воздерж.».
+            foreach (var j in order.FindAll(x => x.Abstains))
+            {
+                host.StartCoroutine(SpotOn(spot, j));
+                host.StartCoroutine(Nod(j));
+                quiet++;
+                Count();
+                if (j.Tag is Tag quietTag)
+                    quietTag.Text.text = j.Title + "\n" + $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>";
+                box.Say(j.Title, Loc.T("Воздерживаюсь."));
+                Spoken++;
+                Debug.Log($"[СУД] {j.Title}: воздерживается");
+                if (j.Voice != null && j.Voice.TryGetComponent<Audio.VoiceGenerator>(out var murmur))
+                    murmur.Babble(Loc.T("Воздерживаюсь."), 0.45f);
+                yield return UI.Letterbox.Hold(0.95f);
+            }
+
+            foreach (var j in order.FindAll(x => !x.Abstains))
             {
                 // Камера с общего плана чуть поворачивает к говорящему: весы — в кадре.
                 host.StartCoroutine(camera.FocusOnPoint(Vector3.Lerp(look, j.Seat + Vector3.up * 1.6f, 0.3f),
-                                                        overview, null, push: 14f));
+                                                        overview, null, push: 14f, fov: WideFov));
                 host.StartCoroutine(SpotOn(spot, j));
                 host.StartCoroutine(Flare(j, Mathf.Abs(j.Net) / loudest));
                 Play(j, j.Abstains ? "Idle" : "Talk");
@@ -352,6 +507,15 @@ namespace Sinbinder.Gameplay
                 host._aim = Tilt(running, reach);
                 string stance = j.Abstains ? Loc.T("Воздерживаюсь.")
                               : j.ForOrder ? Loc.T("Я — за приказ.") : Loc.T("Я — против.");
+                if (j.ForOrder) ayes++; else nays++;
+                Count();
+                if (j.Tag is Tag tag)
+                {
+                    string mark = j.Abstains ? $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>"
+                                : j.ForOrder ? $"<color=#{Hex(ForOrderTone)}>{Loc.T("за")}</color>"
+                                             : $"<color=#{Hex(AgainstTone)}>{Loc.T("против")}</color>";
+                    tag.Text.text = j.Title + "\n" + mark;
+                }
                 yield return Line(box, j.Voice, j.Title, Words(j, rival, c, w) + " " + stance);
                 Play(j, "Idle");
             }
@@ -360,7 +524,7 @@ namespace Sinbinder.Gameplay
             // слабая никнет, свеча приказа гаснет — или вспыхивает.
             Step = "verdict";
             host.StartCoroutine(SpotOff(spot));
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
             bool refused = d.RefusedCommand || d.Hesitated;
             host._aim = Final(d, total, reach);
             if (!d.Hesitated)
@@ -373,6 +537,10 @@ namespace Sinbinder.Gameplay
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
                 yield return Line(box, host, Loc.T("Вердикт"), why);
+
+            // Что это значит для игры — одной строкой, напоследок.
+            yield return Line(box, host, court,
+                Loc.T("Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."));
 
             // 6. Назад, в мир.
             Step = "exit";
@@ -551,6 +719,25 @@ namespace Sinbinder.Gameplay
                                               Loc.F("{0} замерла: приказ не исполнен.", name));
             return Grammar.Pick(w.Gender, Loc.F("{0} исполнил приказ.", name),
                                           Loc.F("{0} исполнила приказ.", name));
+        }
+
+        /// <summary>
+        /// Первая строка в зале — вопрос, на который суд ответит: игрок только
+        /// что видел поступок и не знает почему. Суд — ответ.
+        /// </summary>
+        private static string Opening(Warrior w, Decision d)
+        {
+            if (d.RefusedCommand)
+                return Grammar.Pick(w.Gender,
+                    Loc.T("Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
+                    Loc.T("Почему она не послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
+            if (d.Hesitated)
+                return Grammar.Pick(w.Gender,
+                    Loc.T("Почему он замер? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
+                    Loc.T("Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
+            return Grammar.Pick(w.Gender,
+                Loc.T("Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
+                Loc.T("Почему она послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
         }
 
         private static string OrderWords(CommandKind kind)
@@ -764,7 +951,7 @@ namespace Sinbinder.Gameplay
             Piece(t, PrimitiveType.Cube, "Пол", Hall + new Vector3(0f, -0.05f, 1.2f), new Vector3(12f, 0.1f, 9f), stone);
             Piece(t, PrimitiveType.Cube, "Стена", Hall + new Vector3(0f, 3.6f, WallZ + 0.15f), new Vector3(12f, 7.2f, 0.3f), wall);
             // Полотнище под весами и компасом — как герб над судом.
-            Piece(t, PrimitiveType.Cube, "Полотнище", Hall + new Vector3(0f, 4.15f, WallZ - 0.02f), new Vector3(1.9f, 3.9f, 0.04f), cloth);
+            Piece(t, PrimitiveType.Cube, "Полотнище", Hall + new Vector3(0f, 3.75f, WallZ - 0.02f), new Vector3(1.9f, 3.3f, 0.04f), cloth);
             foreach (float x in new[] { -4.6f, 4.6f })
                 Piece(t, PrimitiveType.Cube, "Колонна", Hall + new Vector3(x, 3.4f, WallZ - 0.4f), new Vector3(0.6f, 6.8f, 0.6f), wall);
 
@@ -781,9 +968,9 @@ namespace Sinbinder.Gameplay
                 Piece(t, PrimitiveType.Cube, "Кафедра, верх", j.Seat - dir * 0.44f + Vector3.up * (DeskTop + 0.02f),
                       new Vector3(0.84f, 0.04f, 0.42f), dark).transform.rotation = face;
                 // Спинка тёмная и матовая: светлые спинки на кадре 05.11 стояли забором.
-                Piece(t, PrimitiveType.Cube, "Спинка кресла", j.Seat + dir * 0.42f + Vector3.up * (Dais + 1.05f),
-                      new Vector3(0.56f, 2.1f, 0.08f), chair).transform.rotation = face;
-                Piece(t, PrimitiveType.Cube, "Навершие", j.Seat + dir * 0.42f + Vector3.up * (Dais + 2.15f),
+                Piece(t, PrimitiveType.Cube, "Спинка кресла", j.Seat + dir * 0.42f + Vector3.up * (Dais + 0.93f),
+                      new Vector3(0.56f, 1.86f, 0.08f), chair).transform.rotation = face;
+                Piece(t, PrimitiveType.Cube, "Навершие", j.Seat + dir * 0.42f + Vector3.up * (Dais + 1.9f),
                       new Vector3(0.16f, 0.16f, 0.10f), wood).transform.rotation = face * Quaternion.Euler(0f, 0f, 45f);
 
                 var root = new GameObject("Судья — " + j.Module);
@@ -1046,6 +1233,18 @@ namespace Sinbinder.Gameplay
         // ──────────────────────────────────
         // Жесты
         // ──────────────────────────────────
+
+        /// <summary>Короткий кивок — «воздерживаюсь».</summary>
+        private static IEnumerator Nod(Judge j)
+        {
+            for (float t = 0f; t < 0.6f; t += Time.unscaledDeltaTime)
+            {
+                if (j.Waist == null) yield break;
+                j.Waist.localRotation = Quaternion.Euler(12f * Mathf.Sin(t / 0.6f * Mathf.PI), 0f, 0f);
+                yield return null;
+            }
+            if (j.Waist != null) j.Waist.localRotation = Quaternion.identity;
+        }
 
         /// <summary>Движение тела судьи, если у его модели такое есть.</summary>
         private static void Play(Judge j, string state)

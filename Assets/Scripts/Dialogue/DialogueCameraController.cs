@@ -443,7 +443,7 @@ namespace Sinbinder.Dialogue
         /// (<see cref="SaveCameraPosition"/>, <see cref="RestoreCamera"/>).
         /// </summary>
         public IEnumerator FocusOnPoint(Vector3 look, Vector3 from, string caption = null,
-                                        float push = 0f)
+                                        float push = 0f, float fov = 0f)
         {
             if (Cam() == null) yield break;
 
@@ -454,7 +454,9 @@ namespace Sinbinder.Dialogue
             _inDialogue = true;
             Target = null;   // точка, а не говорящий
             Partner = null;
-            Cam().fieldOfView = _dialogueFOV;
+            // Свой угол — для общего плана, которому узкого мало (зал суда: кафедра,
+            // весы и компас в одном кадре под полосами).
+            Cam().fieldOfView = fov > 0f ? fov : _dialogueFOV;
             UI.Letterbox.Instance?.Show(caption);
 
             yield return MoveCamera(from, Quaternion.LookRotation((look - from).normalized));

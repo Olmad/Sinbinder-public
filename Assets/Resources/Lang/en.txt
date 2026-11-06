@@ -9805,3 +9805,96 @@ msgstr "Above all is his moral compass: good on the left, the middle on top, evi
 
 msgid "Над всем — её моральный компас: слева добро, вверху середина, справа зло. Стрелка встала посередине: она ни добра, ни зла."
 msgstr "Above all is her moral compass: good on the left, the middle on top, evil on the right. The needle settled in the middle: she is neither good nor evil."
+
+msgid "подсудимый"
+msgstr "the accused"
+
+msgid "ЗА ПРИКАЗ"
+msgstr "FOR THE ORDER"
+
+msgid "ПРОТИВ"
+msgstr "AGAINST"
+
+msgid "ДОБРО"
+msgstr "GOOD"
+
+msgid "СЕРЕДИНА"
+msgstr "MIDDLE"
+
+msgid "ЗЛО"
+msgstr "EVIL"
+
+msgid "за — {0}    против — {1}    воздержались — {2}"
+msgstr "for — {0}    against — {1}    abstained — {2}"
+
+msgid "воздерж."
+msgstr "abstains"
+
+msgid "за"
+msgstr "for"
+
+msgid "против"
+msgstr "against"
+
+msgid "Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he disobey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+msgid "Почему она не послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she disobey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+msgid "Почему он замер? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he freeze? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+msgid "Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she freeze? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+msgid "Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
+msgstr "Why did he obey? He did not decide alone — his soul did. Here is its court: the judges are his thirteen voices, and before them stands he himself."
+
+msgid "Почему она послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
+msgstr "Why did she obey? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
+msgstr "This is how every warrior in your band decides: you give the order, their voices weigh it. Another soul has other voices — and another court."
+
+msgid "Подойдите к телу и нажмите R — душа вернётся в оболочку."
+msgstr "Walk up to the body and press R — the soul returns to its shell."
+
+msgid "Поднятый встанет вашим воином."
+msgstr "The risen will stand as your warrior."
+
+msgid "Это ваш первый воин."
+msgstr "This is your first warrior."
+
+msgid "Правой кнопкой — по земле: он пойдёт туда."
+msgstr "Right-click the ground: he will go there."
+
+msgid "Правой кнопкой — по земле: она пойдёт туда."
+msgstr "Right-click the ground: she will go there."
+
+msgid "Приказ отдаёте вы. Исполнит ли — решает душа."
+msgstr "You give the order. Whether it is carried out — the soul decides."
+
+msgid "Его убийцы вернулись."
+msgstr "His killers have returned."
+
+msgid "Её убийцы вернулись."
+msgstr "Her killers have returned."
+
+msgid "X, затем щелчок по земле позади него — приказ отступить."
+msgstr "X, then click the ground behind him — the order to fall back."
+
+msgid "X, затем щелчок по земле позади неё — приказ отступить."
+msgstr "X, then click the ground behind her — the order to fall back."
+
+msgid "Послушается ли — решит душа. Смотрите."
+msgstr "Whether the order is obeyed — the soul decides. Watch."
+
+msgid "Убийц больше нет."
+msgstr "The killers are gone."
+
+msgid "Тот же приказ: X и щелчок позади."
+msgstr "The same order: X and a click behind."
+
+msgid "Причины больше нет — что решит душа теперь?"
+msgstr "The reason is gone — what will the soul decide now?"

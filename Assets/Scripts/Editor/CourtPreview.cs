@@ -37,7 +37,7 @@ namespace Sinbinder.EditorTools
             cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Color.black;
-            cam.fieldOfView = 55f;   // как у камеры сна
+            cam.fieldOfView = 50f;
 
             // Свет зала — как в игре на время суда: мира нет, только свечи, весы и компас.
             RenderSettings.skybox = null;
@@ -48,10 +48,12 @@ namespace Sinbinder.EditorTools
 
             foreach (var (name, from, look) in SoulCourt.PreviewShots(1))
             {
+                cam.fieldOfView = name == "общий" ? 50f : 36f;   // как в суде: общий шире, крупные — угол наездов
                 cam.transform.position = from;
                 cam.transform.LookAt(look);
                 Shot(cam, "SoulCourt_" + name);
             }
+            cam.fieldOfView = 50f;
             cam.transform.position = SoulCourt.PreviewFrom;
             cam.transform.LookAt(SoulCourt.PreviewLook);
 

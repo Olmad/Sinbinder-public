@@ -46,6 +46,16 @@ namespace Sinbinder.Gameplay
         /// а до 26 октября об этом не говорила ни одна строка игры.
         /// </summary>
         Refusal,
+
+        /// <summary>
+        /// Урок по заказу: сон ведёт свои шаги сам (<see cref="DreamTutorialDirector"/>)
+        /// и зовёт кольцо на каждый — поднять душу, первый приказ, приказ при
+        /// убийцах, тот же приказ без них. Автор, 06.11: «у нас есть круг обучения.
+        /// Возможно, он может решить почти все проблемы» — суд срабатывал раз из
+        /// десяти, потому что цепочка к нему рвалась на шагах, которых игрок не понял.
+        /// В сохранение не пишется: заказчик сам знает, когда звать.
+        /// </summary>
+        Guided,
     }
 
     /// <summary>
@@ -227,6 +237,37 @@ namespace Sinbinder.Gameplay
             _instance._read = 0f;
             _instance._since = Time.unscaledTime;
             _instance.Begin(LessonKind.Refusal, w.transform.position);
+        }
+
+        /// <summary>Дольше этого урок по заказу мир не держит, секунд: заказчик ведёт и без кольца.</summary>
+        private const float GuideCap = 60f;
+
+        private System.Func<(string key, string words)> _guidePlate;
+        private System.Func<bool> _guideDone;
+
+        /// <summary>
+        /// Урок по заказу: мир встаёт, кольцо — у <paramref name="centre"/>, плашка
+        /// говорит <paramref name="plate"/> (зовётся каждый кадр — шаг может смениться),
+        /// урок кончается, когда <paramref name="done"/> скажет «да». Не встал
+        /// (уроки выключены, мир уже держат, панель открыта) — false, и заказчик
+        /// ведёт шаг словами, как без уроков.
+        /// </summary>
+        public static bool Guide(Vector3 centre, System.Func<(string key, string words)> plate,
+                                 System.Func<bool> done, float floor = Inner)
+        {
+            if (_instance == null || _instance._now.HasValue || plate == null || done == null) return false;
+            if (!Allowed || !Calm() || GamePauseController.Instance == null) return false;
+            _instance._guidePlate = plate;
+            _instance._guideDone = done;
+            _instance.Begin(LessonKind.Guided, centre, floor);
+            _given.Remove(LessonKind.Guided);
+            return true;
+        }
+
+        private bool GuideDone()
+        {
+            try { return _guideDone == null || _guideDone(); }
+            catch (System.Exception e) { Debug.LogException(e); return true; }
         }
 
         /// <summary>Виден ли воин на экране, с запасом от края.</summary>
@@ -765,7 +806,8 @@ namespace Sinbinder.Gameplay
 
             ShowRing(kind == LessonKind.Exchange ? WarriorColor
                    : kind == LessonKind.Backstab ? FoeColor
-                   : kind == LessonKind.Refusal ? SinOf(_partner) : SoulColor);
+                   : kind == LessonKind.Refusal ? SinOf(_partner)
+                   : kind == LessonKind.Guided ? WarriorColor : SoulColor);
             ShowPlate(true);
             Debug.Log("[УРОК] " + kind + ": мир стоит, кольцо по Греховоду.");
         }
@@ -783,6 +825,7 @@ namespace Sinbinder.Gameplay
                 || (_now == LessonKind.Harvest && (!SoulStillThere() || !Standable(_soul.Position)))
                 || (_now == LessonKind.Raising && _device == null)
                 || (_now == LessonKind.Refusal && (_partner == null || _partner.IsDead))
+                || (_now == LessonKind.Guided && (GuideDone() || Time.unscaledTime - _begun > GuideCap))
                 || (_now == LessonKind.Backstab && (_foe == null || _foe.IsDead
                                                     || _flanker == null || _flanker.IsDead)))
             {
@@ -873,6 +916,8 @@ namespace Sinbinder.Gameplay
             _foe = _pinner = _flanker = null;
             _frontal = false;
             _read = 0f;
+            _guidePlate = null;
+            _guideDone = null;
             _endedAt = Time.unscaledTime;
             _road.Clear();
             _walking = false;
@@ -1081,6 +1126,11 @@ namespace Sinbinder.Gameplay
             if (_now == LessonKind.Raising) return RaisingStep();
             if (_now == LessonKind.Backstab) return BackstabStep();
             if (_now == LessonKind.Refusal) return RefusalStep();
+            if (_now == LessonKind.Guided && _guidePlate != null)
+            {
+                try { return _guidePlate(); }
+                catch (System.Exception e) { Debug.LogException(e); _guidePlate = null; }
+            }
 
             // Разговор — только от первого лица, вблизи и глядя на воина.
             // Сверху плашка сперва говорит, как посмотреть его глазами;

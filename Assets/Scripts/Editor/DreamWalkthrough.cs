@@ -28,7 +28,7 @@ namespace Sinbinder.EditorTools
         private const string ReportPath = "Logs/dream-walkthrough.txt";
         private const string Shots = "Docs/Образцы/сон";
         private const string ScenePath = "Assets/Scenes/Prologue_Dream.unity";
-        private const float Limit = 300f;
+        private const float Limit = 540f;   // суд с 06.11 — тринадцать судей, знакомство и слово каждого
 
         private static float _t0 = -1f, _stepAt, _lastPoke;
         private static string _step = "";

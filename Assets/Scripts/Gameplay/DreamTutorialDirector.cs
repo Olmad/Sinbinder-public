@@ -80,6 +80,100 @@ namespace Sinbinder.Gameplay
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
+        // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
+        // душа угасала несобранной, игрок не отдавал приказ или сам рубил убийц,
+        // решение не приходило за 6 с. Каждое звено теперь доходит само.
+        private float _standoffReal, _harvestSince;
+        private bool _autoOrdered;
+        private SoulData _fallbackSoul;
+
+        // Круг обучения на каждом шаге к суду (автор, 06.11: «у нас есть круг
+        // обучения. Возможно, он может решить почти все проблемы»).
+        private Stage _guidedFor = Stage.Finished;
+        private float _nextGuide;
+
+        // Приказ замечаем по самому приказу, а не по игровому времени: под кругом
+        // мир стоит, и время приказа равно времени начала шага.
+        private PendingCommand _cmdMark;
+        private CommandKind? _courtOrder;
+
+        private void MarkCommand()
+        {
+            if (_zombie != null) _cmdMark = _zombie.Command;
+        }
+
+        private bool OrderedSinceMark()
+        {
+            if (_zombie == null || _zombie.IsDead || !_zombie.HasCommand) return false;
+            var c = _zombie.Command;
+            return c.Kind != _cmdMark.Kind || c.Point != _cmdMark.Point || c.Target != _cmdMark.Target
+                || !Mathf.Approximately(c.IssuedAt, _cmdMark.IssuedAt);
+        }
+
+        private bool Picked()
+        {
+            var pick = _zombie != null ? _zombie.GetComponent<SelectionComponent>() : null;
+            return pick != null && pick.IsSelected;
+        }
+
+        private string Whom() => _zombie != null ? Grammar.Dative(_zombie.DisplayName, _zombie.Gender) : "";
+
+        /// <summary>
+        /// Кольцо на шаг, который игрок должен сделать сам: мир стоит, плашка
+        /// говорит клавишу, шаг сделан — мир пошёл. Уроки выключены — шаг ведут
+        /// строки журнала, как раньше.
+        /// </summary>
+        private void Guide()
+        {
+            if (_guidedFor == _stage || Time.unscaledTime < _nextGuide || SoulCourt.Sitting) return;
+            _nextGuide = Time.unscaledTime + 0.25f;
+            var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            bool shown = false;
+            switch (_stage)
+            {
+                case Stage.Rebind:
+                    shown = Lesson.Guide(_woundedAt,
+                        () => ("R", Loc.T("Подойдите к телу и нажмите R — душа вернётся в оболочку.")
+                                  + "\n" + Loc.T("Поднятый встанет вашим воином.")),
+                        () => _stage != Stage.Rebind);
+                    break;
+                case Stage.Command:
+                    if (_zombie == null) return;
+                    shown = Lesson.Guide(_zombie.transform.position,
+                        () => !Picked()
+                            ? (Loc.T("ЛКМ"), Loc.F("Щёлкните по {0} — выделить.", Whom())
+                                             + "\n" + Loc.T("Это ваш первый воин."))
+                            : (Loc.T("ПКМ"), Grammar.Pick(g, Loc.T("Правой кнопкой — по земле: он пойдёт туда."),
+                                                             Loc.T("Правой кнопкой — по земле: она пойдёт туда."))
+                                             + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа.")),
+                        () => _stage != Stage.Command || _squadOrdered || OrderedSinceMark());
+                    break;
+                case Stage.Standoff:
+                    if (_zombie == null || _killers.Count == 0) return;   // убийцы ещё не встали
+                    shown = Lesson.Guide(_zombie.transform.position,
+                        () => !Picked()
+                            ? (Loc.T("ЛКМ"), Grammar.Pick(g, Loc.T("Его убийцы вернулись."), Loc.T("Её убийцы вернулись."))
+                                             + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
+                            : ("X", Grammar.Pick(g, Loc.T("X, затем щелчок по земле позади него — приказ отступить."),
+                                                    Loc.T("X, затем щелчок по земле позади неё — приказ отступить."))
+                                  + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
+                        () => _stage != Stage.Standoff || OrderedSinceMark());
+                    break;
+                case Stage.Retest:
+                    if (_zombie == null) return;
+                    shown = Lesson.Guide(_zombie.transform.position,
+                        () => !Picked()
+                            ? (Loc.T("ЛКМ"), Loc.T("Убийц больше нет.") + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
+                            : ("X", Loc.T("Тот же приказ: X и щелчок позади.")
+                                  + "\n" + Loc.T("Причины больше нет — что решит душа теперь?")),
+                        () => _stage != Stage.Retest || OrderedSinceMark());
+                    break;
+                default:
+                    _guidedFor = _stage;   // этому шагу кольцо не нужно
+                    return;
+            }
+            if (shown) _guidedFor = _stage;
+        }
         private bool _courtRunning, _retestOrdered, _contrastRunning;
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
@@ -259,6 +353,7 @@ namespace Sinbinder.Gameplay
                 Log(_line);
                 _nextPrompt = Time.unscaledTime + 25f;
             }
+            Guide();
             switch (_stage)
             {
                 case Stage.Approach:
@@ -274,6 +369,12 @@ namespace Sinbinder.Gameplay
                     {
                         Set(Stage.Rebind, "Подойди к телу. Нажми R, чтобы вернуть душу в оболочку.");
                     }
+                    else if (Time.unscaledTime - _harvestSince > 50f && _wounded != null && _wounded.Soul != null)
+                    {
+                        // Душа угасает за минуту; несобранная — сон не должен на этом встать.
+                        _fallbackSoul = _wounded.Soul;
+                        Set(Stage.Rebind, "Душа ещё держится за тело. Подойди к телу и нажми R, чтобы вернуть её.");
+                    }
                     break;
                 case Stage.Rebind:
                     if (Pressed(KeyCode.R) && GroundDistance(_hero.transform.position, _woundedAt) < 4f)
@@ -282,10 +383,10 @@ namespace Sinbinder.Gameplay
                 case Stage.Command:
                     // Первый приказ — любой. Он его исполнит: послушание — фон,
                     // на котором отказ потом читается характером, а не поломкой.
-                    if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame)))
+                    if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame) || OrderedSinceMark()))
                         _orderedAt = Time.unscaledTime;
                     if ((_orderedAt >= 0f && Time.unscaledTime - _orderedAt > 3.5f)
-                        || Time.unscaledTime - _commandSince > 20f)
+                        || Time.unscaledTime - _commandSince > (Lesson.Holding ? 60f : 20f))
                         BeginStandoff();
                     break;
                 case Stage.Standoff:
@@ -297,8 +398,20 @@ namespace Sinbinder.Gameplay
                         Set(Stage.FirstPerson, "Убийцы пали. Tab: перейди от тактического вида к первому лицу.");
                         break;
                     }
-                    if (_killers.Count > 0 && Ordered(_standoffSince))
+                    // Игрок медлит — приказ отдаёт сам Греховод: суд важнее урока клавиш.
+                    if (!_autoOrdered && _killers.Count > 0 && !OrderedSinceMark()
+                        && Time.unscaledTime - _standoffReal > (Lesson.Holding ? 45f : 14f) && !SoulCourt.Sitting)
                     {
+                        _autoOrdered = true;
+                        Vector3 away = _zombie.transform.position - _killers[0].transform.position;
+                        away.y = 0f;
+                        away = away.sqrMagnitude < 0.01f ? Vector3.back : away.normalized;
+                        Log("Греховод сам велит ему отступить.");
+                        _zombie.IssueCommand(CommandKind.FallBack, _zombie.transform.position + away * 6f);
+                    }
+                    if (_killers.Count > 0 && OrderedSinceMark())
+                    {
+                        _courtOrder = _zombie.Command.Kind;
                         var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
                         _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
@@ -311,6 +424,11 @@ namespace Sinbinder.Gameplay
                     var mind = _zombie != null ? _zombie.GetComponent<AOS.AOSWarriorWrapper>() : null;
                     if (mind == null || _zombie.IsDead) { StartBattle("Решение не дошло до суда."); break; }
                     if (_courtRunning) break;
+                    // Голоса не заговорили сами за секунду с лишним — спросить душу напрямую:
+                    // тот же Decide, что зовёт её мозг, просто сейчас.
+                    if ((mind.LastContext == null || mind.LastContext == _mindBefore)
+                        && Time.unscaledTime - _decideSince > 1.2f)
+                        mind.Decide();
                     if (mind.LastContext != null && mind.LastContext != _mindBefore)
                     {
                         _courtRunning = true;
@@ -331,6 +449,7 @@ namespace Sinbinder.Gameplay
                         {
                             _retestSince = Time.time;
                             _retestPrompted = Time.unscaledTime;
+                            MarkCommand();
                             _retestOrdered = false;
                             Set(Stage.Retest, "Убийц больше нет. Отдай ему тот же приказ — отступить (X).");
                         }
@@ -342,7 +461,7 @@ namespace Sinbinder.Gameplay
                 {
                     if (_zombie == null || _zombie.IsDead) { Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу."); break; }
                     var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                    if (!_retestOrdered && Ordered(_retestSince))
+                    if (!_retestOrdered && (Ordered(_retestSince) || OrderedSinceMark()))
                     {
                         _retestOrdered = true;
                         _mindBefore = mind != null ? mind.LastContext : null;
@@ -354,7 +473,7 @@ namespace Sinbinder.Gameplay
                         _contrastRunning = true;
                         StartCoroutine(Contrast(mind.LastDecisionDetail));
                     }
-                    else if (!_retestOrdered && Time.unscaledTime - _retestPrompted > 40f)
+                    else if (!_retestOrdered && !Lesson.Holding && Time.unscaledTime - _retestPrompted > 40f)
                         Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу.");
                     break;
                 }
@@ -440,6 +559,7 @@ namespace Sinbinder.Gameplay
             var hp = _wounded.GetComponent<Damageable>();
             if (hp == null) { Log("Нет Damageable у раненого."); yield break; }
             hp.TakeDamage(hp.HP + hp.MaxHP + 1f, null);
+            _harvestSince = Time.unscaledTime;
             Set(Stage.Harvest, "Подойди к душе и нажми E. Свежая душа сохраняет память.");
         }
 
@@ -453,16 +573,16 @@ namespace Sinbinder.Gameplay
         private void TryRebind()
         {
             int jar = FindJar();
-            if (jar < 0) { Log("Сначала забери душу в банку."); return; }
-            var slot = Satchel.At(jar);
-            if (slot.Soul == null) return;
+            var soul = jar >= 0 ? Satchel.At(jar).Soul : _fallbackSoul;
+            if (soul == null) { Log("Сначала забери душу в банку."); return; }
             // A tutorial reanimation is a local, explicit shortcut to Raising.Rise,
             // not a second copy of the binding/shell maths.
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
-            var risen = Raising.Rise(slot.Soul, ShellType.Zombie,
+            var risen = Raising.Rise(soul, ShellType.Zombie,
                 _woundedAt + new Vector3(2f, 0f, 0f), Quaternion.identity, relations);
             if (risen == null) { Log("Не удалось поднять тело. Душа осталась в банке."); return; }
-            Satchel.TakeSoul(jar); // Only remove after successful creation.
+            if (jar >= 0) Satchel.TakeSoul(jar); // Only remove after successful creation.
+            _fallbackSoul = null;
             if (_wounded != null) _wounded.gameObject.SetActive(false);
             _zombie = risen;
             // This is actual AOS memory keyed to the actors, not Attack(killer).
@@ -472,6 +592,7 @@ namespace Sinbinder.Gameplay
                         AOS.EmotionType.Anger, 0.95f);
             _commandSince = Time.unscaledTime;
             _commandSinceGame = Time.time;
+            MarkCommand();
             Set(Stage.Command, "Выдели его и отдай приказ ПКМ по земле — он пойдёт.");
         }
 
@@ -482,6 +603,9 @@ namespace Sinbinder.Gameplay
         private void BeginStandoff()
         {
             _standoffSince = Time.time;
+            _standoffReal = Time.unscaledTime;
+            _autoOrdered = false;
+            MarkCommand();
             Hold(_zombie, true);
             Set(Stage.Standoff, "Его убийцы вернулись. Прикажи ему отступить: выдели его, нажми X и щёлкни по земле позади (или Shift + ПКМ).");
             StartCoroutine(ReleaseKillers());
@@ -503,7 +627,8 @@ namespace Sinbinder.Gameplay
                 if (enemy == null) continue;
                 enemy.Attack = Mathf.Min(enemy.Attack, 2.5f); // Weaker than the hero.
                 var hp = enemy.GetComponent<Damageable>();
-                if (hp != null) hp.Initialize(9f, 0f);
+                // До боя их не срубить: срубленные раньше приказа уводили мимо суда.
+                if (hp != null) hp.Initialize(999f, 0f);
                 enemy.transform.rotation = Quaternion.LookRotation(Flat(near - at));
                 Hold(enemy, true);
                 _killers.Add(enemy);
@@ -536,7 +661,7 @@ namespace Sinbinder.Gameplay
             // Миг на его слово над головой (RefusalPresenter) — потом суд.
             yield return new WaitForSecondsRealtime(0.8f);
             if (_zombie != null && !_zombie.IsDead)
-                yield return SoulCourt.Convene(_zombie, d, c);
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder);
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
@@ -550,7 +675,12 @@ namespace Sinbinder.Gameplay
 
         private void StartBattle(string line)
         {
-            foreach (var k in _killers) Hold(k, false);
+            foreach (var k in _killers)
+            {
+                Hold(k, false);
+                var hp = k != null && !k.IsDead ? k.GetComponent<Damageable>() : null;
+                if (hp != null) hp.Initialize(9f, 0f);   // теперь — обычные противники
+            }
             if (_zombie != null) Hold(_zombie, false);
             _battleStarted = true;
             Set(Stage.Battle, line);

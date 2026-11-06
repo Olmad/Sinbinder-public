@@ -51,30 +51,39 @@ namespace Sinbinder.AOS
             if (_memories[warrior.Id].Count > _maxRecordsPerWarrior)
             {
                 _memories[warrior.Id] = _memories[warrior.Id]
-                    .OrderByDescending(m => m.GetCurrentStrength(Time.time))
+                    .OrderByDescending(m => Mathf.Abs(m.GetCurrentStrength(Time.time)))
                     .Take(_maxRecordsPerWarrior)
                     .ToList();
             }
         }
 
+        /// <summary>
+        /// Живые воспоминания, сильные — первыми. Сила со знаком (гнев, страх,
+        /// печаль — минус), поэтому живость — по модулю. До 06.11 здесь стояло
+        /// «сила > 0,05», и вся тёмная память пропадала на входе: убитый не помнил
+        /// убийц (голос Памяти во сне молчал при них на каждом прогоне), обида
+        /// и отнятое не трогали отношений. Чистка памяти и модуль Памяти и раньше
+        /// брали модуль — отсекала только выборка.
+        /// </summary>
         public List<MemoryRecord> GetMemories(Warrior warrior)
         {
             if (!_memories.ContainsKey(warrior.Id)) return new List<MemoryRecord>();
+            return Vivid(_memories[warrior.Id]);
+        }
+
+        private static List<MemoryRecord> Vivid(List<MemoryRecord> all)
+        {
             float currentTime = Time.time;
-            return _memories[warrior.Id]
-                .Where(m => m.GetCurrentStrength(currentTime) > 0.05f)
-                .OrderByDescending(m => m.GetCurrentStrength(currentTime))
+            return all
+                .Where(m => Mathf.Abs(m.GetCurrentStrength(currentTime)) > 0.05f)
+                .OrderByDescending(m => Mathf.Abs(m.GetCurrentStrength(currentTime)))
                 .ToList();
         }
 
         public List<MemoryRecord> GetMemoriesById(string warriorId)
         {
             if (!_memories.ContainsKey(warriorId)) return new List<MemoryRecord>();
-            float currentTime = Time.time;
-            return _memories[warriorId]
-                .Where(m => m.GetCurrentStrength(currentTime) > 0.05f)
-                .OrderByDescending(m => m.GetCurrentStrength(currentTime))
-                .ToList();
+            return Vivid(_memories[warriorId]);
         }
 
         public void CreateMemoryById(string warriorId, string eventType, string targetId, EmotionType emotion, float importance)
@@ -98,7 +107,7 @@ namespace Sinbinder.AOS
             if (_memories[warriorId].Count > _maxRecordsPerWarrior)
             {
                 _memories[warriorId] = _memories[warriorId]
-                    .OrderByDescending(m => m.GetCurrentStrength(Time.time))
+                    .OrderByDescending(m => Mathf.Abs(m.GetCurrentStrength(Time.time)))
                     .Take(_maxRecordsPerWarrior)
                     .ToList();
             }
