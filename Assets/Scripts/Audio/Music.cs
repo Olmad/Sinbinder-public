@@ -8,7 +8,7 @@ namespace Sinbinder.Audio
 {
     /// <summary>Что звучит: место пролога, а не имя файла.</summary>
     /// <remarks>Новое место — в конец: номера прежних не сдвигаются.</remarks>
-    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted, Menu }
+    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted, Menu, Court }
 
     /// <summary>
     /// Короткий сигнал поверх темы: событие, а не место. Из архива автора:
@@ -30,6 +30,7 @@ namespace Sinbinder.Audio
     /// | набег             | Шуганули                      | Scatter                |
     /// | вторая волна      | The Hunted                    | Hunted                 |
     /// | склеп, конец демо | «Нас мало» — плач «Крыс»      | Lament                 |
+    /// | Суд Души          | тема Владыки на весах         | Court                  |
     ///
     /// 23 октября — решения автора: «Крысы» — тема отряда Безымянного; колыбельная
     /// сюиты — в главное меню; «для лагеря хороша 6 или 7» — звучат по очереди,
@@ -86,6 +87,9 @@ namespace Sinbinder.Audio
                 // двери (−34) и прежним «Bad is good» (−32,4) — тихий плач.
                 case Track.Crypt:    return 0.12f;
                 case Track.Epilogue: return 0.12f;
+                // Суд Души: зал почти всё время в рамке кино — тема приседает до Duck,
+                // и под словами Смерти и судей звучит как лагерь.
+                case Track.Court:    return 0.24f;
                 default:             return 0f;
             }
         }
@@ -105,6 +109,7 @@ namespace Sinbinder.Audio
                 case Track.Hunted:   return new[] { "Hunted" };
                 case Track.Crypt:    return new[] { "Lament" };
                 case Track.Epilogue: return new[] { "Lament" };
+                case Track.Court:    return new[] { "Court" };
                 default:             return null;
             }
         }

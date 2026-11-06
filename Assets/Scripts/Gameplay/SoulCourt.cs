@@ -531,6 +531,10 @@ namespace Sinbinder.Gameplay
             Step = "rise";
             box.Say(null, "");   // строка поля («…исполнил приказ») в зал не идёт: первый кадр — без слов
             var world = Darkness.Fall(eye);
+            // Своя тема зала (Tools/music/court.py): тема Владыки на весах — с ми и с нотой
+            // отказа, без разрешения. Тема места уходит и вернётся на выходе.
+            var before = Audio.Music.Current;
+            Audio.Music.Play(Audio.Track.Court, 2.5f);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
             camera.Crane(Hall + RiseLook, Hall + RiseFrom, RiseFov, look, overview, WideFov,
                          RiseHold, RiseSeconds, 20f, OverviewPush);
@@ -723,6 +727,7 @@ namespace Sinbinder.Gameplay
             Step = "exit";
             if (!shortly) { PlayerPrefs.SetInt(SeenKey, 1); PlayerPrefs.Save(); }
             Audio.DeathVoice.Quiet();
+            if (Audio.Music.Current == Audio.Track.Court) Audio.Music.Play(before, 2.5f);
             yield return fader.To(1f, 0.6f);
             world.Rise();
             camera.StopSway();

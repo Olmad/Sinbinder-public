@@ -1147,6 +1147,21 @@ Begins» — тот же мотив автора (валторна ре–ми�
 слышит игрок, это его герой; потом — лагерь. И на дороге между местами,
 когда она будет. В игру не ставилась — до слова автора.
 
+### Суд Души — 06.11
+
+Автор: «после сборки — займись музыкой для суда». `Tools/music/court.py`, петля
+107,52 с, темп 54. Суд взвешивает приказ — музыка взвешивает тему Владыки: она
+звучит дважды, медленно, у виолончелей с ми («послушается», под ней ля-мажор) и у
+валторны с ми-бемолем — нотой отказа, той же, что у Магистра (под ней ми-бемоль-мажор).
+Конец застывает на ля без разрешения и уходит на круг: приговор выносит суд, а не музыка.
+Орган, хор далеко вверху, редкий колокол (канал пикколо с программой 14); ниже 70 Гц
+ничего — гул Смерти (42 Гц) остаётся ей. Ударного нет: колокол входа и вердикта бьёт
+сама игра (`SoulCourt.Toll`).
+
+Громкость: запись −17,1 дБ(A), `Music.LevelOf` 0,24; зал всё время в рамке кино, и тема
+приседает до 0,45 — под словами −36,4 дБ(A), как лагерь (−36,2). `SoulCourt.Convene`
+включает её на подъёме в зал и на выходе возвращает прежнюю тему (во сне — тишину).
+
 ### Как пересобрать записи игры
 
 ```
@@ -1157,6 +1172,7 @@ python3 rats.py loot l.mid    && sh render.sh l.mid l.wav && python3 master.py l
 python3 battles.py scatter r.mid --loop && sh render.sh r.mid r.wav && python3 master.py r.wav Scatter.ogg --cut 63.36:126.72
 python3 battles.py hunted h.mid --loop  && sh render.sh h.mid h.wav && python3 master.py h.wav Hunted.ogg --cut 85.76:171.52
 python3 rats.py weep w.mid --loop       && sh render.sh w.mid w.wav && python3 master.py w.wav Lament.ogg --cut 129.92:259.84
+python3 court.py c.mid --loop          && sh render.sh c.mid c.wav && python3 master.py c.wav Court.ogg --cut 107.52:215.04
 python3 stingers.py spark s.mid  && sh render.sh s.mid s.wav && python3 master.py s.wav Spark.ogg --trim
 python3 stingers.py fallen f.mid && sh render.sh f.mid f.wav && python3 master.py f.wav Fallen.ogg --trim
 ```
