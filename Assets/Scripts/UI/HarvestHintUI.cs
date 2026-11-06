@@ -53,6 +53,12 @@ namespace Sinbinder.UI
 
         private float _hideAt = -1f;
 
+        /// <summary>
+        /// «Подойдите» — к чему, видно меткой над ближней гаснущей душой (автор, 06.11:
+        /// «если есть конкретное место — показывать стрелкой как выход из лагеря»).
+        /// </summary>
+        private PlaceMarker _marker;
+
         void Start()
         {
             if (_panel != null) _panel.SetActive(false);
@@ -98,12 +104,37 @@ namespace Sinbinder.UI
             // Строка — в миг показа: язык могли сменить в меню после начала сцены.
             if (_text != null) _text.text = Loc.T(Line);
             if (_panel != null) _panel.SetActive(true);
+
+            if (_marker == null)
+            {
+                var root = new GameObject("Метка души");
+                root.transform.SetParent(transform, false);
+                _marker = PlaceMarker.On(root, new Color(0.78f, 0.92f, 0.96f));
+            }
+            _marker.Aim(Loc.T("Душа"), NearestSoul, 2.2f);
+        }
+
+        /// <summary>Над ближней к Греховоду гаснущей душой; нет таких — места нет.</summary>
+        private static Vector3? NearestSoul()
+        {
+            var souls = SoulManager.Instance;
+            if (souls == null) return null;
+            FadingSoul best = null;
+            float far = float.MaxValue;
+            foreach (var s in souls.GetAllFadingSouls())
+            {
+                if (s == null) continue;
+                float d = SinbinderPlayer.Exists ? CampFocus.GroundDistance(SinbinderPlayer.Where, s.Position) : 0f;
+                if (d < far) { far = d; best = s; }
+            }
+            return best != null ? best.Position + Vector3.up * 1.4f : (Vector3?)null;
         }
 
         private void Hide()
         {
             _hideAt = -1f;
             if (_panel != null) _panel.SetActive(false);
+            if (_marker != null) _marker.Clear();
             enabled = false;
         }
     }

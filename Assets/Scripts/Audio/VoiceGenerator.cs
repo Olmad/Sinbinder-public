@@ -504,10 +504,10 @@ namespace Sinbinder.Audio
             switch (type)
             {
                 case VoiceType.Sawtooth: return new Colour { Tilt = 0.75f, Odd = 1f, Breath = 0.03f, Bright = 1.4f, Loud = 0.55f };
-                case VoiceType.Sine:     return new Colour { Tilt = 1.6f, Odd = 1f, Breath = 0.18f, Bright = 1f, Loud = 0.45f };
+                case VoiceType.Sine:     return new Colour { Tilt = 1.6f, Odd = 1f, Breath = 0.07f, Bright = 1f, Loud = 0.45f };
                 case VoiceType.Triangle:
                     return odd ? new Colour { Tilt = 0.85f, Odd = 1f, Breath = 0.02f, Bright = 0.9f, Loud = 0.52f }    // голем
-                               : new Colour { Tilt = 1.3f, Odd = 1f, Breath = 0.06f, Bright = 0.8f, Loud = 0.48f };   // зомби
+                               : new Colour { Tilt = 1.3f, Odd = 1f, Breath = 0.03f, Bright = 0.8f, Loud = 0.48f };   // зомби
                 default:
                     return odd ? new Colour { Tilt = 1.0f, Odd = 1.35f, Breath = 0.03f, Bright = 1f, Loud = 0.5f }     // скелет
                                : new Colour { Tilt = 1.1f, Odd = 1f, Breath = 0.02f, Bright = 1f, Loud = 0.5f };      // живой
@@ -649,7 +649,7 @@ namespace Sinbinder.Audio
         {
             int rate = Rate;
             int n = Mathf.Max(1, Mathf.RoundToInt(dur * rate));
-            int pre = onset == Burst ? Mathf.RoundToInt(0.012f * rate) : onset == Hiss ? Mathf.RoundToInt(0.045f * rate) : 0;
+            int pre = onset == Burst ? Mathf.RoundToInt(0.012f * rate) : onset == Hiss ? Mathf.RoundToInt(0.032f * rate) : 0;
             var data = new float[pre + n];
             var rng = new System.Random(seed);
 
@@ -689,15 +689,17 @@ namespace Sinbinder.Audio
                 peak = Mathf.Max(peak, Mathf.Abs((float)sum));
             }
 
-            // Придыхание.
+            // Придыхание. Шум сглажен дважды: с одним сглаживанием он шуршал поверх
+            // гласной (автор, 06.11: «временами слышно шорканье»).
             if (colour.Breath > 0f && peak > 0f)
             {
-                float smooth = 0f;
+                float smooth = 0f, softer = 0f;
                 for (int i = 0; i < n; i++)
                 {
                     float w = (float)(rng.NextDouble() * 2.0 - 1.0) * 1.7f;
                     smooth += (w - smooth) * 0.3f;
-                    data[pre + i] += colour.Breath * peak * smooth;
+                    softer += (smooth - softer) * 0.3f;
+                    data[pre + i] += colour.Breath * peak * softer * 1.6f;
                 }
             }
 
@@ -714,16 +716,22 @@ namespace Sinbinder.Audio
             float scale = most > 0f ? colour.Loud / most : 0f;
             for (int i = 0; i < n; i++) data[pre + i] *= scale;
 
-            // Согласная перед гласной.
-            float last = 0f;
+            // Согласная перед гласной — намёком, а не шумом. Автор, 06.11: «временами
+            // слышно шорканье»: шип 45 мс почти в треть гласной и щелчок с полного
+            // размаха шуршали на каждом «с», «ш», «х», «т». Теперь шип короче и в
+            // несколько раз тише, нарастает и гаснет плавно (синус в квадрате);
+            // взрыв — тихий толчок с нарастанием в полторы миллисекунды.
+            float last = 0f, soft = 0f;
             for (int i = 0; i < pre; i++)
             {
                 float w = (float)(rng.NextDouble() * 2.0 - 1.0) * 1.7f;
                 float edge = w - last;   // шум без низа: шорох, а не гул
                 last = w;
+                soft += (edge - soft) * 0.5f;   // и без самого верха: не скрежет
+                float bell = Mathf.Sin(Mathf.PI * i / pre);
                 data[i] = onset == Burst
-                    ? edge * Mathf.Exp(-i / (0.003f * rate)) * colour.Loud * 0.22f
-                    : edge * Mathf.Sin(Mathf.PI * i / pre) * colour.Loud * 0.12f;
+                    ? soft * Mathf.Clamp01(i / (0.0015f * rate)) * Mathf.Exp(-i / (0.003f * rate)) * colour.Loud * 0.08f
+                    : soft * bell * bell * colour.Loud * 0.04f;
             }
 
             // Верх приглушить: голос — бормотание за стеной, а не писк.

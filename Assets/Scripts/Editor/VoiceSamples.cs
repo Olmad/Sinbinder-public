@@ -30,6 +30,9 @@ namespace Sinbinder.EditorTools
             Write(dir, "игра — голос без души", 1f,
                   "Ну что, владыка, опять мои кости ноют? К дождю, видать.");
             Roll(dir);
+            Death(dir, "игра — Бог Смерти ведёт суд",
+                  "Почему он не послушался? Решал не он один — решала его душа. Вот её суд.",
+                  "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса.");
             Debug.Log("[ГОЛОС] образцы: " + dir);
             EditorApplication.Exit(0);
         }
@@ -82,6 +85,33 @@ namespace Sinbinder.EditorTools
             }
             Save(Path.Combine(dir, "игра — суд, голоса судей.wav"), all.ToArray(), rate);
             Debug.Log($"[ГОЛОС] перекличка суда: {all.Count / (float)rate:F1} с");
+        }
+
+        /// <summary>Бог Смерти на суде (Audio.DeathVoice.Speech): строки подряд, с эхом склепа.</summary>
+        private static void Death(string dir, string name, params string[] lines)
+        {
+            const int rate = 22050;
+            var all = new System.Collections.Generic.List<float>();
+            int at = 0;
+            for (int l = 0; l < lines.Length; l++)
+            {
+                var data = Audio.DeathVoice.Speech(lines[l], out float spoken);
+                // Как в игре: следующая строка — через 0,8 с после сказанного,
+                // хвост прошлой гаснет за полсекунды под новой (DeathVoice.Utter).
+                int next = at + Mathf.RoundToInt((spoken + 0.8f) * rate);
+                bool last = l == lines.Length - 1;
+                for (int i = 0; i < data.Length; i++)
+                {
+                    int j = at + i;
+                    float k = last || j < next ? 1f : 1f - (j - next) / (0.5f * rate);
+                    if (k <= 0f) break;
+                    while (all.Count <= j) all.Add(0f);
+                    all[j] += data[i] * k;
+                }
+                at = next;
+            }
+            Save(Path.Combine(dir, name + ".wav"), all.ToArray(), rate);
+            Debug.Log($"[ГОЛОС] {name}: {all.Count / (float)rate:F1} с, пик {Peak(all.ToArray()):F2}");
         }
 
         private static void Save(string path, float[] data, int rate)

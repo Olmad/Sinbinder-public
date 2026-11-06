@@ -8956,8 +8956,8 @@ msgid "ЗЛО"
 msgstr "EVIL"
 
 #: Gameplay/SoulCourt.cs
-msgid "Суд души"
-msgstr "The Court of the Soul"
+msgid "Бог Смерти"
+msgstr "God of Death"
 
 #: Gameplay/SoulCourt.cs
 msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
@@ -9004,8 +9004,8 @@ msgid "против"
 msgstr "against"
 
 #: Gameplay/SoulCourt.cs
-msgid "Вердикт"
-msgstr "Verdict"
+msgid "Бог Смерти — вердикт"
+msgstr "God of Death — verdict"
 
 #: Gameplay/SoulCourt.cs
 msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
@@ -9751,7 +9751,7 @@ msgstr "Only its will remains. A soul like that will rise as a zombie."
 msgid "Кошель убитого — в ваш: +{0}."
 msgstr ""
 
-#: Gameplay/SquadGear.cs
+#: Gameplay/SquadGear.cs UI/TaskList.cs
 msgid "Оружие"
 msgstr "Weapon"
 
@@ -10223,9 +10223,9 @@ msgstr ""
 msgid "Собери троих верных. Спасай их в бою, давай им дело: без дела верные остывают."
 msgstr ""
 
-#: Gameplay/TugTutorial.cs
+#: Gameplay/TugTutorial.cs UI/TaskList.cs
 msgid "Охотники"
-msgstr ""
+msgstr "Hunters"
 
 #: Gameplay/TugTutorial.cs
 msgid "С троп идут охотники Ордена — враги всем. Отбей их. Каждые пять минут их будет больше, и к сильнейшему — больше всех."
@@ -10859,7 +10859,7 @@ msgstr "Click an item on the warrior to take it into the bag. An occupied slot m
 msgid "Издали только смотрят. Отдать и забрать — подойдя: F от первого лица. I или Esc — закрыть."
 msgstr "From afar you can only look. To give or take — walk up: F in first person. I or Esc — close."
 
-#: UI/GearPanel.cs
+#: UI/GearPanel.cs UI/TaskList.cs
 msgid "Сундук Марги"
 msgstr "Marga's chest"
 
@@ -11002,6 +11002,10 @@ msgstr "{0} hands his gold over to the Sinbinder's purse."
 #: UI/HarvestHintUI.cs
 msgid "Подойдите и нажмите E, чтобы забрать душу в банку. Чем дольше она гаснет, тем меньше от неё останется."
 msgstr "Walk up and press E to take the soul into a jar. The longer it fades, the less of it will remain."
+
+#: UI/HarvestHintUI.cs
+msgid "Душа"
+msgstr "Soul"
 
 #: UI/MissionMapUI.cs
 msgid "Куда послать отряд?  Esc — отойти от шара"
@@ -11708,8 +11712,16 @@ msgid "Выйдите из шатра"
 msgstr "Leave the tent"
 
 #: UI/TaskList.cs
+msgid "Выход из шатра"
+msgstr "Tent exit"
+
+#: UI/TaskList.cs
 msgid "Пошлите отряд к заставе — совет у стола с шаром"
 msgstr "Send a squad to the outpost — council at the table with the orb"
+
+#: UI/TaskList.cs
+msgid "Стол с шаром"
+msgstr "Table with the ball"
 
 #: UI/TaskList.cs
 msgid "Откройте сундук Марги (F)"
@@ -11722,6 +11734,10 @@ msgstr "Pay Marga his debt in person (optional)"
 #: UI/TaskList.cs
 msgid "Взгляните в горящий шар"
 msgstr "Look into the burning orb"
+
+#: UI/TaskList.cs
+msgid "Шар"
+msgstr "Crystal ball"
 
 #: UI/TaskList.cs
 msgid "Отбейте охотников"
@@ -11744,6 +11760,14 @@ msgid "Дар: {0}."
 msgstr ""
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Суд души"
+msgstr "The Court of the Soul"
+
+#. нет в коде
+msgid "Вердикт"
+msgstr "Verdict"
 
 #. нет в коде
 msgid "Добра в нём больше, чем греха. Добрый слушается."

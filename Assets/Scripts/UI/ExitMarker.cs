@@ -66,6 +66,13 @@ namespace Sinbinder.UI
         /// ровно в противоположную сторону.
         /// </summary>
         public static Vector2 Place(Vector3 screen, float width, float height, out string text)
+            => Place(screen, width, height, Loc.T(Word), out text);
+
+        /// <summary>
+        /// То же для любого места: <paramref name="word"/> — уже переведённое слово
+        /// метки (<see cref="PlaceMarker"/>: «Сундук Марги», «Шар», «Охотники»).
+        /// </summary>
+        public static Vector2 Place(Vector3 screen, float width, float height, string word, out string text)
         {
             var centre = new Vector2(width * 0.5f, height * 0.5f);
             var at = new Vector2(screen.x, screen.y);
@@ -74,7 +81,7 @@ namespace Sinbinder.UI
             bool inside = !behind
                        && at.x >= Margin && at.x <= width - Margin
                        && at.y >= Margin && at.y <= height - Margin;
-            if (inside) { text = Loc.T(Word); return at; }
+            if (inside) { text = word; return at; }
 
             var ray = at - centre;
             if (behind) ray = -ray;
@@ -88,9 +95,9 @@ namespace Sinbinder.UI
             var edge = centre + ray * Mathf.Min(reachX, reachY);
 
             if (Mathf.Abs(ray.x) >= Mathf.Abs(ray.y))
-                text = ray.x > 0f ? Loc.T(Word) + " →" : "← " + Loc.T(Word);
+                text = ray.x > 0f ? word + " →" : "← " + word;
             else
-                text = ray.y > 0f ? "↑ " + Loc.T(Word) : "↓ " + Loc.T(Word);
+                text = ray.y > 0f ? "↑ " + word : "↓ " + word;
 
             return edge;
         }
@@ -117,7 +124,19 @@ namespace Sinbinder.UI
             var at = Place(screen, Screen.width, Screen.height, out string text);
 
             _label.text = text;
-            _label.rectTransform.position = new Vector3(at.x, at.y, 0f);
+            Pin(_label.rectTransform, at);
+        }
+
+        /// <summary>
+        /// Поставить метку в точку экрана — долей экрана, а не точками. В игре это
+        /// одно и то же; а кадры прогона снимают холст в 1600×900, тогда как экран
+        /// пакетного Unity — 640×480, и метка «у края» вставала посреди снимка.
+        /// </summary>
+        public static void Pin(RectTransform label, Vector2 at)
+        {
+            float w = Mathf.Max(1f, Screen.width), h = Mathf.Max(1f, Screen.height);
+            label.anchorMin = label.anchorMax = new Vector2(at.x / w, at.y / h);
+            label.anchoredPosition = Vector2.zero;
         }
 
         private void Build()

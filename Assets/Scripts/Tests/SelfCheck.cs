@@ -1333,6 +1333,12 @@ namespace Sinbinder.Tests
             // сзади справа приходят слева. Стрелка обязана смотреть вправо.
             UI.ExitMarker.Place(new Vector3(-3000f, 450f, -10f), w, h, out text);
             Check(text.EndsWith("→"), "ворота за спиной справа — стрелка вправо, а не влево");
+
+            // Метка места задачи (06.11) — тот же расчёт со своим словом.
+            UI.ExitMarker.Place(new Vector3(800f, 5000f, 10f), w, h, "Шар", out text);
+            Check(text == "↑ Шар", "место выше кадра — его имя у верхнего края, стрелка вверх");
+            UI.ExitMarker.Place(new Vector3(800f, 450f, 10f), w, h, "Сундук Марги", out text);
+            Check(text == "Сундук Марги", "место в кадре — одно имя, без стрелки");
         }
 
         /// <summary>
