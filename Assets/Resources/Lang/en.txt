@@ -9898,3 +9898,15 @@ msgstr "The same order: X and a click behind."
 
 msgid "Причины больше нет — что решит душа теперь?"
 msgstr "The reason is gone — what will the soul decide now?"
+
+msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против» — на волосок."
+msgstr "Order refused. Against: {0}. For: {1}. The scales tipped to “against” — by a hair."
+
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
+msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for” — by a hair."
+
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
+msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
+
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
+msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."

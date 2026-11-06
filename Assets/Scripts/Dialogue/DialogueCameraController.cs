@@ -443,7 +443,7 @@ namespace Sinbinder.Dialogue
         /// (<see cref="SaveCameraPosition"/>, <see cref="RestoreCamera"/>).
         /// </summary>
         public IEnumerator FocusOnPoint(Vector3 look, Vector3 from, string caption = null,
-                                        float push = 0f, float fov = 0f)
+                                        float push = 0f, float fov = 0f, float reach = 0.2f)
         {
             if (Cam() == null) yield break;
 
@@ -463,13 +463,17 @@ namespace Sinbinder.Dialogue
 
             if (!_inDialogue || revision != _frameRevision) yield break;
             _swayCoroutine = StartCoroutine(PushTowards(look, from,
-                push > 0f ? push : _pushSeconds));
+                push > 0f ? push : _pushSeconds, reach));
         }
 
-        /// <summary>Подъезд к вещи: на пятую часть пути, плавно, и стоять.</summary>
-        private IEnumerator PushTowards(Vector3 look, Vector3 from, float seconds)
+        /// <summary>
+        /// Подъезд к вещи: на пятую часть пути (или на <paramref name="reach"/>), плавно,
+        /// и стоять. Общему плану суда пятая часть много: к вердикту крайние судьи
+        /// уезжали за край кадра (прогон 06.11).
+        /// </summary>
+        private IEnumerator PushTowards(Vector3 look, Vector3 from, float seconds, float reach = 0.2f)
         {
-            Vector3 to = Vector3.Lerp(from, look, 0.2f);
+            Vector3 to = Vector3.Lerp(from, look, reach);
             float elapsed = 0f;
 
             while (_inDialogue)

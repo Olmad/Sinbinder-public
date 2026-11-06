@@ -86,7 +86,7 @@ namespace Sinbinder.Gameplay
         /// моральный компас.
         /// </summary>
         private const float BenchRadius = 3.6f;
-        private const float BenchFrom = 162f, BenchTo = 18f;
+        private const float BenchFrom = 156f, BenchTo = 24f;   // уже — на 16:10 крайние не уходят за край
         private const float DeskTop = 1.12f;
         private const float Dais = 0.18f;
         private const float WallZ = 4.9f;
@@ -100,6 +100,9 @@ namespace Sinbinder.Gameplay
         /// весы и головы судей: компас уходил за верх кадра (прогон 06.11).
         /// </summary>
         private const float WideFov = 50f;
+
+        /// <summary>Насколько общий план подползает к кафедре: чуть, чтобы все тринадцать оставались в кадре.</summary>
+        private const float OverviewPush = 0.07f;
 
         /// <summary>
         /// Весы — то, что 05.11 было «компасом»: часы со стрелкой (автор: «идея
@@ -200,6 +203,7 @@ namespace Sinbinder.Gameplay
 
         private void LateUpdate()
         {
+            Face();
             if (_tags.Count == 0) return;
             var eye = Camera.main;
             if (eye == null) return;
@@ -402,7 +406,7 @@ namespace Sinbinder.Gameplay
             Step = "hall";
             var world = Darkness.Fall(eye);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             yield return new WaitForSecondsRealtime(0.35f);
             yield return fader.To(0f, 0.9f);
 
@@ -429,7 +433,7 @@ namespace Sinbinder.Gameplay
                 Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит.")));
 
             Step = "hall";
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             yield return Line(box, host, court,
                 Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(given ?? w.Command.Kind)));
 
@@ -452,7 +456,7 @@ namespace Sinbinder.Gameplay
             // 5. Слово каждого (автор: «а после каждый высказался»): тише — первыми,
             // громче — последними. Каждое «за» и «против» качает весы.
             Step = "stance";
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             yield return Line(box, host, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними."));
 
             var order = new List<Judge>(judges);
@@ -499,7 +503,7 @@ namespace Sinbinder.Gameplay
             {
                 // Камера с общего плана чуть поворачивает к говорящему: весы — в кадре.
                 host.StartCoroutine(camera.FocusOnPoint(Vector3.Lerp(look, j.Seat + Vector3.up * 1.6f, 0.3f),
-                                                        overview, null, push: 14f, fov: WideFov));
+                                                        overview, null, push: 14f, fov: WideFov, reach: OverviewPush));
                 host.StartCoroutine(SpotOn(spot, j));
                 host.StartCoroutine(Flare(j, Mathf.Abs(j.Net) / loudest));
                 Play(j, j.Abstains ? "Idle" : "Talk");
@@ -524,7 +528,7 @@ namespace Sinbinder.Gameplay
             // слабая никнет, свеча приказа гаснет — или вспыхивает.
             Step = "verdict";
             host.StartCoroutine(SpotOff(spot));
-            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov));
+            host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             bool refused = d.RefusedCommand || d.Hesitated;
             host._aim = Final(d, total, reach);
             if (!d.Hesitated)
@@ -627,7 +631,7 @@ namespace Sinbinder.Gameplay
             }
 
             float tilt = Tilt(against, Mathf.Abs(against) * 1.6f);
-            host._angle = host._aim = refused ? Mathf.Min(tilt, -8f) : Mathf.Max(tilt, 8f);
+            host._angle = host._aim = refused ? Mathf.Min(tilt, -MinLean) : Mathf.Max(tilt, MinLean);
             if (host._needle != null) host._needle.localRotation = Quaternion.AngleAxis(host._angle, Vector3.forward);
 
             var spot = Spotlight(hall.transform);
@@ -841,6 +845,10 @@ namespace Sinbinder.Gameplay
             if (d.Hesitated)
                 return Loc.T("Голоса вровень — душа не выбрала ничего.");
 
+            float proSum = 0f, conSum = 0f;
+            foreach (var j in judges) if (j.ForOrder) proSum += Mathf.Abs(j.Net); else conSum += Mathf.Abs(j.Net);
+            // Перевес меньше пятой части — сказать: иначе почти ровная стрелка спорит со словом «склонились».
+            bool hair = proSum > 0f && conSum > 0f && Mathf.Abs(proSum - conSum) < 0.2f * Mathf.Max(proSum, conSum);
             string against = Roll(judges.FindAll(j => !j.ForOrder));
             string pro = Roll(judges.FindAll(j => j.ForOrder));
 
@@ -848,12 +856,16 @@ namespace Sinbinder.Gameplay
             {
                 if (string.IsNullOrEmpty(against)) return Loc.T("Приказ отвергнут.");
                 if (string.IsNullOrEmpty(pro)) return Loc.F("Приказ отвергнут. Против — {0}. За приказ — никто.", against);
-                return Loc.F("Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против».", against, pro);
+                return hair
+                    ? Loc.F("Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против» — на волосок.", against, pro)
+                    : Loc.F("Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против».", against, pro);
             }
 
             if (string.IsNullOrEmpty(pro)) return Loc.T("Приказ исполнен.");
             if (string.IsNullOrEmpty(against)) return Loc.F("Приказ исполнен. За — {0}. Против — никто.", pro);
-            return Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за».", pro, against);
+            return hair
+                ? Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок.", pro, against)
+                : Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за».", pro, against);
         }
 
         /// <summary>Что показал компас — натура души, а не это решение.</summary>
@@ -886,13 +898,19 @@ namespace Sinbinder.Gameplay
             return Loc.F("{0} и {1}", string.Join(", ", names.GetRange(0, names.Count - 1)), names[names.Count - 1]);
         }
 
+        /// <summary>
+        /// Меньше — и «весы склонились» на экране не видно: при 93 против 83 стрелка
+        /// стояла на 8°, почти на полудне (прогон 06.11).
+        /// </summary>
+        private const float MinLean = 14f;
+
         /// <summary>Где встанет стрелка: по сумме всех голосов, но не против самого решения.</summary>
         private static float Final(Decision d, float total, float reach)
         {
             float a = Tilt(total, reach);
             if (d.Hesitated) return Mathf.Clamp(a, -4f, 4f);
-            if (d.RefusedCommand) return Mathf.Min(a, -8f);
-            return Mathf.Max(a, 8f);
+            if (d.RefusedCommand) return Mathf.Min(a, -MinLean);
+            return Mathf.Max(a, MinLean);
         }
 
         /// <summary>
@@ -1176,14 +1194,97 @@ namespace Sinbinder.Gameplay
             light.range = 6f;
             light.intensity = 0f;
             light.shadows = LightShadows.None;
+            Shaft(light);
             return light;
+        }
+
+        // Луч в воздухе от фонаря к говорящему (автор, 06.11: «на говорящего судью
+        // должен светить луч света»). Свет судью освещал, но тумана в зале нет —
+        // и самого света не было видно. Клин сложением цвета: узкий у фонаря,
+        // широкий внизу, края мягкие; всегда лицом к камере (Face).
+        private static Transform _shaft;
+        private static Light _shaftLight;
+        private static Material _shaftMat;
+        private const float ShaftLength = 3.0f, ShaftAlpha = 0.2f;
+
+        private static void Shaft(Light spot)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) return;
+            var mat = new Material(shader) { name = "Луч" };
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 2f);   // сложение: луч светит, а не застилает
+            mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetFloat("_Cull", 0f);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            mat.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0f));
+
+            // Пять столбцов поперёк (края гаснут), шесть рядов вдоль (книзу тише).
+            float[] across = { -1f, -0.45f, 0f, 0.45f, 1f };
+            float[] bright = { 0f, 0.55f, 1f, 0.55f, 0f };
+            const int rows = 6;
+            var verts = new List<Vector3>();
+            var cols = new List<Color>();
+            var tris = new List<int>();
+            for (int r = 0; r <= rows; r++)
+            {
+                float k = r / (float)rows;
+                float half = Mathf.Lerp(0.07f, 0.62f, k);
+                float fade = Mathf.Lerp(1f, 0.25f, k) * Mathf.Clamp01(k * 6f);   // у фонаря — не обрубком
+                for (int c = 0; c < across.Length; c++)
+                {
+                    verts.Add(new Vector3(across[c] * half, 0f, k * ShaftLength));
+                    cols.Add(new Color(1f, 1f, 1f, bright[c] * fade));
+                }
+            }
+            int w = across.Length;
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < w - 1; c++)
+                {
+                    int a = r * w + c;
+                    tris.AddRange(new[] { a, a + w, a + 1, a + 1, a + w, a + w + 1 });
+                }
+            var mesh = new Mesh { name = "Луч" };
+            mesh.SetVertices(verts);
+            mesh.SetColors(cols);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateBounds();
+
+            var go = new GameObject("Луч");
+            go.transform.SetParent(spot.transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            _shaft = go.transform;
+            _shaftLight = spot;
+            _shaftMat = mat;
+        }
+
+        /// <summary>Луч — лицом к камере (вокруг своей оси) и ярок, как сам свет.</summary>
+        private static void Face()
+        {
+            if (_shaft == null || _shaftLight == null || _shaftMat == null) return;
+            var eye = Camera.main;
+            if (eye == null) return;
+            Vector3 axis = _shaftLight.transform.forward;
+            Vector3 toEye = Vector3.ProjectOnPlane(eye.transform.position - _shaft.position, axis);
+            if (toEye.sqrMagnitude > 1e-4f) _shaft.rotation = Quaternion.LookRotation(axis, toEye);
+            Color c = _shaftLight.color;
+            c.a = ShaftAlpha * Mathf.Clamp01(_shaftLight.intensity / SpotPower);
+            _shaftMat.SetColor("_BaseColor", c);
         }
 
         /// <summary>Поставить свет над судьёй: сверху и чуть спереди, его цвета.</summary>
         private static void Aim(Light spot, Judge j)
         {
             Vector3 dir = Flat(j.Seat - Hall);
-            Vector3 at = j.Seat - dir * 0.9f + Vector3.up * 3.1f;
+            // Почти прямо над судьёй: фонарь в 0,9 м перед ним клал верх луча на соседа (кадры 06.11).
+            Vector3 at = j.Seat - dir * 0.3f + Vector3.up * 3.4f;
             spot.transform.SetPositionAndRotation(at, Quaternion.LookRotation(j.Seat + Vector3.up * 1.0f - at));
             spot.color = Color.Lerp(new Color(0.78f, 0.80f, 0.92f), Glow(j.Module), 0.35f);
         }

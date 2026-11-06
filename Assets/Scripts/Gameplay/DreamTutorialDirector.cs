@@ -348,7 +348,7 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             if (_hero == null || _stage == Stage.Finished) return;
-            if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting)
+            if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
                 Log(_line);
                 _nextPrompt = Time.unscaledTime + 25f;
@@ -700,8 +700,8 @@ namespace Sinbinder.Gameplay
             string line = obeyed
                 ? Grammar.Pick(g, Loc.T("Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."),
                                   Loc.T("Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."))
-                : Grammar.Pick(g, Loc.T("И снова нет: у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."),
-                                  Loc.T("И снова нет: у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."));
+                : Grammar.Pick(g, Loc.T("И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."),
+                                  Loc.T("И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."));
 
             var camera = Dialogue.DialogueCameraController.Instance;
             if (camera != null && _zombie != null && UI.Letterbox.Instance != null)
@@ -768,7 +768,7 @@ namespace Sinbinder.Gameplay
 
         private void OnGUI()
         {
-            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting) return;
+            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown) return;
             // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
             var style = GUI.skin.box;
