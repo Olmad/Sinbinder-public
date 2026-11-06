@@ -304,8 +304,9 @@ namespace Sinbinder.Gameplay
             box.Say(name, words);
             Spoken++;
             Debug.Log($"[СУД] {name}: {words}");
+            // Суд говорит не спеша и до конца фразы: времени голосу — больше, чем у наезда.
             if (speaker != null && speaker.TryGetComponent<Audio.VoiceGenerator>(out var voice))
-                voice.Babble(words, Mathf.Min(Herald.Hold(words) - 0.4f, words.Length / 40f * 1.2f + 0.3f));
+                voice.Babble(words, Mathf.Min(Herald.Hold(words) - 0.4f, words.Length / 40f * 1.6f + 0.4f));
             yield return UI.Letterbox.Hold(Herald.Hold(words) + 0.5f);
         }
 
@@ -335,6 +336,36 @@ namespace Sinbinder.Gameplay
             echo.diffusion = 100f;
             echo.density = 100f;
             return voice;
+        }
+
+        /// <summary>
+        /// Голос судьи по его сути, а не по месту за кафедрой: Гнев резок, Страх, Зависть
+        /// и Похоть — с придыханием, Уныние и Чревоугодие — глухо и медленно, Гордыня
+        /// и Верность — низко, Страх частит, Терпение не спешит.
+        /// </summary>
+        public static (float depth, Audio.VoiceGenerator.VoiceType kind, float tempo) Cast(string module)
+        {
+            const Audio.VoiceGenerator.VoiceType Even = Audio.VoiceGenerator.VoiceType.Square,
+                                                 Breath = Audio.VoiceGenerator.VoiceType.Sine,
+                                                 Dull = Audio.VoiceGenerator.VoiceType.Triangle,
+                                                 Sharp = Audio.VoiceGenerator.VoiceType.Sawtooth;
+            switch (module)
+            {
+                case "Loyalty":  return (0.78f, Even, 1.0f);
+                case "Fear":     return (1.12f, Breath, 0.85f);
+                case "Memory":   return (0.90f, Even, 1.1f);
+                case "Morality": return (0.84f, Even, 1.05f);
+                case "Virtue":   return (0.96f, Even, 1.0f);
+                case "Patience": return (0.86f, Even, 1.2f);
+                case "Greed":    return (1.00f, Even, 0.92f);
+                case "Pride":    return (0.72f, Even, 1.1f);
+                case "Wrath":    return (0.80f, Sharp, 0.88f);
+                case "Envy":     return (1.06f, Breath, 0.95f);
+                case "Lust":     return (1.02f, Breath, 1.1f);
+                case "Gluttony": return (0.76f, Dull, 1.2f);
+                case "Sloth":    return (0.86f, Dull, 1.35f);
+                default:         return (0.90f, Even, 1.0f);
+            }
         }
 
         /// <summary>
@@ -1234,7 +1265,9 @@ namespace Sinbinder.Gameplay
                 root.transform.SetParent(t, false);
                 root.transform.position = j.Seat + Vector3.up * Dais;
                 root.transform.rotation = Quaternion.LookRotation(Flat(Hall - j.Seat));
-                j.Voice = Throat(root, 0.70f + 0.04f * i);
+                var cast = Cast(j.Module);
+                j.Voice = Throat(root, cast.depth);
+                if (j.Voice is Audio.VoiceGenerator throat) { throat.Kind = cast.kind; throat.Tempo = cast.tempo; }
 
                 // Шарнир в поясе: верх тела кланяется, ноги за кафедрой.
                 j.Waist = new GameObject("Пояс").transform;

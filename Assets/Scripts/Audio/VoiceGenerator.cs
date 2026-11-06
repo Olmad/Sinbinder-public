@@ -58,6 +58,12 @@ namespace Sinbinder.Audio
         /// </summary>
         public float Depth { get; set; } = 1f;
 
+        /// <summary>Тембр голоса без души — у судей суда свой у каждого (SoulCourt.Cast).</summary>
+        public VoiceType Kind { get => _defaultVoice; set => _defaultVoice = value; }
+
+        /// <summary>Темп: больше — медленнее (Уныние тянет, Страх частит).</summary>
+        public float Tempo { get; set; } = 1f;
+
         /// <summary>Основной тон мужского голоса, Гц.</summary>
         private const float Male = 118f;
 
@@ -86,7 +92,7 @@ namespace Sinbinder.Audio
 
         /// <summary>
         /// Голос под печатаемую строку (окно разговора) — по букве: гласная — слог
-        /// (не чаще 13 в секунду), согласная — молча, но готовит начало следующего
+        /// (не чаще 10 в секунду), согласная — молча, но готовит начало следующего
         /// слога. От буквы — дрожание высоты, и реплика звучит одинаково при каждом
         /// прочтении. Без буквы — недовольное «хм» отказа.
         /// </summary>
@@ -113,7 +119,7 @@ namespace Sinbinder.Audio
             }
 
             float now = Time.unscaledTime;
-            if (now - _lastSyllable < 0.075f) { _onset = None; return; }
+            if (now - _lastSyllable < 0.1f) { _onset = None; return; }
             _lastSyllable = now;
 
             float p = Base(mood) * (1.06f - 0.025f * Mathf.Min(_since, 6)) * (1f + 0.02f * mood.Jitter * Wobble(c));
@@ -130,7 +136,7 @@ namespace Sinbinder.Audio
         private float _loud = 1f;
 
         /// <summary>Больше слогов на одну реплику не надо: дальше — уже шум, а не речь.</summary>
-        private const int MostSyllables = 34;
+        private const int MostSyllables = 40;
 
         private Coroutine _babble;
 
@@ -180,26 +186,26 @@ namespace Sinbinder.Audio
         /// <summary>
         /// Как строка будет сказана: слог за слогом — гласная, начало, высота от и до,
         /// длина и пауза после. Фраза — до конца предложения: к концу ниже, вопрос —
-        /// вверх, ударный слог выше, перед знаком слог длиннее. Не дольше
-        /// <paramref name="seconds"/> и не больше <see cref="MostSyllables"/>.
+        /// вверх, ударный слог выше, перед знаком слог длиннее.
+        ///
+        /// Строка длиннее <paramref name="seconds"/> — голос частит (до 0,7 обычной
+        /// длины слога), чтобы фраза дошла до конца: образцы 06.11 обрывались на «Я —
+        /// Гордыня…». Не влезла и так — последний слог сходит вниз, как конец фразы.
         /// </summary>
         private List<Step> Plan(string words, Tone mood, float seconds)
         {
-            var steps = new List<Step>();
+            var all = new List<Step>();
             float tone = Base(mood);
             var line = Parse(words);
-            float spent = 0f;
             int a = 0;
-            while (a < line.Count)
+            while (a < line.Count && all.Count < MostSyllables)
             {
                 int b = a;
                 while (b < line.Count - 1 && line[b].Pause < Full) b++;
                 int kind = line[b].Pause;
 
-                for (int i = a; i <= b; i++)
+                for (int i = a; i <= b && all.Count < MostSyllables; i++)
                 {
-                    if (spent >= seconds || steps.Count >= MostSyllables) return steps;
-
                     var s = line[i];
                     float k = (i - a) / (float)Mathf.Max(1, b - a);
                     float p = tone * (1.08f - 0.18f * k);
@@ -208,11 +214,31 @@ namespace Sinbinder.Audio
                     p *= 1f + 0.02f * mood.Jitter * Wobble(s.Letter);
                     float end = kind == Question && i >= b - 1 ? p * 1.22f : p * 0.96f;
                     float dur = 0.112f * mood.Pace * (s.Stress ? 1.25f : 1f) * (s.Pause >= Comma ? 1.4f : 1f);
-                    float wait = dur + Gap(s.Pause);
-                    steps.Add(new Step { Vowel = s.Vowel, Onset = s.Onset, From = p, To = end, Length = dur, Wait = wait });
-                    spent += wait;
+                    all.Add(new Step { Vowel = s.Vowel, Onset = s.Onset, From = p, To = end, Length = dur, Wait = dur + Gap(s.Pause) });
                 }
                 a = b + 1;
+            }
+
+            float natural = 0f;
+            foreach (var s in all) natural += s.Wait;
+            float squeeze = natural > seconds && natural > 0f ? Mathf.Max(0.7f, seconds / natural) : 1f;
+
+            var steps = new List<Step>(all.Count);
+            float spent = 0f;
+            foreach (var s in all)
+            {
+                if (spent >= seconds) break;
+                var t = s;
+                t.Length = Mathf.Max(0.06f, s.Length * squeeze);
+                t.Wait = s.Wait * squeeze;
+                steps.Add(t);
+                spent += t.Wait;
+            }
+            if (steps.Count > 0 && steps.Count < all.Count)
+            {
+                var last = steps[steps.Count - 1];
+                last.To = last.From * 0.9f;
+                steps[steps.Count - 1] = last;
             }
             return steps;
         }
@@ -377,7 +403,7 @@ namespace Sinbinder.Audio
                 Type = Timbre(),
                 Pitch = 1f,
                 Jitter = _pitchVariation / 0.3f,
-                Pace = Pace() * (_duration / 0.06f) * Mathf.Lerp(1f, 1f / Mathf.Max(0.3f, Depth), 0.4f),
+                Pace = Pace() * (_duration / 0.06f) * Mathf.Lerp(1f, 1f / Mathf.Max(0.3f, Depth), 0.4f) * Tempo,
             };
             if (!_useEmotions || _warrior == null || EmotionSystem.Instance == null) return tone;
 

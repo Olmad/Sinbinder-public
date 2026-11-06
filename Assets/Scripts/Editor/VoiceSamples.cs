@@ -29,6 +29,7 @@ namespace Sinbinder.EditorTools
                   "Почему он не послушался? Решал не он один — решала его душа. Вот её суд.");
             Write(dir, "игра — голос без души", 1f,
                   "Ну что, владыка, опять мои кости ноют? К дождю, видать.");
+            Roll(dir);
             Debug.Log("[ГОЛОС] образцы: " + dir);
             EditorApplication.Exit(0);
         }
@@ -39,11 +40,53 @@ namespace Sinbinder.EditorTools
             var voice = go.AddComponent<Audio.VoiceGenerator>();
             voice.Depth = depth;
             // Сколько звучит строка в игре — как у реплики суда (SoulCourt.Line).
-            float seconds = Mathf.Min(Gameplay.Herald.Hold(words) - 0.4f, words.Length / 40f * 1.2f + 0.3f);
+            float seconds = Mathf.Min(Gameplay.Herald.Hold(words) - 0.4f, words.Length / 40f * 1.6f + 0.4f);
             var data = voice.Render(words, seconds, out int rate);
             Object.DestroyImmediate(go);
 
-            using var file = new FileStream(Path.Combine(dir, name + ".wav"), FileMode.Create);
+            Save(Path.Combine(dir, name + ".wav"), data, rate);
+            Debug.Log($"[ГОЛОС] {name}: {data.Length / (float)rate:F1} с, пик {Peak(data):F2}");
+        }
+
+        /// <summary>
+        /// Перекличка суда: каждый судья своим голосом (SoulCourt.Cast) — своя строка,
+        /// подряд, с паузой. Эха под сводами здесь нет: его даёт фильтр источника в игре.
+        /// </summary>
+        private static void Roll(string dir)
+        {
+            var lines = new (string module, string words)[]
+            {
+                ("Pride", "Я — Гордыня. Я не склоняю головы."),
+                ("Fear", "Я — Страх. Я берегу жизнь."),
+                ("Wrath", "Я — Гнев. Я не прощаю обид."),
+                ("Sloth", "Я — Уныние. Я берегу силы."),
+                ("Envy", "Я — Зависть. Я вижу, у кого больше."),
+                ("Loyalty", "Я — Верность. Я слышу владыку."),
+                ("Gluttony", "Я — Чревоугодие. Мне всегда мало."),
+            };
+            var all = new System.Collections.Generic.List<float>();
+            int rate = 22050;
+            foreach (var (module, words) in lines)
+            {
+                var go = new GameObject("Судья — образец");
+                var voice = go.AddComponent<Audio.VoiceGenerator>();
+                var cast = Gameplay.SoulCourt.Cast(module);
+                voice.Depth = cast.depth;
+                voice.Kind = cast.kind;
+                voice.Tempo = cast.tempo;
+                float seconds = Mathf.Min(Gameplay.Herald.Hold(words) - 0.4f, words.Length / 40f * 1.6f + 0.4f);
+                var data = voice.Render(words, seconds, out rate);
+                Object.DestroyImmediate(go);
+                all.AddRange(data);
+                all.AddRange(new float[rate / 3]);
+            }
+            Save(Path.Combine(dir, "игра — суд, голоса судей.wav"), all.ToArray(), rate);
+            Debug.Log($"[ГОЛОС] перекличка суда: {all.Count / (float)rate:F1} с");
+        }
+
+        private static void Save(string path, float[] data, int rate)
+        {
+            using var file = new FileStream(path, FileMode.Create);
             using var w = new BinaryWriter(file);
             int bytes = data.Length * 2;
             w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
@@ -59,7 +102,6 @@ namespace Sinbinder.EditorTools
             w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
             w.Write(bytes);
             foreach (float x in data) w.Write((short)Mathf.Clamp(Mathf.RoundToInt(x * 32767f), -32768, 32767));
-            Debug.Log($"[ГОЛОС] {name}: {data.Length / (float)rate:F1} с, пик {Peak(data):F2}");
         }
 
         private static float Peak(float[] data)
