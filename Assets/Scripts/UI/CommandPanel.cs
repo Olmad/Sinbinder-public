@@ -368,6 +368,9 @@ namespace Sinbinder.UI
             _tip.raycastTarget = false;
             tipRect.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
             fit.Bind(_tip, 520f, new Vector2(16f, 10f));
+            // Табличка без просвета: подсказка встаёт у правого края, где висят метки мест
+            // («Шар →»), и золотая метка просвечивала сквозь прогноз (КТ1, кадр интерфейса).
+            tipPlate.GetComponent<Image>().color = Color.white;
 
             _group.alpha = 0f;
         }

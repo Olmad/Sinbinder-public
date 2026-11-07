@@ -208,11 +208,15 @@ namespace Sinbinder.UI
             return mark;
         }
 
+        // Показанные в этом кадре весы: место, ширина подписи (доли экрана).
+        private readonly List<(Mark m, Vector2 p, float w)> _shown = new List<(Mark m, Vector2 p, float w)>();
+
         void LateUpdate()
         {
             var eye = Camera.main;
             float now = Time.unscaledTime;
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            _shown.Clear();
             for (int i = _marks.Count - 1; i >= 0; i--)
             {
                 var m = _marks[i];
@@ -267,7 +271,46 @@ namespace Sinbinder.UI
                     spot = new Vector2(mid.x + Mathf.Sign(m.Side) * off,
                                        Mathf.Min(mid.y - (34f + Size * 0.5f) / h, ceiling));
                 }
-                m.Root.anchorMin = m.Root.anchorMax = new Vector2(Mathf.Clamp(spot.x, half, 1f - half), Mathf.Max(spot.y, 0.2f));
+                float w = Mathf.Max(Size + 12f, m.Label.preferredWidth + 10f) / wide;
+                _shown.Add((m, new Vector2(Mathf.Clamp(spot.x, half, 1f - half), Mathf.Max(spot.y, 0.2f)), w));
+            }
+            Unstack();
+        }
+
+        /// <summary>
+        /// Два воина рядом — весы и «послушается» ложились друг на друга (КТ1, кадр 10б).
+        /// Старшие весы стоят, младшие отходят: вверх на высоту весов, а если выше некуда —
+        /// вбок. Порядок по времени появления, а не по высоте: иначе при равной высоте
+        /// весы менялись бы местами каждый кадр.
+        /// </summary>
+        private void Unstack()
+        {
+            if (_shown.Count == 0) return;
+            var area = ((RectTransform)_canvas.transform).rect;
+            float h = Mathf.Max(1f, area.height), wide = Mathf.Max(1f, area.width);
+            float tall = (Size + 42f) / h;
+            float roof = 0.80f - (Size + 40f) / h;
+            float half = Size * 1.5f / wide;
+            _shown.Reverse();   // _marks обходили с конца — теперь старшие первыми
+            for (int a = 0; a < _shown.Count; a++)
+            {
+                var (m, p, w) = _shown[a];
+                for (int pass = 0; pass < 4; pass++)
+                {
+                    bool moved = false;
+                    for (int b = 0; b < a; b++)
+                    {
+                        var q = _shown[b];
+                        float needX = (w + q.w) * 0.5f;
+                        if (Mathf.Abs(p.x - q.p.x) >= needX || Mathf.Abs(p.y - q.p.y) >= tall) continue;
+                        if (q.p.y + tall <= roof) p.y = q.p.y + tall;
+                        else p.x = Mathf.Clamp(q.p.x + (p.x >= q.p.x ? needX : -needX), half, 1f - half);
+                        moved = true;
+                    }
+                    if (!moved) break;
+                }
+                _shown[a] = (m, p, w);
+                m.Root.anchorMin = m.Root.anchorMax = p;
                 m.Root.anchoredPosition = Vector2.zero;
             }
         }
