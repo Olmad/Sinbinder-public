@@ -116,7 +116,7 @@ namespace Sinbinder.UI
             if (Gameplay.OpeningReveal.Busy) return null;
             // То же в кадре с полосами (разговор, миг, сцена): слово висело над головой
             // Каргана посреди его вызова и над Хорем со знаменем (кадры w0711g).
-            if (Letterbox.Instance != null && Letterbox.Instance.Shown) return null;
+            if (Letterbox.Instance != null && Letterbox.Instance.Covering) return null;
             if (FogOfWar.Hides(w)) return null;
             if (!Transparency.Shows(Detail.Moments)) return null;
 

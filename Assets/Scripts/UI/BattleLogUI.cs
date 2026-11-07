@@ -70,7 +70,7 @@ namespace Sinbinder.UI
             }
 
             bool on = _wanted && !Modal.Any
-                   && !(Letterbox.Instance != null && Letterbox.Instance.Shown);
+                   && !(Letterbox.Instance != null && Letterbox.Instance.Covering);
             _group.alpha = on ? 1f : 0f;
 
             if (_scrollDue) { _scrollDue = false; Bottom(); }

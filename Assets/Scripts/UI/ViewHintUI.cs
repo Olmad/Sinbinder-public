@@ -64,7 +64,7 @@ namespace Sinbinder.UI
 
             bool eyes = cam.FirstPersonNow;
             bool busy = OpeningReveal.Busy || Lesson.Holding
-                     || (Letterbox.Instance != null && Letterbox.Instance.Shown);
+                     || (Letterbox.Instance != null && Letterbox.Instance.Covering);
 
             // Из глаз — наверх: запомнить всегда (выход из шатра идёт под сценой
             // открытия), сказать — когда сцена кончилась и ничего не мешает.

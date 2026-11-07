@@ -83,7 +83,7 @@ namespace Sinbinder.UI
             // И не поверх кино: наезд камеры снимает «первое лицо», и панель
             // включалась заново посреди мига, мимо полос (кадры 05.11).
             bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson()
-                       && !(Letterbox.Instance != null && Letterbox.Instance.Shown);
+                       && !(Letterbox.Instance != null && Letterbox.Instance.Covering);
             if (_showing && _panel != null && _panel.activeSelf != fit) _panel.SetActive(fit);
             if (!fit) return;
 

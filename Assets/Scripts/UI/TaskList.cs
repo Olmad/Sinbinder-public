@@ -288,7 +288,7 @@ namespace Sinbinder.UI
         {
             bool camp = FindFirstObjectByType<CampOpening>() != null;
             bool quiet = !camp || PrologueTitleUI.Showing || OpeningReveal.Busy || Modal.Any
-                      || (Letterbox.Instance != null && Letterbox.Instance.Shown);
+                      || (Letterbox.Instance != null && Letterbox.Instance.Covering);
             float want = quiet ? 0f : 1f;
             _group.alpha = Mathf.MoveTowards(_group.alpha, want, Time.unscaledDeltaTime * 3f);
             if (_marker != null) _marker.Hidden = quiet;

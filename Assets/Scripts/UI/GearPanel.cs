@@ -347,7 +347,7 @@ namespace Sinbinder.UI
             // нужен Греховод, а не мешок.
             // И не в сцене с полосами: «F — поговорить» под репликой воина — шум (кадр сна 06.11).
             if ((pause != null && pause.IsPaused) || !SinbinderPlayer.Exists
-                || CommanderCouncilUI.AtTable || (Letterbox.Instance != null && Letterbox.Instance.Shown))
+                || CommanderCouncilUI.AtTable || (Letterbox.Instance != null && Letterbox.Instance.Covering))
             { _prompt.text = ""; return; }
 
             // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.

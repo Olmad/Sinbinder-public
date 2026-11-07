@@ -68,6 +68,14 @@ namespace Sinbinder.UI
         /// раз то же слово над головой читалось бы как поломка.</summary>
         public bool Shown => _shown;
 
+        /// <summary>
+        /// Стоят ли полосы на экране — подняты или ещё уезжают. Спрашивают
+        /// панели, когда им вернуться: до 7 ноября журнал возвращался в миг
+        /// <see cref="Hide"/>, и три десятых секунды висел поверх уходящего
+        /// кадра (КТ1, кадр «у огня: Хорь назвал отряд Крысами»).
+        /// </summary>
+        public bool Covering => _shown || Current() > 0.001f;
+
         /// <summary>Напечатано ли что-нибудь на нижней полосе. Спрашивает прогон: снимать кадр.</summary>
         public bool Typed => _line != null && !string.IsNullOrEmpty(_line.text) && _typing == null;
 
@@ -196,7 +204,8 @@ namespace Sinbinder.UI
             if (_shown) return;
             _shown = true;
 
-            Others(false);
+            // Подняли снова, пока полосы уезжали, — интерфейс ещё погашен.
+            if (_dimmed.Count == 0) Others(false);
             Run(_height);
         }
 
@@ -206,7 +215,8 @@ namespace Sinbinder.UI
             if (!_shown) return;
             _shown = false;
 
-            Others(true);
+            // Интерфейс возвращается, когда полосы ушли (Slide), а не в первый
+            // же кадр: иначе он встаёт поверх кино, которое ещё на экране.
             Clear();
             Run(0f);
         }
@@ -436,6 +446,13 @@ namespace Sinbinder.UI
 
             Set(target);
             _running = null;
+            if (!_shown) Others(true);
+        }
+
+        void OnDisable()
+        {
+            // Полосы выключили на полпути вниз — интерфейс не должен остаться погашенным.
+            if (!_shown && _running != null) { _running = null; Set(0f); Others(true); }
         }
 
         private float Current()

@@ -45,6 +45,8 @@ namespace Sinbinder.UI
         private int _said;
         private readonly List<Bubble> _order = new();
         private readonly List<Rect> _taken = new();
+        private RectTransform _stack;
+        private static readonly Vector3[] Corners = new Vector3[4];
         private Canvas _canvas;
         private Font _font;
 
@@ -139,7 +141,9 @@ namespace Sinbinder.UI
             // Окно требует ответа — мир молчит поверх него: облачко из мира
             // ложилось на сундук, над заголовком (опись экранов, 46-UI §1.1, п. 5).
             // Холст реплик свой и выше основного, поэтому окно его не гасит.
-            if (_canvas != null) _canvas.enabled = !Modal.Any;
+            // И пока проявляется название игры: «Марга Копатель: „Ага…“» ложилось прямо
+            // на девиз «Не командуй. Искушай.» (КТ1, кадр открытия, 7 ноября).
+            if (_canvas != null) _canvas.enabled = !Modal.Any && !Gameplay.OpeningReveal.Showing;
 
             if (_live.Count == 0) return;
             var cam = Camera.main;
@@ -201,13 +205,14 @@ namespace Sinbinder.UI
             foreach (var b in _live)
                 if (b.Line != null && b.Line.enabled && !(b.Who is Gameplay.SinbinderPlayer)) _order.Add(b);   // строка Греховода — своя, внизу
 
-            if (_order.Count < 2) return;
+            _taken.Clear();
+            Plates();
+            if (_order.Count == 0 || (_order.Count < 2 && _taken.Count == 0)) return;
 
             // Свежие первыми. Счётчик, а не часы: двух одинаковых у него
             // не бывает, и порядок не зависит от того, как легла сортировка.
             _order.Sort((x, y) => y.Said.CompareTo(x.Said));
 
-            _taken.Clear();
             foreach (var b in _order)
             {
                 var rt = b.Line.rectTransform;
@@ -236,6 +241,41 @@ namespace Sinbinder.UI
                 rt.position = at;
                 _taken.Add(new Rect(at.x - half, at.y, half * 2f, tall));
             }
+        }
+
+        /// <summary>
+        /// Плашки внизу, которые строка обходит так же, как другую строку:
+        /// стопка над панелью выделенного (подсказки урока, подпись предмета)
+        /// и строка самого Греховода. Облачко рисуется поверх всего, и голова
+        /// воина над стопкой клала его прямо на «Щёлкните по воину…» — две
+        /// строки друг в друге (КТ1, кадр «Ждан сел с балалайкой», 7 ноября).
+        /// </summary>
+        private void Plates()
+        {
+            if (_stack == null)
+            {
+                var found = GameObject.Find("Над выделенным");
+                if (found == null) return;
+                _stack = found.transform as RectTransform;
+            }
+            if (_stack == null || !_stack.gameObject.activeInHierarchy) return;
+
+            foreach (Transform child in _stack)
+            {
+                if (!child.gameObject.activeInHierarchy || child is not RectTransform row) continue;
+                var group = row.GetComponent<CanvasGroup>();
+                if (group != null && group.alpha < 0.05f) continue;
+                row.GetWorldCorners(Corners);
+                var r = Rect.MinMaxRect(Corners[0].x, Corners[0].y, Corners[2].x, Corners[2].y);
+                if (r.width > 1f && r.height > 1f) _taken.Add(r);
+            }
+
+            foreach (var b in _live)
+                if (b.Who is Gameplay.SinbinderPlayer && b.Back != null && b.Line != null && b.Line.enabled)
+                {
+                    b.Back.rectTransform.GetWorldCorners(Corners);
+                    _taken.Add(Rect.MinMaxRect(Corners[0].x, Corners[0].y, Corners[2].x, Corners[2].y));
+                }
         }
 
         /// <summary>
