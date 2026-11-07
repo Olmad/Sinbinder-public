@@ -851,7 +851,7 @@ namespace Sinbinder.Gameplay
             var walk = _hero.GetComponent<PlayerWalk>();
             if (walk != null) walk.enabled = false;
             Debug.Log("[СОН] Ворота склепа открываются.");
-            if (DreamRoad.Instance != null) yield return DreamRoad.Instance.OpenCrypt(_hero.transform.position);
+            if (DreamRoad.Instance != null) yield return DreamRoad.Instance.OpenCrypt(_hero);
             Finish();
         }
 

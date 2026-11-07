@@ -119,7 +119,7 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < 10; i++)
             {
                 float s = i % 2 == 0 ? 1f : -1f;
-                road.AddCandle(t, new Vector3(5.5f * s, 0f, From + 4f + i * 6f), post, 1.2f);
+                road.AddCandle(t, new Vector3(5.5f * s, 0f, From + 4f + i * 6f), post, 3.5f);
             }
 
             road.BuildDummy(t, DummyAt);
@@ -128,19 +128,17 @@ namespace Sinbinder.Gameplay
 
             // Жаровня во дворе у чучела — тёплая; у склепа две — холодным огнём: цель видна издалека.
             var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
-            road.Brazier(t, new Vector3(6.4f, 0f, 16.2f), new Color(1f, 0.62f, 0.30f), 1.8f, iron);
+            // Свет у точечных огней падает с квадратом расстояния: при силе 1–2 жаровня не доставала
+            // и до соседнего камня, а ключевой свет сцены бьёт с севера, и склеп накрывает тенью весь
+            // двор форта — двор на кадрах был чёрным (w0711zi, w0711zj). Отсюда сила 9–10.
+            road.Brazier(t, new Vector3(6.4f, 0f, 16.2f), new Color(1f, 0.62f, 0.30f), 10f, iron);
             foreach (float s in new[] { -1f, 1f })
-                road.Brazier(t, new Vector3(3.8f * s, 0f, GateZ - 1.7f), new Color(0.55f, 0.75f, 1f), 2.4f, iron);
-
-            // Луна с юга — слабая, без теней. Ключевой свет сцены бьёт с севера, и всё, что видно
-            // по дороге к склепу, стояло к игроку тёмной стороной: форт и двор — чёрные (w0711zi).
-            var moon = new GameObject("Луна сна").AddComponent<Light>();
-            moon.transform.SetParent(t, false);
-            moon.transform.rotation = Quaternion.Euler(30f, -18f, 0f);
-            moon.type = LightType.Directional;
-            moon.color = new Color(0.55f, 0.62f, 0.86f);
-            moon.intensity = 0.4f;
-            moon.shadows = LightShadows.None;
+                road.Brazier(t, new Vector3(3.8f * s, 0f, GateZ - 1.7f), new Color(0.55f, 0.75f, 1f), 9f, iron);
+            // Факелы на надвратных башнях — снаружи, к дороге, и один во двор.
+            var warm = new Color(1f, 0.64f, 0.32f);
+            foreach (float s in new[] { -1f, 1f })
+                road.Torch(t, new Vector3(3.9f * s, 2.9f, FortFront - 1.3f), Vector3.back, warm, iron);
+            road.Torch(t, new Vector3(-3.9f, 2.9f, FortFront + 1.3f), Vector3.forward, warm, iron);
             return road;
         }
 
@@ -161,10 +159,34 @@ namespace Sinbinder.Gameplay
             var light = go.AddComponent<Light>();
             light.type = LightType.Point;
             light.color = fire;
-            light.range = 9f;
+            light.range = 12f;
             light.intensity = power;
             light.shadows = LightShadows.None;
             _candles.Add(new Candle { At = at, Flame = flame, Light = light, Power = power, Lit = 0f, Size = new Vector3(0.36f, 0.6f, 0.36f) });
+        }
+
+        /// <summary>Факел на стене: древко наискось от кладки, пламя, свет чуть впереди.</summary>
+        private void Torch(Transform parent, Vector3 at, Vector3 outward, Color fire, Material iron)
+        {
+            var root = new GameObject("Факел").transform;
+            root.SetParent(parent, false);
+            root.position = at;
+            Piece(root, PrimitiveType.Cube, "Скоба", at, new Vector3(0.12f, 0.3f, 0.12f), iron);
+            var stick = Piece(root, PrimitiveType.Cylinder, "Древко", at + outward * 0.18f + Vector3.up * 0.18f, new Vector3(0.07f, 0.28f, 0.07f),
+                              Lit(new Color(0.22f, 0.15f, 0.09f), 0.1f), false).transform;
+            stick.rotation = Quaternion.FromToRotation(Vector3.up, (Vector3.up + outward * 0.6f).normalized);
+            var tip = at + outward * 0.34f + Vector3.up * 0.48f;
+            var flame = Piece(root, PrimitiveType.Sphere, "Пламя", tip, new Vector3(0.16f, 0.28f, 0.16f), Glowing(fire, 2.2f), false).transform;
+            var go = new GameObject("Свет факела");
+            go.transform.SetParent(root, false);
+            go.transform.position = tip + outward * 0.4f;
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = fire;
+            light.range = 10f;
+            light.intensity = 7f;
+            light.shadows = LightShadows.None;
+            _candles.Add(new Candle { At = at, Flame = flame, Light = light, Power = 7f, Lit = 0f, Size = new Vector3(0.16f, 0.28f, 0.16f) });
         }
 
         /// <summary>Прогон: зажечь все свечи разом — для кадров издалека.</summary>
@@ -369,7 +391,7 @@ namespace Sinbinder.Gameplay
             var light = go.AddComponent<Light>();
             light.type = LightType.Point;
             light.color = new Color(1f, 0.72f, 0.42f);
-            light.range = 6f;
+            light.range = 7.5f;
             light.intensity = 0f;
             light.shadows = LightShadows.None;
             _candles.Add(new Candle { At = at, Flame = flame, Light = light, Power = power, Size = new Vector3(0.06f, 0.11f, 0.06f) });
@@ -418,7 +440,7 @@ namespace Sinbinder.Gameplay
                 Piece(root, PrimitiveType.Cylinder, "Крышка", jarAt + Vector3.up * 0.13f, new Vector3(0.18f, 0.025f, 0.18f), lid, false);
             }
             // Свеча на полке — без столбика: камень и есть подставка.
-            AddCandle(root, at + new Vector3(0.45f, 0f, -0.1f), stoneMat, 0.9f);
+            AddCandle(root, at + new Vector3(0.45f, 0f, -0.1f), stoneMat, 3f);
             var postPiece = _candles[_candles.Count - 1].Flame.parent.Find("Столбик");
             if (postPiece != null) DestroyImmediate(postPiece.gameObject);
             // Лицом к дороге и к идущему с юга.
@@ -437,10 +459,12 @@ namespace Sinbinder.Gameplay
             var cold = new Color(0.68f, 0.80f, 1f);
             float z = GateZ;
 
-            // Холм над склепом.
-            var hill = Piece(root, PrimitiveType.Sphere, "Курган", new Vector3(0f, -3f, z + 15f), new Vector3(40f, 18f, 26f),
-                             Lit(new Color(0.10f, 0.09f, 0.08f), 0.05f), false);
-            hill.name = "Курган";
+            // Курган — за склепом и по бокам. Прежний шар выпирал внутрь склепа перед силуэтом и
+            // светом в глубине: в открытых дверях стояла тёмная земля (w0711zj).
+            var soil = Lit(new Color(0.10f, 0.09f, 0.08f), 0.05f);
+            Piece(root, PrimitiveType.Sphere, "Курган", new Vector3(0f, -3f, z + 24f), new Vector3(46f, 24f, 26f), soil, false);
+            foreach (float s in new[] { -1f, 1f })
+                Piece(root, PrimitiveType.Sphere, "Курган — плечо", new Vector3(12.5f * s, -1.5f, z + 5f), new Vector3(15f, 11f, 13f), soil, false);
 
             // Лицо: два крыла, перемычка, ступенчатый фронтон, колонны, порог.
             Piece(root, PrimitiveType.Cube, "Крыло левое", new Vector3(-5.65f, 3.2f, z + 0.7f), new Vector3(6.7f, 6.4f, 1.4f), stone);
@@ -507,7 +531,7 @@ namespace Sinbinder.Gameplay
             _cryptLight = go.AddComponent<Light>();
             _cryptLight.type = LightType.Point;
             _cryptLight.color = cold;
-            _cryptLight.range = 10f;
+            _cryptLight.range = 12f;
             _cryptLight.intensity = 0f;
             _cryptLight.shadows = LightShadows.None;
         }
@@ -666,9 +690,10 @@ namespace Sinbinder.Gameplay
         /// раньше, чем можно что-то рассмотреть, — только силуэт против холодного света.
         /// Кончается чёрным экраном; дальше сон грузит лагерь.
         /// </summary>
-        public IEnumerator OpenCrypt(Vector3 heroAt)
+        public IEnumerator OpenCrypt(SinbinderPlayer hero)
         {
             CryptFade = 0f;
+            Vector3 heroAt = hero != null ? hero.transform.position : GateFront;
             var cam = Camera.main;
             var rts = cam != null ? cam.GetComponent<RTS_Camera>() : null;
             if (rts != null) rts.enabled = false;
@@ -691,6 +716,14 @@ namespace Sinbinder.Gameplay
             UI.Letterbox.Instance?.Show();
             var eye = new Vector3(Mathf.Clamp(heroAt.x, -1.0f, 1.0f), 1.75f, GateZ - 5.4f);
             var look = Quaternion.LookRotation(new Vector3(0f, 2.3f, GateZ + 6.5f) - eye);
+            // Глазами Греховода: тело не видно и стоит под глазами — в прогоне он заслонял ворота спиной.
+            if (hero != null)
+            {
+                foreach (var r in hero.GetComponentsInChildren<Renderer>()) r.enabled = false;
+                var agent = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                var feet = new Vector3(eye.x, 0f, eye.z);
+                if (agent != null && agent.isOnNavMesh) agent.Warp(feet); else hero.transform.position = feet;
+            }
             if (cam != null)
             {
                 var fromPos = cam.transform.position;
@@ -713,7 +746,7 @@ namespace Sinbinder.Gameplay
                 float d = Mathf.Pow(Smooth(Mathf.Clamp01(t / open)), 1.3f);
                 if (_doorLeft != null) _doorLeft.localRotation = Quaternion.Euler(0f, -88f * d, 0f);
                 if (_doorRight != null) _doorRight.localRotation = Quaternion.Euler(0f, 88f * d, 0f);
-                if (_cryptLight != null) _cryptLight.intensity = 3f * d;
+                if (_cryptLight != null) _cryptLight.intensity = 10f * d;
                 float a = Mathf.Pow(Mathf.Clamp01(t / fade), 1.6f);
                 black.color = new Color(0f, 0f, 0f, a);
                 CryptFade = a;

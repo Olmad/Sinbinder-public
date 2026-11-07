@@ -264,8 +264,8 @@ namespace Sinbinder.EditorTools
                     if (_step != "пробуждение")
                     {
                         Go("пробуждение");
-                        Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f));
                         ShotFrom("сон — ворота склепа", new Vector3(2.5f, 2.2f, 21.5f), new Vector3(0f, 3.4f, 30f));
+                        Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f));
                     }
                     if (poke && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
                     if (!_gateShot && DreamRoad.CryptFade > 0.15f) { _gateShot = true; Snap("сон — створки расходятся"); }
