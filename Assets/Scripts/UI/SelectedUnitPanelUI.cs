@@ -402,6 +402,10 @@ namespace Sinbinder.UI
             {
                 bool longLine = !string.IsNullOrEmpty(named);
                 _craftLine.horizontalOverflow = longLine ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
+                // Подбор размера у Unity не работает, пока текст может уйти за рамку по высоте:
+                // примета стояла кеглем 20 в две строки и вторая ложилась на «Гордыня тлеет…»
+                // (КТ1, кадр интерфейса, 7 ноября). В рамке — подбор ужимает до двух строк в ней.
+                _craftLine.verticalOverflow = longLine ? VerticalWrapMode.Truncate : VerticalWrapMode.Overflow;
                 _craftLine.resizeTextForBestFit = longLine;
                 _craftLine.resizeTextMinSize = 11;
                 _craftLine.resizeTextMaxSize = 20;
