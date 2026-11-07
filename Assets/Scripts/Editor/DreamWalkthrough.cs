@@ -148,9 +148,11 @@ namespace Sinbinder.EditorTools
                         // Дорога целиком (docs/64-DREAM-ROAD.md): от начала до склепа. Свечи
                         // загораются у идущего — для кадров издалека зажигаем все.
                         DreamRoad.Instance?.LightAll();
-                        ShotFrom("сон — дорога к склепу", new Vector3(0f, 9f, -36f), new Vector3(0f, 1.5f, 18f));
+                        // С начала дороги — как видит игрок: впереди туман войны, разведанное серым.
+                        ShotFrom("сон — дорога к склепу", new Vector3(0f, 9f, -36f), new Vector3(0f, 1.5f, 18f), clear: false);
                         ShotFrom("сон — ворота форта", new Vector3(3f, 2.6f, 3.5f), new Vector3(0f, 3.2f, 15f));
-                        ShotFrom("сон — двор форта, чучело и камень с банками", new Vector3(0.4f, 3.4f, 14.6f), new Vector3(0f, 1.0f, 21f));
+                        ShotFrom("сон — двор форта, чучело", new Vector3(0.5f, 2.3f, 13.6f), new Vector3(4.2f, 1.0f, 17.5f));
+                        ShotFrom("сон — двор форта, камень с банками", new Vector3(-0.5f, 2.2f, 16.5f), new Vector3(-4.6f, 0.9f, 20.5f));
                         Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -3.2f));
                     }
                     break;
@@ -278,7 +280,11 @@ namespace Sinbinder.EditorTools
         private static bool _gateShot, _deathShot, _blackShot;
 
         /// <summary>Кадр с отдельной точки: камера сна на миг встаёт туда и возвращается.</summary>
-        private static void ShotFrom(string name, Vector3 from, Vector3 look)
+        /// <summary>
+        /// Кадр с точки. clear — без тумана войны: место, каким его видит игрок, когда
+        /// Греховод там (вблизи туман рассеян); иначе дальний план чёрный — не разведан.
+        /// </summary>
+        private static void ShotFrom(string name, Vector3 from, Vector3 look, bool clear = true)
         {
             var cam = Camera.main;
             if (cam == null) return;
@@ -288,7 +294,9 @@ namespace Sinbinder.EditorTools
             var pos = cam.transform.position;
             var rot = cam.transform.rotation;
             cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(look - from));
+            if (clear) FogOfWar.ShotClear(true);
             Snap(name);
+            if (clear) FogOfWar.ShotClear(false);
             cam.transform.SetPositionAndRotation(pos, rot);
             if (rts != null) rts.enabled = was;
         }

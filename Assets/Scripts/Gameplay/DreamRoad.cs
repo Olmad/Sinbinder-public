@@ -151,8 +151,7 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cylinder, "Столб жаровни", at + Vector3.up * 0.5f, new Vector3(0.14f, 0.5f, 0.14f), iron);
             Piece(root, PrimitiveType.Cylinder, "Чаша жаровни", at + Vector3.up * 1.05f, new Vector3(0.7f, 0.1f, 0.7f), iron);
             Piece(root, PrimitiveType.Sphere, "Угли", at + Vector3.up * 1.15f, new Vector3(0.55f, 0.12f, 0.55f), Glowing(fire * 0.6f, 1.2f), false);
-            var flame = Piece(root, PrimitiveType.Sphere, "Огонь", at + Vector3.up * 1.42f, new Vector3(0.36f, 0.6f, 0.36f),
-                              Glowing(fire, 2.0f), false).transform;
+            var flame = Flame(root, "Огонь", at + Vector3.up * 1.45f, new Vector3(0.36f, 0.6f, 0.36f), fire, 1.15f);
             var go = new GameObject("Свет жаровни");
             go.transform.SetParent(root, false);
             go.transform.position = at + Vector3.up * 1.9f;
@@ -176,7 +175,7 @@ namespace Sinbinder.Gameplay
                               Lit(new Color(0.22f, 0.15f, 0.09f), 0.1f), false).transform;
             stick.rotation = Quaternion.FromToRotation(Vector3.up, (Vector3.up + outward * 0.6f).normalized);
             var tip = at + outward * 0.34f + Vector3.up * 0.48f;
-            var flame = Piece(root, PrimitiveType.Sphere, "Пламя", tip, new Vector3(0.16f, 0.28f, 0.16f), Glowing(fire, 2.2f), false).transform;
+            var flame = Flame(root, "Пламя", tip, new Vector3(0.16f, 0.28f, 0.16f), fire, 1.15f);
             var go = new GameObject("Свет факела");
             go.transform.SetParent(root, false);
             go.transform.position = tip + outward * 0.4f;
@@ -382,8 +381,7 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cube, "Столбик", at + Vector3.up * 0.45f, new Vector3(0.34f, 0.9f, 0.34f), stone);
             Piece(root, PrimitiveType.Cylinder, "Свеча", at + Vector3.up * 0.97f, new Vector3(0.09f, 0.07f, 0.09f),
                   Lit(new Color(0.85f, 0.80f, 0.68f), 0.2f), false);
-            var flame = Piece(root, PrimitiveType.Sphere, "Пламя", at + Vector3.up * 1.1f, new Vector3(0.06f, 0.11f, 0.06f),
-                              Glowing(new Color(1f, 0.70f, 0.36f), 2.2f), false).transform;
+            var flame = Flame(root, "Пламя", at + Vector3.up * 1.1f, new Vector3(0.06f, 0.11f, 0.06f), new Color(1f, 0.70f, 0.36f), 1.3f);
             flame.localScale = Vector3.zero;
             var go = new GameObject("Свет свечи");
             go.transform.SetParent(root, false);
@@ -662,6 +660,18 @@ namespace Sinbinder.Gameplay
         public static bool NearShrine(Vector3 at, float reach = 3.4f) => Flat(at - ShrineAt).magnitude <= reach;
         public static bool NearGate(Vector3 at, float reach = 3.6f) => Flat(at - GateFront).magnitude <= reach;
 
+        /// <summary>
+        /// Дорога разведана с начала — серым, как свой лагерь (<see cref="FogOfWar"/>, KnownHome).
+        /// Неразведанное туман войны красит чёрным, и с начала дороги не было видно ни форта,
+        /// ни холодных жаровен у склепа — цели, к которой она ведёт; кадры издалека выходили
+        /// чёрными (w0711zk). Туман ставится после Awake, поэтому — здесь, в Start.
+        /// </summary>
+        private void Start()
+        {
+            for (float z = From; z <= GateZ + 12f; z += 4f)
+                FogOfWar.Reveal(new Vector3(0f, 0f, z), 15f);
+        }
+
         private void Update()
         {
             float dt = Time.deltaTime;
@@ -826,6 +836,32 @@ namespace Sinbinder.Gameplay
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smooth);
             return m;
+        }
+
+        /// <summary>
+        /// Огонь — капля: круглый низ и язык к острию. Прежний шар силой 2 уходил в белое,
+        /// и жаровни на кадрах стояли с белыми яйцами (w0811a): цвет огня держится, только
+        /// пока он не ярче себя самого, — отсюда сила около единицы.
+        /// </summary>
+        private static Transform Flame(Transform parent, string name, Vector3 at, Vector3 size, Color fire, float bright)
+        {
+            var flame = new GameObject(name).transform;
+            flame.SetParent(parent, false);
+            flame.position = at;
+            flame.localScale = size;
+            var glow = Glowing(fire, bright);
+            var bulb = Piece(flame, PrimitiveType.Sphere, "Низ огня", at, Vector3.one, glow, false);
+            bulb.transform.localPosition = new Vector3(0f, -0.18f, 0f);
+            bulb.transform.localScale = Vector3.one * 0.8f;
+            bulb.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var tongue = new GameObject("Язык огня");
+            tongue.transform.SetParent(flame, false);
+            tongue.transform.localPosition = new Vector3(0f, -0.18f, 0f);
+            tongue.AddComponent<MeshFilter>().sharedMesh = Cone(0.4f, 0f, 0.75f, 12);
+            var r = tongue.AddComponent<MeshRenderer>();
+            r.sharedMaterial = glow;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return flame;
         }
 
         private static Material Glowing(Color colour, float bright)
