@@ -8,7 +8,7 @@ namespace Sinbinder.Audio
 {
     /// <summary>Что звучит: место пролога, а не имя файла.</summary>
     /// <remarks>Новое место — в конец: номера прежних не сдвигаются.</remarks>
-    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted, Menu, Court }
+    public enum Track { None, Camp, Raid, Crypt, Epilogue, Hunted, Menu, Court, Dream }
 
     /// <summary>
     /// Короткий сигнал поверх темы: событие, а не место. Из архива автора:
@@ -31,6 +31,7 @@ namespace Sinbinder.Audio
     /// | вторая волна      | The Hunted                    | Hunted                 |
     /// | склеп, конец демо | «Нас мало» — плач «Крыс»      | Lament                 |
     /// | Суд Души          | заседание: маятник и писарь   | Court                  |
+    /// | сон-обучение      | повседневный суд (четвёртый)  | Dream                  |
     ///
     /// 23 октября — решения автора: «Крысы» — тема отряда Безымянного; колыбельная
     /// сюиты — в главное меню; «для лагеря хороша 6 или 7» — звучат по очереди,
@@ -93,6 +94,10 @@ namespace Sinbinder.Audio
                 // Пятая («заседание», автор 07.11: «ставь») на 0,8 дБ(A) тише третьей —
                 // 0,13 вместо 0,12, под словами те же −42.
                 case Track.Court:    return 0.13f;
+                // Сон-обучение — четвёртый суд, «повседневный» (автор, 07.11: «вполне может
+                // подойти суд 4»; о нём же — «прогулка по зелёному лугу»: сон — дорога).
+                // Запись −14,9 дБ(A), при 0,09 — −35,8: как лагерь (−36,2), там тоже читают.
+                case Track.Dream:    return 0.09f;
                 default:             return 0f;
             }
         }
@@ -113,6 +118,7 @@ namespace Sinbinder.Audio
                 case Track.Crypt:    return new[] { "Lament" };
                 case Track.Epilogue: return new[] { "Lament" };
                 case Track.Court:    return new[] { "Court" };
+                case Track.Dream:    return new[] { "Dream" };
                 default:             return null;
             }
         }
@@ -133,6 +139,7 @@ namespace Sinbinder.Audio
         {
             switch (scene)
             {
+                case "Prologue_Dream": return Track.Dream;
                 case "Prologue_Camp":  return Track.Camp;
                 case "Crypt_Entrance": return Track.Crypt;
                 case "Crypt_Test":     return Track.Crypt;

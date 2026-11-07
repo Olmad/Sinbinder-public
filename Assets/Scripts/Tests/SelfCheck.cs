@@ -1195,6 +1195,8 @@ namespace Sinbinder.Tests
                 "лагерь начинается своей темой");
             Check(Sinbinder.Audio.Music.ForScene("Crypt_Entrance") == Sinbinder.Audio.Track.Crypt,
                 "склеп начинается своей темой");
+            Check(Sinbinder.Audio.Music.ForScene("Prologue_Dream") == Sinbinder.Audio.Track.Dream,
+                "сон-обучение звучит своей темой, а не тишиной");
             Check(Sinbinder.Audio.Music.ForScene(RaidEvent.SceneName) == Sinbinder.Audio.Track.None,
                 "у набега нет своей сцены — его тему включает разгром, а не загрузка");
             // Вторая волна набега звучит своей темой, не темой первой (автор, 10 октября):

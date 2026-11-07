@@ -739,6 +739,8 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(0.4f);
 
             Creak();
+            // Тема сна уходит вместе с дверьми: к силуэту — тишина и скрип.
+            Audio.Music.Stop(3f);
             if (_seam != null) _seam.SetActive(false);
             const float open = 3.4f, fade = 3.8f;
             for (float t = 0f; t < fade + 0.9f; t += Time.unscaledDeltaTime)
