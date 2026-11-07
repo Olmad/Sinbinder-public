@@ -36,9 +36,9 @@ namespace Sinbinder.Core
         /// <summary>Порядок — порядок на граммофоне. Clip — путь в Resources.</summary>
         public static readonly Record[] All =
         {
-            new("Moonlight", Loc.N("«Лунная соната» составом «Крыс»"), "Records/Moonlight",
+            new("Moonlight", Loc.N("„Лунная соната“ составом „Крыс“"), "Records/Moonlight",
                 Loc.N("пластинка лежала у граммофона"), Way.Hidden, ""),
-            new("Lullaby", Loc.N("Колыбельная «Крыс»"), "Music/Lullaby",
+            new("Lullaby", Loc.N("Колыбельная „Крыс“"), "Music/Lullaby",
                 Loc.N("так звучала дверь в игру"), Way.Heard, "Lullaby"),
             new("RatSong", Loc.N("Крысиная песня"), "Music/RatSong",
                 Loc.N("так звучал лагерь"), Way.Heard, "RatSong"),

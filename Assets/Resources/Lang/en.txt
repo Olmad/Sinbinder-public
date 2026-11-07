@@ -1560,7 +1560,7 @@ msgid "в окне"
 msgstr "windowed"
 
 #: Core/Records.cs
-msgid "«Лунная соната» составом «Крыс»"
+msgid "„Лунная соната“ составом „Крыс“"
 msgstr ""
 
 #: Core/Records.cs
@@ -1568,7 +1568,7 @@ msgid "пластинка лежала у граммофона"
 msgstr ""
 
 #: Core/Records.cs
-msgid "Колыбельная «Крыс»"
+msgid "Колыбельная „Крыс“"
 msgstr ""
 
 #: Core/Records.cs

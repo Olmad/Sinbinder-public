@@ -87,8 +87,13 @@ namespace Sinbinder.Gameplay
                 if (nudgeEvery > 0f && waited >= nudgeEvery)
                 {
                     waited = 0f;
-                    if (!string.IsNullOrEmpty(nudge))
-                        UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(nudge);
+                    // Напоминание — не новость: если оно и так последнее в журнале, второе такое
+                    // же подряд читалось сбоем (кадр «Греховод у стола»: «Карган ждёт у стола
+                    // с шаром.» дважды; вычитка КТ1 п. 12, 07.11).
+                    var log = string.IsNullOrEmpty(nudge) ? null : UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>();
+                    var said = log != null ? log.History : null;
+                    if (log != null && (said.Count == 0 || said[said.Count - 1] != nudge))
+                        log.Write(nudge);
                 }
 
                 yield return null;
