@@ -82,6 +82,10 @@ namespace Sinbinder.EditorTools
         /// <summary>Снят ли кадр наезда на реплику. Один за прогон.</summary>
         private static bool _heraldShot;
 
+        /// <summary>Кадр 3 постоянного списка снят; с какого мига Хорь ждёт ответа.</summary>
+        private static bool _askShot;
+        private static float _askSince = -1f;
+
         /// <summary>Снят ли кадр шара, где гаснут отряды. Один за прогон.</summary>
         private static bool _ballShot;
 
@@ -231,6 +235,8 @@ namespace Sinbinder.EditorTools
                 _courtStep = "";
                 _courtShots.Clear();
                 _heraldShot = false;
+                _askShot = false;
+                _askSince = -1f;
                 _ballShot = false;
                 _startSeen = -1f;
                 _startShot = false;
@@ -341,6 +347,15 @@ namespace Sinbinder.EditorTools
                 {
                     _ballShot = true;
                     Snap("шар — отряды гаснут");
+                }
+
+                // Кадр 3 постоянного списка (58-ROADMAP): разговор с выбором — Хорь
+                // спиной, знамя в кадре, ответы на экране. Ответ сам придёт через
+                // три секунды — снимаем посередине.
+                if (!_askShot && RatBanner.Asking)
+                {
+                    if (_askSince < 0f) _askSince = now;
+                    else if (now - _askSince > 1.4f) { _askShot = true; Snap("КТ 3 — разговор с выбором"); }
                 }
 
                 // За картами (CardTable): кадр, когда камера доехала и прозвучала
@@ -610,6 +625,7 @@ namespace Sinbinder.EditorTools
                 S("лагерь: ворон, тень Гурта, балалайка Ждана", null, Habits, 3f),
                 // Ждан берёт балалайку и садится на бревно, а не в воздух (автор, 28.10) — ждём и снимаем.
                 S("лагерь: Ждан сел с балалайкой на бревно", ZhdanHour, ZhdanSeated, 40f),
+                S("КТ: общий план лагеря", null, CheckpointCamp, 5f),
 
                 // Ворон летает (автор, 27.10: «ворон не улетает и не прилетает»): поднять и снять в полёте.
                 S("лагерь: ворон слетел с плеча", RavenUp, RavenAloft, 8f),
@@ -866,6 +882,7 @@ namespace Sinbinder.EditorTools
                 // склеп встречает отряд словами о Каргане и «нас мало».
                 S("склеп: встретили — потеря и «нас мало»", null,
                   () => !CryptArrival.Running, 60f),
+                S("КТ: дверь склепа и луч", null, CheckpointCrypt, 5f),
 
                 S("склеп: знамя на Греховоде", null,
                   () => _bearerAway || (RatBanner.BySinbinder && HeroShot("знамя — в склепе")), 5f),
@@ -2731,6 +2748,7 @@ namespace Sinbinder.EditorTools
             mark.transform.position = z.transform.position - Vector3.up * 0.4f;
             Sinbinder.Utilets.Snapshot.Portrait("Docs/Образцы/облик в игре", "Ждан на бревне с балалайкой", mark.transform, z.transform.forward);
             UnityEngine.Object.Destroy(mark);
+            FireAndZhdan(z);
             BalalaikaHabit.Shift = 0f;
             return true;
         }
@@ -3099,6 +3117,116 @@ namespace Sinbinder.EditorTools
                 if (head != null) Close("Карган — глаза", head.position, w.transform.forward);
                 break;
             }
+            return true;
+        }
+
+        /// <summary>Куда кладутся кадры постоянного списка (58-ROADMAP): рядом с кадрами прогона.</summary>
+        private const string Checkpoint = "Docs/Образцы/прохождение";
+
+        /// <summary>
+        /// Кадр 1 постоянного списка (58-ROADMAP): лагерь ночью общим планом — костёр,
+        /// факелы, небо, туман. Кадры шагов сняты тактической камерой сверху: неба в них нет.
+        /// Кадр 2 — в миг посадки Ждана (<see cref="FireAndZhdan"/>).
+        ///
+        /// Общий план: восемнадцать метров от огня, четыре над землёй, взгляд почти
+        /// горизонтально — небо в верхней половине. Сторона — первая из восьми, откуда
+        /// до огня ничего не заслоняет и где камера не в палатке.
+        /// </summary>
+        private static bool CheckpointCamp()
+        {
+            var fire = UnityEngine.Object.FindFirstObjectByType<CampfireStoke>();
+            if (fire == null) { Write("  [КТ] костра нет — общего плана не будет"); return true; }
+            var c = fire.Centre;
+
+            try
+            {
+                var at = c + Vector3.up * 2.2f;
+                Vector3 best = Vector3.zero;
+                int side = -1;
+                for (int k = 0; k < 8 && side < 0; k++)
+                {
+                    var d = Quaternion.Euler(0f, 22.5f + 45f * k, 0f) * Vector3.forward;
+                    var from = c + d * 18f;
+                    float ground = Physics.Raycast(from + Vector3.up * 60f, Vector3.down, out var hit, 120f) ? hit.point.y : c.y;
+                    from.y = ground + 4f;
+                    if (best == Vector3.zero) best = from;
+                    if (Physics.CheckSphere(from, 0.7f) || Physics.Linecast(from, at)) continue;
+                    best = from;
+                    side = k;
+                }
+                Write($"  [КТ] общий план: сторона {(side < 0 ? "первая (чистой нет)" : side.ToString())}, {Vector3.Distance(best, c):F0} м от огня");
+                Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 1 — лагерь ночью", best, at));
+            }
+            catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] общий план: " + e.Message); }
+            return true;
+        }
+
+        /// <summary>
+        /// Кадр постоянного списка без линий по земле: круг голоса и круги выделения
+        /// (LineRenderer) — разметка приказа, а не облик лагеря. В кадре w0711v круг
+        /// голоса шёл через весь общий план — по холму, мимо костра, через палатки.
+        /// </summary>
+        private static void Bare(Action shot)
+        {
+            var off = new List<LineRenderer>();
+            foreach (var line in UnityEngine.Object.FindObjectsByType<LineRenderer>(FindObjectsSortMode.None))
+                if (line.enabled) { line.enabled = false; off.Add(line); }
+            try { shot(); }
+            finally { foreach (var line in off) if (line != null) line.enabled = true; }
+        }
+
+        /// <summary>
+        /// Кадр 2 постоянного списка: костёр крупно, Ждан с балалайкой. Снимается в миг,
+        /// когда он сидит (<see cref="ZhdanSeated"/>): шагом позже смена кончается, и он
+        /// уже стоит (кадр w0711v). Камера низко за огнём, чуть в стороне: пламя
+        /// в ближнем углу, Ждан за ним на бревне.
+        /// </summary>
+        private static void FireAndZhdan(Warrior zhdan)
+        {
+            try
+            {
+                var fire = UnityEngine.Object.FindFirstObjectByType<CampfireStoke>();
+                if (fire == null) { Write("  [КТ] костра нет — кадра у костра не будет"); return; }
+                var c = fire.Centre;
+                var to = zhdan.transform.position - c; to.y = 0f;
+                if (to.sqrMagnitude < 0.01f) to = Vector3.forward;
+                var dir = to.normalized;
+                var aside = Vector3.Cross(Vector3.up, dir);
+                var face = zhdan.transform.position + Vector3.up * 0.95f;
+                var from = c - dir * 1.4f + aside * 1.0f + Vector3.up * 1.1f;
+                var at = Vector3.Lerp(c + Vector3.up * 0.5f, face, 0.65f);
+                Write($"  [КТ] костёр крупно: Ждан сидит в {to.magnitude:F1} м от огня");
+                Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 2 — костёр и Ждан с балалайкой", from, at));
+            }
+            catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] костёр крупно: " + e.Message); }
+        }
+
+        /// <summary>
+        /// Кадр 5 постоянного списка: дверь склепа и луч из неё (<see cref="CryptShaft"/>) —
+        /// изнутри зала, от алтаря назад к проёму: полосы идут к камере, пыль в них видна.
+        /// </summary>
+        private static bool CheckpointCrypt()
+        {
+            try
+            {
+                var gate = GameObject.Find("Вход в склеп");
+                if (gate == null) { Write("  [КТ] входа в склеп нет — кадра двери не будет"); return true; }
+                var g = gate.transform.position;
+                var inside = Vector3.back;
+                var hall = GameObject.Find("Зал");
+                if (hall != null)
+                {
+                    var to = hall.transform.position - g; to.y = 0f;
+                    if (to.sqrMagnitude > 0.01f) inside = to.normalized;
+                }
+                var aside = Vector3.Cross(Vector3.up, inside);
+                var from = g + inside * 7f + aside * 1.4f + Vector3.up * 1.6f;
+                var at = g + inside * 0.8f + Vector3.up * 1.7f;
+                Write($"  [КТ] дверь склепа: камера в {Vector3.Distance(from, g):F1} м от входа"
+                    + (Physics.Linecast(from, at) ? ", между ней и дверью что-то стоит" : ""));
+                Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 5 — дверь склепа и луч", from, at));
+            }
+            catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] дверь склепа: " + e.Message); }
             return true;
         }
 

@@ -48,6 +48,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Сцена у огня прошла (или пропущена — Хоря в лагере не было).</summary>
         public static bool Named { get; private set; }
 
+        /// <summary>Ответы на экране, Хорь ждёт выбора. Прогон снимает по нему кадр 3 постоянного списка (58-ROADMAP).</summary>
+        public static bool Asking { get; private set; }
+
         /// <summary>Воткнутое знамя — пало с носящим и ещё не поднято; иначе null. Для прогона.</summary>
         public static GameObject Planted => _dropped;
 
@@ -66,6 +69,7 @@ namespace Sinbinder.Gameplay
             Holder = Bearer;
             BySinbinder = false;
             Named = false;
+            Asking = false;
             OpinionsSaid = 0;
             _worn = null;
             _dropped = null;
@@ -463,6 +467,7 @@ namespace Sinbinder.Gameplay
             TalkView.Show(name, Loc.T(Show), options, Loc.T("Выберите ответ — цифрой или мышью."), bearer);
 
             float auto = Time.unscaledTime + 3f;
+            Asking = true;
             while (answer == 0)
             {
                 if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) answer = 1;
@@ -470,6 +475,8 @@ namespace Sinbinder.Gameplay
                 else if (OpeningReveal.Autopilot && Time.unscaledTime >= auto) answer = 1;
                 yield return null;
             }
+
+            Asking = false;
 
             // Обернулся обратно — отвечает. Имя остаётся при обоих ответах.
             Face(bearer, SinbinderPlayer.Exists ? SinbinderPlayer.Where : bearer.transform.position - bearer.transform.forward);
