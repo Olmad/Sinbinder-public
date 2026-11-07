@@ -57,6 +57,16 @@ namespace Sinbinder.Dialogue
         private readonly Collider[] _frameOverlaps = new Collider[32];
         private readonly RaycastHit[] _frameHits = new RaycastHit[32];
         private static readonly float[] FrameAngles = { 0f, 30f, -30f, 60f, -60f, 90f, -90f, 180f };
+
+        // Крупный план одного: говорящий смотрит на собеседника, а не в объектив (автор, 07.11:
+        // «говорящий всегда смотрит в камеру, и это странно»). Камера — в стороне от линии взгляда:
+        // база повёрнута на GazeOff, да ещё сдвиг вбок (_sideOffset при _cameraDistance — около 18°),
+        // итого около 33° — лицо в три четверти, глаза мимо объектива. Запасные стороны — тоже
+        // мимо взгляда (≈ −27°, 58°, −47°, 78°): на линии взгляда и за спиной планов нет.
+        private const float GazeOff = 15f;
+        private static readonly float[] GazeAngles = { 0f, -60f, 25f, -80f, 45f };
+        private Transform _listener;
+        private Vector3 _gaze = Vector3.forward;
         private float _frameYaw;
         private float _frameReach = 1f;
         private float _distanceMultiplier = 1f;
@@ -284,8 +294,20 @@ namespace Sinbinder.Dialogue
             // Все числа кадра умножаются на рост — композиция та же.
             _scale = Scale(target, out float ground);
             Vector3 anchor = new Vector3(target.position.x, ground, target.position.z);
-            Vector3 face = Flat(target.forward);
-            Vector3 side = Flat(target.right);
+            // Взгляд — на Греховода, если он рядом и снимают не его самого; иначе — куда смотрит.
+            _listener = null;
+            _gaze = Flat(target.forward);
+            if (Gameplay.SinbinderPlayer.Exists && target != Gameplay.SinbinderPlayer.Instance.transform)
+            {
+                var to = Gameplay.SinbinderPlayer.Instance.transform.position - target.position; to.y = 0f;
+                if (to.sqrMagnitude > 0.16f && to.sqrMagnitude < 225f)
+                {
+                    _listener = Gameplay.SinbinderPlayer.Instance.transform;
+                    _gaze = to.normalized;
+                }
+            }
+            Vector3 face = Quaternion.AngleAxis(GazeOff, Vector3.up) * _gaze;
+            Vector3 side = Vector3.Cross(Vector3.up, face);
 
             Vector3 lookTarget = anchor + Vector3.up * (_lookHeight * _scale);
             if (!TrySpeakerFrame(anchor, face, side, lookTarget, _cameraDistance * _scale * _distanceMultiplier, 0f,
@@ -905,7 +927,7 @@ namespace Sinbinder.Dialogue
             for (int near = 0; near < 3; near++)
             {
                 float reach = 1f - near * 0.2f;
-                foreach (float angle in FrameAngles)
+                foreach (float angle in GazeAngles)
                 {
                     turn = Quaternion.AngleAxis(angle, Vector3.up);
                     var candidate = Frame(anchor, turn * face, turn * side, distance * reach, sway);
@@ -985,18 +1007,22 @@ namespace Sinbinder.Dialogue
                 var cam = Cam();
                 if (cam == null) yield break;
 
-                // Говорящий жив — кадр за ним: сдвинулся — план следом; повернулся — лицом к камере (автор, 29.10:
-                // Хорь при разговоре с ответами отворачивался, при «Вызове» Каргана камера снимала не то — план
-                // стоял там, где говорящий был в начале).
+                // Говорящий жив — кадр за ним: сдвинулся — план следом (автор, 29.10: при «Вызове» Каргана
+                // план стоял там, где говорящий был в начале). Лицом — к собеседнику, а не к камере
+                // (автор, 07.11); держим и его: Хорь при разговоре с ответами отворачивался (29.10).
                 if (Target != null)
                 {
                     var now = new Vector3(Target.position.x, anchor.y, Target.position.z);
                     var moved = now - anchor;
                     if (moved.sqrMagnitude > 0.0004f) { anchor = now; lookTarget += moved; }
-                    var toCam = cam.transform.position - Target.position; toCam.y = 0f;
-                    if (toCam.sqrMagnitude > 0.01f)
-                        Target.rotation = Quaternion.Slerp(Target.rotation, Quaternion.LookRotation(toCam),
-                                                           1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                    var want = _gaze;
+                    if (_listener != null)
+                    {
+                        var to = _listener.position - Target.position; to.y = 0f;
+                        if (to.sqrMagnitude > 0.04f) want = to.normalized;
+                    }
+                    Target.rotation = Quaternion.Slerp(Target.rotation, Quaternion.LookRotation(want),
+                                                       1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
                 }
 
                 if (!TrySpeakerFrame(anchor, face, side, lookTarget, distance, sway, Target,
