@@ -288,7 +288,9 @@ namespace Sinbinder.UI
             if (_shown.Count == 0) return;
             var area = ((RectTransform)_canvas.transform).rect;
             float h = Mathf.Max(1f, area.height), wide = Mathf.Max(1f, area.width);
-            float tall = (Size + 42f) / h;
+            // Высота весов с подписью — Size + 34 и обод; ещё 18 — зазор: при 42 вверху
+            // циферблат нижних касался «послушается» верхних (прогон w0711za).
+            float tall = (Size + 52f) / h;
             float roof = 0.80f - (Size + 40f) / h;
             float half = Size * 1.5f / wide;
             _shown.Reverse();   // _marks обходили с конца — теперь старшие первыми

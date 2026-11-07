@@ -238,9 +238,18 @@ namespace Sinbinder.Dialogue
             _hiddenHero.Clear();
         }
 
-        public IEnumerator FocusOn(Transform target, string caption = null, float distanceMultiplier = 1f)
+        /// <summary>
+        /// Доля полуширины кадра, на которую взгляд уходит вправо от лица: справа ответы
+        /// (<see cref="UI.TalkView"/>, от 60% ширины). Лицо по центру — и два ответа ложились
+        /// Хорю на грудь (КТ1, кадр «разговор с выбором»). 0 — лицо по центру.
+        /// </summary>
+        private float _menuRoom;
+
+        public IEnumerator FocusOn(Transform target, string caption = null, float distanceMultiplier = 1f,
+                                   bool menu = false)
         {
             if (target == null) yield break;
+            _menuRoom = menu ? 0.3f : 0f;
 
             // Камеры нет — сцена уходит, и SaveCameraPosition об этом уже
             // сказал. Наводить нечего: без этой строки наезд падал здесь же
@@ -294,8 +303,7 @@ namespace Sinbinder.Dialogue
             // Стоит между камерой и говорящим — тело на время наезда прячется (RestoreCamera вернёт).
             HideHeroIfInFrame(baseCamPos, lookTarget, target);
 
-            yield return MoveCamera(baseCamPos,
-                Quaternion.LookRotation((lookTarget - baseCamPos).normalized), target, lookTarget);
+            yield return MoveCamera(baseCamPos, Aim(baseCamPos, lookTarget), target, lookTarget);
 
             if (!_inDialogue || Target != target || revision != _frameRevision) yield break;
 
@@ -695,6 +703,23 @@ namespace Sinbinder.Dialogue
             return v.sqrMagnitude < 0.0001f ? Vector3.forward : v.normalized;
         }
 
+        /// <summary>
+        /// Взгляд на лицо — или правее него на <see cref="_menuRoom"/> полуширины кадра:
+        /// тогда говорящий стоит левее середины, а справа — место под ответы.
+        /// </summary>
+        private Quaternion Aim(Vector3 from, Vector3 look)
+        {
+            var dir = look - from;
+            var cam = Cam();
+            if (_menuRoom > 0f && cam != null && dir.sqrMagnitude > 0.0001f)
+            {
+                var right = Vector3.Cross(Vector3.up, Flat(dir));
+                float half = Mathf.Tan(cam.fieldOfView * Mathf.Deg2Rad * 0.5f) * cam.aspect;
+                dir += right * (dir.magnitude * half * _menuRoom);
+            }
+            return Quaternion.LookRotation(dir.normalized);
+        }
+
         /// <summary>Где стоит камера при данном отдалении и сдвиге вбок.</summary>
         private Vector3 Frame(Vector3 anchor, Vector3 face, Vector3 side,
                               float distance, float sway)
@@ -983,7 +1008,7 @@ namespace Sinbinder.Dialogue
                 }
                 HideHeroIfInFrame(pos, lookTarget, Target);
                 cam.transform.position = pos;
-                cam.transform.rotation = Quaternion.LookRotation((lookTarget - pos).normalized);
+                cam.transform.rotation = Aim(pos, lookTarget);
 
                 yield return null;
             }

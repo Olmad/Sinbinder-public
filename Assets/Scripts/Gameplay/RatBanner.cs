@@ -438,12 +438,13 @@ namespace Sinbinder.Gameplay
             Face(bearer, SinbinderPlayer.Exists ? SinbinderPlayer.Where : bearer.transform.position + bearer.transform.forward);
 
             // Наезд на лицо, как в разговоре (GearPanel): полосы поднимает камера.
+            // Лицо левее середины — справа встанут ответы.
             var cam = Dialogue.DialogueCameraController.Instance;
             bool framed = false;
             if (cam != null && !cam.InDialogue)
             {
                 cam.SaveCameraPosition();
-                cam.StartCoroutine(cam.FocusOn(bearer.transform));
+                cam.StartCoroutine(cam.FocusOn(bearer.transform, menu: true));
                 framed = true;
             }
             Letterbox.Instance?.Show();

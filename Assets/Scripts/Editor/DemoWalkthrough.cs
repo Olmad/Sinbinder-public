@@ -3170,7 +3170,8 @@ namespace Sinbinder.EditorTools
 
         /// <summary>
         /// Сколько кадра закрыто вблизи: сетка 9×5 лучей по полю зрения снимка
-        /// (по вертикали 30°, кадр 16:9) — луч, упёршийся во что-то ближе 9 м.
+        /// (по вертикали 30°, кадр 16:9) — луч, упёршийся во что-то ближе 13 м
+        /// (огонь в 18; при 9 м палатка в 10–12 м прошла как чистая, прогон w0711za).
         /// Земля — не заслон: ровное, смотрящее вверх, не считаем.
         /// </summary>
         private static int NearCover(Vector3 from, Vector3 at)
@@ -3182,7 +3183,7 @@ namespace Sinbinder.EditorTools
                 for (int y = 0; y < 5; y++)
                 {
                     var ray = look * new Vector3(tanH * (x / 4f - 1f), tanV * (y / 2f - 1f), 1f).normalized;
-                    if (!Physics.Raycast(from, ray, out var hit, 9f, ~0, QueryTriggerInteraction.Ignore)) continue;
+                    if (!Physics.Raycast(from, ray, out var hit, 13f, ~0, QueryTriggerInteraction.Ignore)) continue;
                     if (hit.normal.y > 0.8f) continue;   // ровное снизу — земля, не заслон
                     near++;
                 }
@@ -3243,7 +3244,9 @@ namespace Sinbinder.EditorTools
                     if (behind >= fewest) continue;
                     fewest = behind; from = spot;
                 }
-                var at = Vector3.Lerp(c + Vector3.up * 0.6f, face, 0.55f);
+                // Взгляд ниже: при Lerp(огонь + 0,6 м, лицо, 0,55) костёр срезало нижним
+                // краем (прогон w0711za). Так — дрова и пламя целиком, Ждан у верхней трети.
+                var at = Vector3.Lerp(c + Vector3.up * 0.2f, face, 0.35f);
                 Write($"  [КТ] костёр крупно: Ждан сидит в {to.magnitude:F1} м от огня, за ним в кадре {fewest}");
                 Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 2 — костёр и Ждан с балалайкой", from, at));
             }

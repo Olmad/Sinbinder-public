@@ -44,6 +44,9 @@ namespace Sinbinder.UI
         private SoulJarView _jar;
         [SerializeField] private Text _nameLine;
         [SerializeField] private Text _craftLine;
+        // Рамка строки ремесла, как её поставил строитель сцены (одна строка, 28 точек).
+        private Vector2 _craftAt, _craftSize;
+        private bool _craftKnown;
         [SerializeField] private Text _sinLine;
         [SerializeField] private Text _bodyLine;
 
@@ -407,9 +410,17 @@ namespace Sinbinder.UI
                 // (КТ1, кадр интерфейса, 7 ноября). В рамке — подбор ужимает до двух строк в ней.
                 _craftLine.verticalOverflow = longLine ? VerticalWrapMode.Truncate : VerticalWrapMode.Overflow;
                 _craftLine.resizeTextForBestFit = longLine;
-                _craftLine.resizeTextMinSize = 11;
+                _craftLine.resizeTextMinSize = 12;
                 _craftLine.resizeTextMaxSize = 20;
                 _craftLine.lineSpacing = longLine ? 0.9f : 1f;
+                // В рамку одной строки (28 точек) две строки влезали только кеглем 11 —
+                // примету было не прочесть (прогон w0711za). Длинной — рамка на две строки:
+                // на 4 точки вверх, в зазор под именем, и на 4 вниз; строка грехов
+                // стоит по середине своей рамки, буквы не сходятся.
+                var box = _craftLine.rectTransform;
+                if (!_craftKnown) { _craftAt = box.anchoredPosition; _craftSize = box.sizeDelta; _craftKnown = true; }
+                box.anchoredPosition = longLine ? _craftAt + new Vector2(0f, 4f) : _craftAt;
+                box.sizeDelta = longLine ? _craftSize + new Vector2(0f, 8f) : _craftSize;
             }
             Set(_sinLine, soul != null ? SinsLine(soul) : Loc.T("Душа неизвестна"), Bone);
             Set(_bodyLine, string.IsNullOrEmpty(named) ? BodyLine(who) : ShellLine(who) + " · " + BodyLine(who), Muted);
