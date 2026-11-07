@@ -34,7 +34,9 @@ namespace Sinbinder.UI
             public CommandKind Kind;
             public float Touched, NextLook;
             public RectTransform Root;
-            public RectTransform Needle;
+            public RectTransform Beam, PanFor, PanAgainst;
+            public Image BowlFor, BowlAgainst;
+            public Vector2 BeamAt;
             public CanvasGroup Group;
             public float Born, Angle, Swing, Aim;
             public int Side;   // 0 — ещё не решено, 1 — над головой, ±2 — справа/слева от неё
@@ -47,7 +49,10 @@ namespace Sinbinder.UI
 
         private static ScalesOverhead _instance;
         private static readonly Dictionary<Warrior, float> NextFor = new();
-        private static Sprite _disc;
+        private static Sprite _disc, _bowl;
+        // Коромысло ходит на ту же долю наклона, что в зале (SoulCourt: 22° из 70°).
+        private const float BeamGain = 22f / 70f;
+        private static readonly Color Brass = new Color(0.86f, 0.74f, 0.48f);
         private readonly List<Mark> _marks = new();
         private Canvas _canvas;
 
@@ -173,17 +178,20 @@ namespace Sinbinder.UI
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            // Циферблат как в зале: обод цвета кости, тёмный круг, слева «за», справа «против», вверху — середина.
+            // Весы как в зале (автор, 07.11: «более стилизованные весы»; до того — циферблат со
+            // стрелкой): на тёмном круге стойка, коромысло с язычком и две чаши — слева «за приказ»,
+            // справа «против». Перевесившая опускается и светлеет.
             Vector2 centre = new Vector2(0f, 34f + Size * 0.5f);
             Img("Обод", root, centre, new Vector2(Size + 6f, Size + 6f), new Color(0.78f, 0.70f, 0.52f, 0.95f), Disc());
             Img("Круг", root, centre, new Vector2(Size, Size), new Color(0.11f, 0.12f, 0.19f, 0.95f), Disc());
-            Img("За", root, centre + new Vector2(-Size * 0.34f, 0f), new Vector2(11f, 4f), SoulCourt.ForOrderTone, null);
-            Img("Против", root, centre + new Vector2(Size * 0.34f, 0f), new Vector2(11f, 4f), SoulCourt.AgainstTone, null);
-            Img("Середина", root, centre + new Vector2(0f, Size * 0.34f), new Vector2(3f, 10f), new Color(0.92f, 0.90f, 0.86f), null);
-            var needle = Img("Стрелка", root, centre, new Vector2(3.5f, Size * 0.40f), new Color(0.96f, 0.91f, 0.78f), null);
-            needle.pivot = new Vector2(0.5f, 0f);
-            needle.anchoredPosition = centre;
-            Img("Ось", root, centre, new Vector2(8f, 8f), new Color(0.96f, 0.91f, 0.78f), Disc());
+            Img("Стойка", root, centre + new Vector2(0f, -Size * 0.10f), new Vector2(3f, Size * 0.48f), Brass, null);
+            Img("Основание", root, centre + new Vector2(0f, -Size * 0.34f), new Vector2(Size * 0.34f, 3.5f), Brass, null);
+            var beamAt = centre + new Vector2(0f, Size * 0.14f);
+            var beam = Img("Коромысло", root, beamAt, new Vector2(Size * 0.76f, 3.5f), Brass, null);
+            Img("Язычок", beam, new Vector2(0f, 1.75f + Size * 0.11f), new Vector2(2.5f, Size * 0.22f), new Color(0.97f, 0.93f, 0.80f), null);
+            Img("Ось", root, beamAt, new Vector2(7f, 7f), new Color(0.97f, 0.93f, 0.80f), Disc());
+            var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
+            var panAgainst = Pan("Чаша против", root, SoulCourt.AgainstTone, out var bowlAgainst);
 
             var textRect = Rect("Голос", root, new Vector2(0f, 0f), new Vector2(Size * 3f, 30f));
             textRect.pivot = new Vector2(0.5f, 0f);
@@ -201,7 +209,8 @@ namespace Sinbinder.UI
 
             var mark = new Mark
             {
-                Who = w, Body = w.GetComponentInChildren<Collider>(), Root = root, Needle = needle, Group = group,
+                Who = w, Body = w.GetComponentInChildren<Collider>(), Root = root, Group = group,
+                Beam = beam, BeamAt = beamAt, PanFor = panFor, PanAgainst = panAgainst, BowlFor = bowlFor, BowlAgainst = bowlAgainst,
                 Label = text, Preview = preview, Born = Time.unscaledTime, Touched = Time.unscaledTime, Aim = lean,
             };
             _marks.Add(mark);
@@ -231,7 +240,7 @@ namespace Sinbinder.UI
                 // Стрелка ищет своё, как в зале: качнулась, проскочила, встала.
                 m.Swing += ((m.Aim - m.Angle) * 28f - m.Swing * 6.5f) * dt;
                 m.Angle += m.Swing * dt;
-                m.Needle.localRotation = Quaternion.Euler(0f, 0f, m.Angle);
+                Weigh(m);
 
                 Vector3 at = m.Who.transform.position;
                 float top = m.Body != null ? m.Body.bounds.max.y : at.y + 1.9f;
@@ -317,6 +326,34 @@ namespace Sinbinder.UI
             }
         }
 
+        /// <summary>Коромысло — на долю наклона; чаши висят отвесно на его концах, перевесившая светлее.</summary>
+        private static void Weigh(Mark m)
+        {
+            float deg = m.Angle * BeamGain;
+            m.Beam.localRotation = Quaternion.Euler(0f, 0f, deg);
+            Vector2 half = Quaternion.Euler(0f, 0f, deg) * new Vector3(Size * 0.37f, 0f, 0f);
+            m.PanFor.anchoredPosition = m.BeamAt - half;
+            m.PanAgainst.anchoredPosition = m.BeamAt + half;
+            float t = Mathf.Clamp(m.Angle / 70f, -1f, 1f);
+            m.BowlFor.color = Color.Lerp(SoulCourt.ForOrderTone * 0.7f, Color.Lerp(SoulCourt.ForOrderTone, Color.white, 0.25f), Mathf.Max(0f, t));
+            m.BowlAgainst.color = Color.Lerp(SoulCourt.AgainstTone * 0.7f, Color.Lerp(SoulCourt.AgainstTone, Color.white, 0.25f), Mathf.Max(0f, -t));
+            var c = m.BowlFor.color; c.a = 1f; m.BowlFor.color = c;
+            c = m.BowlAgainst.color; c.a = 1f; m.BowlAgainst.color = c;
+        }
+
+        /// <summary>Чаша на шнуре: точка подвеса — верх (pivot), под ней шнур, край и чаша.</summary>
+        private static RectTransform Pan(string name, RectTransform root, Color tone, out Image bowl)
+        {
+            float h = Size * 0.32f;
+            var pan = Rect(name, root, Vector2.zero, new Vector2(Size * 0.34f, h));
+            pan.pivot = new Vector2(0.5f, 1f);
+            Img("Шнур", pan, new Vector2(0f, h - Size * 0.08f), new Vector2(1.5f, Size * 0.16f), new Color(0.75f, 0.66f, 0.48f), null);
+            var cup = Img("Чаша", pan, new Vector2(0f, h - Size * 0.16f - Size * 0.075f), new Vector2(Size * 0.32f, Size * 0.15f), tone, Bowl());
+            Img("Край", pan, new Vector2(0f, h - Size * 0.16f), new Vector2(Size * 0.36f, 2.5f), Brass, null);
+            bowl = cup.GetComponent<Image>();
+            return pan;
+        }
+
         private void Drop(int i)
         {
             if (_marks[i].Root != null) Destroy(_marks[i].Root.gameObject);
@@ -345,6 +382,24 @@ namespace Sinbinder.UI
         }
 
         /// <summary>Круг с мягким краем — формулой: встроенных круглых картинок в сборке нет.</summary>
+        /// <summary>Нижняя половина круга — чаша весов.</summary>
+        private static Sprite Bowl()
+        {
+            if (_bowl != null) return _bowl;
+            const int w = 64, h = 32;
+            var t = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Чаша весов" };
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float dx = x + 0.5f - w * 0.5f, dy = h - (y + 0.5f);
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    t.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(w * 0.5f - d)));
+                }
+            t.Apply();
+            _bowl = Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
+            return _bowl;
+        }
+
         private static Sprite Disc()
         {
             if (_disc != null) return _disc;

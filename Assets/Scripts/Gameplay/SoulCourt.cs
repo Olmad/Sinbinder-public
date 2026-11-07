@@ -1,4 +1,4 @@
-// Assets/Scripts/Gameplay/SoulCourt.cs
+﻿// Assets/Scripts/Gameplay/SoulCourt.cs
 // Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
@@ -148,6 +148,8 @@ namespace Sinbinder.Gameplay
         private static readonly Vector3 ScalesAt = new Vector3(0f, 2.95f, WallZ - 0.2f);
         private static readonly Vector3 ScalesFrom = new Vector3(0f, 2.85f, -0.6f);
         private const float MaxTilt = 70f;
+        // Весы-коромысло: наклон — доля наклона прежней стрелки; ось выше середины; плечо, подвес, чаша.
+        private const float BeamGain = 22f / MaxTilt, BeamRise = 0.16f, BeamHalf = 0.58f, PanDrop = 0.40f, PanRadius = 0.19f;
         public static readonly Color ForOrderTone = new Color(0.95f, 0.76f, 0.30f);   // и малые весы над головой
         public static readonly Color AgainstTone = new Color(0.82f, 0.22f, 0.20f);
 
@@ -168,6 +170,8 @@ namespace Sinbinder.Gameplay
 
         // Стрелки живут на зале: у них вес — идут к цели, чуть проскакивают, успокаиваются.
         private Transform _needle, _compass;
+        private readonly List<(Transform end, Transform hang)> _hangers = new();
+        private Material _panFor, _panAgainst;
         private float _angle, _swing, _aim;
         private float _cAngle, _cSwing, _cAim;
 
@@ -279,7 +283,8 @@ namespace Sinbinder.Gameplay
             {
                 _swing += ((_aim - _angle) * 28f - _swing * 6.5f) * dt;
                 _angle += _swing * dt;
-                _needle.localRotation = Quaternion.AngleAxis(_angle, Vector3.forward);
+                _needle.localRotation = Quaternion.AngleAxis(_angle * BeamGain, Vector3.forward);
+                Hang();
             }
             if (_compass != null)
             {
@@ -510,8 +515,9 @@ namespace Sinbinder.Gameplay
             }
             var accusedTag = host.AddTag(Hall + Vector3.up * 2.0f,
                 Loc.Name(w.DisplayName) + "\n<color=#B8B0A0>" + Loc.T("подсудимый") + "</color>", new Color(1f, 0.95f, 0.85f), 0.022f, true);
-            var forTag = host.AddTag(Hall + ScalesAt + new Vector3(-1.1f, 0.05f, -0.15f), Loc.T("ЗА ПРИКАЗ"), ForOrderTone, 0.026f, true);
-            var againstTag = host.AddTag(Hall + ScalesAt + new Vector3(1.1f, 0.05f, -0.15f), Loc.T("ПРОТИВ"), AgainstTone, 0.026f, true);
+            // Подписи — у чаш, а не у середины: «за приказ» у левой, «против» у правой.
+            var forTag = host.AddTag(Hall + ScalesAt + new Vector3(-1.2f, BeamRise - PanDrop + 0.02f, -0.15f), Loc.T("ЗА ПРИКАЗ"), ForOrderTone, 0.026f, true);
+            var againstTag = host.AddTag(Hall + ScalesAt + new Vector3(1.2f, BeamRise - PanDrop + 0.02f, -0.15f), Loc.T("ПРОТИВ"), AgainstTone, 0.026f, true);
             // Счёт — внизу кадра, над подсудимым: у весов ему тесно между головами судей и компасом.
             var tally = host.AddTag(Vector3.zero, "", new Color(0.95f, 0.93f, 0.88f), 0.024f, true);
             if (tally != null) tally.Fixed = new Vector2(0.5f, 0.21f);
@@ -824,7 +830,7 @@ namespace Sinbinder.Gameplay
 
             float tilt = Tilt(against, Mathf.Abs(against) * 1.6f);
             host._angle = host._aim = refused ? Mathf.Min(tilt, -MinLean) : Mathf.Max(tilt, MinLean);
-            if (host._needle != null) host._needle.localRotation = Quaternion.AngleAxis(host._angle, Vector3.forward);
+            if (host._needle != null) { host._needle.localRotation = Quaternion.AngleAxis(host._angle * BeamGain, Vector3.forward); host.Hang(); }
 
             var spot = Spotlight(hall.transform);
             if (decider != null) { Aim(spot, decider); spot.intensity = SpotPower; }
@@ -1533,7 +1539,7 @@ namespace Sinbinder.Gameplay
             fill.color = new Color(0.55f, 0.60f, 0.80f);
             fill.shadows = LightShadows.None;
 
-            host._needle = Dial(t);
+            host._needle = Dial(t, host);
             host._compass = Compass(t);
 
             float seed = 0f;
@@ -1547,8 +1553,10 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Моральный компас: круг, три сектора — добро слева, середина вверху,
-        /// зло справа — и стрелка с острием. Встаёт на натуру души.
+        /// Моральный компас — медальон, а не прибор (автор, 07.11: «более стилизованные весы
+        /// и показатель морали»; до того — тёмный круг с брусками делений, как спидометр).
+        /// Обод зубцами, как корона; три дуги — добро слева, середина вверху, зло справа; на
+        /// каждой — гнездо со знаком: солнце, ромб, рога. Стрелка — меч остриём к натуре души.
         /// </summary>
         private static Transform Compass(Transform parent)
         {
@@ -1556,43 +1564,47 @@ namespace Sinbinder.Gameplay
             root.SetParent(parent, false);
             root.position = Hall + CompassAt;
             root.rotation = Quaternion.identity;
+            var c = root.position;
+            var brass = Lit(new Color(0.55f, 0.43f, 0.20f), 0.7f);
+            var dark = Lit(new Color(0.05f, 0.045f, 0.055f), 0.3f);
 
-            var rim = Piece(root, PrimitiveType.Cylinder, "Обод", root.position + Vector3.forward * 0.05f,
-                            new Vector3(1.36f, 0.02f, 1.36f), Lit(new Color(0.42f, 0.33f, 0.16f), 0.6f));
-            rim.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            var face = Piece(root, PrimitiveType.Cylinder, "Круг", root.position + Vector3.forward * 0.03f,
-                             new Vector3(1.22f, 0.025f, 1.22f), Lit(new Color(0.06f, 0.055f, 0.065f), 0.35f));
+            var face = Piece(root, PrimitiveType.Cylinder, "Круг", c + Vector3.forward * 0.04f,
+                             new Vector3(1.26f, 0.02f, 1.26f), dark);
             face.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            Arc(root, "Обод — зубцы", c + Vector3.forward * 0.02f, 0.62f, 0.69f, 0f, 360f, brass, 72, 0.045f);
+            Arc(root, "Обод — внутренний", c - Vector3.forward * 0.005f, 0.585f, 0.60f, 0f, 360f, brass, 72);
+            Arc(root, "Ступица", c - Vector3.forward * 0.005f, 0.17f, 0.185f, 0f, 360f, brass, 48);
+            // Низ — тёмный: туда стрелка не ходит. Тонкая гравировка, чтобы круг не был пустым.
+            Arc(root, "Гравировка", c - Vector3.forward * 0.005f, 0.47f, 0.478f, 112f, 248f,
+                Glowing(new Color(0.22f, 0.20f, 0.18f), 1f), 32);
 
-            // Сектора: дуга из делений и самоцвет на краю. Угол — по часовой от верха.
-            foreach (var (centre, tone) in new[] { (-60f, PiousTone), (0f, NeutralTone), (60f, ViciousTone) })
+            foreach (var (centre, tone, sign) in new[] { (-60f, PiousTone, 0), (0f, NeutralTone, 1), (60f, ViciousTone, 2) })
             {
-                for (int k = -2; k <= 2; k++)
-                {
-                    float a = centre + k * 9f;
-                    var at = root.position - Vector3.forward * 0.01f
-                           + new Vector3(Mathf.Sin(a * Mathf.Deg2Rad), Mathf.Cos(a * Mathf.Deg2Rad), 0f) * 0.47f;
-                    var tick = Piece(root, PrimitiveType.Cube, "Деление", at,
-                                     new Vector3(0.05f, k == 0 ? 0.16f : 0.09f, 0.01f), Glowing(tone, 1f));
-                    tick.transform.rotation = Quaternion.AngleAxis(-a, Vector3.forward);
-                }
-                var gem = root.position - Vector3.forward * 0.02f
-                        + new Vector3(Mathf.Sin(centre * Mathf.Deg2Rad), Mathf.Cos(centre * Mathf.Deg2Rad), 0f) * 0.64f;
-                Piece(root, PrimitiveType.Sphere, "Самоцвет", gem, Vector3.one * 0.11f, Glowing(tone, 1.2f));
+                Arc(root, "Дуга", c - Vector3.forward * 0.01f, 0.44f, 0.53f, centre - 26f, centre + 26f, Glowing(tone, 0.75f), 24);
+                var at = c - Vector3.forward * 0.02f
+                       + new Vector3(Mathf.Sin(centre * Mathf.Deg2Rad), Mathf.Cos(centre * Mathf.Deg2Rad), 0f) * 0.485f;
+                var socket = Piece(root, PrimitiveType.Cylinder, "Гнездо", at, new Vector3(0.15f, 0.01f, 0.15f), dark);
+                socket.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                Arc(root, "Оправа", at - Vector3.forward * 0.005f, 0.072f, 0.082f, 0f, 360f, brass, 32);
+                Sign(root, at - Vector3.forward * 0.012f, sign, Glowing(tone, 1.25f));
             }
 
+            // Меч: клинок к натуре, гарда у оси, рукоять и навершие — хвост.
             var pivot = new GameObject("Стрелка компаса").transform;
             pivot.SetParent(root, false);
-            pivot.localPosition = new Vector3(0f, 0f, -0.05f);
-            var steel = Glowing(new Color(0.85f, 0.87f, 0.92f), 1f);
-            Piece(pivot, PrimitiveType.Cube, "Остриё", pivot.position + Vector3.up * 0.22f, new Vector3(0.045f, 0.44f, 0.012f), steel)
-                .transform.rotation = Quaternion.identity;
-            var tip = Piece(pivot, PrimitiveType.Cube, "Наконечник", pivot.position + Vector3.up * 0.44f, new Vector3(0.075f, 0.075f, 0.012f), steel);
-            tip.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
-            Piece(pivot, PrimitiveType.Cube, "Хвост", pivot.position - Vector3.up * 0.1f, new Vector3(0.07f, 0.2f, 0.012f),
-                  Glowing(new Color(0.3f, 0.3f, 0.34f), 1f));
-            var hub = Piece(pivot, PrimitiveType.Cylinder, "Ось", pivot.position, new Vector3(0.09f, 0.012f, 0.09f), steel);
-            hub.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            pivot.localPosition = new Vector3(0f, 0f, -0.06f);
+            var p = pivot.position;
+            var steel = Glowing(new Color(0.86f, 0.88f, 0.93f), 1f);
+            var hilt = Lit(new Color(0.60f, 0.47f, 0.22f), 0.7f);
+            Piece(pivot, PrimitiveType.Cube, "Клинок", p + Vector3.up * 0.24f, new Vector3(0.04f, 0.36f, 0.01f), steel);
+            Piece(pivot, PrimitiveType.Cube, "Дол", p + Vector3.up * 0.22f - Vector3.forward * 0.006f, new Vector3(0.008f, 0.28f, 0.004f),
+                  Glowing(new Color(0.45f, 0.47f, 0.52f), 1f));
+            Piece(pivot, PrimitiveType.Cube, "Остриё", p + Vector3.up * 0.42f, new Vector3(0.0283f, 0.0283f, 0.01f), steel)
+                .transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            Piece(pivot, PrimitiveType.Cube, "Гарда", p + Vector3.up * 0.045f, new Vector3(0.17f, 0.028f, 0.014f), hilt);
+            Piece(pivot, PrimitiveType.Cube, "Рукоять", p - Vector3.up * 0.04f, new Vector3(0.026f, 0.11f, 0.012f),
+                  Lit(new Color(0.20f, 0.12f, 0.08f), 0.3f));
+            Piece(pivot, PrimitiveType.Sphere, "Навершие", p - Vector3.up * 0.11f, new Vector3(0.05f, 0.05f, 0.02f), hilt);
 
             var go = new GameObject("Свет компаса");
             go.transform.SetParent(root, false);
@@ -1600,59 +1612,174 @@ namespace Sinbinder.Gameplay
             var light = go.AddComponent<Light>();
             light.type = LightType.Point;
             light.range = 2.0f;
-            light.intensity = 0.6f;
-            light.color = new Color(0.85f, 0.80f, 0.70f);
+            light.intensity = 0.7f;
+            light.color = new Color(0.90f, 0.82f, 0.68f);
             light.shadows = LightShadows.None;
             return pivot;
         }
 
-        /// <summary>Весы: тёмный циферблат, двенадцать делений, одна стрелка.</summary>
-        private static Transform Dial(Transform parent)
+        /// <summary>Знак в гнезде компаса: 0 — солнце (добро), 1 — ромб (середина), 2 — рога (зло).</summary>
+        private static void Sign(Transform root, Vector3 at, int sign, Material glow)
+        {
+            if (sign == 0)
+            {
+                Arc(root, "Солнце", at, 0f, 0.026f, 0f, 360f, glow, 24);
+                for (int k = 0; k < 8; k++)
+                {
+                    float a = k * 45f;
+                    var dir = new Vector3(Mathf.Sin(a * Mathf.Deg2Rad), Mathf.Cos(a * Mathf.Deg2Rad), 0f);
+                    Piece(root, PrimitiveType.Cube, "Луч", at + dir * 0.045f, new Vector3(0.009f, 0.022f, 0.004f), glow)
+                        .transform.rotation = Quaternion.AngleAxis(-a, Vector3.forward);
+                }
+            }
+            else if (sign == 1)
+            {
+                Piece(root, PrimitiveType.Cube, "Ромб", at, new Vector3(0.05f, 0.05f, 0.004f), glow)
+                    .transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            }
+            else
+            {
+                Arc(root, "Лоб", at - Vector3.up * 0.012f, 0f, 0.028f, 0f, 360f, glow, 24);
+                foreach (float s in new[] { -1f, 1f })
+                    Piece(root, PrimitiveType.Cube, "Рог", at + new Vector3(0.026f * s, 0.03f, 0f), new Vector3(0.012f, 0.05f, 0.004f), glow)
+                        .transform.rotation = Quaternion.Euler(0f, 0f, -28f * s);
+            }
+        }
+
+        /// <summary>
+        /// Весы — настоящие (автор, 07.11; до того — циферблат со стрелкой, как часы): стойка
+        /// на ступенчатом основании, коромысло, две чаши на подвесах, язычок над дугой шкалы.
+        /// Чаша «за приказ» — слева, «против» — справа; перевесившая опускается и разгорается.
+        /// Наклон коромысла — доля наклона прежней стрелки (<see cref="BeamGain"/>): стрелка ходила
+        /// до 70°, коромысло — до 22°, язычок над шкалой читается так же.
+        /// </summary>
+        private static Transform Dial(Transform parent, SoulCourt host)
         {
             var root = new GameObject("Весы").transform;
             root.SetParent(parent, false);
             root.position = Hall + ScalesAt;
             root.rotation = Quaternion.identity;
+            var c = root.position;
+            var brass = Lit(new Color(0.58f, 0.46f, 0.22f), 0.7f);
+            // Без круга-подложки: весы стоят в зале вещью, а не висят прибором. Круг шире
+            // старого циферблата лёг бы на компас (до его зубцов над весами 0,2 м).
 
-            var face = Piece(root, PrimitiveType.Cylinder, "Циферблат", root.position + Vector3.forward * 0.03f,
-                             new Vector3(1.45f, 0.025f, 1.45f), Lit(new Color(0.09f, 0.085f, 0.095f), 0.35f));
-            face.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            // Ось коромысла выше середины: под ним висят чаши, над ним — язычок и шкала.
+            var axis = c + Vector3.up * BeamRise;
+            Piece(root, PrimitiveType.Cube, "Стойка", new Vector3(c.x, (axis.y + c.y - 0.6f) * 0.5f, c.z - 0.01f),
+                  new Vector3(0.05f, axis.y - (c.y - 0.6f), 0.02f), brass);
+            Piece(root, PrimitiveType.Cube, "Основание", c - Vector3.up * 0.62f - Vector3.forward * 0.01f, new Vector3(0.40f, 0.05f, 0.03f), brass);
+            Piece(root, PrimitiveType.Cube, "Ступень", c - Vector3.up * 0.575f - Vector3.forward * 0.01f, new Vector3(0.22f, 0.045f, 0.03f), brass);
 
-            // Деления как у часов: 9–11 — за приказ (там сидят такие судьи), 1–3 — против,
-            // 12 — вровень, низ — тёмный: туда стрелка не ходит.
-            for (int k = 0; k < 12; k++)
-            {
-                float a = k * 30f;
-                Color tone = k == 0 ? new Color(0.95f, 0.93f, 0.88f)
-                           : k <= 3 ? AgainstTone
-                           : k >= 9 ? ForOrderTone
-                           : new Color(0.20f, 0.19f, 0.22f);
-                Vector3 at = root.position - Vector3.forward * 0.01f
-                           + new Vector3(Mathf.Sin(a * Mathf.Deg2Rad), Mathf.Cos(a * Mathf.Deg2Rad), 0f) * 0.6f;
-                var tick = Piece(root, PrimitiveType.Cube, "Деление", at,
-                                 new Vector3(0.035f, k % 3 == 0 ? 0.15f : 0.09f, 0.01f), Glowing(tone, 1f));
-                tick.transform.rotation = Quaternion.AngleAxis(-a, Vector3.forward);
-            }
+            // Шкала над осью: золото — за приказ, белое — вровень, красное — против.
+            Arc(root, "Шкала за", axis - Vector3.forward * 0.01f, 0.40f, 0.44f, -26f, -3.5f, Glowing(ForOrderTone, 0.9f), 16);
+            Arc(root, "Шкала вровень", axis - Vector3.forward * 0.01f, 0.39f, 0.45f, -1.6f, 1.6f, Glowing(new Color(0.95f, 0.93f, 0.88f), 1f), 2);
+            Arc(root, "Шкала против", axis - Vector3.forward * 0.01f, 0.40f, 0.44f, 3.5f, 26f, Glowing(AgainstTone, 0.9f), 16);
 
-            var pivot = new GameObject("Стрелка").transform;
-            pivot.SetParent(root, false);
-            pivot.localPosition = new Vector3(0f, 0f, -0.04f);
-            var brass = Glowing(new Color(0.95f, 0.88f, 0.70f), 1f);
-            Piece(pivot, PrimitiveType.Cube, "Остриё", pivot.position + Vector3.up * 0.26f, new Vector3(0.03f, 0.52f, 0.012f), brass);
-            Piece(pivot, PrimitiveType.Cube, "Хвост", pivot.position - Vector3.up * 0.07f, new Vector3(0.05f, 0.14f, 0.012f), brass);
-            var hub = Piece(pivot, PrimitiveType.Cylinder, "Ось", pivot.position, new Vector3(0.08f, 0.012f, 0.08f), brass);
+            var beam = new GameObject("Коромысло").transform;
+            beam.SetParent(root, false);
+            beam.position = axis - Vector3.forward * 0.04f;
+            var b = beam.position;
+            Piece(beam, PrimitiveType.Cube, "Брус", b, new Vector3(BeamHalf * 2f, 0.035f, 0.02f), brass);
+            Piece(beam, PrimitiveType.Cube, "Язычок", b + Vector3.up * 0.19f, new Vector3(0.022f, 0.34f, 0.012f),
+                  Glowing(new Color(0.96f, 0.90f, 0.74f), 1.1f));
+            Piece(beam, PrimitiveType.Cube, "Остриё язычка", b + Vector3.up * 0.37f, new Vector3(0.03f, 0.03f, 0.012f),
+                  Glowing(new Color(0.96f, 0.90f, 0.74f), 1.1f)).transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            var hub = Piece(beam, PrimitiveType.Cylinder, "Ось", b - Vector3.forward * 0.01f, new Vector3(0.085f, 0.012f, 0.085f), brass);
             hub.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
-            var go = new GameObject("Свет компаса");
+            foreach (var (sx, tone, name) in new[] { (-1f, ForOrderTone, "за приказ"), (1f, AgainstTone, "против") })
+            {
+                var end = new GameObject("Конец — " + name).transform;
+                end.SetParent(beam, false);
+                end.position = b + Vector3.right * (BeamHalf * sx);
+                Piece(beam, PrimitiveType.Sphere, "Наконечник", end.position, new Vector3(0.055f, 0.055f, 0.03f), brass);
+
+                // Подвес: два шнура от конца коромысла к краям чаши. Держится отвесно (Hang).
+                var hang = new GameObject("Чаша — " + name).transform;
+                hang.SetParent(root, false);
+                hang.position = end.position;
+                var h = hang.position;
+                var bowl = h - Vector3.up * PanDrop;
+                foreach (float k in new[] { -1f, 1f })
+                {
+                    var rim = bowl + Vector3.right * (PanRadius * 0.92f * k);
+                    var mid = (h + rim) * 0.5f;
+                    var len = Vector3.Distance(h, rim);
+                    var cord = Piece(hang, PrimitiveType.Cube, "Шнур", mid, new Vector3(0.01f, len, 0.006f),
+                                     Glowing(new Color(0.55f, 0.48f, 0.35f), 0.9f));
+                    cord.transform.rotation = Quaternion.FromToRotation(Vector3.up, (h - rim).normalized);
+                }
+                var glow = Glowing(tone, 0.8f);
+                Arc(hang, "Чаша", bowl, 0f, PanRadius, 90f, 270f, glow, 20);
+                Piece(hang, PrimitiveType.Cube, "Край чаши", bowl + Vector3.up * 0.008f, new Vector3(PanRadius * 2.1f, 0.022f, 0.02f), brass);
+                host._hangers.Add((end, hang));
+                if (sx < 0f) host._panFor = glow; else host._panAgainst = glow;
+            }
+
+            var go = new GameObject("Свет весов");
             go.transform.SetParent(root, false);
             go.transform.position = root.position - Vector3.forward * 0.9f + Vector3.up * 0.2f;
             var light = go.AddComponent<Light>();
             light.type = LightType.Point;
             light.range = 2.2f;
-            light.intensity = 0.7f;
-            light.color = new Color(0.75f, 0.78f, 0.95f);
+            light.intensity = 0.8f;
+            light.color = new Color(0.85f, 0.80f, 0.92f);
             light.shadows = LightShadows.None;
-            return pivot;
+            return beam;
+        }
+
+        /// <summary>
+        /// Плоская дуга кольца в плоскости зала, лицом к камере (камера смотрит вдоль +z):
+        /// радиусы <paramref name="r0"/>–<paramref name="r1"/>, углы по часовой от верха.
+        /// <paramref name="tooth"/> — зубцы по внешнему краю (через шаг выше на столько).
+        /// </summary>
+        private static GameObject Arc(Transform parent, string name, Vector3 centre, float r0, float r1,
+                                      float from, float to, Material material, int steps = 24, float tooth = 0f)
+        {
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(parent, false);
+            go.transform.position = centre;
+            go.transform.rotation = Quaternion.identity;
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            for (int i = 0; i <= steps; i++)
+            {
+                float a = Mathf.Lerp(from, to, i / (float)steps) * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Sin(a), Mathf.Cos(a), 0f);
+                float outer = r1 + (tooth > 0f && i % 2 == 1 ? tooth : 0f);
+                verts.Add(dir * r0);
+                verts.Add(dir * outer);
+                if (i == 0) continue;
+                int v = verts.Count - 4;
+                // По часовой, как видит камера: лицом к ней.
+                tris.Add(v); tris.Add(v + 1); tris.Add(v + 3);
+                tris.Add(v); tris.Add(v + 3); tris.Add(v + 2);
+            }
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(verts);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go;
+        }
+
+        /// <summary>Чаши висят отвесно за концами коромысла; перевесившая разгорается.</summary>
+        private void Hang()
+        {
+            foreach (var (end, hang) in _hangers)
+            {
+                if (end == null || hang == null) continue;
+                hang.position = end.position;
+                hang.rotation = hang.parent != null ? hang.parent.rotation : Quaternion.identity;
+            }
+            float t = Mathf.Clamp(_angle / MaxTilt, -1f, 1f);
+            if (_panFor != null) _panFor.color = ForOrderTone * (0.7f + 0.8f * Mathf.Max(0f, t));
+            if (_panAgainst != null) _panAgainst.color = AgainstTone * (0.7f + 0.8f * Mathf.Max(0f, -t));
         }
 
         /// <summary>Сила света на говорящем: при 2,6 его на кадрах 05.11 не было видно — до судьи три метра.</summary>
