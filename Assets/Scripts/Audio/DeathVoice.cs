@@ -158,7 +158,8 @@ namespace Sinbinder.Audio
         /// ~25 мс. Основной тон 84 Гц — октава над гулом пешки (42), к концу фразы ниже;
         /// под ним суб-октава — тот самый гул Смерти, но идущий за голосом, по фразе,
         /// а не по слогам, как и нижние гармоники: низ не качается и не бьёт. Поверх —
-        /// шёпот теми же формантами, второй, бесплотный голос; эхо склепа — как у пешки.
+        /// шёпот теми же формантами, второй, бесплотный голос, — громче самого голоса
+        /// (вариант «Б», автор, 07.11); эхо склепа — как у пешки.
         /// Прототип и образцы — D:\Claude\Голоса\death.py.
         /// </summary>
         public static float[] Speech(string line, out float spoken) => Court(line, out spoken);
@@ -605,12 +606,13 @@ namespace Sinbinder.Audio
             float hushTop = Max(hush);
 
             // 6. Вместе; верх мягче (за стеной склепа), эхо склепа.
-            const float Whisper = 0.5f;
+            // Вариант «Б»: шёпот громче, голос тише — больше призрака (автор, 07.11: «Поставь Б»).
+            const float Whisper = 1.0f, Body = 0.6f;
             var dry = new float[n];
             float lp = 0f, alpha = 1f - Mathf.Exp(-2f * Mathf.PI * 3000f / Rate);
             for (int i = 0; i < n; i++)
             {
-                float voice = upper[i] / most * amp[i] + under[i] / most * phraseAmp[i] + Sub * deep[i] * slow[i] / slowTop;
+                float voice = Body * (upper[i] / most * amp[i] + under[i] / most * phraseAmp[i] + Sub * deep[i] * slow[i] / slowTop);
                 float ghost = Whisper * air[i] / airTop * amp[i] + 0.10f * hush[i] / hushTop * hiss[i];
                 lp += alpha * (voice + ghost - lp);
                 dry[i] = lp;
