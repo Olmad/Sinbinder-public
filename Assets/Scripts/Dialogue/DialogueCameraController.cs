@@ -831,6 +831,30 @@ namespace Sinbinder.Dialogue
         }
 
         /// <summary>
+        /// За спиной говорящего, ближе двух с половиной метров, — палатка или стена: фон крупного
+        /// плана — плоская ткань во весь кадр (КТ1, кадр «Вызов»: бежевый скат палатки на две трети
+        /// кадра за Карганом). Такой план берём, только если открытого без стены нет.
+        /// Чужое тело за спиной стеной не считаем — оно не плоское и уходит.
+        /// </summary>
+        private static bool WallBehind(Vector3 from, Vector3 look, Transform speaker)
+        {
+            var dir = Flat(look - from);
+            if (dir.sqrMagnitude < 0.0001f) return false;
+            dir.Normalize();
+            var own = speaker != null ? Gameplay.TentInterior.Around(speaker.position + Vector3.up * 0.1f) : null;
+            for (float d = 0.7f; d <= 2.5f; d += 0.45f)
+            {
+                var tent = Gameplay.TentInterior.Around(look + dir * d);
+                if (tent != null && tent != own) return true;
+            }
+            if (Physics.Raycast(look, dir, out var hit, 2.5f, ~0, QueryTriggerInteraction.Ignore)
+                && hit.collider.GetComponentInParent<Gameplay.Warrior>() == null
+                && (speaker == null || !hit.transform.IsChildOf(speaker)))
+                return true;
+            return false;
+        }
+
+        /// <summary>
         /// Держим выбранную сторону, пока она свободна. При помехе ищем другой ракурс,
         /// затем более близкий план. Порядок фиксирован; стены и палатки не прячем.
         /// </summary>
@@ -841,13 +865,18 @@ namespace Sinbinder.Dialogue
             var turn = Quaternion.AngleAxis(_frameYaw, Vector3.up);
             position = Frame(anchor, turn * face, turn * side, distance * _frameReach, sway);
             if (ClearFrame(position, look, speaker)
-                && (!fresh || Shut(position, look, speaker, null, Vector3.Distance(position, look) - 0.5f) <= OpenEnough))
+                && (!fresh || (Shut(position, look, speaker, null, Vector3.Distance(position, look) - 0.5f) <= OpenEnough
+                               && !WallBehind(position, look, speaker))))
                 return true;
 
             // При выборе плана (fresh) кадр ещё и не должен быть закрыт вблизи; открытого
             // нет — берём наименее закрытый: без плана реплика осталась бы без лица.
             float least = float.MaxValue, leastYaw = 0f, leastReach = 1f;
             Vector3 leastAt = Vector3.zero;
+            // Открытый, но со стеной за спиной — запасной: берём, если чистого нет.
+            bool walled = false;
+            float walledYaw = 0f, walledReach = 1f;
+            Vector3 walledAt = Vector3.zero;
             for (int near = 0; near < 3; near++)
             {
                 float reach = 1f - near * 0.2f;
@@ -864,12 +893,25 @@ namespace Sinbinder.Dialogue
                             if (shut < least) { least = shut; leastYaw = angle; leastReach = reach; leastAt = candidate; }
                             continue;
                         }
+                        if (WallBehind(candidate, look, speaker))
+                        {
+                            if (!walled) { walled = true; walledYaw = angle; walledReach = reach; walledAt = candidate; }
+                            continue;
+                        }
                     }
                     _frameYaw = angle;
                     _frameReach = reach;
                     position = candidate;
                     return true;
                 }
+            }
+            if (walled)
+            {
+                Debug.Log("[КАМЕРА] Крупный план: за спиной у всех открытых планов стена или палатка — взят первый.");
+                _frameYaw = walledYaw;
+                _frameReach = walledReach;
+                position = walledAt;
+                return true;
             }
             if (least <= 1f)
             {
