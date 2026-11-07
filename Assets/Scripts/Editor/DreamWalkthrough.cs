@@ -145,7 +145,9 @@ namespace Sinbinder.EditorTools
                     {
                         Go("подход");
                         Snap("сон — начало");
-                        // Дорога целиком (docs/64-DREAM-ROAD.md): от начала до склепа.
+                        // Дорога целиком (docs/64-DREAM-ROAD.md): от начала до склепа. Свечи
+                        // загораются у идущего — для кадров издалека зажигаем все.
+                        DreamRoad.Instance?.LightAll();
                         ShotFrom("сон — дорога к склепу", new Vector3(0f, 9f, -36f), new Vector3(0f, 1.5f, 18f));
                         ShotFrom("сон — ворота форта", new Vector3(3f, 2.6f, 3.5f), new Vector3(0f, 3.2f, 15f));
                         ShotFrom("сон — двор форта, чучело и камень с банками", new Vector3(0.4f, 3.4f, 14.6f), new Vector3(0f, 1.0f, 21f));
