@@ -28,6 +28,9 @@ namespace Sinbinder.UI
         /// <summary>Спрашивали ли уже в этом запуске.</summary>
         private static bool _asked;
 
+        /// <summary>Сон Греховода — с него начинается новая игра.</summary>
+        public const string Dream = "Prologue_Dream";
+
         [SerializeField] private GameObject _panel;
         [SerializeField] private RectTransform _rows;
         [SerializeField] private Text _title;
@@ -54,14 +57,15 @@ namespace Sinbinder.UI
         ///
         /// Проверка обязана отвечать на тот же вопрос, что и человек:
         /// пропускать его особым путём значит проверять не ту игру,
-        /// которую увидит игрок.
+        /// которую увидит игрок. Сон перед лагерем прогон лагеря не проходит:
+        /// у сна свой прогон (DreamWalkthrough), и кончается он тем же — загрузкой лагеря.
         /// </summary>
         public static void ChooseFresh()
         {
             if (!Waiting) return;
 
             var panel = Object.FindFirstObjectByType<StartPanel>(FindObjectsInactive.Include);
-            if (panel != null) panel.Begin(false);
+            if (panel != null) panel.Begin(false, dream: false);
         }
 
         void Start()
@@ -85,7 +89,17 @@ namespace Sinbinder.UI
             Modal.Close(_panel);
         }
 
-        private void Begin(bool commitment)
+        private void Begin(bool commitment) => Begin(commitment, dream: true);
+
+        /// <summary>
+        /// Новая игра. Начинается она со сна Греховода (автор, 05.11: «нужно один раз
+        /// КОНКРЕТНО, на сто процентов понятно показать AOS»): один приказ, суд души —
+        /// и пробуждение в лагере (сон сам грузит лагерь, когда кончится). До 07.11 новая
+        /// игра начиналась в лагере, а в сон вела строка меню паузы — новичок мог так
+        /// и не увидеть, что воины решают сами. Продолжить запись — сразу в лагерь.
+        /// Только дверь лагеря: у полигона склепа своя дверь, и сна перед ним нет.
+        /// </summary>
+        private void Begin(bool commitment, bool dream)
         {
             var mode = Object.FindFirstObjectByType<GameModeSettings>();
 
@@ -96,6 +110,12 @@ namespace Sinbinder.UI
 
             Hide();
             GamePauseController.Instance?.Resume();
+
+            if (dream && gameObject.scene.name == "Prologue_Camp" && Application.CanStreamedLevelBeLoaded(Dream))
+            {
+                Debug.Log("[ДВЕРЬ] Новая игра — со сна Греховода.");
+                UnityEngine.SceneManagement.SceneManager.LoadScene(Dream);
+            }
         }
 
         private void Continue(string slot)

@@ -1,5 +1,5 @@
-// Sinbinder: optional, isolated dream tutorial before Prologue_Camp.
-// Does not alter the campaign until a level designer explicitly opts in.
+// Сон Греховода — обучение перед лагерем. С 07.11 с него начинается новая игра (UI.StartPanel);
+// пропустить — «Проснуться» в меню паузы.
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

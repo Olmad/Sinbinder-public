@@ -203,8 +203,12 @@ namespace Sinbinder.UI
             Add(ref y, Loc.T("Редактор карт"), Loc.T("новая карта или правка готовой"), () => { MapSession.Path = null; MapSession.Map = null; Field("MapEditor"); });
 
             // Сон Греховода — его собственный сон перед пробуждением в лагере; обучение с судом души (автор, 05.11: «сейчас в игре
-            // я могу оценить суд?»). Пока новая игра начинается в лагере, вход в сон — здесь.
-            Add(ref y, Loc.T("Сон Греховода"), Loc.T("обучение и суд души"), () => Field("Prologue_Dream"));
+            // я могу оценить суд?»). С 07.11 с него начинается новая игра (StartPanel), а здесь — вернуться в него
+            // или, во сне, проснуться: при новой игре не всякий раз хочется проходить его заново.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == StartPanel.Dream)
+                Add(ref y, Loc.T("Проснуться"), Loc.T("пропустить сон — в лагерь"), () => Field("Prologue_Camp"));
+            else
+                Add(ref y, Loc.T("Сон Греховода"), Loc.T("обучение и суд души"), () => Field(StartPanel.Dream));
 
             y -= MenuRows.Height * 0.5f;
             Add(ref y, Loc.T("Выйти из игры"), Commitment.On
