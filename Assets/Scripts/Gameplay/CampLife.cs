@@ -504,6 +504,30 @@ namespace Sinbinder.Gameplay
                 // это два метра ВПЕРЕДИ него; брат сбавлял ход — Гурт вставал у него на дороге
                 // и ждал, а брат ждал Гурта (замер 07.11: ход 1,87 из 3,5, Гурт в 1,1 м, стоит).
                 float speed = agent != null ? new Vector3(agent.velocity.x, 0f, agent.velocity.z).magnitude : 0f;
+
+                // Брат развернулся — и Гурт оказался впереди, на его дороге. Точка «за спиной»
+                // теперь по ту сторону брата, и Гурт шёл к ней сквозь него: двое нос к носу
+                // в тесноте у палаток, брат шесть секунд на месте (w0711w: ход 0,92 из 3,5,
+                // Гурт в 1,4 м, стоит). Теперь Гурт отходит с его дороги в сторону — на два
+                // метра от линии хода — и пропускает; прошёл брат — снова тенью позади.
+                var rel = w.transform.position - t.position;
+                rel.y = 0f;
+                float ahead = Vector3.Dot(rel, dir);
+                if (ahead > 0.3f && rel.sqrMagnitude < 12f)
+                {
+                    float side = Vector3.Dot(rel, aside) >= 0f ? 1f : -1f;
+                    for (int tryside = 0; tryside < 2; tryside++, side = -side)
+                    {
+                        var off = t.position + dir * ahead + aside * side * 2f;
+                        if (!UnityEngine.AI.NavMesh.SamplePosition(off, out var away, 1.2f, UnityEngine.AI.NavMesh.AllAreas)) continue;
+                        var lateral = away.position - t.position;
+                        lateral.y = 0f;
+                        if (Mathf.Abs(Vector3.Dot(lateral, aside)) < 1.2f) continue;   // сбоку стена — на дороге осталась бы
+                        point = away.position;
+                        return true;
+                    }
+                }
+
                 float along = Mathf.Min(speed * 0.5f - 1.5f, -0.9f);
                 point = t.position + dir * along + aside * 0.8f;
                 if (UnityEngine.AI.NavMesh.SamplePosition(point, out var hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
