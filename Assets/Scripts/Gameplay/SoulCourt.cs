@@ -330,10 +330,10 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Слово Бога Смерти — он ведёт суд (автор, 06.11: «Вместо Голоса Суда — сделай
-        /// Голос Бога Смерти»): вступление, компас, весы, приказ, вердикт. Голос — тот же,
-        /// что у пешки, но речью (<see cref="Audio.DeathVoice.Utter"/>), и печать — в его
-        /// темпе: Смерть не торопится. Щелчок — дальше, как у всех реплик.
+        /// Слово Бога Смерти — одно на суд, решение (автор, 07.11: «каждое его слово должно
+        /// быть редким, чтобы иметь больший вес»). С 06.11 по 07.11 Смерть вела весь суд —
+        /// голос прекрасен, но много слов его обесценили. Голос — <see cref="Audio.DeathVoice.Utter"/>,
+        /// печать — в его темпе: Смерть не торопится. Щелчок — дальше, как у всех реплик.
         /// </summary>
         private static IEnumerator Death(UI.Letterbox box, string name, string words)
         {
@@ -545,12 +545,12 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(RiseHold + 0.5f - 0.35f - 1.6f);
             Step = "hall";
 
-            string court = Loc.T("Бог Смерти");
+            string court = Loc.T("Суд души");
             var spot = Spotlight(host.transform);
             if (shortly)
             {
                 // Не первый суд (автор, 06.11: «показывать чаще, но по делу»): что значат
-                // компас и весы, игрок уже слышал. Все на местах, подписи видны, Смерть
+                // компас и весы, игрок уже слышал. Все на местах, подписи видны, суд
                 // называет приказ и отказ — и сразу слово судьям.
                 Show(accusedTag);
                 Show(goodTag); Show(midTag); Show(evilTag);
@@ -558,14 +558,14 @@ namespace Sinbinder.Gameplay
                 foreach (var j in judges) Show(j.Tag as Tag);
                 host._cSwing = 180f;
                 host._cAim = MoralAngle(moral);
-                yield return Death(box, court, Summon(w, d, given));
+                yield return Line(box, host, court, Summon(w, d, given));
                 goto Stances;
             }
 
             // Первый суд объясняет себя сам: кто судьи, кто перед ними, что значат
             // компас, весы и огонь.
             Show(accusedTag);
-            yield return Death(box, court, Opening(w, d));
+            yield return Line(box, host, court, Opening(w, d));
 
             // Компас — кто он по натуре: крутится и встаёт на своё.
             Step = "compass";
@@ -573,19 +573,19 @@ namespace Sinbinder.Gameplay
             host._cSwing = 540f;
             host._cAim = MoralAngle(moral);
             host.StartCoroutine(camera.FocusOnPoint(Hall + CompassAt, Hall + CompassFrom, null, push: 12f));
-            yield return Death(box, court, CompassWords(w, moral));
+            yield return Line(box, host, court, CompassWords(w, moral));
 
             // Весы — как он поступит сейчас.
             Step = "scales";
             Show(forTag); Show(againstTag);
             host.StartCoroutine(camera.FocusOnPoint(Hall + ScalesAt, Hall + ScalesFrom, null, push: 12f));
-            yield return Death(box, court, Grammar.Pick(w.Gender,
+            yield return Line(box, host, court, Grammar.Pick(w.Gender,
                 Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."),
                 Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит.")));
 
             Step = "hall";
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
-            yield return Death(box, court,
+            yield return Line(box, host, court,
                 Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(given ?? w.Command.Kind)));
 
             // 4. Знакомство (автор, 05.11: «сначала познакомить с персонажами,
@@ -607,7 +607,7 @@ namespace Sinbinder.Gameplay
             // громче — последними. Каждое «за» и «против» качает весы.
             Step = "stance";
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
-            yield return Death(box, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."));
+            yield return Line(box, host, court, Loc.T("Судьи, ваше слово. Тише — первыми, громче — последними. Чем сильнее голос, тем ярче его свеча и тем дальше качнутся весы."));
 
             Stances:
             Step = "stance";
@@ -650,7 +650,7 @@ namespace Sinbinder.Gameplay
             // Полный суд (обучение) представляет и молчащих: что значит «воздержался» —
             // и почему каждый из них молчит (автор, 06.11).
             if (!shortly && order.Exists(x => x.Abstains))
-                yield return Death(box, court, Loc.T("Кого вопрос не задел, тот воздерживается: весы он не качает."));
+                yield return Line(box, host, court, Loc.T("Кого вопрос не задел, тот воздерживается: весы он не качает."));
 
             foreach (var j in order.FindAll(x => x.Abstains && !shortly))
             {
@@ -708,19 +708,31 @@ namespace Sinbinder.Gameplay
             if (orderFire != null)
                 host.StartCoroutine(refused ? Die(orderFire, orderFlame) : Blaze(orderFire));
 
-            string verdict = Loc.T("Бог Смерти — вердикт");
-            yield return Death(box, verdict, Sentence(w, d, voting));
+            // Слово Смерти — одно на суд (автор, 07.11: «Голос Смерти — прекрасен, но им нельзя
+            // говорить много — каждое его слово должно быть редким, чтобы иметь больший вес.
+            // Так же Смерть не многословна»). Колокол отзвучал — Смерть называет решение;
+            // кто за, кто против и почему — голос суда. Ничьей Смерть не судит: решения нет.
+            string verdict = Loc.T("Вердикт");
+            string sentence = Sentence(w, d, voting);
+            int cut = d.Hesitated ? -1 : sentence.IndexOf(". ", System.StringComparison.Ordinal);
+            if (!d.Hesitated)
+            {
+                yield return new WaitForSecondsRealtime(0.6f);
+                yield return Death(box, Loc.T("Бог Смерти"), cut > 0 ? sentence.Substring(0, cut + 1) : sentence);
+            }
+            if (d.Hesitated || cut > 0)
+                yield return Line(box, host, verdict, d.Hesitated ? sentence : sentence.Substring(cut + 2));
             // Голосов «за» больше, а приказ отвергнут — новичок решит, что суд считает неправильно.
             string weight = Weight(d, voting);
-            if (weight != null) yield return Death(box, verdict, weight);
+            if (weight != null) yield return Line(box, host, verdict, weight);
 
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
-                yield return Death(box, verdict, why);
+                yield return Line(box, host, verdict, why);
 
             // Что это значит для игры — одной строкой, напоследок. Короткий суд её не повторяет.
             if (!shortly)
-                yield return Death(box, court,
+                yield return Line(box, host, court,
                     Loc.T("Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."));
 
             // 6. Назад, в мир.
@@ -1356,7 +1368,7 @@ namespace Sinbinder.Gameplay
             var hall = new GameObject("Суд души");
             hall.transform.position = Hall;
             host = hall.AddComponent<SoulCourt>();
-            // Своей гортани у зала нет: суд ведёт Бог Смерти (Death, Audio.DeathVoice).
+            Throat(hall, 0.62f);   // голос самого суда; Бог Смерти говорит одно слово — вердикт (Death)
 
             var stone = Lit(new Color(0.075f, 0.07f, 0.075f), 0.1f);
             var wall = Lit(new Color(0.10f, 0.09f, 0.085f), 0.05f);
