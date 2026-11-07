@@ -32,7 +32,9 @@ namespace Sinbinder.EditorTools
             Roll(dir);
             Death(dir, "игра — Бог Смерти ведёт суд",
                   "Почему он не послушался? Решал не он один — решала его душа. Вот её суд.",
-                  "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса.");
+                  "Перед судом — приказ владыки: «отступить». Судьи, встаньте и назовитесь.",
+                  "Приказ исполнен. Весы склонились к «за» — на волосок.",
+                  "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд.");
             Debug.Log("[ГОЛОС] образцы: " + dir);
             EditorApplication.Exit(0);
         }
@@ -95,7 +97,10 @@ namespace Sinbinder.EditorTools
             int at = 0;
             for (int l = 0; l < lines.Length; l++)
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 var data = Audio.DeathVoice.Speech(lines[l], out float spoken);
+                // В игре строка строится в миг, когда Смерть начинает её говорить: дорого — кадр дёрнется.
+                Debug.Log($"[ГОЛОС] {name}, строка {l + 1}: {spoken:F1} с речи построены за {watch.ElapsedMilliseconds} мс");
                 // Как в игре: следующая строка — через 0,8 с после сказанного,
                 // хвост прошлой гаснет за полсекунды под новой (DeathVoice.Utter).
                 int next = at + Mathf.RoundToInt((spoken + 0.8f) * rate);
