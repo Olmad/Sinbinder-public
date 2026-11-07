@@ -3128,9 +3128,10 @@ namespace Sinbinder.EditorTools
         /// факелы, небо, туман. Кадры шагов сняты тактической камерой сверху: неба в них нет.
         /// Кадр 2 — в миг посадки Ждана (<see cref="FireAndZhdan"/>).
         ///
-        /// Общий план: восемнадцать метров от огня, четыре над землёй, взгляд почти
-        /// горизонтально — небо в верхней половине. Сторона — первая из восьми, откуда
-        /// до огня ничего не заслоняет и где камера не в палатке.
+        /// Общий план: восемнадцать метров от огня, четыре или шесть над землёй, взгляд
+        /// почти горизонтально — небо в верхней половине. Из восьми сторон и двух высот
+        /// берём ту, где огонь открыт, камера не в палатке и меньше всего кадра закрыто
+        /// вблизи: в кадре w0711v ближняя палатка слева занимала четверть кадра.
         /// </summary>
         private static bool CheckpointCamp()
         {
@@ -3142,23 +3143,50 @@ namespace Sinbinder.EditorTools
             {
                 var at = c + Vector3.up * 2.2f;
                 Vector3 best = Vector3.zero;
-                int side = -1;
-                for (int k = 0; k < 8 && side < 0; k++)
+                int side = -1, least = int.MaxValue;
+                float lift = 0f;
+                for (int k = 0; k < 8; k++)
                 {
                     var d = Quaternion.Euler(0f, 22.5f + 45f * k, 0f) * Vector3.forward;
-                    var from = c + d * 18f;
-                    float ground = Physics.Raycast(from + Vector3.up * 60f, Vector3.down, out var hit, 120f) ? hit.point.y : c.y;
-                    from.y = ground + 4f;
-                    if (best == Vector3.zero) best = from;
-                    if (Physics.CheckSphere(from, 0.7f) || Physics.Linecast(from, at)) continue;
-                    best = from;
-                    side = k;
+                    var foot = c + d * 18f;
+                    float ground = Physics.Raycast(foot + Vector3.up * 60f, Vector3.down, out var hit, 120f) ? hit.point.y : c.y;
+                    foreach (float up in new[] { 4f, 6f })
+                    {
+                        var from = new Vector3(foot.x, ground + up, foot.z);
+                        if (best == Vector3.zero) best = from;
+                        if (Physics.CheckSphere(from, 0.7f) || Physics.Linecast(from, at)) continue;
+                        int near = NearCover(from, at);
+                        if (near >= least) continue;
+                        least = near; best = from; side = k; lift = up;
+                    }
                 }
-                Write($"  [КТ] общий план: сторона {(side < 0 ? "первая (чистой нет)" : side.ToString())}, {Vector3.Distance(best, c):F0} м от огня");
+                Write($"  [КТ] общий план: сторона {(side < 0 ? "первая (чистой нет)" : side.ToString())}, "
+                    + $"{Vector3.Distance(best, c):F0} м от огня, {lift:F0} м над землёй, закрыто вблизи {(side < 0 ? 0 : least)} из 45 лучей");
                 Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 1 — лагерь ночью", best, at));
             }
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] общий план: " + e.Message); }
             return true;
+        }
+
+        /// <summary>
+        /// Сколько кадра закрыто вблизи: сетка 9×5 лучей по полю зрения снимка
+        /// (по вертикали 30°, кадр 16:9) — луч, упёршийся во что-то ближе 9 м.
+        /// Земля — не заслон: ровное, смотрящее вверх, не считаем.
+        /// </summary>
+        private static int NearCover(Vector3 from, Vector3 at)
+        {
+            var look = Quaternion.LookRotation((at - from).normalized);
+            float tanV = Mathf.Tan(15f * Mathf.Deg2Rad), tanH = tanV * 16f / 9f;
+            int near = 0;
+            for (int x = 0; x < 9; x++)
+                for (int y = 0; y < 5; y++)
+                {
+                    var ray = look * new Vector3(tanH * (x / 4f - 1f), tanV * (y / 2f - 1f), 1f).normalized;
+                    if (!Physics.Raycast(from, ray, out var hit, 9f, ~0, QueryTriggerInteraction.Ignore)) continue;
+                    if (hit.normal.y > 0.8f) continue;   // ровное снизу — земля, не заслон
+                    near++;
+                }
+            return near;
         }
 
         /// <summary>
@@ -3180,6 +3208,10 @@ namespace Sinbinder.EditorTools
         /// когда он сидит (<see cref="ZhdanSeated"/>): шагом позже смена кончается, и он
         /// уже стоит (кадр w0711v). Камера низко за огнём, чуть в стороне: пламя
         /// в ближнем углу, Ждан за ним на бревне.
+        ///
+        /// В три метра от огня, а не в полтора: вплотную пламя ложилось на объектив тёплым
+        /// пятном без языков (КТ1, кадр 2). Сторона — та, где за Жданом никто не стоит:
+        /// тёмный скелет в шлеме прямо за ним сливался с ним в одну фигуру.
         /// </summary>
         private static void FireAndZhdan(Warrior zhdan)
         {
@@ -3193,9 +3225,26 @@ namespace Sinbinder.EditorTools
                 var dir = to.normalized;
                 var aside = Vector3.Cross(Vector3.up, dir);
                 var face = zhdan.transform.position + Vector3.up * 0.95f;
-                var from = c - dir * 1.4f + aside * 1.0f + Vector3.up * 1.1f;
-                var at = Vector3.Lerp(c + Vector3.up * 0.5f, face, 0.65f);
-                Write($"  [КТ] костёр крупно: Ждан сидит в {to.magnitude:F1} м от огня");
+                Vector3 from = Vector3.zero;
+                int fewest = int.MaxValue;
+                foreach (float s in new[] { 1f, -1f })
+                {
+                    var spot = c - dir * 3.0f + aside * (1.5f * s) + Vector3.up * 1.3f;
+                    var ray = (face - spot).normalized;
+                    int behind = 0;
+                    foreach (var other in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    {
+                        if (other == zhdan || other.IsDead) continue;
+                        var rel = other.transform.position + Vector3.up * 0.95f - face;
+                        float along = Vector3.Dot(rel, ray);
+                        if (along < 0.2f || along > 4f) continue;
+                        if ((rel - ray * along).magnitude < 0.8f) behind++;
+                    }
+                    if (behind >= fewest) continue;
+                    fewest = behind; from = spot;
+                }
+                var at = Vector3.Lerp(c + Vector3.up * 0.6f, face, 0.55f);
+                Write($"  [КТ] костёр крупно: Ждан сидит в {to.magnitude:F1} м от огня, за ним в кадре {fewest}");
                 Bare(() => Sinbinder.Utilets.Snapshot.Look(Checkpoint, "КТ 2 — костёр и Ждан с балалайкой", from, at));
             }
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] костёр крупно: " + e.Message); }
