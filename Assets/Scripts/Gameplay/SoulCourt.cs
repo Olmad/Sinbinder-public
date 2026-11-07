@@ -1,4 +1,4 @@
-﻿// Assets/Scripts/Gameplay/SoulCourt.cs
+// Assets/Scripts/Gameplay/SoulCourt.cs
 // Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
@@ -1639,10 +1639,16 @@ namespace Sinbinder.Gameplay
             }
             else
             {
-                Arc(root, "Лоб", at - Vector3.up * 0.012f, 0f, 0.028f, 0f, 360f, glow, 24);
+                // Рог — два колена: от лба наружу, потом вверх и внутрь. Прямые торчали
+                // ушами — знак читался зайцем (прогон w0711zd).
+                Arc(root, "Лоб", at - Vector3.up * 0.014f, 0f, 0.027f, 0f, 360f, glow, 24);
                 foreach (float s in new[] { -1f, 1f })
-                    Piece(root, PrimitiveType.Cube, "Рог", at + new Vector3(0.026f * s, 0.03f, 0f), new Vector3(0.012f, 0.05f, 0.004f), glow)
-                        .transform.rotation = Quaternion.Euler(0f, 0f, -28f * s);
+                {
+                    Piece(root, PrimitiveType.Cube, "Рог", at + new Vector3(0.034f * s, 0.006f, 0f), new Vector3(0.013f, 0.034f, 0.004f), glow)
+                        .transform.rotation = Quaternion.Euler(0f, 0f, -62f * s);
+                    Piece(root, PrimitiveType.Cube, "Рог — кончик", at + new Vector3(0.046f * s, 0.032f, 0f), new Vector3(0.009f, 0.03f, 0.004f), glow)
+                        .transform.rotation = Quaternion.Euler(0f, 0f, 12f * s);
+                }
             }
         }
 
@@ -1681,10 +1687,11 @@ namespace Sinbinder.Gameplay
             beam.position = axis - Vector3.forward * 0.04f;
             var b = beam.position;
             Piece(beam, PrimitiveType.Cube, "Брус", b, new Vector3(BeamHalf * 2f, 0.035f, 0.02f), brass);
-            Piece(beam, PrimitiveType.Cube, "Язычок", b + Vector3.up * 0.19f, new Vector3(0.022f, 0.34f, 0.012f),
-                  Glowing(new Color(0.96f, 0.90f, 0.74f), 1.1f));
-            Piece(beam, PrimitiveType.Cube, "Остриё язычка", b + Vector3.up * 0.37f, new Vector3(0.03f, 0.03f, 0.012f),
-                  Glowing(new Color(0.96f, 0.90f, 0.74f), 1.1f)).transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            // Язычок светится тускло: при 1,1 он с осью давал белую звезду сияния (прогон w0711zd).
+            var tongue = Glowing(new Color(0.90f, 0.84f, 0.68f), 0.8f);
+            Piece(beam, PrimitiveType.Cube, "Язычок", b + Vector3.up * 0.19f, new Vector3(0.022f, 0.34f, 0.012f), tongue);
+            Piece(beam, PrimitiveType.Cube, "Остриё язычка", b + Vector3.up * 0.37f, new Vector3(0.03f, 0.03f, 0.012f), tongue)
+                .transform.rotation = Quaternion.Euler(0f, 0f, 45f);
             var hub = Piece(beam, PrimitiveType.Cylinder, "Ось", b - Vector3.forward * 0.01f, new Vector3(0.085f, 0.012f, 0.085f), brass);
             hub.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 

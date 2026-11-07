@@ -612,6 +612,13 @@ namespace Sinbinder.UI
             _voiceLine.text = line;
             _voiceLine.color = color;
             _voiceLine.fontSize = size;
+            // Одной строкой, ужимаясь: «Уныние говорит чуть громче прочих» кеглем 34 уходила
+            // в две строки и ложилась на заголовок и на причину (кадр сна, w0711zd).
+            _voiceLine.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _voiceLine.verticalOverflow = VerticalWrapMode.Truncate;
+            _voiceLine.resizeTextForBestFit = true;
+            _voiceLine.resizeTextMinSize = 20;
+            _voiceLine.resizeTextMaxSize = size;
             Set(_reasonLine, reason, Muted);
         }
 

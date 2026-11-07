@@ -187,7 +187,8 @@ namespace Sinbinder.UI
             Img("Стойка", root, centre + new Vector2(0f, -Size * 0.10f), new Vector2(3f, Size * 0.48f), Brass, null);
             Img("Основание", root, centre + new Vector2(0f, -Size * 0.34f), new Vector2(Size * 0.34f, 3.5f), Brass, null);
             var beamAt = centre + new Vector2(0f, Size * 0.14f);
-            var beam = Img("Коромысло", root, beamAt, new Vector2(Size * 0.76f, 3.5f), Brass, null);
+            // Плечо 0,31 круга, чаша 0,26: при 0,37 и 0,34 чаши ложились на обод (прогон w0711zd).
+            var beam = Img("Коромысло", root, beamAt, new Vector2(Size * 0.64f, 3.5f), Brass, null);
             Img("Язычок", beam, new Vector2(0f, 1.75f + Size * 0.11f), new Vector2(2.5f, Size * 0.22f), new Color(0.97f, 0.93f, 0.80f), null);
             Img("Ось", root, beamAt, new Vector2(7f, 7f), new Color(0.97f, 0.93f, 0.80f), Disc());
             var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
@@ -331,7 +332,7 @@ namespace Sinbinder.UI
         {
             float deg = m.Angle * BeamGain;
             m.Beam.localRotation = Quaternion.Euler(0f, 0f, deg);
-            Vector2 half = Quaternion.Euler(0f, 0f, deg) * new Vector3(Size * 0.37f, 0f, 0f);
+            Vector2 half = Quaternion.Euler(0f, 0f, deg) * new Vector3(Size * 0.31f, 0f, 0f);
             m.PanFor.anchoredPosition = m.BeamAt - half;
             m.PanAgainst.anchoredPosition = m.BeamAt + half;
             float t = Mathf.Clamp(m.Angle / 70f, -1f, 1f);
@@ -345,11 +346,11 @@ namespace Sinbinder.UI
         private static RectTransform Pan(string name, RectTransform root, Color tone, out Image bowl)
         {
             float h = Size * 0.32f;
-            var pan = Rect(name, root, Vector2.zero, new Vector2(Size * 0.34f, h));
+            var pan = Rect(name, root, Vector2.zero, new Vector2(Size * 0.28f, h));
             pan.pivot = new Vector2(0.5f, 1f);
             Img("Шнур", pan, new Vector2(0f, h - Size * 0.08f), new Vector2(1.5f, Size * 0.16f), new Color(0.75f, 0.66f, 0.48f), null);
-            var cup = Img("Чаша", pan, new Vector2(0f, h - Size * 0.16f - Size * 0.075f), new Vector2(Size * 0.32f, Size * 0.15f), tone, Bowl());
-            Img("Край", pan, new Vector2(0f, h - Size * 0.16f), new Vector2(Size * 0.36f, 2.5f), Brass, null);
+            var cup = Img("Чаша", pan, new Vector2(0f, h - Size * 0.16f - Size * 0.065f), new Vector2(Size * 0.26f, Size * 0.13f), tone, Bowl());
+            Img("Край", pan, new Vector2(0f, h - Size * 0.16f), new Vector2(Size * 0.29f, 2.5f), Brass, null);
             bowl = cup.GetComponent<Image>();
             return pan;
         }
