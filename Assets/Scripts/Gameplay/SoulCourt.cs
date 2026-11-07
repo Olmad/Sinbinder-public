@@ -1762,14 +1762,18 @@ namespace Sinbinder.Gameplay
             var soul = new GameObject("Душа в бусине").transform;
             soul.SetParent(beam, false);
             soul.position = at;
-            var ghost = Glowing(SoulTone, 1.4f);
-            Piece(soul, PrimitiveType.Sphere, "Голова", at + Vector3.up * 0.014f, Vector3.one * 0.032f, ghost);
-            Piece(soul, PrimitiveType.Sphere, "Тельце", at - Vector3.up * 0.008f, new Vector3(0.034f, 0.036f, 0.026f), ghost);
-            Piece(soul, PrimitiveType.Sphere, "Хвостик", at + new Vector3(0.008f, -0.028f, 0f), new Vector3(0.018f, 0.022f, 0.016f), ghost);
-            Piece(soul, PrimitiveType.Sphere, "Кончик хвостика", at + new Vector3(0.017f, -0.038f, 0f), new Vector3(0.010f, 0.012f, 0.010f), ghost);
-            var eye = Glowing(new Color(0.10f, 0.12f, 0.22f), 1f);
+            // Крупнее в 1,45 раза и светит мягче: при 1,4 сияние съедало глаза, душа в кадре
+            // крупного плана была белым пятнышком в треть бусины (w0711zg).
+            const float k = 1.45f;
+            var ghost = Glowing(SoulTone, 0.95f);
+            Piece(soul, PrimitiveType.Sphere, "Голова", at + Vector3.up * (0.014f * k), Vector3.one * (0.032f * k), ghost);
+            Piece(soul, PrimitiveType.Sphere, "Тельце", at - Vector3.up * (0.008f * k), new Vector3(0.034f, 0.036f, 0.026f) * k, ghost);
+            Piece(soul, PrimitiveType.Sphere, "Хвостик", at + new Vector3(0.008f, -0.028f, 0f) * k, new Vector3(0.018f, 0.022f, 0.016f) * k, ghost);
+            Piece(soul, PrimitiveType.Sphere, "Кончик хвостика", at + new Vector3(0.017f, -0.038f, 0f) * k, new Vector3(0.010f, 0.012f, 0.010f) * k, ghost);
+            var eye = Glowing(new Color(0.06f, 0.07f, 0.14f), 1f);
             foreach (float s in new[] { -1f, 1f })
-                Piece(soul, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.0065f * s, 0.016f, -0.016f), new Vector3(0.0055f, 0.0075f, 0.003f), eye);
+                Piece(soul, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.0075f * s * k, 0.016f * k, -0.0165f * k),
+                      new Vector3(0.0075f, 0.0105f, 0.004f) * k, eye);
 
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader != null)
@@ -1786,8 +1790,8 @@ namespace Sinbinder.Gameplay
                 halo.SetFloat("_ZWrite", 0f);
                 halo.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
                 halo.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 2;
-                halo.SetColor("_BaseColor", new Color(SoulTone.r, SoulTone.g, SoulTone.b, 0.5f));
-                Piece(soul, PrimitiveType.Quad, "Ореол", at + Vector3.forward * 0.02f, Vector3.one * 0.085f, halo);
+                halo.SetColor("_BaseColor", new Color(SoulTone.r, SoulTone.g, SoulTone.b, 0.35f));
+                Piece(soul, PrimitiveType.Quad, "Ореол", at + Vector3.forward * 0.03f, Vector3.one * 0.12f, halo);
 
                 // Стекло: бледное, почти прозрачное, обычным смешиванием поверх огонька.
                 var glass = new Material(shader) { name = "Стекло бусины" };
