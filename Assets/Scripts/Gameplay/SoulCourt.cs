@@ -149,7 +149,9 @@ namespace Sinbinder.Gameplay
         private static readonly Vector3 ScalesFrom = new Vector3(0f, 2.85f, -0.6f);
         private const float MaxTilt = 70f;
         // Весы-коромысло: наклон — доля наклона прежней стрелки; ось выше середины; плечо, подвес, чаша.
-        private const float BeamGain = 22f / MaxTilt, BeamRise = 0.16f, BeamHalf = 0.58f, PanDrop = 0.40f, PanRadius = 0.19f;
+        // Подвес 0,34, а не 0,40, и основание выше: в общем плане чаши ложились на подписи судей (w0711zd).
+        private const float BeamGain = 22f / MaxTilt, BeamRise = 0.16f, BeamHalf = 0.58f, PanDrop = 0.34f, PanRadius = 0.19f;
+        private static readonly Color SoulTone = new Color(0.74f, 0.88f, 1f);
         public static readonly Color ForOrderTone = new Color(0.95f, 0.76f, 0.30f);   // и малые весы над головой
         public static readonly Color AgainstTone = new Color(0.82f, 0.22f, 0.20f);
 
@@ -171,6 +173,8 @@ namespace Sinbinder.Gameplay
         // Стрелки живут на зале: у них вес — идут к цели, чуть проскакивают, успокаиваются.
         private Transform _needle, _compass;
         private readonly List<(Transform end, Transform hang)> _hangers = new();
+        private Transform _soul, _soulCore;
+        private Vector3 _soulAt;
         private Material _panFor, _panAgainst;
         private float _angle, _swing, _aim;
         private float _cAngle, _cSwing, _cAim;
@@ -285,6 +289,7 @@ namespace Sinbinder.Gameplay
                 _angle += _swing * dt;
                 _needle.localRotation = Quaternion.AngleAxis(_angle * BeamGain, Vector3.forward);
                 Hang();
+                Breathe(now);
             }
             if (_compass != null)
             {
@@ -1672,10 +1677,10 @@ namespace Sinbinder.Gameplay
 
             // Ось коромысла выше середины: под ним висят чаши, над ним — язычок и шкала.
             var axis = c + Vector3.up * BeamRise;
-            Piece(root, PrimitiveType.Cube, "Стойка", new Vector3(c.x, (axis.y + c.y - 0.6f) * 0.5f, c.z - 0.01f),
-                  new Vector3(0.05f, axis.y - (c.y - 0.6f), 0.02f), brass);
-            Piece(root, PrimitiveType.Cube, "Основание", c - Vector3.up * 0.62f - Vector3.forward * 0.01f, new Vector3(0.40f, 0.05f, 0.03f), brass);
-            Piece(root, PrimitiveType.Cube, "Ступень", c - Vector3.up * 0.575f - Vector3.forward * 0.01f, new Vector3(0.22f, 0.045f, 0.03f), brass);
+            Piece(root, PrimitiveType.Cube, "Стойка", new Vector3(c.x, (axis.y + c.y - 0.5f) * 0.5f, c.z - 0.01f),
+                  new Vector3(0.05f, axis.y - (c.y - 0.5f), 0.02f), brass);
+            Piece(root, PrimitiveType.Cube, "Основание", c - Vector3.up * 0.52f - Vector3.forward * 0.01f, new Vector3(0.40f, 0.05f, 0.03f), brass);
+            Piece(root, PrimitiveType.Cube, "Ступень", c - Vector3.up * 0.475f - Vector3.forward * 0.01f, new Vector3(0.22f, 0.045f, 0.03f), brass);
 
             // Шкала над осью: золото — за приказ, белое — вровень, красное — против.
             Arc(root, "Шкала за", axis - Vector3.forward * 0.01f, 0.40f, 0.44f, -26f, -3.5f, Glowing(ForOrderTone, 0.9f), 16);
@@ -1689,9 +1694,11 @@ namespace Sinbinder.Gameplay
             Piece(beam, PrimitiveType.Cube, "Брус", b, new Vector3(BeamHalf * 2f, 0.035f, 0.02f), brass);
             // Язычок светится тускло: при 1,1 он с осью давал белую звезду сияния (прогон w0711zd).
             var tongue = Glowing(new Color(0.90f, 0.84f, 0.68f), 0.8f);
-            Piece(beam, PrimitiveType.Cube, "Язычок", b + Vector3.up * 0.19f, new Vector3(0.022f, 0.34f, 0.012f), tongue);
-            Piece(beam, PrimitiveType.Cube, "Остриё язычка", b + Vector3.up * 0.37f, new Vector3(0.03f, 0.03f, 0.012f), tongue)
+            Piece(beam, PrimitiveType.Cube, "Язычок", b + Vector3.up * 0.115f, new Vector3(0.022f, 0.19f, 0.012f), tongue);
+            Piece(beam, PrimitiveType.Cube, "Язычок — конец", b + Vector3.up * 0.375f, new Vector3(0.016f, 0.05f, 0.012f), tongue);
+            Piece(beam, PrimitiveType.Cube, "Остриё язычка", b + Vector3.up * 0.40f, new Vector3(0.026f, 0.026f, 0.012f), tongue)
                 .transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            SoulBead(host, beam, b + Vector3.up * 0.29f, brass);
             var hub = Piece(beam, PrimitiveType.Cylinder, "Ось", b - Vector3.forward * 0.01f, new Vector3(0.085f, 0.012f, 0.085f), brass);
             hub.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
@@ -1734,6 +1741,73 @@ namespace Sinbinder.Gameplay
             light.color = new Color(0.85f, 0.80f, 0.92f);
             light.shadows = LightShadows.None;
             return beam;
+        }
+
+        /// <summary>
+        /// Стеклянная бусина в язычке весов, в ней — маленькая душа (автор, 07.11: «было бы
+        /// прикольно, если у весов в стрелке был стеклянный кружочек с маленькой душой»).
+        /// Латунная оправа, стекло с бликом, внутри огонёк с ореолом — дышит и чуть ходит
+        /// (<see cref="Breathe"/>). Качается вместе с коромыслом: душа — то, что взвешивают.
+        /// </summary>
+        private static void SoulBead(SoulCourt host, Transform beam, Vector3 at, Material brass)
+        {
+            const float r = 0.066f;
+            Arc(beam, "Оправа бусины", at - Vector3.forward * 0.07f, r, r + 0.014f, 0f, 360f, brass, 40);
+
+            var soul = new GameObject("Душа в бусине").transform;
+            soul.SetParent(beam, false);
+            soul.position = at;
+            var core = Piece(soul, PrimitiveType.Sphere, "Огонёк", at, Vector3.one * 0.03f, Glowing(SoulTone, 1.5f));
+            Piece(soul, PrimitiveType.Sphere, "Язычок огонька", at + Vector3.up * 0.018f, new Vector3(0.016f, 0.026f, 0.016f),
+                  Glowing(SoulTone, 1.3f));
+
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader != null)
+            {
+                // Ореол — мягкое пятно, сложением: огонёк светится сквозь стекло.
+                var halo = new Material(shader) { name = "Ореол души" };
+                var tex = Soft(32, false);
+                halo.SetTexture("_BaseMap", tex);
+                halo.mainTexture = tex;
+                halo.SetFloat("_Surface", 1f);
+                halo.SetFloat("_Blend", 2f);
+                halo.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                halo.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+                halo.SetFloat("_ZWrite", 0f);
+                halo.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                halo.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 2;
+                halo.SetColor("_BaseColor", new Color(SoulTone.r, SoulTone.g, SoulTone.b, 0.85f));
+                Piece(soul, PrimitiveType.Quad, "Ореол", at - Vector3.forward * 0.035f, Vector3.one * 0.12f, halo);
+
+                // Стекло: бледное, почти прозрачное, обычным смешиванием поверх огонька.
+                var glass = new Material(shader) { name = "Стекло бусины" };
+                glass.SetFloat("_Surface", 1f);
+                glass.SetFloat("_Blend", 0f);
+                glass.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                glass.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                glass.SetFloat("_ZWrite", 0f);
+                glass.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                glass.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 1;
+                glass.SetColor("_BaseColor", new Color(0.62f, 0.74f, 0.86f, 0.20f));
+                Piece(beam, PrimitiveType.Sphere, "Стекло", at, Vector3.one * (r * 2f), glass);
+            }
+            // Блик — белая точка вверху слева: так стекло читается стеклом.
+            Piece(beam, PrimitiveType.Sphere, "Блик", at + new Vector3(-0.026f, 0.028f, -0.06f), new Vector3(0.016f, 0.016f, 0.004f),
+                  Glowing(Color.white, 1.1f));
+            Piece(beam, PrimitiveType.Sphere, "Блик малый", at + new Vector3(-0.034f, 0.012f, -0.06f), new Vector3(0.007f, 0.007f, 0.003f),
+                  Glowing(Color.white, 0.9f));
+
+            host._soul = soul;
+            host._soulCore = core.transform;
+            host._soulAt = soul.localPosition;
+        }
+
+        /// <summary>Душа в бусине дышит: огонёк пульсирует, сама чуть ходит вверх-вниз и вбок.</summary>
+        private void Breathe(float now)
+        {
+            if (_soul == null) return;
+            _soul.localPosition = _soulAt + new Vector3(0.006f * Mathf.Sin(now * 1.3f), 0.009f * Mathf.Sin(now * 2.1f), 0f);
+            if (_soulCore != null) _soulCore.localScale = Vector3.one * (0.03f * (1f + 0.14f * Mathf.Sin(now * 3.7f)));
         }
 
         /// <summary>

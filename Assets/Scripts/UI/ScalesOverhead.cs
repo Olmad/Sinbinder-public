@@ -35,7 +35,7 @@ namespace Sinbinder.UI
             public float Touched, NextLook;
             public RectTransform Root;
             public RectTransform Beam, PanFor, PanAgainst;
-            public Image BowlFor, BowlAgainst;
+            public Image BowlFor, BowlAgainst, Soul;
             public Vector2 BeamAt;
             public CanvasGroup Group;
             public float Born, Angle, Swing, Aim;
@@ -189,7 +189,13 @@ namespace Sinbinder.UI
             var beamAt = centre + new Vector2(0f, Size * 0.14f);
             // Плечо 0,31 круга, чаша 0,26: при 0,37 и 0,34 чаши ложились на обод (прогон w0711zd).
             var beam = Img("Коромысло", root, beamAt, new Vector2(Size * 0.64f, 3.5f), Brass, null);
-            Img("Язычок", beam, new Vector2(0f, 1.75f + Size * 0.11f), new Vector2(2.5f, Size * 0.22f), new Color(0.97f, 0.93f, 0.80f), null);
+            Img("Язычок", beam, new Vector2(0f, 1.75f + Size * 0.065f), new Vector2(2.5f, Size * 0.13f), new Color(0.97f, 0.93f, 0.80f), null);
+            // Стеклянная бусина с душой в язычке — как в зале (автор, 07.11).
+            var beadAt = new Vector2(0f, 1.75f + Size * 0.18f);
+            Img("Оправа бусины", beam, beadAt, new Vector2(13f, 13f), Brass, Disc());
+            Img("Стекло", beam, beadAt, new Vector2(10f, 10f), new Color(0.20f, 0.26f, 0.34f, 1f), Disc());
+            var soul = Img("Душа", beam, beadAt, new Vector2(5f, 5f), new Color(0.74f, 0.88f, 1f), Disc()).GetComponent<Image>();
+            Img("Блик", beam, beadAt + new Vector2(-2.2f, 2.2f), new Vector2(2f, 2f), Color.white, Disc());
             Img("Ось", root, beamAt, new Vector2(7f, 7f), new Color(0.97f, 0.93f, 0.80f), Disc());
             var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
             var panAgainst = Pan("Чаша против", root, SoulCourt.AgainstTone, out var bowlAgainst);
@@ -211,7 +217,7 @@ namespace Sinbinder.UI
             var mark = new Mark
             {
                 Who = w, Body = w.GetComponentInChildren<Collider>(), Root = root, Group = group,
-                Beam = beam, BeamAt = beamAt, PanFor = panFor, PanAgainst = panAgainst, BowlFor = bowlFor, BowlAgainst = bowlAgainst,
+                Beam = beam, BeamAt = beamAt, PanFor = panFor, PanAgainst = panAgainst, BowlFor = bowlFor, BowlAgainst = bowlAgainst, Soul = soul,
                 Label = text, Preview = preview, Born = Time.unscaledTime, Touched = Time.unscaledTime, Aim = lean,
             };
             _marks.Add(mark);
@@ -340,6 +346,10 @@ namespace Sinbinder.UI
             m.BowlAgainst.color = Color.Lerp(SoulCourt.AgainstTone * 0.7f, Color.Lerp(SoulCourt.AgainstTone, Color.white, 0.25f), Mathf.Max(0f, -t));
             var c = m.BowlFor.color; c.a = 1f; m.BowlFor.color = c;
             c = m.BowlAgainst.color; c.a = 1f; m.BowlAgainst.color = c;
+            // Душа в бусине дышит.
+            float breath = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 3.7f);
+            m.Soul.color = new Color(0.74f * breath + 0.26f, 0.88f * breath + 0.12f, 1f, 1f);
+            m.Soul.rectTransform.localScale = Vector3.one * (0.9f + 0.2f * breath);
         }
 
         /// <summary>Чаша на шнуре: точка подвеса — верх (pivot), под ней шнур, край и чаша.</summary>
