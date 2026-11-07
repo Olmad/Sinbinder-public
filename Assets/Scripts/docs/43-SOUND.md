@@ -1169,13 +1169,13 @@ Begins» — тот же мотив автора (валторна ре–ми�
    мягкий стук деревяшки, «печать». Ре-дорийский, темп 88, 32 такта, петля 87 с. Самый низ —
    ре, 73 Гц. Скачок громкости за круг — +7 дБ на 0:44 (печать и полный состав второй половины).
    Автор: «теперь звучит не как суд, а как прогулка по зелёному лугу, нюхая цветочки» —
-   светлый лад, фагот с кларнетом и шагающий бас дали пастораль. В игре снова третья.
-5. На пробу — заседание, `court_session.py`: третья (минор, подложка, маятник) и в ней идёт
+   светлый лад, фагот с кларнетом и шагающий бас дали пастораль.
+5. Сейчас (07.11, автор: «ставь») — заседание, `court_session.py`: третья (минор, подложка, маятник) и в ней идёт
    дело — писарь (рояль, тихие отрывистые восьмые, сверху всё время ре) и виолончель,
    читающая протокол на одной ноте с поворотом «отложено» / «решено». Ре-минор, темп 66,
    24 такта, петля 86,4 с. Без деревянных духовых и клавесина.
 
-Громкость (третья): запись −16,4 дБ(A), `Music.LevelOf` 0,12 (четвёртая была −14,9 и 0,10); зал всё время в рамке кино, тема
+Громкость: запись −17,2 дБ(A), `Music.LevelOf` 0,13 (третья −16,4 и 0,12, четвёртая −14,9 и 0,10); зал всё время в рамке кино, тема
 приседает до 0,45 — под словами −42 дБ(A), на 6 дБ тише лагеря (−36,2): струнные лежат
 в полосе речи (150 Гц – 2 кГц — 85 % энергии). `SoulCourt.Convene` включает её на подъёме
 в зал и на выходе возвращает прежнюю тему (во сне — тишину).
@@ -1190,7 +1190,7 @@ python3 rats.py loot l.mid    && sh render.sh l.mid l.wav && python3 master.py l
 python3 battles.py scatter r.mid --loop && sh render.sh r.mid r.wav && python3 master.py r.wav Scatter.ogg --cut 63.36:126.72
 python3 battles.py hunted h.mid --loop  && sh render.sh h.mid h.wav && python3 master.py h.wav Hunted.ogg --cut 85.76:171.52
 python3 rats.py weep w.mid --loop       && sh render.sh w.mid w.wav && python3 master.py w.wav Lament.ogg --cut 129.92:259.84
-python3 court.py c.mid --loop          && sh render.sh c.mid c.wav && python3 master.py c.wav Court.ogg --cut 96:192
+python3 court_session.py c.mid --loop  && sh render.sh c.mid c.wav && python3 master.py c.wav Court.ogg --cut 86.4:172.8
 python3 stingers.py spark s.mid  && sh render.sh s.mid s.wav && python3 master.py s.wav Spark.ogg --trim
 python3 stingers.py fallen f.mid && sh render.sh f.mid f.wav && python3 master.py f.wav Fallen.ogg --trim
 ```
