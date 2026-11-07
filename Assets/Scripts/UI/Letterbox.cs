@@ -375,6 +375,18 @@ namespace Sinbinder.UI
             _typing = null;
         }
 
+        /// <summary>
+        /// Сколько строка будет печататься — тем же счётом, что <see cref="Type"/>.
+        /// Миг, который сам решает, когда кончиться (RearguardMoment), держится по нему.
+        /// </summary>
+        public float TypeSeconds(string line)
+        {
+            if (string.IsNullOrEmpty(line) || line.IndexOf('<') >= 0) return 0f;
+            float seconds = 0f;
+            foreach (char c in line) seconds += 1f / Mathf.Max(1f, _lettersPerSecond) + Breath(c);
+            return seconds;
+        }
+
         /// <summary>Запинка после знака: точка — вдох, запятая — полвдоха.</summary>
         private static float Breath(char c)
         {

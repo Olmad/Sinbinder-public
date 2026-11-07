@@ -334,6 +334,9 @@ namespace Sinbinder.EditorTools
                     Snap("за картами");
                     CardTable.Instance?.StandUp();
                 }
+
+                // Вызов Каргана: миг держит кадр, и шаг его не видит — снимаем здесь.
+                ChallengeFrames();
                 if (now - _framedSince < 30f)
                 {
                     if (_entered) { _startedAt += tick; _framedInStep = true; }
@@ -2156,6 +2159,7 @@ namespace Sinbinder.EditorTools
 
         private static Transform _seenTarget;
         private static float _seenSince;
+        private static readonly HashSet<string> _shutShot = new();
 
         private static void Guards()
         {
@@ -2478,6 +2482,16 @@ namespace Sinbinder.EditorTools
             float now = Time.realtimeSinceStartup;
             if (who != _seenTarget) { _seenTarget = who; _seenSince = now; return; }
             if (now - _seenSince < 1f) return;
+
+            // Стена, скат палатки или чужое тело вблизи на трети кадра и больше (w0711e: разговор
+            // со Жданом — полкадра ската, перед ним Карган). Та же мерка, что выбирает план.
+            float shut = talk.ShutNow();
+            string whose = who.TryGetComponent<Warrior>(out var speaker) ? speaker.DisplayName : who.name;
+            if (shut > 0.34f && _shutShot.Add(whose))
+            {
+                Guard("ЗАКРЫТ", whose, $"{whose}: кадр разговора закрыт вблизи на {shut:P0} — стена, палатка или чужое тело");
+                Snap("ЗАКРЫТ кадр — " + whose);
+            }
 
             HiddenSpeaker(who, cam, talk.Partner != null, talk.Partner);
             if (talk.Partner != null) HiddenSpeaker(talk.Partner, cam, true, who);
@@ -4320,8 +4334,6 @@ namespace Sinbinder.EditorTools
         private static float _challengeAt = -1f;
         private static float _challengeWait = -1f;
         private static int _challengeShots;
-        private static float _challengeShotAt;
-        private static int _challengeShotFrame;
 
         /// <summary>
         /// Миг арьергарда на Каргане и два кадра: удары в щит (общий план со
@@ -4359,20 +4371,43 @@ namespace Sinbinder.EditorTools
                 return false;
             }
 
-            // Кадры — по тому, что на экране, а не по секундам: редактор подвисал,
-            // и оба кадра выходили в одном такте, до первой строки (w0511d).
+            ChallengeFrames();
             float t = Time.realtimeSinceStartup - _challengeAt;
-            var box = UI.Letterbox.Instance;
-            bool said = box != null && box.Shown && box.Typed;
-            if (_challengeShots == 0 && (said || t > 4f))
-            { Snap("вызов — удары в щит"); _challengeShots++; _challengeShotAt = Time.realtimeSinceStartup; _challengeShotFrame = Time.frameCount; }
-            if (_challengeShots == 1 && Time.realtimeSinceStartup - _challengeShotAt > 1.2f
-                && Time.frameCount > _challengeShotFrame + 20)
-            { Snap("вызов — крупный план"); _challengeShots++; }
             if (_challengeShots < 2 || (moment != null && t < 6f)) return false;
             Write($"  [ВЫЗОВ] миг шёл {t:0.0} с; время после него {Time.timeScale:0.##}");
             _challengeAt = -1f;
             return true;
+        }
+
+        /// <summary>
+        /// Два кадра вызова — по часам самого мига (RearguardMoment.Clock), а не по секундам
+        /// прогона. Зовётся и из шага, и из ветки «камера в кадре»: пока миг держит камеру,
+        /// шаги стоят, и до 07.11 оба кадра выходили после мига, общим планом сверху (w0611).
+        /// Удары в щит — после третьего (1,02 с), крупный план — когда камера доехала
+        /// (наезд с 1,65 с, переезд 0,2 с).
+        /// </summary>
+        private static void ChallengeFrames()
+        {
+            if (_challengeAt < 0f || _challengeShots >= 2) return;
+            float t = Time.realtimeSinceStartup - _challengeAt;
+            float clock = RearguardMoment.Clock;
+            bool going = UnityEngine.Object.FindFirstObjectByType<RearguardMoment>() != null;
+            if (_challengeShots == 0 && (clock >= 1.1f || (!going && t > 1f)))
+            { ChallengeState(t); Snap("вызов — удары в щит"); _challengeShots++; return; }
+            if (_challengeShots == 1 && (clock >= 2.4f || !going))
+            { ChallengeState(t); Snap("вызов — крупный план"); _challengeShots++; }
+        }
+
+        /// <summary>Что было в кадре, когда снимали вызов: оба кадра w0611 вышли общим планом сверху.</summary>
+        private static void ChallengeState(float t)
+        {
+            var talk = Dialogue.DialogueCameraController.Instance;
+            var box = UI.Letterbox.Instance;
+            var cam = Camera.main;
+            float clock = RearguardMoment.Clock;
+            Write($"  [ВЫЗОВ] кадр на {t:0.0} с: " + (clock >= 0f ? $"вызов идёт {clock:0.0} с" : "МИГ КОНЧИЛСЯ")
+                + $", строка {(box != null && box.Shown && box.Typed ? "допечатана" : "печатается")}, в кадре {(talk != null && talk.InDialogue)}, "
+                + $"камера {(cam != null ? cam.transform.position.ToString("F1") : "нет")}");
         }
 
         /// <summary>Ближайший живой охотник — куда смотреть, когда набег начался.</summary>

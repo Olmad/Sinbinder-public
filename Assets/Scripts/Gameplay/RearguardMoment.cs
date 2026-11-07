@@ -6,9 +6,10 @@ using UnityEngine;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
-    /// Миг арьергарда: телохранитель отказался уходить — камера на нём на три
-    /// с половиной секунды, полосы кино, мир замедлен, а он — нет: три удара
-    /// мечом в щит, руки в стороны, «ну, кто первый?».
+    /// Миг арьергарда: телохранитель отказался уходить — камера на нём три
+    /// с половиной секунды (и не меньше, чем нужно, чтобы прочесть его строку),
+    /// полосы кино, мир замедлен, а он — нет: три удара мечом в щит, руки
+    /// в стороны, «ну, кто первый?».
     ///
     /// Автор, 26 октября: «да — на всё» — миг, а не ролик (кодекс §4; 28-ORDERS,
     /// «Арьергард Каргана — мигом»), и «нужна какая-нибудь анимация, которая
@@ -28,8 +29,17 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public class RearguardMoment : MonoBehaviour
     {
-        /// <summary>Сколько длится миг, секунд реального времени.</summary>
+        /// <summary>Сколько длится миг, секунд реального времени, — не меньше.</summary>
         private const float Seconds = 3.5f;
+
+        /// <summary>Сколько строка стоит допечатанной, пока миг не кончился, секунд.</summary>
+        private const float ReadAfter = 1.2f;
+
+        /// <summary>
+        /// Сколько идёт вызов (от первого жеста), секунд; −1 — мига нет. По этим часам
+        /// прогон снимает кадры: по секундам прогона оба кадра выходили после мига (w0611).
+        /// </summary>
+        public static float Clock { get; private set; } = -1f;
 
         /// <summary>
         /// Насколько медленнее мир. Не <c>RefusalPresenter</c>-овские 0,3: тот
@@ -107,6 +117,10 @@ namespace Sinbinder.Gameplay
             // Жест начинается в готовом кадре: первый удар больше не уходит в переезд.
             yield return camera.FocusOn(target, distanceMultiplier: 1.25f);
             if (target == null) { Destroy(gameObject); yield break; }
+            var eye = Camera.main;
+            Debug.Log($"[ПОБЕГ] кадр вызова за {Time.realtimeSinceStartup - began:F1} с: в кадре {camera.InDialogue && camera.Target == target}, "
+                + $"камера {(eye != null ? eye.transform.position.ToString("F1") : "нет")}, до него "
+                + $"{(eye != null ? Vector3.Distance(eye.transform.position, target.position).ToString("F1") : "?")} м");
             float scale = Dialogue.DialogueCameraController.Scale(target, out _);
             _fill = new GameObject("Свет вызова").AddComponent<Light>();
             _fill.transform.SetParent(transform, false);
@@ -120,19 +134,32 @@ namespace Sinbinder.Gameplay
             if (who == null || who.IsDead) { Destroy(gameObject); yield break; }
             var body = who.GetComponent<WarriorAnimation>();
             if (body != null) body.Challenge();
-            UI.Letterbox.Instance?.Say(name, words);
-            if (who.TryGetComponent<Audio.VoiceGenerator>(out var voice))
-                voice.Babble(words, Mathf.Min(Seconds - 0.8f, words.Length / 40f * 1.2f + 0.3f));
+            var box = UI.Letterbox.Instance;
+            box?.Say(name, words);
 
-            // Железо в такт клипу и ворон — по реальному времени, как вызов.
+            // Строку надо успеть прочесть: миг держится, пока она допечатается, и ещё
+            // ReadAfter сверху. До 07.11 он кончался через 3,5 с от начала, а 57 букв
+            // вызова печатаются 2 с — на чтение оставалось меньше секунды.
+            float span = Mathf.Max(Seconds - (Time.realtimeSinceStartup - began),
+                                   (box != null ? box.TypeSeconds(words) : 0f) + ReadAfter);
+            if (who.TryGetComponent<Audio.VoiceGenerator>(out var voice))
+                voice.Babble(words, Mathf.Min(span - 0.8f, words.Length / 40f * 1.2f + 0.3f));
+
+            // Железо в такт клипу и ворон — по реальному времени, как вызов. Часы мига —
+            // по кадрам, шаг не длиннее десятой доли: подвисание (загрузка, снимок)
+            // не съедает сцену целиком, она досматривается с того места, где встала.
             float t = 0f;
             int strike = 0;
             bool raven = false;
             bool close = false;
             Coroutine focus = null;
-            while (Time.realtimeSinceStartup - began < Seconds)
+            string why = "досмотрен";
+            while (t < span)
             {
-                if (target == null || who.IsDead || !camera.InDialogue || camera.Target != target) break;
+                Clock = t;
+                if (target == null || who.IsDead) { why = "пал"; break; }
+                if (!camera.InDialogue || camera.Target != target)
+                { why = camera.InDialogue ? "камеру взял другой" : "камеру отпустили"; break; }
                 while (strike < Strikes.Length && t >= Strikes[strike])
                     Audio.Sfx.ShieldStrike(target.position + Vector3.up * 1.1f, strike++);
                 if (!raven && t >= RavenAt)
@@ -146,13 +173,14 @@ namespace Sinbinder.Gameplay
                     focus = StartCoroutine(camera.FocusOn(target, distanceMultiplier: 0.85f));
                 }
                 PlaceLight(target, scale);
-                _fill.intensity = 0.65f * Mathf.Clamp01(t / 0.25f)
-                    * Mathf.Clamp01((Seconds - (Time.realtimeSinceStartup - began)) / 0.3f);
-                t += Time.unscaledDeltaTime;
+                _fill.intensity = 0.65f * Mathf.Clamp01(t / 0.25f) * Mathf.Clamp01((span - t) / 0.3f);
+                t += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
                 yield return null;
             }
+            Clock = -1f;
 
             if (focus != null) StopCoroutine(focus);
+            Debug.Log($"[ПОБЕГ] миг кончился за {Time.realtimeSinceStartup - began:F1} с (вызов {t:F1} из {span:F1}): {why}");
             RestoreWorld();
 
             if (camera != null && camera.InDialogue && camera.Target == target)
@@ -187,6 +215,7 @@ namespace Sinbinder.Gameplay
 
         private void OnDestroy()
         {
+            Clock = -1f;
             RestoreWorld();
             if (_ownsFrame && _camera != null && _camera.isActiveAndEnabled
                 && _camera.InDialogue && _camera.Target == _target)

@@ -137,6 +137,12 @@ namespace Sinbinder.Dialogue
                 return;
             }
 
+            // Камера ещё едет домой (RestoreCamera): дом — там, куда она едет, а не там,
+            // где её застал новый наезд. Прогон 06.11: разговор с Маргой начат, пока камера
+            // уезжала от Ждана, — домом стало место у Ждана, у земли, в боку палатки,
+            // и после долга камера вернулась туда, а не наверх.
+            if (_homebound == _frameRevision) return;
+
             var cam = Cam();
 
             // Камеры может не быть вовсе: разговор начинается и от смерти
@@ -274,7 +280,7 @@ namespace Sinbinder.Dialogue
 
             Vector3 lookTarget = anchor + Vector3.up * (_lookHeight * _scale);
             if (!TrySpeakerFrame(anchor, face, side, lookTarget, _cameraDistance * _scale * _distanceMultiplier, 0f,
-                                 target, out Vector3 baseCamPos))
+                                 target, out Vector3 baseCamPos, fresh: true))
             {
                 // В тесноте оставляем прежний обзор и реплику на полосе.
                 // Нельзя заменять отсутствие свободного ракурса камерой внутри стены.
@@ -334,7 +340,7 @@ namespace Sinbinder.Dialogue
             cam.fieldOfView = _dialogueFOV;
             UI.Letterbox.Instance?.Show();
 
-            if (!TryPairFrame(speaker, listener, menu, out var from, out var look))
+            if (!TryPairFrame(speaker, listener, menu, out var from, out var look, fresh: true))
             {
                 yield return FocusOn(speaker);
                 yield break;
@@ -411,25 +417,138 @@ namespace Sinbinder.Dialogue
             return Mathf.Max(Mathf.Max(leftEdge, rightEdge), y / vertical - depth);
         }
 
+        /// <summary>
+        /// Общий план двоих. <paramref name="fresh"/> — план выбирают заново (реплика), и тогда
+        /// кадр ещё и не должен быть закрыт вблизи (<see cref="Shut"/>); каждый кадр следования
+        /// (<see cref="FollowPair"/>) держит выбранную сторону и проверяет только камеру и лица.
+        /// </summary>
         private bool TryPairFrame(Transform speaker, Transform listener, bool menu,
-                                  out Vector3 from, out Vector3 look)
+                                  out Vector3 from, out Vector3 look, bool fresh = false)
         {
             var a = ConversationBody(speaker);
             var b = ConversationBody(listener);
             var cam = Cam();
             float bias = speaker == _pairFirst ? -12f : 12f;
-            foreach (float angle in FrameAngles)
-            {
-                var side = Quaternion.AngleAxis(bias + angle, Vector3.up) * _pairSide;
-                ComposePair(a, b, side, _dialogueFOV, cam.aspect, menu, out from, out look);
-                if (!ClearFrame(from, a.center + Vector3.up * (a.extents.y * 0.6f), speaker, listener)
-                    || !ClearFrame(from, b.center + Vector3.up * (b.extents.y * 0.6f), speaker, listener)) continue;
-                _pairSide = Quaternion.AngleAxis(angle, Vector3.up) * _pairSide;
-                return true;
-            }
+            float least = float.MaxValue;
+            // В тесноте (палатки, поленница, третий воин) камера поднимается над помехой
+            // и смотрит на двоих сверху вниз. Следование держит выбранную высоту и сторону.
+            _heldLift[0] = _pairLift;
+            var lifts = fresh ? Lifts : _heldLift;
+            var angles = fresh ? PairAngles : FrameAngles;
+            foreach (float lift in lifts)
+                foreach (float angle in angles)
+                {
+                    var side = Quaternion.AngleAxis(bias + angle, Vector3.up) * _pairSide;
+                    ComposePair(a, b, side, _dialogueFOV, cam.aspect, menu, out from, out look);
+                    from += Vector3.up * lift;
+                    if (!ClearFrame(from, a.center + Vector3.up * (a.extents.y * 0.6f), speaker, listener)
+                        || !ClearFrame(from, b.center + Vector3.up * (b.extents.y * 0.6f), speaker, listener)) continue;
+                    if (fresh)
+                    {
+                        // Говорящий смотрит на слушающего (FollowPair): камера позади этой
+                        // линии снимает его затылок — Марга говорила спиной (w0711h, w0711i).
+                        var toCamera = Flat(from - speaker.position);
+                        var facing = Flat(listener.position - speaker.position);
+                        if (Vector3.Dot(toCamera.normalized, facing.normalized) < -0.26f) continue;
+                        float shut = Shut(from, look, speaker, listener,
+                            Mathf.Min(Vector3.Distance(from, a.center), Vector3.Distance(from, b.center)) - 0.5f);
+                        if (shut > OpenEnough) { least = Mathf.Min(least, shut); continue; }
+                        if (lift > 0f) Debug.Log($"[КАМЕРА] Общий план поднят на {lift:F1} м над помехой.");
+                    }
+                    _pairSide = Quaternion.AngleAxis(angle, Vector3.up) * _pairSide;
+                    _pairLift = lift;
+                    return true;
+                }
+            // Открытого общего плана нет: реплика уходит на крупный план говорящего
+            // (FocusConversation → FocusOn) — лицо лучше, чем стена или спина. Закрытый
+            // общий план брали до 07.11: полкадра ската у Ждана, Марга спиной у Марги (w0711g/h).
+            if (fresh && least <= 1f)
+                Debug.Log($"[КАМЕРА] Общий план: открытого нет (лучший закрыт на {least:P0}) — крупный план говорящего.");
             from = look = Vector3.zero;
             return false;
         }
+
+        /// <summary>
+        /// Стороны общего плана при выборе: не дальше ±60° от поперечной оси. Под 90°
+        /// камера встаёт за спиной одного из двоих — Марга говорила спиной (w0711h).
+        /// </summary>
+        private static readonly float[] PairAngles = { 0f, 30f, -30f, 60f, -60f };
+
+        /// <summary>Подъёмы общего плана над помехой, метров: сначала на уровне глаз.</summary>
+        private static readonly float[] Lifts = { 0f, 0.9f, 1.8f };
+
+        /// <summary>На сколько поднят выбранный общий план (держит <see cref="FollowPair"/>).</summary>
+        private float _pairLift;
+        private readonly float[] _heldLift = new float[1];
+
+        /// <summary>Какая доля кадра может быть закрыта вблизи, чтобы план годился.</summary>
+        private const float OpenEnough = 0.2f;
+
+        /// <summary>Доля кадра, закрытая вблизи, — сейчас, той же меркой (<see cref="Shut"/>). Сторожу прогона.</summary>
+        public float ShutNow()
+        {
+            var cam = Cam();
+            if (cam == null || !_inDialogue || Target == null) return 0f;
+            var from = cam.transform.position;
+            float reach = Vector3.Distance(from, ConversationBody(Target).center);
+            if (Partner != null) reach = Mathf.Min(reach, Vector3.Distance(from, ConversationBody(Partner).center));
+            return Shut(from, from + cam.transform.forward, Target, Partner, reach - 0.5f);
+        }
+
+        /// <summary>
+        /// Какая доля кадра закрыта ближе тех, кого снимаем: стена, скат палатки, чужое тело.
+        /// <see cref="ClearFrame"/> проверяет место камеры и лучи к лицам — а скат палатки
+        /// сбоку закрывал полкадра разговора со Жданом, и перед ним стоял Карган
+        /// (w0711e, «вещи — обмен вблизи»). Пятнадцать лучей по средней полосе кадра:
+        /// верх и низ закрыты полосами кино. <paramref name="reach"/> — до ближнего из двоих.
+        /// </summary>
+        private float Shut(Vector3 from, Vector3 look, Transform speaker, Transform listener, float reach)
+        {
+            var cam = Cam();
+            if (cam == null || reach < 0.3f) return 0f;
+            var rotation = Quaternion.LookRotation(look - from);
+            float tanV = Mathf.Tan(_dialogueFOV * Mathf.Deg2Rad * 0.5f);
+            float tanH = tanV * cam.aspect;
+            var own = speaker != null ? Gameplay.TentInterior.Around(speaker.position + Vector3.up * 0.1f) : null;
+            var theirs = listener != null ? Gameplay.TentInterior.Around(listener.position + Vector3.up * 0.1f) : null;
+            RefreshBodies();
+            int shut = 0;
+            for (int ix = 0; ix < 5; ix++)
+                for (int iy = 0; iy < 3; iy++)
+                {
+                    var dir = (rotation * new Vector3((-0.8f + 0.4f * ix) * tanH, (-0.5f + 0.5f * iy) * tanV, 1f)).normalized;
+                    if (Blocked(from, dir, reach, speaker, listener, own, theirs)) shut++;
+                }
+            return shut / 15f;
+        }
+
+        private bool Blocked(Vector3 from, Vector3 dir, float reach, Transform speaker, Transform listener,
+                             Gameplay.TentInterior own, Gameplay.TentInterior theirs)
+        {
+            int hits = Physics.RaycastNonAlloc(from, dir, _frameHits, reach,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hits; i++)
+            {
+                // Земля и пол — не помеха: луч нижнего ряда может её задеть.
+                if (_frameHits[i].normal.y > 0.7f) continue;
+                if (!IgnoreInFrame(_frameHits[i].collider, speaker, listener)) return true;
+            }
+            for (int i = 1; i <= 12; i++)
+            {
+                var tent = Gameplay.TentInterior.Around(from + dir * (reach * i / 12f));
+                if (tent != null && tent != own && tent != theirs) return true;
+            }
+            var ray = new Ray(from, dir);
+            foreach (var (root, body) in Bodies)
+            {
+                if (root == null || Mine(root, speaker) || Mine(root, listener)) continue;
+                if (body.Contains(from) || (body.IntersectRay(ray, out float d) && d < reach)) return true;
+            }
+            return false;
+        }
+
+        private static bool Mine(Transform root, Transform who)
+            => who != null && (root == who || root.IsChildOf(who) || who.IsChildOf(root));
 
         /// <summary>
         /// Навести камеру на вещь, а не на говорящего: кадр шара
@@ -648,6 +767,24 @@ namespace Sinbinder.Dialogue
         /// </summary>
         private static bool BodyInTheWay(Vector3 from, Vector3 to, Transform speaker, Transform listener)
         {
+            RefreshBodies();
+
+            Vector3 delta = to - from;
+            float length = delta.magnitude;
+            if (length < 0.5f) return false;
+            var ray = new Ray(from, delta / length);
+            foreach (var (root, body) in Bodies)
+            {
+                if (root == null || Mine(root, speaker) || Mine(root, listener)) continue;
+                if (body.Contains(from)) return true;
+                if (body.IntersectRay(ray, out float hit) && hit < length - 0.4f) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Тела воинов — раз в кадр на всех (см. <see cref="BodyInTheWay"/>).</summary>
+        private static void RefreshBodies()
+        {
             if (_bodiesFrame != Time.frameCount)
             {
                 _bodiesFrame = Time.frameCount;
@@ -665,21 +802,6 @@ namespace Sinbinder.Dialogue
                         Bodies.Add((w.transform, b));
                     }
             }
-
-            Vector3 delta = to - from;
-            float length = delta.magnitude;
-            if (length < 0.5f) return false;
-            var ray = new Ray(from, delta / length);
-            foreach (var (root, body) in Bodies)
-            {
-                if (root == null) continue;
-                if ((speaker != null && (root == speaker || root.IsChildOf(speaker) || speaker.IsChildOf(root)))
-                    || (listener != null && (root == listener || root.IsChildOf(listener) || listener.IsChildOf(root))))
-                    continue;
-                if (body.Contains(from)) return true;
-                if (body.IntersectRay(ray, out float hit) && hit < length - 0.4f) return true;
-            }
-            return false;
         }
 
         /// <summary>
@@ -707,12 +829,19 @@ namespace Sinbinder.Dialogue
         /// затем более близкий план. Порядок фиксирован; стены и палатки не прячем.
         /// </summary>
         private bool TrySpeakerFrame(Vector3 anchor, Vector3 face, Vector3 side, Vector3 look,
-                                     float distance, float sway, Transform speaker, out Vector3 position)
+                                     float distance, float sway, Transform speaker, out Vector3 position,
+                                     bool fresh = false)
         {
             var turn = Quaternion.AngleAxis(_frameYaw, Vector3.up);
             position = Frame(anchor, turn * face, turn * side, distance * _frameReach, sway);
-            if (ClearFrame(position, look, speaker)) return true;
+            if (ClearFrame(position, look, speaker)
+                && (!fresh || Shut(position, look, speaker, null, Vector3.Distance(position, look) - 0.5f) <= OpenEnough))
+                return true;
 
+            // При выборе плана (fresh) кадр ещё и не должен быть закрыт вблизи; открытого
+            // нет — берём наименее закрытый: без плана реплика осталась бы без лица.
+            float least = float.MaxValue, leastYaw = 0f, leastReach = 1f;
+            Vector3 leastAt = Vector3.zero;
             for (int near = 0; near < 3; near++)
             {
                 float reach = 1f - near * 0.2f;
@@ -721,11 +850,28 @@ namespace Sinbinder.Dialogue
                     turn = Quaternion.AngleAxis(angle, Vector3.up);
                     var candidate = Frame(anchor, turn * face, turn * side, distance * reach, sway);
                     if (!ClearFrame(candidate, look, speaker)) continue;
+                    if (fresh)
+                    {
+                        float shut = Shut(candidate, look, speaker, null, Vector3.Distance(candidate, look) - 0.5f);
+                        if (shut > OpenEnough)
+                        {
+                            if (shut < least) { least = shut; leastYaw = angle; leastReach = reach; leastAt = candidate; }
+                            continue;
+                        }
+                    }
                     _frameYaw = angle;
                     _frameReach = reach;
                     position = candidate;
                     return true;
                 }
+            }
+            if (least <= 1f)
+            {
+                Debug.Log($"[КАМЕРА] Крупный план: открытого нет, взят закрытый на {least:P0}.");
+                _frameYaw = leastYaw;
+                _frameReach = leastReach;
+                position = leastAt;
+                return true;
             }
             return false;
         }
@@ -806,9 +952,12 @@ namespace Sinbinder.Dialogue
             }
         }
 
+        /// <summary>Номер кадра, в котором камера едет домой; −1 — не едет (см. SaveCameraPosition).</summary>
+        private int _homebound = -1;
+
         public IEnumerator RestoreCamera()
         {
-            _frameRevision++;
+            _homebound = ++_frameRevision;
             _inDialogue = false;
             Target = null;
             Partner = null;
@@ -826,10 +975,11 @@ namespace Sinbinder.Dialogue
             UI.Letterbox.Instance?.Hide();
 
             // Возвращать некого: камера ушла вместе со сценой.
-            if (Cam() == null) yield break;
+            if (Cam() == null) { _homebound = -1; yield break; }
 
             Cam().fieldOfView = _originalFOV;
             yield return MoveCamera(_originalPosition, _originalRotation, avoidObstacles: true);
+            if (_homebound == _frameRevision) _homebound = -1;
         }
 
         private IEnumerator MoveCamera(Vector3 targetPos, Quaternion targetRot,

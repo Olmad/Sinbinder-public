@@ -114,6 +114,9 @@ namespace Sinbinder.UI
             // Открытие — кадр, а не сводка: «● Колеблется…» висело красным
             // посреди неба над лагерем, пока проявлялась надпись (кадры 19.10).
             if (Gameplay.OpeningReveal.Busy) return null;
+            // То же в кадре с полосами (разговор, миг, сцена): слово висело над головой
+            // Каргана посреди его вызова и над Хорем со знаменем (кадры w0711g).
+            if (Letterbox.Instance != null && Letterbox.Instance.Shown) return null;
             if (FogOfWar.Hides(w)) return null;
             if (!Transparency.Shows(Detail.Moments)) return null;
 
