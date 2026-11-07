@@ -216,7 +216,8 @@ namespace Sinbinder.Gameplay
                         view.Yaw = Mathf.MoveTowardsAngle(view.Yaw, lightYaw, 75f * Time.unscaledDeltaTime);
                 }
                 PlaceLight(light, off, t, 0f);
-                spill.color = new Color(1f, 0.98f, 0.94f, (0.07f + 0.02f * Mathf.Sin(t * 1.7f)) * Mathf.Clamp01((Mathf.Abs(off) - 40f) / 60f));
+                // Едва-едва: в линейном цвете 0,07 на экране — уже треть серого, края светились стеной (w0711zi).
+                spill.color = new Color(1f, 0.98f, 0.94f, (0.02f + 0.006f * Mathf.Sin(t * 1.7f)) * Mathf.Clamp01((Mathf.Abs(off) - 40f) / 60f));
                 float a = Mathf.Clamp01((t - TurnHintAfter) / 1.2f);
                 if (a > 0.95f) TurnHintShown = true;
                 hint.color = new Color(0.85f, 0.82f, 0.76f, a * Mathf.Clamp01((Mathf.Abs(off) - Facing) / 30f));
