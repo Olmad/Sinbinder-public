@@ -544,8 +544,11 @@ namespace Sinbinder.EditorTools
                 // (DemoSceneBuilder.Furnish).
                 // Сон (п. 22 отзыва 21.10): темнота и огонёк, к нему идут; проснулся
                 // у постели — F, поднялся. Автопилот сна — вместо клавиш W и F.
-                S("сон: огонёк на полпути", () => OpeningReveal.Autopilot = true,
-                  () => OpeningReveal.DreamProgress > 0.55f, 20f),
+                // Свет за спиной (автор, 07.11): подождал подсказку «обернитесь» — обернулся.
+                S("сон: свет сзади, подсказка обернуться", () => OpeningReveal.Autopilot = true,
+                  () => OpeningReveal.TurnHintShown, 15f),
+                S("сон: огонёк на полпути", null,
+                  () => OpeningReveal.DreamProgress > 0.55f, 25f),
                 S("сон: проснулся у постели, полог над головой", null,
                   () => OpeningReveal.Lying, 15f),
                 S("сон: поднялся", null,

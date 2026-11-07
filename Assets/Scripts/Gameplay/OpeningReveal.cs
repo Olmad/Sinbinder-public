@@ -63,9 +63,9 @@ namespace Sinbinder.Gameplay
         private static readonly string ArrivalThought = Loc.N("Я хотел уйти один. Но они увязались за мной.");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; }
+        private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; Turning = false; TurnHintShown = false; }
 
-        void OnDestroy() { Showing = false; Busy = false; Dreaming = false; Lying = false; }
+        void OnDestroy() { Showing = false; Busy = false; Dreaming = false; Lying = false; Turning = false; TurnHintShown = false; }
 
         IEnumerator Start()
         {
@@ -136,6 +136,12 @@ namespace Sinbinder.Gameplay
         /// <summary>Насколько дошёл до огонька, 0–1. Спрашивает прогон: кадр на полпути.</summary>
         public static float DreamProgress { get; private set; }
 
+        /// <summary>Свет за спиной: Греховод ещё не обернулся. Спрашивает прогон.</summary>
+        public static bool Turning { get; private set; }
+
+        /// <summary>Подсказка «обернитесь» проявилась. Спрашивает прогон: кадр.</summary>
+        public static bool TurnHintShown { get; private set; }
+
         /// <summary>
         /// Прогон без клавиатуры: идёт к огоньку сам и поднимается сам —
         /// тем же путём, что и игрок, только вместо нажатий.
@@ -144,8 +150,12 @@ namespace Sinbinder.Gameplay
 
         private static readonly string DreamLine = Loc.N("Иди к свету — W");
         private static readonly string RiseLine = Loc.N("F — подняться");
+        private static readonly string TurnLine = Loc.N("Обернитесь — мышь или A/D");
 
         private const float DreamWalk = 4.5f;   // секунд с зажатой W до света
+        private const float TurnHintAfter = 4f;  // секунд в темноте до подсказки «обернитесь»
+        private const float LightSpan = 38f;     // градусов от середины экрана до его края
+        private const float Facing = 16f;        // свет «впереди», если отклонение меньше
 
         /// <summary>
         /// Сон. Автор, 21 октября, п. 22: «хочу в начале сон: темнота, белый
@@ -180,22 +190,61 @@ namespace Sinbinder.Gameplay
             if (view != null) { view.Lying = 1f; view.Face(door); view.Pitch = -58f; }
 
             var root = DreamCanvas(out var dark, out var light, out var hint, out var white);
+            var spill = Spill(root);
             Dreaming = true;
             DreamProgress = 0f;
 
-            for (float t = 0f; DreamProgress < 1f; t += Time.unscaledDeltaTime)
+            // Свет — за спиной (автор, 07.11: сон кончается воротами склепа, «переход в сцену
+            // с белым светом. Но он появляется сзади, и через некоторое время подсказка, как
+            // повернуться»). Свет стоит там, где выход из шатра: обернулся к нему — и проснётся
+            // лицом к пологу. Пока сзади — по краям тьмы чуть светлеет.
+            float lightYaw = view != null ? view.Yaw : 0f;
+            if (view != null) view.Yaw = lightYaw + 180f;
+            Turning = true;
+            TurnHintShown = false;
+            hint.text = Loc.T(TurnLine);
+            float since = 0f;
+            for (float t = 0f; Turning; t += Time.unscaledDeltaTime)
             {
-                bool forward = Autopilot || Input.GetAxisRaw("Vertical") > 0.2f || Input.GetKey(KeyCode.W);
-                if (forward) DreamProgress = Mathf.Min(1f, DreamProgress + Time.unscaledDeltaTime / DreamWalk);
-
-                // Огонёк дышит, растёт к концу пути и светлеет.
-                float breath = 1f + 0.06f * Mathf.Sin(t * 2.2f);
-                float k = DreamProgress * DreamProgress;
-                light.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(150f, 1700f, k) * breath;
-                light.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.75f, 1f, DreamProgress));
-                hint.color = new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 2.0f) / 1.2f) * (1f - DreamProgress * 2f));
+                float off = view != null ? Mathf.DeltaAngle(view.Yaw, lightYaw) : 0f;
+                if (view != null)
+                {
+                    float keys = Input.GetAxisRaw("Horizontal");
+                    if (Mathf.Abs(keys) > 0.2f) view.Yaw += keys * 110f * Time.unscaledDeltaTime;
+                    // Прогон: подождал подсказку — оборачивается сам.
+                    else if (Autopilot && TurnHintShown && t > TurnHintAfter + 1.6f)
+                        view.Yaw = Mathf.MoveTowardsAngle(view.Yaw, lightYaw, 75f * Time.unscaledDeltaTime);
+                }
+                PlaceLight(light, off, t, 0f);
+                spill.color = new Color(1f, 0.98f, 0.94f, (0.07f + 0.02f * Mathf.Sin(t * 1.7f)) * Mathf.Clamp01((Mathf.Abs(off) - 40f) / 60f));
+                float a = Mathf.Clamp01((t - TurnHintAfter) / 1.2f);
+                if (a > 0.95f) TurnHintShown = true;
+                hint.color = new Color(0.85f, 0.82f, 0.76f, a * Mathf.Clamp01((Mathf.Abs(off) - Facing) / 30f));
+                if (Mathf.Abs(off) < Facing) { since += Time.unscaledDeltaTime; if (since > 0.25f) Turning = false; }
+                else since = 0f;
                 yield return null;
             }
+            spill.color = Color.clear;
+            hint.text = Loc.T(DreamLine);
+
+            for (float t = 0f; DreamProgress < 1f; t += Time.unscaledDeltaTime)
+            {
+                float off = view != null ? Mathf.DeltaAngle(view.Yaw, lightYaw) : 0f;
+                if (view != null && Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.2f)
+                    view.Yaw += Input.GetAxisRaw("Horizontal") * 110f * Time.unscaledDeltaTime;
+                if (Autopilot && view != null) view.Yaw = Mathf.MoveTowardsAngle(view.Yaw, lightYaw, 75f * Time.unscaledDeltaTime);
+                bool forward = Autopilot || Input.GetAxisRaw("Vertical") > 0.2f || Input.GetKey(KeyCode.W);
+                // Идти к свету можно, только глядя на него: отвернулся — стоит.
+                if (forward && Mathf.Abs(off) < 30f)
+                    DreamProgress = Mathf.Min(1f, DreamProgress + Time.unscaledDeltaTime / DreamWalk);
+
+                // Огонёк дышит, растёт к концу пути и светлеет.
+                PlaceLight(light, off, t, DreamProgress);
+                hint.color = new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 0.8f) / 1.2f) * (1f - DreamProgress * 2f));
+                yield return null;
+            }
+            // Под белым — снова лицом к выходу, как лёг: просыпается, глядя в полог.
+            if (view != null) { view.Yaw = lightYaw; view.Pitch = -58f; }
 
             // Свет заливает всё.
             for (float t = 0f; t < 0.7f; t += Time.unscaledDeltaTime)
@@ -240,6 +289,50 @@ namespace Sinbinder.Gameplay
             if (view != null) { view.Lying = 0f; view.Pitch = 0f; }
             Lying = false;
             if (walk != null) walk.enabled = true;
+        }
+
+        /// <summary>Огонёк на экране: по горизонтали — куда он от взгляда; дышит, растёт с путём.</summary>
+        private static void PlaceLight(Image light, float off, float t, float progress)
+        {
+            float breath = 1f + 0.06f * Mathf.Sin(t * 2.2f);
+            float k = progress * progress;
+            var rt = light.rectTransform;
+            float half = UI.UiStyle.Reference.x * 0.5f;
+            rt.anchoredPosition = new Vector2(off / LightSpan * half, 0f);
+            rt.sizeDelta = Vector2.one * Mathf.Lerp(150f, 1700f, k) * breath;
+            light.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.75f, 1f, progress));
+        }
+
+        private static Texture2D _spillTex;
+
+        /// <summary>Отсвет за спиной: тьма чуть светлее по краям, середина — чёрная.</summary>
+        private static Image Spill(GameObject root)
+        {
+            if (_spillTex == null)
+            {
+                const int w = 64, h = 32;
+                _spillTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        float dx = Mathf.Abs((x + 0.5f) / w * 2f - 1f), dy = (y + 0.5f) / h;
+                        float side = Mathf.Pow(dx, 3f);
+                        float low = Mathf.Pow(1f - dy, 4f) * 0.5f;
+                        _spillTex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(side + low)));
+                    }
+                _spillTex.Apply();
+            }
+            var go = new GameObject("Отсвет сзади", typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(root.transform, false);
+            go.transform.SetSiblingIndex(1);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.GetComponent<Image>();
+            img.sprite = Sprite.Create(_spillTex, new Rect(0, 0, _spillTex.width, _spillTex.height), new Vector2(0.5f, 0.5f));
+            img.color = Color.clear;
+            img.raycastTarget = false;
+            return img;
         }
 
         private static Texture2D _glowTex;

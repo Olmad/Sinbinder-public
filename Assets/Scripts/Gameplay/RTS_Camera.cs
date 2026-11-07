@@ -256,6 +256,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Наклон взгляда от первого лица, градусы (минус — вверх).</summary>
         public float Pitch { get => _pitch; set => _pitch = Mathf.Clamp(value, -85f, 85f); }
 
+        /// <summary>Поворот взгляда от первого лица, градусы. Сон в шатре: свет сзади.</summary>
+        public float Yaw { get => _yaw; set => _yaw = value; }
+
         /// <summary>Задать взгляд из сборщика сцены.</summary>
         public void SetView(CameraView view)
         {
