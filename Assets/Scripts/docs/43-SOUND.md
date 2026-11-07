@@ -1186,12 +1186,17 @@ Begins» — тот же мотив автора (валторна ре–ми�
 включает её сама (`Music.ForScene`); суд меняет на свою и возвращает; двери склепа гасят
 её за 3 с — к силуэту Смерти тишина и скрип.
 
-Своя тема — «Дорога сна», `Tools/music/dream_road.py` (08.11, ждёт отрисовки): от четвёртого
+С 08.11 в игре своя тема (автор: «и сразу примени») — «Дорога сна», `Tools/music/dream_road.py`: от четвёртого
 суда взят шаг — бас пиццикато четвертями (идущий), в разрушенном форте вдвое реже; арфа —
 тихие ломаные аккорды; челеста — короткий мотив «урока» в начале круга; флейта — долгие
 ноты с паузами, во дворе форта мелодию берёт кларнет, к склепу он спускается под флейтой.
 Подложка держит фа — ля — ре над сменой баса: сон стоит, земля меняется. Ре-минор, во дворе
 один раз ре-мажор. Темп 76, 32 такта, петля 101,12 с. Самый низ — ре, 73 Гц.
+
+Первая отрисовка (в игре, `Dream.ogg`): запись −12,3 дБ(A), `Music.LevelOf` 0,07 — −35,4.
+По восьмёркам −22,0 / −10,8 / −12,1 / −10,8: флейта и кларнет на 11 дБ громче подкладки,
+вход флейты на 0:26 — скачок +9,5 дБ. Скрипт сведён заново (флейта 48 и сила 46, кларнет 44,
+в первой восьмёрке — его долгие тихие ноты): ждёт второй отрисовки, `обучение 2.mid`.
 
 ### Как пересобрать записи игры
 
@@ -1204,6 +1209,7 @@ python3 battles.py scatter r.mid --loop && sh render.sh r.mid r.wav && python3 m
 python3 battles.py hunted h.mid --loop  && sh render.sh h.mid h.wav && python3 master.py h.wav Hunted.ogg --cut 85.76:171.52
 python3 rats.py weep w.mid --loop       && sh render.sh w.mid w.wav && python3 master.py w.wav Lament.ogg --cut 129.92:259.84
 python3 court_session.py c.mid --loop  && sh render.sh c.mid c.wav && python3 master.py c.wav Court.ogg --cut 86.4:172.8
+python3 dream_road.py d.mid --loop     && sh render.sh d.mid d.wav && python3 master.py d.wav Dream.ogg --cut 101.12:202.24
 python3 stingers.py spark s.mid  && sh render.sh s.mid s.wav && python3 master.py s.wav Spark.ogg --trim
 python3 stingers.py fallen f.mid && sh render.sh f.mid f.wav && python3 master.py f.wav Fallen.ogg --trim
 ```
