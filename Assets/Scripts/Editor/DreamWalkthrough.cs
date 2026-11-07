@@ -141,7 +141,16 @@ namespace Sinbinder.EditorTools
             switch (stage)
             {
                 case "Approach":
-                    if (_step != "подход") { Go("подход"); Snap("сон — начало"); Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -3.2f)); }
+                    if (_step != "подход")
+                    {
+                        Go("подход");
+                        Snap("сон — начало");
+                        // Дорога целиком (docs/64-DREAM-ROAD.md): от начала до склепа.
+                        ShotFrom("сон — дорога к склепу", new Vector3(0f, 9f, -36f), new Vector3(0f, 1.5f, 18f));
+                        ShotFrom("сон — ворота форта", new Vector3(3f, 2.6f, 3.5f), new Vector3(0f, 3.2f, 15f));
+                        ShotFrom("сон — двор форта, чучело и камень с банками", new Vector3(0.4f, 3.4f, 14.6f), new Vector3(0f, 1.0f, 21f));
+                        Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -3.2f));
+                    }
                     break;
                 case "Harvest":
                     if (_step != "жатва") { Go("жатва"); Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -1.6f)); }
@@ -250,10 +259,36 @@ namespace Sinbinder.EditorTools
                     dream.TestSkipControls();
                     break;
                 case "Return":
-                    if (_step != "пробуждение") { Go("пробуждение"); Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f)); }
-                    if (poke) dream.TestPress(KeyCode.F);
+                    if (_step != "пробуждение")
+                    {
+                        Go("пробуждение");
+                        Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f));
+                        ShotFrom("сон — ворота склепа", new Vector3(2.5f, 2.2f, 21.5f), new Vector3(0f, 3.4f, 30f));
+                    }
+                    if (poke && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
+                    if (!_gateShot && DreamRoad.CryptFade > 0.15f) { _gateShot = true; Snap("сон — створки расходятся"); }
+                    if (!_deathShot && DreamRoad.CryptFade > 0.45f) { _deathShot = true; Snap("сон — силуэт в склепе"); }
+                    if (!_blackShot && DreamRoad.CryptFade >= 1f) { _blackShot = true; Snap("сон — экран погас"); }
                     break;
             }
+        }
+
+        private static bool _gateShot, _deathShot, _blackShot;
+
+        /// <summary>Кадр с отдельной точки: камера сна на миг встаёт туда и возвращается.</summary>
+        private static void ShotFrom(string name, Vector3 from, Vector3 look)
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            var rts = cam.GetComponent<RTS_Camera>();
+            bool was = rts != null && rts.enabled;
+            if (rts != null) rts.enabled = false;
+            var pos = cam.transform.position;
+            var rot = cam.transform.rotation;
+            cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(look - from));
+            Snap(name);
+            cam.transform.SetPositionAndRotation(pos, rot);
+            if (rts != null) rts.enabled = was;
         }
 
         /// <summary>Кадр на каждую реплику суда — когда она допечатана и камера доехала.</summary>

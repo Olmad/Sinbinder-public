@@ -71,10 +71,50 @@ namespace Sinbinder.Gameplay
         public void TestSkipControls()
         {
             if (_stage >= Stage.FirstPerson && _stage < Stage.Return)
-                Set(Stage.Return, "Вернись к воротам и нажми F, чтобы проснуться.");
+                Set(Stage.Return, GateLine);
         }
 
         private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
+
+        // Дорога сна (docs/64-DREAM-ROAD.md): уроки — остановками, в конце склеп.
+        private const string GateLine = "Дорога ведёт к склепу. Подойдите к воротам и нажмите F.";
+        private bool _atDummy, _atShrine, _atGate, _cryptRunning;
+        private int _swingsSeen;
+        private float _heldBackAt = -10f, _nudgeAt = -10f;
+
+        /// <summary>
+        /// Докуда пускает дорога на этом шаге: урок не сделан — дальше не пройти. Суд — до
+        /// убийц, бой — до чучела, банки — до камня, потом до ворот.
+        /// </summary>
+        private float AheadLimit()
+        {
+            switch (_stage)
+            {
+                case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
+                    return DreamRoad.DummyAt.z + 3f;
+                case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
+                case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
+                default: return 12.5f;
+            }
+        }
+
+        /// <summary>Ушёл дальше урока — вернуть к черте и подсветить строку урока.</summary>
+        private void HoldBack()
+        {
+            _nudgeAt = Time.unscaledTime;
+            if (Time.unscaledTime - _heldBackAt < 1f) return;
+            _heldBackAt = Time.unscaledTime;
+            var p = _hero.transform.position;
+            var mover = _hero.GetComponent<UnitMover>();
+            if (mover != null) mover.CommandMove(new Vector3(p.x, p.y, AheadLimit() - 1.2f));
+        }
+
+        /// <summary>Куда тянет рука, если Греховод упрямо идёт назад: вперёд по дороге, не дальше урока.</summary>
+        private Vector3 Ahead()
+        {
+            float z = _hero != null ? _hero.transform.position.z + 4f : _start.z + 4f;
+            return new Vector3(0f, 0f, Mathf.Min(z, AheadLimit() - 1.5f));
+        }
 
         private Stage _stage;
         private SinbinderPlayer _hero;
@@ -209,6 +249,11 @@ namespace Sinbinder.Gameplay
             var dream = Instance;
             if (dream == null || dream._stage == Stage.Finished) return true;
             if (dream._handBusy) return false;
+            if (dream._hero != null && futurePoint.z > dream.AheadLimit() && futurePoint.z > dream._hero.transform.position.z)
+            {
+                dream._nudgeAt = Time.unscaledTime;
+                return false;
+            }
             if (futurePoint.z >= dream._backBoundary &&
                 (dream._backAttempts < 3 || Mathf.Abs(futurePoint.x) <= dream._allowedCorridorHalfWidth)) return true;
             dream.BackAttempt();
@@ -234,6 +279,11 @@ namespace Sinbinder.Gameplay
             // без чего воин поступил бы иначе, и это должно быть посчитано.
             _counterfactualWas = AOS.Counterfactual.Enabled;
             AOS.Counterfactual.Enabled = true;
+
+            // Дорога — до выпечки навмеша (GroundNavMesh печёт в Start): обочины держат на ней.
+            DreamRoad.Build();
+            _allowed = DreamRoad.GateFront;
+            _backBoundary = DreamRoad.From + 0.5f;
         }
 
         private void OnEnable() { SelectionManager.OnPlayerOrder += TrackOrder; }
@@ -342,13 +392,13 @@ namespace Sinbinder.Gameplay
             if (_hand != null)
             {
                 _hand.enabled = true;
-                yield return _hand.DragTo(_allowed, 1.05f);
+                yield return _hand.DragTo(Ahead(), 1.05f);
                 _hand.enabled = false;
             }
             if (_hero != null)
             {
                 var mover = _hero.GetComponent<UnitMover>();
-                if (mover != null) mover.CommandMove(_allowed);
+                if (mover != null) mover.CommandMove(Ahead());
             }
             _handBusy = false;
         }
@@ -362,6 +412,7 @@ namespace Sinbinder.Gameplay
                 _nextPrompt = Time.unscaledTime + 25f;
             }
             Guide();
+            if (!_handBusy && _hero.transform.position.z > AheadLimit() + 0.4f) HoldBack();
             switch (_stage)
             {
                 case Stage.Approach:
@@ -507,7 +558,7 @@ namespace Sinbinder.Gameplay
                     if (_hero.GetComponentInChildren<Armament>(true) != null)
                         Set(Stage.DrawWeapon, "B — достань оружие. Только обнажённым оружием можно атаковать.");
                     else
-                        BeginPractice("Посох всегда в руке. Ударь ЛКМ и держи блок ПКМ.");
+                        BeginPractice("Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему.");
                     break;
                 }
                 case Stage.DrawWeapon:
@@ -516,30 +567,54 @@ namespace Sinbinder.Gameplay
                     if (cam == null || !cam.WarriorModeNow) break;
                     var arms = _hero.GetComponentInChildren<Armament>(true);
                     if (arms != null && !arms.Drawn) break;
-                    BeginPractice("Ударь ЛКМ и держи блок ПКМ. Урок примет только действия боевой системы.");
+                    BeginPractice("Впереди у дороги — чучело: подойдите к нему.");
                     break;
                 }
                 case Stage.Practice:
                 {
+                    // Урок принимает чучело у дороги: удар и блок — рядом с ним, оно качается.
+                    var combat = _hero.GetComponent<FirstPersonCombat>();
+                    if (combat == null) break;
+                    if (!DreamRoad.NearDummy(_hero.transform.position))
+                    {
+                        _atDummy = false;
+                        _swingsSeen = combat.AcceptedSwings;
+                        break;
+                    }
+                    if (!_atDummy)
+                    {
+                        _atDummy = true;
+                        _swingsBefore = _swingsSeen = combat.AcceptedSwings;
+                        _blockFramesBefore = combat.AcceptedBlockFrames;
+                        _line = "Ударьте чучело ЛКМ и подержите блок ПКМ.";
+                    }
+                    if (combat.AcceptedSwings > _swingsSeen)
+                    {
+                        _swingsSeen = combat.AcceptedSwings;
+                        DreamRoad.Instance?.Strike(_hero.transform.position);
+                    }
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam == null || !cam.WarriorModeNow) break;
-                    var combat = _hero.GetComponent<FirstPersonCombat>();
-                    if (combat != null && combat.AcceptedSwings > _swingsBefore
-                        && combat.AcceptedBlockFrames > _blockFramesBefore)
-                    {
-                        _selectedJarBefore = Satchel.Selected;
-                        Set(Stage.Jars, "J: выбери другую банку в суме. Банка остаётся после поднятия.");
-                    }
+                    if (combat.AcceptedSwings > _swingsBefore && combat.AcceptedBlockFrames > _blockFramesBefore)
+                        Set(Stage.Jars, "Дальше по дороге — камень с банками. Подойдите к нему.");
                     break;
                 }
                 case Stage.Jars:
+                    if (!DreamRoad.NearShrine(_hero.transform.position)) break;
+                    if (!_atShrine)
+                    {
+                        _atShrine = true;
+                        _selectedJarBefore = Satchel.Selected;
+                        _line = "J — выберите другую банку в суме. Банка остаётся после поднятия.";
+                    }
                     // Confirm that the real SatchelHands changed the selected jar, not merely a J key press.
                     if (Satchel.Jars < 2 || Satchel.Selected != _selectedJarBefore)
-                        Set(Stage.Return, "Вернись к воротам и нажми F, чтобы проснуться.");
+                        Set(Stage.Return, GateLine);
                     break;
                 case Stage.Return:
-                    if (GroundDistance(_hero.transform.position, _allowed) < 5f && Pressed(KeyCode.F))
-                        Finish();
+                    if (!DreamRoad.NearGate(_hero.transform.position)) break;
+                    if (!_atGate) { _atGate = true; _line = "Ворота склепа. F — открыть."; }
+                    if (Pressed(KeyCode.F)) StartCoroutine(Crypt());
                     break;
             }
         }
@@ -556,7 +631,7 @@ namespace Sinbinder.Gameplay
             if (combat == null)
             {
                 Debug.LogError("[СОН QA] У Греховода нет FirstPersonCombat (SinbinderPlayer.Spawn).");
-                Set(Stage.Return, "Личный бой не подключён. Вернись к воротам и нажми F.");
+                Set(Stage.Return, "Личный бой не подключён. " + GateLine);
                 return;
             }
             _swingsBefore = combat.AcceptedSwings;
@@ -656,7 +731,7 @@ namespace Sinbinder.Gameplay
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
                 Hold(_zombie, false);
-                Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. Вернись к воротам и нажми F.");
+                Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. " + GateLine);
             }
         }
 
@@ -762,6 +837,24 @@ namespace Sinbinder.Gameplay
                 body.Heal(body.MaxHP * 0.55f);
         }
 
+        /// <summary>
+        /// Ворота склепа (автор, 07.11): створки расходятся, экран гаснет раньше, чем можно
+        /// рассмотреть склеп, — только силуэт Бога Смерти. На чёрном — лагерь, свет за спиной.
+        /// </summary>
+        private IEnumerator Crypt()
+        {
+            if (_cryptRunning) yield break;
+            _cryptRunning = true;
+            _handBusy = true;
+            var agent = _hero.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null && agent.isOnNavMesh) agent.ResetPath();
+            var walk = _hero.GetComponent<PlayerWalk>();
+            if (walk != null) walk.enabled = false;
+            Debug.Log("[СОН] Ворота склепа открываются.");
+            if (DreamRoad.Instance != null) yield return DreamRoad.Instance.OpenCrypt(_hero.transform.position);
+            Finish();
+        }
+
         private void Finish()
         {
             if (!Application.CanStreamedLevelBeLoaded(_campScene))
@@ -791,8 +884,13 @@ namespace Sinbinder.Gameplay
             // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
             var style = GUI.skin.box;
+            // Упёрся в черту урока — строка урока вспыхивает: сначала это.
+            float nudge = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
+            var was = GUI.color;
+            GUI.color = Color.Lerp(Color.white, new Color(1f, 0.82f, 0.45f), nudge);
             GUI.Box(new Rect(16, Screen.height - 106, Mathf.Min(Screen.width - 32, 720), 80),
                 "Воспоминание\n" + _line, style);
+            GUI.color = was;
         }
     }
 }
