@@ -487,11 +487,25 @@ namespace Sinbinder.Gameplay
             {
                 if (other == w || other.IsDead || other.DisplayName == null || !other.DisplayName.Contains("Хорь")) continue;
                 var t = other.transform;
-                // Туда, где брат будет через секунду, а не где он был: решение — раз в секунду,
-                // и Гурт отставал на шаг брата (6,7 м в прогоне 27.10).
                 var agent = other.GetComponent<UnityEngine.AI.NavMeshAgent>();
-                var ahead = agent != null ? agent.velocity : Vector3.zero;
-                point = t.position + ahead - t.forward * 1.5f + t.right * 0.6f;
+                // «За спиной» — по ходу брата, а не по взгляду, и ход — по его пути, а не по
+                // скорости: упёршись, он почти стоит, а путь всё тот же. Стоял Хорь лицом
+                // к костру, Гурт за ним; Хорю идти назад — и тень стояла ровно на его пути
+                // (сторож «ЗАСТРЯЛ» у (-0,5; 5,9) почти в каждом -Camp с 29.10).
+                var go = Vector3.zero;
+                if (agent != null && agent.hasPath && agent.remainingDistance > 0.5f) go = agent.steeringTarget - t.position;
+                else if (agent != null) go = agent.velocity;
+                go.y = 0f;
+                var fore = new Vector3(t.forward.x, 0f, t.forward.z);
+                var dir = go.sqrMagnitude > 0.01f ? go.normalized : (fore.sqrMagnitude > 0.01f ? fore.normalized : Vector3.forward);
+                var aside = Vector3.Cross(Vector3.up, dir);
+                // Упреждение — полсекунды хода, но тень всегда позади брата, хотя бы на 0,9 м.
+                // Было: где брат будет через секунду, и полтора метра назад — на полном ходу
+                // это два метра ВПЕРЕДИ него; брат сбавлял ход — Гурт вставал у него на дороге
+                // и ждал, а брат ждал Гурта (замер 07.11: ход 1,87 из 3,5, Гурт в 1,1 м, стоит).
+                float speed = agent != null ? new Vector3(agent.velocity.x, 0f, agent.velocity.z).magnitude : 0f;
+                float along = Mathf.Min(speed * 0.5f - 1.5f, -0.9f);
+                point = t.position + dir * along + aside * 0.8f;
                 if (UnityEngine.AI.NavMesh.SamplePosition(point, out var hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
                     point = hit.position;
                 return true;

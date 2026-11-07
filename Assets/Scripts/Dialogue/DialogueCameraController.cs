@@ -812,14 +812,20 @@ namespace Sinbinder.Dialogue
         /// </summary>
         private static bool ThroughTent(Vector3 from, Vector3 to, Transform speaker, Transform listener)
         {
-            var own = speaker != null ? Gameplay.TentInterior.Around(speaker.position + Vector3.up * 0.1f) : null;
-            var theirs = listener != null ? Gameplay.TentInterior.Around(listener.position + Vector3.up * 0.1f) : null;
+            // Своя палатка — только у того, к чьему лицу отрезок. Отрезок к Греховоду, а палатку
+            // Марги прощали: она стоит в ней — значит, и ткань между камерой и Греховодом
+            // «своя». Сторож прогона прощает лишь палатку того, кто говорит (w0711l, 373 с).
+            var whose = speaker;
+            if (listener != null && (speaker == null
+                || Flat(listener.position - to).sqrMagnitude < Flat(speaker.position - to).sqrMagnitude))
+                whose = listener;
+            var own = whose != null ? Gameplay.TentInterior.Around(whose.position + Vector3.up * 0.1f) : null;
             for (int i = 0; i <= 24; i++)
             {
                 var p = Vector3.Lerp(from, to, i / 24f);
                 if (Vector3.Distance(p, to) < 0.4f) break;
                 var tent = Gameplay.TentInterior.Around(p);
-                if (tent != null && tent != own && tent != theirs) return true;
+                if (tent != null && tent != own) return true;
             }
             return false;
         }

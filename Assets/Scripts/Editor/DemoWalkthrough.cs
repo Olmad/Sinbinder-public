@@ -2393,8 +2393,38 @@ namespace Sinbinder.EditorTools
                     Guard("ЗАСТРЯЛ", w.DisplayName + "|" + Mathf.RoundToInt(at.x) + "," + Mathf.RoundToInt(at.z),
                         $"{w.DisplayName} идёт к цели в {agent.remainingDistance:0.0} м, а шесть секунд стоит у ({at.x:0.0}; {at.z:0.0}); "
                         + $"цель ({agent.destination.x:0.0}; {agent.destination.z:0.0}), путь {agent.pathStatus}, "
-                        + $"в лагере — «{CampLife.Now(w)}», приказ — {(w.HasCommand ? w.Command.Kind.ToString() : "нет")}");
+                        + $"в лагере — «{CampLife.Now(w)}», приказ — {(w.HasCommand ? w.Command.Kind.ToString() : "нет")}; "
+                        + StuckWhy(agent));
             }
+        }
+
+        /// <summary>
+        /// Почему стоит: Хорь у (-0,5; 5,8) застревает почти в каждом -Camp с 29.10 и ни разу
+        /// в -All, причину не нашли (carving Ждана не помог). Скорость, желаемая скорость
+        /// (есть, а хода нет — упёрся в соседа), ведёт ли агент тело, ближайший сосед и препятствие.
+        /// </summary>
+        private static string StuckWhy(NavMeshAgent agent)
+        {
+            var at = agent.transform.position;
+            string near = "нет";
+            float best = 3f;
+            foreach (var other in UnityEngine.Object.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None))
+            {
+                if (other == agent || !other.isActiveAndEnabled) continue;
+                float d = Vector3.Distance(other.transform.position, at);
+                if (d < best) { best = d; near = $"{other.name} в {d:0.0} м (стоит: {other.velocity.magnitude < 0.05f}, приоритет {other.avoidancePriority})"; }
+            }
+            string block = "нет";
+            foreach (var o in UnityEngine.Object.FindObjectsByType<NavMeshObstacle>(FindObjectsSortMode.None))
+            {
+                if (!o.isActiveAndEnabled) continue;
+                float d = Vector3.Distance(o.transform.position, at);
+                if (d < 3f) { block = $"{o.name} в {d:0.0} м (вырезает: {o.carving})"; break; }
+            }
+            var anim = agent.GetComponentInChildren<Animator>();
+            return $"скорость {agent.speed:0.0}, ход {agent.velocity.magnitude:0.00}, хочет {agent.desiredVelocity.magnitude:0.00}, "
+                 + $"ведёт тело {agent.updatePosition}, приоритет {agent.avoidancePriority}, сосед: {near}, препятствие: {block}, "
+                 + $"аниматор {(anim != null ? anim.speed.ToString("0.0") : "нет")}";
         }
 
         // ── Текст не влез: рамка обрезала надпись ──
@@ -2499,15 +2529,17 @@ namespace Sinbinder.EditorTools
 
         private static void HiddenSpeaker(Transform who, Camera cam, bool pair, Transform other)
         {
-            var face =new Vector3(who.position.x, Top(who) - 0.15f, who.position.z);
+            // Лицо — той же меркой, что у камеры (рост по Scale), а не по верху сеток: верх
+            // у Греховода — навершие посоха, на локоть выше головы (w0711l/m, 373 с — лицо
+            // в кадре открыто, а сторож вёл отрезок мимо него, через угол палатки).
+            float scale = Dialogue.DialogueCameraController.Scale(who, out float ground);
+            var face = new Vector3(who.position.x, ground + 1.56f * scale, who.position.z);
             var eye = cam.transform.position;
             string name = who.TryGetComponent<Warrior>(out var w) ? w.DisplayName : who.name;
 
             if (pair)
             {
-                float scale = Dialogue.DialogueCameraController.Scale(who, out float ground);
-                var head = new Vector3(who.position.x, ground + 1.56f * scale, who.position.z);
-                var p = cam.WorldToViewportPoint(head);
+                var p = cam.WorldToViewportPoint(face);
                 if (p.z <= 0f || p.x < 0.04f || p.x > 0.96f || p.y < 0.18f || p.y > 0.82f)
                     Guard("ОБЩИЙ ПЛАН", name, $"{name}: лицо вне общего кадра разговора ({p})");
             }
@@ -2523,8 +2555,14 @@ namespace Sinbinder.EditorTools
                 if (Vector3.Distance(p, face) < 0.4f) break;
                 var tent = TentInterior.Around(p);
                 if (tent == null || tent == own) continue;
+                // Чей кадр — общий, крупный или домашний: по одному лицу не понять (w0711l, 373 с).
+                var mate = other != null ? TentInterior.Around(other.position + Vector3.up * 0.1f) : null;
+                string key = "ЗАСЛОНЁН|" + name + "|" + tent.name;
+                if (!_guardSaid.Contains(key)) Snap("ЗАСЛОНЁН кадр — " + name);
                 Guard("ЗАСЛОНЁН", name + "|" + tent.name,
-                    $"{name} говорит, а между камерой и лицом — «{tent.name}» ({length:0.0} м)");
+                    $"{name} говорит, а между камерой и лицом — «{tent.name}» ({length:0.0} м, ткань в {Vector3.Distance(p, face):0.0} м от лица; "
+                    + $"лицо на {face.y - ground:0.00} м, верх сеток на {Top(who) - ground:0.00} м); камера {eye.x:0.0} {eye.y:0.0} {eye.z:0.0}, "
+                    + (pair ? $"общий план с {(other != null ? other.name : "?")}" + (mate != null ? $" (тот в «{mate.name}»)" : "") : "без пары"));
                 break;
             }
 
