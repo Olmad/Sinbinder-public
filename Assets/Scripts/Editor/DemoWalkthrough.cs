@@ -196,6 +196,20 @@ namespace Sinbinder.EditorTools
         private static void Write(string line)
             => File.AppendAllText(Report, "[" + Time.realtimeSinceStartup.ToString("F0") + "] " + line + NL);
 
+        private static string _lastLine;
+
+        /// <summary>
+        /// Реплика с полосы — в отчёт, под шагом, в котором сказана: сценарий демо целиком
+        /// для вычитки (58-ROADMAP, КТ1 п. 12 — «каждая к месту, говорящий знает, о чём говорит»).
+        /// </summary>
+        private static void Line(string who, string line, bool thought)
+        {
+            if (string.IsNullOrEmpty(line) || line == _lastLine) return;
+            _lastLine = line;
+            string text = System.Text.RegularExpressions.Regex.Replace(line, "<[^>]+>", "").Replace('\n', '/');
+            Write("    [РЕПЛИКА] " + (thought ? "(мысль) " : string.IsNullOrEmpty(who) ? "" : who + ": ") + text);
+        }
+
         private static void Tick()
         {
             if (!SessionState.GetBool(Active, false)) return;
@@ -203,6 +217,9 @@ namespace Sinbinder.EditorTools
 
             if (_steps == null)
             {
+                UI.Letterbox.Said -= Line;
+                UI.Letterbox.Said += Line;
+                _lastLine = null;
                 _steps = Build();
                 _index = 0;
                 _entered = false;
@@ -468,6 +485,7 @@ namespace Sinbinder.EditorTools
                     + ", страховок — " + _late + " ===");
 
             SessionState.SetBool(Active, false);
+            UI.Letterbox.Said -= Line;
             EditorApplication.update -= Tick;
             EditorApplication.isPlaying = false;
             EditorApplication.delayCall += () => EditorApplication.Exit(_failed == 0 && _errors == 0 ? 0 : 1);

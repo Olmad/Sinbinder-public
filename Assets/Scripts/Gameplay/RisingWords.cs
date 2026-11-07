@@ -161,7 +161,7 @@ namespace Sinbinder.Gameplay
                 case Trade.Hunter:    return Loc.T("Где мой лук?");
                 case Trade.Peasant:   return Loc.T("Земля. Хоть земля на месте.");
                 case Trade.Archer:    return Loc.T("Пальцы ищут тетиву. Нашли.");
-                case Trade.Alchemist: return Loc.T("Склянки... Они ведь разбились, да?");
+                case Trade.Alchemist: return Loc.T("Склянки… Они ведь разбились, да?");
                 case Trade.Mage:      return Loc.T("Слова ещё здесь. Значит, не всё потеряно.");
                 case Trade.Spider:    return Loc.T("Углы, тени. Я знаю, куда уходить.");
 
@@ -171,7 +171,7 @@ namespace Sinbinder.Gameplay
                 case Trade.OrderHunter: return Loc.T("Я охотился на таких, как вы. Теперь я такой же.");
                 case Trade.Tracker:     return Loc.T("Я шёл по вашему следу. Теперь иду за вами.");
                 case Trade.Inquisitor:  return Loc.T("Я судил таких, как вы. Кто теперь судит меня?");
-                case Trade.Catcher:     return Loc.T("Сеть... Я ловил вас. Поймали меня.");
+                case Trade.Catcher:     return Loc.T("Сеть… Я ловил вас. Поймали меня.");
                 default:              return "";
             }
         }

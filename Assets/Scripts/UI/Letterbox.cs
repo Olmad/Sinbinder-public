@@ -269,6 +269,14 @@ namespace Sinbinder.UI
 
 
         /// <summary>
+        /// Каждая строка полосы, как её сказали: прогон демо пишет их в отчёт —
+        /// сценарий целиком, по порядку и по шагам, для вычитки (58-ROADMAP, КТ1 п. 12).
+        /// </summary>
+        public static event System.Action<string, string, bool> Said;
+
+        private bool _thought;
+
+        /// <summary>
         /// Что написано на нижней полосе. Говорящий может быть пуст —
         /// тогда строка имени прячется совсем, а не висит пустой:
         /// пустая строка сдвигает реплику вниз и кадр перекашивает.
@@ -276,6 +284,7 @@ namespace Sinbinder.UI
         public void Say(string speaker, string line)
         {
             Plain();
+            Said?.Invoke(speaker, line, _thought);
 
             if (_speaker != null)
             {
@@ -309,7 +318,8 @@ namespace Sinbinder.UI
         /// </summary>
         public void Think(string line)
         {
-            Say(null, line);
+            _thought = true;
+            try { Say(null, line); } finally { _thought = false; }
             if (_line == null) return;
 
             _plainFont ??= _line.font;

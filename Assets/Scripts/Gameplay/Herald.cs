@@ -97,6 +97,10 @@ namespace Sinbinder.Gameplay
 
             label = line.Substring(0, open);
             words = line.Substring(open + 3, close - open - 3);
+            // Точка прямой речи по-русски стоит за «ёлочкой» («…отряд».) — и на полосе
+            // реплика обрывалась без неё: у Каргана почти каждая (вычитка, КТ1 п. 12).
+            // Вопрос, восклицание и многоточие остаются внутри — им точка не нужна.
+            if (words.Length > 0 && ".!?…".IndexOf(words[words.Length - 1]) < 0) words += ".";
             return true;
         }
 

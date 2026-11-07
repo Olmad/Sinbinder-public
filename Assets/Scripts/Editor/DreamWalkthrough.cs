@@ -45,6 +45,8 @@ namespace Sinbinder.EditorTools
             if (!SessionState.GetBool(Active, false)) return;
             Application.logMessageReceived += Catch;
             EditorApplication.update += Tick;
+            UI.Letterbox.Said -= Line;
+            UI.Letterbox.Said += Line;
         }
 
         public static void Run()
@@ -69,6 +71,17 @@ namespace Sinbinder.EditorTools
 
         private static void Write(string line)
             => File.AppendAllText(ReportPath, "[" + Time.realtimeSinceStartup.ToString("F0") + "] " + line + NL);
+
+        private static string _lastLine;
+
+        /// <summary>Реплика с полосы — в отчёт: сон целиком для вычитки (58-ROADMAP, КТ1 п. 12).</summary>
+        private static void Line(string who, string line, bool thought)
+        {
+            if (string.IsNullOrEmpty(line) || line == _lastLine) return;
+            _lastLine = line;
+            string text = System.Text.RegularExpressions.Regex.Replace(line, "<[^>]+>", "").Replace('\n', '/');
+            Write("    [РЕПЛИКА] " + (thought ? "(мысль) " : string.IsNullOrEmpty(who) ? "" : who + ": ") + text);
+        }
 
         private static void Catch(string message, string stack, LogType type)
         {
@@ -284,6 +297,7 @@ namespace Sinbinder.EditorTools
             SessionState.SetBool(Active, false);
             EditorApplication.update -= Tick;
             Application.logMessageReceived -= Catch;
+            UI.Letterbox.Said -= Line;
             EditorApplication.isPlaying = false;
             int code = ok && _errors == 0 ? 0 : 1;
             EditorApplication.delayCall += () => EditorApplication.Exit(code);

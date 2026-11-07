@@ -6408,11 +6408,11 @@ msgid "Тот же приказ — и она идёт. Причины боль�
 msgstr "The same order — and she goes. The reason is gone: the killers are dead."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведи на него мышь — узнаешь какая."
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."
 msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведи на неё мышь — узнаешь какая."
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведите на неё мышь — узнаете, какая."
 msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
 
 #: Gameplay/EscapeZone.cs
@@ -8624,7 +8624,7 @@ msgid "Пальцы ищут тетиву. Нашли."
 msgstr "The fingers search for the string. Found it."
 
 #: Gameplay/RisingWords.cs
-msgid "Склянки... Они ведь разбились, да?"
+msgid "Склянки… Они ведь разбились, да?"
 msgstr "The vials... They broke, didn't they?"
 
 #: Gameplay/RisingWords.cs
@@ -8648,7 +8648,7 @@ msgid "Я судил таких, как вы. Кто теперь судит м�
 msgstr "I judged your kind. Who judges me now?"
 
 #: Gameplay/RisingWords.cs
-msgid "Сеть... Я ловил вас. Поймали меня."
+msgid "Сеть… Я ловил вас. Поймали меня."
 msgstr "The net... I caught your kind. Now I am the one caught."
 
 #: Gameplay/RivalLord.cs
