@@ -260,7 +260,7 @@ namespace Sinbinder.EditorTools
                         Go("управление");
                         Write($"  тот же приказ без убийц: {DreamTutorialDirector.RetestResult ?? "не проверялся"}");
                     }
-                    dream.TestSkipControls();
+                    if (EyesShots(dream, now)) dream.TestSkipControls();
                     break;
                 case "Return":
                     if (_step != "пробуждение")
@@ -271,13 +271,69 @@ namespace Sinbinder.EditorTools
                     }
                     if (poke && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
                     if (!_gateShot && DreamRoad.CryptFade > 0.15f) { _gateShot = true; Snap("сон — створки расходятся"); }
+                    if (!_headShot && DreamRoad.CryptFade > 0.3f) { _headShot = true; Snap("сон — силуэт поднимает голову"); }
                     if (!_deathShot && DreamRoad.CryptFade > 0.45f) { _deathShot = true; Snap("сон — силуэт в склепе"); }
                     if (!_blackShot && DreamRoad.CryptFade >= 1f) { _blackShot = true; Snap("сон — экран погас"); }
                     break;
             }
         }
 
-        private static bool _gateShot, _deathShot, _blackShot;
+        private static bool _gateShot, _deathShot, _blackShot, _headShot;
+        private static int _fpStep;
+        private static float _fpAt;
+
+        /// <summary>
+        /// Глазами у чучела (автор, 08.11): оружие в руке справа; удар — чучело отшатывается
+        /// по ходу удара. true — сняли, можно дальше.
+        /// </summary>
+        private static bool EyesShots(DreamTutorialDirector dream, float now)
+        {
+            var cam = Camera.main;
+            var view = cam != null ? cam.GetComponent<RTS_Camera>() : null;
+            if (view == null || dream.Hero == null) return true;
+            switch (_fpStep)
+            {
+                case 0:
+                    Warp(dream.Hero, DreamRoad.DummyAt + new Vector3(-1.7f, 0f, -0.2f));
+                    if (!view.FirstPersonNow) view.Switch();
+                    _fpStep = 1;
+                    _fpAt = now;
+                    return false;
+                case 1:
+                    // Идёт сценка под полосами (зомби «Грабит», w0811d) — камера не в глазах:
+                    // ждать её конца, иначе кадр и удар — из камеры сценки.
+                    var talk = Sinbinder.Dialogue.DialogueCameraController.Instance;
+                    if ((talk != null && (talk.InDialogue || talk.Homebound))
+                        || (Sinbinder.UI.Letterbox.Instance != null && Sinbinder.UI.Letterbox.Instance.Covering))
+                    {
+                        if (now - _fpAt > 25f) { Write("  глазами: сценка не кончилась за 25 с — кадр пропущен"); _fpStep = 4; return true; }
+                        return false;
+                    }
+                    if (!view.FirstPersonNow) return now - _fpAt > 3f;
+                    if (!view.WarriorModeNow) view.SwitchRole();
+                    view.Face(DreamRoad.DummyAt);
+                    if (now - _fpAt < 1.2f) return false;
+                    Snap("сон — глазами, оружие в руке, чучело");
+                    dream.Hero.GetComponent<FirstPersonCombat>()?.TestStrike();
+                    _fpStep = 2;
+                    _fpAt = now;
+                    return false;
+                case 2:
+                    if (now - _fpAt < 0.2f) return false;
+                    Snap("сон — удар, чучело отшатнулось");
+                    Write($"  попаданий по чучелу: {DreamRoad.DummyHits}");
+                    _fpStep = 3;
+                    _fpAt = now;
+                    return false;
+                case 3:
+                    if (now - _fpAt < 0.6f) return false;
+                    if (view.FirstPersonNow) view.Switch();
+                    _fpStep = 4;
+                    return true;
+                default:
+                    return true;
+            }
+        }
 
         /// <summary>Кадр с отдельной точки: камера сна на миг встаёт туда и возвращается.</summary>
         /// <summary>

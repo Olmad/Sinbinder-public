@@ -526,6 +526,16 @@ namespace Sinbinder.Gameplay
                         point = away.position;
                         return true;
                     }
+                    // Сбоку стены с обеих сторон (проход у палаток): отойти некуда, а точка «за
+                    // спиной» — сквозь брата, и двое стояли нос к носу (w0811c, 114 с: Хорь у
+                    // (-0,6; 6,0), Гурт в 1,4 м). Тогда Гурт идёт вперёд по ходу брата и выводит
+                    // его из тесноты; на просторе снова уступит в сторону или встанет позади.
+                    var lead = t.position + dir * (ahead + 3f);
+                    if (UnityEngine.AI.NavMesh.SamplePosition(lead, out var front, 1.5f, UnityEngine.AI.NavMesh.AllAreas))
+                    {
+                        point = front.position;
+                        return true;
+                    }
                 }
 
                 float along = Mathf.Min(speed * 0.5f - 1.5f, -0.9f);

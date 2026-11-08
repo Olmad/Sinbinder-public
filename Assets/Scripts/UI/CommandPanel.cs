@@ -134,8 +134,10 @@ namespace Sinbinder.UI
 
             var picked = manager != null && manager.enabled
                 ? manager.Selection : SelectionManager.Picked.Nobody;
+            // Под полосами — сцена, а не управление: панель приказов стояла в кадре силуэта Смерти (w0811c).
             bool show = picked != SelectionManager.Picked.Nobody
-                     && (pause == null || !pause.IsPaused);
+                     && (pause == null || !pause.IsPaused)
+                     && !(Letterbox.Instance != null && Letterbox.Instance.Covering);
 
             _group.alpha = show ? 1f : 0f;
             _group.interactable = show;

@@ -27,6 +27,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Оружие сейчас в руке.</summary>
         public bool Drawn { get; private set; }
 
+        /// <summary>Вещь в руке (видна, когда наголо): её копию показывает <see cref="WeaponView"/>.</summary>
+        public GameObject InHand => _inHand;
+
         /// <summary>
         /// Есть что убирать: и оружие в руке, и оно же в ножнах. Нет второй
         /// вещи (старая сборка гардероба) — оружие остаётся в руке, как было

@@ -231,7 +231,7 @@ namespace Sinbinder.Dialogue
             var chest = hero.transform.position + Vector3.up * 1.2f;
             var ray = look - from;
             float k = Mathf.Clamp01(Vector3.Dot(chest - from, ray) / Mathf.Max(1e-4f, ray.sqrMagnitude));
-            if ((from + ray * k - chest).magnitude > 0.7f)
+            if (!_heroOut && (from + ray * k - chest).magnitude > 0.7f)
             {
                 ShowHeroAgain();
                 return;
@@ -241,6 +241,16 @@ namespace Sinbinder.Dialogue
             foreach (var r in hero.GetComponentsInChildren<Renderer>())
                 if (r.enabled) { r.enabled = false; _hiddenHero.Add(r); }
         }
+
+        /// <summary>
+        /// Разговор: Греховода в кадре нет совсем, не только между камерой и лицом
+        /// (автор, 08.11: «не нужно вообще показывать в диалоге со стороны Греховода — только
+        /// наезд на лицо»). Ставит <see cref="FocusConversation"/>.
+        /// </summary>
+        private bool _heroOut;
+
+        /// <summary>Камера едет из кадра на место (<see cref="RestoreCamera"/>).</summary>
+        public bool Homebound => _homebound >= 0 && _homebound == _frameRevision;
 
         private void ShowHeroAgain()
         {
@@ -257,8 +267,12 @@ namespace Sinbinder.Dialogue
 
         public IEnumerator FocusOn(Transform target, string caption = null, float distanceMultiplier = 1f,
                                    bool menu = false)
+            => Focus(target, caption, distanceMultiplier, menu, heroOut: false);
+
+        private IEnumerator Focus(Transform target, string caption, float distanceMultiplier, bool menu, bool heroOut)
         {
             if (target == null) yield break;
+            _heroOut = heroOut;
             _menuRoom = menu ? 0.3f : 0f;
 
             // Камеры нет — сцена уходит, и SaveCameraPosition об этом уже
@@ -343,6 +357,22 @@ namespace Sinbinder.Dialogue
         public IEnumerator FocusConversation(Transform speaker, Transform listener, bool menu = false)
         {
             if (speaker == null) yield break;
+
+            // С Греховодом — только лицо собеседника, его самого со стороны не видно (автор, 08.11).
+            // Кадр на двоих остаётся разговору без него: воины перед боем.
+            // Говорит сам Греховод — лицо того, кому он говорит; не с кем — кадр прежний.
+            var hero = Gameplay.SinbinderPlayer.Exists ? Gameplay.SinbinderPlayer.Instance.transform : null;
+            if (hero != null && (speaker == hero || listener == hero))
+            {
+                var face = speaker == hero ? listener : speaker;
+                if (face == null)
+                {
+                    if (_inDialogue && Target != null && Target != hero) yield break;
+                    face = speaker;
+                }
+                yield return Focus(face, null, 1f, menu, heroOut: face != hero);
+                yield break;
+            }
             if (listener == null || speaker == listener)
             {
                 yield return FocusOn(speaker);

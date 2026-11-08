@@ -61,6 +61,8 @@ namespace Sinbinder.UI
 
             var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             if (cam == null) return;
+            // Во сне лагеря нет: «Осмотрите лагерь» звучала у врат склепа (w0811c). Строка ждёт лагеря.
+            if (DreamTutorialDirector.Instance != null) { _wasEyes = false; _pending = false; return; }
 
             bool eyes = cam.FirstPersonNow;
             bool busy = OpeningReveal.Busy || Lesson.Holding

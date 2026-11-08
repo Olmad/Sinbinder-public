@@ -125,7 +125,9 @@ namespace Sinbinder.Gameplay
         private int _backAttempts;
         private int _swingsBefore, _blockFramesBefore;
         private bool _squadOrdered;
-        private int _selectedJarBefore;
+        private int _hitsBefore, _missesSaid;
+        private int _jarIndex = -1;
+        private bool _soulHeld;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
         // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
@@ -344,6 +346,12 @@ namespace Sinbinder.Gameplay
             yield return null;
             var hp = _wounded.GetComponent<Damageable>();
             if (hp != null) hp.Wound(0.12f);
+            // Убитый бандитами лежит на дороге, а не стоит (автор, 08.11: «должен лежать на земле
+            // и говорить из последних сил»): поза падения с первого кадра — к приходу Греховода он уже лежит.
+            var body = _wounded.GetComponent<WarriorAnimation>();
+            if (body != null) body.Pose(BodyMotion.Die);
+            var voice = _wounded.GetComponent<Sinbinder.Audio.VoiceGenerator>();
+            if (voice != null) { voice.Depth = 1.12f; voice.Tempo = 1.7f; }
             Set(Stage.Approach, "Укажи Греховоду путь правой кнопкой мыши.");
         }
 
@@ -575,6 +583,8 @@ namespace Sinbinder.Gameplay
                     // Урок принимает чучело у дороги: удар и блок — рядом с ним, оно качается.
                     var combat = _hero.GetComponent<FirstPersonCombat>();
                     if (combat == null) break;
+                    // Считаются попадания (DreamRoad.DummyHits), а не взмахи: удар идёт туда,
+                    // куда смотрит Греховод, и чучело отшатывается от него.
                     if (!DreamRoad.NearDummy(_hero.transform.position))
                     {
                         _atDummy = false;
@@ -585,32 +595,52 @@ namespace Sinbinder.Gameplay
                     {
                         _atDummy = true;
                         _swingsBefore = _swingsSeen = combat.AcceptedSwings;
+                        _hitsBefore = DreamRoad.DummyHits;
+                        _missesSaid = 0;
                         _blockFramesBefore = combat.AcceptedBlockFrames;
                         _line = "Ударьте чучело ЛКМ и подержите блок ПКМ.";
                     }
-                    if (combat.AcceptedSwings > _swingsSeen)
+                    if (DreamRoad.DummyHits == _hitsBefore && combat.AcceptedSwings - _swingsBefore >= 2 && _missesSaid == 0)
                     {
-                        _swingsSeen = combat.AcceptedSwings;
-                        DreamRoad.Instance?.Strike(_hero.transform.position);
+                        _missesSaid = 1;
+                        _line = "Мимо. Удар идёт туда, куда смотрите: подойдите вплотную и смотрите на чучело.";
                     }
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam == null || !cam.WarriorModeNow) break;
-                    if (combat.AcceptedSwings > _swingsBefore && combat.AcceptedBlockFrames > _blockFramesBefore)
+                    if (DreamRoad.DummyHits > _hitsBefore && combat.AcceptedBlockFrames > _blockFramesBefore)
                         Set(Stage.Jars, "Дальше по дороге — камень с банками. Подойдите к нему.");
                     break;
                 }
                 case Stage.Jars:
-                    if (!DreamRoad.NearShrine(_hero.transform.position)) break;
-                    if (!_atShrine)
+                {
+                    // Камень — не декорация (автор, 08.11: «зачем банки по пути, если мы просто нажимаем
+                    // кнопку на этом месте»). На полке банка с чужой душой: её берут в суму (E), выбирают
+                    // в суме (J) и берут душу в руку (R) и обратно — ради этого банок и несколько.
+                    // J и R — настоящие SatchelHands; урок только смотрит, что стало с сумой и руками.
+                    if (_jarIndex < 0)
                     {
-                        _atShrine = true;
-                        _selectedJarBefore = Satchel.Selected;
-                        _line = "J — выберите другую банку в суме. Банка остаётся после поднятия.";
+                        if (!DreamRoad.NearShrine(_hero.transform.position)) break;
+                        if (!_atShrine) { _atShrine = true; _line = "На камне — банка с душой. E — забрать её в суму."; }
+                        if (!Pressed(KeyCode.E)) break;
+                        if (!Satchel.AddJar()) { Set(Stage.Return, GateLine); break; }
+                        _jarIndex = Satchel.Jars - 1;
+                        Satchel.Fill(_jarIndex, new SoulData(Loc.N("Путник у дороги"), SinType.Sloth, MoralType.Neutral, 1, 35f),
+                                     SoulQuality.Acceptance);
+                        DreamRoad.Instance?.TakeSoulJar();
+                        _line = "Банка в суме. J — выберите её: под рукой та, что в рамке.";
+                        break;
                     }
-                    // Confirm that the real SatchelHands changed the selected jar, not merely a J key press.
-                    if (Satchel.Jars < 2 || Satchel.Selected != _selectedJarBefore)
-                        Set(Stage.Return, GateLine);
+                    if (!_soulHeld)
+                    {
+                        if (Satchel.Selected != _jarIndex) break;
+                        if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — душу в руку."; break; }
+                        _soulHeld = true;
+                        _line = "Душа в руке. R — обратно в банку.";
+                        break;
+                    }
+                    if (Sinbinder.Crypt.CryptHands.Empty) Set(Stage.Return, GateLine);
                     break;
+                }
                 case Stage.Return:
                     if (!DreamRoad.NearGate(_hero.transform.position)) break;
                     if (!_atGate) { _atGate = true; _line = "Ворота склепа. F — открыть."; }
@@ -643,8 +673,18 @@ namespace Sinbinder.Gameplay
         {
             if (_wounded == null || _wounded.IsDead) yield break;
             var lines = new[] { "Они вернулись...", "Я ничего у них не брал...", "Не пускай их к воротам..." };
-            Log(_wounded.DisplayName + ": «" + lines[_tutorialSeed % lines.Length] + "»");
-            yield return new WaitForSeconds(1.8f);
+            string line = lines[_tutorialSeed % lines.Length];
+            Log(_wounded.DisplayName + ": «" + line + "»");
+            // Из последних сил: по два слова, с остановкой на вдох, всё тише — и обрывается.
+            var words = line.Replace("...", "").Split(' ');
+            for (int i = 0; i < words.Length; i += 2)
+            {
+                if (_wounded == null || _wounded.IsDead) yield break;
+                string piece = string.Join(" ", words, i, Mathf.Min(2, words.Length - i)) + "...";
+                UI.SpeechBubbles.Say(_wounded, Loc.T(piece), 2.2f);
+                yield return new WaitForSeconds(1.5f);
+            }
+            yield return new WaitForSeconds(0.6f);
             if (_wounded == null || _wounded.IsDead) yield break;
             var hp = _wounded.GetComponent<Damageable>();
             if (hp == null) { Log("Нет Damageable у раненого."); yield break; }

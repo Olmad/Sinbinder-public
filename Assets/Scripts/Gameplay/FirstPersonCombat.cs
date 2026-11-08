@@ -34,6 +34,15 @@ namespace Sinbinder.Gameplay
         public int AcceptedSwings { get; private set; }
         public int AcceptedBlockFrames { get; private set; }
 
+        /// <summary>
+        /// Взмах задел что-то, кроме врага: что и куда шёл удар (взгляд). Чучело сна качается
+        /// от удара (<see cref="DreamRoad"/>), а не от места, где стоит Греховод.
+        /// </summary>
+        public static event System.Action<RaycastHit, Vector3> Swung;
+
+        /// <summary>Прогон: удар без мыши — тот же луч, тот же счёт.</summary>
+        public void TestStrike() => Strike();
+
         private void Awake()
         {
             _auto = GetComponent<AutoAttack>();
@@ -104,6 +113,7 @@ namespace Sinbinder.Gameplay
         {
             if (_cachedCamera == null || _auto == null) return;
             AcceptedSwings++;
+            WeaponView.Swing();
             float reach = Mathf.Max(1f, _auto.AttackRange);
             var ray = _cachedCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             if (Physics.Raycast(ray, out RaycastHit hit, reach + 0.25f,
@@ -116,6 +126,7 @@ namespace Sinbinder.Gameplay
                     _auto.ForceAttack(target); // existing damage, timing and sound
                     return;
                 }
+                Swung?.Invoke(hit, ray.direction);
             }
 
             // Промах тоже выглядит как удар и утомляет героя.

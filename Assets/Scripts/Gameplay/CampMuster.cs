@@ -113,8 +113,45 @@ namespace Sinbinder.Gameplay
                 Loc.T("Провожатый так и не пошёл рядом — Карган зовёт к столу без него."));
 
             yield return new WaitForSecondsRealtime(_readPause);
+
+            // Сперва подойти, потом говорить (автор, 08.11: «Карган замечает Греховода, находясь
+            // за палатками, и объясняет из-за палаток»). Настоящим приказом, как провожатый;
+            // не дошёл за срок — говорит, где стоит: строка важнее шагов.
+            // Сказал — и назад, на своё место у стола: встав рядом с Греховодом, он запирал
+            // проход у палаток, и Хорь, идущий к столу, стоял шесть секунд (w0811c/d, 114 с).
+            var keeper = Keeper();
+            bool came = false;
+            Vector3 home = default;
+            if (keeper != null && SinbinderPlayer.Exists && !Near(keeper))
+            {
+                came = true;
+                home = keeper.transform.position;
+                var step = SinbinderPlayer.Where - home;
+                step.y = 0f;
+                keeper.IssueCommand(CommandKind.Move, home + step.normalized * Mathf.Max(0f, step.magnitude - 3.5f));
+                yield return Beat.Until(() => keeper == null || keeper.IsDead || !SinbinderPlayer.Exists || Near(keeper),
+                    15f, "Карган не дошёл до Греховода — зовёт к столу, где стоит.");
+            }
             Ask();
+            if (!came) yield break;
+            yield return null;
+            yield return Beat.Until(() => !Herald.Busy, 30f, "Реплика Каргана не кончилась — он идёт назад и так.");
+            if (keeper != null && !keeper.IsDead) keeper.IssueCommand(CommandKind.Move, home);
         }
+
+        /// <summary>Телохранитель в сцене — тот, кто говорит за отряд.</summary>
+        private static Warrior Keeper()
+        {
+            string name = Bodyguard();
+            if (name == null) return null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
+                if (w != null && !w.IsDead && w.Team == Team.Player && w.DisplayName == name) return w;
+            return null;
+        }
+
+        /// <summary>Рядом с Греховодом — видно друг друга: ближе пяти метров.</summary>
+        private static bool Near(Warrior w)
+            => CampFocus.GroundDistance(w.transform.position, SinbinderPlayer.Where) <= 5f;
 
         void Update()
         {

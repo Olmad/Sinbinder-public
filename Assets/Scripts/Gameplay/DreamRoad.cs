@@ -41,14 +41,33 @@ namespace Sinbinder.Gameplay
         private Transform _dummy, _doorLeft, _doorRight;
         private GameObject _seam;
         private Light _cryptLight;
-        private Vector3 _tipAxis = Vector3.right;
         private Quaternion _dummyRest = Quaternion.identity;
-        private float _tip, _tipVel;
+        private Vector2 _tilt, _tiltVel;      // наклон чучела, градусы по x и z мира
+        private float _spin, _spinVel;        // поворот на коле
+        private readonly List<GameObject> _soulJar = new List<GameObject>();
+
+        // Силуэт и его жизнь — Death, Haunt.
+        private Transform _death, _deathHood, _deathArm, _deathScythe, _deathHem;
+        private Vector3 _deathAt;
+        private readonly List<Transform> _deathEyes = new List<Transform>();
+        private ParticleSystem _deathSmoke, _cryptMist;
+        private Material _backGlow;
+        private Color _backColour;
+
+        /// <summary>Сколько раз удар Греховода пришёлся в чучело. Урок считает попадания, а не взмахи.</summary>
+        public static int DummyHits { get; private set; }
+
+        /// <summary>Банку с душой забрали с камня.</summary>
+        public bool SoulJarTaken { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { CryptFade = -1f; }
+        private static void Rearm() { CryptFade = -1f; DummyHits = 0; }
 
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+        private void OnDestroy()
+        {
+            FirstPersonCombat.Swung -= OnSwung;
+            if (Instance == this) Instance = null;
+        }
 
         /// <summary>Построить дорогу. Зовёт сон из Awake — до выпечки навмеша.</summary>
         public static DreamRoad Build()
@@ -122,6 +141,8 @@ namespace Sinbinder.Gameplay
                 road.AddCandle(t, new Vector3(5.5f * s, 0f, From + 4f + i * 6f), post, 3.5f);
             }
 
+            DummyHits = 0;
+            FirstPersonCombat.Swung += road.OnSwung;
             road.BuildDummy(t, DummyAt);
             road.BuildShrine(t, ShrineAt, post);
             road.BuildCrypt(t);
@@ -407,15 +428,18 @@ namespace Sinbinder.Gameplay
             _dummy = new GameObject("Чучело").transform;
             _dummy.SetParent(parent, false);
             _dummy.position = at;
-            Piece(_dummy, PrimitiveType.Cylinder, "Кол", at + Vector3.up * 1.0f, new Vector3(0.12f, 1.0f, 0.12f), wood);
-            Piece(_dummy, PrimitiveType.Cylinder, "Тулово", at + Vector3.up * 1.2f, new Vector3(0.62f, 0.45f, 0.5f), straw);
-            Piece(_dummy, PrimitiveType.Cube, "Руки", at + Vector3.up * 1.5f, new Vector3(1.5f, 0.12f, 0.12f), wood);
+            // Ростом с человека: взгляд от первого лица — на 1,65 м, и прежнее тулово (до 1,65)
+            // с головой от 1,73 пропускало прямой взгляд в щель — удар шёл мимо (w0811c).
+            Piece(_dummy, PrimitiveType.Cylinder, "Кол", at + Vector3.up * 1.05f, new Vector3(0.12f, 1.05f, 0.12f), wood);
+            Piece(_dummy, PrimitiveType.Cylinder, "Тулово", at + Vector3.up * 1.38f, new Vector3(0.62f, 0.5f, 0.5f), straw);
+            Piece(_dummy, PrimitiveType.Cube, "Руки", at + Vector3.up * 1.66f, new Vector3(1.5f, 0.12f, 0.12f), wood);
             foreach (float s in new[] { -1f, 1f })
-                Piece(_dummy, PrimitiveType.Sphere, "Пучок", at + new Vector3(0.78f * s, 1.5f, 0f), new Vector3(0.22f, 0.2f, 0.2f), straw, false);
-            Piece(_dummy, PrimitiveType.Cylinder, "Пояс", at + Vector3.up * 1.05f, new Vector3(0.64f, 0.03f, 0.52f), wood, false);
-            Piece(_dummy, PrimitiveType.Sphere, "Голова", at + Vector3.up * 1.95f, new Vector3(0.42f, 0.46f, 0.42f), sack);
-            // Руками к дороге, чуть наискось.
-            _dummyRest = Quaternion.Euler(0f, 20f, 0f);
+                Piece(_dummy, PrimitiveType.Sphere, "Пучок", at + new Vector3(0.78f * s, 1.66f, 0f), new Vector3(0.22f, 0.2f, 0.2f), straw, false);
+            Piece(_dummy, PrimitiveType.Cylinder, "Пояс", at + Vector3.up * 1.0f, new Vector3(0.64f, 0.03f, 0.52f), wood, false);
+            Piece(_dummy, PrimitiveType.Sphere, "Голова", at + Vector3.up * 2.12f, new Vector3(0.42f, 0.46f, 0.42f), sack);
+            // Грудью к дороге: Греховод подходит с дороги, с запада (автор, 08.11: «пугало слегка
+            // отвёрнуто» — стояло на 20° наискось).
+            _dummyRest = Quaternion.Euler(0f, -90f, 0f);
             _dummy.rotation = _dummyRest;
         }
 
@@ -429,13 +453,28 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cube, "Камень", at + new Vector3(0f, 1.0f, 0.3f), new Vector3(1.3f, 2.0f, 0.7f), stone)
                 .transform.rotation = Quaternion.Euler(0f, 0f, -3f);
             Piece(root, PrimitiveType.Cube, "Полка", at + new Vector3(0f, 0.95f, -0.1f), new Vector3(1.1f, 0.07f, 0.36f), stoneMat);
-            var glass = Glowing(new Color(0.55f, 0.75f, 1f), 0.7f);
+            // Пустые банки — тусклое стекло; средняя — с чужой душой: её и берут в суму
+            // (автор, 08.11: «зачем банки по пути, если мы просто нажимаем кнопку на этом месте»).
+            var glass = Lit(new Color(0.30f, 0.36f, 0.42f), 0.85f);
+            var soul = Glowing(new Color(0.55f, 0.75f, 1f), 1.1f);
             var lid = Lit(new Color(0.30f, 0.22f, 0.14f), 0.2f);
             for (int i = 0; i < 3; i++)
             {
+                bool full = i == 1;
                 var jarAt = at + new Vector3(-0.32f + i * 0.32f, 1.11f, -0.12f);
-                Piece(root, PrimitiveType.Cylinder, "Банка", jarAt, new Vector3(0.16f, 0.12f, 0.16f), glass, false);
-                Piece(root, PrimitiveType.Cylinder, "Крышка", jarAt + Vector3.up * 0.13f, new Vector3(0.18f, 0.025f, 0.18f), lid, false);
+                var jar = Piece(root, PrimitiveType.Cylinder, full ? "Банка с душой" : "Банка", jarAt, new Vector3(0.16f, 0.12f, 0.16f), full ? soul : glass, false);
+                var cap = Piece(root, PrimitiveType.Cylinder, "Крышка", jarAt + Vector3.up * 0.13f, new Vector3(0.18f, 0.025f, 0.18f), lid, false);
+                if (!full) continue;
+                var glow = new GameObject("Свет души в банке");
+                glow.transform.SetParent(root, false);
+                glow.transform.position = jarAt + Vector3.up * 0.05f;
+                var l = glow.AddComponent<Light>();
+                l.type = LightType.Point;
+                l.color = new Color(0.55f, 0.75f, 1f);
+                l.range = 2.4f;
+                l.intensity = 1.4f;
+                l.shadows = LightShadows.None;
+                _soulJar.AddRange(new[] { jar, cap, glow });
             }
             // Свеча на полке — без столбика: камень и есть подставка.
             AddCandle(root, at + new Vector3(0.45f, 0f, -0.1f), stoneMat, 3f);
@@ -502,7 +541,9 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cube, "Глубь склепа", new Vector3(0f, 3f, z + 9.7f), new Vector3(5.4f, 6f, 0.4f), black, false);
 
             // В глубине — бледный холодный проём, против него стоит Он.
-            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 2.4f, z + 9.45f), new Vector3(3.0f, 4.6f, 1f), Glowing(cold, 1.5f), false);
+            _backGlow = Glowing(cold, 1.5f);
+            _backColour = _backGlow.color;
+            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 2.8f, z + 9.45f), new Vector3(3.8f, 5.6f, 1f), _backGlow, false);
             back.transform.rotation = Quaternion.identity;
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader != null)
@@ -519,9 +560,15 @@ namespace Sinbinder.Gameplay
                 halo.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
                 halo.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
                 halo.SetColor("_BaseColor", new Color(cold.r, cold.g, cold.b, 0.55f));
-                Piece(root, PrimitiveType.Quad, "Ореол проёма", new Vector3(0f, 2.4f, z + 9.35f), new Vector3(5.2f, 6.4f, 1f), halo, false);
+                Piece(root, PrimitiveType.Quad, "Ореол проёма", new Vector3(0f, 2.8f, z + 9.35f), new Vector3(6.0f, 7.2f, 1f), halo, false);
             }
             Death(root, new Vector3(0f, 0f, z + 6.6f), black);
+            // Холодный туман из дверей — ползёт к вошедшему по полу.
+            var mist = Haze(new Color(0.60f, 0.72f, 0.95f), additive: true);
+            if (mist != null)
+                _cryptMist = Wisps(root, "Туман склепа", new Vector3(0f, 0.2f, z + 3.6f), mist, new Vector3(4.2f, 0.15f, 6.2f), 30f,
+                                   new Vector2(4f, 6f), new Vector2(1.4f, 2.8f), new Color(0.60f, 0.72f, 0.95f),
+                                   new Vector3(-0.15f, 0f, -1.0f), new Vector3(0.15f, 0.06f, -0.45f), 0.16f, prewarm: false);
 
             var go = new GameObject("Холод из склепа");
             go.transform.SetParent(root, false);
@@ -553,37 +600,242 @@ namespace Sinbinder.Gameplay
         /// <summary>
         /// Силуэт Бога Смерти: высокий, в капюшоне, с косой — весь чёрный. Свет за ним, не на нём.
         /// </summary>
-        private static void Death(Transform parent, Vector3 at, Material black)
+        /// <summary>
+        /// Бог Смерти в глубине склепа (автор, 08.11: «сделай силуэт Бога Смерти величественнее и более
+        /// жутким, может с какими-нибудь эффектами»). Выше дверного проёма в глубине — 4,7 м с косой;
+        /// висит над полом, подол — лохмотьями, под ними видно свет. Голова опущена, левая рука висит —
+        /// <see cref="Haunt"/> поднимает голову к вошедшему, зажигает глаза и тянет руку вперёд.
+        /// От него поднимается чёрный дым — против света он виден, на чёрном нет.
+        /// </summary>
+        private void Death(Transform parent, Vector3 at, Material black)
         {
             var root = new GameObject("Бог Смерти — силуэт").transform;
             root.SetParent(parent, false);
             root.position = at;
-            var robe = new GameObject("Балахон", typeof(MeshFilter), typeof(MeshRenderer));
-            robe.transform.SetParent(root, false);
-            robe.GetComponent<MeshFilter>().sharedMesh = Cone(0.95f, 0.36f, 2.75f, 20);
-            robe.GetComponent<MeshRenderer>().sharedMaterial = black;
-            Piece(root, PrimitiveType.Sphere, "Плечи", at + Vector3.up * 2.7f, new Vector3(1.15f, 0.45f, 0.62f), black, false);
-            Piece(root, PrimitiveType.Sphere, "Капюшон", at + Vector3.up * 3.12f, new Vector3(0.62f, 0.74f, 0.66f), black, false);
-            var tip = new GameObject("Острие капюшона", typeof(MeshFilter), typeof(MeshRenderer));
-            tip.transform.SetParent(root, false);
-            tip.transform.position = at + new Vector3(0f, 3.3f, 0.12f);
-            tip.transform.rotation = Quaternion.Euler(20f, 0f, 0f);
-            tip.GetComponent<MeshFilter>().sharedMesh = Cone(0.26f, 0.0f, 0.5f, 12);
-            tip.GetComponent<MeshRenderer>().sharedMaterial = black;
-            // Рука к косовищу.
-            var arm = Piece(root, PrimitiveType.Cylinder, "Рука", at, new Vector3(0.2f, 0.45f, 0.2f), black, false).transform;
-            arm.position = at + new Vector3(0.62f, 2.35f, -0.1f);
-            arm.rotation = Quaternion.Euler(0f, 0f, 35f);
-            // Коса: косовище чуть наискось, лезвие — серп поверху.
-            var snath = Piece(root, PrimitiveType.Cylinder, "Косовище", at, new Vector3(0.07f, 1.9f, 0.07f), black, false).transform;
-            snath.position = at + new Vector3(0.9f, 1.85f, -0.15f);
+            _death = root;
+            _deathAt = at;
+            const float hem = 0.4f;
+            Shape(root, "Балахон", Cone(1.3f, 0.46f, 3.0f, 24), at + Vector3.up * hem, Quaternion.identity, black);
+            _deathHem = Shape(root, "Лохмотья", Tatters(1.3f, 26, 0.75f, 13), at + Vector3.up * hem, Quaternion.identity, black);
+            // Плечи — покатая накидка, не шар: шар читался воротником-бубликом (w0811c).
+            Shape(root, "Плечи", Cone(0.8f, 0.36f, 0.75f, 20), at + Vector3.up * 2.95f, Quaternion.identity, black);
+
+            // Голова — на шее, целиком с глазами: поднимается к вошедшему.
+            _deathHood = new GameObject("Голова").transform;
+            _deathHood.SetParent(root, false);
+            _deathHood.position = at + Vector3.up * 3.5f;
+            // Глубокий капюшон: круглый верх, острие откинуто назад. Прямое острие делало
+            // колпак — силуэт выходил мультяшным (w0811c).
+            Piece(_deathHood, PrimitiveType.Sphere, "Капюшон", at + Vector3.up * 3.98f, new Vector3(0.92f, 1.12f, 0.95f), black, false);
+            Shape(_deathHood, "Острие капюшона", Cone(0.3f, 0f, 0.42f, 12), at + new Vector3(0f, 4.3f, 0.22f), Quaternion.Euler(55f, 0f, 0f), black);
+            var eyeGlow = Glowing(new Color(0.50f, 0.72f, 1f), 3f);
+            foreach (float s in new[] { -1f, 1f })
+                _deathEyes.Add(Piece(_deathHood, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.15f * s, 3.92f, -0.43f), Vector3.zero, eyeGlow, false).transform);
+            _deathHood.localRotation = Quaternion.Euler(18f, 0f, 0f);
+
+            // Левая рука: рукав и кость кисти с длинными пальцами.
+            _deathArm = new GameObject("Левая рука").transform;
+            _deathArm.SetParent(root, false);
+            _deathArm.position = at + new Vector3(-0.72f, 3.3f, 0f);
+            Shape(_deathArm, "Рукав", Sheet(new Vector3(0.12f, 0.15f, 0f), new Vector3(-0.32f, -0.3f, -0.04f), new Vector3(-0.86f, -1.0f, -0.08f),
+                                            new Vector3(-0.74f, -1.72f, -0.05f), new Vector3(-0.42f, -1.3f, 0f), new Vector3(0.06f, -0.62f, 0f)),
+                  _deathArm.position, Quaternion.identity, black);
+            var wrist = _deathArm.position + new Vector3(-0.84f, -1.22f, -0.08f);
+            Piece(_deathArm, PrimitiveType.Sphere, "Ладонь", wrist, new Vector3(0.13f, 0.16f, 0.07f), black, false);
+            for (int f = 0; f < 5; f++)
+            {
+                float ang = Mathf.Lerp(-150f, -80f, f / 4f) * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), -0.15f).normalized;
+                float len = f == 4 ? 0.2f : 0.34f;
+                var finger = Piece(_deathArm, PrimitiveType.Cylinder, "Палец", wrist + dir * (0.07f + len * 0.5f), new Vector3(0.035f, len * 0.5f, 0.035f), black, false);
+                finger.transform.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            }
+
+            // Правая рука держит косу; коса выше его самого.
+            Shape(root, "Правый рукав", Sheet(new Vector3(0.55f, 3.5f, 0f), new Vector3(1.2f, 2.75f, -0.08f), new Vector3(1.28f, 2.28f, -0.1f),
+                                              new Vector3(0.96f, 2.2f, -0.05f), new Vector3(0.6f, 2.9f, 0f)),
+                  at, Quaternion.identity, black);
+            _deathScythe = new GameObject("Коса").transform;
+            _deathScythe.SetParent(root, false);
+            _deathScythe.position = at + new Vector3(1.15f, 2.5f, -0.12f);
+            Piece(_deathScythe, PrimitiveType.Sphere, "Кулак", at + new Vector3(1.15f, 2.5f, -0.12f), new Vector3(0.2f, 0.24f, 0.18f), black, false);
+            var snath = Piece(_deathScythe, PrimitiveType.Cylinder, "Косовище", at + new Vector3(1.2f, 2.6f, -0.12f), new Vector3(0.075f, 2.3f, 0.075f), black, false).transform;
             snath.rotation = Quaternion.Euler(0f, 0f, -6f);
-            var top = snath.position + snath.up * 1.9f;
-            var blade = new GameObject("Лезвие", typeof(MeshFilter), typeof(MeshRenderer));
-            blade.transform.SetParent(root, false);
-            blade.transform.position = top;
-            blade.GetComponent<MeshFilter>().sharedMesh = Blade(1.25f, 0.2f);
-            blade.GetComponent<MeshRenderer>().sharedMaterial = black;
+            Shape(_deathScythe, "Лезвие", Blade(1.9f, 0.3f), snath.position + snath.up * 2.3f, Quaternion.identity, black);
+
+            // Чёрный дым от него: виден против света, на чёрном пропадает.
+            var smoke = Haze(new Color(0f, 0f, 0f), additive: false);
+            if (smoke != null)
+                _deathSmoke = Wisps(root, "Дым", at + Vector3.up * 2.3f, smoke, new Vector3(2.6f, 3.6f, 0.7f), 12f,
+                                    new Vector2(2.5f, 4f), new Vector2(0.6f, 1.2f), Color.black,
+                                    new Vector3(-0.15f, 0.25f, -0.05f), new Vector3(0.15f, 0.55f, 0.05f), 0.5f, prewarm: true);
+        }
+
+        /// <summary>Жизнь силуэта, пока гаснет экран: t — секунды от скрипа дверей.</summary>
+        private void Haunt(float t, float breath)
+        {
+            if (_death == null) return;
+            _death.position = _deathAt + Vector3.up * (0.07f * Mathf.Sin(t * 1.25f));
+            if (_deathHem != null) _deathHem.localRotation = Quaternion.Euler(0f, 5f * Mathf.Sin(t * 0.8f), 0f);
+            if (_deathHood != null)
+                _deathHood.localRotation = Quaternion.Euler(Mathf.Lerp(18f, -4f, Smooth(Mathf.InverseLerp(0.6f, 2.3f, t))), 0f, 0f);
+            float eyes = Smooth(Mathf.InverseLerp(1.2f, 1.7f, t)) * (0.9f + 0.1f * Mathf.Sin(t * 19f));
+            foreach (var e in _deathEyes) if (e != null) e.localScale = Vector3.one * (0.065f * eyes);
+            float reach = Smooth(Mathf.InverseLerp(1.0f, 3.2f, t));
+            if (_deathArm != null) _deathArm.localRotation = Quaternion.Euler(48f * reach, 0f, -14f * reach);
+            if (_deathScythe != null) _deathScythe.localRotation = Quaternion.Euler(0f, 0f, 2.5f * Mathf.Sin(t * 0.7f));
+            if (_backGlow != null) _backGlow.color = _backColour * breath;
+        }
+
+        /// <summary>Гул его присутствия: низкий, с медленным выдохом посередине.</summary>
+        private void Presence()
+        {
+            const int rate = 22050;
+            const float seconds = 4.8f;
+            int n = (int)(rate * seconds);
+            var data = new float[n];
+            var rnd = new System.Random(7);
+            float ph = 0f, lp = 0f, br = 0f, br2 = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)rate;
+                float env = Mathf.Clamp01(t / 1.2f) * Mathf.Clamp01((seconds - t) / 0.7f);
+                ph += 42f * (1f + 0.01f * Mathf.Sin(t * 0.9f)) / rate;
+                float saw = (ph % 1f) * 2f - 1f;
+                lp += (saw - lp) * 0.08f;
+                float hum = lp * 0.9f + 0.35f * Mathf.Sin(2f * Mathf.PI * 84f * t) + 0.16f * Mathf.Sin(2f * Mathf.PI * 126f * t);
+                float noise = (float)rnd.NextDouble() * 2f - 1f;
+                br += (noise - br) * 0.18f;
+                br2 += (br - br2) * 0.5f;
+                float exhale = Mathf.Exp(-Mathf.Pow((t - 2.0f) / 0.55f, 2f));
+                data[i] = env * 0.55f * hum + 1.1f * exhale * (br - br2);
+            }
+            var clip = AudioClip.Create("Присутствие Смерти", n, 1, rate, false);
+            clip.SetData(data, 0);
+            var src = gameObject.AddComponent<AudioSource>();
+            src.clip = clip;
+            src.spatialBlend = 0f;
+            src.volume = 0.8f;
+            src.PlayDelayed(0.5f);
+        }
+
+        /// <summary>Полотно по точкам (веер от первой), видно с обеих сторон: рукава.</summary>
+        private static Mesh Sheet(params Vector3[] p)
+        {
+            var tri = new List<int>();
+            for (int i = 1; i < p.Length - 1; i++) tri.AddRange(new[] { 0, i, i + 1, 0, i + 1, i });
+            var m = new Mesh { name = "Полотно" };
+            m.SetVertices(new List<Vector3>(p));
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
+        }
+
+        /// <summary>Лохмотья подола: зубцы вниз по кругу, разной длины и чуть наружу.</summary>
+        private static Mesh Tatters(float r, int n, float len, int seed)
+        {
+            var rnd = new System.Random(seed);
+            var v = new List<Vector3>();
+            var tri = new List<int>();
+            for (int i = 0; i < n; i++)
+            {
+                float a0 = i * Mathf.PI * 2f / n, a1 = (i + 1) * Mathf.PI * 2f / n;
+                float am = (a0 + a1) * 0.5f + ((float)rnd.NextDouble() - 0.5f) * 0.2f;
+                float l = len * (0.45f + 0.55f * (float)rnd.NextDouble());
+                int k = v.Count;
+                v.Add(new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0)) * r);
+                v.Add(new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1)) * r);
+                v.Add(new Vector3(Mathf.Cos(am), 0f, Mathf.Sin(am)) * (r * 1.08f) + Vector3.down * l);
+                tri.AddRange(new[] { k, k + 1, k + 2, k, k + 2, k + 1 });
+            }
+            var m = new Mesh { name = "Лохмотья" };
+            m.SetVertices(v);
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
+        }
+
+        private static Transform Shape(Transform parent, string name, Mesh mesh, Vector3 at, Quaternion rot, Material m)
+        {
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(at, rot);
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = m;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
+        }
+
+        /// <summary>Мягкие пятна частиц: additive — светятся (туман), иначе — заслоняют (дым).</summary>
+        private static Material Haze(Color colour, bool additive)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) return null;
+            var m = new Material(shader) { name = additive ? "Туман" : "Дым" };
+            var tex = Soft(64);
+            m.SetTexture("_BaseMap", tex);
+            m.mainTexture = tex;
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", additive ? 2f : 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            m.SetFloat("_ZWrite", 0f);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            m.SetColor("_BaseColor", new Color(colour.r, colour.g, colour.b, 1f));
+            return m;
+        }
+
+        private static ParticleSystem Wisps(Transform parent, string name, Vector3 at, Material m, Vector3 box, float rate,
+                                            Vector2 life, Vector2 size, Color colour, Vector3 velLo, Vector3 velHi, float alpha, bool prewarm)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = at;
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = true;
+            main.prewarm = prewarm;
+            main.duration = 4f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(life.x, life.y);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(size.x, size.y);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new Color(colour.r, colour.g, colour.b, 1f);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.useUnscaledTime = true;
+            main.maxParticles = 300;
+            var em = ps.emission;
+            em.rateOverTime = rate;
+            var sh = ps.shape;
+            sh.enabled = true;
+            sh.shapeType = ParticleSystemShapeType.Box;
+            sh.scale = box;
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.World;
+            vel.x = new ParticleSystem.MinMaxCurve(velLo.x, velHi.x);
+            vel.y = new ParticleSystem.MinMaxCurve(velLo.y, velHi.y);
+            vel.z = new ParticleSystem.MinMaxCurve(velLo.z, velHi.z);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(alpha, 0.3f), new GradientAlphaKey(alpha, 0.65f), new GradientAlphaKey(0f, 1f) });
+            col.color = new ParticleSystem.MinMaxGradient(g);
+            var sz = ps.sizeOverLifetime;
+            sz.enabled = true;
+            sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.7f, 1f, 1.4f));
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.sharedMaterial = m;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return ps;
         }
 
         /// <summary>Усечённый конус без донца: балахон, остриё капюшона.</summary>
@@ -645,15 +897,32 @@ namespace Sinbinder.Gameplay
 
         // ───────────────────────────── жизнь дороги ─────────────────────────────
 
-        /// <summary>Греховод ударил рядом с чучелом — оно качается от него.</summary>
-        public void Strike(Vector3 from)
+        /// <summary>
+        /// Удар пришёлся в чучело (<see cref="FirstPersonCombat.Swung"/>): оно отшатывается по ходу удара,
+        /// а удар мимо середины ещё и крутит его на коле (автор, 08.11: «когда я бью, оно отшатывается
+        /// в определённую сторону, а должно от удара»). Прежде качалось от любого взмаха рядом —
+        /// и всегда от того места, где стоял Греховод.
+        /// </summary>
+        private void OnSwung(RaycastHit hit, Vector3 dir)
         {
-            if (_dummy == null) return;
-            var d = _dummy.position - from;
-            d.y = 0f;
-            if (d.sqrMagnitude < 1e-4f) d = Vector3.forward;
-            _tipAxis = Vector3.Cross(Vector3.up, d.normalized);
-            _tipVel += 140f;
+            if (_dummy == null || hit.collider == null || !hit.collider.transform.IsChildOf(_dummy)) return;
+            DummyHits++;
+            var d = new Vector2(dir.x, dir.z);
+            if (d.sqrMagnitude < 1e-4f) return;
+            d.Normalize();
+            _tiltVel += d * 150f;
+            var arm = hit.point - _dummy.position;
+            arm.y = 0f;
+            _spinVel += Vector3.Cross(arm, new Vector3(d.x, 0f, d.y)).y * 260f;
+        }
+
+        /// <summary>Взять банку с душой с камня: прячется с полки. false — уже взята.</summary>
+        public bool TakeSoulJar()
+        {
+            if (SoulJarTaken) return false;
+            SoulJarTaken = true;
+            foreach (var go in _soulJar) if (go != null) go.SetActive(false);
+            return true;
         }
 
         public static bool NearDummy(Vector3 at, float reach = 3.2f) => Flat(at - DummyAt).magnitude <= reach;
@@ -675,11 +944,16 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             float dt = Time.deltaTime;
-            if (_dummy != null && (Mathf.Abs(_tip) > 0.01f || Mathf.Abs(_tipVel) > 0.01f))
+            if (_dummy != null && (_tilt.sqrMagnitude > 1e-4f || _tiltVel.sqrMagnitude > 1e-4f
+                                   || Mathf.Abs(_spin) > 0.01f || Mathf.Abs(_spinVel) > 0.01f))
             {
-                _tipVel += (-90f * _tip - 6f * _tipVel) * dt;
-                _tip += _tipVel * dt;
-                _dummy.localRotation = Quaternion.AngleAxis(Mathf.Clamp(_tip, -25f, 25f), _tipAxis) * _dummyRest;
+                _tiltVel += (-90f * _tilt - 6f * _tiltVel) * dt;
+                _tilt = Vector2.ClampMagnitude(_tilt + _tiltVel * dt, 25f);
+                _spinVel += (-25f * _spin - 3f * _spinVel) * dt;
+                _spin = Mathf.Clamp(_spin + _spinVel * dt, -40f, 40f);
+                var d3 = new Vector3(_tilt.x, 0f, _tilt.y);
+                var lean = d3.sqrMagnitude > 1e-6f ? Quaternion.AngleAxis(d3.magnitude, Vector3.Cross(Vector3.up, d3.normalized)) : Quaternion.identity;
+                _dummy.localRotation = lean * Quaternion.Euler(0f, _spin, 0f) * _dummyRest;
             }
 
             var hero = SinbinderPlayer.Instance;
@@ -749,8 +1023,13 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(0.4f);
 
             Creak();
-            // Тема сна уходит вместе с дверьми: к силуэту — тишина и скрип.
+            Presence();
+            if (_deathSmoke != null) _deathSmoke.Play();
+            if (_cryptMist != null) _cryptMist.Play();
+            // Тема сна уходит вместе с дверьми: к силуэту — тишина, скрип и его гул.
             Audio.Music.Stop(3f);
+            // Взгляд поднимается за ним: он выше дверей в глубине.
+            var lookUp = Quaternion.LookRotation(new Vector3(0f, 2.9f, GateZ + 6.5f) - eye);
             if (_seam != null) _seam.SetActive(false);
             const float open = 3.4f, fade = 3.8f;
             for (float t = 0f; t < fade + 0.9f; t += Time.unscaledDeltaTime)
@@ -758,48 +1037,108 @@ namespace Sinbinder.Gameplay
                 float d = Mathf.Pow(Smooth(Mathf.Clamp01(t / open)), 1.3f);
                 if (_doorLeft != null) _doorLeft.localRotation = Quaternion.Euler(0f, -88f * d, 0f);
                 if (_doorRight != null) _doorRight.localRotation = Quaternion.Euler(0f, 88f * d, 0f);
-                if (_cryptLight != null) _cryptLight.intensity = 10f * d;
+                float breath = 1f + 0.16f * Mathf.Sin(t * 1.6f) + 0.05f * Mathf.Sin(t * 5.3f);
+                if (_cryptLight != null) _cryptLight.intensity = 10f * d * breath;
+                Haunt(t, breath);
                 float a = Mathf.Pow(Mathf.Clamp01(t / fade), 1.6f);
                 black.color = new Color(0f, 0f, 0f, a);
                 CryptFade = a;
-                if (cam != null) cam.transform.position = eye + look * Vector3.forward * (1.8f * Smooth(Mathf.Clamp01(t / fade)));
+                if (cam != null)
+                {
+                    float push = Smooth(Mathf.Clamp01(t / fade));
+                    cam.transform.SetPositionAndRotation(eye + look * Vector3.forward * (1.8f * push), Quaternion.Slerp(look, lookUp, push));
+                }
                 yield return null;
             }
             // Чёрное остаётся до загрузки лагеря: уйдёт вместе со сценой сна.
             CryptFade = 1f;
         }
 
-        /// <summary>Скрип тяжёлых створок: низкий гул и прерывистый скрежет петель.</summary>
+        /// <summary>
+        /// Створки отворяются со стоном (автор, 08.11: «при открытии врат большого склепа нужен
+        /// скрип, чтобы он напоминал стон умирающего»). Петля скрипит толчками с частотой голоса:
+        /// вдох вверх (118 → 156 Гц), долгий спад (→ 84) и обрыв (→ 58). Толчки идут через гласные —
+        /// «о» к «у» (три резонанса, как горло), рвутся рывками трения, а к концу сбиваются и
+        /// тонут в выдохе. Под стоном — гул камня.
+        /// </summary>
         private void Creak()
         {
             const int rate = 22050;
-            const float seconds = 3.6f;
+            const float seconds = 4.4f;
             int n = (int)(rate * seconds);
-            var data = new float[n];
+            var voice = new float[n];
             var rnd = new System.Random(31);
-            float phase = 0f, low = 0f, rumble = 0f;
+            float phase = 0f, jitter = 0f, pulse = 0f, peak = 1e-6f;
+            Resonator f1 = default, f2 = default, f3 = default;
             for (int i = 0; i < n; i++)
             {
                 float t = i / (float)rate;
-                float env = Mathf.Clamp01(t / 0.15f) * Mathf.Clamp01((seconds - t) / 0.8f);
-                // Петли: скрежет рывками — частота ходит, громкость пульсирует.
-                float f = 95f + 40f * Mathf.Sin(t * 2.3f) + 18f * Mathf.Sin(t * 7.1f);
-                phase += f / rate;
-                float saw = (phase % 1f) * 2f - 1f;
-                float stick = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(t * Mathf.PI * 2f * (6f + 3f * Mathf.Sin(t * 1.7f)))), 3f);
-                low += (saw - low) * 0.25f;
-                // Гул камня.
+                float f0 = t < 0.6f ? Mathf.Lerp(118f, 156f, Smooth(t / 0.6f))
+                         : t < 3.3f ? Mathf.Lerp(156f, 84f, (t - 0.6f) / 2.7f)
+                         : Mathf.Lerp(84f, 58f, (t - 3.3f) / 1.1f);
+                f0 *= 1f + 0.025f * Mathf.Sin(t * 2f * Mathf.PI * 4.6f);
+                float dying = Smooth((t - 2.6f) / 1.6f);
+                phase += f0 * (1f + jitter) / rate;
+                if (phase >= 1f)
+                {
+                    phase -= 1f;
+                    jitter = ((float)rnd.NextDouble() * 2f - 1f) * Mathf.Lerp(0.06f, 0.24f, dying);
+                    pulse = 1f;
+                }
                 float noise = (float)rnd.NextDouble() * 2f - 1f;
-                rumble += (noise - rumble) * 0.02f;
-                data[i] = env * (0.32f * low * (0.35f + 0.65f * stick) + 1.6f * rumble);
+                // Трение петли: голос цепляется рывками, пять-семь раз в секунду.
+                float stick = 0.5f + 0.5f * Mathf.Pow(Mathf.Abs(Mathf.Sin(t * Mathf.PI * (5.5f + 2f * Mathf.Sin(t * 1.3f)))), 0.6f);
+                float src = pulse * stick * (1f - 0.6f * dying) + noise * Mathf.Lerp(0.03f, 0.25f, dying);
+                pulse *= 0.55f;
+                if ((i & 31) == 0)
+                {
+                    float v = Smooth((t - 0.8f) / 2.8f);
+                    f1.Tune(Mathf.Lerp(520f, 340f, v), 90f, rate);
+                    f2.Tune(Mathf.Lerp(880f, 680f, v), 110f, rate);
+                    f3.Tune(Mathf.Lerp(2450f, 2250f, v), 160f, rate);
+                }
+                float env = Smooth(t / 0.3f) * Mathf.Clamp01((seconds - t) / 0.9f);
+                voice[i] = env * (f1.Step(src) + 0.55f * f2.Step(src) + 0.2f * f3.Step(src));
+                peak = Mathf.Max(peak, Mathf.Abs(voice[i]));
             }
-            var clip = AudioClip.Create("Скрип ворот склепа", n, 1, rate, false);
-            clip.SetData(data, 0);
-            var src = gameObject.AddComponent<AudioSource>();
-            src.clip = clip;
-            src.spatialBlend = 0f;
-            src.volume = 0.55f;
-            src.Play();
+            float rumble = 0f, gain = 0.7f / peak;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)rate;
+                rumble += (((float)rnd.NextDouble() * 2f - 1f) - rumble) * 0.02f;
+                float env = Mathf.Clamp01(t / 0.15f) * Mathf.Clamp01((seconds - t) / 0.8f);
+                voice[i] = voice[i] * gain + 1.4f * rumble * env;
+            }
+            var clip = AudioClip.Create("Стон ворот склепа", n, 1, rate, false);
+            clip.SetData(voice, 0);
+            var src2 = gameObject.AddComponent<AudioSource>();
+            src2.clip = clip;
+            src2.spatialBlend = 0f;
+            src2.volume = 0.6f;
+            src2.Play();
+        }
+
+        /// <summary>Резонанс горла (полосовой, пик 0 дБ): гласную задают три таких.</summary>
+        private struct Resonator
+        {
+            private float _b0, _a1, _a2, _x1, _x2, _y1, _y2;
+
+            public void Tune(float f, float width, int rate)
+            {
+                float w = 2f * Mathf.PI * f / rate;
+                float alpha = Mathf.Sin(w) * width / (2f * f);
+                float a0 = 1f + alpha;
+                _b0 = alpha / a0;
+                _a1 = -2f * Mathf.Cos(w) / a0;
+                _a2 = (1f - alpha) / a0;
+            }
+
+            public float Step(float x)
+            {
+                float y = _b0 * (x - _x2) - _a1 * _y1 - _a2 * _y2;
+                _x2 = _x1; _x1 = x; _y2 = _y1; _y1 = y;
+                return y;
+            }
         }
 
         // ───────────────────────────── помощники ─────────────────────────────
