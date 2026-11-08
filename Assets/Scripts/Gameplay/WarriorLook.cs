@@ -55,7 +55,8 @@ namespace Sinbinder.Gameplay
         /// ни без неё.
         /// </summary>
         public static Transform Build(GameObject owner, ShellType shell,
-                                      float height, float girth, float lift)
+                                      float height, float girth, float lift,
+                                      Warrior dressAs = null)
         {
             if (owner == null) return null;
 
@@ -102,7 +103,9 @@ namespace Sinbinder.Gameplay
                 // перьев — по тому, кем воин является (22-LOOK.md).
                 // Здесь, а не в спавнерах: спавнеров четыре, и одеть
                 // в трёх из них — значит однажды забыть в четвёртом.
-                Wardrobe.Dress(model, owner.GetComponent<Warrior>());
+                // dressAs — поднятый из свежего тела носит одежду того,
+                // кем был (Raising.Rise, corpse): одежда — по нему, не по оболочке.
+                Wardrobe.Dress(model, dressAs != null ? dressAs : owner.GetComponent<Warrior>());
 
                 return model.transform;
             }

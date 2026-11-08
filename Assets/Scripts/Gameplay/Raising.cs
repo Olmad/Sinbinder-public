@@ -20,12 +20,16 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public static class Raising
     {
+        /// <summary>Кожа свежего мертвеца: серая, без крови, чуть в зелень.
+        /// Живая — 0,435/0,378/0,335 (bodies.py); эта темнее и холоднее.</summary>
+        private static readonly Color DeadSkin = new Color(0.34f, 0.355f, 0.335f);
+
         /// <summary>
         /// Поднять воина. Возвращает его или <c>null</c>, если поднять
         /// было не из чего.
         /// </summary>
         public static Warrior Rise(SoulData soul, ShellType shell, Vector3 at,
-            Quaternion rotation, RelationshipSystem relations)
+            Quaternion rotation, RelationshipSystem relations, Warrior corpse = null)
         {
             if (soul == null) return null;
 
@@ -50,7 +54,21 @@ namespace Sinbinder.Gameplay
             // Оболочка видна: поднятый в големе не должен выглядеть
             // как поднятый в скелете — иначе выбор тела у устройства
             // ничего не значит на глаз.
-            WarriorLook.Build(go, shell, 1.05f, 0.5f, 0.65f);
+            //
+            // Свежее тело — другое дело (автор, 08.11: «только что умерший воин
+            // становится разлагающимся зомби, уже потеряв куски плоти и даже всё
+            // мясо с руки»). Оболочка та же — душа в мёртвом теле, — но тело его
+            // же: рост, лицо и одежда того, кто только что лежал, кожа мёртвая,
+            // а в глазах грех (SinEyes). Гниль приходит со временем, не сразу.
+            if (corpse != null)
+            {
+                var old = corpse.transform.Find("Тело");
+                float tall = old != null && old.localScale.y > 0f ? old.localScale.y : 1.05f;
+                float thick = old != null && old.localScale.y > 0f ? old.localScale.x / tall * 0.5f : 0.5f;
+                var body = WarriorLook.Build(go, corpse.Shell, tall, thick, 0.65f, dressAs: corpse);
+                if (body != null) Wardrobe.Tint(body.gameObject, "Skin", DeadSkin);
+            }
+            else WarriorLook.Build(go, shell, 1.05f, 0.5f, 0.65f);
 
             // Поднятый вне старта сцены через настройку не проходит:
             // без этого вызова он остался бы телом без движка решений.

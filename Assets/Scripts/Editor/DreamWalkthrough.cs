@@ -38,6 +38,7 @@ namespace Sinbinder.EditorTools
         private static float _riseAt = -1f;
         private static bool _riseShot;
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
+        private static bool _risenShot;
         private static string NL => Environment.NewLine;
 
         static DreamWalkthrough()
@@ -180,6 +181,21 @@ namespace Sinbinder.EditorTools
                     break;
                 case "Command":
                     if (_step != "приказ") { Go("приказ"); }
+                    // Поднятый из свежего тела — тот же человек, а не гниль (автор, 08.11).
+                    // Камера на миг к нему, кадр, камера обратно: Snapshot рисует сразу.
+                    if (!_risenShot && dream.Zombie != null && now - _stepAt > 0.6f && Camera.main != null)
+                    {
+                        _risenShot = true;
+                        var cam = Camera.main.transform;
+                        var keepAt = cam.position; var keepRot = cam.rotation; float keepFov = Camera.main.fieldOfView;
+                        var who = dream.Zombie.transform;
+                        var face = who.position + Vector3.up * 1.15f;
+                        cam.position = face + who.forward * 2.3f + who.right * 0.8f + Vector3.up * 0.25f;
+                        cam.rotation = Quaternion.LookRotation(face - cam.position, Vector3.up);
+                        Camera.main.fieldOfView = 45f;
+                        Snap("сон — поднятый, свежее тело");
+                        cam.position = keepAt; cam.rotation = keepRot; Camera.main.fieldOfView = keepFov;
+                    }
                     if (dream.Zombie != null && !dream.Zombie.HasCommand && now - _stepAt > 1f)
                         dream.Zombie.IssueCommand(CommandKind.Move, dream.Zombie.transform.position + new Vector3(-1.5f, 0f, -1.5f));
                     break;

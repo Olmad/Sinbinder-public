@@ -709,7 +709,7 @@ namespace Sinbinder.Gameplay
             // not a second copy of the binding/shell maths.
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
             var risen = Raising.Rise(soul, ShellType.Zombie,
-                _woundedAt + new Vector3(2f, 0f, 0f), Quaternion.identity, relations);
+                _woundedAt + new Vector3(2f, 0f, 0f), Quaternion.identity, relations, corpse: _wounded);
             if (risen == null) { Log("Не удалось поднять тело. Душа осталась в банке."); return; }
             if (jar >= 0) Satchel.TakeSoul(jar); // Only remove after successful creation.
             _fallbackSoul = null;
