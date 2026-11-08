@@ -29,11 +29,13 @@ namespace Sinbinder.Gameplay
         private Vector3 _lastEye;
 
         // Позы — в осях камеры: x вправо, y вверх, z вперёд. dir — куда смотрит остриё.
-        private static readonly Vector3 IdleAt = new Vector3(0.27f, -0.30f, 0.52f), IdleDir = new Vector3(-0.22f, 0.72f, 0.66f);
-        private static readonly Vector3 BlockAt = new Vector3(0.10f, -0.16f, 0.48f), BlockDir = new Vector3(-0.97f, 0.18f, 0.18f);
-        private static readonly Vector3 WindAt = new Vector3(0.36f, -0.12f, 0.40f), WindDir = new Vector3(0.35f, 0.85f, -0.20f);
-        private static readonly Vector3 CutAt = new Vector3(-0.12f, -0.36f, 0.60f), CutDir = new Vector3(-0.75f, -0.25f, 0.60f);
-        private static readonly Vector3 Elbow = new Vector3(0.42f, -0.62f, 0.12f);
+        // Покой — в правой трети кадра, кулак над нижней панелью (кадр w0811f: посох шёл
+        // через середину, кулак прятался под панелью выделенного).
+        private static readonly Vector3 IdleAt = new Vector3(0.30f, -0.19f, 0.50f), IdleDir = new Vector3(-0.10f, 0.93f, 0.35f);
+        private static readonly Vector3 BlockAt = new Vector3(0.10f, -0.10f, 0.48f), BlockDir = new Vector3(-0.97f, 0.18f, 0.18f);
+        private static readonly Vector3 WindAt = new Vector3(0.36f, -0.06f, 0.40f), WindDir = new Vector3(0.35f, 0.85f, -0.20f);
+        private static readonly Vector3 CutAt = new Vector3(-0.10f, -0.24f, 0.60f), CutDir = new Vector3(-0.75f, -0.25f, 0.60f);
+        private static readonly Vector3 Elbow = new Vector3(0.45f, -0.55f, 0.10f);
         private const float SwingSeconds = 0.6f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -219,7 +221,7 @@ namespace Sinbinder.Gameplay
                     { cloth = r.sharedMaterial; break; }
             if (cloth == null) cloth = Lit(new Color(0.42f, 0.05f, 0.06f));
 
-            _fist = Part(PrimitiveType.Sphere, "Кулак", Lit(new Color(0.83f, 0.80f, 0.71f)));
+            _fist = Part(PrimitiveType.Sphere, "Кулак", Lit(new Color(0.60f, 0.56f, 0.48f)));
             _fist.SetParent(transform, false);
             var knuckles = _fist.GetChild(0);
             knuckles.localScale = new Vector3(0.085f, 0.11f, 0.095f);
@@ -228,8 +230,9 @@ namespace Sinbinder.Gameplay
 
             var glow = new GameObject("Свет у руки").AddComponent<Light>();
             glow.type = LightType.Point;
-            glow.range = 1.1f;
-            glow.intensity = 0.5f;
+            // Слабо: у самого кулака свет в 0,5 выбеливал его в белое яйцо (кадр w0811g).
+            glow.range = 0.9f;
+            glow.intensity = 0.12f;
             glow.color = new Color(1f, 0.82f, 0.62f);
             glow.shadows = LightShadows.None;
             glow.transform.SetParent(_fist, false);

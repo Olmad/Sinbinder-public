@@ -947,13 +947,22 @@ namespace Sinbinder.Gameplay
             if (_dummy != null && (_tilt.sqrMagnitude > 1e-4f || _tiltVel.sqrMagnitude > 1e-4f
                                    || Mathf.Abs(_spin) > 0.01f || Mathf.Abs(_spinVel) > 0.01f))
             {
-                _tiltVel += (-90f * _tilt - 6f * _tiltVel) * dt;
-                _tilt = Vector2.ClampMagnitude(_tilt + _tiltVel * dt, 25f);
-                _spinVel += (-25f * _spin - 3f * _spinVel) * dt;
-                _spin = Mathf.Clamp(_spin + _spinVel * dt, -40f, 40f);
+                // Мелкими шагами и с сильным гашением: шаг в кадр и гашение 6 давали отдачу
+                // сильнее толчка — через долю секунды чучело валилось на бьющего (кадр w0811g).
+                int steps = Mathf.Clamp(Mathf.CeilToInt(dt * 120f), 1, 12);
+                float h = dt / steps;
+                for (int k = 0; k < steps; k++)
+                {
+                    _tiltVel += (-90f * _tilt - 13f * _tiltVel) * h;
+                    _tilt = Vector2.ClampMagnitude(_tilt + _tiltVel * h, 25f);
+                    _spinVel += (-25f * _spin - 6f * _spinVel) * h;
+                    _spin = Mathf.Clamp(_spin + _spinVel * h, -40f, 40f);
+                }
                 var d3 = new Vector3(_tilt.x, 0f, _tilt.y);
                 var lean = d3.sqrMagnitude > 1e-6f ? Quaternion.AngleAxis(d3.magnitude, Vector3.Cross(Vector3.up, d3.normalized)) : Quaternion.identity;
-                _dummy.localRotation = lean * Quaternion.Euler(0f, _spin, 0f) * _dummyRest;
+                // В мировых осях: покой задан мировым поворотом, а родитель повёрнут — в его
+                // осях чучело валилось на бьющего (кадр w0811f «удар»).
+                _dummy.rotation = lean * Quaternion.Euler(0f, _spin, 0f) * _dummyRest;
             }
 
             var hero = SinbinderPlayer.Instance;

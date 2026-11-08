@@ -286,6 +286,14 @@ namespace Sinbinder.EditorTools
         /// Глазами у чучела (автор, 08.11): оружие в руке справа; удар — чучело отшатывается
         /// по ходу удара. true — сняли, можно дальше.
         /// </summary>
+        private static void EyeAtDummy(Camera cam, DreamTutorialDirector dream)
+        {
+            var eye = dream.Hero.transform.position + Vector3.up * 1.65f;
+            var aim = DreamRoad.DummyAt + Vector3.up * 1.4f;
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(aim - eye));
+            cam.fieldOfView = 60f;
+        }
+
         private static bool EyesShots(DreamTutorialDirector dream, float now)
         {
             var cam = Camera.main;
@@ -312,6 +320,9 @@ namespace Sinbinder.EditorTools
                     if (!view.FirstPersonNow) return now - _fpAt > 3f;
                     if (!view.WarriorModeNow) view.SwitchRole();
                     view.Face(DreamRoad.DummyAt);
+                    // В пакетном запуске у окна нет фокуса, и RTS_Camera глаза не ставит (кадр w0811e —
+                    // вид сверху и посох перед ним): глаза — отсюда, как у кадра луны в прогоне лагеря.
+                    EyeAtDummy(cam, dream);
                     if (now - _fpAt < 1.2f) return false;
                     Snap("сон — глазами, оружие в руке, чучело");
                     dream.Hero.GetComponent<FirstPersonCombat>()?.TestStrike();
@@ -319,6 +330,7 @@ namespace Sinbinder.EditorTools
                     _fpAt = now;
                     return false;
                 case 2:
+                    EyeAtDummy(cam, dream);
                     if (now - _fpAt < 0.2f) return false;
                     Snap("сон — удар, чучело отшатнулось");
                     Write($"  попаданий по чучелу: {DreamRoad.DummyHits}");
