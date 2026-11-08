@@ -46,6 +46,11 @@ namespace Sinbinder.EditorTools
             im.animationType = ModelImporterAnimationType.None;
             im.optimizeMeshPolygons = true;
             im.optimizeMeshVertices = true;
+
+            // Мягкая вещь (Wardrobe.Soften) перекладывает вершины в пространство тела
+            // и раздаёт им веса во время игры — меш должен читаться и в сборке.
+            if (System.IO.Path.GetFileNameWithoutExtension(assetPath).EndsWith("Garment"))
+                im.isReadable = true;
         }
 
         /// <summary>Вещь на теле — той же гладкости, что тело (<see cref="BodyImport.Surface"/>).</summary>

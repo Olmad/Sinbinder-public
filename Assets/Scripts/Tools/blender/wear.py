@@ -954,7 +954,8 @@ def sin_mantle(b):
     пешка логотипа. Без шаров на плечах: они раздували силуэт в нелепость.
     """
     z = P["neck"] - 0.014
-    b.add(*ring((0, 0.004, z), 0.078, 0.014, scale=(1.0, 0.92, 0.8), segs=22, rsegs=6), bone="Chest", mat=2)
+    # Кольцо-воротник снято 08.11: ряса сама доходит до шеи, а кольцо было третьим
+    # в стопке колец у шеи («одежда кусочная»). Шипы растут прямо из кокетки.
     for k in range(7):
         a = math.radians(30 + k * 20)        # бока и спина
         base = (math.cos(a) * 0.084, math.sin(a) * 0.078, z + 0.004)
@@ -1022,7 +1023,243 @@ def sin_staff(b):
         b.add(*tube(p0, p1, 0.0060, 0.0045, segs=6), bone=bone, mat=1)
         b.add(*tube(p1, p2, 0.0045, 0.0012, segs=6), bone=bone, mat=1)
 
+
+# ------------------------------------------------- облачение одним куском
+
+# Автор, 08.11: «нужно поработать над одеждой Греховода — она кусочная». Ряса,
+# юбка, рукава до локтя, рукава от локтя, воротник, бронзовое кольцо и плащ были
+# семью жёсткими вещами на шести костях: торс — ровный цилиндр, над ним торчали
+# плечи, у шеи стопка колец, рукава расходились на локте, плащ стоял по бокам
+# досками. Теперь это одна вещь: кокетка ложится на плечи, торс сужается к кушаку,
+# юбка расходится складками, разрез и рваный подол — в той же ткани, рукава
+# колоколом выходят из-под кокетки, накидка за спиной — продолжение плеч.
+# Вещь гнётся вместе с телом: часть ткани записана в UV (u — 0 ряса, 1 левый
+# рукав, 2 правый, 3 накидка), а веса костей по ней раздаёт Wardrobe.Soften.
+
+ROBE_MANTLE = ("Robe Mantle", (0.100, 0.018, 0.030, 1.0))
+
+# Длины лоскутов подола — по кругу, не жребием (как у tatters).
+RAGS = (0.030, 0.052, 0.022, 0.044, 0.060, 0.026, 0.038, 0.050, 0.018, 0.046)
+
+
+def _norm(v):
+    n = math.sqrt(sum(c * c for c in v)) or 1.0
+    return tuple(c / n for c in v)
+
+
+def cloth_sheet(b, grid, part, inward, thick=0.007, alias=None, keep=None, mats=None):
+    """
+    Ткань в два слоя по сетке точек grid[r][c]. Изнанка — внутрь на thick
+    (inward(p) — направление внутрь), края закрыты кромкой: ткань видна с обеих
+    сторон и не пропадает, стоит зайти сзади. alias(r, c) склеивает шов (ряса
+    выше разреза — замкнутая), keep(r, c) — есть ли грань, mats(r, c) — её материал.
+    Лицо смотрит наружу — проверяется по сумме нормалей, а не угадывается.
+    """
+    R, C = len(grid), len(grid[0])
+    alias = alias or (lambda r, c: (r, c))
+    index, verts = {}, []
+
+    def vid(r, c):
+        key = alias(r, c)
+        if key not in index:
+            index[key] = len(verts)
+            verts.append(grid[key[0]][key[1]])
+        return index[key]
+
+    quads, qm = [], []
+    for r in range(R - 1):
+        for c in range(C - 1):
+            if keep is not None and not keep(r, c):
+                continue
+            q = [vid(r, c), vid(r + 1, c), vid(r + 1, c + 1), vid(r, c + 1)]
+            q = [v for k, v in enumerate(q) if v not in q[:k]]
+            if len(q) < 3:
+                continue
+            quads.append(q)
+            qm.append(mats(r, c) if mats else 0)
+
+    # Наружу ли смотрит лицо: нормаль Ньюэлла против «внутрь».
+    score = 0.0
+    for q in quads:
+        nx = ny = nz = 0.0
+        for k in range(len(q)):
+            a, c2 = verts[q[k]], verts[q[(k + 1) % len(q)]]
+            nx += (a[1] - c2[1]) * (a[2] + c2[2])
+            ny += (a[2] - c2[2]) * (a[0] + c2[0])
+            nz += (a[0] - c2[0]) * (a[1] + c2[1])
+        d = inward(verts[q[0]])
+        score -= nx * d[0] + ny * d[1] + nz * d[2]
+    if score < 0:
+        quads = [list(reversed(q)) for q in quads]
+
+    n = len(verts)
+    inner = []
+    for p in verts:
+        d = _norm(inward(p))
+        inner.append(tuple(p[k] + d[k] * thick for k in range(3)))
+
+    faces = [list(q) for q in quads]
+    fm = list(qm)
+    faces += [[i + n for i in reversed(q)] for q in quads]
+    fm += qm
+
+    used = {}
+    for q, m in zip(quads, qm):
+        for k in range(len(q)):
+            a, c2 = q[k], q[(k + 1) % len(q)]
+            key = (min(a, c2), max(a, c2))
+            used.setdefault(key, []).append((a, c2, m))
+    for edges in used.values():
+        if len(edges) == 1:
+            a, c2, m = edges[0]
+            faces.append([c2, a, a + n, c2 + n])
+            fm.append(m)
+
+    allv = verts + inner
+    b.add(allv, faces, bone="Spine", mat=fm, smooth=True)
+    if not hasattr(b, "uv"):
+        b.uv = []
+    b.uv.extend([(float(part), 0.0)] * len(allv))
+
+
+def _densify(points, step):
+    """Профиль (t, a, b…) с промежуточными точками не реже step по t."""
+    out = [points[0]]
+    for p0, p1 in zip(points, points[1:]):
+        k = max(1, int(math.ceil(abs(p1[0] - p0[0]) / step)))
+        for i in range(1, k + 1):
+            f = i / k
+            out.append(tuple(a + (c - a) * f for a, c in zip(p0, p1)))
+    return out
+
+
+def _folds(theta):
+    """Складки: две волны, чтобы не было ровной гофры."""
+    return 0.7 * math.sin(11 * theta + 0.3) + 0.3 * math.sin(17 * theta + 1.1)
+
+
+def garment_profile():
+    """Ряса сверху вниз: (z, rx, ry). Под скелет — рёбра ±0,079, таз ±0,088 (замер 08.11)."""
+    sh, nk, ch, wa, hp, kn, an = (P[k] for k in ("shoulder", "neck", "chest", "waist", "hip", "knee", "ankle"))
+    hem = (kn + an) * 0.5
+    slit = kn + 0.040
+    return [(nk + 0.008, 0.050, 0.048), (sh + 0.034, 0.074, 0.060), (sh + 0.026, 0.094, 0.068),
+            (sh + 0.014, 0.108, 0.074), (sh - 0.002, 0.114, 0.078), (sh - 0.026, 0.110, 0.082),
+            (ch + 0.040, 0.100, 0.084), (ch - 0.020, 0.094, 0.078), (wa + 0.020, 0.088, 0.071),
+            (wa, 0.088, 0.070), (hp + 0.010, 0.102, 0.080), (hp - 0.050, 0.108, 0.086),
+            (slit + 0.080, 0.116, 0.094), (slit, 0.124, 0.104), (hem + 0.060, 0.134, 0.114),
+            (hem, 0.142, 0.122)], slit, hem
+
+
+def _radius_at(prof, z):
+    """rx, ry рясы на высоте z (профиль сверху вниз)."""
+    if z >= prof[0][0]:
+        return prof[0][1], prof[0][2]
+    for (z0, a0, b0), (z1, a1, b1) in zip(prof, prof[1:]):
+        if z1 <= z <= z0:
+            f = (z0 - z) / (z0 - z1)
+            return a0 + (a1 - a0) * f, b0 + (b1 - b0) * f
+    return prof[-1][1], prof[-1][2]
+
+
+def sin_garment(b):
+    """Ряса, рукава и накидка Греховода — одна ткань (см. выше)."""
+    yc = 0.004
+    prof, slit, hem = garment_profile()
+    rows = _densify(prof, 0.018)
+    ch, wa, hp = P["chest"], P["waist"], P["hip"]
+    C = 48
+
+    def amp(z):
+        if z > ch + 0.040:
+            return 0.0
+        if z > wa + 0.020:
+            return 0.012
+        if z > hp:
+            return 0.004 + 0.008 * (wa - z) / (wa - hp) if z < wa else 0.004
+        return 0.012 + 0.058 * (hp - z) / (hp - hem)
+
+    def gap(z):
+        if z >= slit - 1e-6:
+            return 0.0
+        return math.radians(5.0 + 15.0 * (slit - z) / (slit - hem))
+
+    grid = []
+    for ri, (z, rx, ry) in enumerate(rows):
+        g = gap(z)
+        line = []
+        for c in range(C + 1):
+            th = math.radians(270.0) + g + (2 * math.pi - 2 * g) * c / C
+            k = 1.0 + amp(z) * _folds(th)
+            zz = z
+            if ri == len(rows) - 1:
+                zz -= RAGS[c % len(RAGS)] * 0.6
+            line.append((math.cos(th) * rx * k, yc + math.sin(th) * ry * k, zz))
+        grid.append(line)
+
+    def alias(r, c):
+        return (r, 0) if c == C and gap(rows[r][0]) == 0.0 else (r, c)
+
+    kn = P["knee"]
+    patches = ((200.0, kn + 0.090, 0.040, 0.034), (65.0, hp - 0.020, 0.034, 0.040))
+
+    def mats(r, c):
+        z = (rows[r][0] + rows[r + 1][0]) * 0.5
+        if z < hem + 0.030:
+            return 1
+        g = gap(z)
+        th = math.degrees(math.radians(270.0) + g + (2 * math.pi - 2 * g) * (c + 0.5) / C) % 360.0
+        for a, pz, w, h in patches:
+            span = math.degrees(w / 0.12) * 0.5
+            if abs(((th - a + 180.0) % 360.0) - 180.0) < span and abs(z - pz) < h * 0.5:
+                return 2
+        return 0
+
+    cloth_sheet(b, grid, 0, lambda p: (-p[0], -(p[1] - yc), 0.0), alias=alias, mats=mats)
+
+    # Рукава колоколом: из-под кокетки до запястья, к кисти шире. Ось — кость руки.
+    sh, sx, el, wr = P["shoulder"], P["shoulder_x"], P["elbow"], P["wrist"]
+    x0, x1 = sx - 0.032, wr + 0.014
+    sp = _densify([(x0, 0.032), (sx, 0.036), (sx + 0.050, 0.035), (el - 0.020, 0.033),
+                   (el + 0.030, 0.034), (wr - 0.060, 0.043), (wr - 0.010, 0.053), (x1, 0.059)], 0.018)
+    N = 18
+    for side, part in ((1, 1), (-1, 2)):
+        grid = []
+        for ri, (x, r) in enumerate(sp):
+            line = []
+            for c in range(N + 1):
+                ph = 2 * math.pi * c / N
+                k = 1.0 + (0.05 if x > el else 0.02) * math.sin(5 * ph + 0.7)
+                xx = x + (RAGS[c % len(RAGS)] * 0.25 if ri == len(sp) - 1 else 0.0)
+                line.append((side * xx, math.cos(ph) * r * k, sh + math.sin(ph) * r * k))
+            grid.append(line)
+        cloth_sheet(b, grid, part, lambda p: (0.0, -p[1], sh - p[2]),
+                    alias=lambda r, c: (r, 0) if c == N else (r, c), thick=0.005)
+
+    # Накидка за спиной: продолжение плеч, книзу шире и в складках, край рваный.
+    top, low = sh + 0.026, kn - 0.010
+    zs = [top - (top - low) * i / 26 for i in range(27)]
+    A0, A1, M = 90.0 - 66.0, 90.0 + 66.0, 22
+    grid = []
+    for ri, z in enumerate(zs):
+        f = ri / (len(zs) - 1)
+        rx, ry = _radius_at(prof, z)
+        rx0, ry0 = _radius_at(prof, top)
+        # Не уже плеч: у кушака ряса сужается, а накидка падает с плеч отвесно.
+        rx, ry = max(rx, rx0 * (1.0 - 0.10 * f)), max(ry, ry0)
+        off = 0.009 + 0.030 * f
+        line = []
+        for c in range(M + 1):
+            th = math.radians(A0 + (A1 - A0) * c / M)
+            k = 1.0 + 0.08 * f * math.sin(8 * th + 0.4)
+            zz = z - (RAGS[c % len(RAGS)] * 0.9 if ri == len(zs) - 1 else 0.0)
+            line.append((math.cos(th) * (rx + off) * k, yc + math.sin(th) * (ry + off) * k, zz))
+        grid.append(line)
+    cloth_sheet(b, grid, 3, lambda p: (-p[0], -(p[1] - yc), 0.0), mats=lambda r, c: 3, thick=0.006)
+
+
 ITEMS = [
+    Item("SinGarment",     "Spine",         sin_garment,                [ROBE, DUST, PATCH, ROBE_MANTLE]),
     Item("SinRobe",        "Spine",         sin_robe,                   [ROBE, GOLD, DARK]),
     Item("SinSkirt",       "Hips",          sin_skirt,                  [ROBE, GOLD, DARK, DUST, PATCH]),
     Item("SinCloak",       "Chest",         sin_cloak,                  [CLOTH, CLOTH, DARK]),
@@ -1278,6 +1515,8 @@ def flasks_skeleton(b):
 # Остального скелету шить не нужно — общая вещь на нём сидит.
 SKELETON_ITEMS = [
     # Облачение Греховода — на узком скелете поджато к оси.
+    # Цельное облачение собрано прямо по скелету (garment_profile) — без поджатия.
+    ("SinGarment", None, None),
     ("SinRobe", None, hug(0.86, y0=0.004)),
     ("SinSkirt", None, hug(0.90, y0=0.004)),
     ("SinCloak", None, hug(0.74, y0=0.010)),
@@ -1362,6 +1601,13 @@ def build(item, fit=None):
         if i < len(mesh.polygons):
             mesh.polygons[i].material_index = mat
             mesh.polygons[i].use_smooth = b.smooth[i]
+
+    # Часть мягкой вещи (u) — по вершине; Wardrobe.Soften читает её из UV.
+    uv = getattr(b, "uv", None)
+    if uv and len(uv) == len(b.verts):
+        layer = mesh.uv_layers.new(name="UVMap")
+        for loop in mesh.loops:
+            layer.data[loop.index].uv = uv[loop.vertex_index]
 
     obj = bpy.data.objects.new(item.name, mesh)
     bpy.context.scene.collection.objects.link(obj)

@@ -198,9 +198,11 @@ namespace Sinbinder.Gameplay
             {
                 Wardrobe.Tint(model.gameObject, BodyCrimson);
                 Wardrobe.Wear(model.gameObject, "Hood", MantleCrimson);
-                // Плащ свой — с истрёпанным краем (28-ORDERS, 26.10); нет его
-                // в сборке — общий плащ следопыта, как прежде.
-                if (Wardrobe.Wear(model.gameObject, "SinCloak", MantleCrimson) == null)
+                // Облачение одним куском (автор, 08.11: «одежда Греховода — кусочная»):
+                // ряса, рукава и накидка — одна мягкая ткань (Wardrobe.Soften). Нет её
+                // в сборке — прежние куски и плащ с истрёпанным краем.
+                bool whole = Wardrobe.Wear(model.gameObject, "SinGarment") != null;
+                if (!whole && Wardrobe.Wear(model.gameObject, "SinCloak", MantleCrimson) == null)
                     Wardrobe.Wear(model.gameObject, "Cloak", MantleCrimson);
 
                 // Облачение (автор, 21 октября: «сделать его более… Греховодом»,
@@ -208,9 +210,10 @@ namespace Sinbinder.Gameplay
                 // в бегах, не маг»): ряса до середины икры с разрезом, истрёпанная,
                 // рукава, оплечье с шипами, кушак с банками душ (гримуара нет),
                 // костяной посох с огоньком души. Цвета — в самих вещах.
-                foreach (var item in new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
-                                             "SinCuffLeft", "SinCuffRight", "SinMantle",
-                                             "SinBelt", "SinStaff" })
+                foreach (var item in whole ? new[] { "SinMantle", "SinBelt", "SinStaff" }
+                                           : new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
+                                                     "SinCuffLeft", "SinCuffRight", "SinMantle",
+                                                     "SinBelt", "SinStaff" })
                     Wardrobe.Wear(model.gameObject, item);
 
                 // Тень надевается ПОСЛЕ общей покраски: иначе она
@@ -267,10 +270,13 @@ namespace Sinbinder.Gameplay
             if (sinEyes != null) Object.DestroyImmediate(sinEyes);
 
             Wardrobe.Wear(model.gameObject, "Hood");
-            if (Wardrobe.Wear(model.gameObject, "SinCloak") == null)
+            // То же облачение, что у Греховода (одним куском, 08.11); нет — прежние куски.
+            bool whole = Wardrobe.Wear(model.gameObject, "SinGarment") != null;
+            if (!whole && Wardrobe.Wear(model.gameObject, "SinCloak") == null)
                 Wardrobe.Wear(model.gameObject, "Cloak");
-            foreach (var item in new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
-                                         "SinCuffLeft", "SinCuffRight", "SinMantle" })
+            foreach (var item in whole ? new[] { "SinMantle" }
+                                       : new[] { "SinRobe", "SinSkirt", "SinSleeveLeft", "SinSleeveRight",
+                                                 "SinCuffLeft", "SinCuffRight", "SinMantle" })
                 Wardrobe.Wear(model.gameObject, item);
 
             // Всё — в тьму, потом провал и глаза поверх: порядок тот же, что у Греховода.

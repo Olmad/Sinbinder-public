@@ -217,7 +217,8 @@ namespace Sinbinder.Gameplay
             Material cloth = null;
             if (hero != null)
                 foreach (var r in hero.GetComponentsInChildren<Renderer>(true))
-                    if (r.name.StartsWith("SinSleeveRight") || r.transform.parent != null && r.transform.parent.name.StartsWith("SinSleeveRight"))
+                    if (r.name.StartsWith("SinGarment") || r.name.StartsWith("SinSleeveRight")
+                        || r.transform.parent != null && r.transform.parent.name.StartsWith("SinSleeveRight"))
                     { cloth = r.sharedMaterial; break; }
             if (cloth == null) cloth = Lit(new Color(0.42f, 0.05f, 0.06f));
 

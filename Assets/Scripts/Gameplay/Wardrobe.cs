@@ -62,6 +62,7 @@ namespace Sinbinder.Gameplay
             { "Bow", "Chest" },
             { "Cloak", "Chest" },
             // Облачение Греховода (21 октября, wear.py «Греховод»).
+            { "SinGarment", "Spine" },      // облачение одним куском, мягкое (08.11)
             { "SinRobe", "Spine" },
             { "SinSkirt", "Hips" },
             { "SinCloak", "Chest" },        // плащ с истрёпанным краем (26.10)
@@ -171,7 +172,7 @@ namespace Sinbinder.Gameplay
             GameObject inHand = null, stowed = null;
             foreach (var item in For(warrior))
             {
-                var worn = Put(item, shell, bones, binds, null);
+                var worn = Put(item, shell, bones, binds, null, skin);
                 if (worn == null) continue;
                 if (item == "Charm" && warrior.Soul != null)
                     Tint(worn, "Charm", SinPalette.Of(warrior.Soul.Sin));
@@ -238,7 +239,7 @@ namespace Sinbinder.Gameplay
             var binds = skin.sharedMesh.bindposes;
             if (bones == null || binds == null || bones.Length != binds.Length) return null;
 
-            return Put(item, ShellOf(skin), bones, binds, tint);
+            return Put(item, ShellOf(skin), bones, binds, tint, skin);
         }
 
         /// <summary>Перекрасить всё, что рендерится под этим объектом. Через
@@ -336,7 +337,7 @@ namespace Sinbinder.Gameplay
         }
 
         private static GameObject Put(string item, string shell, Transform[] bones, Matrix4x4[] binds,
-                                      Color? tint)
+                                      Color? tint, SkinnedMeshRenderer skin = null)
         {
             if (!Worn.TryGetValue(item, out var boneName)) return null;
 
@@ -388,9 +389,164 @@ namespace Sinbinder.Gameplay
             // расстояние от надетого до его кости: глазами такое не
             // увидеть, потому что уехавшее просто исчезает из кадра.
 
+            // Мягкая вещь гнётся вместе с телом — жёсткая копия уступает ей место.
+            if (Soft.Contains(item) && skin != null)
+            {
+                var soft = Soften(worn, index, bones, binds, skin);
+                if (soft != null) worn = soft;
+            }
+
             if (tint.HasValue) Tint(worn, tint.Value);
 
             return worn;
+        }
+
+        /// <summary>
+        /// Вещи, которые гнутся с телом, а не висят на одной кости. Облачение Греховода
+        /// (автор, 08.11: «одежда Греховода — кусочная»): семь жёстких кусков на шести
+        /// костях расходились на плечах и локтях; одна ткань с весами костей — нет.
+        /// </summary>
+        private static readonly HashSet<string> Soft = new() { "SinGarment" };
+
+        /// <summary>Мягкий меш — один на пару «вещь, тело»: у всех Греховодов и судей он тот же.</summary>
+        private static readonly Dictionary<(int, int), Mesh> SoftMeshes = new();
+
+        private static bool _toldAboutHard;
+
+        /// <summary>
+        /// Превратить надетую жёсткую вещь в мягкую: те же вершины в пространстве меша тела
+        /// и веса его костей. Часть ткани записана в UV (<c>wear.py</c>, <c>cloth_sheet</c>):
+        /// u = 0 ряса и 3 накидка — по высоте: таз, поясница, грудь; 1 и 2 — левый и правый
+        /// рукав: грудь у плеча, плечо до локтя, предплечье дальше. Стыки — плавные,
+        /// по три сантиметра роста в обе стороны: на стыке ткань тянется, а не рвётся.
+        /// Не вышло (меш не читается) — вещь остаётся жёсткой, как было.
+        /// </summary>
+        private static GameObject Soften(GameObject worn, int index, Transform[] bones, Matrix4x4[] binds,
+                                         SkinnedMeshRenderer skin)
+        {
+            var mf = worn.GetComponentInChildren<MeshFilter>();
+            var mr = mf != null ? mf.GetComponent<MeshRenderer>() : null;
+            if (mf == null || mr == null || mf.sharedMesh == null) return null;
+            var src = mf.sharedMesh;
+            if (!src.isReadable)
+            {
+                if (!_toldAboutHard)
+                {
+                    _toldAboutHard = true;
+                    Debug.LogWarning($"[ГАРДЕРОБ] {worn.name}: меш не читается (isReadable) — вещь осталась жёсткой. См. WearImport.");
+                }
+                return null;
+            }
+
+            var key = (src.GetInstanceID(), skin.sharedMesh.GetInstanceID());
+            if (!SoftMeshes.TryGetValue(key, out var mesh) || mesh == null)
+            {
+                // Вершина вещи → пространство меша тела: обратная привязка кости, на которой висит.
+                var toBody = binds[index].inverse * bones[index].worldToLocalMatrix * mf.transform.localToWorldMatrix;
+                var normalTo = toBody.inverse.transpose;
+                var v = src.vertices;
+                var n = src.normals;
+                var uv = src.uv;
+                for (int i = 0; i < v.Length; i++) v[i] = toBody.MultiplyPoint3x4(v[i]);
+                for (int i = 0; i < n.Length; i++) n[i] = normalTo.MultiplyVector(n[i]).normalized;
+
+                mesh = new Mesh { name = src.name + " мягкая" };
+                if (v.Length > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                mesh.vertices = v;
+                if (n.Length == v.Length) mesh.normals = n;
+                if (uv.Length == v.Length) mesh.uv = uv;
+                mesh.subMeshCount = src.subMeshCount;
+                for (int s = 0; s < src.subMeshCount; s++) mesh.SetTriangles(src.GetTriangles(s), s);
+                mesh.boneWeights = Weigh(v, uv, bones, binds);
+                mesh.bindposes = binds;
+                mesh.RecalculateBounds();
+                SoftMeshes[key] = mesh;
+            }
+
+            // Под мешем тела, а не рядом: кто ищет тело через GetComponentInChildren,
+            // найдёт его раньше — сам объект проверяется прежде детей.
+            var go = new GameObject(worn.name);
+            go.transform.SetParent(skin.transform, false);
+            var smr = go.AddComponent<SkinnedMeshRenderer>();
+            smr.sharedMesh = mesh;
+            smr.bones = bones;
+            smr.rootBone = skin.rootBone;
+            smr.sharedMaterials = mr.sharedMaterials;
+            smr.shadowCastingMode = mr.shadowCastingMode;
+            smr.receiveShadows = mr.receiveShadows;
+            var bounds = skin.localBounds;
+            bounds.Expand(bounds.size.magnitude * 0.3f);
+            smr.localBounds = bounds;
+
+            worn.SetActive(false);
+            if (Application.isPlaying) Object.Destroy(worn);
+            else Object.DestroyImmediate(worn);
+            return go;
+        }
+
+        /// <summary>Веса костей по части ткани (u) и месту вершины; суставы — из матриц привязки.</summary>
+        private static BoneWeight[] Weigh(Vector3[] v, Vector2[] uv, Transform[] bones, Matrix4x4[] binds)
+        {
+            int Find(string name)
+            {
+                for (int i = 0; i < bones.Length; i++)
+                    if (bones[i] != null && bones[i].name == name) return i;
+                return -1;
+            }
+            Vector3 Joint(int i) => i < 0 ? Vector3.zero : binds[i].inverse.MultiplyPoint3x4(Vector3.zero);
+            float Smooth(float a, float b, float x) { float k = Mathf.Clamp01((x - a) / (b - a)); return k * k * (3f - 2f * k); }
+
+            int hips = Find("Hips"), spine = Find("Spine"), chest = Find("Chest"), neck = Find("Neck");
+            int[] upper = { Find("LeftUpperArm"), Find("RightUpperArm") };
+            int[] lower = { Find("LeftLowerArm"), Find("RightLowerArm") };
+            var hipsJ = Joint(hips);
+            var axis = Joint(neck) - hipsJ;
+            // Единица — рост тела: от таза до шеи у скелета 0,319 роста (bodies.py).
+            float unit = Mathf.Max(1e-5f, axis.magnitude / 0.319f);
+            var up = axis.normalized;
+            float hs = Vector3.Dot(Joint(spine) - hipsJ, up) / unit;
+            float hc = Vector3.Dot(Joint(chest) - hipsJ, up) / unit;
+
+            var weights = new BoneWeight[v.Length];
+            var pick = new List<(int bone, float w)>(3);
+            for (int i = 0; i < v.Length; i++)
+            {
+                pick.Clear();
+                int part = uv.Length == v.Length ? Mathf.RoundToInt(uv[i].x) : 0;
+                if ((part == 1 || part == 2) && upper[part - 1] >= 0 && lower[part - 1] >= 0)
+                {
+                    var a = Joint(upper[part - 1]);
+                    var e = Joint(lower[part - 1]);
+                    var dir = (e - a).normalized;
+                    float along = Vector3.Dot(v[i] - a, dir) / unit;
+                    float elbow = (e - a).magnitude / unit;
+                    float f = Smooth(-0.02f, 0.03f, along);
+                    float k = Smooth(elbow - 0.03f, elbow + 0.03f, along);
+                    pick.Add((chest, 1f - f));
+                    pick.Add((upper[part - 1], f * (1f - k)));
+                    pick.Add((lower[part - 1], f * k));
+                }
+                else
+                {
+                    float h = Vector3.Dot(v[i] - hipsJ, up) / unit;
+                    float a = Smooth(hs - 0.03f, hs + 0.03f, h);
+                    float c = Smooth(hc - 0.03f, hc + 0.03f, h);
+                    pick.Add((hips, 1f - a));
+                    pick.Add((spine, a * (1f - c)));
+                    pick.Add((chest, a * c));
+                }
+                pick.RemoveAll(x => x.bone < 0 || x.w <= 1e-4f);
+                if (pick.Count == 0) pick.Add((Mathf.Max(0, spine), 1f));
+                pick.Sort((x, y) => y.w.CompareTo(x.w));
+                float sum = 0f;
+                foreach (var x in pick) sum += x.w;
+                var bw = new BoneWeight();
+                bw.boneIndex0 = pick[0].bone; bw.weight0 = pick[0].w / sum;
+                if (pick.Count > 1) { bw.boneIndex1 = pick[1].bone; bw.weight1 = pick[1].w / sum; }
+                if (pick.Count > 2) { bw.boneIndex2 = pick[2].bone; bw.weight2 = pick[2].w / sum; }
+                weights[i] = bw;
+            }
+            return weights;
         }
 
         /// <summary>
