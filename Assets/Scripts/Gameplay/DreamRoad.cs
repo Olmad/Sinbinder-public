@@ -47,7 +47,7 @@ namespace Sinbinder.Gameplay
         private readonly List<GameObject> _soulJar = new List<GameObject>();
 
         // Силуэт и его жизнь — Death, Haunt.
-        private Transform _death, _deathHood, _deathArm, _deathScythe, _deathHem;
+        private Transform _death, _deathHood, _deathScythe, _deathHem;
         private Vector3 _deathAt;
         private readonly List<Transform> _deathEyes = new List<Transform>();
         private ParticleSystem _deathSmoke, _cryptMist;
@@ -543,7 +543,7 @@ namespace Sinbinder.Gameplay
             // В глубине — бледный холодный проём, против него стоит Он.
             _backGlow = Glowing(cold, 1.5f);
             _backColour = _backGlow.color;
-            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 2.8f, z + 9.45f), new Vector3(3.8f, 5.6f, 1f), _backGlow, false);
+            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 2.9f, z + 9.45f), new Vector3(4.6f, 5.8f, 1f), _backGlow, false);
             back.transform.rotation = Quaternion.identity;
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader != null)
@@ -603,8 +603,8 @@ namespace Sinbinder.Gameplay
         /// <summary>
         /// Бог Смерти в глубине склепа (автор, 08.11: «сделай силуэт Бога Смерти величественнее и более
         /// жутким, может с какими-нибудь эффектами»). Выше дверного проёма в глубине — 4,7 м с косой;
-        /// висит над полом, подол — лохмотьями, под ними видно свет. Голова опущена, левая рука висит —
-        /// <see cref="Haunt"/> поднимает голову к вошедшему, зажигает глаза и тянет руку вперёд.
+        /// висит над полом, подол — лохмотьями, под ними видно свет. Голова опущена; руки не движутся —
+        /// <see cref="Haunt"/> поднимает голову к вошедшему и зажигает глаза.
         /// От него поднимается чёрный дым — против света он виден, на чёрном нет.
         /// </summary>
         private void Death(Transform parent, Vector3 at, Material black)
@@ -614,54 +614,66 @@ namespace Sinbinder.Gameplay
             root.position = at;
             _death = root;
             _deathAt = at;
+            // Автор, 08.11 (второй раз): «зачем-то отводит руку в сторону и по-прежнему выглядит
+            // не очень величественно… проблема именно в самом силуэте». Конус с яйцом читался
+            // пешкой. Теперь — плечи вдвое шире капюшона под рваной накидкой, балахон в складках,
+            // книзу расходится; руки не движутся: правая держит косу, левая висит, из рукава —
+            // кости пальцев. Лезвие дугой над капюшоном. Все высоты — от пола.
             const float hem = 0.4f;
-            Shape(root, "Балахон", Cone(1.3f, 0.46f, 3.0f, 24), at + Vector3.up * hem, Quaternion.identity, black);
-            _deathHem = Shape(root, "Лохмотья", Tatters(1.3f, 26, 0.75f, 13), at + Vector3.up * hem, Quaternion.identity, black);
-            // Плечи — покатая накидка, не шар: шар читался воротником-бубликом (w0811c).
-            Shape(root, "Плечи", Cone(0.8f, 0.36f, 0.75f, 20), at + Vector3.up * 2.95f, Quaternion.identity, black);
+            Shape(root, "Балахон", Lathe(new[] { hem, 1.20f, 0.9f, 1.08f, 1.6f, 0.93f, 2.3f, 0.84f,
+                                                 2.8f, 0.88f, 3.1f, 0.86f, 3.3f, 0.60f, 3.42f, 0.34f },
+                                         30, 0.62f, 11, 0.07f), at, Quaternion.identity, black);
+            _deathHem = Shape(root, "Лохмотья", Tatters(1.2f, 30, 0.75f, 13), at + Vector3.up * hem, Quaternion.identity, black);
+            _deathHem.localScale = new Vector3(1f, 1f, 0.62f);
+            // Накидка на плечах: широкая, рваная по краю — она и делает плечи.
+            Shape(root, "Накидка", Lathe(new[] { 2.50f, 1.02f, 2.80f, 1.00f, 3.05f, 0.92f, 3.25f, 0.70f,
+                                                 3.40f, 0.42f, 3.50f, 0.30f },
+                                         28, 0.66f, 9, 0.05f, ragged: 0.3f), at, Quaternion.identity, black);
 
             // Голова — на шее, целиком с глазами: поднимается к вошедшему.
             _deathHood = new GameObject("Голова").transform;
             _deathHood.SetParent(root, false);
             _deathHood.position = at + Vector3.up * 3.5f;
-            // Глубокий капюшон: круглый верх, острие откинуто назад. Прямое острие делало
-            // колпак — силуэт выходил мультяшным (w0811c).
-            Piece(_deathHood, PrimitiveType.Sphere, "Капюшон", at + Vector3.up * 3.98f, new Vector3(0.92f, 1.12f, 0.95f), black, false);
-            Shape(_deathHood, "Острие капюшона", Cone(0.3f, 0f, 0.42f, 12), at + new Vector3(0f, 4.3f, 0.22f), Quaternion.Euler(55f, 0f, 0f), black);
+            // Капюшон с острием вверх-назад: силуэт жнеца. Острие ниже лезвия косы.
+            Piece(_deathHood, PrimitiveType.Sphere, "Капюшон", at + Vector3.up * 3.96f, new Vector3(0.86f, 1.05f, 0.92f), black, false);
+            Shape(_deathHood, "Острие капюшона", Cone(0.3f, 0f, 0.44f, 12), at + new Vector3(0f, 4.3f, 0.14f), Quaternion.Euler(35f, 0f, 0f), black);
             var eyeGlow = Glowing(new Color(0.50f, 0.72f, 1f), 3f);
             foreach (float s in new[] { -1f, 1f })
                 _deathEyes.Add(Piece(_deathHood, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.15f * s, 3.92f, -0.43f), Vector3.zero, eyeGlow, false).transform);
             _deathHood.localRotation = Quaternion.Euler(18f, 0f, 0f);
 
-            // Левая рука: рукав и кость кисти с длинными пальцами.
-            _deathArm = new GameObject("Левая рука").transform;
-            _deathArm.SetParent(root, false);
-            _deathArm.position = at + new Vector3(-0.72f, 3.3f, 0f);
-            Shape(_deathArm, "Рукав", Sheet(new Vector3(0.12f, 0.15f, 0f), new Vector3(-0.32f, -0.3f, -0.04f), new Vector3(-0.86f, -1.0f, -0.08f),
-                                            new Vector3(-0.74f, -1.72f, -0.05f), new Vector3(-0.42f, -1.3f, 0f), new Vector3(0.06f, -0.62f, 0f)),
-                  _deathArm.position, Quaternion.identity, black);
-            var wrist = _deathArm.position + new Vector3(-0.84f, -1.22f, -0.08f);
-            Piece(_deathArm, PrimitiveType.Sphere, "Ладонь", wrist, new Vector3(0.13f, 0.16f, 0.07f), black, false);
-            for (int f = 0; f < 5; f++)
+            // Левая рука висит и не движется: рукав колоколом, под ним — кости пальцев.
+            Shape(root, "Левый рукав", Sheet(new Vector3(-0.95f, 2.70f, -0.1f), new Vector3(-1.10f, 2.30f, -0.12f),
+                                             new Vector3(-1.13f, 1.75f, -0.12f), new Vector3(-1.04f, 1.45f, -0.1f),
+                                             new Vector3(-0.90f, 1.70f, -0.08f), new Vector3(-0.84f, 2.40f, -0.06f)),
+                  at, Quaternion.identity, black);
+            for (int f = 0; f < 4; f++)
             {
-                float ang = Mathf.Lerp(-150f, -80f, f / 4f) * Mathf.Deg2Rad;
-                var dir = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), -0.15f).normalized;
-                float len = f == 4 ? 0.2f : 0.34f;
-                var finger = Piece(_deathArm, PrimitiveType.Cylinder, "Палец", wrist + dir * (0.07f + len * 0.5f), new Vector3(0.035f, len * 0.5f, 0.035f), black, false);
+                var top = at + new Vector3(-1.12f + f * 0.045f, 1.62f, -0.14f);
+                float len = f == 3 ? 0.2f : 0.3f - 0.02f * f;
+                var dir = new Vector3(-0.12f + 0.06f * f, -1f, -0.18f).normalized;
+                var finger = Piece(root, PrimitiveType.Cylinder, "Палец", top + dir * (len * 0.5f), new Vector3(0.028f, len * 0.5f, 0.028f), black, false);
                 finger.transform.rotation = Quaternion.FromToRotation(Vector3.up, dir);
             }
 
-            // Правая рука держит косу; коса выше его самого.
-            Shape(root, "Правый рукав", Sheet(new Vector3(0.55f, 3.5f, 0f), new Vector3(1.2f, 2.75f, -0.08f), new Vector3(1.28f, 2.28f, -0.1f),
-                                              new Vector3(0.96f, 2.2f, -0.05f), new Vector3(0.6f, 2.9f, 0f)),
+            // Правая рука держит косу; рукав свисает с предплечья.
+            Shape(root, "Правый рукав", Sheet(new Vector3(0.95f, 2.85f, -0.08f), new Vector3(1.18f, 2.66f, -0.1f),
+                                              new Vector3(1.24f, 2.50f, -0.12f), new Vector3(1.18f, 2.36f, -0.1f),
+                                              new Vector3(1.02f, 1.62f, -0.08f), new Vector3(0.86f, 2.00f, -0.05f)),
                   at, Quaternion.identity, black);
             _deathScythe = new GameObject("Коса").transform;
             _deathScythe.SetParent(root, false);
-            _deathScythe.position = at + new Vector3(1.15f, 2.5f, -0.12f);
-            Piece(_deathScythe, PrimitiveType.Sphere, "Кулак", at + new Vector3(1.15f, 2.5f, -0.12f), new Vector3(0.2f, 0.24f, 0.18f), black, false);
-            var snath = Piece(_deathScythe, PrimitiveType.Cylinder, "Косовище", at + new Vector3(1.2f, 2.6f, -0.12f), new Vector3(0.075f, 2.3f, 0.075f), black, false).transform;
-            snath.rotation = Quaternion.Euler(0f, 0f, -6f);
-            Shape(_deathScythe, "Лезвие", Blade(1.9f, 0.3f), snath.position + snath.up * 2.3f, Quaternion.identity, black);
+            _deathScythe.position = at + new Vector3(1.22f, 2.5f, -0.12f);
+            // Кулак — кости пальцев поперёк косовища: видно, что держит.
+            for (int f = 0; f < 4; f++)
+            {
+                var knuckle = Piece(_deathScythe, PrimitiveType.Cylinder, "Палец", at + new Vector3(1.20f, 2.40f + f * 0.07f, -0.2f),
+                                    new Vector3(0.034f, 0.12f - 0.012f * f, 0.034f), black, false);
+                knuckle.transform.rotation = Quaternion.Euler(0f, 0f, 90f - 8f * f);
+            }
+            var snath = Piece(_deathScythe, PrimitiveType.Cylinder, "Косовище", at + new Vector3(1.22f, 2.42f, -0.12f), new Vector3(0.09f, 2.36f, 0.09f), black, false).transform;
+            snath.rotation = Quaternion.Euler(0f, 0f, -3f);
+            Shape(_deathScythe, "Лезвие", Blade(2.0f, 0.42f), snath.position + snath.up * 2.34f, Quaternion.identity, black);
 
             // Чёрный дым от него: виден против света, на чёрном пропадает.
             var smoke = Haze(new Color(0f, 0f, 0f), additive: false);
@@ -681,8 +693,6 @@ namespace Sinbinder.Gameplay
                 _deathHood.localRotation = Quaternion.Euler(Mathf.Lerp(18f, -4f, Smooth(Mathf.InverseLerp(0.6f, 2.3f, t))), 0f, 0f);
             float eyes = Smooth(Mathf.InverseLerp(1.2f, 1.7f, t)) * (0.9f + 0.1f * Mathf.Sin(t * 19f));
             foreach (var e in _deathEyes) if (e != null) e.localScale = Vector3.one * (0.065f * eyes);
-            float reach = Smooth(Mathf.InverseLerp(1.0f, 3.2f, t));
-            if (_deathArm != null) _deathArm.localRotation = Quaternion.Euler(48f * reach, 0f, -14f * reach);
             if (_deathScythe != null) _deathScythe.localRotation = Quaternion.Euler(0f, 0f, 2.5f * Mathf.Sin(t * 0.7f));
             if (_backGlow != null) _backGlow.color = _backColour * breath;
         }
@@ -857,6 +867,46 @@ namespace Sinbinder.Gameplay
                 tri.AddRange(new[] { k, k + 3, k + 1, k, k + 2, k + 3 });
             }
             var m = new Mesh { name = "Конус" };
+            m.SetVertices(v);
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
+        }
+
+        /// <summary>
+        /// Тело вращения по профилю (y, r, y, r…) снизу вверх; в глубину — эллипс (depth).
+        /// Продольные складки (folds, fold — доля радиуса) сильнее книзу: у плеч ткань натянута.
+        /// ragged — рваный нижний край: нижний ряд опущен зубцами разной длины. Видно с обеих сторон.
+        /// </summary>
+        private static Mesh Lathe(float[] profile, int n, float depth, int folds, float fold, float ragged = 0f)
+        {
+            var v = new List<Vector3>();
+            var tri = new List<int>();
+            int rows = profile.Length / 2;
+            var rnd = new System.Random(5);
+            var drop = new float[n + 1];
+            for (int i = 0; i < n; i++) drop[i] = ragged * (0.3f + 0.7f * (float)rnd.NextDouble());
+            drop[n] = drop[0];
+            for (int r = 0; r < rows; r++)
+            {
+                float y = profile[r * 2], rad = profile[r * 2 + 1];
+                float amp = fold * (1f - r / (float)Mathf.Max(1, rows - 1));
+                for (int i = 0; i <= n; i++)
+                {
+                    float a = i * Mathf.PI * 2f / n;
+                    float k = rad * (1f + amp * Mathf.Sin(a * folds));
+                    v.Add(new Vector3(Mathf.Cos(a) * k, r == 0 ? y - drop[i] : y, Mathf.Sin(a) * k * depth));
+                }
+            }
+            for (int r = 0; r < rows - 1; r++)
+                for (int i = 0; i < n; i++)
+                {
+                    int a0 = r * (n + 1) + i, a1 = a0 + 1, b0 = a0 + n + 1, b1 = b0 + 1;
+                    tri.AddRange(new[] { a0, b0, b1, a0, b1, a1 });
+                    tri.AddRange(new[] { a0, b1, b0, a0, a1, b1 });
+                }
+            var m = new Mesh { name = "Тело вращения" };
             m.SetVertices(v);
             m.SetTriangles(tri, 0);
             m.RecalculateNormals();
