@@ -199,7 +199,11 @@ internal sealed class Room
             await PublishLobbyAsync(token);
             while (!token.IsCancellationRequested)
             {
-                var line = await peer.ReadLineAsync(token);
+                // A vanished TCP peer may never send FIN/RST. Expire its
+                // lobby slot after 20 seconds without a complete packet.
+                using var idle = CancellationTokenSource.CreateLinkedTokenSource(token);
+                idle.CancelAfter(TimeSpan.FromSeconds(20));
+                var line = await peer.ReadLineAsync(idle.Token);
                 if (line == null) break;
                 if (!peer.AllowMessage())
                 {
@@ -214,7 +218,9 @@ internal sealed class Room
                     continue;
                 }
 
-                if (packet?.Type == "ready")
+                if (packet?.Type == "ping")
+                    await SendSafeAsync(peer, new { type = "pong" }, token);
+                else if (packet?.Type == "ready")
                     await MarkReadyAsync(peer, token);
                 else if (packet?.Type == "order")
                     await AcceptOrderAsync(peer, packet, token);
