@@ -168,6 +168,11 @@ namespace Sinbinder.Multiplayer
                 if (GUILayout.Button("Стоять")) _client.Hold();
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
+                if (!_client.Connected && TryPort(out int reconnectPort))
+                {
+                    if (GUILayout.Button("Повторить подключение"))
+                        _client.Connect(_server.Active ? "127.0.0.1" : _address, reconnectPort);
+                }
                 GUILayout.Label("ПКМ по полю: идти. Два окна игры = два игрока.");
                 if (GUILayout.Button("Выйти из теста")) Leave();
             }
@@ -224,6 +229,16 @@ namespace Sinbinder.Multiplayer
             floor.transform.localScale = new Vector3(2, 1, 2);
             SetLayer(floor, 30);
             Tint(floor, new Color(0.14f, 0.19f, 0.15f));
+
+            // All original scene roots (including their lights) are inactive.
+            // Without a temporary key light the URP/Lit pawns can appear black.
+            var lamp = new GameObject("LAN arena key light");
+            lamp.transform.SetParent(_arena.transform);
+            lamp.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+            var keyLight = lamp.AddComponent<Light>();
+            keyLight.type = LightType.Directional;
+            keyLight.intensity = 1.6f;
+            keyLight.cullingMask = 1 << 30;
 
             _pawn1 = SpawnPawn("Греховод 1", new Vector3(-3, 0.8f, 0), new Color(0.38f, 0.8f, 0.55f));
             _pawn2 = SpawnPawn("Греховод 2", new Vector3(3, 0.8f, 0), new Color(0.91f, 0.48f, 0.37f));
@@ -298,6 +313,7 @@ namespace Sinbinder.Multiplayer
 
         private void OnDestroy()
         {
+            if (_instance != this) return;
             SceneManager.activeSceneChanged -= OnSceneChanged;
             Leave();
             if (_instance == this) _instance = null;
