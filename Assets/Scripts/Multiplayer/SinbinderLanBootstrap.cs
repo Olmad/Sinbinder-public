@@ -28,6 +28,9 @@ namespace Sinbinder.Multiplayer
         private string _portText = "7777";
         private string _notice = "";
         private bool _dedicated;
+        private bool _autoReady;
+        private bool _launchHost;
+        private string _launchConnect;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -49,6 +52,10 @@ namespace Sinbinder.Multiplayer
             DontDestroyOnLoad(gameObject);
             _server = new LanRoomServer();
             _client = new LanRoomClient();
+            _client.Received += packet =>
+            {
+                if (_autoReady && packet.type == "welcome") _client.Ready();
+            };
             SceneManager.activeSceneChanged += OnSceneChanged;
 
             string[] args = Environment.GetCommandLineArgs();
@@ -58,6 +65,12 @@ namespace Sinbinder.Multiplayer
                     _portText = args[++i];
                 else if (args[i] == "-server" || args[i] == "-sinbinder-server" || args[i] == "--sinbinder-server")
                     _dedicated = true;
+                else if (args[i] == "-lan-host")
+                    _launchHost = true;
+                else if (args[i] == "-lan-connect" && i + 1 < args.Length)
+                    _launchConnect = args[++i];
+                else if (args[i] == "-lan-auto-ready")
+                    _autoReady = true;
             }
 
             if (_dedicated)
@@ -68,6 +81,13 @@ namespace Sinbinder.Multiplayer
                     Debug.Log("[Sinbinder LAN] Dedicated test server listening on TCP " + port);
                 }
                 else Debug.LogError("[Sinbinder LAN] " + (_server.Error ?? "Invalid port"));
+            }
+            else if (_launchHost)
+                StartHost();
+            else if (!string.IsNullOrEmpty(_launchConnect))
+            {
+                _address = _launchConnect;
+                StartClient();
             }
         }
 
