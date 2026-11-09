@@ -78,7 +78,7 @@ namespace Sinbinder.Multiplayer
             }
             catch (Exception e) when (e is SocketException || e is TimeoutException ||
                                        e is OperationCanceledException || e is ObjectDisposedException ||
-                                       e is System.IO.IOException || e is ArgumentException)
+                                       e is System.IO.IOException || e is System.IO.InvalidDataException || e is ArgumentException)
             {
                 Queue(generation, null, "ERROR:" + e.Message);
             }
@@ -137,6 +137,8 @@ namespace Sinbinder.Multiplayer
                         break;
                     case "start":
                         Playing = true;
+                        Players = 2;
+                        ReadyCount = 2;
                         Tick = 0;
                         Status = "Матч запущен. ПКМ по полю: двигаться";
                         break;
