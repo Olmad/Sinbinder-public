@@ -24,6 +24,10 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Compile .NET server
         run: dotnet build Tools/server/Sinbinder.Server.csproj -c Release
+      - name: Compile actual Unity LAN source files against test stubs
+        run: dotnet build Tools/server/UnityLanHarness/UnityLanHarness.csproj -c Release
+      - name: Exercise actual Unity networking source (transport, room, client)
+        run: dotnet run --no-build -c Release --project Tools/server/UnityLanHarness/UnityLanHarness.csproj
       - name: Compile Python smoke tests
         run: python3 -m py_compile Tools/server/smoke_test.py Tools/server/unity_smoke_test.py
       - name: Run live TCP smoke tests
