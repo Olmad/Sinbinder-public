@@ -29,19 +29,27 @@ Example with two terminal connections (e.g. `nc 127.0.0.1 7777`):
 7. A disconnect stops the match and clears queued orders; the remaining player
    can wait for another player to connect and ready.
 
-Supported order kinds for protocol proof only: `Move`, `Hold`. The server
-**does not move a unit** or simulate AOS, battles, crypts, fog, or economy. An
-`execute` event is an authorized input event, **not a world-state snapshot**.
+Supported test-pawn orders: `Move`, `Hold`. This server **does simulate
+movement of two simple test pawns** at 20 ticks/second and broadcasts a
+`state` snapshot (coordinates `p1X`, `p1Z`, `p2X`, `p2Z`) 10 times per
+second. It does **not** simulate the real Sinbinder warriors, AOS, battles,
+crypts, fog or economy.
+
+This .NET 8 executable is **optional**. The Unity build contains an embedded
+LAN host that speaks the same protocol and needs no external .NET installation.
+See `Assets/Scripts/Multiplayer/README.md`.
 
 ## Boundaries / follow-up
 
-- Unity project remains untouched; no new packages or GameObjects.
+- The existing Unity gameplay remains untouched. An isolated Unity LAN
+  test arena is auto-created at runtime; no network packages required.
 - Network event ordering and IDs are assigned by the server.
 - Deterministic lockstep is **not** assumed: Unity NavMeshAgent and position-
   dependent AOS decisions can diverge between computers.
-- Next integration needs a client transport, server-side match simulation,
-  connection-to-Lord identity mapping, ownership validation using game data,
-  and server-authoritative visibility/state replication. Decide whether
-  to replace TCP with Unity Transport before shipping.
-- Validate with `dotnet build Tools/server/Sinbinder.Server.csproj` and two
-  simultaneous clients. No Unity or .NET execution occurred during creation.
+- Next integration needs real AOS match simulation, connection-to-Lord
+  mapping, ownership checks on actual Warrior objects, world-state and
+  fog-of-war replication. Choose a release-grade transport before shipping.
+- Validate with `dotnet build Tools/server/Sinbinder.Server.csproj`,
+  `python Tools/server/smoke_test.py` and
+  `python Tools/server/unity_smoke_test.py` while a room is running.
+  None of these runtime validations have been executed here.
