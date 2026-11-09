@@ -18,6 +18,11 @@ namespace UnityEngine
 
     public enum RuntimeInitializeLoadType { AfterSceneLoad }
     public enum PrimitiveType { Plane, Capsule }
+    public enum LightType { Directional }
+    public struct Quaternion
+    {
+        public static Quaternion Euler(float x, float y, float z) { return new Quaternion(); }
+    }
     public enum CameraClearFlags { SolidColor }
 
     public class Object
@@ -68,6 +73,7 @@ namespace UnityEngine
     {
         public Vector3 position;
         public Vector3 localScale;
+        public Quaternion rotation;
         public void SetParent(Transform parent) { }
         public void LookAt(Vector3 target) { }
         public IEnumerator<Transform> GetEnumerator() { return Enumerable.Empty<Transform>().GetEnumerator(); }
@@ -135,6 +141,12 @@ namespace UnityEngine
         public Ray ScreenPointToRay(Vector3 point) { return new Ray(); }
     }
 
+    public class Light : Component
+    {
+        public LightType type;
+        public float intensity;
+        public int cullingMask;
+    }
     public class Renderer : Component { public Material material; }
     public class Shader : Object { public static Shader Find(string title) { return new Shader(); } }
     public class Material : Object
