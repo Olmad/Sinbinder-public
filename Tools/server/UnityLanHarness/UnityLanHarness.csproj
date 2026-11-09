@@ -14,5 +14,7 @@
     <Compile Include="../../../Assets/Scripts/Multiplayer/LanRoomServer.cs" Link="LanRoomServer.cs" />
     <Compile Include="../../../Assets/Scripts/Multiplayer/LanRoomClient.cs" Link="LanRoomClient.cs" />
     <Compile Include="../../../Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs" Link="SinbinderLanBootstrap.cs" />
+    <Compile Include="../../../Assets/Scripts/Core/MultiplayerTestMap.cs" Link="MultiplayerTestMap.cs" />
+    <Compile Include="../../../Assets/Scripts/Gameplay/AltarVisualEnhancer.cs" Link="AltarVisualEnhancer.cs" />
   </ItemGroup>
 </Project>
