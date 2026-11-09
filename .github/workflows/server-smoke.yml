@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+      - name: Verify multiplayer map and altar assets
+        run: python3 Tools/server/check_map_assets.py
       - name: Compile .NET server
         run: dotnet build Tools/server/Sinbinder.Server.csproj -c Release
       - name: Compile actual Unity LAN source files against test stubs
