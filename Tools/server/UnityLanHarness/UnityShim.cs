@@ -157,6 +157,8 @@ namespace UnityEngine
     {
         public Color color;
         public Material(Shader shader) { }
+        public bool HasProperty(string name) { return true; }
+        public void SetColor(string name, Color value) { color = value; }
     }
 
     public static class Mathf
