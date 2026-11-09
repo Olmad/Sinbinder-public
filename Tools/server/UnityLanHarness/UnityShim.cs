@@ -38,7 +38,11 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class { return gameObject?.GetComponent<T>(); }
     }
 
-    public class MonoBehaviour : Component { }
+    public class MonoBehaviour : Component
+    {
+        public bool enabled = true;
+        public bool isActiveAndEnabled { get { return enabled && (gameObject == null || gameObject.activeSelf); } }
+    }
 
     public class GameObject : Object
     {
@@ -228,5 +232,14 @@ namespace UnityEngine.SceneManagement
     {
         public static event Action<Scene, Scene> activeSceneChanged;
         public static Scene GetActiveScene() { return new Scene(); }
+    }
+}
+
+// Only for the Unity networking harness; the actual project supplies this.
+namespace Sinbinder.Gameplay
+{
+    public class SelectionManager : UnityEngine.MonoBehaviour
+    {
+        public static SelectionManager Instance { get; set; }
     }
 }
