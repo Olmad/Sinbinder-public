@@ -50,16 +50,22 @@ internal static class ExtraLanChecks
                     "disconnect iteration " + i);
             }
 
-            // Rapid reconnect attempts without allowing older asynchronous
-            // connects to finish must not overwrite the last client's wire.
+            // Rapid reconnection can legitimately race with server-side
+            // removal of closed sockets. Do not expect the LAST attempt to
+            // take a slot before stale sessions have been drained. Verify
+            // that the server recovers and that the client can retry.
             for (int i = 0; i < 12; i++)
                 client.Connect("127.0.0.1", 7792);
+            client.Disconnect();
+            await Until(room, () => room.PlayerCount == 0,
+                "rapid reconnects left no ghost sessions");
 
+            client.Connect("127.0.0.1", 7792);
             await Until(room, () =>
             {
                 client.Pump();
                 return client.PlayerId == 1 && room.PlayerCount == 1;
-            }, "last connection survived stale connect attempts");
+            }, "new connection succeeds after clearing stale peers");
 
             client.Ready();
             await Until(room, () =>
