@@ -316,7 +316,13 @@ namespace Sinbinder.Multiplayer
             if (shader == null) shader = Shader.Find("Standard");
             if (shader == null) shader = Shader.Find("Unlit/Color");
             if (shader == null) return;
-            var material = new Material(shader) { color = color };
+            var material = new Material(shader);
+            // URP Lit uses _BaseColor, while Standard/Unlit shaders use
+            // _Color. Material.color alone is not portable across them.
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            else if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
             renderer.material = material;
             _temporaryMaterials.Add(material);
         }
