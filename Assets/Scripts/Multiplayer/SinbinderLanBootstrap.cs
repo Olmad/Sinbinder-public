@@ -32,6 +32,8 @@ namespace Sinbinder.Multiplayer
         private bool _autoReady;
         private bool _launchHost;
         private string _launchConnect;
+        private float _nextAutoReconnect;
+        private int _autoReconnectAttempts;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -103,6 +105,23 @@ namespace Sinbinder.Multiplayer
             _server.Pump(Time.unscaledDeltaTime);
             _client.Pump();
             if (!_arenaActive || _dedicated) return;
+
+            // A second game window may launch before the host finishes
+            // loading its first Unity scene. Retry command-line joins for
+            // up to a minute instead of permanently failing on the first
+            // refused TCP connection.
+            if (_autoReady && !string.IsNullOrEmpty(_launchConnect) &&
+                !_client.Connected && !_client.Playing &&
+                _autoReconnectAttempts < 30 &&
+                (_client.Status.StartsWith("Ошибка соединения:") ||
+                 _client.Status == "Сервер закрыл соединение") &&
+                Time.realtimeSinceStartup >= _nextAutoReconnect &&
+                TryPort(out int retryPort))
+            {
+                _autoReconnectAttempts++;
+                _nextAutoReconnect = Time.realtimeSinceStartup + 2f;
+                _client.Connect(_address, retryPort);
+            }
 
             if (_pawn1 != null)
                 _pawn1.position = Vector3.Lerp(_pawn1.position, _client.First, Mathf.Clamp01(12f * Time.unscaledDeltaTime));
@@ -323,6 +342,7 @@ namespace Sinbinder.Multiplayer
                 _pausedSelection = null;
             }
             _arenaActive = false;
+            _autoReconnectAttempts = 30;
             _notice = "";
         }
 
