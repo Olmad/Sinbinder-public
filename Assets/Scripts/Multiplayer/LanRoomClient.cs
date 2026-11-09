@@ -18,6 +18,7 @@ namespace Sinbinder.Multiplayer
         }
 
         private readonly ConcurrentQueue<Incoming> _incoming = new ConcurrentQueue<Incoming>();
+        private readonly object _connectionGate = new object();
         private TcpClient _socket;
         private LanWire _wire;
         private CancellationTokenSource _cancel;
@@ -44,29 +45,45 @@ namespace Sinbinder.Multiplayer
                 return;
             }
             int generation = _generation;
-            _cancel = new CancellationTokenSource();
+            var source = new CancellationTokenSource();
+            var socket = new TcpClient();
+            lock (_connectionGate)
+            {
+                _cancel = source;
+                _socket = socket;
+            }
             First = new Vector3(-3, 0.8f, 0);
             Second = new Vector3(3, 0.8f, 0);
             Status = "Подключение к " + host + ":" + port;
-            _ = ConnectAndReadAsync(host.Trim(), port, generation, _cancel.Token);
+            _ = ConnectAndReadAsync(socket, host.Trim(), port, generation, source.Token);
         }
 
-        private async Task ConnectAndReadAsync(string host, int port, int generation, CancellationToken token)
+        private async Task ConnectAndReadAsync(TcpClient socket, string host, int port, int generation, CancellationToken token)
         {
-            TcpClient socket = null;
             try
             {
-                socket = new TcpClient();
-                _socket = socket;
                 Task connecting = socket.ConnectAsync(host, port);
                 Task timeout = Task.Delay(5000, token);
                 if (await Task.WhenAny(connecting, timeout) != connecting)
+                {
+                    if (token.IsCancellationRequested) return;
                     throw new TimeoutException("Сервер не ответил за 5 секунд");
+                }
                 await connecting;
                 if (token.IsCancellationRequested) return;
 
                 var wire = new LanWire(socket);
-                _wire = wire;
+                lock (_connectionGate)
+                {
+                    // A previous asynchronous Connect must never replace a
+                    // newer connection's wire after a rapid reconnect.
+                    if (generation != _generation || token.IsCancellationRequested)
+                    {
+                        wire.Dispose();
+                        return;
+                    }
+                    _wire = wire;
+                }
                 Queue(generation, null, "CONNECTED");
                 while (!token.IsCancellationRequested)
                 {
@@ -84,16 +101,29 @@ namespace Sinbinder.Multiplayer
             }
             finally
             {
-                if (socket != null) socket.Close();
+                socket.Close();
+                lock (_connectionGate)
+                {
+                    if (generation == _generation)
+                    {
+                        _socket = null;
+                        _wire = null;
+                    }
+                }
             }
         }
 
         private void Queue(int generation, string data, string status)
         {
+            if (generation != Volatile.Read(ref _generation)) return;
             if (Interlocked.Increment(ref _queued) > 256)
             {
                 Interlocked.Decrement(ref _queued);
-                if (_socket != null) _socket.Close();
+                lock (_connectionGate)
+                {
+                    if (generation == _generation && _socket != null)
+                        _socket.Close();
+                }
                 return;
             }
             _incoming.Enqueue(new Incoming { Generation = generation, Data = data, Status = status });
@@ -202,10 +232,22 @@ namespace Sinbinder.Multiplayer
 
         public void Disconnect()
         {
-            _generation++;
-            if (_cancel != null) { _cancel.Cancel(); _cancel = null; }
-            if (_wire != null) { _wire.Dispose(); _wire = null; }
-            if (_socket != null) { _socket.Close(); _socket = null; }
+            CancellationTokenSource source;
+            LanWire wire;
+            TcpClient socket;
+            lock (_connectionGate)
+            {
+                _generation++;
+                source = _cancel;
+                wire = _wire;
+                socket = _socket;
+                _cancel = null;
+                _wire = null;
+                _socket = null;
+            }
+            if (source != null) source.Cancel();
+            if (wire != null) wire.Dispose();
+            if (socket != null) socket.Close();
             Connected = false;
             Playing = false;
             PlayerId = 0;
