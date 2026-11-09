@@ -171,8 +171,12 @@ namespace UnityEngine
     public static class Time
     {
         private static readonly Stopwatch Watch = Stopwatch.StartNew();
-        public static float realtimeSinceStartup { get { return (float)Watch.Elapsed.TotalSeconds; } }
+        private static float _offset;
+        public static float realtimeSinceStartup { get { return (float)Watch.Elapsed.TotalSeconds + _offset; } }
         public static float unscaledDeltaTime { get { return 0.02f; } }
+        // Harness-only clock jumps make 20-second TCP timeouts testable
+        // without keeping a CI worker idle for 20 real seconds.
+        public static void Advance(float seconds) { _offset += seconds; }
     }
 
     public static class Screen { public static int width { get { return 1280; } } }
