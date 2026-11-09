@@ -23,6 +23,7 @@ internal static class ExtraLanChecks
     {
         await ConnectionChurn();
         await InboxFloodAndRecovery();
+        await SeatReplacementAfterDisconnect();
         await DisconnectedClientAndBadPort();
         Console.WriteLine("PASS: rapid reconnect, inbox overload recovery, invalid endpoint.");
     }
@@ -104,6 +105,72 @@ internal static class ExtraLanChecks
             if (first != null) first.Close();
             if (second != null) second.Close();
             if (replacement != null) replacement.Close();
+            room.Stop();
+        }
+    }
+
+    private static async Task SeatReplacementAfterDisconnect()
+    {
+        var room = new LanRoomServer();
+        var first = new LanRoomClient();
+        var second = new LanRoomClient();
+        var replacement = new LanRoomClient();
+        try
+        {
+            if (!room.Start(7795)) throw new Exception(room.Error);
+            first.Connect("127.0.0.1", 7795);
+            second.Connect("127.0.0.1", 7795);
+            await Until(room, () =>
+            {
+                first.Pump();
+                second.Pump();
+                return first.PlayerId != 0 && second.PlayerId != 0;
+            }, "initial pair joined");
+
+            first.Ready();
+            second.Ready();
+            await Until(room, () =>
+            {
+                first.Pump();
+                second.Pump();
+                return first.Playing && second.Playing;
+            }, "initial pair started");
+
+            int firstId = first.PlayerId;
+            int abandonedId = second.PlayerId;
+            second.Disconnect();
+            await Until(room, () =>
+            {
+                first.Pump();
+                return !first.Playing && room.PlayerCount == 1;
+            }, "remaining player sees game stopped");
+
+            replacement.Connect("127.0.0.1", 7795);
+            await Until(room, () =>
+            {
+                first.Pump();
+                replacement.Pump();
+                return replacement.PlayerId == abandonedId &&
+                    room.PlayerCount == 2;
+            }, "new client receives vacated player slot");
+
+            first.Ready();
+            replacement.Ready();
+            await Until(room, () =>
+            {
+                first.Pump();
+                replacement.Pump();
+                return first.Playing && replacement.Playing;
+            }, "replacement can start a new match");
+
+            if (first.PlayerId != firstId)
+                throw new Exception("Persistent player's identity changed");
+        }
+        finally
+        {
+            first.Disconnect();
+            second.Disconnect();
+            replacement.Disconnect();
             room.Stop();
         }
     }
