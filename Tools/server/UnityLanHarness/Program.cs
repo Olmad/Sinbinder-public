@@ -75,6 +75,7 @@ internal static class Program
                 "server stop notification");
             Console.WriteLine("PASS: disconnect stops match.");
             await ExtraLanChecks.Run();
+            MapVisualChecks.Run();
             return 0;
         }
         finally
