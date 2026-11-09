@@ -44,6 +44,7 @@ namespace Sinbinder.Multiplayer
         private TcpListener _listener;
         private CancellationTokenSource _cancel;
         private int _pending;
+        private int _epoch;
         private bool _active;
         private bool _started;
         private float _carried;
@@ -69,6 +70,7 @@ namespace Sinbinder.Multiplayer
             }
             try
             {
+                _epoch++;
                 _cancel = new CancellationTokenSource();
                 _listener = new TcpListener(IPAddress.Any, port);
                 _listener.Start(2);
@@ -81,7 +83,7 @@ namespace Sinbinder.Multiplayer
                 _first = _firstGoal = new Vector3(-3, 0.8f, 0);
                 _second = _secondGoal = new Vector3(3, 0.8f, 0);
                 _orders.Clear();
-                _ = AcceptLoopAsync(_cancel.Token);
+                _ = AcceptLoopAsync(_cancel.Token, _epoch);
                 return true;
             }
             catch (Exception e) when (e is SocketException || e is ArgumentException)
@@ -100,6 +102,7 @@ namespace Sinbinder.Multiplayer
         {
             if (!_active) return;
             _active = false;
+            _epoch++;
             _started = false;
             if (_cancel != null) _cancel.Cancel();
             if (_listener != null) _listener.Stop();
@@ -107,12 +110,13 @@ namespace Sinbinder.Multiplayer
             _peers.Clear();
             _orders.Clear();
             while (_inbox.TryDequeue(out _)) { }
+            Interlocked.Exchange(ref _pending, 0);
             _listener = null;
             // The accept/receive tasks may still observe the cancelled token.
             // Do not dispose its source until after their termination.
         }
 
-        private async Task AcceptLoopAsync(CancellationToken token)
+        private async Task AcceptLoopAsync(CancellationToken token, int epoch)
         {
             while (!token.IsCancellationRequested)
             {
@@ -128,22 +132,27 @@ namespace Sinbinder.Multiplayer
 
                 if (socket == null) continue;
                 var accepted = socket;
-                Queue(() => AddPeer(accepted), () => accepted.Close());
+                Queue(() => AddPeer(accepted, epoch), epoch, () => accepted.Close());
             }
         }
 
-        private void Queue(Action action, Action onDrop = null)
+        private void Queue(Action action, int epoch, Action onDrop = null)
         {
+            if (epoch != Volatile.Read(ref _epoch))
+            {
+                if (onDrop != null) onDrop();
+                return;
+            }
             if (Interlocked.Increment(ref _pending) > 256)
             {
                 Interlocked.Decrement(ref _pending);
                 if (onDrop != null) onDrop();
                 return;
             }
-            _inbox.Enqueue(action);
+            _inbox.Enqueue(() => { if (epoch == _epoch) action(); else if (onDrop != null) onDrop(); });
         }
 
-        private void AddPeer(TcpClient socket)
+        private void AddPeer(TcpClient socket, int epoch)
         {
             if (!_active || _started || _peers.Count >= 2)
             {
@@ -156,10 +165,10 @@ namespace Sinbinder.Multiplayer
             _peers.Add(peer);
             Send(peer, new LanMessage { type = "welcome", protocol = 1, playerId = id, unitId = id });
             PublishLobby();
-            _ = ReadLoopAsync(peer, _cancel.Token);
+            _ = ReadLoopAsync(peer, _cancel.Token, epoch);
         }
 
-        private async Task ReadLoopAsync(Peer peer, CancellationToken token)
+        private async Task ReadLoopAsync(Peer peer, CancellationToken token, int epoch)
         {
             try
             {
@@ -168,7 +177,7 @@ namespace Sinbinder.Multiplayer
                     string line = await peer.Wire.ReadLineAsync(token);
                     if (line == null) break;
                     var copy = line;
-                    Queue(() => HandleMessage(peer, copy), () => peer.Wire.Dispose());
+                    Queue(() => HandleMessage(peer, copy), epoch, () => peer.Wire.Dispose());
                 }
             }
             catch (Exception e) when (e is IOException || e is SocketException ||
@@ -177,7 +186,7 @@ namespace Sinbinder.Multiplayer
             {
                 // Closing or misbehaving peers do not crash the match.
             }
-            finally { Queue(() => RemovePeer(peer)); }
+            finally { Queue(() => RemovePeer(peer), epoch); }
         }
 
         private void HandleMessage(Peer peer, string raw)
@@ -368,7 +377,7 @@ namespace Sinbinder.Multiplayer
             catch (Exception e) when (e is IOException || e is SocketException ||
                                        e is OperationCanceledException || e is ObjectDisposedException)
             {
-                Queue(() => RemovePeer(peer));
+                Queue(() => RemovePeer(peer), _epoch);
             }
         }
     }
