@@ -17,7 +17,7 @@ namespace UnityEngine
     }
 
     public enum RuntimeInitializeLoadType { AfterSceneLoad }
-    public enum PrimitiveType { Plane, Capsule }
+    public enum PrimitiveType { Plane, Capsule, Cube, Cylinder, Sphere }
     public enum LightType { Directional, Point }
     public enum LightShadows { None }
     public enum LightRenderMode { ForcePixel }
@@ -25,6 +25,7 @@ namespace UnityEngine
     public struct Quaternion
     {
         public static Quaternion Euler(float x, float y, float z) { return new Quaternion(); }
+        public static Quaternion identity { get { return new Quaternion(); } }
     }
     public enum CameraClearFlags { SolidColor }
 
@@ -173,7 +174,11 @@ namespace UnityEngine
         public float intensity;
         public int cullingMask;
     }
-    public class Renderer : Component { public Material material; }
+    public class Renderer : Component
+    {
+        public Material material;
+        public Material sharedMaterial;
+    }
     public class Shader : Object { public static Shader Find(string title) { return new Shader(); } }
     public class Material : Object
     {
