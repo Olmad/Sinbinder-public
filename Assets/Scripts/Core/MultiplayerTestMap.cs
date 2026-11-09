@@ -11,7 +11,7 @@ namespace Sinbinder.Core
         {
             var map = new MapData
             {
-                Name = "Сетевой полигон",
+                Name = Loc.N("Сетевой полигон"),
                 Author = "Sinbinder QA",
                 Size = 240f
             };
@@ -23,23 +23,23 @@ namespace Sinbinder.Core
             // The residents are neutral, not decorative dummies: this
             // exercises their AOS, recruitment, loyalty and rival interaction.
             map.Locations.Add(new MapData.Location {
-                Kind = "village", Name = "Нейтральная деревня",
+                Kind = "village", Name = Loc.N("Нейтральная деревня"),
                 X = 0f, Z = 0f, Radius = 18f, People = 10
             });
             map.Locations.Add(new MapData.Location {
-                Kind = "forest", Name = "Лес и дозор",
+                Kind = "forest", Name = Loc.N("Лес и дозор"),
                 X = -54f, Z = -12f, Radius = 20f, People = 7
             });
             map.Locations.Add(new MapData.Location {
-                Kind = "field", Name = "Открытое поле",
+                Kind = "field", Name = Loc.N("Открытое поле"),
                 X = 54f, Z = 12f, Radius = 20f, People = 7
             });
             map.Locations.Add(new MapData.Location {
-                Kind = "village", Name = "Северный опорный пункт",
+                Kind = "village", Name = Loc.N("Северный опорный пункт"),
                 X = -49f, Z = 51f, Radius = 15f, People = 5
             });
             map.Locations.Add(new MapData.Location {
-                Kind = "forest", Name = "Южный дозор",
+                Kind = "forest", Name = Loc.N("Южный дозор"),
                 X = 49f, Z = -51f, Radius = 15f, People = 5
             });
 
