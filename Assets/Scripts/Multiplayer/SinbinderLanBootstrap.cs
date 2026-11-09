@@ -17,6 +17,7 @@ namespace Sinbinder.Multiplayer
         private LanRoomServer _server;
         private LanRoomClient _client;
         private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
+        private readonly List<Material> _temporaryMaterials = new List<Material>();
         private GameObject _arena;
         private Camera _camera;
         private Transform _pawn1;
@@ -55,7 +56,7 @@ namespace Sinbinder.Multiplayer
             {
                 if (args[i] == "-port" && i + 1 < args.Length)
                     _portText = args[++i];
-                else if (args[i] == "-sinbinder-server" || args[i] == "--sinbinder-server")
+                else if (args[i] == "-server" || args[i] == "-sinbinder-server" || args[i] == "--sinbinder-server")
                     _dedicated = true;
             }
 
@@ -243,7 +244,7 @@ namespace Sinbinder.Multiplayer
                 SetLayer(child.gameObject, layer);
         }
 
-        private static void Tint(GameObject obj, Color color)
+        private void Tint(GameObject obj, Color color)
         {
             var renderer = obj.GetComponent<Renderer>();
             if (renderer == null) return;
@@ -253,6 +254,7 @@ namespace Sinbinder.Multiplayer
             if (shader == null) return;
             var material = new Material(shader) { color = color };
             renderer.material = material;
+            _temporaryMaterials.Add(material);
         }
 
         private void Leave()
@@ -261,6 +263,9 @@ namespace Sinbinder.Multiplayer
             _server.Stop();
             if (_arena != null) Destroy(_arena);
             _arena = null;
+            foreach (var material in _temporaryMaterials)
+                if (material != null) Destroy(material);
+            _temporaryMaterials.Clear();
             _pawn1 = null;
             _pawn2 = null;
             _camera = null;
