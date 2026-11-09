@@ -33,6 +33,7 @@ namespace Sinbinder.Multiplayer
         private bool _launchHost;
         private string _launchConnect;
         private bool _launchMechanicsMap;
+        private bool _openMechanicsMap;
         private float _nextAutoReconnect;
         private int _autoReconnectAttempts;
 
@@ -111,6 +112,13 @@ namespace Sinbinder.Multiplayer
 
         private void Update()
         {
+            if (_openMechanicsMap)
+            {
+                _openMechanicsMap = false;
+                _open = false;
+                SceneManager.LoadScene("Multiplayer_Test");
+                return;
+            }
             _server.Pump(Time.unscaledDeltaTime);
             _client.Pump();
             if (!_arenaActive || _dedicated) return;
@@ -157,7 +165,7 @@ namespace Sinbinder.Multiplayer
         {
             if (!_open) return false;
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
-            float height = _arenaActive ? 265f : 219f;
+            float height = _arenaActive ? 280f : 250f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
             return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
@@ -174,7 +182,7 @@ namespace Sinbinder.Multiplayer
                 return;
             }
 
-            float height = _arenaActive ? 265 : 219;
+            float height = _arenaActive ? 280 : 250;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
             GUILayout.BeginArea(new Rect(frame.x + 12, frame.y + 28, frame.width - 24, frame.height - 37));
@@ -190,11 +198,8 @@ namespace Sinbinder.Multiplayer
 
             if (!_arenaActive)
             {
-                if (GUILayout.Button("Карта всех основных механик (локально)"))
-                {
-                    _open = false;
-                    SceneManager.LoadScene("Multiplayer_Test");
-                }
+                if (GUILayout.Button("Карта механик (локально)"))
+                    _openMechanicsMap = true;
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Создать LAN"))
                     StartHost();
