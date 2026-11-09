@@ -32,6 +32,7 @@ namespace Sinbinder.Multiplayer
         private bool _autoReady;
         private bool _launchHost;
         private string _launchConnect;
+        private bool _launchMechanicsMap;
         private float _nextAutoReconnect;
         private int _autoReconnectAttempts;
 
@@ -74,6 +75,14 @@ namespace Sinbinder.Multiplayer
                     _launchConnect = args[++i];
                 else if (args[i] == "-lan-auto-ready")
                     _autoReady = true;
+                else if (args[i] == "-mp-test-map")
+                    _launchMechanicsMap = true;
+            }
+
+            if (_launchMechanicsMap && !_dedicated)
+            {
+                SceneManager.LoadScene("Multiplayer_Test");
+                return;
             }
 
             if (_dedicated)
@@ -181,6 +190,11 @@ namespace Sinbinder.Multiplayer
 
             if (!_arenaActive)
             {
+                if (GUILayout.Button("Карта всех основных механик (локально)"))
+                {
+                    _open = false;
+                    SceneManager.LoadScene("Multiplayer_Test");
+                }
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Создать LAN"))
                     StartHost();
