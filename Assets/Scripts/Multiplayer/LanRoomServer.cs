@@ -118,9 +118,11 @@ namespace Sinbinder.Multiplayer
             foreach (var peer in _peers) peer.Wire.Dispose();
             _peers.Clear();
             _orders.Clear();
-            while (_inbox.TryDequeue(out _)) { }
+            // Keep the counter paired with every dequeue. Resetting it to
+            // zero while a background Queue() is mid-enqueue can make it
+            // negative on the next Pump after a rapid server restart.
+            while (_inbox.TryDequeue(out _)) Interlocked.Decrement(ref _pending);
             while (_disconnects.TryDequeue(out _)) { }
-            Interlocked.Exchange(ref _pending, 0);
             _listener = null;
             // The accept/receive tasks may still observe the cancelled token.
             // Do not dispose its source until after their termination.
