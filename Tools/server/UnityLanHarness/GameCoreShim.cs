@@ -9,6 +9,10 @@ namespace Sinbinder.Crypt
 
 namespace Sinbinder.Core
 {
+    public static class Loc
+    {
+        public static string N(string key) { return key; }
+    }
     public class MapData
     {
         public string Name = "";
