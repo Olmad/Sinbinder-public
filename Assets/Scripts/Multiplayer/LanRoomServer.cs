@@ -24,7 +24,9 @@ namespace Sinbinder.Multiplayer
             public LanWire Wire;
             public bool Ready;
             public float WindowStarted;
+            public float LastPacketAt;
             public int MessagesInWindow;
+            public int RemovalQueued;
         }
 
         private struct Disconnected
@@ -169,7 +171,8 @@ namespace Sinbinder.Multiplayer
             }
 
             int id = _peers.Exists(p => p.Id == 1) ? 2 : 1;
-            var peer = new Peer { Id = id, Wire = new LanWire(socket), WindowStarted = Time.realtimeSinceStartup };
+            var peer = new Peer { Id = id, Wire = new LanWire(socket),
+                WindowStarted = Time.realtimeSinceStartup, LastPacketAt = Time.realtimeSinceStartup };
             _peers.Add(peer);
             Send(peer, new LanMessage { type = "welcome", protocol = 1, playerId = id, unitId = id });
             PublishLobby();
@@ -200,8 +203,9 @@ namespace Sinbinder.Multiplayer
         private void EnqueueDisconnect(Peer peer, int epoch)
         {
             // Cleanup must NEVER be dropped when the bounded incoming queue
-            // overflows. Otherwise the disconnected peer permanently occupies
-            // one of two lobby slots.
+            // overflows. Coalesce repeated send failures to avoid an
+            // unbounded disconnect queue when a peer stops reading.
+            if (Interlocked.Exchange(ref peer.RemovalQueued, 1) != 0) return;
             _disconnects.Enqueue(new Disconnected { Peer = peer, Epoch = epoch });
         }
 
@@ -219,10 +223,17 @@ namespace Sinbinder.Multiplayer
                 RemovePeer(peer);
                 return;
             }
+            peer.LastPacketAt = now;
 
             if (!LanMessage.TryDecode(raw, out var packet))
             {
                 SendError(peer, "Неверный формат сообщения");
+                return;
+            }
+
+            if (packet.type == "ping")
+            {
+                Send(peer, new LanMessage { type = "pong" });
                 return;
             }
 
@@ -321,6 +332,17 @@ namespace Sinbinder.Multiplayer
             }
             while (_disconnects.TryDequeue(out var removed))
                 if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
+
+            // A silent TCP peer can remain 'connected' after its cable/Wi-Fi
+            // disappears. Reap it and free its lobby slot independently
+            // of an OS-level FIN/RST arriving.
+            if (_active)
+            {
+                float now = Time.realtimeSinceStartup;
+                for (int i = _peers.Count - 1; i >= 0; i--)
+                    if (now - _peers[i].LastPacketAt > 20f)
+                        RemovePeer(_peers[i]);
+            }
             if (!_active || !_started) return;
 
             _carried += Mathf.Clamp(unscaledDelta, 0f, 0.25f);
