@@ -51,7 +51,7 @@ def main():
         second.until("start")
 
         first.send(type="order", unitId=b["unitId"], kind="Move", x=1, y=0, z=1)
-        assert "not owned" in first.until("error")["message"].lower()
+        assert "Чужим" in first.until("error")["message"]
 
         first.send(type="order", unitId=a["unitId"], kind="Move", x=1, y=0, z=1)
         accepted = first.until("accepted")
