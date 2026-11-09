@@ -55,6 +55,9 @@ namespace UnityEngine
 
     public class GameObject : Object
     {
+        public static readonly List<GameObject> PrimitiveObjects = new List<GameObject>();
+        private Renderer _renderer;
+        private Collider _collider;
         public string name;
         public int layer;
         public bool activeSelf = true;
@@ -67,7 +70,15 @@ namespace UnityEngine
             transform = new Transform { gameObject = this };
         }
 
-        public static GameObject CreatePrimitive(PrimitiveType kind) { return new GameObject(); }
+        public static GameObject CreatePrimitive(PrimitiveType kind)
+        {
+            var go = new GameObject(kind.ToString());
+            go._collider = new Collider { gameObject = go };
+            go._renderer = new Renderer { gameObject = go };
+            PrimitiveObjects.Add(go);
+            return go;
+        }
+
         public static GameObject Find(string name) { return null; }
         public T GetComponentInChildren<T>() where T : class { return null; }
 
@@ -78,7 +89,8 @@ namespace UnityEngine
 
         public T GetComponent<T>() where T : class
         {
-            if (typeof(T) == typeof(Renderer)) return new Renderer() as T;
+            if (typeof(T) == typeof(Renderer)) return _renderer as T;
+            if (typeof(T) == typeof(Collider)) return _collider as T;
             return null;
         }
 
