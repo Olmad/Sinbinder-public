@@ -18,7 +18,10 @@ namespace UnityEngine
 
     public enum RuntimeInitializeLoadType { AfterSceneLoad }
     public enum PrimitiveType { Plane, Capsule }
-    public enum LightType { Directional }
+    public enum LightType { Directional, Point }
+    public enum LightShadows { None }
+    public enum LightRenderMode { ForcePixel }
+    public enum FindObjectsSortMode { None }
     public struct Quaternion
     {
         public static Quaternion Euler(float x, float y, float z) { return new Quaternion(); }
@@ -29,6 +32,11 @@ namespace UnityEngine
     {
         public static void Destroy(Object target) { }
         public static void DontDestroyOnLoad(Object target) { }
+        private static int _idCounter;
+        private readonly int _id = System.Threading.Interlocked.Increment(ref _idCounter);
+        public int GetInstanceID() { return _id; }
+        public static T[] FindObjectsByType<T>(FindObjectsSortMode mode) where T : Object
+        { return Array.Empty<T>(); }
     }
 
     public class Component : Object
@@ -49,6 +57,7 @@ namespace UnityEngine
         public string name;
         public int layer;
         public bool activeSelf = true;
+        public bool activeInHierarchy { get { return activeSelf; } }
         public Transform transform { get; }
 
         public GameObject(string title = "")
@@ -58,6 +67,8 @@ namespace UnityEngine
         }
 
         public static GameObject CreatePrimitive(PrimitiveType kind) { return new GameObject(); }
+        public static GameObject Find(string name) { return null; }
+        public T GetComponentInChildren<T>() where T : class { return null; }
 
         public T AddComponent<T>() where T : Component, new()
         {
@@ -76,9 +87,12 @@ namespace UnityEngine
     public class Transform : Component, IEnumerable<Transform>
     {
         public Vector3 position;
+        public Vector3 localPosition;
         public Vector3 localScale;
         public Quaternion rotation;
+        public Quaternion localRotation;
         public void SetParent(Transform parent) { }
+        public void SetParent(Transform parent, bool worldPositionStays) { }
         public void LookAt(Vector3 target) { }
         public IEnumerator<Transform> GetEnumerator() { return Enumerable.Empty<Transform>().GetEnumerator(); }
         IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
@@ -90,6 +104,7 @@ namespace UnityEngine
         public Vector3(float xx, float yy, float zz) { x = xx; y = yy; z = zz; }
         public static Vector3 zero { get { return new Vector3(); } }
         public static Vector3 up { get { return new Vector3(0, 1, 0); } }
+        public static Vector3 one { get { return new Vector3(1, 1, 1); } }
 
         public static Vector3 MoveTowards(Vector3 a, Vector3 b, float maximum)
         {
@@ -114,6 +129,8 @@ namespace UnityEngine
     {
         public float r, g, b;
         public Color(float r, float g, float b) { this.r = r; this.g = g; this.b = b; }
+        public static Color operator *(Color c, float f)
+        { return new Color(c.r * f, c.g * f, c.b * f); }
     }
 
     public struct Rect
@@ -145,9 +162,14 @@ namespace UnityEngine
         public Ray ScreenPointToRay(Vector3 point) { return new Ray(); }
     }
 
+    public class Collider : Component { public bool enabled = true; }
     public class Light : Component
     {
         public LightType type;
+        public LightShadows shadows;
+        public LightRenderMode renderMode;
+        public Color color;
+        public float range;
         public float intensity;
         public int cullingMask;
     }
@@ -159,6 +181,8 @@ namespace UnityEngine
         public Material(Shader shader) { }
         public bool HasProperty(string name) { return true; }
         public void SetColor(string name, Color value) { color = value; }
+        public void SetFloat(string name, float value) { }
+        public void EnableKeyword(string keyword) { }
     }
 
     public static class Mathf
@@ -166,6 +190,9 @@ namespace UnityEngine
         public static float Abs(float value) { return Math.Abs(value); }
         public static float Clamp(float value, float lo, float hi) { return Math.Min(hi, Math.Max(lo, value)); }
         public static float Clamp01(float value) { return Clamp(value, 0f, 1f); }
+        public const float Deg2Rad = (float)(Math.PI / 180.0);
+        public static float Cos(float v) { return (float)Math.Cos(v); }
+        public static float Sin(float v) { return (float)Math.Sin(v); }
     }
 
     public static class Time
@@ -232,8 +259,10 @@ namespace UnityEngine
 
 namespace UnityEngine.SceneManagement
 {
+    public enum LoadSceneMode { Single, Additive }
     public struct Scene
     {
+        public string name { get { return "Multiplayer_Test"; } }
         public bool IsValid() { return true; }
         public UnityEngine.GameObject[] GetRootGameObjects() { return Array.Empty<UnityEngine.GameObject>(); }
     }
@@ -241,6 +270,8 @@ namespace UnityEngine.SceneManagement
     public static class SceneManager
     {
         public static event Action<Scene, Scene> activeSceneChanged;
+        public static event Action<Scene, LoadSceneMode> sceneLoaded;
+        public static void LoadScene(string name) { }
         public static Scene GetActiveScene() { return new Scene(); }
     }
 }
