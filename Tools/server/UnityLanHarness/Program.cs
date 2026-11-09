@@ -74,6 +74,7 @@ internal static class Program
             await PumpUntil(room, one, two, () => !one.Playing,
                 "server stop notification");
             Console.WriteLine("PASS: disconnect stops match.");
+            await ExtraLanChecks.Run();
             return 0;
         }
         finally
