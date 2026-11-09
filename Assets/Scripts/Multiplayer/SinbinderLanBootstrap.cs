@@ -82,7 +82,9 @@ namespace Sinbinder.Multiplayer
 
             if (_launchMechanicsMap && !_dedicated)
             {
-                SceneManager.LoadScene("Multiplayer_Test");
+                // Defer scene loading until the first Update, outside Awake
+                // and IMGUI's layout pass.
+                _openMechanicsMap = true;
                 return;
             }
 
