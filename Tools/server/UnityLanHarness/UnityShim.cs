@@ -179,7 +179,11 @@ namespace UnityEngine
         public static void Advance(float seconds) { _offset += seconds; }
     }
 
-    public static class Screen { public static int width { get { return 1280; } } }
+    public static class Screen
+    {
+        public static int width { get { return 1280; } }
+        public static int height { get { return 720; } }
+    }
     public static class Application { public static bool isBatchMode { get { return true; } } }
     public static class Input
     {
