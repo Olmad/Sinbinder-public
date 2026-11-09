@@ -29,6 +29,7 @@ internal static class ExtraLanChecks
         await DisconnectedClientAndBadPort();
         await HeartbeatAndSilentPeerExpiry();
         await NonRespondingServerTimeout();
+        await ServerRestartSamePort();
         TestArenaLifecycle();
         Console.WriteLine("PASS: reconnect, flood recovery, heartbeat, silent-peer expiry, dead-server detection and arena lifecycle.");
     }
@@ -258,6 +259,40 @@ internal static class ExtraLanChecks
             client.Disconnect();
             if (remote != null) remote.Close();
             listener.Stop();
+        }
+    }
+
+    private static async Task ServerRestartSamePort()
+    {
+        var room = new LanRoomServer();
+        TcpClient socket = null;
+        try
+        {
+            // Rapid Start/Stop used to race with callbacks from the
+            // previous listener epoch and corrupt the inbox bound counter.
+            for (int i = 0; i < 12; i++)
+            {
+                if (!room.Start(7799))
+                    throw new Exception("Restart iteration " + i + ": " + room.Error);
+                socket = new TcpClient();
+                await socket.ConnectAsync("127.0.0.1", 7799);
+                await Until(room, () => room.PlayerCount == 1,
+                    "listener restarted on same port, iteration " + i);
+                room.Stop();
+                socket.Close();
+                socket = null;
+            }
+            if (!room.Start(7799))
+                throw new Exception("Final restart failed: " + room.Error);
+            socket = new TcpClient();
+            await socket.ConnectAsync("127.0.0.1", 7799);
+            await Until(room, () => room.PlayerCount == 1,
+                "fresh client accepted after 12 restarts");
+        }
+        finally
+        {
+            if (socket != null) socket.Close();
+            room.Stop();
         }
     }
 
