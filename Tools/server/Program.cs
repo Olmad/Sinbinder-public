@@ -148,6 +148,8 @@ internal sealed class Room
     private long _sequence;
     private const int TickRate = 20;
     private const int CommandDelay = 3;
+    private double _p1X = -3, _p1Z, _p2X = 3, _p2Z;
+    private double _p1GoalX = -3, _p1GoalZ, _p2GoalX = 3, _p2GoalZ;
 
     public async Task HandleConnectionAsync(TcpClient socket, CancellationToken token)
     {
@@ -244,6 +246,10 @@ internal sealed class Room
                     _tick = 0;
                     _sequence = 0;
                     _orders.Clear();
+                    _p1X = _p1GoalX = -3;
+                    _p1Z = _p1GoalZ = 0;
+                    _p2X = _p2GoalX = 3;
+                    _p2Z = _p2GoalZ = 0;
                 }
                 players = start ? _peers.ToArray() : Array.Empty<Peer>();
             }
@@ -252,6 +258,7 @@ internal sealed class Room
         {
             foreach (var player in players)
                 await SendSafeAsync(player, new { type = "start", tick = 0, playerId = player.Id, unitId = player.Id }, token);
+            await PublishStateAsync(token);
         }
         else
             await PublishLobbyAsync(token);
@@ -264,11 +271,11 @@ internal sealed class Room
         lock (_gate)
         {
             if (!_started) error = "Match has not started";
-            else if (packet.UnitId != peer.Id) error = "Unit is not owned by this connection";
-            else if (packet.Kind is not ("Move" or "Hold")) error = "Unsupported order kind";
+            else if (packet.UnitId != peer.Id) error = "Чужим юнитом командовать нельзя";
+            else if (packet.Kind is not ("Move" or "Hold")) error = "Неизвестный приказ";
             else if (!double.IsFinite(packet.X) || !double.IsFinite(packet.Y) || !double.IsFinite(packet.Z) ||
-                     Math.Abs(packet.X) > 10000 || Math.Abs(packet.Y) > 10000 || Math.Abs(packet.Z) > 10000)
-                error = "Coordinates out of range";
+                     Math.Abs(packet.X) > 8 || Math.Abs(packet.Z) > 8 || Math.Abs(packet.Y) > 0.1)
+                error = "Недопустимая точка назначения";
             else
             {
                 long due = _tick + CommandDelay;
@@ -276,7 +283,8 @@ internal sealed class Room
                     packet.Kind!, packet.X, packet.Y, packet.Z);
                 if (!_orders.TryGetValue(due, out var list))
                     _orders.Add(due, list = new List<ScheduledOrder>());
-                list.Add(scheduled);
+                if (list.Count >= 64) error = "Очередь переполнена";
+                else list.Add(scheduled);
             }
         }
         if (error != null) await ErrorAsync(peer, error, token);
@@ -291,25 +299,72 @@ internal sealed class Room
             while (await timer.WaitForNextTickAsync(token))
             {
                 List<ScheduledOrder>? due = null;
+                bool publish;
                 lock (_gate)
                 {
                     if (!_started) continue;
                     ++_tick;
                     if (_orders.Remove(_tick, out var batch)) due = batch;
+                    if (due != null)
+                    {
+                        foreach (var order in due.OrderBy(o => o.Sequence))
+                        {
+                            if (order.CommanderId == 1)
+                            {
+                                _p1GoalX = order.Kind == "Hold" ? _p1X : order.X;
+                                _p1GoalZ = order.Kind == "Hold" ? _p1Z : order.Z;
+                            }
+                            else
+                            {
+                                _p2GoalX = order.Kind == "Hold" ? _p2X : order.X;
+                                _p2GoalZ = order.Kind == "Hold" ? _p2Z : order.Z;
+                            }
+                        }
+                    }
+                    (_p1X, _p1Z) = MoveTowards(_p1X, _p1Z, _p1GoalX, _p1GoalZ);
+                    (_p2X, _p2Z) = MoveTowards(_p2X, _p2Z, _p2GoalX, _p2GoalZ);
+                    publish = _tick % 2 == 0;
                 }
 
-                if (due == null) continue;
-                // Only the server assigns tick and sequence. Clients do not reorder orders.
-                foreach (var order in due.OrderBy(o => o.Sequence))
-                    await BroadcastSafeAsync(new
-                    {
-                        type = "execute", tick = order.Tick, sequence = order.Sequence,
-                        commanderId = order.CommanderId, unitId = order.UnitId,
-                        kind = order.Kind, x = order.X, y = order.Y, z = order.Z
-                    }, token);
+                if (due != null)
+                    foreach (var order in due.OrderBy(o => o.Sequence))
+                        await BroadcastSafeAsync(new
+                        {
+                            type = "execute", tick = order.Tick, sequence = order.Sequence,
+                            commanderId = order.CommanderId, unitId = order.UnitId,
+                            kind = order.Kind, x = order.X, y = order.Y, z = order.Z
+                        }, token);
+                if (publish) await PublishStateAsync(token);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+    }
+
+    // Same speed and initial positions as the built-in Unity LAN server.
+    private static (double x, double z) MoveTowards(
+        double x, double z, double goalX, double goalZ)
+    {
+        double dx = goalX - x, dz = goalZ - z;
+        double distance = Math.Sqrt(dx * dx + dz * dz);
+        const double step = 2.8 / TickRate;
+        if (distance <= step || distance == 0) return (goalX, goalZ);
+        return (x + step * dx / distance, z + step * dz / distance);
+    }
+
+    private async Task PublishStateAsync(CancellationToken token)
+    {
+        object state;
+        lock (_gate)
+        {
+            if (!_started) return;
+            state = new
+            {
+                type = "state", tick = _tick,
+                p1X = _p1X, p1Z = _p1Z,
+                p2X = _p2X, p2Z = _p2Z
+            };
+        }
+        await BroadcastSafeAsync(state, token);
     }
 
     private async Task PublishLobbyAsync(CancellationToken token)
