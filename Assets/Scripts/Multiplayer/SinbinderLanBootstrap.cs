@@ -18,6 +18,7 @@ namespace Sinbinder.Multiplayer
         private LanRoomClient _client;
         private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
         private readonly List<Material> _temporaryMaterials = new List<Material>();
+        private Sinbinder.Gameplay.SelectionManager _pausedSelection;
         private GameObject _arena;
         private Camera _camera;
         private Transform _pawn1;
@@ -222,6 +223,15 @@ namespace Sinbinder.Multiplayer
                 }
             }
 
+            // SelectionManager is DontDestroyOnLoad and otherwise keeps
+            // consuming right-clicks against the now-inactive game scene.
+            var selection = Sinbinder.Gameplay.SelectionManager.Instance;
+            if (selection != null && selection.isActiveAndEnabled)
+            {
+                _pausedSelection = selection;
+                selection.enabled = false;
+            }
+
             _arena = new GameObject("Sinbinder LAN: temporary arena");
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "LAN arena floor";
@@ -307,6 +317,11 @@ namespace Sinbinder.Multiplayer
             foreach (var root in _hiddenRoots)
                 if (root != null) root.SetActive(true);
             _hiddenRoots.Clear();
+            if (_pausedSelection != null)
+            {
+                _pausedSelection.enabled = true;
+                _pausedSelection = null;
+            }
             _arenaActive = false;
             _notice = "";
         }
