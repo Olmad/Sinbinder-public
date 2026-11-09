@@ -24,6 +24,8 @@ namespace Sinbinder.Multiplayer
         private CancellationTokenSource _cancel;
         private int _generation;
         private int _queued;
+        private float _lastInboundAt;
+        private float _lastPingAt;
 
         public bool Connected { get; private set; }
         public bool Playing { get; private set; }
@@ -138,6 +140,8 @@ namespace Sinbinder.Multiplayer
                 if (next.Status == "CONNECTED")
                 {
                     Connected = true;
+                    _lastInboundAt = Time.realtimeSinceStartup;
+                    _lastPingAt = _lastInboundAt;
                     Status = "Подключено. Ожидаем игроков";
                     continue;
                 }
@@ -154,8 +158,13 @@ namespace Sinbinder.Multiplayer
                     Status = "Некорректное сообщение сервера";
                     continue;
                 }
+                _lastInboundAt = Time.realtimeSinceStartup;
                 switch (packet.type)
                 {
+                    case "pong":
+                        // Acknowledges that the server's read and send loops
+                        // still work even while the match is idle.
+                        break;
                     case "welcome":
                         if (packet.protocol != 1) { Status = "Версия сетевого протокола не подходит"; Disconnect(); break; }
                         PlayerId = packet.playerId;
@@ -187,6 +196,20 @@ namespace Sinbinder.Multiplayer
                 }
                 if (packet.type != "welcome" || packet.protocol == 1)
                     Received?.Invoke(packet);
+            }
+
+            if (!Connected) return;
+            float now = Time.realtimeSinceStartup;
+            if (now - _lastInboundAt > 12f)
+            {
+                Disconnect();
+                Status = "Ошибка соединения: сервер не отвечает";
+                return;
+            }
+            if (now - _lastPingAt >= 2f)
+            {
+                _lastPingAt = now;
+                Send(new LanMessage { type = "ping" });
             }
         }
 
