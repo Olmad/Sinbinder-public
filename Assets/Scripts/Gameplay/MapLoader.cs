@@ -27,6 +27,12 @@ namespace Sinbinder.Gameplay
 
         void Awake()
         {
+            // This scene is a dedicated, reproducible REAL-gameplay QA map.
+            // All existing MapLoader/Warrior/AOS systems remain intact.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                == "Multiplayer_Test")
+                MultiplayerTestMap.Choose();
+
             var map = MapSession.Map;
             // Пакетный проход обучения (TugSceneBuilder.TutorialRun): «-tugTutorial».
             if (map == null && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugTutorial") >= 0)
