@@ -132,7 +132,7 @@ namespace Sinbinder.Multiplayer
 
             // Right click moves YOUR pawn. Left click and Tab/V belong to
             // the main game's camera/selection; the arena never steals them.
-            if (Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonDown(1) && !PointerOverLanPanel())
             {
                 Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
                 var ground = new Plane(Vector3.up, Vector3.zero);
@@ -142,6 +142,17 @@ namespace Sinbinder.Multiplayer
                     _client.Move(destination);
                 }
             }
+        }
+
+        private bool PointerOverLanPanel()
+        {
+            if (!_open) return false;
+            // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
+            float height = _arenaActive ? 265f : 219f;
+            Vector3 mouse = Input.mousePosition;
+            float top = Screen.height - 8f;
+            return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
+                && mouse.y <= top && mouse.y >= top - height;
         }
 
         private void OnGUI()
