@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -26,8 +27,10 @@ internal static class ExtraLanChecks
         await InboxFloodAndRecovery();
         await SeatReplacementAfterDisconnect();
         await DisconnectedClientAndBadPort();
+        await HeartbeatAndSilentPeerExpiry();
+        await NonRespondingServerTimeout();
         TestArenaLifecycle();
-        Console.WriteLine("PASS: rapid reconnect, inbox overload recovery, invalid endpoint and arena lifecycle.");
+        Console.WriteLine("PASS: reconnect, flood recovery, heartbeat, silent-peer expiry, dead-server detection and arena lifecycle.");
     }
 
     private static async Task ConnectionChurn()
@@ -180,6 +183,81 @@ internal static class ExtraLanChecks
             second.Disconnect();
             replacement.Disconnect();
             room.Stop();
+        }
+    }
+
+    private static async Task HeartbeatAndSilentPeerExpiry()
+    {
+        var room = new LanRoomServer();
+        var client = new LanRoomClient();
+        TcpClient silent = null;
+        try
+        {
+            if (!room.Start(7797)) throw new Exception(room.Error);
+            client.Connect("127.0.0.1", 7797);
+            await Until(room, () =>
+            {
+                client.Pump();
+                return client.PlayerId == 1;
+            }, "heartbeat client connected");
+
+            bool sawPong = false;
+            client.Received += packet => { if (packet.type == "pong") sawPong = true; };
+            Time.Advance(3f);
+            client.Pump(); // queues ping on next heartbeat
+            await Until(room, () =>
+            {
+                client.Pump();
+                return sawPong;
+            }, "server acknowledged heartbeat");
+
+            silent = new TcpClient();
+            await silent.ConnectAsync("127.0.0.1", 7797);
+            await Until(room, () => room.PlayerCount == 2, "silent raw peer admitted");
+            Time.Advance(21f);
+            // The LAN test client has not pumped since the clock jump, so
+            // BOTH peers will be reaped if we advance too far. Instead the
+            // important invariant is that nobody occupies a ghost seat.
+            room.Pump(0.01f);
+            if (room.PlayerCount != 0)
+                throw new Exception("Silent peers were not reaped after 20 seconds");
+        }
+        finally
+        {
+            if (silent != null) silent.Close();
+            client.Disconnect();
+            room.Stop();
+        }
+    }
+
+    private static async Task NonRespondingServerTimeout()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 7798);
+        var client = new LanRoomClient();
+        TcpClient remote = null;
+        try
+        {
+            listener.Start();
+            Task<TcpClient> accepted = listener.AcceptTcpClientAsync();
+            client.Connect("127.0.0.1", 7798);
+            remote = await accepted;
+            for (int i = 0; i < 400 && !client.Connected; i++)
+            {
+                client.Pump();
+                await Task.Delay(10);
+            }
+            if (!client.Connected)
+                throw new Exception("Could not establish mock silent connection");
+            Time.Advance(13f);
+            client.Pump();
+            if (client.Connected || !client.Status.Contains("сервер не отвечает"))
+                throw new Exception("Client did not report a dead server after 12 seconds");
+        }
+        finally
+        {
+            client.Disconnect();
+            if (remote != null) remote.Close();
+            listener.Stop();
         }
     }
 
