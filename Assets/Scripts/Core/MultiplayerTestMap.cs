@@ -93,7 +93,8 @@ namespace Sinbinder.Core
             // run before the two-Lord networking layer is integrated.
             if (MapSession.Seats.Count >= 2)
                 MapSession.Seats[1] = MapSession.Seat.AiMedium;
-            MapSession.GreatHunt = false; // keep QA sessions running
+            // Allow the existing long-match Great Hunt to be tested too.
+            MapSession.GreatHunt = true;
             MapSession.Tutorial = false;
         }
 
