@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -83,6 +84,8 @@ internal sealed class Peer : IDisposable
     private readonly NetworkStream _stream;
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly byte[] _one = new byte[1];
+    private long _windowStart = Stopwatch.GetTimestamp();
+    private int _messages;
     public int Id { get; }
     public bool Ready { get; set; }
     public TcpClient Socket { get; }
@@ -92,6 +95,17 @@ internal sealed class Peer : IDisposable
         Id = id;
         Socket = socket;
         _stream = socket.GetStream();
+    }
+
+    public bool AllowMessage()
+    {
+        long now = Stopwatch.GetTimestamp();
+        if (now - _windowStart >= Stopwatch.Frequency)
+        {
+            _windowStart = now;
+            _messages = 0;
+        }
+        return ++_messages <= 25;
     }
 
     // Read a bounded UTF-8 message. Never allocate from an untrusted length.
@@ -187,6 +201,11 @@ internal sealed class Room
             {
                 var line = await peer.ReadLineAsync(token);
                 if (line == null) break;
+                if (!peer.AllowMessage())
+                {
+                    await ErrorAsync(peer, "Rate limit exceeded", token);
+                    break;
+                }
                 ClientPacket? packet;
                 try { packet = JsonSerializer.Deserialize<ClientPacket>(line, JsonOptions); }
                 catch (JsonException)
