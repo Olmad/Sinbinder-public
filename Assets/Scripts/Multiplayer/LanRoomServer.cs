@@ -27,6 +27,12 @@ namespace Sinbinder.Multiplayer
             public int MessagesInWindow;
         }
 
+        private struct Disconnected
+        {
+            public Peer Peer;
+            public int Epoch;
+        }
+
         private struct Order
         {
             public long Tick;
@@ -38,6 +44,7 @@ namespace Sinbinder.Multiplayer
 
         private readonly List<Peer> _peers = new List<Peer>();
         private readonly ConcurrentQueue<Action> _inbox = new ConcurrentQueue<Action>();
+        private readonly ConcurrentQueue<Disconnected> _disconnects = new ConcurrentQueue<Disconnected>();
         private readonly SortedDictionary<long, List<Order>> _orders =
             new SortedDictionary<long, List<Order>>();
 
@@ -110,6 +117,7 @@ namespace Sinbinder.Multiplayer
             _peers.Clear();
             _orders.Clear();
             while (_inbox.TryDequeue(out _)) { }
+            while (_disconnects.TryDequeue(out _)) { }
             Interlocked.Exchange(ref _pending, 0);
             _listener = null;
             // The accept/receive tasks may still observe the cancelled token.
@@ -186,7 +194,15 @@ namespace Sinbinder.Multiplayer
             {
                 // Closing or misbehaving peers do not crash the match.
             }
-            finally { Queue(() => RemovePeer(peer), epoch); }
+            finally { EnqueueDisconnect(peer, epoch); }
+        }
+
+        private void EnqueueDisconnect(Peer peer, int epoch)
+        {
+            // Cleanup must NEVER be dropped when the bounded incoming queue
+            // overflows. Otherwise the disconnected peer permanently occupies
+            // one of two lobby slots.
+            _disconnects.Enqueue(new Disconnected { Peer = peer, Epoch = epoch });
         }
 
         private void HandleMessage(Peer peer, string raw)
@@ -296,11 +312,15 @@ namespace Sinbinder.Multiplayer
 
         public void Pump(float unscaledDelta)
         {
+            while (_disconnects.TryDequeue(out var removed))
+                if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
             while (_inbox.TryDequeue(out var action))
             {
                 Interlocked.Decrement(ref _pending);
                 if (_active) action();
             }
+            while (_disconnects.TryDequeue(out var removed))
+                if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
             if (!_active || !_started) return;
 
             _carried += Mathf.Clamp(unscaledDelta, 0f, 0.25f);
@@ -377,7 +397,7 @@ namespace Sinbinder.Multiplayer
             catch (Exception e) when (e is IOException || e is SocketException ||
                                        e is OperationCanceledException || e is ObjectDisposedException)
             {
-                Queue(() => RemovePeer(peer), _epoch);
+                EnqueueDisconnect(peer, _epoch);
             }
         }
     }
