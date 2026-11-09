@@ -49,11 +49,23 @@ internal static class MapVisualChecks
         // Exercise geometry/material code, not just source syntax. It must
         // work without a running gameplay system and without UnityEditor.
         var altar = new GameObject("Test visual altar");
+        int before = GameObject.PrimitiveObjects.Count;
         var install = typeof(AltarVisualEnhancer).GetMethod("Install",
             BindingFlags.Static | BindingFlags.NonPublic);
         if (install == null) throw new Exception("Missing altar decorator");
         install.Invoke(null, new object[] { altar, false });
+        int after = GameObject.PrimitiveObjects.Count;
+        if (after - before < 16)
+            throw new Exception("Altar visual factory produced insufficient geometry");
+        foreach (var primitive in GameObject.PrimitiveObjects.Skip(before))
+        {
+            var collider = primitive.GetComponent<Collider>();
+            if (collider == null || collider.enabled)
+                throw new Exception("Decoration has an active collider: " + primitive.name);
+        }
         install.Invoke(null, new object[] { altar, true });
+        if (GameObject.PrimitiveObjects.Count != after)
+            throw new Exception("Altar decorator duplicated an existing ornament set");
         // The second call must be idempotent on an already decorated target.
 
         Console.WriteLine("PASS: symmetrical full-gameplay QA map and altar visual factory");
