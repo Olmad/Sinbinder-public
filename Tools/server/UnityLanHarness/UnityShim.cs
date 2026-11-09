@@ -113,7 +113,10 @@ namespace UnityEngine
         { this.x = x; this.y = y; width = w; height = h; }
     }
 
-    public struct Ray { }
+    public struct Ray
+    {
+        public Vector3 GetPoint(float distance) { return Vector3.zero; }
+    }
     public struct Plane
     {
         public Plane(Vector3 normal, Vector3 position) { }
