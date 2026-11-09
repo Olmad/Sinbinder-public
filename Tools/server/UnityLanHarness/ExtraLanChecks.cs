@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Sinbinder.Multiplayer;
@@ -25,7 +26,8 @@ internal static class ExtraLanChecks
         await InboxFloodAndRecovery();
         await SeatReplacementAfterDisconnect();
         await DisconnectedClientAndBadPort();
-        Console.WriteLine("PASS: rapid reconnect, inbox overload recovery, invalid endpoint.");
+        TestArenaLifecycle();
+        Console.WriteLine("PASS: rapid reconnect, inbox overload recovery, invalid endpoint and arena lifecycle.");
     }
 
     private static async Task ConnectionChurn()
@@ -179,6 +181,34 @@ internal static class ExtraLanChecks
             replacement.Disconnect();
             room.Stop();
         }
+    }
+
+    private static void TestArenaLifecycle()
+    {
+        var selection = new UnityEngine.GameObject("persistent selection")
+            .AddComponent<Sinbinder.Gameplay.SelectionManager>();
+        Sinbinder.Gameplay.SelectionManager.Instance = selection;
+
+        var bootstrap = new UnityEngine.GameObject("LAN test controller")
+            .AddComponent<SinbinderLanBootstrap>();
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var type = typeof(SinbinderLanBootstrap);
+        void Invoke(string name)
+        {
+            var method = type.GetMethod(name, flags);
+            if (method == null) throw new Exception("Missing LAN lifecycle method: " + name);
+            method.Invoke(bootstrap, Array.Empty<object>());
+        }
+
+        Invoke("Awake");
+        Invoke("EnterArena");
+        if (selection.enabled)
+            throw new Exception("Persistent selection input remained enabled during LAN test");
+        Invoke("Leave");
+        if (!selection.enabled)
+            throw new Exception("Persistent selection input was not restored after LAN test");
+        Invoke("OnDestroy");
+        Sinbinder.Gameplay.SelectionManager.Instance = null;
     }
 
     private static async Task DisconnectedClientAndBadPort()
