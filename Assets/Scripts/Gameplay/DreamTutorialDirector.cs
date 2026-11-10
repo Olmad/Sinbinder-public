@@ -147,6 +147,7 @@ namespace Sinbinder.Gameplay
         private float _rescueSince, _rescueNextHit, _rescueResultAt = -1f;
         private int _rescueCreditBefore;
         private bool _rescueDecisionShown;
+        private bool _rescueHelpShown;
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
@@ -765,6 +766,17 @@ namespace Sinbinder.Gameplay
                             Log(_line);
                         }
                     }
+                    // Игрок может изменить расположение вместо повторного
+                    // бесполезного ожидания. Это настоящий приказ и настоящая AOS.
+                    if (!_rescueHelpShown && !_rescueDecisionShown
+                        && Time.unscaledTime - _rescueSince > 11f)
+                    {
+                        _rescueHelpShown = true;
+                        _line = "Не пришёл на помощь? Выделите стража ЛКМ, ПКМ у раненого. "
+                              + "Сблизив их, посмотрите, выберет ли он защиту сам. "
+                              + "Приказ лишь меняет положение, а не заставляет спасать.";
+                        Log(_line);
+                    }
                     if (_rescueResultAt >= 0f)
                     {
                         if (Time.unscaledTime - _rescueResultAt > 2.8f) EndRescueLesson();
@@ -890,6 +902,7 @@ namespace Sinbinder.Gameplay
             _rescueNextHit = Time.time + 5f;
             _rescueCreditBefore = Bodyguard.Rescues;
             _rescueDecisionShown = false;
+            _rescueHelpShown = false;
 
             _rescueWounded = CreateLiving(
                 new SoulData("Раненый товарищ", SinType.Sloth, MoralType.Neutral, 1, 15f),
