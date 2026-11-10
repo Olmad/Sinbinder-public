@@ -33,10 +33,12 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, Puzzle, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
+        /// <summary>Разрешено отдать настоящий приказ по подвесной мишени.</summary>
+        public static bool BowShotAvailable => Instance != null && Instance._stage == Stage.BowShot;
 
         /// <summary>
         /// Весы до приказа во сне — только на проверке тем же приказом (63-TEACHING, п. 7):
@@ -71,10 +73,10 @@ namespace Sinbinder.Gameplay
         /// <summary>Автопрогон обходится без физического ввода мыши, но ОБЯЗАН пройти печати.</summary>
         public void TestSkipControls()
         {
-            if (_stage >= Stage.FirstPerson && _stage < Stage.Puzzle)
+            if (_stage >= Stage.FirstPerson && _stage < Stage.BowFind)
             {
                 EnsureSealCompanion();
-                Set(Stage.Puzzle, PuzzleLine);
+                Set(Stage.BowFind, "На возвышении слева лежит лук тщеславия. Подойдите и нажмите F.");
             }
         }
 
@@ -98,7 +100,8 @@ namespace Sinbinder.Gameplay
                 case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
-                case Stage.CommanderPractice: case Stage.Puzzle: return DreamRoad.GateZ;
+                case Stage.CommanderPractice: case Stage.BowFind: case Stage.BowEquip:
+                case Stage.BowShot: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -667,9 +670,40 @@ namespace Sinbinder.Gameplay
                 {
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam != null && cam.CommanderModeNow && _commanderOrdered)
-                        Set(Stage.Puzzle, PuzzleLine);
+                        Set(Stage.BowFind, "На возвышении слева лежит лук тщеславия. Подойдите и нажмите F.");
                     break;
                 }
+                case Stage.BowFind:
+                {
+                    var road = DreamRoad.Instance;
+                    if (road == null) { Set(Stage.Puzzle, PuzzleLine); break; }
+                    if (road.BowTaken || (Pressed(KeyCode.F) && road.TryTakeBow()))
+                        Set(Stage.BowEquip,
+                            "Лук в мешке. Подойдите к соратнику и нажмите F, выберите «Снаряжение», отдайте ему лук. Предмет-искуситель влияет на голосование души.");
+                    else if (Vector3.Distance(new Vector3(_hero.transform.position.x, 0f, _hero.transform.position.z),
+                                               DreamRoad.BowStandAt) < 3.1f)
+                        _line = "F — взять лук тщеславия с возвышения. Он соблазняет Гордыню, но не гарантирует послушания.";
+                    break;
+                }
+                case Stage.BowEquip:
+                {
+                    bool equipped = false;
+                    foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                        if (ally != null && !ally.IsDead && ally.Team == Team.Player &&
+                            !(ally is SinbinderPlayer) && DreamBowTarget.HasBow(ally))
+                        { equipped = true; break; }
+                    if (equipped)
+                        Set(Stage.BowShot,
+                            "Лук усиливает Гордыню: зовёт атаковать, удерживает от бегства. Но приказ всё ещё судит душа. Выделите лучника ЛКМ, ПКМ по высоко подвешенной мишени.");
+                    break;
+                }
+                case Stage.BowShot:
+                    if (DreamRoad.Instance != null && DreamRoad.Instance.BowTargetBroken)
+                    {
+                        EnsureSealCompanion();
+                        Set(Stage.Puzzle, "Попадание! Лук — оружие и искушение одновременно. " + PuzzleLine);
+                    }
+                    break;
                 case Stage.Puzzle:
                 {
                     if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
