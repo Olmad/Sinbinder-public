@@ -166,6 +166,17 @@ namespace Sinbinder.UI
                     }
                     if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
                 }
+                // После суда тот же язык работает на поле боя: герой может
+                // увидеть, какое искушение принёс конкретный предмет, не
+                // возвращаясь в полный суд и не открывая панель снаряжения.
+                int shownTemptations = 0;
+                foreach (var item in warrior.Carried)
+                {
+                    if (item == null || Mathf.Approximately(item.TemptationValue, 0f)) continue;
+                    string effect = SquadGear.Effect(item);
+                    _text.text += "\n" + Core.Loc.F("{0}: {1}", Core.Loc.Name(item.Name), effect);
+                    if (++shownTemptations >= 2) break;
+                }
                 if (isNeutralInMatch)
                     _text.text = Favor.Attitude(warrior) + (hasDecision ? "\n" + _text.text : string.Empty);
                 // Титулованный или легенда — дар словами (Gift).
