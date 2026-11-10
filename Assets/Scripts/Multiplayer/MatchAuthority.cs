@@ -214,7 +214,8 @@ namespace Sinbinder.Multiplayer
         // of this check FAILS CLOSED. Clients cannot assert visibility.
         public bool TryApprove(int authenticatedConnectionId, NetworkOrderIntent intent,
             long currentTick, Func<long, long, bool> targetVisible,
-            out AuthorizedGameOrder approved, out OrderRejection reason)
+            out AuthorizedGameOrder approved, out OrderRejection reason,
+            int extraDelayTicks = 0)
         {
             approved = default;
             reason = OrderRejection.None;
@@ -286,7 +287,9 @@ namespace Sinbinder.Multiplayer
                 reason = OrderRejection.NotAllowed;
                 return false;
             }
-            if (currentTick < 0 || currentTick > long.MaxValue - _delay ||
+            if (extraDelayTicks < 0 || extraDelayTicks > 3 ||
+                currentTick < 0 ||
+                currentTick > long.MaxValue - _delay - extraDelayTicks ||
                 _nextSequence == long.MaxValue)
             {
                 reason = OrderRejection.NotAllowed;
@@ -295,7 +298,7 @@ namespace Sinbinder.Multiplayer
 
             player.LastCommandId = intent.CommandId;
             approved = new AuthorizedGameOrder(++_nextSequence,
-                currentTick + _delay, intent.CommandId,
+                currentTick + _delay + extraDelayTicks, intent.CommandId,
                 authenticatedConnectionId, player.Lord, intent);
             return true;
         }
