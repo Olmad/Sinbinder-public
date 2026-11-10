@@ -10,6 +10,12 @@ using System.Text.Json;
 
 namespace UnityEngine
 {
+    [AttributeUsage(AttributeTargets.Field)]
+    public sealed class SerializeField : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public sealed class DisallowMultipleComponent : Attribute { }
+
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute
     {
@@ -58,6 +64,8 @@ namespace UnityEngine
         public static readonly List<GameObject> PrimitiveObjects = new List<GameObject>();
         private Renderer _renderer;
         private Collider _collider;
+        private readonly Dictionary<Type, Component> _components =
+            new Dictionary<Type, Component>();
         public string name;
         public int layer;
         public bool activeSelf = true;
@@ -84,14 +92,19 @@ namespace UnityEngine
 
         public T AddComponent<T>() where T : Component, new()
         {
-            return new T { gameObject = this };
+            if (_components.TryGetValue(typeof(T), out var existing))
+                return existing as T;
+            var created = new T { gameObject = this };
+            _components[typeof(T)] = created;
+            return created;
         }
 
         public T GetComponent<T>() where T : class
         {
             if (typeof(T) == typeof(Renderer)) return _renderer as T;
             if (typeof(T) == typeof(Collider)) return _collider as T;
-            return null;
+            return _components.TryGetValue(typeof(T), out var component)
+                ? component as T : null;
         }
 
         public void SetActive(bool active) { activeSelf = active; }
