@@ -79,6 +79,7 @@ internal static class Program
             AuthorityChecks.Run();
             WorldProbeChecks.Run();
             await GameOrderWireChecks.Run();
+            await WorldSnapshotChecks.Run();
             return 0;
         }
         finally
