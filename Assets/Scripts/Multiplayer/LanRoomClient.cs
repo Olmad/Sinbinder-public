@@ -181,6 +181,8 @@ namespace Sinbinder.Multiplayer
                         {
                             GameMatchId = packet.matchId;
                             OwnLordActorId = packet.actorId;
+                            if (packet.lastCommandId > _nextGameCommandId)
+                                _nextGameCommandId = packet.lastCommandId;
                         }
                         break;
                     case "welcome":
