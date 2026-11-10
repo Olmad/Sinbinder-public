@@ -78,6 +78,7 @@ internal static class Program
             MapVisualChecks.Run();
             AuthorityChecks.Run();
             WorldProbeChecks.Run();
+            await GameOrderWireChecks.Run();
             return 0;
         }
         finally
