@@ -162,6 +162,9 @@ namespace Sinbinder.Gameplay
         private AOS.DecisionContext _emotionContextBefore;
         private bool _emotionApplied;
         private GameObject _fearSign, _contrastMarker;
+        private float _puzzleSince;
+        private int _puzzleHelpLevel;
+        public bool FinalTrialCompleted { get; private set; }
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
@@ -430,6 +433,11 @@ namespace Sinbinder.Gameplay
         private void Set(Stage stage, string line)
         {
             _stage = stage;
+            if (stage == Stage.Puzzle)
+            {
+                _puzzleSince = Time.unscaledTime;
+                _puzzleHelpLevel = 0;
+            }
             _line = line;
             _nextPrompt = Time.unscaledTime + 15f;
             Log(line);
@@ -902,6 +910,26 @@ namespace Sinbinder.Gameplay
                 case Stage.Puzzle:
                 {
                     if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
+                    // Итоговая задача начинается без инструкции «нажмите сюда».
+                    // Помощь — по мере реального застревания, не поверх задания.
+                    float elapsed = Time.unscaledTime - _puzzleSince;
+                    if (_puzzleHelpLevel < 1 && elapsed > 18f)
+                    {
+                        _puzzleHelpLevel = 1;
+                        _line = "Вглядитесь в два знака у ворот. Каждому нужен живой человек. "
+                            + "Поставьте соратника на один знак, Греховода — на другой.";
+                    }
+                    if (_puzzleHelpLevel < 2 && elapsed > 45f)
+                    {
+                        _puzzleHelpLevel = 2;
+                        _line = PuzzleLine;
+                    }
+                    if (_puzzleHelpLevel < 3 && elapsed > 80f)
+                    {
+                        _puzzleHelpLevel = 3;
+                        _line = "Если ваш воин не пошёл, прочитайте голоса в подсказке и попробуйте другого. "
+                            + "Печати должны удерживать оба одновременно.";
+                    }
                     var road = DreamRoad.Instance;
                     if (road == null) { Set(Stage.Return, GateLine); break; }
                     // Любой живой союзник может заменить учебного, если тот дошёл.
@@ -913,7 +941,10 @@ namespace Sinbinder.Gameplay
                             DreamRoad.WarriorSealAt) <= 1.35f) { onSeal = ally; break; }
                     }
                     if (road.CheckSeals(onSeal, _hero.transform.position))
+                    {
+                        FinalTrialCompleted = true;
                         Set(Stage.Return, "Печати ответили обеим душам. Подойдите к воротам и нажмите F.");
+                    }
                     break;
                 }
                 case Stage.Return:
@@ -1044,7 +1075,7 @@ namespace Sinbinder.Gameplay
             _contrastProudAnswered = false;
             _contrastHelpShown = false;
             _contrastStarted = Time.unscaledTime;
-            _compareIssuedAfter = Time.time;
+            _compareIssuedAfter = Time.time - 0.01f;
             var merciful = new SoulData("Страж Милосердия", SinType.Pride, MoralType.Pious, 1, -75f);
             merciful.Set(SinType.Wrath, -60f);
             var proud = new SoulData("Страж Гордыни", SinType.Pride, MoralType.Vicious, 1, 95f);
@@ -1106,7 +1137,7 @@ namespace Sinbinder.Gameplay
         private void BeginEmotionShift()
         {
             _emotionStarted = Time.unscaledTime;
-            _emotionIssuedAfter = Time.time;
+            _emotionIssuedAfter = Time.time - 0.01f;
             _emotionHelpShown = false;
             _emotionApplied = false;
             _emotionContextBefore = _contrastMerciful != null
@@ -1149,8 +1180,9 @@ namespace Sinbinder.Gameplay
             if (_contrastMarker != null) Destroy(_contrastMarker);
             _contrastMarker = null;
             EnsureSealCompanion();
-            Set(Stage.Puzzle, "Вы видели разные души и изменение эмоциональных весов. "
-                + "Теперь действуйте сами: две плиты, две души и один проход. " + PuzzleLine);
+            Set(Stage.Puzzle, "Последнее испытание без приказа Бога Смерти: два незапертых знака "
+                + "перед склепом и несколько воинов, каждый со своей волей. "
+                + "Откройте ворота своими действиями.");
         }
 
         /// <summary>
