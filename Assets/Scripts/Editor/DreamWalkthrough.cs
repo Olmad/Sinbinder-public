@@ -351,7 +351,22 @@ namespace Sinbinder.EditorTools
                         Snap("сон — испытание гордыни с луком");
                     }
                     break;
+                case "Rescue":
+                    if (_step != "Последний щит")
+                    {
+                        Go("Последний щит");
+                        Write("  [AOS] наблюдаем настоящие решения защитника и реальный перехват входящего урона");
+                        Snap("сон — последний щит, AOS спасение");
+                    }
+                    // Не вызываем GuardForRescue и OnAllySaved из прогона:
+                    // иначе нарисуем победу там, где души на деле не спасали.
+                    break;
                 case "Puzzle":
+                    if (dream.RescueResult != "спасён")
+                    {
+                        End(false, "сцену спасения прошли без настоящего защитного удара: " + dream.RescueResult);
+                        return;
+                    }
                     if (_step != "две печати")
                     {
                         Go("две печати");
