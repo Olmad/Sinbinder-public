@@ -203,8 +203,8 @@ namespace Sinbinder.Multiplayer
                         {
                             ServerMeasuredPingMs = packet.rttMs;
                             ServerMeasuredJitterMs = packet.jitterMs;
-                            FairInputDelayMs = Mathf.Clamp(
-                                packet.extraDelayMs, 0, 150);
+                            FairInputDelayMs = Math.Max(0,
+                                Math.Min(150, packet.extraDelayMs));
                             PingBalanceSetting = packet.pingBalanceMode;
                         }
                         break;
