@@ -163,6 +163,31 @@ namespace Sinbinder.Gameplay
             if (_mode == CameraView.Tactical) LookDown();
         }
 
+        /// <summary>
+        /// Небольшой постоянный ключ к роли в первом лице. После V камера
+        /// не меняется, зато ЛКМ/ПКМ делают противоположные вещи.
+        /// Журнал раньше сообщал это однажды, и подсказка тут же терялась.
+        /// </summary>
+        void OnGUI()
+        {
+            if (!isActiveAndEnabled || !FirstPersonNow || OpeningReveal.Busy || UI.Modal.Any) return;
+            if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
+            if (Core.GamePauseController.Instance != null && Core.GamePauseController.Instance.IsPaused) return;
+            var width = Mathf.Min(360f, Screen.width - 32f);
+            var caption = CommanderModeNow
+                ? Core.Loc.T("КОМАНДИР  ·  V — Воин, Tab — вид сверху") + "\n" +
+                  Core.Loc.T("ЛКМ — выбрать    ПКМ — приказ")
+                : Core.Loc.T("ВОИН  ·  V — Командир, Tab — вид сверху") + "\n" +
+                  Core.Loc.T("ЛКМ — удар    ПКМ — блок");
+            var style = new GUIStyle(GUI.skin.box)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                fontSize = Mathf.Clamp(Screen.height / 60, 12, 19),
+                wordWrap = true
+            };
+            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, 68f), caption, style);
+        }
+
         void OnApplicationFocus(bool focus)
         {
             _hasFocus = focus;
