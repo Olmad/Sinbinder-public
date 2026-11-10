@@ -39,14 +39,38 @@ namespace Sinbinder.Multiplayer
                 if (entry.Value == warrior)
                     throw new InvalidOperationException("Warrior already has a network ID");
 
+            var identity = warrior.GetComponent<NetworkActorIdentity>();
+            if (identity != null && identity.Assigned)
+                throw new InvalidOperationException("Warrior is still bound to another match");
+
             long id = _authority.RegisterActor(role, ownerConnection);
-            _warriors.Add(id, warrior);
-            _roles.Add(id, role);
-            return id;
+            try
+            {
+                if (identity == null)
+                    identity = warrior.gameObject.AddComponent<NetworkActorIdentity>();
+                identity.BindServerIdentity(id, _authority.MatchId);
+                _warriors.Add(id, warrior);
+                _roles.Add(id, role);
+                return id;
+            }
+            catch
+            {
+                // A failed Unity component initialization must not leak an
+                // authoritative actor ID into the match registry.
+                _authority.RemoveActor(id);
+                throw;
+            }
         }
 
         public void Unregister(long id)
         {
+            if (_warriors.TryGetValue(id, out var warrior) && warrior != null)
+            {
+                var identity = warrior.GetComponent<NetworkActorIdentity>();
+                if (identity != null && identity.ServerId == id &&
+                    identity.MatchId == _authority.MatchId)
+                    identity.ClearServerIdentity();
+            }
             _warriors.Remove(id);
             _roles.Remove(id);
             _authority.RemoveActor(id);
