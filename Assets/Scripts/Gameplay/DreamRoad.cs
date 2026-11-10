@@ -40,8 +40,11 @@ namespace Sinbinder.Gameplay
         private readonly List<Candle> _candles = new List<Candle>();
         private Transform _dummy, _doorLeft, _doorRight;
         private Renderer _warriorSeal, _lordSeal;
+        private readonly List<Transform> _sealBolts = new List<Transform>();
         private float _sealTogether;
         private bool _sealsAwake;
+        private bool _mechanismReleased;
+        private bool _mechanismMoving;
         private GameObject _bowOnStand;
         private bool _bowTaken;
         private Sturdy _hangingTarget;
@@ -57,6 +60,8 @@ namespace Sinbinder.Gameplay
         public static readonly Vector3 WarriorSealAt = new Vector3(-1.8f, 0f, 25.8f);
         public static readonly Vector3 LordSealAt = new Vector3(1.8f, 0f, 25.8f);
         public bool SealsAwake => _sealsAwake;
+        /// <summary>Мишень упала на приёмную плиту, и каменные засовы отпустили две печати.</summary>
+        public bool MechanismReleased => _mechanismReleased;
         private GameObject _seam;
         private Light _cryptLight;
         private Vector3 _tipAxis = Vector3.right;
@@ -247,6 +252,15 @@ namespace Sinbinder.Gameplay
                 new Vector3(0.7f, 0.12f, 0.18f), stone);
             Piece(parent, PrimitiveType.Cylinder, "Подвесная цепь", BowTargetAt + Vector3.up * 2.2f,
                 new Vector3(0.04f, 2.2f, 0.04f), stone, false);
+            // Под подвесом явно стоит чаша противовеса. Стрела сбивает груз,
+            // тот падает на чашу и освобождает механическую блокировку двух плит.
+            Piece(parent, PrimitiveType.Cylinder, "Приёмная чаша противовеса",
+                new Vector3(BowTargetAt.x, 0.06f, BowTargetAt.z),
+                new Vector3(2.5f, 0.12f, 2.5f), stone, false);
+            Piece(parent, PrimitiveType.Cylinder, "Сердцевина механизма",
+                new Vector3(BowTargetAt.x, 0.135f, BowTargetAt.z),
+                new Vector3(0.8f, 0.025f, 0.8f),
+                Glowing(new Color(0.23f, 0.42f, 0.48f), 0.9f), false);
             root.gameObject.AddComponent<DreamBowTarget>();
         }
 
@@ -275,6 +289,7 @@ namespace Sinbinder.Gameplay
         private void BuildSeals(Transform parent)
         {
             var dormant = Glowing(new Color(0.16f, 0.32f, 0.46f), 0.8f);
+            var stoneLock = Lit(new Color(0.27f, 0.28f, 0.32f), 0.08f);
             foreach (var (at, name, ally) in new[]
             {
                 (WarriorSealAt, "Печать соратника", true),
@@ -291,7 +306,52 @@ namespace Sinbinder.Gameplay
                     Glowing(new Color(0.36f, 0.62f, 0.82f), 1.15f), false);
                 if (ally) _warriorSeal = sign.GetComponent<Renderer>();
                 else _lordSeal = sign.GetComponent<Renderer>();
+                // Поперечный засов виден до попадания по подвесу. После падения
+                // груза засов действительно уходит в камень, открывая знак.
+                var bolt = Piece(root, PrimitiveType.Cube, "Запор печати",
+                    at + new Vector3(0f, 0.24f, 0f),
+                    new Vector3(2.2f, 0.30f, 0.28f), stoneLock, false);
+                _sealBolts.Add(bolt.transform);
             }
+        }
+
+        /// <summary>
+        /// Падение подвесной печати запускает освобождение затворов.
+        /// Перед этим две напольные печати физически перекрыты засовами;
+        /// выстрел не просто переключает учебную стадию, а меняет мир.
+        /// </summary>
+        public void ReleaseMechanism()
+        {
+            if (_mechanismReleased || _mechanismMoving || !BowTargetBroken) return;
+            _mechanismMoving = true;
+            StartCoroutine(UnlockAfterWeightFalls());
+        }
+
+        private IEnumerator UnlockAfterWeightFalls()
+        {
+            // 4,6 метра свободного падения, около одной секунды.
+            // Игрок видит падение прежде, чем заметит открытие печатей.
+            yield return new WaitForSeconds(0.95f);
+            var from = new Vector3[_sealBolts.Count];
+            for (int i = 0; i < _sealBolts.Count; ++i)
+                if (_sealBolts[i] != null) from[i] = _sealBolts[i].position;
+            const float duration = 0.65f;
+            for (float time = 0f; time < duration; time += Time.deltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(time / duration));
+                for (int i = 0; i < _sealBolts.Count; ++i)
+                    if (_sealBolts[i] != null)
+                        _sealBolts[i].position = Vector3.Lerp(from[i], from[i] - Vector3.up * 0.75f, k);
+                yield return null;
+            }
+            foreach (var bolt in _sealBolts) if (bolt != null) bolt.gameObject.SetActive(false);
+            if (_warriorSeal != null) _warriorSeal.material.color = new Color(0.48f, 0.9f, 1f);
+            if (_lordSeal != null) _lordSeal.material.color = new Color(0.48f, 0.9f, 1f);
+            _mechanismReleased = true;
+            _mechanismMoving = false;
+            FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                "Груз ударил в чашу. Каменные засовы ушли вниз. Две печати у ворот теперь доступны.");
+            Debug.Log("[СОН] Подвес сбит: чаша противовеса освободила две печати у склепа.");
         }
 
         /// <summary>
@@ -301,6 +361,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public bool CheckSeals(Warrior ally, Vector3 lord)
         {
+            // Пока стрелой не освобождён противовес, стояние на плитах
+            // ничего не даёт. Это причинная связь между двумя загадками.
+            if (!_mechanismReleased) return false;
             if (_sealsAwake) return true;
             bool warrior = ally != null && !ally.IsDead &&
                            Flat(ally.transform.position - WarriorSealAt).magnitude <= 1.35f;
