@@ -769,7 +769,8 @@ namespace Sinbinder.Gameplay
                         if (Time.unscaledTime - _rescueResultAt > 2.8f) EndRescueLesson();
                         break;
                     }
-                    if (Bodyguard.Rescues > _rescueCreditBefore)
+                    if (Bodyguard.Rescues > _rescueCreditBefore
+                        && Bodyguard.LastRescued == _rescueWounded)
                     {
                         RescueResult = "спасён";
                         _rescueResultAt = Time.unscaledTime;
