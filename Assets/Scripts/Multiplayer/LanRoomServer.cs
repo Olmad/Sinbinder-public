@@ -44,8 +44,18 @@ namespace Sinbinder.Multiplayer
             public Vector3 Destination;
         }
 
+        // Cleanup remains available even when an accepted socket is dropped
+        // before Pump() has registered it as a Peer.
+        private struct PendingAction
+        {
+            public Action Perform;
+            public Action OnDrop;
+            public int Epoch;
+        }
+
         private readonly List<Peer> _peers = new List<Peer>();
-        private readonly ConcurrentQueue<Action> _inbox = new ConcurrentQueue<Action>();
+        private readonly ConcurrentQueue<PendingAction> _inbox =
+            new ConcurrentQueue<PendingAction>();
         private readonly ConcurrentQueue<Disconnected> _disconnects = new ConcurrentQueue<Disconnected>();
         private readonly SortedDictionary<long, List<Order>> _orders =
             new SortedDictionary<long, List<Order>>();
@@ -121,7 +131,11 @@ namespace Sinbinder.Multiplayer
             // Keep the counter paired with every dequeue. Resetting it to
             // zero while a background Queue() is mid-enqueue can make it
             // negative on the next Pump after a rapid server restart.
-            while (_inbox.TryDequeue(out _)) Interlocked.Decrement(ref _pending);
+            while (_inbox.TryDequeue(out var dropped))
+            {
+                Interlocked.Decrement(ref _pending);
+                dropped.OnDrop?.Invoke();
+            }
             while (_disconnects.TryDequeue(out _)) { }
             _listener = null;
             // The accept/receive tasks may still observe the cancelled token.
@@ -161,7 +175,9 @@ namespace Sinbinder.Multiplayer
                 if (onDrop != null) onDrop();
                 return;
             }
-            _inbox.Enqueue(() => { if (epoch == _epoch) action(); else if (onDrop != null) onDrop(); });
+            _inbox.Enqueue(new PendingAction {
+                Perform = action, OnDrop = onDrop, Epoch = epoch
+            });
         }
 
         private void AddPeer(TcpClient socket, int epoch)
@@ -327,10 +343,13 @@ namespace Sinbinder.Multiplayer
         {
             while (_disconnects.TryDequeue(out var removed))
                 if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
-            while (_inbox.TryDequeue(out var action))
+            while (_inbox.TryDequeue(out var queued))
             {
                 Interlocked.Decrement(ref _pending);
-                if (_active) action();
+                if (_active && queued.Epoch == _epoch)
+                    queued.Perform();
+                else
+                    queued.OnDrop?.Invoke();
             }
             while (_disconnects.TryDequeue(out var removed))
                 if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
