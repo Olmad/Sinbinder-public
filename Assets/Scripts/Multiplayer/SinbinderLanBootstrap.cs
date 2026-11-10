@@ -199,7 +199,7 @@ namespace Sinbinder.Multiplayer
             if (!_open) return false;
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 385f)
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 410f)
                 : 250f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
@@ -218,7 +218,7 @@ namespace Sinbinder.Multiplayer
             }
 
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 385f)
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 410f)
                 : 250f;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
@@ -268,9 +268,15 @@ namespace Sinbinder.Multiplayer
                         _client.WorldActors.Count + "; тик " + _client.WorldTick);
                     if (_client.WorldActors.TryGetValue(_client.OwnLordActorId,
                         out var ownPosition))
+                    {
                         GUILayout.Label("Мой Греховод: X " +
                             ownPosition.Position.x.ToString("0.0") + ", Z " +
                             ownPosition.Position.z.ToString("0.0"));
+                        if (ownPosition.HasHealth)
+                            GUILayout.Label("Здоровье: " +
+                                ownPosition.HP.ToString("0") + "/" +
+                                ownPosition.MaxHP.ToString("0"));
+                    }
                     GUILayout.Label(_gameNotice);
                 }
                 if (GUILayout.Button("Выйти из теста")) Leave();
