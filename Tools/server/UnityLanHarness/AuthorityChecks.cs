@@ -224,6 +224,7 @@ internal static class AuthorityChecks
             Math.Abs(lord2.TestMover.Destination.x - 5f) < .01,
             "direct Lord movement uses UnitMover without AOS voting");
         bridge.Unregister(id3);
+        Require(!identity.Assigned, "unregister clears old match identity");
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 3, id3,
             NetworkOrderKind.Move), 5, null, (w,l) => 0f,
             out _, out reason) && reason == OrderRejection.UnknownActor,
