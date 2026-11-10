@@ -191,7 +191,9 @@ namespace Sinbinder.Multiplayer
         {
             if (!_open) return false;
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
-            float height = _arenaActive ? 280f : 250f;
+            float height = _arenaActive
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 340f)
+                : 250f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
             return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
@@ -208,7 +210,9 @@ namespace Sinbinder.Multiplayer
                 return;
             }
 
-            float height = _arenaActive ? 280 : 250;
+            float height = _arenaActive
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 340f)
+                : 250f;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
             GUILayout.BeginArea(new Rect(frame.x + 12, frame.y + 28, frame.width - 24, frame.height - 37));
