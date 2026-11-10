@@ -16,6 +16,8 @@ namespace Sinbinder.Multiplayer
 
         private LanRoomServer _server;
         private LanRoomClient _client;
+        private LanWorldAutoVerifier _verification;
+        private bool _verifyClient;
         private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
         private readonly List<Material> _temporaryMaterials = new List<Material>();
         private readonly Dictionary<long, Transform> _worldProxies =
@@ -92,8 +94,24 @@ namespace Sinbinder.Multiplayer
                     _launchConnect = args[++i];
                 else if (args[i] == "-lan-auto-ready")
                     _autoReady = true;
+                else if (args[i] == "-mp-verify-client")
+                    _verifyClient = true;
                 else if (args[i] == "-mp-test-map")
                     _launchMechanicsMap = true;
+            }
+
+            if (_verifyClient)
+            {
+                if (string.IsNullOrEmpty(_launchConnect) || _dedicated ||
+                    _launchMechanicsMap)
+                {
+                    Debug.LogError("[Sinbinder REAL Unity Acceptance] FAIL " +
+                        "-mp-verify-client requires -lan-connect and no test map/server flags");
+                    Application.Quit(1);
+                    return;
+                }
+                _autoReady = true;
+                _verification = new LanWorldAutoVerifier(_client);
             }
 
             if (_launchMechanicsMap && !_dedicated)
@@ -139,6 +157,7 @@ namespace Sinbinder.Multiplayer
             }
             _server.Pump(Time.unscaledDeltaTime);
             _client.Pump();
+            _verification?.Tick();
             if (!_arenaActive || _dedicated) return;
 
             // A second game window may launch before the host finishes
@@ -481,6 +500,8 @@ namespace Sinbinder.Multiplayer
 
         private void Leave()
         {
+            _verification?.Dispose();
+            _verification = null;
             _client.Disconnect();
             _server.Stop();
             if (_arena != null) Destroy(_arena);
