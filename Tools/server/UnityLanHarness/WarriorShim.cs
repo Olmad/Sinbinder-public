@@ -25,7 +25,13 @@ namespace Sinbinder.Gameplay
     }
 
     public class SinbinderPlayer : Warrior { }
-    public class RivalLord : MonoBehaviour { public int Side { get; set; } }
+    public class RivalLord : MonoBehaviour
+    {
+        public int Side { get; set; }
+        public bool NetworkControlled { get; private set; }
+        public void SetNetworkControlled(bool value)
+        { NetworkControlled = value; }
+    }
 
     public static class MapLoader
     {
