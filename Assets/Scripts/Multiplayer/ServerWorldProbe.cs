@@ -37,6 +37,8 @@ namespace Sinbinder.Multiplayer
         private float _tickCarry;
         private long _tick;
         private bool _initialized;
+        private LanRoomServer _room;
+        private bool _ownsRoom;
 
         public MatchAuthority Authority { get; private set; }
         public ServerWarriorOrderBridge Orders { get; private set; }
@@ -56,6 +58,8 @@ namespace Sinbinder.Multiplayer
                 return;
             }
             Initialize();
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-mp-world-host") >= 0)
+                StartWorldHost();
         }
 
         public void Initialize()
@@ -82,6 +86,7 @@ namespace Sinbinder.Multiplayer
         private void Update()
         {
             if (!_initialized) return;
+            if (_ownsRoom && _room != null) _room.Pump(Time.unscaledDeltaTime);
             _scanElapsed += Time.unscaledDeltaTime;
             if (_scanElapsed >= 0.5f)
             {
@@ -93,6 +98,79 @@ namespace Sinbinder.Multiplayer
             // Existing AOS/Combat/Unity NavMesh still run only in this
             // authoritative Unity process, not on remote clients.
             Advance(Time.unscaledDeltaTime);
+        }
+
+        /// <summary>
+        /// Attach the existing TCP room without changing its capsule mode.
+        /// Only explicit Multiplayer_Test hosts may call this. A future
+        /// gameplay transport can replace this adapter without touching AOS.
+        /// </summary>
+        public void AttachRoom(LanRoomServer room)
+        {
+            if (!_initialized || room == null)
+                throw new InvalidOperationException("World probe must be initialized");
+            if (_room != null)
+                throw new InvalidOperationException("A world room is already attached");
+            _room = room;
+            room.GameMatchId = Authority.MatchId;
+            room.ResolveLordActorId = GetLordActorId;
+            room.RouteGameOrder = (connectionId, intent) =>
+            {
+                if (TryIssueFromConnection(connectionId, intent, null,
+                    out var approved, out var rejection))
+                    return LanGameOrderCodec.Accepted(approved);
+                // Targeted Attack currently fails closed: server-side FOW
+                // still needs integration before it can approve real combat.
+                return LanGameOrderCodec.Rejected(intent.CommandId, rejection);
+            };
+            room.PeerConnectionChanged = (id, connected) =>
+                Authority.SetConnected(id, connected);
+            Orders.OrderResolved += room.NotifyGameOrderResolved;
+        }
+
+        public long GetLordActorId(int connectionId)
+        {
+            foreach (var entry in _registered.Values)
+                if (entry.Role == NetworkActorRole.Lord &&
+                    entry.Owner == connectionId && entry.Warrior != null &&
+                    !entry.Warrior.IsDead)
+                    return entry.ActorId;
+            return 0;
+        }
+
+        private void StartWorldHost()
+        {
+            int port = 7777;
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; i++)
+                if (args[i] == "-port" && !int.TryParse(args[i + 1], out port))
+                {
+                    Debug.LogError("[Sinbinder MP Probe] Invalid port");
+                    return;
+                }
+
+            var room = new LanRoomServer();
+            AttachRoom(room);
+            if (!room.Start(port))
+            {
+                Debug.LogError("[Sinbinder MP Probe] " + room.Error);
+                DetachRoom();
+                return;
+            }
+            _ownsRoom = true;
+            Debug.Log("[Sinbinder MP Probe] REAL-world LAN order host on TCP " +
+                port + "; no remote world rendering or combat sync yet.");
+        }
+
+        private void DetachRoom()
+        {
+            if (_room == null) return;
+            Orders.OrderResolved -= _room.NotifyGameOrderResolved;
+            _room.RouteGameOrder = null;
+            _room.ResolveLordActorId = null;
+            _room.PeerConnectionChanged = null;
+            _room.GameMatchId = null;
+            _room = null;
         }
 
         public void Advance(float dt)
@@ -215,6 +293,9 @@ namespace Sinbinder.Multiplayer
         private void OnDestroy()
         {
             if (!_initialized) return;
+            if (_ownsRoom && _room != null) _room.Stop();
+            _ownsRoom = false;
+            DetachRoom();
             Orders.CancelPending();
             _expired.Clear();
             foreach (var key in _registered.Keys)
