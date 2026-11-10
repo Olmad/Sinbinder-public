@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,17 @@ namespace Sinbinder.Multiplayer
         private float _lastInboundAt;
         private float _lastPingAt;
         private long _nextGameCommandId;
+        private readonly Dictionary<long, LanWorldActorState> _worldActors =
+            new Dictionary<long, LanWorldActorState>();
+        private Dictionary<long, LanWorldActorState> _pendingWorld;
+        private int _pendingWorldCount;
+        private long _pendingWorldFrame;
+        private long _lastWorldFrame;
+
+        public IReadOnlyDictionary<long, LanWorldActorState> WorldActors
+        { get { return _worldActors; } }
+        public long WorldTick { get; private set; }
+        public long WorldFrame { get { return _lastWorldFrame; } }
 
         public bool Connected { get; private set; }
         public bool Playing { get; private set; }
@@ -179,6 +191,8 @@ namespace Sinbinder.Multiplayer
                             !string.IsNullOrEmpty(packet.matchId) &&
                             packet.playerId == PlayerId)
                         {
+                            if (GameMatchId != packet.matchId)
+                                ResetWorld();
                             GameMatchId = packet.matchId;
                             OwnLordActorId = packet.actorId;
                             if (packet.lastCommandId > _nextGameCommandId)
@@ -195,6 +209,7 @@ namespace Sinbinder.Multiplayer
                         ReadyCount = packet.ready;
                         break;
                     case "start":
+                        ResetWorld();
                         Playing = true;
                         Players = 2;
                         ReadyCount = 2;
@@ -210,7 +225,13 @@ namespace Sinbinder.Multiplayer
                         First = new Vector3(packet.p1X, 0.8f, packet.p1Z);
                         Second = new Vector3(packet.p2X, 0.8f, packet.p2Z);
                         break;
+                    case "worldBegin":
+                    case "worldActor":
+                    case "worldEnd":
+                        ProcessWorldFrame(packet);
+                        break;
                     case "stopped":
+                        ResetWorld();
                         Playing = false;
                         GameMatchId = null;
                         OwnLordActorId = 0;
@@ -236,6 +257,63 @@ namespace Sinbinder.Multiplayer
             {
                 _lastPingAt = now;
                 Send(new LanMessage { type = "ping" });
+            }
+        }
+
+        private void ResetWorld()
+        {
+            _worldActors.Clear();
+            _pendingWorld = null;
+            _pendingWorldCount = 0;
+            _pendingWorldFrame = 0;
+            _lastWorldFrame = 0;
+            WorldTick = 0;
+        }
+
+        private void ProcessWorldFrame(LanMessage packet)
+        {
+            if (!Playing || string.IsNullOrEmpty(GameMatchId) ||
+                !string.Equals(packet.matchId, GameMatchId, StringComparison.Ordinal))
+                return;
+
+            if (packet.type == "worldBegin")
+            {
+                _pendingWorld = null;
+                if (packet.snapshotId <= _lastWorldFrame || packet.snapshotId <= 0 ||
+                    packet.actorCount < 0 ||
+                    packet.actorCount > LanRoomServer.MaxWorldActorsPerSnapshot)
+                    return;
+                _pendingWorld = new Dictionary<long, LanWorldActorState>();
+                _pendingWorldFrame = packet.snapshotId;
+                _pendingWorldCount = packet.actorCount;
+                return;
+            }
+            if (_pendingWorld == null || _pendingWorldFrame != packet.snapshotId)
+                return;
+            if (packet.type == "worldActor")
+            {
+                if (_pendingWorld.Count >= _pendingWorldCount ||
+                    !LanWorldActorState.TryRead(packet, GameMatchId,
+                        _pendingWorldFrame, out var actor) ||
+                    _pendingWorld.ContainsKey(actor.Id))
+                    _pendingWorld = null;
+                else
+                    _pendingWorld.Add(actor.Id, actor);
+                return;
+            }
+            if (packet.type == "worldEnd")
+            {
+                if (_pendingWorld.Count == _pendingWorldCount &&
+                    packet.actorCount == _pendingWorldCount &&
+                    packet.tick >= WorldTick)
+                {
+                    _worldActors.Clear();
+                    foreach (var kv in _pendingWorld)
+                        _worldActors.Add(kv.Key, kv.Value);
+                    _lastWorldFrame = _pendingWorldFrame;
+                    WorldTick = packet.tick;
+                }
+                _pendingWorld = null;
             }
         }
 
@@ -327,6 +405,7 @@ namespace Sinbinder.Multiplayer
             Players = 0;
             ReadyCount = 0;
             Tick = 0;
+            ResetWorld();
             GameMatchId = null;
             OwnLordActorId = 0;
             // Intentionally do not reset _nextGameCommandId: the same
