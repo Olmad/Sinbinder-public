@@ -26,6 +26,8 @@ namespace Sinbinder.Gameplay
         private static readonly Dictionary<string, float> LastRescueCredit = new();
         private const float RescueCreditCooldown = 15f;
         public static int Rescues { get; private set; }
+        public static Warrior LastRescued { get; private set; }
+        public static Warrior LastRescuer { get; private set; }
         private static readonly Dictionary<Damageable, Watch> Watched = new();
 
         // Строка — черновик D; облаку на сверку.
@@ -38,6 +40,8 @@ namespace Sinbinder.Gameplay
             LastRescueCredit.Clear();
             Blocks = 0;
             Rescues = 0;
+            LastRescued = null;
+            LastRescuer = null;
         }
 
         /// <summary>Охранять этого столько секунд — до первого удара.</summary>
@@ -106,6 +110,8 @@ namespace Sinbinder.Gameplay
                 {
                     LastRescueCredit[key] = Time.time;
                     Rescues++;
+                    LastRescued = target.Warrior;
+                    LastRescuer = w.Guard;
                     AOS.AOSEventHub.Instance?.OnAllySaved(w.Guard, target.Warrior);
                     Debug.Log($"[AOS] Спасение подтверждено реальным перехватом удара: {w.Guard.DisplayName} -> {target.Warrior.DisplayName}");
                 }
