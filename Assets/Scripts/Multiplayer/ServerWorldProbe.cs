@@ -181,16 +181,25 @@ namespace Sinbinder.Multiplayer
             foreach (var entry in owned)
             {
                 if (result.Count >= LanRoomServer.MaxWorldActorsPerSnapshot) break;
-                result.Add(new LanWorldActorState(entry.ActorId, entry.Role,
-                    entry.Warrior.transform.position));
+                result.Add(WorldState(entry));
             }
             foreach (var entry in observable)
             {
                 if (result.Count >= LanRoomServer.MaxWorldActorsPerSnapshot) break;
-                result.Add(new LanWorldActorState(entry.ActorId, entry.Role,
-                    entry.Warrior.transform.position));
+                result.Add(WorldState(entry));
             }
             return result;
+        }
+
+        private static LanWorldActorState WorldState(Entry entry)
+        {
+            var damageable = entry.Warrior.GetComponent<Damageable>();
+            return damageable != null
+                ? new LanWorldActorState(entry.ActorId, entry.Role,
+                    entry.Warrior.transform.position,
+                    damageable.HP, damageable.MaxHP)
+                : new LanWorldActorState(entry.ActorId, entry.Role,
+                    entry.Warrior.transform.position);
         }
 
         public long GetLordActorId(int connectionId)
