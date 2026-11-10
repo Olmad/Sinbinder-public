@@ -81,6 +81,6 @@ probe = (ROOT / "Assets/Scripts/Multiplayer/ServerWorldProbe.cs").read_text("utf
 assert '"gameOrder"' in server and "RouteGameOrder(peer.Id, intent)" in server
 assert "LanGameOrderCodec.Write(intent)" in client
 assert '"-mp-world-host"' in loader and '"-mp-world-host"' in probe
-assert '"-mp-world-host"' in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
+assert "-mp-world-host" in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
 assert "GameOrderWireChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
