@@ -33,7 +33,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Rescue, Puzzle, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Rescue, CompareSouls, EmotionShift, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -46,11 +46,16 @@ namespace Sinbinder.Gameplay
         /// целится приказом, весы над воином отвечают до щелчка. До суда — нет: там весы
         /// ещё никто не объяснил.
         /// </summary>
-        public static bool Foreseeing => Instance != null && Instance._stage == Stage.Retest;
+        public static bool Foreseeing => Instance != null && (Instance._stage == Stage.Retest || Instance._stage == Stage.CompareSouls || Instance._stage == Stage.EmotionShift);
 
         /// <summary>Поднятый — для прогона.</summary>
         public Warrior Zombie => _zombie;
         public Warrior SealCompanion => _sealCompanion;
+        public Warrior ContrastMerciful => _contrastMerciful;
+        public Warrior ContrastProud => _contrastProud;
+        public static readonly Vector3 ContrastPoint = new Vector3(0f, 0f, 25.0f);
+        public bool CompareSoulsCompleted { get; private set; }
+        public bool EmotionShiftCompleted { get; private set; }
         public Warrior Wounded => _wounded;
         public IReadOnlyList<Warrior> Killers => _killers;
         public Vector3 WoundedAt => _woundedAt;
@@ -101,7 +106,8 @@ namespace Sinbinder.Gameplay
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
                 case Stage.CommanderPractice: case Stage.BowFind: case Stage.BowEquip:
-                case Stage.BowShot: case Stage.BowTemper: case Stage.Rescue: case Stage.Puzzle: return DreamRoad.GateZ;
+                case Stage.BowShot: case Stage.BowTemper: case Stage.Rescue: case Stage.CompareSouls:
+                case Stage.EmotionShift: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -148,6 +154,12 @@ namespace Sinbinder.Gameplay
         private int _rescueCreditBefore;
         private bool _rescueDecisionShown;
         private bool _rescueHelpShown;
+        private Warrior _contrastMerciful, _contrastProud;
+        private bool _contrastMercifulAnswered, _contrastProudAnswered, _contrastHelpShown;
+        private bool _emotionHelpShown;
+        private float _compareIssuedAfter, _contrastStarted, _emotionIssuedAfter, _emotionStarted;
+        private AOS.Decision _mercyFirstDecision;
+        private GameObject _fearSign;
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
@@ -822,6 +834,64 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 }
+                case Stage.CompareSouls:
+                {
+                    // Один и тот же приказ у двух разных душ. Важно дождаться
+                    // настоящего такта AutoAttackAOS, не вручать готовые ответы.
+                    CheckContrastCommand(_contrastMerciful, ref _contrastMercifulAnswered, true);
+                    CheckContrastCommand(_contrastProud, ref _contrastProudAnswered, false);
+                    if (_contrastMercifulAnswered && _contrastProudAnswered)
+                    {
+                        CompareSoulsCompleted = true;
+                        BeginEmotionShift();
+                    }
+                    else if (!_contrastHelpShown && Time.unscaledTime - _contrastStarted > 25f)
+                    {
+                        _contrastHelpShown = true;
+                        _line = "Поставьте по очереди двух стражей на одну точку впереди: ЛКМ по воину, ПКМ по земле у светящегося знака. "
+                              + "Наведите курсор на каждого: их голоса различаются.";
+                        Log(_line);
+                    }
+                    else if (Time.unscaledTime - _contrastStarted > 90f)
+                    {
+                        Log("[ПРОПУЩЕНО] Не удалось получить оба решения души: не запираем склеп, но урок не засчитан.");
+                        BeginEmotionShift();
+                    }
+                    break;
+                }
+                case Stage.EmotionShift:
+                {
+                    var w = _contrastMerciful;
+                    var mind = w != null ? w.GetComponent<AOS.AOSWarriorWrapper>() : null;
+                    if (w != null && !w.IsDead && w.HasCommand
+                        && w.Command.IssuedAt > _emotionIssuedAfter
+                        && w.Command.Kind == CommandKind.Move
+                        && GroundDistance(w.Command.Point, ContrastPoint) < 2.5f
+                        && mind != null && mind.LastContext != null && mind.LastContext.HasCommand)
+                    {
+                        var now = mind.LastDecisionDetail;
+                        UI.ScalesOverhead.Show(w, now, mind.LastContext, force: true);
+                        EmotionShiftCompleted = true;
+                        Log("До угрозы: " + DescribeAOS(_mercyFirstDecision)
+                            + ". После угрозы: " + DescribeAOS(now)
+                            + ". Страх усиливает голос Страха и ослабляет Гнев. "
+                            + "Победитель может остаться прежним, но веса уже другие.");
+                        EndEmotionShift();
+                    }
+                    else if (!_emotionHelpShown && Time.unscaledTime - _emotionStarted > 20f)
+                    {
+                        _emotionHelpShown = true;
+                        _line = "После появления знака страха ещё раз прикажите милосердному стражу идти к тому же месту. "
+                              + "Сравните голосование: обстоятельства изменили веса, но не характер.";
+                        Log(_line);
+                    }
+                    else if (Time.unscaledTime - _emotionStarted > 75f)
+                    {
+                        Log("[ПРОПУЩЕНО] Второе решение под страхом не получено. Обучение не засчитано.");
+                        EndEmotionShift();
+                    }
+                    break;
+                }
                 case Stage.Puzzle:
                 {
                     if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
@@ -949,11 +1019,116 @@ namespace Sinbinder.Gameplay
             _rescueMarker = null;
             if (_rescueAttacker != null) Destroy(_rescueAttacker.gameObject);
             _rescueAttacker = null;
-            if (_rescueWounded != null && !_rescueWounded.IsDead) Hold(_rescueWounded, false);
+            if (_rescueWounded != null && !_rescueWounded.IsDead)
+            {
+                _rescueWounded.GetComponent<Damageable>()?.Heal(999f);
+                Hold(_rescueWounded, false);
+            }
             EnsureSealCompanion();
-            Set(Stage.Puzzle, RescueResult == "спасён"
-                ? "Защита изменила память товарища. Теперь без подсказки распределите воинов между двумя печатями. " + PuzzleLine
-                : "Спасение не было гарантировано: причины определяют сами души. Откройте склеп совместно. " + PuzzleLine);
+            BeginContrastSouls();
+        }
+
+        /// <summary>Один приказ для двух характеров, каждый отвечает настоящей AOS.</summary>
+        private void BeginContrastSouls()
+        {
+            CompareSoulsCompleted = false;
+            EmotionShiftCompleted = false;
+            _contrastMercifulAnswered = false;
+            _contrastProudAnswered = false;
+            _contrastHelpShown = false;
+            _contrastStarted = Time.unscaledTime;
+            _compareIssuedAfter = Time.time;
+            var merciful = new SoulData("Страж Милосердия", SinType.Pride, MoralType.Pious, 1, -75f);
+            merciful.Set(SinType.Wrath, -60f);
+            var proud = new SoulData("Страж Гордыни", SinType.Pride, MoralType.Vicious, 1, 95f);
+            proud.Set(SinType.Wrath, 65f);
+            _contrastMerciful = CreateLiving(merciful, new Vector3(-5.0f, 0f, 20.8f), Team.Player);
+            _contrastProud = CreateLiving(proud, new Vector3(5.0f, 0f, 20.8f), Team.Player);
+            if (_contrastMerciful != null) _contrastMerciful.ChangeLoyalty(35f);
+            if (_contrastProud != null) _contrastProud.ChangeLoyalty(35f);
+            if (_contrastMerciful == null || _contrastProud == null)
+            {
+                Debug.LogError("[СОН QA] Не удалось создать двух стражей для сравнения AOS.");
+                BeginEmotionShift();
+                return;
+            }
+            Set(Stage.CompareSouls, "Две души, одна воля. Слева милосердный страж, справа гордый. "
+                + "Выделите каждого ЛКМ и прикажите ПКМ идти к месту между печатями. "
+                + "Сравните решение и самый сильный голос над их головами.");
+        }
+
+        private void CheckContrastCommand(Warrior who, ref bool recorded, bool merciful)
+        {
+            if (recorded || who == null || who.IsDead || !who.HasCommand) return;
+            if (who.Command.IssuedAt <= _compareIssuedAfter
+                || who.Command.Kind != CommandKind.Move
+                || GroundDistance(who.Command.Point, ContrastPoint) >= 2.5f) return;
+            var mind = who.GetComponent<AOS.AOSWarriorWrapper>();
+            if (mind == null || mind.LastContext == null || !mind.LastContext.HasCommand) return;
+            recorded = true;
+            UI.ScalesOverhead.Show(who, mind.LastDecisionDetail, mind.LastContext, force: true);
+            Log(who.DisplayName + ": " + DescribeAOS(mind.LastDecisionDetail)
+                + ". Самый сильный голос: " + mind.LastDecisionDetail.TopModule
+                + ". Смотрите не только на исход, но и на то, кто его предложил.");
+            if (merciful) _mercyFirstDecision = mind.LastDecisionDetail;
+            _line = merciful
+                ? "Теперь точно такой же приказ отдайте гордому стражу справа: ЛКМ, ПКМ к тому же месту."
+                : "Сравните причины. Одинаковый приказ не означает одинаковое голосование.";
+        }
+
+        private static string DescribeAOS(AOS.Decision d)
+        {
+            if (d.Hesitated) return "колеблется";
+            if (d.RefusedCommand) return "отказывается: " + d.Action;
+            if (d.Action == AOS.ActionType.ObeyCommand) return "исполняет приказ";
+            if (d.Action == AOS.ActionType.SaveAlly) return "помогает товарищу";
+            if (d.Action == AOS.ActionType.Attack) return "выбирает атаку";
+            if (d.Action == AOS.ActionType.Flee) return "предпочитает бегство";
+            return "выбирает " + d.Action;
+        }
+
+        private void BeginEmotionShift()
+        {
+            _emotionStarted = Time.unscaledTime;
+            _emotionIssuedAfter = Time.time;
+            _emotionHelpShown = false;
+            if (_contrastMerciful == null || _contrastMerciful.IsDead)
+            {
+                Debug.LogWarning("[СОН QA] Страж для урока эмоций отсутствует.");
+                EndEmotionShift();
+                return;
+            }
+            _contrastMerciful.ClearCommand();
+            // Видимый знак — источник страха в этой учебной сцене.
+            _fearSign = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            _fearSign.name = "Знак страха над воротами";
+            _fearSign.transform.position = new Vector3(0f, 3.5f, 26.8f);
+            _fearSign.transform.localScale = Vector3.one * 1.25f;
+            var c = _fearSign.GetComponent<Collider>();
+            if (c != null) Destroy(c);
+            var renderer = _fearSign.GetComponent<Renderer>();
+            if (renderer != null) renderer.material.color = new Color(0.58f, 0.14f, 0.18f);
+            if (AOS.EmotionSystem.Instance != null)
+            {
+                AOS.EmotionSystem.Instance.TriggerEmotion(_contrastMerciful, AOS.EmotionType.Fear, 1f);
+                Log("Знак страха пробудился. Вес голоса Страха у милосердного стража теперь ×"
+                    + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Fear").ToString("F1")
+                    + ", голос Гнева ×"
+                    + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Wrath").ToString("F1") + ".");
+            }
+            else Debug.LogError("[СОН QA] EmotionSystem отсутствует. Урок эмоций нельзя подтвердить.");
+            Set(Stage.EmotionShift, "Та же душа, но теперь её охватил страх от знака над воротами. "
+                + "Ещё раз отдайте милосердному стражу тот же приказ идти к месту между печатями. "
+                + "Сравните новые весы с предыдущими.");
+        }
+
+        private void EndEmotionShift()
+        {
+            if (_fearSign != null) Destroy(_fearSign);
+            _fearSign = null;
+            EnsureSealCompanion();
+            Set(Stage.Puzzle, "Вы видели разные души и изменение эмоциональных весов. "
+                + "Теперь действуйте сами: две плиты, две души и один проход. " + PuzzleLine);
         }
 
         /// <summary>
