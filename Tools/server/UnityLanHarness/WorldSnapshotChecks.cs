@@ -49,6 +49,9 @@ internal static class WorldSnapshotChecks
         var ally = new GameObject("Player 1 allied Warrior").AddComponent<Warrior>();
         ally.Team = Team.Player;
         ally.transform.position = new Vector3(15f, 0f, -60f);
+        var allyHealth = ally.gameObject.AddComponent<Damageable>();
+        allyHealth.HP = 18f;
+        allyHealth.MaxHP = 30f;
         var neutral = new GameObject("Neutral resident").AddComponent<Warrior>();
         neutral.Team = Team.Neutral;
         neutral.transform.position = new Vector3(1f, 0f, 2f);
@@ -92,14 +95,23 @@ internal static class WorldSnapshotChecks
             Need(Math.Abs(c1.WorldActors[ownId].Position.z + 91f) < .01f &&
                 Math.Abs(c2.WorldActors[rivalId].Position.z - 91f) < .01f,
                 "received real positions from authoritative Unity world");
+            Need(c1.WorldActors[allyId].HasHealth &&
+                Math.Abs(c1.WorldActors[allyId].HP - 18f) < .01f &&
+                Math.Abs(c1.WorldActors[allyId].MaxHP - 30f) < .01f &&
+                !c2.WorldActors.ContainsKey(allyId),
+                "private Damageable health arrives to ally owner, never enemy");
 
             own.transform.position = new Vector3(8f, 0f, -80f);
+            allyHealth.HP = 7f;
             long frame = c1.WorldFrame;
             room.PublishPrivateWorldSnapshot();
             await Wait(room, c1, c2, () => c1.WorldFrame > frame &&
                 c2.WorldFrame > frame, "updated positions");
             Need(Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "own server position changed in client snapshot");
+            Need(Math.Abs(c1.WorldActors[allyId].HP - 7f) < .01f &&
+                !c2.WorldActors.ContainsKey(allyId),
+                "health updates from real Damageable, not client simulation");
 
             // Explicit per-client, authoritative visibility, NOT the local
             // FogOfWar render mask. Only player 1 can see this neutral.
@@ -160,7 +172,7 @@ internal static class WorldSnapshotChecks
                 Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "incomplete frame never replaces last valid snapshot");
 
-            Console.WriteLine("PASS: two TCP clients receive private real-Warrior snapshots; hidden enemies, visibility revocation, death and partial frames");
+            Console.WriteLine("PASS: private real-Warrior coordinates and Damageable HP; per-player fog, death, and incomplete frames");
         }
         finally
         {
