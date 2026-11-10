@@ -56,6 +56,7 @@ metas = {
     "Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs.meta": "5e2c63ab41e64ec7bc42d209fd2bf358",
     "Assets/Scripts/Multiplayer/ServerWorldProbe.cs.meta": "aab31050a69d4fb5a8df740628e175bd",
     "Assets/Scripts/Multiplayer/LanGameOrderCodec.cs.meta": "78e541dab92d472ebc396de0aa3a67fa",
+    "Assets/Scripts/Multiplayer/LanWorldState.cs.meta": "b5d89ad227d54ef4bac99d518ae279fa",
     "Assets/Scenes/Tug/Multiplayer_Test.unity.meta": "82df2b7319bc4ab393db801f19f3b580",
 }
 all_seen = set()
@@ -83,4 +84,8 @@ assert "LanGameOrderCodec.Write(intent)" in client
 assert '"-mp-world-host"' in loader and '"-mp-world-host"' in probe
 assert "-mp-world-host" in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
 assert "GameOrderWireChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+assert "WorldSnapshotChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+assert "PrivateWorldActors" in server and "PublishPrivateWorldSnapshot" in server
+assert "CanObserveActorOnServer" in probe and "GetPrivateWorldActors" in probe
+assert "worldBegin" in client and "worldEnd" in client
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
