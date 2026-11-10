@@ -159,6 +159,8 @@ namespace Sinbinder.Gameplay
         private bool _emotionHelpShown;
         private float _compareIssuedAfter, _contrastStarted, _emotionIssuedAfter, _emotionStarted;
         private AOS.Decision _mercyFirstDecision;
+        private AOS.DecisionContext _emotionContextBefore;
+        private bool _emotionApplied;
         private GameObject _fearSign;
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
@@ -867,7 +869,10 @@ namespace Sinbinder.Gameplay
                         && w.Command.IssuedAt > _emotionIssuedAfter
                         && w.Command.Kind == CommandKind.Move
                         && GroundDistance(w.Command.Point, ContrastPoint) < 2.5f
-                        && mind != null && mind.LastContext != null && mind.LastContext.HasCommand)
+                        && _emotionApplied
+                        && mind != null && mind.LastContext != null
+                        && mind.LastContext != _emotionContextBefore
+                        && mind.LastContext.HasCommand)
                     {
                         var now = mind.LastDecisionDetail;
                         UI.ScalesOverhead.Show(w, now, mind.LastContext, force: true);
@@ -1092,6 +1097,9 @@ namespace Sinbinder.Gameplay
             _emotionStarted = Time.unscaledTime;
             _emotionIssuedAfter = Time.time;
             _emotionHelpShown = false;
+            _emotionApplied = false;
+            _emotionContextBefore = _contrastMerciful != null
+                ? _contrastMerciful.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
             if (_contrastMerciful == null || _contrastMerciful.IsDead)
             {
                 Debug.LogWarning("[СОН QA] Страж для урока эмоций отсутствует.");
@@ -1111,6 +1119,7 @@ namespace Sinbinder.Gameplay
             if (AOS.EmotionSystem.Instance != null)
             {
                 AOS.EmotionSystem.Instance.TriggerEmotion(_contrastMerciful, AOS.EmotionType.Fear, 1f);
+                _emotionApplied = AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Fear") > 1f;
                 Log("Знак страха пробудился. Вес голоса Страха у милосердного стража теперь ×"
                     + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Fear").ToString("F1")
                     + ", голос Гнева ×"
