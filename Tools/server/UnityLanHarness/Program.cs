@@ -77,6 +77,7 @@ internal static class Program
             await ExtraLanChecks.Run();
             MapVisualChecks.Run();
             AuthorityChecks.Run();
+            WorldProbeChecks.Run();
             return 0;
         }
         finally
