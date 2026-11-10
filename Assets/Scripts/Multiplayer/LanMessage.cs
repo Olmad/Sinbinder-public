@@ -23,6 +23,11 @@ namespace Sinbinder.Multiplayer
         public long lastCommandId;
         public long actorId;
         public long targetId;
+        // Framed, visibility-filtered real-world snapshots. The receiver
+        // commits only complete frames, so vanished actors disappear.
+        public long snapshotId;
+        public int actorRole;
+        public int actorCount;
         public int players;
         public int ready;
         public long tick;
