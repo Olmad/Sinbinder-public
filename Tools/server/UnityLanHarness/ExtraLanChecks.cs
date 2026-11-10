@@ -317,6 +317,26 @@ internal static class ExtraLanChecks
                 return first.Playing && second.Playing;
             }, "initial pair started");
 
+            // Make the first match visibly different from a fresh spawn.
+            // Otherwise a broken restart can pass even if old pawn
+            // positions and movement goals are still retained.
+            first.Move(new Vector3(-1f, 0f, 3f));
+            await Until(room, () =>
+            {
+                first.Pump();
+                second.Pump();
+                return Math.Abs(first.PlayerId == 1 ?
+                    first.First.z : first.Second.z) > 0.5f;
+            }, "first match pawn moved away from its starting position");
+
+            bool freshSnapshot = false;
+            first.Received += packet =>
+            {
+                if (packet.type == "start") freshSnapshot = false;
+                if (packet.type == "state" && packet.tick == 0 && first.Playing)
+                    freshSnapshot = true;
+            };
+
             int firstId = first.PlayerId;
             int abandonedId = second.PlayerId;
             second.Disconnect();
@@ -344,6 +364,18 @@ internal static class ExtraLanChecks
                 return first.Playing && replacement.Playing;
             }, "replacement can start a new match");
 
+            await Until(room, () =>
+            {
+                first.Pump();
+                replacement.Pump();
+                return freshSnapshot;
+            }, "new round publishes a fresh authoritative snapshot");
+
+            if (Math.Abs(first.First.z) > 0.01f ||
+                Math.Abs(first.Second.z) > 0.01f ||
+                Math.Abs(replacement.First.z) > 0.01f ||
+                Math.Abs(replacement.Second.z) > 0.01f)
+                throw new Exception("New match inherited previous round movement");
             if (first.PlayerId != firstId)
                 throw new Exception("Persistent player's identity changed");
         }
