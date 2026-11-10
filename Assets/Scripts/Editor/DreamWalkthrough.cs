@@ -428,6 +428,11 @@ namespace Sinbinder.EditorTools
                         return;
                     }
                     companion.ClearCommand();
+                    // Только автоматический прогон может варпать на плиты:
+                    // это проверка механизма, НЕ подтверждение того, что
+                    // живой игрок освоил командование.
+                    if (_step == "две печати")
+                        Write("  [QA ОБХОД УПРАВЛЕНИЯ] расстановка на плитах через NavMeshAgent.Warp, не через AOS");
                     // Regression: «стою на печати» — расстояние, не
                     // нормализованное направление. Испытываем 120 тактов
                     // неверной комбинации, затем уже ставим обоих правильно.
@@ -450,6 +455,11 @@ namespace Sinbinder.EditorTools
                     Warp(dream.Hero, DreamRoad.LordSealAt);
                     break;
                 case "Return":
+                    if (!dream.FinalTrialCompleted)
+                    {
+                        End(false, "переход к воротам без засчитанного итогового испытания на печатях");
+                        return;
+                    }
                     if (_step != "пробуждение")
                     {
                         Go("пробуждение");
