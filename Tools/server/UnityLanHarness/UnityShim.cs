@@ -244,7 +244,12 @@ namespace UnityEngine
         public static int width { get { return 1280; } }
         public static int height { get { return 720; } }
     }
-    public static class Application { public static bool isBatchMode { get { return true; } } }
+    public static class Application
+    {
+        public static bool isBatchMode { get { return true; } }
+        public static int? LastExitCode { get; private set; }
+        public static void Quit(int exitCode = 0) { LastExitCode = exitCode; }
+    }
     public enum KeyCode { F8 }
     public static class Input
     {
