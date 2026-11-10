@@ -63,6 +63,10 @@ namespace Sinbinder.Gameplay
                 || guard == null || guard.IsDead || who.Warrior == guard) return false;
             if (Vector3.Distance(who.transform.position, guard.transform.position) > 2.8f) return false;
             if (who.HP >= who.MaxHP * 0.3f) return false;
+            // Дружба определяется системой отрядов, а не только одинаковым
+            // Team. Для нейтральных персонажей команды могут различаться.
+            if (CombatManager.Instance == null
+                || !CombatManager.Instance.GetAllies(guard.gameObject).Contains(who)) return false;
 
             // Особый телохранитель (Карган) всегда сохраняет свою заранее
             // установленную защиту: AOS не перебивает сюжетную механику.
@@ -87,8 +91,10 @@ namespace Sinbinder.Gameplay
 
             var guardBody = w.Guard.GetComponent<Damageable>();
             if (guardBody == null || guardBody.IsDead || guardBody == target) return false;
-            if (w.Rescue && (target.Warrior == null ||
-                Vector3.Distance(w.Guard.transform.position, target.transform.position) > 2.8f))
+            if (w.Rescue && (target.Warrior == null
+                || Vector3.Distance(w.Guard.transform.position, target.transform.position) > 2.8f
+                || CombatManager.Instance == null
+                || !CombatManager.Instance.GetAllies(w.Guard.gameObject).Contains(target)))
                 return false;
 
             // Встретил оружием: взмах, полудара — ему.
@@ -97,7 +103,7 @@ namespace Sinbinder.Gameplay
 
             // Звать на себя — нет: только в арьергарде (28-ORDERS, «Карган разгружен»).
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F(Took, Loc.Name(w.Guard.DisplayName)));
-            Debug.Log($"[ВОРОН] {w.Guard.DisplayName} принял удар по {target.name} на себя.");
+            Debug.Log($"[{(w.Rescue ? "AOS СПАСЕНИЕ" : "ВОРОН")}] {w.Guard.DisplayName} принял удар по {target.name} на себя.");
             Blocks++;
             if (w.Rescue && target.Warrior != null)
             {
