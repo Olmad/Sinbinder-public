@@ -18,6 +18,12 @@ namespace Sinbinder.Multiplayer
         private LanRoomClient _client;
         private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
         private readonly List<Material> _temporaryMaterials = new List<Material>();
+        private readonly Dictionary<long, Transform> _worldProxies =
+            new Dictionary<long, Transform>();
+        private readonly Dictionary<NetworkActorRole, Material> _worldProxyMaterials =
+            new Dictionary<NetworkActorRole, Material>();
+        private readonly List<long> _expiredWorldProxies = new List<long>();
+        private long _renderedWorldFrame;
         private Sinbinder.Gameplay.SelectionManager _pausedSelection;
         private GameObject _arena;
         private Camera _camera;
@@ -157,6 +163,7 @@ namespace Sinbinder.Multiplayer
             if (_pawn2 != null)
                 _pawn2.position = Vector3.Lerp(_pawn2.position, _client.Second, Mathf.Clamp01(12f * Time.unscaledDeltaTime));
 
+            RefreshWorldProxies();
             if (!_client.Playing || _camera == null) return;
 
             // Diagnostic REAL-Warrior command for the isolated two-crypt map.
@@ -192,7 +199,7 @@ namespace Sinbinder.Multiplayer
             if (!_open) return false;
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 340f)
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 385f)
                 : 250f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
@@ -211,7 +218,7 @@ namespace Sinbinder.Multiplayer
             }
 
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 340f)
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 385f)
                 : 250f;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
@@ -256,7 +263,14 @@ namespace Sinbinder.Multiplayer
                 GUILayout.Label("ПКМ по полю: капсула (локальный сетевой тест).");
                 if (!string.IsNullOrEmpty(_client.GameMatchId))
                 {
-                    GUILayout.Label("Сервер реальной карты: F8 = приказ своему Греховоду");
+                    GUILayout.Label("Реальный сервер: F8 = приказ своему Греховоду");
+                    GUILayout.Label("Видимых серверных воинов: " +
+                        _client.WorldActors.Count + "; тик " + _client.WorldTick);
+                    if (_client.WorldActors.TryGetValue(_client.OwnLordActorId,
+                        out var ownPosition))
+                        GUILayout.Label("Мой Греховод: X " +
+                            ownPosition.Position.x.ToString("0.0") + ", Z " +
+                            ownPosition.Position.z.ToString("0.0"));
                     GUILayout.Label(_gameNotice);
                 }
                 if (GUILayout.Button("Выйти из теста")) Leave();
@@ -366,6 +380,73 @@ namespace Sinbinder.Multiplayer
             return pawn.transform;
         }
 
+        private void RefreshWorldProxies()
+        {
+            if (_arena == null || _client.WorldFrame == _renderedWorldFrame) return;
+            _renderedWorldFrame = _client.WorldFrame;
+            _expiredWorldProxies.Clear();
+            foreach (var old in _worldProxies.Keys)
+                if (!_client.WorldActors.ContainsKey(old))
+                    _expiredWorldProxies.Add(old);
+            foreach (long id in _expiredWorldProxies)
+            {
+                var gone = _worldProxies[id];
+                if (gone != null) Destroy(gone.gameObject);
+                _worldProxies.Remove(id);
+            }
+            foreach (var kv in _client.WorldActors)
+            {
+                if (!_worldProxies.TryGetValue(kv.Key, out var proxy) ||
+                    proxy == null)
+                {
+                    proxy = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
+                    proxy.gameObject.name = "Серверный воин " + kv.Key;
+                    proxy.SetParent(_arena.transform);
+                    proxy.localScale = new Vector3(0.36f, 0.36f, 0.36f);
+                    SetLayer(proxy.gameObject, 30);
+                    // Markers must not intercept test mouse commands.
+                    var collider = proxy.GetComponent<Collider>();
+                    if (collider != null)
+                    {
+                        collider.enabled = false;
+                        Destroy(collider);
+                    }
+                    var renderer = proxy.GetComponent<Renderer>();
+                    if (renderer != null)
+                        renderer.sharedMaterial = MaterialForWorldRole(kv.Value.Role);
+                    _worldProxies[kv.Key] = proxy;
+                }
+                // 240m real map compressed to a 20m diagnostic plane:
+                // this is NOT rendering the replicated full game world.
+                var world = kv.Value.Position;
+                proxy.position = new Vector3(world.x / 12f, 0.42f,
+                    world.z / 12f);
+            }
+        }
+
+        private Material MaterialForWorldRole(NetworkActorRole role)
+        {
+            if (_worldProxyMaterials.TryGetValue(role, out var material))
+                return material;
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) shader = Shader.Find("Standard");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) return null;
+            material = new Material(shader);
+            Color color = role == NetworkActorRole.Lord
+                ? new Color(0.16f, 0.74f, 0.96f)
+                : role == NetworkActorRole.NeutralWarrior
+                    ? new Color(0.91f, 0.76f, 0.34f)
+                    : new Color(0.58f, 0.82f, 0.60f);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            else if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+            _temporaryMaterials.Add(material);
+            _worldProxyMaterials[role] = material;
+            return material;
+        }
+
         private static void SetLayer(GameObject obj, int layer)
         {
             obj.layer = layer;
@@ -401,6 +482,10 @@ namespace Sinbinder.Multiplayer
             foreach (var material in _temporaryMaterials)
                 if (material != null) Destroy(material);
             _temporaryMaterials.Clear();
+            _worldProxies.Clear();
+            _worldProxyMaterials.Clear();
+            _expiredWorldProxies.Clear();
+            _renderedWorldFrame = 0;
             _pawn1 = null;
             _pawn2 = null;
             _camera = null;
