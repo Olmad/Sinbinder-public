@@ -33,7 +33,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -48,6 +48,7 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Поднятый — для прогона.</summary>
         public Warrior Zombie => _zombie;
+        public Warrior SealCompanion => _sealCompanion;
         public Warrior Wounded => _wounded;
         public IReadOnlyList<Warrior> Killers => _killers;
         public Vector3 WoundedAt => _woundedAt;
@@ -71,13 +72,15 @@ namespace Sinbinder.Gameplay
         public void TestSkipControls()
         {
             if (_stage >= Stage.FirstPerson && _stage < Stage.Return)
-                Set(Stage.Return, GateLine);
+                EnsureSealCompanion();
+                Set(Stage.Puzzle, PuzzleLine);
         }
 
         private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
 
         // Дорога сна (docs/64-DREAM-ROAD.md): уроки — остановками, в конце склеп.
         private const string GateLine = "Дорога ведёт к склепу. Подойдите к воротам и нажмите F.";
+        private const string PuzzleLine = "Две печати у ворот: воин должен встать на левую, Греховод — на правую. Выделите воина ЛКМ и прикажите ПКМ идти к знаку.";
         private bool _atDummy, _atShrine, _atGate, _cryptRunning;
         private int _swingsSeen;
         private float _heldBackAt = -10f, _nudgeAt = -10f;
@@ -93,6 +96,7 @@ namespace Sinbinder.Gameplay
                 case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
+                case Stage.CommanderPractice: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -125,6 +129,10 @@ namespace Sinbinder.Gameplay
         private int _backAttempts;
         private int _swingsBefore, _blockFramesBefore;
         private bool _squadOrdered;
+        private bool _commanderOrdered;
+        private Warrior _sealCompanion;
+        private float _temptStarted;
+        private string _whisperWas;
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
@@ -156,6 +164,12 @@ namespace Sinbinder.Gameplay
             var c = _zombie.Command;
             return c.Kind != _cmdMark.Kind || c.Point != _cmdMark.Point || c.Target != _cmdMark.Target
                 || !Mathf.Approximately(c.IssuedAt, _cmdMark.IssuedAt);
+        }
+
+        private bool PickedCompanion()
+        {
+            var pick = _sealCompanion != null ? _sealCompanion.GetComponent<SelectionComponent>() : null;
+            return pick != null && pick.IsSelected;
         }
 
         private bool Picked()
@@ -206,6 +220,22 @@ namespace Sinbinder.Gameplay
                                                     Loc.T("X, затем щелчок по земле позади неё — приказ отступить."))
                                   + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
                         () => _stage != Stage.Standoff || OrderedSinceMark());
+                    break;
+                case Stage.CommanderPractice:
+                    if (_sealCompanion == null) return;
+                    shown = Lesson.Guide(_sealCompanion.transform.position,
+                        () =>
+                        {
+                            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                            if (view != null && view.WarriorModeNow)
+                                return ("V", Loc.T("V — вернитесь к Командиру. В этом режиме мышь отдаёт приказы."));
+                            if (view != null && !view.FirstPersonNow)
+                                return ("Tab", Loc.T("Tab — смотрите глазами Греховода и командуйте от первого лица."));
+                            return !PickedCompanion()
+                                ? (Loc.T("ЛКМ"), Loc.T("В режиме Командира выделите соратника ЛКМ."))
+                                : (Loc.T("ПКМ"), Loc.T("Отдайте соратнику приказ ПКМ. Следом — загадка у ворот."));
+                        },
+                        () => _stage != Stage.CommanderPractice || _commanderOrdered);
                     break;
                 case Stage.Retest:
                     if (_zombie == null) return;
@@ -300,6 +330,11 @@ namespace Sinbinder.Gameplay
             if (count <= 0 || SelectionManager.Instance == null) return;
             if (_stage == Stage.Command && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
                 _squadOrdered = true;
+            if (_stage == Stage.CommanderPractice && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
+            {
+                var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (cam != null && cam.CommanderModeNow) _commanderOrdered = true;
+            }
         }
 
         private IEnumerator Start()
@@ -500,6 +535,18 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 }
+                case Stage.Temptation:
+                    // После суда убийцы замерли: игрок может безопасно попробовать Z.
+                    // Не требуем успеха искушения, только осмысленную попытку;
+                    // недоступный шёпот не должен запирать обучение.
+                    if (Whisper.LastResult != _whisperWas && !Whisper.ShowingOutcome)
+                    {
+                        StartBattle("Шёпот услышан. Теперь увидьте, как поступит воин.");
+                    }
+                    else if (Time.unscaledTime - _temptStarted > 22f && !Whisper.ShowingOutcome
+                             && (UI.Letterbox.Instance == null || !UI.Letterbox.Instance.Shown))
+                        StartBattle("Испытание продолжается. Искушение доступно при отказе рядом с воином.");
+                    break;
                 case Stage.Battle:
                     KeepHeroAlive();
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
@@ -609,9 +656,37 @@ namespace Sinbinder.Gameplay
                     }
                     // Confirm that the real SatchelHands changed the selected jar, not merely a J key press.
                     if (Satchel.Jars < 2 || Satchel.Selected != _selectedJarBefore)
-                        Set(Stage.Return, GateLine);
+                    {
+                        EnsureSealCompanion();
+                        Set(Stage.CommanderPractice, "V — вернитесь к Командиру. Выделите соратника ЛКМ и отдайте приказ ПКМ.");
+                    }
                     break;
+                case Stage.CommanderPractice:
+                {
+                    var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                    if (cam != null && cam.CommanderModeNow && _commanderOrdered)
+                        Set(Stage.Puzzle, PuzzleLine);
+                    break;
+                }
+                case Stage.Puzzle:
+                {
+                    if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
+                    var road = DreamRoad.Instance;
+                    if (road == null) { Set(Stage.Return, GateLine); break; }
+                    // Любой живой союзник может заменить учебного, если тот дошёл.
+                    Warrior onSeal = null;
+                    foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    {
+                        if (ally == null || ally.IsDead || ally is SinbinderPlayer || ally.Team != Team.Player) continue;
+                        if (Vector3.Distance(new Vector3(ally.transform.position.x, 0f, ally.transform.position.z),
+                            DreamRoad.WarriorSealAt) <= 1.35f) { onSeal = ally; break; }
+                    }
+                    if (road.CheckSeals(onSeal, _hero.transform.position))
+                        Set(Stage.Return, "Печати ответили обеим душам. Подойдите к воротам и нажмите F.");
+                    break;
+                }
                 case Stage.Return:
+                    if (DreamRoad.Instance != null && !DreamRoad.Instance.SealsAwake) break;
                     if (!DreamRoad.NearGate(_hero.transform.position)) break;
                     if (!_atGate) { _atGate = true; _line = "Ворота склепа. F — открыть."; }
                     if (Pressed(KeyCode.F)) StartCoroutine(Crypt());
@@ -624,6 +699,19 @@ namespace Sinbinder.Gameplay
             => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.Command.IssuedAt > since;
 
         private float _commandSinceGame;
+
+        /// <summary>
+        /// Сон даёт второго соратника у двух печатей: даже если первый пал в бою,
+        /// загадка не становится непроходимой. У него настоящая душа и настоящие
+        /// решения AOS, не скрипт, который бежит на плиту без голосования.
+        /// </summary>
+        private void EnsureSealCompanion()
+        {
+            if (_sealCompanion != null && !_sealCompanion.IsDead) return;
+            var soul = new SoulData("Безмолвный страж", SinType.Pride, MoralType.Pious, 1, 12f);
+            _sealCompanion = CreateLiving(soul, new Vector3(-1.8f, 0f, 22.0f), Team.Player);
+            if (_sealCompanion != null) _sealCompanion.ChangeLoyalty(40f);
+        }
 
         private void BeginPractice(string line)
         {
@@ -760,9 +848,13 @@ namespace Sinbinder.Gameplay
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
             if (d.RefusedCommand || d.Hesitated)
-                StartBattle(Grammar.Pick(g,
-                    "Он решил сам. Убери причину — срази убийц. Или искуси его: подойди и нажми Z.",
-                    "Она решила сама. Убери причину — срази убийц. Или искуси её: подойди и нажми Z."));
+            {
+                _temptStarted = Time.unscaledTime;
+                _whisperWas = Whisper.LastResult;
+                Set(Stage.Temptation, Grammar.Pick(g,
+                    "Убийцы замерли. Подойди к отказавшему воину и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится.",
+                    "Убийцы замерли. Подойди к отказавшей воительнице и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится."));
+            }
             else
                 StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
         }
