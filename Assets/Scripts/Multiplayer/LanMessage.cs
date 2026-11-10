@@ -16,6 +16,12 @@ namespace Sinbinder.Multiplayer
         public int playerId;
         public int unitId;
         public int commanderId;
+        // Additive, opt-in protocol for REAL-Warrior server commands.
+        // Old capsule messages and the .NET 8 proof server remain valid.
+        public string matchId;
+        public long commandId;
+        public long actorId;
+        public long targetId;
         public int players;
         public int ready;
         public long tick;
