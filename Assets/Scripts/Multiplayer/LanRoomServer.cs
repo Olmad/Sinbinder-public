@@ -28,6 +28,10 @@ namespace Sinbinder.Multiplayer
             public int MessagesInWindow;
             public int RemovalQueued;
             public long LastLordActorId = -1;
+            public long LatencySequence;
+            public float ProbeSentAt;
+            public float NextProbeAt;
+            public bool ProbeOutstanding;
         }
 
         private struct Disconnected
@@ -54,6 +58,7 @@ namespace Sinbinder.Multiplayer
             public int Epoch;
         }
 
+        private readonly LanLatencyFairness _latency = new LanLatencyFairness();
         private readonly object _inboxGate = new object();
         private const int MaxMessagesPerPump = 128;
         private readonly List<Peer> _peers = new List<Peer>();
@@ -83,6 +88,16 @@ namespace Sinbinder.Multiplayer
         public int PlayerCount { get { return _peers.Count; } }
         public long Tick { get { return _tick; } }
         public string Error { get; private set; }
+        public PingBalanceMode PingBalanceSetting
+        {
+            get { return _latency.Mode; }
+            set { _latency.SetMode(value); }
+        }
+
+        public int ExtraInputDelayTicks(int authenticatedConnectionId)
+        {
+            return _latency.ExtraInputDelayTicks(authenticatedConnectionId);
+        }
 
         // Explicitly installed only by the opt-in Multiplayer_Test host.
         // Callbacks run on Unity's main thread from Pump(), not a TCP task.
@@ -162,6 +177,7 @@ namespace Sinbinder.Multiplayer
             foreach (var peer in _peers)
             {
                 PeerConnectionChanged?.Invoke(peer.Id, false);
+                _latency.OnDisconnected(peer.Id);
                 peer.Wire.Dispose();
             }
             _peers.Clear();
@@ -224,6 +240,8 @@ namespace Sinbinder.Multiplayer
             var peer = new Peer { Id = id, Wire = new LanWire(socket),
                 WindowStarted = Time.realtimeSinceStartup, LastPacketAt = Time.realtimeSinceStartup };
             _peers.Add(peer);
+            _latency.OnConnected(id);
+            peer.NextProbeAt = Time.realtimeSinceStartup + 0.25f;
             PeerConnectionChanged?.Invoke(id, true);
             Send(peer, new LanMessage { type = "welcome", protocol = 1, playerId = id, unitId = id });
             PublishLobby();
@@ -285,6 +303,27 @@ namespace Sinbinder.Multiplayer
             if (packet.type == "ping")
             {
                 Send(peer, new LanMessage { type = "pong" });
+                return;
+            }
+
+            if (packet.type == "latencyReply")
+            {
+                // The RTT is measured by the SERVER, with its own probe
+                // sequence and clock. Any forged client rttMs is ignored.
+                if (peer.ProbeOutstanding &&
+                    packet.sequence == peer.LatencySequence)
+                {
+                    float elapsed = now - peer.ProbeSentAt;
+                    peer.ProbeOutstanding = false;
+                    if (_latency.ObserveServerRtt(peer.Id, elapsed * 1000.0))
+                        Send(peer, new LanMessage {
+                            type = "latencyStats",
+                            rttMs = (float)_latency.MedianRttMs(peer.Id),
+                            jitterMs = (float)_latency.JitterMs(peer.Id),
+                            extraDelayMs = _latency.ExtraInputDelayMs(peer.Id),
+                            pingBalanceMode = _latency.Mode.ToString()
+                        });
+                }
                 return;
             }
 
@@ -403,6 +442,7 @@ namespace Sinbinder.Multiplayer
         {
             if (!_peers.Remove(peer)) return;
             PeerConnectionChanged?.Invoke(peer.Id, false);
+            _latency.OnDisconnected(peer.Id);
             peer.Wire.Dispose();
             if (_started)
             {
@@ -440,8 +480,25 @@ namespace Sinbinder.Multiplayer
             {
                 float now = Time.realtimeSinceStartup;
                 for (int i = _peers.Count - 1; i >= 0; i--)
-                    if (now - _peers[i].LastPacketAt > 20f)
-                        RemovePeer(_peers[i]);
+                {
+                    var p = _peers[i];
+                    if (now - p.LastPacketAt > 20f)
+                    {
+                        RemovePeer(p);
+                        continue;
+                    }
+                    if (now < p.NextProbeAt) continue;
+                    if (p.ProbeOutstanding && now - p.ProbeSentAt < 3f)
+                        continue;
+                    p.ProbeOutstanding = true;
+                    p.LatencySequence++;
+                    p.ProbeSentAt = now;
+                    p.NextProbeAt = now +
+                        (_latency.SampleCount(p.Id) < 3 ? 0.45f : 2f);
+                    Send(p, new LanMessage {
+                        type = "latencyProbe", sequence = p.LatencySequence
+                    });
+                }
             }
             if (!_active || !_started) return;
 
