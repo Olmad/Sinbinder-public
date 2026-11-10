@@ -19,6 +19,9 @@ namespace Sinbinder.Multiplayer
         private LanWorldAutoVerifier _verification;
         private bool _verifyClient;
         private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
+        private List<LanServerBookmark> _savedServers =
+            new List<LanServerBookmark>();
+        private int _selectedSavedServer = -1;
         private readonly List<Material> _temporaryMaterials = new List<Material>();
         private readonly Dictionary<long, Transform> _worldProxies =
             new Dictionary<long, Transform>();
@@ -66,6 +69,7 @@ namespace Sinbinder.Multiplayer
             DontDestroyOnLoad(gameObject);
             _server = new LanRoomServer();
             _client = new LanRoomClient();
+            _savedServers = LanServerBookmarks.Load();
             _client.Received += packet =>
             {
                 if (_autoReady && packet.type == "welcome") _client.Ready();
@@ -219,7 +223,7 @@ namespace Sinbinder.Multiplayer
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
             float height = _arenaActive
                 ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
-                : 270f;
+                : 310f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
             return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
@@ -238,7 +242,7 @@ namespace Sinbinder.Multiplayer
 
             float height = _arenaActive
                 ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
-                : 270f;
+                : 310f;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
             GUILayout.BeginArea(new Rect(frame.x + 12, frame.y + 28, frame.width - 24, frame.height - 37));
@@ -251,6 +255,42 @@ namespace Sinbinder.Multiplayer
             GUILayout.Label("Порт", GUILayout.Width(50));
             _portText = GUILayout.TextField(_portText, 5);
             GUILayout.EndHorizontal();
+
+            if (!_arenaActive)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Запомнить"))
+                {
+                    if (TryPort(out int bookmarkPort) &&
+                        LanServerBookmarks.Add(_address, bookmarkPort))
+                    {
+                        _savedServers = LanServerBookmarks.Load();
+                        _selectedSavedServer = 0;
+                        _notice = "Адрес добавлен в избранное";
+                    }
+                    else _notice = "Укажи правильный IP/имя и порт";
+                }
+                if (_savedServers.Count > 0 && GUILayout.Button("Выбрать"))
+                {
+                    _selectedSavedServer =
+                        (_selectedSavedServer + 1) % _savedServers.Count;
+                    var selected = _savedServers[_selectedSavedServer];
+                    _address = selected.host;
+                    _portText = selected.port.ToString();
+                    _notice = "Избранное: " + selected.name;
+                }
+                if (_selectedSavedServer >= 0 &&
+                    _selectedSavedServer < _savedServers.Count &&
+                    GUILayout.Button("Удалить"))
+                {
+                    var selected = _savedServers[_selectedSavedServer];
+                    LanServerBookmarks.Remove(selected.host, selected.port);
+                    _savedServers = LanServerBookmarks.Load();
+                    _selectedSavedServer = -1;
+                    _notice = "Адрес удалён из избранного";
+                }
+                GUILayout.EndHorizontal();
+            }
 
             if (!_arenaActive)
             {
