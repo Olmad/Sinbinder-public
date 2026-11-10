@@ -161,7 +161,7 @@ namespace Sinbinder.Gameplay
         private AOS.Decision _mercyFirstDecision;
         private AOS.DecisionContext _emotionContextBefore;
         private bool _emotionApplied;
-        private GameObject _fearSign;
+        private GameObject _fearSign, _contrastMarker;
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
@@ -870,6 +870,8 @@ namespace Sinbinder.Gameplay
                         && w.Command.Kind == CommandKind.Move
                         && GroundDistance(w.Command.Point, ContrastPoint) < 2.5f
                         && _emotionApplied
+                        && AOS.EmotionSystem.Instance != null
+                        && AOS.EmotionSystem.Instance.GetDominantEmotion(w) == AOS.EmotionType.Fear
                         && mind != null && mind.LastContext != null
                         && mind.LastContext != _emotionContextBefore
                         && mind.LastContext.HasCommand)
@@ -1051,6 +1053,15 @@ namespace Sinbinder.Gameplay
             _contrastProud = CreateLiving(proud, new Vector3(5.0f, 0f, 20.8f), Team.Player);
             if (_contrastMerciful != null) _contrastMerciful.ChangeLoyalty(35f);
             if (_contrastProud != null) _contrastProud.ChangeLoyalty(35f);
+            // Внешняя цель делает «одно и то же место» однозначным.
+            _contrastMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _contrastMarker.name = "Знак одинакового приказа";
+            _contrastMarker.transform.position = ContrastPoint + Vector3.up * 0.05f;
+            _contrastMarker.transform.localScale = new Vector3(1.8f, 0.055f, 1.8f);
+            var markerCollider = _contrastMarker.GetComponent<Collider>();
+            if (markerCollider != null) Destroy(markerCollider);
+            var markerRenderer = _contrastMarker.GetComponent<Renderer>();
+            if (markerRenderer != null) markerRenderer.material.color = new Color(0.27f, 0.64f, 0.73f);
             if (_contrastMerciful == null || _contrastProud == null)
             {
                 Debug.LogError("[СОН QA] Не удалось создать двух стражей для сравнения AOS.");
@@ -1135,6 +1146,8 @@ namespace Sinbinder.Gameplay
         {
             if (_fearSign != null) Destroy(_fearSign);
             _fearSign = null;
+            if (_contrastMarker != null) Destroy(_contrastMarker);
+            _contrastMarker = null;
             EnsureSealCompanion();
             Set(Stage.Puzzle, "Вы видели разные души и изменение эмоциональных весов. "
                 + "Теперь действуйте сами: две плиты, две души и один проход. " + PuzzleLine);
