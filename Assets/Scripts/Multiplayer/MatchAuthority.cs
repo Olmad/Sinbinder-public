@@ -189,6 +189,13 @@ namespace Sinbinder.Multiplayer
             _actors.Remove(actorId);
         }
 
+        /// <summary>Server-only replay cursor for a reconnected seat.</summary>
+        public long LastAcceptedCommandId(int connectionId)
+        {
+            return _players.TryGetValue(connectionId, out var player)
+                ? player.LastCommandId : 0L;
+        }
+
         public bool TryGetLord(int connectionId, out string lord)
         {
             if (_players.TryGetValue(connectionId, out var player) && player.Connected)
