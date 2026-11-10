@@ -55,6 +55,7 @@ namespace Sinbinder.Gameplay
 
         private int _step = -1;
         private bool _showDetails;
+        private bool _hintOffered;
         private float _since, _doneAt = -1f;
         private int _raisedBefore;
         private bool _released;
@@ -92,6 +93,13 @@ namespace Sinbinder.Gameplay
             {
                 if (Time.unscaledTime - _doneAt > 1.6f) Next();
                 return;
+            }
+            // Новичок мог не заметить F1. После 45 секунд без результата
+            // открываем объяснение ОДИН раз, не перескакивая урок.
+            if (!_hintOffered && Time.unscaledTime - _since > 45f)
+            {
+                _hintOffered = true;
+                if (!_showDetails) { _showDetails = true; RefreshInstruction(); }
             }
             if (_step == 1) WatchAttitude();
             if (Done()) { _doneAt = Time.unscaledTime; _title.text = Loc.F("Урок {0} из {1} — готово", _step + 1, Lessons.Length); }
@@ -149,6 +157,7 @@ namespace Sinbinder.Gameplay
 
             _title.text = Loc.F("Урок {0} из {1}: {2}", _step + 1, Lessons.Length, Loc.T(Lessons[_step].title));
             _showDetails = false;
+            _hintOffered = false;
             RefreshInstruction();
             Debug.Log($"[ОБУЧЕНИЕ] урок {_step + 1}: {Lessons[_step].title}");
         }
