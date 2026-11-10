@@ -361,7 +361,51 @@ namespace Sinbinder.EditorTools
                     // Не вызываем GuardForRescue и OnAllySaved из прогона:
                     // иначе нарисуем победу там, где души на деле не спасали.
                     break;
+                case "CompareSouls":
+                    if (_step != "две души — один приказ")
+                    {
+                        Go("две души — один приказ");
+                        var mercy = dream.ContrastMerciful;
+                        var pride = dream.ContrastProud;
+                        if (mercy == null || pride == null)
+                        {
+                            End(false, "учебные души AOS не созданы");
+                            return;
+                        }
+                        // Эмуляция только клика игрока: оба ПРИКАЗА настоящие.
+                        // AOS обязана проголосовать самостоятельно в своём обычном такте.
+                        mercy.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        pride.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        Write("  [QA ВВОД] отправлен одинаковый Move обеим душам; голосование не подменяется");
+                        Snap("сон — два характера");
+                    }
+                    break;
+                case "EmotionShift":
+                    if (_step != "одна душа — разный страх")
+                    {
+                        Go("одна душа — разный страх");
+                        if (!dream.CompareSoulsCompleted)
+                        {
+                            End(false, "урок двух душ пропущен или оба голосования не записаны");
+                            return;
+                        }
+                        var mercy = dream.ContrastMerciful;
+                        if (mercy == null)
+                        {
+                            End(false, "нет стража для повторной проверки эмоции");
+                            return;
+                        }
+                        mercy.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        Write("  [QA ВВОД] повторён Move после настоящего EmotionSystem.TriggerEmotion");
+                        Snap("сон — изменение страха");
+                    }
+                    break;
                 case "Puzzle":
+                    if (!dream.CompareSoulsCompleted || !dream.EmotionShiftCompleted)
+                    {
+                        End(false, "не показаны два характера или влияние страха на голосование");
+                        return;
+                    }
                     if (dream.RescueResult != "спасён")
                     {
                         End(false, "сцену спасения прошли без настоящего защитного удара: " + dream.RescueResult);
@@ -384,6 +428,21 @@ namespace Sinbinder.EditorTools
                         return;
                     }
                     companion.ClearCommand();
+                    // Regression: «стою на печати» — расстояние, не
+                    // нормализованное направление. Испытываем 120 тактов
+                    // неверной комбинации, затем уже ставим обоих правильно.
+                    var road = DreamRoad.Instance;
+                    if (road == null) { End(false, "дорога пропала"); return; }
+                    var far = new Vector3(-5f, 0f, 17f);
+                    if (UnityEngine.Vector3.Distance(companion.transform.position, DreamRoad.WarriorSealAt) <= 1.35f)
+                        companion.transform.position = far;
+                    for (int i = 0; i < 120; i++)
+                        if (road.CheckSeals(companion, DreamRoad.LordSealAt))
+                        {
+                            End(false, "плиты сработали с союзником вне своей печати");
+                            return;
+                        }
+                    Write("  [ПЛИТЫ] 120 проверок вне круга не открывают ворота");
                     var agent = companion.GetComponent<UnityEngine.AI.NavMeshAgent>();
                     if (agent != null && agent.enabled && agent.isOnNavMesh)
                         agent.Warp(DreamRoad.WarriorSealAt);
