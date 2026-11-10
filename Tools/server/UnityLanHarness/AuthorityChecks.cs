@@ -162,6 +162,14 @@ internal static class AuthorityChecks
         long id1 = bridge.Register(lord1, NetworkActorRole.Lord, 1);
         long id2 = bridge.Register(lord2, NetworkActorRole.Lord, 2);
         long id3 = bridge.Register(neutral, NetworkActorRole.NeutralWarrior);
+        var identity = neutral.GetComponent<NetworkActorIdentity>();
+        Require(identity != null && identity.Assigned &&
+            identity.MatchId == "aos-bridge" && identity.ServerId == id3,
+            "server ID must be bound directly to actual Unity Warrior object");
+        bool rejectedRebind = false;
+        try { identity.BindServerIdentity(id3 + 999, "aos-bridge"); }
+        catch (InvalidOperationException) { rejectedRebind = true; }
+        Require(rejectedRebind, "client-side identity reassignment is forbidden");
 
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
             NetworkOrderKind.Move), 1, null, null,
