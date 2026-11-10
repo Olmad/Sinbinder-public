@@ -10,6 +10,12 @@ namespace Sinbinder.Gameplay
         None, Move, Attack, Hold, Defend, FallBack, Patrol, AttackMove
     }
 
+    public class Damageable : MonoBehaviour
+    {
+        public float HP { get; set; } = 30f;
+        public float MaxHP { get; set; } = 30f;
+    }
+
     public class UnitMover : MonoBehaviour
     {
         public Vector3 Destination;
