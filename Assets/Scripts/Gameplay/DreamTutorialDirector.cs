@@ -143,6 +143,7 @@ namespace Sinbinder.Gameplay
         private bool _bowTemperCommanded;
         private AOS.DecisionContext _bowTemperBefore;
         private Warrior _rescueWounded, _rescueDefender, _rescueAttacker;
+        private GameObject _rescueMarker;
         private float _rescueSince, _rescueNextHit, _rescueResultAt = -1f;
         private int _rescueCreditBefore;
         private bool _rescueDecisionShown;
@@ -909,6 +910,16 @@ namespace Sinbinder.Gameplay
             }
 
             _rescueWounded.GetComponent<Damageable>()?.Wound(0.24f);
+            // Красный круг под раненым показывает цель без отдельного окна
+            // и без остановки AOS. Короткая плашка остаётся пояснением.
+            _rescueMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _rescueMarker.name = "Последний щит — круг раненого";
+            _rescueMarker.transform.position = _rescueWounded.transform.position + Vector3.up * 0.025f;
+            _rescueMarker.transform.localScale = new Vector3(2.4f, 0.03f, 2.4f);
+            var markerCollider = _rescueMarker.GetComponent<Collider>();
+            if (markerCollider != null) Destroy(markerCollider);
+            var markerVisual = _rescueMarker.GetComponent<Renderer>();
+            if (markerVisual != null) markerVisual.material.color = new Color(0.75f, 0.19f, 0.16f);
             Hold(_rescueWounded, true);
             Hold(_rescueAttacker, true);
             var attackerBody = _rescueAttacker.GetComponent<Damageable>();
@@ -921,6 +932,8 @@ namespace Sinbinder.Gameplay
 
         private void EndRescueLesson()
         {
+            if (_rescueMarker != null) Destroy(_rescueMarker);
+            _rescueMarker = null;
             if (_rescueAttacker != null) Destroy(_rescueAttacker.gameObject);
             _rescueAttacker = null;
             if (_rescueWounded != null && !_rescueWounded.IsDead) Hold(_rescueWounded, false);
