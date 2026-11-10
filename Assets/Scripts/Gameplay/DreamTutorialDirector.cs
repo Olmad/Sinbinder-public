@@ -883,7 +883,8 @@ namespace Sinbinder.Gameplay
                         && AOS.EmotionSystem.Instance.GetDominantEmotion(w) == AOS.EmotionType.Fear
                         && mind != null && mind.LastContext != null
                         && mind.LastContext != _emotionContextBefore
-                        && mind.LastContext.HasCommand)
+                        && mind.LastContext.HasCommand
+                        && mind.LastContext.NearbyEnemies > 0)
                     {
                         var now = mind.LastDecisionDetail;
                         UI.ScalesOverhead.Show(w, now, mind.LastContext, force: true);
