@@ -10,6 +10,7 @@ namespace Sinbinder.Multiplayer
     {
         private readonly LanRoomClient _client;
         private readonly bool _quitOnCompletion;
+        private readonly string _logPrefix;
         private readonly float _begin;
         private float _issuedAt;
         private Vector3 _before;
@@ -26,13 +27,16 @@ namespace Sinbinder.Multiplayer
         public string Report { get; private set; }
         public int PlayerId { get { return _client.PlayerId; } }
 
-        public LanWorldAutoVerifier(LanRoomClient client, bool quitOnCompletion = true)
+        public LanWorldAutoVerifier(LanRoomClient client,
+            bool quitOnCompletion = true,
+            string logPrefix = "[Sinbinder REAL Unity Acceptance]")
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _quitOnCompletion = quitOnCompletion;
+            _logPrefix = logPrefix;
             _begin = Time.realtimeSinceStartup;
             _client.Received += OnPacket;
-            Debug.Log("[Sinbinder REAL Unity Acceptance] START; waiting for two " +
+            Debug.Log(_logPrefix + " START; waiting for two " +
                 "LAN clients and private real-Warrior world snapshot");
         }
 
@@ -100,7 +104,7 @@ namespace Sinbinder.Multiplayer
                 }
                 _issued = true;
                 _issuedAt = now;
-                Debug.Log("[Sinbinder REAL Unity Acceptance] ORDER sent; " +
+                Debug.Log(_logPrefix + " ORDER sent; " +
                     "seat=" + _client.PlayerId + ", actor=" + _lord +
                     ", tick=" + _tick + ", frame=" + _frame +
                     ", hp=" + own.HP + "/" + own.MaxHP);
@@ -152,9 +156,9 @@ namespace Sinbinder.Multiplayer
             Passed = passed;
             Report = report;
             if (passed)
-                Debug.Log("[Sinbinder REAL Unity Acceptance] PASS " + report);
+                Debug.Log(_logPrefix + " PASS " + report);
             else
-                Debug.LogError("[Sinbinder REAL Unity Acceptance] FAIL " + report);
+                Debug.LogError(_logPrefix + " FAIL " + report);
             if (_quitOnCompletion) Application.Quit(passed ? 0 : 1);
         }
 
