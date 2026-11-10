@@ -383,9 +383,9 @@ namespace Sinbinder.Gameplay
             // ничего не даёт. Это причинная связь между двумя загадками.
             if (!_mechanismReleased) return false;
             if (_sealsAwake) return true;
-            // Flat() в директоре НОРМАЛИЗУЕТ вектор: его длина почти всегда 1.
-            // Для плиты нужна настоящая дистанция по горизонтали, иначе
-            // обе печати открывались из любой точки карты.
+            // Явная проверка КВАДРАТА расстояния по земле.
+            // Локальный Flat() тоже вычитает высоту без нормализации,
+            // но здесь сохраняем проверку без квадратного корня.
             Vector3 allyAt = ally != null ? ally.transform.position - WarriorSealAt : Vector3.zero;
             allyAt.y = 0f;
             Vector3 lordAt = lord - LordSealAt;
