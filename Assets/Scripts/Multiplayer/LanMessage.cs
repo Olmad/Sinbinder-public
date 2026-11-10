@@ -38,6 +38,12 @@ namespace Sinbinder.Multiplayer
         public float z;
         public float hp;
         public float maxHp;
+        // Server nonce-validated RTT statistics. Never accept a client
+        // supplied RTT as authoritative for gameplay scheduling.
+        public float rttMs;
+        public float jitterMs;
+        public int extraDelayMs;
+        public string pingBalanceMode;
         public float p1X;
         public float p1Z;
         public float p2X;
