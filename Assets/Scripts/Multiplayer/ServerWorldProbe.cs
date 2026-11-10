@@ -79,8 +79,8 @@ namespace Sinbinder.Multiplayer
             Orders.OrderResolved += (order, applied) =>
                 OrderResolved?.Invoke(order, applied);
             _initialized = true;
-            Debug.Log("[Sinbinder MP Probe] Enabled on Multiplayer_Test. Match=" +
-                Authority.MatchId + " (diagnostic only; no real-world network transport).");
+            Debug.Log("[Sinbinder MP Probe] Real Warrior registry enabled. Match=" +
+                Authority.MatchId + " (transport only with explicit -mp-world-host).");
         }
 
         private void Update()
