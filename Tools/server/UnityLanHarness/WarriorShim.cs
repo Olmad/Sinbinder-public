@@ -18,6 +18,14 @@ namespace Sinbinder.Gameplay
         public void CommandAttack(GameObject target) { AttackTarget = target; }
     }
 
+    public class SinbinderPlayer : Warrior { }
+    public class RivalLord : MonoBehaviour { public int Side { get; set; } }
+
+    public static class MapLoader
+    {
+        public static Sinbinder.Core.MapData Current { get; set; }
+    }
+
     public class Warrior : MonoBehaviour
     {
         public Team Team { get; set; }
@@ -55,5 +63,7 @@ namespace Sinbinder.Gameplay
     public static class Voice
     {
         public static bool Heard(float muffle) { return muffle < 1f; }
+        public static float Muffle(float distance)
+        { return distance <= 100f ? 0.2f : 1f; }
     }
 }
