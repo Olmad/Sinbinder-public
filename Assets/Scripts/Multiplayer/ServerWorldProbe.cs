@@ -189,7 +189,7 @@ namespace Sinbinder.Multiplayer
                 catch (Exception error)
                 {
                     Debug.LogWarning("[Sinbinder MP Probe] Could not register " +
-                        warrior.name + ": " + error.Message);
+                        warrior.gameObject.name + ": " + error.Message);
                 }
             }
         }
