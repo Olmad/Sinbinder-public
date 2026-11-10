@@ -26,6 +26,7 @@ namespace Sinbinder.Multiplayer
         private int _queued;
         private float _lastInboundAt;
         private float _lastPingAt;
+        private long _nextGameCommandId;
 
         public bool Connected { get; private set; }
         public bool Playing { get; private set; }
@@ -33,6 +34,8 @@ namespace Sinbinder.Multiplayer
         public int Players { get; private set; }
         public int ReadyCount { get; private set; }
         public long Tick { get; private set; }
+        public string GameMatchId { get; private set; }
+        public long OwnLordActorId { get; private set; }
         public Vector3 First { get; private set; }
         public Vector3 Second { get; private set; }
         public string Status { get; private set; } = "Не подключено";
@@ -169,6 +172,17 @@ namespace Sinbinder.Multiplayer
                         // Acknowledges that the server's read and send loops
                         // still work even while the match is idle.
                         break;
+                    case "gameMatch":
+                        // Sent by an opt-in real-world host after both players
+                        // become ready, not by the capsule-only server.
+                        if (packet.protocol == MatchAuthority.Protocol &&
+                            !string.IsNullOrEmpty(packet.matchId) &&
+                            packet.playerId == PlayerId)
+                        {
+                            GameMatchId = packet.matchId;
+                            OwnLordActorId = packet.actorId;
+                        }
+                        break;
                     case "welcome":
                         if (packet.protocol != 1) { Status = "Версия сетевого протокола не подходит"; Disconnect(); break; }
                         PlayerId = packet.playerId;
@@ -196,6 +210,8 @@ namespace Sinbinder.Multiplayer
                         break;
                     case "stopped":
                         Playing = false;
+                        GameMatchId = null;
+                        OwnLordActorId = 0;
                         Status = string.IsNullOrEmpty(packet.reason) ? "Матч остановлен" : packet.reason;
                         break;
                     case "error":
@@ -244,6 +260,30 @@ namespace Sinbinder.Multiplayer
             Send(new LanMessage { type = "order", unitId = PlayerId, kind = "Hold" });
         }
 
+        /// <summary>
+        /// Send an order to an existing server-owned Warrior ID.
+        /// This does not modify the old capsule Move/Hold protocol.
+        /// The server binds the request to the authenticated socket,
+        /// validates visibility/hearing, and sends gameAccepted/Rejected.
+        /// </summary>
+        public bool OrderGameplay(long actorId, NetworkOrderKind kind,
+            Vector3 destination, long targetId = 0)
+        {
+            if (!Connected || !Playing || PlayerId <= 0 ||
+                string.IsNullOrEmpty(GameMatchId) || actorId <= 0 ||
+                !Enum.IsDefined(typeof(NetworkOrderKind), kind) ||
+                _nextGameCommandId == long.MaxValue)
+                return false;
+            var intent = new NetworkOrderIntent {
+                Protocol = MatchAuthority.Protocol, MatchId = GameMatchId,
+                CommandId = ++_nextGameCommandId, ActorId = actorId,
+                TargetId = targetId, Kind = kind,
+                X = destination.x, Y = destination.y, Z = destination.z
+            };
+            Send(LanGameOrderCodec.Write(intent));
+            return true;
+        }
+
         private void Send(LanMessage packet)
         {
             if (!Connected || _wire == null || _cancel == null) return;
@@ -285,6 +325,10 @@ namespace Sinbinder.Multiplayer
             Players = 0;
             ReadyCount = 0;
             Tick = 0;
+            GameMatchId = null;
+            OwnLordActorId = 0;
+            // Intentionally do not reset _nextGameCommandId: the same
+            // Lord may reconnect and must never replay older command IDs.
             Status = "Не подключено";
         }
     }
