@@ -6,7 +6,8 @@ using Sinbinder.Inventory;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
-    /// Подвесная учебная мишень. Приказ атаковать идёт через SelectionManager
+    /// Подвесная печать запирает противовес над каменной чашей у склепа.
+    /// Приказ атаковать идёт через SelectionManager
     /// и настоящую AOS-оценку ObeyCommand; сюда приходит только исполнение.
     /// Меч не достаёт до подвешенной мишени. Лук является реальной вещью,
     /// которую передают воину через SquadGear, и меняет голоса TemptationResolver.
@@ -52,7 +53,7 @@ namespace Sinbinder.Gameplay
                 {
                     _nextShot = Time.time + Cadence;
                     Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
-                        "Мишень слишком высоко для клинка. Передайте воину лук тщеславия через F — снаряжение.");
+                        "Замок противовеса слишком высоко для клинка. Передайте воину лук тщеславия через F — снаряжение.");
                 }
                 return;
             }
@@ -94,8 +95,11 @@ namespace Sinbinder.Gameplay
                 _falling = true;
                 _body.isKinematic = false;
                 _body.useGravity = true;
+                // Падение груза запускает видимое отпирание напольных печатей.
+                // Они не активируются просто из-за смены учебной стадии.
+                DreamRoad.Instance?.ReleaseMechanism();
                 Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
-                    "Стрела перерезала подвес. Мишень упала. Лук остаётся у воина и влияет на его решения.");
+                    "Стрела разбила замок подвеса. Противовес падает в каменную чашу: теперь откроются засовы у двух печатей.");
             }
         }
     }
