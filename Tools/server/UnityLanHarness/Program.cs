@@ -81,6 +81,7 @@ internal static class Program
             await GameOrderWireChecks.Run();
             await WorldSnapshotChecks.Run();
             await LatencyFairnessChecks.Run();
+            RoomDirectoryChecks.Run();
             return 0;
         }
         finally
