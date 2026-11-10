@@ -218,8 +218,8 @@ namespace Sinbinder.Multiplayer
             if (!_open) return false;
             // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 410f)
-                : 250f;
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
+                : 270f;
             Vector3 mouse = Input.mousePosition;
             float top = Screen.height - 8f;
             return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
@@ -237,8 +237,8 @@ namespace Sinbinder.Multiplayer
             }
 
             float height = _arenaActive
-                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 280f : 410f)
-                : 250f;
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
+                : 270f;
             var frame = new Rect(Screen.width - 328, 8, 320, height);
             GUI.Box(frame, "Sinbinder: сетевой тест");
             GUILayout.BeginArea(new Rect(frame.x + 12, frame.y + 28, frame.width - 24, frame.height - 37));
@@ -267,6 +267,13 @@ namespace Sinbinder.Multiplayer
             {
                 GUILayout.Label("Игроков: " + _client.Players + "/2; готовы: " + _client.ReadyCount);
                 GUILayout.Label("Ваш номер: " + _client.PlayerId + "; тик: " + _client.Tick);
+                if (_client.ServerMeasuredPingMs > 0f)
+                {
+                    GUILayout.Label("Пинг: " + _client.ServerMeasuredPingMs.ToString("0") +
+                        " мс; джиттер: " + _client.ServerMeasuredJitterMs.ToString("0") + " мс");
+                    GUILayout.Label("Компенсация: " + _client.PingBalanceSetting +
+                        "; доп. задержка приказа: " + _client.FairInputDelayMs + " мс");
+                }
                 GUILayout.BeginHorizontal();
                 GUI.enabled = _client.Connected && _client.PlayerId != 0 && !_client.Playing;
                 if (GUILayout.Button("Готов")) _client.Ready();
