@@ -27,6 +27,7 @@ namespace Sinbinder.Multiplayer
             public float LastPacketAt;
             public int MessagesInWindow;
             public int RemovalQueued;
+            public long LastLordActorId = -1;
         }
 
         private struct Disconnected
@@ -85,6 +86,7 @@ namespace Sinbinder.Multiplayer
         // Callbacks run on Unity's main thread from Pump(), not a TCP task.
         public string GameMatchId { get; set; }
         public Func<int, long> ResolveLordActorId { get; set; }
+        public Func<int, long> ResolveLastCommandId { get; set; }
         public Func<int, NetworkOrderIntent, LanMessage> RouteGameOrder { get; set; }
         public Action<int, bool> PeerConnectionChanged { get; set; }
 
@@ -150,7 +152,11 @@ namespace Sinbinder.Multiplayer
             _started = false;
             if (_cancel != null) _cancel.Cancel();
             if (_listener != null) _listener.Stop();
-            foreach (var peer in _peers) peer.Wire.Dispose();
+            foreach (var peer in _peers)
+            {
+                PeerConnectionChanged?.Invoke(peer.Id, false);
+                peer.Wire.Dispose();
+            }
             _peers.Clear();
             _orders.Clear();
             while (_disconnects.TryDequeue(out _)) { }
@@ -292,12 +298,7 @@ namespace Sinbinder.Multiplayer
                     foreach (var p in _peers)
                     {
                         Send(p, new LanMessage { type = "start", tick = 0, playerId = p.Id, unitId = p.Id });
-                        if (!string.IsNullOrEmpty(GameMatchId) && RouteGameOrder != null)
-                            Send(p, new LanMessage {
-                                type = "gameMatch", protocol = MatchAuthority.Protocol,
-                                matchId = GameMatchId, playerId = p.Id,
-                                actorId = ResolveLordActorId != null ? ResolveLordActorId(p.Id) : 0
-                            });
+                        SendGameIdentity(p);
                     }
                     PublishState();
                 }
@@ -464,6 +465,34 @@ namespace Sinbinder.Multiplayer
                 if (_tick % 2 == 0) PublishState();
             }
             if (steps > 5) _carried = 0f; // No unbounded catch-up after a frame stall.
+        }
+
+        // Only send each peer their own Lord's ID. Neutral actor visibility
+        // requires a separate server-side fog-of-war filtered roster.
+        private void SendGameIdentity(Peer peer)
+        {
+            if (string.IsNullOrEmpty(GameMatchId) || RouteGameOrder == null) return;
+            long actorId = ResolveLordActorId != null
+                ? ResolveLordActorId(peer.Id) : 0L;
+            peer.LastLordActorId = actorId;
+            Send(peer, new LanMessage {
+                type = "gameMatch", protocol = MatchAuthority.Protocol,
+                matchId = GameMatchId, playerId = peer.Id, actorId = actorId,
+                lastCommandId = ResolveLastCommandId != null
+                    ? ResolveLastCommandId(peer.Id) : 0L
+            });
+        }
+
+        public void RefreshGameIdentity()
+        {
+            if (!_active || !_started || string.IsNullOrEmpty(GameMatchId))
+                return;
+            foreach (var peer in _peers)
+            {
+                long current = ResolveLordActorId != null
+                    ? ResolveLordActorId(peer.Id) : 0L;
+                if (peer.LastLordActorId != current) SendGameIdentity(peer);
+            }
         }
 
         // Only the issuer receives a command resolution. Broadcasting actor
