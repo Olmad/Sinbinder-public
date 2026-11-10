@@ -383,9 +383,15 @@ namespace Sinbinder.Gameplay
             // ничего не даёт. Это причинная связь между двумя загадками.
             if (!_mechanismReleased) return false;
             if (_sealsAwake) return true;
-            bool warrior = ally != null && !ally.IsDead &&
-                           Flat(ally.transform.position - WarriorSealAt).magnitude <= 1.35f;
-            bool owner = Flat(lord - LordSealAt).magnitude <= 1.35f;
+            // Flat() в директоре НОРМАЛИЗУЕТ вектор: его длина почти всегда 1.
+            // Для плиты нужна настоящая дистанция по горизонтали, иначе
+            // обе печати открывались из любой точки карты.
+            Vector3 allyAt = ally != null ? ally.transform.position - WarriorSealAt : Vector3.zero;
+            allyAt.y = 0f;
+            Vector3 lordAt = lord - LordSealAt;
+            lordAt.y = 0f;
+            bool warrior = ally != null && !ally.IsDead && allyAt.sqrMagnitude <= 1.35f * 1.35f;
+            bool owner = lordAt.sqrMagnitude <= 1.35f * 1.35f;
             _sealTogether = warrior && owner ? _sealTogether + Time.deltaTime : 0f;
             if (_warriorSeal != null)
                 _warriorSeal.material.color = warrior ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
