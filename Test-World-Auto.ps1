@@ -2,7 +2,9 @@
 # Windows PowerShell 5.1. Run after "Собрать игру.cmd" from the project root.
 param(
     [ValidateRange(1024, 65535)] [int]$Port = 7786,
-    [ValidateRange(30, 600)] [int]$TimeoutSeconds = 180
+    [ValidateRange(30, 600)] [int]$TimeoutSeconds = 180,
+    [ValidateSet('Off', 'Conservative', 'Balanced')]
+    [string]$PingBalanceMode = 'Conservative'
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -44,12 +46,14 @@ try {
     $hostLog = Join-Path $runDir 'WorldHost.log'
     $oneLog  = Join-Path $runDir 'Client1.log'
     $twoLog  = Join-Path $runDir 'Client2.log'
-    Write-Host ("Sinbinder REAL Unity 2-client acceptance test, port " + $Port)
+    Write-Host ("Sinbinder REAL Unity 2-client acceptance test, port " + $Port +
+        ", ping compensation " + $PingBalanceMode)
     Write-Host ("Logs: " + $runDir)
     Write-Host "The world host and both players use the SAME local Unity build."
 
     $hostArgs = '-batchmode -nographics -mp-test-map -mp-world-host -port ' +
-        $Port + ' -logFile "' + $hostLog + '"'
+        $Port + ' -mp-ping-balance ' + $PingBalanceMode.ToLowerInvariant() +
+        ' -logFile "' + $hostLog + '"'
     $hostProc = Spawn 'World Host' $hostArgs
     $hostReady = $false
     $deadline = (Get-Date).AddSeconds(90)
