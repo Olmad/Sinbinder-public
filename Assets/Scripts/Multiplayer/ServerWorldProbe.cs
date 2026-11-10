@@ -35,6 +35,7 @@ namespace Sinbinder.Multiplayer
         private readonly List<int> _expired = new List<int>();
         private float _scanElapsed;
         private float _tickCarry;
+        private float _snapshotCarry;
         private long _tick;
         private bool _initialized;
         private LanRoomServer _room;
@@ -46,6 +47,11 @@ namespace Sinbinder.Multiplayer
         public long Tick { get { return _tick; } }
 
         public event Action<AuthorizedGameOrder, bool> OrderResolved;
+
+        // Optional authoritative, PER-PLAYER visibility supplied by future
+        // multiplayer fog of war. Null means ONLY owned entities are sent.
+        // Never use FogOfWar.Hides(): it is one local player's render mask.
+        public Func<int, Warrior, bool> CanObserveActorOnServer { get; set; }
 
         private void Awake()
         {
@@ -98,6 +104,15 @@ namespace Sinbinder.Multiplayer
             // Existing AOS/Combat/Unity NavMesh still run only in this
             // authoritative Unity process, not on remote clients.
             Advance(Time.unscaledDeltaTime);
+            if (_ownsRoom && _room != null)
+            {
+                _snapshotCarry += Mathf.Clamp(Time.unscaledDeltaTime, 0f, 0.25f);
+                if (_snapshotCarry >= 0.25f)
+                {
+                    _snapshotCarry = 0f;
+                    _room.PublishPrivateWorldSnapshot();
+                }
+            }
         }
 
         /// <summary>
@@ -115,6 +130,8 @@ namespace Sinbinder.Multiplayer
             room.GameMatchId = Authority.MatchId;
             room.ResolveLordActorId = GetLordActorId;
             room.ResolveLastCommandId = Authority.LastAcceptedCommandId;
+            room.PrivateWorldActors = GetPrivateWorldActors;
+            room.ResolveWorldTick = () => _tick;
             room.RouteGameOrder = (connectionId, intent) =>
             {
                 if (TryIssueFromConnection(connectionId, intent, null,
@@ -127,6 +144,53 @@ namespace Sinbinder.Multiplayer
             room.PeerConnectionChanged = (id, connected) =>
                 Authority.SetConnected(id, connected);
             Orders.OrderResolved += room.NotifyGameOrderResolved;
+        }
+
+        /// <summary>
+        /// Projection of real live positions into the authenticated player's
+        /// private roster. By default it contains their Lord and at most
+        /// 23 affiliated Warriors. The neutral roster, rival Lord and hidden
+        /// enemies are NOT transmitted until a server-side visibility policy
+        /// explicitly approves them.
+        /// </summary>
+        public IReadOnlyList<LanWorldActorState> GetPrivateWorldActors(int connectionId)
+        {
+            var result = new List<LanWorldActorState>();
+            if (!_initialized || !Authority.TryGetLord(connectionId, out _))
+                return result;
+
+            var owned = new List<Entry>();
+            var observable = new List<Entry>();
+            foreach (var entry in _registered.Values)
+            {
+                var w = entry.Warrior;
+                if (w == null || w.IsDead) continue;
+                if (entry.Owner == connectionId && entry.Owner != 0)
+                    owned.Add(entry);
+                else if (CanObserveActorOnServer != null &&
+                         CanObserveActorOnServer(connectionId, w))
+                    observable.Add(entry);
+            }
+            owned.Sort((a, b) =>
+            {
+                if (a.Role == NetworkActorRole.Lord && b.Role != NetworkActorRole.Lord) return -1;
+                if (b.Role == NetworkActorRole.Lord && a.Role != NetworkActorRole.Lord) return 1;
+                return a.ActorId.CompareTo(b.ActorId);
+            });
+            observable.Sort((a, b) => a.ActorId.CompareTo(b.ActorId));
+            foreach (var entry in owned)
+            {
+                if (result.Count >= LanRoomServer.MaxWorldActorsPerSnapshot) break;
+                result.Add(new LanWorldActorState(entry.ActorId, entry.Role,
+                    entry.Warrior.transform.position));
+            }
+            foreach (var entry in observable)
+            {
+                if (result.Count >= LanRoomServer.MaxWorldActorsPerSnapshot) break;
+                result.Add(new LanWorldActorState(entry.ActorId, entry.Role,
+                    entry.Warrior.transform.position));
+            }
+            return result;
         }
 
         public long GetLordActorId(int connectionId)
@@ -170,6 +234,8 @@ namespace Sinbinder.Multiplayer
             _room.RouteGameOrder = null;
             _room.ResolveLordActorId = null;
             _room.ResolveLastCommandId = null;
+            _room.PrivateWorldActors = null;
+            _room.ResolveWorldTick = null;
             _room.PeerConnectionChanged = null;
             _room.GameMatchId = null;
             _room = null;
