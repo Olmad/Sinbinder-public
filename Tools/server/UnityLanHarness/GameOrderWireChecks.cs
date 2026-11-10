@@ -69,6 +69,7 @@ internal static class GameOrderWireChecks
         var room = new LanRoomServer();
         var one = new LanRoomClient();
         var two = new LanRoomClient();
+        var replacement = new LanRoomClient();
         int acceptedA = 0, acceptedB = 0, rejectedA = 0;
         int resolvedA = 0, resolvedB = 0, cancelled = 0;
         string rejection = null;
@@ -149,13 +150,43 @@ internal static class GameOrderWireChecks
             probe.Advance(0.20f);
             Require(cancelled == 1 && neutral.LastCommand == CommandKind.Patrol,
                 "disconnected Lord cannot execute pending game order");
+
+            // A fresh client process starts its counter at zero, but the
+            // SERVER must preserve the last accepted command for this seat.
+            // The reconnect handshake transfers that cursor without replay.
+            int replacementAccepted = 0;
+            replacement.Received += packet =>
+            {
+                if (packet.type == "gameAccepted") replacementAccepted++;
+            };
+            replacement.Connect("127.0.0.1", 7806);
+            await Until(room, replacement, two,
+                () => replacement.PlayerId == 1 && room.PlayerCount == 2,
+                "reused vacated Lord seat");
+            two.Ready();
+            replacement.Ready();
+            await Until(room, replacement, two,
+                () => replacement.Playing && two.Playing &&
+                      replacement.GameMatchId == probe.Authority.MatchId &&
+                      replacement.OwnLordActorId == lordAId,
+                "reconnected Lord receives match and actor identity");
+            Require(replacement.OrderGameplay(neutralId, NetworkOrderKind.Move,
+                new Vector3(6f, 0f, 3f)), "new client can issue gameplay command");
+            await Until(room, replacement, two,
+                () => replacementAccepted == 1,
+                "reconnected client resumed its server-side replay cursor");
+            probe.Advance(0.20f);
+            Require(neutral.LastLord == "Греховод стороны 1" &&
+                neutral.LastCommand == CommandKind.Move,
+                "reconnected client commands reach same real Warrior");
             Console.WriteLine(
-                "PASS: two real TCP clients -> authenticated Lord / neutral Warrior -> server tick -> private AOS delivery / disconnect");
+                "PASS: two TCP clients -> real Warrior/AOS, private confirmations, disconnect cancellation and fresh-client reconnect");
         }
         finally
         {
             one.Disconnect();
             two.Disconnect();
+            replacement.Disconnect();
             room.Stop();
         }
     }
