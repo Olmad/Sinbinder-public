@@ -121,6 +121,7 @@ namespace Sinbinder.Gameplay
             if (string.IsNullOrEmpty(itemName)) return null;
             string n = itemName.ToLowerInvariant();
 
+            if (n.Contains("лук") || n.Contains("арбалет")) return "Bow";
             if (n.Contains("топор") || n.Contains("секир")) return "Axe";
             if (n.Contains("меч") || n.Contains("клинок") || n.Contains("сабл")) return "Sword";
             if (n.Contains("нож") || n.Contains("кинжал") || n.Contains("стилет")) return "Dagger";
