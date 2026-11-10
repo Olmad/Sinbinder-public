@@ -119,9 +119,9 @@ internal static class ExtraLanChecks
             // the old match.
             enqueue.Invoke(client, new object[] { generation, null, terminal });
             enqueue.Invoke(client, new object[] { generation,
-                "{\\"type\\":\\"start\\",\\"playerId\\":1,\\"unitId\\":1}", null });
+                @"{""type"":""start"",""playerId"":1,""unitId"":1}", null });
             enqueue.Invoke(client, new object[] { generation,
-                "{\\"type\\":\\"state\\",\\"tick\\":100,\\"p1X\\":7}", null });
+                @"{""type"":""state"",""tick"":100,""p1X"":7}", null });
             client.Pump();
 
             if (client.Connected || client.Playing || client.PlayerId != 0 ||
