@@ -68,12 +68,14 @@ namespace Sinbinder.Gameplay
         private bool Pressed(KeyCode key)
             => Input.GetKeyDown(key) || (_testKey == key && Time.frameCount - _testKeyFrame <= 1);
 
-        /// <summary>Прогон: управление (Tab, V, J) проверено в лагере — сразу к воротам.</summary>
+        /// <summary>Автопрогон обходится без физического ввода мыши, но ОБЯЗАН пройти печати.</summary>
         public void TestSkipControls()
         {
-            if (_stage >= Stage.FirstPerson && _stage < Stage.Return)
+            if (_stage >= Stage.FirstPerson && _stage < Stage.Puzzle)
+            {
                 EnsureSealCompanion();
                 Set(Stage.Puzzle, PuzzleLine);
+            }
         }
 
         private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
@@ -719,7 +721,8 @@ namespace Sinbinder.Gameplay
             if (combat == null)
             {
                 Debug.LogError("[СОН QA] У Греховода нет FirstPersonCombat (SinbinderPlayer.Spawn).");
-                Set(Stage.Return, "Личный бой не подключён. " + GateLine);
+                EnsureSealCompanion();
+                Set(Stage.Puzzle, "Личный бой не подключён. " + PuzzleLine);
                 return;
             }
             _swingsBefore = combat.AcceptedSwings;
@@ -819,7 +822,8 @@ namespace Sinbinder.Gameplay
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
                 Hold(_zombie, false);
-                Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. " + GateLine);
+                EnsureSealCompanion();
+                Set(Stage.Puzzle, "Убийцы не появились. Воспоминание прервано. " + PuzzleLine);
             }
         }
 
