@@ -323,6 +323,20 @@ namespace Sinbinder.EditorTools
                         }
                     }
                     break;
+                case "BowTemper":
+                    if (_step != "лук — искушение в деле")
+                    {
+                        Go("лук — искушение в деле");
+                        var archer = dream.SealCompanion;
+                        if (archer != null)
+                        {
+                            archer.IssueCommand(CommandKind.FallBack,
+                                archer.transform.position + new Vector3(0f, 0f, -5f));
+                            Write("  попытка отступления с луком: решение принимает AOS");
+                        }
+                        Snap("сон — испытание гордыни с луком");
+                    }
+                    break;
                 case "Puzzle":
                     if (_step != "две печати")
                     {
