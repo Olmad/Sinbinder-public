@@ -21,6 +21,28 @@ namespace Sinbinder.Multiplayer
             new Dictionary<long, Warrior>();
         private readonly Dictionary<long, NetworkActorRole> _roles =
             new Dictionary<long, NetworkActorRole>();
+        // Acknowledgement and execution are distinct. Previously the bridge
+        // executed immediately even while reporting ExecuteTick = now + 3.
+        private sealed class Scheduled
+        {
+            public AuthorizedGameOrder Order;
+            public float Muffle;
+            public Func<Warrior, Warrior, bool> Visible;
+        }
+
+        private readonly SortedDictionary<long, List<Scheduled>> _scheduled =
+            new SortedDictionary<long, List<Scheduled>>();
+        private const int MaxPendingOrders = 512;
+        private int _pending;
+
+        public int PendingOrders { get { return _pending; } }
+
+        /// <summary>
+        /// Emitted on authoritative simulation tick, never on receipt.
+        /// If successful=false, world state changed after command acceptance
+        /// (warrior died/unregistered, target vanished or became hidden).
+        /// </summary>
+        public event Action<AuthorizedGameOrder, bool> OrderResolved;
 
         public ServerWarriorOrderBridge(MatchAuthority authority)
         {
@@ -178,17 +200,90 @@ namespace Sinbinder.Multiplayer
                     target != null && !target.IsDead &&
                     visibleOnServer != null && visibleOnServer(warrior, target);
 
+            if (_pending >= MaxPendingOrders)
+            {
+                reason = OrderRejection.NotAllowed;
+                return false;
+            }
+
             if (!_authority.TryApprove(authenticatedConnectionId, intent,
                     serverTick, visible, out approved, out reason))
                 return false;
 
-            Vector3 point = new Vector3(approved.X, approved.Y, approved.Z);
-            // Targeted attack coordinates are derived from the REAL target's
-            // server position; never trust a position submitted by the client.
-            if (target != null) point = target.transform.position;
-
-            if (role == NetworkActorRole.Lord)
+            if (!_scheduled.TryGetValue(approved.ExecuteTick, out var bucket))
             {
+                bucket = new List<Scheduled>();
+                _scheduled.Add(approved.ExecuteTick, bucket);
+            }
+            bucket.Add(new Scheduled {
+                Order = approved, Muffle = muffle, Visible = visibleOnServer
+            });
+            _pending++;
+            // The AOS proposal is issued only by ProcessDue on ExecuteTick.
+            return true;
+        }
+
+        /// <summary>
+        /// Advance using the AUTHORITATIVE Unity server tick. A bounded
+        /// number of orders is accepted, so this remains predictable.
+        /// The caller must invoke this on the Unity simulation thread.
+        /// </summary>
+        public void ProcessDue(long serverTick)
+        {
+            if (serverTick < 0) throw new ArgumentOutOfRangeException(nameof(serverTick));
+            while (_scheduled.Count > 0)
+            {
+                long next = 0;
+                foreach (var item in _scheduled)
+                {
+                    next = item.Key;
+                    break;
+                }
+                if (next > serverTick) break;
+                var bucket = _scheduled[next];
+                _scheduled.Remove(next);
+                // All orders in a tick have sequential global server IDs.
+                // Preserve the server's acceptance order.
+                foreach (var pending in bucket)
+                {
+                    _pending--;
+                    bool applied = Apply(pending);
+                    OrderResolved?.Invoke(pending.Order, applied);
+                }
+            }
+        }
+
+        /// <summary>Cancel queued game actions on server match teardown.</summary>
+        public void CancelPending()
+        {
+            foreach (var bucket in _scheduled.Values)
+                foreach (var pending in bucket)
+                    OrderResolved?.Invoke(pending.Order, false);
+            _scheduled.Clear();
+            _pending = 0;
+        }
+
+        private bool Apply(Scheduled item)
+        {
+            var approved = item.Order;
+            if (!_warriors.TryGetValue(approved.ActorId, out var warrior) ||
+                warrior == null || warrior.IsDead)
+                return false;
+            Warrior target = null;
+            if (approved.Kind == NetworkOrderKind.Attack)
+            {
+                if (!_warriors.TryGetValue(approved.TargetId, out target) ||
+                    target == null || target.IsDead || target == warrior ||
+                    item.Visible == null || !item.Visible(warrior, target))
+                    return false;
+            }
+
+            Vector3 point = target != null ? target.transform.position
+                : new Vector3(approved.X, approved.Y, approved.Z);
+            if (_roles[approved.ActorId] == NetworkActorRole.Lord)
+            {
+                var mover = warrior.GetComponent<UnitMover>();
+                if (mover == null) return false;
                 if (approved.Kind == NetworkOrderKind.Attack)
                     mover.CommandAttack(target.gameObject);
                 else
@@ -197,12 +292,12 @@ namespace Sinbinder.Multiplayer
             }
 
             if (approved.Kind == NetworkOrderKind.Patrol)
-                warrior.IssuePatrol(point, muffle, approved.Lord);
+                warrior.IssuePatrol(point, item.Muffle, approved.Lord);
             else
                 warrior.IssueCommand(Kind(approved.Kind), point,
                     target != null ? target.gameObject : null,
-                    muffle, approved.Lord);
-            // Only records the proposal. AOSWarriorWrapper executes/votes.
+                    item.Muffle, approved.Lord);
+            // AOS votes independently after the request reaches Warrior.
             return true;
         }
 
