@@ -54,6 +54,8 @@ metas = {
     "Assets/Scripts/Multiplayer/MatchAuthority.cs.meta": "1a42d071f99e4e87b44dfc39a47c0278",
     "Assets/Scripts/Multiplayer/NetworkActorIdentity.cs.meta": "6e48768cf44b44d29702b209364ca6ea",
     "Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs.meta": "5e2c63ab41e64ec7bc42d209fd2bf358",
+    "Assets/Scripts/Multiplayer/ServerWorldProbe.cs.meta": "aab31050a69d4fb5a8df740628e175bd",
+    "Assets/Scripts/Multiplayer/LanGameOrderCodec.cs.meta": "78e541dab92d472ebc396de0aa3a67fa",
     "Assets/Scenes/Tug/Multiplayer_Test.unity.meta": "82df2b7319bc4ab393db801f19f3b580",
 }
 all_seen = set()
@@ -73,4 +75,12 @@ assert "warrior.IssueCommand(" in bridge and "warrior.IssuePatrol(" in bridge
 assert "NetworkActorRole.NeutralWarrior" in authority
 assert "AuthenticatedConnectionId" not in authority  # identity comes from socket context
 assert "UnityEditor" not in authority
-print("PASS: multiplayer test scene, original demo, altar and server AOS contracts")
+server = (ROOT / "Assets/Scripts/Multiplayer/LanRoomServer.cs").read_text("utf-8")
+client = (ROOT / "Assets/Scripts/Multiplayer/LanRoomClient.cs").read_text("utf-8")
+probe = (ROOT / "Assets/Scripts/Multiplayer/ServerWorldProbe.cs").read_text("utf-8")
+assert '"gameOrder"' in server and "RouteGameOrder(peer.Id, intent)" in server
+assert "LanGameOrderCodec.Write(intent)" in client
+assert '"-mp-world-host"' in loader and '"-mp-world-host"' in probe
+assert '"-mp-world-host"' in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
+assert "GameOrderWireChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
