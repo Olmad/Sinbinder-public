@@ -81,6 +81,13 @@ namespace Sinbinder.Multiplayer
         public long Tick { get { return _tick; } }
         public string Error { get; private set; }
 
+        // Explicitly installed only by the opt-in Multiplayer_Test host.
+        // Callbacks run on Unity's main thread from Pump(), not a TCP task.
+        public string GameMatchId { get; set; }
+        public Func<int, long> ResolveLordActorId { get; set; }
+        public Func<int, NetworkOrderIntent, LanMessage> RouteGameOrder { get; set; }
+        public Action<int, bool> PeerConnectionChanged { get; set; }
+
         public bool Start(int port)
         {
             if (_active) return true;
@@ -204,6 +211,7 @@ namespace Sinbinder.Multiplayer
             var peer = new Peer { Id = id, Wire = new LanWire(socket),
                 WindowStarted = Time.realtimeSinceStartup, LastPacketAt = Time.realtimeSinceStartup };
             _peers.Add(peer);
+            PeerConnectionChanged?.Invoke(id, true);
             Send(peer, new LanMessage { type = "welcome", protocol = 1, playerId = id, unitId = id });
             PublishLobby();
             _ = ReadLoopAsync(peer, _cancel.Token, epoch);
@@ -282,10 +290,51 @@ namespace Sinbinder.Multiplayer
                     _first = _firstGoal = new Vector3(-3, 0.8f, 0);
                     _second = _secondGoal = new Vector3(3, 0.8f, 0);
                     foreach (var p in _peers)
+                    {
                         Send(p, new LanMessage { type = "start", tick = 0, playerId = p.Id, unitId = p.Id });
+                        if (!string.IsNullOrEmpty(GameMatchId) && RouteGameOrder != null)
+                            Send(p, new LanMessage {
+                                type = "gameMatch", protocol = MatchAuthority.Protocol,
+                                matchId = GameMatchId, playerId = p.Id,
+                                actorId = ResolveLordActorId != null ? ResolveLordActorId(p.Id) : 0
+                            });
+                    }
                     PublishState();
                 }
                 else PublishLobby();
+                return;
+            }
+
+            if (packet.type == "gameOrder")
+            {
+                // Keep real-gameplay packets completely separate from
+                // synthetic capsule orders. The TCP socket's peer.Id is
+                // authoritative; never accept a commanderId from the packet.
+                if (!_started || RouteGameOrder == null ||
+                    string.IsNullOrEmpty(GameMatchId))
+                {
+                    Send(peer, LanGameOrderCodec.Rejected(packet.commandId,
+                        OrderRejection.NotAllowed));
+                    return;
+                }
+                if (!LanGameOrderCodec.TryRead(packet, out var intent))
+                {
+                    Send(peer, LanGameOrderCodec.Rejected(packet.commandId,
+                        OrderRejection.UnsupportedOrder));
+                    return;
+                }
+                try
+                {
+                    var response = RouteGameOrder(peer.Id, intent);
+                    Send(peer, response ?? LanGameOrderCodec.Rejected(
+                        packet.commandId, OrderRejection.NotAllowed));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[Sinbinder LAN] Server game-order callback: " + e);
+                    Send(peer, LanGameOrderCodec.Rejected(packet.commandId,
+                        OrderRejection.NotAllowed));
+                }
                 return;
             }
 
@@ -344,6 +393,7 @@ namespace Sinbinder.Multiplayer
         private void RemovePeer(Peer peer)
         {
             if (!_peers.Remove(peer)) return;
+            PeerConnectionChanged?.Invoke(peer.Id, false);
             peer.Wire.Dispose();
             if (_started)
             {
@@ -414,6 +464,15 @@ namespace Sinbinder.Multiplayer
                 if (_tick % 2 == 0) PublishState();
             }
             if (steps > 5) _carried = 0f; // No unbounded catch-up after a frame stall.
+        }
+
+        // Only the issuer receives a command resolution. Broadcasting actor
+        // identifiers would leak fog-of-war information to the rival.
+        public void NotifyGameOrderResolved(AuthorizedGameOrder order, bool applied)
+        {
+            if (!_active || !_started || string.IsNullOrEmpty(GameMatchId)) return;
+            var peer = _peers.Find(p => p.Id == order.ConnectionId);
+            if (peer != null) Send(peer, LanGameOrderCodec.Resolved(order, applied));
         }
 
         private void PublishState()
