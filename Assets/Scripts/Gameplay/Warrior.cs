@@ -216,9 +216,11 @@ namespace Sinbinder.Gameplay
         /// Патруль: ходить отсюда до <paramref name="to"/> и обратно, пока
         /// не снимут. Второй конец маршрута — там, где воин стоял в миг приказа.
         /// </summary>
-        public void IssuePatrol(Vector3 to, float muffle = 0f)
+        public void IssuePatrol(Vector3 to, float muffle = 0f, string lord = null)
         {
-            IssueCommand(CommandKind.Patrol, to, null, muffle);
+            // Networked neutral warriors must remember the issuing Lord.
+            // The optional argument preserves all existing solo callers.
+            IssueCommand(CommandKind.Patrol, to, null, muffle, lord);
             _command.From = transform.position;
         }
 
