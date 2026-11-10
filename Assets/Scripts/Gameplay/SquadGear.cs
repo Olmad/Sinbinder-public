@@ -196,7 +196,30 @@ namespace Sinbinder.Gameplay
             var parts = new System.Collections.Generic.List<string>();
             if (item.AttackBonus > 0f) parts.Add(Loc.T("бьёт тяжелее"));
             if (item.DefenseBonus > 0f) parts.Add(Loc.T("держит удар"));
-            if (item.TemptationValue > 0f) parts.Add(Loc.T("искушает"));
+            // Инвентарь обязан объяснять не только слово «искушает», но и
+            // что именно предмет делает с решениями AOS. Соответствует Pull
+            // в TemptationResolver; показываем эффект словами, без чисел.
+            if (!Mathf.Approximately(item.TemptationValue, 0f))
+            {
+                string nature = SoulData.GetSinName(item.TemptationSin);
+                string direction = item.TemptationValue > 0f
+                    ? Loc.F("искушает: {0}", nature)
+                    : Loc.F("усмиряет: {0}", nature);
+                string pull = item.TemptationSin switch
+                {
+                    SinType.Greed => Loc.T("к добыче, от приказа"),
+                    SinType.Pride => Loc.T("к атаке, против бегства"),
+                    SinType.Wrath => Loc.T("к атаке, против бездействия"),
+                    SinType.Envy => Loc.T("к атаке и добыче"),
+                    SinType.Lust => Loc.T("к добыче, от приказа"),
+                    SinType.Gluttony => Loc.T("к добыче и отдыху"),
+                    SinType.Sloth => Loc.T("к отдыху, против атаки"),
+                    _ => ""
+                };
+                if (item.TemptationValue < 0f)
+                    pull = Loc.T("ослабляет эти склонности: ") + pull;
+                parts.Add(string.IsNullOrEmpty(pull) ? direction : direction + " (" + pull + ")");
+            }
             if (item.Type == ItemType.Provision) parts.Add(Loc.T("припас"));
             return parts.Count == 0 ? "" : string.Join(", ", parts);
         }
