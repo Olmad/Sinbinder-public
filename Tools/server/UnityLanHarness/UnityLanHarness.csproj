@@ -10,6 +10,7 @@
     <!-- Compile the SAME Unity networking sources against a tiny API shim.
          This catches C# and transport mistakes without needing Unity on CI. -->
     <Compile Include="../../../Assets/Scripts/Multiplayer/LanMessage.cs" Link="LanMessage.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanWorldState.cs" Link="LanWorldState.cs" />
     <Compile Include="../../../Assets/Scripts/Multiplayer/LanGameOrderCodec.cs" Link="LanGameOrderCodec.cs" />
     <Compile Include="../../../Assets/Scripts/Multiplayer/MatchAuthority.cs" Link="MatchAuthority.cs" />
     <Compile Include="../../../Assets/Scripts/Multiplayer/NetworkActorIdentity.cs" Link="NetworkActorIdentity.cs" />
