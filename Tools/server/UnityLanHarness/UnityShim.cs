@@ -244,6 +244,17 @@ namespace UnityEngine
         public static int width { get { return 1280; } }
         public static int height { get { return 720; } }
     }
+    public static class PlayerPrefs
+    {
+        private static readonly Dictionary<string, string> Saved =
+            new Dictionary<string, string>();
+        public static string GetString(string key, string fallback = "")
+        { return Saved.TryGetValue(key, out var value) ? value : fallback; }
+        public static void SetString(string key, string value) { Saved[key] = value; }
+        public static void Save() { }
+        public static void DeleteKey(string key) { Saved.Remove(key); }
+    }
+
     public static class Application
     {
         public static bool isBatchMode { get { return true; } }
