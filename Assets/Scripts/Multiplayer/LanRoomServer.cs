@@ -53,6 +53,8 @@ namespace Sinbinder.Multiplayer
             public int Epoch;
         }
 
+        private readonly object _inboxGate = new object();
+        private const int MaxMessagesPerPump = 128;
         private readonly List<Peer> _peers = new List<Peer>();
         private readonly ConcurrentQueue<PendingAction> _inbox =
             new ConcurrentQueue<PendingAction>();
@@ -89,11 +91,16 @@ namespace Sinbinder.Multiplayer
             }
             try
             {
-                _epoch++;
                 _cancel = new CancellationTokenSource();
                 _listener = new TcpListener(IPAddress.Any, port);
                 _listener.Start(2);
-                _active = true;
+                lock (_inboxGate)
+                {
+                    // Match each accepted socket with an epoch and make
+                    // opening the queue atomic with closing the previous one.
+                    _epoch++;
+                    _active = true;
+                }
                 _started = false;
                 _carried = 0;
                 _tick = 0;
@@ -120,22 +127,25 @@ namespace Sinbinder.Multiplayer
         public void Stop()
         {
             if (!_active) return;
-            _active = false;
-            _epoch++;
+            // A receive/accept callback can attempt to Queue() at precisely
+            // the same time as Stop(). Serialize invalidation with enqueue:
+            // nothing can be left behind after the final queue drain.
+            lock (_inboxGate)
+            {
+                _active = false;
+                _epoch++;
+                while (_inbox.TryDequeue(out var dropped))
+                {
+                    Interlocked.Decrement(ref _pending);
+                    dropped.OnDrop?.Invoke();
+                }
+            }
             _started = false;
             if (_cancel != null) _cancel.Cancel();
             if (_listener != null) _listener.Stop();
             foreach (var peer in _peers) peer.Wire.Dispose();
             _peers.Clear();
             _orders.Clear();
-            // Keep the counter paired with every dequeue. Resetting it to
-            // zero while a background Queue() is mid-enqueue can make it
-            // negative on the next Pump after a rapid server restart.
-            while (_inbox.TryDequeue(out var dropped))
-            {
-                Interlocked.Decrement(ref _pending);
-                dropped.OnDrop?.Invoke();
-            }
             while (_disconnects.TryDequeue(out _)) { }
             _listener = null;
             // The accept/receive tasks may still observe the cancelled token.
@@ -164,20 +174,22 @@ namespace Sinbinder.Multiplayer
 
         private void Queue(Action action, int epoch, Action onDrop = null)
         {
-            if (epoch != Volatile.Read(ref _epoch))
+            bool accepted;
+            lock (_inboxGate)
             {
-                if (onDrop != null) onDrop();
-                return;
+                accepted = _active && epoch == _epoch &&
+                    Volatile.Read(ref _pending) < 256;
+                if (accepted)
+                {
+                    Interlocked.Increment(ref _pending);
+                    _inbox.Enqueue(new PendingAction {
+                        Perform = action, OnDrop = onDrop, Epoch = epoch
+                    });
+                }
             }
-            if (Interlocked.Increment(ref _pending) > 256)
-            {
-                Interlocked.Decrement(ref _pending);
-                if (onDrop != null) onDrop();
-                return;
-            }
-            _inbox.Enqueue(new PendingAction {
-                Perform = action, OnDrop = onDrop, Epoch = epoch
-            });
+            // Dispose rejected sockets outside the lock. A Stop() cannot
+            // miss this callback, even if it races with the enqueue attempt.
+            if (!accepted) onDrop?.Invoke();
         }
 
         private void AddPeer(TcpClient socket, int epoch)
@@ -343,8 +355,12 @@ namespace Sinbinder.Multiplayer
         {
             while (_disconnects.TryDequeue(out var removed))
                 if (_active && removed.Epoch == _epoch) RemovePeer(removed.Peer);
-            while (_inbox.TryDequeue(out var queued))
+            int processed = 0;
+            // Never spend an unbounded amount of Unity frame time handling
+            // network packets if peers send a burst of messages.
+            while (processed < MaxMessagesPerPump && _inbox.TryDequeue(out var queued))
             {
+                processed++;
                 Interlocked.Decrement(ref _pending);
                 if (_active && queued.Epoch == _epoch)
                     queued.Perform();
