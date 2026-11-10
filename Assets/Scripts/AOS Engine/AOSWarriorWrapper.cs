@@ -503,29 +503,42 @@ namespace Sinbinder.AOS
             }
         }
 
+        /// <summary>
+        /// AOS решила СПАСТИ, а не просто подойти и мгновенно записать подвиг.
+        /// Выбираем раненого среди друзей ЭТОГО воина: GetAliveAllies()
+        /// возвращал только отряд игрока, и враги «спасали» не тех.
+        /// Приблизившись, воин прикрывает товарища от следующего удара.
+        /// Только реальный блок Bodyguard.Absorb создаёт событие спасения.
+        /// </summary>
         private void ExecuteSaveAlly()
         {
-            if (CombatManager.Instance == null) return;
-            var allies = CombatManager.Instance.GetAliveAllies();
-            Warrior best = null;
+            if (CombatManager.Instance == null || _warrior == null || _warrior.IsDead) return;
+            Damageable best = null;
             float bestDist = float.MaxValue;
-            foreach (var dmg in allies)
+            foreach (var dmg in CombatManager.Instance.GetAllies(gameObject))
             {
                 if (dmg == null || dmg.IsDead || dmg.Warrior == null || dmg.Warrior == _warrior) continue;
-                var w = dmg.Warrior;
-                if (w.Team != _warrior.Team) continue;
-                if (w.HP < w.MaxHP * 0.5f)
-                {
-                    float dist = Vector3.Distance(transform.position, w.transform.position);
-                    if (dist < bestDist) { bestDist = dist; best = w; }
-                }
+                if (dmg.HP >= dmg.MaxHP * 0.3f) continue;
+                float dist = Vector3.Distance(transform.position, dmg.transform.position);
+                // Голосование видит союзников максимум в 10 метрах. Исполнение
+                // не должно отправлять защитника за полкарты к другому раненому.
+                if (dist > 10f || dist >= bestDist) continue;
+                bestDist = dist;
+                best = dmg;
             }
-            if (best != null)
+            if (best == null) return;
+
+            var mover = GetComponent<UnitMover>();
+            if (bestDist > 2.5f)
             {
-                var mover = GetComponent<UnitMover>();
-                if (mover != null) mover.CommandMove(best.transform.position);
-                AOSEventHub.Instance?.OnAllySaved(_warrior, best);
+                mover?.CommandMove(best.transform.position);
+                return;
             }
+
+            mover?.Stop();
+            Bodyguard.GuardForRescue(best, _warrior);
+            // Нет OnAllySaved здесь. Пока удар не перехвачен,
+            // раненый ещё не спасён и никому ничего не должен.
         }
 
         /// <summary>
