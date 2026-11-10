@@ -92,7 +92,7 @@ namespace Sinbinder.Multiplayer
                 _first = _firstGoal = new Vector3(-3, 0.8f, 0);
                 _second = _secondGoal = new Vector3(3, 0.8f, 0);
                 _orders.Clear();
-                _ = AcceptLoopAsync(_cancel.Token, _epoch);
+                _ = AcceptLoopAsync(_listener, _cancel.Token, _epoch);
                 return true;
             }
             catch (Exception e) when (e is SocketException || e is ArgumentException)
@@ -128,14 +128,14 @@ namespace Sinbinder.Multiplayer
             // Do not dispose its source until after their termination.
         }
 
-        private async Task AcceptLoopAsync(CancellationToken token, int epoch)
+        private async Task AcceptLoopAsync(TcpListener listener, CancellationToken token, int epoch)
         {
             while (!token.IsCancellationRequested)
             {
                 TcpClient socket = null;
                 try
                 {
-                    socket = await _listener.AcceptTcpClientAsync();
+                    socket = await listener.AcceptTcpClientAsync();
                 }
                 catch (Exception e) when (e is SocketException || e is ObjectDisposedException)
                 {
