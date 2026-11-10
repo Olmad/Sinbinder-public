@@ -147,11 +147,15 @@ namespace Sinbinder.Multiplayer
                 }
                 if (next.Status != null)
                 {
-                    Connected = Playing = false;
-                    Status = next.Status == "CLOSED"
+                    // A terminal event invalidates every queued packet from
+                    // this TCP generation. Otherwise a buffered "start" can
+                    // resurrect Playing after CLOSED/ERROR.
+                    string failure = next.Status == "CLOSED"
                         ? "Сервер закрыл соединение"
                         : "Ошибка соединения: " + next.Status.Substring("ERROR:".Length);
-                    continue;
+                    Disconnect();
+                    Status = failure;
+                    return;
                 }
                 if (!LanMessage.TryDecode(next.Data, out var packet))
                 {
