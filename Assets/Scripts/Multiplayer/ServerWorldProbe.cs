@@ -114,6 +114,7 @@ namespace Sinbinder.Multiplayer
             _room = room;
             room.GameMatchId = Authority.MatchId;
             room.ResolveLordActorId = GetLordActorId;
+            room.ResolveLastCommandId = Authority.LastAcceptedCommandId;
             room.RouteGameOrder = (connectionId, intent) =>
             {
                 if (TryIssueFromConnection(connectionId, intent, null,
@@ -168,6 +169,7 @@ namespace Sinbinder.Multiplayer
             Orders.OrderResolved -= _room.NotifyGameOrderResolved;
             _room.RouteGameOrder = null;
             _room.ResolveLordActorId = null;
+            _room.ResolveLastCommandId = null;
             _room.PeerConnectionChanged = null;
             _room.GameMatchId = null;
             _room = null;
@@ -276,6 +278,10 @@ namespace Sinbinder.Multiplayer
             if (_registered.Count != previouslyRegistered)
                 Debug.Log("[Sinbinder MP Probe] Registered live entities: " +
                     _registered.Count + " / tick " + _tick);
+            // A Lord can die and respawn between two scans while the
+            // total entity count stays identical. Re-send identity only
+            // when the authoritative Lord actor ID actually changed.
+            if (_room != null) _room.RefreshGameIdentity();
         }
 
         private void Unregister(int key)
