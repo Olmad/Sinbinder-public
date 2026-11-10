@@ -192,8 +192,10 @@ namespace Sinbinder.Gameplay
             // gameplay, and is disabled unless explicitly requested.
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
                     == "Multiplayer_Test" &&
-                System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
-                    "-mp-world-probe") >= 0)
+                (System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-probe") >= 0 ||
+                 System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-host") >= 0))
                 gameObject.AddComponent<Sinbinder.Multiplayer.ServerWorldProbe>();
         }
 
