@@ -51,6 +51,9 @@ assert "UnityEditor" not in altar
 metas = {
     "Assets/Scripts/Core/MultiplayerTestMap.cs.meta": "04b1ad50829e46bda6e0e8adac13f623",
     "Assets/Scripts/Gameplay/AltarVisualEnhancer.cs.meta": "12b92499cd714343b7a9acf0254d4e31",
+    "Assets/Scripts/Multiplayer/MatchAuthority.cs.meta": "1a42d071f99e4e87b44dfc39a47c0278",
+    "Assets/Scripts/Multiplayer/NetworkActorIdentity.cs.meta": "6e48768cf44b44d29702b209364ca6ea",
+    "Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs.meta": "5e2c63ab41e64ec7bc42d209fd2bf358",
     "Assets/Scenes/Tug/Multiplayer_Test.unity.meta": "82df2b7319bc4ab393db801f19f3b580",
 }
 all_seen = set()
@@ -60,4 +63,14 @@ for name, expected in metas.items():
     assert actual.group(1) not in all_seen, f"{name} GUID duplicated"
     all_seen.add(actual.group(1))
 
-print("PASS: standalone multiplayer test scene, launch, original demo and altar safety")
+# The multiplayer bridge must preserve the real AOS order API rather
+# than bypassing it with a duplicate, client-authoritative AI.
+warrior = (ROOT / "Assets/Scripts/Gameplay/Warrior.cs").read_text("utf-8")
+bridge = (ROOT / "Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs").read_text("utf-8")
+authority = (ROOT / "Assets/Scripts/Multiplayer/MatchAuthority.cs").read_text("utf-8")
+assert "string lord = null)" in warrior and "IssuePatrol(Vector3 to" in warrior
+assert "warrior.IssueCommand(" in bridge and "warrior.IssuePatrol(" in bridge
+assert "NetworkActorRole.NeutralWarrior" in authority
+assert "AuthenticatedConnectionId" not in authority  # identity comes from socket context
+assert "UnityEditor" not in authority
+print("PASS: multiplayer test scene, original demo, altar and server AOS contracts")
