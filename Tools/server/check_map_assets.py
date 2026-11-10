@@ -87,5 +87,11 @@ assert "GameOrderWireChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Prog
 assert "WorldSnapshotChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
 assert "PrivateWorldActors" in server and "PublishPrivateWorldSnapshot" in server
 assert "CanObserveActorOnServer" in probe and "GetPrivateWorldActors" in probe
+rival = (ROOT / "Assets/Scripts/Gameplay/RivalLord.cs").read_text("utf-8")
+assert "public void SetNetworkControlled(bool controlled)" in rival
+assert "if (NetworkControlled) return;" in rival
+assert "SetNetworkControl(entry.Warrior, true)" in probe
+assert "SetNetworkControl(entry.Warrior, false)" in probe
+assert "Scan(UnityEngine.Object.FindObjectsByType<Warrior>" in probe
 assert "worldBegin" in client and "worldEnd" in client
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
