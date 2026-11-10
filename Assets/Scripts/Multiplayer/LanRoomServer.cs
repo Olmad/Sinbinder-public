@@ -72,6 +72,8 @@ namespace Sinbinder.Multiplayer
         private float _carried;
         private long _tick;
         private long _sequence;
+        private long _snapshotSequence;
+        public const int MaxWorldActorsPerSnapshot = 24;
         private Vector3 _first = new Vector3(-3, 0.8f, 0);
         private Vector3 _second = new Vector3(3, 0.8f, 0);
         private Vector3 _firstGoal;
@@ -87,6 +89,10 @@ namespace Sinbinder.Multiplayer
         public string GameMatchId { get; set; }
         public Func<int, long> ResolveLordActorId { get; set; }
         public Func<int, long> ResolveLastCommandId { get; set; }
+        // Server-side projection must be private to each authenticated
+        // connection. Never supply the raw world roster directly here.
+        public Func<int, IReadOnlyList<LanWorldActorState>> PrivateWorldActors { get; set; }
+        public Func<long> ResolveWorldTick { get; set; }
         public Func<int, NetworkOrderIntent, LanMessage> RouteGameOrder { get; set; }
         public Action<int, bool> PeerConnectionChanged { get; set; }
 
@@ -114,6 +120,7 @@ namespace Sinbinder.Multiplayer
                 _carried = 0;
                 _tick = 0;
                 _sequence = 0;
+                _snapshotSequence = 0;
                 Error = null;
                 _first = _firstGoal = new Vector3(-3, 0.8f, 0);
                 _second = _secondGoal = new Vector3(3, 0.8f, 0);
@@ -289,6 +296,7 @@ namespace Sinbinder.Multiplayer
                 {
                     _started = true;
                     _tick = _sequence = 0;
+                    _snapshotSequence = 0;
                     _carried = 0;
                     _orders.Clear();
                     // A room can be reused after one player disconnects.
@@ -465,6 +473,61 @@ namespace Sinbinder.Multiplayer
                 if (_tick % 2 == 0) PublishState();
             }
             if (steps > 5) _carried = 0f; // No unbounded catch-up after a frame stall.
+        }
+
+        /// <summary>
+        /// Sends a FULL, separately filtered roster for each peer.
+        /// The client swaps state only after worldEnd so previously
+        /// visible or dead actors disappear rather than persisting.
+        /// A bounded count and per-actor validation keep frames small.
+        /// Called by the opt-in real-world Unity host on main thread.
+        /// </summary>
+        public void PublishPrivateWorldSnapshot()
+        {
+            if (!_active || !_started || string.IsNullOrEmpty(GameMatchId) ||
+                PrivateWorldActors == null)
+                return;
+            long frame = ++_snapshotSequence;
+            long worldTick = ResolveWorldTick != null ? ResolveWorldTick() : _tick;
+            foreach (var peer in _peers)
+            {
+                IReadOnlyList<LanWorldActorState> actors;
+                try { actors = PrivateWorldActors(peer.Id); }
+                catch (Exception e)
+                {
+                    Debug.LogError("[Sinbinder LAN] private world filter failed: " + e);
+                    continue; // fail closed; never send an unfiltered roster
+                }
+                if (actors == null || actors.Count > MaxWorldActorsPerSnapshot)
+                    continue;
+                bool valid = true;
+                var unique = new HashSet<long>();
+                for (int i = 0; i < actors.Count; i++)
+                {
+                    var a = actors[i];
+                    if (a.Id <= 0 || !unique.Add(a.Id) ||
+                        !LanWorldActorState.Valid(a.Position.x) ||
+                        !LanWorldActorState.Valid(a.Position.y) ||
+                        !LanWorldActorState.Valid(a.Position.z))
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (!valid) continue;
+                Send(peer, new LanMessage {
+                    type = "worldBegin", matchId = GameMatchId,
+                    snapshotId = frame, actorCount = actors.Count,
+                    tick = worldTick
+                });
+                foreach (var actor in actors)
+                    Send(peer, LanWorldActorState.Packet(actor, GameMatchId, frame, worldTick));
+                Send(peer, new LanMessage {
+                    type = "worldEnd", matchId = GameMatchId,
+                    snapshotId = frame, actorCount = actors.Count,
+                    tick = worldTick
+                });
+            }
         }
 
         // Only send each peer their own Lord's ID. Neutral actor visibility
