@@ -82,6 +82,7 @@ internal static class Program
             await WorldSnapshotChecks.Run();
             await LatencyFairnessChecks.Run();
             RoomDirectoryChecks.Run();
+            ServerBookmarksChecks.Run();
             return 0;
         }
         finally
