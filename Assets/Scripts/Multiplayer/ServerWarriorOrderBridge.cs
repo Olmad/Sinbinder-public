@@ -266,6 +266,11 @@ namespace Sinbinder.Multiplayer
         private bool Apply(Scheduled item)
         {
             var approved = item.Order;
+            // A disconnected Lord must not execute delayed commands after
+            // their transport session has been invalidated.
+            if (!_authority.TryGetLord(approved.ConnectionId, out var currentLord) ||
+                !string.Equals(currentLord, approved.Lord, StringComparison.Ordinal))
+                return false;
             if (!_warriors.TryGetValue(approved.ActorId, out var warrior) ||
                 warrior == null || warrior.IsDead)
                 return false;
