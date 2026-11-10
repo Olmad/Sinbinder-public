@@ -42,6 +42,15 @@ namespace Sinbinder.Gameplay
         private Renderer _warriorSeal, _lordSeal;
         private float _sealTogether;
         private bool _sealsAwake;
+        private GameObject _bowOnStand;
+        private bool _bowTaken;
+        private Sturdy _hangingTarget;
+
+        public static readonly Vector3 BowStandAt = new Vector3(-7f, 0f, 18.2f);
+        public static readonly Vector3 BowTargetAt = new Vector3(8f, 4.6f, 21.2f);
+        public bool BowTaken => _bowTaken;
+        public bool BowTargetBroken => _hangingTarget != null && _hangingTarget.Broken;
+        public Sturdy BowTarget => _hangingTarget;
 
         // Загадка перед склепом: союзник на одной печати, сам Греховод на другой.
         // Вся проверка проходит по реальным позициям, не по нажатию кнопки.
@@ -135,6 +144,7 @@ namespace Sinbinder.Gameplay
             road.BuildShrine(t, ShrineAt, post);
             road.BuildCrypt(t);
             road.BuildSeals(t);
+            road.BuildBowChallenge(t);
 
             // Жаровня во дворе у чучела — тёплая; у склепа две — холодным огнём: цель видна издалека.
             var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
@@ -197,6 +207,68 @@ namespace Sinbinder.Gameplay
             light.intensity = 7f;
             light.shadows = LightShadows.None;
             _candles.Add(new Candle { At = at, Flame = flame, Light = light, Power = 7f, Lit = 0f, Size = new Vector3(0.16f, 0.28f, 0.16f) });
+        }
+
+        /// <summary>
+        /// Лук-искуситель на низкой высоте, а мишень на недосягаемой мечом цепи.
+        /// Стрела летит только после настоящего приказа, который исполняет AOS.
+        /// </summary>
+        private void BuildBowChallenge(Transform parent)
+        {
+            var stone = Lit(new Color(0.22f, 0.22f, 0.25f), 0.3f);
+            var wood = Lit(new Color(0.46f, 0.28f, 0.12f), 0.15f);
+            var golden = Glowing(new Color(0.94f, 0.67f, 0.29f), 1.7f);
+            Piece(parent, PrimitiveType.Cube, "Возвышение с луком", BowStandAt + Vector3.up * 0.48f,
+                new Vector3(2.6f, 0.95f, 2.1f), stone);
+            _bowOnStand = new GameObject("Лук тщеславия на пьедестале");
+            _bowOnStand.transform.SetParent(parent, false);
+            var bow = Piece(_bowOnStand.transform, PrimitiveType.Cylinder, "Изогнутое древко",
+                BowStandAt + Vector3.up * 1.35f, new Vector3(0.08f, 0.75f, 0.08f), golden, false);
+            bow.transform.rotation = Quaternion.Euler(0f, 0f, -25f);
+            var stringLine = Piece(_bowOnStand.transform, PrimitiveType.Cylinder, "Тетива",
+                BowStandAt + new Vector3(0.36f, 1.35f, 0f),
+                new Vector3(0.015f, 0.78f, 0.015f), wood, false);
+            stringLine.transform.rotation = Quaternion.Euler(0f, 0f, -2f);
+            Piece(parent, PrimitiveType.Cube, "Знак искушения", BowStandAt + new Vector3(0f, 1.05f, -0.55f),
+                new Vector3(0.95f, 0.15f, 0.2f), golden, false);
+
+            // Подвес на высоте: обычный ближний удар и осада мечом до него не достают.
+            var root = new GameObject("Высокая мишень — подвес").transform;
+            root.SetParent(parent, false);
+            root.position = BowTargetAt;
+            var sturdy = root.gameObject.AddComponent<Sturdy>();
+            sturdy.Configure("Подвесная печать", 5f, -1);
+            _hangingTarget = sturdy;
+            var gong = Piece(root, PrimitiveType.Cylinder, "Металлическая печать", BowTargetAt,
+                new Vector3(1.25f, 0.12f, 1.25f), golden);
+            gong.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            // Цель видна в перспективе и выделяется физическим лучом.
+            Piece(root, PrimitiveType.Cube, "Узор цели", BowTargetAt + Vector3.back * 0.15f,
+                new Vector3(0.7f, 0.12f, 0.18f), stone);
+            Piece(parent, PrimitiveType.Cylinder, "Подвесная цепь", BowTargetAt + Vector3.up * 2.2f,
+                new Vector3(0.04f, 2.2f, 0.04f), stone, false);
+            root.gameObject.AddComponent<DreamBowTarget>();
+        }
+
+        public bool TryTakeBow()
+        {
+            if (_bowTaken || !SinbinderPlayer.Exists) return false;
+            if (Flat(SinbinderPlayer.Where - BowStandAt).magnitude > 2.8f) return false;
+            var bag = Sinbinder.Inventory.PlayerInventory.Instance;
+            if (bag == null) return false;
+            var bow = new Sinbinder.Inventory.InventoryItem(
+                DreamBowTarget.BowName,
+                "Оружие-искуситель. Усиливает Гордыню: в споре души толкает к нападению и против бегства. "
+                    + "Это не послушание: воин может выбрать не ваш приказ, а собственную битву.",
+                Sinbinder.Inventory.ItemType.Equipment, 1,
+                Sinbinder.Core.SinType.Pride, 32f, attack: 3f,
+                slot: Sinbinder.Inventory.GearSlot.Weapon);
+            if (!bag.AddItem(bow)) return false;
+            _bowTaken = true;
+            if (_bowOnStand != null) _bowOnStand.SetActive(false);
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
+                "Взяли лук тщеславия. Он искушает Гордыню. Передайте его союзнику через F — снаряжение.");
+            return true;
         }
 
         // Печати плоские: не мешают NavMesh и не становятся препятствиями для луча приказа.
