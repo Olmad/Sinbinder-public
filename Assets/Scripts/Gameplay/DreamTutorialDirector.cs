@@ -698,11 +698,13 @@ namespace Sinbinder.Gameplay
                         { equipped = true; break; }
                     if (equipped)
                         Set(Stage.BowShot,
-                            "Лук усиливает Гордыню: зовёт атаковать, удерживает от бегства. Но приказ всё ещё судит душа. Выделите лучника ЛКМ, ПКМ по высоко подвешенной мишени.");
+                            "Ворота склепа заперты. Лук усиливает Гордыню, но не отменяет воли. Выделите лучника ЛКМ и прикажите ПКМ сбить висящий над чашей замок противовеса: он держит засовы двух печатей.");
                     break;
                 }
                 case Stage.BowShot:
-                    if (DreamRoad.Instance != null && DreamRoad.Instance.BowTargetBroken)
+                    // Не хватает самого попадания: противовес должен упасть,
+                    // а засовы у напольных печатей действительно опуститься.
+                    if (DreamRoad.Instance != null && DreamRoad.Instance.MechanismReleased)
                         BeginBowTemper();
                     break;
                 case Stage.BowTemper:
@@ -803,7 +805,7 @@ namespace Sinbinder.Gameplay
             if (_bowShadow != null) Destroy(_bowShadow.gameObject);
             _bowShadow = null;
             EnsureSealCompanion();
-            Set(Stage.Puzzle, "Теперь вы знаете: снаряжение тоже склоняет душу. " + PuzzleLine);
+            Set(Stage.Puzzle, "Противовес освободил напольные печати, но для открытия склепа нужны две воли. " + PuzzleLine);
         }
 
         /// <summary>
