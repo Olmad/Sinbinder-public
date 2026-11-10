@@ -3,6 +3,10 @@ setlocal
 set "GAME=%~dp0Build\Sinbinder\Sinbinder.exe"
 set "LOG=%~dp0Build\Sinbinder\WorldHost.log"
 set "PORT=7786"
+set "PING_MODE=conservative"
+if /I "%~1"=="off" set "PING_MODE=off"
+if /I "%~1"=="balanced" set "PING_MODE=balanced"
+if /I "%~1"=="conservative" set "PING_MODE=conservative"
 
 if not exist "%GAME%" (
   echo No Unity build at Build\Sinbinder\Sinbinder.exe.
@@ -12,10 +16,12 @@ if not exist "%GAME%" (
 )
 
 echo Starting REAL-Warrior diagnostic server on 127.0.0.1:%PORT%
+echo Server input ping compensation: %PING_MODE%
+echo Modes: off / conservative / balanced (supply as first argument)
 echo Real AOS/Warrior simulation runs in this headless Unity host.
 echo Clients still display the capsule proving ground; the real
 echo gameplay map is NOT synchronized or rendered remotely yet.
-start "Sinbinder World Host" "%GAME%" -batchmode -nographics -mp-test-map -mp-world-host -port %PORT% -logFile "%LOG%"
+start "Sinbinder World Host" "%GAME%" -batchmode -nographics -mp-test-map -mp-world-host -mp-ping-balance %PING_MODE% -port %PORT% -logFile "%LOG%"
 
 echo Launching two LAN client windows...
 timeout /t 6 /nobreak >nul
