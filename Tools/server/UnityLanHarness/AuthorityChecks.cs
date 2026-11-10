@@ -150,6 +150,12 @@ internal static class AuthorityChecks
         authority.RegisterPlayer(1, 0, "Mòrt");
         authority.RegisterPlayer(2, 1, "Vida");
         var bridge = new ServerWarriorOrderBridge(authority);
+        int appliedOrders = 0, cancelledOrders = 0;
+        bridge.OrderResolved += (order, applied) =>
+        {
+            if (applied) appliedOrders++;
+            else cancelledOrders++;
+        };
         var lord1 = new GameObject("Lord A").AddComponent<Warrior>();
         lord1.Team = Team.Player;
         lord1.TestMover = new UnitMover();
@@ -190,18 +196,28 @@ internal static class AuthorityChecks
             NetworkOrderKind.Move, 4, 9), 2, null,
             (w,l) => 0.2f, out var first, out reason),
             "neutral receives an AOS proposal from first Lord");
+        Require(neutral.LastCommand == CommandKind.None &&
+            bridge.PendingOrders == 1,
+            "approved AOS orders must NOT execute on receipt");
+        bridge.ProcessDue(4);
+        Require(neutral.LastCommand == CommandKind.None,
+            "AOS command must not execute before authoritative server tick");
+        bridge.ProcessDue(5);
         Require(first.Lord == "Mòrt" && neutral.LastLord == "Mòrt" &&
             neutral.LastCommand == CommandKind.Move &&
             Math.Abs(neutral.LastMuffle - 0.2f) < .01,
-            "existing Warrior.IssueCommand gets verified Lord + hearing");
+            "server tick executes existing Warrior.IssueCommand");
 
         Require(bridge.TryIssue(2, Intent("aos-bridge", 1, id3,
             NetworkOrderKind.Patrol, 3, 5), 3, null,
             (w,l) => 0.3f, out var second, out reason),
             "other Lord can propose patrol to same neutral");
-        Require(second.Lord == "Vida" && neutral.LastLord == "Vida" &&
+        Require(second.Lord == "Vida" && neutral.LastLord == "Mòrt",
+            "rival Lord order stays queued until its tick");
+        bridge.ProcessDue(6);
+        Require(neutral.LastLord == "Vida" &&
             neutral.LastCommand == CommandKind.Patrol,
-            "existing Warrior.IssuePatrol preserves rival Lord identity");
+            "existing Warrior.IssuePatrol executes on tick and keeps rival Lord");
 
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 2, id3,
             NetworkOrderKind.Attack, target: id2), 4, (a,b) => false,
@@ -213,20 +229,37 @@ internal static class AuthorityChecks
             NetworkOrderKind.Attack, 99f, 99f, id2), 4,
             (a,b) => true, (w,l) => 0f, out _, out reason),
             "visible enemy can be target of AOS attack");
+        Require(neutral.LastTarget == null,
+            "accepted attack must not be applied before its server tick");
+        bridge.ProcessDue(7);
         Require(neutral.LastTarget == lord2.gameObject &&
             Math.Abs(neutral.LastPoint.x - 12f) < 0.01f &&
             Math.Abs(neutral.LastPoint.z + 3f) < 0.01f,
-            "attack derives real position from SERVER, not packet coordinates");
+            "tick-executed attack derives real SERVER position, not client coordinates");
 
         Require(bridge.TryIssue(2, Intent("aos-bridge", 2, id2,
             NetworkOrderKind.Move, 5, 7), 4, null, null,
             out _, out reason) &&
-            Math.Abs(lord2.TestMover.Destination.x - 5f) < .01,
-            "direct Lord movement uses UnitMover without AOS voting");
+            Math.Abs(lord2.TestMover.Destination.x) < .01,
+            "direct Lord movement is queued without AOS");
+        bridge.ProcessDue(7);
+        Require(Math.Abs(lord2.TestMover.Destination.x - 5f) < .01,
+            "direct Lord moves on authoritative server tick");
+        Require(appliedOrders == 4 && cancelledOrders == 0,
+            "all four accepted orders execute exactly once");
+        Require(bridge.TryIssue(1, Intent("aos-bridge", 3, id3,
+            NetworkOrderKind.Move, 2f, 4f), 8, null,
+            (w,l) => 0f, out _, out reason),
+            "pending order accepted before target is unregistered");
         bridge.Unregister(id3);
+        bridge.ProcessDue(11);
+        Require(cancelledOrders == 1 && appliedOrders == 4,
+            "unregistered actor's pending order must be cancelled");
+        Require(bridge.PendingOrders == 0,
+            "server queue drained at scheduled tick");
         Require(!identity.Assigned, "unregister clears old match identity");
-        Require(!bridge.TryIssue(1, Intent("aos-bridge", 3, id3,
-            NetworkOrderKind.Move), 5, null, (w,l) => 0f,
+        Require(!bridge.TryIssue(1, Intent("aos-bridge", 4, id3,
+            NetworkOrderKind.Move), 12, null, (w,l) => 0f,
             out _, out reason) && reason == OrderRejection.UnknownActor,
             "unregistered/dead actors cannot accept orders");
     }
