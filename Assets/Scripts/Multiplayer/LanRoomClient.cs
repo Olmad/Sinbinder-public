@@ -39,6 +39,10 @@ namespace Sinbinder.Multiplayer
         { get { return _worldActors; } }
         public long WorldTick { get; private set; }
         public long WorldFrame { get { return _lastWorldFrame; } }
+        public float ServerMeasuredPingMs { get; private set; } = -1f;
+        public float ServerMeasuredJitterMs { get; private set; } = -1f;
+        public int FairInputDelayMs { get; private set; }
+        public string PingBalanceSetting { get; private set; } = "Off";
 
         public bool Connected { get; private set; }
         public bool Playing { get; private set; }
@@ -183,6 +187,26 @@ namespace Sinbinder.Multiplayer
                     case "pong":
                         // Acknowledges that the server's read and send loops
                         // still work even while the match is idle.
+                        break;
+                    case "latencyProbe":
+                        // Echo only the server-issued sequence. Never
+                        // self-report ping, jitter or an extra delay.
+                        if (packet.sequence > 0)
+                            Send(new LanMessage {
+                                type = "latencyReply", sequence = packet.sequence
+                            });
+                        break;
+                    case "latencyStats":
+                        if (packet.rttMs > 0f && packet.rttMs <= 1500f &&
+                            !float.IsNaN(packet.rttMs) &&
+                            !float.IsInfinity(packet.rttMs))
+                        {
+                            ServerMeasuredPingMs = packet.rttMs;
+                            ServerMeasuredJitterMs = packet.jitterMs;
+                            FairInputDelayMs = Mathf.Clamp(
+                                packet.extraDelayMs, 0, 150);
+                            PingBalanceSetting = packet.pingBalanceMode;
+                        }
                         break;
                     case "gameMatch":
                         // Sent by an opt-in real-world host after both players
@@ -405,6 +429,10 @@ namespace Sinbinder.Multiplayer
             Players = 0;
             ReadyCount = 0;
             Tick = 0;
+            ServerMeasuredPingMs = -1f;
+            ServerMeasuredJitterMs = -1f;
+            FairInputDelayMs = 0;
+            PingBalanceSetting = "Off";
             ResetWorld();
             GameMatchId = null;
             OwnLordActorId = 0;
