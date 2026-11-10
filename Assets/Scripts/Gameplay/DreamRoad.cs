@@ -39,6 +39,15 @@ namespace Sinbinder.Gameplay
         private class Candle { public Vector3 At; public Transform Flame; public Light Light; public float Lit = -1f; public float Power; public Vector3 Size; }
         private readonly List<Candle> _candles = new List<Candle>();
         private Transform _dummy, _doorLeft, _doorRight;
+        private Renderer _warriorSeal, _lordSeal;
+        private float _sealTogether;
+        private bool _sealsAwake;
+
+        // Загадка перед склепом: союзник на одной печати, сам Греховод на другой.
+        // Вся проверка проходит по реальным позициям, не по нажатию кнопки.
+        public static readonly Vector3 WarriorSealAt = new Vector3(-1.8f, 0f, 25.8f);
+        public static readonly Vector3 LordSealAt = new Vector3(1.8f, 0f, 25.8f);
+        public bool SealsAwake => _sealsAwake;
         private GameObject _seam;
         private Light _cryptLight;
         private Vector3 _tipAxis = Vector3.right;
@@ -125,6 +134,7 @@ namespace Sinbinder.Gameplay
             road.BuildDummy(t, DummyAt);
             road.BuildShrine(t, ShrineAt, post);
             road.BuildCrypt(t);
+            road.BuildSeals(t);
 
             // Жаровня во дворе у чучела — тёплая; у склепа две — холодным огнём: цель видна издалека.
             var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
@@ -187,6 +197,49 @@ namespace Sinbinder.Gameplay
             light.intensity = 7f;
             light.shadows = LightShadows.None;
             _candles.Add(new Candle { At = at, Flame = flame, Light = light, Power = 7f, Lit = 0f, Size = new Vector3(0.16f, 0.28f, 0.16f) });
+        }
+
+        // Печати плоские: не мешают NavMesh и не становятся препятствиями для луча приказа.
+        private void BuildSeals(Transform parent)
+        {
+            var dormant = Glowing(new Color(0.16f, 0.32f, 0.46f), 0.8f);
+            foreach (var (at, name, ally) in new[]
+            {
+                (WarriorSealAt, "Печать соратника", true),
+                (LordSealAt, "Печать Греховода", false)
+            })
+            {
+                var root = new GameObject(name).transform;
+                root.SetParent(parent, false);
+                Piece(root, PrimitiveType.Cylinder, "Круг", at + Vector3.up * 0.045f,
+                    new Vector3(2.75f, 0.045f, 2.75f), dormant, false);
+                var sign = Piece(root, PrimitiveType.Cube, ally ? "Знак союзника" : "Знак владыки",
+                    at + Vector3.up * 0.11f,
+                    ally ? new Vector3(0.22f, 0.04f, 1.65f) : new Vector3(1.65f, 0.04f, 0.22f),
+                    Glowing(new Color(0.36f, 0.62f, 0.82f), 1.15f), false);
+                if (ally) _warriorSeal = sign.GetComponent<Renderer>();
+                else _lordSeal = sign.GetComponent<Renderer>();
+            }
+        }
+
+        /// <summary>
+        /// Ворота откроются, если союзник и Греховод одновременно стоят на
+        /// разных печатях 1.2 секунды. Переступил с печати — отсчёт сброшен.
+        /// Воин должен дойти своим движением: здесь нет телепорта и команды мимо AOS.
+        /// </summary>
+        public bool CheckSeals(Warrior ally, Vector3 lord)
+        {
+            if (_sealsAwake) return true;
+            bool warrior = ally != null && !ally.IsDead &&
+                           Flat(ally.transform.position - WarriorSealAt).magnitude <= 1.35f;
+            bool owner = Flat(lord - LordSealAt).magnitude <= 1.35f;
+            _sealTogether = warrior && owner ? _sealTogether + Time.deltaTime : 0f;
+            if (_warriorSeal != null)
+                _warriorSeal.material.color = warrior ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
+            if (_lordSeal != null)
+                _lordSeal.material.color = owner ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
+            if (_sealTogether >= 1.2f) _sealsAwake = true;
+            return _sealsAwake;
         }
 
         /// <summary>Прогон: зажечь все свечи разом — для кадров издалека.</summary>
