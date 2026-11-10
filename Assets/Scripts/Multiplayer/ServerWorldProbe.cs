@@ -144,6 +144,19 @@ namespace Sinbinder.Multiplayer
             room.PeerConnectionChanged = (id, connected) =>
                 Authority.SetConnected(id, connected);
             Orders.OrderResolved += room.NotifyGameOrderResolved;
+            // On an actual network host, the opponent's Lord must not
+            // simultaneously run RivalLord's tactical AI. Preserve
+            // RivalLord as a component for combat, loyalty and LordOf().
+            foreach (var entry in _registered.Values)
+                SetNetworkControl(entry.Warrior, true);
+        }
+
+        private static void SetNetworkControl(Warrior warrior, bool enabled)
+        {
+            if (warrior == null) return;
+            var rival = warrior.GetComponent<RivalLord>();
+            if (rival != null && rival.Side > 0)
+                rival.SetNetworkControlled(enabled);
         }
 
         /// <summary>
@@ -223,6 +236,11 @@ namespace Sinbinder.Multiplayer
                     return;
                 }
 
+            // Register the scene's existing real Warriors before the first
+            // handshake. Without this the first gameMatch had actorId=0
+            // until the next 0.5s scan, making early F8 appear broken.
+            Scan(UnityEngine.Object.FindObjectsByType<Warrior>(
+                FindObjectsSortMode.None));
             var room = new LanRoomServer();
             AttachRoom(room);
             if (!room.Start(port))
@@ -239,6 +257,8 @@ namespace Sinbinder.Multiplayer
         private void DetachRoom()
         {
             if (_room == null) return;
+            foreach (var entry in _registered.Values)
+                SetNetworkControl(entry.Warrior, false);
             Orders.OrderResolved -= _room.NotifyGameOrderResolved;
             _room.RouteGameOrder = null;
             _room.ResolveLordActorId = null;
@@ -340,6 +360,8 @@ namespace Sinbinder.Multiplayer
                         Warrior = warrior, ActorId = id,
                         Role = role, Owner = owner
                     });
+                    if (_room != null)
+                        SetNetworkControl(warrior, true);
                     if (role == NetworkActorRole.Lord &&
                         Authority.TryGetLord(owner, out var name))
                         _lords[name] = warrior;
@@ -362,6 +384,7 @@ namespace Sinbinder.Multiplayer
         private void Unregister(int key)
         {
             if (!_registered.TryGetValue(key, out var entry)) return;
+            SetNetworkControl(entry.Warrior, false);
             Orders.Unregister(entry.ActorId);
             _registered.Remove(key);
             if (entry.Role == NetworkActorRole.Lord &&
