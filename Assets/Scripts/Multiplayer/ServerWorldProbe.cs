@@ -135,7 +135,8 @@ namespace Sinbinder.Multiplayer
             room.RouteGameOrder = (connectionId, intent) =>
             {
                 if (TryIssueFromConnection(connectionId, intent, null,
-                    out var approved, out var rejection))
+                    out var approved, out var rejection,
+                    room.ExtraInputDelayTicks(connectionId)))
                     return LanGameOrderCodec.Accepted(approved);
                 // Targeted Attack currently fails closed: server-side FOW
                 // still needs integration before it can approve real combat.
@@ -228,13 +229,34 @@ namespace Sinbinder.Multiplayer
         private void StartWorldHost()
         {
             int port = 7777;
+            // Off by default for compatibility with old LAN tests.
+            // Use -mp-ping-balance conservative|balanced|off on the host.
+            PingBalanceMode balance = PingBalanceMode.Off;
             var args = Environment.GetCommandLineArgs();
             for (int i = 0; i + 1 < args.Length; i++)
+            {
                 if (args[i] == "-port" && !int.TryParse(args[i + 1], out port))
                 {
                     Debug.LogError("[Sinbinder MP Probe] Invalid port");
                     return;
                 }
+                if (args[i] == "-mp-ping-balance")
+                {
+                    string mode = args[i + 1];
+                    if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase))
+                        balance = PingBalanceMode.Off;
+                    else if (string.Equals(mode, "conservative", StringComparison.OrdinalIgnoreCase))
+                        balance = PingBalanceMode.Conservative;
+                    else if (string.Equals(mode, "balanced", StringComparison.OrdinalIgnoreCase))
+                        balance = PingBalanceMode.Balanced;
+                    else
+                    {
+                        Debug.LogError("[Sinbinder MP Probe] Ping balancing mode must be off, conservative or balanced");
+                        return;
+                    }
+                    i++;
+                }
+            }
 
             // Register the scene's existing real Warriors before the first
             // handshake. Without this the first gameMatch had actorId=0
@@ -242,6 +264,7 @@ namespace Sinbinder.Multiplayer
             Scan(UnityEngine.Object.FindObjectsByType<Warrior>(
                 FindObjectsSortMode.None));
             var room = new LanRoomServer();
+            room.PingBalanceSetting = balance;
             AttachRoom(room);
             if (!room.Start(port))
             {
@@ -251,7 +274,8 @@ namespace Sinbinder.Multiplayer
             }
             _ownsRoom = true;
             Debug.Log("[Sinbinder MP Probe] REAL-world LAN order host on TCP " +
-                port + "; no remote world rendering or combat sync yet.");
+                port + "; ping balancing=" + balance +
+                "; no full remote world rendering or combat sync yet.");
         }
 
         private void DetachRoom()
@@ -287,13 +311,15 @@ namespace Sinbinder.Multiplayer
         /// specify which connection authenticated the sender.</summary>
         public bool TryIssueFromConnection(int authenticatedConnection,
             NetworkOrderIntent intent, Func<Warrior, Warrior, bool> visible,
-            out AuthorizedGameOrder accepted, out OrderRejection reason)
+            out AuthorizedGameOrder accepted, out OrderRejection reason,
+            int extraDelayTicks = 0)
         {
             accepted = default;
             reason = OrderRejection.NotAllowed;
             if (!_initialized) return false;
             return Orders.TryIssue(authenticatedConnection, intent, _tick,
-                visible, ResolveMuffle, out accepted, out reason);
+                visible, ResolveMuffle, out accepted, out reason,
+                extraDelayTicks);
         }
 
         private float ResolveMuffle(Warrior actor, string lord)
