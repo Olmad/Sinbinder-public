@@ -277,6 +277,10 @@ namespace Sinbinder.Multiplayer
                     _tick = _sequence = 0;
                     _carried = 0;
                     _orders.Clear();
+                    // A room can be reused after one player disconnects.
+                    // Never inherit the previous match's position or goal.
+                    _first = _firstGoal = new Vector3(-3, 0.8f, 0);
+                    _second = _secondGoal = new Vector3(3, 0.8f, 0);
                     foreach (var p in _peers)
                         Send(p, new LanMessage { type = "start", tick = 0, playerId = p.Id, unitId = p.Id });
                     PublishState();
