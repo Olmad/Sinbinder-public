@@ -41,6 +41,7 @@ namespace Sinbinder.Gameplay
         private Transform _dummy, _doorLeft, _doorRight;
         private Renderer _warriorSeal, _lordSeal;
         private readonly List<Transform> _sealBolts = new List<Transform>();
+        private readonly List<Renderer> _sealChannels = new List<Renderer>();
         private float _sealTogether;
         private bool _sealsAwake;
         private bool _mechanismReleased;
@@ -261,6 +262,21 @@ namespace Sinbinder.Gameplay
                 new Vector3(BowTargetAt.x, 0.135f, BowTargetAt.z),
                 new Vector3(0.8f, 0.025f, 0.8f),
                 Glowing(new Color(0.23f, 0.42f, 0.48f), 0.9f), false);
+            // Два желоба показывают связь чаши с напольными плитами ещё
+            // ДО выстрела. После падения груза линии загораются.
+            foreach (var plate in new[] { WarriorSealAt, LordSealAt })
+            {
+                var a = new Vector3(BowTargetAt.x, 0.065f, BowTargetAt.z);
+                var target = new Vector3(plate.x, 0.065f, plate.z);
+                var delta = target - a;
+                var channel = Piece(parent, PrimitiveType.Cube,
+                    "Каменный желоб противовеса к печати",
+                    (a + target) * 0.5f,
+                    new Vector3(0.12f, 0.035f, delta.magnitude),
+                    Lit(new Color(0.15f, 0.25f, 0.29f), 0.16f), false);
+                channel.transform.rotation = Quaternion.LookRotation(delta);
+                _sealChannels.Add(channel.GetComponent<Renderer>());
+            }
             root.gameObject.AddComponent<DreamBowTarget>();
         }
 
@@ -347,6 +363,8 @@ namespace Sinbinder.Gameplay
             foreach (var bolt in _sealBolts) if (bolt != null) bolt.gameObject.SetActive(false);
             if (_warriorSeal != null) _warriorSeal.material.color = new Color(0.48f, 0.9f, 1f);
             if (_lordSeal != null) _lordSeal.material.color = new Color(0.48f, 0.9f, 1f);
+            foreach (var channel in _sealChannels)
+                if (channel != null) channel.material.color = new Color(0.34f, 0.86f, 1f);
             _mechanismReleased = true;
             _mechanismMoving = false;
             FindFirstObjectByType<UI.BattleLogUI>()?.Write(
