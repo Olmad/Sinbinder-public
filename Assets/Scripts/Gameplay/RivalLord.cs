@@ -30,6 +30,27 @@ namespace Sinbinder.Gameplay
         public int Orders { get; private set; }
         public bool Attacking { get; private set; }
 
+        // The TCP test-world host can hand this existing Lord to player 2.
+        // Keep RivalLord enabled (LordOf/All/side identity still work), but
+        // stop its autonomous strategy from overwriting network Move orders.
+        public bool NetworkControlled { get; private set; }
+
+        public void SetNetworkControlled(bool controlled)
+        {
+            if (NetworkControlled == controlled) return;
+            NetworkControlled = controlled;
+            if (controlled)
+            {
+                Attacking = false;
+                _away.Clear();
+                _resting.Clear();
+                _focused.Clear();
+                _out = null;
+            }
+            else
+                _next = Time.time + Beat;
+        }
+
         /// <summary>
         /// Стиль (54-TUG, «Стили ИИ»): по греху самого Греховода-ИИ — грех от номера партии и места, без жребия.
         /// Гнев — натиск; уныние, гордыня — оборона; чревоугодие, зависть — некромант; похоть — переманщик;
@@ -119,6 +140,9 @@ namespace Sinbinder.Gameplay
             // Решает не душа, а ум Греховода: голосование обычного воина (если движок его выдал) —
             // выключить, один раз. Снять нельзя: за него держится удар (AutoAttackAOS).
             if (!_muted && TryGetComponent<AOS.AOSWarriorWrapper>(out var brain)) { brain.enabled = false; _muted = true; }
+            // This is still a real Lord for team/loyalty/combat bookkeeping,
+            // but its strategic AI must not fight player 2's server commands.
+            if (NetworkControlled) return;
             // Пал — лежит до восстания у трона (TugMatch.Rise ставит новое тело).
             if (_body.IsDead) return;
 
