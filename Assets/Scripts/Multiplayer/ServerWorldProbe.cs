@@ -75,6 +75,8 @@ namespace Sinbinder.Multiplayer
             Orders.OrderResolved += (order, applied) =>
                 OrderResolved?.Invoke(order, applied);
             _initialized = true;
+            Debug.Log("[Sinbinder MP Probe] Enabled on Multiplayer_Test. Match=" +
+                Authority.MatchId + " (diagnostic only; no real-world network transport).");
         }
 
         private void Update()
@@ -138,6 +140,7 @@ namespace Sinbinder.Multiplayer
         public void Scan(IEnumerable<Warrior> liveWarriors)
         {
             if (!_initialized || liveWarriors == null) return;
+            int previouslyRegistered = _registered.Count;
             _expired.Clear();
             foreach (var pair in _registered)
                 if (pair.Value.Warrior == null || pair.Value.Warrior.IsDead)
@@ -192,6 +195,9 @@ namespace Sinbinder.Multiplayer
                         warrior.gameObject.name + ": " + error.Message);
                 }
             }
+            if (_registered.Count != previouslyRegistered)
+                Debug.Log("[Sinbinder MP Probe] Registered live entities: " +
+                    _registered.Count + " / tick " + _tick);
         }
 
         private void Unregister(int key)
