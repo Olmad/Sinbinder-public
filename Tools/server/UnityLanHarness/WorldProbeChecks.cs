@@ -40,13 +40,16 @@ internal static class WorldProbeChecks
         var rival = new GameObject("Other Lord").AddComponent<Warrior>();
         rival.Team = Team.Neutral; // Actual RivalLord is also Team.Neutral!
         rival.TestMover = new UnitMover();
-        rival.gameObject.AddComponent<RivalLord>().Side = 1;
+        var rivalAI = rival.gameObject.AddComponent<RivalLord>();
+        rivalAI.Side = 1;
 
         var neutral = new GameObject("Neutral Resident").AddComponent<Warrior>();
         neutral.Team = Team.Neutral;
 
         probe.Scan(new Warrior[] { hero, rival, neutral });
         Require(probe.RegisteredCount == 3, "register actual hero, rival and neutral");
+        Require(!rivalAI.NetworkControlled,
+            "local probe without a network room MUST preserve solo rival AI");
         long heroId = hero.GetComponent<NetworkActorIdentity>().ServerId;
         long rivalId = rival.GetComponent<NetworkActorIdentity>().ServerId;
         long neutralId = neutral.GetComponent<NetworkActorIdentity>().ServerId;
