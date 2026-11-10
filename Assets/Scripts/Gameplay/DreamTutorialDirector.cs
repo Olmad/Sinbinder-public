@@ -33,7 +33,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, Puzzle, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -101,7 +101,7 @@ namespace Sinbinder.Gameplay
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
                 case Stage.CommanderPractice: case Stage.BowFind: case Stage.BowEquip:
-                case Stage.BowShot: case Stage.Puzzle: return DreamRoad.GateZ;
+                case Stage.BowShot: case Stage.BowTemper: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -138,6 +138,10 @@ namespace Sinbinder.Gameplay
         private Warrior _sealCompanion;
         private float _temptStarted;
         private string _whisperWas;
+        private Warrior _bowShadow;
+        private float _bowTemperSince;
+        private bool _bowTemperCommanded;
+        private AOS.DecisionContext _bowTemperBefore;
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
@@ -699,11 +703,43 @@ namespace Sinbinder.Gameplay
                 }
                 case Stage.BowShot:
                     if (DreamRoad.Instance != null && DreamRoad.Instance.BowTargetBroken)
+                        BeginBowTemper();
+                    break;
+                case Stage.BowTemper:
+                {
+                    // Ситуация с настоящим искушением: безопасный противник стоит
+                    // рядом, поэтому «атаковать» и «бежать» являются альтернативами
+                    // приказу. Гордыня от лука сдвигает их веса через TemptationResolver.
+                    // Игрок сам велит отступить, исход не подстроен.
+                    if (_bowShadow != null) Hold(_bowShadow, true);
+                    Warrior archer = BowBearer();
+                    if (archer != null && archer.HasCommand && archer.Command.Kind == CommandKind.FallBack)
                     {
-                        EnsureSealCompanion();
-                        Set(Stage.Puzzle, "Попадание! Лук — оружие и искушение одновременно. " + PuzzleLine);
+                        var mind = archer.GetComponent<AOS.AOSWarriorWrapper>();
+                        if (!_bowTemperCommanded)
+                        {
+                            _bowTemperCommanded = true;
+                            _bowTemperBefore = mind != null ? mind.LastContext : null;
+                        }
+                        else if (mind != null && mind.LastContext != null &&
+                                 mind.LastContext != _bowTemperBefore)
+                        {
+                            var decision = mind.LastDecisionDetail;
+                            UI.ScalesOverhead.Show(archer, decision, mind.LastContext, force: true);
+                            Log(decision.RefusedCommand || decision.Hesitated
+                                ? "Лучник спорит с приказом отойти. Лук усиливает Гордыню, но решение — сумма голосов."
+                                : "Лучник отступает несмотря на зов Гордыни. Предмет влияет на выбор, но не управляет душой.");
+                            EndBowTemper();
+                            break;
+                        }
+                    }
+                    if (Time.unscaledTime - _bowTemperSince > 30f)
+                    {
+                        Log("Испытание с луком можно повторить позднее: предмет по-прежнему действует на решения AOS.");
+                        EndBowTemper();
                     }
                     break;
+                }
                 case Stage.Puzzle:
                 {
                     if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
@@ -735,6 +771,40 @@ namespace Sinbinder.Gameplay
             => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.Command.IssuedAt > since;
 
         private float _commandSinceGame;
+
+        private Warrior BowBearer()
+        {
+            foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (ally != null && !ally.IsDead && !(ally is SinbinderPlayer) &&
+                    ally.Team == Team.Player && DreamBowTarget.HasBow(ally)) return ally;
+            return null;
+        }
+
+        private void BeginBowTemper()
+        {
+            if (_stage == Stage.BowTemper) return;
+            _bowTemperSince = Time.unscaledTime;
+            _bowTemperCommanded = false;
+            _bowTemperBefore = null;
+            var soul = new SoulData("Тень испытания", SinType.Wrath, MoralType.Neutral, 1, 10f);
+            _bowShadow = CreateLiving(soul, new Vector3(6f, 0f, 19.2f), Team.Enemy);
+            if (_bowShadow != null)
+            {
+                var hp = _bowShadow.GetComponent<Damageable>();
+                if (hp != null) hp.Initialize(999f, 0f);
+                Hold(_bowShadow, true);
+            }
+            Set(Stage.BowTemper,
+                "Лук зовёт к славному бою. В стороне стоит безопасная тень: выделите лучника, нажмите X и щёлкните позади него. Посмотрите, исполнит ли он приказ отступить.");
+        }
+
+        private void EndBowTemper()
+        {
+            if (_bowShadow != null) Destroy(_bowShadow.gameObject);
+            _bowShadow = null;
+            EnsureSealCompanion();
+            Set(Stage.Puzzle, "Теперь вы знаете: снаряжение тоже склоняет душу. " + PuzzleLine);
+        }
 
         /// <summary>
         /// Сон даёт второго соратника у двух печатей: даже если первый пал в бою,
