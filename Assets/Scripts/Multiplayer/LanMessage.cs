@@ -20,6 +20,7 @@ namespace Sinbinder.Multiplayer
         // Old capsule messages and the .NET 8 proof server remain valid.
         public string matchId;
         public long commandId;
+        public long lastCommandId;
         public long actorId;
         public long targetId;
         public int players;
