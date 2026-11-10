@@ -33,7 +33,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Puzzle, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Rescue, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -101,7 +101,7 @@ namespace Sinbinder.Gameplay
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
                 case Stage.CommanderPractice: case Stage.BowFind: case Stage.BowEquip:
-                case Stage.BowShot: case Stage.BowTemper: case Stage.Puzzle: return DreamRoad.GateZ;
+                case Stage.BowShot: case Stage.BowTemper: case Stage.Rescue: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -142,6 +142,11 @@ namespace Sinbinder.Gameplay
         private float _bowTemperSince;
         private bool _bowTemperCommanded;
         private AOS.DecisionContext _bowTemperBefore;
+        private Warrior _rescueWounded, _rescueDefender, _rescueAttacker;
+        private float _rescueSince, _rescueNextHit, _rescueResultAt = -1f;
+        private int _rescueCreditBefore;
+        /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
+        public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
@@ -742,6 +747,52 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 }
+                case Stage.Rescue:
+                {
+                    if (_rescueResultAt >= 0f)
+                    {
+                        if (Time.unscaledTime - _rescueResultAt > 2.8f) EndRescueLesson();
+                        break;
+                    }
+                    if (Bodyguard.Rescues > _rescueCreditBefore)
+                    {
+                        RescueResult = "спасён";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Настоящий удар был принят защитником. Раненый запомнил помощь; подвиг записан только теперь, а не когда воин решил подбежать.";
+                        Log(_line);
+                        break;
+                    }
+                    if (_rescueWounded == null || _rescueWounded.IsDead)
+                    {
+                        RescueResult = "погиб";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Никто не успел защитить раненого. Душа не обязана выбирать спасение; у самостоятельных решений есть последствия.";
+                        Log(_line);
+                        break;
+                    }
+
+                    // Угроза в этой учебной сцене бьёт по расписанию, чтобы
+                    // игрок мог видеть именно НЕСКРИПТОВЫЙ выбор защитника.
+                    // Урон проходит настоящим Damageable.TakeDamage и
+                    // настоящим Bodyguard.Absorb, без вызова OnAllySaved вручную.
+                    if (_rescueAttacker != null && !_rescueAttacker.IsDead
+                        && Time.time >= _rescueNextHit)
+                    {
+                        _rescueNextHit = Time.time + 4.25f;
+                        var arm = _rescueAttacker.GetComponent<WarriorAnimation>();
+                        if (arm != null) arm.Struck();
+                        _rescueWounded.GetComponent<Damageable>()?.TakeDamage(2.1f,
+                            _rescueAttacker.gameObject);
+                    }
+                    if (Time.unscaledTime - _rescueSince > 33f)
+                    {
+                        RescueResult = "не помогли";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Ни один защитник не успел перехватить удар. Проверьте голоса: спасение не подменяется неизбежным сценарием.";
+                        Log(_line);
+                    }
+                    break;
+                }
                 case Stage.Puzzle:
                 {
                     if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
@@ -805,7 +856,61 @@ namespace Sinbinder.Gameplay
             if (_bowShadow != null) Destroy(_bowShadow.gameObject);
             _bowShadow = null;
             EnsureSealCompanion();
-            Set(Stage.Puzzle, "Противовес освободил напольные печати, но для открытия склепа нужны две воли. " + PuzzleLine);
+            BeginRescueLesson();
+        }
+
+        /// <summary>
+        /// «Последний щит». Один союзник ранен, один может выбрать спасение,
+        /// лучник после испытания Гордыни может предпочесть бой.
+        /// У атакующего — учебные взмахи по времени, у защитников — ПОДЛИННАЯ
+        /// AOS без принудительного ObeyCommand или выдачи фальшивой награды.
+        /// </summary>
+        private void BeginRescueLesson()
+        {
+            RescueResult = "";
+            _rescueResultAt = -1f;
+            _rescueSince = Time.unscaledTime;
+            _rescueNextHit = Time.time + 5f;
+            _rescueCreditBefore = Bodyguard.Rescues;
+
+            _rescueWounded = CreateLiving(
+                new SoulData("Раненый товарищ", SinType.Sloth, MoralType.Neutral, 1, 15f),
+                new Vector3(-0.6f, 0f, 23.3f), Team.Player);
+            _rescueDefender = CreateLiving(
+                new SoulData("Милосердный страж", SinType.Pride, MoralType.Pious, 1, 5f),
+                new Vector3(-3.1f, 0f, 23.2f), Team.Player);
+            _rescueAttacker = CreateLiving(
+                new SoulData("Тень нападающего", SinType.Wrath, MoralType.Vicious, 1, 60f),
+                new Vector3(-0.7f, 0f, 21.1f), Team.Enemy);
+
+            if (_rescueWounded == null || _rescueDefender == null || _rescueAttacker == null)
+            {
+                Debug.LogError("[СОН] Не удалось создать участников испытания спасения.");
+                RescueResult = "сцена не собрана";
+                EndRescueLesson();
+                return;
+            }
+
+            _rescueWounded.GetComponent<Damageable>()?.Wound(0.24f);
+            Hold(_rescueWounded, true);
+            Hold(_rescueAttacker, true);
+            var attackerBody = _rescueAttacker.GetComponent<Damageable>();
+            if (attackerBody != null) attackerBody.Initialize(999f, 0f);
+
+            Set(Stage.Rescue,
+                "Последний щит: раненому осталось меньше трети здоровья. Тень замахивается каждые несколько секунд. "
+                + "Смотрите, что сами выберут милосердный страж и лучник. Наведите на них курсор: голоса могут предпочесть бой спасению.");
+        }
+
+        private void EndRescueLesson()
+        {
+            if (_rescueAttacker != null) Destroy(_rescueAttacker.gameObject);
+            _rescueAttacker = null;
+            if (_rescueWounded != null && !_rescueWounded.IsDead) Hold(_rescueWounded, false);
+            EnsureSealCompanion();
+            Set(Stage.Puzzle, RescueResult == "спасён"
+                ? "Защита изменила память товарища. Теперь без подсказки распределите воинов между двумя печатями. " + PuzzleLine
+                : "Спасение не было гарантировано: причины определяют сами души. Откройте склеп совместно. " + PuzzleLine);
         }
 
         /// <summary>
