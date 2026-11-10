@@ -80,6 +80,7 @@ internal static class Program
             WorldProbeChecks.Run();
             await GameOrderWireChecks.Run();
             await WorldSnapshotChecks.Run();
+            await LatencyFairnessChecks.Run();
             return 0;
         }
         finally
