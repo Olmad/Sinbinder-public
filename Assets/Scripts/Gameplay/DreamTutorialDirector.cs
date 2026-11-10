@@ -162,6 +162,7 @@ namespace Sinbinder.Gameplay
         private AOS.DecisionContext _emotionContextBefore;
         private bool _emotionApplied;
         private GameObject _fearSign, _contrastMarker;
+        private Warrior _fearShadow;
         private float _puzzleSince;
         private int _puzzleHelpLevel;
         public bool FinalTrialCompleted { get; private set; }
@@ -888,9 +889,9 @@ namespace Sinbinder.Gameplay
                         UI.ScalesOverhead.Show(w, now, mind.LastContext, force: true);
                         EmotionShiftCompleted = true;
                         Log("До угрозы: " + DescribeAOS(_mercyFirstDecision)
-                            + ". После угрозы: " + DescribeAOS(now)
-                            + ". Страх усиливает голос Страха и ослабляет Гнев. "
-                            + "Победитель может остаться прежним, но веса уже другие.");
+                            + ". После появления тени: " + DescribeAOS(now)
+                            + ". Ситуация открыла бой и бегство, а эмоция усилила Страх и ослабила Гнев. "
+                            + "Победитель может не смениться, но теперь есть настоящая альтернатива приказу.");
                         EndEmotionShift();
                     }
                     else if (!_emotionHelpShown && Time.unscaledTime - _emotionStarted > 20f)
@@ -1158,6 +1159,18 @@ namespace Sinbinder.Gameplay
             if (c != null) Destroy(c);
             var renderer = _fearSign.GetComponent<Renderer>();
             if (renderer != null) renderer.material.color = new Color(0.58f, 0.14f, 0.18f);
+            // Без угрозы голос Страха почти не участвует в выборе Move
+            // (кандидатов Flee и Attack нет): это был бы пустой урок.
+            // Безопасная тень даёт реальное присутствие врага в контексте,
+            // а видимый знак запускает временное состояние Fear.
+            _fearShadow = CreateLiving(
+                new SoulData("Тень колокола", SinType.Wrath, MoralType.Neutral, 1, 15f),
+                new Vector3(1.0f, 0f, 27.1f), Team.Enemy);
+            if (_fearShadow != null)
+            {
+                _fearShadow.GetComponent<Damageable>()?.Initialize(999f, 0f);
+                Hold(_fearShadow, true);
+            }
             if (AOS.EmotionSystem.Instance != null)
             {
                 AOS.EmotionSystem.Instance.TriggerEmotion(_contrastMerciful, AOS.EmotionType.Fear, 1f);
@@ -1168,15 +1181,17 @@ namespace Sinbinder.Gameplay
                     + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Wrath").ToString("F1") + ".");
             }
             else Debug.LogError("[СОН QA] EmotionSystem отсутствует. Урок эмоций нельзя подтвердить.");
-            Set(Stage.EmotionShift, "Та же душа, но теперь её охватил страх от знака над воротами. "
-                + "Ещё раз отдайте милосердному стражу тот же приказ идти к месту между печатями. "
-                + "Сравните новые весы с предыдущими.");
+            Set(Stage.EmotionShift, "Знак страха вызвал дрожь, рядом стоит безопасная враждебная тень. "
+                + "Стражу теперь доступны также бой и бегство. Повторите тот же приказ идти к месту между печатями, "
+                + "а затем сравните голоса. Изменились и опасность, и эмоциональные веса.");
         }
 
         private void EndEmotionShift()
         {
             if (_fearSign != null) Destroy(_fearSign);
             _fearSign = null;
+            if (_fearShadow != null) Destroy(_fearShadow.gameObject);
+            _fearShadow = null;
             if (_contrastMarker != null) Destroy(_contrastMarker);
             _contrastMarker = null;
             EnsureSealCompanion();
