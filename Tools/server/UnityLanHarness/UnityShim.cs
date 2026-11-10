@@ -245,10 +245,12 @@ namespace UnityEngine
         public static int height { get { return 720; } }
     }
     public static class Application { public static bool isBatchMode { get { return true; } } }
+    public enum KeyCode { F8 }
     public static class Input
     {
         public static Vector3 mousePosition { get { return Vector3.zero; } }
         public static bool GetMouseButtonDown(int button) { return false; }
+        public static bool GetKeyDown(KeyCode key) { return false; }
     }
 
     public static class Debug
