@@ -12,6 +12,19 @@ namespace Sinbinder.Core
     public static class Loc
     {
         public static string N(string key) { return key; }
+        public static string F(string pattern, params object[] args)
+        { return string.Format(pattern, args); }
+    }
+
+    public static class TestMapFixture
+    {
+        public static void TwoCrypts()
+        {
+            var map = new MapData { Name = "Multiplayer_Test", Size = 240f };
+            map.Crypts.Add(new MapData.Crypt { X = 0f, Z = -90f });
+            map.Crypts.Add(new MapData.Crypt { X = 0f, Z = 90f });
+            Sinbinder.Gameplay.MapLoader.Current = map;
+        }
     }
     public class MapData
     {
