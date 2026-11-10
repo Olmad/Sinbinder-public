@@ -238,17 +238,17 @@ namespace Sinbinder.Gameplay
                 new Vector3(0.95f, 0.15f, 0.2f), golden, false);
 
             // Подвес на высоте: обычный ближний удар и осада мечом до него не достают.
-            var root = new GameObject("Высокая мишень — подвес").transform;
+            var root = new GameObject("Замок подвесного противовеса").transform;
             root.SetParent(parent, false);
             root.position = BowTargetAt;
             var sturdy = root.gameObject.AddComponent<Sturdy>();
-            sturdy.Configure("Подвесная печать", 5f, -1);
+            sturdy.Configure("Замок противовеса", 5f, -1);
             _hangingTarget = sturdy;
-            var gong = Piece(root, PrimitiveType.Cylinder, "Металлическая печать", BowTargetAt,
+            var gong = Piece(root, PrimitiveType.Cylinder, "Тяжёлая печать противовеса", BowTargetAt,
                 new Vector3(1.25f, 0.12f, 1.25f), golden);
             gong.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             // Цель видна в перспективе и выделяется физическим лучом.
-            Piece(root, PrimitiveType.Cube, "Узор цели", BowTargetAt + Vector3.back * 0.15f,
+            Piece(root, PrimitiveType.Cube, "Узор подвесного замка", BowTargetAt + Vector3.back * 0.15f,
                 new Vector3(0.7f, 0.12f, 0.18f), stone);
             Piece(parent, PrimitiveType.Cylinder, "Подвесная цепь", BowTargetAt + Vector3.up * 2.2f,
                 new Vector3(0.04f, 2.2f, 0.04f), stone, false);
