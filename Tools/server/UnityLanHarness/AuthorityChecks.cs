@@ -255,6 +255,18 @@ internal static class AuthorityChecks
         bridge.ProcessDue(11);
         Require(cancelledOrders == 1 && appliedOrders == 4,
             "unregistered actor's pending order must be cancelled");
+
+        // A command accepted while connected must not fire after that
+        // player loses their network session before ExecuteTick.
+        Require(bridge.TryIssue(2, Intent("aos-bridge", 3, id2,
+            NetworkOrderKind.Move, 17f, 4f), 15, null, null,
+            out _, out reason), "connected Lord can queue movement");
+        authority.SetConnected(2, false);
+        bridge.ProcessDue(18);
+        Require(cancelledOrders == 2 && appliedOrders == 4 &&
+            Math.Abs(lord2.TestMover.Destination.x - 5f) < .01,
+            "disconnect cancels queued Lord movement");
+        authority.SetConnected(2, true);
         Require(bridge.PendingOrders == 0,
             "server queue drained at scheduled tick");
         Require(!identity.Assigned, "unregister clears old match identity");
