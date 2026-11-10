@@ -76,7 +76,7 @@ namespace Sinbinder.Gameplay
             if (_stage >= Stage.FirstPerson && _stage < Stage.BowFind)
             {
                 EnsureSealCompanion();
-                Set(Stage.BowFind, "На возвышении слева лежит лук тщеславия. Подойдите и нажмите F.");
+                Set(Stage.BowFind, "Две печати склепа закрыты каменными засовами. От подвесного замка идут желоба к плитам. Мечом до замка не добраться. Слева на возвышении лежит лук: подойдите и нажмите F.");
             }
         }
 
@@ -674,7 +674,7 @@ namespace Sinbinder.Gameplay
                 {
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam != null && cam.CommanderModeNow && _commanderOrdered)
-                        Set(Stage.BowFind, "На возвышении слева лежит лук тщеславия. Подойдите и нажмите F.");
+                        Set(Stage.BowFind, "Две печати склепа закрыты каменными засовами. От подвесного замка идут желоба к плитам. Мечом до замка не добраться. Слева на возвышении лежит лук: подойдите и нажмите F.");
                     break;
                 }
                 case Stage.BowFind:
