@@ -57,6 +57,10 @@ metas = {
     "Assets/Scripts/Multiplayer/ServerWorldProbe.cs.meta": "aab31050a69d4fb5a8df740628e175bd",
     "Assets/Scripts/Multiplayer/LanGameOrderCodec.cs.meta": "78e541dab92d472ebc396de0aa3a67fa",
     "Assets/Scripts/Multiplayer/LanWorldState.cs.meta": "b5d89ad227d54ef4bac99d518ae279fa",
+    "Assets/Scripts/Multiplayer/LanLatencyFairness.cs.meta": "82dc47f114754b79a254db154f9dc2b0",
+    "Assets/Scripts/Multiplayer/LanRoomDirectory.cs.meta": "ffd062862e4c402b9f14b95fb5461d10",
+    "Assets/Scripts/Multiplayer/LanServerBookmarks.cs.meta": "e80acdf90ca34d20ac09acba91f89c08",
+    "Assets/Scripts/Multiplayer/LanWorldAutoVerifier.cs.meta": "88c36a74ac8c4faba7ec4ec2d047abc1",
     "Assets/Scenes/Tug/Multiplayer_Test.unity.meta": "82df2b7319bc4ab393db801f19f3b580",
 }
 all_seen = set()
@@ -94,4 +98,14 @@ assert "SetNetworkControl(entry.Warrior, true)" in probe
 assert "SetNetworkControl(entry.Warrior, false)" in probe
 assert "Scan(UnityEngine.Object.FindObjectsByType<Warrior>" in probe
 assert "worldBegin" in client and "worldEnd" in client
+assert "LatencyFairnessChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+assert "RoomDirectoryChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+assert "ServerBookmarksChecks.Run()" in (ROOT / "Tools/server/UnityLanHarness/Program.cs").read_text("utf-8")
+assert "RoomJoinStatus" in (ROOT / "Assets/Scripts/Multiplayer/LanRoomDirectory.cs").read_text("utf-8")
+assert "Rfc2898DeriveBytes" in (ROOT / "Assets/Scripts/Multiplayer/LanRoomDirectory.cs").read_text("utf-8")
+assert "ExtraInputDelayTicks(connectionId)" in probe
+assert '"latencyReply"' in server and '"latencyProbe"' in server
+assert "LanServerBookmarks.Load()" in entry
+assert "mp-ping-balance" in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
+assert "mp-ping-balance" in (ROOT / "Test-World-Auto.ps1").read_text("utf-8")
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
