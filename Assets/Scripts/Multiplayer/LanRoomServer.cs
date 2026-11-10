@@ -508,7 +508,8 @@ namespace Sinbinder.Multiplayer
                     if (a.Id <= 0 || !unique.Add(a.Id) ||
                         !LanWorldActorState.Valid(a.Position.x) ||
                         !LanWorldActorState.Valid(a.Position.y) ||
-                        !LanWorldActorState.Valid(a.Position.z))
+                        !LanWorldActorState.Valid(a.Position.z) ||
+                        !a.ValidHealth())
                     {
                         valid = false;
                         break;
