@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Sinbinder.Core;
 using Sinbinder.Gameplay;
@@ -56,7 +57,8 @@ internal static class GameOrderWireChecks
         var lordB = new GameObject("Lord two").AddComponent<Warrior>();
         lordB.Team = Team.Neutral;
         lordB.TestMover = new UnitMover();
-        lordB.gameObject.AddComponent<RivalLord>().Side = 1;
+        var rivalBrain = lordB.gameObject.AddComponent<RivalLord>();
+        rivalBrain.Side = 1;
         var neutral = new GameObject("Resident").AddComponent<Warrior>();
         neutral.Team = Team.Neutral;
         probe.Scan(new Warrior[] { lordA, lordB, neutral });
@@ -92,6 +94,8 @@ internal static class GameOrderWireChecks
         try
         {
             probe.AttachRoom(room);
+            Require(rivalBrain.NetworkControlled,
+                "network host must suspend opponent's autonomous tactical AI");
             if (!room.Start(7806)) throw new Exception(room.Error);
             one.Connect("127.0.0.1", 7806);
             two.Connect("127.0.0.1", 7806);
@@ -188,6 +192,14 @@ internal static class GameOrderWireChecks
             two.Disconnect();
             replacement.Disconnect();
             room.Stop();
+            // The production Unity component must restore AI ownership
+            // on teardown; the singleplayer mode must remain unchanged.
+            var destroy = typeof(ServerWorldProbe).GetMethod(
+                "OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic);
+            Require(destroy != null, "world-probe cleanup hook exists");
+            destroy.Invoke(probe, null);
+            Require(!rivalBrain.NetworkControlled,
+                "network host teardown restores RivalLord's solo strategy");
         }
     }
 }
