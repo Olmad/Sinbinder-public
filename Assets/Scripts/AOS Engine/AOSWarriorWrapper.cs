@@ -243,7 +243,12 @@ namespace Sinbinder.AOS
                         var sturdy = cmd.Target.GetComponentInParent<Sturdy>();
                         if (sturdy != null && !sturdy.Broken)
                         {
-                            Siege(sturdy, mover);
+                            // Снаряжение-искуситель в обучении: настоящая команда
+                            // проходит выбор души, после послушания — стрела по
+                            // недосягаемой мечом подвесной печати.
+                            var suspended = sturdy.GetComponent<DreamBowTarget>();
+                            if (suspended != null) suspended.ExecuteShot(_warrior);
+                            else Siege(sturdy, mover);
                             return;
                         }
                     }
