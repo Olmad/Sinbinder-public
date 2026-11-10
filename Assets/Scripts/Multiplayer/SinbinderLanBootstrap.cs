@@ -28,6 +28,7 @@ namespace Sinbinder.Multiplayer
         private string _address = "127.0.0.1";
         private string _portText = "7777";
         private string _notice = "";
+        private string _gameNotice = "";
         private bool _dedicated;
         private bool _autoReady;
         private bool _launchHost;
@@ -60,6 +61,15 @@ namespace Sinbinder.Multiplayer
             _client.Received += packet =>
             {
                 if (_autoReady && packet.type == "welcome") _client.Ready();
+                if (packet.type == "gameAccepted")
+                    _gameNotice = "Игровой приказ #" + packet.commandId +
+                        " принят; исполнение на тике " + packet.executeTick;
+                else if (packet.type == "gameRejected")
+                    _gameNotice = "Приказ #" + packet.commandId +
+                        " отклонён сервером: " + packet.reason;
+                else if (packet.type == "gameResolved")
+                    _gameNotice = "Приказ #" + packet.commandId +
+                        ": " + packet.reason;
             };
             SceneManager.activeSceneChanged += OnSceneChanged;
 
@@ -149,6 +159,20 @@ namespace Sinbinder.Multiplayer
 
             if (!_client.Playing || _camera == null) return;
 
+            // Diagnostic REAL-Warrior command for the isolated two-crypt map.
+            // The full gameplay view is NOT replicated to LAN clients yet.
+            // F8 moves only the authenticated player's real Lord a short
+            // distance toward the centre of their starting crypt.
+            if (_client.OwnLordActorId > 0 &&
+                !string.IsNullOrEmpty(_client.GameMatchId) &&
+                Input.GetKeyDown(KeyCode.F8))
+            {
+                float destinationZ = _client.PlayerId == 1 ? -90f : 90f;
+                bool sent = _client.OrderGameplay(_client.OwnLordActorId,
+                    NetworkOrderKind.Move, new Vector3(0f, 0f, destinationZ));
+                if (!sent) _gameNotice = "Не удалось отправить игровой приказ";
+            }
+
             // Right click moves YOUR pawn. Left click and Tab/V belong to
             // the main game's camera/selection; the arena never steals them.
             if (Input.GetMouseButtonDown(1) && !PointerOverLanPanel())
@@ -225,7 +249,12 @@ namespace Sinbinder.Multiplayer
                     if (GUILayout.Button("Повторить подключение"))
                         _client.Connect(_server.Active ? "127.0.0.1" : _address, reconnectPort);
                 }
-                GUILayout.Label("ПКМ по полю: идти. Два окна игры = два игрока.");
+                GUILayout.Label("ПКМ по полю: капсула (локальный сетевой тест).");
+                if (!string.IsNullOrEmpty(_client.GameMatchId))
+                {
+                    GUILayout.Label("Сервер реальной карты: F8 = приказ своему Греховоду");
+                    GUILayout.Label(_gameNotice);
+                }
                 if (GUILayout.Button("Выйти из теста")) Leave();
             }
 
@@ -382,6 +411,7 @@ namespace Sinbinder.Multiplayer
             _arenaActive = false;
             _autoReconnectAttempts = 30;
             _notice = "";
+            _gameNotice = "";
         }
 
         private void OnDestroy()
