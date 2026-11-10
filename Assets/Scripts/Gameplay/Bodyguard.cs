@@ -20,20 +20,55 @@ namespace Sinbinder.Gameplay
     {
         private const float Blocked = 0.5f;     // какая доля удара доходит до охранника
 
-        private struct Watch { public Warrior Guard; public float Until; }
+        private struct Watch { public Warrior Guard; public float Until; public bool Rescue; }
+        // Одна награда за одну угрозу. Повторное голосование AOS каждую секунду
+        // не должно производить сотни фиктивных подвигов.
+        private static readonly Dictionary<string, float> LastRescueCredit = new();
+        private const float RescueCreditCooldown = 15f;
+        public static int Rescues { get; private set; }
         private static readonly Dictionary<Damageable, Watch> Watched = new();
 
         // Строка — черновик D; облаку на сверку.
         private static readonly string Took = Loc.N("{0} принял удар на себя.");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => Watched.Clear();
+        private static void Rearm()
+        {
+            Watched.Clear();
+            LastRescueCredit.Clear();
+            Blocks = 0;
+            Rescues = 0;
+        }
 
         /// <summary>Охранять этого столько секунд — до первого удара.</summary>
         public static void Guard(Damageable who, Warrior guard, float seconds)
         {
             if (who == null || guard == null) return;
-            Watched[who] = new Watch { Guard = guard, Until = Time.time + seconds };
+            Watched[who] = new Watch { Guard = guard, Until = Time.time + seconds, Rescue = false };
+        }
+
+        /// <summary>
+        /// AOS выбрала «Спасти товарища»: защитник уже дошёл до раненого.
+        /// Подвиги НЕ начисляются за приближение. Только действительно
+        /// перехваченный удар может превратиться в память о спасении.
+        /// Возвращает false, когда защита пока невозможна или её место уже занято.
+        /// </summary>
+        public static bool GuardForRescue(Damageable who, Warrior guard, float seconds = 2.5f)
+        {
+            if (who == null || who.IsDead || who.Warrior == null
+                || guard == null || guard.IsDead || who.Warrior == guard) return false;
+            if (Vector3.Distance(who.transform.position, guard.transform.position) > 2.8f) return false;
+            if (who.HP >= who.MaxHP * 0.3f) return false;
+
+            // Особый телохранитель (Карган) всегда сохраняет свою заранее
+            // установленную защиту: AOS не перебивает сюжетную механику.
+            if (Watched.TryGetValue(who, out var existing)
+                && existing.Guard != null && !existing.Guard.IsDead
+                && existing.Until > Time.time)
+                return existing.Rescue && existing.Guard == guard;
+
+            Watched[who] = new Watch { Guard = guard, Until = Time.time + seconds, Rescue = true };
+            return true;
         }
 
         /// <summary>
@@ -47,7 +82,10 @@ namespace Sinbinder.Gameplay
             if (w.Guard == null || w.Guard.IsDead || Time.time > w.Until) return false;
 
             var guardBody = w.Guard.GetComponent<Damageable>();
-            if (guardBody == null || guardBody == target) return false;
+            if (guardBody == null || guardBody.IsDead || guardBody == target) return false;
+            if (w.Rescue && (target.Warrior == null ||
+                Vector3.Distance(w.Guard.transform.position, target.transform.position) > 2.8f))
+                return false;
 
             // Встретил оружием: взмах, полудара — ему.
             if (w.Guard.TryGetComponent<WarriorAnimation>(out var arm)) arm.Struck();
@@ -57,6 +95,21 @@ namespace Sinbinder.Gameplay
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F(Took, Loc.Name(w.Guard.DisplayName)));
             Debug.Log($"[ВОРОН] {w.Guard.DisplayName} принял удар по {target.name} на себя.");
             Blocks++;
+            if (w.Rescue && target.Warrior != null)
+            {
+                // Событие наступило ПОСЛЕ удара по защитнику, не после команды.
+                // Повторные удары в одной схватке остаются защитой, но не
+                // генерируют новые титулы и благодарность каждую секунду.
+                string key = w.Guard.GetInstanceID() + ":" + target.GetInstanceID();
+                if (!LastRescueCredit.TryGetValue(key, out float creditedAt)
+                    || Time.time - creditedAt >= RescueCreditCooldown)
+                {
+                    LastRescueCredit[key] = Time.time;
+                    Rescues++;
+                    AOS.AOSEventHub.Instance?.OnAllySaved(w.Guard, target.Warrior);
+                    Debug.Log($"[AOS] Спасение подтверждено реальным перехватом удара: {w.Guard.DisplayName} -> {target.Warrior.DisplayName}");
+                }
+            }
             return true;
         }
 
