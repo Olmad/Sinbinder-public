@@ -36,6 +36,8 @@ namespace Sinbinder.Multiplayer
         public float x;
         public float y;
         public float z;
+        public float hp;
+        public float maxHp;
         public float p1X;
         public float p1Z;
         public float p2X;
