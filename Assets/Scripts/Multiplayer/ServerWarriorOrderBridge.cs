@@ -124,7 +124,8 @@ namespace Sinbinder.Multiplayer
             Func<Warrior, Warrior, bool> visibleOnServer,
             Func<Warrior, string, float> muffleOnServer,
             out AuthorizedGameOrder approved,
-            out OrderRejection reason)
+            out OrderRejection reason,
+            int extraDelayTicks = 0)
         {
             approved = default;
             reason = OrderRejection.None;
@@ -207,7 +208,8 @@ namespace Sinbinder.Multiplayer
             }
 
             if (!_authority.TryApprove(authenticatedConnectionId, intent,
-                    serverTick, visible, out approved, out reason))
+                    serverTick, visible, out approved, out reason,
+                    extraDelayTicks))
                 return false;
 
             if (!_scheduled.TryGetValue(approved.ExecuteTick, out var bucket))
