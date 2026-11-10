@@ -183,6 +183,10 @@ namespace Sinbinder.Multiplayer
                         Players = 2;
                         ReadyCount = 2;
                         Tick = 0;
+                        // Reset the presentation immediately. The state
+                        // snapshot for the new round follows this event.
+                        First = new Vector3(-3, 0.8f, 0);
+                        Second = new Vector3(3, 0.8f, 0);
                         Status = "Матч запущен. ПКМ по полю: двигаться";
                         break;
                     case "state":
