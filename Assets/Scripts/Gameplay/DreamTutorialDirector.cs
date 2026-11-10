@@ -145,6 +145,7 @@ namespace Sinbinder.Gameplay
         private Warrior _rescueWounded, _rescueDefender, _rescueAttacker;
         private float _rescueSince, _rescueNextHit, _rescueResultAt = -1f;
         private int _rescueCreditBefore;
+        private bool _rescueDecisionShown;
         /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
@@ -749,6 +750,20 @@ namespace Sinbinder.Gameplay
                 }
                 case Stage.Rescue:
                 {
+                    if (!_rescueDecisionShown && _rescueDefender != null)
+                    {
+                        var mind = _rescueDefender.GetComponent<AOS.AOSWarriorWrapper>();
+                        if (mind != null && mind.LastDecision == AOS.ActionType.SaveAlly
+                            && mind.LastContext != null)
+                        {
+                            _rescueDecisionShown = true;
+                            UI.ScalesOverhead.Show(_rescueDefender, mind.LastDecisionDetail,
+                                mind.LastContext, force: true);
+                            _line = "Страж сам выбрал спасение. Весы показывают, какие голоса перевесили. "
+                                  + "Но помощь будет считаться настоящей, только если он примет удар.";
+                            Log(_line);
+                        }
+                    }
                     if (_rescueResultAt >= 0f)
                     {
                         if (Time.unscaledTime - _rescueResultAt > 2.8f) EndRescueLesson();
@@ -872,6 +887,7 @@ namespace Sinbinder.Gameplay
             _rescueSince = Time.unscaledTime;
             _rescueNextHit = Time.time + 5f;
             _rescueCreditBefore = Bodyguard.Rescues;
+            _rescueDecisionShown = false;
 
             _rescueWounded = CreateLiving(
                 new SoulData("Раненый товарищ", SinType.Sloth, MoralType.Neutral, 1, 15f),
