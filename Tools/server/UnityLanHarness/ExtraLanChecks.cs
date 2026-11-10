@@ -24,6 +24,8 @@ internal static class ExtraLanChecks
     public static async Task Run()
     {
         await ConnectionChurn();
+        await DropPendingAcceptOnStop();
+        await DiscardPacketsAfterTerminalEvent();
         await InboxFloodAndRecovery();
         await SeatReplacementAfterDisconnect();
         await DisconnectedClientAndBadPort();
@@ -32,6 +34,112 @@ internal static class ExtraLanChecks
         await ServerRestartSamePort();
         TestArenaLifecycle();
         Console.WriteLine("PASS: reconnect, flood recovery, heartbeat, silent-peer expiry, dead-server detection and arena lifecycle.");
+    }
+
+    private static async Task DropPendingAcceptOnStop()
+    {
+        var room = new LanRoomServer();
+        TcpClient socket = null;
+        try
+        {
+            if (!room.Start(7791)) throw new Exception(room.Error);
+            socket = new TcpClient();
+            await socket.ConnectAsync("127.0.0.1", 7791);
+
+            // Wait for the listener to accept the connection, but DO NOT
+            // pump the room: this reproduces the previously lost onDrop
+            // cleanup path for accepted, unregistered sockets.
+            var field = typeof(LanRoomServer).GetField("_inbox",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field == null) throw new Exception("LAN inbox not found");
+            bool pending = false;
+            for (int i = 0; i < 300; i++)
+            {
+                var inbox = field.GetValue(room);
+                int count = (int)inbox.GetType().GetProperty("Count").GetValue(inbox);
+                if (count > 0) { pending = true; break; }
+                await Task.Delay(10);
+            }
+            if (!pending) throw new Exception("Listener did not queue an unregistered TCP peer");
+
+            room.Stop();
+            var response = new byte[1];
+            using (var deadline = new System.Threading.CancellationTokenSource(
+                       TimeSpan.FromSeconds(3)))
+            {
+                int length = await socket.GetStream().ReadAsync(
+                    response, 0, response.Length, deadline.Token);
+                if (length != 0)
+                    throw new Exception("Unregistered peer remained alive after Stop");
+            }
+            Console.WriteLine("PASS: Stop releases TCP connections still waiting in the inbox");
+        }
+        finally
+        {
+            if (socket != null) socket.Close();
+            room.Stop();
+        }
+    }
+
+    private static async Task DiscardPacketsAfterTerminalEvent()
+    {
+        await VerifyTerminal("CLOSED");
+        await VerifyTerminal("ERROR:Simulated disconnection");
+        Console.WriteLine("PASS: terminal socket events invalidate stale queued start/state packets");
+    }
+
+    private static async Task VerifyTerminal(string terminal)
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 7789);
+        var client = new LanRoomClient();
+        TcpClient remote = null;
+        try
+        {
+            listener.Start();
+            var accepted = listener.AcceptTcpClientAsync();
+            client.Connect("127.0.0.1", 7789);
+            remote = await accepted;
+            for (int i = 0; i < 400 && !client.Connected; i++)
+            {
+                client.Pump();
+                await Task.Delay(10);
+            }
+            if (!client.Connected) throw new Exception("Mock transport did not connect");
+
+            int count = 0;
+            client.Received += message => { if (message.type == "start") count++; };
+            var type = typeof(LanRoomClient);
+            var fields = BindingFlags.Instance | BindingFlags.NonPublic;
+            var generation = (int)type.GetField("_generation", fields).GetValue(client);
+            var enqueue = type.GetMethod("Queue", fields);
+            if (enqueue == null) throw new Exception("LAN receiver queue method missing");
+
+            // A race can put CLOSED ahead of already received packets on the
+            // main-thread queue. Nothing after CLOSED is allowed to restart
+            // the old match.
+            enqueue.Invoke(client, new object[] { generation, null, terminal });
+            enqueue.Invoke(client, new object[] { generation,
+                "{\\"type\\":\\"start\\",\\"playerId\\":1,\\"unitId\\":1}", null });
+            enqueue.Invoke(client, new object[] { generation,
+                "{\\"type\\":\\"state\\",\\"tick\\":100,\\"p1X\\":7}", null });
+            client.Pump();
+
+            if (client.Connected || client.Playing || client.PlayerId != 0 ||
+                client.Tick != 0 || count != 0)
+                throw new Exception("Stale packets revived a closed TCP generation: " +
+                    terminal);
+            if (terminal == "CLOSED" && !client.Status.Contains("закрыл"))
+                throw new Exception("Client lost its disconnect status");
+            if (terminal.StartsWith("ERROR") &&
+                !client.Status.Contains("Simulated disconnection"))
+                throw new Exception("Client lost its socket error status");
+        }
+        finally
+        {
+            client.Disconnect();
+            if (remote != null) remote.Close();
+            listener.Stop();
+        }
     }
 
     private static async Task ConnectionChurn()
