@@ -25,6 +25,7 @@ internal static class ExtraLanChecks
     {
         await ConnectionChurn();
         await DropPendingAcceptOnStop();
+        await StopEnqueueRaceAndFrameBudget();
         await DiscardPacketsAfterTerminalEvent();
         await InboxFloodAndRecovery();
         await SeatReplacementAfterDisconnect();
@@ -34,6 +35,66 @@ internal static class ExtraLanChecks
         await ServerRestartSamePort();
         TestArenaLifecycle();
         Console.WriteLine("PASS: reconnect, flood recovery, heartbeat, silent-peer expiry, dead-server detection and arena lifecycle.");
+    }
+
+    private static async Task StopEnqueueRaceAndFrameBudget()
+    {
+        var room = new LanRoomServer();
+        try
+        {
+            if (!room.Start(7787)) throw new Exception(room.Error);
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var type = typeof(LanRoomServer);
+            var enqueue = type.GetMethod("Queue", flags);
+            var epochField = type.GetField("_epoch", flags);
+            var pendingField = type.GetField("_pending", flags);
+            if (enqueue == null || epochField == null || pendingField == null)
+                throw new Exception("LAN queue contract missing");
+            int epoch = (int)epochField.GetValue(room);
+            int executed = 0;
+            int discarded = 0;
+            Action onExecute = () => System.Threading.Interlocked.Increment(ref executed);
+            Action onDrop = () => System.Threading.Interlocked.Increment(ref discarded);
+
+            // Saturate the bounded inbox before a single frame and verify
+            // that Pump does not consume its entire queue in one update.
+            for (int i = 0; i < 256; i++)
+                enqueue.Invoke(room, new object[] { onExecute, epoch, onDrop });
+            room.Pump(0f);
+            if (executed != 128)
+                throw new Exception("Network work was not capped at 128 packets/frame: " + executed);
+            room.Pump(0f);
+            if (executed != 256)
+                throw new Exception("Network work was lost across capped frames");
+
+            // Simulate pending accepts arriving concurrently with Stop().
+            // After Stop every accepted callback must execute its OnDrop
+            // exactly once, whether it was queued before or after invalidation.
+            const int attempts = 1500;
+            var began = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var writer = Task.Run(async () =>
+            {
+                for (int i = 0; i < attempts; i++)
+                {
+                    enqueue.Invoke(room, new object[] { onExecute, epoch, onDrop });
+                    if (i == 0) began.TrySetResult(true);
+                    if (i % 23 == 0) await Task.Yield();
+                }
+            });
+            await began.Task;
+            room.Stop();
+            await writer;
+            if (executed != 256 || discarded != attempts)
+                throw new Exception(
+                    "Stop lost queued cleanup callbacks. Executed=" + executed +
+                    " Dropped=" + discarded + " Expected drops=" + attempts);
+            int pending = (int)pendingField.GetValue(room);
+            if (pending != 0)
+                throw new Exception("Pending packet count after Stop: " + pending);
+            Console.WriteLine("PASS: bounded network frame budget and atomic Stop/Queue cleanup");
+        }
+        finally { room.Stop(); }
     }
 
     private static async Task DropPendingAcceptOnStop()
