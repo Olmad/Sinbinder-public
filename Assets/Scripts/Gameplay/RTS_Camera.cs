@@ -168,6 +168,8 @@ namespace Sinbinder.Gameplay
         /// не меняется, зато ЛКМ/ПКМ делают противоположные вещи.
         /// Журнал раньше сообщал это однажды, и подсказка тут же терялась.
         /// </summary>
+        private GUIStyle _roleGuideStyle;
+
         void OnGUI()
         {
             if (!isActiveAndEnabled || !FirstPersonNow || OpeningReveal.Busy || UI.Modal.Any) return;
@@ -179,13 +181,10 @@ namespace Sinbinder.Gameplay
                   Core.Loc.T("ЛКМ — выбрать    ПКМ — приказ")
                 : Core.Loc.T("ВОИН  ·  V — Командир, Tab — вид сверху") + "\n" +
                   Core.Loc.T("ЛКМ — удар    ПКМ — блок");
-            var style = new GUIStyle(GUI.skin.box)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                fontSize = Mathf.Clamp(Screen.height / 60, 12, 19),
-                wordWrap = true
-            };
-            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, 68f), caption, style);
+            if (_roleGuideStyle == null)
+                _roleGuideStyle = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
+            _roleGuideStyle.fontSize = Mathf.Clamp(Screen.height / 60, 12, 19);
+            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, 68f), caption, _roleGuideStyle);
         }
 
         void OnApplicationFocus(bool focus)
