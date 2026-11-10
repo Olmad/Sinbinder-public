@@ -131,6 +131,8 @@ namespace UnityEngine
         public static Vector3 zero { get { return new Vector3(); } }
         public static Vector3 up { get { return new Vector3(0, 1, 0); } }
         public static Vector3 one { get { return new Vector3(1, 1, 1); } }
+        public static Vector3 operator -(Vector3 a, Vector3 b)
+        { return new Vector3(a.x-b.x, a.y-b.y, a.z-b.z); }
 
         public static Vector3 MoveTowards(Vector3 a, Vector3 b, float maximum)
         {
@@ -223,6 +225,7 @@ namespace UnityEngine
         public const float Deg2Rad = (float)(Math.PI / 180.0);
         public static float Cos(float v) { return (float)Math.Cos(v); }
         public static float Sin(float v) { return (float)Math.Sin(v); }
+        public static float Sqrt(float v) { return (float)Math.Sqrt(v); }
     }
 
     public static class Time
@@ -252,6 +255,7 @@ namespace UnityEngine
     {
         public static void Log(object obj) { Console.WriteLine(obj); }
         public static void LogError(object obj) { Console.Error.WriteLine(obj); }
+        public static void LogWarning(object obj) { Console.WriteLine(obj); }
     }
 
     public static class GUI
