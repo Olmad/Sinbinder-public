@@ -301,6 +301,13 @@ namespace Sinbinder.EditorTools
                     if (_step != "лук — выстрел")
                     {
                         Go("лук — выстрел");
+                        // Инвариант: до настоящего попадания механизм ещё заперт.
+                        if (DreamRoad.Instance == null || DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "противовес отпёр засовы до попадания стрелы");
+                            return;
+                        }
+                        Write("  [МЕХАНИЗМ] до выстрела засовы закрыты");
                         var target = DreamRoad.Instance != null ? DreamRoad.Instance.BowTarget : null;
                         if (dream.SealCompanion == null || target == null)
                         {
@@ -327,6 +334,13 @@ namespace Sinbinder.EditorTools
                     if (_step != "лук — искушение в деле")
                     {
                         Go("лук — искушение в деле");
+                        // Падение мишени без разблокировки плит больше не считается успехом.
+                        if (DreamRoad.Instance == null || !DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "стрела сбила противовес, но засовы печатей не открылись");
+                            return;
+                        }
+                        Write("  [МЕХАНИЗМ] противовес освободил две напольные печати");
                         var archer = dream.SealCompanion;
                         if (archer != null)
                         {
@@ -341,6 +355,11 @@ namespace Sinbinder.EditorTools
                     if (_step != "две печати")
                     {
                         Go("две печати");
+                        if (DreamRoad.Instance == null || !DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "достигли финальной загадки, не разблокировав плиты выстрелом");
+                            return;
+                        }
                         Snap("сон — две печати склепа");
                     }
                     var companion = dream.SealCompanion;
