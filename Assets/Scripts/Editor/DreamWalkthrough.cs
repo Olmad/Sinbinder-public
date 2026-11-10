@@ -199,6 +199,16 @@ namespace Sinbinder.EditorTools
                         && !SoulCourt.Sitting && now - _stepAt > 0.9f)
                     { _scalesShot = true; Snap("сон — весы над головой"); }
                     break;
+                case "Temptation":
+                    if (_step != "искушение")
+                    {
+                        Go("искушение");
+                        if (dream.Zombie != null)
+                            Warp(dream.Hero, dream.Zombie.transform.position + new Vector3(0f, 0f, -2f));
+                    }
+                    if (poke && now - _stepAt > 0.8f)
+                        Whisper.TryAny();  // настоящий шёпот через AOS, либо тайм-аут сцены
+                    break;
                 case "Battle":
                     if (_step != "бой")
                     {
@@ -253,12 +263,84 @@ namespace Sinbinder.EditorTools
                 case "DrawWeapon":
                 case "Practice":
                 case "Jars":
+                case "CommanderPractice":
                     if (_step != "управление")
                     {
                         Go("управление");
                         Write($"  тот же приказ без убийц: {DreamTutorialDirector.RetestResult ?? "не проверялся"}");
                     }
-                    dream.TestSkipControls();
+                    dream.TestSkipControls(); // только кнопочный блок; новые загадки проверяются отдельно
+                    break;
+                case "BowFind":
+                    if (_step != "лук — возвышение")
+                    {
+                        Go("лук — возвышение");
+                        Warp(dream.Hero, DreamRoad.BowStandAt + new Vector3(0f, 0f, -1.5f));
+                        Snap("сон — лук-искуситель на возвышении");
+                    }
+                    if (poke) dream.TestPress(KeyCode.F);
+                    break;
+                case "BowEquip":
+                    if (_step != "лук — снаряжение")
+                    {
+                        Go("лук — снаряжение");
+                        var bag = Sinbinder.Inventory.PlayerInventory.Instance;
+                        var ally = dream.SealCompanion;
+                        var item = bag?.GetAllItems().Find(i => i != null && i.Name == DreamBowTarget.BowName);
+                        if (ally == null || item == null || !SquadGear.Hand(ally, item, bag, out string reason))
+                        {
+                            End(false, "не удалось экипировать учебный лук реальной системой SquadGear");
+                            return;
+                        }
+                        Write("  передача лука через SquadGear.Hand: есть; голос искушения в вещи " +
+                              ally.Worn(Sinbinder.Inventory.GearSlot.Weapon)?.TemptationSin);
+                        Snap("сон — лук в снаряжении союзника");
+                    }
+                    break;
+                case "BowShot":
+                    if (_step != "лук — выстрел")
+                    {
+                        Go("лук — выстрел");
+                        var target = DreamRoad.Instance != null ? DreamRoad.Instance.BowTarget : null;
+                        if (dream.SealCompanion == null || target == null)
+                        {
+                            End(false, "отсутствует соратник или подвесная мишень");
+                            return;
+                        }
+                        // В первую очередь: подлинный приказ и голосование. Отказ не является
+                        // багом, поэтому через 12 секунд принудительно проверим только
+                        // механику полёта стрелы, явно записав обход AOS в отчёт.
+                        dream.SealCompanion.IssueCommand(CommandKind.Attack, target.transform.position, target.gameObject);
+                        Snap("сон — высокая мишень, настоящий приказ");
+                    }
+                    if (now - _stepAt > 12f && DreamRoad.Instance != null && !DreamRoad.Instance.BowTargetBroken)
+                    {
+                        var target = DreamRoad.Instance.BowTarget?.GetComponent<DreamBowTarget>();
+                        if (target != null && dream.SealCompanion != null)
+                        {
+                            Write("  [QA ОБХОД] За 12 с AOS не исполнила приказ, выстрел проверяется прямым вызовом.");
+                            target.ExecuteShot(dream.SealCompanion);
+                        }
+                    }
+                    break;
+                case "Puzzle":
+                    if (_step != "две печати")
+                    {
+                        Go("две печати");
+                        Snap("сон — две печати склепа");
+                    }
+                    var companion = dream.SealCompanion;
+                    if (companion == null || companion.IsDead)
+                    {
+                        End(false, "соратник не дожил до двух печатей");
+                        return;
+                    }
+                    companion.ClearCommand();
+                    var agent = companion.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                    if (agent != null && agent.enabled && agent.isOnNavMesh)
+                        agent.Warp(DreamRoad.WarriorSealAt);
+                    else companion.transform.position = DreamRoad.WarriorSealAt;
+                    Warp(dream.Hero, DreamRoad.LordSealAt);
                     break;
                 case "Return":
                     if (_step != "пробуждение")
