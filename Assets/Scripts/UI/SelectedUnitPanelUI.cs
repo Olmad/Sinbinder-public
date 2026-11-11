@@ -242,17 +242,23 @@ namespace Sinbinder.UI
 
             var odd = new System.Collections.Generic.List<string>();
             int calm = 0;
+            int pending = 0;
             foreach (var w in all)
             {
                 if (w == shown) continue;
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                if (d != null && d.HasCurrentCommandDecision && Disagrees(w))
+                // A delivered command is not an AOS verdict. Do not count
+                // a warrior awaiting the thirteen voices as "in formation".
+                if (w.HasCommand && (d == null || !d.HasCurrentCommandDecision))
+                    pending++;
+                else if (d != null && d.HasCurrentCommandDecision && Disagrees(w))
                     odd.Add(Loc.F("{0} {1}", Loc.Name(w.DisplayName),
                         d.LastDecisionDetail.Hesitated ? Grammar.For(w.Gender, Loc.T("медлит"))
                                                        : PhraseGenerator.Doing(d.LastDecisionDetail.Action).ToLowerInvariant()));
                 else calm++;
             }
 
+            if (pending > 0) odd.Add(Loc.F("ещё {0} — ожидают решения", Many(pending)));
             if (calm > 0) odd.Add(Loc.F("ещё {0} — в строю", Many(calm)));
             if (_groupLine != null)
             {
