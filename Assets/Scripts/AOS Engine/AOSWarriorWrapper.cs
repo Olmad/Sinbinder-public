@@ -136,7 +136,8 @@ namespace Sinbinder.AOS
 
             // Жизнь в лагере (docs/32-CAMP.md): решил «стоять» — стоит там,
             // куда тянет душа. Голос решил что, лагерь — где.
-            if (action == ActionType.Idle && CampLife.Where(_warrior, out var spot, out _))
+            if (OrderIntegrity.MayRoamCamp(action == ActionType.Idle, _warrior.HasCommand) &&
+                CampLife.Where(_warrior, out var spot, out _))
             {
                 ShowDecisionIcon(action);
                 var legs = GetComponent<UnitMover>();
@@ -150,9 +151,26 @@ namespace Sinbinder.AOS
                 return;
             }
 
+            // Holding a defensive post is compatible with choosing to
+            // attack an enemy who is already in range. It is NOT a license
+            // to chase an enemy across the map and abandon the post.
+            if (_warrior != null && _warrior.HasCommand &&
+                _warrior.Command.Kind == CommandKind.Defend &&
+                (action == ActionType.Attack || action == ActionType.Idle))
+            {
+                ShowDecisionIcon(action);
+                ExecuteDefenseAtPost();
+                return;
+            }
+
             ShowDecisionIcon(action);
             switch (action)
             {
+                case ActionType.Idle:
+                    // AOS hesitation must actually stop the previous move.
+                    // TryExecuteSkill(Idle) used to leave a NavMesh path alive.
+                    GetComponent<UnitMover>()?.Stop();
+                    break;
                 case ActionType.Attack: ExecuteAttack(); break;
                 case ActionType.Flee: ExecuteFlee(); break;
                 case ActionType.Loot: ExecuteLoot(); break;
@@ -318,15 +336,35 @@ namespace Sinbinder.AOS
                     break;
 
                 case CommandKind.Defend:
-                    if (mover != null) mover.Stop();
-                    // Оборона: бить только того, кто подошёл сам.
-                    var near = FindBestTarget();
-                    var aa = GetComponent<AutoAttack>();
-                    if (near != null && aa != null
-                        && Vector3.Distance(transform.position, near.transform.position) <= aa.AttackRange)
-                        aa.ForceAttack(near);   // деяние — в AutoAttack.Land
+                    ExecuteDefenseAtPost();
                     break;
             }
+        }
+
+        /// <summary>
+        /// Defend means HOLD this position and repel attackers who reached
+        /// weapon range. An AOS Attack candidate may satisfy Defend, but
+        /// must not turn into an unbounded pursuit.
+        /// </summary>
+        private void ExecuteDefenseAtPost()
+        {
+            GetComponent<UnitMover>()?.Stop();
+            var aa = GetComponent<AutoAttack>();
+            if (aa == null || CombatManager.Instance == null) return;
+
+            Damageable closest = null;
+            float closestDistance = float.MaxValue;
+            foreach (var enemy in CombatManager.Instance.GetEnemies(gameObject))
+            {
+                if (enemy == null || enemy.IsDead) continue;
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance <= aa.AttackRange && distance < closestDistance)
+                {
+                    closest = enemy;
+                    closestDistance = distance;
+                }
+            }
+            if (closest != null) aa.ForceAttack(closest);
         }
 
         /// <summary>Кто позвал на себя и на чей зов этот воин повёлся. Пусто — никто.</summary>
