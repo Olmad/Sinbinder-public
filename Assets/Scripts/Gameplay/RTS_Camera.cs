@@ -82,7 +82,8 @@ namespace Sinbinder.Gameplay
                 ? FirstPersonRole.Warrior : FirstPersonRole.Commander;
             SelectionManager.Instance?.StopAiming();
             LatchMouse();
-            // Индикатора роли на экране пока нет — говорим словами.
+            _fullRoleGuideUntil = Time.unscaledTime + 7f;
+            // Смена V не меняет камеру, но меняет ЛКМ/ПКМ.
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_role == FirstPersonRole.Warrior
                 ? Core.Loc.T("Воин: ЛКМ — удар, ПКМ — блок. V — снова Командир.")
                 : Core.Loc.T("Командир: мышь отдаёт приказы. V — Воин."));
@@ -161,6 +162,7 @@ namespace Sinbinder.Gameplay
             // не бывает, и мышь пришлось бы отпускать обратно.
             ApplyCursor();
             if (_mode == CameraView.Tactical) LookDown();
+            else _fullRoleGuideUntil = Time.unscaledTime + 7f;
         }
 
         /// <summary>
@@ -169,22 +171,31 @@ namespace Sinbinder.Gameplay
         /// Журнал раньше сообщал это однажды, и подсказка тут же терялась.
         /// </summary>
         private GUIStyle _roleGuideStyle;
+        private float _fullRoleGuideUntil;
 
         void OnGUI()
         {
             if (!isActiveAndEnabled || !FirstPersonNow || OpeningReveal.Busy || UI.Modal.Any) return;
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
             if (Core.GamePauseController.Instance != null && Core.GamePauseController.Instance.IsPaused) return;
-            var width = Mathf.Min(360f, Screen.width - 32f);
-            var caption = CommanderModeNow
-                ? Core.Loc.T("КОМАНДИР  ·  V — Воин, Tab — вид сверху") + "\n" +
-                  Core.Loc.T("ЛКМ — выбрать    ПКМ — приказ")
-                : Core.Loc.T("ВОИН  ·  V — Командир, Tab — вид сверху") + "\n" +
-                  Core.Loc.T("ЛКМ — удар    ПКМ — блок");
+            // Full explanation when changing mode; then a small persistent
+            // role label. The 68px help box no longer occupies the corner
+            // of the screen throughout combat.
+            bool full = Time.unscaledTime < _fullRoleGuideUntil;
+            float width = Mathf.Min(full ? 360f : 275f, Screen.width - 32f);
+            string caption = full
+                ? CommanderModeNow
+                    ? Core.Loc.T("КОМАНДИР  ·  V — Воин, Tab — вид сверху") + "\n" +
+                      Core.Loc.T("ЛКМ — выбрать    ПКМ — приказ")
+                    : Core.Loc.T("ВОИН  ·  V — Командир, Tab — вид сверху") + "\n" +
+                      Core.Loc.T("ЛКМ — удар    ПКМ — блок")
+                : CommanderModeNow
+                    ? Core.Loc.T("КОМАНДИР · ЛКМ выбор · ПКМ приказ")
+                    : Core.Loc.T("ВОИН · ЛКМ удар · ПКМ блок");
             if (_roleGuideStyle == null)
                 _roleGuideStyle = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
-            _roleGuideStyle.fontSize = Mathf.Clamp(Screen.height / 60, 12, 19);
-            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, 68f), caption, _roleGuideStyle);
+            _roleGuideStyle.fontSize = Mathf.Clamp(Screen.height / (full ? 60 : 78), 12, full ? 19 : 15);
+            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, full ? 68f : 37f), caption, _roleGuideStyle);
         }
 
         void OnApplicationFocus(bool focus)
@@ -255,6 +266,8 @@ namespace Sinbinder.Gameplay
             else { _pitch = 0f; _cam.fieldOfView = EyeFov; }   // из-под потолка голова не начинает смотреть в пол
 
             ShowHero(_mode == CameraView.Tactical);
+            if (_mode == CameraView.FirstPerson)
+                _fullRoleGuideUntil = Time.unscaledTime + 7f;
         }
 
         /// <summary>
@@ -289,6 +302,7 @@ namespace Sinbinder.Gameplay
             LatchMouse();
             _mode = view;
             if (view == CameraView.Tactical) LookDown();
+            else _fullRoleGuideUntil = Time.unscaledTime + 7f;
         }
 
         /// <summary>
