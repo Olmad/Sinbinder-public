@@ -78,6 +78,16 @@ internal static class Program
         Check(OrderAdvice.Next(null, "Pride").Contains("задачу"), "pride voice suggests a different assignment");
         Check(!string.IsNullOrWhiteSpace(OrderAdvice.Next("Unknown", "Unknown")),
             "unrecognized refusal still gives a non-guaranteed alternative");
+        Check(OrderAdvice.Short("Distance") == "Подойдите ближе",
+            "distance has a readable one-line command-panel hint");
+        Check(OrderAdvice.Short("Debt") == "Выплатите долг",
+            "debt has a readable one-line command-panel hint");
+        Check(OrderAdvice.Short("Temptation").Contains("снаряжение"),
+            "temptation short hint exposes a real player lever");
+        Check(OrderAdvice.Short(null, "Memory").Length <= 40,
+            "memory hint fits the one-line lower strip");
+        Check(OrderAdvice.Short("Unknown", "Unknown").Length <= 40,
+            "fallback hint is short enough for the lower strip");
 
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
