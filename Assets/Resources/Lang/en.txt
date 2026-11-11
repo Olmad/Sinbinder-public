@@ -13180,3 +13180,127 @@ msgstr "Yours? Then take it back."
 #: Dialogue/CampLines.cs
 msgid "Поняла."
 msgstr "Understood."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Партия прервана: один из воинов отошёл от стола."
+msgstr "The hand was interrupted: a warrior left the table."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Перебор."
+msgstr "Bust."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Беру карту."
+msgstr "I'll draw a card."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Хватит."
+msgstr "I'll stand."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Вы"
+msgstr "You"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Тренировка: наберите от 17 до 21."
+msgstr "Practice: score between 17 and 21."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Новая раздача. Цель — ближе всех к 21, не перебрав."
+msgstr "New deal. Get closest to 21 without going over."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Ваш ход записан."
+msgstr "Your move is registered."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Ход сделан."
+msgstr "Move registered."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Никто не набрал достаточно очков."
+msgstr "Nobody scored enough to win."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Партия окончена. Выиграли: {0}."
+msgstr "Hand over. Winners: {0}."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Эта партия моя."
+msgstr "That hand is mine."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Наблюдайте за ходами или нажмите «Сыграть»."
+msgstr "Watch the game, or choose Play."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Карты у костра"
+msgstr "Cards by the campfire"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "КАРТЫ У КОСТРА · ОЧКО (21)"
+msgstr "CAMPFIRE CARDS · 21"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11. Без ставок."
+msgstr "36 cards: 6–10 face value, J=2, Q=3, K=4, A=11. No wagers."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "ПЕРЕБОР"
+msgstr "BUST"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid " ← ход"
+msgstr " ← turn"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid " · закончил"
+msgstr " · done"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "{0}: {1}  [{2}]{3}"
+msgstr "{0}: {1}  [{2}]{3}"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "За столом пока нет начатой партии."
+msgstr "No hand is in progress at this table."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Взять карту (Пробел)"
+msgstr "Draw a card (Space)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Хватит (Enter)"
+msgstr "Stand (Enter)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сыграть самому (N)"
+msgstr "Play a hand (N)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Нет соперников: доступна тренировка или игра с одним воином."
+msgstr "No full table: practise alone or play against one warrior."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сейчас ход воина. Решение зависит от его характера."
+msgstr "A warrior is playing. Their choices depend on their character."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сыграть после этой раздачи"
+msgstr "Join after this hand"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Вы присоединитесь к следующей раздаче."
+msgstr "You will join the next deal."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Следующая раздача будет с вашим участием."
+msgstr "You are joining the next deal."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Встать из-за стола (F / Esc)"
+msgstr "Leave the table (F / Esc)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "F — карты: смотреть или сыграть"
+msgstr "F — cards: watch or play"
