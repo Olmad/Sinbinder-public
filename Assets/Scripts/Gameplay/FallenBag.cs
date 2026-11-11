@@ -62,6 +62,17 @@ namespace Sinbinder.Gameplay
 
         private void MapChanged(Scene previous, Scene next) => SetMap(next.name);
 
+        /// <summary>
+        /// The scene-loaded checkpoint can run before activeSceneChanged.
+        /// Sync the bag's originating map first so a checkpoint never
+        /// captures a bag as still on the map we just left.
+        /// </summary>
+        public static void OnMapLoaded(string sceneName)
+        {
+            foreach (var bag in Live.ToArray())
+                if (bag != null) bag.SetMap(sceneName);
+        }
+
         private void SetMap(string name)
         {
             if (_retired || string.IsNullOrEmpty(_homeScene)) return;

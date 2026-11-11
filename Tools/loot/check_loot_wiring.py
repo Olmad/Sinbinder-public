@@ -31,6 +31,8 @@ assert 'if (!b._retention.OnHomeMap && left <= 0f)' in b
 assert 'if (b != null && b._onMap && !b._retired' in b
 assert 'FallenBag.Restore(save.FallenBags' in save
 assert 'FallenBag.Snapshot()' in save
+assert "Gameplay.FallenBag.OnMapLoaded(scene.name)" in save
+assert "public static void OnMapLoaded(string sceneName)" in b
 assert 'public List<SavedFallenBag> FallenBags' in save_type
 assert 'FallenBag.Forget()' in prologue
 assert 'foreach (var sack in FallenBag.InReach())' in gear

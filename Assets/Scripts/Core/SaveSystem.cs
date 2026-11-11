@@ -197,6 +197,7 @@ namespace Sinbinder.Core
         {
             Arriving = false;
             StagedScene = null;
+            Gameplay.FallenBag.OnMapLoaded(scene.name);
 
             // Начало доли — её отметка: сюда вернёт «С начала доли».
             // Сцена — пришедшая, а не «открытая»: в sceneLoaded Unity могла
