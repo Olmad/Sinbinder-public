@@ -64,6 +64,7 @@ namespace Sinbinder.Multiplayer
         public readonly long ExecuteTick;
         public readonly long CommandId;
         public readonly int ConnectionId;
+        public readonly long SessionEpoch;
         public readonly string Lord;
         public readonly long ActorId;
         public readonly long TargetId;
@@ -71,12 +72,13 @@ namespace Sinbinder.Multiplayer
         public readonly float X, Y, Z;
 
         internal AuthorizedGameOrder(long sequence, long tick, long commandId,
-            int connectionId, string lord, NetworkOrderIntent input)
+            int connectionId, long sessionEpoch, string lord, NetworkOrderIntent input)
         {
             Sequence = sequence;
             ExecuteTick = tick;
             CommandId = commandId;
             ConnectionId = connectionId;
+            SessionEpoch = sessionEpoch;
             Lord = lord;
             ActorId = input.ActorId;
             TargetId = input.TargetId;
@@ -103,6 +105,7 @@ namespace Sinbinder.Multiplayer
             public readonly string Lord;
             public readonly int Side;
             public bool Connected = true;
+            public long SessionEpoch = 1;
             public long LastCommandId;
             public Player(string lord, int side) { Lord = lord; Side = side; }
         }
@@ -165,7 +168,17 @@ namespace Sinbinder.Multiplayer
         public void SetConnected(int connectionId, bool connected)
         {
             if (_players.TryGetValue(connectionId, out var player))
-                player.Connected = connected;
+                {
+                    // A disconnect invalidates every order approved in the old session.
+                    // Keep the replay cursor and Lord identity for authorized resume.
+                    if (player.Connected && !connected)
+                    {
+                        if (player.SessionEpoch == long.MaxValue)
+                            throw new InvalidOperationException("Session epoch exhausted");
+                        player.SessionEpoch++;
+                    }
+                    player.Connected = connected;
+                }
         }
 
         /// <summary>Only server code allocates IDs, never Warrior.Id / client IDs.</summary>
@@ -194,6 +207,12 @@ namespace Sinbinder.Multiplayer
         {
             return _players.TryGetValue(connectionId, out var player)
                 ? player.LastCommandId : 0L;
+        }
+
+        public bool IsCurrentSession(int connectionId, long epoch)
+        {
+            return _players.TryGetValue(connectionId, out var player) &&
+                player.Connected && player.SessionEpoch == epoch;
         }
 
         public bool TryGetLord(int connectionId, out string lord)
@@ -299,7 +318,7 @@ namespace Sinbinder.Multiplayer
             player.LastCommandId = intent.CommandId;
             approved = new AuthorizedGameOrder(++_nextSequence,
                 currentTick + _delay + extraDelayTicks, intent.CommandId,
-                authenticatedConnectionId, player.Lord, intent);
+                authenticatedConnectionId, player.SessionEpoch, player.Lord, intent);
             return true;
         }
 
