@@ -128,7 +128,7 @@ namespace Sinbinder.Gameplay
         /// Soul shapes *risk tolerance* but does not predetermine card draws.
         /// These are a character's choices, not an AOS obedience verdict.
         /// </summary>
-        public static bool WantsCard(SinType sin, int score)
+        public static bool WantsCard(SinType sin, int score, int memoryBias = 0)
         {
             int target = sin switch
             {
@@ -141,7 +141,9 @@ namespace Sinbinder.Gameplay
                 SinType.Sloth => 15,
                 _ => 17
             };
-            return score < target;
+            // A remembered win/loss may nudge risk by at most two points.
+            // AOS memory cannot manufacture cards or force obedience.
+            return score < target + Math.Max(-2, Math.Min(2, memoryBias));
         }
     }
 }

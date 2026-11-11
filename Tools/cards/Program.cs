@@ -33,6 +33,14 @@ static class Program
         Check(CampCardRound.WantsCard(SinType.Wrath, 16), "risk-taking Wrath hits at 16");
         Check(!CampCardRound.WantsCard(SinType.Wrath, 21), "nobody hits at 21");
         Check(CampCardRound.WantsCard(SinType.Greed, 17), "Greed chases higher score");
+        Check(!CampCardRound.WantsCard(SinType.Sloth, 15), "Sloth normally stands at 15");
+        Check(CampCardRound.WantsCard(SinType.Sloth, 15, 1),
+            "remembered loss may encourage one more draw");
+        Check(!CampCardRound.WantsCard(SinType.Sloth, 14, -1),
+            "remembered win may encourage cautious standing");
+        Check(CampCardRound.WantsCard(SinType.Sloth, 15, 200) ==
+              CampCardRound.WantsCard(SinType.Sloth, 15, 2),
+            "memory bias clamped to avoid fake impossible bravery");
 
         var p = Game(120, ("Игрок", SinType.Pride, true), ("Вейн", SinType.Sloth, false));
         var p2 = Game(120, ("Игрок", SinType.Pride, true), ("Вейн", SinType.Sloth, false));

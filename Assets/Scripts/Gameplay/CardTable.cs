@@ -301,7 +301,7 @@ namespace Sinbinder.Gameplay
                 if (Time.unscaledTime < _nextMoveAt) return;
                 var hand = _round.Current;
                 var npc = _roundWarriors[_round.Turn];
-                bool take = CampCardRound.WantsCard(hand.Sin, hand.Score);
+                bool take = CampCardRound.WantsCard(hand.Sin, hand.Score, RecentCardBias(npc));
                 _round.Play(take);
                 _nextMoveAt = Time.unscaledTime + TurnBeat;
                 if (npc != null)
@@ -326,6 +326,30 @@ namespace Sinbinder.Gameplay
             // than repeating two pre-recorded phrases forever.
             if (!Watching && Time.unscaledTime >= _nextDealAt && available.Count >= 2)
                 BeginRound(available, false);
+        }
+
+        /// <summary>
+        /// An actual previous victory makes the warrior a little more
+        /// cautious; a loss can make the next round riskier. Only the
+        /// most recent vivid game memory against this Sinbinder counts.
+        /// This changes a game decision, never the AOS command verdict.
+        /// </summary>
+        private static int RecentCardBias(Warrior who)
+        {
+            if (who == null || !SinbinderPlayer.Exists ||
+                MemoryProcessor.Instance == null) return 0;
+
+            MemoryRecord recent = null;
+            foreach (var memory in MemoryProcessor.Instance.GetMemories(who))
+            {
+                if (memory == null || memory.TargetID != SinbinderPlayer.Instance.Id ||
+                    (memory.EventType != "CardsLostToSinbinder" &&
+                     memory.EventType != "CardsWonAgainstSinbinder")) continue;
+                if (recent == null || memory.CreationTime > recent.CreationTime)
+                    recent = memory;
+            }
+            return recent == null ? 0
+                : recent.EventType == "CardsLostToSinbinder" ? 1 : -1;
         }
 
         private void BeginRound(List<Warrior> available, bool includeHuman)
@@ -438,7 +462,9 @@ namespace Sinbinder.Gameplay
                 }
             }
             _nextDealAt = Time.unscaledTime + NextDeal;
-            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);
+            // Ordinary camp life should not dump a match result into the
+            // battle log every few seconds when the player is elsewhere.
+            if (Watching) Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);
         }
 
         /// <summary>F at the table: watch a live round or play yourself.</summary>
