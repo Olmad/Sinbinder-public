@@ -432,7 +432,10 @@ namespace Sinbinder.UI
             if (wrapper == null || wrapper.LastContext == null)
             {
                 Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
-                Order(Loc.T("Приказа нет"), "", false);
+                if (who.HasCommand)
+                    Order(Loc.T("Приказ отдан — решение ожидается"), "", true);
+                else
+                    Order(Loc.T("Приказа нет"), "", false);
                 return;
             }
 
