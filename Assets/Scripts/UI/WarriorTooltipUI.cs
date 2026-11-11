@@ -32,6 +32,8 @@ namespace Sinbinder.UI
 
         // Строка весов — на решение, а не на кадр: голоса считаются заново, только когда воин решил снова.
         private DecisionContext _scalesFor;
+        private Warrior _scalesWarrior;
+        private bool _scalesWhisperCompelled;
         private string _scales;
 
         /// <summary>
@@ -205,9 +207,16 @@ namespace Sinbinder.UI
                 // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
                 if (hasDecision && !waitingForCommand)
                 {
-                    if (_scalesFor != wrapper.LastContext)
+                    // A context alone is not a complete visual cache key: hovering
+                    // another warrior (or compelling this verdict) must not reuse
+                    // the previous warrior's displayed voice balance.
+                    if (_scalesFor != wrapper.LastContext ||
+                        _scalesWarrior != warrior ||
+                        _scalesWhisperCompelled != wrapper.LastWhisperCompelled)
                     {
                         _scalesFor = wrapper.LastContext;
+                        _scalesWarrior = warrior;
+                        _scalesWhisperCompelled = wrapper.LastWhisperCompelled;
                         _scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
                     }
                     if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
