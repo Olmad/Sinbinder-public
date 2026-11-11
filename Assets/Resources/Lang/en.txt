@@ -5541,7 +5541,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Я сам решу, за кем идти."
-msgstr ""
+msgstr "I'll decide for myself whom to follow."
 
 #: Dialogue/VillageLines.cs
 msgid "Лишь бы дело дал, а не стоять."
@@ -5549,11 +5549,11 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Пусть зовёт. Я тут посижу."
-msgstr ""
+msgstr "Let him call. I'll sit here."
 
 #: Dialogue/VillageLines.cs
 msgid "Тебя звал, а меня — нет?"
-msgstr ""
+msgstr "He called you, but not me?"
 
 #: Dialogue/VillageLines.cs
 msgid "Звал? Ласково хоть?"
@@ -5561,7 +5561,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "У него, говорят, котёл полный."
-msgstr ""
+msgstr "I hear his cooking pot is full."
 
 #: Dialogue/VillageLines.cs
 msgid "Поглядим."
@@ -5669,7 +5669,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Подсаживайся ближе."
-msgstr ""
+msgstr "Come sit closer."
 
 #: Dialogue/VillageLines.cs
 msgid "Хлеба бы."
