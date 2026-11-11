@@ -92,6 +92,24 @@ internal static class Program
         Contains(tick, "yield break;", "stale decision can be discarded without executing");
         Contains(tick, "OrderIntegrity.ShouldPresentRefusal(", "production tick uses single-refusal-pause rule");
 
+        // AOS is a vote of thirteen distinct personality voices, not a
+        // tutorial-friendly script or a substitute AI. Guard the actual
+        // resolver's constructor registry against accidental truncation.
+        string resolver = File.ReadAllText(Path.Combine(root, "Assets/Scripts/AOS Engine/BehaviorResolver.cs"));
+        string registry = resolver.Split(new[] { "public BehaviourResolver()" }, StringSplitOptions.None)[1]
+            .Split(new[] { "/// <summary>" }, StringSplitOptions.None)[0];
+        var voices = new[]
+        {
+            "GreedModule", "PrideModule", "WrathModule", "EnvyModule",
+            "LustModule", "GluttonyModule", "SlothModule", "PatienceModule",
+            "FearModule", "LoyaltyModule", "MoralityModule", "MemoryModule", "VirtueModule"
+        };
+        foreach (var voice in voices)
+            Check(registry.Contains("new " + voice + "()"), voice + " is present in production AOS");
+        int registrations = System.Text.RegularExpressions.Regex.Matches(registry,
+            @"new\s+[A-Za-z]+Module\s*\(\s*\)").Count;
+        Check(registrations == 13, "AOS keeps exactly thirteen registered voices");
+
         Console.WriteLine("PASS: " + _passed + " AOS order-integrity assertions");
         return 0;
     }
