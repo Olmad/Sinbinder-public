@@ -68,6 +68,15 @@ internal static class Program
         Check(OrderIntegrity.MayExecuteDelayed(0u, 0u),
             "initial order identity remains usable");
 
+        Check(OrderIntegrity.ShouldPresentRefusal(false, 0u, 0u),
+            "first refusal gets a visible pause");
+        Check(!OrderIntegrity.ShouldPresentRefusal(true, 5u, 5u),
+            "repeated vote on same order does not spam the refusal overlay");
+        Check(OrderIntegrity.ShouldPresentRefusal(true, 5u, 6u),
+            "next order gets its own visible refusal");
+        Check(!OrderIntegrity.ShouldPresentRefusal(true, 6u, 6u),
+            "same-frame repeated vote cannot cause a second overlay");
+
         // Wire checks are intentionally supplemental to executable tests:
         // they prevent a future refactor from silently bypassing the tested
         // production gate. They do NOT substitute for Unity Play Mode.
@@ -81,6 +90,7 @@ internal static class Program
         Contains(hub, "warrior.GetInstanceID(), warrior.CommandRevision", "event keyed by runtime identity and revision");
         Contains(tick, "OrderIntegrity.MayExecuteDelayed(", "real AOS tick checks paused command freshness");
         Contains(tick, "yield break;", "stale decision can be discarded without executing");
+        Contains(tick, "OrderIntegrity.ShouldPresentRefusal(", "production tick uses single-refusal-pause rule");
 
         Console.WriteLine("PASS: " + _passed + " AOS order-integrity assertions");
         return 0;
