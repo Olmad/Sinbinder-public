@@ -173,7 +173,8 @@ namespace Sinbinder.Gameplay
             foreach (var record in saved)
             {
                 if (record == null || string.IsNullOrEmpty(record.Scene) ||
-                    record.Items == null && record.Gold <= 0 && record.Memento == null)
+                    ((record.Items == null || record.Items.Count == 0) &&
+                     record.Gold <= 0 && record.Memento == null))
                     continue;
                 if (record.Away && record.RemainingAway <= 0f) continue;
                 var b = MakePhysical(record.Owner ?? "", record.Position, record.Scene);
@@ -185,7 +186,8 @@ namespace Sinbinder.Gameplay
                 if (record.Items != null) b._items.AddRange(record.Items);
                 b._retention = FallenBagRetention.FromSave(!record.Away,
                     record.RemainingAway, Time.unscaledTime);
-                b.SetMap(targetScene);
+                b.SetMap(string.IsNullOrEmpty(targetScene)
+                    ? SceneManager.GetActiveScene().name : targetScene);
             }
         }
 

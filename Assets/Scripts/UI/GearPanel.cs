@@ -400,7 +400,10 @@ namespace Sinbinder.UI
             if (shut != null) Offer(Gaze.Miss(shut.transform), Loc.T("F — открыть сундук Марги"), shut.Open);
             var chest = TrophyChest.Reachable();
             if (chest != null) Offer(Gaze.Miss(chest.transform), Loc.T("F — сундук Марги"), () => OpenChest(chest));
-            foreach (var sack in FallenBag.InReach()) Offer(Gaze.Miss(sack.transform), sack.Prompt, sack.Take);
+            foreach (var sack in FallenBag.InReach())
+                Offer(Mathf.Min(Gaze.Miss(sack.transform),
+                    Gaze.Miss(sack.transform.position + Vector3.up * 0.5f, 0.75f)),
+                    sack.Prompt, sack.Take);
             var pot = Cauldron.Nearest();
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var well = CampWell.Nearest();

@@ -5,6 +5,10 @@ on:
       - feature/server-prototype
     paths:
       - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/Gameplay/PrologueDirector.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
       - "Assets/Scripts/Gameplay/CombatManager.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
@@ -15,6 +19,10 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/Gameplay/PrologueDirector.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
       - "Assets/Scripts/Gameplay/CombatManager.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
@@ -34,4 +42,5 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run -c Release --project Tools/loot/LootChecks.csproj
+      - run: dotnet run -c Release --project Tools/loot/BagTimeChecks.csproj
       - run: python3 Tools/loot/check_loot_wiring.py
