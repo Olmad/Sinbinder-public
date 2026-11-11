@@ -11,5 +11,6 @@
     <Compile Include="Program.cs" />
     <!-- Compile the exact same production file that the Unity dream uses. -->
     <Compile Include="../../Assets/Scripts/Gameplay/DreamTutorialChecks.cs" Link="DreamTutorialChecks.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
   </ItemGroup>
 </Project>
