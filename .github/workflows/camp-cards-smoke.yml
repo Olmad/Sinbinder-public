@@ -6,6 +6,7 @@ on:
       - feature/server-prototype
     paths:
       - "Assets/Scripts/Gameplay/CardTable.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Gameplay/CampCardRules.cs"
       - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/UI/PauseMenu.cs"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/Gameplay/CardTable.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Gameplay/CampCardRules.cs"
       - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/UI/PauseMenu.cs"

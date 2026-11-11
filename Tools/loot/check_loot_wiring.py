@@ -4,7 +4,10 @@ b = (base/"Assets/Scripts/Gameplay/FallenBag.cs").read_text(encoding="utf-8")
 combat = (base/"Assets/Scripts/Gameplay/CombatManager.cs").read_text(encoding="utf-8")
 warrior = (base/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
 roster = (base/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
-assert "FallenBag.CreateFor(killed)" in combat
+assert "FallenBag.CreateFor(killed, bodyLoot)" in combat
+assert "HarvestableBody CreateLootOnField" in combat
+assert "bodyLoot.CollectGold()" in b and "bodyLoot.CollectEquipment()" in b
+assert "!LootChain.Enabled" in b
 assert "OnAnyDeath +=" not in b
 assert "FallenBagTransfer.Move(_items, inventory.AddItem)" in b
 assert "FallenBagTransfer.Move(_items, bag.AddItem)" in b

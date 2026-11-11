@@ -42,7 +42,7 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- появление
 
-        public static void CreateFor(Damageable killed)
+        public static void CreateFor(Damageable killed, HarvestableBody bodyLoot)
         {
             var w = killed != null ? killed.Warrior : null;
             if (w == null || w is SinbinderPlayer) return;
@@ -51,9 +51,18 @@ namespace Sinbinder.Gameplay
             // generated harvestable loot on a corpse. Never duplicate gold.
             bool allied = w.Team == Team.Player;
             InventoryItem keepsake = allied ? Memento(w.DisplayName) : null;
-            if (w.Carried.Count == 0 && w.PocketGold <= 0 && keepsake == null)
+            // Generated treasure belongs to the existing corpse system.
+            // If automatic distribution is enabled, leave it there for
+            // LootChain. Otherwise transfer that value once to the bag.
+            bool collectCorpseLoot = !allied && !LootChain.Enabled && bodyLoot != null;
+            int extraGold = collectCorpseLoot ? bodyLoot.GoldValue : 0;
+            string trophy = collectCorpseLoot && bodyLoot.HasEquipment
+                ? bodyLoot.EquipmentName : null;
+            if (w.Carried.Count == 0 && w.PocketGold <= 0 && keepsake == null &&
+                extraGold <= 0 && string.IsNullOrEmpty(trophy))
                 return;
 
+            bool ownedEquipment = w.Carried.Count > 0;
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = Loc.F("Мешок {0}", w.DisplayName);
             Object.Destroy(go.GetComponent<Collider>());
@@ -75,6 +84,15 @@ namespace Sinbinder.Gameplay
             w.TakeAll();
             bag._gold = w.EmptyPocket();
             bag._memento = keepsake;
+            if (collectCorpseLoot)
+            {
+                // Both Collect methods zero the generated body payload
+                // to prevent a second reward from Remains / LootChain.
+                bag._gold = checked(bag._gold + bodyLoot.CollectGold());
+                string acquired = bodyLoot.CollectEquipment();
+                if (!string.IsNullOrEmpty(acquired) && !ownedEquipment)
+                    bag._items.Add(LootChain.Trophy(acquired));
+            }
         }
 
         /// <summary>Памятная вещь по имени — та, что в его примете.</summary>

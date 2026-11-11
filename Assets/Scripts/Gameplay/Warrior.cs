@@ -447,6 +447,7 @@ namespace Sinbinder.Gameplay
         {
             int all = PocketGold;
             PocketGold = 0;
+            SquadRoster.SyncPocket(this);
             return all;
         }
 

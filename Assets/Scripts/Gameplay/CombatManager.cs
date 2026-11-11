@@ -144,10 +144,12 @@ namespace Sinbinder.Gameplay
             {
                 // Resolve card escrow before the fallen wallet becomes loot.
                 CardTable.Instance?.CancelForDeath(killed.Warrior);
-                CreateLootOnField(killed);
-                // Direct death path: independent of watcher Update timing,
-                // and occurs exactly once for one lethal damage event.
-                FallenBag.CreateFor(killed);
+                var bodyLoot = CreateLootOnField(killed);
+                // Direct death path: independent of watcher Update timing.
+                // The bag takes tangible belongings. If LootChain is off,
+                // it also receives the body's generated treasure exactly
+                // once so enemies do not leave untouchable invisible loot.
+                FallenBag.CreateFor(killed, bodyLoot);
             }
             if (OnAnyDeath != null)
                 foreach (var d in OnAnyDeath.GetInvocationList())
@@ -169,7 +171,7 @@ namespace Sinbinder.Gameplay
         /// и она же единственная, у которой есть огонёк, срок и цена
         /// промедления.
         /// </summary>
-        private void CreateLootOnField(Damageable killed)
+        private HarvestableBody CreateLootOnField(Damageable killed)
         {
             var pos = killed.transform.position;
 
@@ -179,6 +181,7 @@ namespace Sinbinder.Gameplay
             harvestableBody.Initialize(killed.Warrior.Shell, killed.Warrior.Soul);
             harvestableBody.Foe = killed.Warrior.Team != Team.Player;
             _bodiesOnField.Add(harvestableBody);
+            return harvestableBody;
         }
 
         private void CheckBattleEnd()

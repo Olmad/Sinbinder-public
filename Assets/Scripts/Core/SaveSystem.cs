@@ -78,6 +78,7 @@ namespace Sinbinder.Core
 
         public static SaveGame Snapshot()
         {
+            Gameplay.CardTable.BeforeSaveOrLoad(); // no open wager escrow in a save
             var save = new SaveGame
             {
                 Scene = Here,
@@ -312,6 +313,7 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool Restore(SaveGame save)
         {
+            Gameplay.CardTable.BeforeSaveOrLoad();
             if (save == null) return false;
 
             if (save.Version != SaveGame.Current)

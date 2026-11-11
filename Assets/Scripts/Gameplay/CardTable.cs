@@ -268,6 +268,18 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Called before recording or restoring save state. A card pot is
+        /// runtime-only, so saving debited purses without this refund would
+        /// destroy coins or permit a reload to double-pay a round.
+        /// </summary>
+        public static void BeforeSaveOrLoad()
+        {
+            if (Instance == null || Instance._pot == null) return;
+            Instance.AbortRound();
+            Instance._status = Loc.T("Ставки возвращены: сохранение прервало партию.");
+        }
+
         private void AbortRound()
         {
             _pot?.Refund();
