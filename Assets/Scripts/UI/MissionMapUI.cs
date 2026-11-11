@@ -39,6 +39,7 @@ namespace Sinbinder.UI
         [SerializeField] private Font _font;
 
         private readonly List<GameObject> _spawned = new();
+        private ScrollRect _missionScroll;
 
         private static MissionMapUI _shown;
 
@@ -67,6 +68,7 @@ namespace Sinbinder.UI
 
         void Start()
         {
+            EnsureScrolling();
             if (_panel == gameObject)
                 Debug.LogError("[КАРТА] Компонент висит на панели, которую сам "
                              + "выключает: подход к шару замечен не будет.");
@@ -484,10 +486,57 @@ namespace Sinbinder.UI
             return "";
         }
 
+        /// <summary>
+        /// Old scenes contain a fixed-height list of mission buttons with
+        /// no scroll component. Runtime installation preserves those scenes
+        /// while ensuring every mission and archived replay stays reachable.
+        /// </summary>
+        private void EnsureScrolling()
+        {
+            if (_rows == null || _missionScroll != null) return;
+            var existing = _rows.GetComponentInParent<ScrollRect>();
+            if (existing != null)
+            {
+                _missionScroll = existing;
+                if (existing.content != null) _rows = existing.content;
+                return;
+            }
+
+            var viewport = _rows;
+            if (viewport.GetComponent<RectMask2D>() == null)
+                viewport.gameObject.AddComponent<RectMask2D>();
+
+            var contentObj = new GameObject("Список экспедиций — прокрутка",
+                typeof(RectTransform));
+            var content = (RectTransform)contentObj.transform;
+            content.SetParent(viewport, false);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = new Vector2(0f, Mathf.Max(1f, viewport.rect.height));
+            content.anchoredPosition = Vector2.zero;
+
+            _missionScroll = viewport.gameObject.AddComponent<ScrollRect>();
+            _missionScroll.viewport = viewport;
+            _missionScroll.content = content;
+            _missionScroll.horizontal = false;
+            _missionScroll.vertical = true;
+            _missionScroll.movementType = ScrollRect.MovementType.Clamped;
+            _missionScroll.scrollSensitivity = 34f;
+            _missionScroll.inertia = true;
+            _rows = content;
+        }
+
         private void Rows(out float y)
         {
+            EnsureScrolling();
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
+            if (_rows != null)
+                _rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    _missionScroll != null ? _missionScroll.viewport.rect.height : 550f);
+            if (_missionScroll != null)
+                _missionScroll.verticalNormalizedPosition = 1f;
             y = 0f;
         }
 
@@ -505,6 +554,14 @@ namespace Sinbinder.UI
             rt.offsetMax = Vector2.zero;
             rt.sizeDelta = new Vector2(0f, height);
             rt.anchoredPosition = new Vector2(0f, y);
+            if (_missionScroll != null && _rows != null)
+            {
+                // Rows are top-anchored; extend the content's actual size
+                // or Unity's ScrollRect will clamp all scrolling to zero.
+                float required = -y + height + 12f;
+                if (required > _rows.rect.height)
+                    _rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, required);
+            }
 
             var plate = go.AddComponent<Image>();
             plate.color = bright

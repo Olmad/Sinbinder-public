@@ -13,6 +13,10 @@ assert "new GameObject" in m and "surface.BuildNavMesh()" in m
 assert "WarriorRig.Attach(go)" in p and "sceneSetup?.SetupWarrior(go)" in p
 assert "ExpeditionMapPlan.ForName(mission.Name)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui
+assert "viewport.gameObject.AddComponent<RectMask2D>()" in ui
+assert "_missionScroll = viewport.gameObject.AddComponent<ScrollRect>()" in ui
+assert "_rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, required)" in ui
+assert "_missionScroll.verticalNormalizedPosition = 1f" in ui
 gear=src("Assets/Scripts/UI/GearPanel.cs")
 assert "PersonalExpedition.OfferInteractions(Offer);" in gear
 assert "public static void OfferInteractions(" in p
