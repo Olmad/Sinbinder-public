@@ -147,6 +147,20 @@ internal static class Program
         Contains(whisper, "void ResolveBargain()", "whisper settles only after the soul speaks");
         Contains(whisper, "w.CommandRevision == agreedOrder", "cancelled or changed orders cannot be paid for");
         Contains(whisper, "if (applied)", "false agreement cannot consume money or corrupt the soul");
+        // Positive: the existing refusal/hesitation branch still permits a
+        // current, genuinely evaluated order. Negative: no whisper while a
+        // new command has not yet received its own thirteen-voice verdict.
+        string whisperSource = File.ReadAllText(whisper);
+        int canStart = whisperSource.IndexOf("private static bool Can(Warrior w, bool anyDistance)", StringComparison.Ordinal);
+        int canEnd = whisperSource.IndexOf("private static Whisper _one;", canStart, StringComparison.Ordinal);
+        Check(canStart >= 0 && canEnd > canStart, "whisper eligibility production method exists");
+        string canSource = whisperSource.Substring(canStart, canEnd - canStart);
+        int freshness = canSource.IndexOf("if (!mind.HasCurrentCommandDecision) return false;", StringComparison.Ordinal);
+        int refusal = canSource.IndexOf("return d.Hesitated || d.RefusedCommand;", StringComparison.Ordinal);
+        Check(freshness >= 0 && refusal > freshness,
+            "stale command is rejected before considering refusal or hesitation");
+        Check(canSource.Contains("if (mind == null || !w.HasCommand) return false;"),
+            "current command and AOS wrapper remain mandatory for whisper eligibility");
         // The same tooltip file also exposes the natural verdict versus whisper compulsion.
         Contains(tooltip, "wrapper.NaturalDecisionDetail", "court tooltip retains natural thirteen-voice verdict");
         Contains(tooltip, "wrapper.LastWhisperCompelled", "tooltip distinguishes external persuasion from AOS vote");
