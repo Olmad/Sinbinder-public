@@ -383,21 +383,19 @@ namespace Sinbinder.Gameplay
             // ничего не даёт. Это причинная связь между двумя загадками.
             if (!_mechanismReleased) return false;
             if (_sealsAwake) return true;
-            // Явная проверка КВАДРАТА расстояния по земле.
-            // Локальный Flat() тоже вычитает высоту без нормализации,
-            // но здесь сохраняем проверку без квадратного корня.
-            Vector3 allyAt = ally != null ? ally.transform.position - WarriorSealAt : Vector3.zero;
-            allyAt.y = 0f;
-            Vector3 lordAt = lord - LordSealAt;
-            lordAt.y = 0f;
-            bool warrior = ally != null && !ally.IsDead && allyAt.sqrMagnitude <= 1.35f * 1.35f;
-            bool owner = lordAt.sqrMagnitude <= 1.35f * 1.35f;
-            _sealTogether = warrior && owner ? _sealTogether + Time.deltaTime : 0f;
+            // Real game and CI both use the SAME non-normalizing distance
+            // and continuous-hold rule. A missed step resets progress.
+            bool warrior = ally != null && !ally.IsDead &&
+                DreamTutorialChecks.OnSeal(ally.transform.position.x, ally.transform.position.z,
+                    WarriorSealAt.x, WarriorSealAt.z);
+            bool owner = DreamTutorialChecks.OnSeal(lord.x, lord.z, LordSealAt.x, LordSealAt.z);
+            bool nowAwake = DreamTutorialChecks.AdvanceSeals(
+                ref _sealTogether, _mechanismReleased, warrior, owner, Time.deltaTime);
             if (_warriorSeal != null)
                 _warriorSeal.material.color = warrior ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
             if (_lordSeal != null)
                 _lordSeal.material.color = owner ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
-            if (_sealTogether >= 1.2f) _sealsAwake = true;
+            if (nowAwake) _sealsAwake = true;
             return _sealsAwake;
         }
 
