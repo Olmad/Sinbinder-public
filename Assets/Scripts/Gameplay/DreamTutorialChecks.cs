@@ -61,6 +61,25 @@ namespace Sinbinder.Gameplay
     /// Bodyguard.Absorb interception; protects an incident from reward spam.
     /// Kept pure for deterministic CI execution without Unity.
     /// </summary>
+    /// <summary>
+    /// A battle can end only after at least one enemy was present, and only
+    /// once per enemy wave. Later allied deaths must not replay victory rewards.
+    /// Pure production rule, tested without Unity.
+    /// </summary>
+    public sealed class BattleEndGate
+    {
+        private bool _hadEnemies;
+
+        public void EnemyRegistered() => _hadEnemies = true;
+
+        public bool TryComplete(bool anyLivingEnemies)
+        {
+            if (!_hadEnemies || anyLivingEnemies) return false;
+            _hadEnemies = false;
+            return true;
+        }
+    }
+
     public sealed class RescueCreditGate
     {
         public const float CooldownSeconds = 15f;
