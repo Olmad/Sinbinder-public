@@ -165,6 +165,27 @@ internal static class Program
               saveSource.Contains("foreach (var s in save.Shelf)"),
               "valid squad and soul restoration paths remain present");
 
+        // A missing destination scene must fail before Restore mutates live state.
+        // Positive paths: same part without reload and valid raid-host scenes
+        // still reach Restore. This is L0 source-linked, not Unity Play Mode.
+        int returnToStart = saveSource.IndexOf("public static bool ReturnTo(SaveGame save, bool reload = false)");
+        int restoreStart = saveSource.IndexOf("public static bool Restore(SaveGame save)", returnToStart);
+        string returnToBody = returnToStart >= 0 && restoreStart > returnToStart
+            ? saveSource.Substring(returnToStart, restoreStart - returnToStart) : "";
+        int sceneGuard = returnToBody.IndexOf("!Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene))");
+        int restoreCall = returnToBody.IndexOf("if (!Restore(save)) return false;");
+        Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
+              returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
+              "missing destination scene rejects save before live state restoration");
+        Check(returnToBody.Contains("(reload || save.Scene != Here)") &&
+              returnToBody.Contains("if (save.Scene == Here && !reload) return true;") &&
+              returnToBody.Contains("string scene = RaidEvent.HostOf(save.Scene);") &&
+              returnToBody.Contains("SceneManager.LoadScene(scene);"),
+              "same-scene and valid hosted raid destination still follow original restore paths");
+        Check(!returnToBody.Contains("состояние возвращено, место — нет") &&
+              !returnToBody.Contains("return true;\n            }\n\n            Arriving = true;"),
+              "missing scene cannot be reported as successful partial restoration");
+
         // Solo save durability: a failed write must not truncate the existing slot.
         // L0 source-linked checks; the actual Unity filesystem needs separate QA.
         int writeStart = saveSource.IndexOf("public static bool Write(SaveGame save, string path)");
