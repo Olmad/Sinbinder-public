@@ -108,4 +108,18 @@ assert '"latencyReply"' in server and '"latencyProbe"' in server
 assert "LanServerBookmarks.Load()" in entry
 assert "mp-ping-balance" in (ROOT / "Test-World-LAN.cmd").read_text("utf-8")
 assert "mp-ping-balance" in (ROOT / "Test-World-Auto.ps1").read_text("utf-8")
+# Verify that the manual Windows Unity build cannot silently claim success
+# after Unity failed or robocopy returned an error. This is only a static
+# contract; a real Windows + Unity Player build is still required.
+build_script = (ROOT / "Tools/play/build-game.ps1").read_text("utf-8-sig")
+assert "if ($p.ExitCode -ne 0)" in build_script
+assert "Test-Path -LiteralPath $sourceExe -PathType Leaf" in build_script
+assert "Test-Path -LiteralPath $sourceData -PathType Container" in build_script
+assert "$copyCode = $LASTEXITCODE" in build_script
+assert "if ($copyCode -ge 8)" in build_script  # robocopy: 0..7 nonfatal, >=8 failed
+assert "Test-Path -LiteralPath $destExe -PathType Leaf" in build_script
+assert "Test-Path -LiteralPath $destData -PathType Container" in build_script
+assert build_script.index("if ($copyCode -ge 8)") < build_script.index('Write-Host "Готово за')
+print("PASS: Windows author build checks Unity process, output and robocopy before success")
+
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
