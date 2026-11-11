@@ -5,6 +5,13 @@ on:
       - feature/server-prototype
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/UI/MissionMapUI.cs"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
       - "Assets/Scripts/Gameplay/SoulHarvester.cs"
       - "Assets/Scripts/Gameplay/MapEvents.cs"
       - "Assets/Scripts/Crypt/MissionBoard.cs"
@@ -14,6 +21,13 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/UI/MissionMapUI.cs"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
       - "Assets/Scripts/Gameplay/SoulHarvester.cs"
       - "Assets/Scripts/Gameplay/MapEvents.cs"
       - "Assets/Scripts/Crypt/MissionBoard.cs"
@@ -32,4 +46,6 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
+      - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py
