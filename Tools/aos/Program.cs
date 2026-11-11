@@ -77,6 +77,23 @@ internal static class Program
         Check(!OrderIntegrity.ShouldPresentRefusal(true, 6u, 6u),
             "same-frame repeated vote cannot cause a second overlay");
 
+        // A whisper is a temporary purchase of obedience to ONE order,
+        // not a universal obedience buff lasting twenty seconds.
+        Check(OrderIntegrity.WhisperApplies(12u, 12u, true, 25f, 20f),
+            "accepted whisper applies to its exact active order");
+        Check(OrderIntegrity.WhisperApplies(12u, 12u, true, 25f, 25f),
+            "accepted whisper expires at the documented boundary");
+        Check(!OrderIntegrity.WhisperApplies(12u, 13u, true, 25f, 21f),
+            "changing the order cancels whisper compulsion");
+        Check(!OrderIntegrity.WhisperApplies(12u, 12u, false, 25f, 21f),
+            "cancelling the order cancels whisper compulsion");
+        Check(!OrderIntegrity.WhisperApplies(12u, 12u, true, 25f, 25.001f),
+            "old whisper cannot compel after expiration");
+        Check(!OrderIntegrity.WhisperApplies(12u, 12u, true, 25f, float.NaN),
+            "invalid current time cannot extend a whisper");
+        Check(!OrderIntegrity.WhisperApplies(12u, 12u, true, float.PositiveInfinity, 20f),
+            "invalid expiration cannot grant eternal obedience");
+
         // Wire checks are intentionally supplemental to executable tests:
         // they prevent a future refactor from silently bypassing the tested
         // production gate. They do NOT substitute for Unity Play Mode.
@@ -91,6 +108,16 @@ internal static class Program
         Contains(tick, "OrderIntegrity.MayExecuteDelayed(", "real AOS tick checks paused command freshness");
         Contains(tick, "yield break;", "stale decision can be discarded without executing");
         Contains(tick, "OrderIntegrity.ShouldPresentRefusal(", "production tick uses single-refusal-pause rule");
+        string whisper = Path.Combine(root, "Assets/Scripts/Gameplay/Whisper.cs");
+        string aosWrapper = Path.Combine(root, "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
+        string ui = Path.Combine(root, "Assets/Scripts/UI/SelectedUnitPanelUI.cs");
+        Contains(whisper, "OrderIntegrity.WhisperApplies(", "whisper checks the production per-order guard");
+        Contains(whisper, "OrderRevision = agreedOrder", "accepted whisper records exact order identity");
+        Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
+        Contains(aosWrapper, "LastWhisperCompelled = context.HasCommand", "effective action is labelled as whisper-driven");
+        Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");
+        Contains(aosWrapper, "_obeyedOrderRevision != _warrior.CommandRevision", "obedience credit distinguishes two same-frame commands");
+        Contains(ui, "wrapper.LastWhisperCompelled", "selected warrior panel distinguishes compulsion from loyalty");
 
         // AOS is a vote of thirteen distinct personality voices, not a
         // tutorial-friendly script or a substitute AI. Guard the actual
