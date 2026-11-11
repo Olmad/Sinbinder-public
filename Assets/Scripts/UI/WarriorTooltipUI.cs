@@ -177,8 +177,13 @@ namespace Sinbinder.UI
 
             if (_text != null)
             {
+                // Explain what the thirteen voices genuinely voted for.
+                // If the warrior was persuaded, tell the player separately
+                // that the external whisper changed what actually happened.
+                var actualVote = hasDecision && wrapper.LastWhisperCompelled
+                    ? wrapper.NaturalDecisionDetail : hasDecision ? wrapper.LastDecisionDetail : default;
                 _text.text = hasDecision
-                    ? PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail)
+                    ? PhraseGenerator.Explain(warrior, wrapper.LastContext, actualVote)
                     : string.Empty;
                 // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
                 if (hasDecision)
@@ -186,9 +191,12 @@ namespace Sinbinder.UI
                     if (_scalesFor != wrapper.LastContext)
                     {
                         _scalesFor = wrapper.LastContext;
-                        _scales = SoulCourt.ScalesLine(warrior, wrapper.LastDecisionDetail, wrapper.LastContext);
+                        _scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
                     }
                     if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
+                    if (wrapper.LastWhisperCompelled)
+                        _text.text += "\n" + Core.Loc.T(
+                            "Поддался шёпоту: исполняет текущий приказ вопреки голосованию души.");
 
                     // После отказа игроку нужен следующий осмысленный шаг,
                     // а не ещё один процент послушания. Весь текст исходит
