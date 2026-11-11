@@ -22,9 +22,16 @@ namespace Sinbinder.UI
             if (decision.Weighed && decision.Decisive != Counterfactual.Factor.None)
                 factor = decision.Decisive.ToString();
 
-            // Without a decisive counterfactual, try a visible, actionable
-            // circumstance before falling back to the personality voice.
-            if (factor == null)
+            // Counterfactual has already tested what actually changes
+            // the vote. Do NOT override a weighed Pride/Memory verdict with
+            // an incidental unpaid debt or a distant commander.
+            if (decision.Weighed && factor == null &&
+                !string.IsNullOrEmpty(decision.DecisiveVoice))
+                return Loc.T(OrderAdvice.Next(null, decision.DecisiveVoice));
+
+            // Only when a decisive reason has NOT been computed can
+            // visible circumstances offer a provisional next step.
+            if (factor == null && !decision.Weighed)
             {
                 if (context.CommandVolume < 0.75f) factor = "Distance";
                 else if (context.UnpaidMissions > 0) factor = "Debt";
