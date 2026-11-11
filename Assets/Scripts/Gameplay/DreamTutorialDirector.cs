@@ -1517,9 +1517,11 @@ namespace Sinbinder.Gameplay
                 case Stage.BowEquip: return "F рядом с союзником → Снаряжение → передать лук.";
                 case Stage.BowShot: return "ЛКМ лучник → ПКМ по подвесному замку.";
                 case Stage.BowTemper: return "X и ПКМ — прикажите лучнику отступить от тени.";
-                case Stage.Rescue: return "Защитите раненого: посмотрите, что выберут воины.";
-                case Stage.CompareSouls: return "Отдайте двум стражам один и тот же приказ движения.";
-                case Stage.EmotionShift: return "Тот же приказ под страхом: сравните решения.";
+                case Stage.Rescue: return _rescueHelpShown
+                    ? "ЛКМ страж → ПКМ у раненого: измените его положение."
+                    : "Кто сам защитит раненого? Посмотрите на весы.";
+                case Stage.CompareSouls: return "ЛКМ страж → ПКМ к голубому знаку. Повторите со вторым.";
+                case Stage.EmotionShift: return "Повторите приказ к голубому знаку стражу под страхом.";
                 case Stage.Puzzle:
                     return _puzzleHelpLevel == 0
                         ? "Самостоятельно откройте ворота склепа."
