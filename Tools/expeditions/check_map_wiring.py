@@ -27,6 +27,10 @@ assert "SquadRoster.CanGo(member)" in p
 assert "seen.Count + 1 > Mathf.Max(1, mission.Squad)" in p
 assert "Экспедиция" in p and "Exit()" in p
 assert "PersonalExpedition.CurrentMapKey" in bag
+assert "_active.Exit(commitResult:false)" in p
+assert "if (commitResult)" in p
+assert "private void Exit(bool commitResult)" in p
+assert "if (commitResult && _state != null)" in p
 assert "Gameplay.PersonalExpedition.BeforeSaveOrLoad()" in save
 assert "Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions)" in save
 assert "public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions" in s

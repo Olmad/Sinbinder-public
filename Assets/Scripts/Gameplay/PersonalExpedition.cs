@@ -50,7 +50,11 @@ namespace Sinbinder.Gameplay
 
         public static void RestoreProgress(List<SavedPersonalExpedition> saved)
         {
-            if (Active) _active.Exit();
+            // Restore is called after SaveSystem has installed the saved
+            // squad. Normal Exit() would immediately overwrite it with
+            // stale scene warriors, resurrecting dead squadmates or losing
+            // items. End the virtual map without reporting or settling.
+            if (Active) _active.Exit(commitResult:false);
             Progress.Clear();
             if (saved == null) return;
             foreach (var state in saved)
@@ -318,11 +322,19 @@ namespace Sinbinder.Gameplay
                 "\n"+prompt+notice,style);
         }
 
-        public void Exit()
+        public void Exit() => Exit(commitResult:true);
+
+        /// <summary>
+        /// commitResult:false is exclusively for SaveSystem.Restore.
+        /// Never record a mission, hand out rewards or sync the old
+        /// runtime roster over newly restored save data.
+        /// </summary>
+        private void Exit(bool commitResult)
         {
             if(_exiting) return;
             _exiting=true;
-            _state.EnemiesRemaining=EnemiesLeft();
+            if (commitResult && _state != null)
+                _state.EnemiesRemaining=EnemiesLeft();
             // No duplicate reward by returning to the same expedition.
             foreach(var member in _travellers)
                 if(member.Warrior!=null && !member.Warrior.IsDead)
@@ -341,10 +353,15 @@ namespace Sinbinder.Gameplay
             if(camera!=null) camera.SetView(_returnTactical
                 ? RTS_Camera.CameraView.Tactical : RTS_Camera.CameraView.FirstPerson);
 
-            // All real surviving companions keep their original AOS soul,
-            // carried gear and pocket; dead companions no longer appear.
-            SquadRoster.Remember(MissionBoard.Squad());
-            CryptMap.Board?.RecordPersonal(_mission,_state.CargoTaken||_state.SecretTaken);
+            // A normal expedition produces a report and synchronises living
+            // warriors. Restore must NOT write stale state into the freshly
+            // loaded save snapshot or award an unearned mission result.
+            if (commitResult)
+            {
+                SquadRoster.Remember(MissionBoard.Squad());
+                CryptMap.Board?.RecordPersonal(_mission,
+                    _state != null && (_state.CargoTaken || _state.SecretTaken));
+            }
             UnityEngine.Object.Destroy(gameObject);
         }
 
