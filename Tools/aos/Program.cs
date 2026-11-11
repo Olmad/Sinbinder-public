@@ -135,6 +135,10 @@ internal static class Program
         Contains(ui, "if (d == null || !d.HasCurrentCommandDecision) return false;", "group refuses only for current order");
         Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
         Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");
+        // Neutral match warriors have an attitude prefix. It must not hide
+        // the first pending AOS verdict when no LastContext exists yet.
+        Contains(tooltip, "hasDecision || waitingForCommand ? \"\\n\" + _text.text : string.Empty",
+            "neutral warrior tooltip retains first-order pending feedback alongside attitude");
         Contains(aosWrapper, "OrderIntegrity.MayRoamCamp(", "real AOS executor uses camp movement gate");
         Contains(aosWrapper, "case ActionType.Idle:", "idle has an explicit execution path");
         Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
