@@ -44,6 +44,7 @@ namespace Sinbinder.Gameplay
         private float _nextDealAt;
         private int _deal;
         private bool _playedByHuman;
+        private bool _joinNext;
         private bool _recorded;
         private string _status = "";
         private GUIStyle _headingStyle;
@@ -314,8 +315,15 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            // Watching results is voluntary. In the background, NPCs really
-            // play the next hand rather than looping the same two phrases.
+            // An observer may ask to join the *next* fair deal, without
+            // erasing the hand the NPCs are currently playing.
+            if (Watching && _joinNext && Time.unscaledTime >= _nextDealAt)
+            {
+                BeginRound(available, true);
+                return;
+            }
+            // In the background, NPCs really play the next hand rather
+            // than repeating two pre-recorded phrases forever.
             if (!Watching && Time.unscaledTime >= _nextDealAt && available.Count >= 2)
                 BeginRound(available, false);
         }
@@ -344,6 +352,7 @@ namespace Sinbinder.Gameplay
                                  (_deal * 7919));
             _round = new CampCardRound(seats, seed);
             _playedByHuman = includeHuman;
+            _joinNext = false;
             _recorded = false;
             _nextMoveAt = Time.unscaledTime + TurnBeat;
             _nextDealAt = Time.unscaledTime + NextDeal;
@@ -441,6 +450,7 @@ namespace Sinbinder.Gameplay
             if (camera == null || eye == null || camera.InDialogue) return;
 
             Watching = true;
+            _joinNext = false;
             _status = Loc.T("Наблюдайте за ходами или нажмите «Сыграть».");
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -459,6 +469,7 @@ namespace Sinbinder.Gameplay
         {
             if (!Watching) return;
             Watching = false;
+            _joinNext = false;
             _escapeClosedFrame = Time.frameCount;
             // Leaving a live player hand is abandonment, not a win or
             // an event that grants AOS memory. NPCs can deal again later.
@@ -534,8 +545,18 @@ namespace Sinbinder.Gameplay
                         _rowStyle);
             }
             else
+            {
                 GUILayout.Label(Loc.T("Сейчас ход воина. Решение зависит от его характера."),
                     _rowStyle);
+                if (!_playedByHuman && !_joinNext &&
+                    GUILayout.Button(Loc.T("Сыграть после этой раздачи"), GUILayout.Height(38f)))
+                {
+                    _joinNext = true;
+                    _status = Loc.T("Вы присоединитесь к следующей раздаче.");
+                }
+                else if (_joinNext)
+                    GUILayout.Label(Loc.T("Следующая раздача будет с вашим участием."), _rowStyle);
+            }
 
             GUILayout.FlexibleSpace();
             if (GUILayout.Button(Loc.T("Встать из-за стола (F / Esc)"), GUILayout.Height(35f)))
