@@ -202,10 +202,27 @@ namespace Sinbinder.Gameplay
         {
             if (character == null) return;
             var agent=character.GetComponent<NavMeshAgent>();
-            if (agent!=null && agent.enabled && agent.isOnNavMesh && agent.Warp(point)) return;
-            if (agent!=null && agent.enabled) agent.enabled=false;
-            character.transform.position=point;
-            if (agent!=null) agent.enabled=true;
+            // When the target surface is already baked, a normal warp keeps
+            // the agent active and preserves its movement capabilities.
+            if (agent!=null && agent.enabled && agent.isOnNavMesh &&
+                agent.Warp(point)) return;
+
+            bool wasEnabled=agent!=null && agent.enabled;
+            if (wasEnabled) agent.enabled=false;
+            if (NavMesh.SamplePosition(point, out var safe, 3f, NavMesh.AllAreas))
+            {
+                character.transform.position=safe.position;
+                if (wasEnabled) agent.enabled=true;
+            }
+            else
+            {
+                // Never re-enable an agent at an unbaked position: Unity
+                // would report "Failed to create agent ... close to NavMesh"
+                // and subsequent AOS movement would silently stop working.
+                character.transform.position=point;
+                Debug.LogWarning("[EXPEDITION] No NavMesh near return/entry: " +
+                                 character.DisplayName);
+            }
         }
 
         private void SpawnGuards()

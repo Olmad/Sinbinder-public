@@ -10,6 +10,9 @@ s=src("Assets/Scripts/Core/SaveGame.cs")
 board=src("Assets/Scripts/Crypt/MissionBoard.cs")
 assert "ExpeditionMapBuilder.Build(plan)" in p
 assert "new GameObject" in m and "surface.BuildNavMesh()" in m
+assert "NavMesh.SamplePosition(entrance, out _, 3f, NavMesh.AllAreas)" in m
+assert "surface.RemoveData();" in m
+assert "if (NavMesh.SamplePosition(point, out var safe, 3f, NavMesh.AllAreas))" in p
 assert "WarriorRig.Attach(go)" in p and "sceneSetup?.SetupWarrior(go)" in p
 assert "ExpeditionMapPlan.ForName(mission.Name)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui

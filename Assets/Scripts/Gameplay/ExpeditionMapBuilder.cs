@@ -2,6 +2,7 @@
 // pre-baked demo-only layout is required. All geometry is real mesh/collider,
 // with a separate NavMeshSurface scoped to its own map.
 using UnityEngine;
+using UnityEngine.AI;
 using Unity.AI.Navigation;
 
 namespace Sinbinder.Gameplay
@@ -72,6 +73,16 @@ namespace Sinbinder.Gameplay
             var surface = root.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Children;
             surface.BuildNavMesh();
+            // Failing closed is safer than moving the entire AOS squad onto
+            // a map with no navigable entrance, leaving it permanently stuck.
+            var entrance = Point(plan, 0f, plan.EntranceZ + 4f);
+            if (!NavMesh.SamplePosition(entrance, out _, 3f, NavMesh.AllAreas))
+            {
+                Debug.LogError("[EXPEDITION] NavMesh has no valid entrance: " + plan.Id);
+                surface.RemoveData();
+                Object.Destroy(root);
+                return null;
+            }
             return root;
         }
 
