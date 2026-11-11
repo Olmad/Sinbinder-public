@@ -153,20 +153,30 @@ namespace Sinbinder.Gameplay
             string answer = virtuous ? Loc.T("Не купишь.") : broke ? Loc.T("Половина чего? Кошель-то пуст.") : yes;
 
             float before = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
-            // Apply the bargain before showing its result. If the player
-            // changed the order after Z, no coins or permanent corruption
-            // may be charged for a contract that never took effect.
-            bool applied = yielded && w != null && w.HasCommand &&
-                w.CommandRevision == agreedOrder;
-            if (applied)
+            bool applied = false;
+            string outcome = "";
+            // Commit only when the soul actually answers, not at the start
+            // of the cinematic. The player may cancel the original order
+            // during the spoken offer. Such a contract costs nothing.
+            void ResolveBargain()
             {
-                if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
-                Until[w] = new Consent { Until = Time.time + Holds, OrderRevision = agreedOrder };
-                if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
+                bool canPay = sin != SinType.Greed || (bag != null && bag.Gold >= GreedCoins);
+                applied = yielded && canPay && w != null && !w.IsDead &&
+                    w.Soul != null && w.HasCommand && w.CommandRevision == agreedOrder;
+                if (applied)
+                {
+                    if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
+                    Until[w] = new Consent { Until = Time.time + Holds, OrderRevision = agreedOrder };
+                    if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
+                }
+                else if (yielded)
+                    answer = canPay
+                        ? Loc.T("Приказ уже изменён. На другой я не соглашался.")
+                        : Loc.T("Кошель уже пуст.");
+                outcome = yielded && !applied
+                    ? Loc.T("Уговор не состоялся: новый приказ требует нового разговора.")
+                    : Outcome(w, sin, applied, virtuous, louder: applied && before < Ceiling);
             }
-            string outcome = yielded && !applied
-                ? Loc.T("Приказ изменён: уговор к прежнему приказу не действует.")
-                : Outcome(w, sin, applied, virtuous, louder: applied && before < Ceiling);
 
             bool slowed = Time.timeScale > 0f;
             if (slowed) Time.timeScale = Slow;
@@ -188,9 +198,10 @@ namespace Sinbinder.Gameplay
             {
                 box.Say(Loc.T("Греховод, шёпотом"), offer);
                 yield return UI.Letterbox.Hold(1.9f);
+                ResolveBargain();
                 UI.Letterbox.Instance?.Say(Loc.Name(w.DisplayName), answer);
                 if (w != null && w.TryGetComponent<Audio.VoiceGenerator>(out var said)) said.Babble(answer, 0.9f);
-                if (yielded && w != null) StartCoroutine(Flare(w, SinPalette.Of(sin)));
+                if (applied && w != null) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                 yield return UI.Letterbox.Hold(1.9f);
                 UI.Letterbox.Instance?.Say(null, outcome);
                 ShowingOutcome = true;
@@ -201,7 +212,6 @@ namespace Sinbinder.Gameplay
             {
                 // Кадр занят — по-старому, пузырями над головами.
                 UI.SpeechBubbles.Say(hero, offer, 2.6f);
-                if (yielded) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                 float t = 0f;
                 bool answered = false;
                 while (t < Seconds)
@@ -209,6 +219,8 @@ namespace Sinbinder.Gameplay
                     if (!answered && t >= 1.0f && w != null)
                     {
                         answered = true;
+                        ResolveBargain();
+                        if (applied) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                         UI.SpeechBubbles.Say(w, answer, 2.4f);
                         if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
                     }
