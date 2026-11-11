@@ -90,6 +90,9 @@ namespace Sinbinder.Gameplay
 
             var guardBody = w.Guard.GetComponent<Damageable>();
             if (guardBody == null || guardBody.IsDead || guardBody == target) return false;
+            // An animation, zero-damage probe or environmental tick is not
+            // an intercepted attack. Never grant rescue memory for one.
+            if (w.Rescue && !RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;
             if (w.Rescue && (target.Warrior == null
                 || Vector3.Distance(w.Guard.transform.position, target.transform.position) > 2.8f
                 || CombatManager.Instance == null
