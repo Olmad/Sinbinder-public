@@ -1,0 +1,41 @@
+name: AOS order integrity
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
+      - "Assets/Scripts/AOS Engine/AOSEventHub.cs"
+      - "Assets/Scripts/AOS Engine/AutoAttackAOS.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Tools/aos/**"
+      - ".github/workflows/aos-integrity.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
+      - "Assets/Scripts/AOS Engine/AOSEventHub.cs"
+      - "Assets/Scripts/AOS Engine/AutoAttackAOS.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Tools/aos/**"
+      - ".github/workflows/aos-integrity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  aos-integrity:
+    name: Compile real AOS order rules and run negative tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build production-linked AOS rules
+        working-directory: Tools/aos
+        run: dotnet build AOSIntegrityTests.csproj -c Release
+      - name: Reject duplicate memories and stale commands
+        working-directory: Tools/aos
+        run: dotnet run --no-build -c Release --project AOSIntegrityTests.csproj -- ../..
