@@ -188,6 +188,13 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public PendingCommand Command => _command;
 
+        /// <summary>
+        /// Monotonic runtime identity for a player's order. Time.time alone
+        /// cannot distinguish two commands issued in the same Unity frame.
+        /// An internal patrol reversal does NOT create a new order.
+        /// </summary>
+        public uint CommandRevision { get; private set; }
+
         public bool HasCommand => _command.IsSet;
 
         /// <param name="muffle">Насколько приглушён голос Греховода
@@ -197,6 +204,9 @@ namespace Sinbinder.Gameplay
         public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null,
                                  float muffle = 0f, string lord = null)
         {
+            // Every newly issued order needs its own identity for AOS
+            // memories and cancellation of delayed decisions.
+            unchecked { CommandRevision++; }
             _command = new PendingCommand
             {
                 Kind = kind,
@@ -210,7 +220,15 @@ namespace Sinbinder.Gameplay
             Favor.Issued(_command.Lord, _command.IssuedAt);
         }
 
-        public void ClearCommand() => _command = default;
+        public void ClearCommand()
+        {
+            // Cancelling an order must also invalidate any pending refusal.
+            if (_command.IsSet)
+            {
+                unchecked { CommandRevision++; }
+            }
+            _command = default;
+        }
 
         /// <summary>
         /// Патруль: ходить отсюда до <paramref name="to"/> и обратно, пока
