@@ -326,6 +326,23 @@ namespace Sinbinder.Gameplay
         /// on save/reload because only the old pocket value was written.
         /// Away members are deliberately never overwritten.
         /// </summary>
+        /// <summary>
+        /// Return escrow after a scene has destroyed the warrior object.
+        /// Only the persistent roster can receive those coins safely.
+        /// </summary>
+        public static void CreditPocket(string name, int amount)
+        {
+            if (string.IsNullOrEmpty(name) || amount <= 0) return;
+            for (int i = 0; i < _members.Count; i++)
+            {
+                var member = _members[i];
+                if (member.Name != name) continue;
+                member.Pocket = checked(member.Pocket + amount);
+                _members[i] = member;
+                break;
+            }
+        }
+
         public static void SyncPocket(Warrior warrior)
         {
             if (warrior == null || warrior.Soul == null) return;

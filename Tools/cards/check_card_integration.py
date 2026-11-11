@@ -17,6 +17,7 @@ assert "_pot.Settle(winners)" in table
 assert "_pot?.Refund()" in table
 assert "public void CancelForDeath(Warrior warrior)" in table
 assert "public static void BeforeSaveOrLoad()" in table
+assert "SquadRoster.CreditPocket(_name, amount)" in table
 assert "CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)" in table
 assert "if (Watching) Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);" in table
 assert "_joinNext" in table and "Сыграть после этой раздачи" in table

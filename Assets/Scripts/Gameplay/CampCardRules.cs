@@ -53,7 +53,8 @@ namespace Sinbinder.Gameplay
     }
 
     /// <summary>
-    /// No virtual money, no invented wagers and no hidden "winning" script.
+    /// Real coins are wagered via CampCardPot; this component only owns
+    /// the shuffled deck, score and personality-driven card choices.
     /// A single participant may practise alone; multiplayer rounds use one
     /// shuffled non-repeating 36-card deck and honest maximum <= 21.
     /// </summary>

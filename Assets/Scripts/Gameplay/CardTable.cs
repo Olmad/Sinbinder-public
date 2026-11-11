@@ -238,10 +238,20 @@ namespace Sinbinder.Gameplay
         private sealed class WarriorWallet : ICampCardWallet
         {
             private readonly Warrior _warrior;
-            public WarriorWallet(Warrior warrior) { _warrior = warrior; }
+            private readonly string _name;
+            public WarriorWallet(Warrior warrior)
+            {
+                _warrior = warrior;
+                _name = warrior != null ? warrior.DisplayName : "";
+            }
             public int Balance => _warrior != null ? _warrior.PocketGold : 0;
             public bool Spend(int amount) => _warrior != null && _warrior.TrySpendPocket(amount);
-            public void Credit(int amount) { if (_warrior != null) _warrior.Pocket(amount); }
+            public void Credit(int amount)
+            {
+                if (amount <= 0) return;
+                if (_warrior != null) _warrior.Pocket(amount);
+                else SquadRoster.CreditPocket(_name, amount);
+            }
         }
 
         private sealed class PlayerWallet : ICampCardWallet
