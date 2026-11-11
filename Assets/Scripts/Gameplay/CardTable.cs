@@ -457,7 +457,8 @@ namespace Sinbinder.Gameplay
                     if (CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)
                         < requestedStake)
                     {
-                        _status = Loc.T("Воин отказался ставить столько монет.");
+                        _status = Loc.F("{0} не согласен на ставку {1}. Попробуйте меньшую ставку или бесплатную партию.",
+                            Loc.Name(warrior.DisplayName), requestedStake);
                         return;
                     }
                     wallets.Add(new WarriorWallet(warrior));
@@ -467,7 +468,7 @@ namespace Sinbinder.Gameplay
                     var inventory = Inventory.PlayerInventory.Instance;
                     if (inventory == null || inventory.Gold < requestedStake)
                     {
-                        _status = Loc.T("В вашем кошеле не хватает монет.");
+                        _status = Loc.T("В кошеле не хватает монет. Попробуйте меньшую ставку или бесплатную партию.");
                         return;
                     }
                     wallets.Add(new PlayerWallet(inventory));
