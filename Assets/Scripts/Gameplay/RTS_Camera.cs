@@ -182,7 +182,7 @@ namespace Sinbinder.Gameplay
             // role label. The 68px help box no longer occupies the corner
             // of the screen throughout combat.
             bool full = Time.unscaledTime < _fullRoleGuideUntil;
-            float width = Mathf.Min(full ? 360f : 275f, Screen.width - 32f);
+            float width = Mathf.Min(360f, Screen.width - 32f);
             string caption = full
                 ? CommanderModeNow
                     ? Core.Loc.T("КОМАНДИР  ·  V — Воин, Tab — вид сверху") + "\n" +
@@ -190,8 +190,8 @@ namespace Sinbinder.Gameplay
                     : Core.Loc.T("ВОИН  ·  V — Командир, Tab — вид сверху") + "\n" +
                       Core.Loc.T("ЛКМ — удар    ПКМ — блок")
                 : CommanderModeNow
-                    ? Core.Loc.T("КОМАНДИР · ЛКМ выбор · ПКМ приказ")
-                    : Core.Loc.T("ВОИН · ЛКМ удар · ПКМ блок");
+                    ? Core.Loc.T("КОМАНДИР · ЛКМ выбор · ПКМ приказ · V/Tab")
+                    : Core.Loc.T("ВОИН · ЛКМ удар · ПКМ блок · V/Tab");
             if (_roleGuideStyle == null)
                 _roleGuideStyle = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
             _roleGuideStyle.fontSize = Mathf.Clamp(Screen.height / (full ? 60 : 78), 12, full ? 19 : 15);
