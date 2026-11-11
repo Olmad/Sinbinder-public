@@ -127,7 +127,7 @@ internal static class Program
         Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
         // Source-level wiring guards: no old refusal can be displayed while
         // a new command waits for its first genuine AOS decision.
-        // Reuse the tooltip path declared above for both HUD and whisper assertions.
+        string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
         Contains(aosWrapper, "public uint LastDecisionCommandRevision", "AOS verdict records the order identity");
         Contains(aosWrapper, "LastDecisionCommandRevision = _warrior.CommandRevision;", "each real vote stamps the current command");
         Contains(aosWrapper, "LastDecisionCommandRevision == _warrior.CommandRevision", "verdict freshness compares exact revision");
@@ -147,7 +147,7 @@ internal static class Program
         Contains(whisper, "void ResolveBargain()", "whisper settles only after the soul speaks");
         Contains(whisper, "w.CommandRevision == agreedOrder", "cancelled or changed orders cannot be paid for");
         Contains(whisper, "if (applied)", "false agreement cannot consume money or corrupt the soul");
-        string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
+        // The same tooltip file also exposes the natural verdict versus whisper compulsion.
         Contains(tooltip, "wrapper.NaturalDecisionDetail", "court tooltip retains natural thirteen-voice verdict");
         Contains(tooltip, "wrapper.LastWhisperCompelled", "tooltip distinguishes external persuasion from AOS vote");
         Contains(ui, "wrapper.LastWhisperCompelled", "selected warrior panel distinguishes compulsion from loyalty");
