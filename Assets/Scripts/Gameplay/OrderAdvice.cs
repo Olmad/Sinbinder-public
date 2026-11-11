@@ -10,6 +10,41 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public static class OrderAdvice
     {
+        /// <summary>
+        /// Short form for the fixed-height lower strip. Full advice remains
+        /// available by hovering the warrior.
+        /// </summary>
+        public static string Short(string factor, string voice = null)
+        {
+            switch (factor)
+            {
+                case "Distance": return "Подойдите ближе";
+                case "Debt": return "Выплатите долг";
+                case "Pocket": return "Обсудите его долю";
+                case "Temptation": return "Проверьте снаряжение";
+                case "Loot": return "Уведите от добычи";
+                case "Patrol": return "Смените приказ или воина";
+                case "AllyInDanger": return "Помогите раненому";
+                case "Wounds": return "Выберите здорового воина";
+                case "Surrounded": return "Выведите из окружения";
+                case "Fatigue": return "Дайте передышку";
+                case "Murderer": return "Уберите угрозу убийц";
+            }
+            switch (voice)
+            {
+                case "Greed": return "Проверьте долги и добычу";
+                case "Pride": return "Смените задачу или воина";
+                case "Wrath": return "Измените обстановку боя";
+                case "Sloth": return "Дайте передышку";
+                case "Fear": return "Снизьте опасность";
+                case "Memory": return "Уберите напоминание о прошлом";
+                case "Loyalty": return "Укрепите доверие";
+                case "Morality":
+                case "Virtue": return "Измените спорный приказ";
+            }
+            return "Измените условия или воина";
+        }
+
         public static string Next(string factor, string voice = null)
         {
             switch (factor)
