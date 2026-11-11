@@ -122,4 +122,17 @@ assert "Test-Path -LiteralPath $destData -PathType Container" in build_script
 assert build_script.index("if ($copyCode -ge 8)") < build_script.index('Write-Host "Готово за')
 print("PASS: Windows author build checks Unity process, output and robocopy before success")
 
+# Regression: a non-attack must NOT consume a pending rescue guard. Previously
+# Watched.Remove(target) ran before IsRealAttack, so a zero-damage probe could
+# disarm the rescue and leave the victim exposed to the next genuine hit.
+bodyguard = (ROOT / "Assets/Scripts/Gameplay/Bodyguard.cs").read_text("utf-8-sig")
+absorb = bodyguard.split("public static bool Absorb(", 1)[1].split("public static int Blocks", 1)[0]
+invalid_gate = "if (w.Rescue && !RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;"
+remove_watch = "Watched.Remove(target);"
+assert invalid_gate in absorb and remove_watch in absorb, "Rescue guard integrity checks missing"
+assert absorb.index(invalid_gate) < absorb.index(remove_watch), (
+    "Invalid damage probe consumes rescue watch before a real attack"
+)
+print("PASS: invalid rescue probes cannot disarm a pending guard")
+
 print("PASS: original demo, map, altar, AOS and real-warrior LAN transport contracts")
