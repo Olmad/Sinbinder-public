@@ -49,6 +49,14 @@ internal static class Program
         Check(!DreamTutorialChecks.FreshOrderedDecision(true, 11f, 10f, true, false),
             "idle vote without command rejected");
 
+        // A rescue requires an actual positive hit from a real attacker.
+        Check(RescueCreditGate.IsRealAttack(2.1f, true), "real attacker and positive hit qualify");
+        Check(!RescueCreditGate.IsRealAttack(0f, true), "zero-damage VFX cannot earn rescue credit");
+        Check(!RescueCreditGate.IsRealAttack(2.1f, false), "missing attacker cannot earn rescue credit");
+        Check(!RescueCreditGate.IsRealAttack(-1f, true), "negative healing cannot earn rescue credit");
+        Check(!RescueCreditGate.IsRealAttack(float.NaN, true), "invalid damage cannot earn rescue credit");
+        Check(!RescueCreditGate.IsRealAttack(float.PositiveInfinity, true), "infinite damage cannot earn rescue credit");
+
         // AOS real protection and cooldown. No grant occurs in the approach path.
         var credit = new RescueCreditGate();
         Check(credit.TryCredit("guard-a:victim-a", 10f), "first verified interception earns credit");
