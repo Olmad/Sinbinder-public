@@ -64,6 +64,12 @@ namespace Sinbinder.Gameplay
     public sealed class RescueCreditGate
     {
         public const float CooldownSeconds = 15f;
+
+        // An intercepted hit must be an actual positive attack. A VFX-only
+        // call, zero damage or missing attacker must not create a rescue deed.
+        public static bool IsRealAttack(float damage, bool hasAttacker)
+            => hasAttacker && damage > 0f && !float.IsNaN(damage) && !float.IsInfinity(damage);
+
         private readonly Dictionary<string, float> _last = new Dictionary<string, float>();
 
         public bool TryCredit(string pairKey, float now)
