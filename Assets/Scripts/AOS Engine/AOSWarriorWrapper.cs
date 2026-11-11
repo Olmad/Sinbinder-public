@@ -22,6 +22,12 @@ namespace Sinbinder.AOS
         /// <summary>Последнее решение вместе с причиной. Читают подсказка и журнал.</summary>
         public Decision LastDecisionDetail { get; private set; }
 
+        /// <summary>Unmodified thirteen-voice vote, before any explicit whisper agreement.</summary>
+        public Decision NaturalDecisionDetail { get; private set; }
+
+        /// <summary>True if an accepted whisper changed the actual action to obedience.</summary>
+        public bool LastWhisperCompelled { get; private set; }
+
         /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
         public DecisionContext LastContext { get; private set; }
 
@@ -47,6 +53,20 @@ namespace Sinbinder.AOS
             Decision decision;
             using (Core.Cost.Of("decide.vote")) decision = _resolver.DecideDetailed(_warrior, context);
 
+            // The thirteen voices ALWAYS vote honestly. Whisper is an
+            // explicit external bargain; it changes the effective action,
+            // not the votes. Preserve the raw result for the Soul Court.
+            NaturalDecisionDetail = decision;
+            LastWhisperCompelled = context.HasCommand &&
+                Gameplay.Whisper.Persuaded(_warrior) &&
+                decision.Action != ActionType.ObeyCommand;
+            if (LastWhisperCompelled)
+            {
+                decision.Action = ActionType.ObeyCommand;
+                decision.RefusedCommand = false;
+                decision.Hesitated = false;
+            }
+
             // Смена действия — до присваивания: объявлять надо начало
             // поступка, а не каждый тик, пока он длится. Бежать можно
             // полминуты, и «сбегает» полминуты подряд — это не событие,
@@ -69,7 +89,7 @@ namespace Sinbinder.AOS
 
             if (decision.RefusedCommand)
                 using (Core.Cost.Of("decide.refused")) AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
-            else if (changed)
+            else if (changed && !LastWhisperCompelled)
                 using (Core.Cost.Of("decide.selfwilled")) AOSEventHub.Instance?.OnSelfWilled(_warrior, decision, context);
 
             return LastDecision;
@@ -175,7 +195,8 @@ namespace Sinbinder.AOS
         /// не находил подходящего умения и вырождался в Idle.
         /// То есть подчинение исполнялось как «стоять на месте».
         /// </summary>
-        private float _obeyedAt = -1f;
+        private bool _hasObeyedOrder;
+        private uint _obeyedOrderRevision;
         private float _siegeReady;
 
         /// <summary>
@@ -209,9 +230,11 @@ namespace Sinbinder.AOS
 
             // Послушал Греховода — привыкает слушать его, а приказ по душе — сильнее (Favor, 54-TUG.md):
             // раз на приказ, а не каждый такт.
-            if (!string.IsNullOrEmpty(cmd.Lord) && !Mathf.Approximately(_obeyedAt, cmd.IssuedAt))
+            if (!string.IsNullOrEmpty(cmd.Lord) &&
+                (!_hasObeyedOrder || _obeyedOrderRevision != _warrior.CommandRevision))
             {
-                _obeyedAt = cmd.IssuedAt;
+                _hasObeyedOrder = true;
+                _obeyedOrderRevision = _warrior.CommandRevision;
                 Favor.Obeyed(_warrior, cmd);
             }
 
