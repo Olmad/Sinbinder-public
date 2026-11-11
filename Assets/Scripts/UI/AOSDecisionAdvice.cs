@@ -12,39 +12,41 @@ namespace Sinbinder.UI
     /// </summary>
     public static class AOSDecisionAdvice
     {
+        private static string Factor(Decision decision, DecisionContext context)
+        {
+            if (decision.Weighed)
+                return decision.Decisive != Counterfactual.Factor.None
+                    ? decision.Decisive.ToString() : null;
+
+            // When counterfactual analysis is unavailable, suggest a
+            // visible obstacle. Never override a weighed decisive voice.
+            if (context.CommandVolume < 0.75f) return "Distance";
+            if (context.UnpaidMissions > 0) return "Debt";
+            if (context.KnownMurdererInSight) return "Murderer";
+            if (context.AllyInDanger) return "AllyInDanger";
+            if (context.Surrounded) return "Surrounded";
+            if (context.IsExhausted || context.Fatigue > 0.6f) return "Fatigue";
+            if (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.4f) return "Wounds";
+            return null;
+        }
+
+        private static bool NeedsHelp(Decision d, DecisionContext c)
+            => c != null && c.HasCommand && (d.RefusedCommand || d.Hesitated);
+
+        private static string Voice(Decision decision)
+            => !string.IsNullOrEmpty(decision.DecisiveVoice)
+                ? decision.DecisiveVoice : decision.TopModule;
+
         public static string Next(Decision decision, DecisionContext context)
         {
-            if (context == null || !context.HasCommand ||
-                (!decision.RefusedCommand && !decision.Hesitated))
-                return "";
+            if (!NeedsHelp(decision, context)) return "";
+            return Loc.T(OrderAdvice.Next(Factor(decision, context), Voice(decision)));
+        }
 
-            string factor = null;
-            if (decision.Weighed && decision.Decisive != Counterfactual.Factor.None)
-                factor = decision.Decisive.ToString();
-
-            // Counterfactual has already tested what actually changes
-            // the vote. Do NOT override a weighed Pride/Memory verdict with
-            // an incidental unpaid debt or a distant commander.
-            if (decision.Weighed && factor == null &&
-                !string.IsNullOrEmpty(decision.DecisiveVoice))
-                return Loc.T(OrderAdvice.Next(null, decision.DecisiveVoice));
-
-            // Only when a decisive reason has NOT been computed can
-            // visible circumstances offer a provisional next step.
-            if (factor == null && !decision.Weighed)
-            {
-                if (context.CommandVolume < 0.75f) factor = "Distance";
-                else if (context.UnpaidMissions > 0) factor = "Debt";
-                else if (context.KnownMurdererInSight) factor = "Murderer";
-                else if (context.AllyInDanger) factor = "AllyInDanger";
-                else if (context.Surrounded) factor = "Surrounded";
-                else if (context.IsExhausted || context.Fatigue > 0.6f) factor = "Fatigue";
-                else if (context.MaxHP > 0f && context.CurrentHP < context.MaxHP * 0.4f) factor = "Wounds";
-            }
-
-            string voice = !string.IsNullOrEmpty(decision.DecisiveVoice)
-                ? decision.DecisiveVoice : decision.TopModule;
-            return Loc.T(OrderAdvice.Next(factor, voice));
+        public static string NextShort(Decision decision, DecisionContext context)
+        {
+            if (!NeedsHelp(decision, context)) return "";
+            return Loc.T(OrderAdvice.Short(Factor(decision, context), Voice(decision)));
         }
 
         public static bool Fulfilled(Decision decision, DecisionContext context)
