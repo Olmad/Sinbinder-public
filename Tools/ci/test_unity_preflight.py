@@ -91,5 +91,15 @@ class PreflightTests(unittest.TestCase):
         self.write_build(paths)
         self.assert_rejected("Solo demo start")
 
+    def test_cloud_workflow_covers_gameplay_and_import_dependencies(self):
+        # A green cloud gate on a different SHA is not a valid gate for code
+        # that did not trigger this workflow at all.
+        workflow = (Path(__file__).resolve().parents[2]
+                    / ".github/workflows/unity-cloud-smoke.yml").read_text(encoding="utf-8")
+        push_section = workflow.split("  push:", 1)[1].split("  workflow_dispatch:", 1)[0]
+        for changed_path in ("Assets/**", "Packages/**", "ProjectSettings/**"):
+            self.assertIn(f'      - "{changed_path}"', push_section,
+                          f"Unity import gate would not run for {changed_path}")
+
 if __name__ == "__main__":
     unittest.main()
