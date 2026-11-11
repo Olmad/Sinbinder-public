@@ -381,8 +381,9 @@ namespace Sinbinder.Gameplay
         {
             // Пока стрелой не освобождён противовес, стояние на плитах
             // ничего не даёт. Это причинная связь между двумя загадками.
-            if (!_mechanismReleased) return false;
             if (_sealsAwake) return true;
+            // Even while locked, run the shared rule so a pending partial
+            // hold cannot carry over before the counterweight has fallen.
             // Real game and CI both use the SAME non-normalizing distance
             // and continuous-hold rule. A missed step resets progress.
             bool warrior = ally != null && !ally.IsDead &&
@@ -392,9 +393,11 @@ namespace Sinbinder.Gameplay
             bool nowAwake = DreamTutorialChecks.AdvanceSeals(
                 ref _sealTogether, _mechanismReleased, warrior, owner, Time.deltaTime);
             if (_warriorSeal != null)
-                _warriorSeal.material.color = warrior ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
+                _warriorSeal.material.color = _mechanismReleased && warrior
+                    ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
             if (_lordSeal != null)
-                _lordSeal.material.color = owner ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
+                _lordSeal.material.color = _mechanismReleased && owner
+                    ? new Color(0.28f, 1f, 0.68f) : new Color(0.36f, 0.62f, 0.82f);
             if (nowAwake) _sealsAwake = true;
             return _sealsAwake;
         }
