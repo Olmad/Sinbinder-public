@@ -49,6 +49,15 @@ namespace Sinbinder.AOS
     public static class OrderIntegrity
     {
         /// <summary>
+        /// An Idle vote while a player's command is still pending is a
+        /// hesitation/choice to stand, not permission for camp-life AI to
+        /// start another move. Without orders, autonomous camp activity is
+        /// legitimate.
+        /// </summary>
+        public static bool MayRoamCamp(bool decidedIdle, bool hasCommand)
+            => decidedIdle && !hasCommand;
+
+        /// <summary>
         /// A single repeated vote should not pause and announce the very
         /// same refusal every second. The next distinct order gets a fresh
         /// visible refusal even when its memory event is in cooldown.
