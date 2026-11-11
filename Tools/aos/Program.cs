@@ -77,6 +77,17 @@ internal static class Program
         Check(!OrderIntegrity.ShouldPresentRefusal(true, 6u, 6u),
             "same-frame repeated vote cannot cause a second overlay");
 
+        // Idle is a real AOS decision, not an unbounded leftover NavMesh
+        // journey and not a reason to wander off to the campfire mid-order.
+        Check(OrderIntegrity.MayRoamCamp(true, false),
+            "autonomous idle can use genuine camp-life routine");
+        Check(!OrderIntegrity.MayRoamCamp(true, true),
+            "hesitation while commanded cannot start camp movement");
+        Check(!OrderIntegrity.MayRoamCamp(false, false),
+            "an attack/escape decision cannot start idle camp routine");
+        Check(!OrderIntegrity.MayRoamCamp(false, true),
+            "active command and non-idle action never trigger camp routine");
+
         // A whisper is a temporary purchase of obedience to ONE order,
         // not a universal obedience buff lasting twenty seconds.
         Check(OrderIntegrity.WhisperApplies(12u, 12u, true, 25f, 20f),
@@ -114,6 +125,11 @@ internal static class Program
         Contains(whisper, "OrderIntegrity.WhisperApplies(", "whisper checks the production per-order guard");
         Contains(whisper, "OrderRevision = agreedOrder", "accepted whisper records exact order identity");
         Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
+        Contains(aosWrapper, "OrderIntegrity.MayRoamCamp(", "real AOS executor uses camp movement gate");
+        Contains(aosWrapper, "case ActionType.Idle:", "idle has an explicit execution path");
+        Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
+        Contains(aosWrapper, "ExecuteDefenseAtPost();", "Defend uses the no-pursuit executor");
+        Contains(aosWrapper, "distance <= aa.AttackRange", "defensive attack requires an actually reachable enemy");
         Contains(aosWrapper, "LastWhisperCompelled = context.HasCommand", "effective action is labelled as whisper-driven");
         Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");
         Contains(aosWrapper, "_obeyedOrderRevision != _warrior.CommandRevision", "obedience credit distinguishes two same-frame commands");
