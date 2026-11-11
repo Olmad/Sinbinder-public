@@ -181,6 +181,25 @@ internal static class Program
         Check(canSource.Contains("if (mind == null || !w.HasCommand) return false;"),
             "current command and AOS wrapper remain mandatory for whisper eligibility");
         // The same tooltip file also exposes the natural verdict versus whisper compulsion.
+        // Hovering a door/throne must use the real cursor even if QA has pinned a warrior.
+        // Positive: sturdy tooltip bypasses the pinned-warrior projection.
+        // Negative: warrior tooltip keeps the pinned placement used for QA.
+        string tooltipSource = File.ReadAllText(tooltip);
+        int sturdyMethod = tooltipSource.IndexOf("private void ShowSturdy(Sturdy sturdy)", StringComparison.Ordinal);
+        int refreshMethod = tooltipSource.IndexOf("private void Refresh(Warrior warrior)", sturdyMethod, StringComparison.Ordinal);
+        Check(sturdyMethod >= 0 && refreshMethod > sturdyMethod, "sturdy tooltip method exists");
+        string sturdySource = tooltipSource.Substring(sturdyMethod, refreshMethod - sturdyMethod);
+        Check(sturdySource.Contains("PlaceNearPointer(actualMouse: true);"),
+            "sturdy tooltip uses actual hovered cursor despite a pinned warrior");
+        Check(tooltipSource.Contains("Vector2 pointer = actualMouse ? (Vector2)Input.mousePosition : Pointer();"),
+            "tooltip placement supports separate real cursor and pinned QA anchor");
+        Check(tooltipSource.Contains("void Update()") &&
+              tooltipSource.Substring(tooltipSource.IndexOf("void Update()", StringComparison.Ordinal),
+                  tooltipSource.IndexOf("private void PlaceNearPointer(", StringComparison.Ordinal) -
+                  tooltipSource.IndexOf("void Update()", StringComparison.Ordinal))
+                  .Contains("PlaceNearPointer();"),
+            "warrior tooltip retains default pinned positioning");
+
         Contains(tooltip, "wrapper.NaturalDecisionDetail", "court tooltip retains natural thirteen-voice verdict");
         Contains(tooltip, "wrapper.LastWhisperCompelled", "tooltip distinguishes external persuasion from AOS vote");
         Contains(ui, "wrapper.LastWhisperCompelled", "selected warrior panel distinguishes compulsion from loyalty");
