@@ -7033,55 +7033,55 @@ msgstr "Guda the Younger"
 
 #: Gameplay/FallenBag.cs
 msgid "Мешок {0}"
-msgstr ""
+msgstr "{0}'s bag"
 
 #: Gameplay/FallenBag.cs
 msgid "Лопата Марги"
-msgstr ""
+msgstr "Marga's shovel"
 
 #: Gameplay/FallenBag.cs
 msgid "Он копал ею везде, где вставал лагерь."
-msgstr ""
+msgstr "He used it to dig wherever the camp was pitched."
 
 #: Gameplay/FallenBag.cs
 msgid "Воронье перо"
-msgstr ""
+msgstr "Raven feather"
 
 #: Gameplay/FallenBag.cs
 msgid "Ворон прибился к нему ещё при жизни."
-msgstr ""
+msgstr "The raven had followed him even in life."
 
 #: Gameplay/FallenBag.cs
 msgid "Огарок свечи Вейна"
-msgstr ""
+msgstr "Veyn's candle stub"
 
 #: Gameplay/FallenBag.cs
 msgid "Он читал при ней, пока лагерь спал."
-msgstr ""
+msgstr "He read by its light while the camp slept."
 
 #: Gameplay/FallenBag.cs
 msgid "F — поднять мешок {0}"
-msgstr ""
+msgstr "F — collect {0}'s bag"
 
 #: Gameplay/FallenBag.cs
 msgid "Вы подняли мешок {0}. «{1}» — с вами."
-msgstr ""
+msgstr "You collected {0}'s bag. You kept \"{1}\"."
 
 #: Gameplay/FallenBag.cs
 msgid "Вы подняли мешок {0}."
-msgstr ""
+msgstr "You collected {0}'s bag."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} несёт вам вещи {1}."
-msgstr ""
+msgstr "{0} brings you {1}'s belongings."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} обобрал {1}: не ладили."
-msgstr ""
+msgstr "{0} robbed {1}: they never got along."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} не тронул мешок {1}: у мёртвых не берут."
-msgstr ""
+msgstr "{0} left {1}'s bag untouched: the dead should not be robbed."
 
 #: Gameplay/Favor.cs
 msgid "Наконец-то дело!"
@@ -13356,3 +13356,19 @@ msgstr "Bet 5"
 #: Gameplay/CardTable.cs
 msgid "Поставить 10"
 msgstr "Bet 10"
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок"
+msgstr "Bag"
+
+#: Gameplay/FallenBag.cs
+msgid "Сейчас некому забрать содержимое мешка."
+msgstr "There is nobody to carry the bag's contents."
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок {0}: места не хватило, оставшиеся вещи на земле."
+msgstr "There was not enough space in your inventory. The remaining items are still in {0}'s bag."
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок {0} собран."
+msgstr "You collected everything from {0}'s bag."
