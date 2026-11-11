@@ -82,10 +82,10 @@ internal static class RoomDirectoryChecks
                 RoomJoinStatus.WrongPassword, "tracked attempt slot " + i);
         Check(bounded.TryJoin(9999, boundedId, "another-secure-password") ==
             RoomJoinStatus.RateLimited, "new identities fail closed at bound");
-        Check(bounded.TryJoin(2000, boundedId, "another-secure-password") ==
-            RoomJoinStatus.Accepted, "existing legitimate identity can still join");
         Check(bounded.TryJoin(2001, boundedId, null) ==
             RoomJoinStatus.WrongPassword, "existing attempt state survives saturation");
+        Check(bounded.TryJoin(2000, boundedId, "another-secure-password") ==
+            RoomJoinStatus.Accepted, "existing legitimate identity can still join");
 
         ExpectError(() => rooms.Create(41, "x", "EU", 2, null),
             "invalid short name blocked");
