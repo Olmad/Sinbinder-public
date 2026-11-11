@@ -270,7 +270,8 @@ namespace Sinbinder.Multiplayer
             var approved = item.Order;
             // A disconnected Lord must not execute delayed commands after
             // their transport session has been invalidated.
-            if (!_authority.TryGetLord(approved.ConnectionId, out var currentLord) ||
+            if (!_authority.IsCurrentSession(approved.ConnectionId, approved.SessionEpoch) ||
+                !_authority.TryGetLord(approved.ConnectionId, out var currentLord) ||
                 !string.Equals(currentLord, approved.Lord, StringComparison.Ordinal))
                 return false;
             if (!_warriors.TryGetValue(approved.ActorId, out var warrior) ||
