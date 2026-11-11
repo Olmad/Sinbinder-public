@@ -130,7 +130,7 @@ namespace Sinbinder.UI
             return message;
         }
 
-        private static bool Load(string slot)
+        private bool Load(string slot)
         {
             if (!Commitment.CanLoad) { _status = Commitment.WhyNoLoad; Say(_status); return false; }
 
