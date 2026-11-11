@@ -49,6 +49,14 @@ namespace Sinbinder.AOS
     public static class OrderIntegrity
     {
         /// <summary>
+        /// A single repeated vote should not pause and announce the very
+        /// same refusal every second. The next distinct order gets a fresh
+        /// visible refusal even when its memory event is in cooldown.
+        /// </summary>
+        public static bool ShouldPresentRefusal(bool presented, uint presentedRevision, uint currentRevision)
+            => !presented || presentedRevision != currentRevision;
+
+        /// <summary>
         /// Reject an action decided before the latest order was issued or
         /// cancelled. The next AOS tick will vote again in the new context.
         /// </summary>
