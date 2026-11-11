@@ -42,11 +42,14 @@ namespace Sinbinder.Multiplayer
         public const int MaximumCapacity = 4;
         private const int KdfIterations = 120000;
         private const int MaxFailedPasswordAttempts = 5;
+        private const int MaxTrackedAttemptsPerRoom = 128;
+        private static readonly TimeSpan AttemptRetention = TimeSpan.FromMinutes(10);
 
         private sealed class Attempt
         {
             public int Failed;
             public DateTime BlockedUntilUtc;
+            public DateTime LastSeenUtc;
         }
 
         private sealed class Room
@@ -130,12 +133,20 @@ namespace Sinbinder.Multiplayer
 
             if (room.Hash != null)
             {
+                DateTime now = DateTime.UtcNow;
                 if (!room.Attempts.TryGetValue(authenticatedConnectionId, out var attempt))
                 {
+                    if (room.Attempts.Count >= MaxTrackedAttemptsPerRoom)
+                        PruneExpiredAttempts(room, now);
+                    // Fail closed instead of evicting a live lockout to make room
+                    // for unbounded identities supplied by an attacker.
+                    if (room.Attempts.Count >= MaxTrackedAttemptsPerRoom)
+                        return RoomJoinStatus.RateLimited;
                     attempt = new Attempt();
                     room.Attempts.Add(authenticatedConnectionId, attempt);
                 }
-                if (DateTime.UtcNow < attempt.BlockedUntilUtc)
+                attempt.LastSeenUtc = now;
+                if (now < attempt.BlockedUntilUtc)
                     return RoomJoinStatus.RateLimited;
                 bool correct = password != null &&
                     FixedTimeEqual(room.Hash, Derive(password, room.Salt));
@@ -145,7 +156,7 @@ namespace Sinbinder.Multiplayer
                     if (attempt.Failed >= MaxFailedPasswordAttempts)
                     {
                         attempt.Failed = 0;
-                        attempt.BlockedUntilUtc = DateTime.UtcNow.AddSeconds(30);
+                        attempt.BlockedUntilUtc = now.AddSeconds(30);
                     }
                     return RoomJoinStatus.WrongPassword;
                 }
@@ -178,6 +189,17 @@ namespace Sinbinder.Multiplayer
             // Running games need a separate reconnect / AI-takeover policy.
             // Do not implicitly allocate another player to a live game.
             return true;
+        }
+
+        private static void PruneExpiredAttempts(Room room, DateTime now)
+        {
+            var expired = new List<int>();
+            foreach (var pair in room.Attempts)
+                if (now >= pair.Value.BlockedUntilUtc &&
+                    now - pair.Value.LastSeenUtc >= AttemptRetention)
+                    expired.Add(pair.Key);
+            foreach (int id in expired)
+                room.Attempts.Remove(id);
         }
 
         private static void ValidateLabel(string value, int min,
