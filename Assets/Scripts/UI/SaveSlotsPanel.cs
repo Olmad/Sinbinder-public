@@ -29,6 +29,7 @@ namespace Sinbinder.UI
         private readonly List<GameObject> _spawned = new();
         private bool _open;
         private bool _loading;
+        private string _status;
 
         void Start()
         {
@@ -57,6 +58,7 @@ namespace Sinbinder.UI
         {
             _open = true;
             _loading = false;
+            _status = null;
             if (_panel != null) _panel.SetActive(true);
             GamePauseController.Instance?.Pause();
             Draw();
@@ -65,6 +67,7 @@ namespace Sinbinder.UI
         private void Close()
         {
             _open = false;
+            _status = null;
             if (_panel != null) _panel.SetActive(false);
             GamePauseController.Instance?.Resume();
         }
@@ -75,9 +78,11 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_title != null)
-                _title.text = _loading
-                    ? Loc.T("Вернуться к записанному.  F9 или Esc — закрыть")
-                    : Loc.T("Куда записать.  F9 или Esc — закрыть");
+                _title.text = !string.IsNullOrEmpty(_status)
+                    ? _status
+                    : (_loading
+                        ? Loc.T("Вернуться к записанному.  F9 или Esc — закрыть")
+                        : Loc.T("Куда записать.  F9 или Esc — закрыть"));
 
             float y = 0f;
 
@@ -87,7 +92,7 @@ namespace Sinbinder.UI
             {
                 bool toLoad = !_loading;
                 _spawned.Add(Row(y, toLoad ? Loc.T("Вернуться к записанному") : Loc.T("Записать"),
-                    "", () => { _loading = toLoad; Draw(); }));
+                    "", () => { _loading = toLoad; _status = null; Draw(); }));
                 y -= RowHeight * 1.4f;
             }
             else
@@ -110,34 +115,38 @@ namespace Sinbinder.UI
                 // пустое гнездо должно быть видно, чтобы в него записали.
                 System.Action act = _loading
                     ? (has ? () => { if (Load(name)) Close(); else Draw(); } : (System.Action)null)
-                    : () => { Save(name); Draw(); };
+                    : () => { _status = Save(name); Draw(); };
 
                 _spawned.Add(Row(y, Loc.T(name), what, act));   // имя гнезда — ключ файла, показ — переводом
                 y -= RowHeight * 1.6f;
             }
         }
 
-        private static void Save(string slot)
+        private static string Save(string slot)
         {
             bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.PathOf(slot));
-            Say(ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло."));
+            string message = ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло.");
+            Say(message);
+            return message;
         }
 
         private static bool Load(string slot)
         {
-            if (!Commitment.CanLoad) { Say(Commitment.WhyNoLoad); return false; }
+            if (!Commitment.CanLoad) { _status = Commitment.WhyNoLoad; Say(_status); return false; }
 
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
             if (save == null)
             {
-                Say(Loc.T("Запись не прочиталась. Выберите другую запись или начните заново."));
+                _status = Loc.T("Запись не прочиталась. Выберите другую запись или начните заново.");
+                Say(_status);
                 return false;
             }
 
             bool loaded = SaveSystem.ReturnTo(save);
-            Say(loaded
+            _status = loaded
                 ? Loc.F("Вернулись к «{0}».", Loc.T(slot))
-                : Loc.T("Не удалось восстановить запись. Выберите другую запись или начните заново."));
+                : Loc.T("Не удалось восстановить запись. Выберите другую запись или начните заново.");
+            Say(_status);
             return loaded;
         }
 
