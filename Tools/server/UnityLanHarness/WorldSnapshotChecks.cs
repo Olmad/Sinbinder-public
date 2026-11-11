@@ -158,8 +158,10 @@ internal static class WorldSnapshotChecks
             Need(c1.WorldActors.Count == 0 && c2.WorldActors.Count == 0,
                 "invalid/throw private projections clear stale actors");
 
-            // A subsequent valid frame must recover normal private filtering.
-            probe.AttachRoom(room);
+            // Recover the production visibility delegate without attaching
+            // the same room twice. AttachRoom is intentionally single-shot
+            // and a duplicate attach must remain an error.
+            room.PrivateWorldActors = probe.GetPrivateWorldActors;
             frame = c1.WorldFrame;
             room.PublishPrivateWorldSnapshot();
             await Wait(room, c1, c2, () => c1.WorldFrame > frame &&
