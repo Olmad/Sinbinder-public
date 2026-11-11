@@ -6,7 +6,10 @@ on:
       - feature/server-prototype
     paths:
       - ".github/workflows/unity-cloud-smoke.yml"
-      - "Assets/Tests/Editor/**"
+      - "Assets/Tests/**"
+      - "Tools/ci/**"
+      - "Assets/Scenes/**"
+      - "ProjectSettings/EditorBuildSettings.asset"
       - "ProjectSettings/ProjectVersion.txt"
       - "Packages/manifest.json"
   workflow_dispatch:
@@ -27,27 +30,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - name: Verify version, test framework, build scenes
-        shell: python
-        run: |
-          import json
-          import pathlib
-          import re
-          root = pathlib.Path('.')
-          version = (root / 'ProjectSettings/ProjectVersion.txt').read_text(encoding='utf-8')
-          assert 'm_EditorVersion: 6000.3.22f1' in version, 'Unexpected Unity editor version'
-          manifest = json.loads((root / 'Packages/manifest.json').read_text(encoding='utf-8'))
-          assert 'com.unity.test-framework' in manifest.get('dependencies', {}), 'Unity Test Framework missing'
-          settings = (root / 'ProjectSettings/EditorBuildSettings.asset').read_text(encoding='utf-8')
-          scenes = re.findall(r'path: (Assets/[^\r\n]+\.unity)', settings)
-          assert scenes, 'No Unity scenes listed in build settings'
-          for path in scenes:
-              assert (root / path).is_file(), 'Missing scene: ' + path
-              assert (root / (path + '.meta')).is_file(), 'Missing scene meta: ' + path
-          for path in ('Assets/Scenes/Prologue_Dream.unity', 'Assets/Scenes/Tug/Field.unity',
-                       'Assets/Scenes/Tug/Multiplayer_Test.unity'):
-              assert path in scenes, 'Critical scene absent from build settings: ' + path
-          print('Static project preflight PASS; this is NOT a Unity import, compilation or Play Mode pass')
+      - name: Run negative regression tests for preflight
+        run: python3 -m unittest discover -s Tools/ci -p 'test_unity_preflight.py' -v
+      - name: Validate project scene GUIDs and Editor smoke fixtures
+        run: python3 Tools/ci/unity_preflight.py .
 
   editor-import:
     name: Unity 6000.3.22f1 import and EditMode NUnit smoke (opt-in)
