@@ -27,6 +27,9 @@ namespace Sinbinder.Crypt
         /// <summary>Что вышло из последней вылазки. Читает карта.</summary>
         public string LastReport { get; private set; } = "";
 
+        /// <summary>Every recorded action, not the three-line retelling.</summary>
+        public ExpeditionReplayData LastReplay { get; private set; }
+
         /// <summary>Сколько вылазок ушло с этой доски. Спрашивает склеп демо (<see cref="CryptMap"/>).</summary>
         public int Sent { get; private set; }
 
@@ -43,6 +46,7 @@ namespace Sinbinder.Crypt
         public void RecordPersonal(Mission mission, bool recoveredSomething)
         {
             Sent++;
+            LastReplay = null; // no false "automatic" reconstruction of live play
             LastReport = recoveredSomething
                 ? Loc.F("Греховод лично вернулся из «{0}» с находкой.", Loc.Name(mission.Name))
                 : Loc.F("Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита.",
@@ -216,12 +220,64 @@ namespace Sinbinder.Crypt
                     Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
             }
 
+            LastReplay = BuildReplay(mission, commanderName, party, chosen,
+                fight, survivors);
+
             // Отряд вернулся — точка, к которой игрок захочет вернуться
             // сам, и единственная, которую он не выбирает. В режиме
             // обязательств она же и единственная возможная.
             Core.SaveSystem.AutoSave();
 
             return LastReport;
+        }
+
+        /// <summary>
+        /// Preserve EVERY engine-recorded combat event in chronological
+        /// order. March and return are abstract route stages because the
+        /// original instant simulator does not store world coordinates.
+        /// A replay viewer must label them schematic, not pretend the
+        /// warriors walked through a full real-time scene.
+        /// </summary>
+        private static ExpeditionReplayData BuildReplay(Mission mission, string leader,
+            List<string> party, AOS.MissionAction? chosen,
+            Expedition.Outcome outcome, List<string> survivors)
+        {
+            var replay = new ExpeditionReplayData(Loc.Name(mission.Name),Loc.Name(leader),party);
+            replay.Append(ExpeditionReplayKind.Departure,Loc.Name(leader),
+                Loc.T("Отряд вышел из склепа."));
+            replay.Append(ExpeditionReplayKind.March,Loc.Name(leader),
+                Loc.F("Отряд направился к месту «{0}».",Loc.Name(mission.Name)));
+
+            if(chosen.HasValue)
+                replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
+                    JunctionCatalog.Told(chosen.Value));
+            if(outcome.Record != null && outcome.Record.Events != null)
+            {
+                foreach(var ev in outcome.Record.Events)
+                {
+                    if(ev==null)continue;
+                    string actor=string.IsNullOrEmpty(ev.ActorName)
+                        ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
+                    replay.Append(ExpeditionReplayKind.CombatAction,actor,
+                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt);
+                }
+            }
+
+            if(outcome.Record == null)
+                replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
+                    Loc.T("Бой не состоялся: решение было принято на развилке."));
+
+            if(survivors.Count>0)
+                replay.Append(ExpeditionReplayKind.Loot,Loc.Name(leader),
+                    Loc.F("С павших противников взяли монет: {0}.",outcome.Taken));
+            else
+                replay.Append(ExpeditionReplayKind.Loot,"",Loc.T("Отряд погиб; добыча осталась на месте."));
+
+            replay.Append(ExpeditionReplayKind.Return,Loc.Name(leader),
+                survivors.Count>0
+                    ? Loc.F("Вернулись: {0}.",string.Join(", ",survivors))
+                    : Loc.T("К склепу не вернулся никто."));
+            return replay;
         }
 
         /// <summary>

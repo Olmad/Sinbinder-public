@@ -5,6 +5,9 @@ on:
       - feature/server-prototype
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Crypt/Retelling.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
@@ -21,6 +24,9 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Crypt/Retelling.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
@@ -47,5 +53,7 @@ jobs:
           dotnet-version: "8.0.x"
       - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
+      - run: python3 Tools/expeditions/check_replay_wiring.py
       - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py

@@ -106,6 +106,7 @@ namespace Sinbinder.UI
                 // которую нельзя закрыть, запирает склеп насмерть — ровно
                 // тот род поломки, из-за которого пришлось вырезать сцену
                 // побега.
+                if (ExpeditionReplayViewer.OwnsEscape) return;
                 if (Input.GetKeyDown(KeyCode.Escape)) Back();
                 return;
             }
@@ -172,6 +173,19 @@ namespace Sinbinder.UI
                     : _board.LastReport;
 
             Rows(out float y);
+
+            // The old summary still fits the title, but the complete
+            // auto-battle log is now a separate user-controlled viewer.
+            if (_board.LastReplay != null && _board.LastReplay.Frames.Count > 0)
+            {
+                var replay = _board.LastReplay;
+                _spawned.Add(Row(y,true,
+                    Loc.T("▶ Смотреть весь реплей вылазки"),
+                    Loc.F("Каждое записанное действие · событий: {0}.",replay.Frames.Count),
+                    Loc.T("Пауза, перемотка и хронология; схематическая карта."),
+                    () => ExpeditionReplayViewer.Open(replay),105f));
+                y-=113f;
+            }
 
             int ready = _board.Ready();
 

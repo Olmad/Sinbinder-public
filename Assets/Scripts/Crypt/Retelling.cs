@@ -98,6 +98,9 @@ namespace Sinbinder.Crypt
         /// Одна фраза. Положение не передаётся, и это правильный ответ:
         /// приказов на вылазке не отдают, значит отход был побегом.
         /// </summary>
+        /// <summary>One real event line, without the summary's 3-item cap.</summary>
+        public static string Describe(BattleEvent ev) => ev == null ? "" : Line(ev);
+
         private static string Line(BattleEvent ev)
         {
             string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : Loc.Name(ev.ActorName);
