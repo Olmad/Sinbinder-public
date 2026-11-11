@@ -56,6 +56,9 @@ namespace Sinbinder.UI
         {
             if (Pinned == null || Pinned.IsDead || _cam == null) return Input.mousePosition;
             Vector3 p = _cam.WorldToScreenPoint(Pinned.transform.position + Vector3.up * 1.2f);
+            // A pinned warrior behind the active camera has no meaningful
+            // on-screen anchor. Avoid pinning the note to a mirrored projection.
+            if (p.z <= 0f) return Input.mousePosition;
             return new Vector2(p.x, p.y);
         }
 
