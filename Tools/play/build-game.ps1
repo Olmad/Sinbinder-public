@@ -66,12 +66,35 @@ if ($text -match 'error CS') {
     Fail "Не собралось: ошибки в коде (выше). Скажи Claude — лог: $log"
 }
 if ($text -notmatch '\[СБОРКА\] Готово') { Fail "Не собралось. Лог: $log" }
+if ($p.ExitCode -ne 0) { Fail "Unity завершилась с кодом $($p.ExitCode). Лог: $log" }
+
+# Даже при строке «Готово» итоговый Player обязан существовать на диске.
+$sourceExe = Join-Path $work 'Sinbinder.exe'
+$sourceData = Join-Path $work 'Sinbinder_Data'
+if (-not (Test-Path -LiteralPath $sourceExe -PathType Leaf)) {
+    Fail "Unity сообщила об успехе, но Sinbinder.exe отсутствует: $sourceExe"
+}
+if (-not (Test-Path -LiteralPath $sourceData -PathType Container)) {
+    Fail "Unity сообщила об успехе, но папка Sinbinder_Data отсутствует: $sourceData"
+}
 
 # Копия — в свою папку с датой; играть оттуда.
 $stamp = Get-Date -Format 'yyyy-MM-dd HH-mm'
 $dest = Join-Path $builds $stamp
 New-Item -ItemType Directory -Force $dest | Out-Null
 robocopy $work $dest /E /NFL /NDL /NJH /NJS /NP | Out-Null
+$copyCode = $LASTEXITCODE
+# robocopy: коды 0..7 = успех/предупреждение, от 8 = ошибка копирования.
+if ($copyCode -ge 8) { Fail "Ошибка копирования сборки (robocopy код $copyCode). Папка: $dest" }
+$destExe = Join-Path $dest 'Sinbinder.exe'
+$destData = Join-Path $dest 'Sinbinder_Data'
+if (-not (Test-Path -LiteralPath $destExe -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $destData -PathType Container)) {
+    Fail "Копирование неполное: нет Sinbinder.exe или Sinbinder_Data. Папка: $dest"
+}
+if ((Get-Item -LiteralPath $destExe).Length -ne (Get-Item -LiteralPath $sourceExe).Length) {
+    Fail "Sinbinder.exe скопирован не полностью: отличается размер. Папка: $dest"
+}
 $size = [int]((Get-ChildItem $dest -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 $took = [math]::Round(((Get-Date) - $start).TotalMinutes, 1)
 
