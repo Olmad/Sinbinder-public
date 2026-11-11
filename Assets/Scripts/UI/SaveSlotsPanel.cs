@@ -129,7 +129,16 @@ namespace Sinbinder.UI
 
         private static string Save(string slot)
         {
-            bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.PathOf(slot));
+            string path = SaveSystem.PathOf(slot);
+            // The slot may have become unreadable after Draw() created its button.
+            // Recheck immediately before writing to avoid overwriting that file.
+            if (SaveSystem.Exists(path) && SaveSystem.Read(path) == null)
+            {
+                string warning = Loc.T("Запись не читается. Выберите другое гнездо.");
+                Say(warning);
+                return warning;
+            }
+            bool ok = SaveSystem.Write(SaveSystem.Snapshot(), path);
             string message = ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло.");
             Say(message);
             return message;
