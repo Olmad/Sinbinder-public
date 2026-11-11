@@ -125,6 +125,16 @@ internal static class Program
         Contains(whisper, "OrderIntegrity.WhisperApplies(", "whisper checks the production per-order guard");
         Contains(whisper, "OrderRevision = agreedOrder", "accepted whisper records exact order identity");
         Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
+        // Source-level wiring guards: no old refusal can be displayed while
+        // a new command waits for its first genuine AOS decision.
+        string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
+        Contains(aosWrapper, "public uint LastDecisionCommandRevision", "AOS verdict records the order identity");
+        Contains(aosWrapper, "LastDecisionCommandRevision = _warrior.CommandRevision;", "each real vote stamps the current command");
+        Contains(aosWrapper, "LastDecisionCommandRevision == _warrior.CommandRevision", "verdict freshness compares exact revision");
+        Contains(ui, "if (who.HasCommand && !wrapper.HasCurrentCommandDecision)", "selected unit shows pending verdict for a new order");
+        Contains(ui, "if (d == null || !d.HasCurrentCommandDecision) return false;", "group refuses only for current order");
+        Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
+        Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");
         Contains(aosWrapper, "OrderIntegrity.MayRoamCamp(", "real AOS executor uses camp movement gate");
         Contains(aosWrapper, "case ActionType.Idle:", "idle has an explicit execution path");
         Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
