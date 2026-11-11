@@ -19,7 +19,7 @@ namespace Sinbinder.Dialogue
         {
             if (a?.Soul == null || b?.Soul == null) return ("", "");
             if (CampLines.Mute(a))
-                return (CampLines.Gesture(a), CampLines.Mute(b) ? CampLines.Gesture(b) : Loc.T("Понял."));
+                return (CampLines.Gesture(a), CampLines.Mute(b) ? CampLines.Gesture(b) : CampLines.Acknowledge(b));
             int k = unchecked(Wardrobe.Stamp(a.Soul.Name) + Wardrobe.Stamp(b.Soul.Name)
                 + (int)(UnityEngine.Time.time / 60f));
             var ev = Nearest(a);

@@ -39,7 +39,7 @@ namespace Sinbinder.Dialogue
             if (a == null || b == null || a.Soul == null || b.Soul == null) return ("", "");
 
             // На кивок нельзя отвечать так, будто немой рассказал о долге или старшем.
-            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Loc.T("Понял."));
+            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Acknowledge(b));
 
             string first = Opening(a, b);
             // Ответ — на то, что сказано, а не просто грех на грех (автор, 28.10: «Старший — Вейн. Посмотрим,
@@ -128,6 +128,10 @@ namespace Sinbinder.Dialogue
         private static bool IsLiska(Warrior w) => w.DisplayName == "Лиска";
 
         public static string Gesture(Warrior w) => Loc.T("(молча кивает)");
+
+        /// <summary>Ответ на немой жест с учётом рода собеседника.</summary>
+        public static string Acknowledge(Warrior w) => Grammar.Pick(w.Gender,
+            Loc.T("Понял."), Loc.T("Поняла."));
 
         // ──────────────────────────────────
         // Первая строка

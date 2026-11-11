@@ -20,5 +20,7 @@ begin = t.index("private string GetDialogueLine(")
 end = t.index("\n        }", begin)
 method = t[begin:end]
 assert method.index('if (situation == "JOIN_01"') < method.index("EncounterLines.Say(")
-assert 'Loc.T("Понял.")' in c
+assert 'public static string Acknowledge(Warrior w)' in c
+assert 'Grammar.Pick(w.Gender' in c
+assert 'CampLines.Acknowledge(b)' in v
 print("PASS: source wiring uses contextual village responses, mute gestures and JOIN_01")

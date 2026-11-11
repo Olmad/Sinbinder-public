@@ -13176,3 +13176,7 @@ msgstr "Stop counting sorties. Demand what you're owed."
 #: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
 msgid "Твоё? Так забери обратно."
 msgstr "Yours? Then take it back."
+
+#: Dialogue/CampLines.cs
+msgid "Поняла."
+msgstr "Understood."
