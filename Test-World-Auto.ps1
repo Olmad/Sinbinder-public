@@ -35,10 +35,34 @@ function Spawn([string]$title, [string]$arguments) {
 
 try {
     Check (Test-Path -LiteralPath $exe) ('No built Unity player: ' + $exe)
-    $latestScript = Get-ChildItem -Path (Join-Path $root 'Assets\Scripts') -Recurse -Filter '*.cs' -File |
+    # A Unity rebuild can leave Sinbinder.exe's timestamp unchanged.
+    # Require the verified author-build marker and check the actual project
+    # inputs against it instead of comparing only the executable timestamp.
+    $dataDir = Join-Path $root 'Build\Sinbinder\Sinbinder_Data'
+    Check (Test-Path -LiteralPath $dataDir -PathType Container) ('No Unity Player data: ' + $dataDir)
+    $marker = Join-Path $root 'Build\Sinbinder\.sinbinder-author-build.txt'
+    Check (Test-Path -LiteralPath $marker -PathType Leaf) (
+        'Missing verified author-build marker; run "Собрать игру.cmd" first')
+    $builtAt = [DateTime]::MinValue
+    Check ([DateTime]::TryParseExact(
+        ([System.IO.File]::ReadAllText($marker)).Trim(),
+        'o', [System.Globalization.CultureInfo]::InvariantCulture,
+        [System.Globalization.DateTimeStyles]::RoundtripKind, [ref]$builtAt
+    )) 'Invalid verified author-build timestamp'
+    $builtAt = $builtAt.ToUniversalTime()
+    $inputs = @(
+        Get-ChildItem -LiteralPath (Join-Path $root 'Assets') -Recurse -File |
+            Where-Object { $_.Extension -in @('.cs', '.unity', '.prefab', '.asset', '.asmdef', '.shader', '.compute', '.meta') }
+    )
+    $inputs += @(
+        Get-Item -LiteralPath (Join-Path $root 'Packages\manifest.json'),
+                               (Join-Path $root 'ProjectSettings\ProjectVersion.txt'),
+                               (Join-Path $root 'ProjectSettings\EditorBuildSettings.asset')
+    )
+    $newer = $inputs | Where-Object { $_.LastWriteTimeUtc -gt $builtAt } |
         Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
-    if ($latestScript -and (Get-Item $exe).LastWriteTimeUtc -lt $latestScript.LastWriteTimeUtc) {
-        throw ('The game executable is older than source file ' + $latestScript.FullName +
+    if ($newer) {
+        throw ('Project input changed after verified Unity build: ' + $newer.FullName +
                '. Rebuild using "Собрать игру.cmd" first.')
     }
 
