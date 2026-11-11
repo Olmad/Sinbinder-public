@@ -12,6 +12,8 @@ assert 'public static string Describe(BattleEvent ev)' in retelling
 assert 'ExpeditionReplayViewer.Open(replay)' in ui
 assert 'ExpeditionReplayArchive.Add(LastReplay)' in board
 assert 'ExpeditionReplayArchive.History' in ui
+assert 'private int _replayPage;' in ui
+assert 'int last = history.Count - 1 - _replayPage*2;' in ui
 save=(r/"Assets/Scripts/Core/SaveSystem.cs").read_text(encoding="utf-8")
 assert 'save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot()' in save
 assert 'Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays)' in save

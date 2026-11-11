@@ -58,6 +58,7 @@ namespace Sinbinder.UI
         /// </summary>
         private bool _gathering;
         private bool _personal;
+        private int _replayPage;
         private string _leader;
         private readonly HashSet<string> _party = new();
 
@@ -179,7 +180,13 @@ namespace Sinbinder.UI
             // A new mission does not erase old complete battle records.
             // These are actual events from the resolver, not invented shots.
             var history = ExpeditionReplayArchive.History;
-            for(int i=history.Count-1; i>=0; i--)
+            // Only two replays per page; the mission buttons must remain
+            // reachable even after eight automatic expeditions.
+            _replayPage = Mathf.Clamp(_replayPage, 0,
+                Mathf.Max(0,(history.Count-1)/2));
+            int last = history.Count - 1 - _replayPage*2;
+            int first = Mathf.Max(0,last-1);
+            for(int i=last; i>=first; i--)
             {
                 var replay=history[i];
                 if(replay==null || replay.Frames==null || replay.Frames.Count==0) continue;
@@ -189,6 +196,20 @@ namespace Sinbinder.UI
                     Loc.T("Полная хронология решений, без вымышленных координат."),
                     () => ExpeditionReplayViewer.Open(replay),105f));
                 y-=113f;
+            }
+            if(history.Count>2)
+            {
+                bool older=first>0;
+                bool newer=_replayPage>0;
+                _spawned.Add(Row(y,true,
+                    Loc.F("Архив: страница {0} из {1}",_replayPage+1,
+                        (history.Count+1)/2),
+                    older ? Loc.T("Ещё более ранние реплеи") :
+                            Loc.T("Это самые ранние записи"),
+                    newer ? Loc.T("Новые записи доступны выше в архиве") : "",
+                    () => { _replayPage=older ? _replayPage+1 : 0; ShowMissions(); },
+                    78f));
+                y-=86f;
             }
 
             int ready = _board.Ready();
