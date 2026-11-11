@@ -269,6 +269,35 @@ internal static class AuthorityChecks
         authority.SetConnected(2, true);
         Require(bridge.PendingOrders == 0,
             "server queue drained at scheduled tick");
+        // Negative regression: disconnect AND reconnect before ExecuteTick.
+        // The new socket session must not resurrect the old accepted intent.
+        Require(bridge.TryIssue(2, Intent("aos-bridge", 4, id2,
+            NetworkOrderKind.Move, 31f, 4f), 20, null, null,
+            out var stale, out reason), "old session can queue an order");
+        authority.SetConnected(2, false);
+        authority.SetConnected(2, true);
+        Require(!authority.IsCurrentSession(2, stale.SessionEpoch),
+            "reconnect invalidates previous session epoch");
+        bridge.ProcessDue(23);
+        Require(cancelledOrders == 3 && appliedOrders == 4 &&
+            Math.Abs(lord2.TestMover.Destination.x - 5f) < .01,
+            "reconnected Lord must not execute old session order");
+
+        // Positive regression: a newly accepted order from the resumed
+        // session executes normally; replay cursor is not reset.
+        Require(bridge.TryIssue(2, Intent("aos-bridge", 5, id2,
+            NetworkOrderKind.Move, 23f, 4f), 24, null, null,
+            out var resumed, out reason) &&
+            resumed.SessionEpoch != stale.SessionEpoch,
+            "resumed session accepts only a fresh command ID");
+        bridge.ProcessDue(27);
+        Require(appliedOrders == 5 && cancelledOrders == 3 &&
+            Math.Abs(lord2.TestMover.Destination.x - 23f) < .01,
+            "fresh resumed-session movement executes exactly once");
+        Require(!bridge.TryIssue(2, Intent("aos-bridge", 4, id2,
+            NetworkOrderKind.Move), 28, null, null,
+            out _, out reason) && reason == OrderRejection.StaleOrDuplicate,
+            "reconnect does not reset anti-replay cursor");
         Require(!identity.Assigned, "unregister clears old match identity");
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 4, id3,
             NetworkOrderKind.Move), 12, null, (w,l) => 0f,
