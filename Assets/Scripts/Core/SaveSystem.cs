@@ -318,8 +318,17 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool Restore(SaveGame save)
         {
-            Gameplay.CardTable.BeforeSaveOrLoad();
             if (save == null) return false;
+
+            // Validate before touching the live game. A damaged or hand-edited
+            // save must not leave half a squad, shelf, or wager restored.
+            if (save.Squad == null || save.Shelf == null ||
+                save.Squad.Exists(m => m == null) ||
+                save.Shelf.Exists(s => s == null))
+            {
+                Debug.LogWarning("[СОХРАНЕНИЕ] Неполный список воинов или душ. Не читаю.");
+                return false;
+            }
 
             if (save.Version != SaveGame.Current)
             {
@@ -327,6 +336,8 @@ namespace Sinbinder.Core
                                + $"({save.Version}, ждали {SaveGame.Current}). Не читаю.");
                 return false;
             }
+
+            Gameplay.CardTable.BeforeSaveOrLoad();
 
             var members = new List<SquadRoster.Member>();
             foreach (var m in save.Squad)
@@ -522,6 +533,17 @@ namespace Sinbinder.Core
             catch (IOException e)
             {
                 Debug.LogWarning($"[СОХРАНЕНИЕ] Не прочиталось: {e.Message}");
+                return null;
+            }
+            catch (System.ArgumentException e)
+            {
+                // Unity JsonUtility throws for malformed JSON, not IOException.
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Повреждённый формат: {e.Message}");
+                return null;
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Нет доступа к записи: {e.Message}");
                 return null;
             }
         }
