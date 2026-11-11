@@ -239,6 +239,22 @@ internal static class Program
               "unreadable slot is not overwritten through the save panel");
 
 
+        // Revalidate a slot at click time: a save may become unreadable after
+        // the F9 panel was drawn. Empty and valid slots still take Write().
+        int saveMethod = slotsSource.IndexOf("private static string Save(string slot)");
+        int loadMethod = slotsSource.IndexOf("private bool Load(string slot)", saveMethod);
+        string saveAction = saveMethod >= 0 && loadMethod > saveMethod
+            ? slotsSource.Substring(saveMethod, loadMethod - saveMethod) : "";
+        int existsGuard = saveAction.IndexOf("SaveSystem.Exists(path) && SaveSystem.Read(path) == null");
+        int writeAction = saveAction.IndexOf("SaveSystem.Write(SaveSystem.Snapshot(), path)");
+        Check(existsGuard >= 0 && writeAction > existsGuard &&
+              saveAction.Substring(existsGuard, writeAction - existsGuard).Contains("return warning;"),
+              "slot becoming unreadable after UI draw is rejected before overwrite");
+        Check(saveAction.Contains("string path = SaveSystem.PathOf(slot);") &&
+              saveAction.Contains("bool ok = SaveSystem.Write(SaveSystem.Snapshot(), path);") &&
+              saveAction.Contains("ok ? Loc.F("),
+              "empty and readable slot save paths still reach normal write result");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
