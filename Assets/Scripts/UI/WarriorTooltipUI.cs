@@ -244,7 +244,8 @@ namespace Sinbinder.UI
                     if (++shownTemptations >= 2) break;
                 }
                 if (isNeutralInMatch)
-                    _text.text = Favor.Attitude(warrior) + (hasDecision ? "\n" + _text.text : string.Empty);
+                    _text.text = Favor.Attitude(warrior) +
+                        (hasDecision || waitingForCommand ? "\n" + _text.text : string.Empty);
                 // Титулованный или легенда — дар словами (Gift).
                 if (Lords.Active && warrior.TryGetComponent<Gift>(out var gift))
                 {
