@@ -19,6 +19,12 @@ assert "public void CancelForDeath(Warrior warrior)" in table
 assert "public static void BeforeSaveOrLoad()" in table
 assert "SquadRoster.CreditPocket(_name, amount)" in table
 assert "CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)" in table
+# A declined wager must explain whose decision it was and offer a real recovery.
+assert 'Loc.Name(warrior.DisplayName), requestedStake' in table
+assert 'Попробуйте меньшую ставку или бесплатную партию.' in table
+assert 'Воин отказался ставить столько монет.' not in table
+assert 'В вашем кошеле не хватает монет.' not in table
+assert 'CampCardPot.TryOpen(wallets, requestedStake, out var pot)' in table
 assert "if (Watching) Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);" in table
 assert "_joinNext" in table and "Сыграть после этой раздачи" in table
 assert "if (_playedByHuman && _round.Hands.Count > 1" in table
