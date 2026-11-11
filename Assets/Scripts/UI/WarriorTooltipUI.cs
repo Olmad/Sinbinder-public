@@ -109,10 +109,11 @@ namespace Sinbinder.UI
         /// right and bottom borders. Clamp the same overlay-space position,
         /// respecting the prefab's pivot and actual canvas scaling.
         /// </summary>
-        private void PlaceNearPointer()
+        private void PlaceNearPointer(bool actualMouse = false)
         {
             if (_panel == null) return;
-            Vector2 pointer = Pointer();
+            // Object tooltips must follow the hovered object, not a pinned warrior.
+            Vector2 pointer = actualMouse ? (Vector2)Input.mousePosition : Pointer();
             Vector2 at = pointer + _offset;
             Vector2 size = _panel.rect.size;
             Vector3 scale = _panel.lossyScale;
@@ -177,7 +178,7 @@ namespace Sinbinder.UI
             Tint(sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f));
             if (_panel == null) return;
             _panel.gameObject.SetActive(true);
-            PlaceNearPointer();
+            PlaceNearPointer(actualMouse: true);
         }
 
         private void Refresh(Warrior warrior)
