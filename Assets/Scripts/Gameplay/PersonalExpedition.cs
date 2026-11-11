@@ -106,6 +106,20 @@ namespace Sinbinder.Gameplay
                 foreach (string name in party)
                 {
                     if (string.IsNullOrEmpty(name) || !seen.Add(name)) continue;
+                    // Recheck the selected roster at the moment of departure.
+                    // UI was opened earlier, and a soldier might now be away,
+                    // unavailable or on another mission. Never teleport them.
+                    if (!SquadRoster.TryGet(name, out var member) ||
+                        !SquadRoster.CanGo(member))
+                    {
+                        error = Loc.F("Воин {0} сейчас не может выйти в экспедицию.", Loc.Name(name));
+                        return false;
+                    }
+                    if (seen.Count + 1 > Mathf.Max(1, mission.Squad))
+                    {
+                        error = Loc.T("Отряд больше допуска для этой экспедиции.");
+                        return false;
+                    }
                     Warrior found = null;
                     foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(
                                  FindObjectsSortMode.None))

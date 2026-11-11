@@ -13,6 +13,9 @@ assert "new GameObject" in m and "surface.BuildNavMesh()" in m
 assert "WarriorRig.Attach(go)" in p and "sceneSetup?.SetupWarrior(go)" in p
 assert "ExpeditionMapPlan.ForName(mission.Name)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui
+assert "ready > 0 || personalPossible" in ui
+assert "SquadRoster.CanGo(member)" in p
+assert "seen.Count + 1 > Mathf.Max(1, mission.Squad)" in p
 assert "Экспедиция" in p and "Exit()" in p
 assert "PersonalExpedition.CurrentMapKey" in bag
 assert "Gameplay.PersonalExpedition.BeforeSaveOrLoad()" in save

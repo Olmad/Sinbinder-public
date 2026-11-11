@@ -202,11 +202,18 @@ namespace Sinbinder.UI
                 if (ready < m.Squad)
                     facts += " " + Loc.F("У вас сейчас только {0}.", Leadership.Collective(ready));
 
-                _spawned.Add(Row(y, ready > 0,
+                // The Sinbinder himself is a valid one-person party.
+                // No roster soldiers is NOT a reason to disable a personally
+                // visitable expedition. Automatic dispatch still requires
+                // an available commander.
+                bool personalPossible = ExpeditionMapPlan.ForName(m.Name) != null &&
+                                        SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead;
+                bool enabled = ready > 0 || personalPossible;
+                _spawned.Add(Row(y, enabled,
                     Loc.Name(m.Name),
                     m.Rumour,
                     facts,
-                    ready > 0 ? () => PickCommander(m) : (System.Action)null));
+                    enabled ? () => PickCommander(m) : (System.Action)null));
 
                 y -= 150f;
             }
