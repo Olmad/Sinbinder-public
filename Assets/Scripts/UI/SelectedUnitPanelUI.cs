@@ -482,7 +482,7 @@ namespace Sinbinder.UI
                 return;
             }
 
-            string suggestion = AOSDecisionAdvice.Next(decision, context);
+            string suggestion = AOSDecisionAdvice.NextShort(decision, context);
             string why = string.IsNullOrEmpty(suggestion)
                 ? Grammar.For(who.Gender, Quieter(decision, context))
                 : suggestion;
