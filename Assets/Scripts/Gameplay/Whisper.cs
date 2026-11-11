@@ -85,6 +85,9 @@ namespace Sinbinder.Gameplay
             if (Last.TryGetValue(w, out var at) && Time.time - at < Again) return false;
             var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
             if (mind == null || !w.HasCommand) return false;
+            // An old refusal cannot make a newly issued order whisperable.
+            // Wait for the real thirteen-voice verdict on this exact revision.
+            if (!mind.HasCurrentCommandDecision) return false;
             var d = mind.LastDecisionDetail;
             return d.Hesitated || d.RefusedCommand;
         }
