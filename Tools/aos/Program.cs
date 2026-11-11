@@ -117,6 +117,13 @@ internal static class Program
         Contains(aosWrapper, "LastWhisperCompelled = context.HasCommand", "effective action is labelled as whisper-driven");
         Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");
         Contains(aosWrapper, "_obeyedOrderRevision != _warrior.CommandRevision", "obedience credit distinguishes two same-frame commands");
+        Contains(aosWrapper, "if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord)", "whisper compulsion cannot farm earned loyalty");
+        Contains(whisper, "void ResolveBargain()", "whisper settles only after the soul speaks");
+        Contains(whisper, "w.CommandRevision == agreedOrder", "cancelled or changed orders cannot be paid for");
+        Contains(whisper, "if (applied)", "false agreement cannot consume money or corrupt the soul");
+        string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
+        Contains(tooltip, "wrapper.NaturalDecisionDetail", "court tooltip retains natural thirteen-voice verdict");
+        Contains(tooltip, "wrapper.LastWhisperCompelled", "tooltip distinguishes external persuasion from AOS vote");
         Contains(ui, "wrapper.LastWhisperCompelled", "selected warrior panel distinguishes compulsion from loyalty");
 
         // AOS is a vote of thirteen distinct personality voices, not a
