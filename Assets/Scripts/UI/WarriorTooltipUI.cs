@@ -255,7 +255,11 @@ namespace Sinbinder.UI
                 }
             }
 
-            if (warrior.Soul != null) Tint(SinColor(warrior.Soul.Sin));
+            // Never carry the previous warrior's sin colour into a tooltip
+            // for a warrior whose soul has not been revealed or assigned.
+            Tint(warrior.Soul != null
+                ? SinColor(warrior.Soul.Sin)
+                : new Color(0.55f, 0.55f, 0.58f));
 
             if (_panel != null) _panel.gameObject.SetActive(true);
         }
