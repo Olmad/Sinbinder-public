@@ -54,7 +54,7 @@ namespace Sinbinder.UI
         /// <summary>Где «мышь»: у прогона — у груди воина, в игре — сама мышь.</summary>
         private Vector2 Pointer()
         {
-            if (Pinned == null || _cam == null) return Input.mousePosition;
+            if (Pinned == null || Pinned.IsDead || _cam == null) return Input.mousePosition;
             Vector3 p = _cam.WorldToScreenPoint(Pinned.transform.position + Vector3.up * 1.2f);
             return new Vector2(p.x, p.y);
         }
