@@ -99,8 +99,32 @@ namespace Sinbinder.UI
             // Подсказку можно считать прочитанной лишь когда панель действительно видна.
             Hovered = _panel != null && _panel.gameObject.activeInHierarchy ? _shown : null;
 
-            if (_panel != null)
-                _panel.position = Pointer() + _offset;
+            PlaceNearPointer();
+        }
+
+        /// <summary>
+        /// The hover note used to disappear beyond the screen edge near the
+        /// right and bottom borders. Clamp the same overlay-space position,
+        /// respecting the prefab's pivot and actual canvas scaling.
+        /// </summary>
+        private void PlaceNearPointer()
+        {
+            if (_panel == null) return;
+            Vector2 at = Pointer() + _offset;
+            Vector2 size = _panel.rect.size;
+            Vector3 scale = _panel.lossyScale;
+            float width = size.x * Mathf.Abs(scale.x);
+            float height = size.y * Mathf.Abs(scale.y);
+            const float margin = 12f;
+            float left = width * _panel.pivot.x;
+            float right = width * (1f - _panel.pivot.x);
+            float bottom = height * _panel.pivot.y;
+            float top = height * (1f - _panel.pivot.y);
+            at.x = Mathf.Clamp(at.x, left + margin,
+                Mathf.Max(left + margin, Screen.width - right - margin));
+            at.y = Mathf.Clamp(at.y, bottom + margin,
+                Mathf.Max(bottom + margin, Screen.height - top - margin));
+            _panel.position = new Vector3(at.x, at.y, _panel.position.z);
         }
 
         private Warrior WarriorUnderCursor()
@@ -139,7 +163,7 @@ namespace Sinbinder.UI
             Tint(sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f));
             if (_panel == null) return;
             _panel.gameObject.SetActive(true);
-            _panel.position = Pointer() + _offset;
+            PlaceNearPointer();
         }
 
         private void Refresh(Warrior warrior)
@@ -165,6 +189,23 @@ namespace Sinbinder.UI
                         _scales = SoulCourt.ScalesLine(warrior, wrapper.LastDecisionDetail, wrapper.LastContext);
                     }
                     if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
+
+                    // После отказа игроку нужен следующий осмысленный шаг,
+                    // а не ещё один процент послушания. Весь текст исходит
+                    // из Counterfactual и положения, не гарантирует результата.
+                    if (warrior.HasCommand &&
+                        (wrapper.LastDecisionDetail.RefusedCommand || wrapper.LastDecisionDetail.Hesitated))
+                    {
+                        string advice = AOSDecisionAdvice.Next(wrapper.LastDecisionDetail, wrapper.LastContext);
+                        if (!string.IsNullOrEmpty(advice))
+                            _text.text += "\n" + Core.Loc.T("Можно попробовать: ") + advice;
+                    }
+                    else if (warrior.HasCommand &&
+                             AOSDecisionAdvice.Fulfilled(wrapper.LastDecisionDetail, wrapper.LastContext) &&
+                             wrapper.LastDecisionDetail.Action != ActionType.ObeyCommand)
+                    {
+                        _text.text += "\n" + Core.Loc.T("Приказ выполнен по собственной воле.");
+                    }
                 }
                 // После суда тот же язык работает на поле боя: герой может
                 // увидеть, какое искушение принёс конкретный предмет, не
