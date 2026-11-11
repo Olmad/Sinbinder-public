@@ -111,6 +111,7 @@ namespace Sinbinder.Gameplay
             TrophyChest.Forget();
             FallenBag.Forget(); // discard last run's DontDestroyOnLoad loot
             PersonalExpedition.Forget();
+            ExpeditionReplayArchive.Forget();
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
             UI.CommandHintUI.Forget();

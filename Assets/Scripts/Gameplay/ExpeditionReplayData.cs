@@ -32,9 +32,11 @@ namespace Sinbinder.Gameplay
     {
         public string MissionName;
         public string Leader;
-        public readonly List<string> Squad = new List<string>();
-        public readonly List<ExpeditionReplayFrame> Frames =
+        public List<string> Squad = new List<string>();
+        public List<ExpeditionReplayFrame> Frames =
             new List<ExpeditionReplayFrame>();
+
+        public ExpeditionReplayData() { } // Unity JsonUtility deserialization
 
         public ExpeditionReplayData(string missionName, string leader,
                                     IEnumerable<string> squad)
@@ -66,7 +68,7 @@ namespace Sinbinder.Gameplay
         }
 
         public bool HasCompleteRoute =>
-            Frames.Count >= 3 &&
+            Frames != null && Frames.Count >= 3 &&
             Frames[0].Kind == ExpeditionReplayKind.Departure &&
             Frames[Frames.Count - 1].Kind == ExpeditionReplayKind.Return;
     }

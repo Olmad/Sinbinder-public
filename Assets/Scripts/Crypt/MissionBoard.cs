@@ -255,6 +255,7 @@ namespace Sinbinder.Crypt
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,
                 fight, survivors, shares, coinsForLord);
+            ExpeditionReplayArchive.Add(LastReplay);
 
             // Отряд вернулся — точка, к которой игрок захочет вернуться
             // сам, и единственная, которую он не выбирает. В режиме

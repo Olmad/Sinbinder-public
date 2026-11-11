@@ -5,4 +5,5 @@
 </PropertyGroup><ItemGroup>
 <Compile Include="ReplayProgram.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayData.cs" Link="ExpeditionReplayData.cs"/>
+<Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs" Link="ExpeditionReplayArchive.cs"/>
 </ItemGroup></Project>

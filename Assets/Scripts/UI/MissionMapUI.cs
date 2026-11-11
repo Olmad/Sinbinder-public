@@ -176,13 +176,17 @@ namespace Sinbinder.UI
 
             // The old summary still fits the title, but the complete
             // auto-battle log is now a separate user-controlled viewer.
-            if (_board.LastReplay != null && _board.LastReplay.Frames.Count > 0)
+            // A new mission does not erase old complete battle records.
+            // These are actual events from the resolver, not invented shots.
+            var history = ExpeditionReplayArchive.History;
+            for(int i=history.Count-1; i>=0; i--)
             {
-                var replay = _board.LastReplay;
+                var replay=history[i];
+                if(replay==null || replay.Frames==null || replay.Frames.Count==0) continue;
                 _spawned.Add(Row(y,true,
-                    Loc.T("▶ Смотреть весь реплей вылазки"),
-                    Loc.F("Каждое записанное действие · событий: {0}.",replay.Frames.Count),
-                    Loc.T("Пауза, перемотка и хронология; схематическая карта."),
+                    Loc.F("▶ Реплей: {0}",replay.MissionName),
+                    Loc.F("Командир: {0} · событий: {1}",replay.Leader,replay.Frames.Count),
+                    Loc.T("Полная хронология решений, без вымышленных координат."),
                     () => ExpeditionReplayViewer.Open(replay),105f));
                 y-=113f;
             }

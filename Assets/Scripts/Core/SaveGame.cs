@@ -161,6 +161,8 @@ namespace Sinbinder.Core
         // Absent on old save files: these locations start unvisited.
         public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
             new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+        public List<Sinbinder.Gameplay.ExpeditionReplayData> ExpeditionReplays =
+            new List<Sinbinder.Gameplay.ExpeditionReplayData>();
 
         /// <summary>
         /// Открыт ли сундук Марги и что в нём осталось. Без этого загрузка

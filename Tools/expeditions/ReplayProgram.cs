@@ -28,6 +28,24 @@ static class Program
         var incomplete=new ExpeditionReplayData("Часовня","",null);
         incomplete.Append(ExpeditionReplayKind.CombatAction,"?","No route");
         Test(!incomplete.HasCompleteRoute,"unrealistic partial trace is not claimed complete");
-        Console.WriteLine($"PASS: {tests} full expedition trace tests");
+        ExpeditionReplayArchive.Forget();
+        for(int i=0;i<12;i++)
+        {
+            var trace=new ExpeditionReplayData("Mission "+i,"Chief",new[]{"Scout"});
+            trace.Append(ExpeditionReplayKind.Departure,"Chief","Departure");
+            trace.Append(ExpeditionReplayKind.March,"Chief","Route");
+            trace.Append(ExpeditionReplayKind.Return,"Scout","Home");
+            ExpeditionReplayArchive.Add(trace);
+        }
+        Test(ExpeditionReplayArchive.History.Count==8,"retains exactly eight newest replays");
+        Test(ExpeditionReplayArchive.History[0].MissionName=="Mission 4","evicts oldest");
+        var snapshot=ExpeditionReplayArchive.Snapshot();
+        ExpeditionReplayArchive.Forget();
+        Test(ExpeditionReplayArchive.History.Count==0,"new game clears history");
+        ExpeditionReplayArchive.Restore(snapshot);
+        Test(ExpeditionReplayArchive.History[7].MissionName=="Mission 11","restore retains newest");
+        ExpeditionReplayArchive.Restore(null);
+        Test(ExpeditionReplayArchive.History.Count==0,"old save without history safe");
+        Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
     }
 }
