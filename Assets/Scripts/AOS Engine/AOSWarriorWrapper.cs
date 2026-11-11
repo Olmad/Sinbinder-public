@@ -31,6 +31,15 @@ namespace Sinbinder.AOS
         /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
         public DecisionContext LastContext { get; private set; }
 
+        /// <summary>Identity of the command for which LastDecisionDetail was calculated.</summary>
+        public uint LastDecisionCommandRevision { get; private set; }
+
+        /// <summary>Never display a previous command's refusal as the current verdict.</summary>
+        public bool HasCurrentCommandDecision =>
+            _warrior != null && _warrior.HasCommand &&
+            LastContext != null && LastContext.HasCommand &&
+            LastDecisionCommandRevision == _warrior.CommandRevision;
+
         void Awake()
         {
             _warrior = GetComponent<Warrior>();
@@ -74,6 +83,7 @@ namespace Sinbinder.AOS
             bool changed = decision.Action != LastDecision;
 
             LastContext = context;
+            LastDecisionCommandRevision = _warrior.CommandRevision;
             LastDecisionDetail = decision;
             LastDecision = decision.Action;
 
