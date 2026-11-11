@@ -106,10 +106,13 @@ namespace Sinbinder.UI
                 var name = slot;
                 var save = SaveSystem.Read(SaveSystem.PathOf(slot));
                 bool has = save != null;
+                // An existing but unreadable file is not an empty slot.
+                // Never invite the player to load it as if it were valid.
+                bool unreadable = !has && SaveSystem.Exists(SaveSystem.PathOf(slot));
 
                 string what = has
                     ? (string.IsNullOrEmpty(save.Label) ? Loc.T("Запись") : save.Label)
-                    : Loc.T("Пусто");
+                    : (unreadable ? Loc.T("Запись не читается") : Loc.T("Пусто"));
 
                 // Загружать нечего — строка есть, но не нажимается:
                 // пустое гнездо должно быть видно, чтобы в него записали.
