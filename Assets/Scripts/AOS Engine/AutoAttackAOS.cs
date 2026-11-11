@@ -23,6 +23,7 @@ namespace Sinbinder.AOS
         private AOSWarriorWrapper _wrapper;
         private RefusalPresenter _presenter;
         private Gameplay.Damageable _self;
+        private Gameplay.Warrior _warrior;
         private float _lastDecisionTime;
         private bool _pausing;
 
@@ -31,6 +32,7 @@ namespace Sinbinder.AOS
             _wrapper = GetComponent<AOSWarriorWrapper>();
             _presenter = GetComponent<RefusalPresenter>();
             _self = GetComponent<Gameplay.Damageable>();
+            _warrior = GetComponent<Gameplay.Warrior>();
 
             // Свой такт у каждого: все думали в один и тот же кадр раз в секунду,
             // и на поле в 400 этот кадр стоил секунду и больше (замер 27.10). Сдвиг —
@@ -59,12 +61,13 @@ namespace Sinbinder.AOS
             // намерения появляется и тонет в бою: игрок физически
             // не успевает связать приказ, поступок и причину.
             if (_wrapper.LastDecisionDetail.RefusedCommand && _refusalPause > 0f)
-                StartCoroutine(ExecuteAfterBeat(action));
+                StartCoroutine(ExecuteAfterBeat(action,
+                    _warrior != null ? _warrior.CommandRevision : 0u));
             else
                 using (Core.Cost.Of("execute")) _wrapper.Execute(action);
         }
 
-        private IEnumerator ExecuteAfterBeat(ActionType action)
+        private IEnumerator ExecuteAfterBeat(ActionType action, uint decidedForOrder)
         {
             _pausing = true;
 
@@ -74,7 +77,16 @@ namespace Sinbinder.AOS
             yield return new WaitForSeconds(_refusalPause);
 
             _pausing = false;
-            _wrapper.Execute(action);
+
+            // The player may change or cancel the command during the
+            // refusal beat. Never execute a vote against an older order;
+            // let the next scheduled AOS tick evaluate the new situation.
+            if (_warrior != null &&
+                !OrderIntegrity.MayExecuteDelayed(decidedForOrder, _warrior.CommandRevision))
+                yield break;
+
+            if (_self != null && _self.IsDead) yield break;
+            using (Core.Cost.Of("execute")) _wrapper.Execute(action);
         }
     }
 }
