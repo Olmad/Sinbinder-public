@@ -13,6 +13,7 @@ namespace Sinbinder.Gameplay
         private List<Damageable> _enemyUnits = new();
         private readonly List<Damageable> _neutralUnits = new();
         private List<HarvestableBody> _bodiesOnField = new();
+        private readonly BattleEndGate _battleEndGate = new BattleEndGate();
 
         public System.Action<Damageable, GameObject> OnAnyDeath;
         public System.Action OnUnitsChanged;
@@ -26,7 +27,11 @@ namespace Sinbinder.Gameplay
         }
 
         public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
-        public void RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits);
+        public void RegisterEnemyUnit(Damageable unit)
+        {
+            Register(unit, _enemyUnits);
+            if (unit != null && !unit.IsDead) _battleEndGate.EnemyRegistered();
+        }
         public void RegisterNeutralUnit(Damageable unit) => Register(unit, _neutralUnits);
 
         private void Register(Damageable unit, List<Damageable> destination)
@@ -171,7 +176,7 @@ namespace Sinbinder.Gameplay
 
         private void CheckBattleEnd()
         {
-            if (_enemyUnits.Count == 0 || !_enemyUnits.Exists(e => e != null && !e.IsDead))
+            if (_battleEndGate.TryComplete(_enemyUnits.Exists(e => e != null && !e.IsDead)))
             {
                 int enemiesKilled = _enemyUnits.Count;
                 int alliesLost = 0;
