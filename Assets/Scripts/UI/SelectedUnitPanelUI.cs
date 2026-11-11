@@ -438,19 +438,33 @@ namespace Sinbinder.UI
 
             var decision = wrapper.LastDecisionDetail;
             var context = wrapper.LastContext;
-            bool ordered = who.Command.IsSet;
+            bool ordered = who.Command.IsSet && context.HasCommand;
 
             // Исполняет приказ — громче всех ваш голос, и он один на панели:
             // строки «Верность кричит» и «Ваш приказ громче» — одна правда дважды.
-            if (ordered && !decision.Hesitated && decision.Action == ActionType.ObeyCommand)
+            if (ordered && AOSDecisionAdvice.Fulfilled(decision, context)
+                && decision.Action == ActionType.ObeyCommand)
             {
                 // Середина зоны не пустует (разбор кадра 1 октября): крупно —
                 // что он делает, тише — что в нём сейчас никто не спорит.
                 string doing = PhraseGenerator.Doing(decision.Action);
                 Voice(null, string.IsNullOrEmpty(doing) ? "" : char.ToUpper(doing[0]) + doing.Substring(1),
                       Grammar.For(who.Gender, Loc.T("ничто в нём сейчас не спорит с приказом")), Muted, 30);
-                Order(Loc.T("Ваш приказ — громче всех"),
-                      Grammar.For(who.Gender, Loc.T("громче всех его голосов")), true);
+                Order(Loc.T("Исполняет приказ"),
+                      Grammar.For(who.Gender, Loc.T("решил послушаться")), true);
+                return;
+            }
+
+            // Иногда душа выбирает тот же поступок не из послушания:
+            // гневный идёт атаковать сам, исполняя приказ на атаку.
+            // Называть это отказом — показывать игроку ложную причину.
+            if (ordered && AOSDecisionAdvice.Fulfilled(decision, context))
+            {
+                var doing = PhraseGenerator.Doing(decision.Action);
+                Voice(null, Loc.T("Сам выбрал: ") + doing,
+                    PhraseGenerator.Reason(who, context, decision), Bone, 27);
+                Order(Loc.T("Приказ выполнен"),
+                    Loc.T("Его собственное решение совпало с приказом."), true);
                 return;
             }
 
@@ -468,11 +482,16 @@ namespace Sinbinder.UI
                 return;
             }
 
-            string why = Grammar.For(who.Gender, Quieter(decision, context));
+            string suggestion = AOSDecisionAdvice.Next(decision, context);
+            string why = string.IsNullOrEmpty(suggestion)
+                ? Grammar.For(who.Gender, Quieter(decision, context))
+                : suggestion;
             if (decision.Hesitated)
-                Order(Loc.T("Ваш приказ — почти так же громко"), why, true);
+                Order(Loc.T("Колеблется — приказ не исполнен"), why, true);
+            else if (decision.RefusedCommand)
+                Order(Loc.T("Отказался от приказа"), why, true);
             else
-                Order(Loc.T("Ваш приказ — тише"), why, true);
+                Order(Loc.T("Решает самостоятельно"), why, true);
         }
 
         /// <summary>Тело строчными: «зомби», «скелет».</summary>
