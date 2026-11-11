@@ -57,6 +57,7 @@ namespace Sinbinder.UI
         /// (автор: «войны, отправляемые на них, фиксированные»).
         /// </summary>
         private bool _gathering;
+        private bool _personal;
         private string _leader;
         private readonly HashSet<string> _party = new();
 
@@ -161,6 +162,7 @@ namespace Sinbinder.UI
 
         private void ShowMissions()
         {
+            _personal = false;
             _pickingCommander = false;
             _gathering = false;
 
@@ -198,6 +200,7 @@ namespace Sinbinder.UI
 
         private void PickCommander(Mission mission)
         {
+            _personal = false;
             _chosen = mission;
             _pickingCommander = true;
             _gathering = false;
@@ -206,6 +209,18 @@ namespace Sinbinder.UI
                 _title.text = Loc.F("{0}. Кто поведёт отряд?  Esc — назад", Loc.Name(mission.Name));
 
             Rows(out float y);
+
+            // Personal visit is available on the first two physical maps.
+            // It uses the same party picker, but the Lord commands directly.
+            if (ExpeditionMapPlan.ForName(mission.Name) != null && SinbinderPlayer.Exists)
+            {
+                _spawned.Add(Row(y, true,
+                    Loc.T("Греховод — вести лично"),
+                    Loc.T("Выйти на трёхмерную карту, командовать и собрать добычу самому."),
+                    Loc.T("Души может собирать только Греховод."),
+                    () => LeadPersonal()));
+                y -= 150f;
+            }
 
             foreach (var member in SquadRoster.Members)
             {
@@ -238,8 +253,25 @@ namespace Sinbinder.UI
         /// тех же, кого уводил до 16 октября. Опытных в склепе подсказка
         /// не бережёт — кем рискнуть, решает игрок.
         /// </summary>
+        private void LeadPersonal()
+        {
+            _personal = true;
+            _leader = Loc.N("Греховод");
+            _gathering = true;
+            _party.Clear();
+            int count = 0;
+            foreach(var member in SquadRoster.Members)
+                if (SquadRoster.CanGo(member) && count < Mathf.Max(0, _chosen.Squad - 1))
+                {
+                    _party.Add(member.Name);
+                    count++;
+                }
+            ShowParty(null);
+        }
+
         private void Lead(string commanderName)
         {
+            _personal = false;
             _leader = commanderName;
             _gathering = true;
             _party.Clear();
@@ -251,12 +283,24 @@ namespace Sinbinder.UI
 
         /// <summary>Скольких старший возьмёт сверх себя.</summary>
         private int Room
-            => Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
+            => _personal ? Mathf.Max(0, _chosen.Squad - 1)
+                : Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
 
         /// <summary>Отряд набран. Есть развилка — спросить, что предложить; нет — уходят.</summary>
         private void Gathered()
         {
             _gathering = false;
+            if (_personal)
+            {
+                if (PersonalExpedition.Enter(_chosen, new List<string>(_party), out var error))
+                {
+                    Close();
+                    return;
+                }
+                _gathering = true;
+                ShowParty(error);
+                return;
+            }
             if (_chosen.Junction == Junction.None) { Send(_leader, null); return; }
             PickOffer(_leader);
         }
@@ -277,7 +321,7 @@ namespace Sinbinder.UI
         private void ShowParty(string warning)
         {
             int total = _party.Count + 1;
-            string leader = Loc.Name(Shown(_leader));
+            string leader = _personal ? Loc.T("Греховод") : Loc.Name(Shown(_leader));
 
             // Меньше, чем советуют, — можно; сказано, чем это грозит.
             string risk = total >= _chosen.Squad ? ""
@@ -317,7 +361,8 @@ namespace Sinbinder.UI
             }
 
             _spawned.Add(Row(y, true,
-                _party.Count == 0 ? Loc.F("Отправить одного: {0}", leader)
+                _personal ? Loc.T("Войти на карту лично")
+                : _party.Count == 0 ? Loc.F("Отправить одного: {0}", leader)
                                   : Loc.F("Отправить отряд — ведёт {0}", leader),
                 "", "", Gathered, height));
         }

@@ -157,6 +157,11 @@ namespace Sinbinder.Core
         /// </summary>
         public List<SavedFallenBag> FallenBags = new List<SavedFallenBag>();
 
+        // Progress on two personally visitable expedition maps.
+        // Absent on old save files: these locations start unvisited.
+        public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
+            new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+
         /// <summary>
         /// Открыт ли сундук Марги и что в нём осталось. Без этого загрузка
         /// в лагерь из другой сцены открывала сундук заново — и его горсть

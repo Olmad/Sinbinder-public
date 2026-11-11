@@ -230,7 +230,7 @@ namespace Sinbinder.Gameplay
             Vector3 where = w.transform.position +
                 w.transform.right * 0.6f + Vector3.up * 0.16f;
             var bag = MakePhysical(w.DisplayName, where,
-                SceneManager.GetActiveScene().name);
+                PersonalExpedition.CurrentMapKey);
             bag._ownerId = w.Id;
             bag._since = Time.time;
             foreach (GearSlot slot in System.Enum.GetValues(typeof(GearSlot)))

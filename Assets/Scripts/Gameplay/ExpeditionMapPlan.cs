@@ -88,7 +88,7 @@ namespace Sinbinder.Gameplay
             for (int row = 0; row < 4; row++)
                 for (int col = 0; col < 5; col++)
                     props.Add(new ExpeditionProp(ExpeditionPropKind.Grave,
-                        -26f + col * 6f, -12f + row * 8f, 0.85f, col % 2 == 0 ? 0f : 8f));
+                        (col < 3 ? -30f + col * 7f : 18f + (col - 3) * 7f), -12f + row * 8f, 0.85f, col % 2 == 0 ? 0f : 8f));
             for (int i = 0; i < 8; i++)
             {
                 props.Add(new ExpeditionProp(ExpeditionPropKind.Column, -19f + i * 5.4f, 33f, 1.15f));

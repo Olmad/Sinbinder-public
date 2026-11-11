@@ -35,6 +35,21 @@ namespace Sinbinder.Crypt
 
         public const int UpgradeLimit = 2;
 
+        /// <summary>
+        /// Called on real return from a personally traversed map.
+        /// Items, money, HP and AOS are already real scene state, not a
+        /// second fake reward from the instant automatic resolver.
+        /// </summary>
+        public void RecordPersonal(Mission mission, bool recoveredSomething)
+        {
+            Sent++;
+            LastReport = recoveredSomething
+                ? Loc.F("Греховод лично вернулся из «{0}» с находкой.", Loc.Name(mission.Name))
+                : Loc.F("Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита.",
+                    Loc.Name(mission.Name));
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(LastReport);
+        }
+
         /// <summary>Точки карты. Пока постоянные — карта не тасуется.</summary>
         public Mission[] Missions => MissionCatalog.All();
 

@@ -110,6 +110,7 @@ namespace Sinbinder.Gameplay
             CameraPullback.Forget();
             TrophyChest.Forget();
             FallenBag.Forget(); // discard last run's DontDestroyOnLoad loot
+            PersonalExpedition.Forget();
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
             UI.CommandHintUI.Forget();

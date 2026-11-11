@@ -78,6 +78,7 @@ namespace Sinbinder.Core
 
         public static SaveGame Snapshot()
         {
+            Gameplay.PersonalExpedition.BeforeSaveOrLoad();
             Gameplay.CardTable.BeforeSaveOrLoad(); // no open wager escrow in a save
             var save = new SaveGame
             {
@@ -91,6 +92,7 @@ namespace Sinbinder.Core
 
             save.Label = Label(save);
             save.FallenBags = Gameplay.FallenBag.Snapshot();
+            save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
 
             if (Inventory.PlayerInventory.Instance != null)
                 save.Bag = new List<Inventory.InventoryItem>(Inventory.PlayerInventory.Instance.GetAllItems());
@@ -354,6 +356,7 @@ namespace Sinbinder.Core
 
             SquadRoster.Set(members);
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
+            Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             CryptUpgrades.Restore(save.Installed, save.Brought);
             Commitment.Set(save.Commitment);
 
