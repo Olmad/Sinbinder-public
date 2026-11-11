@@ -553,10 +553,13 @@ namespace Sinbinder.Multiplayer
                 catch (Exception e)
                 {
                     Debug.LogError("[Sinbinder LAN] private world filter failed: " + e);
-                    continue; // fail closed; never send an unfiltered roster
+                    actors = null;
                 }
+                // A failed private projection must revoke previously visible
+                // actors. Skipping a frame leaves stale private positions/HP.
+                // Never fall back to an unfiltered roster.
                 if (actors == null || actors.Count > MaxWorldActorsPerSnapshot)
-                    continue;
+                    actors = Array.Empty<LanWorldActorState>();
                 bool valid = true;
                 var unique = new HashSet<long>();
                 for (int i = 0; i < actors.Count; i++)
@@ -572,7 +575,8 @@ namespace Sinbinder.Multiplayer
                         break;
                     }
                 }
-                if (!valid) continue;
+                if (!valid)
+                    actors = Array.Empty<LanWorldActorState>();
                 Send(peer, new LanMessage {
                     type = "worldBegin", matchId = GameMatchId,
                     snapshotId = frame, actorCount = actors.Count,
