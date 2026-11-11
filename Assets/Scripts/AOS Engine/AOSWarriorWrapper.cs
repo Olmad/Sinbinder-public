@@ -230,7 +230,9 @@ namespace Sinbinder.AOS
 
             // Послушал Греховода — привыкает слушать его, а приказ по душе — сильнее (Favor, 54-TUG.md):
             // раз на приказ, а не каждый такт.
-            if (!string.IsNullOrEmpty(cmd.Lord) &&
+            // A purchased whisper is not earned trust. The player has
+            // bought this action, not proved that the soul trusts its Lord.
+            if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord) &&
                 (!_hasObeyedOrder || _obeyedOrderRevision != _warrior.CommandRevision))
             {
                 _hasObeyedOrder = true;
