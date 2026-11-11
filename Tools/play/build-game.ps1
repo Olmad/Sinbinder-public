@@ -13,6 +13,9 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)          # кор�
 $drive = Split-Path -Qualifier $root                                   # буква флешки — на другом ПК бывает другой
 $builds = Join-Path $drive 'Claude\builds'
 $log = Join-Path $root 'Logs\build-author.log'
+# The Unity launcher can retain its timestamp across builds; use a build marker.
+$buildMarker = Join-Path $root 'Build\Sinbinder\.sinbinder-author-build.txt'
+Remove-Item -LiteralPath $buildMarker -ErrorAction SilentlyContinue
 
 function Fail($text) { Write-Host ''; Write-Host $text -ForegroundColor Red; Write-Host ''; Read-Host 'Нажми Enter, чтобы закрыть'; exit 1 }
 
@@ -95,6 +98,9 @@ if (-not (Test-Path -LiteralPath $destExe -PathType Leaf) -or
 if ((Get-Item -LiteralPath $destExe).Length -ne (Get-Item -LiteralPath $sourceExe).Length) {
     Fail "Sinbinder.exe скопирован не полностью: отличается размер. Папка: $dest"
 }
+# Only mark a build accepted after Unity, robocopy and output validation.
+[System.IO.File]::WriteAllText($buildMarker, [DateTime]::UtcNow.ToString('o'))
+Copy-Item -LiteralPath $buildMarker -Destination (Join-Path $dest '.sinbinder-author-build.txt') -Force
 $size = [int]((Get-ChildItem $dest -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 $took = [math]::Round(((Get-Date) - $start).TotalMinutes, 1)
 
