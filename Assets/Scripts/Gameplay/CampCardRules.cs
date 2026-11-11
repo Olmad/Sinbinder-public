@@ -128,6 +128,23 @@ namespace Sinbinder.Gameplay
         /// Soul shapes *risk tolerance* but does not predetermine card draws.
         /// These are a character's choices, not an AOS obedience verdict.
         /// </summary>
+        /// <summary>
+        /// A soul sets its own maximum stake. It may decline even when
+        /// it can afford the coins; bankruptcy is never forced by an order.
+        /// </summary>
+        public static int MaxStake(SinType sin, int balance)
+        {
+            if (balance < 2) return 0;
+            int appetite = sin switch
+            {
+                SinType.Greed => 10, SinType.Wrath => 10,
+                SinType.Pride => 5, SinType.Envy => 5,
+                SinType.Gluttony => 2, SinType.Lust => 2,
+                SinType.Sloth => 1, _ => 1
+            };
+            return Math.Min(appetite, balance / 2);
+        }
+
         public static bool WantsCard(SinType sin, int score, int memoryBias = 0)
         {
             int target = sin switch

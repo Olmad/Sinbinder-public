@@ -39,6 +39,7 @@ namespace Sinbinder.Gameplay
             && CampFocus.GroundDistance(SinbinderPlayer.Where, Instance.transform.position) <= Reach;
 
         private CampCardRound _round;
+        private CampCardPot _pot;
         private readonly List<Warrior> _roundWarriors = new();
         private float _nextMoveAt;
         private float _nextDealAt;
@@ -65,6 +66,7 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             if (Instance != this) return;
+            AbortRound(); // scene transition never burns escrowed coins
             if (Watching) StandUp();
             Instance = null;
             Watching = false;
@@ -233,6 +235,49 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        private sealed class WarriorWallet : ICampCardWallet
+        {
+            private readonly Warrior _warrior;
+            public WarriorWallet(Warrior warrior) { _warrior = warrior; }
+            public int Balance => _warrior != null ? _warrior.PocketGold : 0;
+            public bool Spend(int amount) => _warrior != null && _warrior.TrySpendPocket(amount);
+            public void Credit(int amount) { if (_warrior != null) _warrior.Pocket(amount); }
+        }
+
+        private sealed class PlayerWallet : ICampCardWallet
+        {
+            private readonly Inventory.PlayerInventory _inventory;
+            public PlayerWallet(Inventory.PlayerInventory inventory) { _inventory = inventory; }
+            public int Balance => _inventory != null ? _inventory.Gold : 0;
+            public bool Spend(int amount) => _inventory != null && amount > 0 &&
+                                              _inventory.SpendGold(amount);
+            public void Credit(int amount) { if (_inventory != null && amount > 0) _inventory.AddGold(amount); }
+        }
+
+        /// <summary>
+        /// Cancel immediately before the corpse's purse becomes ground loot;
+        /// a refund on the next Update would come too late and lose coins.
+        /// </summary>
+        public void CancelForDeath(Warrior warrior)
+        {
+            if (warrior == null || _round == null || _round.Finished) return;
+            if (warrior == SinbinderPlayer.Instance || _roundWarriors.Contains(warrior))
+            {
+                AbortRound();
+                _status = Loc.T("Партия остановлена: участник погиб. Ставки возвращены.");
+            }
+        }
+
+        private void AbortRound()
+        {
+            _pot?.Refund();
+            _pot = null;
+            _round = null;
+            _roundWarriors.Clear();
+            _playedByHuman = false;
+            _joinNext = false;
+        }
+
         void Update()
         {
             Seating();
@@ -241,8 +286,7 @@ namespace Sinbinder.Gameplay
             if (!CampLife.Enabled || RaidEvent.Running || OpeningReveal.Busy)
             {
                 if (Watching) StandUp();
-                _round = null;
-                _roundWarriors.Clear();
+                AbortRound();
                 return;
             }
 
@@ -289,8 +333,7 @@ namespace Sinbinder.Gameplay
                     if (participant == null || participant.IsDead || participant.HasCommand ||
                         !available.Contains(participant))
                     {
-                        _round = null; // no phantom cards for a warrior who left
-                        _roundWarriors.Clear();
+                        AbortRound(); // refund escrow; no phantom stakes on exit
                         _nextDealAt = Time.unscaledTime + NextDeal;
                         _status = Loc.T("Партия прервана: один из воинов отошёл от стола.");
                         return;
@@ -352,7 +395,7 @@ namespace Sinbinder.Gameplay
                 : recent.EventType == "CardsLostToSinbinder" ? 1 : -1;
         }
 
-        private void BeginRound(List<Warrior> available, bool includeHuman)
+        private void BeginRound(List<Warrior> available, bool includeHuman, int requestedStake = 0)
         {
             // A participant who was invited may leave before their first
             // turn; taking only physically present, eligible souls is crucial.
@@ -369,6 +412,53 @@ namespace Sinbinder.Gameplay
                 seats.Add((Loc.T("Вы"), SinType.Pride, true));
 
             if (seats.Count == 0) return;
+
+            // In unattended camp life, souls may choose a modest coin
+            // wager when they possess money and their personalities allow it.
+            if (!includeHuman && seats.Count > 1)
+            {
+                requestedStake = 1;
+                foreach (var w in _roundWarriors)
+                    if (CampCardRound.MaxStake(w.Soul.Sin, w.PocketGold) < 1)
+                        requestedStake = 0;
+            }
+            if (requestedStake > 0)
+            {
+                if (seats.Count < 2)
+                {
+                    _status = Loc.T("Для денежной ставки нужен соперник.");
+                    return;
+                }
+                var wallets = new List<ICampCardWallet>();
+                foreach (var warrior in _roundWarriors)
+                {
+                    if (CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)
+                        < requestedStake)
+                    {
+                        _status = Loc.T("Воин отказался ставить столько монет.");
+                        return;
+                    }
+                    wallets.Add(new WarriorWallet(warrior));
+                }
+                if (includeHuman)
+                {
+                    var inventory = Inventory.PlayerInventory.Instance;
+                    if (inventory == null || inventory.Gold < requestedStake)
+                    {
+                        _status = Loc.T("В вашем кошеле не хватает монет.");
+                        return;
+                    }
+                    wallets.Add(new PlayerWallet(inventory));
+                }
+                if (!CampCardPot.TryOpen(wallets, requestedStake, out var pot))
+                {
+                    _status = Loc.T("Не удалось собрать ставки: ничьи деньги не списаны.");
+                    return;
+                }
+                _pot = pot;
+            }
+            else
+                _pot = null;
             _deal++;
             // A new shuffled deck for every deal, with seed specific to this
             // camp session. This is not predetermined win/lose for the player.
@@ -381,14 +471,16 @@ namespace Sinbinder.Gameplay
             _nextMoveAt = Time.unscaledTime + TurnBeat;
             _nextDealAt = Time.unscaledTime + NextDeal;
             _status = seats.Count == 1 ? Loc.T("Тренировка: наберите от 17 до 21.")
+                : _pot != null ? Loc.F("На кону {0} монет. Побеждает лучший результат до 21.", _pot.Total)
                 : Loc.T("Новая раздача. Цель — ближе всех к 21, не перебрав.");
         }
 
-        private void NewDeal(bool join)
+        private void NewDeal(bool join, int stake = 0)
         {
+            if (_round != null && !_round.Finished) return;
             var available = Players();
             available.Sort((a, b) => string.CompareOrdinal(a.DisplayName, b.DisplayName));
-            BeginRound(available, join);
+            BeginRound(available, join, stake);
         }
 
         private void HumanMove(bool take)
@@ -408,6 +500,13 @@ namespace Sinbinder.Gameplay
             if (_recorded || _round == null || !_round.Finished) return;
             _recorded = true;
             var winners = _round.Winners();
+            if (_pot != null)
+            {
+                // The exact winners decide the pot. All-bust refunds;
+                // no negative balance, repeat payout or fictitious stake.
+                _pot.Settle(winners);
+                _pot = null;
+            }
             if (winners.Count == 0)
             {
                 _status = Loc.T("Никто не набрал достаточно очков.");
@@ -501,8 +600,7 @@ namespace Sinbinder.Gameplay
             // an event that grants AOS memory. NPCs can deal again later.
             if (_playedByHuman && _round != null && !_round.Finished)
             {
-                _round = null;
-                _roundWarriors.Clear();
+                AbortRound(); // player walked away: return every escrowed coin
                 _nextDealAt = Time.unscaledTime + NextDeal;
             }
             var camera = Dialogue.DialogueCameraController.Instance;
@@ -530,7 +628,13 @@ namespace Sinbinder.Gameplay
 
             GUILayout.BeginArea(new Rect(x + 16f, y + 10f, width - 32f, height - 20f));
             GUILayout.Label(Loc.T("КАРТЫ У КОСТРА · ОЧКО (21)"), _headingStyle);
-            GUILayout.Label(Loc.T("36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11. Без ставок."), _rowStyle);
+            GUILayout.Label(Loc.T("36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11."), _rowStyle);
+            if (_pot != null)
+                GUILayout.Label(Loc.F("Ставка: {0} с игрока; в банке: {1}.",
+                    _pot.Stake, _pot.Total), _rowStyle);
+            var purse = Inventory.PlayerInventory.Instance;
+            if (purse != null)
+                GUILayout.Label(Loc.F("Ваш кошель: {0} монет.", purse.Gold), _rowStyle);
             GUILayout.Space(9f);
             if (_round != null)
             {
@@ -564,8 +668,16 @@ namespace Sinbinder.Gameplay
             }
             else if (_round == null || _round.Finished)
             {
-                if (GUILayout.Button(Loc.T("Сыграть самому (N)"), GUILayout.Height(42f)))
+                if (GUILayout.Button(Loc.T("Бесплатная партия (N)"), GUILayout.Height(35f)))
                     NewDeal(true);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(Loc.T("Поставить 1"), GUILayout.Height(33f)))
+                    NewDeal(true, 1);
+                if (GUILayout.Button(Loc.T("Поставить 5"), GUILayout.Height(33f)))
+                    NewDeal(true, 5);
+                if (GUILayout.Button(Loc.T("Поставить 10"), GUILayout.Height(33f)))
+                    NewDeal(true, 10);
+                GUILayout.EndHorizontal();
                 if (Players().Count < 2)
                     GUILayout.Label(Loc.T("Нет соперников: доступна тренировка или игра с одним воином."),
                         _rowStyle);

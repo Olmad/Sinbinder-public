@@ -12,6 +12,11 @@ assert "if (Input.GetKeyDown(KeyCode.Space)) HumanMove(true);" in table
 assert "HumanMove(false)" in table
 assert "GUI.Box(" in table and "GUILayout.Button" in table
 assert "MemoryProcessor.Instance.CreateMemory" in table
+assert "CampCardPot.TryOpen(wallets, requestedStake, out var pot)" in table
+assert "_pot.Settle(winners)" in table
+assert "_pot?.Refund()" in table
+assert "public void CancelForDeath(Warrior warrior)" in table
+assert "CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)" in table
 assert "if (Watching) Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);" in table
 assert "_joinNext" in table and "Сыграть после этой раздачи" in table
 assert "if (_playedByHuman && _round.Hands.Count > 1" in table

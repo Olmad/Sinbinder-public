@@ -99,6 +99,11 @@ static class Program
         }
         Check(CampCardRound.WantsCard(SinType.Wrath, 17), "Wrath takes risks");
         Check(!CampCardRound.WantsCard(SinType.Sloth, 17), "Sloth stands early");
+        Check(CampCardRound.MaxStake(SinType.Sloth, 0) == 0, "broke NPC cannot bet");
+        Check(CampCardRound.MaxStake(SinType.Sloth, 4) == 1, "sloth risks at most 1");
+        Check(CampCardRound.MaxStake(SinType.Greed, 20) == 10, "wealthy Greed can wager 10");
+        Check(CampCardRound.MaxStake(SinType.Greed, 3) == 1, "Greed protects at least half the pocket");
+
         Check(CampCardRound.WantsCard(SinType.Sloth, 15, 1), "losing increases risk");
         var g = Deal(19, ("Hero", SinType.Pride, true), ("Enemy", SinType.Greed, false));
         Check(g.Hands.Count == 2 && g.CardsDrawn == 2, "a real opening deal");

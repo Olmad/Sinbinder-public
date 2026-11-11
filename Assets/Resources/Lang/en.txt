@@ -13304,3 +13304,55 @@ msgstr "Leave the table (F / Esc)"
 #: Gameplay/CardTable.cs UI/GearPanel.cs
 msgid "F — карты: смотреть или сыграть"
 msgstr "F — cards: watch or play"
+
+#: Gameplay/CardTable.cs
+msgid "Для денежной ставки нужен соперник."
+msgstr "You need an opponent to wager coins."
+
+#: Gameplay/CardTable.cs
+msgid "Воин отказался ставить столько монет."
+msgstr "A warrior declined that wager."
+
+#: Gameplay/CardTable.cs
+msgid "В вашем кошеле не хватает монет."
+msgstr "Not enough coins in your purse."
+
+#: Gameplay/CardTable.cs
+msgid "Не удалось собрать ставки: ничьи деньги не списаны."
+msgstr "The wager could not be opened. No coins were taken."
+
+#: Gameplay/CardTable.cs
+msgid "На кону {0} монет. Побеждает лучший результат до 21."
+msgstr "{0} coins in the pot. Highest score up to 21 wins."
+
+#: Gameplay/CardTable.cs
+msgid "Партия остановлена: участник погиб. Ставки возвращены."
+msgstr "The hand ended because a participant died. Stakes were refunded."
+
+#: Gameplay/CardTable.cs
+msgid "36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11."
+msgstr "36 cards: 6–10 face value, J=2, Q=3, K=4, A=11."
+
+#: Gameplay/CardTable.cs
+msgid "Ставка: {0} с игрока; в банке: {1}."
+msgstr "Stake: {0} per player; pot: {1}."
+
+#: Gameplay/CardTable.cs
+msgid "Ваш кошель: {0} монет."
+msgstr "Your purse: {0} coins."
+
+#: Gameplay/CardTable.cs
+msgid "Бесплатная партия (N)"
+msgstr "Free hand (N)"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 1"
+msgstr "Bet 1"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 5"
+msgstr "Bet 5"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 10"
+msgstr "Bet 10"

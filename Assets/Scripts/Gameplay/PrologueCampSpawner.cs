@@ -303,7 +303,12 @@ namespace Sinbinder.Gameplay
             if (!SquadRoster.HasSquad)
             {
                 SquadRoster.Set(Canon());
-                RatBanner.Reset();        // новая игра — знамя «Крыс» снова у Хоря
+                RatBanner.Reset();
+                // Starting purses, only once when a genuinely new squad is
+                // created. No gold is minted on scene transitions or reload.
+                if (!Core.SaveSystem.Arriving &&
+                    Inventory.PlayerInventory.Instance != null)
+                    Inventory.PlayerInventory.Instance.AddGold(10);        // новая игра — знамя «Крыс» снова у Хоря
             }
             Banner();
 
@@ -356,7 +361,8 @@ namespace Sinbinder.Gameplay
                     Trade = m.Trade,
                     Legend = m.Legend,
                     Shell = m.Shell,
-                    Gear = OwnGear(m)
+                    Gear = OwnGear(m),
+                    Pocket = 8
                 };
         }
 
