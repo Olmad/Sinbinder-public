@@ -6,12 +6,10 @@ on:
       - feature/server-prototype
     paths:
       - ".github/workflows/unity-cloud-smoke.yml"
-      - "Assets/Tests/**"
+      - "Assets/**"
       - "Tools/ci/**"
-      - "Assets/Scenes/**"
-      - "ProjectSettings/EditorBuildSettings.asset"
-      - "ProjectSettings/ProjectVersion.txt"
-      - "Packages/manifest.json"
+      - "Packages/**"
+      - "ProjectSettings/**"
   workflow_dispatch:
 
 permissions:
