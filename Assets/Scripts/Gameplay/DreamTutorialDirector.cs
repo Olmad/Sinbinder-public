@@ -1552,10 +1552,14 @@ namespace Sinbinder.Gameplay
             GUI.color = Color.Lerp(Color.white, new Color(1f, 0.82f, 0.45f), nudge);
 
             float width = Mathf.Min(Screen.width - 32f, 720f);
-            float height = _moreExplanation ? 122f : 76f;
             string content = _moreExplanation
                 ? Loc.T("СОН · ПОДРОБНЕЕ") + "\n" + _line + "\n" + Loc.T("F1 — свернуть")
                 : Loc.T("СОН · ЦЕЛЬ") + "\n" + Loc.T(CurrentGoal()) + "\n" + Loc.T("F1 — объяснить");
+            // A fixed 76/122px panel clips wrapped or localized dream goals.
+            // Measure the actual caption, retaining the original minimum height.
+            float measuredHeight = _tutorialGoalStyle.CalcHeight(new GUIContent(content), width);
+            float height = Mathf.Max(_moreExplanation ? 122f : 76f, Mathf.Ceil(measuredHeight));
+            height = Mathf.Min(height, Mathf.Max(1f, Screen.height - 52f));
             GUI.Box(new Rect(16f, Screen.height - height - 26f, width, height),
                 content, _tutorialGoalStyle);
             GUI.color = previous;
