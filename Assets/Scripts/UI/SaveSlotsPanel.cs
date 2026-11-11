@@ -109,7 +109,7 @@ namespace Sinbinder.UI
                 // Загружать нечего — строка есть, но не нажимается:
                 // пустое гнездо должно быть видно, чтобы в него записали.
                 System.Action act = _loading
-                    ? (has ? () => { Load(name); Close(); } : (System.Action)null)
+                    ? (has ? () => { if (Load(name)) Close(); else Draw(); } : (System.Action)null)
                     : () => { Save(name); Draw(); };
 
                 _spawned.Add(Row(y, Loc.T(name), what, act));   // имя гнезда — ключ файла, показ — переводом
@@ -123,15 +123,22 @@ namespace Sinbinder.UI
             Say(ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло."));
         }
 
-        private static void Load(string slot)
+        private static bool Load(string slot)
         {
-            if (!Commitment.CanLoad) { Say(Commitment.WhyNoLoad); return; }
+            if (!Commitment.CanLoad) { Say(Commitment.WhyNoLoad); return false; }
 
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
+            if (save == null)
+            {
+                Say(Loc.T("Запись не прочиталась. Выберите другую запись или начните заново."));
+                return false;
+            }
 
-            Say(SaveSystem.ReturnTo(save)
+            bool loaded = SaveSystem.ReturnTo(save);
+            Say(loaded
                 ? Loc.F("Вернулись к «{0}».", Loc.T(slot))
-                : Loc.T("Эта запись не от нынешней игры."));
+                : Loc.T("Не удалось восстановить запись. Выберите другую запись или начните заново."));
+            return loaded;
         }
 
         private static void Say(string line)
