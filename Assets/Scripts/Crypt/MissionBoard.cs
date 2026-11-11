@@ -195,6 +195,8 @@ namespace Sinbinder.Crypt
             // в ней больше нет, вернувшимся должны.
             Settle(party, survivors);
 
+            var shares = new List<ExpeditionLootShare>();
+            int coinsForLord = 0;
             if (survivors.Count > 0)
             {
                 TakeSpoils(mission, chosen);
@@ -208,10 +210,41 @@ namespace Sinbinder.Crypt
                 // в 39-PLACES §2.1; Казна была нужна, пока платить было
                 // нечем, — теперь кошель есть и плата лично тоже.
                 int coin = fight.Taken + Carried(mission, chosen);
-                if (coin > 0)
+                // The same physical coin total, but AOS characters can
+                // pocket a portion according to Greed/Envy, the value of
+                // the find and their devotion. No soul, secret or coin
+                // is created by the allocation.
+                var witnesses = new List<ExpeditionLootPerson>();
+                foreach(var m in away)
                 {
-                    Inventory.PlayerInventory.Instance?.AddGold(coin);
-                    Log(Loc.F("Добычу ссыпали в ваш кошель: +{0}.", coin));
+                    if(!survivors.Contains(m.Name)) continue;
+                    var drive = m.Sin switch
+                    {
+                        SinType.Greed => ExpeditionGreed.Greed,
+                        SinType.Envy => ExpeditionGreed.Envy,
+                        SinType.Pride => ExpeditionGreed.Pride,
+                        _ => ExpeditionGreed.Other
+                    };
+                    witnesses.Add(new ExpeditionLootPerson(m.Name,drive,m.Loyalty));
+                }
+                var split = ExpeditionAutoLoot.Allocate(coin,witnesses);
+                shares.AddRange(split.PersonalCoins);
+                foreach(var share in shares)
+                {
+                    Warrior present = null;
+                    foreach(var w in Squad())
+                        if(w.DisplayName == share.Name && !w.IsDead)
+                        {present = w;break;}
+                    if(present!=null) present.Pocket(share.Coins);
+                    else SquadRoster.CreditPocket(share.Name,share.Coins);
+                    Log(Loc.F("{0} оставил себе из вылазки {1} монет.",
+                        Loc.Name(share.Name),share.Coins));
+                }
+                coinsForLord = split.ReturnedCoins;
+                if (coinsForLord > 0)
+                {
+                    Inventory.PlayerInventory.Instance?.AddGold(coinsForLord);
+                    Log(Loc.F("Добычу ссыпали в ваш кошель: +{0}.", coinsForLord));
                 }
 
                 // Пластинка — награда вылазки песочницы (37-DEMO §8.4): тема по месту, не сила.
@@ -221,7 +254,7 @@ namespace Sinbinder.Crypt
             }
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,
-                fight, survivors);
+                fight, survivors, shares, coinsForLord);
 
             // Отряд вернулся — точка, к которой игрок захочет вернуться
             // сам, и единственная, которую он не выбирает. В режиме
@@ -240,7 +273,8 @@ namespace Sinbinder.Crypt
         /// </summary>
         private static ExpeditionReplayData BuildReplay(Mission mission, string leader,
             List<string> party, AOS.MissionAction? chosen,
-            Expedition.Outcome outcome, List<string> survivors)
+            Expedition.Outcome outcome, List<string> survivors,
+            List<ExpeditionLootShare> shares, int coinsForLord)
         {
             var replay = new ExpeditionReplayData(Loc.Name(mission.Name),Loc.Name(leader),party);
             replay.Append(ExpeditionReplayKind.Departure,Loc.Name(leader),
@@ -268,8 +302,15 @@ namespace Sinbinder.Crypt
                     Loc.T("Бой не состоялся: решение было принято на развилке."));
 
             if(survivors.Count>0)
+            {
                 replay.Append(ExpeditionReplayKind.Loot,Loc.Name(leader),
                     Loc.F("С павших противников взяли монет: {0}.",outcome.Taken));
+                foreach(var taken in shares)
+                    replay.Append(ExpeditionReplayKind.Loot,Loc.Name(taken.Name),
+                        Loc.F("Оставил себе {0} монет.",taken.Coins));
+                replay.Append(ExpeditionReplayKind.Loot,Loc.T("Отряд"),
+                    Loc.F("Общая добыча, вернувшаяся в казну: {0} монет.",coinsForLord));
+            }
             else
                 replay.Append(ExpeditionReplayKind.Loot,"",Loc.T("Отряд погиб; добыча осталась на месте."));
 

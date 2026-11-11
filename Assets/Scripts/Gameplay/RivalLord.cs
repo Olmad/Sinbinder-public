@@ -266,15 +266,12 @@ namespace Sinbinder.Gameplay
             var home = gate.position;
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
 
-            // Душа под ногами — в банку.
-            int jars = Satchel.StartingJars + (Trophies.Has(Lord, Trophies.Kind.Jar) ? 1 : 0);
-            var souls = SoulManager.Instance;
-            if (souls != null && _souls.Count < jars && souls.TryHarvestSoul(transform.position) is { } fading)
-            {
-                souls.RemoveIndicator(fading);
-                var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
-                if (kept.Soul != null) { _souls.Add(kept.Soul); SoulHarvester.Freeze(this); return true; }
-            }
+            // Current design: only the player's Sinbinder may harvest a
+            // free soul. A rival AI Lord has no such permission at present,
+            // regardless of a necromancer style. Do not silently consume
+            // the global soul pool; future licensed collectors must acquire
+            // an explicit, tested origin or learned ability.
+            // No automatic soul harvest here.
 
             // Несёт — домой; дошёл — тело в материал.
             if (_carry.HasValue)
