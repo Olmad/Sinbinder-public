@@ -288,12 +288,18 @@ namespace Sinbinder.Gameplay
         {
             for (int i = _indicators.Count - 1; i >= 0; i--)
             {
-                if (_indicators[i] != null && _indicators[i].gameObject != null)
+                var indicator = _indicators[i];
+                if (indicator == null)
                 {
-                    Destroy(_indicators[i].gameObject);
                     _indicators.RemoveAt(i);
-                    break;
+                    continue;
                 }
+                // Multiple souls can fade in the same frame. Remove the light
+                // belonging to THIS soul, not the first surviving light.
+                if (!ReferenceEquals(indicator.Soul, soul)) continue;
+                Destroy(indicator.gameObject);
+                _indicators.RemoveAt(i);
+                break;
             }
         }
 
