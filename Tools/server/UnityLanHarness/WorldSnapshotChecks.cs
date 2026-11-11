@@ -145,6 +145,29 @@ internal static class WorldSnapshotChecks
                 c1.WorldActors.Count == 1,
                 "dead owned Warrior removed without ghost entity");
 
+            // A failed server-side visibility projection must revoke the
+            // last roster, not leave stale HP/coordinates on either client.
+            room.PrivateWorldActors = peerId => {
+                if (peerId == 1) throw new InvalidOperationException("visibility unavailable");
+                return null;
+            };
+            frame = c1.WorldFrame;
+            room.PublishPrivateWorldSnapshot();
+            await Wait(room, c1, c2, () => c1.WorldFrame > frame &&
+                c2.WorldFrame > frame, "failed private projection revokes roster");
+            Need(c1.WorldActors.Count == 0 && c2.WorldActors.Count == 0,
+                "invalid/throw private projections clear stale actors");
+
+            // A subsequent valid frame must recover normal private filtering.
+            probe.AttachRoom(room);
+            frame = c1.WorldFrame;
+            room.PublishPrivateWorldSnapshot();
+            await Wait(room, c1, c2, () => c1.WorldFrame > frame &&
+                c2.WorldFrame > frame, "private projection recovers");
+            Need(c1.WorldActors.Count == 1 && c1.WorldActors.ContainsKey(ownId) &&
+                c2.WorldActors.Count == 1 && c2.WorldActors.ContainsKey(rivalId),
+                "recovered projection restores only private Lord actors");
+
             // Never replace a snapshot on receipt of only a partial frame.
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
             int generation = (int)typeof(LanRoomClient)
