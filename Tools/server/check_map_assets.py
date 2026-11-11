@@ -121,6 +121,25 @@ assert "Test-Path -LiteralPath $destExe -PathType Leaf" in build_script
 assert "Test-Path -LiteralPath $destData -PathType Container" in build_script
 assert build_script.index("if ($copyCode -ge 8)") < build_script.index('Write-Host "Готово за')
 print("PASS: Windows author build checks Unity process, output and robocopy before success")
+# Regression: Unity can reuse Sinbinder.exe while updating its game data.
+# An old executable timestamp is not build provenance. The author script must
+# write its marker AFTER validating Unity output and copy success; the LAN
+# acceptance script must reject absent markers and later source/scene edits.
+auto_test = (ROOT / "Test-World-Auto.ps1").read_text("utf-8-sig")
+assert "$buildMarker = Join-Path" in build_script
+assert "Remove-Item -LiteralPath $buildMarker" in build_script
+assert "WriteAllText($buildMarker" in build_script
+assert build_script.index("if ($copyCode -ge 8)") < build_script.index("WriteAllText($buildMarker")
+assert "Copy-Item -LiteralPath $buildMarker" in build_script
+assert "Test-Path -LiteralPath $marker -PathType Leaf" in auto_test
+assert "TryParseExact(" in auto_test
+assert "LastWriteTimeUtc -gt $builtAt" in auto_test
+assert "'Project input changed after verified Unity build:" in auto_test
+assert "Sinbinder_Data" in auto_test
+assert "LastWriteTimeUtc -lt $latestScript.LastWriteTimeUtc" not in auto_test
+print("PASS: Unity acceptance freshness uses verified author-build marker, not launcher mtime")
+
+
 
 # Regression: a non-attack must NOT consume a pending rescue guard. Previously
 # Watched.Remove(target) ran before IsRealAttack, so a zero-damage probe could
