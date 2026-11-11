@@ -127,7 +127,7 @@ internal static class Program
         Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
         // Source-level wiring guards: no old refusal can be displayed while
         // a new command waits for its first genuine AOS decision.
-        string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
+        // Reuse the tooltip path declared above for both HUD and whisper assertions.
         Contains(aosWrapper, "public uint LastDecisionCommandRevision", "AOS verdict records the order identity");
         Contains(aosWrapper, "LastDecisionCommandRevision = _warrior.CommandRevision;", "each real vote stamps the current command");
         Contains(aosWrapper, "LastDecisionCommandRevision == _warrior.CommandRevision", "verdict freshness compares exact revision");
