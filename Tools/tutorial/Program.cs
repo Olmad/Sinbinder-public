@@ -61,7 +61,7 @@ internal static class Program
         Check(!battle.TryComplete(true), "new enemy wave remains active");
         Check(battle.TryComplete(false), "new wave earns its own victory once");
         Check(!battle.TryComplete(false), "second wave cannot duplicate rewards");
-        var combatSource = File.ReadAllText(Path.Combine(args.Length > 0 ? args[0] : ".", "Assets/Scripts/Gameplay/CombatManager.cs"));
+        var combatSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CombatManager.cs");
         Check(combatSource.Contains("_battleEndGate.EnemyRegistered()") &&
               combatSource.Contains("_battleEndGate.TryComplete(_enemyUnits.Exists("),
               "real CombatManager registers enemy waves and gates OnBattleEnd");
