@@ -24,6 +24,9 @@ namespace Sinbinder.Gameplay
         [SerializeField] private GameObject _soulIndicatorPrefab;
 
         private List<FadingSoul> _fadingSouls = new();
+        // One physical death may produce only one fading soul, even if
+        // a callback is accidentally delivered twice before scene unload.
+        private readonly HashSet<Warrior> _deathRegistered = new();
         private List<SoulIndicator> _indicators = new();
 
         public System.Action<FadingSoul> OnSoulHarvested;
@@ -164,7 +167,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
         {
-            if (_fadingSouls.Count == 0) return;
+            if (_fadingSouls.Count == 0) { _deathRegistered.Clear(); return; }
+            _deathRegistered.Clear();
 
             Debug.Log($"[ДУШИ] Поле ушло вместе со сценой {scene.name}: несобранных — {_fadingSouls.Count}.");
             _fadingSouls.Clear();
@@ -199,6 +203,9 @@ namespace Sinbinder.Gameplay
 
         public void StartSoulFade(Warrior warrior, Vector3 position)
         {
+            // A repeated death event must not duplicate the harvestable soul.
+            // Reject missing souls before creating an invalid FadingSoul.
+            if (warrior == null || warrior.Soul == null || !_deathRegistered.Add(warrior)) return;
             // Имя, заслуженное при жизни, переносим с тела в душу —
             // здесь и только здесь, потому что здесь душа и уходит.
             // Титул живёт в ReputationData, то есть на трупе, и вместе
