@@ -111,6 +111,21 @@ namespace Sinbinder.Core
     /// файле сохранения, который записался без единой ошибки.
     /// </summary>
     [System.Serializable]
+    public class SavedFallenBag
+    {
+        public string Scene;
+        public UnityEngine.Vector3 Position;
+        public string Owner;
+        public string OwnerId;
+        public List<Inventory.InventoryItem> Items = new List<Inventory.InventoryItem>();
+        public Inventory.InventoryItem Memento;
+        public int Gold;
+        public bool Decided;
+        public bool Away;
+        public float RemainingAway = 60f;
+    }
+
+    [System.Serializable]
     public class SaveGame
     {
         /// <summary>
@@ -134,6 +149,13 @@ namespace Sinbinder.Core
         /// загрузка из другой сцены теряла всё, что Греховод нёс.
         /// </summary>
         public List<Inventory.InventoryItem> Bag = new List<Inventory.InventoryItem>();
+
+        /// <summary>
+        /// Physical uncollected corpse bags on each map, including contents
+        /// and time remaining if the player is currently on another map.
+        /// Old saves without this field are treated as having no bags.
+        /// </summary>
+        public List<SavedFallenBag> FallenBags = new List<SavedFallenBag>();
 
         /// <summary>
         /// Открыт ли сундук Марги и что в нём осталось. Без этого загрузка

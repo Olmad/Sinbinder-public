@@ -90,6 +90,7 @@ namespace Sinbinder.Core
             };
 
             save.Label = Label(save);
+            save.FallenBags = Gameplay.FallenBag.Snapshot();
 
             if (Inventory.PlayerInventory.Instance != null)
                 save.Bag = new List<Inventory.InventoryItem>(Inventory.PlayerInventory.Instance.GetAllItems());
@@ -351,6 +352,7 @@ namespace Sinbinder.Core
             }
 
             SquadRoster.Set(members);
+            Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             CryptUpgrades.Restore(save.Installed, save.Brought);
             Commitment.Set(save.Commitment);
 

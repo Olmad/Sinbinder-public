@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Sinbinder.Core;
 using Sinbinder.Inventory;
 
@@ -33,12 +34,160 @@ namespace Sinbinder.Gameplay
         private InventoryItem _memento;
         private float _since;
         private bool _decided;
+        private string _homeScene = "";
+        private FallenBagRetention _retention = new FallenBagRetention();
+        private bool _onMap = true, _retired;
+        private TextMesh _visibleLabel;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() => Live.Clear();
 
-        void OnEnable() => Live.Add(this);
-        void OnDisable() => Live.Remove(this);
+        void OnEnable()
+        {
+            if (!Live.Contains(this)) Live.Add(this);
+            SceneManager.activeSceneChanged += MapChanged;
+        }
+
+        void OnDisable()
+        {
+            SceneManager.activeSceneChanged -= MapChanged;
+            Live.Remove(this);
+        }
+
+        void OnDestroy()
+        {
+            SceneManager.activeSceneChanged -= MapChanged;
+            Live.Remove(this);
+        }
+
+        private void MapChanged(Scene previous, Scene next) => SetMap(next.name);
+
+        private void SetMap(string name)
+        {
+            if (_retired || string.IsNullOrEmpty(_homeScene)) return;
+            _retention.ChangeMap(name == _homeScene, Time.unscaledTime);
+            if (_retention.Expired) { Retire(); return; }
+            _onMap = _retention.OnHomeMap;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+                r.enabled = _onMap;
+        }
+
+        private void Retire()
+        {
+            if (_retired) return;
+            _retired = true;
+            _onMap = false;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+                r.enabled = false;
+            Live.Remove(this); // no interaction while Unity's Destroy is deferred
+            Destroy(gameObject);
+        }
+
+        private static FallenBag MakePhysical(string owner, Vector3 position, string scene)
+        {
+            // A visible sack, not just an invisible loot record. No collider:
+            // F selection is handled by GearPanel and still respects reach.
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = Loc.F("Мешок {0}", Loc.Name(owner));
+            Object.Destroy(go.GetComponent<Collider>());
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(0.48f, 0.32f, 0.40f);
+            go.GetComponent<Renderer>().material.color = new Color(0.38f, 0.27f, 0.16f);
+
+            var knot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            knot.name = "Горловина мешка";
+            Object.Destroy(knot.GetComponent<Collider>());
+            knot.transform.SetParent(go.transform, false);
+            knot.transform.localPosition = new Vector3(0f, 0.64f, 0f);
+            knot.transform.localScale = new Vector3(0.55f, 0.38f, 0.55f);
+            knot.GetComponent<Renderer>().material.color = new Color(0.48f, 0.36f, 0.20f);
+
+            var marker = new GameObject("Надпись над мешком");
+            marker.transform.SetParent(go.transform, false);
+            marker.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            // Counteract the scaled sack root so the label remains legible.
+            marker.transform.localScale = new Vector3(
+                1f / go.transform.localScale.x,
+                1f / go.transform.localScale.y,
+                1f / go.transform.localScale.z);
+            var label = marker.AddComponent<TextMesh>();
+            label.text = Loc.T("Мешок");
+            label.fontSize = 40;
+            label.characterSize = 0.12f;
+            label.color = new Color(1f, 0.91f, 0.68f);
+            label.anchor = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignment.Center;
+
+            var bag = go.AddComponent<FallenBag>();
+            bag._owner = owner;
+            bag._homeScene = scene;
+            bag._visibleLabel = label;
+            Object.DontDestroyOnLoad(go);
+            return bag;
+        }
+
+        /// <summary>Discard the last game's bags when a genuine new game starts.</summary>
+        public static void Forget()
+        {
+            foreach (var b in Live.ToArray())
+                if (b != null) b.Retire();
+            Live.Clear();
+        }
+
+        /// <summary>
+        /// Snapshot exact uncollected contents across maps and save/load.
+        /// Time expires only while the player is *away* from the map.
+        /// </summary>
+        public static List<SavedFallenBag> Snapshot()
+        {
+            var saved = new List<SavedFallenBag>();
+            foreach (var b in Live)
+            {
+                if (b == null || b._retired || b._retention.Expired) continue;
+                float left = b._retention.Remaining(Time.unscaledTime);
+                if (!b._retention.OnHomeMap && left <= 0f) continue;
+                if (b._items.Count == 0 && b._memento == null && b._gold == 0)
+                    continue;
+                saved.Add(new SavedFallenBag
+                {
+                    Scene = b._homeScene,
+                    Position = b.transform.position,
+                    Owner = b._owner,
+                    OwnerId = b._ownerId,
+                    Items = new List<InventoryItem>(b._items),
+                    Memento = b._memento,
+                    Gold = b._gold,
+                    Decided = b._decided,
+                    Away = !b._retention.OnHomeMap,
+                    RemainingAway = left
+                });
+            }
+            return saved;
+        }
+
+        /// <summary>Restore the physical bag, not merely its bookkeeping.</summary>
+        public static void Restore(List<SavedFallenBag> saved, string targetScene)
+        {
+            Forget();
+            if (saved == null) return; // older save file has no bag field
+            foreach (var record in saved)
+            {
+                if (record == null || string.IsNullOrEmpty(record.Scene) ||
+                    record.Items == null && record.Gold <= 0 && record.Memento == null)
+                    continue;
+                if (record.Away && record.RemainingAway <= 0f) continue;
+                var b = MakePhysical(record.Owner ?? "", record.Position, record.Scene);
+                b._ownerId = record.OwnerId ?? "";
+                b._gold = Mathf.Max(0, record.Gold);
+                b._memento = record.Memento;
+                b._decided = record.Decided;
+                b._since = Time.time;
+                if (record.Items != null) b._items.AddRange(record.Items);
+                b._retention = FallenBagRetention.FromSave(!record.Away,
+                    record.RemainingAway, Time.unscaledTime);
+                b.SetMap(targetScene);
+            }
+        }
 
         // ---------------------------------------------------------- появление
 
@@ -63,16 +212,10 @@ namespace Sinbinder.Gameplay
                 return;
 
             bool ownedEquipment = w.Carried.Count > 0;
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = Loc.F("Мешок {0}", w.DisplayName);
-            Object.Destroy(go.GetComponent<Collider>());
-            go.transform.position = w.transform.position + w.transform.right * 0.6f + Vector3.up * 0.14f;
-            go.transform.localScale = new Vector3(0.38f, 0.28f, 0.32f);
-            var r = go.GetComponent<Renderer>();
-            r.material.color = new Color(0.30f, 0.23f, 0.15f);   // мешковина
-
-            var bag = go.AddComponent<FallenBag>();
-            bag._owner = w.DisplayName;
+            Vector3 where = w.transform.position +
+                w.transform.right * 0.6f + Vector3.up * 0.16f;
+            var bag = MakePhysical(w.DisplayName, where,
+                SceneManager.GetActiveScene().name);
             bag._ownerId = w.Id;
             bag._since = Time.time;
             foreach (GearSlot slot in System.Enum.GetValues(typeof(GearSlot)))
@@ -112,7 +255,8 @@ namespace Sinbinder.Gameplay
         {
             if (!SinbinderPlayer.Exists) yield break;
             foreach (var b in Live)
-                if (b != null && CampFocus.GroundDistance(SinbinderPlayer.Where, b.transform.position) <= Reach)
+                if (b != null && b._onMap && !b._retired &&
+                    CampFocus.GroundDistance(SinbinderPlayer.Where, b.transform.position) <= Reach)
                     yield return b;
         }
 
@@ -120,7 +264,8 @@ namespace Sinbinder.Gameplay
         {
             if (!SinbinderPlayer.Exists) return null;
             foreach (var b in Live)
-                if (b != null && CampFocus.GroundDistance(SinbinderPlayer.Where, b.transform.position) <= Reach)
+                if (b != null && b._onMap && !b._retired &&
+                    CampFocus.GroundDistance(SinbinderPlayer.Where, b.transform.position) <= Reach)
                     return b;
             return null;
         }
@@ -130,6 +275,7 @@ namespace Sinbinder.Gameplay
         /// <summary>F: всё — Греховоду, и памятная вещь тоже.</summary>
         public void Take()
         {
+            if (_retired || !_onMap) return;
             var inventory = PlayerInventory.Instance;
             if (inventory == null)
             {
@@ -158,14 +304,27 @@ namespace Sinbinder.Gameplay
                 return;
             }
             Log(Loc.F("Мешок {0} собран.", Loc.Name(_owner)));
-            Destroy(gameObject);
+            Retire();
         }
 
         // ---------------------------------------------------------- свои
 
         void Update()
         {
+            if (_retired) return;
+            _retention.Tick(Time.unscaledTime);
+            if (_retention.Expired) { Retire(); return; }
+            if (!_onMap) return; // not visible or interactable on other maps
+
+            // Keep the label facing both first-person and tactical cameras.
+            if (_visibleLabel != null && Camera.main != null)
+                _visibleLabel.transform.rotation = Camera.main.transform.rotation;
+
             if (_decided || Time.time - _since < WaitForHero) return;
+            // A bag must not vanish in view because an NPC silently looted it.
+            if (SinbinderPlayer.Exists &&
+                CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) < 10f)
+                return;
             _decided = true;
 
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
@@ -208,7 +367,7 @@ namespace Sinbinder.Gameplay
             }
 
             // Пусто и без памятной — мешка больше нет; памятная лежит, пока Греховод не поднимет.
-            if (_items.Count == 0 && _gold == 0 && _memento == null) Destroy(gameObject);
+            if (_items.Count == 0 && _gold == 0 && _memento == null) Retire();
         }
 
         private static void Log(string line) => Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(line);
