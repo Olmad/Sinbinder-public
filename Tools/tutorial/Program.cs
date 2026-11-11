@@ -66,6 +66,16 @@ internal static class Program
               combatSource.Contains("_battleEndGate.TryComplete(_enemyUnits.Exists("),
               "real CombatManager registers enemy waves and gates OnBattleEnd");
 
+        // Source-linked visual causality: removing soul B must not delete A's light.
+        // Runtime Play Mode with two simultaneous souls is still required.
+        var soulManagerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulManager.cs");
+        var soulIndicatorSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulIndicator.cs");
+        Check(soulIndicatorSource.Contains("public FadingSoul Soul => _soul;") &&
+              soulManagerSource.Contains("ReferenceEquals(indicator.Soul, soul)"),
+              "fading soul removal targets its own indicator identity");
+        Check(!soulManagerSource.Contains("if (_indicators[i] != null && _indicators[i].gameObject != null)"),
+              "soul removal no longer deletes an arbitrary surviving light");
+
         // A rescue requires an actual positive hit from a real attacker.
         Check(RescueCreditGate.IsRealAttack(2.1f, true), "real attacker and positive hit qualify");
         Check(!RescueCreditGate.IsRealAttack(0f, true), "zero-damage VFX cannot earn rescue credit");
