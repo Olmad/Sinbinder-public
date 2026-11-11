@@ -36,7 +36,7 @@ namespace Sinbinder.AOS
 
                 // Different order, but not enough time has elapsed to
                 // count it as another meaningful relationship event.
-                if (now >= previous.At && now - previous.At < cooldown) return false;
+                if (now < previous.At || now - previous.At < cooldown) return false;
             }
 
             _last[warriorInstanceId] = new Stamp { OrderRevision = orderRevision, At = now };
