@@ -1,0 +1,86 @@
+name: Unity cloud preflight (opt-in editor)
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - ".github/workflows/unity-cloud-smoke.yml"
+      - "Assets/Tests/Editor/**"
+      - "ProjectSettings/ProjectVersion.txt"
+      - "Packages/manifest.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-cloud-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Check Unity project shape (no license required)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Verify version, test framework, build scenes
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import re
+          root = pathlib.Path('.')
+          version = (root / 'ProjectSettings/ProjectVersion.txt').read_text(encoding='utf-8')
+          assert 'm_EditorVersion: 6000.3.22f1' in version, 'Unexpected Unity editor version'
+          manifest = json.loads((root / 'Packages/manifest.json').read_text(encoding='utf-8'))
+          assert 'com.unity.test-framework' in manifest.get('dependencies', {}), 'Unity Test Framework missing'
+          settings = (root / 'ProjectSettings/EditorBuildSettings.asset').read_text(encoding='utf-8')
+          scenes = re.findall(r'path: (Assets/[^\r\n]+\.unity)', settings)
+          assert scenes, 'No Unity scenes listed in build settings'
+          for path in scenes:
+              assert (root / path).is_file(), 'Missing scene: ' + path
+              assert (root / (path + '.meta')).is_file(), 'Missing scene meta: ' + path
+          for path in ('Assets/Scenes/Prologue_Dream.unity', 'Assets/Scenes/Tug/Field.unity',
+                       'Assets/Scenes/Tug/Multiplayer_Test.unity'):
+              assert path in scenes, 'Critical scene absent from build settings: ' + path
+          print('Static project preflight PASS; this is NOT a Unity import, compilation or Play Mode pass')
+
+  editor-import:
+    name: Unity 6000.3.22f1 import and EditMode NUnit smoke (opt-in)
+    needs: preflight
+    if: ${{ vars.SINBINDER_UNITY_CI_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Unity Editor import, compilation and EditMode tests
+        id: editor
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          projectPath: .
+          unityVersion: 6000.3.22f1
+          testMode: EditMode
+          coverageEnabled: false
+      - name: Upload Unity test results and logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sinbinder-unity-editmode-${{ github.sha }}
+          path: artifacts
+          if-no-files-found: warn
+          retention-days: 7
+
+# The Unity job remains skipped unless the repository variable
+# SINBINDER_UNITY_CI_ENABLED is explicitly set to the string 'true'.
+# A green preflight is only static L0, not Unity L3.
