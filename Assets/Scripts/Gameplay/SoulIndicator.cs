@@ -27,6 +27,8 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _bobHeight = 0.2f;
 
         private FadingSoul _soul;
+        // Identity is the FadingSoul instance, not position or warrior name.
+        public FadingSoul Soul => _soul;
         private Vector3 _basePosition;
 
         /// <summary>Собрать огонёк на месте смерти. Префаба не требует.</summary>
