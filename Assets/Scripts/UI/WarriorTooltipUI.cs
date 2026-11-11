@@ -110,7 +110,8 @@ namespace Sinbinder.UI
         private void PlaceNearPointer()
         {
             if (_panel == null) return;
-            Vector2 at = Pointer() + _offset;
+            Vector2 pointer = Pointer();
+            Vector2 at = pointer + _offset;
             Vector2 size = _panel.rect.size;
             Vector3 scale = _panel.lossyScale;
             float width = size.x * Mathf.Abs(scale.x);
@@ -120,6 +121,17 @@ namespace Sinbinder.UI
             float right = width * (1f - _panel.pivot.x);
             float bottom = height * _panel.pivot.y;
             float top = height * (1f - _panel.pivot.y);
+
+            // When there is room on the opposite side, flip instead of
+            // clamping the tooltip directly over the hovered unit/cursor.
+            // Keep the original offsets and panel pivot in screen pixels.
+            if (at.x + right + margin > Screen.width &&
+                pointer.x - Mathf.Abs(_offset.x) - width - margin >= 0f)
+                at.x = pointer.x - Mathf.Abs(_offset.x) - right;
+            if (at.y - bottom - margin < 0f &&
+                pointer.y + Mathf.Abs(_offset.y) + height + margin <= Screen.height)
+                at.y = pointer.y + Mathf.Abs(_offset.y) + bottom;
+
             at.x = Mathf.Clamp(at.x, left + margin,
                 Mathf.Max(left + margin, Screen.width - right - margin));
             at.y = Mathf.Clamp(at.y, bottom + margin,
