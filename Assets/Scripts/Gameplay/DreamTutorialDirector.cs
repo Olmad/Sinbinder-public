@@ -292,6 +292,8 @@ namespace Sinbinder.Gameplay
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
+        private bool _moreExplanation;
+        private GUIStyle _tutorialGoalStyle;
         private DreamHandCursor _hand;
         private int _tutorialSeed, _dreamNo;
         private bool _counterfactualWas;
@@ -441,6 +443,7 @@ namespace Sinbinder.Gameplay
                 _puzzleHelpLevel = 0;
             }
             _line = line;
+            _moreExplanation = false;
             _nextPrompt = Time.unscaledTime + 15f;
             Log(line);
         }
@@ -482,6 +485,9 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             if (_hero == null || _stage == Stage.Finished) return;
+            if (Input.GetKeyDown(KeyCode.F1) && !UI.Modal.Any &&
+                !SoulCourt.Sitting && !Lesson.Holding && !UI.TalkView.Shown)
+                _moreExplanation = !_moreExplanation;
             if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
                 Log(_line);
@@ -1481,19 +1487,76 @@ namespace Sinbinder.Gameplay
             return v.sqrMagnitude < 1e-4f ? Vector3.forward : v.normalized;
         }
 
+        /// <summary>
+        /// One short action for each step. The full narrative remains in _line
+        /// and the battle log, but does not permanently fill a small HUD plate.
+        /// Do not reveal the solution to the last puzzle until the player
+        /// actually gets stuck.
+        /// </summary>
+        private string CurrentGoal()
+        {
+            switch (_stage)
+            {
+                case Stage.Approach: return "ПКМ по земле: подойдите к незнакомцу.";
+                case Stage.Dying: return "Выслушайте незнакомца.";
+                case Stage.Harvest: return "E — соберите освобождённую душу.";
+                case Stage.Rebind: return "R — верните душу в тело.";
+                case Stage.Command: return "ЛКМ — выберите воина. ПКМ — отдайте приказ.";
+                case Stage.Standoff: return "X, затем ПКМ позади воина: отступление.";
+                case Stage.Deciding: return "Посмотрите, какое решение примет душа.";
+                case Stage.Temptation: return "Z — попробуйте склонить воина; исход не гарантирован.";
+                case Stage.Battle: return "Помогите воину справиться с убийцами.";
+                case Stage.Retest: return "X и ПКМ: повторите приказ после боя.";
+                case Stage.FirstPerson: return "Tab — посмотрите глазами Греховода.";
+                case Stage.WarriorMode: return "V — переключитесь с Командира на Воина.";
+                case Stage.DrawWeapon: return "B — обнажите оружие.";
+                case Stage.Practice: return "ЛКМ — удар, ПКМ — блок. Попробуйте оба.";
+                case Stage.Jars: return "J — выберите другую банку души.";
+                case Stage.CommanderPractice: return "V — Командир; ЛКМ — выбор, ПКМ — приказ.";
+                case Stage.BowFind: return "На возвышении слева лук: подойдите и нажмите F.";
+                case Stage.BowEquip: return "F рядом с союзником → Снаряжение → передать лук.";
+                case Stage.BowShot: return "ЛКМ лучник → ПКМ по подвесному замку.";
+                case Stage.BowTemper: return "X и ПКМ — прикажите лучнику отступить от тени.";
+                case Stage.Rescue: return "Защитите раненого: посмотрите, что выберут воины.";
+                case Stage.CompareSouls: return "Отдайте двум стражам один и тот же приказ движения.";
+                case Stage.EmotionShift: return "Тот же приказ под страхом: сравните решения.";
+                case Stage.Puzzle:
+                    return _puzzleHelpLevel == 0
+                        ? "Самостоятельно откройте ворота склепа."
+                        : _puzzleHelpLevel == 1
+                            ? "Посмотрите на два знака у ворот."
+                            : "Займите два знака одновременно: герой и союзник.";
+                case Stage.Return: return "Подойдите к воротам и нажмите F.";
+                default: return _line ?? "";
+            }
+        }
+
         private void OnGUI()
         {
-            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown) return;
-            // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
+            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding ||
+                UI.TalkView.Shown || UI.Modal.Any) return;
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
-            var style = GUI.skin.box;
-            // Упёрся в черту урока — строка урока вспыхивает: сначала это.
+
+            if (_tutorialGoalStyle == null)
+                _tutorialGoalStyle = new GUIStyle(GUI.skin.box)
+                {
+                    wordWrap = true,
+                    alignment = TextAnchor.MiddleLeft
+                };
+            _tutorialGoalStyle.fontSize = Mathf.Clamp(Screen.height / 62, 13, 19);
+
             float nudge = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
-            var was = GUI.color;
+            var previous = GUI.color;
             GUI.color = Color.Lerp(Color.white, new Color(1f, 0.82f, 0.45f), nudge);
-            GUI.Box(new Rect(16, Screen.height - 106, Mathf.Min(Screen.width - 32, 720), 80),
-                "Воспоминание\n" + _line, style);
-            GUI.color = was;
+
+            float width = Mathf.Min(Screen.width - 32f, 720f);
+            float height = _moreExplanation ? 122f : 76f;
+            string content = _moreExplanation
+                ? Loc.T("СОН · ПОДРОБНЕЕ") + "\n" + _line + "\n" + Loc.T("F1 — свернуть")
+                : Loc.T("СОН · ЦЕЛЬ") + "\n" + Loc.T(CurrentGoal()) + "\n" + Loc.T("F1 — объяснить");
+            GUI.Box(new Rect(16f, Screen.height - height - 26f, width, height),
+                content, _tutorialGoalStyle);
+            GUI.color = previous;
         }
     }
 }
