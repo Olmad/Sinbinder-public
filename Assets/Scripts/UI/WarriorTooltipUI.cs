@@ -169,11 +169,14 @@ namespace Sinbinder.UI
         private void Refresh(Warrior warrior)
         {
             var wrapper = warrior.GetComponent<AOSWarriorWrapper>();
+            // New command, old AOS context: don't attribute the old verdict to it.
+            bool waitingForCommand = warrior.HasCommand &&
+                (wrapper == null || !wrapper.HasCurrentCommandDecision);
             bool hasDecision = wrapper != null && wrapper.LastContext != null;
             bool isNeutralInMatch = warrior.Team == Team.Neutral && Lords.Active;
             // У только появившегося ничьего ещё нет решения ИИ, но отношение к нему уже есть.
             // Без этой ветки подсказка не появлялась и второй урок мог стать непроходимым.
-            if (!hasDecision && !isNeutralInMatch) { Hide(); return; }
+            if (!hasDecision && !isNeutralInMatch && !waitingForCommand) { Hide(); return; }
 
             if (_text != null)
             {
@@ -182,11 +185,13 @@ namespace Sinbinder.UI
                 // that the external whisper changed what actually happened.
                 var actualVote = hasDecision && wrapper.LastWhisperCompelled
                     ? wrapper.NaturalDecisionDetail : hasDecision ? wrapper.LastDecisionDetail : default;
-                _text.text = hasDecision
-                    ? PhraseGenerator.Explain(warrior, wrapper.LastContext, actualVote)
-                    : string.Empty;
+                _text.text = waitingForCommand
+                    ? Core.Loc.T("Новый приказ отдан. Ожидаем решения воина.")
+                    : hasDecision
+                        ? PhraseGenerator.Explain(warrior, wrapper.LastContext, actualVote)
+                        : string.Empty;
                 // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
-                if (hasDecision)
+                if (hasDecision && !waitingForCommand)
                 {
                     if (_scalesFor != wrapper.LastContext)
                     {
