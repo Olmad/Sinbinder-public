@@ -40,6 +40,8 @@ jobs:
       - name: Execute rules against real production C#
         run: dotnet run --no-build -c Release --project Tools/tutorial/TutorialChecks.csproj
       - name: Compile Roslyn grammar gate (Unity editor and player)
-        run: dotnet build Tools/tutorial/SyntaxChecks.csproj -c Release
+        working-directory: Tools/tutorial
+        run: dotnet build SyntaxChecks.csproj -c Release
       - name: Parse all gameplay and editor C# (syntax, not Unity types)
-        run: dotnet run --no-build -c Release --project Tools/tutorial/SyntaxChecks.csproj -- Assets/Scripts
+        working-directory: Tools/tutorial
+        run: dotnet run --no-build -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
