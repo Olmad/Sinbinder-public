@@ -6,6 +6,7 @@ on:
     paths:
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Gameplay/FallenBagChoice.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
       - "Assets/Scripts/Gameplay/PrologueDirector.cs"
       - "Assets/Scripts/UI/GearPanel.cs"
@@ -20,6 +21,7 @@ on:
     paths:
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Gameplay/FallenBagChoice.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
       - "Assets/Scripts/Gameplay/PrologueDirector.cs"
       - "Assets/Scripts/UI/GearPanel.cs"
