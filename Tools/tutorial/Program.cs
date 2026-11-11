@@ -149,6 +149,26 @@ internal static class Program
               saveSource.Contains("foreach (var s in save.Shelf)"),
               "valid squad and soul restoration paths remain present");
 
+        // Solo save durability: a failed write must not truncate the existing slot.
+        // L0 source-linked checks; the actual Unity filesystem needs separate QA.
+        int writeStart = saveSource.IndexOf("public static bool Write(SaveGame save, string path)");
+        int readStart = saveSource.IndexOf("public static SaveGame Read(string path)", writeStart);
+        string writeBody = writeStart >= 0 && readStart > writeStart
+            ? saveSource.Substring(writeStart, readStart - writeStart) : "";
+        int stage = writeBody.IndexOf("new FileStream(temp, FileMode.CreateNew");
+        int flush = writeBody.IndexOf("stream.Flush(true)");
+        int replace = writeBody.IndexOf("File.Replace(temp, fullPath, null)");
+        int move = writeBody.IndexOf("File.Move(temp, fullPath)");
+        Check(stage >= 0 && flush > stage && replace > flush && move > flush,
+              "save JSON staged and flushed before replacing the existing slot");
+        Check(writeBody.Contains("File.Exists(fullPath)") &&
+              !writeBody.Contains("File.WriteAllText(path,") &&
+              !writeBody.Contains("File.Delete(fullPath)"),
+              "existing slot never truncated or deleted before safe replacement");
+        Check(writeBody.Contains("finally") && writeBody.Contains("File.Delete(temp)") &&
+              writeBody.Contains("catch (System.PlatformNotSupportedException e)"),
+              "failed save cleans temporary file and rejects unsupported replacement");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
