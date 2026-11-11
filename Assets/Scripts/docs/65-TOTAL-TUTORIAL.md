@@ -311,15 +311,15 @@
 `OnAllySaved` за приближение.
 
 Запуск `TutorialChecks.csproj` на GitHub Actions подтвердил
-**27 проверок из 27**, 0 ошибок и 0 предупреждений при компиляции
+**44 проверки из 44**, 0 ошибок и 0 предупреждений при компиляции
 правил. Добавлен отдельный Roslyn-синтаксический проход
-`SyntaxChecks.csproj`: **435 исходников × 2 режима** (Player/Editor),
+`SyntaxChecks.csproj`: **437 исходников × 2 режима** (Player/Editor),
 **0 синтаксических ошибок** в успешном CI-прогоне. Потребовалось
 зафиксировать SDK 8 в `Tools/tutorial/global.json`, потому что
 Roslyn из нового SDK 10 несовместим с целевым runtime 8.
 
 Ссылка на успешный зафиксированный прогон:
-https://github.com/Olmad/Sinbinder-public/actions/runs/42976354512
+https://github.com/Olmad/Sinbinder-public/actions/runs/42980148233
 
 **Граница проверки:** Roslyn `ParseText` не выполняет компиляцию против
 настоящих DLL Unity и не запускает сцену. Модули AOS, NavMesh,
