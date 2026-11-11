@@ -440,6 +440,17 @@ namespace Sinbinder.UI
             var context = wrapper.LastContext;
             bool ordered = who.Command.IsSet && context.HasCommand;
 
+            // The whisper is an EXTERNAL bargain, not a fourteenth AOS
+            // voice and not free loyalty. Show the difference to the player.
+            if (ordered && wrapper.LastWhisperCompelled)
+            {
+                Voice(null, Loc.T("Поддался шёпоту"),
+                    Loc.T("Голоса души спорили, но уговор изменил поступок."), Bone, 27);
+                Order(Loc.T("Исполняет уговорённый приказ"),
+                    Loc.T("Шёпот действует только на этот приказ."), true);
+                return;
+            }
+
             // Исполняет приказ — громче всех ваш голос, и он один на панели:
             // строки «Верность кричит» и «Ваш приказ громче» — одна правда дважды.
             if (ordered && AOSDecisionAdvice.Fulfilled(decision, context)
