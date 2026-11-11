@@ -10,7 +10,7 @@ assert "bodyLoot.CollectGold()" in b and "bodyLoot.CollectEquipment()" in b
 assert "!LootChain.Enabled" in b
 assert "OnAnyDeath +=" not in b
 assert "FallenBagTransfer.Move(_items, inventory.AddItem)" in b
-assert "FallenBagTransfer.Move(_items, bag.AddItem)" in b
+assert "FallenBagTransfer.Move(_items, pack.AddItem)" in b
 assert "FallenBagTransfer.Move(_items, who.Give)" in b
 assert 'FallenBagChoice.Decide(w.Soul.Sin, w.Soul.Moral, feel, brother)' in b
 assert 'CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) < 10f' not in b
