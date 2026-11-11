@@ -195,7 +195,11 @@ namespace Sinbinder.Gameplay
             if (_roleGuideStyle == null)
                 _roleGuideStyle = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
             _roleGuideStyle.fontSize = Mathf.Clamp(Screen.height / (full ? 60 : 78), 12, full ? 19 : 15);
-            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, full ? 68f : 37f), caption, _roleGuideStyle);
+            // A fixed 37/68px box can clip localized instructions when
+            // wordWrap creates an extra line on smaller displays.
+            float textHeight = _roleGuideStyle.CalcHeight(new GUIContent(caption), width);
+            float guideHeight = Mathf.Max(full ? 68f : 37f, Mathf.Ceil(textHeight));
+            GUI.Box(new Rect(Screen.width - width - 16f, 12f, width, guideHeight), caption, _roleGuideStyle);
         }
 
         void OnApplicationFocus(bool focus)
