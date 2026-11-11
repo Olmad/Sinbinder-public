@@ -26,6 +26,8 @@ namespace Sinbinder.AOS
         private Gameplay.Warrior _warrior;
         private float _lastDecisionTime;
         private bool _pausing;
+        private bool _hasPresentedRefusal;
+        private uint _lastPresentedRefusalOrder;
 
         void Awake()
         {
@@ -60,9 +62,15 @@ namespace Sinbinder.AOS
             // Отказ исполняется не сразу. Без этой задержки значок
             // намерения появляется и тонет в бою: игрок физически
             // не успевает связать приказ, поступок и причину.
-            if (_wrapper.LastDecisionDetail.RefusedCommand && _refusalPause > 0f)
-                StartCoroutine(ExecuteAfterBeat(action,
-                    _warrior != null ? _warrior.CommandRevision : 0u));
+            uint currentOrder = _warrior != null ? _warrior.CommandRevision : 0u;
+            if (_wrapper.LastDecisionDetail.RefusedCommand && _refusalPause > 0f &&
+                OrderIntegrity.ShouldPresentRefusal(
+                    _hasPresentedRefusal, _lastPresentedRefusalOrder, currentOrder))
+            {
+                _hasPresentedRefusal = true;
+                _lastPresentedRefusalOrder = currentOrder;
+                StartCoroutine(ExecuteAfterBeat(action, currentOrder));
+            }
             else
                 using (Core.Cost.Of("execute")) _wrapper.Execute(action);
         }
