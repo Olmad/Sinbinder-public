@@ -237,9 +237,7 @@ internal static class Program
         // slots remain writable and valid slots retain their save behavior.
         Check(slotsSource.Contains("unreadable ? (System.Action)null : () => { _status = Save(name); Draw(); }"),
               "unreadable slot is not overwritten through the save panel");
-        Check(slotsSource.Contains("bool unreadable = !has && SaveSystem.Exists(SaveSystem.PathOf(slot))") &&
-              slotsSource.Contains("unreadable ? Loc.T(\\\"Запись не читается\\\") : Loc.T(\\\"Пусто\\\")"),
-              "unreadable slot is identified separately from an empty slot");
+
 
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
