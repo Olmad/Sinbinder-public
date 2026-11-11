@@ -62,5 +62,18 @@ namespace Sinbinder.AOS
         /// </summary>
         public static bool MayExecuteDelayed(uint decidedForRevision, uint currentRevision)
             => decidedForRevision == currentRevision;
+
+        /// <summary>
+        /// A successful whisper buys obedience to ONE specific order, not
+        /// to any future order during the next twenty seconds. The soul's
+        /// natural vote still exists, but it must not be misreported as
+        /// the physical action when the whisper is accepted.
+        /// </summary>
+        public static bool WhisperApplies(
+            uint consentRevision, uint activeRevision, bool hasCommand,
+            float until, float now)
+            => hasCommand && consentRevision == activeRevision &&
+               !float.IsNaN(now) && !float.IsInfinity(now) &&
+               !float.IsNaN(until) && !float.IsInfinity(until) && now <= until;
     }
 }
