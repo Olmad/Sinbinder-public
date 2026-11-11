@@ -39,7 +39,7 @@ namespace Sinbinder.Dialogue
             if (a == null || b == null || a.Soul == null || b.Soul == null) return ("", "");
 
             // На кивок нельзя отвечать так, будто немой рассказал о долге или старшем.
-            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Loc.T("Пока тихо."));
+            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Loc.T("Понял."));
 
             string first = Opening(a, b);
             // Ответ — на то, что сказано, а не просто грех на грех (автор, 28.10: «Старший — Вейн. Посмотрим,

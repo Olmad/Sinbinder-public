@@ -1,0 +1,39 @@
+name: Dialogue consistency smoke
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Dialogue/**"
+      - "Assets/Scripts/Core/Loc.cs"
+      - "Assets/Scripts/Core/Soul/SinType.cs"
+      - "Assets/Resources/Lang/en.txt"
+      - "Tools/dialogue/**"
+      - ".github/workflows/dialogue-smoke.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Dialogue/**"
+      - "Assets/Scripts/Core/Loc.cs"
+      - "Assets/Scripts/Core/Soul/SinType.cs"
+      - "Assets/Resources/Lang/en.txt"
+      - "Tools/dialogue/**"
+      - ".github/workflows/dialogue-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dialogue:
+    name: Compile production dialogue replies and verify conversation wiring
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Execute production village replies in .NET harness
+        run: dotnet run -c Release --project Tools/dialogue/DialoguesChecks.csproj
+      - name: Check contextual calls, mute handling and joining replies
+        run: python3 Tools/dialogue/check_dialogue_wiring.py
