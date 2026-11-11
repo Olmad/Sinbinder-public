@@ -118,7 +118,9 @@ namespace Sinbinder.UI
                 // пустое гнездо должно быть видно, чтобы в него записали.
                 System.Action act = _loading
                     ? (has ? () => { if (Load(name)) Close(); else Draw(); } : (System.Action)null)
-                    : () => { _status = Save(name); Draw(); };
+                    // Do not silently overwrite an unreadable existing save.
+                    // It may be the player's only recoverable copy.
+                    : (unreadable ? (System.Action)null : () => { _status = Save(name); Draw(); });
 
                 _spawned.Add(Row(y, Loc.T(name), what, act));   // имя гнезда — ключ файла, показ — переводом
                 y -= RowHeight * 1.6f;
