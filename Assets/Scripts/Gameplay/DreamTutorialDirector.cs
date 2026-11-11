@@ -160,6 +160,7 @@ namespace Sinbinder.Gameplay
         private float _compareIssuedAfter, _contrastStarted, _emotionIssuedAfter, _emotionStarted;
         private AOS.Decision _mercyFirstDecision;
         private AOS.DecisionContext _emotionContextBefore;
+        private AOS.DecisionContext _contrastMercifulBefore, _contrastProudBefore;
         private bool _emotionApplied;
         private GameObject _fearSign, _contrastMarker;
         private Warrior _fearShadow;
@@ -875,15 +876,15 @@ namespace Sinbinder.Gameplay
                     var w = _contrastMerciful;
                     var mind = w != null ? w.GetComponent<AOS.AOSWarriorWrapper>() : null;
                     if (w != null && !w.IsDead && w.HasCommand
-                        && w.Command.IssuedAt > _emotionIssuedAfter
-                        && w.Command.Kind == CommandKind.Move
-                        && GroundDistance(w.Command.Point, ContrastPoint) < 2.5f
                         && _emotionApplied
                         && AOS.EmotionSystem.Instance != null
                         && AOS.EmotionSystem.Instance.GetDominantEmotion(w) == AOS.EmotionType.Fear
                         && mind != null && mind.LastContext != null
-                        && mind.LastContext != _emotionContextBefore
-                        && mind.LastContext.HasCommand
+                        && DreamTutorialChecks.FreshOrderedDecision(
+                            w.Command.Kind == CommandKind.Move &&
+                                GroundDistance(w.Command.Point, ContrastPoint) < 2.5f,
+                            w.Command.IssuedAt, _emotionIssuedAfter,
+                            mind.LastContext != _emotionContextBefore, mind.LastContext.HasCommand)
                         && mind.LastContext.NearbyEnemies > 0)
                     {
                         var now = mind.LastDecisionDetail;
@@ -1086,6 +1087,10 @@ namespace Sinbinder.Gameplay
             _contrastProud = CreateLiving(proud, new Vector3(5.0f, 0f, 20.8f), Team.Player);
             if (_contrastMerciful != null) _contrastMerciful.ChangeLoyalty(35f);
             if (_contrastProud != null) _contrastProud.ChangeLoyalty(35f);
+            _contrastMercifulBefore = _contrastMerciful != null
+                ? _contrastMerciful.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
+            _contrastProudBefore = _contrastProud != null
+                ? _contrastProud.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
             // Внешняя цель делает «одно и то же место» однозначным.
             _contrastMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             _contrastMarker.name = "Знак одинакового приказа";
@@ -1109,11 +1114,14 @@ namespace Sinbinder.Gameplay
         private void CheckContrastCommand(Warrior who, ref bool recorded, bool merciful)
         {
             if (recorded || who == null || who.IsDead || !who.HasCommand) return;
-            if (who.Command.IssuedAt <= _compareIssuedAfter
-                || who.Command.Kind != CommandKind.Move
-                || GroundDistance(who.Command.Point, ContrastPoint) >= 2.5f) return;
+            bool correctOrder = who.Command.Kind == CommandKind.Move
+                && GroundDistance(who.Command.Point, ContrastPoint) < 2.5f;
             var mind = who.GetComponent<AOS.AOSWarriorWrapper>();
-            if (mind == null || mind.LastContext == null || !mind.LastContext.HasCommand) return;
+            var previous = merciful ? _contrastMercifulBefore : _contrastProudBefore;
+            if (mind == null || mind.LastContext == null ||
+                !DreamTutorialChecks.FreshOrderedDecision(
+                    correctOrder, who.Command.IssuedAt, _compareIssuedAfter,
+                    mind.LastContext != previous, mind.LastContext.HasCommand)) return;
             recorded = true;
             UI.ScalesOverhead.Show(who, mind.LastDecisionDetail, mind.LastContext, force: true);
             Log(who.DisplayName + ": " + DescribeAOS(mind.LastDecisionDetail)
