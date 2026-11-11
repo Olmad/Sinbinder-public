@@ -132,6 +132,23 @@ internal static class Program
         Check(OrderAdvice.Short("Unknown", "Unknown").Length <= 40,
             "fallback hint is short enough for the lower strip");
 
+        // Save-load source contracts: malformed input must not partially mutate
+        // the squad/shelf or escape JsonUtility's ArgumentException path.
+        // This is L0 source verification, NOT a Unity deserialization test.
+        var saveSource = System.IO.File.ReadAllText("Assets/Scripts/Core/SaveSystem.cs");
+        int validateSave = saveSource.IndexOf("if (save.Squad == null || save.Shelf == null");
+        int firstMutation = saveSource.IndexOf("Gameplay.CardTable.BeforeSaveOrLoad();", saveSource.IndexOf("public static bool Restore(SaveGame save)"));
+        Check(validateSave >= 0 && firstMutation > validateSave &&
+              saveSource.Contains("save.Squad.Exists(m => m == null)") &&
+              saveSource.Contains("save.Shelf.Exists(s => s == null)"),
+              "corrupt squad or soul shelf rejected before Restore changes live state");
+        Check(saveSource.Contains("catch (System.ArgumentException e)") &&
+              saveSource.Contains("catch (System.UnauthorizedAccessException e)"),
+              "malformed JSON and denied access fail safely in SaveSystem.Read");
+        Check(saveSource.Contains("foreach (var m in save.Squad)") &&
+              saveSource.Contains("foreach (var s in save.Shelf)"),
+              "valid squad and soul restoration paths remain present");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
