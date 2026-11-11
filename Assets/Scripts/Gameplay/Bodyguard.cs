@@ -23,8 +23,7 @@ namespace Sinbinder.Gameplay
         private struct Watch { public Warrior Guard; public float Until; public bool Rescue; }
         // Одна награда за одну угрозу. Повторное голосование AOS каждую секунду
         // не должно производить сотни фиктивных подвигов.
-        private static readonly Dictionary<string, float> LastRescueCredit = new();
-        private const float RescueCreditCooldown = 15f;
+        private static readonly RescueCreditGate RescueCredits = new RescueCreditGate();
         public static int Rescues { get; private set; }
         public static Warrior LastRescued { get; private set; }
         public static Warrior LastRescuer { get; private set; }
@@ -37,7 +36,7 @@ namespace Sinbinder.Gameplay
         private static void Rearm()
         {
             Watched.Clear();
-            LastRescueCredit.Clear();
+            RescueCredits.Clear();
             Blocks = 0;
             Rescues = 0;
             LastRescued = null;
@@ -111,10 +110,8 @@ namespace Sinbinder.Gameplay
                 // Повторные удары в одной схватке остаются защитой, но не
                 // генерируют новые титулы и благодарность каждую секунду.
                 string key = w.Guard.GetInstanceID() + ":" + target.GetInstanceID();
-                if (!LastRescueCredit.TryGetValue(key, out float creditedAt)
-                    || Time.time - creditedAt >= RescueCreditCooldown)
+                if (RescueCredits.TryCredit(key, Time.time))
                 {
-                    LastRescueCredit[key] = Time.time;
                     Rescues++;
                     LastRescued = target.Warrior;
                     LastRescuer = w.Guard;
