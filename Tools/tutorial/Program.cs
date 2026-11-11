@@ -201,6 +201,16 @@ internal static class Program
               slotsSource.Contains("if (Load(name)) Close();"),
               "commitment mode still denies loading and valid loads retain close behavior");
 
+        // An unreadable on-disk slot must not be presented as an empty one.
+        // Missing files remain empty; valid saves retain their own labels.
+        Check(slotsSource.Contains("bool unreadable = !has && SaveSystem.Exists(SaveSystem.PathOf(slot))") &&
+              slotsSource.Contains("unreadable ? Loc.T(\"Запись не читается\") : Loc.T(\"Пусто\")"),
+              "existing unreadable save is distinguished from a truly empty slot");
+        Check(slotsSource.Contains("bool has = save != null;") &&
+              slotsSource.Contains("has ? () => { if (Load(name)) Close(); else Draw(); } : (System.Action)null") &&
+              slotsSource.Contains("string.IsNullOrEmpty(save.Label) ? Loc.T(\"Запись\") : save.Label"),
+              "unreadable save cannot be loaded; valid labels and load action remain");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
