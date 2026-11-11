@@ -538,7 +538,11 @@ namespace Sinbinder.Core
                 }
                 finally
                 {
-                    if (File.Exists(temp)) File.Delete(temp);
+                    // A cleanup failure must not turn a successful replacement into
+                    // a reported failure or conceal the original write error.
+                    try { if (File.Exists(temp)) File.Delete(temp); }
+                    catch (IOException) { }
+                    catch (System.UnauthorizedAccessException) { }
                 }
             }
             catch (IOException e)
@@ -546,6 +550,16 @@ namespace Sinbinder.Core
                 // Отсутствие права записи — событие, а не ноль: молча
                 // «сохранить» и не сохранить хуже любой ошибки.
                 Debug.LogWarning($"[СОХРАНЕНИЕ] Не записалось: {e.Message}");
+                return false;
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Нет доступа к слоту: {e.Message}");
+                return false;
+            }
+            catch (System.PlatformNotSupportedException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Замена слота не поддерживается: {e.Message}");
                 return false;
             }
         }
