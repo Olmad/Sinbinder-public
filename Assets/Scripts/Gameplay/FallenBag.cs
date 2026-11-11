@@ -34,6 +34,8 @@ namespace Sinbinder.Gameplay
         private InventoryItem _memento;
         private float _since;
         private bool _decided;
+        private bool _piousWitnessed;
+        private float _nextNpcCheck;
         private string _homeScene = "";
         private FallenBagRetention _retention = new FallenBagRetention();
         private bool _onMap = true, _retired;
@@ -333,53 +335,82 @@ namespace Sinbinder.Gameplay
             if (_visibleLabel != null && Camera.main != null)
                 _visibleLabel.transform.rotation = Camera.main.transform.rotation;
 
-            if (_decided || Time.time - _since < WaitForHero) return;
-            // A bag must not vanish in view because an NPC silently looted it.
-            if (SinbinderPlayer.Exists &&
-                CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) < 10f)
-                return;
-            _decided = true;
+            if (_decided || Time.time - _since < WaitForHero ||
+                Time.time < _nextNpcCheck) return;
+            _nextNpcCheck = Time.time + 1.5f;
 
+            // The player's presence does not veto AOS choices. A Greedy
+            // warrior can visibly take a purse while the Lord is watching.
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
-            Warrior who = null;
+            Warrior who = null, piousWitness = null;
+            FallenBagIntent intent = FallenBagIntent.Leave;
             float best = Near;
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
             {
-                if (w == null || w.IsDead || w is SinbinderPlayer || w.Team != Team.Player || w.Soul == null) continue;
+                if (w == null || w.IsDead || w is SinbinderPlayer ||
+                    w.Team != Team.Player || w.Soul == null) continue;
                 float d = CampFocus.GroundDistance(w.transform.position, transform.position);
-                if (d < best) { best = d; who = w; }
-            }
-            if (who == null) return;
+                if (d >= Near) continue;
+                float feel = relations.GetRelationship(w.Id, _ownerId);
+                bool brother = (w.DisplayName.Contains("Гурт") && _owner.Contains("Хорь"))
+                            || (w.DisplayName.Contains("Хорь") && _owner.Contains("Гурт"));
+                var choice = FallenBagChoice.Decide(w.Soul.Sin, w.Soul.Moral, feel, brother);
 
-            float feel = relations.GetRelationship(who.Id, _ownerId);
-            bool brother = (who.DisplayName.Contains("Гурт") && _owner.Contains("Хорь"))
-                        || (who.DisplayName.Contains("Хорь") && _owner.Contains("Гурт"));
-
-            if (brother || feel > 20f)
-            {
-                // Несёт Греховоду — всё, кроме памятной: её свои не трогают, она ждёт его.
-                var bag = PlayerInventory.Instance;
-                if (bag != null)
+                // An uninvolved or pious bystander must not prevent a
+                // nearby Greedy warrior from reaching a decision.
+                if (choice == FallenBagIntent.RespectDead && piousWitness == null)
+                    piousWitness = w;
+                if (choice != FallenBagIntent.Steal &&
+                    choice != FallenBagIntent.DeliverToLord) continue;
+                if (d < best)
                 {
-                    FallenBagTransfer.Move(_items, bag.AddItem);
-                    if (_gold > 0) { bag.AddGold(_gold); _gold = 0; }
+                    best = d;
+                    who = w;
+                    intent = choice;
                 }
-                Log(Loc.F("{0} несёт вам вещи {1}.", Loc.Name(who.DisplayName), Loc.Name(_owner)));
             }
-            else if (who.Soul.Sin == SinType.Greed && feel < 0f)
+            if (who == null)
             {
-                who.Pocket(_gold);
-                _gold = 0;
-                SquadRoster.SyncPocket(who);
-                FallenBagTransfer.Move(_items, who.Give);
-                Log(Loc.F("{0} обобрал {1}: не ладили.", Loc.Name(who.DisplayName), Loc.Name(_owner)));
-            }
-            else if (who.Soul.Moral == MoralType.Pious)
-            {
-                Log(Loc.F("{0} не тронул мешок {1}: у мёртвых не берут.", Loc.Name(who.DisplayName), Loc.Name(_owner)));
+                if (!_piousWitnessed && piousWitness != null)
+                {
+                    _piousWitnessed = true;
+                    Log(Loc.F("{0} не тронул мешок {1}: у мёртвых не берут.",
+                        Loc.Name(piousWitness.DisplayName), Loc.Name(_owner)));
+                }
+                // Nobody has made a decision. Check again later: an
+                // interested soul may walk up to the sack afterwards.
+                return;
             }
 
-            // Пусто и без памятной — мешка больше нет; памятная лежит, пока Греховод не поднимет.
+            if (intent == FallenBagIntent.DeliverToLord)
+            {
+                // Friends may hand over accepted gear and coins; the
+                // memento belongs to the Lord and stays inside the sack.
+                var pack = PlayerInventory.Instance;
+                if (pack == null) return; // retry rather than lose goods
+                int moved = FallenBagTransfer.Move(_items, pack.AddItem);
+                int coins = _gold;
+                if (coins > 0) { pack.AddGold(coins); _gold = 0; }
+                if (moved == 0 && coins == 0) return;
+                _decided = true;
+                Log(Loc.F("{0} несёт вам вещи {1}.",
+                    Loc.Name(who.DisplayName), Loc.Name(_owner)));
+                UI.SpeechBubbles.Say(who, Loc.T("Отнесу его вещи владыке."), 2.5f);
+            }
+            else if (intent == FallenBagIntent.Steal)
+            {
+                int coins = _gold;
+                if (coins > 0) { who.Pocket(coins); _gold = 0; }
+                int moved = FallenBagTransfer.Move(_items, who.Give);
+                if (coins == 0 && moved == 0) return;
+                _decided = true;
+                Log(Loc.F("{0} забрал вещи {1} себе.",
+                    Loc.Name(who.DisplayName), Loc.Name(_owner)));
+                UI.SpeechBubbles.Say(who, Loc.T("Мёртвому это уже ни к чему."), 2.5f);
+            }
+
+            // The Lord may still collect a unique memento or any items a
+            // recipient could not carry. Nothing disappears without transfer.
             if (_items.Count == 0 && _gold == 0 && _memento == null) Retire();
         }
 

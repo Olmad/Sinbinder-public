@@ -12,6 +12,11 @@ assert "OnAnyDeath +=" not in b
 assert "FallenBagTransfer.Move(_items, inventory.AddItem)" in b
 assert "FallenBagTransfer.Move(_items, bag.AddItem)" in b
 assert "FallenBagTransfer.Move(_items, who.Give)" in b
+assert 'FallenBagChoice.Decide(w.Soul.Sin, w.Soul.Moral, feel, brother)' in b
+assert 'CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) < 10f' not in b
+assert 'if (who == null)' in b and 'Time.time < _nextNpcCheck' in b
+assert 'choice == FallenBagIntent.RespectDead' in b
+assert 'UI.SpeechBubbles.Say(who' in b
 assert "if (_items.Count > 0 || _memento != null)" in b
 assert "if (inventory == null)" in b
 assert "public bool TrySpendPocket(int gold)" in warrior

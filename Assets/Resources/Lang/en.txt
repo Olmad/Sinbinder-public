@@ -13372,3 +13372,15 @@ msgstr "There was not enough space in your inventory. The remaining items are st
 #: Gameplay/FallenBag.cs
 msgid "Мешок {0} собран."
 msgstr "You collected everything from {0}'s bag."
+
+#: Gameplay/FallenBag.cs
+msgid "Отнесу его вещи владыке."
+msgstr "I'll bring his things to our lord."
+
+#: Gameplay/FallenBag.cs
+msgid "Мёртвому это уже ни к чему."
+msgstr "The dead have no use for this now."
+
+#: Gameplay/FallenBag.cs
+msgid "{0} забрал вещи {1} себе."
+msgstr "{0} kept {1}'s belongings."

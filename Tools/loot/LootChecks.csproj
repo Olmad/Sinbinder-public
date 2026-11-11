@@ -10,5 +10,8 @@
 <ItemGroup>
 <Compile Include="Program.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/FallenBagTransfer.cs" Link="FallenBagTransfer.cs"/>
+<Compile Include="../../Assets/Scripts/Gameplay/FallenBagChoice.cs" Link="FallenBagChoice.cs"/>
+<Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" Link="SinType.cs"/>
+<Compile Include="../../Assets/Scripts/Core/Soul/MoralType.cs" Link="MoralType.cs"/>
 </ItemGroup>
 </Project>
