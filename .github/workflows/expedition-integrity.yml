@@ -1,0 +1,35 @@
+name: Expedition collection integrity
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/SoulHarvester.cs"
+      - "Assets/Scripts/Gameplay/MapEvents.cs"
+      - "Assets/Scripts/Crypt/MissionBoard.cs"
+      - "Assets/Scripts/Crypt/MissionCatalog.cs"
+      - "Tools/expeditions/**"
+      - ".github/workflows/expedition-integrity.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/SoulHarvester.cs"
+      - "Assets/Scripts/Gameplay/MapEvents.cs"
+      - "Assets/Scripts/Crypt/MissionBoard.cs"
+      - "Assets/Scripts/Crypt/MissionCatalog.cs"
+      - "Tools/expeditions/**"
+      - ".github/workflows/expedition-integrity.yml"
+permissions:
+  contents: read
+jobs:
+  expedition-collection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
+      - run: python3 Tools/expeditions/check_wiring.py

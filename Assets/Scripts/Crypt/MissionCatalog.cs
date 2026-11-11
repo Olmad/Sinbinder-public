@@ -181,9 +181,9 @@ namespace Sinbinder.Crypt
             switch (spoils)
             {
                 // 47-TEXTS §2, пп. 4–7: что принести и зачем — без загадок.
-                case Spoils.Souls:   return Loc.T("Оттуда можно принести души — для пустых тел в склепе.");
+                case Spoils.Souls:   return Loc.T("На месте есть души, но нынешние автоматические отряды не умеют их собирать.");
                 case Spoils.Shell:   return Loc.T("Оттуда можно принести тело — новую оболочку для души.");
-                case Spoils.Upgrade: return Loc.T("Оттуда можно принести вещь для гнезда в склепе.");
+                case Spoils.Upgrade: return Loc.T("Там может быть секрет, но нынешние отряды не умеют находить его самостоятельно.");
                 default:             return Loc.T("Больше оттуда нечего принести.");
             }
         }

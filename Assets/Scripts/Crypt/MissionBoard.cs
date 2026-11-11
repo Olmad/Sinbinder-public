@@ -384,71 +384,28 @@ namespace Sinbinder.Crypt
         }
 
         /// <summary>
-        /// Добыча. Души кладутся в жатву — то есть на полку зоны
-        /// связывания, потому что полка это вид на жатву, а не свой запас.
+        /// Automatic expeditions cannot fabricate rare finds. No soldier
+        /// currently has the origin/acquired soul-collector trait; the
+        /// player's Sinbinder must personally harvest souls in a live map.
+        /// The same goes for unique secrets without a qualified finder.
+        /// Ordinary bodies, coin and other mundane loot use their
+        /// existing paths and are still affected by the squad's choices.
         /// </summary>
         private void TakeSpoils(Mission mission, AOS.MissionAction? chosen)
         {
-            // Развилка меняет не только деньги. Резня оставляет души,
-            // уведённые живыми — тела; отпущенный обоз не оставляет
-            // ничего, и это тоже исход.
-            if (chosen == AOS.MissionAction.TakeEverything) BringSoul(mission.Name);
             if (chosen == AOS.MissionAction.TakePeople)
-                // 47-TEXTS §2, п. 14: обещания без продолжения не даём.
                 Log(Loc.T("Живых привели связанными. Склепу пока нечего с ними делать."));
             if (chosen == AOS.MissionAction.LetThemPass) return;
 
-            switch (mission.Spoils)
-            {
-                case Spoils.Souls:
-                    BringSoul(mission.Name);
-                    break;
+            if (chosen == AOS.MissionAction.TakeEverything ||
+                mission.Spoils == Spoils.Souls)
+                Log(Loc.T("Души остались на месте: в отряде нет собирателя душ."));
 
-                case Spoils.Upgrade:
-                    if (CryptUpgrades.Bring(out var what))
-                    {
-                        Upgrades++;
-                        Log(Loc.F("Оттуда принесли: {0}. "
-                          + "Найдётся гнездо — поставите.", CryptUpgrades.Name(what)));
-                    }
-                    else Log(Loc.T("Такое у вас уже есть, и второго места нет."));
-                    break;
+            if (mission.Spoils == Spoils.Upgrade)
+                Log(Loc.T("В отряде нет искателя секретов: редкую находку не обнаружили."));
 
-                case Spoils.Shell:
-                    // Тела на столе не кончаются: подставка — витрина,
-                    // а не склад. Считать оболочки имеет смысл там, где
-                    // их добывают, и это работа основной игры.
-                    Log(Loc.T("Оттуда принесли тело. Оно на столе."));
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Принесённая душа. Свежесть — «Принятие»: её везли,
-        /// а не собирали в момент смерти. Тот же <see cref="SoulDecay"/>,
-        /// что и у настоящей жатвы, иначе привезённая душа отличалась бы
-        /// от собранной ничем, кроме происхождения.
-        /// </summary>
-        private static void BringSoul(string from)
-        {
-            var souls = SoulManager.Instance;
-            if (souls == null) return;
-
-            // Грех выбирается по имени точки, а не броском: две вылазки
-            // на одну точку обязаны приносить одно и то же.
-            int hash = 0;
-            foreach (char c in from) hash = (hash * 31 + c) & 0x7FFFFFFF;
-
-            var sin = (SinType)(hash % 7);
-            var moral = (MoralType)(hash / 7 % 3);
-
-            var soul = new SoulData(Loc.N("Безымянная душа"), sin, moral, 1, 40f + hash % 40);
-            var kept = SoulDecay.Harvest(soul, SoulQuality.Acceptance);
-
-            if (kept == null) return;
-
-            souls.PutBack(new SoulManager.Kept(kept, SoulQuality.Acceptance));
-            Log(Loc.T("Оттуда принесли душу. Она на полке."));
+            if (mission.Spoils == Spoils.Shell)
+                Log(Loc.T("Оттуда принесли тело. Оно на столе."));
         }
 
         /// <summary>Забыть добычу при новой игре.</summary>
