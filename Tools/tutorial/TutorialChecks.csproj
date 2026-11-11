@@ -3,10 +3,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Program.cs" />
     <!-- Compile the exact same production file that the Unity dream uses. -->
     <Compile Include="../../Assets/Scripts/Gameplay/DreamTutorialChecks.cs" Link="DreamTutorialChecks.cs" />
   </ItemGroup>
