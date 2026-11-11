@@ -510,8 +510,8 @@ namespace Sinbinder.Crypt
                 Log(Loc.T("Живых привели связанными. Склепу пока нечего с ними делать."));
             if (chosen == AOS.MissionAction.LetThemPass) return;
 
-            if (chosen == AOS.MissionAction.TakeEverything ||
-                mission.Spoils == Spoils.Souls)
+            // Taking ordinary cargo must not invent a soul encounter.
+            if (mission.Spoils == Spoils.Souls)
                 Log(Loc.T("Души остались на месте: в отряде нет собирателя душ."));
 
             if (mission.Spoils == Spoils.Upgrade)

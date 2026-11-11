@@ -5,6 +5,8 @@ h = (r/"Assets/Scripts/Gameplay/SoulHarvester.cs").read_text(encoding="utf-8")
 ev = (r/"Assets/Scripts/Gameplay/MapEvents.cs").read_text(encoding="utf-8")
 catalog = (r/"Assets/Scripts/Crypt/MissionCatalog.cs").read_text(encoding="utf-8")
 assert "BringSoul(" not in m, "automatic missions must not award synthetic souls"
+assert "if (mission.Spoils == Spoils.Souls)" in m
+assert "chosen == AOS.MissionAction.TakeEverything ||" not in m
 assert "CryptUpgrades.Bring(" not in m, "auto-squads cannot bring hidden secret upgrades"
 assert "GetComponent<SinbinderPlayer>()" in h, "non-player warrior must be rejected"
 assert "_warrior is SinbinderPlayer" in h
