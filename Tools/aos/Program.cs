@@ -133,6 +133,21 @@ internal static class Program
         Contains(aosWrapper, "LastDecisionCommandRevision == _warrior.CommandRevision", "verdict freshness compares exact revision");
         Contains(ui, "if (who.HasCommand && !wrapper.HasCurrentCommandDecision)", "selected unit shows pending verdict for a new order");
         Contains(ui, "if (d == null || !d.HasCurrentCommandDecision) return false;", "group refuses only for current order");
+        // Group UI must distinguish an undeliberated order from a genuine
+        // non-refusal; otherwise "in formation" implies obedience prematurely.
+        string panelSource = File.ReadAllText(ui);
+        int groupStart = panelSource.IndexOf("private void Group(Warrior shown)", StringComparison.Ordinal);
+        int groupEnd = panelSource.IndexOf("private static bool Disagrees(Warrior w)", groupStart, StringComparison.Ordinal);
+        Check(groupStart >= 0 && groupEnd > groupStart, "group verdict summary exists in production panel");
+        string groupSource = panelSource.Substring(groupStart, groupEnd - groupStart);
+        int pendingBranch = groupSource.IndexOf("if (w.HasCommand && (d == null || !d.HasCurrentCommandDecision))", StringComparison.Ordinal);
+        int disagreementBranch = groupSource.IndexOf("else if (d != null && d.HasCurrentCommandDecision && Disagrees(w))", StringComparison.Ordinal);
+        int calmBranch = groupSource.IndexOf("else calm++;", StringComparison.Ordinal);
+        Check(pendingBranch >= 0 && disagreementBranch > pendingBranch && calmBranch > disagreementBranch,
+            "pending AOS decisions are counted separately before refused and settled squad members");
+        Check(groupSource.Contains("pending++;") && groupSource.Contains("ожидают решения") &&
+              groupSource.Contains("if (calm > 0)") && groupSource.Contains("в строю"),
+            "pending and settled squad summaries have distinct readable labels");
         Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
         Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");
         // Neutral match warriors have an attitude prefix. It must not hide
