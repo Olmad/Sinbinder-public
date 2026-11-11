@@ -282,6 +282,18 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool ReturnTo(SaveGame save, bool reload = false)
         {
+            // Validate the destination before changing any live squad, soul or
+            // inventory state. A save from a missing scene must fail atomically.
+            // The raid part is hosted by the camp scene, not a standalone scene.
+            if (save == null) return false;
+            if (!string.IsNullOrEmpty(save.Scene) &&
+                (reload || save.Scene != Here) &&
+                !Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene)))
+            {
+                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{RaidEvent.HostOf(save.Scene)}» нет в сборке: загрузка отменена.");
+                return false;
+            }
+
             if (!Restore(save)) return false;
 
             // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
@@ -294,15 +306,6 @@ namespace Sinbinder.Core
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).
             string scene = RaidEvent.HostOf(save.Scene);
-
-            // Сцены нет в сборке — не падаем, а говорим. Состояние
-            // вернули, место вернуть не можем, и игрок должен это знать.
-            if (!Application.CanStreamedLevelBeLoaded(scene))
-            {
-                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{scene}» нет в сборке: "
-                               + "состояние возвращено, место — нет.");
-                return true;
-            }
 
             Arriving = true;
             _unfold = scene != save.Scene ? save.Scene : null;
