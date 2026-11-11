@@ -160,16 +160,16 @@ namespace Sinbinder.Dialogue
             {
                 switch (sin)
                 {
-                    case SinType.Greed:    return P(Loc.T("Жив. Была бы доля — был бы и весел."),
-                                                    Loc.T("Жива. Была бы доля — была бы и весела."));
+                    case SinType.Greed:    return P(Loc.T("Пока цел. Была бы доля — был бы и весел."),
+                                                    Loc.T("Пока цела. Была бы доля — была бы и весела."));
                     case SinType.Pride:    return Loc.T("Не хуже прочих. Лучше, если честно.");
                     case SinType.Wrath:    return Loc.T("Скучно. Когда дадут кого-нибудь ударить?");
                     case SinType.Envy:     return Loc.T("Как все. Только у других почему-то лучше.");
                     case SinType.Lust:     return Loc.T("Хорошо, пока есть на кого посмотреть.");
                     case SinType.Gluttony: return P(Loc.T("Сыт был утром. Это было давно."),
                                                     Loc.T("Сыта была утром. Это было давно."));
-                    default:               return P(Loc.T("Устал. Можно я постою?"),
-                                                    Loc.T("Устала. Можно я постою?"));
+                    default:               return P(Loc.T("Устал. Можно я присяду?"),
+                                                    Loc.T("Устала. Можно я присяду?"));
                 }
             }
 

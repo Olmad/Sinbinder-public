@@ -40,13 +40,13 @@ internal static class Program
         {
             string positive = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Respected);
             string negative = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Distrusted);
-            string invited = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Invited);
+            string invited = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Undecided);
             Check(!string.IsNullOrWhiteSpace(positive) && !string.IsNullOrWhiteSpace(negative)
                   && !string.IsNullOrWhiteSpace(invited), "every reputation gets an answer");
             Check(positive != negative && positive != invited && negative != invited,
                   $"three different replies for Lord standing, sin={sin}");
-            Check(!positive.StartsWith("Звал") && !negative.StartsWith("Звал"),
-                  "no phantom invitation in reputation lines");
+            Check(!positive.StartsWith("Звал") && !negative.StartsWith("Звал")
+                  && !invited.StartsWith("Звал"), "no phantom invitation in reputation lines");
         }
         foreach (int stamp in new[] { int.MinValue, -9, -1, 0, 1, 2, 3, 4, 5, int.MaxValue })
             Check(VillageDialogueRules.TopicIndex(stamp) >= 0 &&

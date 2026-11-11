@@ -81,11 +81,11 @@ namespace Sinbinder.Dialogue
                     if (sin == SinType.Greed) return b.UnpaidMissions > 0
                         ? Loc.T("И мне не платят. Считай за двоих.")
                         : Loc.T("Тебе должны — с владыки и спрашивай.");
-                    if (sin == SinType.Pride) return Loc.T("Плату просят, а не считают.");
+                    if (sin == SinType.Pride) return Loc.T("Не считай вылазки. Потребуй своё.");
                     return Loc.T("Мне бы и без платы полежать.");
                 case Topic.Took:
                     if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
-                    if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Значит, не заслужил держать."), Loc.T("Значит, не заслужила держать."));
+                    if (sin == SinType.Pride) return Loc.T("Твоё? Так забери обратно.");
                     return Loc.T("Меньше нести.");
                 case Topic.Brothers:
                     return Loc.T("А где ж мне ещё.");

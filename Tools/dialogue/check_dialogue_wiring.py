@@ -7,6 +7,11 @@ t = (root / "Assets/Scripts/Dialogue/DialogueTrigger.cs").read_text(encoding="ut
 c = (root / "Assets/Scripts/Dialogue/CampLines.cs").read_text(encoding="utf-8")
 assert "VillageDialogueRules.SinAnswer(a.Soul.Sin, b.Soul.Sin)" in v
 assert "VillageDialogueRules.LordAnswer(b.Soul.Sin, tone)" in v
+assert "VillageLordTone.Undecided" in v
+assert "Греховод заходил. Звал за собой." not in v
+assert "Опять этот Греховод тут ходит" not in v
+assert "SinOpening(a, b)" in v
+assert "Grammar.Pick(b.Gender" in v
 assert "VillageDialogueRules.TopicIndex(k)" in v
 assert "CampLines.Mute(a)" in v and v.count("CampLines.Mute(b)") >= 4
 assert "SinAnswer(Warrior b)" not in v

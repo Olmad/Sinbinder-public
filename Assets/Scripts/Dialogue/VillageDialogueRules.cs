@@ -4,7 +4,7 @@ using Sinbinder.Core;
 
 namespace Sinbinder.Dialogue
 {
-    public enum VillageLordTone { Respected, Distrusted, Invited }
+    public enum VillageLordTone { Respected, Distrusted, Undecided }
 
     public static class VillageDialogueRules
     {
@@ -12,8 +12,8 @@ namespace Sinbinder.Dialogue
         private static readonly string[][] LordReplies =
         {
             new[] {
-                Loc.N("Пока держит слово, зря ругать его не стану."),
-                Loc.N("Не худший. Но за меня решать не надо."),
+                Loc.N("Если слово сдержит, не стану его ругать."),
+                Loc.N("Может, и так. Но за меня решать не надо."),
                 Loc.N("Посмотрим, каков он в настоящей драке."),
                 Loc.N("К нему идут охотнее, чем ко мне."),
                 Loc.N("С ним хоть поговорить можно."),
@@ -30,13 +30,13 @@ namespace Sinbinder.Dialogue
                 Loc.N("Лишь бы мимо прошёл."),
             },
             new[] {
-                Loc.N("Звал — пусть сначала заплатит."),
-                Loc.N("Я сам решу, за кем идти."),
-                Loc.N("В бой зовёт или просто за собой таскать?"),
-                Loc.N("Тебя звал, а меня — нет?"),
-                Loc.N("Звал? Хоть по-человечески?"),
-                Loc.N("У него, говорят, котёл полный."),
-                Loc.N("Пусть зовёт. Я тут посижу."),
+                Loc.N("Пусть делом докажет, что ему можно верить."),
+                Loc.N("Веру пусть делами заслужит."),
+                Loc.N("В бою посмотрим, чего он стоит."),
+                Loc.N("Другим он обещает больше, чем нам."),
+                Loc.N("Сначала поговорю с ним сам."),
+                Loc.N("Если накормит — подумаю."),
+                Loc.N("Пока не трогает, мне всё равно."),
             }
         };
 

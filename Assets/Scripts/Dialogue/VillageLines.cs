@@ -30,7 +30,7 @@ namespace Sinbinder.Dialogue
                 case Topic.Lord: return LordTalk(a, b);
                 case Topic.Order: return (Loc.T("Поговаривают, Орден снова на тропах. Не к добру."), CampLines.Mute(b) ? CampLines.Gesture(b) : OrderAnswer(b));
                 case Topic.Event: return (Loc.F("У знака неподалёку — «{0}». Кто пойдёт посмотреть?", Loc.T(ev.Entry.Title)), CampLines.Mute(b) ? CampLines.Gesture(b) : EventAnswer(b));
-                default: return (SinOpening(a), CampLines.Mute(b)
+                default: return (SinOpening(a, b), CampLines.Mute(b)
                     ? CampLines.Gesture(b) : VillageDialogueRules.SinAnswer(a.Soul.Sin, b.Soul.Sin));
             }
         }
@@ -51,15 +51,15 @@ namespace Sinbinder.Dialogue
         /// <summary>О Греховоде игрока — как к нему этот житель: словом, без числа.</summary>
         private static (string, string) LordTalk(Warrior a, Warrior b)
         {
-            if (Lords.Player == null) return (SinOpening(a), CampLines.Mute(b)
+            if (Lords.Player == null) return (SinOpening(a, b), CampLines.Mute(b)
                 ? CampLines.Gesture(b) : VillageDialogueRules.SinAnswer(a.Soul.Sin, b.Soul.Sin));
             float v = Allegiance.Of(a.Id, a.Loyalty, Lords.Player);
             string first = v >= Hostility.Follows ? Loc.T("Наш-то Греховод — не худший из них.")
-                         : v <= Hostility.Despised ? Loc.T("Опять этот Греховод тут ходит. Не к добру.")
-                         : Loc.T("Греховод заходил. Звал за собой.");
+                         : v <= Hostility.Despised ? Loc.T("С этим Греховодом лучше не связываться.")
+                         : Loc.T("Что скажешь про Греховода? Стоит ему верить?");
             VillageLordTone tone = v >= Hostility.Follows ? VillageLordTone.Respected
                 : v <= Hostility.Despised ? VillageLordTone.Distrusted
-                : VillageLordTone.Invited;
+                : VillageLordTone.Undecided;
             string answer = CampLines.Mute(b)
                 ? CampLines.Gesture(b) : VillageDialogueRules.LordAnswer(b.Soul.Sin, tone);
             return (first, answer);
@@ -86,13 +86,13 @@ namespace Sinbinder.Dialogue
             _ => Loc.T("Не наше это дело. Пока."),
         };
 
-        private static string SinOpening(Warrior a) => a.Soul.Sin switch
+        private static string SinOpening(Warrior a, Warrior b) => a.Soul.Sin switch
         {
             SinType.Greed => Loc.T("Сколько у тебя припрятано? Только честно."),
-            SinType.Pride => Loc.T("В этой деревне я один стою чего-то."),
+            SinType.Pride => Loc.T("В этой деревне только я чего-то стою."),
             SinType.Wrath => Loc.T("Ещё день без дела — и я кого-нибудь пришибу."),
             SinType.Sloth => Loc.T("Хорошо сидим. Не вставай."),
-            SinType.Envy => Loc.T("Видал, что у соседа новое?"),
+            SinType.Envy => Grammar.Pick(b.Gender, Loc.T("Видал, что у соседа новое?"), Loc.T("Видала, что у соседа новое?")),
             SinType.Lust => Loc.T("У очага теплее, когда не один."),
             SinType.Gluttony => Loc.T("Что-то есть хочется. Опять."),
             _ => Loc.T("Тихо сегодня."),

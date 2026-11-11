@@ -13100,3 +13100,79 @@ msgstr "There's something by the nearby marker: \"{0}\". Who will go and look?"
 #: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
 msgid "Понял."
 msgstr "Understood."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пусть делом докажет, что ему можно верить."
+msgstr "Let him prove by his deeds that he can be trusted."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Веру пусть делами заслужит."
+msgstr "Let him earn my trust through actions."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "В бою посмотрим, чего он стоит."
+msgstr "We'll see what he's worth in battle."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Другим он обещает больше, чем нам."
+msgstr "He promises the others more than he promises us."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Сначала поговорю с ним сам."
+msgstr "I'll talk to him myself first."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Если накормит — подумаю."
+msgstr "If he feeds us, I'll consider it."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока не трогает, мне всё равно."
+msgstr "As long as he leaves me alone, I don't care."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Если слово сдержит, не стану его ругать."
+msgstr "If he keeps his word, I won't speak ill of him."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Может, и так. Но за меня решать не надо."
+msgstr "Maybe so. But he doesn't get to decide for me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "С этим Греховодом лучше не связываться."
+msgstr "Better not get involved with that Sinbinder."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Что скажешь про Греховода? Стоит ему верить?"
+msgstr "What do you think of the Sinbinder? Can we trust him?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "В этой деревне только я чего-то стою."
+msgstr "I'm the only one in this village worth anything."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Видала, что у соседа новое?"
+msgstr "Have you seen what the neighbor got?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока цел. Была бы доля — был бы и весел."
+msgstr "Still in one piece. I'd be happier with my share."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока цела. Была бы доля — была бы и весела."
+msgstr "Still in one piece. I'd be happier with my share."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Устал. Можно я присяду?"
+msgstr "I'm tired. Can I sit down?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Устала. Можно я присяду?"
+msgstr "I'm tired. Can I sit down?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Не считай вылазки. Потребуй своё."
+msgstr "Stop counting sorties. Demand what you're owed."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Твоё? Так забери обратно."
+msgstr "Yours? Then take it back."
