@@ -509,9 +509,37 @@ namespace Sinbinder.Core
 
             try
             {
-                Directory.CreateDirectory(Folder);
-                File.WriteAllText(path, JsonUtility.ToJson(save, true));
-                return true;
+                // Stage the complete JSON beside the slot. Never truncate a valid
+                // save before the replacement is ready.
+                string fullPath = Path.GetFullPath(path);
+                string directory = Path.GetDirectoryName(fullPath);
+                Directory.CreateDirectory(directory);
+                string temp = fullPath + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(JsonUtility.ToJson(save, true));
+                    using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        stream.Write(bytes, 0, bytes.Length);
+                        stream.Flush(true);
+                    }
+
+                    if (File.Exists(fullPath))
+                    {
+                        // On an unsupported filesystem, fail rather than deleting
+                        // or overwriting the only known-good save.
+                        File.Replace(temp, fullPath, null);
+                    }
+                    else
+                    {
+                        File.Move(temp, fullPath);
+                    }
+                    return true;
+                }
+                finally
+                {
+                    if (File.Exists(temp)) File.Delete(temp);
+                }
             }
             catch (IOException e)
             {
