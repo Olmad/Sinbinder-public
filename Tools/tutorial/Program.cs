@@ -169,6 +169,22 @@ internal static class Program
               writeBody.Contains("catch (System.PlatformNotSupportedException e)"),
               "failed save cleans temporary file and rejects unsupported replacement");
 
+        // Save slots UX: failed restore must not dismiss the only recovery UI.
+        // Source-linked L0 contract; not a Unity button/play-mode test.
+        var slotsSource = System.IO.File.ReadAllText("Assets/Scripts/UI/SaveSlotsPanel.cs");
+        Check(slotsSource.Contains("if (Load(name)) Close(); else Draw();") &&
+              !slotsSource.Contains("Load(name); Close();"),
+              "failed slot load keeps the save selection panel available");
+        Check(slotsSource.Contains("if (save == null)") &&
+              slotsSource.Contains("Запись не прочиталась.") &&
+              slotsSource.Contains("bool loaded = SaveSystem.ReturnTo(save);") &&
+              slotsSource.Contains("return loaded;"),
+              "corrupt read and restore rejection are distinct and only success closes");
+        Check(slotsSource.Contains("if (!Commitment.CanLoad)") &&
+              slotsSource.Contains("Commitment.WhyNoLoad") &&
+              slotsSource.Contains("if (Load(name)) Close();"),
+              "commitment mode still denies loading and valid loads retain close behavior");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
