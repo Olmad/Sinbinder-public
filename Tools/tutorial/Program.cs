@@ -63,6 +63,22 @@ internal static class Program
         credit.Clear();
         Check(credit.TryCredit("guard-a:victim-a", 0f), "session reset clears earlier credits");
 
+        // Explain an AOS refusal in a way a player can act on. These are
+        // actual gameplay copy strings, not CI-only duplicates.
+        Check(OrderAdvice.Next("Distance").Contains("ближе"), "distance refusal suggests moving closer");
+        Check(OrderAdvice.Next("Debt").Contains("долг"), "unpaid wages suggest resolving the debt");
+        Check(OrderAdvice.Next("Temptation").Contains("снаряжение"), "tempting item suggests changing equipment");
+        Check(OrderAdvice.Next("AllyInDanger").Contains("товарища"), "ally in danger suggests rescue first");
+        Check(OrderAdvice.Next("Fatigue").Contains("передышку"), "fatigue suggests a rest or replacement");
+        Check(OrderAdvice.Next("Surrounded").Contains("окружения"), "encirclement suggests reducing danger");
+        Check(OrderAdvice.Next("Murderer").Contains("убийц"), "revenge suggests removing remembered threat");
+        Check(OrderAdvice.Next(null, "Fear").Contains("опасность"), "fear voice suggests safer circumstances");
+        Check(OrderAdvice.Next(null, "Memory").Contains("прошлом"), "memory voice suggests changing reminder");
+        Check(OrderAdvice.Next(null, "Morality").Contains("убеждений"), "conscience voice suggests another order");
+        Check(OrderAdvice.Next(null, "Pride").Contains("задачу"), "pride voice suggests a different assignment");
+        Check(!string.IsNullOrWhiteSpace(OrderAdvice.Next("Unknown", "Unknown")),
+            "unrecognized refusal still gives a non-guaranteed alternative");
+
         Console.WriteLine("PASS: " + _checks + " production tutorial rule assertions");
         return 0;
     }
