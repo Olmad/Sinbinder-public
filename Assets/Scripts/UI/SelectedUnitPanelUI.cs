@@ -246,7 +246,7 @@ namespace Sinbinder.UI
             {
                 if (w == shown) continue;
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                if (d != null && d.LastContext != null && Disagrees(w))
+                if (d != null && d.HasCurrentCommandDecision && Disagrees(w))
                     odd.Add(Loc.F("{0} {1}", Loc.Name(w.DisplayName),
                         d.LastDecisionDetail.Hesitated ? Grammar.For(w.Gender, Loc.T("медлит"))
                                                        : PhraseGenerator.Doing(d.LastDecisionDetail.Action).ToLowerInvariant()));
@@ -265,7 +265,7 @@ namespace Sinbinder.UI
         private static bool Disagrees(Warrior w)
         {
             var d = w.GetComponent<AOSWarriorWrapper>();
-            if (d == null || d.LastContext == null) return false;
+            if (d == null || !d.HasCurrentCommandDecision) return false;
             return d.LastDecisionDetail.RefusedCommand || d.LastDecisionDetail.Hesitated;
         }
 
@@ -344,7 +344,7 @@ namespace Sinbinder.UI
             foreach (var w in Picked())
             {
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                if (d != null && d.LastContext != null)
+                if (d != null && d.HasCurrentCommandDecision)
                 {
                     if (d.LastDecisionDetail.RefusedCommand) return w;
                     if (hesitant == null && d.LastDecisionDetail.Hesitated) hesitant = w;
@@ -433,6 +433,14 @@ namespace Sinbinder.UI
             {
                 Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
                 Order(Loc.T("Приказа нет"), "", false);
+                return;
+            }
+
+            // A newly issued order has not yet been voted on: never reuse an old refusal.
+            if (who.HasCommand && !wrapper.HasCurrentCommandDecision)
+            {
+                Voice(null, Loc.T("Новый приказ"), Loc.T("Ожидаем решения воина"), Faint, 27);
+                Order(Loc.T("Приказ отдан — решение ожидается"), "", true);
                 return;
             }
 
