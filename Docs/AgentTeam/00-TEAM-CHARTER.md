@@ -34,6 +34,8 @@
 
 Ссылки: PR https://github.com/Olmad/Sinbinder-public/pull/1; приоритеты мультиплеера https://github.com/Olmad/Sinbinder-public/issues/2; главный журнал координации https://github.com/Olmad/Sinbinder-public/issues/3; Assets/Scripts/docs/57-MULTIPLAYER-PRIORITIES-HANDOFF.md; Assets/Scripts/docs/65-TOTAL-TUTORIAL.md.
 
+**Обязательная общая доска реальной готовности:** [Docs/AgentTeam/60-RELEASE-READINESS.md](60-RELEASE-READINESS.md). Каждая из пяти ролей перед новой работой сверяет свой gate G0–G7 с актуальным HEAD. QA вносит только доказанные результаты с ссылкой на CI/Unity/видео; без Unity ставить UNKNOWN/BLOCKED, а не PASS. Если CI красный, сначала чинить красный CI, не записывать предыдущий зелёный SHA в текущий.
+
 ## 5. Обязательная схема КАЖДОГО запуска
 1. Проверить название ветки и текущий HEAD (SHA). Сначала не править.
 2. Посмотреть последние коммиты, связанные изменения, запущенные и завершённые GitHub Actions на текущем SHA. Разделить ошибки сети, обучения, статических проверок и Unity.
