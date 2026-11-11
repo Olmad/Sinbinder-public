@@ -76,6 +76,14 @@ internal static class Program
         Check(!soulManagerSource.Contains("if (_indicators[i] != null && _indicators[i].gameObject != null)"),
               "soul removal no longer deletes an arbitrary surviving light");
 
+        // Death callbacks must not create duplicate souls or invalid null souls.
+        Check(soulManagerSource.Contains("!_deathRegistered.Add(warrior)") &&
+              soulManagerSource.Contains("warrior == null || warrior.Soul == null"),
+              "repeated or invalid death cannot register a second fading soul");
+        Check(soulManagerSource.Contains("_deathRegistered.Clear()") &&
+              soulManagerSource.Contains("OnSceneUnloaded("),
+              "death identity gate resets when the physical battle scene unloads");
+
         // A rescue requires an actual positive hit from a real attacker.
         Check(RescueCreditGate.IsRealAttack(2.1f, true), "real attacker and positive hit qualify");
         Check(!RescueCreditGate.IsRealAttack(0f, true), "zero-damage VFX cannot earn rescue credit");
