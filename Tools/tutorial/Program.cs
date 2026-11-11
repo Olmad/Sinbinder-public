@@ -132,6 +132,22 @@ internal static class Program
         Check(OrderAdvice.Short("Unknown", "Unknown").Length <= 40,
             "fallback hint is short enough for the lower strip");
 
+        // The save slots panel pauses gameplay, so errors must be visible inside
+        // that panel, not exclusively in the obscured battle log (L0 only).
+        var slotsUx = System.IO.File.ReadAllText("Assets/Scripts/UI/SaveSlotsPanel.cs");
+        Check(slotsUx.Contains("private string _status;") &&
+              slotsUx.Contains("_title.text = !string.IsNullOrEmpty(_status)") &&
+              slotsUx.Contains("else Draw();"),
+              "failed load keeps panel open and renders its feedback in the panel");
+        Check(slotsUx.Contains("_status = Loc.T(\"Запись не прочиталась.") &&
+              slotsUx.Contains("_status = loaded") &&
+              slotsUx.Contains("Say(_status);"),
+              "unreadable and rejected saves both explain failure in the paused panel");
+        Check(slotsUx.Contains("_status = Save(name); Draw();") &&
+              slotsUx.Contains("private static string Save(string slot)") &&
+              slotsUx.Contains("_status = null;"),
+              "save failures appear in panel and reopening clears stale feedback");
+
         // Save-load source contracts: malformed input must not partially mutate
         // the squad/shelf or escape JsonUtility's ArgumentException path.
         // This is L0 source verification, NOT a Unity deserialization test.
