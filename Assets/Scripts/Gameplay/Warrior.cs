@@ -426,7 +426,21 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public int PocketGold { get; private set; }
 
-        public void Pocket(int gold) => PocketGold += System.Math.Max(0, gold);
+        public void Pocket(int gold)
+        {
+            if (gold <= 0) return;
+            PocketGold = checked(PocketGold + gold);
+            SquadRoster.SyncPocket(this);
+        }
+
+        /// <summary>Debit the living warrior's own coins, never the Lord's.</summary>
+        public bool TrySpendPocket(int gold)
+        {
+            if (gold <= 0 || PocketGold < gold) return false;
+            PocketGold -= gold;
+            SquadRoster.SyncPocket(this);
+            return true;
+        }
 
         /// <summary>Вынуть из кармана всё. Сколько вынуто.</summary>
         public int EmptyPocket()

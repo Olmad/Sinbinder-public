@@ -42,39 +42,17 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- появление
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Boot()
-        {
-            if (Object.FindFirstObjectByType<Watcher>() != null) return;
-            var go = new GameObject("Мешки павших");
-            DontDestroyOnLoad(go);
-            go.AddComponent<Watcher>();
-        }
-
-        /// <summary>Слушает гибели в любой сцене с боем — как <see cref="SignatureDeaths"/>.</summary>
-        private class Watcher : MonoBehaviour
-        {
-            private CombatManager _subscribed;
-
-            void Update()
-            {
-                var combat = CombatManager.Instance;
-                if (combat == null || combat == _subscribed) return;
-                if (_subscribed != null) _subscribed.OnAnyDeath -= OnDeath;
-                combat.OnAnyDeath += OnDeath;
-                _subscribed = combat;
-            }
-
-            void OnDestroy()
-            {
-                if (_subscribed != null) _subscribed.OnAnyDeath -= OnDeath;
-            }
-        }
-
-        private static void OnDeath(Damageable killed, GameObject killer)
+        public static void CreateFor(Damageable killed)
         {
             var w = killed != null ? killed.Warrior : null;
-            if (w == null || w is SinbinderPlayer || w.Team != Team.Player) return;
+            if (w == null || w is SinbinderPlayer) return;
+
+            // Owned gear and actual pocket coins are distinct from the
+            // generated harvestable loot on a corpse. Never duplicate gold.
+            bool allied = w.Team == Team.Player;
+            InventoryItem keepsake = allied ? Memento(w.DisplayName) : null;
+            if (w.Carried.Count == 0 && w.PocketGold <= 0 && keepsake == null)
+                return;
 
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = Loc.F("Мешок {0}", w.DisplayName);
@@ -96,7 +74,7 @@ namespace Sinbinder.Gameplay
             }
             w.TakeAll();
             bag._gold = w.EmptyPocket();
-            bag._memento = Memento(w.DisplayName);
+            bag._memento = keepsake;
         }
 
         /// <summary>Памятная вещь по имени — та, что в его примете.</summary>
@@ -134,16 +112,34 @@ namespace Sinbinder.Gameplay
         /// <summary>F: всё — Греховоду, и памятная вещь тоже.</summary>
         public void Take()
         {
-            var bag = PlayerInventory.Instance;
-            if (bag != null)
+            var inventory = PlayerInventory.Instance;
+            if (inventory == null)
             {
-                foreach (var item in _items) bag.AddItem(item);
-                if (_memento != null) bag.AddItem(_memento);
-                if (_gold > 0) bag.AddGold(_gold);
+                Log(Loc.T("Сейчас некому забрать содержимое мешка."));
+                return;
             }
-            Log(_memento != null
-                ? Loc.F("Вы подняли мешок {0}. «{1}» — с вами.", Loc.Name(_owner), Loc.T(_memento.Name))
-                : Loc.F("Вы подняли мешок {0}.", Loc.Name(_owner)));
+
+            // An unaccepted item stays in the physical bag; a full
+            // inventory is not an excuse to delete someone's equipment.
+            int received = FallenBagTransfer.Move(_items, inventory.AddItem);
+            if (_memento != null && inventory.AddItem(_memento))
+            {
+                received++;
+                _memento = null;
+            }
+            if (_gold > 0)
+            {
+                inventory.AddGold(_gold);
+                _gold = 0;
+            }
+
+            if (_items.Count > 0 || _memento != null)
+            {
+                Log(Loc.F("Мешок {0}: места не хватило, оставшиеся вещи на земле.",
+                    Loc.Name(_owner)));
+                return;
+            }
+            Log(Loc.F("Мешок {0} собран.", Loc.Name(_owner)));
             Destroy(gameObject);
         }
 
@@ -175,17 +171,17 @@ namespace Sinbinder.Gameplay
                 var bag = PlayerInventory.Instance;
                 if (bag != null)
                 {
-                    foreach (var item in _items) bag.AddItem(item);
-                    if (_gold > 0) bag.AddGold(_gold);
+                    FallenBagTransfer.Move(_items, bag.AddItem);
+                    if (_gold > 0) { bag.AddGold(_gold); _gold = 0; }
                 }
-                _items.Clear(); _gold = 0;
                 Log(Loc.F("{0} несёт вам вещи {1}.", Loc.Name(who.DisplayName), Loc.Name(_owner)));
             }
             else if (who.Soul.Sin == SinType.Greed && feel < 0f)
             {
                 who.Pocket(_gold);
-                foreach (var item in _items) who.Give(item);
-                _items.Clear(); _gold = 0;
+                _gold = 0;
+                SquadRoster.SyncPocket(who);
+                FallenBagTransfer.Move(_items, who.Give);
                 Log(Loc.F("{0} обобрал {1}: не ладили.", Loc.Name(who.DisplayName), Loc.Name(_owner)));
             }
             else if (who.Soul.Moral == MoralType.Pious)

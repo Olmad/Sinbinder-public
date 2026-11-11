@@ -141,7 +141,14 @@ namespace Sinbinder.Gameplay
                 return;
             }
             if (killed.Warrior != null)
+            {
+                // Resolve card escrow before the fallen wallet becomes loot.
+                CardTable.Instance?.CancelForDeath(killed.Warrior);
                 CreateLootOnField(killed);
+                // Direct death path: independent of watcher Update timing,
+                // and occurs exactly once for one lethal damage event.
+                FallenBag.CreateFor(killed);
+            }
             if (OnAnyDeath != null)
                 foreach (var d in OnAnyDeath.GetInvocationList())
                     using (Core.Cost.Of(Core.Cost.On ? "death>" + d.Method.DeclaringType?.Name : null))

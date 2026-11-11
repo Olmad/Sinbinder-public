@@ -320,6 +320,25 @@ namespace Sinbinder.Gameplay
         /// Запомнить выбор игрока. Командир остаётся один: остальные
         /// кандидаты возвращаются в строй рядовыми.
         /// </summary>
+        /// <summary>
+        /// Immediate transfer of a warrior's pocket into the roster used
+        /// by SaveSystem.Snapshot. Without this, card stakes could vanish
+        /// on save/reload because only the old pocket value was written.
+        /// Away members are deliberately never overwritten.
+        /// </summary>
+        public static void SyncPocket(Warrior warrior)
+        {
+            if (warrior == null || warrior.Soul == null) return;
+            for (int i = 0; i < _members.Count; i++)
+            {
+                var member = _members[i];
+                if (member.IsAway || member.Name != warrior.DisplayName) continue;
+                member.Pocket = warrior.PocketGold;
+                _members[i] = member;
+                break;
+            }
+        }
+
         public static void ChooseCommander(string name)
         {
             for (int i = 0; i < _members.Count; i++)
