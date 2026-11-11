@@ -49,6 +49,23 @@ internal static class Program
         Check(!DreamTutorialChecks.FreshOrderedDecision(true, 11f, 10f, true, false),
             "idle vote without command rejected");
 
+        // Production battle-end gate: one real victory per enemy wave,
+        // never a second victory when an ally dies after the enemy is gone.
+        var battle = new BattleEndGate();
+        Check(!battle.TryComplete(false), "empty scene is not an earned victory");
+        battle.EnemyRegistered();
+        Check(!battle.TryComplete(true), "living enemy prevents victory");
+        Check(battle.TryComplete(false), "last enemy death triggers exactly one victory");
+        Check(!battle.TryComplete(false), "later allied death cannot replay victory");
+        battle.EnemyRegistered();
+        Check(!battle.TryComplete(true), "new enemy wave remains active");
+        Check(battle.TryComplete(false), "new wave earns its own victory once");
+        Check(!battle.TryComplete(false), "second wave cannot duplicate rewards");
+        var combatSource = File.ReadAllText(Path.Combine(args.Length > 0 ? args[0] : ".", "Assets/Scripts/Gameplay/CombatManager.cs"));
+        Check(combatSource.Contains("_battleEndGate.EnemyRegistered()") &&
+              combatSource.Contains("_battleEndGate.TryComplete(_enemyUnits.Exists("),
+              "real CombatManager registers enemy waves and gates OnBattleEnd");
+
         // A rescue requires an actual positive hit from a real attacker.
         Check(RescueCreditGate.IsRealAttack(2.1f, true), "real attacker and positive hit qualify");
         Check(!RescueCreditGate.IsRealAttack(0f, true), "zero-damage VFX cannot earn rescue credit");
