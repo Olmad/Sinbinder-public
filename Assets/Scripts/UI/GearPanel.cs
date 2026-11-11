@@ -404,6 +404,9 @@ namespace Sinbinder.UI
                 Offer(Mathf.Min(Gaze.Miss(sack.transform),
                     Gaze.Miss(sack.transform.position + Vector3.up * 0.5f, 0.75f)),
                     sack.Prompt, sack.Take);
+            // Expedition gate/objective must compete fairly with nearby
+            // bags and conversations; a single F press selects one action.
+            PersonalExpedition.OfferInteractions(Offer);
             var pot = Cauldron.Nearest();
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var well = CampWell.Nearest();

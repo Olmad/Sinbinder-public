@@ -241,22 +241,23 @@ namespace Sinbinder.Gameplay
         private static float Dist(Vector3 a,Vector3 b)
         { a.y=0f; b.y=0f; return Vector3.Distance(a,b); }
 
-        private void Update()
+        /// <summary>
+        /// The central F-interaction selector owns mission objectives too.
+        /// Never read F in a second Update: GearPanel may otherwise take a
+        /// corpse bag and award cargo in the same frame, or end the mission
+        /// while the player is interacting with another object.
+        /// </summary>
+        public static void OfferInteractions(System.Action<float,string,System.Action> offer)
         {
-            if (_exiting || !SinbinderPlayer.Exists) return;
-            if (Core.GamePauseController.Instance != null &&
-                Core.GamePauseController.Instance.IsPaused) return;
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                if (Dist(SinbinderPlayer.Where,Gate)<4f)
-                {
-                    Exit();
-                    return;
-                }
-                if (Dist(SinbinderPlayer.Where,Objective)<4f &&
-                    FallenBag.Near()==null)
-                    CollectObjective();
-            }
+            if (_active == null || _active._exiting || !SinbinderPlayer.Exists ||
+                offer == null) return;
+            var expedition = _active;
+            if (Dist(SinbinderPlayer.Where,expedition.Gate)<4f)
+                offer(Gaze.Miss(expedition.Gate+Vector3.up*1.4f,1.5f),
+                    Loc.T("F — вернуться в склеп"), expedition.Exit);
+            if (Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
+                offer(Gaze.Miss(expedition.Objective+Vector3.up*1.4f,1.5f),
+                    Loc.T("F — исследовать цель"), expedition.CollectObjective);
         }
 
         private void CollectObjective()

@@ -13,6 +13,11 @@ assert "new GameObject" in m and "surface.BuildNavMesh()" in m
 assert "WarriorRig.Attach(go)" in p and "sceneSetup?.SetupWarrior(go)" in p
 assert "ExpeditionMapPlan.ForName(mission.Name)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui
+gear=src("Assets/Scripts/UI/GearPanel.cs")
+assert "PersonalExpedition.OfferInteractions(Offer);" in gear
+assert "public static void OfferInteractions(" in p
+assert "FallenBag.Near()" not in p
+assert "Input.GetKeyDown(KeyCode.F)" not in p
 assert "ready > 0 || personalPossible" in ui
 assert "SquadRoster.CanGo(member)" in p
 assert "seen.Count + 1 > Mathf.Max(1, mission.Squad)" in p
