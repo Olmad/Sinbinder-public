@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/CampCardRules.cs" Link="CampCardRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CampCardWagers.cs" Link="CampCardWagers.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" Link="SinType.cs" />
   </ItemGroup>
 </Project>
