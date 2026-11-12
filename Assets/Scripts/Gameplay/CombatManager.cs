@@ -29,8 +29,13 @@ namespace Sinbinder.Gameplay
         public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
         public void RegisterEnemyUnit(Damageable unit)
         {
+            // The same living guard can be registered by a hostility
+            // transition and later by Damageable.Start. Count it once;
+            // duplicated registration should not restart battle completion.
+            bool alreadyEnemy=unit!=null && _enemyUnits.Contains(unit);
             Register(unit, _enemyUnits);
-            if (unit != null && !unit.IsDead) _battleEndGate.EnemyRegistered();
+            if (!alreadyEnemy && unit != null && !unit.IsDead)
+                _battleEndGate.EnemyRegistered();
         }
         public void RegisterNeutralUnit(Damageable unit) => Register(unit, _neutralUnits);
 
