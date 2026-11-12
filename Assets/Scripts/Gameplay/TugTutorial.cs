@@ -96,7 +96,7 @@ namespace Sinbinder.Gameplay
             }
             // Новичок мог не заметить F1. После 45 секунд без результата
             // открываем объяснение ОДИН раз, не перескакивая урок.
-            if (!_hintOffered && Time.unscaledTime - _since > 45f)
+            if (!_hintOffered && Time.time - _since > 45f)
             {
                 _hintOffered = true;
                 if (!_showDetails) { _showDetails = true; RefreshInstruction(); }
