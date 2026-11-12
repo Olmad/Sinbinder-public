@@ -62,3 +62,23 @@ assert "SquadRoster.SendAway(commanderName, companions);" in m
 assert "if(MissionBoard.Journeys.Count==before && _title!=null)" in ui
 roster=(r/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
 assert "if (alreadyAway) continue;" in roster
+
+# Causal contract: encounter first, recorded result on return, no replay reroll,
+# winner not merely body count, no absent warrior in a second scene.
+rules=(r/"Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs").read_text(encoding="utf-8")
+assert "private bool ResolveEncounter(SavedAutoExpedition journey)" in m
+assert "if (!ResolveEncounter(journey)) continue;" in m
+assert "journey.EncounterResolved=true;" in m
+assert "journey.BattleWon=fight.Record!=null" in m
+assert "if(!journey.EncounterResolved) return;" in m
+assert "ExpeditionObjectiveRules.Secured(" in m
+assert "ExpeditionObjectiveRules.DeliveredCoins(" in m
+assert "public static bool Secured(bool fought, bool resolverVictory, int survivors)" in rules
+assert "return survivors > 0 && (!fought || resolverVictory);" in rules
+assert "if(secured) TakeSpoils(mission, chosen);" in m
+assert "warrior.gameObject.SetActive(false);" in m
+assert "w.gameObject.SetActive(true);" in m
+assert "FindObjectsInactive.Include" in m
+assert "journey.EncounterTrace=events;" in m
+assert "journey.EncounterResolved=true;" in m
+print("PASS: AOS expedition encounter, victory, world state and delayed payout invariants")
