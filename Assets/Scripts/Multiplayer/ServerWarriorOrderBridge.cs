@@ -138,6 +138,14 @@ namespace Sinbinder.Multiplayer
                 return false;
             }
 
+            // Do not reveal whether a target exists or is hidden until the
+            // authenticated socket owns (or may address) the acting warrior.
+            if (!_authority.CanIssueFrom(authenticatedConnectionId, intent.ActorId))
+            {
+                reason = OrderRejection.NotAllowed;
+                return false;
+            }
+
             Warrior target = null;
             if (intent.Kind == NetworkOrderKind.Attack)
             {
