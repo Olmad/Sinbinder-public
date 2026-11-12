@@ -141,6 +141,7 @@ namespace Sinbinder.AOS
 #if !REAL_AOS
     public enum ActionType { Attack, SaveAlly, BribeEnemy, Flee, Loot, Idle }
 #endif
+#if !REAL_AOS
     public enum SquadStrategy { Balanced, Aggressive, Defensive }
     public static class SquadOrders
     {
@@ -148,11 +149,8 @@ namespace Sinbinder.AOS
         public static void Set(SquadStrategy strategy) => Current=strategy;
         public static SquadStrategy FromSin(Sinbinder.Core.SinType sin)
             => SquadStrategy.Balanced;
-#if REAL_AOS
-        public static IEnumerable<StrategyModifier> CurrentModifiers()
-            => Array.Empty<StrategyModifier>();
-#endif
     }
+#endif
     public sealed class MemoryProcessor
     {
         public static MemoryProcessor Instance {get;}=new MemoryProcessor();
