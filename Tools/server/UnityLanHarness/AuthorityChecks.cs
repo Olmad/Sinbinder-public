@@ -177,6 +177,25 @@ internal static class AuthorityChecks
         catch (InvalidOperationException) { rejectedRebind = true; }
         Require(rejectedRebind, "client-side identity reassignment is forbidden");
 
+        // Adversarial privacy regression: an unauthorized Lord must not
+        // distinguish a real hidden target from an absent target by response.
+        int visibilityProbes = 0;
+        Func<Warrior, Warrior, bool> countVisibility = (a, b) => {
+            visibilityProbes++;
+            return false;
+        };
+        Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
+            NetworkOrderKind.Attack, target: id3), 1, countVisibility, null,
+            out _, out var privacyReason) && privacyReason == OrderRejection.NotAllowed,
+            "foreign Lord must not learn that attack target exists");
+        Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
+            NetworkOrderKind.Attack, target: 999999), 1, countVisibility, null,
+            out _, out privacyReason) && privacyReason == OrderRejection.NotAllowed,
+            "foreign Lord must get same denial for nonexistent target");
+        Require(visibilityProbes == 0 && bridge.PendingOrders == 0 &&
+            authority.LastAcceptedCommandId(1) == 0,
+            "unauthorized attacks cannot query visibility or consume commands");
+
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
             NetworkOrderKind.Move), 1, null, null,
             out _, out var reason) && reason == OrderRejection.NotAllowed,
