@@ -31,6 +31,7 @@ namespace Sinbinder.Crypt
         public List<string> Party = new List<string>();
         public bool HasSuggestion;
         public int SuggestedAction;
+        public bool Recalled;
         // 0: outbound, 1: awaiting instructions, 2: returning
         public int Phase;
         public float SecondsRemaining;
@@ -71,7 +72,7 @@ namespace Sinbinder.Crypt
                 MissionName=item.MissionName, Commander=item.Commander,
                 Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
-                Phase=item.Phase, SecondsRemaining=item.SecondsRemaining
+                Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining
             };
 
         public static void RestoreJourneys(List<SavedAutoExpedition> saved)
@@ -153,6 +154,19 @@ namespace Sinbinder.Crypt
             return true;
         }
 
+        /// <summary>Abort before contact. The crew still travels home; no combat or loot.</summary>
+        public bool RecallJourney()
+        {
+            if (ActiveJourneys.Count==0 || ActiveJourneys[0].Phase!=0) return false;
+            var journey=ActiveJourneys[0];
+            journey.Recalled=true;
+            journey.Phase=2;
+            journey.SecondsRemaining=ReturnSeconds;
+            LastReport=Loc.T("Послан гонец с приказом вернуться. Отряд ещё в пути.");
+            Core.SaveSystem.AutoSave();
+            return true;
+        }
+
         private void CompleteJourney(SavedAutoExpedition journey)
         {
             Mission found=default;
@@ -172,6 +186,26 @@ namespace Sinbinder.Crypt
             if (away.Count!=journey.Party.Count)
             {
                 LastReport=Loc.T("Состав похода изменился. Автоматический расчёт отменён, награды не начислены.");
+                return;
+            }
+            if (journey.Recalled)
+            {
+                SquadRoster.ComeBack(journey.Party,journey.Party);
+                Settle(journey.Party,journey.Party);
+                LastReport=Loc.F("Отряд «{0}» вернулся по вашему приказу. Боя и добычи не было.",
+                    Loc.Name(journey.Commander));
+                LastReplay=new ExpeditionReplayData(Loc.Name(found.Name),
+                    Loc.Name(journey.Commander),journey.Party);
+                LastReplay.Append(ExpeditionReplayKind.Departure,Loc.Name(journey.Commander),
+                    Loc.T("Отряд вышел из склепа."));
+                LastReplay.Append(ExpeditionReplayKind.March,Loc.Name(journey.Commander),
+                    Loc.T("Отряд двигался к цели."));
+                LastReplay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(journey.Commander),
+                    Loc.T("Греховод приказал вернуться до столкновения."));
+                LastReplay.Append(ExpeditionReplayKind.Return,Loc.Name(journey.Commander),
+                    Loc.T("Отряд вернулся без боя и добычи."));
+                ExpeditionReplayArchive.Add(LastReplay);
+                Core.SaveSystem.AutoSave();
                 return;
             }
             ResolveReturned(found,journey.Commander,away,new List<string>(journey.Party),
