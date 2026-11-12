@@ -94,6 +94,7 @@ namespace Sinbinder.Core
             save.FallenBags = Gameplay.FallenBag.Snapshot();
             save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
             save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot();
+            save.AutoExpeditions = MissionBoard.SnapshotJourneys();
 
             if (Inventory.PlayerInventory.Instance != null)
                 save.Bag = new List<Inventory.InventoryItem>(Inventory.PlayerInventory.Instance.GetAllItems());
@@ -373,6 +374,7 @@ namespace Sinbinder.Core
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
+            MissionBoard.RestoreJourneys(save.AutoExpeditions);
             CryptUpgrades.Restore(save.Installed, save.Brought);
             Commitment.Set(save.Commitment);
 
