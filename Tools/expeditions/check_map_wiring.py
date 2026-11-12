@@ -31,6 +31,9 @@ assert "private void ChooseCaravan(bool attack)" in p
 assert "Team disposition=_plan.Kind==ExpeditionMapKind.SaltRoad" in p
 assert "? Team.Neutral : Team.Enemy;" in p
 assert "private void ProvokeCaravan()" in p
+assert "visit._state.EnemiesRemaining<mission.Guards" in p
+assert "Вы напали на обоз: охрана теперь враждебна" in p
+assert "Охрана нейтральна, пока вы не нападёте" in p
 assert "guard.Team=Team.Enemy;" in p
 assert "CombatManager.Instance.UpdateTeam(body,Team.Enemy);" in p
 assert "public static void OnGuardAttacked(Warrior victim, GameObject attacker)" in p
