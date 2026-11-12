@@ -104,6 +104,32 @@ namespace Sinbinder.Crypt
         private static string Line(BattleEvent ev)
         {
             string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : Loc.Name(ev.ActorName);
+
+            // AutoBattleResolver records AOS intent even when the physical
+            // executor could not enact it. Never narrate an unexecuted
+            // escape, nonexistent loot, failed bribe or empty healing
+            // as a completed deed or a real rescue.
+            switch (ev.Action)
+            {
+                case ActionType.Flee:
+                    return Core.Grammar.Pick(ev.ActorGender,
+                        Loc.F("{0} пытался отступить; выхода из боя не произошло.",who),
+                        Loc.F("{0} пыталась отступить; выхода из боя не произошло.",who));
+                case ActionType.Loot:
+                    return Loc.F("{0} отвлёкся на поиски добычи; предмет не был собран.",who);
+                case ActionType.BribeEnemy:
+                    return string.IsNullOrEmpty(ev.TargetId)
+                        ? Loc.F("{0} попытался подкупить противника, но тот не перешёл на его сторону.",who)
+                        : Loc.F("{0} подкупил противника: тот сменил сторону.",who);
+                case ActionType.SaveAlly:
+                    return ev.HealDealt>0f
+                        ? Loc.F("{0} подлечил союзника. Это не подтверждает спасение от смертельной атаки.",who)
+                        : Loc.F("{0} попытался помочь союзнику, но лечения не произошло.",who);
+                case ActionType.Attack:
+                    if (string.IsNullOrEmpty(ev.TargetId) || ev.DamageDealt<=0f)
+                        return Loc.F("{0} попытался атаковать, но подтверждённого удара не было.",who);
+                    break;
+            }
             return $"{who} {PhraseGenerator.Did(ev.Action, null, ev.ActorGender)}.";
         }
     }
