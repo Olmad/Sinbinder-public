@@ -134,6 +134,32 @@ static class RealBoardShimTests
         MissionBoard.Forget();
         SquadRoster.Members.Clear();
         SquadRoster.Members.Add(Member("Командир",SinType.Greed,90f));
+        // The real expedition ledger, rather than a fake history provider,
+        // must contribute a bounded Memory vote at precisely this site.
+        ExpeditionMemoryLedger.Remember("past1","Командир","Соляной обоз",
+            "ExpeditionSparedCaravan",EmotionType.Calm,1f);
+        ExpeditionMemoryLedger.Remember("past1","Командир","Соляной обоз",
+            "ExpeditionSparedCaravan",EmotionType.Calm,1f);
+        Check(ExpeditionMemoryLedger.ForWarrior("Командир","Соляной обоз").Count==1,
+            "real memory ledger deduplicates previously observed decisions");
+        Check(ExpeditionMemoryLedger.ForWarrior("Командир","Часовня").Count==0,
+            "real memory does not leak experience across different mission sites");
+        var past=ExpeditionMemoryLedger.Snapshot();
+        ExpeditionMemoryLedger.Restore(past);
+        Check(ExpeditionMemoryLedger.ForWarrior("Командир","Соляной обоз").Count==1,
+            "saved and restored real expedition memories influence AOS once");
+        var memorySoul=new Soul
+        {
+            Spectra=new float[7]
+        };
+        var memoryContext=new MissionContext
+        {
+            ExpeditionSite="Соляной обоз",
+            RecentMemories=ExpeditionMemoryLedger.ForWarrior("Командир","Соляной обоз")
+        };
+        Check(new Sinbinder.AOS.Modules.MemoryModule().EvaluateMission(
+                memorySoul,memoryContext,MissionAction.LetThemPass)>0f,
+            "real thirteen-module voting receives site-scoped expedition memory");
         board.Send(Mission("Соляной обоз"),"Командир",
             new string[0],null);
         board.AdvanceJourneys(ExpeditionJourneyTiming.OutboundSeconds,false);
