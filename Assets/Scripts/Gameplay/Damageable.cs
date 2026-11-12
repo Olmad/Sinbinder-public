@@ -179,6 +179,14 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.OnUnitKilled(this, killer);
         }
 
+        /// <summary>Restore wounds without causing a new death/kill event.</summary>
+        public void SetHealthFraction(float fraction)
+        {
+            if(IsDead || float.IsNaN(fraction) || float.IsInfinity(fraction)) return;
+            float safe=Mathf.Clamp(fraction,0.01f,1f);
+            _hp=Mathf.Max(0.01f,_maxHP*safe);
+        }
+
         public void Initialize(float maxHP, float defense)
         {
             _maxHP = maxHP;
