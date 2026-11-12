@@ -26,6 +26,13 @@ namespace Sinbinder.Gameplay
         public float Healing;
         public int Sequence;
         public int Round; // 0 outside combat or from old save
+        // Additional factual AOS outcome fields. Old saves have
+        // HasOutcome=false, so absent booleans are never treated as failure.
+        public bool HasOutcome;
+        public bool Resolved;
+        public bool TargetKilled;
+        public string TargetName;
+        public float TargetHealthAfter;
     }
 
     [Serializable]
@@ -52,13 +59,19 @@ namespace Sinbinder.Gameplay
 
         public void Append(ExpeditionReplayKind kind, string actor,
                            string description, string target = "",
-                           float damage = 0f, float healing = 0f, int round = 0)
+                           float damage = 0f, float healing = 0f, int round = 0,
+                           string targetName = "", bool hasOutcome = false,
+                           bool resolved = false, bool targetKilled = false,
+                           float targetHealthAfter = 0f)
         {
             Frames.Add(new ExpeditionReplayFrame
             {
                 Kind=kind,Actor=actor ?? "",Target=target ?? "",
                 Description=description ?? "",Damage=damage,Healing=healing,
-                Sequence=Frames.Count, Round=round
+                Sequence=Frames.Count, Round=round,
+                TargetName=targetName ?? "",HasOutcome=hasOutcome,
+                Resolved=resolved,TargetKilled=targetKilled,
+                TargetHealthAfter=targetHealthAfter
             });
         }
 
