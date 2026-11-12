@@ -256,7 +256,11 @@ namespace Sinbinder.Crypt
                 ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction) : null;
             AOS.MissionAction? chosen=mission.Junction==Junction.None
                 ? null : Decide(mission,away,suggested);
-            bool noFight=chosen==AOS.MissionAction.LetThemPass;
+            // The approved caravan rules allow taking goods while sparing
+            // people without bloodshed. Taking everything or captives
+            // risks the hired guards in an actual AOS fight.
+            bool noFight=chosen==AOS.MissionAction.LetThemPass ||
+                chosen==AOS.MissionAction.TakeGoodsSparePeople;
             var fight=noFight
                 ? new Expedition.Outcome(Names(away),0,0)
                 : Expedition.Fight(away, mission.Guards);
@@ -523,6 +527,8 @@ namespace Sinbinder.Crypt
             AOS.MissionAction? chosen=journey.HasChosenAction
                 ? (AOS.MissionAction?)((AOS.MissionAction)journey.ChosenAction) : null;
             var survivors=journey.Survivors ?? new List<string>();
+            bool secured=survivors.Count>0 &&
+                (!journey.EncounterFought || journey.FoesFallen>=mission.Guards);
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
@@ -535,13 +541,15 @@ namespace Sinbinder.Crypt
             string told = journey.BattleSummary;
             if (!string.IsNullOrEmpty(told)) LastReport += " " + told;
 
-            if (chosen.HasValue && survivors.Count>0)
+            if (chosen.HasValue && secured)
             {
                 LastReport += " " + JunctionCatalog.Told(chosen.Value);
                 Judge(away, survivors, chosen.Value);
             }
             else if (chosen.HasValue)
-                LastReport += " " + Loc.T("Замысел командира не был доведён до конца: отряд погиб.");
+                LastReport += " " + Loc.T("Замысел командира не выполнен: охрана остановила отряд.");
+            if (survivors.Count>0 && !secured)
+                LastReport += " " + Loc.T("Отступили с пустыми руками, цель не достигнута.");
 
             // Ушедших видно в склепе — сцена догоняет состав: не вернувшихся
             // в ней больше нет, вернувшимся должны.
@@ -551,7 +559,7 @@ namespace Sinbinder.Crypt
             int coinsForLord = 0;
             if (survivors.Count > 0)
             {
-                TakeSpoils(mission, chosen);
+                if(secured) TakeSpoils(mission, chosen);
 
                 // Добыча — в кошель Греховода, числом (монеты — то, чем он
                 // владеет и что тратит; решение автора 30 сентября). До
@@ -561,7 +569,10 @@ namespace Sinbinder.Crypt
                 // руками. Правило «серебро закроет долг разом» записано
                 // в 39-PLACES §2.1; Казна была нужна, пока платить было
                 // нечем, — теперь кошель есть и плата лично тоже.
-                int coin = journey.TakenCoins + Carried(mission, chosen);
+                // Survivors alone do not prove the wagon or guarded
+                // cargo was secured. No magically recovered bags after defeat.
+                int coin = secured
+                    ? journey.TakenCoins + Carried(mission, chosen) : 0;
                 // The same physical coin total, but AOS characters can
                 // pocket a portion according to Greed/Envy, the value of
                 // the find and their devotion. No soul, secret or coin
@@ -601,12 +612,12 @@ namespace Sinbinder.Crypt
 
                 // Пластинка — награда вылазки песочницы (37-DEMO §8.4): тема по месту, не сила.
                 var record = Core.Records.FromMission(mission.Name);
-                if (record != null)
+                if (secured && record != null)
                     Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
             }
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,
-                journey, survivors, shares, coinsForLord);
+                journey, survivors, shares, coinsForLord, secured);
             ExpeditionReplayArchive.Add(LastReplay);
 
             // Отряд вернулся — точка, к которой игрок захочет вернуться
@@ -626,7 +637,7 @@ namespace Sinbinder.Crypt
         private static ExpeditionReplayData BuildReplay(Mission mission, string leader,
             List<string> party, AOS.MissionAction? chosen,
             SavedAutoExpedition outcome, List<string> survivors,
-            List<ExpeditionLootShare> shares, int coinsForLord)
+            List<ExpeditionLootShare> shares, int coinsForLord, bool secured)
         {
             var replay = new ExpeditionReplayData(Loc.Name(mission.Name),Loc.Name(leader),party);
             replay.Append(ExpeditionReplayKind.Departure,Loc.Name(leader),
@@ -645,9 +656,11 @@ namespace Sinbinder.Crypt
 
             if(!outcome.EncounterFought)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
-                    Loc.T("Столкновения не было: командир разрешил проход."));
+                    chosen==AOS.MissionAction.TakeGoodsSparePeople
+                        ? Loc.T("Обоз разгрузили без боя и отпустили возчиков.")
+                        : Loc.T("Столкновения не было: командир разрешил проход."));
 
-            if(survivors.Count>0)
+            if(survivors.Count>0 && secured)
             {
                 replay.Append(ExpeditionReplayKind.Loot,Loc.Name(leader),
                     Loc.F("С павших противников взяли монет: {0}.",outcome.TakenCoins));
@@ -657,6 +670,9 @@ namespace Sinbinder.Crypt
                 replay.Append(ExpeditionReplayKind.Loot,Loc.T("Отряд"),
                     Loc.F("Общая добыча, вернувшаяся в казну: {0} монет.",coinsForLord));
             }
+            else if(survivors.Count>0)
+                replay.Append(ExpeditionReplayKind.Loot,"",
+                    Loc.T("Охрана удержала груз. Отряд отступил без добычи."));
             else
                 replay.Append(ExpeditionReplayKind.Loot,"",Loc.T("Отряд погиб; добыча осталась на месте."));
 
