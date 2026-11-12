@@ -161,6 +161,9 @@ namespace Sinbinder.Core
         // Absent on old save files: these locations start unvisited.
         public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
             new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+        // Delayed automatic operations, including assigned warriors and travel stage.
+        public List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions =
+            new List<Sinbinder.Crypt.SavedAutoExpedition>();
         public List<Sinbinder.Gameplay.ExpeditionReplayData> ExpeditionReplays =
             new List<Sinbinder.Gameplay.ExpeditionReplayData>();
 
