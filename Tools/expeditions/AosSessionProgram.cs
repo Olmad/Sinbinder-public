@@ -72,6 +72,19 @@ namespace Sinbinder.Core
     {
         public RelationshipSystem(object memories) {}
     }
+#if !REAL_AOS
+    // The combined REAL_AOS test builds the actual LocationManager.cs.
+    // Older AOS harnesses intentionally use a tiny equivalent boundary.
+    public static class LocationManager
+    {
+        private sealed class Scope : IDisposable
+        {
+            public void Dispose() {}
+        }
+        public static IDisposable ForOffscreenSite(params string[] tags)
+            => new Scope();
+    }
+#endif
 }
 namespace Sinbinder.Inventory
 {
