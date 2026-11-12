@@ -37,7 +37,7 @@ assert "journey.Phase=1;" in m and "journey.Phase=2;" in m
 assert "if (journey.Phase==0 || journey.Phase==1)" in m
 assert "CompleteJourney(journey);" in m
 assert "ResolveReturned(found,journey.Commander" in m
-assert "Expedition.Fight(away, mission.Guards)" in m
+assert "new Expedition.CombatEncounter(away,mission.Guards" in m
 assert "SquadRoster.ComeBack(party, survivors)" in m
 assert "OfferJourneyOrder(string commanderName, AOS.MissionAction? offer)" in m
 assert "public bool RecallJourney(string commanderName)" in m
@@ -67,7 +67,7 @@ assert "if (alreadyAway) continue;" in roster
 # winner not merely body count, no absent warrior in a second scene.
 rules=(r/"Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs").read_text(encoding="utf-8")
 assert "private bool ResolveEncounter(SavedAutoExpedition journey)" in m
-assert "if (!ResolveEncounter(journey)) continue;" in m
+assert "if (!ResolveEncounter(journey))" in m
 assert "journey.EncounterResolved=true;" in m
 assert "journey.BattleWon=fight.Record!=null" in m
 assert "if(!journey.EncounterResolved) return;" in m
@@ -79,7 +79,7 @@ assert "if(secured) TakeSpoils(mission, chosen, journey);" in m
 assert "warrior.gameObject.SetActive(false);" in m
 assert "w.gameObject.SetActive(true);" in m
 assert "FindObjectsInactive.Include" in m
-assert "journey.EncounterTrace=events;" in m
+assert "journey.EncounterTrace=trace;" in m and "journey.EncounterTrace=nextTrace;" in m
 assert "journey.EncounterResolved=true;" in m
 print("PASS: AOS expedition encounter, victory, world state and delayed payout invariants")
 
@@ -140,7 +140,7 @@ assert "journey.SecondsRemaining=ExpeditionJourneyTiming.AdviceSeconds;" in m
 assert "Core.SaveSystem.AutoSave();" in m
 assert "if (journey.Phase==1) continue;" not in m
 assert "if (journey.Phase==0 || journey.Phase==1)" in m
-assert "if (!ResolveEncounter(journey)) continue;" in m
+assert "if (!ResolveEncounter(journey))" in m
 assert "_board != null && !_board.isActiveAndEnabled" in cryptmap
 assert "_board.AdvanceJourneys(Time.deltaTime);" in cryptmap
 assert "journey.Phase==1" in ui
@@ -205,3 +205,38 @@ assert "Возврат и выдача добычи заблокированы" 
 assert "journey.ReturnBlocked" in ui
 assert "Награды не выданы" in ui
 print("PASS: invalid squad data preserves trip and exposes recovery-required status")
+
+# AOS is now committed in actual independent rounds, never a precomputed
+# film. Every checkpoint has original actor identities, active-side indices,
+# recorded actions and measured health. Loading must not re-execute old rounds.
+checkpoint=(r/"Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs").read_text(encoding="utf-8")
+stepper=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")
+expedition=(r/"Assets/Scripts/Gameplay/Expedition.cs").read_text(encoding="utf-8")
+warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
+assert "public ExpeditionBattleCheckpoint BattleCheckpoint;" in m
+assert "BattleCheckpoint=ExpeditionBattleCheckpoint.Copy(item.BattleCheckpoint)" in m
+assert "item.Phase>3" in m
+assert "if(item.Phase==3)" in m
+assert "ExpeditionBattleCheckpoint.IsValid(item.BattleCheckpoint" in m
+assert "public bool CombatBlocked;" in m
+assert "if (journey.Phase==3)" in m
+assert "private bool AdvanceEncounterRound(SavedAutoExpedition journey)" in m
+assert "var next=combat.Snapshot();" in m
+assert "journey.BattleCheckpoint=next;" in m
+assert "journey.EncounterTrace=nextTrace;" in m
+assert "for(int i=oldCount;i<combat.Record.Events.Count;i++)" in m
+assert "if(combat.IsComplete)" in m
+assert "CommitFight(journey,combat.Outcome(),chosen,true);" in m
+assert "journey.BattleCheckpoint=null;" in m
+assert "journey.SecondsRemaining=ExpeditionJourneyTiming.BattleRoundSeconds;" in m
+assert "public sealed class Session" in stepper
+assert "public bool StepRound()" in stepper
+assert "while(session.StepRound())" in stepper
+assert "public bool IsFaulted" in stepper
+assert "public sealed class CombatEncounter" in expedition
+assert "RestoreAutoExpeditionSnapshot" in warrior
+assert "public static bool IsValid(" in checkpoint
+assert "public static ExpeditionBattleCheckpoint Copy(" in checkpoint
+assert "Завершено ходов AOS" in ui
+assert "AOS-бой остановлен" in ui
+print("PASS: truly incremental AOS battle with durable round boundaries, safe load and UI")
