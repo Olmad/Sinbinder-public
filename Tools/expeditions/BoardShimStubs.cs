@@ -83,6 +83,14 @@ namespace Sinbinder.AOS
         public string TargetID;
         public float Strength;
         public float Importance;
+        public EmotionType Emotion;
+        public MemoryRecord() {}
+        public MemoryRecord(string target,string eventType,
+            EmotionType emotion,float importance,float decay)
+        {
+            TargetID=target;EventType=eventType;Emotion=emotion;
+            Importance=importance;Strength=importance;
+        }
     }
 #if !REAL_AOS
     public sealed class MissionContext
@@ -164,6 +172,7 @@ namespace Sinbinder.Gameplay
         public static string Judged(Core.MoralType moral,MissionAction a,Core.Gender g)
             => "оценил";
     }
+#if !REAL_AOS
     public static class ExpeditionMemoryLedger
     {
         public static List<MemoryRecord> ForWarrior(string name,string mission)
@@ -172,6 +181,7 @@ namespace Sinbinder.Gameplay
             string eventType,EmotionType emotion,float importance) {}
         public static void Forget() {}
     }
+#endif
     public static partial class SquadRoster
     {
         public static readonly List<Member> Members=new List<Member>();
