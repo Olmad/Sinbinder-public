@@ -185,6 +185,59 @@ static class RealBoardShimTests
         Check(MissionBoard.Journeys.Single().EncounterResolved ||
               MissionBoard.Journeys.Single().BattleCheckpoint!=null,
             "actual mission vote either avoided battle or started real combat");
+        // Two simultaneous battles with REAL strategies and thirteen
+        // modules must not leak a commander's temporary strategy into the
+        // second crew, nor duplicate homecoming rewards after JSON reload.
+        MissionBoard.Forget();
+        ExpeditionReplayArchive.Forget();
+        SquadRoster.Members.Clear();
+        PlayerInventory.Instance=new PlayerInventory();
+        SquadRoster.Members.AddRange(new[]{
+            Member("Командир А",SinType.Wrath,95f),
+            Member("Воин А",SinType.Wrath,70f),
+            Member("Командир Б",SinType.Greed,95f),
+            Member("Воин Б",SinType.Greed,70f)
+        });
+        board.Send(Mission("Придорожная часовня"),
+            "Командир А",new[]{"Воин А"},null);
+        board.Send(Mission("Затопленная каменоломня"),
+            "Командир Б",new[]{"Воин Б"},null);
+        Check(MissionBoard.Journeys.Count==2 &&
+              MissionBoard.Journeys[0].JourneyId!=MissionBoard.Journeys[1].JourneyId,
+            "two real-AOS expeditions have independent journey identities");
+        board.AdvanceJourneys(ExpeditionJourneyTiming.OutboundSeconds,false);
+        Check(MissionBoard.Journeys.All(j=>j.Phase==3 &&
+              j.BattleCheckpoint.CompletedRounds==0),
+            "parallel real AOS battles start independently with no precomputed turns");
+        board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        Check(Sinbinder.Gameplay.SquadOrders.Current==SquadStrategy.Balanced,
+            "global tactical strategy restored after interleaved real AOS rounds");
+        var bothSaved=CopyDisk();
+        Check(bothSaved.All(j=>j.EncounterTrace.Frames.Count>0 &&
+              j.BattleCheckpoint.CompletedRounds==1),
+            "each real AOS squad has its own first-round battle history");
+        MissionBoard.RestoreJourneys(bothSaved);
+        int parallelSteps=0;
+        while(MissionBoard.Journeys.Any(j=>j.Phase==3))
+        {
+            if(++parallelSteps>25) throw new Exception("Parallel real AOS stalled");
+            board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        }
+        Check(MissionBoard.Journeys.All(j=>j.Phase==2 && j.EncounterResolved),
+            "both real module-led AOS encounters complete after round restore");
+        board.AdvanceJourneys(ExpeditionJourneyTiming.ReturnSeconds,false);
+        Check(ExpeditionReplayArchive.History.Count==0,
+            "parallel squads do not receive loot or replay while player is away");
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==0 &&
+              ExpeditionReplayArchive.History.Count==2,
+            "two actual AOS encounters return and archive exactly once");
+        int finalPayout=PlayerInventory.Instance.Gold;
+        board.AdvanceJourneys(999f,true);
+        Check(PlayerInventory.Instance.Gold==finalPayout &&
+              ExpeditionReplayArchive.History.Count==2,
+            "subsequent game ticks cannot duplicate parallel real-AOS rewards");
+
         Console.WriteLine("PASS: "+assertions+
             " combined actual MissionBoard and 13-module real AOS shim assertions");
     }
