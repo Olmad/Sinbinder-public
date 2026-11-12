@@ -349,6 +349,30 @@ namespace Sinbinder.Gameplay
         /// Apply a previously witnessed health state to a surviving warrior.
         /// This is a save/expedition restore, not a combat attack or resurrection.
         /// </summary>
+        /// <summary>
+        /// Restore a PURELY OFFSCREEN AOS projection at a committed round
+        /// boundary. Never use this for an active scene warrior: it bypasses
+        /// real death/loot events precisely because they were already
+        /// resolved and saved by the expedition simulator.
+        /// </summary>
+        public void RestoreAutoExpeditionSnapshot(string stableId,
+            float healthFraction, bool dead, Team team)
+        {
+            if(gameObject.activeInHierarchy || GetComponent<Damageable>()!=null)
+                throw new System.InvalidOperationException(
+                    "Only inactive, bodyless expedition projections can restore combat snapshots.");
+            if(string.IsNullOrEmpty(stableId) ||
+               float.IsNaN(healthFraction) || float.IsInfinity(healthFraction) ||
+               healthFraction<0f || healthFraction>1f ||
+               (dead && healthFraction!=0f) ||
+               (!dead && healthFraction<=0f))
+                throw new System.ArgumentException("Invalid AOS combat health checkpoint.");
+            _id=stableId;
+            _team=team;
+            _isDead=dead;
+            _hp=dead ? 0f : _maxHP*healthFraction;
+        }
+
         public void SetHealthFraction(float fraction)
         {
             if(IsDead || float.IsNaN(fraction) || float.IsInfinity(fraction)) return;
