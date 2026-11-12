@@ -35,7 +35,12 @@ namespace Sinbinder.Gameplay
                     Damage = frame.Damage,
                     Healing = frame.Healing,
                     Sequence = frame.Sequence,
-                    Round = frame.Round
+                    Round = frame.Round,
+                    HasOutcome = frame.HasOutcome,
+                    Resolved = frame.Resolved,
+                    TargetKilled = frame.TargetKilled,
+                    TargetName = frame.TargetName ?? "",
+                    TargetHealthAfter = frame.TargetHealthAfter
                 });
             }
             return copy;
