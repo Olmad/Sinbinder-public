@@ -72,6 +72,10 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // A modal window owns the screen: never show a world tooltip above it.
+            // Hide also clears Hovered, so tutorial reading cannot advance unseen.
+            if (Modal.Any) { Hide(); return; }
+
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) { Hide(); return; }
 
