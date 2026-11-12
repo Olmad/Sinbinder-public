@@ -24,3 +24,25 @@ assert "shares.AddRange(split.PersonalCoins)" in m
 assert "SquadRoster.CreditPocket(share.Name,share.Coins)" in m
 assert "ExpeditionGreed.Greed" in m and "ExpeditionGreed.Envy" in m
 assert "ReturnedCoins" in auto and "PersonalCoins" in auto
+
+# Automatic missions are not instantaneous: active crew, timer, decision wait,
+# return and save/load must be wired to the actual AOS outcome.
+ui=(r/"Assets/Scripts/UI/MissionMapUI.cs").read_text(encoding="utf-8")
+save=(r/"Assets/Scripts/Core/SaveSystem.cs").read_text(encoding="utf-8")
+savegame=(r/"Assets/Scripts/Core/SaveGame.cs").read_text(encoding="utf-8")
+assert "class SavedAutoExpedition" in m
+assert "ActiveJourneys.Add(new SavedAutoExpedition" in m
+assert "SecondsRemaining=OutboundSeconds" in m
+assert "journey.Phase=1;" in m and "journey.Phase=2;" in m
+assert "if (journey.Phase==1) return;" in m
+assert "CompleteJourney(journey);" in m
+assert "ResolveReturned(found,journey.Commander" in m
+assert "Expedition.Fight(away, mission.Guards)" in m
+assert "SquadRoster.ComeBack(party, survivors)" in m
+assert "OfferJourneyOrder(AOS.MissionAction? offer)" in m
+assert "MissionBoard.Journeys" in ui and "PickJourneyDecision()" in ui
+assert "Decisions occur when the squad reaches the location" in ui
+assert "save.AutoExpeditions = MissionBoard.SnapshotJourneys();" in save
+assert "MissionBoard.RestoreJourneys(save.AutoExpeditions);" in save
+assert "List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions" in savegame
+print("PASS: staged automatic expedition dispatch, commander advice, delayed return and persistence")
