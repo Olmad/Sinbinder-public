@@ -174,3 +174,19 @@ assert "save.AutoExpeditionReport = MissionBoard.SnapshotReport();" in save
 assert "MissionBoard.RestoreReport(save.AutoExpeditionReport);" in save
 assert "public string AutoExpeditionReport;" in savegame
 print("PASS: one persistent cross-scene expedition clock, crypt-only settlement, saved reports")
+
+# Personal expeditions run inside the crypt scene as a temporary 3D map.
+# Calling SaveSystem.AutoSave during them forcibly calls
+# PersonalExpedition.BeforeSaveOrLoad() => Exit(). Remote auto-squads
+# must neither abort personal play nor materialize soldiers on this map.
+personal=(r/"Assets/Scripts/Gameplay/PersonalExpedition.cs").read_text(encoding="utf-8")
+assert "if (Active) _active.Exit();" in personal
+assert "Gameplay.PersonalExpedition.Active" in world
+assert "if (PersonalExpedition.Active) canDeliver=false;" in m
+assert "private static void SaveExpeditionProgress()" in m
+assert "if (!PersonalExpedition.Active)" in m
+assert "Core.SaveSystem.AutoSave();" in m
+assert "SaveExpeditionProgress();" in m
+assert "Core.SaveSystem.AutoSave();" in m.split("private static void SaveExpeditionProgress()",1)[1]
+assert "Core.SaveSystem.AutoSave();" not in m.split("private static void SaveExpeditionProgress()",1)[0]
+print("PASS: remote journeys do not force-close personal expedition maps through autosave or delivery")
