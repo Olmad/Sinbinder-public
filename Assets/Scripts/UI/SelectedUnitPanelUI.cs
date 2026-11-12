@@ -241,25 +241,29 @@ namespace Sinbinder.UI
                 _craftLine.text = Grammar.For(shown.Gender, Loc.T("громче всех не согласен"));
 
             var odd = new System.Collections.Generic.List<string>();
-            int calm = 0;
+            int decided = 0;
             int pending = 0;
+            int unordered = 0;
             foreach (var w in all)
             {
                 if (w == shown) continue;
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                // A delivered command is not an AOS verdict. Do not count
-                // a warrior awaiting the thirteen voices as "in formation".
-                if (w.HasCommand && (d == null || !d.HasCurrentCommandDecision))
+                // No order, awaiting AOS, and a completed verdict are distinct
+                // states. A verdict alone does not prove physical execution.
+                if (!w.HasCommand)
+                    unordered++;
+                else if (d == null || !d.HasCurrentCommandDecision)
                     pending++;
-                else if (d != null && d.HasCurrentCommandDecision && Disagrees(w))
+                else if (Disagrees(w))
                     odd.Add(Loc.F("{0} {1}", Loc.Name(w.DisplayName),
                         d.LastDecisionDetail.Hesitated ? Grammar.For(w.Gender, Loc.T("медлит"))
                                                        : PhraseGenerator.Doing(d.LastDecisionDetail.Action).ToLowerInvariant()));
-                else calm++;
+                else decided++;
             }
 
             if (pending > 0) odd.Add(Loc.F("ещё {0} — ожидают решения", Many(pending)));
-            if (calm > 0) odd.Add(Loc.F("ещё {0} — в строю", Many(calm)));
+            if (unordered > 0) odd.Add(Loc.F("ещё {0} — без приказа", Many(unordered)));
+            if (decided > 0) odd.Add(Loc.F("ещё {0} — решение принято", Many(decided)));
             if (_groupLine != null)
             {
                 _groupLine.text = string.Join(" · ", odd);
