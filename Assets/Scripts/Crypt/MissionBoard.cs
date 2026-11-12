@@ -56,6 +56,7 @@ namespace Sinbinder.Crypt
             new List<SavedAutoExpedition>();
         private const float OutboundSeconds = 15f;
         private const float ReturnSeconds = 15f;
+        private const int MaxActiveJourneys = 4;
 
         public static IReadOnlyList<SavedAutoExpedition> Journeys => ActiveJourneys;
         public static List<SavedAutoExpedition> SnapshotJourneys()
@@ -87,7 +88,7 @@ namespace Sinbinder.Crypt
                     float.IsNaN(item.SecondsRemaining) ||
                     float.IsInfinity(item.SecondsRemaining)) continue;
                 // Older or corrupt saves cannot create an unbounded queue.
-                if (ActiveJourneys.Count>=1) break;
+                if (ActiveJourneys.Count>=MaxActiveJourneys) break;
                 var exists=false;
                 foreach (var mission in MissionCatalog.All())
                     if (mission.Name==item.MissionName) exists=true;
@@ -108,63 +109,76 @@ namespace Sinbinder.Crypt
         private void Update()
         {
             if (ActiveJourneys.Count==0 || Time.deltaTime<=0f) return;
-            var journey=ActiveJourneys[0];
-            if (journey.Phase==1) return;
-            journey.SecondsRemaining-=Time.deltaTime;
-            if (journey.SecondsRemaining>0f) return;
+            // Walk backwards: completed journeys are removed while the others
+            // continue ticking. Autosave always sees the surviving operations.
+            for (int i=ActiveJourneys.Count-1;i>=0;i--)
+            {
+                var journey=ActiveJourneys[i];
+                if (journey.Phase==1) continue;
+                journey.SecondsRemaining-=Time.deltaTime;
+                if (journey.SecondsRemaining>0f) continue;
 
-            if (journey.Phase==0)
-            {
-                Mission mission=default;
-                foreach (var candidate in MissionCatalog.All())
-                    if (candidate.Name==journey.MissionName) { mission=candidate; break; }
-                if (mission.Junction!=Junction.None && !journey.HasSuggestion)
+                if (journey.Phase==0)
                 {
-                    journey.Phase=1;
-                    journey.SecondsRemaining=0f;
-                    LastReport=Loc.F("Отряд «{0}» прибыл к развилке. Требуется решение игрока.",
-                        Loc.Name(journey.Commander));
+                    Mission mission=default;
+                    foreach (var candidate in MissionCatalog.All())
+                        if (candidate.Name==journey.MissionName) { mission=candidate; break; }
+                    if (mission.Junction!=Junction.None && !journey.HasSuggestion)
+                    {
+                        journey.Phase=1;
+                        journey.SecondsRemaining=0f;
+                        LastReport=Loc.F("Отряд «{0}» прибыл к развилке. Требуется решение игрока.",
+                            Loc.Name(journey.Commander));
+                    }
+                    else
+                    {
+                        journey.Phase=2;
+                        journey.SecondsRemaining=ReturnSeconds;
+                        LastReport=Loc.F("Отряд «{0}» на месте. Ждём возвращения и доклада.",
+                            Loc.Name(journey.Commander));
+                    }
+                    continue;
                 }
-                else
+                if (journey.Phase==2)
                 {
-                    journey.Phase=2;
-                    journey.SecondsRemaining=ReturnSeconds;
-                    LastReport=Loc.F("Отряд «{0}» на месте. Ждём возвращения и доклада.",
-                        Loc.Name(journey.Commander));
+                    ActiveJourneys.RemoveAt(i);
+                    CompleteJourney(journey);
                 }
-                return;
-            }
-            if (journey.Phase==2)
-            {
-                ActiveJourneys.RemoveAt(0); // completion may autosave
-                CompleteJourney(journey);
             }
         }
 
-        /// <summary>The suggestion is advice to the AOS commander, not a forced order.</summary>
-        public bool OfferJourneyOrder(AOS.MissionAction? offer)
+        /// <summary>Advice is addressed to a specific commander, never all squads.</summary>
+        public bool OfferJourneyOrder(string commanderName, AOS.MissionAction? offer)
         {
-            if (ActiveJourneys.Count==0 || ActiveJourneys[0].Phase!=1) return false;
-            var journey=ActiveJourneys[0];
-            journey.HasSuggestion=offer.HasValue;
-            journey.SuggestedAction=offer.HasValue ? (int)offer.Value : 0;
-            journey.Phase=2;
-            journey.SecondsRemaining=ReturnSeconds;
-            LastReport=Loc.T("Совет передан старшему. Его собственное решение будет известно по возвращении.");
-            return true;
+            foreach (var journey in ActiveJourneys)
+            {
+                if (journey.Commander!=commanderName || journey.Phase!=1) continue;
+                journey.HasSuggestion=offer.HasValue;
+                journey.SuggestedAction=offer.HasValue ? (int)offer.Value : 0;
+                journey.Phase=2;
+                journey.SecondsRemaining=ReturnSeconds;
+                LastReport=Loc.F("Совет передан старшему «{0}». Он сам примет решение.",
+                    Loc.Name(commanderName));
+                return true;
+            }
+            return false;
         }
 
-        /// <summary>Abort before contact. The crew still travels home; no combat or loot.</summary>
-        public bool RecallJourney()
+        /// <summary>Recall the selected squad before contact, without combat or loot.</summary>
+        public bool RecallJourney(string commanderName)
         {
-            if (ActiveJourneys.Count==0 || ActiveJourneys[0].Phase!=0) return false;
-            var journey=ActiveJourneys[0];
-            journey.Recalled=true;
-            journey.Phase=2;
-            journey.SecondsRemaining=ReturnSeconds;
-            LastReport=Loc.T("Послан гонец с приказом вернуться. Отряд ещё в пути.");
-            Core.SaveSystem.AutoSave();
-            return true;
+            foreach (var journey in ActiveJourneys)
+            {
+                if (journey.Commander!=commanderName || journey.Phase!=0) continue;
+                journey.Recalled=true;
+                journey.Phase=2;
+                journey.SecondsRemaining=ReturnSeconds;
+                LastReport=Loc.F("Отряд «{0}» отозван. Ожидается возвращение.",
+                    Loc.Name(commanderName));
+                Core.SaveSystem.AutoSave();
+                return true;
+            }
+            return false;
         }
 
         private void CompleteJourney(SavedAutoExpedition journey)
@@ -306,8 +320,8 @@ namespace Sinbinder.Crypt
         public string Send(Mission mission, string commanderName, ICollection<string> companions,
                            AOS.MissionAction? suggestion)
         {
-            if (ActiveJourneys.Count>0)
-                return Loc.T("Сначала дождитесь возвращения отправленного отряда.");
+            if (ActiveJourneys.Count>=MaxActiveJourneys)
+                return Loc.T("Слишком много одновременных экспедиций.");
             if (Ready() == 0)
                 return Loc.T("Послать некого.");
 
