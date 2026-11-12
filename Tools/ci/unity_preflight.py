@@ -48,6 +48,9 @@ def check(root):
 
     build = read(root, "ProjectSettings/EditorBuildSettings.asset")
     entries = BUILD_ENTRY.findall(build)
+    declared = re.findall(r"(?m)^[ \t]*-[ \t]+enabled:", build)
+    require(len(entries) == len(declared),
+            f"Malformed EditorBuildSettings scene entry: parsed {len(entries)} of {len(declared)}")
     require(entries, "No parsed scene entries in EditorBuildSettings.asset")
     seen_paths, seen_guids, enabled_paths = set(), set(), set()
     for enabled, rel, guid in entries:
