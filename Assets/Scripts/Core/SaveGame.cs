@@ -47,6 +47,8 @@ namespace Sinbinder.Core
         public int Gender;
         public float Intensity;
         public float Loyalty;
+        // New saves preserve a living warrior's injuries. Legacy zero = full.
+        public float HealthFraction;
         public int UnpaidMissions;
         public float Leadership;
         public bool IsCommander;
