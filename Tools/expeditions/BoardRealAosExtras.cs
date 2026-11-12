@@ -104,8 +104,17 @@ namespace Sinbinder.AOS
     public sealed class PerkDatabase {}
     public static class PerkResolver
     {
+        // A witness for the real Context selection. The full PerkResolver
+        // remains stubbed here, but its caller must never see the live
+        // Crypt tag while voting for an offscreen expedition.
+        public static int OffscreenVoteChecks;
+        public static int LiveSceneVoteChecks;
         public static void ApplyPerks(Dictionary<ActionType,float> scores,
-            Warrior warrior,DecisionContext context,PerkDatabase db) {}
+            Warrior warrior,DecisionContext context,PerkDatabase db)
+        {
+            if(Core.LocationManager.HasTag("Crypt")) LiveSceneVoteChecks++;
+            else OffscreenVoteChecks++;
+        }
     }
     public static class TemptationResolver
     {
