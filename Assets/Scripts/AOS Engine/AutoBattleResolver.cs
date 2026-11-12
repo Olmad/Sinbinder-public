@@ -39,13 +39,17 @@ namespace Sinbinder.AOS
             private readonly AutoBattleResult _result = new AutoBattleResult();
             public int CompletedRounds { get; private set; }
             public bool IsComplete { get; private set; }
+            public bool IsFaulted { get; private set; }
             public AutoBattleResult Result => IsComplete ? _result : null;
             public BattleRecord Record => _record;
 
             public Session(Warrior commander, List<Warrior> squad,
                            List<Warrior> enemies, SquadStrategy strategy,
-                           BattleRecord record = null)
+                           BattleRecord record = null, int completedRounds = 0)
             {
+                if(completedRounds<0 || completedRounds>MaxTurns)
+                    throw new System.ArgumentOutOfRangeException(nameof(completedRounds));
+                CompletedRounds=completedRounds;
                 _squad=squad;
                 _enemies=enemies;
                 _strategy=strategy;
@@ -66,6 +70,9 @@ namespace Sinbinder.AOS
             /// <returns>True only if one real round was performed.</returns>
             public bool StepRound()
             {
+                if(IsFaulted)
+                    throw new System.InvalidOperationException(
+                        "An AOS combat step failed after partial world mutation; restore a verified checkpoint.");
                 if(IsComplete) return false;
                 if(!CanAdvance()) { Complete(); return false; }
 
@@ -85,6 +92,14 @@ namespace Sinbinder.AOS
                             Act(_resolver,enemy,_enemies,_squad,_record,round);
 
                     CompletedRounds++;
+                }
+                catch
+                {
+                    // Some earlier actors may already have dealt real
+                    // damage. Re-entering this round would double-apply it.
+                    // Require reconstruction from a saved round boundary.
+                    IsFaulted=true;
+                    throw;
                 }
                 finally
                 {
