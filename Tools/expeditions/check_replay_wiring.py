@@ -5,9 +5,13 @@ retelling=(r/"Assets/Scripts/Crypt/Retelling.cs").read_text(encoding="utf-8")
 ui=(r/"Assets/Scripts/UI/MissionMapUI.cs").read_text(encoding="utf-8")
 viewer=(r/"Assets/Scripts/UI/ExpeditionReplayViewer.cs").read_text(encoding="utf-8")
 data=(r/"Assets/Scripts/Gameplay/ExpeditionReplayData.cs").read_text(encoding="utf-8")
-assert 'foreach(var ev in outcome.Record.Events)' in board
-assert 'replay.Append(ExpeditionReplayKind.CombatAction' in board
+assert 'foreach(var ev in fight.Record.Events)' in board
+assert 'journey.EncounterTrace=events;' in board
+assert 'journey.EncounterResolved=true;' in board
+assert 'events.Append(ExpeditionReplayKind.CombatAction' in board
+assert 'replay.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,' in board
 assert 'LastReplay = BuildReplay(' in board
+assert 'SavedAutoExpedition outcome, List<string> survivors' in board
 assert 'public static string Describe(BattleEvent ev)' in retelling
 assert 'ExpeditionReplayViewer.Open(replay)' in ui
 assert 'ExpeditionReplayArchive.Add(LastReplay)' in board
