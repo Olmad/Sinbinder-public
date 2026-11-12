@@ -9,14 +9,14 @@ using Sinbinder.Gameplay;
 
 namespace UnityEngine
 {
-    public static class Mathf
+    public static partial class Mathf
     {
         public static int Max(int a,int b) => Math.Max(a,b);
         public static float Max(float a,float b) => Math.Max(a,b);
         public static int RoundToInt(float v) => (int)MathF.Round(v);
     }
     public static class Application { public static bool isPlaying=true; }
-    public static class Object
+    public static partial class Object
     {
         public static void Destroy(GameObject obj) {}
         public static void DestroyImmediate(GameObject obj) {}
@@ -25,7 +25,7 @@ namespace UnityEngine
     {
         public void SetParent(Transform parent) {}
     }
-    public sealed class GameObject
+    public sealed partial class GameObject
     {
         public readonly string name;
         public readonly Transform transform=new Transform();
@@ -38,7 +38,7 @@ namespace Sinbinder.Core
 {
     public enum Gender { Male, Female }
     public enum SinType { Greed, Wrath, Pride, Envy, Sloth, Gluttony, Lust }
-    public enum MoralType { Vicious }
+    public enum MoralType { Vicious, Pious }
     public enum ShellType { Skeleton }
     public sealed class SoulData
     {
@@ -62,7 +62,7 @@ namespace Sinbinder.Core
 }
 namespace Sinbinder.Inventory
 {
-    public sealed class InventoryItem {}
+    public sealed partial class InventoryItem {}
 }
 namespace Sinbinder.Gameplay
 {
@@ -71,9 +71,9 @@ namespace Sinbinder.Gameplay
     {
         public static int Gold(Core.ShellType shell,Core.SoulData soul) => 3;
     }
-    public static class SquadRoster
+    public static partial class SquadRoster
     {
-        public sealed class Member
+        public sealed partial class Member
         {
             public string Name;
             public Core.SinType Sin;
@@ -86,7 +86,7 @@ namespace Sinbinder.Gameplay
             public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
         }
     }
-    public sealed class Warrior
+    public partial class Warrior
     {
         private static int ids;
         public string Id;
@@ -154,7 +154,7 @@ namespace Sinbinder.AOS
         public static DecisionContext Create(Warrior warrior,List<Warrior> allies,
             List<Warrior> enemies) => new DecisionContext { Actor=warrior };
     }
-    public sealed class BehaviourResolver
+    public sealed partial class BehaviourResolver
     {
         public ActionType Decide(Warrior warrior,DecisionContext context)
         {
@@ -373,6 +373,9 @@ static class Program
                 "no duplicated or missing real AOS events after round-boundary load");
         }
 
+#if BOARD_SHIM
+        BoardShimTests.Run();
+#endif
         Console.WriteLine("PASS: "+checks+" real AOS session, one-round progression, and legacy equivalence checks");
     }
 }
