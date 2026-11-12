@@ -345,6 +345,19 @@ namespace Sinbinder.Gameplay
         public void MarkSpokenWith(string otherId) => _spokenWithThisBattle.Add(otherId);
         public void ResetBattleDialogue() => _spokenWithThisBattle.Clear();
 
+        /// <summary>
+        /// Apply a previously witnessed health state to a surviving warrior.
+        /// This is a save/expedition restore, not a combat attack or resurrection.
+        /// </summary>
+        public void SetHealthFraction(float fraction)
+        {
+            if(IsDead || float.IsNaN(fraction) || float.IsInfinity(fraction)) return;
+            float safe=Mathf.Clamp(fraction,0.01f,1f);
+            if(Body is Damageable body)
+                body.SetHealthFraction(safe);
+            _hp=Mathf.Max(0.01f,_maxHP*safe);
+        }
+
         public void TakeDamage(float damage)
         {
             if (IsDead) return;
