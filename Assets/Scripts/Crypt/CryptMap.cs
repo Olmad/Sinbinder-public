@@ -102,7 +102,11 @@ namespace Sinbinder.Crypt
             // The expedition table belongs to _zone, which can be inactive.
             // A hidden UI must not freeze the world or strand away warriors.
             // Do not double-tick when MissionBoard.Update runs normally.
-            if (_board != null && !_board.isActiveAndEnabled)
+            // In ordinary gameplay the persistent world clock owns time.
+            // Keep the old inactive-table fallback only for isolated test
+            // scenes that do not have the runtime clock installed.
+            if (!ExpeditionWorldClock.IsRunning &&
+                _board != null && !_board.isActiveAndEnabled)
                 _board.AdvanceJourneys(Time.deltaTime);
         }
 
