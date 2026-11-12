@@ -282,7 +282,13 @@ namespace Sinbinder.EditorTools
                     if (_step != "пробуждение")
                     {
                         Go("пробуждение");
-                        ShotFrom("сон — ворота склепа", new Vector3(2.5f, 2.2f, 21.5f), new Vector3(0f, 3.4f, 30f));
+                        ShotFrom("сон — ворота склепа", new Vector3(2.5f, 2.2f, DreamRoad.GateZ - 8.5f), new Vector3(0f, 3.4f, DreamRoad.GateZ));
+                        // Площадь печатей (12.11): сверху, с входа глазами, алтарь, арка с противовесом, печати.
+                        ShotFrom("сон — площадь печатей сверху", new Vector3(0f, 16f, DreamRoad.SquareFrom - 6f), new Vector3(0f, 0f, (DreamRoad.SquareFrom + DreamRoad.SquareTo) * 0.5f));
+                        ShotFrom("сон — площадь, глазами с входа", new Vector3(0.4f, 1.65f, DreamRoad.SquareFrom - 1f), new Vector3(0f, 2.5f, DreamRoad.GateZ));
+                        ShotFrom("сон — алтарь лука", DreamRoad.AltarAt + new Vector3(2.8f, 1.9f, -2.6f), DreamRoad.AltarAt + Vector3.up * 0.9f);
+                        ShotFrom("сон — арка противовеса", new Vector3(-3.5f, 2.0f, DreamRoad.ArchZ.z - 9f), new Vector3(0f, 4.0f, DreamRoad.ArchZ.z));
+                        ShotFrom("сон — две печати у ворот", new Vector3(0f, 3.2f, DreamRoad.WarriorSealAt.z - 5f), new Vector3(0f, 0.3f, DreamRoad.WarriorSealAt.z));
                         Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f));
                     }
                     if (poke && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);

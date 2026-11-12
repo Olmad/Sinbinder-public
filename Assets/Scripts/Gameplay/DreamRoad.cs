@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
 {
@@ -26,12 +27,20 @@ namespace Sinbinder.Gameplay
     {
         public static DreamRoad Instance { get; private set; }
 
-        public const float From = -31f, GateZ = 30f, Half = 7f;
+        // Площадь печатей (12.11, план 66): между фортом и склепом — мощёный двор для уроков
+        // лука, противовеса, двух душ, последнего щита и печатей. Ворота отодвинуты на 28 м.
+        public const float From = -31f, GateZ = 58f, Half = 7f;
+        public const float SquareFrom = 30f, SquareTo = 54f, SquareHalf = 11f;
+        public static readonly Vector3 AltarAt = new Vector3(-6.8f, 0f, 38f);
+        public static readonly Vector3 ArchZ = new Vector3(0f, 0f, 46f);
+        public static readonly Vector3 FallenColumnAt = new Vector3(6.8f, 0f, 42f);
+        public static readonly Vector3 WarriorSealAt = new Vector3(-1.9f, 0f, 53.4f);
+        public static readonly Vector3 LordSealAt = new Vector3(1.9f, 0f, 53.4f);
         /// <summary>Форт: передняя стена с воротами, задняя с проломом, полуширина двора.</summary>
         public const float FortFront = 14f, FortBack = 24f, FortHalf = 13f;
         public static readonly Vector3 DummyAt = new Vector3(4.2f, 0f, 17.5f);
         public static readonly Vector3 ShrineAt = new Vector3(-4.6f, 0f, 20.5f);
-        public static readonly Vector3 GateFront = new Vector3(0f, 0f, 28.4f);
+        public static readonly Vector3 GateFront = new Vector3(0f, 0f, GateZ - 1.6f);
 
         /// <summary>Ворота склепа: −1 — не открывали; 0…1 — сколько погас экран. Спрашивает прогон.</summary>
         public static float CryptFade { get; private set; } = -1f;
@@ -48,6 +57,7 @@ namespace Sinbinder.Gameplay
 
         // Силуэт и его жизнь — Death, Haunt.
         private Transform _death, _deathHood, _deathScythe, _deathHem;
+        private float _deathYaw;
         private Vector3 _deathAt;
         private readonly List<Transform> _deathEyes = new List<Transform>();
         private ParticleSystem _deathSmoke, _cryptMist;
@@ -102,7 +112,7 @@ namespace Sinbinder.Gameplay
             }
             // До форта и от форта до склепа; во дворе дорогу держат стены форта.
             foreach (float s in new[] { -1f, 1f })
-                foreach (var (z0, z1) in new[] { (From - 0.5f, FortFront), (FortBack, GateZ + 0.5f) })
+                foreach (var (z0, z1) in new[] { (From - 0.5f, FortFront), (FortBack, SquareFrom), (SquareTo, GateZ + 0.5f) })
                 {
                     for (float z = z0; z < z1;)
                     {
@@ -116,6 +126,7 @@ namespace Sinbinder.Gameplay
                     }
                 }
             road.Fort(t, rnd, stones);
+            road.Square(t, rnd, stones);
             // Позади — завал: назад дороги нет.
             for (float x = -Half; x <= Half; x += 1.7f)
             {
@@ -126,10 +137,10 @@ namespace Sinbinder.Gameplay
             }
 
             // Мёртвые деревья за обочинами — силуэты в тумане.
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 24; i++)
             {
                 float s = i % 2 == 0 ? -1f : 1f;
-                var at = new Vector3(s * R(9.5f, 16f), 0f, Mathf.Lerp(From + 2f, GateZ - 3f, i / 15f) + R(-2f, 2f));
+                var at = new Vector3(s * R(12.5f, 18f), 0f, Mathf.Lerp(From + 2f, GateZ - 3f, i / 23f) + R(-2f, 2f));
                 road.Tree(t, at, R(4f, 6.5f), rnd, bark);
             }
 
@@ -374,6 +385,119 @@ namespace Sinbinder.Gameplay
 
         // ───────────────────────────── вещи у дороги ─────────────────────────────
 
+
+        /// <summary>
+        /// Площадь печатей: мощёный двор от форта до склепа (план 66, сцены 7–10). Низкая
+        /// разрушенная ограда и обломки колоннады по бокам; слева — каменный алтарь (на нём
+        /// ляжет лук); посередине — арка с бронзовым противовесом на цепи, под ним чаша;
+        /// справа — поваленная колонна; перед воротами — две печати, резанные в камне.
+        /// Здесь только камень и бронза — никаких дисков и шаров-маркеров.
+        /// </summary>
+        private void Square(Transform parent, System.Random rnd, Material[] stones)
+        {
+            float R(float a, float b) => a + (float)rnd.NextDouble() * (b - a);
+            var root = new GameObject("Площадь печатей").transform;
+            root.SetParent(parent, false);
+            var dressed = Lit(new Color(0.25f, 0.25f, 0.27f), 0.12f);
+            var dark = Lit(new Color(0.17f, 0.17f, 0.19f), 0.1f);
+            var slab = Lit(new Color(0.145f, 0.14f, 0.15f), 0.08f);
+            var bronze = Lit(new Color(0.42f, 0.30f, 0.14f), 0.62f);
+            float mid = (SquareFrom + SquareTo) * 0.5f, len = SquareTo - SquareFrom;
+
+            // Мощение: общий настил и отдельные плиты вразнобой, кое-где вздыбленные.
+            Flat(root, "Мощение площади", new Vector3(0f, 0.02f, mid), new Vector2(SquareHalf * 2f, len), slab);
+            for (int i = 0; i < 40; i++)
+            {
+                var plate = Piece(root, PrimitiveType.Cube, "Плита", new Vector3(R(-SquareHalf + 1f, SquareHalf - 1f), 0.03f, R(SquareFrom + 1f, SquareTo - 1f)),
+                                  new Vector3(R(1.2f, 2.2f), R(0.05f, 0.14f), R(1.0f, 2.0f)), stones[rnd.Next(stones.Length)], false);
+                plate.transform.rotation = Quaternion.Euler(R(-3f, 3f), R(-8f, 8f), R(-3f, 3f));
+            }
+
+            // Ограда: невысокая, с провалами; углы — обломки башенок.
+            WallZ(root, -SquareHalf, SquareFrom, SquareTo, 0.7f, 1.7f, rnd, dressed, dark, new Vector2(36f, 41f));
+            WallZ(root, SquareHalf, SquareFrom, SquareTo, 0.7f, 1.7f, rnd, dressed, dark, new Vector2(44f, 48f));
+            WallX(root, SquareFrom, -SquareHalf, -2.6f, 0.6f, 1.4f, rnd, dressed, dark, new Vector2(-9f, -6f));
+            WallX(root, SquareFrom, 2.6f, SquareHalf, 0.6f, 1.4f, rnd, dressed, dark, null);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                Tower(root, new Vector3(s * SquareHalf, 0f, SquareFrom), 2.2f, R(2.2f, 3.4f), false, dressed, dark);
+                Tower(root, new Vector3(s * SquareHalf, 0f, SquareTo), 2.2f, R(1.6f, 2.8f), false, dressed, dark);
+            }
+
+            // Колоннада: пни колонн по обе стороны, две-три уцелели повыше.
+            for (float z = SquareFrom + 3f; z < SquareTo - 2f; z += 4.2f)
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    float h = rnd.Next(4) == 0 ? R(3.6f, 4.8f) : R(0.9f, 2.4f);
+                    var col = Piece(root, PrimitiveType.Cylinder, "Колонна", new Vector3(s * 8.6f, h * 0.5f, z + R(-0.3f, 0.3f)), new Vector3(0.75f, h * 0.5f, 0.75f), dressed);
+                    col.transform.rotation = Quaternion.Euler(R(-2f, 2f), 0f, R(-2f, 2f));
+                    Piece(root, PrimitiveType.Cube, "База колонны", new Vector3(s * 8.6f, 0.17f, z), new Vector3(1.1f, 0.34f, 1.1f), dark);
+                }
+
+            // Алтарь слева: плита на двух блоках, на ней бронзовая пластина с руной Гордыни.
+            Piece(root, PrimitiveType.Cube, "Алтарь — опора", AltarAt + new Vector3(-0.6f, 0.4f, 0f), new Vector3(0.6f, 0.8f, 0.9f), dark);
+            Piece(root, PrimitiveType.Cube, "Алтарь — опора", AltarAt + new Vector3(0.6f, 0.4f, 0f), new Vector3(0.6f, 0.8f, 0.9f), dark);
+            Piece(root, PrimitiveType.Cube, "Алтарь — плита", AltarAt + Vector3.up * 0.9f, new Vector3(2.2f, 0.2f, 1.1f), dressed);
+            Piece(root, PrimitiveType.Cube, "Алтарь — пластина", AltarAt + Vector3.up * 1.005f, new Vector3(1.4f, 0.01f, 0.6f), bronze, false);
+            foreach (float s in new[] { -1f, 1f })
+                AddCandle(root, AltarAt + new Vector3(s * 1.5f, 0f, -0.9f), dark, 2.5f);
+
+            // Арка противовеса: два пилона, перемычка, цепь, бронзовый груз; под ним каменная чаша.
+            foreach (float s in new[] { -1f, 1f })
+            {
+                Piece(root, PrimitiveType.Cube, "Пилон арки", new Vector3(s * 4.6f, 3.3f, ArchZ.z), new Vector3(1.0f, 6.6f, 1.0f), dressed);
+                Piece(root, PrimitiveType.Cube, "База пилона", new Vector3(s * 4.6f, 0.2f, ArchZ.z), new Vector3(1.5f, 0.4f, 1.5f), dark);
+                Piece(root, PrimitiveType.Cube, "Капитель пилона", new Vector3(s * 4.6f, 6.75f, ArchZ.z), new Vector3(1.4f, 0.3f, 1.4f), dark);
+            }
+            Piece(root, PrimitiveType.Cube, "Перемычка арки", new Vector3(0f, 7.15f, ArchZ.z), new Vector3(10.6f, 0.5f, 1.1f), dressed);
+            Piece(root, PrimitiveType.Cylinder, "Цепь противовеса", new Vector3(0f, 5.9f, ArchZ.z), new Vector3(0.06f, 1.0f, 0.06f), dark, false);
+            var weight = Piece(root, PrimitiveType.Cylinder, "Бронзовый противовес", new Vector3(0f, 4.4f, ArchZ.z), new Vector3(0.9f, 0.55f, 0.9f), bronze);
+            Piece(root, PrimitiveType.Cylinder, "Кольцо груза", new Vector3(0f, 5.0f, ArchZ.z), new Vector3(0.3f, 0.06f, 0.3f), dark, false)
+                .transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            Piece(root, PrimitiveType.Cylinder, "Чаша противовеса", new Vector3(0f, 0.14f, ArchZ.z), new Vector3(2.4f, 0.14f, 2.4f), dark);
+            Piece(root, PrimitiveType.Cylinder, "Чаша — дно", new Vector3(0f, 0.29f, ArchZ.z), new Vector3(1.8f, 0.02f, 1.8f), Glowing(new Color(0.16f, 0.30f, 0.40f), 0.6f), false);
+
+            // Поваленная колонна справа — у неё ляжет раненый.
+            var fallen = Piece(root, PrimitiveType.Cylinder, "Поваленная колонна", FallenColumnAt + Vector3.up * 0.4f, new Vector3(0.8f, 2.2f, 0.8f), dressed);
+            fallen.transform.rotation = Quaternion.Euler(0f, 20f, 90f);
+            Piece(root, PrimitiveType.Cylinder, "Барабан колонны", FallenColumnAt + new Vector3(-1.6f, 0.3f, 1.4f), new Vector3(0.8f, 0.3f, 0.8f), dressed)
+                .transform.rotation = Quaternion.Euler(8f, 0f, 12f);
+
+            // Печати перед воротами: резьба в камне — диск, кольцо и знак, свет едва тлеет.
+            Seal(root, WarriorSealAt, true, dark, dressed);
+            Seal(root, LordSealAt, false, dark, dressed);
+
+            // Четыре холодных фонаря по углам площади.
+            var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                Brazier(root, new Vector3(s * 9.2f, 0f, SquareFrom + 2.2f), new Color(0.55f, 0.75f, 1f), 6f, iron);
+                Brazier(root, new Vector3(s * 9.2f, 0f, SquareTo - 2.2f), new Color(0.55f, 0.75f, 1f), 6f, iron);
+            }
+        }
+
+        /// <summary>Печать в полу: каменный диск, кольцо, знак воина (меч) или владыки (венец).</summary>
+        private static void Seal(Transform parent, Vector3 at, bool warrior, Material dark, Material dressed)
+        {
+            var root = new GameObject(warrior ? "Печать воина" : "Печать владыки").transform;
+            root.SetParent(parent, false);
+            Piece(root, PrimitiveType.Cylinder, "Диск", at + Vector3.up * 0.03f, new Vector3(2.6f, 0.03f, 2.6f), dressed, false);
+            Piece(root, PrimitiveType.Cylinder, "Кольцо", at + Vector3.up * 0.065f, new Vector3(2.2f, 0.012f, 2.2f), dark, false);
+            Piece(root, PrimitiveType.Cylinder, "Поле", at + Vector3.up * 0.07f, new Vector3(1.9f, 0.012f, 1.9f), dressed, false);
+            var rune = Glowing(new Color(0.22f, 0.40f, 0.56f), 0.7f);
+            if (warrior)
+            {
+                Piece(root, PrimitiveType.Cube, "Клинок", at + new Vector3(0f, 0.085f, 0.1f), new Vector3(0.14f, 0.012f, 1.3f), rune, false);
+                Piece(root, PrimitiveType.Cube, "Гарда", at + new Vector3(0f, 0.085f, -0.35f), new Vector3(0.7f, 0.012f, 0.12f), rune, false);
+            }
+            else
+            {
+                Piece(root, PrimitiveType.Cube, "Обод венца", at + new Vector3(0f, 0.085f, -0.3f), new Vector3(1.2f, 0.012f, 0.14f), rune, false);
+                foreach (float x in new[] { -0.45f, 0f, 0.45f })
+                    Piece(root, PrimitiveType.Cube, "Зубец венца", at + new Vector3(x, 0.085f, 0.1f), new Vector3(0.14f, 0.012f, 0.7f), rune, false);
+            }
+        }
+
         private void Tree(Transform parent, Vector3 at, float h, System.Random rnd, Material bark)
         {
             float R(float a, float b) => a + (float)rnd.NextDouble() * (b - a);
@@ -534,16 +658,22 @@ namespace Sinbinder.Gameplay
 
             // Внутри — чёрная пасть: свет туда не доходит. Щель между створками светится холодом.
             _seam = Piece(root, PrimitiveType.Cube, "Щель", new Vector3(0f, 2.85f, z + 0.45f), new Vector3(0.10f, 5.5f, 0.02f), Glowing(cold, 1.2f), false);
-            Piece(root, PrimitiveType.Cube, "Пол склепа", new Vector3(0f, 0.02f, z + 5f), new Vector3(4.8f, 0.04f, 9f), black, false);
-            Piece(root, PrimitiveType.Cube, "Стена склепа левая", new Vector3(-2.5f, 3f, z + 5f), new Vector3(0.4f, 6f, 9f), black, false);
-            Piece(root, PrimitiveType.Cube, "Стена склепа правая", new Vector3(2.5f, 3f, z + 5f), new Vector3(0.4f, 6f, 9f), black, false);
-            Piece(root, PrimitiveType.Cube, "Свод склепа", new Vector3(0f, 5.9f, z + 5f), new Vector3(5.4f, 0.4f, 9f), black, false);
-            Piece(root, PrimitiveType.Cube, "Глубь склепа", new Vector3(0f, 3f, z + 9.7f), new Vector3(5.4f, 6f, 0.4f), black, false);
+            Piece(root, PrimitiveType.Cube, "Пол склепа", new Vector3(0f, 0.02f, z + 5f), new Vector3(13f, 0.04f, 9f), black, false);
+            // Свод — десять метров (12.11): величие — это когда фигура не помещается в проём ворот,
+            // а внутри ей есть где стоять. Снаружи высоты не видно: вход тот же.
+            // Зал за воротами шире ворот (12.11): Смерть стоит сбоку, и мимо неё идут к свету.
+            Piece(root, PrimitiveType.Cube, "Стена склепа левая", new Vector3(-6.7f, 5f, z + 5f), new Vector3(0.4f, 10f, 9f), black, false);
+            Piece(root, PrimitiveType.Cube, "Стена склепа правая", new Vector3(6.7f, 5f, z + 5f), new Vector3(0.4f, 10f, 9f), black, false);
+            Piece(root, PrimitiveType.Cube, "Свод склепа", new Vector3(0f, 10.1f, z + 5f), new Vector3(13.8f, 0.4f, 9f), black, false);
+            Piece(root, PrimitiveType.Cube, "Глубь склепа", new Vector3(0f, 5f, z + 9.7f), new Vector3(13.8f, 10f, 0.4f), black, false);
+            // Изнанка ворот: за крыльями фасада зал шире, и щели по бокам надо закрыть.
+            foreach (float s in new[] { -1f, 1f })
+                Piece(root, PrimitiveType.Cube, "Стена у входа", new Vector3(s * 4.6f, 5f, z + 1.6f), new Vector3(4.6f, 10f, 0.4f), black, false);
 
             // В глубине — бледный холодный проём, против него стоит Он.
             _backGlow = Glowing(cold, 1.5f);
             _backColour = _backGlow.color;
-            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 2.9f, z + 9.45f), new Vector3(4.6f, 5.8f, 1f), _backGlow, false);
+            var back = Piece(root, PrimitiveType.Quad, "Свет в глубине", new Vector3(0f, 4.9f, z + 9.45f), new Vector3(7.6f, 9.8f, 1f), _backGlow, false);
             back.transform.rotation = Quaternion.identity;
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader != null)
@@ -560,9 +690,13 @@ namespace Sinbinder.Gameplay
                 halo.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
                 halo.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
                 halo.SetColor("_BaseColor", new Color(cold.r, cold.g, cold.b, 0.55f));
-                Piece(root, PrimitiveType.Quad, "Ореол проёма", new Vector3(0f, 2.8f, z + 9.35f), new Vector3(6.0f, 7.2f, 1f), halo, false);
+                Piece(root, PrimitiveType.Quad, "Ореол проёма", new Vector3(0f, 4.9f, z + 9.35f), new Vector3(10.0f, 11.5f, 1f), halo, false);
+                Rays(root, new Vector3(0f, 5.2f, z + 9.25f), cold);
             }
-            Death(root, new Vector3(0f, 0f, z + 6.6f), black);
+            // Смерть не заперта и не держит (автор, 12.11): стоит сбоку в глубине, провожает идущего.
+            Death(root, new Vector3(-3.8f, 0f, z + 6.0f), black);
+            _deathYaw = -34f;
+            _death.rotation = Quaternion.Euler(0f, _deathYaw, 0f);
             // Холодный туман из дверей — ползёт к вошедшему по полу.
             var mist = Haze(new Color(0.60f, 0.72f, 0.95f), additive: true);
             if (mist != null)
@@ -614,73 +748,132 @@ namespace Sinbinder.Gameplay
             root.position = at;
             _death = root;
             _deathAt = at;
-            // Автор, 08.11 (второй раз): «зачем-то отводит руку в сторону и по-прежнему выглядит
-            // не очень величественно… проблема именно в самом силуэте». Конус с яйцом читался
-            // пешкой. Теперь — плечи вдвое шире капюшона под рваной накидкой, балахон в складках,
-            // книзу расходится; руки не движутся: правая держит косу, левая висит, из рукава —
-            // кости пальцев. Лезвие дугой над капюшоном. Все высоты — от пола.
-            const float hem = 0.4f;
-            Shape(root, "Балахон", Lathe(new[] { hem, 1.20f, 0.9f, 1.08f, 1.6f, 0.93f, 2.3f, 0.84f,
-                                                 2.8f, 0.88f, 3.1f, 0.86f, 3.3f, 0.60f, 3.42f, 0.34f },
-                                         30, 0.62f, 11, 0.07f), at, Quaternion.identity, black);
-            _deathHem = Shape(root, "Лохмотья", Tatters(1.2f, 30, 0.75f, 13), at + Vector3.up * hem, Quaternion.identity, black);
+            // Третий заход (автор, 12.11: «сделать силуэт более величественным»; план 66 §5).
+            // Он в полтора раза выше прежнего — семь с половиной метров, выше ворот: виден от
+            // груди, капюшон режет перемычка, когда камера подходит. Не вырезка из картона:
+            // ткань чуть серая и гладкая, сзади у него свой свет — по краю балахона идёт ободок,
+            // складки читаются по нему. Руки спрятаны в рукавах; видна одна кисть — на косовище.
+            // Капюшон глубокий, клювом вперёд, без острия. Коса в полтора роста, лезвие широкой
+            // дугой над капюшоном. Подол не касается пола — уходит в туман.
+            // Чёрный без блеска: в v3 ткань с подсветкой вышла серебряной и перестала быть силуэтом.
+            // Объём дают лучи за спиной, которые он режет собой, и форма.
+            var cloth = black;
+            var steel = black;
+            const float hem = 0.6f;
+            Shape(root, "Балахон", Lathe(new[] { hem, 1.86f, 1.40f, 1.67f, 2.50f, 1.44f, 3.60f, 1.30f,
+                                                 4.35f, 1.36f, 4.80f, 1.33f, 5.10f, 0.93f, 5.30f, 0.53f },
+                                         36, 0.62f, 13, 0.07f), at, Quaternion.identity, cloth);
+            _deathHem = Shape(root, "Лохмотья", Tatters(1.86f, 34, 1.1f, 13), at + Vector3.up * hem, Quaternion.identity, cloth);
             _deathHem.localScale = new Vector3(1f, 1f, 0.62f);
-            // Накидка на плечах: широкая, рваная по краю — она и делает плечи.
-            Shape(root, "Накидка", Lathe(new[] { 2.50f, 1.02f, 2.80f, 1.00f, 3.05f, 0.92f, 3.25f, 0.70f,
-                                                 3.40f, 0.42f, 3.50f, 0.30f },
-                                         28, 0.66f, 9, 0.05f, ragged: 0.3f), at, Quaternion.identity, black);
+            Shape(root, "Накидка", Lathe(new[] { 3.90f, 1.75f, 4.35f, 1.70f, 4.75f, 1.55f, 5.05f, 1.15f,
+                                                 5.30f, 0.70f, 5.45f, 0.45f },
+                                         30, 0.66f, 9, 0.05f, ragged: 0.45f), at, Quaternion.identity, cloth);
 
-            // Голова — на шее, целиком с глазами: поднимается к вошедшему.
             _deathHood = new GameObject("Голова").transform;
             _deathHood.SetParent(root, false);
-            _deathHood.position = at + Vector3.up * 3.5f;
-            // Капюшон с острием вверх-назад: силуэт жнеца. Острие ниже лезвия косы.
-            Piece(_deathHood, PrimitiveType.Sphere, "Капюшон", at + Vector3.up * 3.96f, new Vector3(0.86f, 1.05f, 0.92f), black, false);
-            Shape(_deathHood, "Острие капюшона", Cone(0.3f, 0f, 0.44f, 12), at + new Vector3(0f, 4.3f, 0.14f), Quaternion.Euler(35f, 0f, 0f), black);
+            _deathHood.position = at + Vector3.up * 5.4f;
+            // Куколь: ткань от плеч вверх, сходится клювом вперёд над лицом; спереди вырез — тьма и глаза.
+            Shape(_deathHood, "Куколь", Lathe(new[] { 5.05f, 1.10f, 5.60f, 1.06f, 6.30f, 0.98f, 6.90f, 0.78f, 7.30f, 0.45f, 7.58f, 0.10f },
+                                            30, 1.0f, 0, 0f, lean: -0.55f, arc0: 300f, arc1: 600f), at, Quaternion.identity, cloth);
+            Piece(_deathHood, PrimitiveType.Sphere, "Голова в тени", at + new Vector3(0f, 6.25f, 0.05f), new Vector3(0.9f, 1.05f, 0.9f), cloth, false);
             var eyeGlow = Glowing(new Color(0.50f, 0.72f, 1f), 3f);
             foreach (float s in new[] { -1f, 1f })
-                _deathEyes.Add(Piece(_deathHood, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.15f * s, 3.92f, -0.43f), Vector3.zero, eyeGlow, false).transform);
-            _deathHood.localRotation = Quaternion.Euler(18f, 0f, 0f);
+                _deathEyes.Add(Piece(_deathHood, PrimitiveType.Sphere, "Глаз", at + new Vector3(0.26f * s, 6.30f, -0.50f), Vector3.zero, eyeGlow, false).transform);
+            _deathHood.localRotation = Quaternion.Euler(16f, 0f, 0f);
 
-            // Левая рука висит и не движется: рукав колоколом, под ним — кости пальцев.
-            Shape(root, "Левый рукав", Sheet(new Vector3(-0.95f, 2.70f, -0.1f), new Vector3(-1.10f, 2.30f, -0.12f),
-                                             new Vector3(-1.13f, 1.75f, -0.12f), new Vector3(-1.04f, 1.45f, -0.1f),
-                                             new Vector3(-0.90f, 1.70f, -0.08f), new Vector3(-0.84f, 2.40f, -0.06f)),
-                  at, Quaternion.identity, black);
-            for (int f = 0; f < 4; f++)
-            {
-                var top = at + new Vector3(-1.12f + f * 0.045f, 1.62f, -0.14f);
-                float len = f == 3 ? 0.2f : 0.3f - 0.02f * f;
-                var dir = new Vector3(-0.12f + 0.06f * f, -1f, -0.18f).normalized;
-                var finger = Piece(root, PrimitiveType.Cylinder, "Палец", top + dir * (len * 0.5f), new Vector3(0.028f, len * 0.5f, 0.028f), black, false);
-                finger.transform.rotation = Quaternion.FromToRotation(Vector3.up, dir);
-            }
-
-            // Правая рука держит косу; рукав свисает с предплечья.
-            Shape(root, "Правый рукав", Sheet(new Vector3(0.95f, 2.85f, -0.08f), new Vector3(1.18f, 2.66f, -0.1f),
-                                              new Vector3(1.24f, 2.50f, -0.12f), new Vector3(1.18f, 2.36f, -0.1f),
-                                              new Vector3(1.02f, 1.62f, -0.08f), new Vector3(0.86f, 2.00f, -0.05f)),
-                  at, Quaternion.identity, black);
+            // Левая рука в рукаве до земли — кисти не видно.
+            Shape(root, "Левый рукав", Sheet(new Vector3(-1.47f, 4.19f, -0.15f), new Vector3(-1.70f, 3.56f, -0.19f),
+                                             new Vector3(-1.75f, 2.71f, -0.19f), new Vector3(-1.61f, 2.25f, -0.15f),
+                                             new Vector3(-1.40f, 2.63f, -0.12f), new Vector3(-1.30f, 3.72f, -0.09f)),
+                  at, Quaternion.identity, cloth);
+            // Правая — на косе; рукав свисает с предплечья.
+            Shape(root, "Правый рукав", Sheet(new Vector3(1.20f, 4.42f, -0.14f), new Vector3(1.50f, 4.12f, -0.20f),
+                                              new Vector3(1.56f, 3.87f, -0.26f), new Vector3(1.48f, 3.66f, -0.22f),
+                                              new Vector3(1.30f, 2.51f, -0.16f), new Vector3(1.05f, 3.10f, -0.10f)),
+                  at, Quaternion.identity, cloth);
             _deathScythe = new GameObject("Коса").transform;
             _deathScythe.SetParent(root, false);
-            _deathScythe.position = at + new Vector3(1.22f, 2.5f, -0.12f);
-            // Кулак — кости пальцев поперёк косовища: видно, что держит.
+            _deathScythe.position = at + new Vector3(1.45f, 3.9f, -0.25f);
             for (int f = 0; f < 4; f++)
             {
-                var knuckle = Piece(_deathScythe, PrimitiveType.Cylinder, "Палец", at + new Vector3(1.20f, 2.40f + f * 0.07f, -0.2f),
-                                    new Vector3(0.034f, 0.12f - 0.012f * f, 0.034f), black, false);
+                var knuckle = Piece(_deathScythe, PrimitiveType.Cylinder, "Палец", at + new Vector3(1.42f, 3.72f + f * 0.11f, -0.37f),
+                                    new Vector3(0.05f, 0.18f - 0.018f * f, 0.05f), cloth, false);
                 knuckle.transform.rotation = Quaternion.Euler(0f, 0f, 90f - 8f * f);
             }
-            var snath = Piece(_deathScythe, PrimitiveType.Cylinder, "Косовище", at + new Vector3(1.22f, 2.42f, -0.12f), new Vector3(0.09f, 2.36f, 0.09f), black, false).transform;
-            snath.rotation = Quaternion.Euler(0f, 0f, -3f);
-            Shape(_deathScythe, "Лезвие", Blade(2.0f, 0.42f), snath.position + snath.up * 2.34f, Quaternion.identity, black);
+            var snath = Piece(_deathScythe, PrimitiveType.Cylinder, "Косовище", at + new Vector3(1.45f, 4.2f, -0.25f), new Vector3(0.12f, 3.9f, 0.12f), cloth, false).transform;
+            snath.rotation = Quaternion.Euler(0f, 0f, 4f);
+            Shape(_deathScythe, "Лезвие", Blade(3.2f, 0.8f), snath.position + snath.up * 3.9f, Quaternion.identity, steel);
+
+            // Свет за спиной: ободок по краю ткани и блик по кромке лезвия.
+            var rimGo = new GameObject("Свет за спиной");
+            rimGo.transform.SetParent(root, false);
+            rimGo.transform.position = at + new Vector3(0f, 5.2f, 2.4f);
+            var rim = rimGo.AddComponent<Light>();
+            rim.type = LightType.Point;
+            rim.color = new Color(0.62f, 0.76f, 1f);
+            rim.range = 9f;
+            rim.intensity = 4f;
+            rim.shadows = LightShadows.None;
 
             // Чёрный дым от него: виден против света, на чёрном пропадает.
             var smoke = Haze(new Color(0f, 0f, 0f), additive: false);
             if (smoke != null)
-                _deathSmoke = Wisps(root, "Дым", at + Vector3.up * 2.3f, smoke, new Vector3(2.6f, 3.6f, 0.7f), 12f,
-                                    new Vector2(2.5f, 4f), new Vector2(0.6f, 1.2f), Color.black,
+                _deathSmoke = Wisps(root, "Дым", at + Vector3.up * 3.6f, smoke, new Vector3(3.8f, 5.0f, 0.9f), 12f,
+                                    new Vector2(2.5f, 4f), new Vector2(0.8f, 1.6f), Color.black,
                                     new Vector3(-0.15f, 0.25f, -0.05f), new Vector3(0.15f, 0.55f, 0.05f), 0.5f, prewarm: true);
+            // Подол уходит в холодный туман.
+            var mist = Haze(new Color(0.60f, 0.72f, 0.95f), additive: true);
+            if (mist != null)
+                Wisps(root, "Туман у подола", at + Vector3.up * 0.45f, mist, new Vector3(3.6f, 0.5f, 2.2f), 10f,
+                      new Vector2(2f, 3.5f), new Vector2(1.0f, 2.0f), new Color(0.60f, 0.72f, 0.95f),
+                      new Vector3(-0.05f, 0.05f, -0.05f), new Vector3(0.05f, 0.15f, 0.05f), 0.12f, prewarm: true);
+        }
+
+        /// <summary>
+        /// Лучи из проёма: полосы света веером от его середины, в плоскости проёма. Силуэт
+        /// стоит перед ними и режет их собой — так он читается объёмом, а не дырой в свете.
+        /// </summary>
+        private static void Rays(Transform parent, Vector3 origin, Color cold)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) return;
+            var m = new Material(shader) { name = "Луч" };
+            var tex = Streak(64);
+            m.SetTexture("_BaseMap", tex);
+            m.mainTexture = tex;
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 2f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            m.SetFloat("_ZWrite", 0f);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            m.SetColor("_BaseColor", new Color(cold.r, cold.g, cold.b, 0.32f));
+            var rnd = new System.Random(11);
+            for (int i = 0; i < 11; i++)
+            {
+                float ang = Mathf.Lerp(-78f, 78f, i / 10f) + ((float)rnd.NextDouble() - 0.5f) * 8f;
+                float len = 9f + 5f * (float)rnd.NextDouble();
+                float wide = 0.45f + 0.7f * (float)rnd.NextDouble();
+                var dir = Quaternion.Euler(0f, 0f, ang) * Vector3.up;
+                var ray = Piece(parent, PrimitiveType.Quad, "Луч", origin + dir * (len * 0.5f), new Vector3(wide, len, 1f), m, false);
+                ray.transform.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            }
+        }
+
+        /// <summary>Полоса: мягкая по ширине, гаснет к концу.</summary>
+        private static Texture2D Streak(int size)
+        {
+            var t = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float w = 1f - Mathf.Abs((x + 0.5f) / size * 2f - 1f);
+                    float l = 1f - (y + 0.5f) / size;
+                    t.SetPixel(x, y, new Color(1f, 1f, 1f, w * w * l * l));
+                }
+            t.Apply();
+            return t;
         }
 
         /// <summary>Жизнь силуэта, пока гаснет экран: t — секунды от скрипа дверей.</summary>
@@ -688,11 +881,23 @@ namespace Sinbinder.Gameplay
         {
             if (_death == null) return;
             _death.position = _deathAt + Vector3.up * (0.07f * Mathf.Sin(t * 1.25f));
+            // Провожает взглядом: всем корпусом, медленно, следом за идущим мимо.
+            if (Camera.main != null)
+            {
+                var d = Camera.main.transform.position - _death.position;
+                d.y = 0f;
+                if (d.sqrMagnitude > 0.01f)
+                {
+                    float want = Mathf.Atan2(-d.x, -d.z) * Mathf.Rad2Deg;
+                    float k = Smooth(Mathf.InverseLerp(0.8f, 3.2f, t));
+                    _death.rotation = Quaternion.Euler(0f, Mathf.LerpAngle(_deathYaw, want, k), 0f);
+                }
+            }
             if (_deathHem != null) _deathHem.localRotation = Quaternion.Euler(0f, 5f * Mathf.Sin(t * 0.8f), 0f);
             if (_deathHood != null)
-                _deathHood.localRotation = Quaternion.Euler(Mathf.Lerp(18f, -4f, Smooth(Mathf.InverseLerp(0.6f, 2.3f, t))), 0f, 0f);
+                _deathHood.localRotation = Quaternion.Euler(Mathf.Lerp(14f, -5f, Smooth(Mathf.InverseLerp(0.6f, 2.3f, t))), 0f, 0f);
             float eyes = Smooth(Mathf.InverseLerp(1.2f, 1.7f, t)) * (0.9f + 0.1f * Mathf.Sin(t * 19f));
-            foreach (var e in _deathEyes) if (e != null) e.localScale = Vector3.one * (0.065f * eyes);
+            foreach (var e in _deathEyes) if (e != null) e.localScale = Vector3.one * (0.12f * eyes);
             if (_deathScythe != null) _deathScythe.localRotation = Quaternion.Euler(0f, 0f, 2.5f * Mathf.Sin(t * 0.7f));
             if (_backGlow != null) _backGlow.color = _backColour * breath;
         }
@@ -879,7 +1084,8 @@ namespace Sinbinder.Gameplay
         /// Продольные складки (folds, fold — доля радиуса) сильнее книзу: у плеч ткань натянута.
         /// ragged — рваный нижний край: нижний ряд опущен зубцами разной длины. Видно с обеих сторон.
         /// </summary>
-        private static Mesh Lathe(float[] profile, int n, float depth, int folds, float fold, float ragged = 0f)
+        private static Mesh Lathe(float[] profile, int n, float depth, int folds, float fold, float ragged = 0f,
+                                  float lean = 0f, float arc0 = 0f, float arc1 = 360f)
         {
             var v = new List<Vector3>();
             var tri = new List<int>();
@@ -892,11 +1098,12 @@ namespace Sinbinder.Gameplay
             {
                 float y = profile[r * 2], rad = profile[r * 2 + 1];
                 float amp = fold * (1f - r / (float)Mathf.Max(1, rows - 1));
+                float part = r / (float)Mathf.Max(1, rows - 1);
                 for (int i = 0; i <= n; i++)
                 {
-                    float a = i * Mathf.PI * 2f / n;
-                    float k = rad * (1f + amp * Mathf.Sin(a * folds));
-                    v.Add(new Vector3(Mathf.Cos(a) * k, r == 0 ? y - drop[i] : y, Mathf.Sin(a) * k * depth));
+                    float a = Mathf.Deg2Rad * Mathf.Lerp(arc0, arc1, i / (float)n);
+                    float k = folds > 0 ? rad * (1f + amp * Mathf.Sin(a * folds)) : rad;
+                    v.Add(new Vector3(Mathf.Cos(a) * k, r == 0 ? y - drop[i] : y, Mathf.Sin(a) * k * depth + lean * part));
                 }
             }
             for (int r = 0; r < rows - 1; r++)
@@ -1057,8 +1264,9 @@ namespace Sinbinder.Gameplay
             // Глазами Греховода перед дверями.
             // Пять шагов до дверей: видно проём целиком и колонны; ближе створки занимали весь кадр (w0711zi).
             UI.Letterbox.Instance?.Show();
-            var eye = new Vector3(Mathf.Clamp(heroAt.x, -1.0f, 1.0f), 1.75f, GateZ - 5.4f);
-            var look = Quaternion.LookRotation(new Vector3(0f, 2.3f, GateZ + 6.5f) - eye);
+            // Камера ниже глаз и смотрит вверх (12.11): величие читается снизу.
+            var eye = new Vector3(Mathf.Clamp(heroAt.x, -1.0f, 1.0f), 1.25f, GateZ - 5.4f);
+            var look = Quaternion.LookRotation(new Vector3(0f, 3.4f, GateZ + 6.5f) - eye);
             // Глазами Греховода: тело не видно и стоит под глазами — в прогоне он заслонял ворота спиной.
             if (hero != null)
             {
@@ -1087,11 +1295,18 @@ namespace Sinbinder.Gameplay
             if (_cryptMist != null) _cryptMist.Play();
             // Тема сна уходит вместе с дверьми: к силуэту — тишина, скрип и его гул.
             Audio.Music.Stop(3f);
-            // Взгляд поднимается за ним: он выше дверей в глубине.
-            var lookUp = Quaternion.LookRotation(new Vector3(0f, 2.9f, GateZ + 6.5f) - eye);
             if (_seam != null) _seam.SetActive(false);
-            const float open = 3.4f, fade = 3.8f;
-            for (float t = 0f; t < fade + 0.9f; t += Time.unscaledDeltaTime)
+
+            // Замысел (автор, 12.11): ворота — не темница Смерти, а выход из сна. Безымянный
+            // идёт мимо неё к свету и просыпается; она не держит — провожает взглядом и
+            // говорит вслед. Экран уходит в белое, не в чёрное.
+            const float open = 3.4f, total = 9.2f;
+            var passTo = new Vector3(0.4f, 1.6f, GateZ + 7.4f);
+            var gateAim = new Vector3(0f, 3.4f, GateZ + 6.5f);
+            var face = _deathAt + Vector3.up * 6.2f;
+            var lightAt = new Vector3(0f, 4.6f, GateZ + 9.4f);
+            bool spoke = false;
+            for (float t = 0f; t < total; t += Time.unscaledDeltaTime)
             {
                 float d = Mathf.Pow(Smooth(Mathf.Clamp01(t / open)), 1.3f);
                 if (_doorLeft != null) _doorLeft.localRotation = Quaternion.Euler(0f, -88f * d, 0f);
@@ -1099,17 +1314,31 @@ namespace Sinbinder.Gameplay
                 float breath = 1f + 0.16f * Mathf.Sin(t * 1.6f) + 0.05f * Mathf.Sin(t * 5.3f);
                 if (_cryptLight != null) _cryptLight.intensity = 10f * d * breath;
                 Haunt(t, breath);
-                float a = Mathf.Pow(Mathf.Clamp01(t / fade), 1.6f);
-                black.color = new Color(0f, 0f, 0f, a);
-                CryptFade = a;
                 if (cam != null)
                 {
-                    float push = Smooth(Mathf.Clamp01(t / fade));
-                    cam.transform.SetPositionAndRotation(eye + look * Vector3.forward * (1.8f * push), Quaternion.Slerp(look, lookUp, push));
+                    // Стоит, пока створки расходятся; потом идёт — мимо него, к свету.
+                    float go = Smooth(Mathf.InverseLerp(2.4f, total - 0.4f, t));
+                    var pos = Vector3.Lerp(eye, passTo, go);
+                    var atHim = Vector3.Lerp(gateAim, face, Smooth(Mathf.InverseLerp(0.8f, 2.4f, t)));
+                    var aim = Vector3.Lerp(atHim, lightAt, Smooth(Mathf.InverseLerp(4.8f, 7.6f, t)));
+                    cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(aim - pos, Vector3.up));
                 }
+                if (!spoke && t > 3.8f)
+                {
+                    spoke = true;
+                    string words = Loc.T("Ты можешь бежать от меня. Но от своей сути не убежишь.");
+                    var box = UI.Letterbox.Instance;
+                    if (box != null) box.Say(Loc.T("Бог Смерти"), words);
+                    Audio.DeathVoice.Utter(words);
+                    Debug.Log("[СОН] Бог Смерти: " + words);
+                }
+                float a = Mathf.Pow(Mathf.Clamp01((t - 5.6f) / 3.2f), 1.4f);
+                black.color = new Color(1f, 1f, 1f, a);
+                CryptFade = Mathf.Clamp01(t / total);
                 yield return null;
             }
-            // Чёрное остаётся до загрузки лагеря: уйдёт вместе со сценой сна.
+            // Белое остаётся до загрузки лагеря: уйдёт вместе со сценой сна.
+            black.color = Color.white;
             CryptFade = 1f;
         }
 
