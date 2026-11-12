@@ -182,10 +182,14 @@ namespace Sinbinder.UI
             foreach (var journey in MissionBoard.Journeys)
             {
                 string commanderId=journey.Commander;
-                var phase=journey.Phase==0 ? Loc.T("В пути к цели")
+                var phase=journey.ReturnBlocked
+                    ? Loc.T("Возврат заблокирован: необходимо восстановить состав")
+                    : journey.Phase==0 ? Loc.T("В пути к цели")
                     : journey.Phase==1 ? Loc.T("Ожидает совета (решит сам, если совета нет)")
                     : Loc.T("Возвращается в склеп");
-                var eta=journey.Phase==1
+                var eta=journey.ReturnBlocked
+                    ? Loc.T("Награды не выданы. Исправьте данные состава или загрузите исправное сохранение.")
+                    : journey.Phase==1
                     ? Loc.F("Старший решит сам через {0} сек. Нажмите, чтобы дать совет.",
                         Mathf.CeilToInt(journey.SecondsRemaining))
                     : journey.Phase==0 ? Loc.F("До прибытия около {0} сек. Нажмите, чтобы отозвать.",
