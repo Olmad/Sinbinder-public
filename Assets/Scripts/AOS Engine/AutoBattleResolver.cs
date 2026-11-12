@@ -55,11 +55,11 @@ namespace Sinbinder.AOS
                 {
                     foreach (var warrior in squad.Where(w => w != null && !w.IsDead).ToList())
                         if (squad.Contains(warrior) && !warrior.IsDead)
-                            Act(resolver, warrior, squad, enemies, record);
+                            Act(resolver, warrior, squad, enemies, record, turns+1);
 
                     foreach (var enemy in enemies.Where(e => e != null && !e.IsDead).ToList())
                         if (enemies.Contains(enemy) && !enemy.IsDead)
-                            Act(resolver, enemy, enemies, squad, record);
+                            Act(resolver, enemy, enemies, squad, record, turns+1);
 
                     turns++;
                 }
@@ -90,7 +90,7 @@ namespace Sinbinder.AOS
         }
 
         private static void Act(BehaviourResolver resolver, Warrior warrior,
-            List<Warrior> allies, List<Warrior> foes, BattleRecord record)
+            List<Warrior> allies, List<Warrior> foes, BattleRecord record, int round)
         {
             // Контекст собирается из списков боя, а не из сцены:
             // сцены здесь нет, и прежний CombatDecisionContext.Create
@@ -99,11 +99,11 @@ namespace Sinbinder.AOS
             // в неподвижности — двадцать ходов, ноль урона, «победа».
             var context = AutoBattleContext.Create(warrior, allies, foes);
             var action = resolver.Decide(warrior, context);
-            Execute(warrior, action, foes, allies, record);
+            Execute(warrior, action, foes, allies, record, round);
         }
 
         private static void Execute(Warrior warrior, ActionType action,
-            List<Warrior> foes, List<Warrior> allies, BattleRecord record)
+            List<Warrior> foes, List<Warrior> allies, BattleRecord record, int round)
         {
             var evt = new BattleEvent
             {
@@ -111,6 +111,7 @@ namespace Sinbinder.AOS
                 ActorName = warrior.DisplayName,
                 ActorGender = warrior.Gender,
                 Action = action,
+                Round = round,
             };
 
             switch (action)
