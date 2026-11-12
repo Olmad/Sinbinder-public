@@ -93,7 +93,9 @@ namespace Sinbinder.Gameplay
                    (actor.Dead && actor.HealthFraction!=0f) ||
                    actor.Team<0 || actor.Team>2 ||
                    actor.SquadIndex< -1 || actor.EnemyIndex< -1 ||
-                   (actor.SquadIndex>=0 && actor.EnemyIndex>=0))
+                   (actor.SquadIndex>=0 && actor.EnemyIndex>=0) ||
+                   (actor.SquadIndex>=0 && actor.Team!=0) ||
+                   (actor.EnemyIndex>=0 && actor.Team!=1))
                     return false;
                 if(actor.OriginalParty) countedParty++;
                 if(actor.SquadIndex>=0 && !squadSlots.Add(actor.SquadIndex))
@@ -114,9 +116,18 @@ namespace Sinbinder.Gameplay
             {
                 if(ev==null || ev.Round<1 ||
                    ev.Round>state.CompletedRounds ||
-                   ev.Round<lastRound) return false;
+                   ev.Round<lastRound ||
+                   string.IsNullOrEmpty(ev.ActorId) ||
+                   !ids.Contains(ev.ActorId) ||
+                   (!string.IsNullOrEmpty(ev.TargetId) &&
+                    !ids.Contains(ev.TargetId))) return false;
                 lastRound=ev.Round;
             }
+            // The actual resolver records an action for every real turn.
+            // An 'already completed' round with no events or with no final
+            // round event is a forged/truncated checkpoint, not a new battle.
+            if(state.CompletedRounds>0 && lastRound!=state.CompletedRounds)
+                return false;
             return true;
         }
     }
