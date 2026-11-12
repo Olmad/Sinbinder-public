@@ -55,10 +55,23 @@ namespace Sinbinder.Crypt
     public class MissionBoard : MonoBehaviour
     {
         /// <summary>Что вышло из последней вылазки. Читает карта.</summary>
-        public string LastReport { get; private set; } = "";
+        // Reports belong to the world, not a particular scene's table.
+        // When the expedition event runs in another scene, its result must
+        // still be visible on the next crypt map.
+        private static string _lastWorldReport = "";
+        public string LastReport
+        {
+            get => _lastWorldReport;
+            private set => _lastWorldReport=value ?? "";
+        }
 
         /// <summary>Every recorded action, not the three-line retelling.</summary>
-        public ExpeditionReplayData LastReplay { get; private set; }
+        private static ExpeditionReplayData _lastWorldReplay;
+        public ExpeditionReplayData LastReplay
+        {
+            get => _lastWorldReplay;
+            private set => _lastWorldReplay=value;
+        }
 
         /// <summary>Сколько вылазок ушло с этой доски. Спрашивает склеп демо (<see cref="CryptMap"/>).</summary>
         public int Sent { get; private set; }
@@ -188,14 +201,20 @@ namespace Sinbinder.Crypt
             }
         }
 
-        private void Update() => AdvanceJourneys(Time.deltaTime);
+        // The persistent WorldClock owns game time when present.
+        // Keep a local fallback for editor test scenes without the clock.
+        private void Update()
+        {
+            if (!ExpeditionWorldClock.IsRunning)
+                AdvanceJourneys(Time.deltaTime);
+        }
 
         /// <summary>
         /// Expedition time belongs to the world, not to a visible UI panel.
         /// CryptMap can call this on its disabled child MissionBoard while
         /// the expedition table is hidden. A paused game passes zero delta.
         /// </summary>
-        public void AdvanceJourneys(float gameDelta)
+        public void AdvanceJourneys(float gameDelta, bool canDeliver = true)
         {
             if (ActiveJourneys.Count==0 || gameDelta<=0f ||
                 float.IsNaN(gameDelta) || float.IsInfinity(gameDelta)) return;
@@ -246,6 +265,10 @@ namespace Sinbinder.Crypt
 
                 if (journey.Phase==2)
                 {
+                    // Physical homecoming modifies the player's roster,
+                    // pockets, crypt inventory and replay archive. Never
+                    // apply it to the wrong scene or without the inventory.
+                    if (!canDeliver) continue;
                     // Older saves without the encounter result must resolve
                     // it once before return; never award an unplayed victory.
                     if (!journey.Recalled && !journey.EncounterResolved)
@@ -255,6 +278,10 @@ namespace Sinbinder.Crypt
                         Core.SaveSystem.AutoSave();
                         continue;
                     }
+                    // Do not discard the only state of a journey that
+                    // cannot settle. A missing roster member must not turn
+                    // into an unrecorded permanent disappearance.
+                    if (!CanCompleteJourney(journey)) continue;
                     ActiveJourneys.RemoveAt(i);
                     CompleteJourney(journey);
                 }
@@ -364,6 +391,23 @@ namespace Sinbinder.Crypt
                 return true;
             }
             return false;
+        }
+
+        private static bool CanCompleteJourney(SavedAutoExpedition journey)
+        {
+            if (journey==null || journey.Party==null || journey.Party.Count==0)
+                return false;
+            bool exists=false;
+            foreach(var mission in MissionCatalog.All())
+                if(mission.Name==journey.MissionName) { exists=true; break; }
+            if(!exists || !journey.Party.Contains(journey.Commander))
+                return false;
+            foreach(var name in journey.Party)
+                if(!SquadRoster.TryGet(name,out var member) || !member.IsAway)
+                    return false;
+            // The crypt must be capable of accepting money and physical
+            // cargo before the journey is removed from durable state.
+            return journey.Recalled || Inventory.PlayerInventory.Instance!=null;
         }
 
         private void CompleteJourney(SavedAutoExpedition journey)
@@ -1035,6 +1079,8 @@ namespace Sinbinder.Crypt
         public static void Forget()
         {
             Upgrades = 0;
+            _lastWorldReport="";
+            _lastWorldReplay=null;
             ActiveJourneys.Clear();
             ExpeditionMemoryLedger.Forget();
             CryptUpgrades.Forget();
