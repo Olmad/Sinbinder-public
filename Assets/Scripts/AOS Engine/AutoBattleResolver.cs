@@ -84,12 +84,20 @@ namespace Sinbinder.AOS
                     SquadOrders.Set(_strategy);
                     int round=CompletedRounds+1;
                     foreach(var warrior in _squad.Where(w=>w!=null && !w.IsDead).ToList())
+                    {
+                        if(!_enemies.Any(w=>w!=null && !w.IsDead)) break;
                         if(_squad.Contains(warrior) && !warrior.IsDead)
                             Act(_resolver,warrior,_squad,_enemies,_record,round);
+                    }
 
                     foreach(var enemy in _enemies.Where(w=>w!=null && !w.IsDead).ToList())
+                    {
+                        // If the last attacker just fled, died or converted,
+                        // do not fabricate enemy attacks against empty ranks.
+                        if(!_squad.Any(w=>w!=null && !w.IsDead)) break;
                         if(_enemies.Contains(enemy) && !enemy.IsDead)
                             Act(_resolver,enemy,_enemies,_squad,_record,round);
+                    }
 
                     CompletedRounds++;
                 }
