@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AosSessionProgram.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AutoBattleResolver.cs" Link="AutoBattleResolver.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/BattleRecord.cs" Link="BattleRecord.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs" Link="ExpeditionCombatFacts.cs" />
+  </ItemGroup>
+</Project>
