@@ -38,7 +38,7 @@ namespace Sinbinder.Core
 {
     public enum Gender { Male, Female }
     public enum SinType { Greed, Wrath, Pride, Envy, Sloth, Gluttony, Lust }
-    public enum MoralType { Vicious, Pious }
+    public enum MoralType { Vicious, Neutral, Pious }
     public enum ShellType { Skeleton }
     public sealed class SoulData
     {
@@ -47,13 +47,18 @@ namespace Sinbinder.Core
         public Gender Gender;
         public int Level = 1;
         public float Greed;
+        public MoralType Moral;
+        public const int SpectrumCount=7;
+        public readonly float[] Spectra=new float[SpectrumCount];
+        public float[] CopySpectra() => (float[])Spectra.Clone();
         public SoulData() {}
         public SoulData(string name, SinType sin, MoralType moral, int level,
             float intensity,object memory,Gender gender)
         {
             Name=name;Sin=sin;Level=level;Gender=gender;Greed=intensity;
+            Spectra[(int)sin]=intensity;
         }
-        public float Get(SinType type) => Greed;
+        public float Get(SinType type) => Spectra[(int)type];
     }
     public sealed class RelationshipSystem
     {
@@ -128,11 +133,14 @@ namespace Sinbinder.Gameplay
             HP=Math.Max(0f,HP-Math.Max(0f,damage));
         }
         public void Heal(float amount) { HP=Math.Min(MaxHP,HP+amount); }
+        public T[] GetComponents<T>() => Array.Empty<T>();
     }
 }
 namespace Sinbinder.AOS
 {
+#if !REAL_AOS
     public enum ActionType { Attack, SaveAlly, BribeEnemy, Flee, Loot, Idle }
+#endif
     public enum SquadStrategy { Balanced, Aggressive, Defensive }
     public static class SquadOrders
     {
@@ -140,20 +148,43 @@ namespace Sinbinder.AOS
         public static void Set(SquadStrategy strategy) => Current=strategy;
         public static SquadStrategy FromSin(Sinbinder.Core.SinType sin)
             => SquadStrategy.Balanced;
+#if REAL_AOS
+        public static IEnumerable<StrategyModifier> CurrentModifiers()
+            => Array.Empty<StrategyModifier>();
+#endif
     }
     public sealed class MemoryProcessor
     {
         public static MemoryProcessor Instance {get;}=new MemoryProcessor();
+#if REAL_AOS
+        public List<MemoryRecord> GetMemories(Warrior warrior)
+            => new List<MemoryRecord>();
+#endif
     }
+#if !REAL_AOS
     public sealed class DecisionContext
     {
         public Warrior Actor;
     }
+#endif
     public static class AutoBattleContext
     {
         public static DecisionContext Create(Warrior warrior,List<Warrior> allies,
-            List<Warrior> enemies) => new DecisionContext { Actor=warrior };
+            List<Warrior> enemies)
+#if REAL_AOS
+            => new DecisionContext {
+                CurrentHP=warrior.HP,MaxHP=warrior.MaxHP,
+                NearbyEnemies=enemies.Count(w=>w!=null && !w.IsDead),
+                EnemiesInSight=enemies.Count(w=>w!=null && !w.IsDead),
+                NearbyAllies=allies.Count(w=>w!=null && !w.IsDead)-1,
+                NearbyLoot=0,DangerLevel=0.6f,
+                AllyInDanger=allies.Any(w=>w!=null && !w.IsDead && w.HP<w.MaxHP*0.5f),
+                RecentMemories=new List<MemoryRecord>()};
+#else
+            => new DecisionContext { Actor=warrior };
+#endif
     }
+#if !REAL_AOS
     public sealed partial class BehaviourResolver
     {
         public ActionType Decide(Warrior warrior,DecisionContext context)
@@ -162,6 +193,7 @@ namespace Sinbinder.AOS
             return warrior.PreferredAction;
         }
     }
+#endif
 }
 
 static class Program
@@ -175,6 +207,9 @@ static class Program
 
     static void Main()
     {
+#if REAL_AOS
+        RealBoardShimTests.Run();
+#else
         var one=new Warrior("Марга",Team.Player,15f,5f);
         var foe=new Warrior("Чужой 1",Team.Enemy,15f,1f);
         var squad=new List<Warrior>{one};
@@ -377,5 +412,6 @@ static class Program
         BoardShimTests.Run();
 #endif
         Console.WriteLine("PASS: "+checks+" real AOS session, one-round progression, and legacy equivalence checks");
+#endif
     }
 }
