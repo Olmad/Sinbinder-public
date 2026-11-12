@@ -177,6 +177,22 @@ namespace Sinbinder.UI
 
             Rows(out float y);
 
+            // Ongoing operations take precedence over archived reports.
+            // A commander remains away until the real resolver finishes on return.
+            foreach (var journey in MissionBoard.Journeys)
+            {
+                var phase=journey.Phase==0 ? Loc.T("В пути к цели")
+                    : journey.Phase==1 ? Loc.T("Ожидает решения Греховода")
+                    : Loc.T("Возвращается в склеп");
+                var eta=journey.Phase==1 ? Loc.T("Нужен ваш совет")
+                    : Loc.F("Осталось примерно {0} сек.",Mathf.CeilToInt(journey.SecondsRemaining));
+                _spawned.Add(Row(y,true,
+                    Loc.F("Отряд: {0}",Loc.Name(journey.MissionName)),
+                    Loc.F("Старший: {0} · {1}",Loc.Name(journey.Commander),phase),
+                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision()) : null,125f));
+                y-=133f;
+            }
+
             // The old summary still fits the title, but the complete
             // auto-battle log is now a separate user-controlled viewer.
             // A new mission does not erase old complete battle records.
@@ -466,6 +482,38 @@ namespace Sinbinder.UI
                 Loc.T("Пусть решают сами."),
                 "",
                 () => Send(commanderName, null)));
+        }
+
+        private void PickJourneyDecision()
+        {
+            if (MissionBoard.Journeys.Count==0 || MissionBoard.Journeys[0].Phase!=1)
+            { ShowMissions(); return; }
+            var pending=MissionBoard.Journeys[0];
+            Mission mission=default;
+            foreach(var item in _board.Missions)
+                if(item.Name==pending.MissionName) { mission=item; break; }
+            if(mission.Junction==Junction.None)
+            {
+                _board.OfferJourneyOrder(null);
+                ShowMissions();
+                return;
+            }
+            _pickingCommander=true;
+            if(_title!=null)
+                _title.text=JunctionCatalog.Situation(mission.Junction)+
+                    Loc.T(" Ваш совет будет передан старшему; окончательное решение за ним.");
+            Rows(out float y);
+            foreach(var option in JunctionCatalog.Options(mission.Junction))
+            {
+                var value=option;
+                _spawned.Add(Row(y,true,JunctionCatalog.Offer(value),
+                    Loc.T("Предложить действие командиру"),"",
+                    () => { _board.OfferJourneyOrder(value); ShowMissions(); }));
+                y-=150f;
+            }
+            _spawned.Add(Row(y,true,Loc.T("Пусть командир решает сам"),
+                Loc.T("Не отправлять рекомендацию"),"",
+                () => { _board.OfferJourneyOrder(null); ShowMissions(); }));
         }
 
         private void Send(string commanderName, MissionAction? offer)
