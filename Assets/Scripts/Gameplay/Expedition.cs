@@ -31,6 +31,13 @@ namespace Sinbinder.Gameplay
     /// исход — иначе объяснение «он свернул за блеском» было бы враньём
     /// через раз.
     /// </summary>
+    [System.Serializable]
+    public sealed class ExpeditionSurvivorHealth
+    {
+        public string Name;
+        public float Fraction;
+    }
+
     public static class Expedition
     {
         /// <summary>
@@ -53,14 +60,18 @@ namespace Sinbinder.Gameplay
             /// разу: резолвер умел её вести, но никто её не заводил.
             /// </summary>
             public readonly AOS.BattleRecord Record;
+            // Wounds are part of real simulated outcome, not a fresh roll on return.
+            public readonly List<ExpeditionSurvivorHealth> Health;
 
             public Outcome(List<string> survivors, int taken, int foesFallen,
-                           AOS.BattleRecord record = null)
+                           AOS.BattleRecord record = null,
+                           List<ExpeditionSurvivorHealth> health = null)
             {
                 Survivors = survivors;
                 Taken = taken;
                 FoesFallen = foesFallen;
                 Record = record;
+                Health = health;
             }
         }
 
@@ -86,6 +97,7 @@ namespace Sinbinder.Gameplay
         public static Outcome Fight(List<SquadRoster.Member> away, int foeCount)
         {
             var survivors = new List<string>();
+            var health = new List<ExpeditionSurvivorHealth>();
             var record = new AOS.BattleRecord();
             int taken = 0, fallen = 0;
             if (away == null || away.Count == 0) return new Outcome(survivors, 0, 0, record);
@@ -153,7 +165,16 @@ namespace Sinbinder.Gameplay
                 }
 
                 for (int i = 0; i < originalSquad.Count; i++)
-                    if (!originalSquad[i].IsDead) survivors.Add(away[i].Name);
+                {
+                    if (originalSquad[i].IsDead) continue;
+                    survivors.Add(away[i].Name);
+                    health.Add(new ExpeditionSurvivorHealth
+                    {
+                        Name=away[i].Name,
+                        Fraction=ExpeditionHealthRules.Capture(
+                            originalSquad[i].HP, originalSquad[i].MaxHP)
+                    });
+                }
 
                 // С павших снимают то же, что снимали бы на поле.
                 foreach (var foe in foes)
@@ -171,7 +192,7 @@ namespace Sinbinder.Gameplay
                 else Object.DestroyImmediate(holder);
             }
 
-            return new Outcome(survivors, taken, fallen, record);
+            return new Outcome(survivors, taken, fallen, record, health);
         }
 
         /// <summary>
@@ -189,6 +210,9 @@ namespace Sinbinder.Gameplay
             var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
                          m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender, m.Shell);
             w.UnpaidMissions = m.UnpaidMissions;
+            // Previous battles do not heal themselves when simulations use
+            // new temporary objects; keep the actual survivor's injury.
+            w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));
 
             // Надетое и карман спорят в голове (искушение, Жадность) —
             // спрошенный на развилке обязан решать с ними же.
