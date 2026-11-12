@@ -109,6 +109,8 @@ namespace Sinbinder.Multiplayer
         public Func<int, IReadOnlyList<LanWorldActorState>> PrivateWorldActors { get; set; }
         public Func<long> ResolveWorldTick { get; set; }
         public Func<int, NetworkOrderIntent, LanMessage> RouteGameOrder { get; set; }
+        // Reject delayed results from a disconnected/reused seat.
+        public Func<int, long, bool> IsCurrentGameOrderSession { get; set; }
         public Action<int, bool> PeerConnectionChanged { get; set; }
 
         public bool Start(int port)
@@ -625,6 +627,8 @@ namespace Sinbinder.Multiplayer
         public void NotifyGameOrderResolved(AuthorizedGameOrder order, bool applied)
         {
             if (!_active || !_started || string.IsNullOrEmpty(GameMatchId)) return;
+            if (IsCurrentGameOrderSession == null ||
+                !IsCurrentGameOrderSession(order.ConnectionId, order.SessionEpoch)) return;
             var peer = _peers.Find(p => p.Id == order.ConnectionId);
             if (peer != null) Send(peer, LanGameOrderCodec.Resolved(order, applied));
         }
