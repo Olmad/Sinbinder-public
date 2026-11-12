@@ -317,6 +317,28 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Actual crypt repair after an expedition, not a save-file heal.
+        /// This is only available to present (not away) wounded warriors.
+        /// The caller charges the player's inventory and synchronizes any
+        /// currently spawned scene body before saving.
+        /// </summary>
+        public static bool RepairReturnedWarrior(string name)
+        {
+            if(string.IsNullOrEmpty(name)) return false;
+            for(int i=0;i<_members.Count;i++)
+            {
+                var member=_members[i];
+                if(member.Name!=name || member.IsAway ||
+                   ExpeditionHealthRules.TreatmentCost(member.HealthFraction)==0)
+                    continue;
+                member.HealthFraction=1f;
+                _members[i]=member;
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>Заплатить всем: долги обнуляются, верность растёт.</summary>
         public static void PayEveryone()
         {
