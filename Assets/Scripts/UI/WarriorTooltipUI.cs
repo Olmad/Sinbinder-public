@@ -30,11 +30,6 @@ namespace Sinbinder.UI
         private Warrior _shown;
         private float _nextRefresh;
 
-        // Строка весов — на решение, а не на кадр: голоса считаются заново, только когда воин решил снова.
-        private DecisionContext _scalesFor;
-        private Warrior _scalesWarrior;
-        private bool _scalesWhisperCompelled;
-        private string _scales;
 
         /// <summary>
         /// Над кем подсказка сейчас. Урок отказа (<see cref="Lesson"/>) ждёт,
@@ -230,16 +225,11 @@ namespace Sinbinder.UI
                     // A context alone is not a complete visual cache key: hovering
                     // another warrior (or compelling this verdict) must not reuse
                     // the previous warrior's displayed voice balance.
-                    if (_scalesFor != wrapper.LastContext ||
-                        _scalesWarrior != warrior ||
-                        _scalesWhisperCompelled != wrapper.LastWhisperCompelled)
-                    {
-                        _scalesFor = wrapper.LastContext;
-                        _scalesWarrior = warrior;
-                        _scalesWhisperCompelled = wrapper.LastWhisperCompelled;
-                        _scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
-                    }
-                    if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
+                    // The verdict may change while the context object and warrior stay
+                    // the same. Refresh from the current vote, not a stale UI cache.
+                    // Refresh() already runs at most once per 0.35 seconds.
+                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
+                    if (!string.IsNullOrEmpty(scales)) _text.text += "\n" + scales;
                     if (wrapper.LastWhisperCompelled)
                         _text.text += "\n" + Core.Loc.T(
                             "Поддался шёпоту: исполняет текущий приказ вопреки голосованию души.");
