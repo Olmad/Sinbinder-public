@@ -146,7 +146,7 @@ print("PASS: Unity acceptance freshness uses verified author-build marker, not l
 # disarm the rescue and leave the victim exposed to the next genuine hit.
 bodyguard = (ROOT / "Assets/Scripts/Gameplay/Bodyguard.cs").read_text("utf-8-sig")
 absorb = bodyguard.split("public static bool Absorb(", 1)[1].split("public static int Blocks", 1)[0]
-invalid_gate = "if (w.Rescue && !RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;"
+invalid_gate = "if (!RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;"
 remove_watch = "Watched.Remove(target);"
 assert invalid_gate in absorb and remove_watch in absorb, "Rescue guard integrity checks missing"
 assert absorb.index(invalid_gate) < absorb.index(remove_watch), (
