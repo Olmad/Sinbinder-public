@@ -37,10 +37,6 @@ namespace UnityEngine
         public static T[] FindObjectsByType<T>(FindObjectsInactive inactive,
             FindObjectsSortMode sort) where T:class => Array.Empty<T>();
     }
-    public sealed partial class GameObject
-    {
-        public void SetActive(bool active) {}
-    }
 }
 namespace Sinbinder.Core
 {
@@ -128,6 +124,11 @@ namespace Sinbinder.Inventory
 }
 namespace Sinbinder.Gameplay
 {
+    public partial class Warrior
+    {
+        public UnityEngine.GameObject gameObject {get;}=
+            new UnityEngine.GameObject("Shim Warrior");
+    }
     public sealed class SinbinderPlayer : Warrior {}
     public static class PersonalExpedition
     {
