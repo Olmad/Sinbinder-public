@@ -10,5 +10,6 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs" Link="ExpeditionCollectionPolicy.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs" Link="ExpeditionObjectiveRules.cs" />
   </ItemGroup>
 </Project>
