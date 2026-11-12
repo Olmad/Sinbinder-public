@@ -5,10 +5,10 @@ retelling=(r/"Assets/Scripts/Crypt/Retelling.cs").read_text(encoding="utf-8")
 ui=(r/"Assets/Scripts/UI/MissionMapUI.cs").read_text(encoding="utf-8")
 viewer=(r/"Assets/Scripts/UI/ExpeditionReplayViewer.cs").read_text(encoding="utf-8")
 data=(r/"Assets/Scripts/Gameplay/ExpeditionReplayData.cs").read_text(encoding="utf-8")
-assert 'foreach(var ev in fight.Record.Events)' in board
-assert 'journey.EncounterTrace=events;' in board
+assert 'for(int i=oldCount;i<combat.Record.Events.Count;i++)' in board
+assert 'journey.EncounterTrace=nextTrace;' in board
 assert 'journey.EncounterResolved=true;' in board
-assert 'events.Append(ExpeditionReplayKind.CombatAction' in board
+assert 'nextTrace.Append(ExpeditionReplayKind.CombatAction' in board
 assert 'replay.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,' in board
 assert 'LastReplay = BuildReplay(' in board
 assert 'SavedAutoExpedition outcome, List<string> survivors' in board
@@ -58,7 +58,7 @@ battle=(r/"Assets/Scripts/AOS Engine/BattleRecord.cs").read_text(encoding="utf-8
 archive=(r/"Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs").read_text(encoding="utf-8")
 assert "public int Round;" in battle and "Round = round" in resolver
 assert "public int Round;" in data
-assert "ev.HealDealt," in board and "ev.Round,ev.TargetName,true,ev.Resolved" in board
+assert "ev.HealDealt,ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
 assert "frame.Damage,frame.Healing,frame.Round" in board
 assert "Round = frame.Round" in archive
 assert 'frame.Round>0 ? "\\nХод AOS: "+frame.Round' in viewer
@@ -79,7 +79,7 @@ assert "evt.TargetName=target.DisplayName;" in resolver
 assert "evt.TargetKilled=wasAlive && target.IsDead;" in resolver
 assert "Math.Max(0f, beforeHp-afterHp)" in facts
 assert "Math.Max(0f, afterHp-beforeHp)" in facts
-assert "ev.TargetName,true,ev.Resolved" in board
+assert "ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
 assert "frame.TargetName,frame.HasOutcome,frame.Resolved" in board
 assert "public bool HasOutcome;" in data
 assert "public bool TargetKilled;" in data
@@ -93,3 +93,16 @@ assert "frame.HasOutcome" in viewer
 assert "ev.DamageDealt.ToString" in retelling
 assert "ev.HealDealt.ToString" in retelling
 print("PASS: actual HP deltas, target names and killing blows persisted through AOS and replay")
+
+# When a traveller reaches its destination, the saved real battle frames
+# are appended after each AOS turn. On load the previous round's events are
+# kept exactly once, then only next-round events are added.
+assert "private bool AdvanceEncounterRound(SavedAutoExpedition journey)" in board
+assert "int oldCount=journey.BattleCheckpoint.Record.Events.Count;" in board
+assert "journey.EncounterTrace.Frames.Count!=oldCount" in board
+assert "var nextTrace=CopyTrace(journey.EncounterTrace);" in board
+assert "for(int i=oldCount;i<combat.Record.Events.Count;i++)" in board
+assert "nextTrace.Append(ExpeditionReplayKind.CombatAction" in board
+assert "journey.EncounterTrace=nextTrace;" in board
+assert "CommitFight(journey,combat.Outcome(),chosen,true);" in board
+print("PASS: replay append-only real combat round boundary with no duplicated old events")
