@@ -6,6 +6,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The real Unity inspector assigns [SerializeField] _database; this
+         CPU-only compiler cannot observe inspector serialization. -->
+    <NoWarn>$(NoWarn);CS0649</NoWarn>
     <DefineConstants>BOARD_REAL_AOS;REAL_AOS;BOARD_SHIM</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
