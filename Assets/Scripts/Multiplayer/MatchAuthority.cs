@@ -245,6 +245,25 @@ namespace Sinbinder.Multiplayer
             return reason == OrderRejection.None;
         }
 
+        // Pure shape validation before any target lookup or fog callback.
+        // Do not consume CommandId here; TryApprove remains final authority.
+        public bool PreflightShape(NetworkOrderIntent intent, out OrderRejection reason)
+        {
+            reason = OrderRejection.None;
+            if (intent == null) { reason = OrderRejection.WrongProtocol; return false; }
+            if (!Enum.IsDefined(typeof(NetworkOrderKind), intent.Kind))
+                reason = OrderRejection.UnsupportedOrder;
+            else if (!FiniteWithin(intent.X) || !FiniteWithin(intent.Y) ||
+                     !FiniteWithin(intent.Z))
+                reason = OrderRejection.InvalidPoint;
+            else if (intent.Kind == NetworkOrderKind.Attack &&
+                     (intent.TargetId <= 0 || intent.TargetId == intent.ActorId))
+                reason = OrderRejection.TargetRequired;
+            else if (intent.Kind != NetworkOrderKind.Attack && intent.TargetId != 0)
+                reason = OrderRejection.NotAllowed;
+            return reason == OrderRejection.None;
+        }
+
         public bool TryGetLord(int connectionId, out string lord)
         {
             if (_players.TryGetValue(connectionId, out var player) && player.Connected)
