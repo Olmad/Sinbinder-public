@@ -35,6 +35,17 @@ namespace Sinbinder.Crypt
         // 0: outbound, 1: awaiting instructions, 2: returning
         public int Phase;
         public float SecondsRemaining;
+        // Combat resolves at the encounter, not retrospectively upon homecoming.
+        // These results travel with the squad and survive a save/load.
+        public bool EncounterResolved;
+        public bool EncounterFought;
+        public bool HasChosenAction;
+        public int ChosenAction;
+        public List<string> Survivors = new List<string>();
+        public int TakenCoins;
+        public int FoesFallen;
+        public string BattleSummary;
+        public ExpeditionReplayData EncounterTrace;
     }
 
     public class MissionBoard : MonoBehaviour
@@ -73,8 +84,26 @@ namespace Sinbinder.Crypt
                 MissionName=item.MissionName, Commander=item.Commander,
                 Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
-                Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining
+                Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
+                EncounterResolved=item.EncounterResolved, EncounterFought=item.EncounterFought,
+                HasChosenAction=item.HasChosenAction, ChosenAction=item.ChosenAction,
+                Survivors=item.Survivors == null ? new List<string>() : new List<string>(item.Survivors),
+                TakenCoins=item.TakenCoins, FoesFallen=item.FoesFallen,
+                BattleSummary=item.BattleSummary ?? "",
+                EncounterTrace=CopyTrace(item.EncounterTrace)
             };
+
+        private static ExpeditionReplayData CopyTrace(ExpeditionReplayData source)
+        {
+            if (source==null) return null;
+            var copy=new ExpeditionReplayData(source.MissionName,source.Leader,source.Squad);
+            if (source.Frames!=null)
+                foreach (var frame in source.Frames)
+                    if(frame!=null)
+                        copy.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
+                            frame.Damage,frame.Healing);
+            return copy;
+        }
 
         public static void RestoreJourneys(List<SavedAutoExpedition> saved)
         {
@@ -109,6 +138,13 @@ namespace Sinbinder.Crypt
                         reserved.Contains(name)) valid=false;
                 if (!valid) continue;
                 foreach (var name in item.Party) reserved.Add(name);
+                if(item.EncounterResolved)
+                {
+                    if(item.Survivors==null || item.TakenCoins<0 ||
+                        item.FoesFallen<0 || item.EncounterTrace==null ||
+                        item.Survivors.Count>item.Party.Count ||
+                        item.Survivors.Exists(n => !item.Party.Contains(n))) continue;
+                }
                 var copy=CopyJourney(item);
                 copy.SecondsRemaining=Mathf.Clamp(copy.SecondsRemaining,0f,3600f);
                 ActiveJourneys.Add(copy);
@@ -118,8 +154,6 @@ namespace Sinbinder.Crypt
         private void Update()
         {
             if (ActiveJourneys.Count==0 || Time.deltaTime<=0f) return;
-            // Walk backwards: completed journeys are removed while the others
-            // continue ticking. Autosave always sees the surviving operations.
             for (int i=ActiveJourneys.Count-1;i>=0;i--)
             {
                 var journey=ActiveJourneys[i];
@@ -141,15 +175,28 @@ namespace Sinbinder.Crypt
                     }
                     else
                     {
+                        // Resolve combat now. Return travel cannot begin until
+                        // AOS has actually determined whether anybody survived.
+                        if (!ResolveEncounter(journey)) continue;
                         journey.Phase=2;
                         journey.SecondsRemaining=ReturnSeconds;
-                        LastReport=Loc.F("Отряд «{0}» на месте. Ждём возвращения и доклада.",
+                        LastReport=Loc.F("Отряд «{0}» завершил столкновение и идёт домой.",
                             Loc.Name(journey.Commander));
+                        Core.SaveSystem.AutoSave();
                     }
                     continue;
                 }
                 if (journey.Phase==2)
                 {
+                    // Compatibility with saves created before encounter-state
+                    // serialization. Do not complete a phantom return.
+                    if (!journey.Recalled && !journey.EncounterResolved)
+                    {
+                        if (!ResolveEncounter(journey)) continue;
+                        journey.SecondsRemaining=ReturnSeconds;
+                        Core.SaveSystem.AutoSave();
+                        continue;
+                    }
                     ActiveJourneys.RemoveAt(i);
                     CompleteJourney(journey);
                 }
@@ -162,15 +209,80 @@ namespace Sinbinder.Crypt
             foreach (var journey in ActiveJourneys)
             {
                 if (journey.Commander!=commanderName || journey.Phase!=1) continue;
+                Mission mission=default;
+                foreach(var candidate in MissionCatalog.All())
+                    if(candidate.Name==journey.MissionName) { mission=candidate; break; }
+                if (offer.HasValue && !JunctionCatalog.Options(mission.Junction).Contains(offer.Value))
+                    return false;
                 journey.HasSuggestion=offer.HasValue;
                 journey.SuggestedAction=offer.HasValue ? (int)offer.Value : 0;
+                if (!ResolveEncounter(journey)) return false;
                 journey.Phase=2;
                 journey.SecondsRemaining=ReturnSeconds;
-                LastReport=Loc.F("Совет передан старшему «{0}». Он сам примет решение.",
+                LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
                     Loc.Name(commanderName));
+                Core.SaveSystem.AutoSave();
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Real AOS event is settled AT THE LOCATION, prior to homeward travel.
+        /// The recorded outcome is immutable in gameplay and persists through
+        /// SaveGame, so loading during return cannot reroll casualties or loot.
+        /// Nothing is awarded or brought home until CompleteJourney().
+        /// </summary>
+        private bool ResolveEncounter(SavedAutoExpedition journey)
+        {
+            if (journey.EncounterResolved) return true;
+            Mission mission=default;
+            bool found=false;
+            foreach(var candidate in MissionCatalog.All())
+                if(candidate.Name==journey.MissionName)
+                { mission=candidate; found=true; break; }
+            if(!found) return false;
+            var away=new List<SquadRoster.Member>();
+            foreach(var name in journey.Party)
+            {
+                if(!SquadRoster.TryGet(name,out var member) || !member.IsAway)
+                    return false;
+                member.IsCommander=member.Name==journey.Commander;
+                away.Add(member);
+            }
+            if (away.Count==0 || !journey.Party.Contains(journey.Commander))
+                return false;
+            AOS.MissionAction? suggested=journey.HasSuggestion
+                ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction) : null;
+            AOS.MissionAction? chosen=mission.Junction==Junction.None
+                ? null : Decide(mission,away,suggested);
+            bool noFight=chosen==AOS.MissionAction.LetThemPass;
+            var fight=noFight
+                ? new Expedition.Outcome(Names(away),0,0)
+                : Expedition.Fight(away,mission.Guards);
+
+            var events=new ExpeditionReplayData(Loc.Name(mission.Name),
+                Loc.Name(journey.Commander),journey.Party);
+            if (fight.Record!=null && fight.Record.Events!=null)
+                foreach(var ev in fight.Record.Events)
+                {
+                    if(ev==null) continue;
+                    string actor=string.IsNullOrEmpty(ev.ActorName)
+                        ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
+                    events.Append(ExpeditionReplayKind.CombatAction,actor,
+                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt);
+                }
+            // Commit all fields only after the resolver returned successfully.
+            journey.Survivors=new List<string>(fight.Survivors);
+            journey.TakenCoins=fight.Taken;
+            journey.FoesFallen=fight.FoesFallen;
+            journey.EncounterFought=!noFight;
+            journey.HasChosenAction=chosen.HasValue;
+            journey.ChosenAction=chosen.HasValue ? (int)chosen.Value : 0;
+            journey.BattleSummary=Retelling.Tell(fight.Record);
+            journey.EncounterTrace=events;
+            journey.EncounterResolved=true;
+            return true;
         }
 
         /// <summary>Recall the selected squad before contact, without combat or loot.</summary>
@@ -231,9 +343,8 @@ namespace Sinbinder.Crypt
                 Core.SaveSystem.AutoSave();
                 return;
             }
-            ResolveReturned(found,journey.Commander,away,new List<string>(journey.Party),
-                journey.HasSuggestion
-                    ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction) : null);
+            ResolveReturned(found,journey.Commander,away,
+                new List<string>(journey.Party),journey);
         }
 
 
@@ -398,20 +509,14 @@ namespace Sinbinder.Crypt
 
         private void ResolveReturned(Mission mission, string commanderName,
             List<SquadRoster.Member> away, List<string> party,
-            AOS.MissionAction? suggestion)
+            SavedAutoExpedition journey)
         {
-            // Развилка решается до боя: она решает, будет ли бой вообще.
-            AOS.MissionAction? chosen = mission.Junction == Junction.None
-                ? null
-                : Decide(mission, away, suggestion);
-
-            bool noFight = chosen == AOS.MissionAction.LetThemPass;
-
-            var fight = noFight
-                ? new Expedition.Outcome(Names(away), 0, 0)
-                : Expedition.Fight(away, mission.Guards);
-
-            var survivors = fight.Survivors;
+            // Use the event already decided and simulated at the destination.
+            // Re-running AOS here would change the past on every load.
+            if(!journey.EncounterResolved) return;
+            AOS.MissionAction? chosen=journey.HasChosenAction
+                ? (AOS.MissionAction?)((AOS.MissionAction)journey.ChosenAction) : null;
+            var survivors=journey.Survivors ?? new List<string>();
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
@@ -421,7 +526,7 @@ namespace Sinbinder.Crypt
 
             // Что там было. До этого отчёт говорил, кто вернулся,
             // и молчал о том, почему остальные не вернулись.
-            string told = Retelling.Tell(fight.Record);
+            string told = journey.BattleSummary;
             if (!string.IsNullOrEmpty(told)) LastReport += " " + told;
 
             if (chosen.HasValue)
@@ -448,7 +553,7 @@ namespace Sinbinder.Crypt
                 // руками. Правило «серебро закроет долг разом» записано
                 // в 39-PLACES §2.1; Казна была нужна, пока платить было
                 // нечем, — теперь кошель есть и плата лично тоже.
-                int coin = fight.Taken + Carried(mission, chosen);
+                int coin = journey.TakenCoins + Carried(mission, chosen);
                 // The same physical coin total, but AOS characters can
                 // pocket a portion according to Greed/Envy, the value of
                 // the find and their devotion. No soul, secret or coin
@@ -493,7 +598,7 @@ namespace Sinbinder.Crypt
             }
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,
-                fight, survivors, shares, coinsForLord);
+                journey, survivors, shares, coinsForLord);
             ExpeditionReplayArchive.Add(LastReplay);
 
             // Отряд вернулся — точка, к которой игрок захочет вернуться
@@ -512,7 +617,7 @@ namespace Sinbinder.Crypt
         /// </summary>
         private static ExpeditionReplayData BuildReplay(Mission mission, string leader,
             List<string> party, AOS.MissionAction? chosen,
-            Expedition.Outcome outcome, List<string> survivors,
+            SavedAutoExpedition outcome, List<string> survivors,
             List<ExpeditionLootShare> shares, int coinsForLord)
         {
             var replay = new ExpeditionReplayData(Loc.Name(mission.Name),Loc.Name(leader),party);
@@ -524,26 +629,20 @@ namespace Sinbinder.Crypt
             if(chosen.HasValue)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
                     JunctionCatalog.Told(chosen.Value));
-            if(outcome.Record != null && outcome.Record.Events != null)
-            {
-                foreach(var ev in outcome.Record.Events)
-                {
-                    if(ev==null)continue;
-                    string actor=string.IsNullOrEmpty(ev.ActorName)
-                        ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
-                    replay.Append(ExpeditionReplayKind.CombatAction,actor,
-                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt);
-                }
-            }
+            if(outcome.EncounterTrace!=null && outcome.EncounterTrace.Frames!=null)
+                foreach(var frame in outcome.EncounterTrace.Frames)
+                    if(frame!=null)
+                        replay.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
+                            frame.Damage,frame.Healing);
 
-            if(outcome.Record == null)
+            if(!outcome.EncounterFought)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
-                    Loc.T("Бой не состоялся: решение было принято на развилке."));
+                    Loc.T("Столкновения не было: командир разрешил проход."));
 
             if(survivors.Count>0)
             {
                 replay.Append(ExpeditionReplayKind.Loot,Loc.Name(leader),
-                    Loc.F("С павших противников взяли монет: {0}.",outcome.Taken));
+                    Loc.F("С павших противников взяли монет: {0}.",outcome.TakenCoins));
                 foreach(var taken in shares)
                     replay.Append(ExpeditionReplayKind.Loot,Loc.Name(taken.Name),
                         Loc.F("Оставил себе {0} монет.",taken.Coins));
