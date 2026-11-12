@@ -80,6 +80,7 @@ namespace Sinbinder.Crypt
         {
             ActiveJourneys.Clear();
             if (saved == null) return;
+            var reserved=new HashSet<string>();
             foreach (var item in saved)
             {
                 if (item==null || string.IsNullOrEmpty(item.MissionName) ||
@@ -99,7 +100,15 @@ namespace Sinbinder.Crypt
                     if (!SquadRoster.TryGet(name,out var m) || !m.IsAway)
                     { valid=false; break; }
                 }
+                // A malformed save must not resolve one warrior in several
+                // overlapping expeditions and pay the same spoils twice.
+                if (!valid || !item.Party.Contains(item.Commander)) continue;
+                var local=new HashSet<string>();
+                foreach (var name in item.Party)
+                    if (string.IsNullOrEmpty(name) || !local.Add(name) ||
+                        reserved.Contains(name)) valid=false;
                 if (!valid) continue;
+                foreach (var name in item.Party) reserved.Add(name);
                 var copy=CopyJourney(item);
                 copy.SecondsRemaining=Mathf.Clamp(copy.SecondsRemaining,0f,3600f);
                 ActiveJourneys.Add(copy);
@@ -224,7 +233,7 @@ namespace Sinbinder.Crypt
             }
             ResolveReturned(found,journey.Commander,away,new List<string>(journey.Party),
                 journey.HasSuggestion
-                    ? (AOS.MissionAction?)journey.SuggestedAction : null);
+                    ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction) : null);
         }
 
 
@@ -337,6 +346,24 @@ namespace Sinbinder.Crypt
                 return Loc.T("Выбранный старший недоступен.");
             if (before.Contains(commanderName))
                 return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
+
+            // Validate everything BEFORE mutating SquadRoster. The old
+            // SendAway silently skipped unavailable soldiers, making the
+            // on-screen party differ from the group actually sent.
+            var selected=new HashSet<string>();
+            int maxSize=System.Math.Min(mission.Squad,
+                Leadership.SquadSize(commander.Leadership));
+            if (companions!=null)
+                foreach (var name in companions)
+                {
+                    if (string.IsNullOrEmpty(name) || name==commanderName ||
+                        !selected.Add(name) ||
+                        !SquadRoster.TryGet(name,out var member) ||
+                        !SquadRoster.CanGo(member))
+                        return Loc.T("Неверный состав: один из спутников недоступен или указан повторно.");
+                }
+            if (selected.Count+1>maxSize)
+                return Loc.T("Старший не может вести столько спутников.");
 
             SquadRoster.SendAway(commanderName, companions);
 
