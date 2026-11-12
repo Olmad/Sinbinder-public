@@ -215,6 +215,32 @@ namespace Sinbinder.UI
                 y-=133f;
             }
 
+            // Wounds are no longer an eternal penalty with no way to
+            // recover. Returning soldiers can have their bodies repaired
+            // for ordinary silver collected on expeditions. Never treat an
+            // away soldier, heal an old save default, or revive the dead.
+            var purse=Inventory.PlayerInventory.Instance;
+            foreach(var member in SquadRoster.Members)
+            {
+                if(member.IsAway) continue;
+                int cost=ExpeditionHealthRules.TreatmentCost(member.HealthFraction);
+                if(cost<=0) continue;
+                string name=member.Name;
+                bool affordable=purse!=null && purse.Gold>=cost;
+                _spawned.Add(Row(y,affordable,
+                    Loc.F("Восстановить бойца: {0}",Loc.Name(member.ShownName)),
+                    Loc.F("Здоровье: {0}% · восстановление: {1} монет",
+                        Mathf.RoundToInt(
+                            ExpeditionHealthRules.RestoreFraction(member.HealthFraction)*100f),
+                        cost),
+                    affordable
+                        ? Loc.T("Нажмите: вернуть полное здоровье перед новой экспедицией.")
+                        : Loc.T("Не хватает монет. Вернувшийся воин остаётся раненым."),
+                    affordable ? (System.Action)(() => RepairWarrior(name))
+                               : null,118f));
+                y-=126f;
+            }
+
             // The old summary still fits the title, but the complete
             // auto-battle log is now a separate user-controlled viewer.
             // A new mission does not erase old complete battle records.
@@ -466,6 +492,38 @@ namespace Sinbinder.UI
             if (m.UnpaidMissions > 0) parts.Add(Grammar.Pick(m.Gender, Loc.T("ему должны"), Loc.T("ей должны")));
             if (m.Brother) parts.Add(Loc.T("брат по оружию"));
             return string.Join(" · ", parts);
+        }
+
+        /// <summary>
+        /// An actual crypt action: spend real carried silver, repair the
+        /// persistent body AND the currently spawned Warrior, then autosave.
+        /// Rechecks stock and availability at click time to prevent repeat
+        /// purchases from stale UI rows.
+        /// </summary>
+        private void RepairWarrior(string name)
+        {
+            if(!CryptMap.Opened || PersonalExpedition.Active ||
+               !SquadRoster.TryGet(name,out var member) || member.IsAway)
+            { ShowMissions(); return; }
+
+            int cost=ExpeditionHealthRules.TreatmentCost(member.HealthFraction);
+            var purse=Inventory.PlayerInventory.Instance;
+            if(cost<=0 || purse==null || !purse.SpendGold(cost))
+            { ShowMissions(); return; }
+
+            if(!SquadRoster.RepairReturnedWarrior(name))
+            {
+                purse.AddGold(cost); // reverse a cancelled purchase
+                ShowMissions();
+                return;
+            }
+
+            foreach(var warrior in MissionBoard.Squad())
+                if(warrior.DisplayName==name && !warrior.IsDead)
+                    warrior.SetHealthFraction(1f);
+
+            Core.SaveSystem.AutoSave();
+            ShowMissions();
         }
 
         private static string HealthNote(SquadRoster.Member member)
