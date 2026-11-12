@@ -68,6 +68,17 @@ namespace Sinbinder.Gameplay
             // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
             if (Bodyguard.Absorb(this, attacker, damage)) return;
 
+            // The caravan is genuinely peaceful until the first hostile
+            // action. A hit by the player or a player-side warrior commits
+            // assault BEFORE the blow is applied, so its neutral guards
+            // immediately become real enemies. The method ignores all
+            // ordinary battles and personal maps other than Salt Road.
+            if(attacker!=null)
+            {
+                if(_warrior==null) _warrior=GetComponent<Warrior>();
+                PersonalExpedition.OnGuardAttacked(_warrior,attacker);
+            }
+
             // Кто ударил, тот в бою участвовал. Без этой отметки «Тень»
             // не отличить от остальных (AOSWarriorWrapper.Struck).
             if (attacker != null
