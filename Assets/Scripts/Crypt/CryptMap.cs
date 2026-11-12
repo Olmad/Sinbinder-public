@@ -98,6 +98,12 @@ namespace Sinbinder.Crypt
         {
             bool on = Switch && Opened;
             if (_shown != on) Show(on);
+
+            // The expedition table belongs to _zone, which can be inactive.
+            // A hidden UI must not freeze the world or strand away warriors.
+            // Do not double-tick when MissionBoard.Update runs normally.
+            if (_board != null && !_board.isActiveAndEnabled)
+                _board.AdvanceJourneys(Time.deltaTime);
         }
 
         private void Show(bool on)
