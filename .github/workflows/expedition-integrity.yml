@@ -6,6 +6,10 @@ on:
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
       - "Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs"
+      - "Assets/Scripts/AOS Engine/MemoryModule.cs"
+      - "Assets/Scripts/AOS Engine/MissionContext.cs"
       - "Assets/Scripts/Gameplay/RivalLord.cs"
       - "Assets/Scripts/Crypt/Retelling.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
@@ -62,6 +66,7 @@ jobs:
       - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
       - run: python3 Tools/expeditions/check_replay_wiring.py
       - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py
