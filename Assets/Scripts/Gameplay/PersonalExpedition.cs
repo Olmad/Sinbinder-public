@@ -336,6 +336,8 @@ namespace Sinbinder.Gameplay
             }
             if (_plan.Kind==ExpeditionMapKind.SaltRoad)
             {
+                if(_state.CaravanPassed)
+                { Announce(Loc.T("Обоз ушёл по дороге. Серебро больше недоступно.")); return; }
                 if(_state.CargoTaken)
                 { Announce(Loc.T("Обоз уже разгружен.")); return; }
                 var inventory=Inventory.PlayerInventory.Instance;
@@ -379,6 +381,10 @@ namespace Sinbinder.Gameplay
                     : Loc.T("Решить судьбу обоза и добыть серебро"))
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
+                : _plan.Kind==ExpeditionMapKind.SaltRoad && !_state.CargoTaken &&
+                  !_caravanFightChosen &&
+                  Dist(SinbinderPlayer.Where,CaravanDecisionPoint)<6f
+                    ? Loc.T("F — решить судьбу обоза")
                 : Dist(SinbinderPlayer.Where,Objective)<4f ? Loc.T("F — исследовать цель")
                 : Loc.T("Следуйте к янтарному огню; бирюзовый огонь — путь назад.");
             string notice=Time.unscaledTime<_noticeUntil ? "\n"+_notice : "";
