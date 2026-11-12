@@ -183,9 +183,11 @@ namespace Sinbinder.UI
             {
                 string commanderId=journey.Commander;
                 var phase=journey.Phase==0 ? Loc.T("В пути к цели")
-                    : journey.Phase==1 ? Loc.T("Ожидает решения Греховода")
+                    : journey.Phase==1 ? Loc.T("Ожидает совета (решит сам, если совета нет)")
                     : Loc.T("Возвращается в склеп");
-                var eta=journey.Phase==1 ? Loc.T("Нажмите, чтобы выбрать совет")
+                var eta=journey.Phase==1
+                    ? Loc.F("Старший решит сам через {0} сек. Нажмите, чтобы дать совет.",
+                        Mathf.CeilToInt(journey.SecondsRemaining))
                     : journey.Phase==0 ? Loc.F("До прибытия около {0} сек. Нажмите, чтобы отозвать.",
                         Mathf.CeilToInt(journey.SecondsRemaining))
                     : Loc.F("До возвращения около {0} сек.",Mathf.CeilToInt(journey.SecondsRemaining));
