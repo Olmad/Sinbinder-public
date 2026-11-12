@@ -188,49 +188,68 @@ namespace Sinbinder.Crypt
             }
         }
 
-        private void Update()
+        private void Update() => AdvanceJourneys(Time.deltaTime);
+
+        /// <summary>
+        /// Expedition time belongs to the world, not to a visible UI panel.
+        /// CryptMap can call this on its disabled child MissionBoard while
+        /// the expedition table is hidden. A paused game passes zero delta.
+        /// </summary>
+        public void AdvanceJourneys(float gameDelta)
         {
-            if (ActiveJourneys.Count==0 || Time.deltaTime<=0f) return;
+            if (ActiveJourneys.Count==0 || gameDelta<=0f ||
+                float.IsNaN(gameDelta) || float.IsInfinity(gameDelta)) return;
+
+            // Each active crew owns its own stage and remaining time.
+            // Reverse traversal tolerates returns that remove completed trips.
             for (int i=ActiveJourneys.Count-1;i>=0;i--)
             {
                 var journey=ActiveJourneys[i];
-                if (journey.Phase==1) continue;
-                journey.SecondsRemaining-=Time.deltaTime;
-                if (journey.SecondsRemaining>0f) continue;
+                journey.SecondsRemaining=ExpeditionJourneyTiming.Advance(
+                    journey.SecondsRemaining,gameDelta);
+                if (!ExpeditionJourneyTiming.Finished(journey.SecondsRemaining)) continue;
 
                 if (journey.Phase==0)
                 {
                     Mission mission=default;
                     foreach (var candidate in MissionCatalog.All())
                         if (candidate.Name==journey.MissionName) { mission=candidate; break; }
+
                     if (mission.Junction!=Junction.None && !journey.HasSuggestion)
                     {
+                        // Advice is optional. A real AOS commander never waits
+                        // forever for a player who has left the crystal ball.
                         journey.Phase=1;
-                        journey.SecondsRemaining=0f;
-                        LastReport=Loc.F("Отряд «{0}» прибыл к развилке. Требуется решение игрока.",
-                            Loc.Name(journey.Commander));
-                    }
-                    else
-                    {
-                        // Resolve combat now. Return travel cannot begin until
-                        // AOS has actually determined whether anybody survived.
-                        if (!ResolveEncounter(journey)) continue;
-                        journey.Phase=2;
-                        journey.SecondsRemaining=ReturnSeconds;
-                        LastReport=Loc.F("Отряд «{0}» завершил столкновение и идёт домой.",
+                        journey.SecondsRemaining=ExpeditionJourneyTiming.AdviceSeconds;
+                        LastReport=Loc.F(
+                            "Отряд «{0}» у развилки. Можно дать совет; без него старший решит сам.",
                             Loc.Name(journey.Commander));
                         Core.SaveSystem.AutoSave();
+                        continue;
                     }
+                }
+
+                if (journey.Phase==0 || journey.Phase==1)
+                {
+                    // The commander chooses and battle resolves at the site,
+                    // regardless of whether the player sent any advice.
+                    if (!ResolveEncounter(journey)) continue;
+                    journey.Phase=2;
+                    journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
+                    LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
+                        Loc.Name(journey.Commander));
+                    Core.SaveSystem.AutoSave();
                     continue;
                 }
+
                 if (journey.Phase==2)
                 {
-                    // Compatibility with saves created before encounter-state
-                    // serialization. Do not complete a phantom return.
+                    // Older saves without the encounter result must resolve
+                    // it once before return; never award an unplayed victory.
                     if (!journey.Recalled && !journey.EncounterResolved)
                     {
                         if (!ResolveEncounter(journey)) continue;
-                        journey.SecondsRemaining=ReturnSeconds;
+                        journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
                         Core.SaveSystem.AutoSave();
                         continue;
                     }
