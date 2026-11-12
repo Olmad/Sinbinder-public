@@ -95,6 +95,7 @@ namespace Sinbinder.Core
             save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
             save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot();
             save.AutoExpeditions = MissionBoard.SnapshotJourneys();
+            save.AutoExpeditionReport = MissionBoard.SnapshotReport();
             save.ExpeditionMemories = Gameplay.ExpeditionMemoryLedger.Snapshot();
 
             if (Inventory.PlayerInventory.Instance != null)
