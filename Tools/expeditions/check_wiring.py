@@ -75,7 +75,7 @@ assert "ExpeditionObjectiveRules.Secured(" in m
 assert "ExpeditionObjectiveRules.DeliveredCoins(" in m
 assert "public static bool Secured(bool fought, bool resolverVictory, int survivors)" in rules
 assert "return survivors > 0 && (!fought || resolverVictory);" in rules
-assert "if(secured) TakeSpoils(mission, chosen);" in m
+assert "if(secured) TakeSpoils(mission, chosen, journey);" in m
 assert "warrior.gameObject.SetActive(false);" in m
 assert "w.gameObject.SetActive(true);" in m
 assert "FindObjectsInactive.Include" in m
