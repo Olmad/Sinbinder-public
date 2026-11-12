@@ -62,6 +62,17 @@ static class Program
             "actual AOS HP becomes the persisted wound fraction");
         Check(ExpeditionHealthRules.Capture(300f,80f)==1f,
             "health fraction respects maximum HP");
+        Check(ExpeditionHealthRules.TreatmentCost(1f)==0 &&
+              ExpeditionHealthRules.TreatmentCost(0f)==0,
+            "full health and pre-wound saves require no body repair");
+        Check(ExpeditionHealthRules.TreatmentCost(0.75f)==5,
+            "minor expedition wound costs real silver in the crypt");
+        Check(ExpeditionHealthRules.TreatmentCost(0.25f)==15,
+            "severe wounds cost more to restore than minor wounds");
+        Check(ExpeditionHealthRules.TreatmentCost(0.001f)==20,
+            "near-fatal surviving wounds have a bounded repair cost");
+        Check(ExpeditionHealthRules.TreatmentCost(float.NaN)==0,
+            "invalid old save health never charges money");
         Check(ExpeditionJourneyTiming.OutboundSeconds>0f &&
               ExpeditionJourneyTiming.AdviceSeconds>0f &&
               ExpeditionJourneyTiming.ReturnSeconds>0f,
