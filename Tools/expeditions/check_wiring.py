@@ -44,7 +44,7 @@ assert "public bool RecallJourney(string commanderName)" in m
 assert "if (journey.Recalled)" in m
 assert "SquadRoster.ComeBack(journey.Party,journey.Party);" in m
 assert "Отряд вернулся без боя и добычи" in m
-assert "MissionBoard.Journeys" in ui and "PickJourneyDecision()" in ui
+assert "MissionBoard.Journeys" in ui and "PickJourneyDecision(commanderId)" in ui
 assert "_board.RecallJourney(commanderId); ShowMissions();" in ui
 assert "Decisions occur when the squad reaches the location" in ui
 assert "save.AutoExpeditions = MissionBoard.SnapshotJourneys();" in save
