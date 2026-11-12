@@ -19,6 +19,7 @@ namespace Sinbinder.Gameplay
         public int EnemiesRemaining;
         public bool CargoTaken;
         public bool CaravanPassed;
+        public bool CaravanAssaulted;
         public bool SecretTaken;
         public int Visits;
     }
@@ -45,6 +46,7 @@ namespace Sinbinder.Gameplay
                 list.Add(new SavedPersonalExpedition
                 { Id=state.Id, EnemiesRemaining=state.EnemiesRemaining,
                   CargoTaken=state.CargoTaken, CaravanPassed=state.CaravanPassed,
+                  CaravanAssaulted=state.CaravanAssaulted,
                   SecretTaken=state.SecretTaken,
                   Visits=state.Visits });
             return list;
@@ -196,7 +198,7 @@ namespace Sinbinder.Gameplay
         private SavedPersonalExpedition _state;
         private readonly List<Traveller> _travellers=new();
         private readonly List<Warrior> _guards=new();
-        private bool _exiting, _returnTactical, _caravanChoiceOpen, _caravanFightChosen;
+        private bool _exiting, _returnTactical, _caravanChoiceOpen;
         private string _notice="";
         private float _noticeUntil;
 
@@ -282,7 +284,7 @@ namespace Sinbinder.Gameplay
             if (expedition._plan.Kind==ExpeditionMapKind.SaltRoad &&
                 !expedition._state.CaravanPassed &&
                 !expedition._state.CargoTaken &&
-                !expedition._caravanFightChosen &&
+                !expedition._state.CaravanAssaulted &&
                 Dist(SinbinderPlayer.Where,expedition.CaravanDecisionPoint)<6f)
                 offer(Gaze.Miss(expedition.CaravanDecisionPoint+Vector3.up*1.4f,1.5f),
                     Loc.T("F — решить судьбу обоза"),expedition.OpenCaravanChoice);
@@ -294,7 +296,7 @@ namespace Sinbinder.Gameplay
         private void OpenCaravanChoice()
         {
             if (_exiting || _state.CaravanPassed || _state.CargoTaken ||
-                _caravanFightChosen) return;
+                _state.CaravanAssaulted) return;
             _caravanChoiceOpen=true;
         }
 
@@ -305,7 +307,7 @@ namespace Sinbinder.Gameplay
             _caravanChoiceOpen=false;
             if (attack)
             {
-                _caravanFightChosen=true;
+                _state.CaravanAssaulted=true;
                 Announce(Loc.T("Греховод приказал напасть. Охрану придётся победить настоящим боем."));
                 return;
             }
@@ -324,7 +326,7 @@ namespace Sinbinder.Gameplay
         {
             if(_plan.Kind==ExpeditionMapKind.SaltRoad &&
                !_state.CaravanPassed && !_state.CargoTaken &&
-               !_caravanFightChosen)
+               !_state.CaravanAssaulted)
             {
                 OpenCaravanChoice();
                 return;
@@ -382,7 +384,7 @@ namespace Sinbinder.Gameplay
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
                 : _plan.Kind==ExpeditionMapKind.SaltRoad && !_state.CargoTaken &&
-                  !_caravanFightChosen &&
+                  !_state.CaravanAssaulted &&
                   Dist(SinbinderPlayer.Where,CaravanDecisionPoint)<6f
                     ? Loc.T("F — решить судьбу обоза")
                 : Dist(SinbinderPlayer.Where,Objective)<4f ? Loc.T("F — исследовать цель")
