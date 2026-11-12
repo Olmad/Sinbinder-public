@@ -86,6 +86,61 @@ static class Program
              "corrupt frame is rejected without corrupting the archive");
         ExpeditionReplayArchive.Restore(null);
         Test(ExpeditionReplayArchive.History.Count==0,"old save without history safe");
+        // Actual action facts, not nominal attack or attempted heal.
+        Test(ExpeditionCombatFacts.ActualDamage(50f,43f)==7f,
+            "armour and absorption: record actual seven HP lost, not nominal attack");
+        Test(ExpeditionCombatFacts.ActualDamage(50f,50f)==0f,
+            "fully blocked attack does not masquerade as damage");
+        Test(ExpeditionCombatFacts.ActualDamage(10f,0f)==10f,
+            "killing blow records only HP actually remaining");
+        Test(ExpeditionCombatFacts.ActualDamage(10f,15f)==0f,
+            "target recovering HP does not count as damage");
+        Test(ExpeditionCombatFacts.ActualHealing(99f,100f)==1f,
+            "healing reports only restored HP rather than attempted five");
+        Test(ExpeditionCombatFacts.ActualHealing(30f,30f)==0f,
+            "healing at cap does not report a cure");
+        Test(ExpeditionCombatFacts.ActualHealing(30f,35f)==5f,
+            "real healing delta is retained");
+        Test(ExpeditionCombatFacts.ActualDamage(float.NaN,10f)==0f,
+            "invalid health values cannot inject imaginary damage");
+
+        // New format: AOS outcome facts survive both archive clone and
+        // saved JSON-shaped records. Old records must remain ambiguous,
+        // not be misclassified as failed actions by default-false fields.
+        var observed=new ExpeditionReplayData("Соляной обоз","Командир",new[]{"Командир"});
+        observed.Append(ExpeditionReplayKind.Departure,"Командир","Вышел");
+        observed.Append(ExpeditionReplayKind.CombatAction,"Командир","Действительно ударил",
+            target:"runtime-guid",damage:7f,round:4,targetName:"Чужой 2",
+            hasOutcome:true,resolved:true,targetKilled:true,targetHealthAfter:0f);
+        observed.Append(ExpeditionReplayKind.Return,"Командир","Вернулся");
+        ExpeditionReplayArchive.Add(observed);
+        var observedCopy=ExpeditionReplayArchive.Snapshot().Last().Frames[1];
+        Test(observedCopy.TargetName=="Чужой 2" && observedCopy.Target=="runtime-guid",
+            "real target label and original runtime ID both retained");
+        Test(observedCopy.HasOutcome && observedCopy.Resolved && observedCopy.TargetKilled,
+            "verified hit, effective result and fatality survive archive copy");
+        Test(observedCopy.Round==4 && observedCopy.Damage==7f &&
+             observedCopy.TargetHealthAfter==0f,
+            "actual AOS round, post-armour damage and target HP survive copy");
+        observed.Frames[1].TargetName="TAMPER";
+        observed.Frames[1].Resolved=false;
+        Test(ExpeditionReplayArchive.History.Last().Frames[1].Resolved &&
+             ExpeditionReplayArchive.History.Last().Frames[1].TargetName=="Чужой 2",
+             "changing a live battle event cannot rewrite saved observations");
+
+        var failed=new ExpeditionReplayData("Отказ","Командир",new[]{"Командир"});
+        failed.Append(ExpeditionReplayKind.Departure,"Командир","Вышел");
+        failed.Append(ExpeditionReplayKind.CombatAction,"Командир","Пытался",
+            targetName:"Чужой 1",round:2,hasOutcome:true,resolved:false);
+        failed.Append(ExpeditionReplayKind.Return,"Командир","Вернулся");
+        ExpeditionReplayArchive.Add(failed);
+        var failedCopy=ExpeditionReplayArchive.Snapshot().Last().Frames[1];
+        Test(failedCopy.HasOutcome && !failedCopy.Resolved &&
+             failedCopy.TargetName=="Чужой 1",
+            "failed action survives as observed failure without invented effect");
+        var legacy=ExpeditionReplayArchive.Snapshot().Last().Frames[0];
+        Test(!legacy.HasOutcome && !legacy.Resolved && !legacy.TargetKilled,
+            "route and old-save frames are not mislabeled as failed combat");
         Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
     }
 }
