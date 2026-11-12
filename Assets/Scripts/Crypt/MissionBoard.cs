@@ -291,12 +291,40 @@ namespace Sinbinder.Crypt
                 {
                     // The commander chooses and battle resolves at the site,
                     // regardless of whether the player sent any advice.
-                    if (!ResolveEncounter(journey)) continue;
+                    if (!ResolveEncounter(journey))
+                    {
+                        if(journey.Phase==3)
+                        {
+                            LastReport=Loc.F("Отряд «{0}» вступил в столкновение. Решения AOS исполняются по ходам.",
+                                Loc.Name(journey.Commander));
+                            Log(LastReport);
+                            SaveExpeditionProgress();
+                        }
+                        continue;
+                    }
                     journey.Phase=2;
                     journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
                     LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
                         Loc.Name(journey.Commander));
                     Log(LastReport);
+                    SaveExpeditionProgress();
+                    continue;
+                }
+
+                if (journey.Phase==3)
+                {
+                    // ONE genuine AOS round per 2 seconds of game time,
+                    // not a previously simulated film played frame by frame.
+                    if(journey.CombatBlocked) continue;
+                    if(AdvanceEncounterRound(journey))
+                    {
+                        journey.Phase=2;
+                        journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
+                        LastReport=Loc.F(
+                            "Отряд «{0}» завершил AOS-столкновение и идёт домой.",
+                            Loc.Name(journey.Commander));
+                        Log(LastReport);
+                    }
                     SaveExpeditionProgress();
                     continue;
                 }
@@ -313,7 +341,11 @@ namespace Sinbinder.Crypt
                     // it once before return; never award an unplayed victory.
                     if (!journey.Recalled && !journey.EncounterResolved)
                     {
-                        if (!ResolveEncounter(journey)) continue;
+                        if (!ResolveEncounter(journey))
+                        {
+                            if(journey.Phase==3) SaveExpeditionProgress();
+                            continue;
+                        }
                         journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
                         SaveExpeditionProgress();
                         continue;
@@ -353,7 +385,15 @@ namespace Sinbinder.Crypt
                     return false;
                 journey.HasSuggestion=offer.HasValue;
                 journey.SuggestedAction=offer.HasValue ? (int)offer.Value : 0;
-                if (!ResolveEncounter(journey)) return false;
+                if (!ResolveEncounter(journey))
+                {
+                    if(journey.Phase!=3 || journey.CombatBlocked) return false;
+                    LastReport=Loc.F("Отряд «{0}» начал AOS-столкновение. Совет учтён, но командир решает сам.",
+                        Loc.Name(commanderName));
+                    Log(LastReport);
+                    SaveExpeditionProgress();
+                    return true;
+                }
                 journey.Phase=2;
                 journey.SecondsRemaining=ReturnSeconds;
                 LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
