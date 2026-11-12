@@ -308,8 +308,9 @@ namespace Sinbinder.UI
                 _spawned.Add(Row(y, can,
                     Loc.Name(member.ShownName),
                     !can ? why
-                        : Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
-                        : Leadership.Shortfall(member.Leadership, mission.Squad),
+                        : (Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
+                            : Leadership.Shortfall(member.Leadership, mission.Squad))
+                          + HealthNote(member),
                     prophecy,
                     can ? () => Lead(name) : (System.Action)null));
 
@@ -444,9 +445,19 @@ namespace Sinbinder.UI
 
             var parts = new List<string> { goes ? Loc.T("идёт") : Loc.T("остаётся в склепе") };
             parts.Add(SoulData.GetSinName(m.Sin).ToLowerInvariant());
+            string condition=HealthNote(m);
+            if(condition.Length>0) parts.Add(condition.Trim());
             if (m.UnpaidMissions > 0) parts.Add(Grammar.Pick(m.Gender, Loc.T("ему должны"), Loc.T("ей должны")));
             if (m.Brother) parts.Add(Loc.T("брат по оружию"));
             return string.Join(" · ", parts);
+        }
+
+        private static string HealthNote(SquadRoster.Member member)
+        {
+            float health=ExpeditionHealthRules.RestoreFraction(member.HealthFraction);
+            if(health<0.35f) return Loc.T(" · тяжело ранен");
+            if(health<0.99f) return Loc.T(" · ранен");
+            return "";
         }
 
         /// <summary>Имя по старшинству для голого имени из состава.</summary>
