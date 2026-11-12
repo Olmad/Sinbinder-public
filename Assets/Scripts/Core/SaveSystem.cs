@@ -113,6 +113,7 @@ namespace Sinbinder.Core
                     Gender = (int)m.Gender,
                     Intensity = m.Intensity,
                     Loyalty = m.Loyalty,
+                    HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
                     Leadership = m.Leadership,
                     IsCommander = m.IsCommander,
