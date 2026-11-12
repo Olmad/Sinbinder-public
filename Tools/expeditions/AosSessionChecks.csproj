@@ -13,5 +13,7 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/BattleRecord.cs" Link="BattleRecord.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs" Link="ExpeditionCombatFacts.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs" Link="ExpeditionBattleCheckpoint.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionHealthRules.cs" Link="ExpeditionHealthRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Expedition.cs" Link="Expedition.cs" />
   </ItemGroup>
 </Project>
