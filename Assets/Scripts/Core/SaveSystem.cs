@@ -380,6 +380,7 @@ namespace Sinbinder.Core
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
             MissionBoard.RestoreJourneys(save.AutoExpeditions);
+            MissionBoard.RestoreReport(save.AutoExpeditionReport);
             CryptUpgrades.Restore(save.Installed, save.Brought);
             Commitment.Set(save.Commitment);
 
