@@ -22,7 +22,8 @@ assert "CaravanPassed=state.CaravanPassed" in p
 assert "_state.CaravanPassed=true;" in p
 assert "_state.CargoTaken=true;" in p
 assert "_state.EnemiesRemaining=0;" in p
-assert "_caravanFightChosen=true;" in p
+assert "_state.CaravanAssaulted=true;" in p
+assert "CaravanAssaulted=state.CaravanAssaulted" in p
 assert "private void OpenCaravanChoice()" in p
 assert "private void ChooseCaravan(bool attack)" in p
 assert "expedition.OpenCaravanChoice" in p
