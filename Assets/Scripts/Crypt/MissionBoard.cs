@@ -36,8 +36,12 @@ namespace Sinbinder.Crypt
         // True only if physical homecoming was blocked by invalid party data.
         // The journey is preserved; no loot or invented crew is granted.
         public bool ReturnBlocked;
-        // 0: outbound, 1: awaiting instructions, 2: returning
+        // 0: outbound, 1: awaiting advice, 2: returning, 3: live AOS
         public int Phase;
+        // Real AOS round boundaries, including actor HP, teams and actions.
+        // Never generate an outcome from a blocked or missing checkpoint.
+        public ExpeditionBattleCheckpoint BattleCheckpoint;
+        public bool CombatBlocked;
         public float SecondsRemaining;
         // Combat resolves at the encounter, not retrospectively upon homecoming.
         // These results travel with the squad and survive a save/load.
@@ -113,6 +117,8 @@ namespace Sinbinder.Crypt
                 Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
                 Recalled=item.Recalled, ReturnBlocked=item.ReturnBlocked,
+                CombatBlocked=item.CombatBlocked,
+                BattleCheckpoint=ExpeditionBattleCheckpoint.Copy(item.BattleCheckpoint),
                 Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
                 EncounterResolved=item.EncounterResolved, EncounterFought=item.EncounterFought,
                 BattleWon=item.BattleWon,
@@ -162,7 +168,7 @@ namespace Sinbinder.Crypt
             {
                 if (item==null || string.IsNullOrEmpty(item.MissionName) ||
                     string.IsNullOrEmpty(item.Commander) || item.Party==null ||
-                    item.Party.Count==0 || item.Phase<0 || item.Phase>2 ||
+                    item.Party.Count==0 || item.Phase<0 || item.Phase>3 ||
                     float.IsNaN(item.SecondsRemaining) ||
                     float.IsInfinity(item.SecondsRemaining)) continue;
                 // Older or corrupt saves cannot create an unbounded queue.
@@ -204,6 +210,22 @@ namespace Sinbinder.Crypt
                     }
                 }
                 if(!valid) continue;
+                // A corrupted half-finished battle must NEVER be restarted
+                // from the beginning, creating a second chance at loot or
+                // silently changing deaths. Keep the journey, but block the
+                // continuation until its checkpoint can be repaired.
+                if(item.Phase==3)
+                {
+                    Mission fightMission=default;
+                    foreach(var candidate in MissionCatalog.All())
+                        if(candidate.Name==item.MissionName)
+                        { fightMission=candidate; break; }
+                    if(item.EncounterResolved || item.Recalled ||
+                       !ExpeditionBattleCheckpoint.IsValid(item.BattleCheckpoint,
+                           item.Party.Count,Mathf.Max(fightMission.Guards,1),
+                           AOS.AutoBattleResolver.MaxTurns))
+                        item.CombatBlocked=true;
+                }
                 // Only successfully validated journeys reserve actors.
                 foreach (var name in item.Party) reserved.Add(name);
                 var copy=CopyJourney(item);
