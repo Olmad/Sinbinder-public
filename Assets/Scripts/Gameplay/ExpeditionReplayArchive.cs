@@ -34,7 +34,8 @@ namespace Sinbinder.Gameplay
                     Description = frame.Description ?? "",
                     Damage = frame.Damage,
                     Healing = frame.Healing,
-                    Sequence = frame.Sequence
+                    Sequence = frame.Sequence,
+                    Round = frame.Round
                 });
             }
             return copy;
