@@ -147,7 +147,8 @@ namespace Sinbinder.Multiplayer
             }
 
             // Invalid envelopes must never probe target existence or fog.
-            if (!_authority.PreflightEnvelope(authenticatedConnectionId, intent, out reason))
+            if (!_authority.PreflightEnvelope(authenticatedConnectionId, intent, out reason) ||
+                !_authority.PreflightShape(intent, out reason))
                 return false;
 
             Warrior target = null;
