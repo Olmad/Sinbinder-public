@@ -188,7 +188,10 @@ namespace Sinbinder.Gameplay
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue)
             { LatchMouse(); return; }
-            if (Sinbinder.Dev.PhotoMode.Active || UI.Modal.Any)
+            // Экран снаряжения и разговора (GearPanel) — тоже окно: в первом лице
+            // курсор оставался запертым, и отдать вещь было нечем (автор, 12.11:
+            // «при открытии снаряжения не отображается мышка»).
+            if (Sinbinder.Dev.PhotoMode.Active || UI.Modal.Any || UI.GearPanel.Open)
             { LatchMouse(); Release(); return; }
 
             // На паузе игрок разговаривает с панелью, и мышь нужна ему,
