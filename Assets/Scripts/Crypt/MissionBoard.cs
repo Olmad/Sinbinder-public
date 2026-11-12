@@ -28,6 +28,7 @@ namespace Sinbinder.Crypt
     {
         public string MissionName;
         public string Commander;
+        public string JourneyId;
         public List<string> Party = new List<string>();
         public bool HasSuggestion;
         public int SuggestedAction;
@@ -83,6 +84,7 @@ namespace Sinbinder.Crypt
             => new SavedAutoExpedition
             {
                 MissionName=item.MissionName, Commander=item.Commander,
+                JourneyId=item.JourneyId,
                 Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
                 Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
@@ -161,6 +163,8 @@ namespace Sinbinder.Crypt
                 // Only successfully validated journeys reserve actors.
                 foreach (var name in item.Party) reserved.Add(name);
                 var copy=CopyJourney(item);
+                if (string.IsNullOrEmpty(copy.JourneyId))
+                    copy.JourneyId=System.Guid.NewGuid().ToString("N");
                 copy.SecondsRemaining=Mathf.Clamp(copy.SecondsRemaining,0f,3600f);
                 ActiveJourneys.Add(copy);
             }
@@ -522,6 +526,7 @@ namespace Sinbinder.Crypt
             ActiveJourneys.Add(new SavedAutoExpedition
             {
                 MissionName=mission.Name, Commander=commanderName,
+                JourneyId=System.Guid.NewGuid().ToString("N"),
                 Party=new List<string>(party), Phase=0,
                 SecondsRemaining=OutboundSeconds,
                 HasSuggestion=suggestion.HasValue,
@@ -566,6 +571,41 @@ namespace Sinbinder.Crypt
                 LastReport += " " + Loc.T("Замысел командира не выполнен: охрана остановила отряд.");
             if (survivors.Count>0 && !secured)
                 LastReport += " " + Loc.T("Отступили с пустыми руками, цель не достигнута.");
+
+            // The voice of Memory now has durable, observed expedition
+            // experience. Dead characters cannot remember their own return.
+            foreach(var member in away)
+            {
+                if(!survivors.Contains(member.Name)) continue;
+                string experience=null;
+                if(!secured)
+                    experience="ExpeditionRepelled";
+                else if(chosen==AOS.MissionAction.LetThemPass)
+                    experience="ExpeditionSparedCaravan";
+                else if(chosen==AOS.MissionAction.TakeGoodsSparePeople)
+                    experience="ExpeditionTookGoods";
+                else if(chosen==AOS.MissionAction.TakeEverything)
+                    experience="ExpeditionRaidedCaravan";
+                else if(chosen==AOS.MissionAction.TakePeople)
+                    experience="ExpeditionCaptureAttempt"; // no physical prisoner yet
+                if(experience!=null)
+                {
+                    var feeling=experience=="ExpeditionRepelled" ? AOS.EmotionType.Fear
+                        : member.Moral==MoralType.Pious
+                            ? (chosen==AOS.MissionAction.LetThemPass
+                                ? AOS.EmotionType.Joy : AOS.EmotionType.Disgust)
+                            : member.Moral==MoralType.Vicious
+                                ? (chosen==AOS.MissionAction.LetThemPass
+                                    ? AOS.EmotionType.Disgust : AOS.EmotionType.Joy)
+                                : AOS.EmotionType.Calm;
+                    ExpeditionMemoryLedger.Remember(journey.JourneyId,member.Name,
+                        mission.Name,experience,feeling,1f);
+                }
+                if(survivors.Count<away.Count)
+                    ExpeditionMemoryLedger.Remember(journey.JourneyId,member.Name,
+                        mission.Name,"ExpeditionLostCompanion",
+                        AOS.EmotionType.Sadness,0.9f);
+            }
 
             // Ушедших видно в склепе — сцена догоняет состав: не вернувшихся
             // в ней больше нет, вернувшимся должны.
@@ -781,9 +821,10 @@ namespace Sinbinder.Crypt
                     // Заводить под него новые поля значило бы объявить,
                     // что грабёж обоза — не то же самое, что грабёж вообще.
                     HasInnocentVictims = true,
+                    ExpeditionSite = mission.Name,
                     HasTreasure = mission.Prize != Prize.None,
                     HasGuiltyParty = false,
-                    RecentMemories = new List<AOS.MemoryRecord>(),
+                    RecentMemories = ExpeditionMemoryLedger.ForWarrior(boss.Name, mission.Name),
                     CarriedItems = new List<Inventory.InventoryItem>(),
                     HasSuggestion = suggestion.HasValue,
                     SuggestedAction = suggestion ?? default
@@ -906,6 +947,7 @@ namespace Sinbinder.Crypt
         {
             Upgrades = 0;
             ActiveJourneys.Clear();
+            ExpeditionMemoryLedger.Forget();
             CryptUpgrades.Forget();
         }
 
