@@ -30,6 +30,43 @@ namespace Sinbinder.Gameplay
             new List<ExpeditionBattleActor>();
         public BattleRecord Record = new BattleRecord();
 
+        /// <summary>Deep-copy the completed round, including every AOS event.</summary>
+        public static ExpeditionBattleCheckpoint Copy(ExpeditionBattleCheckpoint source)
+        {
+            if(source==null) return null;
+            var result=new ExpeditionBattleCheckpoint
+            {
+                CompletedRounds=source.CompletedRounds,
+                Actors=new List<ExpeditionBattleActor>(),
+                Record=new BattleRecord()
+            };
+            if(source.Actors!=null)
+                foreach(var a in source.Actors)
+                    result.Actors.Add(a==null ? null : new ExpeditionBattleActor
+                    {
+                        Name=a.Name,Id=a.Id,OriginalParty=a.OriginalParty,
+                        Team=a.Team,HealthFraction=a.HealthFraction,
+                        Dead=a.Dead,SquadIndex=a.SquadIndex,EnemyIndex=a.EnemyIndex
+                    });
+            if(source.Record!=null)
+            {
+                result.Record.Winner=source.Record.Winner;
+                result.Record.TotalTurns=source.Record.TotalTurns;
+                if(source.Record.Events!=null)
+                    foreach(var ev in source.Record.Events)
+                        result.Record.Events.Add(ev==null ? null : new BattleEvent
+                        {
+                            ActorId=ev.ActorId,ActorName=ev.ActorName,
+                            ActorGender=ev.ActorGender,Action=ev.Action,
+                            TargetId=ev.TargetId,TargetName=ev.TargetName,
+                            DamageDealt=ev.DamageDealt,HealDealt=ev.HealDealt,
+                            Resolved=ev.Resolved,TargetKilled=ev.TargetKilled,
+                            TargetHealthAfter=ev.TargetHealthAfter,Round=ev.Round
+                        });
+            }
+            return result;
+        }
+
         public static bool IsValid(ExpeditionBattleCheckpoint state,
                                   int originalPartyCount, int initialEnemyCount,
                                   int maxRounds)
