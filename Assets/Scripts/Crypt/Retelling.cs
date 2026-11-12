@@ -104,6 +104,8 @@ namespace Sinbinder.Crypt
         private static string Line(BattleEvent ev)
         {
             string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : Loc.Name(ev.ActorName);
+            string target = string.IsNullOrEmpty(ev.TargetName)
+                ? Loc.T("неизвестного участника") : Loc.Name(ev.TargetName);
 
             // AutoBattleResolver records AOS intent even when the physical
             // executor could not enact it. Never narrate an unexecuted
@@ -124,15 +126,20 @@ namespace Sinbinder.Crypt
                 case ActionType.BribeEnemy:
                     return !ev.Resolved
                         ? Loc.F("{0} попытался подкупить противника, но тот не перешёл на его сторону.",who)
-                        : Loc.F("{0} подкупил противника: тот сменил сторону.",who);
+                        : Loc.F("{0} подкупил {1}: противник перешёл на другую сторону.",who,target);
                 case ActionType.SaveAlly:
                     return ev.Resolved && ev.HealDealt>0f
-                        ? Loc.F("{0} подлечил союзника. Это не подтверждает спасение от смертельной атаки.",who)
+                        ? Loc.F("{0} восстановил {1} здоровья воину {2}.",who,
+                            ev.HealDealt.ToString("0.#"),target)
                         : Loc.F("{0} попытался помочь союзнику, но лечения не произошло.",who);
                 case ActionType.Attack:
-                    if (string.IsNullOrEmpty(ev.TargetId) || ev.DamageDealt<=0f)
-                        return Loc.F("{0} попытался атаковать, но подтверждённого удара не было.",who);
-                    break;
+                    if (!ev.Resolved || string.IsNullOrEmpty(ev.TargetId) || ev.DamageDealt<=0f)
+                        return Loc.F("{0} попытался атаковать, но подтверждённого урона не было.",who);
+                    return ev.TargetKilled
+                        ? Loc.F("{0} сразил {1}, нанеся {2} фактического урона.",who,
+                            target,ev.DamageDealt.ToString("0.#"))
+                        : Loc.F("{0} ранил {1}: фактический урон {2}.",who,
+                            target,ev.DamageDealt.ToString("0.#"));
             }
             return $"{who} {PhraseGenerator.Did(ev.Action, null, ev.ActorGender)}.";
         }
