@@ -15,38 +15,114 @@ namespace UnityEngine
         public static float Max(float a,float b) => Math.Max(a,b);
         public static int RoundToInt(float v) => (int)MathF.Round(v);
     }
+    public static class Application { public static bool isPlaying=true; }
+    public static class Object
+    {
+        public static void Destroy(GameObject obj) {}
+        public static void DestroyImmediate(GameObject obj) {}
+    }
+    public sealed class Transform
+    {
+        public void SetParent(Transform parent) {}
+    }
+    public sealed class GameObject
+    {
+        public readonly string name;
+        public readonly Transform transform=new Transform();
+        public GameObject(string name) { this.name=name; }
+        public void SetActive(bool active) {}
+        public T AddComponent<T>() where T : new() => new T();
+    }
 }
 namespace Sinbinder.Core
 {
     public enum Gender { Male, Female }
-    public enum SinType { Greed }
+    public enum SinType { Greed, Wrath, Pride, Envy, Sloth, Gluttony, Lust }
+    public enum MoralType { Vicious }
+    public enum ShellType { Skeleton }
     public sealed class SoulData
     {
+        public string Name;
+        public SinType Sin;
+        public Gender Gender;
         public int Level = 1;
         public float Greed;
+        public SoulData() {}
+        public SoulData(string name, SinType sin, MoralType moral, int level,
+            float intensity,object memory,Gender gender)
+        {
+            Name=name;Sin=sin;Level=level;Gender=gender;Greed=intensity;
+        }
         public float Get(SinType type) => Greed;
     }
+    public sealed class RelationshipSystem
+    {
+        public RelationshipSystem(object memories) {}
+    }
+}
+namespace Sinbinder.Inventory
+{
+    public sealed class InventoryItem {}
 }
 namespace Sinbinder.Gameplay
 {
-    public enum Team { Player, Enemy }
+    public enum Team { Player, Enemy, Neutral }
+    public static class BodyWorth
+    {
+        public static int Gold(Core.ShellType shell,Core.SoulData soul) => 3;
+    }
+    public static class SquadRoster
+    {
+        public sealed class Member
+        {
+            public string Name;
+            public Core.SinType Sin;
+            public Core.MoralType Moral;
+            public Core.Gender Gender;
+            public Core.ShellType Shell;
+            public float Intensity, Loyalty, HealthFraction;
+            public bool IsCommander;
+            public int UnpaidMissions, Pocket;
+            public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
+        }
+    }
     public sealed class Warrior
     {
+        private static int ids;
         public string Id;
         public string DisplayName;
         public Core.Gender Gender;
         public Team Team;
         public Core.SoulData Soul;
+        public Core.ShellType Shell;
+        public int UnpaidMissions;
         public float HP, MaxHP, Attack, Loyalty;
         public ActionType PreferredAction = ActionType.Attack;
         public bool ThrowDecision;
         public bool IsDead => HP<=0f;
+        public Warrior() { }
         public Warrior(string name, Team team, float health=15f,float damage=5f)
         {
             Id=name+"-id";DisplayName=name;Team=team;
             MaxHP=health;HP=health;Attack=damage;
             Soul=new Core.SoulData();
         }
+        public void Initialize(Core.SoulData soul,Core.ShellType shell,
+            Core.RelationshipSystem relations,bool isCommander,Team team)
+        {
+            Id="temp-"+(++ids);DisplayName=soul.Name;Soul=soul;
+            Shell=shell;Gender=soul.Gender;Team=team;
+            HP=MaxHP=15f;Attack=5f;Loyalty=50f;
+        }
+        public void ChangeLoyalty(float value) { Loyalty+=value; }
+        public void SetHealthFraction(float fraction) { HP=MaxHP*fraction; }
+        public void RestoreAutoExpeditionSnapshot(string stableId,
+            float fraction,bool dead,Team team)
+        {
+            Id=stableId;Team=team;HP=dead ? 0f : MaxHP*fraction;
+        }
+        public void Give(Inventory.InventoryItem item) {}
+        public void Pocket(int coins) {}
         public void TakeDamage(float damage)
         {
             HP=Math.Max(0f,HP-Math.Max(0f,damage));
@@ -62,6 +138,12 @@ namespace Sinbinder.AOS
     {
         public static SquadStrategy Current {get; private set;} = SquadStrategy.Defensive;
         public static void Set(SquadStrategy strategy) => Current=strategy;
+        public static SquadStrategy FromSin(Sinbinder.Core.SinType sin)
+            => SquadStrategy.Balanced;
+    }
+    public sealed class MemoryProcessor
+    {
+        public static MemoryProcessor Instance {get;}=new MemoryProcessor();
     }
     public sealed class DecisionContext
     {
@@ -243,6 +325,53 @@ static class Program
             "checkpoint cannot silently omit an original enemy");
         Check(!ExpeditionBattleCheckpoint.IsValid(null,1,1,20),
             "missing battle checkpoint is invalid, never an excuse to reroll");
+
+        var members=new List<SquadRoster.Member>
+        {
+            new SquadRoster.Member{ Name="Марга",Sin=Sinbinder.Core.SinType.Greed,
+                IsCommander=true,Loyalty=50f,HealthFraction=1f },
+            new SquadRoster.Member{ Name="Вейн",Sin=Sinbinder.Core.SinType.Wrath,
+                IsCommander=false,Loyalty=50f,HealthFraction=0.75f }
+        };
+        var full=Expedition.Fight(members,3);
+        ExpeditionBattleCheckpoint firstRound;
+        using(var underway=new Expedition.CombatEncounter(members,3))
+        {
+            Check(underway.CompletedRounds==0 && underway.Record.Events.Count==0,
+                "gameplay expedition does not precompute any AOS rounds");
+            Check(underway.StepRound(),"one real AOS round executed on expedition actors");
+            firstRound=underway.Snapshot();
+            Check(firstRound.CompletedRounds==1 &&
+                  firstRound.Record.Events.Count==underway.Record.Events.Count &&
+                  !underway.IsComplete,"first expedition round saved without ending encounter");
+        }
+        using(var restored=new Expedition.CombatEncounter(members,3,firstRound))
+        {
+            Check(restored.CompletedRounds==1 &&
+                  restored.Record.Events.Count==firstRound.Record.Events.Count,
+                "loading reconstructs current actors without replaying the first AOS round");
+            var before=restored.Record.Events.Count;
+            Check(restored.StepRound(),"loaded game executes its next actual AOS round");
+            Check(restored.Record.Events.Count>before &&
+                  restored.Record.Events.Skip(before).All(e=>e.Round==2),
+                "only new AOS events appear in the second recorded round");
+            while(restored.StepRound()) {}
+            var staged=restored.Outcome();
+            Check(staged.Record.TotalTurns==full.Record.TotalTurns &&
+                  staged.Record.Winner==full.Record.Winner,
+                "one-shot and serialized resumed battle reach same actual AOS outcome");
+            Check(staged.FoesFallen==full.FoesFallen && staged.Taken==full.Taken &&
+                  staged.Survivors.SequenceEqual(full.Survivors),
+                "resumed battle conserves original enemies, spoils and survivor identities");
+            Check(staged.Health.Count==full.Health.Count &&
+                  staged.Health.Select(x=>x.Fraction).SequenceEqual(
+                     full.Health.Select(x=>x.Fraction)),
+                "saved intermediate wounds reach the exact same final health");
+            Check(staged.Record.Events.Count==full.Record.Events.Count &&
+                  staged.Record.Events.Select(e=>e.Round).SequenceEqual(
+                      full.Record.Events.Select(e=>e.Round)),
+                "no duplicated or missing real AOS events after round-boundary load");
+        }
 
         Console.WriteLine("PASS: "+checks+" real AOS session, one-round progression, and legacy equivalence checks");
     }
