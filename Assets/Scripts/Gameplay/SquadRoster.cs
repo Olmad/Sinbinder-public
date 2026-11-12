@@ -33,6 +33,8 @@ namespace Sinbinder.Gameplay
             public Gender Gender;
             public float Intensity;
             public float Loyalty;
+            // 0 is old save / no recorded wounds; interpreted as full health.
+            public float HealthFraction;
             public int UnpaidMissions;
 
             /// <summary>
@@ -296,6 +298,25 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// The AOS simulator has already determined who survived and how
+        /// wounded they are. Apply ONLY that named survivor's condition;
+        /// never re-roll damage when the party reaches home.
+        /// </summary>
+        public static void ApplyExpeditionHealth(string name, float fraction)
+        {
+            if(string.IsNullOrEmpty(name)) return;
+            float safe=ExpeditionHealthRules.RestoreFraction(fraction);
+            for(int i=0;i<_members.Count;i++)
+            {
+                var member=_members[i];
+                if(member.Name!=name || !member.IsAway) continue;
+                member.HealthFraction=safe;
+                _members[i]=member;
+                return;
+            }
+        }
+
         /// <summary>Заплатить всем: долги обнуляются, верность растёт.</summary>
         public static void PayEveryone()
         {
@@ -411,6 +432,7 @@ namespace Sinbinder.Gameplay
                 m.Moral = w.Soul.Moral;
                 m.Intensity = w.Soul.Get(w.Soul.Sin);
                 m.Loyalty = w.Loyalty;
+                m.HealthFraction=ExpeditionHealthRules.Capture(w.HP,w.MaxHP);
                 m.UnpaidMissions = w.UnpaidMissions;
                 m.IsCommander = w.IsCommander;
                 m.IsAway = false;
