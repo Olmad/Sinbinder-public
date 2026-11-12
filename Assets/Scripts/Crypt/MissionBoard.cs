@@ -22,6 +22,20 @@ namespace Sinbinder.Crypt
     /// того, чего движок не мог бы решить сам» — держится и здесь,
     /// хотя сцены нет вовсе.
     /// </summary>
+    /// <summary>Serializable in-flight automatic expedition. Old saves have an empty list.</summary>
+    [System.Serializable]
+    public sealed class SavedAutoExpedition
+    {
+        public string MissionName;
+        public string Commander;
+        public List<string> Party = new List<string>();
+        public bool HasSuggestion;
+        public int SuggestedAction;
+        // 0: outbound, 1: awaiting instructions, 2: returning
+        public int Phase;
+        public float SecondsRemaining;
+    }
+
     public class MissionBoard : MonoBehaviour
     {
         /// <summary>Что вышло из последней вылазки. Читает карта.</summary>
@@ -37,6 +51,134 @@ namespace Sinbinder.Crypt
         public static int Upgrades { get; private set; }
 
         public const int UpgradeLimit = 2;
+        private static readonly List<SavedAutoExpedition> ActiveJourneys =
+            new List<SavedAutoExpedition>();
+        private const float OutboundSeconds = 15f;
+        private const float ReturnSeconds = 15f;
+
+        public static IReadOnlyList<SavedAutoExpedition> Journeys => ActiveJourneys;
+        public static List<SavedAutoExpedition> SnapshotJourneys()
+        {
+            var result = new List<SavedAutoExpedition>();
+            foreach (var item in ActiveJourneys)
+                result.Add(CopyJourney(item));
+            return result;
+        }
+
+        private static SavedAutoExpedition CopyJourney(SavedAutoExpedition item)
+            => new SavedAutoExpedition
+            {
+                MissionName=item.MissionName, Commander=item.Commander,
+                Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
+                HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
+                Phase=item.Phase, SecondsRemaining=item.SecondsRemaining
+            };
+
+        public static void RestoreJourneys(List<SavedAutoExpedition> saved)
+        {
+            ActiveJourneys.Clear();
+            if (saved == null) return;
+            foreach (var item in saved)
+            {
+                if (item==null || string.IsNullOrEmpty(item.MissionName) ||
+                    string.IsNullOrEmpty(item.Commander) || item.Party==null ||
+                    item.Party.Count==0 || item.Phase<0 || item.Phase>2 ||
+                    float.IsNaN(item.SecondsRemaining) ||
+                    float.IsInfinity(item.SecondsRemaining)) continue;
+                // Older or corrupt saves cannot create an unbounded queue.
+                if (ActiveJourneys.Count>=1) break;
+                var exists=false;
+                foreach (var mission in MissionCatalog.All())
+                    if (mission.Name==item.MissionName) exists=true;
+                if (!exists) continue;
+                var valid=true;
+                foreach (var name in item.Party)
+                {
+                    if (!SquadRoster.TryGet(name,out var m) || !m.IsAway)
+                    { valid=false; break; }
+                }
+                if (!valid) continue;
+                var copy=CopyJourney(item);
+                copy.SecondsRemaining=Mathf.Clamp(copy.SecondsRemaining,0f,3600f);
+                ActiveJourneys.Add(copy);
+            }
+        }
+
+        private void Update()
+        {
+            if (ActiveJourneys.Count==0 || Time.deltaTime<=0f) return;
+            var journey=ActiveJourneys[0];
+            if (journey.Phase==1) return;
+            journey.SecondsRemaining-=Time.deltaTime;
+            if (journey.SecondsRemaining>0f) return;
+
+            if (journey.Phase==0)
+            {
+                Mission mission=default;
+                foreach (var candidate in MissionCatalog.All())
+                    if (candidate.Name==journey.MissionName) { mission=candidate; break; }
+                if (mission.Junction!=Junction.None && !journey.HasSuggestion)
+                {
+                    journey.Phase=1;
+                    journey.SecondsRemaining=0f;
+                    LastReport=Loc.F("Отряд «{0}» прибыл к развилке. Требуется решение игрока.",
+                        Loc.Name(journey.Commander));
+                }
+                else
+                {
+                    journey.Phase=2;
+                    journey.SecondsRemaining=ReturnSeconds;
+                    LastReport=Loc.F("Отряд «{0}» на месте. Ждём возвращения и доклада.",
+                        Loc.Name(journey.Commander));
+                }
+                return;
+            }
+            if (journey.Phase==2)
+            {
+                ActiveJourneys.RemoveAt(0); // completion may autosave
+                CompleteJourney(journey);
+            }
+        }
+
+        /// <summary>The suggestion is advice to the AOS commander, not a forced order.</summary>
+        public bool OfferJourneyOrder(AOS.MissionAction? offer)
+        {
+            if (ActiveJourneys.Count==0 || ActiveJourneys[0].Phase!=1) return false;
+            var journey=ActiveJourneys[0];
+            journey.HasSuggestion=offer.HasValue;
+            journey.SuggestedAction=offer.HasValue ? (int)offer.Value : 0;
+            journey.Phase=2;
+            journey.SecondsRemaining=ReturnSeconds;
+            LastReport=Loc.T("Совет передан старшему. Его собственное решение будет известно по возвращении.");
+            return true;
+        }
+
+        private void CompleteJourney(SavedAutoExpedition journey)
+        {
+            Mission found=default;
+            bool exists=false;
+            foreach (var mission in MissionCatalog.All())
+                if (mission.Name==journey.MissionName)
+                { found=mission; exists=true; break; }
+            if (!exists) { LastReport=Loc.T("Маршрут экспедиции больше недоступен."); return; }
+
+            var away=new List<SquadRoster.Member>();
+            foreach (var name in journey.Party)
+                if (SquadRoster.TryGet(name,out var member) && member.IsAway)
+                {
+                    member.IsCommander=member.Name==journey.Commander;
+                    away.Add(member);
+                }
+            if (away.Count!=journey.Party.Count)
+            {
+                LastReport=Loc.T("Состав похода изменился. Автоматический расчёт отменён, награды не начислены.");
+                return;
+            }
+            ResolveReturned(found,journey.Commander,away,new List<string>(journey.Party),
+                journey.HasSuggestion
+                    ? (AOS.MissionAction?)journey.SuggestedAction : null);
+        }
+
 
         /// <summary>
         /// Called on real return from a personally traversed map.
@@ -130,6 +272,8 @@ namespace Sinbinder.Crypt
         public string Send(Mission mission, string commanderName, ICollection<string> companions,
                            AOS.MissionAction? suggestion)
         {
+            if (ActiveJourneys.Count>0)
+                return Loc.T("Сначала дождитесь возвращения отправленного отряда.");
             if (Ready() == 0)
                 return Loc.T("Послать некого.");
 
@@ -140,6 +284,9 @@ namespace Sinbinder.Crypt
             // старшего с того отряда (SquadRoster.ChooseCommander).
             var before = new HashSet<string>();
             foreach (var m in SquadRoster.Away) before.Add(m.Name);
+            if (!SquadRoster.TryGet(commanderName, out var commander) ||
+                !SquadRoster.CanGo(commander))
+                return Loc.T("Выбранный старший недоступен.");
             if (before.Contains(commanderName))
                 return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
 
@@ -160,7 +307,24 @@ namespace Sinbinder.Crypt
 
             if (away.Count == 0) return Loc.T("Никто не пошёл.");
             Sent++;
+            ActiveJourneys.Add(new SavedAutoExpedition
+            {
+                MissionName=mission.Name, Commander=commanderName,
+                Party=new List<string>(party), Phase=0,
+                SecondsRemaining=OutboundSeconds,
+                HasSuggestion=suggestion.HasValue,
+                SuggestedAction=suggestion.HasValue ? (int)suggestion.Value : 0
+            });
+            LastReport=Loc.F("Отряд «{0}» отправлен к месту «{1}». Отряд в пути.",
+                Loc.Name(commanderName),Loc.Name(mission.Name));
+            Core.SaveSystem.AutoSave();
+            return LastReport;
+        }
 
+        private void ResolveReturned(Mission mission, string commanderName,
+            List<SquadRoster.Member> away, List<string> party,
+            AOS.MissionAction? suggestion)
+        {
             // Развилка решается до боя: она решает, будет ли бой вообще.
             AOS.MissionAction? chosen = mission.Junction == Junction.None
                 ? null
@@ -525,6 +689,7 @@ namespace Sinbinder.Crypt
         public static void Forget()
         {
             Upgrades = 0;
+            ActiveJourneys.Clear();
             CryptUpgrades.Forget();
         }
 
