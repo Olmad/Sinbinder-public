@@ -160,14 +160,17 @@ internal static class Program
         int groupEnd = panelSource.IndexOf("private static bool Disagrees(Warrior w)", groupStart, StringComparison.Ordinal);
         Check(groupStart >= 0 && groupEnd > groupStart, "group verdict summary exists in production panel");
         string groupSource = panelSource.Substring(groupStart, groupEnd - groupStart);
-        int pendingBranch = groupSource.IndexOf("if (w.HasCommand && (d == null || !d.HasCurrentCommandDecision))", StringComparison.Ordinal);
-        int disagreementBranch = groupSource.IndexOf("else if (d != null && d.HasCurrentCommandDecision && Disagrees(w))", StringComparison.Ordinal);
-        int calmBranch = groupSource.IndexOf("else calm++;", StringComparison.Ordinal);
-        Check(pendingBranch >= 0 && disagreementBranch > pendingBranch && calmBranch > disagreementBranch,
-            "pending AOS decisions are counted separately before refused and settled squad members");
-        Check(groupSource.Contains("pending++;") && groupSource.Contains("ожидают решения") &&
-              groupSource.Contains("if (calm > 0)") && groupSource.Contains("в строю"),
-            "pending and settled squad summaries have distinct readable labels");
+        int unorderedBranch = groupSource.IndexOf("if (!w.HasCommand)", StringComparison.Ordinal);
+        int pendingBranch = groupSource.IndexOf("else if (d == null || !d.HasCurrentCommandDecision)", StringComparison.Ordinal);
+        int disagreementBranch = groupSource.IndexOf("else if (Disagrees(w))", StringComparison.Ordinal);
+        int decidedBranch = groupSource.IndexOf("else decided++;", StringComparison.Ordinal);
+        Check(unorderedBranch >= 0 && pendingBranch > unorderedBranch &&
+              disagreementBranch > pendingBranch && decidedBranch > disagreementBranch,
+            "unordered, pending, refused and decided squad members have separate branches");
+        Check(groupSource.Contains("unordered++;") && groupSource.Contains("pending++;") &&
+              groupSource.Contains("ожидают решения") && groupSource.Contains("без приказа") &&
+              groupSource.Contains("решение принято") && !groupSource.Contains("в строю"),
+            "group feedback never presents missing orders as accepted or executed");
         Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
         Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");
         // Neutral match warriors have an attitude prefix. It must not hide
