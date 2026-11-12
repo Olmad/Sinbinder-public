@@ -184,6 +184,66 @@ static class Program
         Check(broken.CompletedRounds==0,
             "incomplete failed round is not marked as committed");
 
+        Check(broken.IsFaulted,"failed real AOS step is marked unsafe to repeat");
+        caught=false;
+        try {broken.StepRound();}catch(InvalidOperationException){caught=true;}
+        Check(caught,"partially failed round cannot be run a second time");
+
+        var snapshot=new ExpeditionBattleCheckpoint();
+        snapshot.Actors.Add(new ExpeditionBattleActor
+        {
+            Name="Марга",Id="stable-player-1",OriginalParty=true,Team=0,
+            HealthFraction=1f,SquadIndex=0,EnemyIndex=-1
+        });
+        snapshot.Actors.Add(new ExpeditionBattleActor
+        {
+            Name="Чужой 1",Id="stable-enemy-1",OriginalParty=false,Team=1,
+            HealthFraction=1f,SquadIndex=-1,EnemyIndex=0
+        });
+        Check(ExpeditionBattleCheckpoint.IsValid(snapshot,1,1,20),
+            "fresh combat has a valid and empty pre-first-round snapshot");
+        snapshot.CompletedRounds=1;
+        snapshot.Actors[0].HealthFraction=0.75f;
+        snapshot.Record.Events.Add(new BattleEvent
+        {
+            ActorId="stable-player-1",ActorName="Марга",Round=1,
+            Action=ActionType.Attack,Resolved=true,DamageDealt=3f
+        });
+        var copy=ExpeditionBattleCheckpoint.Copy(snapshot);
+        Check(ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "snapshot with real AOS first round validates");
+        snapshot.Actors[0].HealthFraction=1f;
+        snapshot.Record.Events[0].DamageDealt=99f;
+        Check(copy.Actors[0].HealthFraction==0.75f &&
+              copy.Record.Events[0].DamageDealt==3f,
+            "saving a round makes deep copy of actor HP and actions");
+        copy.Actors[1].Id="stable-player-1";
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "a corrupted save cannot put two actors at the same ID");
+        copy.Actors[1].Id="stable-enemy-1";
+        copy.Actors[1].SquadIndex=1;
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "one actor cannot act on both teams in a saved round");
+        copy.Actors[1].SquadIndex=-1;
+        copy.Actors[1].EnemyIndex=2;
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "hole in saved squad order cannot invent actors");
+        copy.Actors[1].EnemyIndex=0;
+        copy.Actors[1].Dead=true;
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "dead actors cannot retain living HP after restore");
+        copy.Actors[1].HealthFraction=0f;
+        Check(ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "legitimately dead original foe can be restored");
+        copy.Record.Events.Add(new BattleEvent{ Round=2 });
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,1,20),
+            "future events cannot appear before their AOS round");
+        copy.Record.Events.RemoveAt(1);
+        Check(!ExpeditionBattleCheckpoint.IsValid(copy,1,2,20),
+            "checkpoint cannot silently omit an original enemy");
+        Check(!ExpeditionBattleCheckpoint.IsValid(null,1,1,20),
+            "missing battle checkpoint is invalid, never an excuse to reroll");
+
         Console.WriteLine("PASS: "+checks+" real AOS session, one-round progression, and legacy equivalence checks");
     }
 }
