@@ -55,3 +55,10 @@ assert "MaxActiveJourneys = 4" in m
 assert "for (int i=ActiveJourneys.Count-1;i>=0;i--)" in m
 assert "PickJourneyDecision(commanderId)" in ui
 assert "_board.OfferJourneyOrder(commanderId,value)" in ui
+assert "var reserved=new HashSet<string>();" in m
+assert "if (!valid || !item.Party.Contains(item.Commander)) continue;" in m
+assert "if (selected.Count+1>maxSize)" in m
+assert "SquadRoster.SendAway(commanderName, companions);" in m
+assert "if(MissionBoard.Journeys.Count==before && _title!=null)" in ui
+roster=(r/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
+assert "if (alreadyAway) continue;" in roster
