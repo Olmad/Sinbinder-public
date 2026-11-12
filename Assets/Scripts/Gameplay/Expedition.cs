@@ -227,7 +227,12 @@ namespace Sinbinder.Gameplay
             public bool StepRound()
             {
                 if(_session==null) return false;
-                return _session.StepRound();
+                // An offscreen expedition is NOT located in the player's
+                // currently loaded Crypt/forest scene. No fictional site tags:
+                // MissionCatalog does not yet author them. AOS perks should
+                // only see known offscreen facts during the executed round.
+                using(Core.LocationManager.ForOffscreenSite())
+                    return _session.StepRound();
             }
 
             public ExpeditionBattleCheckpoint Snapshot()
