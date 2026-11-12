@@ -310,7 +310,7 @@ namespace Sinbinder.UI
                     !can ? why
                         : (Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
                             : Leadership.Shortfall(member.Leadership, mission.Squad))
-                          + HealthNote(member),
+                          + (HealthNote(member).Length>0 ? " · " + HealthNote(member) : ""),
                     prophecy,
                     can ? () => Lead(name) : (System.Action)null));
 
@@ -455,8 +455,8 @@ namespace Sinbinder.UI
         private static string HealthNote(SquadRoster.Member member)
         {
             float health=ExpeditionHealthRules.RestoreFraction(member.HealthFraction);
-            if(health<0.35f) return Loc.T(" · тяжело ранен");
-            if(health<0.99f) return Loc.T(" · ранен");
+            if(health<0.35f) return Loc.T("тяжело ранен");
+            if(health<0.99f) return Loc.T("ранен");
             return "";
         }
 
