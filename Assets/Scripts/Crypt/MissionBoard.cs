@@ -44,6 +44,8 @@ namespace Sinbinder.Crypt
         public bool HasChosenAction;
         public int ChosenAction;
         public List<string> Survivors = new List<string>();
+        public List<ExpeditionSurvivorHealth> SurvivorHealth =
+            new List<ExpeditionSurvivorHealth>();
         public int TakenCoins;
         public int FoesFallen;
         public string BattleSummary;
@@ -92,10 +94,26 @@ namespace Sinbinder.Crypt
                 BattleWon=item.BattleWon,
                 HasChosenAction=item.HasChosenAction, ChosenAction=item.ChosenAction,
                 Survivors=item.Survivors == null ? new List<string>() : new List<string>(item.Survivors),
+                SurvivorHealth=CopyHealth(item.SurvivorHealth),
                 TakenCoins=item.TakenCoins, FoesFallen=item.FoesFallen,
                 BattleSummary=item.BattleSummary ?? "",
                 EncounterTrace=CopyTrace(item.EncounterTrace)
             };
+
+        private static List<ExpeditionSurvivorHealth> CopyHealth(
+            List<ExpeditionSurvivorHealth> source)
+        {
+            var result=new List<ExpeditionSurvivorHealth>();
+            if(source==null) return result; // compatibility with older saves
+            foreach(var item in source)
+                if(item!=null)
+                    result.Add(new ExpeditionSurvivorHealth
+                    {
+                        Name=item.Name,
+                        Fraction=item.Fraction
+                    });
+            return result;
+        }
 
         private static ExpeditionReplayData CopyTrace(ExpeditionReplayData source)
         {
@@ -297,6 +315,7 @@ namespace Sinbinder.Crypt
                 }
             // Commit all fields only after the resolver returned successfully.
             journey.Survivors=new List<string>(fight.Survivors);
+            journey.SurvivorHealth=CopyHealth(fight.Health);
             journey.TakenCoins=fight.Taken;
             journey.FoesFallen=fight.FoesFallen;
             journey.EncounterFought=!noFight;
@@ -551,6 +570,14 @@ namespace Sinbinder.Crypt
             bool secured=ExpeditionObjectiveRules.Secured(
                 journey.EncounterFought,journey.BattleWon,survivors.Count);
 
+            // The same survivors return with their real AOS injuries.
+            // Legacy journeys without wound records keep their old health.
+            if(journey.SurvivorHealth!=null)
+                foreach(var condition in journey.SurvivorHealth)
+                    if(condition!=null && survivors.Contains(condition.Name))
+                        SquadRoster.ApplyExpeditionHealth(condition.Name,
+                            condition.Fraction);
+
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
             SquadRoster.ComeBack(party, survivors);
@@ -772,6 +799,7 @@ namespace Sinbinder.Crypt
 
                 w.UnpaidMissions = m.UnpaidMissions;
                 w.ChangeLoyalty(m.Loyalty - w.Loyalty);
+                w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));
                 w.gameObject.SetActive(true);
             }
 
