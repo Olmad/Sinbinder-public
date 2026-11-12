@@ -245,8 +245,14 @@ namespace Sinbinder.Gameplay
                 var w=go.AddComponent<Warrior>();
                 var shell=_plan.Kind==ExpeditionMapKind.SaltRoad
                     ? ShellType.Living : ShellType.Skeleton;
+                // A caravan isn't a battle until the player attacks or
+                // explicitly orders an assault. Chapel defenders remain
+                // hostile from the outset. State persists across visits.
+                Team disposition=_plan.Kind==ExpeditionMapKind.SaltRoad &&
+                    !_state.CaravanAssaulted && !_state.CaravanPassed
+                    ? Team.Neutral : Team.Enemy;
                 w.Initialize(new SoulData("Страж экспедиции "+(i+1),
-                        (SinType)(i%7),MoralType.Vicious,1,55f),shell,relations,false,Team.Enemy);
+                        (SinType)(i%7),MoralType.Vicious,1,55f),shell,relations,false,disposition);
                 WarriorRig.Attach(go);
                 WarriorLook.Build(go,shell,1.65f,1f,1f);
                 sceneSetup?.SetupWarrior(go);
@@ -307,8 +313,8 @@ namespace Sinbinder.Gameplay
             _caravanChoiceOpen=false;
             if (attack)
             {
-                _state.CaravanAssaulted=true;
-                Announce(Loc.T("Греховод приказал напасть. Охрану придётся победить настоящим боем."));
+                ProvokeCaravan();
+                Announce(Loc.T("Греховод приказал напасть. Охрана защищает обоз настоящим боем."));
                 return;
             }
             // LetThemPass is a real irreversible outcome, not a victory
@@ -320,6 +326,54 @@ namespace Sinbinder.Gameplay
                 if (guard!=null) UnityEngine.Object.Destroy(guard.gameObject);
             _guards.Clear();
             Announce(Loc.T("Греховод пропустил обоз. Возчики увезли серебро; добычи не будет."));
+        }
+
+        /// <summary>
+        /// Convert caravan guards into real combat enemies. A single cause
+        /// (either a player's explicit assault or their first hostile hit)
+        /// updates both Warrior.Team and CombatManager's live registries.
+        /// This is not a scripted defeat, a fake fight or a new AI faction.
+        /// </summary>
+        private void ProvokeCaravan()
+        {
+            if(_exiting || _plan==null ||
+               _plan.Kind!=ExpeditionMapKind.SaltRoad ||
+               _state==null || _state.CaravanPassed ||
+               _state.CargoTaken || _state.CaravanAssaulted) return;
+
+            _state.CaravanAssaulted=true;
+            _caravanChoiceOpen=false;
+            foreach(var guard in _guards)
+            {
+                if(guard==null || guard.IsDead) continue;
+                guard.Team=Team.Enemy;
+                var body=guard.GetComponent<Damageable>();
+                if(body!=null && CombatManager.Instance!=null)
+                    CombatManager.Instance.UpdateTeam(body,Team.Enemy);
+            }
+        }
+
+        /// <summary>
+        /// A direct attack on a neutral caravan guard is an irreversible
+        /// attack decision. Called by the real Damageable pipeline, before
+        /// the blow lands, so other guards can respond immediately.
+        /// No other map/faction is affected.
+        /// </summary>
+        public static void OnGuardAttacked(Warrior victim, GameObject attacker)
+        {
+            var expedition=_active;
+            if(expedition==null || victim==null || attacker==null ||
+               expedition._plan==null ||
+               expedition._plan.Kind!=ExpeditionMapKind.SaltRoad ||
+               expedition._state==null || expedition._state.CaravanAssaulted ||
+               expedition._state.CaravanPassed || expedition._state.CargoTaken ||
+               !expedition._guards.Contains(victim)) return;
+
+            var assailant=attacker.GetComponentInParent<Warrior>();
+            if(assailant==null || assailant.Team!=Team.Player) return;
+            expedition.ProvokeCaravan();
+            expedition.Announce(Loc.T(
+                "Вы напали на стража. Охрана обоза стала враждебной, мирный исход закрыт."));
         }
 
         private void CollectObjective()
