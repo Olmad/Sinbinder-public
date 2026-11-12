@@ -78,10 +78,12 @@ namespace Sinbinder.AOS
 
                 // The command influences votes through the existing AOS
                 // order module. Never substitute an action after voting.
-                var previousOrders=SquadOrders.Current;
+                // Do not change player-facing SquadOrders.Current or fire
+                // Changed notifications for an unseen offscreen battle.
+                // Scoring still sees the chosen squad strategy inside scope.
+                using(var simulation=SquadOrders.UseForSimulation(_strategy))
                 try
                 {
-                    SquadOrders.Set(_strategy);
                     int round=CompletedRounds+1;
                     foreach(var warrior in _squad.Where(w=>w!=null && !w.IsDead).ToList())
                     {
@@ -109,10 +111,8 @@ namespace Sinbinder.AOS
                     IsFaulted=true;
                     throw;
                 }
-                finally
-                {
-                    SquadOrders.Set(previousOrders);
-                }
+                // Scope.Dispose restores the previous scoring override
+                // even after a partially failed AOS step.
 
                 if(!CanAdvance()) Complete();
                 return true;
