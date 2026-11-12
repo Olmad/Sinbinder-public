@@ -126,6 +126,18 @@ assert "public void SetHealthFraction(float fraction)" in body
 assert "HealthFraction = m.HealthFraction" in save
 assert "public float HealthFraction;" in savegame
 assert "if(float.IsNaN(stored)" in rules
+# Body repair is a real player choice: spend carried gold, repair both
+# roster and in-scene warrior and persist before the next expedition.
+assert "public static int TreatmentCost(float recordedFraction)" in rules
+assert "public static bool RepairReturnedWarrior(string name)" in roster
+assert "if(member.Name!=name || member.IsAway ||" in roster
+assert "private void RepairWarrior(string name)" in ui
+assert "purse.SpendGold(cost)" in ui
+assert "SquadRoster.RepairReturnedWarrior(name)" in ui
+assert "warrior.SetHealthFraction(1f)" in ui
+assert "Core.SaveSystem.AutoSave();" in ui
+assert "if(!CryptMap.Opened || PersonalExpedition.Active ||" in ui
+print("PASS: crypt body repair spends real currency, heals returned roster and scene, persists")
 print("PASS: AOS injuries persist through game save and subsequent expedition")
 
 # Optional advice must not hold the entire world indefinitely:
