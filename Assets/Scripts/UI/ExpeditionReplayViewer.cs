@@ -87,7 +87,8 @@ namespace Sinbinder.UI
             GUI.Box(new Rect(sideX,top+50f,sideW,mapHeight),"");
             GUI.Label(new Rect(sideX+9f,top+58f,sideW-18f,85f),
                 "Событие "+(_index+1)+" из "+_data.Frames.Count+"\n"+
-                StageName(frame.Kind),_caption);
+                StageName(frame.Kind) +
+                (frame.Round>0 ? "\nХод AOS: "+frame.Round : ""),_caption);
             GUI.Label(new Rect(sideX+9f,top+155f,sideW-18f,mapHeight-115f),
                 (string.IsNullOrEmpty(frame.Actor)?"":frame.Actor+": ") + frame.Description,
                 _item);
@@ -120,7 +121,8 @@ namespace Sinbinder.UI
                 var step=_data.Frames[i];
                 if(i==_index)
                     GUI.Box(new Rect(0f,i*rowH,content.width,rowH),"");
-                string line=(i+1)+". "+StageName(step.Kind)+" · "+
+                string line=(i+1)+". "+StageName(step.Kind)+
+                    (step.Round>0?" · Ход "+step.Round:"")+" · "+
                     (string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
                 { _index=i;_running=false;_clock=0f; }
