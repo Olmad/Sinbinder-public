@@ -51,3 +51,15 @@ assert 'AutoBattleResolver.SquadGold=0;' in expedition
 assert 'AutoBattleResolver.SquadGold=previousGold;' in expedition
 assert 'var w = Summon(holder, m, relations);' in expedition
 print("PASS: AOS retreat/bribe effects and expedition outcomes are distinguished from intent")
+
+# Round number is the genuine AOS turn, not fabricated spatial timing.
+resolver=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")
+battle=(r/"Assets/Scripts/AOS Engine/BattleRecord.cs").read_text(encoding="utf-8")
+archive=(r/"Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs").read_text(encoding="utf-8")
+assert "public int Round;" in battle and "Round = round" in resolver
+assert "public int Round;" in data
+assert "ev.HealDealt,ev.Round" in board
+assert "frame.Damage,frame.Healing,frame.Round" in board
+assert "Round = frame.Round" in archive
+assert 'frame.Round>0 ? "\\nХод AOS: "+frame.Round' in viewer
+print("PASS: factual AOS round provenance retained through save and replay")
