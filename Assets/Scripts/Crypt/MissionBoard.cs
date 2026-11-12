@@ -1096,7 +1096,8 @@ namespace Sinbinder.Crypt
         /// </summary>
         private static void SaveExpeditionProgress()
         {
-            if (!PersonalExpedition.Active)
+            if (!PersonalExpedition.Active &&
+                Inventory.PlayerInventory.Instance != null)
                 Core.SaveSystem.AutoSave();
         }
 
