@@ -72,6 +72,8 @@ namespace Sinbinder.Gameplay
     {
         public static IEnumerable<StrategyModifier> CurrentModifiers()
             => Array.Empty<StrategyModifier>();
+        public static Sinbinder.AOS.SquadStrategy FromSin(SinType sin)
+            => Sinbinder.AOS.SquadStrategy.Balanced;
     }
 }
 namespace Sinbinder.Dev
