@@ -132,6 +132,7 @@ namespace Sinbinder.Multiplayer
             room.ResolveLastCommandId = Authority.LastAcceptedCommandId;
             room.PrivateWorldActors = GetPrivateWorldActors;
             room.ResolveWorldTick = () => _tick;
+            room.IsCurrentGameOrderSession = Authority.IsCurrentSession;
             room.RouteGameOrder = (connectionId, intent) =>
             {
                 if (TryIssueFromConnection(connectionId, intent, null,
@@ -289,6 +290,7 @@ namespace Sinbinder.Multiplayer
             _room.ResolveLastCommandId = null;
             _room.PrivateWorldActors = null;
             _room.ResolveWorldTick = null;
+            _room.IsCurrentGameOrderSession = null;
             _room.PeerConnectionChanged = null;
             _room.GameMatchId = null;
             _room = null;
