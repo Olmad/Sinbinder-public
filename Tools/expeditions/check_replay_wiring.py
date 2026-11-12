@@ -37,19 +37,19 @@ battle=(r/"Assets/Scripts/AOS Engine/BattleRecord.cs").read_text(encoding="utf-8
 expedition=(r/"Assets/Scripts/Gameplay/Expedition.cs").read_text(encoding="utf-8")
 assert 'public bool Resolved;' in battle
 assert 'evt.Resolved = allies.Remove(warrior);' in resolver
-assert 'if (enemies.Contains(enemy) && !enemy.IsDead)' in resolver
-assert 'if (squad.Contains(warrior) && !warrior.IsDead)' in resolver
+assert 'if(_enemies.Contains(enemy) && !enemy.IsDead)' in resolver
+assert 'if(_squad.Contains(warrior) && !warrior.IsDead)' in resolver
 assert 'evt.Resolved=true;' in resolver
 assert 'case ActionType.Flee:' in retelling
 assert 'return ev.Resolved' in retelling
 assert 'case ActionType.BribeEnemy:' in retelling
 assert 'case ActionType.Loot:' in retelling
 assert 'case ActionType.SaveAlly:' in retelling
-assert 'var originalSquad=new List<Warrior>(squad);' in expedition
-assert 'i < originalSquad.Count' in expedition
+assert 'private readonly List<Warrior> _originalSquad' in expedition
+assert 'i=0;i<_originalSquad.Count;i++' in expedition
 assert 'AutoBattleResolver.SquadGold=0;' in expedition
 assert 'AutoBattleResolver.SquadGold=previousGold;' in expedition
-assert 'var w = Summon(holder, m, relations);' in expedition
+assert 'var w=Summon(_holder,member,relations);' in expedition
 print("PASS: AOS retreat/bribe effects and expedition outcomes are distinguished from intent")
 
 # Round number is the genuine AOS turn, not fabricated spatial timing.
