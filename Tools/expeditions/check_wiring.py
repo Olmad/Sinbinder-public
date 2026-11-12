@@ -34,7 +34,7 @@ assert "class SavedAutoExpedition" in m
 assert "ActiveJourneys.Add(new SavedAutoExpedition" in m
 assert "SecondsRemaining=OutboundSeconds" in m
 assert "journey.Phase=1;" in m and "journey.Phase=2;" in m
-assert "if (journey.Phase==1) continue;" in m
+assert "if (journey.Phase==0 || journey.Phase==1)" in m
 assert "CompleteJourney(journey);" in m
 assert "ResolveReturned(found,journey.Commander" in m
 assert "Expedition.Fight(away, mission.Guards)" in m
@@ -127,3 +127,22 @@ assert "HealthFraction = m.HealthFraction" in save
 assert "public float HealthFraction;" in savegame
 assert "if(float.IsNaN(stored)" in rules
 print("PASS: AOS injuries persist through game save and subsequent expedition")
+
+# Optional advice must not hold the entire world indefinitely:
+# leaders independently resolve via the same AOS after a finite timer.
+timing=(r/"Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs").read_text(encoding="utf-8")
+cryptmap=(r/"Assets/Scripts/Crypt/CryptMap.cs").read_text(encoding="utf-8")
+assert "public const float AdviceSeconds = 20f;" in timing
+assert "public void AdvanceJourneys(float gameDelta)" in m
+assert "private void Update() => AdvanceJourneys(Time.deltaTime);" in m
+assert "journey.SecondsRemaining=ExpeditionJourneyTiming.Advance(" in m
+assert "journey.SecondsRemaining=ExpeditionJourneyTiming.AdviceSeconds;" in m
+assert "Core.SaveSystem.AutoSave();" in m
+assert "if (journey.Phase==1) continue;" not in m
+assert "if (journey.Phase==0 || journey.Phase==1)" in m
+assert "if (!ResolveEncounter(journey)) continue;" in m
+assert "_board != null && !_board.isActiveAndEnabled" in cryptmap
+assert "_board.AdvanceJourneys(Time.deltaTime);" in cryptmap
+assert "journey.Phase==1" in ui
+assert "Старший решит сам через" in ui
+print("PASS: finite commander autonomy, paused-game time, hidden table and multiple independent journeys")
