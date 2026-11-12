@@ -44,6 +44,35 @@ static class Program
         Test(ExpeditionReplayArchive.History.Count==0,"new game clears history");
         ExpeditionReplayArchive.Restore(snapshot);
         Test(ExpeditionReplayArchive.History[7].MissionName=="Mission 11","restore retains newest");
+        // A saved replay is an independent record, not an alias of a live
+        // viewer or a caller-owned object.
+        var savedCopy=ExpeditionReplayArchive.Snapshot();
+        var originalName=ExpeditionReplayArchive.History[0].MissionName;
+        savedCopy[0].MissionName="TAMPERED";
+        savedCopy[0].Frames[0].Description="TAMPERED";
+        savedCopy[0].Squad.Clear();
+        Test(ExpeditionReplayArchive.History[0].MissionName==originalName,
+             "snapshot metadata is independent");
+        Test(ExpeditionReplayArchive.History[0].Frames[0].Description!="TAMPERED",
+             "snapshot frames are independent");
+        Test(ExpeditionReplayArchive.History[0].Squad.Count==1,
+             "snapshot squad list is independent");
+        var callerOwned=new ExpeditionReplayData("Caller","Captain",new[]{"Captain"});
+        callerOwned.Append(ExpeditionReplayKind.Departure,"Captain","Departure");
+        callerOwned.Append(ExpeditionReplayKind.March,"Captain","March");
+        callerOwned.Append(ExpeditionReplayKind.Return,"Captain","Return");
+        ExpeditionReplayArchive.Add(callerOwned);
+        callerOwned.Frames[0].Description="MUTATED";
+        Test(ExpeditionReplayArchive.History.Last().Frames[0].Description=="Departure",
+             "adding a replay must copy caller data");
+        var broken=new ExpeditionReplayData("Corrupt","Captain",new[]{"Captain"});
+        broken.Append(ExpeditionReplayKind.Departure,"Captain","Departure");
+        broken.Frames.Add(null);
+        broken.Append(ExpeditionReplayKind.Return,"Captain","Return");
+        int beforeBroken=ExpeditionReplayArchive.History.Count;
+        ExpeditionReplayArchive.Add(broken);
+        Test(ExpeditionReplayArchive.History.Count==beforeBroken,
+             "corrupt frame is rejected without corrupting the archive");
         ExpeditionReplayArchive.Restore(null);
         Test(ExpeditionReplayArchive.History.Count==0,"old save without history safe");
         Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
