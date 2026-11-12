@@ -521,7 +521,7 @@ namespace Sinbinder.UI
             }
             _spawned.Add(Row(y,true,Loc.T("Пусть командир решает сам"),
                 Loc.T("Не отправлять рекомендацию"),"",
-                () => { _board.OfferJourneyOrder(null); ShowMissions(); }));
+                () => { _board.OfferJourneyOrder(commanderId,null); ShowMissions(); }));
         }
 
         private void Send(string commanderName, MissionAction? offer)
