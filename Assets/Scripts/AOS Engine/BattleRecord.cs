@@ -30,6 +30,8 @@ namespace Sinbinder.AOS
         // True only when the executor applied the chosen action.
         // AOS intent and completed world action are different facts.
         public bool Resolved;
+        // One-based actual resolver round. Zero means legacy/unknown.
+        public int Round;
     }
 
     /// <summary>
