@@ -9,6 +9,7 @@ using Sinbinder.Core;
 
 namespace UnityEngine
 {
+    public sealed class SerializeField : Attribute {}
     public sealed class CreateAssetMenuAttribute : Attribute
     {
         public string fileName,menuName;
@@ -45,8 +46,31 @@ namespace UnityEngine
         public static void Log(object value) {}
     }
 }
+namespace UnityEngine.SceneManagement
+{
+    public struct Scene
+    {
+        public string name;
+    }
+    public enum LoadSceneMode { Single, Additive }
+    public static class SceneManager
+    {
+        public static event Action<Scene,LoadSceneMode> sceneLoaded;
+        public static void Deliver(Scene scene, LoadSceneMode mode)
+            => sceneLoaded?.Invoke(scene,mode);
+    }
+}
 namespace Sinbinder.Core
 {
+    public sealed class LocationData
+    {
+        public string SceneName;
+        public string Tag;
+    }
+    public sealed class LocationDatabase
+    {
+        public readonly List<LocationData> Locations=new List<LocationData>();
+    }
     public sealed class NarrativePerk {}
     public enum Clarity { Trace }
     public static class Transparency
