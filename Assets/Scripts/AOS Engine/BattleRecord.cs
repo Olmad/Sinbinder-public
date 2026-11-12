@@ -21,6 +21,9 @@ namespace Sinbinder.AOS
         /// </summary>
         public string ActorName;
         public string TargetId;
+        // Human-readable identity captured at the moment of the action.
+        // The target's ephemeral runtime Guid alone is not a replay name.
+        public string TargetName;
         /// <summary>Пол действующего: без него пересказ говорит «Марга ушёл».</summary>
         public Core.Gender ActorGender;
 
@@ -30,6 +33,11 @@ namespace Sinbinder.AOS
         // True only when the executor applied the chosen action.
         // AOS intent and completed world action are different facts.
         public bool Resolved;
+        // True only when this action itself brought its target to zero HP.
+        public bool TargetKilled;
+        // Actual target HP at the instant this action finished. The damage
+        // or healing fields describe measured HP changes, not intent.
+        public float TargetHealthAfter;
         // One-based actual resolver round. Zero means legacy/unknown.
         public int Round;
     }
