@@ -51,41 +51,9 @@ namespace Sinbinder.AOS.Modules
         /// </summary>
         public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
         {
-            if(context==null || context.RecentMemories==null ||
-               string.IsNullOrEmpty(context.ExpeditionSite)) return 0f;
-            float score=0f;
-            foreach(var memory in context.RecentMemories)
-            {
-                if(memory==null || memory.TargetID!=context.ExpeditionSite) continue;
-                float strength=Mathf.Clamp01(memory.Importance);
-                switch(memory.EventType)
-                {
-                    case "ExpeditionSparedCaravan":
-                        if(action==MissionAction.LetThemPass) score+=7f*strength;
-                        break;
-                    case "ExpeditionTookGoods":
-                        if(action==MissionAction.TakeGoodsSparePeople) score+=7f*strength;
-                        break;
-                    case "ExpeditionRaidedCaravan":
-                        if(action==MissionAction.TakeEverything) score+=7f*strength;
-                        break;
-                    case "ExpeditionCaptureAttempt":
-                        if(action==MissionAction.TakePeople) score+=4f*strength;
-                        break;
-                    case "ExpeditionRepelled":
-                    case "ExpeditionLostCompanion":
-                        // Fear of a verified defeat makes another violent
-                        // attempt less attractive, but wrath resists fear.
-                        float caution=Mathf.Clamp(1f-soul.Get(SinType.Wrath)/200f,0.5f,1.5f);
-                        if(action==MissionAction.LetThemPass)
-                            score+=4f*strength*caution;
-                        if(action==MissionAction.TakeEverything ||
-                           action==MissionAction.TakePeople)
-                            score-=5f*strength*caution;
-                        break;
-                }
-            }
-            return Mathf.Clamp(score,-12f,12f);
+            return Sinbinder.Gameplay.ExpeditionMemoryVote.Score(
+                context?.RecentMemories,context?.ExpeditionSite,action,
+                soul.Get(SinType.Wrath));
         }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
