@@ -46,6 +46,19 @@ static class RealBoardShimTests
         PersonalExpedition.Active=false;
         Sinbinder.Core.SaveSystem.SaveCount=0;
 
+        // These are the actual strategy modifiers read by the same
+        // production AOS resolver, not a hand-written sample bonus list.
+        Check(Sinbinder.Gameplay.SquadOrders.FromSin(SinType.Wrath)
+                ==SquadStrategy.Aggressive,
+            "real Wrath commander selects Aggressive strategy");
+        Check(Sinbinder.Gameplay.SquadOrders.FromSin(SinType.Greed)
+                ==SquadStrategy.LootFocused,
+            "real Greed commander selects LootFocused strategy");
+        Sinbinder.Gameplay.SquadOrders.Set(SquadStrategy.Aggressive);
+        Check(Sinbinder.Gameplay.SquadOrders.CurrentModifiers().Any(m=>
+                m.Action==ActionType.Attack && m.Bonus>0f),
+            "real aggressive strategy raises AOS attack score");
+        Sinbinder.Gameplay.SquadOrders.Reset();
         var resolver=new BehaviourResolver();
         var warrior=new Warrior("Гневный",Team.Player);
         warrior.Soul.Sin=SinType.Wrath;
