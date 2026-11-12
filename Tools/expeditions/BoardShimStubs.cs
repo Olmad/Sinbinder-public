@@ -70,12 +70,21 @@ namespace Sinbinder.Core
 }
 namespace Sinbinder.AOS
 {
+#if !REAL_AOS
     public enum MissionAction
     {
         TakeGoodsSparePeople,TakeEverything,LetThemPass,TakePeople
     }
+#endif
     public enum EmotionType { Fear,Joy,Disgust,Calm,Sadness }
-    public sealed class MemoryRecord {}
+    public sealed class MemoryRecord
+    {
+        public string EventType;
+        public string TargetID;
+        public float Strength;
+        public float Importance;
+    }
+#if !REAL_AOS
     public sealed class MissionContext
     {
         public bool HasInnocentVictims, HasTreasure, HasGuiltyParty;
@@ -98,6 +107,11 @@ namespace Sinbinder.AOS
             return options.Contains(answer) ? answer : options[0];
         }
     }
+#endif
+#if REAL_AOS
+    public enum MissionID { None }
+    public sealed class NPCData {}
+#endif
 }
 namespace Sinbinder.Inventory
 {
