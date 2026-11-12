@@ -615,7 +615,7 @@ namespace Sinbinder.Crypt
             int coinsForLord = 0;
             if (survivors.Count > 0)
             {
-                if(secured) TakeSpoils(mission, chosen);
+                if(secured) TakeSpoils(mission, chosen, journey);
 
                 // Добыча — в кошель Греховода, числом (монеты — то, чем он
                 // владеет и что тратит; решение автора 30 сентября). До
@@ -925,7 +925,8 @@ namespace Sinbinder.Crypt
         /// Ordinary bodies, coin and other mundane loot use their
         /// existing paths and are still affected by the squad's choices.
         /// </summary>
-        private void TakeSpoils(Mission mission, AOS.MissionAction? chosen)
+        private void TakeSpoils(Mission mission, AOS.MissionAction? chosen,
+            SavedAutoExpedition journey)
         {
             if (chosen == AOS.MissionAction.TakePeople)
                 Log(Loc.T("Командир выбрал захват людей. Учёт пленников пока отсутствует: доступные ресурсы склепа не пополнены."));
@@ -939,7 +940,30 @@ namespace Sinbinder.Crypt
                 Log(Loc.T("В отряде нет искателя секретов: редкую находку не обнаружили."));
 
             if (mission.Spoils == Spoils.Shell)
-                Log(Loc.T("Обычные останки могли остаться после боя, но перенос оболочек в хранилище пока не реализован."));
+            {
+                // An actual defeated body exists in AOS only if at least one
+                // hostile shell fell. Never mint an arbitrary body from
+                // a label, peaceful encounter, retreat, or empty battlefield.
+                if(journey==null || journey.FoesFallen<=0)
+                {
+                    Log(Loc.T("Пригодной оболочки среди павших противников не нашли."));
+                    return;
+                }
+                var inventory=Inventory.PlayerInventory.Instance;
+                if(inventory==null)
+                {
+                    Log(Loc.T("Нет доступной сумы: останки не были доставлены."));
+                    return;
+                }
+                var body=new Inventory.InventoryItem(
+                    Loc.N("Обычная оболочка с затопленной каменоломни"),
+                    Loc.N("Останки одного реально павшего противника. Душа не собрана."),
+                    Inventory.ItemType.Shell);
+                if(inventory.AddItem(body))
+                    Log(Loc.T("В суму доставлена одна обычная оболочка. Душа не собрана."));
+                else
+                    Log(Loc.T("В суме не хватило места: оболочка не доставлена."));
+            }
         }
 
         /// <summary>Забыть добычу при новой игре.</summary>
