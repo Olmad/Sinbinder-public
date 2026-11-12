@@ -40,7 +40,12 @@ assert "ResolveReturned(found,journey.Commander" in m
 assert "Expedition.Fight(away, mission.Guards)" in m
 assert "SquadRoster.ComeBack(party, survivors)" in m
 assert "OfferJourneyOrder(AOS.MissionAction? offer)" in m
+assert "public bool RecallJourney()" in m
+assert "if (journey.Recalled)" in m
+assert "SquadRoster.ComeBack(journey.Party,journey.Party);" in m
+assert "Отряд вернулся без боя и добычи" in m
 assert "MissionBoard.Journeys" in ui and "PickJourneyDecision()" in ui
+assert "_board.RecallJourney(); ShowMissions();" in ui
 assert "Decisions occur when the squad reaches the location" in ui
 assert "save.AutoExpeditions = MissionBoard.SnapshotJourneys();" in save
 assert "MissionBoard.RestoreJourneys(save.AutoExpeditions);" in save
