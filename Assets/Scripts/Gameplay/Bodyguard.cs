@@ -85,9 +85,9 @@ namespace Sinbinder.Gameplay
         public static bool Absorb(Damageable target, GameObject attacker, float damage)
         {
             if (target == null || !Watched.TryGetValue(target, out var w)) return false;
-            // A zero-damage probe or missing attacker is not a rescue hit.
-            // Keep the watch armed so the next genuine attack can be intercepted.
-            if (w.Rescue && !RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;
+            // A zero-damage probe or missing attacker is not an attack for either
+            // scripted protection or AOS rescue. Preserve the one-shot watch.
+            if (!RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;
             Watched.Remove(target);
             if (w.Guard == null || w.Guard.IsDead || Time.time > w.Until) return false;
 
