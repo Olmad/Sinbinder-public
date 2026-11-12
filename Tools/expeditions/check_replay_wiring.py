@@ -29,3 +29,25 @@ assert 'Схематическая реконструкция' in viewer
 assert 'foreach(var frame in Frames) yield return frame' in data
 assert 'Frames.Count' in viewer and 'GUI.BeginScrollView' in viewer
 print("PASS: automatic mission replay retains all source events and opens timeline viewer")
+
+# AOS decision != executed effect: a fighter who actually flees leaves the
+# encounter, and a converted enemy must not take a turn for the old side.
+resolver=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")
+battle=(r/"Assets/Scripts/AOS Engine/BattleRecord.cs").read_text(encoding="utf-8")
+expedition=(r/"Assets/Scripts/Gameplay/Expedition.cs").read_text(encoding="utf-8")
+assert 'public bool Resolved;' in battle
+assert 'evt.Resolved = allies.Remove(warrior);' in resolver
+assert 'if (enemies.Contains(enemy) && !enemy.IsDead)' in resolver
+assert 'if (squad.Contains(warrior) && !warrior.IsDead)' in resolver
+assert 'evt.Resolved = true;' in resolver
+assert 'case ActionType.Flee:' in retelling
+assert 'return ev.Resolved' in retelling
+assert 'case ActionType.BribeEnemy:' in retelling
+assert 'case ActionType.Loot:' in retelling
+assert 'case ActionType.SaveAlly:' in retelling
+assert 'var originalSquad=new List<Warrior>(squad);' in expedition
+assert 'i < originalSquad.Count' in expedition
+assert 'AutoBattleResolver.SquadGold=0;' in expedition
+assert 'AutoBattleResolver.SquadGold=previousGold;' in expedition
+assert 'var w = Summon(holder, m, relations);' in expedition
+print("PASS: AOS retreat/bribe effects and expedition outcomes are distinguished from intent")
