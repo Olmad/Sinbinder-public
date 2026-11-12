@@ -184,12 +184,17 @@ namespace Sinbinder.UI
                 var phase=journey.Phase==0 ? Loc.T("В пути к цели")
                     : journey.Phase==1 ? Loc.T("Ожидает решения Греховода")
                     : Loc.T("Возвращается в склеп");
-                var eta=journey.Phase==1 ? Loc.T("Нужен ваш совет")
-                    : Loc.F("Осталось примерно {0} сек.",Mathf.CeilToInt(journey.SecondsRemaining));
+                var eta=journey.Phase==1 ? Loc.T("Нажмите, чтобы выбрать совет")
+                    : journey.Phase==0 ? Loc.F("До прибытия около {0} сек. Нажмите, чтобы отозвать.",
+                        Mathf.CeilToInt(journey.SecondsRemaining))
+                    : Loc.F("До возвращения около {0} сек.",Mathf.CeilToInt(journey.SecondsRemaining));
                 _spawned.Add(Row(y,true,
                     Loc.F("Отряд: {0}",Loc.Name(journey.MissionName)),
                     Loc.F("Старший: {0} · {1}",Loc.Name(journey.Commander),phase),
-                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision()) : null,125f));
+                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision())
+                        : journey.Phase==0 ? (System.Action)(() =>
+                            { _board.RecallJourney(); ShowMissions(); })
+                        : null,125f));
                 y-=133f;
             }
 
