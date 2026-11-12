@@ -25,6 +25,7 @@ namespace Sinbinder.Gameplay
         public float Damage;
         public float Healing;
         public int Sequence;
+        public int Round; // 0 outside combat or from old save
     }
 
     [Serializable]
@@ -51,13 +52,13 @@ namespace Sinbinder.Gameplay
 
         public void Append(ExpeditionReplayKind kind, string actor,
                            string description, string target = "",
-                           float damage = 0f, float healing = 0f)
+                           float damage = 0f, float healing = 0f, int round = 0)
         {
             Frames.Add(new ExpeditionReplayFrame
             {
                 Kind=kind,Actor=actor ?? "",Target=target ?? "",
                 Description=description ?? "",Damage=damage,Healing=healing,
-                Sequence=Frames.Count
+                Sequence=Frames.Count, Round=round
             });
         }
 
