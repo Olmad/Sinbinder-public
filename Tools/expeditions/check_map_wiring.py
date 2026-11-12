@@ -15,6 +15,20 @@ assert "surface.RemoveData();" in m
 assert "if (NavMesh.SamplePosition(point, out var safe, 3f, NavMesh.AllAreas))" in p
 assert "WarriorRig.Attach(go)" in p and "sceneSetup?.SetupWarrior(go)" in p
 assert "ExpeditionMapPlan.ForName(mission.Name)" in p
+# Personal caravan junction must persist a non-loot peaceful result and
+# never award the wagon cargo after the encounter has been resolved.
+assert "public bool CaravanPassed;" in p
+assert "CaravanPassed=state.CaravanPassed" in p
+assert "_state.CaravanPassed=true;" in p
+assert "_state.CargoTaken=true;" in p
+assert "_state.EnemiesRemaining=0;" in p
+assert "_caravanFightChosen=true;" in p
+assert "private void OpenCaravanChoice()" in p
+assert "private void ChooseCaravan(bool attack)" in p
+assert "expedition.OpenCaravanChoice" in p
+assert "GUI.Button(" in p
+assert "(_state.CargoTaken && !_state.CaravanPassed)" in p
+assert "if(_state.CaravanPassed)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui
 assert "viewport.gameObject.AddComponent<RectMask2D>()" in ui
 assert "_missionScroll = viewport.gameObject.AddComponent<ScrollRect>()" in ui
