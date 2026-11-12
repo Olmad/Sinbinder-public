@@ -51,6 +51,12 @@ namespace Sinbinder.Crypt
         {
             if (MissionBoard.Journeys.Count == 0 || Time.deltaTime <= 0f)
                 return;
+            // Merely opening the main menu must not simulate the previous
+            // game's party or overwrite the last legitimate autosave.
+            // The clock advances only when a player or playable crypt scene
+            // actually exists, not on empty boot/loading/menu scenes.
+            if (!Gameplay.SinbinderPlayer.Exists && CryptMap.Board == null)
+                return;
 
             // Only the crypt is allowed to settle its returning squads and
             // physical loot. Other scenes can advance time and resolve AOS
