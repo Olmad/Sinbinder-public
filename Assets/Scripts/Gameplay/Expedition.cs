@@ -250,8 +250,15 @@ namespace Sinbinder.Gameplay
                         Name=w.DisplayName,Id=w.Id,
                         OriginalParty=i<_originalSquad.Count,
                         Team=(int)w.Team,Dead=w.IsDead,
+                        // Keep sub-one-percent real HP unchanged at each
+                        // round boundary. The older roster conversion has
+                        // a protective 1% floor intended for legacy saves;
+                        // applying that floor every turn would heal actors.
                         HealthFraction=w.IsDead ? 0f :
-                            ExpeditionHealthRules.Capture(w.HP,w.MaxHP),
+                            (w.MaxHP>0f
+                                ? System.Math.Max(float.Epsilon,
+                                    System.Math.Min(1f,w.HP/w.MaxHP))
+                                : 1f),
                         SquadIndex=_squad.IndexOf(w),
                         EnemyIndex=_foes.IndexOf(w)
                     });
