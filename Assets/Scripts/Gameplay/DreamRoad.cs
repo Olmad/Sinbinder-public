@@ -694,9 +694,10 @@ namespace Sinbinder.Gameplay
                 Rays(root, new Vector3(0f, 5.2f, z + 9.25f), cold);
             }
             // Смерть не заперта и не держит (автор, 12.11): стоит сбоку в глубине, провожает идущего.
-            Death(root, new Vector3(-3.8f, 0f, z + 6.0f), black);
-            _deathYaw = -34f;
-            _death.rotation = Quaternion.Euler(0f, _deathYaw, 0f);
+            // Автор, 12.11: «мы идём к нему» — стоит посередине, лицом к вошедшему; слово своё
+            // скажет не здесь, а когда Безымянный пойдёт к свету уже в лагере (OpeningReveal).
+            Death(root, new Vector3(0f, 0f, z + 6.6f), black);
+            _deathYaw = 0f;
             // Холодный туман из дверей — ползёт к вошедшему по полу.
             var mist = Haze(new Color(0.60f, 0.72f, 0.95f), additive: true);
             if (mist != null)
@@ -881,18 +882,6 @@ namespace Sinbinder.Gameplay
         {
             if (_death == null) return;
             _death.position = _deathAt + Vector3.up * (0.07f * Mathf.Sin(t * 1.25f));
-            // Провожает взглядом: всем корпусом, медленно, следом за идущим мимо.
-            if (Camera.main != null)
-            {
-                var d = Camera.main.transform.position - _death.position;
-                d.y = 0f;
-                if (d.sqrMagnitude > 0.01f)
-                {
-                    float want = Mathf.Atan2(-d.x, -d.z) * Mathf.Rad2Deg;
-                    float k = Smooth(Mathf.InverseLerp(0.8f, 3.2f, t));
-                    _death.rotation = Quaternion.Euler(0f, Mathf.LerpAngle(_deathYaw, want, k), 0f);
-                }
-            }
             if (_deathHem != null) _deathHem.localRotation = Quaternion.Euler(0f, 5f * Mathf.Sin(t * 0.8f), 0f);
             if (_deathHood != null)
                 _deathHood.localRotation = Quaternion.Euler(Mathf.Lerp(14f, -5f, Smooth(Mathf.InverseLerp(0.6f, 2.3f, t))), 0f, 0f);
@@ -1297,16 +1286,11 @@ namespace Sinbinder.Gameplay
             Audio.Music.Stop(3f);
             if (_seam != null) _seam.SetActive(false);
 
-            // Замысел (автор, 12.11): ворота — не темница Смерти, а выход из сна. Безымянный
-            // идёт мимо неё к свету и просыпается; она не держит — провожает взглядом и
-            // говорит вслед. Экран уходит в белое, не в чёрное.
-            const float open = 3.4f, total = 9.2f;
-            var passTo = new Vector3(0.4f, 1.6f, GateZ + 7.4f);
-            var gateAim = new Vector3(0f, 3.4f, GateZ + 6.5f);
-            var face = _deathAt + Vector3.up * 6.2f;
-            var lightAt = new Vector3(0f, 4.6f, GateZ + 9.4f);
-            bool spoke = false;
-            for (float t = 0f; t < total; t += Time.unscaledDeltaTime)
+            // К нему: створки расходятся, он поднимает голову, глаза; взгляд идёт вверх, шаг
+            // вперёд — и темнота. Экран гаснет раньше, чем можно рассмотреть склеп.
+            var lookUp = Quaternion.LookRotation(new Vector3(0f, 5.6f, GateZ + 6.5f) - eye);
+            const float open = 3.4f, fade = 3.8f;
+            for (float t = 0f; t < fade + 0.9f; t += Time.unscaledDeltaTime)
             {
                 float d = Mathf.Pow(Smooth(Mathf.Clamp01(t / open)), 1.3f);
                 if (_doorLeft != null) _doorLeft.localRotation = Quaternion.Euler(0f, -88f * d, 0f);
@@ -1314,31 +1298,17 @@ namespace Sinbinder.Gameplay
                 float breath = 1f + 0.16f * Mathf.Sin(t * 1.6f) + 0.05f * Mathf.Sin(t * 5.3f);
                 if (_cryptLight != null) _cryptLight.intensity = 10f * d * breath;
                 Haunt(t, breath);
+                float a = Mathf.Pow(Mathf.Clamp01(t / fade), 1.6f);
+                black.color = new Color(0f, 0f, 0f, a);
+                CryptFade = a;
                 if (cam != null)
                 {
-                    // Стоит, пока створки расходятся; потом идёт — мимо него, к свету.
-                    float go = Smooth(Mathf.InverseLerp(2.4f, total - 0.4f, t));
-                    var pos = Vector3.Lerp(eye, passTo, go);
-                    var atHim = Vector3.Lerp(gateAim, face, Smooth(Mathf.InverseLerp(0.8f, 2.4f, t)));
-                    var aim = Vector3.Lerp(atHim, lightAt, Smooth(Mathf.InverseLerp(4.8f, 7.6f, t)));
-                    cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(aim - pos, Vector3.up));
+                    float push = Smooth(Mathf.Clamp01(t / fade));
+                    cam.transform.SetPositionAndRotation(eye + look * Vector3.forward * (2.6f * push), Quaternion.Slerp(look, lookUp, push));
                 }
-                if (!spoke && t > 3.8f)
-                {
-                    spoke = true;
-                    string words = Loc.T("Ты можешь бежать от меня. Но от своей сути не убежишь.");
-                    var box = UI.Letterbox.Instance;
-                    if (box != null) box.Say(Loc.T("Бог Смерти"), words);
-                    Audio.DeathVoice.Utter(words);
-                    Debug.Log("[СОН] Бог Смерти: " + words);
-                }
-                float a = Mathf.Pow(Mathf.Clamp01((t - 5.6f) / 3.2f), 1.4f);
-                black.color = new Color(1f, 1f, 1f, a);
-                CryptFade = Mathf.Clamp01(t / total);
                 yield return null;
             }
-            // Белое остаётся до загрузки лагеря: уйдёт вместе со сценой сна.
-            black.color = Color.white;
+            // Чёрное остаётся до загрузки лагеря: уйдёт вместе со сценой сна.
             CryptFade = 1f;
         }
 

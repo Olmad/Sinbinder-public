@@ -228,6 +228,9 @@ namespace Sinbinder.Gameplay
             spill.color = Color.clear;
             hint.text = Loc.T(DreamLine);
 
+            // Слово Бога Смерти — здесь, когда Безымянный уже идёт к свету (автор, 12.11):
+            // начало пути Пешки и его конец — он уходит от своего командира.
+            bool spoke = false;
             for (float t = 0f; DreamProgress < 1f; t += Time.unscaledDeltaTime)
             {
                 float off = view != null ? Mathf.DeltaAngle(view.Yaw, lightYaw) : 0f;
@@ -241,7 +244,17 @@ namespace Sinbinder.Gameplay
 
                 // Огонёк дышит, растёт к концу пути и светлеет.
                 PlaceLight(light, off, t, DreamProgress);
-                hint.color = new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 0.8f) / 1.2f) * (1f - DreamProgress * 2f));
+                if (!spoke && DreamProgress > 0.22f)
+                {
+                    spoke = true;
+                    string words = Loc.T("Ты можешь бежать от меня. Но от своей сути не убежишь.");
+                    hint.text = Loc.T("Бог Смерти") + ": " + words;
+                    Audio.DeathVoice.Utter(words);
+                    Debug.Log("[ОТКРЫТИЕ] Бог Смерти: " + words);
+                }
+                hint.color = spoke
+                    ? new Color(0.85f, 0.82f, 0.76f, 1f - Mathf.Clamp01((DreamProgress - 0.92f) / 0.08f))
+                    : new Color(0.85f, 0.82f, 0.76f, Mathf.Clamp01((t - 0.8f) / 1.2f) * (1f - DreamProgress * 2f));
                 yield return null;
             }
             // Под белым — снова лицом к выходу, как лёг: просыпается, глядя в полог.
