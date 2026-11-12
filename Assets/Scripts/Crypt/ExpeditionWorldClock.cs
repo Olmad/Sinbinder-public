@@ -38,8 +38,13 @@ namespace Sinbinder.Crypt
             }
             _instance = this;
             // A real MissionBoard has all the existing AOS resolver paths.
-            // This component is deliberately not tied to a panel/canvas.
-            _offscreenBoard = gameObject.AddComponent<MissionBoard>();
+            // Keep the service proxy on an INACTIVE child: ordinary scene
+            // lookups for MissionBoard must find the real crypt table, not
+            // accidentally bind its UI to this persistent background service.
+            var proxy=new GameObject("Offscreen expedition resolver");
+            proxy.transform.SetParent(transform,false);
+            proxy.SetActive(false);
+            _offscreenBoard=proxy.AddComponent<MissionBoard>();
         }
 
         private void OnDestroy()
