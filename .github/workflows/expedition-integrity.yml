@@ -77,6 +77,7 @@ jobs:
       - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
       - run: python3 Tools/expeditions/check_replay_wiring.py
