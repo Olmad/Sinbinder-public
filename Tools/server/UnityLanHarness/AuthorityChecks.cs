@@ -225,6 +225,35 @@ internal static class AuthorityChecks
             authority.LastAcceptedCommandId(1) == 0,
             "invalid envelopes cannot probe fog or consume replay cursor");
 
+        // Invalid order shapes must fail before target existence/visibility.
+        // Both a real hidden target and an absent target give the same denial.
+        foreach (long targetId in new[] { id2, 999999L })
+        {
+            var unsupported = Intent("aos-bridge", 1, id1,
+                (NetworkOrderKind)999, target: targetId);
+            Require(!bridge.TryIssue(1, unsupported, 1, countVisibility, null,
+                out _, out var malformedReason) &&
+                malformedReason == OrderRejection.UnsupportedOrder,
+                "unsupported kind must not probe hidden target");
+
+            var nonFinite = Intent("aos-bridge", 1, id1,
+                NetworkOrderKind.Attack, float.NaN, target: targetId);
+            Require(!bridge.TryIssue(1, nonFinite, 1, countVisibility, null,
+                out _, out malformedReason) &&
+                malformedReason == OrderRejection.InvalidPoint,
+                "nonfinite attack must not probe hidden target");
+
+            var outOfBounds = Intent("aos-bridge", 1, id1,
+                NetworkOrderKind.Attack, 121f, target: targetId);
+            Require(!bridge.TryIssue(1, outOfBounds, 1, countVisibility, null,
+                out _, out malformedReason) &&
+                malformedReason == OrderRejection.InvalidPoint,
+                "out-of-bounds attack must not probe hidden target");
+        }
+        Require(visibilityProbes == 0 && bridge.PendingOrders == 0 &&
+            authority.LastAcceptedCommandId(1) == 0,
+            "malformed orders cannot query fog or consume replay cursor");
+
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
             NetworkOrderKind.Move), 1, null, null,
             out _, out var reason) && reason == OrderRejection.NotAllowed,
