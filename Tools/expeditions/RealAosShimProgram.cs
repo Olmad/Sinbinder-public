@@ -56,6 +56,7 @@ namespace Sinbinder.Core
 {
     public enum SinType { Greed, Pride, Wrath, Envy, Lust, Gluttony, Sloth }
     public enum MoralType { Vicious, Neutral, Pious }
+    public sealed class NarrativePerk {}
     public sealed class SoulData
     {
         public const int SpectrumCount=7;
