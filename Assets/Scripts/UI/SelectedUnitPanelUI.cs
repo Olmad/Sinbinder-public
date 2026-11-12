@@ -491,7 +491,7 @@ namespace Sinbinder.UI
                 var doing = PhraseGenerator.Doing(decision.Action);
                 Voice(null, Loc.T("Сам выбрал: ") + doing,
                     PhraseGenerator.Reason(who, context, decision), Bone, 27);
-                Order(Loc.T("Приказ выполнен"),
+                Order(Loc.T("Решение совпало с приказом"),
                     Loc.T("Его собственное решение совпало с приказом."), true);
                 return;
             }
