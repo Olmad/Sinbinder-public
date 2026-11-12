@@ -112,17 +112,21 @@ namespace Sinbinder.Crypt
             switch (ev.Action)
             {
                 case ActionType.Flee:
-                    return Core.Grammar.Pick(ev.ActorGender,
-                        Loc.F("{0} пытался отступить; выхода из боя не произошло.",who),
-                        Loc.F("{0} пыталась отступить; выхода из боя не произошло.",who));
+                    return ev.Resolved
+                        ? Core.Grammar.Pick(ev.ActorGender,
+                            Loc.F("{0} вышел из боя и больше не участвовал в схватке.",who),
+                            Loc.F("{0} вышла из боя и больше не участвовала в схватке.",who))
+                        : Core.Grammar.Pick(ev.ActorGender,
+                            Loc.F("{0} попытался отступить, но не смог.",who),
+                            Loc.F("{0} попыталась отступить, но не смогла.",who));
                 case ActionType.Loot:
                     return Loc.F("{0} отвлёкся на поиски добычи; предмет не был собран.",who);
                 case ActionType.BribeEnemy:
-                    return string.IsNullOrEmpty(ev.TargetId)
+                    return !ev.Resolved
                         ? Loc.F("{0} попытался подкупить противника, но тот не перешёл на его сторону.",who)
                         : Loc.F("{0} подкупил противника: тот сменил сторону.",who);
                 case ActionType.SaveAlly:
-                    return ev.HealDealt>0f
+                    return ev.Resolved && ev.HealDealt>0f
                         ? Loc.F("{0} подлечил союзника. Это не подтверждает спасение от смертельной атаки.",who)
                         : Loc.F("{0} попытался помочь союзнику, но лечения не произошло.",who);
                 case ActionType.Attack:
