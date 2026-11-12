@@ -126,6 +126,11 @@ namespace Sinbinder.Gameplay
                                   40f + i * 5f, 50f, false, Team.Enemy, relations));
                 }
 
+                // Bribery may move captured actors between the mutable squad
+                // and enemy lists. Results must still refer to the people
+                // who actually departed, never to a newly bribed foe.
+                var originalSquad=new List<Warrior>(squad);
+
                 var strategy = commander != null && commander.Soul != null
                     ? SquadOrders.FromSin(commander.Soul.Sin)
                     : SquadStrategy.Balanced;
@@ -133,10 +138,22 @@ namespace Sinbinder.Gameplay
                 // Пятый аргумент. Без него запись боя оставалась пустой,
                 // и вылазка возвращала список выживших без единого слова
                 // о том, почему остальные не вернулись.
-                AutoBattleResolver.Resolve(commander, squad, foes, strategy, record);
+                // SquadGold is global legacy state, not this expedition's
+                // wallet. Never borrow another squad's gold to conjure an
+                // AOS bribe. This prototype has no accountable bribe escrow.
+                int previousGold=AutoBattleResolver.SquadGold;
+                try
+                {
+                    AutoBattleResolver.SquadGold=0;
+                    AutoBattleResolver.Resolve(commander, squad, foes, strategy, record);
+                }
+                finally
+                {
+                    AutoBattleResolver.SquadGold=previousGold;
+                }
 
-                for (int i = 0; i < squad.Count; i++)
-                    if (!squad[i].IsDead) survivors.Add(away[i].Name);
+                for (int i = 0; i < originalSquad.Count; i++)
+                    if (!originalSquad[i].IsDead) survivors.Add(away[i].Name);
 
                 // С павших снимают то же, что снимали бы на поле.
                 foreach (var foe in foes)
