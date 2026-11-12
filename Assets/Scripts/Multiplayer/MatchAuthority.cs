@@ -215,6 +215,17 @@ namespace Sinbinder.Multiplayer
                 player.Connected && player.SessionEpoch == epoch;
         }
 
+        // Side-effect-free authorization gate for Unity bridge preflight.
+        // Target existence/visibility must not be probed for another player's actor.
+        public bool CanIssueFrom(int connectionId, long actorId)
+        {
+            if (!_players.TryGetValue(connectionId, out var player) || !player.Connected ||
+                !_actors.TryGetValue(actorId, out var actor))
+                return false;
+            return actor.Role == NetworkActorRole.NeutralWarrior ||
+                actor.OwnerConnection == connectionId;
+        }
+
         public bool TryGetLord(int connectionId, out string lord)
         {
             if (_players.TryGetValue(connectionId, out var player) && player.Connected)
