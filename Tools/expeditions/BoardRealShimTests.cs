@@ -130,10 +130,22 @@ static class RealBoardShimTests
         Check(Enum.IsDefined(typeof(ActionType),decision.Action),
             "actual mission warrior receives real AOS decision");
 
+        var commanderWithHistory=Member("Греховод1",SinType.Wrath,85f);
+        commanderWithHistory.Seed=new MemorySeed
+        {
+            Story="Previously witnessed battle and carries a life story"
+        };
         SquadRoster.Members.AddRange(new[]{
-            Member("Греховод1",SinType.Wrath,85f),
+            commanderWithHistory,
             Member("Помощник1",SinType.Greed,80f)
         });
+        var historyHolder=new UnityEngine.GameObject("AOS history check");
+        historyHolder.SetActive(false);
+        var historyProjection=Expedition.Summon(historyHolder,
+            commanderWithHistory,new RelationshipSystem(null));
+        Check(object.ReferenceEquals(historyProjection.Soul.Memory,
+                commanderWithHistory.Seed) && historyProjection.Soul.HasMemory,
+            "commander retains real narrative story for thirteen-module AOS");
         var board=new MissionBoard();
         string dispatched=board.Send(Mission("Придорожная часовня"),"Греховод1",
             new[]{"Помощник1"},null);
@@ -155,6 +167,11 @@ static class RealBoardShimTests
         var saved=CopyDisk();
         int alreadyRecorded=saved[0].EncounterTrace.Frames.Count;
         MissionBoard.RestoreJourneys(saved);
+        var afterLoadProjection=Expedition.Summon(historyHolder,
+            commanderWithHistory,new RelationshipSystem(null));
+        Check(object.ReferenceEquals(afterLoadProjection.Soul.Memory,
+                commanderWithHistory.Seed),
+            "loaded combat round still projects identical narrative identity");
         Check(MissionBoard.Journeys.Single().EncounterTrace.Frames.Count==alreadyRecorded,
             "serializing one round preserves exact real AOS log");
         int time=0;
