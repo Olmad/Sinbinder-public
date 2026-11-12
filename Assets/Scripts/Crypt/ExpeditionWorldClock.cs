@@ -59,7 +59,8 @@ namespace Sinbinder.Crypt
             MissionBoard deliveryBoard = activeCrypt != null
                 ? CryptMap.Board : null;
             if (deliveryBoard != null &&
-                deliveryBoard.gameObject.scene != SceneManager.GetActiveScene())
+                (deliveryBoard.gameObject.scene != SceneManager.GetActiveScene() ||
+                 Gameplay.PersonalExpedition.Active))
                 deliveryBoard = null;
 
             var resolver = deliveryBoard != null
