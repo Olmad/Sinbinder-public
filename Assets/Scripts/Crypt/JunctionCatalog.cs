@@ -79,9 +79,9 @@ namespace Sinbinder.Crypt
             switch (action)
             {
                 case MissionAction.TakeGoodsSparePeople:
-                    return Loc.T("После победы отряд забрал товар и отпустил возчиков.");
+                    return Loc.T("Отряд забрал товар без боя, возчиков отпустили.");
                 case MissionAction.TakeEverything:
-                    return Loc.T("После столкновения отряд попытался забрать всё. Души без сборщика собрать нельзя.");
+                    return Loc.T("Охрана разгромлена, товар захвачен. Души остались на месте: собирателя не было.");
                 case MissionAction.LetThemPass:
                     return Loc.T("Обоз пропустили. Отряд вернулся ни с чем и молчал всю дорогу.");
                 case MissionAction.TakePeople:
