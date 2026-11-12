@@ -133,8 +133,8 @@ print("PASS: AOS injuries persist through game save and subsequent expedition")
 timing=(r/"Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs").read_text(encoding="utf-8")
 cryptmap=(r/"Assets/Scripts/Crypt/CryptMap.cs").read_text(encoding="utf-8")
 assert "public const float AdviceSeconds = 20f;" in timing
-assert "public void AdvanceJourneys(float gameDelta)" in m
-assert "private void Update() => AdvanceJourneys(Time.deltaTime);" in m
+assert "public void AdvanceJourneys(float gameDelta, bool canDeliver = true)" in m
+assert "AdvanceJourneys(Time.deltaTime);" in m
 assert "journey.SecondsRemaining=ExpeditionJourneyTiming.Advance(" in m
 assert "journey.SecondsRemaining=ExpeditionJourneyTiming.AdviceSeconds;" in m
 assert "Core.SaveSystem.AutoSave();" in m
