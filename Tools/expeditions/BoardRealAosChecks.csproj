@@ -27,6 +27,7 @@
     <Compile Include="../../Assets/Scripts/Crypt/MissionBoard.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs" />
+    <Compile Include="../../Assets/Scripts/Core/LocationManager.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/BehaviorResolver.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Soul.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/IPersonalityModule.cs" />
