@@ -583,6 +583,14 @@ namespace Sinbinder.Crypt
             SquadRoster.ComeBack(party, survivors);
 
             LastReport = Report(mission, away, survivors, commanderName);
+            var wounded=new List<string>();
+            if(journey.SurvivorHealth!=null)
+                foreach(var condition in journey.SurvivorHealth)
+                    if(condition!=null && condition.Fraction>0f &&
+                        condition.Fraction<0.99f && survivors.Contains(condition.Name))
+                        wounded.Add(Loc.Name(condition.Name));
+            if(wounded.Count>0)
+                LastReport += Loc.F(" Раны после похода: {0}.",string.Join(", ",wounded));
 
             // Что там было. До этого отчёт говорил, кто вернулся,
             // и молчал о том, почему остальные не вернулись.
@@ -759,10 +767,18 @@ namespace Sinbinder.Crypt
             else
                 replay.Append(ExpeditionReplayKind.Loot,"",Loc.T("Отряд погиб; добыча осталась на месте."));
 
-            replay.Append(ExpeditionReplayKind.Return,Loc.Name(leader),
-                survivors.Count>0
-                    ? Loc.F("Вернулись: {0}.",string.Join(", ",survivors))
-                    : Loc.T("К склепу не вернулся никто."));
+            var returnNote=survivors.Count>0
+                ? Loc.F("Вернулись: {0}.",string.Join(", ",survivors))
+                : Loc.T("К склепу не вернулся никто.");
+            var wounded=new List<string>();
+            if(outcome.SurvivorHealth!=null)
+                foreach(var condition in outcome.SurvivorHealth)
+                    if(condition!=null && condition.Fraction>0f &&
+                       condition.Fraction<0.99f && survivors.Contains(condition.Name))
+                        wounded.Add(Loc.Name(condition.Name));
+            if(wounded.Count>0)
+                returnNote += Loc.F(" Ранены: {0}.",string.Join(", ",wounded));
+            replay.Append(ExpeditionReplayKind.Return,Loc.Name(leader),returnNote);
             return replay;
         }
 
