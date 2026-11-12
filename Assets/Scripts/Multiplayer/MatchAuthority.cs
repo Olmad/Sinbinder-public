@@ -226,6 +226,25 @@ namespace Sinbinder.Multiplayer
                 actor.OwnerConnection == connectionId;
         }
 
+        // Side-effect-free envelope/replay gate. The Unity bridge must call
+        // this before looking up an attack target or invoking visibility.
+        // TryApprove remains the final authority and consumes the cursor only
+        // after all gameplay checks pass.
+        public bool PreflightEnvelope(int connectionId, NetworkOrderIntent intent,
+            out OrderRejection reason)
+        {
+            reason = OrderRejection.None;
+            if (intent == null || intent.Protocol != Protocol)
+                reason = OrderRejection.WrongProtocol;
+            else if (!string.Equals(intent.MatchId, MatchId, StringComparison.Ordinal))
+                reason = OrderRejection.WrongMatch;
+            else if (!_players.TryGetValue(connectionId, out var player) || !player.Connected)
+                reason = OrderRejection.UnknownPlayer;
+            else if (intent.CommandId <= 0 || intent.CommandId <= player.LastCommandId)
+                reason = OrderRejection.StaleOrDuplicate;
+            return reason == OrderRejection.None;
+        }
+
         public bool TryGetLord(int connectionId, out string lord)
         {
             if (_players.TryGetValue(connectionId, out var player) && player.Connected)
