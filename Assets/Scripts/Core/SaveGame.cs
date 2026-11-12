@@ -166,6 +166,9 @@ namespace Sinbinder.Core
         // Delayed automatic operations, including assigned warriors and travel stage.
         public List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions =
             new List<Sinbinder.Crypt.SavedAutoExpedition>();
+        // Last known expedition event, including events while player was away
+        // from the crypt. Absent in earlier saves = no report.
+        public string AutoExpeditionReport;
         // Actual expedition experiences, keyed by persistent roster identity.
         public List<Sinbinder.Gameplay.ExpeditionMemoryEntry> ExpeditionMemories =
             new List<Sinbinder.Gameplay.ExpeditionMemoryEntry>();
