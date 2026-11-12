@@ -146,6 +146,10 @@ namespace Sinbinder.Multiplayer
                 return false;
             }
 
+            // Invalid envelopes must never probe target existence or fog.
+            if (!_authority.PreflightEnvelope(authenticatedConnectionId, intent, out reason))
+                return false;
+
             Warrior target = null;
             if (intent.Kind == NetworkOrderKind.Attack)
             {
