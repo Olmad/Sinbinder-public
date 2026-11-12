@@ -33,6 +33,10 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/IMissionModule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/ICampModule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/SquadStrategy.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/StrategyModifier.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/StrategyDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/SquadOrders.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/MissionAction.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/DecisionContext.cs" />
