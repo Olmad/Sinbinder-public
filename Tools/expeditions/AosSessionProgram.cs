@@ -149,6 +149,12 @@ namespace Sinbinder.AOS
         public static void Set(SquadStrategy strategy) => Current=strategy;
         public static SquadStrategy FromSin(Sinbinder.Core.SinType sin)
             => SquadStrategy.Balanced;
+        private sealed class NoVisualChange : IDisposable
+        {
+            public void Dispose() {}
+        }
+        public static IDisposable UseForSimulation(SquadStrategy strategy)
+            => new NoVisualChange();
     }
 #endif
     public sealed class MemoryProcessor
