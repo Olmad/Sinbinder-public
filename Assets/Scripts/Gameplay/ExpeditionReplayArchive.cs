@@ -7,19 +7,63 @@ namespace Sinbinder.Gameplay
         public const int Capacity = 8;
         private static readonly List<ExpeditionReplayData> Entries = new List<ExpeditionReplayData>();
         public static IReadOnlyList<ExpeditionReplayData> History => Entries;
+
+        // Snapshots must not share mutable frame/squad collections with a live
+        // replay viewer or with an older save. Otherwise changing a displayed
+        // replay can silently rewrite the data that gets saved next time.
+        private static ExpeditionReplayData Copy(ExpeditionReplayData source)
+        {
+            if (source == null || source.Frames == null || !source.HasCompleteRoute)
+                return null;
+            var copy = new ExpeditionReplayData
+            {
+                MissionName = source.MissionName ?? "",
+                Leader = source.Leader ?? "",
+                Squad = source.Squad == null
+                    ? new List<string>() : new List<string>(source.Squad),
+                Frames = new List<ExpeditionReplayFrame>(source.Frames.Count)
+            };
+            foreach (var frame in source.Frames)
+            {
+                if (frame == null) return null; // reject corrupted saves
+                copy.Frames.Add(new ExpeditionReplayFrame
+                {
+                    Kind = frame.Kind,
+                    Actor = frame.Actor ?? "",
+                    Target = frame.Target ?? "",
+                    Description = frame.Description ?? "",
+                    Damage = frame.Damage,
+                    Healing = frame.Healing,
+                    Sequence = frame.Sequence
+                });
+            }
+            return copy;
+        }
+
         public static void Add(ExpeditionReplayData replay)
         {
-            if(replay==null || replay.Frames==null || !replay.HasCompleteRoute) return;
-            Entries.Add(replay);
-            if(Entries.Count>Capacity) Entries.RemoveAt(0);
+            var stable = Copy(replay);
+            if (stable == null) return;
+            Entries.Add(stable);
+            if (Entries.Count > Capacity) Entries.RemoveAt(0);
         }
+
         public static List<ExpeditionReplayData> Snapshot()
-            => new List<ExpeditionReplayData>(Entries);
+        {
+            var snapshot = new List<ExpeditionReplayData>(Entries.Count);
+            foreach (var entry in Entries)
+            {
+                var stable = Copy(entry);
+                if (stable != null) snapshot.Add(stable);
+            }
+            return snapshot;
+        }
+
         public static void Restore(List<ExpeditionReplayData> previous)
         {
             Entries.Clear();
-            if(previous==null) return;
-            foreach(var replay in previous) Add(replay);
+            if (previous == null) return;
+            foreach (var replay in previous) Add(replay);
         }
         public static void Forget() => Entries.Clear();
     }
