@@ -90,7 +90,8 @@ namespace Sinbinder.UI
                 StageName(frame.Kind) +
                 (frame.Round>0 ? "\nХод AOS: "+frame.Round : ""),_caption);
             GUI.Label(new Rect(sideX+9f,top+155f,sideW-18f,mapHeight-115f),
-                (string.IsNullOrEmpty(frame.Actor)?"":frame.Actor+": ") + frame.Description,
+                (string.IsNullOrEmpty(frame.Actor)?"":frame.Actor+": ") +
+                frame.Description + ObservedEffect(frame),
                 _item);
 
             GUI.Label(new Rect(mapRect.x,top+58f+mapHeight,w-30f,23f),
@@ -122,8 +123,9 @@ namespace Sinbinder.UI
                 if(i==_index)
                     GUI.Box(new Rect(0f,i*rowH,content.width,rowH),"");
                 string line=(i+1)+". "+StageName(step.Kind)+
-                    (step.Round>0?" · Ход "+step.Round:"")+" · "+
-                    (string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
+                    (step.Round>0?" · Ход "+step.Round:"")+
+                    (step.HasOutcome ? step.Resolved?" · исполнено":" · без результата" : "")+
+                    " · "+(string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
                 { _index=i;_running=false;_clock=0f; }
             }
@@ -157,13 +159,41 @@ namespace Sinbinder.UI
             var a=new Rect(sx,y-8f,22f,22f);
             GUI.color=new Color(0.28f,0.82f,0.91f);
             GUI.DrawTexture(a,Texture2D.whiteTexture);
-            GUI.color=new Color(0.88f,0.32f,0.28f);
-            GUI.DrawTexture(new Rect(ex-40f,ground.y+ground.height*0.23f,22f,22f),
-                Texture2D.whiteTexture);
+            // A red marker is only a SYMBOL for an encounter in the source
+            // log; peaceful route stages have no fabricated visible enemy.
+            if(frame.Kind==ExpeditionReplayKind.CombatAction)
+            {
+                GUI.color=new Color(0.88f,0.32f,0.28f);
+                GUI.DrawTexture(new Rect(ex-40f,ground.y+ground.height*0.23f,22f,22f),
+                    Texture2D.whiteTexture);
+            }
             GUI.color=previous;
             GUI.Label(new Rect(a.x+26f,a.y-2f,ground.width-60f,26f),
                 frame.Kind==ExpeditionReplayKind.CombatAction
                 ? frame.Actor : _data.Leader);
+        }
+
+        /// <summary>
+        /// Displays immutable facts the AOS executor actually observed.
+        /// Legacy saves have no outcome fields: do not claim a recorded
+        /// failure merely because their default bool is false.
+        /// </summary>
+        private static string ObservedEffect(ExpeditionReplayFrame frame)
+        {
+            if(frame==null || frame.Kind!=ExpeditionReplayKind.CombatAction ||
+               !frame.HasOutcome) return "";
+            string result=frame.Resolved
+                ? "\nИтог: действие действительно исполнено."
+                : "\nИтог: действие не дало подтверждённого эффекта.";
+            if(!string.IsNullOrEmpty(frame.TargetName))
+                result+="\nЦель: "+frame.TargetName+".";
+            if(frame.Damage>0f)
+                result+="\nРеальная потеря HP: "+frame.Damage.ToString("0.#")+".";
+            if(frame.Healing>0f)
+                result+="\nРеальное лечение: "+frame.Healing.ToString("0.#")+".";
+            if(frame.TargetKilled)
+                result+="\nГибель цели подтверждена.";
+            return result;
         }
 
         private static string StageName(ExpeditionReplayKind stage) => stage switch
