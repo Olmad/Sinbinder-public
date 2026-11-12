@@ -39,6 +39,7 @@ namespace Sinbinder.Crypt
         // These results travel with the squad and survive a save/load.
         public bool EncounterResolved;
         public bool EncounterFought;
+        public bool BattleWon;
         public bool HasChosenAction;
         public int ChosenAction;
         public List<string> Survivors = new List<string>();
@@ -86,6 +87,7 @@ namespace Sinbinder.Crypt
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
                 Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
                 EncounterResolved=item.EncounterResolved, EncounterFought=item.EncounterFought,
+                BattleWon=item.BattleWon,
                 HasChosenAction=item.HasChosenAction, ChosenAction=item.ChosenAction,
                 Survivors=item.Survivors == null ? new List<string>() : new List<string>(item.Survivors),
                 TakenCoins=item.TakenCoins, FoesFallen=item.FoesFallen,
@@ -294,6 +296,7 @@ namespace Sinbinder.Crypt
             journey.TakenCoins=fight.Taken;
             journey.FoesFallen=fight.FoesFallen;
             journey.EncounterFought=!noFight;
+            journey.BattleWon=fight.Record!=null && fight.Record.Winner=="Squad";
             journey.HasChosenAction=chosen.HasValue;
             journey.ChosenAction=chosen.HasValue ? (int)chosen.Value : 0;
             journey.BattleSummary=Retelling.Tell(fight.Record);
@@ -541,7 +544,7 @@ namespace Sinbinder.Crypt
                 ? (AOS.MissionAction?)((AOS.MissionAction)journey.ChosenAction) : null;
             var survivors=journey.Survivors ?? new List<string>();
             bool secured=ExpeditionObjectiveRules.Secured(
-                journey.EncounterFought,journey.FoesFallen,mission.Guards,survivors.Count);
+                journey.EncounterFought,journey.BattleWon,survivors.Count);
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
