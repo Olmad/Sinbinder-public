@@ -344,8 +344,12 @@ namespace Sinbinder.Gameplay
         public static Warrior Summon(GameObject holder, SquadRoster.Member m,
                                      RelationshipSystem relations)
         {
+            // The roster already persists the warrior's generated life
+            // story and narrative perks. Temporary AOS projections must
+            // receive that same testimony, not an invented empty soul.
             var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                         m.Loyalty, m.IsCommander, Team.Player, relations, m.Gender, m.Shell);
+                         m.Loyalty, m.IsCommander, Team.Player, relations,
+                         m.Gender, m.Shell, m.Seed);
             w.UnpaidMissions = m.UnpaidMissions;
             // Previous battles do not heal themselves when simulations use
             // new temporary objects; keep the actual survivor's injury.
@@ -367,13 +371,13 @@ namespace Sinbinder.Gameplay
         private static Warrior Make(GameObject holder, string name, SinType sin,
             MoralType moral, float intensity, float loyalty, bool isCommander,
             Team team, RelationshipSystem relations, Gender gender = Gender.Male,
-            ShellType shell = ShellType.Skeleton)
+            ShellType shell = ShellType.Skeleton, MemorySeed memory = null)
         {
             var go = new GameObject(name);
             go.transform.SetParent(holder.transform);
 
             var w = go.AddComponent<Warrior>();
-            w.Initialize(new SoulData(name, sin, moral, 1, intensity, null, gender),
+            w.Initialize(new SoulData(name, sin, moral, 1, intensity, memory, gender),
                          shell, relations, isCommander, team);
             // Верность задаётся сдвигом от полусотни: своего сеттера
             // у неё нет, и заводить его ради счётной вылазки незачем.
