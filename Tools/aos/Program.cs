@@ -105,6 +105,26 @@ internal static class Program
         Check(!OrderIntegrity.WhisperApplies(12u, 12u, true, float.PositiveInfinity, 20f),
             "invalid expiration cannot grant eternal obedience");
 
+        // Bodyguard's one-shot protection must survive a zero-damage probe
+        // for BOTH ordinary Guard and AOS GuardForRescue. These are source
+        // wiring assertions, not Unity execution or proof of a real hit.
+        string bodyguardSource = File.ReadAllText(Path.Combine(args.Length > 0 ? args[0] : ".",
+            "Assets/Scripts/Gameplay/Bodyguard.cs"));
+        int absorbStart = bodyguardSource.IndexOf("public static bool Absorb(", StringComparison.Ordinal);
+        int absorbEnd = bodyguardSource.IndexOf("public static int Blocks", absorbStart, StringComparison.Ordinal);
+        Check(absorbStart >= 0 && absorbEnd > absorbStart,
+            "production bodyguard interception path exists");
+        string absorbSource = bodyguardSource.Substring(absorbStart, absorbEnd - absorbStart);
+        int realHitGate = absorbSource.IndexOf("if (!RescueCreditGate.IsRealAttack(damage, attacker != null)) return false;", StringComparison.Ordinal);
+        int consumeWatch = absorbSource.IndexOf("Watched.Remove(target);", StringComparison.Ordinal);
+        Check(realHitGate >= 0 && consumeWatch > realHitGate,
+            "zero damage or missing attacker cannot consume ordinary or rescue watch");
+        Check(!absorbSource.Contains("if (w.Rescue && !RescueCreditGate.IsRealAttack"),
+            "real-hit guard is not limited to AOS rescue");
+        Check(absorbSource.Contains("guardBody.TakeDamage(damage * Blocked, attacker);") &&
+              absorbSource.Contains("Blocks++;") && absorbSource.Contains("return true;"),
+            "real attack still follows the original interception and credit path");
+
         // Wire checks are intentionally supplemental to executable tests:
         // they prevent a future refactor from silently bypassing the tested
         // production gate. They do NOT substitute for Unity Play Mode.
