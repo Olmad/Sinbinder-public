@@ -79,6 +79,12 @@ namespace Sinbinder.UI
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) { Hide(); return; }
 
+            // The selected-unit strip owns its screen area. Do not raycast
+            // through it and mistake a warrior underneath for a hover/read.
+            // Keep scripted pinned captures independent of the mouse position.
+            if ((Pinned == null || Pinned.IsDead) && SelectedUnitPanelUI.Covers(Input.mousePosition))
+            { Hide(); return; }
+
             // Трон и дверь склепа (автор, 27.10: «нельзя посмотреть трон на количество здоровья,
             // то же самое с дверью склепа»): прочность — при любой ступени прозрачности: это вещь,
             // а не чьи-то мысли.
