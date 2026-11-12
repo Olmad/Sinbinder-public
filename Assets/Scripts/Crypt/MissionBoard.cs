@@ -224,6 +224,7 @@ namespace Sinbinder.Crypt
                         LastReport=Loc.F(
                             "Отряд «{0}» у развилки. Можно дать совет; без него старший решит сам.",
                             Loc.Name(journey.Commander));
+                        Log(LastReport);
                         Core.SaveSystem.AutoSave();
                         continue;
                     }
@@ -238,6 +239,7 @@ namespace Sinbinder.Crypt
                     journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
                     LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
                         Loc.Name(journey.Commander));
+                    Log(LastReport);
                     Core.SaveSystem.AutoSave();
                     continue;
                 }
