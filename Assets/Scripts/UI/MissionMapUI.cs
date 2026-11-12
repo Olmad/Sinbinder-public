@@ -365,8 +365,8 @@ namespace Sinbinder.UI
                 ShowParty(error);
                 return;
             }
-            if (_chosen.Junction == Junction.None) { Send(_leader, null); return; }
-            PickOffer(_leader);
+            // Decisions occur when the squad reaches the location, not before departure.
+            Send(_leader, null);
         }
 
         private void Toggle(string name)
