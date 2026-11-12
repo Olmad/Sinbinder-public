@@ -82,3 +82,27 @@ assert "FindObjectsInactive.Include" in m
 assert "journey.EncounterTrace=events;" in m
 assert "journey.EncounterResolved=true;" in m
 print("PASS: AOS expedition encounter, victory, world state and delayed payout invariants")
+
+# Persistent first-person AOS memory vote is derived from genuine completed
+# expedition outcomes, never from a suggested but disobeyed order.
+ledger=(r/"Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs").read_text(encoding="utf-8")
+vote=(r/"Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs").read_text(encoding="utf-8")
+memory=(r/"Assets/Scripts/AOS Engine/MemoryModule.cs").read_text(encoding="utf-8")
+context=(r/"Assets/Scripts/AOS Engine/MissionContext.cs").read_text(encoding="utf-8")
+assert "JourneyId=System.Guid.NewGuid()" in m
+assert "ExpeditionMemoryLedger.Remember(journey.JourneyId" in m
+assert "if(!survivors.Contains(member.Name)) continue;" in m
+assert "RecentMemories = ExpeditionMemoryLedger.ForWarrior(boss.Name, mission.Name)" in m
+assert "ExpeditionMemoryLedger.Forget();" in m
+assert "IMissionModule" in memory
+assert "ExpeditionMemoryVote.Score(" in memory
+assert "public string ExpeditionSite;" in context
+assert "ExpeditionMemories = Gameplay.ExpeditionMemoryLedger.Snapshot();" in save
+assert "ExpeditionMemoryLedger.Restore(save.ExpeditionMemories)" in save
+assert "List<Sinbinder.Gameplay.ExpeditionMemoryEntry> ExpeditionMemories" in savegame
+assert "MaxPerWarrior = 16" in ledger
+assert "Math.Max(-12f,Math.Min(12f,score))" in vote
+assert "new Inventory.InventoryItem(" in m
+assert "Inventory.ItemType.Shell" in m and "if(inventory.AddItem(body))" in m
+assert "journey.FoesFallen<=0" in m
+print("PASS: authentic durable mission memory, bounded AOS influence and real ordinary shell inventory")
