@@ -141,6 +141,9 @@ internal static class GameOrderWireChecks
                 "server executes both real-Warrior proposals in sequence");
             Require(resolvedA == 1 && resolvedB == 1,
                 "execution results do not broadcast rival orders");
+            Require(room.IsCurrentGameOrderSession != null &&
+                !room.IsCurrentGameOrderSession(1, long.MaxValue),
+                "stale session epoch is rejected by production delivery gate");
 
             // Closing a transport session must invalidate an order which
             // was already accepted but has not yet reached ExecuteTick.
@@ -152,8 +155,9 @@ internal static class GameOrderWireChecks
             await Until(room, one, two, () => room.PlayerCount == 1,
                 "client disconnect reaches server");
             probe.Advance(0.20f);
-            Require(cancelled == 1 && neutral.LastCommand == CommandKind.Patrol,
-                "disconnected Lord cannot execute pending game order");
+            Require(cancelled == 1 && neutral.LastCommand == CommandKind.Patrol &&
+                resolvedA == 1 && resolvedB == 1,
+                "disconnect cancels pending order without delivering a stale result");
 
             // A fresh client process starts its counter at zero, but the
             // SERVER must preserve the last accepted command for this seat.
