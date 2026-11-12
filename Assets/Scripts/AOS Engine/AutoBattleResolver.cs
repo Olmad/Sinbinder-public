@@ -124,11 +124,18 @@ namespace Sinbinder.AOS
                                      .OrderBy(e => e.HP).FirstOrDefault();
                     if (target != null)
                     {
-                        float dmg = warrior.Attack;
-                        target.TakeDamage(dmg);
-                        evt.TargetId = target.Id;
-                        evt.DamageDealt = dmg;
-                        evt.Resolved = dmg > 0f;
+
+                        float before=target.HP;
+                        bool wasAlive=!target.IsDead;
+                        target.TakeDamage(warrior.Attack);
+                        evt.TargetId=target.Id;
+                        evt.TargetName=target.DisplayName;
+                        evt.TargetHealthAfter=target.HP;
+                        // Damageable and combat armour may absorb part or
+                        // all of the attempted hit. Record the ACTUAL loss.
+                        evt.DamageDealt=Mathf.Max(0f,before-target.HP);
+                        evt.Resolved=evt.DamageDealt>0f;
+                        evt.TargetKilled=wasAlive && target.IsDead;
                     }
                     break;
                 }
@@ -140,10 +147,14 @@ namespace Sinbinder.AOS
                                      .OrderBy(a => a.HP).FirstOrDefault();
                     if (ally != null)
                     {
+
+                        float before=ally.HP;
                         ally.Heal(5f);
-                        evt.TargetId = ally.Id;
-                        evt.HealDealt = 5f;
-                        evt.Resolved = true;
+                        evt.TargetId=ally.Id;
+                        evt.TargetName=ally.DisplayName;
+                        evt.TargetHealthAfter=ally.HP;
+                        evt.HealDealt=Mathf.Max(0f,ally.HP-before);
+                        evt.Resolved=evt.HealDealt>0f;
                     }
                     break;
                 }
@@ -176,8 +187,11 @@ namespace Sinbinder.AOS
                         foes.Remove(target);
                         allies.Add(target);
 
-                        evt.TargetId = target.Id;
-                        evt.Resolved = true;
+
+                        evt.TargetId=target.Id;
+                        evt.TargetName=target.DisplayName;
+                        evt.TargetHealthAfter=target.HP;
+                        evt.Resolved=true;
                     }
                     break;
                 }
