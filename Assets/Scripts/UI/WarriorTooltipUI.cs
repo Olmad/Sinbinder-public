@@ -242,7 +242,7 @@ namespace Sinbinder.UI
                              AOSDecisionAdvice.Fulfilled(wrapper.LastDecisionDetail, wrapper.LastContext) &&
                              wrapper.LastDecisionDetail.Action != ActionType.ObeyCommand)
                     {
-                        _text.text += "\n" + Core.Loc.T("Приказ выполнен по собственной воле.");
+                        _text.text += "\n" + Core.Loc.T("Решение совпало с приказом по собственной воле.");
                     }
                 }
                 // После суда тот же язык работает на поле боя: герой может
