@@ -105,7 +105,7 @@ namespace Sinbinder.Crypt
                 foreach (var frame in source.Frames)
                     if(frame!=null)
                         copy.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
-                            frame.Damage,frame.Healing);
+                            frame.Damage,frame.Healing,frame.Round);
             return copy;
         }
 
@@ -293,7 +293,7 @@ namespace Sinbinder.Crypt
                     string actor=string.IsNullOrEmpty(ev.ActorName)
                         ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
                     events.Append(ExpeditionReplayKind.CombatAction,actor,
-                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt);
+                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt,ev.Round);
                 }
             // Commit all fields only after the resolver returned successfully.
             journey.Survivors=new List<string>(fight.Survivors);
@@ -708,7 +708,7 @@ namespace Sinbinder.Crypt
                 foreach(var frame in outcome.EncounterTrace.Frames)
                     if(frame!=null)
                         replay.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
-                            frame.Damage,frame.Healing);
+                            frame.Damage,frame.Healing,frame.Round);
 
             if(!outcome.EncounterFought)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
