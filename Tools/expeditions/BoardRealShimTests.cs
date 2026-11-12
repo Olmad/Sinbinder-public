@@ -46,6 +46,39 @@ static class RealBoardShimTests
         PersonalExpedition.Active=false;
         Sinbinder.Core.SaveSystem.SaveCount=0;
 
+        // An unseen squad cannot inherit a perk tag from the player's
+        // active Crypt scene. The actual LocationManager implementation
+        // is compiled in this project.
+        LocationManager.SetLocation(new LocationData
+        {
+            SceneName="Crypt active scene",Tag="Crypt"
+        });
+        Check(LocationManager.HasTag("Crypt"),
+            "visible player scene initially has a real Crypt tag");
+        using(LocationManager.ForOffscreenSite())
+        {
+            Check(!LocationManager.HasTag("Crypt"),
+                "offscreen encounter does not impersonate the player's Crypt");
+            using(LocationManager.ForOffscreenSite("Cave"))
+            {
+                Check(LocationManager.HasTag("Cave") &&
+                      !LocationManager.HasTag("Crypt"),
+                    "only explicitly supplied mission tags affect offscreen perks");
+            }
+            Check(!LocationManager.HasTag("Crypt"),
+                "nested offscreen scope returns to the original empty site tags");
+        }
+        Check(LocationManager.HasTag("Crypt"),
+            "offscreen scope does not modify actual loaded Unity scene");
+        try
+        {
+            using(LocationManager.ForOffscreenSite())
+                throw new InvalidOperationException("simulated AOS error");
+        }
+        catch(InvalidOperationException) {}
+        Check(LocationManager.HasTag("Crypt"),
+            "failed AOS round restores visible location after exception");
+
         // These are the actual strategy modifiers read by the same
         // production AOS resolver, not a hand-written sample bonus list.
         Check(Sinbinder.Gameplay.SquadOrders.FromSin(SinType.Wrath)
@@ -156,7 +189,14 @@ static class RealBoardShimTests
         Check(trip.Phase==3 && trip.BattleCheckpoint!=null &&
               trip.BattleCheckpoint.CompletedRounds==0,
             "real AOS encounter begins without precalculated rounds");
+        int initialSceneVotes=Sinbinder.AOS.PerkResolver.LiveSceneVoteChecks;
+        int initialOffscreenVotes=Sinbinder.AOS.PerkResolver.OffscreenVoteChecks;
         board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        Check(Sinbinder.AOS.PerkResolver.LiveSceneVoteChecks==initialSceneVotes &&
+              Sinbinder.AOS.PerkResolver.OffscreenVoteChecks>initialOffscreenVotes,
+            "real auto AOS round runs all perk hooks without borrowing Crypt tag");
+        Check(LocationManager.HasTag("Crypt"),
+            "player's location is still Crypt after remote AOS combat");
         trip=MissionBoard.Journeys.Single();
         Check(trip.EncounterTrace!=null && trip.EncounterTrace.Frames.Count>0,
             "genuine module-led AOS choices produce logged real actions");
