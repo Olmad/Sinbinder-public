@@ -426,7 +426,6 @@ namespace Sinbinder.Crypt
             // обязательств она же и единственная возможная.
             Core.SaveSystem.AutoSave();
 
-            return LastReport;
         }
 
         /// <summary>
