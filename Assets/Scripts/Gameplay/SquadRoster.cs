@@ -386,6 +386,17 @@ namespace Sinbinder.Gameplay
             {
                 if (w == null || w.IsDead || w.Soul == null) continue;
 
+                // An automatic expedition reserves real warriors in the
+                // roster before the crypt scene has despawned them. Never
+                // re-import their lingering GameObjects as available units:
+                // doing so would create two entries for one soul and permit
+                // the same soldier to join overlapping missions.
+                bool alreadyAway=false;
+                foreach (var existing in _members)
+                    if (existing.IsAway && existing.Name==w.DisplayName)
+                    { alreadyAway=true; break; }
+                if (alreadyAway) continue;
+
                 // Начинаем с прежней записи, а не с пустой: пол, ремесло,
                 // братство, слава, навык и запрет живут только здесь, и снять
                 // их со сцены нельзя. До 24 сентября переносились лишь навык
