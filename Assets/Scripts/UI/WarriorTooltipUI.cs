@@ -88,8 +88,14 @@ namespace Sinbinder.UI
             // Трон и дверь склепа (автор, 27.10: «нельзя посмотреть трон на количество здоровья,
             // то же самое с дверью склепа»): прочность — при любой ступени прозрачности: это вещь,
             // а не чьи-то мысли.
-            var sturdy = SturdyUnderCursor();
-            if (sturdy != null) { ShowSturdy(sturdy); return; }
+            // Scripted diagnostic capture must remain anchored to its warrior,
+            // even when the physical mouse happens to hover a sturdy object.
+            // Normal gameplay still gives sturdy objects first priority.
+            if (Pinned == null || Pinned.IsDead)
+            {
+                var sturdy = SturdyUnderCursor();
+                if (sturdy != null) { ShowSturdy(sturdy); return; }
+            }
 
             // Вторая ступень прозрачности. Игрок, выбравший только значки,
             // причин не спрашивает — и подсказка ему не мешает.
