@@ -526,11 +526,14 @@ namespace Sinbinder.UI
 
         private void Send(string commanderName, MissionAction? offer)
         {
-            _board.Send(_chosen, commanderName, new List<string>(_party), offer);
-
-            // Возвращаемся к карте: отчёт стоит в заголовке, и следующий
-            // выбор игрок делает, уже зная цену прошлого.
+            int before=MissionBoard.Journeys.Count;
+            string result=_board.Send(_chosen, commanderName,
+                new List<string>(_party), offer);
             ShowMissions();
+            // Failed atomic dispatch must be visible, not hidden by the last
+            // successful expedition's stale LastReport.
+            if(MissionBoard.Journeys.Count==before && _title!=null)
+                _title.text=result;
         }
 
         private static string Foretell(string name)
