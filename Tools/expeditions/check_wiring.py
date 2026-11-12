@@ -184,7 +184,9 @@ assert "if (Active) _active.Exit();" in personal
 assert "Gameplay.PersonalExpedition.Active" in world
 assert "if (PersonalExpedition.Active) canDeliver=false;" in m
 assert "private static void SaveExpeditionProgress()" in m
-assert "if (!PersonalExpedition.Active)" in m
+assert "if (!PersonalExpedition.Active &&" in m
+assert "Inventory.PlayerInventory.Instance != null)" in m
+assert "!Gameplay.SinbinderPlayer.Exists && CryptMap.Board == null" in world
 assert "Core.SaveSystem.AutoSave();" in m
 assert "SaveExpeditionProgress();" in m
 assert "Core.SaveSystem.AutoSave();" in m.split("private static void SaveExpeditionProgress()",1)[1]
