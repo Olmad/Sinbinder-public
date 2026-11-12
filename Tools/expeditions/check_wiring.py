@@ -155,7 +155,9 @@ timing=(r/"Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs").read_text(encodi
 crypt=(r/"Assets/Scripts/Crypt/CryptMap.cs").read_text(encoding="utf-8")
 assert "[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]" in world
 assert "DontDestroyOnLoad(go);" in world
-assert "_offscreenBoard = gameObject.AddComponent<MissionBoard>();" in world
+assert "proxy.SetActive(false);" in world
+assert "_offscreenBoard=proxy.AddComponent<MissionBoard>();" in world
+assert "proxy.transform.SetParent(transform,false);" in world
 assert "MissionBoard.Journeys.Count == 0" in world
 assert "SceneManager.GetActiveScene()" in world
 assert "resolver.AdvanceJourneys(Time.deltaTime," in world
