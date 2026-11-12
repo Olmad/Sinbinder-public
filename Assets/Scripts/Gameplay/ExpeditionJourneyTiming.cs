@@ -8,6 +8,8 @@ namespace Sinbinder.Gameplay
     {
         public const float OutboundSeconds = 15f;
         public const float AdviceSeconds = 20f;
+        // AOS executes one genuine round per elapsed game-time interval.
+        public const float BattleRoundSeconds = 2f;
         public const float ReturnSeconds = 15f;
 
         /// <summary>
