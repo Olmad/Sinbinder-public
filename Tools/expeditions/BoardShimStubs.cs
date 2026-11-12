@@ -24,7 +24,7 @@ namespace UnityEngine
     public enum FindObjectsSortMode { InstanceID }
     public enum FindObjectsInactive { Include }
     public static class Time { public static float deltaTime=0.1f; }
-    public static class Debug
+    public static partial class Debug
     {
         public static readonly List<string> Warnings=new List<string>();
         public static void LogWarning(object obj) => Warnings.Add(obj?.ToString() ?? "");
