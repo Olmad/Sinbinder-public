@@ -259,7 +259,7 @@ namespace Sinbinder.Crypt
             bool noFight=chosen==AOS.MissionAction.LetThemPass;
             var fight=noFight
                 ? new Expedition.Outcome(Names(away),0,0)
-                : Expedition.Fight(away,mission.Guards);
+                : Expedition.Fight(away, mission.Guards);
 
             var events=new ExpeditionReplayData(Loc.Name(mission.Name),
                 Loc.Name(journey.Commander),journey.Party);
@@ -492,6 +492,12 @@ namespace Sinbinder.Crypt
             }
 
             if (away.Count == 0) return Loc.T("Никто не пошёл.");
+            // The roster already marks these real characters as travelling.
+            // Hide their scene objects too; otherwise one warrior can fight
+            // beside the player in the crypt while simultaneously on a raid.
+            foreach (var warrior in Squad())
+                if (party.Contains(warrior.DisplayName))
+                    warrior.gameObject.SetActive(false);
             Sent++;
             ActiveJourneys.Add(new SavedAutoExpedition
             {
@@ -529,11 +535,13 @@ namespace Sinbinder.Crypt
             string told = journey.BattleSummary;
             if (!string.IsNullOrEmpty(told)) LastReport += " " + told;
 
-            if (chosen.HasValue)
+            if (chosen.HasValue && survivors.Count>0)
             {
                 LastReport += " " + JunctionCatalog.Told(chosen.Value);
                 Judge(away, survivors, chosen.Value);
             }
+            else if (chosen.HasValue)
+                LastReport += " " + Loc.T("Замысел командира не был доведён до конца: отряд погиб.");
 
             // Ушедших видно в склепе — сцена догоняет состав: не вернувшихся
             // в ней больше нет, вернувшимся должны.
@@ -682,14 +690,17 @@ namespace Sinbinder.Crypt
             var stay = new HashSet<string>(survivors);
             var gone = new List<Warrior>();
 
-            foreach (var w in Squad())
+            foreach (var w in Object.FindObjectsByType<Warrior>(
+                FindObjectsInactive.Include,FindObjectsSortMode.InstanceID))
             {
-                if (!party.Contains(w.DisplayName)) continue;
+                if (w==null || w is SinbinderPlayer || w.Team!=Team.Player ||
+                    !party.Contains(w.DisplayName)) continue;
                 if (!stay.Contains(w.DisplayName)) { gone.Add(w); continue; }
                 if (!SquadRoster.TryGet(w.DisplayName, out var m)) continue;
 
                 w.UnpaidMissions = m.UnpaidMissions;
                 w.ChangeLoyalty(m.Loyalty - w.Loyalty);
+                w.gameObject.SetActive(true);
             }
 
             foreach (var w in gone)
@@ -844,7 +855,7 @@ namespace Sinbinder.Crypt
         private void TakeSpoils(Mission mission, AOS.MissionAction? chosen)
         {
             if (chosen == AOS.MissionAction.TakePeople)
-                Log(Loc.T("Живых привели связанными. Склепу пока нечего с ними делать."));
+                Log(Loc.T("Командир выбрал захват людей. Учёт пленников пока отсутствует: доступные ресурсы склепа не пополнены."));
             if (chosen == AOS.MissionAction.LetThemPass) return;
 
             // Taking ordinary cargo must not invent a soul encounter.
@@ -855,7 +866,7 @@ namespace Sinbinder.Crypt
                 Log(Loc.T("В отряде нет искателя секретов: редкую находку не обнаружили."));
 
             if (mission.Spoils == Spoils.Shell)
-                Log(Loc.T("Оттуда принесли тело. Оно на столе."));
+                Log(Loc.T("Обычные останки могли остаться после боя, но перенос оболочек в хранилище пока не реализован."));
         }
 
         /// <summary>Забыть добычу при новой игре.</summary>
