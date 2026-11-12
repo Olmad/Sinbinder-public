@@ -83,6 +83,16 @@ static class Program
         float second=ExpeditionJourneyTiming.Advance(17f,4f);
         Check(first==8f && second==13f,
               "two simultaneous squads keep independent timers");
-        Console.WriteLine($"PASS: {assertions} expedition rewards, injuries and autonomous stage timing");
+        Check(!ExpeditionJourneyTiming.CanSettle(false,true,false),
+              "a returning party cannot pay loot or appear in an unrelated scene");
+        Check(!ExpeditionJourneyTiming.CanSettle(false,false,true),
+              "recall cannot materialize away warriors outside crypt");
+        Check(!ExpeditionJourneyTiming.CanSettle(true,false,false),
+              "an absent player inventory defers payout rather than losing coins");
+        Check(ExpeditionJourneyTiming.CanSettle(true,false,true),
+              "a safe recall needs crypt but does not need a loot inventory");
+        Check(ExpeditionJourneyTiming.CanSettle(true,true,false),
+              "verified homecoming in crypt with inventory may settle normally");
+        Console.WriteLine($"PASS: {assertions} expedition rewards, wounds, remote world time and safe delivery");
     }
 }
