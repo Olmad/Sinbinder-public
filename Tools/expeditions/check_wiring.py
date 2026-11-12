@@ -34,20 +34,24 @@ assert "class SavedAutoExpedition" in m
 assert "ActiveJourneys.Add(new SavedAutoExpedition" in m
 assert "SecondsRemaining=OutboundSeconds" in m
 assert "journey.Phase=1;" in m and "journey.Phase=2;" in m
-assert "if (journey.Phase==1) return;" in m
+assert "if (journey.Phase==1) continue;" in m
 assert "CompleteJourney(journey);" in m
 assert "ResolveReturned(found,journey.Commander" in m
 assert "Expedition.Fight(away, mission.Guards)" in m
 assert "SquadRoster.ComeBack(party, survivors)" in m
-assert "OfferJourneyOrder(AOS.MissionAction? offer)" in m
-assert "public bool RecallJourney()" in m
+assert "OfferJourneyOrder(string commanderName, AOS.MissionAction? offer)" in m
+assert "public bool RecallJourney(string commanderName)" in m
 assert "if (journey.Recalled)" in m
 assert "SquadRoster.ComeBack(journey.Party,journey.Party);" in m
 assert "Отряд вернулся без боя и добычи" in m
 assert "MissionBoard.Journeys" in ui and "PickJourneyDecision()" in ui
-assert "_board.RecallJourney(); ShowMissions();" in ui
+assert "_board.RecallJourney(commanderId); ShowMissions();" in ui
 assert "Decisions occur when the squad reaches the location" in ui
 assert "save.AutoExpeditions = MissionBoard.SnapshotJourneys();" in save
 assert "MissionBoard.RestoreJourneys(save.AutoExpeditions);" in save
 assert "List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions" in savegame
 print("PASS: staged automatic expedition dispatch, commander advice, delayed return and persistence")
+assert "MaxActiveJourneys = 4" in m
+assert "for (int i=ActiveJourneys.Count-1;i>=0;i--)" in m
+assert "PickJourneyDecision(commanderId)" in ui
+assert "_board.OfferJourneyOrder(commanderId,value)" in ui
