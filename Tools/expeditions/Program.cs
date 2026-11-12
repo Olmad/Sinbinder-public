@@ -30,15 +30,17 @@ static class Program
             "future explicit scout capability can be supported");
         // The battle occurs at the destination. Cargo is not granted just
         // because one warrior survived the guards.
-        Check(ExpeditionObjectiveRules.Secured(false,0,2,2),
+        Check(ExpeditionObjectiveRules.Secured(false,false,2),
             "peaceful AOS resolution can secure the cargo without killing guards");
-        Check(!ExpeditionObjectiveRules.Secured(true,1,2,2),
+        Check(!ExpeditionObjectiveRules.Secured(true,false,2),
             "survivors do not imply the armed guards were defeated");
-        Check(ExpeditionObjectiveRules.Secured(true,2,2,1),
+        Check(ExpeditionObjectiveRules.Secured(true,true,1),
             "actual guarded victory allows ordinary cargo");
-        Check(!ExpeditionObjectiveRules.Secured(true,2,2,0),
+        Check(!ExpeditionObjectiveRules.Secured(true,true,0),
             "dead squad never delivers defeated-enemy loot");
-        Check(!ExpeditionObjectiveRules.Secured(true,0,2,0),
+        Check(ExpeditionObjectiveRules.Secured(true,true,1),
+            "bribed defenders can yield a genuine AOS victory without a corpse");
+        Check(!ExpeditionObjectiveRules.Secured(true,false,0),
             "total defeat does not fabricate successful assault");
         Check(ExpeditionObjectiveRules.DeliveredCoins(false,50,55)==0,
             "failed mission cannot magic 105 coins into the crypt");
