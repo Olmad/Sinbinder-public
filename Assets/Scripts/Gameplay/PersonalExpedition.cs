@@ -156,6 +156,15 @@ namespace Sinbinder.Gameplay
                 Progress[plan.Id] = visit._state;
             }
 
+            // Legacy personal-map saves predate the explicit assault flag.
+            // If some caravan guards were already killed on an earlier
+            // visit, this is evidence of fighting, not a fresh peaceful
+            // encounter. Do not let an old save erase that consequence.
+            if(plan.Kind==ExpeditionMapKind.SaltRoad &&
+               visit._state.EnemiesRemaining<mission.Guards &&
+               !visit._state.CaravanPassed && !visit._state.CargoTaken)
+                visit._state.CaravanAssaulted=true;
+
             visit._mapRoot = ExpeditionMapBuilder.Build(plan);
             if (visit._mapRoot == null)
             {
@@ -434,7 +443,9 @@ namespace Sinbinder.Gameplay
             string state=_plan.Kind==ExpeditionMapKind.SaltRoad
                 ? (_state.CaravanPassed ? Loc.T("Обоз пропущен, серебро увезли")
                     : _state.CargoTaken ? Loc.T("Серебро уже забрано")
-                    : Loc.T("Решить судьбу обоза и добыть серебро"))
+                    : _state.CaravanAssaulted
+                        ? Loc.T("Вы напали на обоз: охрана теперь враждебна")
+                        : Loc.T("Обоз не тронут. Охрана нейтральна, пока вы не нападёте"))
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
                 : _plan.Kind==ExpeditionMapKind.SaltRoad && !_state.CargoTaken &&
