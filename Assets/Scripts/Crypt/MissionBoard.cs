@@ -59,6 +59,13 @@ namespace Sinbinder.Crypt
         // When the expedition event runs in another scene, its result must
         // still be visible on the next crypt map.
         private static string _lastWorldReport = "";
+        public static string SnapshotReport() => _lastWorldReport;
+        public static void RestoreReport(string report)
+        {
+            _lastWorldReport=report ?? "";
+            _lastWorldReplay=null;
+        }
+
         public string LastReport
         {
             get => _lastWorldReport;
@@ -268,7 +275,9 @@ namespace Sinbinder.Crypt
                     // Physical homecoming modifies the player's roster,
                     // pockets, crypt inventory and replay archive. Never
                     // apply it to the wrong scene or without the inventory.
-                    if (!canDeliver) continue;
+                    if (!ExpeditionJourneyTiming.CanSettle(canDeliver,
+                        Inventory.PlayerInventory.Instance!=null,journey.Recalled))
+                        continue;
                     // Older saves without the encounter result must resolve
                     // it once before return; never award an unplayed victory.
                     if (!journey.Recalled && !journey.EncounterResolved)
