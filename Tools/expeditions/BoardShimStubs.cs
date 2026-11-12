@@ -18,6 +18,7 @@ namespace UnityEngine
     public class MonoBehaviour
     {
         public GameObject gameObject {get;}=new GameObject("Shim MissionBoard");
+        protected static void DontDestroyOnLoad(GameObject obj) {}
         protected static void Destroy(GameObject obj) { Object.Destroy(obj); }
         protected static void DestroyImmediate(GameObject obj) { Object.DestroyImmediate(obj); }
     }
