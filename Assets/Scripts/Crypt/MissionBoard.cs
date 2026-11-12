@@ -540,8 +540,8 @@ namespace Sinbinder.Crypt
             AOS.MissionAction? chosen=journey.HasChosenAction
                 ? (AOS.MissionAction?)((AOS.MissionAction)journey.ChosenAction) : null;
             var survivors=journey.Survivors ?? new List<string>();
-            bool secured=survivors.Count>0 &&
-                (!journey.EncounterFought || journey.FoesFallen>=mission.Guards);
+            bool secured=ExpeditionObjectiveRules.Secured(
+                journey.EncounterFought,journey.FoesFallen,mission.Guards,survivors.Count);
 
             // Состав меняется до отчёта: отчёт рассказывает о том, что уже
             // случилось, а не назначает это.
@@ -584,8 +584,8 @@ namespace Sinbinder.Crypt
                 // нечем, — теперь кошель есть и плата лично тоже.
                 // Survivors alone do not prove the wagon or guarded
                 // cargo was secured. No magically recovered bags after defeat.
-                int coin = secured
-                    ? journey.TakenCoins + Carried(mission, chosen) : 0;
+                int coin=ExpeditionObjectiveRules.DeliveredCoins(secured,
+                    journey.TakenCoins,Carried(mission, chosen));
                 // The same physical coin total, but AOS characters can
                 // pocket a portion according to Greed/Envy, the value of
                 // the find and their devotion. No soul, secret or coin
