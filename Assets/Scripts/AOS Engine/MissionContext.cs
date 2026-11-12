@@ -9,6 +9,8 @@ namespace Sinbinder.AOS
     public class MissionContext : DecisionContext
     {
         public MissionID MissionID;
+        // Stable non-localized location key for per-soul expedition testimony.
+        public string ExpeditionSite;
         public bool HasInnocentVictims;
         public bool HasGuiltyParty;
         public bool HasTreasure;
