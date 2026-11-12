@@ -146,3 +146,31 @@ assert "_board.AdvanceJourneys(Time.deltaTime);" in cryptmap
 assert "journey.Phase==1" in ui
 assert "Старший решит сам через" in ui
 print("PASS: finite commander autonomy, paused-game time, hidden table and multiple independent journeys")
+
+# Remote world-time continuity is not a UI/crypt-only timer. One persistent
+# owner drives the same real MissionBoard/AOS transitions, including while
+# the player visits a different scene. Physical payout is crypt-only.
+world=(r/"Assets/Scripts/Crypt/ExpeditionWorldClock.cs").read_text(encoding="utf-8")
+timing=(r/"Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs").read_text(encoding="utf-8")
+crypt=(r/"Assets/Scripts/Crypt/CryptMap.cs").read_text(encoding="utf-8")
+assert "[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]" in world
+assert "DontDestroyOnLoad(go);" in world
+assert "_offscreenBoard = gameObject.AddComponent<MissionBoard>();" in world
+assert "MissionBoard.Journeys.Count == 0" in world
+assert "SceneManager.GetActiveScene()" in world
+assert "resolver.AdvanceJourneys(Time.deltaTime," in world
+assert "canDeliver: deliveryBoard != null" in world
+assert "if (!ExpeditionWorldClock.IsRunning)" in m
+assert "if (!ExpeditionWorldClock.IsRunning &&" in crypt
+assert "public void AdvanceJourneys(float gameDelta, bool canDeliver = true)" in m
+assert "ExpeditionJourneyTiming.CanSettle(canDeliver," in m
+assert "if (!CanCompleteJourney(journey)) continue;" in m
+assert "ActiveJourneys.RemoveAt(i);" in m
+assert "return journey.Recalled || Inventory.PlayerInventory.Instance!=null;" in m
+assert "public static bool CanSettle(bool inCrypt, bool inventoryReady, bool recalled)" in timing
+assert "public static string SnapshotReport()" in m
+assert "public static void RestoreReport(string report)" in m
+assert "save.AutoExpeditionReport = MissionBoard.SnapshotReport();" in save
+assert "MissionBoard.RestoreReport(save.AutoExpeditionReport);" in save
+assert "public string AutoExpeditionReport;" in savegame
+print("PASS: one persistent cross-scene expedition clock, crypt-only settlement, saved reports")
