@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>BOARD_REAL_AOS;REAL_AOS;BOARD_SHIM</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AosSessionProgram.cs" />
+    <Compile Include="BoardShimStubs.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AutoBattleResolver.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/BattleRecord.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionHealthRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Expedition.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayData.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/MissionCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/JunctionCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Crypt/MissionBoard.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/BehaviorResolver.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Soul.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IPersonalityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IMissionModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/ICampModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionAction.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/DecisionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AOSConfig.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/WrathModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/SlothModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/FearModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/LoyaltyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MoralityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MemoryModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/VirtueModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GreedModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PrideModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/EnvyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/LustModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" />
+    <Compile Include="BoardRealAosExtras.cs" />
+    <Compile Include="BoardRealShimTests.cs" />
+  </ItemGroup>
+</Project>
