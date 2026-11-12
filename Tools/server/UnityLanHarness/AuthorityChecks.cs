@@ -196,6 +196,35 @@ internal static class AuthorityChecks
             authority.LastAcceptedCommandId(1) == 0,
             "unauthorized attacks cannot query visibility or consume commands");
 
+        // Invalid protocol/match/replay must be rejected before target probes,
+        // regardless of whether the target exists or is hidden.
+        foreach (int variant in new[] { 0, 1, 2 })
+        {
+            foreach (long targetId in new[] { id2, 999999L })
+            {
+                var invalidEnvelope = Intent("aos-bridge", variant == 2 ? 0 : 1,
+                    id1, NetworkOrderKind.Attack, target: targetId);
+                OrderRejection expected;
+                if (variant == 0)
+                {
+                    invalidEnvelope.Protocol = MatchAuthority.Protocol + 1;
+                    expected = OrderRejection.WrongProtocol;
+                }
+                else if (variant == 1)
+                {
+                    invalidEnvelope.MatchId = "other-match";
+                    expected = OrderRejection.WrongMatch;
+                }
+                else expected = OrderRejection.StaleOrDuplicate;
+                Require(!bridge.TryIssue(1, invalidEnvelope, 1,
+                    countVisibility, null, out _, out var denied) && denied == expected,
+                    "invalid envelope must reject before target lookup: " + variant);
+            }
+        }
+        Require(visibilityProbes == 0 && bridge.PendingOrders == 0 &&
+            authority.LastAcceptedCommandId(1) == 0,
+            "invalid envelopes cannot probe fog or consume replay cursor");
+
         Require(!bridge.TryIssue(1, Intent("aos-bridge", 1, id2,
             NetworkOrderKind.Move), 1, null, null,
             out _, out var reason) && reason == OrderRejection.NotAllowed,
