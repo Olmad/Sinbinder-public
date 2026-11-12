@@ -181,6 +181,7 @@ namespace Sinbinder.UI
             // A commander remains away until the real resolver finishes on return.
             foreach (var journey in MissionBoard.Journeys)
             {
+                string commanderId=journey.Commander;
                 var phase=journey.Phase==0 ? Loc.T("В пути к цели")
                     : journey.Phase==1 ? Loc.T("Ожидает решения Греховода")
                     : Loc.T("Возвращается в склеп");
@@ -191,9 +192,9 @@ namespace Sinbinder.UI
                 _spawned.Add(Row(y,true,
                     Loc.F("Отряд: {0}",Loc.Name(journey.MissionName)),
                     Loc.F("Старший: {0} · {1}",Loc.Name(journey.Commander),phase),
-                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision())
+                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision(commanderId))
                         : journey.Phase==0 ? (System.Action)(() =>
-                            { _board.RecallJourney(); ShowMissions(); })
+                            { _board.RecallJourney(commanderId); ShowMissions(); })
                         : null,125f));
                 y-=133f;
             }
@@ -489,17 +490,19 @@ namespace Sinbinder.UI
                 () => Send(commanderName, null)));
         }
 
-        private void PickJourneyDecision()
+        private void PickJourneyDecision(string commanderId)
         {
-            if (MissionBoard.Journeys.Count==0 || MissionBoard.Journeys[0].Phase!=1)
-            { ShowMissions(); return; }
-            var pending=MissionBoard.Journeys[0];
+            SavedAutoExpedition pending=null;
+            foreach(var journey in MissionBoard.Journeys)
+                if(journey.Commander==commanderId && journey.Phase==1)
+                { pending=journey; break; }
+            if(pending==null) { ShowMissions(); return; }
             Mission mission=default;
             foreach(var item in _board.Missions)
                 if(item.Name==pending.MissionName) { mission=item; break; }
             if(mission.Junction==Junction.None)
             {
-                _board.OfferJourneyOrder(null);
+                _board.OfferJourneyOrder(commanderId,null);
                 ShowMissions();
                 return;
             }
@@ -513,7 +516,7 @@ namespace Sinbinder.UI
                 var value=option;
                 _spawned.Add(Row(y,true,JunctionCatalog.Offer(value),
                     Loc.T("Предложить действие командиру"),"",
-                    () => { _board.OfferJourneyOrder(value); ShowMissions(); }));
+                    () => { _board.OfferJourneyOrder(commanderId,value); ShowMissions(); }));
                 y-=150f;
             }
             _spawned.Add(Row(y,true,Loc.T("Пусть командир решает сам"),
