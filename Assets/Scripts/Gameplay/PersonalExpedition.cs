@@ -18,6 +18,7 @@ namespace Sinbinder.Gameplay
         public string Id;
         public int EnemiesRemaining;
         public bool CargoTaken;
+        public bool CaravanPassed;
         public bool SecretTaken;
         public int Visits;
     }
@@ -43,7 +44,8 @@ namespace Sinbinder.Gameplay
             foreach (var state in Progress.Values)
                 list.Add(new SavedPersonalExpedition
                 { Id=state.Id, EnemiesRemaining=state.EnemiesRemaining,
-                  CargoTaken=state.CargoTaken, SecretTaken=state.SecretTaken,
+                  CargoTaken=state.CargoTaken, CaravanPassed=state.CaravanPassed,
+                  SecretTaken=state.SecretTaken,
                   Visits=state.Visits });
             return list;
         }
@@ -194,7 +196,7 @@ namespace Sinbinder.Gameplay
         private SavedPersonalExpedition _state;
         private readonly List<Traveller> _travellers=new();
         private readonly List<Warrior> _guards=new();
-        private bool _exiting, _returnTactical;
+        private bool _exiting, _returnTactical, _caravanChoiceOpen, _caravanFightChosen;
         private string _notice="";
         private float _noticeUntil;
 
@@ -258,6 +260,7 @@ namespace Sinbinder.Gameplay
         }
 
         private Vector3 Gate => ExpeditionMapBuilder.Point(_plan,0f,_plan.EntranceZ);
+        private Vector3 CaravanDecisionPoint => ExpeditionMapBuilder.Point(_plan,0f,_plan.EntranceZ+19f);
         private Vector3 Objective => ExpeditionMapBuilder.Point(_plan,0f,_plan.GoalZ);
         private static float Dist(Vector3 a,Vector3 b)
         { a.y=0f; b.y=0f; return Vector3.Distance(a,b); }
@@ -276,13 +279,56 @@ namespace Sinbinder.Gameplay
             if (Dist(SinbinderPlayer.Where,expedition.Gate)<4f)
                 offer(Gaze.Miss(expedition.Gate+Vector3.up*1.4f,1.5f),
                     Loc.T("F — вернуться в склеп"), expedition.Exit);
+            if (expedition._plan.Kind==ExpeditionMapKind.SaltRoad &&
+                !expedition._state.CaravanPassed &&
+                !expedition._state.CargoTaken &&
+                !expedition._caravanFightChosen &&
+                Dist(SinbinderPlayer.Where,expedition.CaravanDecisionPoint)<6f)
+                offer(Gaze.Miss(expedition.CaravanDecisionPoint+Vector3.up*1.4f,1.5f),
+                    Loc.T("F — решить судьбу обоза"),expedition.OpenCaravanChoice);
             if (Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
                 offer(Gaze.Miss(expedition.Objective+Vector3.up*1.4f,1.5f),
                     Loc.T("F — исследовать цель"), expedition.CollectObjective);
         }
 
+        private void OpenCaravanChoice()
+        {
+            if (_exiting || _state.CaravanPassed || _state.CargoTaken ||
+                _caravanFightChosen) return;
+            _caravanChoiceOpen=true;
+        }
+
+        private void ChooseCaravan(bool attack)
+        {
+            if (!_caravanChoiceOpen || _exiting || _state.CaravanPassed ||
+                _state.CargoTaken) return;
+            _caravanChoiceOpen=false;
+            if (attack)
+            {
+                _caravanFightChosen=true;
+                Announce(Loc.T("Греховод приказал напасть. Охрану придётся победить настоящим боем."));
+                return;
+            }
+            // LetThemPass is a real irreversible outcome, not a victory
+            // with invisible guards or an award of cargo on next visit.
+            _state.CaravanPassed=true;
+            _state.CargoTaken=true;
+            _state.EnemiesRemaining=0;
+            foreach (var guard in _guards)
+                if (guard!=null) UnityEngine.Object.Destroy(guard.gameObject);
+            _guards.Clear();
+            Announce(Loc.T("Греховод пропустил обоз. Возчики увезли серебро; добычи не будет."));
+        }
+
         private void CollectObjective()
         {
+            if(_plan.Kind==ExpeditionMapKind.SaltRoad &&
+               !_state.CaravanPassed && !_state.CargoTaken &&
+               !_caravanFightChosen)
+            {
+                OpenCaravanChoice();
+                return;
+            }
             if(EnemiesLeft()>0)
             {
                 Announce(Loc.T("Охрана не дала добраться до добычи. Сначала разберитесь с ней."));
@@ -328,12 +374,30 @@ namespace Sinbinder.Gameplay
             if (_exiting || _plan==null || !SinbinderPlayer.Exists) return;
             var style=new GUIStyle(GUI.skin.box){alignment=TextAnchor.UpperLeft,wordWrap=true,fontSize=15};
             string state=_plan.Kind==ExpeditionMapKind.SaltRoad
-                ? (_state.CargoTaken ? Loc.T("Серебро уже забрано") : Loc.T("Найти обоз и забрать серебро"))
+                ? (_state.CaravanPassed ? Loc.T("Обоз пропущен, серебро увезли")
+                    : _state.CargoTaken ? Loc.T("Серебро уже забрано")
+                    : Loc.T("Решить судьбу обоза и добыть серебро"))
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
                 : Dist(SinbinderPlayer.Where,Objective)<4f ? Loc.T("F — исследовать цель")
                 : Loc.T("Следуйте к янтарному огню; бирюзовый огонь — путь назад.");
             string notice=Time.unscaledTime<_noticeUntil ? "\n"+_notice : "";
+            if (_caravanChoiceOpen)
+            {
+                float width=Mathf.Min(460f,Screen.width-24f);
+                var area=new Rect((Screen.width-width)*0.5f,
+                    Mathf.Max(8f,Screen.height*0.25f),width,178f);
+                GUI.Box(area,Loc.T("Соляной обоз. Возчики безоружны. Охрана готова защищать груз."));
+                if(GUI.Button(new Rect(area.x+12f,area.y+52f,width-24f,34f),
+                    Loc.T("Напасть на охрану и забрать серебро")))
+                    ChooseCaravan(true);
+                if(GUI.Button(new Rect(area.x+12f,area.y+94f,width-24f,34f),
+                    Loc.T("Пропустить обоз без добычи")))
+                    ChooseCaravan(false);
+                if(GUI.Button(new Rect(area.x+12f,area.y+136f,width-24f,30f),
+                    Loc.T("Пока не решать")))
+                    _caravanChoiceOpen=false;
+            }
             GUI.Box(new Rect(14f,Screen.height-138f,Mathf.Min(560f,Screen.width-28f),125f),
                 Loc.T(_plan.Title)+"\n"+state+Loc.F(" · живых стражей: {0}",EnemiesLeft())+
                 "\n"+prompt+notice,style);
@@ -350,6 +414,7 @@ namespace Sinbinder.Gameplay
         {
             if(_exiting) return;
             _exiting=true;
+            _caravanChoiceOpen=false;
             if (commitResult && _state != null)
                 _state.EnemiesRemaining=EnemiesLeft();
             // No duplicate reward by returning to the same expedition.
@@ -377,7 +442,7 @@ namespace Sinbinder.Gameplay
             {
                 SquadRoster.Remember(MissionBoard.Squad());
                 CryptMap.Board?.RecordPersonal(_mission,
-                    _state != null && (_state.CargoTaken || _state.SecretTaken));
+                    _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
             }
             UnityEngine.Object.Destroy(gameObject);
         }
