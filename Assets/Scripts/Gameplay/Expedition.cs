@@ -103,10 +103,10 @@ namespace Sinbinder.Gameplay
 
                 foreach (var m in away)
                 {
-                    var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                                 m.Loyalty, m.IsCommander, Team.Player, relations,
-                                 m.Gender, m.Shell);
-                    w.UnpaidMissions = m.UnpaidMissions;
+                    // The same identity projection MUST be used for the
+                    // commander decision and the battle. The old Make()
+                    // lost equipment and pocket before AOS evaluated combat.
+                    var w = Summon(holder, m, relations);
 
                     squad.Add(w);
                     if (m.IsCommander) commander = w;
@@ -122,7 +122,7 @@ namespace Sinbinder.Gameplay
                 for (int i = 0; i < Mathf.Max(foeCount, 1); i++)
                 {
                     var sin = (SinType)(i % 7);
-                    foes.Add(Make(holder, "Чужой", sin, MoralType.Vicious,
+                    foes.Add(Make(holder, "Чужой " + (i+1), sin, MoralType.Vicious,
                                   40f + i * 5f, 50f, false, Team.Enemy, relations));
                 }
 
