@@ -27,6 +27,9 @@ namespace Sinbinder.AOS
         public ActionType Action;
         public float DamageDealt;
         public float HealDealt;
+        // True only when the executor applied the chosen action.
+        // AOS intent and completed world action are different facts.
+        public bool Resolved;
     }
 
     /// <summary>
