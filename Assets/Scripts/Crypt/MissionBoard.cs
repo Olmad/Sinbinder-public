@@ -33,6 +33,9 @@ namespace Sinbinder.Crypt
         public bool HasSuggestion;
         public int SuggestedAction;
         public bool Recalled;
+        // True only if physical homecoming was blocked by invalid party data.
+        // The journey is preserved; no loot or invented crew is granted.
+        public bool ReturnBlocked;
         // 0: outbound, 1: awaiting instructions, 2: returning
         public int Phase;
         public float SecondsRemaining;
@@ -109,7 +112,8 @@ namespace Sinbinder.Crypt
                 JourneyId=item.JourneyId,
                 Party=item.Party != null ? new List<string>(item.Party) : new List<string>(),
                 HasSuggestion=item.HasSuggestion, SuggestedAction=item.SuggestedAction,
-                Recalled=item.Recalled, Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
+                Recalled=item.Recalled, ReturnBlocked=item.ReturnBlocked,
+                Phase=item.Phase, SecondsRemaining=item.SecondsRemaining,
                 EncounterResolved=item.EncounterResolved, EncounterFought=item.EncounterFought,
                 BattleWon=item.BattleWon,
                 HasChosenAction=item.HasChosenAction, ChosenAction=item.ChosenAction,
@@ -293,7 +297,19 @@ namespace Sinbinder.Crypt
                     // Do not discard the only state of a journey that
                     // cannot settle. A missing roster member must not turn
                     // into an unrecorded permanent disappearance.
-                    if (!CanCompleteJourney(journey)) continue;
+                    if (!CanCompleteJourney(journey))
+                    {
+                        if (!journey.ReturnBlocked)
+                        {
+                            journey.ReturnBlocked=true;
+                            LastReport=Loc.F(
+                                "Отряд «{0}» не может вернуться: состав не совпадает с данными похода. Возврат и выдача добычи заблокированы.",
+                                Loc.Name(journey.Commander));
+                            Log(LastReport);
+                            SaveExpeditionProgress();
+                        }
+                        continue;
+                    }
                     ActiveJourneys.RemoveAt(i);
                     CompleteJourney(journey);
                 }
