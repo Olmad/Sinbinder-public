@@ -16,6 +16,18 @@ namespace Sinbinder.Gameplay
             return Math.Max(0.01f,Math.Min(1f,stored));
         }
 
+        /// <summary>
+        /// Actual crypt upkeep: repairing a heavily damaged body costs
+        /// more than patching a small wound. Zero is a legacy save default
+        /// meaning "not recorded", not a nearly dead survivor.
+        /// </summary>
+        public static int TreatmentCost(float recordedFraction)
+        {
+            float health=RestoreFraction(recordedFraction);
+            if(health>=0.999f) return 0;
+            return Math.Max(1,(int)Math.Ceiling((1f-health)*20f));
+        }
+
         public static float Capture(float hp, float maximum)
         {
             if(float.IsNaN(hp) || float.IsInfinity(hp) ||
