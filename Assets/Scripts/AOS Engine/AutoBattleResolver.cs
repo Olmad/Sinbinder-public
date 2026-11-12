@@ -133,7 +133,7 @@ namespace Sinbinder.AOS
                         evt.TargetHealthAfter=target.HP;
                         // Damageable and combat armour may absorb part or
                         // all of the attempted hit. Record the ACTUAL loss.
-                        evt.DamageDealt=Mathf.Max(0f,before-target.HP);
+                        evt.DamageDealt=ExpeditionCombatFacts.ActualDamage(before,target.HP);
                         evt.Resolved=evt.DamageDealt>0f;
                         evt.TargetKilled=wasAlive && target.IsDead;
                     }
@@ -153,7 +153,7 @@ namespace Sinbinder.AOS
                         evt.TargetId=ally.Id;
                         evt.TargetName=ally.DisplayName;
                         evt.TargetHealthAfter=ally.HP;
-                        evt.HealDealt=Mathf.Max(0f,ally.HP-before);
+                        evt.HealDealt=ExpeditionCombatFacts.ActualHealing(before,ally.HP);
                         evt.Resolved=evt.HealDealt>0f;
                     }
                     break;
