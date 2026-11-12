@@ -148,6 +148,18 @@ internal static class Program
               slotsUx.Contains("_status = null;"),
               "save failures appear in panel and reopening clears stale feedback");
 
+        // Tug tutorial: hovering over a neutral while the game is paused must not
+        // earn 0.8s of reading credit. Source-linked L0, Unity pause UX still unknown.
+        var tugSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/TugTutorial.cs");
+        int attitudeStart = tugSource.IndexOf("private void WatchAttitude()");
+        int attitudeEnd = tugSource.IndexOf("#if UNITY_EDITOR", attitudeStart);
+        string attitudeBody = attitudeStart >= 0 && attitudeEnd > attitudeStart
+            ? tugSource.Substring(attitudeStart, attitudeEnd - attitudeStart) : "";
+        Check(attitudeBody.Contains("_attitudeReadFor += Time.deltaTime;"),
+            "neutral attitude requires active gameplay time to complete");
+        Check(!attitudeBody.Contains("Time.unscaledDeltaTime"),
+            "paused frames cannot accumulate neutral attitude read time");
+
         // Save-load source contracts: malformed input must not partially mutate
         // the squad/shelf or escape JsonUtility's ArgumentException path.
         // This is L0 source verification, NOT a Unity deserialization test.
