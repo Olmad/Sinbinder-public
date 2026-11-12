@@ -182,13 +182,23 @@ namespace Sinbinder.UI
             foreach (var journey in MissionBoard.Journeys)
             {
                 string commanderId=journey.Commander;
-                var phase=journey.ReturnBlocked
+                var phase=journey.CombatBlocked
+                    ? Loc.T("AOS-бой остановлен: снимок требует проверки")
+                    : journey.ReturnBlocked
                     ? Loc.T("Возврат заблокирован: необходимо восстановить состав")
                     : journey.Phase==0 ? Loc.T("В пути к цели")
                     : journey.Phase==1 ? Loc.T("Ожидает совета (решит сам, если совета нет)")
+                    : journey.Phase==3 ? Loc.T("Идёт реальный AOS-бой")
                     : Loc.T("Возвращается в склеп");
-                var eta=journey.ReturnBlocked
+                int completed=journey.BattleCheckpoint!=null
+                    ? journey.BattleCheckpoint.CompletedRounds : 0;
+                var eta=journey.CombatBlocked
+                    ? Loc.T("Бой приостановлен. Добыча не выдана; перезапускать расчёт нельзя.")
+                    : journey.ReturnBlocked
                     ? Loc.T("Награды не выданы. Исправьте данные состава или загрузите исправное сохранение.")
+                    : journey.Phase==3
+                    ? Loc.F("Завершено ходов AOS: {0}. До следующего хода около {1} сек.",
+                        completed,Mathf.CeilToInt(journey.SecondsRemaining))
                     : journey.Phase==1
                     ? Loc.F("Старший решит сам через {0} сек. Нажмите, чтобы дать совет.",
                         Mathf.CeilToInt(journey.SecondsRemaining))
