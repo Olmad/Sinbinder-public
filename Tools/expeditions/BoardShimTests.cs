@@ -168,6 +168,61 @@ static class BoardShimTests
         PersonalExpedition.Active=false;
         Check(MissionBoard.Journeys.Count==1,"personal map does not delete remote trip");
 
+        // Two separate teams must be able to fight simultaneously, each
+        // keeping its own round checkpoint and immutable stream of events.
+        Reset();
+        SquadRoster.Members.AddRange(new [] {
+            Make("A0"),Make("A1"),Make("A2"),
+            Make("B0"),Make("B1"),Make("B2")
+        });
+        board.Send(mission,"A0",new[]{"A1","A2"},null);
+        board.Send(Find("Затопленная каменоломня"),
+            "B0",new[]{"B1","B2"},null);
+        Check(MissionBoard.Journeys.Count==2 &&
+              MissionBoard.Journeys[0].JourneyId!=MissionBoard.Journeys[1].JourneyId,
+            "parallel trips each have unique durable journey IDs");
+        board.AdvanceJourneys(15f,false);
+        Check(MissionBoard.Journeys.All(j=>j.Phase==3 &&
+              j.BattleCheckpoint.CompletedRounds==0),
+            "both teams reach independent genuine AOS combat states");
+        board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        var independent=JsonRoundtrip(MissionBoard.SnapshotJourneys());
+        Check(independent.All(j=>j.BattleCheckpoint.CompletedRounds==1 &&
+              j.EncounterTrace.Frames.Count>0),
+            "each encounter saves its own first AOS round");
+        var savedIds=independent.ToDictionary(j=>j.JourneyId,
+            j=>j.BattleCheckpoint.Actors[0].Id);
+        MissionBoard.RestoreJourneys(independent);
+        Check(MissionBoard.Journeys.Count==2 &&
+              MissionBoard.Journeys.All(j=>
+                  savedIds[j.JourneyId]==j.BattleCheckpoint.Actors[0].Id),
+            "parallel JSON restore keeps stable warrior identities per squad");
+        int rounds=0;
+        while(MissionBoard.Journeys.Any(j=>j.Phase==3))
+        {
+            if(++rounds>25)throw new Exception("Parallel AOS encounters stuck");
+            board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        }
+        Check(MissionBoard.Journeys.Count==2 &&
+              MissionBoard.Journeys.All(j=>j.Phase==2 && j.EncounterResolved),
+            "two independent AOS outcomes completed without losing squads");
+        var journeyIds=MissionBoard.Journeys.Select(j=>j.JourneyId).ToList();
+        board.AdvanceJourneys(ExpeditionJourneyTiming.ReturnSeconds,false);
+        Check(MissionBoard.Journeys.Count==2 &&
+              ExpeditionReplayArchive.History.Count==0,
+            "neither offscreen squad can settle or create archived loot");
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==0 &&
+              ExpeditionReplayArchive.History.Count==2,
+            "both real returns settled exactly once in crypt");
+        Check(journeyIds.Count==2 && !SquadRoster.Away.Any(),
+            "parallel parties are not stranded in roster after return");
+        int paid=PlayerInventory.Instance.Gold;
+        board.AdvanceJourneys(50f,true);
+        Check(ExpeditionReplayArchive.History.Count==2 &&
+              PlayerInventory.Instance.Gold==paid,
+            "two concurrent expeditions never duplicate loot on later frames");
+
         Console.WriteLine("PASS: "+assertions+
             " real MissionBoard Unity API shim scenarios, JSON roundtrips and single payout");
     }
