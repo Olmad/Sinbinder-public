@@ -39,7 +39,7 @@ assert 'public bool Resolved;' in battle
 assert 'evt.Resolved = allies.Remove(warrior);' in resolver
 assert 'if (enemies.Contains(enemy) && !enemy.IsDead)' in resolver
 assert 'if (squad.Contains(warrior) && !warrior.IsDead)' in resolver
-assert 'evt.Resolved = true;' in resolver
+assert 'evt.Resolved=true;' in resolver
 assert 'case ActionType.Flee:' in retelling
 assert 'return ev.Resolved' in retelling
 assert 'case ActionType.BribeEnemy:' in retelling
