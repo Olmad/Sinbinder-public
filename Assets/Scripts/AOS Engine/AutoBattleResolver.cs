@@ -54,10 +54,12 @@ namespace Sinbinder.AOS
                        && enemies.Any(e => e != null && !e.IsDead))
                 {
                     foreach (var warrior in squad.Where(w => w != null && !w.IsDead).ToList())
-                        Act(resolver, warrior, squad, enemies, record);
+                        if (squad.Contains(warrior) && !warrior.IsDead)
+                            Act(resolver, warrior, squad, enemies, record);
 
                     foreach (var enemy in enemies.Where(e => e != null && !e.IsDead).ToList())
-                        Act(resolver, enemy, enemies, squad, record);
+                        if (enemies.Contains(enemy) && !enemy.IsDead)
+                            Act(resolver, enemy, enemies, squad, record);
 
                     turns++;
                 }
@@ -125,6 +127,7 @@ namespace Sinbinder.AOS
                         target.TakeDamage(dmg);
                         evt.TargetId = target.Id;
                         evt.DamageDealt = dmg;
+                        evt.Resolved = dmg > 0f;
                     }
                     break;
                 }
@@ -139,6 +142,7 @@ namespace Sinbinder.AOS
                         ally.Heal(5f);
                         evt.TargetId = ally.Id;
                         evt.HealDealt = 5f;
+                        evt.Resolved = true;
                     }
                     break;
                 }
@@ -172,11 +176,18 @@ namespace Sinbinder.AOS
                         allies.Add(target);
 
                         evt.TargetId = target.Id;
+                        evt.Resolved = true;
                     }
                     break;
                 }
 
                 case ActionType.Flee:
+                    // With no 3D position to flee to, withdrawal removes the
+                    // fighter from this encounter. They remain alive and can
+                    // return home, but can no longer attack or be targeted.
+                    evt.Resolved = allies.Remove(warrior);
+                    break;
+
                 case ActionType.Loot:
                 case ActionType.Idle:
                     // Ход записан действием: пересказ (Crypt/Retelling)
