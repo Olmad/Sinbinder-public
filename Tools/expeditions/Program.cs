@@ -62,6 +62,27 @@ static class Program
             "actual AOS HP becomes the persisted wound fraction");
         Check(ExpeditionHealthRules.Capture(300f,80f)==1f,
             "health fraction respects maximum HP");
-        Console.WriteLine($"PASS: {assertions} mission rewards, causality, injury persistence");
+        Check(ExpeditionJourneyTiming.OutboundSeconds>0f &&
+              ExpeditionJourneyTiming.AdviceSeconds>0f &&
+              ExpeditionJourneyTiming.ReturnSeconds>0f,
+              "travel, autonomous AOS advice and return have finite stages");
+        Check(ExpeditionJourneyTiming.Advance(20f,5f)==15f,
+              "each real squad advances by played game time");
+        Check(ExpeditionJourneyTiming.Advance(20f,0f)==20f,
+              "game pause freezes an expedition without consuming advice");
+        Check(ExpeditionJourneyTiming.Advance(20f,-5f)==20f,
+              "invalid negative time cannot advance a journey");
+        Check(ExpeditionJourneyTiming.Advance(20f,float.NaN)==20f,
+              "invalid time cannot alter progress");
+        Check(ExpeditionJourneyTiming.Advance(2f,40f)==0f,
+              "a late frame completes a stage without negative remaining time");
+        Check(ExpeditionJourneyTiming.Finished(
+              ExpeditionJourneyTiming.Advance(0f,1f)),
+              "old saved junctions with zero remaining time resolve next tick");
+        float first=ExpeditionJourneyTiming.Advance(12f,4f);
+        float second=ExpeditionJourneyTiming.Advance(17f,4f);
+        Check(first==8f && second==13f,
+              "two simultaneous squads keep independent timers");
+        Console.WriteLine($"PASS: {assertions} expedition rewards, injuries and autonomous stage timing");
     }
 }
