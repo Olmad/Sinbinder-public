@@ -10,10 +10,11 @@ namespace Sinbinder.Gameplay
         /// A non-combat resolution can complete its chosen objective; after
         /// battle the party must survive AND remove all guarding resistance.
         /// </summary>
-        public static bool Secured(bool fought, int foesFallen, int guards, int survivors)
+        public static bool Secured(bool fought, bool resolverVictory, int survivors)
         {
-            if (guards < 0 || foesFallen < 0 || survivors <= 0) return false;
-            return !fought || foesFallen >= guards;
+            // Converted foes can stop fighting without dying. The source
+            // of truth is the AOS battle result, not just the corpse count.
+            return survivors > 0 && (!fought || resolverVictory);
         }
 
         /// <summary>No corpses or cargo are automatically looted after retreat.</summary>
