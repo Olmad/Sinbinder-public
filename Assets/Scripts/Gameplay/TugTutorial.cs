@@ -193,7 +193,8 @@ namespace Sinbinder.Gameplay
                 return;
             }
             if (_attitudeTarget != hovered) { _attitudeTarget = hovered; _attitudeReadFor = 0f; }
-            _attitudeReadFor += Time.unscaledDeltaTime;
+            // Чтение отношения не засчитывается во время паузы.
+            _attitudeReadFor += Time.deltaTime;
             if (_attitudeReadFor >= AttitudeReadSeconds) _attitudeRead = true;
         }
 
