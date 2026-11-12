@@ -59,6 +59,57 @@ static class RealBoardShimTests
                 m.Action==ActionType.Attack && m.Bonus>0f),
             "real aggressive strategy raises AOS attack score");
         Sinbinder.Gameplay.SquadOrders.Reset();
+
+        // Offscreen AOS must use a different *scoring* order without
+        // changing the player's visible selection or firing Changed.
+        int orderNotifications=0;
+        Action<SquadStrategy> onOrderChanged=_=>orderNotifications++;
+        Sinbinder.Gameplay.SquadOrders.Changed+=onOrderChanged;
+        try
+        {
+            Sinbinder.Gameplay.SquadOrders.Set(SquadStrategy.Defensive);
+            int baseline=orderNotifications;
+            using(Sinbinder.Gameplay.SquadOrders.UseForSimulation(
+                SquadStrategy.Aggressive))
+            {
+                Check(Sinbinder.Gameplay.SquadOrders.Current==SquadStrategy.Defensive,
+                    "offscreen simulation preserves player-facing strategy");
+                Check(Sinbinder.Gameplay.SquadOrders.CurrentModifiers().Any(m=>
+                    m.Action==ActionType.Attack && m.Bonus==30f),
+                    "real AOS scores using the scoped aggressive strategy");
+                using(Sinbinder.Gameplay.SquadOrders.UseForSimulation(
+                    SquadStrategy.LootFocused))
+                {
+                    Check(Sinbinder.Gameplay.SquadOrders.CurrentModifiers().Any(m=>
+                        m.Action==ActionType.Loot && m.Bonus==50f),
+                        "nested second squad sees only its own loot strategy");
+                }
+                Check(Sinbinder.Gameplay.SquadOrders.CurrentModifiers().Any(m=>
+                    m.Action==ActionType.Attack && m.Bonus==30f),
+                    "outer AOS scoring strategy restored after nested expedition");
+            }
+            Check(Sinbinder.Gameplay.SquadOrders.Current==SquadStrategy.Defensive &&
+                orderNotifications==baseline,
+                "background AOS causes zero player-setting change notifications");
+            try
+            {
+                using(Sinbinder.Gameplay.SquadOrders.UseForSimulation(
+                    SquadStrategy.Aggressive))
+                    throw new InvalidOperationException("expected test fault");
+            }
+            catch(InvalidOperationException) {}
+            Check(Sinbinder.Gameplay.SquadOrders.CurrentModifiers().Any(m=>
+                m.Action==ActionType.Attack && m.Bonus==-10f),
+                "exception restores actual player's defensive AOS modifiers");
+            Check(orderNotifications==baseline,
+                "failed simulated battle does not notify gameplay observers");
+        }
+        finally
+        {
+            Sinbinder.Gameplay.SquadOrders.Changed-=onOrderChanged;
+            Sinbinder.Gameplay.SquadOrders.Reset();
+        }
+
         var resolver=new BehaviourResolver();
         var warrior=new Warrior("Гневный",Team.Player);
         warrior.Soul.Sin=SinType.Wrath;
@@ -209,9 +260,18 @@ static class RealBoardShimTests
         Check(MissionBoard.Journeys.All(j=>j.Phase==3 &&
               j.BattleCheckpoint.CompletedRounds==0),
             "parallel real AOS battles start independently with no precomputed turns");
-        board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+        int liveOrderNotifications=0;
+        Action<SquadStrategy> liveObserver=_=>liveOrderNotifications++;
+        Sinbinder.Gameplay.SquadOrders.Changed+=liveObserver;
+        try
+        {
+            board.AdvanceJourneys(ExpeditionJourneyTiming.BattleRoundSeconds,false);
+            Check(liveOrderNotifications==0,
+                "two actual offscreen battles produce no fake UI Changed events");
+        }
+        finally { Sinbinder.Gameplay.SquadOrders.Changed-=liveObserver; }
         Check(Sinbinder.Gameplay.SquadOrders.Current==SquadStrategy.Balanced,
-            "global tactical strategy restored after interleaved real AOS rounds");
+            "global tactical strategy untouched by interleaved real AOS rounds");
         var bothSaved=CopyDisk();
         Check(bothSaved.All(j=>j.EncounterTrace.Frames.Count>0 &&
               j.BattleCheckpoint.CompletedRounds==1),
