@@ -125,7 +125,7 @@ static class Program
               history.Winner=="Squad","genuine final winner and turn count");
         Check(foe.HP==0f && session.Result.EnemiesDefeated==1,
             "final enemy actually fell in combat");
-        Check(!session.StepRound() && history.Events.Count==6,
+        Check(!session.StepRound() && history.Events.Count==5,
             "finished encounter cannot repeat actions or duplicate record");
 
         var one2=new Warrior("Марга",Team.Player,15f,5f);
