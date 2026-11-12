@@ -164,7 +164,7 @@ assert "if (!ExpeditionWorldClock.IsRunning)" in m
 assert "if (!ExpeditionWorldClock.IsRunning &&" in crypt
 assert "public void AdvanceJourneys(float gameDelta, bool canDeliver = true)" in m
 assert "ExpeditionJourneyTiming.CanSettle(canDeliver," in m
-assert "if (!CanCompleteJourney(journey)) continue;" in m
+assert "if (!CanCompleteJourney(journey))" in m
 assert "ActiveJourneys.RemoveAt(i);" in m
 assert "return journey.Recalled || Inventory.PlayerInventory.Instance!=null;" in m
 assert "public static bool CanSettle(bool inCrypt, bool inventoryReady, bool recalled)" in timing
@@ -192,3 +192,14 @@ assert "SaveExpeditionProgress();" in m
 assert "Core.SaveSystem.AutoSave();" in m.split("private static void SaveExpeditionProgress()",1)[1]
 assert "Core.SaveSystem.AutoSave();" not in m.split("private static void SaveExpeditionProgress()",1)[0]
 print("PASS: remote journeys do not force-close personal expedition maps through autosave or delivery")
+
+# Invalid party data cannot silently lose a completed expedition, spawn
+# missing warriors, or credit rewards. The UI must explain blocked return.
+assert "public bool ReturnBlocked;" in m
+assert "ReturnBlocked=item.ReturnBlocked" in m
+assert "journey.ReturnBlocked=true;" in m
+assert "if (!CanCompleteJourney(journey))" in m
+assert "Возврат и выдача добычи заблокированы" in m
+assert "journey.ReturnBlocked" in ui
+assert "Награды не выданы" in ui
+print("PASS: invalid squad data preserves trip and exposes recovery-required status")
