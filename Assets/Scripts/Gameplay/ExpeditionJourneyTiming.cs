@@ -27,5 +27,13 @@ namespace Sinbinder.Gameplay
 
         public static bool Finished(float remaining)
             => remaining <= 0f;
+
+        /// <summary>
+        /// The expedition may finish its return timer anywhere, but
+        /// must not turn into physical warriors or deliver loot outside
+        /// the crypt. An actual inventory recipient is required for loot.
+        /// </summary>
+        public static bool CanSettle(bool inCrypt, bool inventoryReady, bool recalled)
+            => inCrypt && (recalled || inventoryReady);
     }
 }
