@@ -40,6 +40,12 @@ namespace Sinbinder.Core
     public enum SinType { Greed, Wrath, Pride, Envy, Sloth, Gluttony, Lust }
     public enum MoralType { Vicious, Neutral, Pious }
     public enum ShellType { Skeleton }
+    public sealed class MemorySeed
+    {
+        public string Story;
+        public string Trigger;
+        public readonly List<object> NarrativePerks=new List<object>();
+    }
     public sealed class SoulData
     {
         public string Name;
@@ -48,14 +54,16 @@ namespace Sinbinder.Core
         public int Level = 1;
         public float Greed;
         public MoralType Moral;
+        public MemorySeed Memory;
+        public bool HasMemory => Memory!=null && !string.IsNullOrEmpty(Memory.Story);
         public const int SpectrumCount=7;
         public readonly float[] Spectra=new float[SpectrumCount];
         public float[] CopySpectra() => (float[])Spectra.Clone();
         public SoulData() {}
         public SoulData(string name, SinType sin, MoralType moral, int level,
-            float intensity,object memory,Gender gender)
+            float intensity,MemorySeed memory,Gender gender)
         {
-            Name=name;Sin=sin;Level=level;Gender=gender;Greed=intensity;
+            Name=name;Sin=sin;Level=level;Gender=gender;Greed=intensity;Memory=memory;
             Spectra[(int)sin]=intensity;
         }
         public float Get(SinType type) => Spectra[(int)type];
@@ -88,6 +96,7 @@ namespace Sinbinder.Gameplay
             public float Intensity, Loyalty, HealthFraction;
             public bool IsCommander;
             public int UnpaidMissions, Pocket;
+            public Core.MemorySeed Seed;
             public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
         }
     }
@@ -372,6 +381,18 @@ static class Program
             new SquadRoster.Member{ Name="Вейн",Sin=Sinbinder.Core.SinType.Wrath,
                 IsCommander=false,Loyalty=50f,HealthFraction=0.75f }
         };
+        var priorLife=new Sinbinder.Core.MemorySeed
+        {
+            Story="Remembered encounter before the expedition"
+        };
+        members[0].Seed=priorLife;
+        var storyHolder=new UnityEngine.GameObject("Offscreen story");
+        storyHolder.SetActive(false);
+        var storyWarrior=Expedition.Summon(storyHolder,members[0],
+            new Sinbinder.Core.RelationshipSystem(null));
+        Check(object.ReferenceEquals(storyWarrior.Soul.Memory,priorLife) &&
+              storyWarrior.Soul.HasMemory,
+            "expedition projection receives the roster's real narrative seed");
         var full=Expedition.Fight(members,3);
         ExpeditionBattleCheckpoint firstRound;
         using(var underway=new Expedition.CombatEncounter(members,3))
