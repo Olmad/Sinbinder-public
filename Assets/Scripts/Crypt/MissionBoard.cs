@@ -223,6 +223,9 @@ namespace Sinbinder.Crypt
         /// </summary>
         public void AdvanceJourneys(float gameDelta, bool canDeliver = true)
         {
+            // The playable personal expedition is a virtual map inside
+            // the crypt scene. Never materialize an automatic crew there.
+            if (PersonalExpedition.Active) canDeliver=false;
             if (ActiveJourneys.Count==0 || gameDelta<=0f ||
                 float.IsNaN(gameDelta) || float.IsInfinity(gameDelta)) return;
 
@@ -251,7 +254,7 @@ namespace Sinbinder.Crypt
                             "Отряд «{0}» у развилки. Можно дать совет; без него старший решит сам.",
                             Loc.Name(journey.Commander));
                         Log(LastReport);
-                        Core.SaveSystem.AutoSave();
+                        SaveExpeditionProgress();
                         continue;
                     }
                 }
@@ -266,7 +269,7 @@ namespace Sinbinder.Crypt
                     LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
                         Loc.Name(journey.Commander));
                     Log(LastReport);
-                    Core.SaveSystem.AutoSave();
+                    SaveExpeditionProgress();
                     continue;
                 }
 
@@ -284,7 +287,7 @@ namespace Sinbinder.Crypt
                     {
                         if (!ResolveEncounter(journey)) continue;
                         journey.SecondsRemaining=ExpeditionJourneyTiming.ReturnSeconds;
-                        Core.SaveSystem.AutoSave();
+                        SaveExpeditionProgress();
                         continue;
                     }
                     // Do not discard the only state of a journey that
@@ -315,7 +318,7 @@ namespace Sinbinder.Crypt
                 journey.SecondsRemaining=ReturnSeconds;
                 LastReport=Loc.F("Отряд «{0}» завершил событие и возвращается.",
                     Loc.Name(commanderName));
-                Core.SaveSystem.AutoSave();
+                SaveExpeditionProgress();
                 return true;
             }
             return false;
@@ -396,7 +399,7 @@ namespace Sinbinder.Crypt
                 journey.SecondsRemaining=ReturnSeconds;
                 LastReport=Loc.F("Отряд «{0}» отозван. Ожидается возвращение.",
                     Loc.Name(commanderName));
-                Core.SaveSystem.AutoSave();
+                SaveExpeditionProgress();
                 return true;
             }
             return false;
@@ -457,7 +460,7 @@ namespace Sinbinder.Crypt
                 LastReplay.Append(ExpeditionReplayKind.Return,Loc.Name(journey.Commander),
                     Loc.T("Отряд вернулся без боя и добычи."));
                 ExpeditionReplayArchive.Add(LastReplay);
-                Core.SaveSystem.AutoSave();
+                SaveExpeditionProgress();
                 return;
             }
             ResolveReturned(found,journey.Commander,away,
@@ -627,7 +630,7 @@ namespace Sinbinder.Crypt
             });
             LastReport=Loc.F("Отряд «{0}» отправлен к месту «{1}». Отряд в пути.",
                 Loc.Name(commanderName),Loc.Name(mission.Name));
-            Core.SaveSystem.AutoSave();
+            SaveExpeditionProgress();
             return LastReport;
         }
 
@@ -788,7 +791,7 @@ namespace Sinbinder.Crypt
             // Отряд вернулся — точка, к которой игрок захочет вернуться
             // сам, и единственная, которую он не выбирает. В режиме
             // обязательств она же и единственная возможная.
-            Core.SaveSystem.AutoSave();
+            SaveExpeditionProgress();
 
         }
 
@@ -1082,6 +1085,19 @@ namespace Sinbinder.Crypt
                 else
                     Log(Loc.T("В суме не хватило места: оболочка не доставлена."));
             }
+        }
+
+        /// <summary>
+        /// Saving a virtual personal expedition calls
+        /// PersonalExpedition.BeforeSaveOrLoad(), which ends that active
+        /// map. Remote automatic events must never eject the player from
+        /// a personally controlled expedition just to write a quicksave.
+        /// Their in-memory journey is saved on the next safe save.
+        /// </summary>
+        private static void SaveExpeditionProgress()
+        {
+            if (!PersonalExpedition.Active)
+                Core.SaveSystem.AutoSave();
         }
 
         /// <summary>Забыть добычу при новой игре.</summary>
