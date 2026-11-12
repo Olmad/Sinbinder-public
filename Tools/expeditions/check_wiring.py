@@ -106,3 +106,24 @@ assert "new Inventory.InventoryItem(" in m
 assert "Inventory.ItemType.Shell" in m and "if(inventory.AddItem(body))" in m
 assert "journey.FoesFallen<=0" in m
 print("PASS: authentic durable mission memory, bounded AOS influence and real ordinary shell inventory")
+
+# Combat wounds must not disappear at return, save/load or the next
+# simulation, and old saves must not interpret their missing field as death.
+roster=(r/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
+fight=(r/"Assets/Scripts/Gameplay/Expedition.cs").read_text(encoding="utf-8")
+body=(r/"Assets/Scripts/Gameplay/Damageable.cs").read_text(encoding="utf-8")
+warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
+rules=(r/"Assets/Scripts/Gameplay/ExpeditionHealthRules.cs").read_text(encoding="utf-8")
+assert "public float HealthFraction;" in roster
+assert "m.HealthFraction=ExpeditionHealthRules.Capture(w.HP,w.MaxHP)" in roster
+assert "public static void ApplyExpeditionHealth(string name, float fraction)" in roster
+assert "journey.SurvivorHealth=CopyHealth(fight.Health);" in m
+assert "SquadRoster.ApplyExpeditionHealth(condition.Name" in m
+assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));" in m
+assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));" in fight
+assert "public void SetHealthFraction(float fraction)" in warrior
+assert "public void SetHealthFraction(float fraction)" in body
+assert "HealthFraction = m.HealthFraction" in save
+assert "public float HealthFraction;" in savegame
+assert "if(float.IsNaN(stored)" in rules
+print("PASS: AOS injuries persist through game save and subsequent expedition")
