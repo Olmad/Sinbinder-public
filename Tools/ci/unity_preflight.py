@@ -52,6 +52,15 @@ def check(root):
     require(len(entries) == len(declared),
             f"Malformed EditorBuildSettings scene entry: parsed {len(entries)} of {len(declared)}")
     require(entries, "No parsed scene entries in EditorBuildSettings.asset")
+    # A duplicate key after a valid three-line entry must not silently override it.
+    scene_section = build.split("  m_Scenes:", 1)[-1].split("  m_configObjects:", 1)[0]
+    scene_blocks = re.split(r"(?m)^[ \\t]*-[ \\t]+enabled:", scene_section)[1:]
+    require(len(scene_blocks) == len(entries), "Malformed build scene blocks")
+    for block in scene_blocks:
+        for key in ("enabled", "path", "guid"):
+            count = len(re.findall(rf"(?m)^[ \\t]+{key}:", block))
+            require(count == (0 if key == "enabled" else 1),
+                    f"Duplicate or missing build scene key: {key}")
     seen_paths, seen_guids, enabled_paths = set(), set(), set()
     for enabled, rel, guid in entries:
         pure = PurePosixPath(rel)
