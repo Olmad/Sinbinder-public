@@ -44,7 +44,7 @@ static class RealBoardShimTests
         SquadRoster.Members.Clear();
         PlayerInventory.Instance=new PlayerInventory();
         PersonalExpedition.Active=false;
-        Core.SaveSystem.SaveCount=0;
+        Sinbinder.Core.SaveSystem.SaveCount=0;
 
         var resolver=new BehaviourResolver();
         var warrior=new Warrior("Гневный",Team.Player);
