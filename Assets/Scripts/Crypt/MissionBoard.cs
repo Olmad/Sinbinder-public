@@ -136,15 +136,28 @@ namespace Sinbinder.Crypt
                 foreach (var name in item.Party)
                     if (string.IsNullOrEmpty(name) || !local.Add(name) ||
                         reserved.Contains(name)) valid=false;
-                if (!valid) continue;
-                foreach (var name in item.Party) reserved.Add(name);
+                if (!valid || (item.Recalled && item.EncounterResolved)) continue;
                 if(item.EncounterResolved)
                 {
                     if(item.Survivors==null || item.TakenCoins<0 ||
                         item.FoesFallen<0 || item.EncounterTrace==null ||
                         item.Survivors.Count>item.Party.Count ||
                         item.Survivors.Exists(n => !item.Party.Contains(n))) continue;
+                    var uniqueSurvivors=new HashSet<string>();
+                    foreach(var name in item.Survivors)
+                        if(!uniqueSurvivors.Add(name)) valid=false;
+                    if(item.HasChosenAction)
+                    {
+                        Mission mission=default;
+                        foreach(var candidate in MissionCatalog.All())
+                            if(candidate.Name==item.MissionName) { mission=candidate; break; }
+                        if(!JunctionCatalog.Options(mission.Junction).Contains(
+                            (AOS.MissionAction)item.ChosenAction)) valid=false;
+                    }
                 }
+                if(!valid) continue;
+                // Only successfully validated journeys reserve actors.
+                foreach (var name in item.Party) reserved.Add(name);
                 var copy=CopyJourney(item);
                 copy.SecondsRemaining=Mathf.Clamp(copy.SecondsRemaining,0f,3600f);
                 ActiveJourneys.Add(copy);
