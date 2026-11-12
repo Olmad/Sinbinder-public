@@ -61,20 +61,6 @@ namespace Sinbinder.Gameplay
         IEnumerable<ActionType> SkillActions {get;}
         bool CanUseSkill(ActionType action);
     }
-    public readonly struct StrategyModifier
-    {
-        public readonly ActionType Action;
-        public readonly float Bonus;
-        public StrategyModifier(ActionType action,float bonus)
-        { Action=action;Bonus=bonus; }
-    }
-    public static class SquadOrders
-    {
-        public static IEnumerable<StrategyModifier> CurrentModifiers()
-            => Array.Empty<StrategyModifier>();
-        public static Sinbinder.AOS.SquadStrategy FromSin(SinType sin)
-            => Sinbinder.AOS.SquadStrategy.Balanced;
-    }
 }
 namespace Sinbinder.Dev
 {
