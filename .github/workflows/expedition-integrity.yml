@@ -86,6 +86,7 @@ jobs:
       - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/BoardShimChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/RealAosShimChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/BoardRealAosChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
       - run: python3 Tools/expeditions/check_replay_wiring.py
