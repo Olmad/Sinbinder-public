@@ -14,7 +14,7 @@ static class Program
         replay.Append(ExpeditionReplayKind.CommandDecision,"Марга","Решила сразиться.");
         for(int i=0;i<125;i++)
             replay.Append(ExpeditionReplayKind.CombatAction,i%2==0?"Марга":"Вейн",
-                          "Настоящее действие "+i,damage:i%3==0?5:0);
+                          "Настоящее действие "+i,damage:i%3==0?5:0,round:i/5+1);
         replay.Append(ExpeditionReplayKind.Loot,"Марга","Собрали монеты.");
         replay.Append(ExpeditionReplayKind.Return,"Марга","Вернулись.");
         Test(replay.Squad.Count==2,"squad deduplicated, no phantom people");
@@ -23,6 +23,10 @@ static class Program
         Test(replay.Frames.Select(x=>x.Sequence).SequenceEqual(Enumerable.Range(0,130)),
              "every event retains original chronology");
         Test(replay.AllEvents().Count()==130,"full trace accessible");
+        Test(replay.Frames[3].Round==1 && replay.Frames[127].Round==25,
+             "real AOS rounds survive the original event sequence");
+        Test(replay.Frames[0].Round==0 && replay.Frames[129].Round==0,
+             "noncombat stages do not invent combat rounds");
         Test(replay.Frames[126].Kind==ExpeditionReplayKind.CombatAction,"last attack retained");
         Test(replay.Frames.All(x=>x.Description.Length>0),"every authored step describable");
         var incomplete=new ExpeditionReplayData("Часовня","",null);
@@ -65,6 +69,13 @@ static class Program
         callerOwned.Frames[0].Description="MUTATED";
         Test(ExpeditionReplayArchive.History.Last().Frames[0].Description=="Departure",
              "adding a replay must copy caller data");
+        var roundTrace=new ExpeditionReplayData("Rounds","Captain",new[]{"Captain"});
+        roundTrace.Append(ExpeditionReplayKind.Departure,"Captain","Leaving");
+        roundTrace.Append(ExpeditionReplayKind.CombatAction,"Captain","Hit",round:7);
+        roundTrace.Append(ExpeditionReplayKind.Return,"Captain","Home");
+        ExpeditionReplayArchive.Add(roundTrace);
+        Test(ExpeditionReplayArchive.Snapshot().Last().Frames[1].Round==7,
+            "archive retains actual AOS round across snapshot");
         var broken=new ExpeditionReplayData("Corrupt","Captain",new[]{"Captain"});
         broken.Append(ExpeditionReplayKind.Departure,"Captain","Departure");
         broken.Frames.Add(null);
