@@ -370,64 +370,195 @@ namespace Sinbinder.Crypt
         /// SaveGame, so loading during return cannot reroll casualties or loot.
         /// Nothing is awarded or brought home until CompleteJourney().
         /// </summary>
+        /// <summary>
+        /// Choose once at the genuine site encounter. A peaceful choice
+        /// resolves directly; combat enters Phase=3 with NO rounds played.
+        /// AOS alone decides actions in subsequent real round steps.
+        /// </summary>
         private bool ResolveEncounter(SavedAutoExpedition journey)
         {
-            if (journey.EncounterResolved) return true;
+            if(journey.EncounterResolved) return true;
+            if(journey.Phase==3 || journey.BattleCheckpoint!=null) return false;
+
             Mission mission=default;
             bool found=false;
             foreach(var candidate in MissionCatalog.All())
                 if(candidate.Name==journey.MissionName)
-                { mission=candidate; found=true; break; }
+                { mission=candidate;found=true;break; }
             if(!found) return false;
+
+            var away=CombatParty(journey);
+            if(away==null) return false;
+            AOS.MissionAction? suggested=journey.HasSuggestion
+                ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction)
+                : null;
+            AOS.MissionAction? chosen=mission.Junction==Junction.None
+                ? null : Decide(mission,away,suggested);
+            bool noFight=chosen==AOS.MissionAction.LetThemPass ||
+                         chosen==AOS.MissionAction.TakeGoodsSparePeople;
+
+            var trace=new ExpeditionReplayData(Loc.Name(mission.Name),
+                Loc.Name(journey.Commander),journey.Party);
+
+            if(noFight)
+            {
+                // An AOS decision to avoid combat is an actual outcome.
+                // No invented rounds, opponents, casualties or souls.
+                journey.EncounterTrace=trace;
+                CommitFight(journey,new Expedition.Outcome(Names(away),0,0),
+                    chosen,false);
+                return true;
+            }
+
+            try
+            {
+                using(var combat=new Expedition.CombatEncounter(away,mission.Guards))
+                {
+                    // This is the BEFORE-first-round world state.
+                    var initial=combat.Snapshot();
+                    journey.BattleCheckpoint=initial;
+                    journey.EncounterTrace=trace;
+                    journey.HasChosenAction=chosen.HasValue;
+                    journey.ChosenAction=chosen.HasValue ? (int)chosen.Value : 0;
+                    journey.EncounterFought=true;
+                    journey.CombatBlocked=false;
+                    journey.Phase=3;
+                    journey.SecondsRemaining=ExpeditionJourneyTiming.BattleRoundSeconds;
+                    return false;
+                }
+            }
+            catch(System.Exception e)
+            {
+                // Refuse to invent a mission outcome on setup failure.
+                BlockCombat(journey,e.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Only already departed roster identities are allowed in AOS. It
+        /// is invalid to replace a missing warrior with a new temporary one.
+        /// </summary>
+        private static List<SquadRoster.Member> CombatParty(SavedAutoExpedition journey)
+        {
+            if(journey==null || journey.Party==null ||
+               !journey.Party.Contains(journey.Commander)) return null;
             var away=new List<SquadRoster.Member>();
             foreach(var name in journey.Party)
             {
                 if(!SquadRoster.TryGet(name,out var member) || !member.IsAway)
-                    return false;
+                    return null;
                 member.IsCommander=member.Name==journey.Commander;
                 away.Add(member);
             }
-            if (away.Count==0 || !journey.Party.Contains(journey.Commander))
-                return false;
-            AOS.MissionAction? suggested=journey.HasSuggestion
-                ? (AOS.MissionAction?)((AOS.MissionAction)journey.SuggestedAction) : null;
-            AOS.MissionAction? chosen=mission.Junction==Junction.None
-                ? null : Decide(mission,away,suggested);
-            // The approved caravan rules allow taking goods while sparing
-            // people without bloodshed. Taking everything or captives
-            // risks the hired guards in an actual AOS fight.
-            bool noFight=chosen==AOS.MissionAction.LetThemPass ||
-                chosen==AOS.MissionAction.TakeGoodsSparePeople;
-            var fight=noFight
-                ? new Expedition.Outcome(Names(away),0,0)
-                : Expedition.Fight(away, mission.Guards);
+            return away.Count==journey.Party.Count && away.Count>0 ? away : null;
+        }
 
-            var events=new ExpeditionReplayData(Loc.Name(mission.Name),
-                Loc.Name(journey.Commander),journey.Party);
-            if (fight.Record!=null && fight.Record.Events!=null)
-                foreach(var ev in fight.Record.Events)
+        /// <summary>
+        /// The checkpoint contains ALL actor states and actions from earlier
+        /// committed rounds. Reconstruct, execute exactly ONE new AOS round,
+        /// then atomically replace the entire saved round boundary.
+        /// </summary>
+        private bool AdvanceEncounterRound(SavedAutoExpedition journey)
+        {
+            if(journey.CombatBlocked) return false;
+            Mission mission=default;
+            bool found=false;
+            foreach(var candidate in MissionCatalog.All())
+                if(candidate.Name==journey.MissionName)
+                { mission=candidate;found=true;break; }
+            var away=CombatParty(journey);
+            if(!found || away==null ||
+               !ExpeditionBattleCheckpoint.IsValid(journey.BattleCheckpoint,
+                    journey.Party.Count,Mathf.Max(mission.Guards,1),
+                    AOS.AutoBattleResolver.MaxTurns))
+            {
+                BlockCombat(journey,"Не удалось подтвердить сохранённый ход или состав.");
+                return false;
+            }
+
+            int oldCount=journey.BattleCheckpoint.Record.Events.Count;
+            if(journey.EncounterTrace==null || journey.EncounterTrace.Frames==null ||
+               journey.EncounterTrace.Frames.Count!=oldCount)
+            {
+                BlockCombat(journey,"История действий не совпадает со снимком боя.");
+                return false;
+            }
+
+            int oldGold=AOS.AutoBattleResolver.SquadGold;
+            try
+            {
+                using(var combat=new Expedition.CombatEncounter(away,mission.Guards,
+                    journey.BattleCheckpoint))
                 {
-                    if(ev==null) continue;
-                    string actor=string.IsNullOrEmpty(ev.ActorName)
-                        ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
-                    events.Append(ExpeditionReplayKind.CombatAction,actor,
-                        Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,ev.HealDealt,
-                        ev.Round,ev.TargetName,true,ev.Resolved,
-                        ev.TargetKilled,ev.TargetHealthAfter);
+                    AOS.AutoBattleResolver.SquadGold=0; // no fictitious bribe wallet
+                    combat.StepRound();
+                    // AOS may finish in this step, but the final result is
+                    // taken from the SAME live actors and their last HP.
+                    var next=combat.Snapshot();
+                    var nextTrace=CopyTrace(journey.EncounterTrace);
+                    for(int i=oldCount;i<combat.Record.Events.Count;i++)
+                    {
+                        var ev=combat.Record.Events[i];
+                        string actor=string.IsNullOrEmpty(ev.ActorName)
+                            ? Loc.T("Неизвестный воин") : Loc.Name(ev.ActorName);
+                        nextTrace.Append(ExpeditionReplayKind.CombatAction,actor,
+                            Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,
+                            ev.HealDealt,ev.Round,ev.TargetName,true,
+                            ev.Resolved,ev.TargetKilled,ev.TargetHealthAfter);
+                    }
+
+                    // Commit both lists only after the entire round completed.
+                    journey.BattleCheckpoint=next;
+                    journey.EncounterTrace=nextTrace;
+                    if(combat.IsComplete)
+                    {
+                        AOS.MissionAction? chosen=journey.HasChosenAction
+                            ? (AOS.MissionAction?)((AOS.MissionAction)journey.ChosenAction)
+                            : null;
+                        CommitFight(journey,combat.Outcome(),chosen,true);
+                        journey.BattleCheckpoint=null; // durable outcome now owns the truth
+                        return true;
+                    }
+                    journey.SecondsRemaining=ExpeditionJourneyTiming.BattleRoundSeconds;
+                    return false;
                 }
-            // Commit all fields only after the resolver returned successfully.
+            }
+            catch(System.Exception e)
+            {
+                // Never retry an ambiguous partially executed AOS round
+                // on the same live actors. Previous committed checkpoint is
+                // retained, and the player sees the blocked status.
+                BlockCombat(journey,e.Message);
+                return false;
+            }
+            finally { AOS.AutoBattleResolver.SquadGold=oldGold; }
+        }
+
+        private void BlockCombat(SavedAutoExpedition journey,string reason)
+        {
+            if(journey.CombatBlocked) return;
+            journey.CombatBlocked=true;
+            LastReport=Loc.F("Поход «{0}»: бой приостановлен, данные состояния требуют проверки. Добыча не выдана.",
+                Loc.Name(journey.Commander));
+            Log(LastReport);
+            Debug.LogWarning("[AOS Expedition] "+reason);
+            SaveExpeditionProgress();
+        }
+
+        private static void CommitFight(SavedAutoExpedition journey,
+            Expedition.Outcome fight,AOS.MissionAction? chosen,bool fought)
+        {
             journey.Survivors=new List<string>(fight.Survivors);
             journey.SurvivorHealth=CopyHealth(fight.Health);
             journey.TakenCoins=fight.Taken;
             journey.FoesFallen=fight.FoesFallen;
-            journey.EncounterFought=!noFight;
+            journey.EncounterFought=fought;
             journey.BattleWon=fight.Record!=null && fight.Record.Winner=="Squad";
             journey.HasChosenAction=chosen.HasValue;
             journey.ChosenAction=chosen.HasValue ? (int)chosen.Value : 0;
             journey.BattleSummary=Retelling.Tell(fight.Record);
-            journey.EncounterTrace=events;
             journey.EncounterResolved=true;
-            return true;
         }
 
         /// <summary>Recall the selected squad before contact, without combat or loot.</summary>
