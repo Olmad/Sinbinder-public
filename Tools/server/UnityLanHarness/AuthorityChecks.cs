@@ -35,7 +35,67 @@ internal static class AuthorityChecks
     {
         TestIdentityAndReplay();
         TestUnityWarriorOrderBridge();
+        TestListenerFailureIsolation();
         Console.WriteLine("PASS: server-owned IDs, dual-Lord neutral AOS proposals, non-spoofable commands and real-Warrior bridge");
+    }
+
+    private static void TestListenerFailureIsolation()
+    {
+        var authority = new MatchAuthority("listener-isolation", 120f, 2);
+        authority.RegisterPlayer(1, 0, "Mòrt");
+        var bridge = new ServerWarriorOrderBridge(authority);
+        var lord = new GameObject("Listener Lord").AddComponent<Warrior>();
+        lord.Team = Team.Player;
+        lord.TestMover = new UnitMover();
+        long actor = bridge.Register(lord, NetworkActorRole.Lord, 1);
+        int failedListenerCalls = 0, healthyCalls = 0;
+        bridge.OrderResolved += (order, applied) => {
+            failedListenerCalls++;
+            throw new InvalidOperationException("test listener failure");
+        };
+        bridge.OrderResolved += (order, applied) => {
+            healthyCalls++;
+            Require(applied, "scheduled valid Lord movement must apply");
+        };
+        Require(bridge.TryIssue(1, Intent("listener-isolation", 1, actor,
+            NetworkOrderKind.Move, 3f, 4f), 5, null, null,
+            out var first, out _), "first same-tick order accepted");
+        Require(bridge.TryIssue(1, Intent("listener-isolation", 2, actor,
+            NetworkOrderKind.Move, 8f, 9f), 5, null, null,
+            out var second, out _), "second same-tick order accepted");
+        Require(first.ExecuteTick == second.ExecuteTick &&
+            bridge.PendingOrders == 2, "two orders share scheduled bucket");
+        bridge.ProcessDue(first.ExecuteTick);
+        Require(failedListenerCalls == 2 && healthyCalls == 2 &&
+            bridge.PendingOrders == 0 &&
+            Math.Abs(lord.TestMover.Destination.x - 8f) < 0.01f,
+            "listener exception cannot drop later order or healthy subscriber");
+
+        // Negative teardown: exceptions must not strand pending orders.
+        int cancelled = 0;
+        // A Lord is enough: no AOS or fog callbacks needed.
+        var teardownAuthority = new MatchAuthority("listener-teardown-2", 120f, 2);
+        teardownAuthority.RegisterPlayer(1, 0, "Mòrt");
+        var teardown = new ServerWarriorOrderBridge(teardownAuthority);
+        var secondLord = new GameObject("Teardown Lord").AddComponent<Warrior>();
+        secondLord.Team = Team.Player;
+        secondLord.TestMover = new UnitMover();
+        long teardownActor = teardown.Register(secondLord, NetworkActorRole.Lord, 1);
+        teardown.OrderResolved += (order, applied) =>
+            { throw new InvalidOperationException("teardown listener failure"); };
+        teardown.OrderResolved += (order, applied) => {
+            Require(!applied, "cancelled orders must report false");
+            cancelled++;
+        };
+        for (long id = 1; id <= 2; id++)
+            Require(teardown.TryIssue(1, Intent("listener-teardown-2", id,
+                teardownActor, NetworkOrderKind.Move, id, 0f), 5, null, null,
+                out _, out _), "teardown order accepted");
+        teardown.CancelPending();
+        Require(cancelled == 2 && teardown.PendingOrders == 0,
+            "teardown notifies every order and clears pending despite listener exceptions");
+        teardown.CancelPending();
+        Require(cancelled == 2, "repeat teardown must not re-notify old orders");
     }
 
     private static void TestIdentityAndReplay()
