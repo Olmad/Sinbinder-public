@@ -263,7 +263,7 @@ namespace Sinbinder.Multiplayer
                 {
                     _pending--;
                     bool applied = Apply(pending);
-                    OrderResolved?.Invoke(pending.Order, applied);
+                    NotifyResolved(pending.Order, applied);
                 }
             }
         }
@@ -271,11 +271,31 @@ namespace Sinbinder.Multiplayer
         /// <summary>Cancel queued game actions on server match teardown.</summary>
         public void CancelPending()
         {
+            // Clear first: a failing or reentrant listener cannot strand queued
+            // orders during match teardown.
+            var cancelled = new List<Scheduled>();
             foreach (var bucket in _scheduled.Values)
-                foreach (var pending in bucket)
-                    OrderResolved?.Invoke(pending.Order, false);
+                cancelled.AddRange(bucket);
             _scheduled.Clear();
             _pending = 0;
+            foreach (var pending in cancelled)
+                NotifyResolved(pending.Order, false);
+        }
+
+        private void NotifyResolved(AuthorizedGameOrder order, bool applied)
+        {
+            var listeners = OrderResolved;
+            if (listeners == null) return;
+            // Notification consumers are not part of server simulation authority.
+            // One faulty listener must not skip another order or listener.
+            foreach (Action<AuthorizedGameOrder, bool> listener in listeners.GetInvocationList())
+            {
+                try { listener(order, applied); }
+                catch (Exception ex)
+                {
+                    Debug.LogError("ServerWarriorOrderBridge.OrderResolved listener failed: " + ex);
+                }
+            }
         }
 
         private bool Apply(Scheduled item)
