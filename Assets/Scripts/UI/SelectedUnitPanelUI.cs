@@ -482,7 +482,7 @@ namespace Sinbinder.UI
                 string doing = PhraseGenerator.Doing(decision.Action);
                 Voice(null, string.IsNullOrEmpty(doing) ? "" : char.ToUpper(doing[0]) + doing.Substring(1),
                       Grammar.For(who.Gender, Loc.T("ничто в нём сейчас не спорит с приказом")), Muted, 30);
-                Order(Loc.T("Исполняет приказ"),
+                Order(Loc.T("Решил выполнить приказ"),
                       Grammar.For(who.Gender, Loc.T("решил послушаться")), true);
                 return;
             }
