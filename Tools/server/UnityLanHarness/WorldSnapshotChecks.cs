@@ -197,6 +197,45 @@ internal static class WorldSnapshotChecks
                 Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "incomplete frame never replaces last valid snapshot");
 
+            // Invalid worldBegin must not abort an otherwise valid in-flight
+            // snapshot. Exercise the real client's queued wire-frame parser.
+            long intactFrame = c1.WorldFrame + 2;
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldBegin", matchId = c1.GameMatchId,
+                    snapshotId = intactFrame, actorCount = 1
+                }).TrimEnd('\n'), null
+            });
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(LanWorldActorState.Packet(
+                    new LanWorldActorState(ownId,
+                        NetworkActorRole.Lord, new Vector3(42, 0, -80)),
+                    c1.GameMatchId, intactFrame, probe.Tick)).TrimEnd('\n'),
+                null
+            });
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldBegin", matchId = c1.GameMatchId,
+                    snapshotId = intactFrame + 1, actorCount = -1
+                }).TrimEnd('\n'), null
+            });
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldEnd", matchId = c1.GameMatchId,
+                    snapshotId = intactFrame, actorCount = 1,
+                    tick = c1.WorldTick
+                }).TrimEnd('\n'), null
+            });
+            c1.Pump();
+            Need(c1.WorldFrame == intactFrame &&
+                c1.WorldActors.Count == 1 &&
+                Math.Abs(c1.WorldActors[ownId].Position.x - 42f) < .01f,
+                "invalid worldBegin does not cancel a valid pending frame");
+
             // Real TCP reconnect must revoke all private state from the old
             // socket, even if a delayed world frame arrives afterward.
             string oldMatch = c1.GameMatchId;
