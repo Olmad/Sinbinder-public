@@ -39,6 +39,8 @@ namespace Sinbinder.Multiplayer
         private int _cancelGeneration;
         // Reentrant callbacks must not replace the active execution bucket.
         private bool _processingDue;
+        // CancelPending is terminal for this match bridge, including callbacks.
+        private bool _closed;
 
         public int PendingOrders { get { return _pending; } }
 
@@ -134,6 +136,11 @@ namespace Sinbinder.Multiplayer
         {
             approved = default;
             reason = OrderRejection.None;
+            if (_closed)
+            {
+                reason = OrderRejection.NotAllowed;
+                return false;
+            }
 
             // Do not consume a CommandId on preflight failure.
             if (intent == null || !_warriors.TryGetValue(intent.ActorId, out var warrior) ||
@@ -295,6 +302,8 @@ namespace Sinbinder.Multiplayer
         /// <summary>Cancel queued game actions on server match teardown.</summary>
         public void CancelPending()
         {
+            // Close before notifying: listeners cannot requeue during teardown.
+            _closed = true;
             // Clear first: a failing or reentrant listener cannot strand queued
             // orders during match teardown.
             var cancelled = new List<Scheduled>();
