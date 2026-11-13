@@ -302,7 +302,7 @@ namespace Sinbinder.Multiplayer
 
             if (packet.type == "worldBegin")
             {
-                _pendingWorld = null;
+                // An invalid frame must not discard a valid frame in progress.
                 if (packet.snapshotId <= _lastWorldFrame || packet.snapshotId <= 0 ||
                     packet.actorCount < 0 ||
                     packet.actorCount > LanRoomServer.MaxWorldActorsPerSnapshot)
