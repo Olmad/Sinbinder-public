@@ -114,7 +114,12 @@ internal static class AuthorityChecks
                 completed++;
                 reentrant.CancelPending();
             }
-            else stopped++;
+            else
+            {
+                stopped++;
+                // Nested teardown while notifying a cancelled active order.
+                reentrant.CancelPending();
+            }
         };
         Require(reentrant.TryIssue(1, Intent("reentrant-cancel", 1, reentrantActor,
             NetworkOrderKind.Move, 3f, 0f), 5, null, null,
