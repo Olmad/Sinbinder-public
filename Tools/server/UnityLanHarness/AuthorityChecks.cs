@@ -96,6 +96,41 @@ internal static class AuthorityChecks
             "teardown notifies every order and clears pending despite listener exceptions");
         teardown.CancelPending();
         Require(cancelled == 2, "repeat teardown must not re-notify old orders");
+
+        // Negative regression: teardown from a resolved listener must stop
+        // the remaining orders of the already-dequeued execution bucket.
+        var reentrantAuthority = new MatchAuthority("reentrant-cancel", 120f, 2);
+        reentrantAuthority.RegisterPlayer(1, 0, "Mòrt");
+        var reentrant = new ServerWarriorOrderBridge(reentrantAuthority);
+        var reentrantLord = new GameObject("Reentrant Lord").AddComponent<Warrior>();
+        reentrantLord.Team = Team.Player;
+        reentrantLord.TestMover = new UnitMover();
+        long reentrantActor = reentrant.Register(reentrantLord, NetworkActorRole.Lord, 1);
+        int completed = 0, stopped = 0;
+        reentrant.OrderResolved += (order, applied) =>
+        {
+            if (applied)
+            {
+                completed++;
+                reentrant.CancelPending();
+            }
+            else stopped++;
+        };
+        Require(reentrant.TryIssue(1, Intent("reentrant-cancel", 1, reentrantActor,
+            NetworkOrderKind.Move, 3f, 0f), 5, null, null,
+            out var reentrantFirst, out _), "first reentrant order accepted");
+        Require(reentrant.TryIssue(1, Intent("reentrant-cancel", 2, reentrantActor,
+            NetworkOrderKind.Move, 9f, 0f), 5, null, null,
+            out var reentrantSecond, out _), "second reentrant order accepted");
+        Require(reentrantFirst.ExecuteTick == reentrantSecond.ExecuteTick,
+            "reentrant orders share tick");
+        reentrant.ProcessDue(reentrantFirst.ExecuteTick);
+        Require(completed == 1 && stopped == 1 && reentrant.PendingOrders == 0 &&
+            Math.Abs(reentrantLord.TestMover.Destination.x - 3f) < 0.01f,
+            "reentrant teardown must cancel second order without negative pending count");
+        reentrant.CancelPending();
+        Require(completed == 1 && stopped == 1,
+            "repeat reentrant teardown cannot duplicate notifications");
     }
 
     private static void TestIdentityAndReplay()
