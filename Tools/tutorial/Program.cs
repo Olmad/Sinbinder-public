@@ -111,7 +111,8 @@ internal static class Program
         Check(OrderAdvice.Next("Distance").Contains("ближе"), "distance refusal suggests moving closer");
         Check(OrderAdvice.Next("Debt").Contains("долг"), "unpaid wages suggest resolving the debt");
         Check(OrderAdvice.Next("Temptation").Contains("снаряжение"), "tempting item suggests changing equipment");
-        Check(OrderAdvice.Next("AllyInDanger").Contains("товарища"), "ally in danger suggests rescue first");
+        Check(OrderAdvice.Next("AllyInDanger").Contains("товарищу"), "ally in danger suggests rescue first");
+        Check(!OrderAdvice.Next("AllyInDanger").Contains("ранен"), "ally in danger does not invent an injury");
         Check(OrderAdvice.Next("Fatigue").Contains("передышку"), "fatigue suggests a rest or replacement");
         Check(OrderAdvice.Next("Surrounded").Contains("окружения"), "encirclement suggests reducing danger");
         Check(OrderAdvice.Next("Murderer").Contains("убийц"), "revenge suggests removing remembered threat");
