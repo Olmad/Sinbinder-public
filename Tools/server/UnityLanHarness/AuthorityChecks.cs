@@ -36,6 +36,7 @@ internal static class AuthorityChecks
         TestIdentityAndReplay();
         TestUnityWarriorOrderBridge();
         TestListenerFailureIsolation();
+        TestReentrantTickDispatch();
         Console.WriteLine("PASS: server-owned IDs, dual-Lord neutral AOS proposals, non-spoofable commands and real-Warrior bridge");
     }
 
@@ -136,6 +137,45 @@ internal static class AuthorityChecks
         reentrant.CancelPending();
         Require(completed == 1 && stopped == 1,
             "repeat reentrant teardown cannot duplicate notifications");
+    }
+
+    private static void TestReentrantTickDispatch()
+    {
+        var authority = new MatchAuthority("nested-dispatch", 120f, 2);
+        authority.RegisterPlayer(1, 0, "Mòrt");
+        var bridge = new ServerWarriorOrderBridge(authority);
+        var lord = new GameObject("Nested Lord").AddComponent<Warrior>();
+        lord.Team = Team.Player;
+        lord.TestMover = new UnitMover();
+        long actor = bridge.Register(lord, NetworkActorRole.Lord, 1);
+        int applied = 0, cancelled = 0;
+        long firstTick = 0;
+        bridge.OrderResolved += (order, success) =>
+        {
+            if (!success) { cancelled++; return; }
+            applied++;
+            if (applied == 1)
+            {
+                // Nested dispatch of a later due bucket must not replace
+                // the outer active bucket before teardown cancels its tail.
+                bridge.ProcessDue(firstTick + 1);
+                bridge.CancelPending();
+            }
+        };
+        Require(bridge.TryIssue(1, Intent("nested-dispatch", 1, actor,
+            NetworkOrderKind.Move, 3f, 0f), 5, null, null,
+            out var first, out _), "nested first accepted");
+        Require(bridge.TryIssue(1, Intent("nested-dispatch", 2, actor,
+            NetworkOrderKind.Move, 9f, 0f), 5, null, null,
+            out _, out _), "nested second accepted");
+        Require(bridge.TryIssue(1, Intent("nested-dispatch", 3, actor,
+            NetworkOrderKind.Move, 15f, 0f), 6, null, null,
+            out _, out _), "nested later tick accepted");
+        firstTick = first.ExecuteTick;
+        bridge.ProcessDue(firstTick + 1);
+        Require(applied == 1 && cancelled == 2 && bridge.PendingOrders == 0 &&
+            Math.Abs(lord.TestMover.Destination.x - 3f) < 0.01f,
+            "nested dispatch cannot bypass teardown or execute cancelled orders");
     }
 
     private static void TestIdentityAndReplay()
