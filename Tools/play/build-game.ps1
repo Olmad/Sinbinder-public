@@ -15,7 +15,6 @@ $builds = Join-Path $drive 'Claude\builds'
 $log = Join-Path $root 'Logs\build-author.log'
 # The Unity launcher can retain its timestamp across builds; use a build marker.
 $buildMarker = Join-Path $root 'Build\Sinbinder\.sinbinder-author-build.txt'
-Remove-Item -LiteralPath $buildMarker -ErrorAction SilentlyContinue
 
 function Fail($text) { Write-Host ''; Write-Host $text -ForegroundColor Red; Write-Host ''; Read-Host 'Нажми Enter, чтобы закрыть'; exit 1 }
 
@@ -39,6 +38,10 @@ $work = Join-Path $root 'Build\Sinbinder'
 $running = Get-CimInstance Win32_Process -Filter "Name='Sinbinder.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -and $_.ExecutablePath -like "$work*" }
 if ($running) { Fail "Игра запущена прямо из $work — закрой её (играть лучше из папки в $builds)." }
+
+# Invalidate the previous build marker only after confirming that no active
+# Unity session or running working-copy Player blocks a new build.
+Remove-Item -LiteralPath $buildMarker -ErrorAction SilentlyContinue
 
 Write-Host ''
 Write-Host "Собираю Sinbinder (Unity $version). Обычно это 5–15 минут." -ForegroundColor Yellow
