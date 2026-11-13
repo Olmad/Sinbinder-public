@@ -82,9 +82,11 @@ if (-not (Test-Path -LiteralPath $sourceData -PathType Container)) {
 }
 
 # Копия — в свою папку с датой; играть оттуда.
-$stamp = Get-Date -Format 'yyyy-MM-dd HH-mm'
-$dest = Join-Path $builds $stamp
-New-Item -ItemType Directory -Force $dest | Out-Null
+# Use a unique destination for every build. Reusing a minute-level directory with
+# robocopy /E retains stale files from a previous Player build.
+$stamp = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
+$dest = Join-Path $builds ("{0}-{1}" -f $stamp, [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $dest -ErrorAction Stop | Out-Null
 robocopy $work $dest /E /NFL /NDL /NJH /NJS /NP | Out-Null
 $copyCode = $LASTEXITCODE
 # robocopy: коды 0..7 = успех/предупреждение, от 8 = ошибка копирования.
