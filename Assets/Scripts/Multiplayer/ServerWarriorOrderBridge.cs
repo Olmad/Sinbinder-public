@@ -34,6 +34,9 @@ namespace Sinbinder.Multiplayer
             new SortedDictionary<long, List<Scheduled>>();
         private const int MaxPendingOrders = 512;
         private int _pending;
+        private List<Scheduled> _activeBucket;
+        private int _activeIndex = -1;
+        private int _cancelGeneration;
 
         public int PendingOrders { get { return _pending; } }
 
@@ -259,11 +262,24 @@ namespace Sinbinder.Multiplayer
                 _scheduled.Remove(next);
                 // All orders in a tick have sequential global server IDs.
                 // Preserve the server's acceptance order.
-                foreach (var pending in bucket)
+                _activeBucket = bucket;
+                int generation = _cancelGeneration;
+                try
                 {
-                    _pending--;
-                    bool applied = Apply(pending);
-                    NotifyResolved(pending.Order, applied);
+                    for (int i = 0; i < bucket.Count; i++)
+                    {
+                        if (generation != _cancelGeneration) break;
+                        _activeIndex = i;
+                        var pending = bucket[i];
+                        _pending--;
+                        bool applied = Apply(pending);
+                        NotifyResolved(pending.Order, applied);
+                    }
+                }
+                finally
+                {
+                    _activeBucket = null;
+                    _activeIndex = -1;
                 }
             }
         }
@@ -276,6 +292,12 @@ namespace Sinbinder.Multiplayer
             var cancelled = new List<Scheduled>();
             foreach (var bucket in _scheduled.Values)
                 cancelled.AddRange(bucket);
+            // ProcessDue removes the active tick bucket before dispatch.
+            // Teardown must also cancel its not-yet-dispatched members.
+            if (_activeBucket != null)
+                for (int i = _activeIndex + 1; i < _activeBucket.Count; i++)
+                    cancelled.Add(_activeBucket[i]);
+            _cancelGeneration++;
             _scheduled.Clear();
             _pending = 0;
             foreach (var pending in cancelled)
