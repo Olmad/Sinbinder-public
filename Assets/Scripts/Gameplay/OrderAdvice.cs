@@ -24,7 +24,7 @@ namespace Sinbinder.Gameplay
                 case "Temptation": return "Проверьте снаряжение";
                 case "Loot": return "Уведите от добычи";
                 case "Patrol": return "Смените приказ или воина";
-                case "AllyInDanger": return "Помогите раненому";
+                case "AllyInDanger": return "Помогите товарищу";
                 case "Wounds": return "Выберите здорового воина";
                 case "Surrounded": return "Выведите из окружения";
                 case "Fatigue": return "Дайте передышку";
@@ -55,7 +55,7 @@ namespace Sinbinder.Gameplay
                 case "Temptation": return "Проверьте предмет-искуситель и попробуйте другое снаряжение.";
                 case "Loot": return "Измените маршрут, чтобы увести его от добычи.";
                 case "Patrol": return "Попробуйте более короткий приказ или другого воина.";
-                case "AllyInDanger": return "Сначала обезопасьте раненого товарища.";
+                case "AllyInDanger": return "Сначала помогите товарищу, которому угрожает опасность.";
                 case "Wounds": return "Дайте раненому передышку или выберите здорового воина.";
                 case "Surrounded": return "Помогите ему выйти из окружения.";
                 case "Fatigue": return "Дайте ему передышку или выберите свежего воина.";
