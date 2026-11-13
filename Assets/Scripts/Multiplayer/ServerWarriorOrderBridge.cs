@@ -37,6 +37,8 @@ namespace Sinbinder.Multiplayer
         private List<Scheduled> _activeBucket;
         private int _activeIndex = -1;
         private int _cancelGeneration;
+        // Reentrant callbacks must not replace the active execution bucket.
+        private bool _processingDue;
 
         public int PendingOrders { get { return _pending; } }
 
@@ -249,6 +251,10 @@ namespace Sinbinder.Multiplayer
         public void ProcessDue(long serverTick)
         {
             if (serverTick < 0) throw new ArgumentOutOfRangeException(nameof(serverTick));
+            if (_processingDue) return;
+            _processingDue = true;
+            try
+            {
             while (_scheduled.Count > 0)
             {
                 long next = 0;
@@ -282,6 +288,8 @@ namespace Sinbinder.Multiplayer
                     _activeIndex = -1;
                 }
             }
+            }
+            finally { _processingDue = false; }
         }
 
         /// <summary>Cancel queued game actions on server match teardown.</summary>
