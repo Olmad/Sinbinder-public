@@ -710,7 +710,10 @@ namespace Sinbinder.UI
         {
             var f = d.Weighed ? d.Decisive : Counterfactual.Factor.None;
 
-            if (f == Counterfactual.Factor.None)
+            // A completed counterfactual with no decisive factor is not evidence
+            // that distance or debt caused this verdict. Only use context as a
+            // fallback when no counterfactual weighing was performed.
+            if (!d.Weighed && f == Counterfactual.Factor.None)
             {
                 if (c.CommandVolume < 0.75f) f = Counterfactual.Factor.Distance;
                 else if (c.UnpaidMissions > 0) f = Counterfactual.Factor.Debt;
