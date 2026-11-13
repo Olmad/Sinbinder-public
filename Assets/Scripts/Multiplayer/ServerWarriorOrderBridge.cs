@@ -295,8 +295,12 @@ namespace Sinbinder.Multiplayer
             // ProcessDue removes the active tick bucket before dispatch.
             // Teardown must also cancel its not-yet-dispatched members.
             if (_activeBucket != null)
+            {
                 for (int i = _activeIndex + 1; i < _activeBucket.Count; i++)
                     cancelled.Add(_activeBucket[i]);
+                // Mark the remainder consumed before invoking reentrant listeners.
+                _activeIndex = _activeBucket.Count - 1;
+            }
             _cancelGeneration++;
             _scheduled.Clear();
             _pending = 0;
