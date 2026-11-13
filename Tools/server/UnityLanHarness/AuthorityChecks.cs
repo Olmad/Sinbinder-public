@@ -37,7 +37,63 @@ internal static class AuthorityChecks
         TestUnityWarriorOrderBridge();
         TestListenerFailureIsolation();
         TestReentrantTickDispatch();
+        TestTerminalCancelRejectsReentrantIssue();
         Console.WriteLine("PASS: server-owned IDs, dual-Lord neutral AOS proposals, non-spoofable commands and real-Warrior bridge");
+    }
+
+    private static void TestTerminalCancelRejectsReentrantIssue()
+    {
+        var authority = new MatchAuthority("terminal-requeue", 120f, 2);
+        authority.RegisterPlayer(1, 0, "Mòrt");
+        var bridge = new ServerWarriorOrderBridge(authority);
+        var lord = new GameObject("Terminal Lord").AddComponent<Warrior>();
+        lord.Team = Team.Player;
+        lord.TestMover = new UnitMover();
+        long actor = bridge.Register(lord, NetworkActorRole.Lord, 1);
+        int rejectedCallbacks = 0, cancelled = 0;
+        bridge.OrderResolved += (order, applied) =>
+        {
+            Require(!applied, "terminal teardown must report cancelled orders");
+            cancelled++;
+            bool accepted = bridge.TryIssue(1,
+                Intent("terminal-requeue", 3, actor, NetworkOrderKind.Move, 99f, 0f),
+                8, null, null, out _, out var reason);
+            Require(!accepted && reason == OrderRejection.NotAllowed,
+                "cancel callback must not enqueue an order after terminal teardown");
+            rejectedCallbacks++;
+        };
+        Require(bridge.TryIssue(1,
+            Intent("terminal-requeue", 1, actor, NetworkOrderKind.Move, 3f, 0f),
+            5, null, null, out var first, out _), "pre-teardown order accepted");
+        Require(bridge.TryIssue(1,
+            Intent("terminal-requeue", 2, actor, NetworkOrderKind.Move, 8f, 0f),
+            5, null, null, out _, out _), "second pre-teardown order accepted");
+        bridge.CancelPending();
+        bridge.ProcessDue(first.ExecuteTick + 20);
+        Require(cancelled == 2 && rejectedCallbacks == 2 &&
+            bridge.PendingOrders == 0 && authority.LastAcceptedCommandId(1) == 2 &&
+            Math.Abs(lord.TestMover.Destination.x) < 0.01f,
+            "terminal callbacks cannot revive queued actions or consume command IDs");
+        bridge.CancelPending();
+        Require(cancelled == 2, "terminal cancellation is idempotent");
+
+        // A new match uses a fresh bridge, so terminal cancellation must not
+        // globally disable orders or leak the old match's replay state.
+        var fresh = new MatchAuthority("terminal-next-match", 120f, 2);
+        fresh.RegisterPlayer(1, 0, "Mòrt");
+        var next = new ServerWarriorOrderBridge(fresh);
+        var nextLord = new GameObject("Next Match Lord").AddComponent<Warrior>();
+        nextLord.Team = Team.Player;
+        nextLord.TestMover = new UnitMover();
+        long nextActor = next.Register(nextLord, NetworkActorRole.Lord, 1);
+        Require(next.TryIssue(1,
+            Intent("terminal-next-match", 1, nextActor, NetworkOrderKind.Move, 7f, 0f),
+            10, null, null, out var resumed, out _),
+            "fresh match can accept a new order after previous match teardown");
+        next.ProcessDue(resumed.ExecuteTick);
+        Require(next.PendingOrders == 0 &&
+            Math.Abs(nextLord.TestMover.Destination.x - 7f) < 0.01f,
+            "fresh match executes its own authorized movement");
     }
 
     private static void TestListenerFailureIsolation()
