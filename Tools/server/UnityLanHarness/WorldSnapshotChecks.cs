@@ -197,7 +197,44 @@ internal static class WorldSnapshotChecks
                 Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "incomplete frame never replaces last valid snapshot");
 
-            Console.WriteLine("PASS: private real-Warrior coordinates and Damageable HP; per-player fog, death, and incomplete frames");
+            // Real TCP reconnect must revoke all private state from the old
+            // socket, even if a delayed world frame arrives afterward.
+            string oldMatch = c1.GameMatchId;
+            int oldGeneration = generation;
+            c1.Disconnect();
+            Need(c1.WorldActors.Count == 0 && c1.WorldFrame == 0 &&
+                c1.OwnLordActorId == 0 && c1.GameMatchId == null,
+                "disconnect immediately clears private state and identity");
+            await Wait(room, c1, c2, () => !c2.Playing,
+                "remaining peer observes stopped match");
+            c1.Connect("127.0.0.1", 7809);
+            await Wait(room, c1, c2, () => c1.PlayerId == 1,
+                "new TCP peer occupies the vacated seat");
+            enqueue.Invoke(c1, new object[] {
+                oldGeneration,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldBegin", matchId = oldMatch,
+                    snapshotId = malformedFrame + 100, actorCount = 0
+                }).TrimEnd('\n'), null
+            });
+            c1.Pump();
+            Need(c1.WorldActors.Count == 0 && c1.WorldFrame == 0 &&
+                c1.GameMatchId == null,
+                "old generation cannot restore private state after reconnect");
+            c1.Ready(); c2.Ready();
+            await Wait(room, c1, c2, () => c1.Playing && c2.Playing &&
+                c1.GameMatchId == probe.Authority.MatchId,
+                "new TCP session reaches gameplay handshake");
+            room.PublishPrivateWorldSnapshot();
+            await Wait(room, c1, c2, () => c1.WorldFrame > 0 &&
+                c2.WorldFrame > 0, "private snapshots resume after reconnect");
+            Need(c1.WorldActors.Count == 1 && c1.WorldActors.ContainsKey(ownId) &&
+                !c1.WorldActors.ContainsKey(rivalId) &&
+                c2.WorldActors.Count == 1 && c2.WorldActors.ContainsKey(rivalId) &&
+                !c2.WorldActors.ContainsKey(ownId),
+                "reconnected clients receive only their own private Lord");
+
+            Console.WriteLine("PASS: private real-Warrior coordinates and Damageable HP; per-player fog, death, and incomplete frames and TCP reconnect");
         }
         finally
         {
