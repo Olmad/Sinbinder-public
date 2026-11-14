@@ -62,6 +62,9 @@ namespace Sinbinder.Gameplay
 
         public void TakeDamage(float damage, GameObject attacker)
         {
+            // Nonpositive or nonfinite input is not a hit: never heal through damage,
+            // mark hostility, consume a bodyguard watch or produce a death event.
+            if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
             if (IsDead) return;
             if (Untouchable != null && this == Untouchable) return;
 
