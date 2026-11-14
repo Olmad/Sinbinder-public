@@ -118,6 +118,19 @@ if (-not (Test-Path -LiteralPath $destExe -PathType Leaf) -or
 if ((Get-Item -LiteralPath $destExe).Length -ne (Get-Item -LiteralPath $sourceExe).Length) {
     Fail "Sinbinder.exe скопирован не полностью: отличается размер. Папка: $dest"
 }
+# robocopy may report a non-fatal code while leaving an incomplete Player data tree.
+# Verify every source file, not just the launcher, before accepting the build.
+$sourceFiles = @(Get-ChildItem -LiteralPath $work -File -Recurse -ErrorAction Stop)
+foreach ($file in $sourceFiles) {
+    $relative = $file.FullName.Substring($work.Length).TrimStart('\\', '/')
+    $copied = Join-Path $dest $relative
+    if (-not (Test-Path -LiteralPath $copied -PathType Leaf)) {
+        Fail "Копирование неполное: отсутствует $relative. Папка: $dest"
+    }
+    if ((Get-Item -LiteralPath $copied).Length -ne $file.Length) {
+        Fail "Копирование неполное: размер $relative отличается. Папка: $dest"
+    }
+}
 # Only mark a build accepted after Unity, robocopy and output validation.
 [System.IO.File]::WriteAllText($buildMarker, [DateTime]::UtcNow.ToString('o'))
 Copy-Item -LiteralPath $buildMarker -Destination (Join-Path $dest '.sinbinder-author-build.txt') -Force
