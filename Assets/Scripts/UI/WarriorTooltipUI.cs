@@ -113,7 +113,9 @@ namespace Sinbinder.UI
                 _nextRefresh = Time.unscaledTime + 0.35f;
             }
             // Подсказку можно считать прочитанной лишь когда панель действительно видна.
-            Hovered = _panel != null && _panel.gameObject.activeInHierarchy ? _shown : null;
+            Hovered = _panel != null && _panel.gameObject.activeInHierarchy &&
+                      _text != null && _text.gameObject.activeInHierarchy &&
+                      !string.IsNullOrWhiteSpace(_text.text) ? _shown : null;
 
             PlaceNearPointer();
         }
