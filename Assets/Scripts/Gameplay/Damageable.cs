@@ -149,6 +149,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Wound(float remaining)
         {
+            // Invalid wound fractions must not poison HP or silently heal to full.
+            if (float.IsNaN(remaining) || float.IsInfinity(remaining)) return;
             if (IsDead) return;
             _hp = Mathf.Clamp(_maxHP * remaining, 1f, _maxHP);
         }
