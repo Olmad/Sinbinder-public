@@ -378,6 +378,14 @@ namespace Sinbinder.Multiplayer
                 !Enum.IsDefined(typeof(NetworkOrderKind), kind) ||
                 _nextGameCommandId == long.MaxValue)
                 return false;
+            // Connected is updated by Pump, whereas the socket read loop may
+            // already have closed and cleared _wire. Reject locally if there
+            // is no live transport; this is NOT a server delivery/AOS ACK.
+            lock (_connectionGate)
+            {
+                if (_wire == null || _cancel == null || _cancel.IsCancellationRequested)
+                    return false;
+            }
             var intent = new NetworkOrderIntent {
                 Protocol = MatchAuthority.Protocol, MatchId = GameMatchId,
                 CommandId = ++_nextGameCommandId, ActorId = actorId,
