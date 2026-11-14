@@ -123,7 +123,7 @@ namespace Sinbinder.Gameplay
         private readonly List<Sketch> _killerSketches = new List<Sketch>();
         private bool _handBusy, _battleStarted;
         private int _backAttempts;
-        private int _swingsBefore, _blockFramesBefore;
+        private int _swingsBefore, _blockFramesBefore, _blocksBefore, _ripostesBefore;
         private bool _squadOrdered;
         private int _hitsBefore, _missesSaid;
         private int _jarIndex = -1;
@@ -598,7 +598,9 @@ namespace Sinbinder.Gameplay
                         _hitsBefore = DreamRoad.DummyHits;
                         _missesSaid = 0;
                         _blockFramesBefore = combat.AcceptedBlockFrames;
-                        _line = "Ударьте чучело ЛКМ и подержите блок ПКМ.";
+                        _blocksBefore = DreamRoad.DummyBlocks;
+                        _ripostesBefore = DreamRoad.DummyRipostes;
+                        _line = "Ударьте чучело ЛКМ. Оно ответит — встретьте удар блоком ПКМ.";
                     }
                     if (DreamRoad.DummyHits == _hitsBefore && combat.AcceptedSwings - _swingsBefore >= 2 && _missesSaid == 0)
                     {
@@ -607,7 +609,13 @@ namespace Sinbinder.Gameplay
                     }
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam == null || !cam.WarriorModeNow) break;
-                    if (DreamRoad.DummyHits > _hitsBefore && combat.AcceptedBlockFrames > _blockFramesBefore)
+                    // Блок считается только встреченный: чучело замахнулось в ответ, ПКМ был зажат.
+                    if (DreamRoad.DummyRipostes > _ripostesBefore)
+                    {
+                        _ripostesBefore = DreamRoad.DummyRipostes;
+                        _line = "Чучело ударило в ответ. Держите ПКМ, пока оно замахивается.";
+                    }
+                    if (DreamRoad.DummyBlocks > _blocksBefore)
                         Set(Stage.Jars, "Дальше по дороге — камень с банками. Подойдите к нему.");
                     break;
                 }

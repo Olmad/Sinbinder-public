@@ -51,6 +51,14 @@ namespace Sinbinder.Gameplay
         private GameObject _seam;
         private Light _cryptLight;
         private Quaternion _dummyRest = Quaternion.identity;
+        // Ответный замах чучела (план 66, сцена 5: «блок должен быть виден»): после удара
+        // перекладина с пучками описывает дугу в сторону бьющего; встретил блоком — засчитано.
+        private Transform _dummyArms;
+        private float _riposteAt = -1f;
+        private bool _riposteChecked;
+        /// <summary>Сколько ответных замахов чучела встречено блоком / пропущено.</summary>
+        public static int DummyBlocks { get; private set; }
+        public static int DummyRipostes { get; private set; }
         private Vector2 _tilt, _tiltVel;      // наклон чучела, градусы по x и z мира
         private float _spin, _spinVel;        // поворот на коле
         private readonly List<GameObject> _soulJar = new List<GameObject>();
@@ -71,7 +79,7 @@ namespace Sinbinder.Gameplay
         public bool SoulJarTaken { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { CryptFade = -1f; DummyHits = 0; }
+        private static void Rearm() { CryptFade = -1f; DummyHits = 0; DummyBlocks = 0; DummyRipostes = 0; }
 
         private void OnDestroy()
         {
@@ -563,6 +571,15 @@ namespace Sinbinder.Gameplay
             Piece(_dummy, PrimitiveType.Sphere, "Голова", at + Vector3.up * 2.12f, new Vector3(0.42f, 0.46f, 0.42f), sack);
             // Грудью к дороге: Греховод подходит с дороги, с запада (автор, 08.11: «пугало слегка
             // отвёрнуто» — стояло на 20° наискось).
+            // Перекладина и пучки — на своей оси: ответный замах крутит их вокруг кола.
+            _dummyArms = new GameObject("Размах").transform;
+            _dummyArms.SetParent(_dummy, false);
+            _dummyArms.localPosition = Vector3.up * 1.66f;
+            for (int i = _dummy.childCount - 1; i >= 0; i--)
+            {
+                var part = _dummy.GetChild(i);
+                if (part.name == "Руки" || part.name == "Пучок") part.SetParent(_dummyArms, true);
+            }
             _dummyRest = Quaternion.Euler(0f, -90f, 0f);
             _dummy.rotation = _dummyRest;
         }
@@ -1153,6 +1170,8 @@ namespace Sinbinder.Gameplay
         {
             if (_dummy == null || hit.collider == null || !hit.collider.transform.IsChildOf(_dummy)) return;
             DummyHits++;
+            _riposteAt = Time.time + 0.5f;
+            _riposteChecked = false;
             var d = new Vector2(dir.x, dir.z);
             if (d.sqrMagnitude < 1e-4f) return;
             d.Normalize();
@@ -1209,6 +1228,24 @@ namespace Sinbinder.Gameplay
                 // В мировых осях: покой задан мировым поворотом, а родитель повёрнут — в его
                 // осях чучело валилось на бьющего (кадр w0811f «удар»).
                 _dummy.rotation = lean * Quaternion.Euler(0f, _spin, 0f) * _dummyRest;
+            }
+            if (_dummyArms != null && _riposteAt > 0f)
+            {
+                float ph = (Time.time - _riposteAt) / 0.55f;
+                if (ph >= 1f) { _dummyArms.localRotation = Quaternion.identity; _riposteAt = -1f; }
+                else if (ph >= 0f)
+                {
+                    _dummyArms.localRotation = Quaternion.Euler(0f, Mathf.Sin(ph * Mathf.PI) * 80f, 0f);
+                    if (!_riposteChecked && ph > 0.45f)
+                    {
+                        _riposteChecked = true;
+                        var fighter = SinbinderPlayer.Instance;
+                        var fists = fighter != null ? fighter.GetComponent<FirstPersonCombat>() : null;
+                        bool near = fighter != null && NearDummy(fighter.transform.position, 3.6f);
+                        if (near && fists != null && fists.Blocking) { DummyBlocks++; Audio.Sfx.ShieldStrike(fighter.transform.position, 1); }
+                        else if (near) DummyRipostes++;
+                    }
+                }
             }
 
             var hero = SinbinderPlayer.Instance;
