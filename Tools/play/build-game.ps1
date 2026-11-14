@@ -84,6 +84,21 @@ if (-not (Test-Path -LiteralPath $sourceData -PathType Container)) {
     Fail "Unity сообщила об успехе, но папка Sinbinder_Data отсутствует: $sourceData"
 }
 
+# Reject a stale Player even when Unity exits 0 and prints a success marker.
+# The working directory can contain output from an earlier build.
+$buildStartedUtc = $start.ToUniversalTime()
+$exeWrittenUtc = (Get-Item -LiteralPath $sourceExe).LastWriteTimeUtc
+if ($exeWrittenUtc -lt $buildStartedUtc) {
+    Fail "Unity сообщила об успехе, но Sinbinder.exe не обновлён в этой сборке: $sourceExe"
+}
+$dataFiles = @(Get-ChildItem -LiteralPath $sourceData -File -Recurse -ErrorAction Stop)
+if ($dataFiles.Count -eq 0) {
+    Fail "Unity сообщила об успехе, но Sinbinder_Data пуста: $sourceData"
+}
+if (-not @($dataFiles | Where-Object { $_.LastWriteTimeUtc -ge $buildStartedUtc }).Count) {
+    Fail "Unity сообщила об успехе, но в Sinbinder_Data нет файлов этой сборки: $sourceData"
+}
+
 # Копия — в свою папку с датой; играть оттуда.
 # Use a unique destination for every build. Reusing a minute-level directory with
 # robocopy /E retains stale files from a previous Player build.
