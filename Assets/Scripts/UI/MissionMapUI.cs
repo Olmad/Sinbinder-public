@@ -39,6 +39,7 @@ namespace Sinbinder.UI
         [SerializeField] private Font _font;
 
         private readonly List<GameObject> _spawned = new();
+        private ScrollRect _missionScroll;
 
         private static MissionMapUI _shown;
 
@@ -57,6 +58,8 @@ namespace Sinbinder.UI
         /// (автор: «войны, отправляемые на них, фиксированные»).
         /// </summary>
         private bool _gathering;
+        private bool _personal;
+        private int _replayPage;
         private string _leader;
         private readonly HashSet<string> _party = new();
 
@@ -65,6 +68,7 @@ namespace Sinbinder.UI
 
         void Start()
         {
+            EnsureScrolling();
             if (_panel == gameObject)
                 Debug.LogError("[КАРТА] Компонент висит на панели, которую сам "
                              + "выключает: подход к шару замечен не будет.");
@@ -105,6 +109,7 @@ namespace Sinbinder.UI
                 // которую нельзя закрыть, запирает склеп насмерть — ровно
                 // тот род поломки, из-за которого пришлось вырезать сцену
                 // побега.
+                if (ExpeditionReplayViewer.OwnsEscape) return;
                 if (Input.GetKeyDown(KeyCode.Escape)) Back();
                 return;
             }
@@ -161,6 +166,7 @@ namespace Sinbinder.UI
 
         private void ShowMissions()
         {
+            _personal = false;
             _pickingCommander = false;
             _gathering = false;
 
@@ -170,6 +176,107 @@ namespace Sinbinder.UI
                     : _board.LastReport;
 
             Rows(out float y);
+
+            // Ongoing operations take precedence over archived reports.
+            // A commander remains away until the real resolver finishes on return.
+            foreach (var journey in MissionBoard.Journeys)
+            {
+                string commanderId=journey.Commander;
+                var phase=journey.CombatBlocked
+                    ? Loc.T("AOS-бой остановлен: снимок требует проверки")
+                    : journey.ReturnBlocked
+                    ? Loc.T("Возврат заблокирован: необходимо восстановить состав")
+                    : journey.Phase==0 ? Loc.T("В пути к цели")
+                    : journey.Phase==1 ? Loc.T("Ожидает совета (решит сам, если совета нет)")
+                    : journey.Phase==3 ? Loc.T("Идёт реальный AOS-бой")
+                    : Loc.T("Возвращается в склеп");
+                int completed=journey.BattleCheckpoint!=null
+                    ? journey.BattleCheckpoint.CompletedRounds : 0;
+                var eta=journey.CombatBlocked
+                    ? Loc.T("Бой приостановлен. Добыча не выдана; перезапускать расчёт нельзя.")
+                    : journey.ReturnBlocked
+                    ? Loc.T("Награды не выданы. Исправьте данные состава или загрузите исправное сохранение.")
+                    : journey.Phase==3
+                    ? Loc.F("Завершено ходов AOS: {0}. До следующего хода около {1} сек.",
+                        completed,Mathf.CeilToInt(journey.SecondsRemaining))
+                    : journey.Phase==1
+                    ? Loc.F("Старший решит сам через {0} сек. Нажмите, чтобы дать совет.",
+                        Mathf.CeilToInt(journey.SecondsRemaining))
+                    : journey.Phase==0 ? Loc.F("До прибытия около {0} сек. Нажмите, чтобы отозвать.",
+                        Mathf.CeilToInt(journey.SecondsRemaining))
+                    : Loc.F("До возвращения около {0} сек.",Mathf.CeilToInt(journey.SecondsRemaining));
+                _spawned.Add(Row(y,true,
+                    Loc.F("Отряд: {0}",Loc.Name(journey.MissionName)),
+                    Loc.F("Старший: {0} · {1}",Loc.Name(journey.Commander),phase),
+                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision(commanderId))
+                        : journey.Phase==0 ? (System.Action)(() =>
+                            { _board.RecallJourney(commanderId); ShowMissions(); })
+                        : null,125f));
+                y-=133f;
+            }
+
+            // Wounds are no longer an eternal penalty with no way to
+            // recover. Returning soldiers can have their bodies repaired
+            // for ordinary silver collected on expeditions. Never treat an
+            // away soldier, heal an old save default, or revive the dead.
+            var purse=Inventory.PlayerInventory.Instance;
+            foreach(var member in SquadRoster.Members)
+            {
+                if(member.IsAway) continue;
+                int cost=ExpeditionHealthRules.TreatmentCost(member.HealthFraction);
+                if(cost<=0) continue;
+                string name=member.Name;
+                bool affordable=purse!=null && purse.Gold>=cost;
+                _spawned.Add(Row(y,affordable,
+                    Loc.F("Восстановить бойца: {0}",Loc.Name(member.ShownName)),
+                    Loc.F("Здоровье: {0}% · восстановление: {1} монет",
+                        Mathf.RoundToInt(
+                            ExpeditionHealthRules.RestoreFraction(member.HealthFraction)*100f),
+                        cost),
+                    affordable
+                        ? Loc.T("Нажмите: вернуть полное здоровье перед новой экспедицией.")
+                        : Loc.T("Не хватает монет. Вернувшийся воин остаётся раненым."),
+                    affordable ? (System.Action)(() => RepairWarrior(name))
+                               : null,118f));
+                y-=126f;
+            }
+
+            // The old summary still fits the title, but the complete
+            // auto-battle log is now a separate user-controlled viewer.
+            // A new mission does not erase old complete battle records.
+            // These are actual events from the resolver, not invented shots.
+            var history = ExpeditionReplayArchive.History;
+            // Only two replays per page; the mission buttons must remain
+            // reachable even after eight automatic expeditions.
+            _replayPage = Mathf.Clamp(_replayPage, 0,
+                Mathf.Max(0,(history.Count-1)/2));
+            int last = history.Count - 1 - _replayPage*2;
+            int first = Mathf.Max(0,last-1);
+            for(int i=last; i>=first; i--)
+            {
+                var replay=history[i];
+                if(replay==null || replay.Frames==null || replay.Frames.Count==0) continue;
+                _spawned.Add(Row(y,true,
+                    Loc.F("▶ Реплей: {0}",replay.MissionName),
+                    Loc.F("Командир: {0} · событий: {1}",replay.Leader,replay.Frames.Count),
+                    Loc.T("Полная хронология решений, без вымышленных координат."),
+                    () => ExpeditionReplayViewer.Open(replay),105f));
+                y-=113f;
+            }
+            if(history.Count>2)
+            {
+                bool older=first>0;
+                bool newer=_replayPage>0;
+                _spawned.Add(Row(y,true,
+                    Loc.F("Архив: страница {0} из {1}",_replayPage+1,
+                        (history.Count+1)/2),
+                    older ? Loc.T("Ещё более ранние реплеи") :
+                            Loc.T("Это самые ранние записи"),
+                    newer ? Loc.T("Новые записи доступны выше в архиве") : "",
+                    () => { _replayPage=older ? _replayPage+1 : 0; ShowMissions(); },
+                    78f));
+                y-=86f;
+            }
 
             int ready = _board.Ready();
 
@@ -186,11 +293,18 @@ namespace Sinbinder.UI
                 if (ready < m.Squad)
                     facts += " " + Loc.F("У вас сейчас только {0}.", Leadership.Collective(ready));
 
-                _spawned.Add(Row(y, ready > 0,
+                // The Sinbinder himself is a valid one-person party.
+                // No roster soldiers is NOT a reason to disable a personally
+                // visitable expedition. Automatic dispatch still requires
+                // an available commander.
+                bool personalPossible = ExpeditionMapPlan.ForName(m.Name) != null &&
+                                        SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead;
+                bool enabled = ready > 0 || personalPossible;
+                _spawned.Add(Row(y, enabled,
                     Loc.Name(m.Name),
                     m.Rumour,
                     facts,
-                    ready > 0 ? () => PickCommander(m) : (System.Action)null));
+                    enabled ? () => PickCommander(m) : (System.Action)null));
 
                 y -= 150f;
             }
@@ -198,6 +312,7 @@ namespace Sinbinder.UI
 
         private void PickCommander(Mission mission)
         {
+            _personal = false;
             _chosen = mission;
             _pickingCommander = true;
             _gathering = false;
@@ -206,6 +321,18 @@ namespace Sinbinder.UI
                 _title.text = Loc.F("{0}. Кто поведёт отряд?  Esc — назад", Loc.Name(mission.Name));
 
             Rows(out float y);
+
+            // Personal visit is available on the first two physical maps.
+            // It uses the same party picker, but the Lord commands directly.
+            if (ExpeditionMapPlan.ForName(mission.Name) != null && SinbinderPlayer.Exists)
+            {
+                _spawned.Add(Row(y, true,
+                    Loc.T("Греховод — вести лично"),
+                    Loc.T("Выйти на трёхмерную карту, командовать и собрать добычу самому."),
+                    Loc.T("Души может собирать только Греховод."),
+                    () => LeadPersonal()));
+                y -= 150f;
+            }
 
             foreach (var member in SquadRoster.Members)
             {
@@ -223,8 +350,9 @@ namespace Sinbinder.UI
                 _spawned.Add(Row(y, can,
                     Loc.Name(member.ShownName),
                     !can ? why
-                        : Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
-                        : Leadership.Shortfall(member.Leadership, mission.Squad),
+                        : (Leadership.CanLead(member.Leadership, mission.Squad) ? Leadership.Describe(member.Leadership)
+                            : Leadership.Shortfall(member.Leadership, mission.Squad))
+                          + (HealthNote(member).Length>0 ? " · " + HealthNote(member) : ""),
                     prophecy,
                     can ? () => Lead(name) : (System.Action)null));
 
@@ -238,8 +366,25 @@ namespace Sinbinder.UI
         /// тех же, кого уводил до 16 октября. Опытных в склепе подсказка
         /// не бережёт — кем рискнуть, решает игрок.
         /// </summary>
+        private void LeadPersonal()
+        {
+            _personal = true;
+            _leader = Loc.N("Греховод");
+            _gathering = true;
+            _party.Clear();
+            int count = 0;
+            foreach(var member in SquadRoster.Members)
+                if (SquadRoster.CanGo(member) && count < Mathf.Max(0, _chosen.Squad - 1))
+                {
+                    _party.Add(member.Name);
+                    count++;
+                }
+            ShowParty(null);
+        }
+
         private void Lead(string commanderName)
         {
+            _personal = false;
             _leader = commanderName;
             _gathering = true;
             _party.Clear();
@@ -251,14 +396,26 @@ namespace Sinbinder.UI
 
         /// <summary>Скольких старший возьмёт сверх себя.</summary>
         private int Room
-            => Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
+            => _personal ? Mathf.Max(0, _chosen.Squad - 1)
+                : Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
 
         /// <summary>Отряд набран. Есть развилка — спросить, что предложить; нет — уходят.</summary>
         private void Gathered()
         {
             _gathering = false;
-            if (_chosen.Junction == Junction.None) { Send(_leader, null); return; }
-            PickOffer(_leader);
+            if (_personal)
+            {
+                if (PersonalExpedition.Enter(_chosen, new List<string>(_party), out var error))
+                {
+                    Close();
+                    return;
+                }
+                _gathering = true;
+                ShowParty(error);
+                return;
+            }
+            // Decisions occur when the squad reaches the location, not before departure.
+            Send(_leader, null);
         }
 
         private void Toggle(string name)
@@ -277,7 +434,7 @@ namespace Sinbinder.UI
         private void ShowParty(string warning)
         {
             int total = _party.Count + 1;
-            string leader = Loc.Name(Shown(_leader));
+            string leader = _personal ? Loc.T("Греховод") : Loc.Name(Shown(_leader));
 
             // Меньше, чем советуют, — можно; сказано, чем это грозит.
             string risk = total >= _chosen.Squad ? ""
@@ -317,7 +474,8 @@ namespace Sinbinder.UI
             }
 
             _spawned.Add(Row(y, true,
-                _party.Count == 0 ? Loc.F("Отправить одного: {0}", leader)
+                _personal ? Loc.T("Войти на карту лично")
+                : _party.Count == 0 ? Loc.F("Отправить одного: {0}", leader)
                                   : Loc.F("Отправить отряд — ведёт {0}", leader),
                 "", "", Gathered, height));
         }
@@ -329,9 +487,51 @@ namespace Sinbinder.UI
 
             var parts = new List<string> { goes ? Loc.T("идёт") : Loc.T("остаётся в склепе") };
             parts.Add(SoulData.GetSinName(m.Sin).ToLowerInvariant());
+            string condition=HealthNote(m);
+            if(condition.Length>0) parts.Add(condition.Trim());
             if (m.UnpaidMissions > 0) parts.Add(Grammar.Pick(m.Gender, Loc.T("ему должны"), Loc.T("ей должны")));
             if (m.Brother) parts.Add(Loc.T("брат по оружию"));
             return string.Join(" · ", parts);
+        }
+
+        /// <summary>
+        /// An actual crypt action: spend real carried silver, repair the
+        /// persistent body AND the currently spawned Warrior, then autosave.
+        /// Rechecks stock and availability at click time to prevent repeat
+        /// purchases from stale UI rows.
+        /// </summary>
+        private void RepairWarrior(string name)
+        {
+            if(!CryptMap.Opened || PersonalExpedition.Active ||
+               !SquadRoster.TryGet(name,out var member) || member.IsAway)
+            { ShowMissions(); return; }
+
+            int cost=ExpeditionHealthRules.TreatmentCost(member.HealthFraction);
+            var purse=Inventory.PlayerInventory.Instance;
+            if(cost<=0 || purse==null || !purse.SpendGold(cost))
+            { ShowMissions(); return; }
+
+            if(!SquadRoster.RepairReturnedWarrior(name))
+            {
+                purse.AddGold(cost); // reverse a cancelled purchase
+                ShowMissions();
+                return;
+            }
+
+            foreach(var warrior in MissionBoard.Squad())
+                if(warrior.DisplayName==name && !warrior.IsDead)
+                    warrior.SetHealthFraction(1f);
+
+            Core.SaveSystem.AutoSave();
+            ShowMissions();
+        }
+
+        private static string HealthNote(SquadRoster.Member member)
+        {
+            float health=ExpeditionHealthRules.RestoreFraction(member.HealthFraction);
+            if(health<0.35f) return Loc.T("тяжело ранен");
+            if(health<0.99f) return Loc.T("ранен");
+            return "";
         }
 
         /// <summary>Имя по старшинству для голого имени из состава.</summary>
@@ -375,13 +575,50 @@ namespace Sinbinder.UI
                 () => Send(commanderName, null)));
         }
 
+        private void PickJourneyDecision(string commanderId)
+        {
+            SavedAutoExpedition pending=null;
+            foreach(var journey in MissionBoard.Journeys)
+                if(journey.Commander==commanderId && journey.Phase==1)
+                { pending=journey; break; }
+            if(pending==null) { ShowMissions(); return; }
+            Mission mission=default;
+            foreach(var item in _board.Missions)
+                if(item.Name==pending.MissionName) { mission=item; break; }
+            if(mission.Junction==Junction.None)
+            {
+                _board.OfferJourneyOrder(commanderId,null);
+                ShowMissions();
+                return;
+            }
+            _pickingCommander=true;
+            if(_title!=null)
+                _title.text=JunctionCatalog.Situation(mission.Junction)+
+                    Loc.T(" Ваш совет будет передан старшему; окончательное решение за ним.");
+            Rows(out float y);
+            foreach(var option in JunctionCatalog.Options(mission.Junction))
+            {
+                var value=option;
+                _spawned.Add(Row(y,true,JunctionCatalog.Offer(value),
+                    Loc.T("Предложить действие командиру"),"",
+                    () => { _board.OfferJourneyOrder(commanderId,value); ShowMissions(); }));
+                y-=150f;
+            }
+            _spawned.Add(Row(y,true,Loc.T("Пусть командир решает сам"),
+                Loc.T("Не отправлять рекомендацию"),"",
+                () => { _board.OfferJourneyOrder(commanderId,null); ShowMissions(); }));
+        }
+
         private void Send(string commanderName, MissionAction? offer)
         {
-            _board.Send(_chosen, commanderName, new List<string>(_party), offer);
-
-            // Возвращаемся к карте: отчёт стоит в заголовке, и следующий
-            // выбор игрок делает, уже зная цену прошлого.
+            int before=MissionBoard.Journeys.Count;
+            string result=_board.Send(_chosen, commanderName,
+                new List<string>(_party), offer);
             ShowMissions();
+            // Failed atomic dispatch must be visible, not hidden by the last
+            // successful expedition's stale LastReport.
+            if(MissionBoard.Journeys.Count==before && _title!=null)
+                _title.text=result;
         }
 
         private static string Foretell(string name)
@@ -393,10 +630,57 @@ namespace Sinbinder.UI
             return "";
         }
 
+        /// <summary>
+        /// Old scenes contain a fixed-height list of mission buttons with
+        /// no scroll component. Runtime installation preserves those scenes
+        /// while ensuring every mission and archived replay stays reachable.
+        /// </summary>
+        private void EnsureScrolling()
+        {
+            if (_rows == null || _missionScroll != null) return;
+            var existing = _rows.GetComponentInParent<ScrollRect>();
+            if (existing != null)
+            {
+                _missionScroll = existing;
+                if (existing.content != null) _rows = existing.content;
+                return;
+            }
+
+            var viewport = _rows;
+            if (viewport.GetComponent<RectMask2D>() == null)
+                viewport.gameObject.AddComponent<RectMask2D>();
+
+            var contentObj = new GameObject("Список экспедиций — прокрутка",
+                typeof(RectTransform));
+            var content = (RectTransform)contentObj.transform;
+            content.SetParent(viewport, false);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = new Vector2(0f, Mathf.Max(1f, viewport.rect.height));
+            content.anchoredPosition = Vector2.zero;
+
+            _missionScroll = viewport.gameObject.AddComponent<ScrollRect>();
+            _missionScroll.viewport = viewport;
+            _missionScroll.content = content;
+            _missionScroll.horizontal = false;
+            _missionScroll.vertical = true;
+            _missionScroll.movementType = ScrollRect.MovementType.Clamped;
+            _missionScroll.scrollSensitivity = 34f;
+            _missionScroll.inertia = true;
+            _rows = content;
+        }
+
         private void Rows(out float y)
         {
+            EnsureScrolling();
             foreach (var go in _spawned) if (go != null) Destroy(go);
             _spawned.Clear();
+            if (_rows != null)
+                _rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    _missionScroll != null ? _missionScroll.viewport.rect.height : 550f);
+            if (_missionScroll != null)
+                _missionScroll.verticalNormalizedPosition = 1f;
             y = 0f;
         }
 
@@ -414,6 +698,14 @@ namespace Sinbinder.UI
             rt.offsetMax = Vector2.zero;
             rt.sizeDelta = new Vector2(0f, height);
             rt.anchoredPosition = new Vector2(0f, y);
+            if (_missionScroll != null && _rows != null)
+            {
+                // Rows are top-anchored; extend the content's actual size
+                // or Unity's ScrollRect will clamp all scrolling to zero.
+                float required = -y + height + 12f;
+                if (required > _rows.rect.height)
+                    _rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, required);
+            }
 
             var plate = go.AddComponent<Image>();
             plate.color = bright

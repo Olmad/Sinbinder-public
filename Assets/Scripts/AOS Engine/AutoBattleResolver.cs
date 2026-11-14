@@ -23,72 +23,132 @@ namespace Sinbinder.AOS
         public const int MaxTurns = 20;
 
         /// <summary>
-        /// Провести бой. Стратегия действует так же, как в живом бою —
-        /// через голосование, а не подменой уже выбранного действия.
+        /// One genuine AOS battle, advanced ONE resolver round at a time.
+        /// The same path is used by the traditional one-shot Resolve call.
+        /// A client may keep this object alive and call StepRound gradually.
+        /// This object contains live Warrior state: it is NOT a serializable
+        /// cross-scene checkpoint. Do not represent it as one.
+        /// </summary>
+        public sealed class Session
+        {
+            private readonly BehaviourResolver _resolver;
+            private readonly List<Warrior> _squad;
+            private readonly List<Warrior> _enemies;
+            private readonly SquadStrategy _strategy;
+            private readonly BattleRecord _record;
+            private readonly AutoBattleResult _result = new AutoBattleResult();
+            public int CompletedRounds { get; private set; }
+            public bool IsComplete { get; private set; }
+            public bool IsFaulted { get; private set; }
+            public AutoBattleResult Result => IsComplete ? _result : null;
+            public BattleRecord Record => _record;
+
+            public Session(Warrior commander, List<Warrior> squad,
+                           List<Warrior> enemies, SquadStrategy strategy,
+                           BattleRecord record = null, int completedRounds = 0)
+            {
+                if(completedRounds<0 || completedRounds>MaxTurns)
+                    throw new System.ArgumentOutOfRangeException(nameof(completedRounds));
+                CompletedRounds=completedRounds;
+                _squad=squad;
+                _enemies=enemies;
+                _strategy=strategy;
+                _record=record ?? new BattleRecord();
+                // A single BehaviourResolver per encounter, not per actor.
+                _resolver=new BehaviourResolver();
+                if (!CanAdvance()) Complete();
+            }
+
+            private bool CanAdvance()
+            {
+                if(_squad==null || _enemies==null ||
+                   CompletedRounds>=MaxTurns) return false;
+                return _squad.Any(w => w != null && !w.IsDead)
+                    && _enemies.Any(w => w != null && !w.IsDead);
+            }
+
+            /// <returns>True only if one real round was performed.</returns>
+            public bool StepRound()
+            {
+                if(IsFaulted)
+                    throw new System.InvalidOperationException(
+                        "An AOS combat step failed after partial world mutation; restore a verified checkpoint.");
+                if(IsComplete) return false;
+                if(!CanAdvance()) { Complete(); return false; }
+
+                // The command influences votes through the existing AOS
+                // order module. Never substitute an action after voting.
+                // Do not change player-facing SquadOrders.Current or fire
+                // Changed notifications for an unseen offscreen battle.
+                // Scoring still sees the chosen squad strategy inside scope.
+                using(var simulation=SquadOrders.UseForSimulation(_strategy))
+                try
+                {
+                    int round=CompletedRounds+1;
+                    foreach(var warrior in _squad.Where(w=>w!=null && !w.IsDead).ToList())
+                    {
+                        if(!_enemies.Any(w=>w!=null && !w.IsDead)) break;
+                        if(_squad.Contains(warrior) && !warrior.IsDead)
+                            Act(_resolver,warrior,_squad,_enemies,_record,round);
+                    }
+
+                    foreach(var enemy in _enemies.Where(w=>w!=null && !w.IsDead).ToList())
+                    {
+                        // If the last attacker just fled, died or converted,
+                        // do not fabricate enemy attacks against empty ranks.
+                        if(!_squad.Any(w=>w!=null && !w.IsDead)) break;
+                        if(_enemies.Contains(enemy) && !enemy.IsDead)
+                            Act(_resolver,enemy,_enemies,_squad,_record,round);
+                    }
+
+                    CompletedRounds++;
+                }
+                catch
+                {
+                    // Some earlier actors may already have dealt real
+                    // damage. Re-entering this round would double-apply it.
+                    // Require reconstruction from a saved round boundary.
+                    IsFaulted=true;
+                    throw;
+                }
+                // Scope.Dispose restores the previous scoring override
+                // even after a partially failed AOS step.
+
+                if(!CanAdvance()) Complete();
+                return true;
+            }
+
+            private void Complete()
+            {
+                if(IsComplete) return;
+                IsComplete=true;
+                _result.SquadSurvived=_squad==null ? 0
+                    : _squad.Count(w=>w!=null && !w.IsDead);
+                _result.EnemiesDefeated=_enemies==null ? 0
+                    : _enemies.Count(w=>w!=null && w.IsDead);
+                _result.TotalTurns=CompletedRounds;
+                _record.TotalTurns=CompletedRounds;
+                bool enemiesLeft=_enemies!=null && _enemies.Any(w=>w!=null && !w.IsDead);
+                _record.Winner=_result.SquadSurvived==0 ? "Enemy"
+                    : enemiesLeft ? "Draw" : "Squad";
+            }
+        }
+
+        /// <summary>
+        /// Legacy synchronous entry. Its events and result are now produced
+        /// by the SAME StepRound implementation used for gradual simulation.
         /// </summary>
         public static AutoBattleResult Resolve(Warrior commander, List<Warrior> squad,
             List<Warrior> enemies, SquadStrategy strategy, BattleRecord record = null)
         {
-            var result = new AutoBattleResult();
-            if (squad == null || enemies == null) return result;
-
-            // Резолвер строится один раз на бой. Прежде он создавался
-            // заново для каждого воина каждый ход: тринадцать модулей,
-            // и каждый в конструкторе грузит конфиг. В бою восемь на
-            // восемь это больше четырёх тысяч загрузок.
-            var resolver = new BehaviourResolver();
-
-            // Установка отряда — одна на игру, и в автономном бою она
-            // должна работать так же, как в живом. Прежде здесь был
-            // отдельный путь, который подменял выбранное действие уже
-            // после голосования: тем самым решение принимал не совет,
-            // а таблица, и вся архитектура обходилась стороной.
-            var previousOrders = SquadOrders.Current;
-            SquadOrders.Set(strategy);
-
-            int turns = 0;
-            try
-            {
-                while (turns < MaxTurns
-                       && squad.Any(w => w != null && !w.IsDead)
-                       && enemies.Any(e => e != null && !e.IsDead))
-                {
-                    foreach (var warrior in squad.Where(w => w != null && !w.IsDead).ToList())
-                        Act(resolver, warrior, squad, enemies, record);
-
-                    foreach (var enemy in enemies.Where(e => e != null && !e.IsDead).ToList())
-                        Act(resolver, enemy, enemies, squad, record);
-
-                    turns++;
-                }
-            }
-            finally
-            {
-                SquadOrders.Set(previousOrders);
-            }
-
-            result.SquadSurvived = squad.Count(w => w != null && !w.IsDead);
-            result.EnemiesDefeated = enemies.Count(e => e != null && e.IsDead);
-            result.TotalTurns = turns;
-
-            if (record != null)
-            {
-                record.TotalTurns = turns;
-
-                // Ничья — это ничья. Прежде любой исход, в котором выжил
-                // хоть один свой, записывался победой отряда, включая
-                // случай, когда обе стороны просто не добили друг друга
-                // за отведённые ходы.
-                bool enemiesLeft = enemies.Any(e => e != null && !e.IsDead);
-                record.Winner = result.SquadSurvived == 0 ? "Enemy"
-                              : enemiesLeft ? "Draw" : "Squad";
-            }
-
-            return result;
+            if(squad==null || enemies==null) return new AutoBattleResult();
+            var session=new Session(commander,squad,enemies,strategy,record);
+            while(session.StepRound()) { }
+            return session.Result;
         }
 
         private static void Act(BehaviourResolver resolver, Warrior warrior,
-            List<Warrior> allies, List<Warrior> foes, BattleRecord record)
+            List<Warrior> allies, List<Warrior> foes, BattleRecord record, int round)
         {
             // Контекст собирается из списков боя, а не из сцены:
             // сцены здесь нет, и прежний CombatDecisionContext.Create
@@ -97,11 +157,11 @@ namespace Sinbinder.AOS
             // в неподвижности — двадцать ходов, ноль урона, «победа».
             var context = AutoBattleContext.Create(warrior, allies, foes);
             var action = resolver.Decide(warrior, context);
-            Execute(warrior, action, foes, allies, record);
+            Execute(warrior, action, foes, allies, record, round);
         }
 
         private static void Execute(Warrior warrior, ActionType action,
-            List<Warrior> foes, List<Warrior> allies, BattleRecord record)
+            List<Warrior> foes, List<Warrior> allies, BattleRecord record, int round)
         {
             var evt = new BattleEvent
             {
@@ -109,6 +169,7 @@ namespace Sinbinder.AOS
                 ActorName = warrior.DisplayName,
                 ActorGender = warrior.Gender,
                 Action = action,
+                Round = round,
             };
 
             switch (action)
@@ -121,10 +182,18 @@ namespace Sinbinder.AOS
                                      .OrderBy(e => e.HP).FirstOrDefault();
                     if (target != null)
                     {
-                        float dmg = warrior.Attack;
-                        target.TakeDamage(dmg);
-                        evt.TargetId = target.Id;
-                        evt.DamageDealt = dmg;
+
+                        float before=target.HP;
+                        bool wasAlive=!target.IsDead;
+                        target.TakeDamage(warrior.Attack);
+                        evt.TargetId=target.Id;
+                        evt.TargetName=target.DisplayName;
+                        evt.TargetHealthAfter=target.HP;
+                        // Damageable and combat armour may absorb part or
+                        // all of the attempted hit. Record the ACTUAL loss.
+                        evt.DamageDealt=ExpeditionCombatFacts.ActualDamage(before,target.HP);
+                        evt.Resolved=evt.DamageDealt>0f;
+                        evt.TargetKilled=wasAlive && target.IsDead;
                     }
                     break;
                 }
@@ -136,9 +205,14 @@ namespace Sinbinder.AOS
                                      .OrderBy(a => a.HP).FirstOrDefault();
                     if (ally != null)
                     {
+
+                        float before=ally.HP;
                         ally.Heal(5f);
-                        evt.TargetId = ally.Id;
-                        evt.HealDealt = 5f;
+                        evt.TargetId=ally.Id;
+                        evt.TargetName=ally.DisplayName;
+                        evt.TargetHealthAfter=ally.HP;
+                        evt.HealDealt=ExpeditionCombatFacts.ActualHealing(before,ally.HP);
+                        evt.Resolved=evt.HealDealt>0f;
                     }
                     break;
                 }
@@ -171,12 +245,22 @@ namespace Sinbinder.AOS
                         foes.Remove(target);
                         allies.Add(target);
 
-                        evt.TargetId = target.Id;
+
+                        evt.TargetId=target.Id;
+                        evt.TargetName=target.DisplayName;
+                        evt.TargetHealthAfter=target.HP;
+                        evt.Resolved=true;
                     }
                     break;
                 }
 
                 case ActionType.Flee:
+                    // With no 3D position to flee to, withdrawal removes the
+                    // fighter from this encounter. They remain alive and can
+                    // return home, but can no longer attack or be targeted.
+                    evt.Resolved = allies.Remove(warrior);
+                    break;
+
                 case ActionType.Loot:
                 case ActionType.Idle:
                     // Ход записан действием: пересказ (Crypt/Retelling)

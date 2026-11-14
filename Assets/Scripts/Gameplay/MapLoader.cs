@@ -27,6 +27,12 @@ namespace Sinbinder.Gameplay
 
         void Awake()
         {
+            // This scene is a dedicated, reproducible REAL-gameplay QA map.
+            // All existing MapLoader/Warrior/AOS systems remain intact.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                == "Multiplayer_Test")
+                MultiplayerTestMap.Choose();
+
             var map = MapSession.Map;
             // Пакетный проход обучения (TugSceneBuilder.TutorialRun): «-tugTutorial».
             if (map == null && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugTutorial") >= 0)
@@ -179,6 +185,18 @@ namespace Sinbinder.Gameplay
                 var at = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * new Vector3(0f, 0.12f, 1.5f);
                 Rival(i, level, at, Quaternion.Euler(0f, c.Yaw, 0f));
             }
+
+            // Opt-in real-world networking integration probe: it registers
+            // actual live Warrior objects with MatchAuthority and exercises
+            // the server-tick bridge. It does not change single-player
+            // gameplay, and is disabled unless explicitly requested.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                    == "Multiplayer_Test" &&
+                (System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-probe") >= 0 ||
+                 System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-host") >= 0))
+                gameObject.AddComponent<Sinbinder.Multiplayer.ServerWorldProbe>();
         }
 
         /// <summary>Тело Греховода-ИИ: скелет, как Греховод игрока; решает не душа, а его ум (RivalLord).</summary>

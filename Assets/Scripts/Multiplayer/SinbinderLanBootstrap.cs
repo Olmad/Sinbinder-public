@@ -1,0 +1,588 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Sinbinder.Multiplayer
+{
+    /// <summary>
+    /// Zero-scene-setup LAN entry point. The isolated arena deliberately
+    /// disables (and later restores) the current scene's root objects.
+    /// Nothing in the single-player gameplay classes is modified.
+    /// </summary>
+    public sealed class SinbinderLanBootstrap : MonoBehaviour
+    {
+        private static SinbinderLanBootstrap _instance;
+
+        private LanRoomServer _server;
+        private LanRoomClient _client;
+        private LanWorldAutoVerifier _verification;
+        private bool _verifyClient;
+        private readonly List<GameObject> _hiddenRoots = new List<GameObject>();
+        private List<LanServerBookmark> _savedServers =
+            new List<LanServerBookmark>();
+        private int _selectedSavedServer = -1;
+        private readonly List<Material> _temporaryMaterials = new List<Material>();
+        private readonly Dictionary<long, Transform> _worldProxies =
+            new Dictionary<long, Transform>();
+        private readonly Dictionary<NetworkActorRole, Material> _worldProxyMaterials =
+            new Dictionary<NetworkActorRole, Material>();
+        private readonly List<long> _expiredWorldProxies = new List<long>();
+        private long _renderedWorldFrame;
+        private Sinbinder.Gameplay.SelectionManager _pausedSelection;
+        private GameObject _arena;
+        private Camera _camera;
+        private Transform _pawn1;
+        private Transform _pawn2;
+        private bool _open;
+        private bool _arenaActive;
+        private string _address = "127.0.0.1";
+        private string _portText = "7777";
+        private string _notice = "";
+        private string _gameNotice = "";
+        private bool _dedicated;
+        private bool _autoReady;
+        private bool _launchHost;
+        private string _launchConnect;
+        private bool _launchMechanicsMap;
+        private bool _openMechanicsMap;
+        private float _nextAutoReconnect;
+        private int _autoReconnectAttempts;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Install()
+        {
+            if (_instance != null) return;
+            var go = new GameObject("Sinbinder LAN (автозапуск интерфейса)");
+            DontDestroyOnLoad(go);
+            _instance = go.AddComponent<SinbinderLanBootstrap>();
+        }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+            _server = new LanRoomServer();
+            _client = new LanRoomClient();
+            _savedServers = LanServerBookmarks.Load();
+            _client.Received += packet =>
+            {
+                if (_autoReady && packet.type == "welcome") _client.Ready();
+                if (packet.type == "gameAccepted")
+                    _gameNotice = "Игровой приказ #" + packet.commandId +
+                        " принят; исполнение на тике " + packet.executeTick;
+                else if (packet.type == "gameRejected")
+                    _gameNotice = "Приказ #" + packet.commandId +
+                        " отклонён сервером: " + packet.reason;
+                else if (packet.type == "gameResolved")
+                    _gameNotice = "Приказ #" + packet.commandId +
+                        ": " + packet.reason;
+            };
+            SceneManager.activeSceneChanged += OnSceneChanged;
+
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-port" && i + 1 < args.Length)
+                    _portText = args[++i];
+                else if (args[i] == "-server" || args[i] == "-sinbinder-server" || args[i] == "--sinbinder-server")
+                    _dedicated = true;
+                else if (args[i] == "-lan-host")
+                    _launchHost = true;
+                else if (args[i] == "-lan-connect" && i + 1 < args.Length)
+                    _launchConnect = args[++i];
+                else if (args[i] == "-lan-auto-ready")
+                    _autoReady = true;
+                else if (args[i] == "-mp-verify-client")
+                    _verifyClient = true;
+                else if (args[i] == "-mp-test-map")
+                    _launchMechanicsMap = true;
+            }
+
+            if (_verifyClient)
+            {
+                if (string.IsNullOrEmpty(_launchConnect) || _dedicated ||
+                    _launchMechanicsMap)
+                {
+                    Debug.LogError("[Sinbinder REAL Unity Acceptance] FAIL " +
+                        "-mp-verify-client requires -lan-connect and no test map/server flags");
+                    Application.Quit(1);
+                    return;
+                }
+                _autoReady = true;
+                _verification = new LanWorldAutoVerifier(_client);
+            }
+
+            if (_launchMechanicsMap && !_dedicated)
+            {
+                // Defer scene loading until the first Update, outside Awake
+                // and IMGUI's layout pass.
+                _openMechanicsMap = true;
+                return;
+            }
+
+            if (_dedicated)
+            {
+                if (TryPort(out int port) && _server.Start(port))
+                {
+                    EnterArena();
+                    Debug.Log("[Sinbinder LAN] Dedicated test server listening on TCP " + port);
+                }
+                else Debug.LogError("[Sinbinder LAN] " + (_server.Error ?? "Invalid port"));
+            }
+            else if (_launchHost)
+                StartHost();
+            else if (!string.IsNullOrEmpty(_launchConnect))
+            {
+                _address = _launchConnect;
+                StartClient();
+            }
+        }
+
+        private void OnSceneChanged(Scene previous, Scene next)
+        {
+            // A new main scene invalidates the temporary arena references.
+            if (_arenaActive) Leave();
+        }
+
+        private void Update()
+        {
+            if (_openMechanicsMap)
+            {
+                _openMechanicsMap = false;
+                _open = false;
+                SceneManager.LoadScene("Multiplayer_Test");
+                return;
+            }
+            _server.Pump(Time.unscaledDeltaTime);
+            _client.Pump();
+            _verification?.Tick();
+            if (!_arenaActive || _dedicated) return;
+
+            // A second game window may launch before the host finishes
+            // loading its first Unity scene. Retry command-line joins for
+            // up to a minute instead of permanently failing on the first
+            // refused TCP connection.
+            if (_autoReady && !string.IsNullOrEmpty(_launchConnect) &&
+                !_client.Connected && !_client.Playing &&
+                _autoReconnectAttempts < 30 &&
+                (_client.Status.StartsWith("Ошибка соединения:") ||
+                 _client.Status == "Сервер закрыл соединение") &&
+                Time.realtimeSinceStartup >= _nextAutoReconnect &&
+                TryPort(out int retryPort))
+            {
+                _autoReconnectAttempts++;
+                _nextAutoReconnect = Time.realtimeSinceStartup + 2f;
+                _client.Connect(_address, retryPort);
+            }
+
+            if (_pawn1 != null)
+                _pawn1.position = Vector3.Lerp(_pawn1.position, _client.First, Mathf.Clamp01(12f * Time.unscaledDeltaTime));
+            if (_pawn2 != null)
+                _pawn2.position = Vector3.Lerp(_pawn2.position, _client.Second, Mathf.Clamp01(12f * Time.unscaledDeltaTime));
+
+            RefreshWorldProxies();
+            if (!_client.Playing || _camera == null) return;
+
+            // Diagnostic REAL-Warrior command for the isolated two-crypt map.
+            // The full gameplay view is NOT replicated to LAN clients yet.
+            // F8 moves only the authenticated player's real Lord a short
+            // distance toward the centre of their starting crypt.
+            if (_client.OwnLordActorId > 0 &&
+                !string.IsNullOrEmpty(_client.GameMatchId) &&
+                Input.GetKeyDown(KeyCode.F8))
+            {
+                float destinationZ = _client.PlayerId == 1 ? -90f : 90f;
+                bool sent = _client.OrderGameplay(_client.OwnLordActorId,
+                    NetworkOrderKind.Move, new Vector3(0f, 0f, destinationZ));
+                if (!sent) _gameNotice = "Не удалось отправить игровой приказ";
+            }
+
+            // Right click moves YOUR pawn. Left click and Tab/V belong to
+            // the main game's camera/selection; the arena never steals them.
+            if (Input.GetMouseButtonDown(1) && !PointerOverLanPanel())
+            {
+                Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+                var ground = new Plane(Vector3.up, Vector3.zero);
+                if (ground.Raycast(ray, out float distance))
+                {
+                    Vector3 destination = ray.GetPoint(distance);
+                    _client.Move(destination);
+                }
+            }
+        }
+
+        private bool PointerOverLanPanel()
+        {
+            if (!_open) return false;
+            // IMGUI uses top-left coordinates, Input.mousePosition bottom-left.
+            float height = _arenaActive
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
+                : 310f;
+            Vector3 mouse = Input.mousePosition;
+            float top = Screen.height - 8f;
+            return mouse.x >= Screen.width - 328f && mouse.x <= Screen.width - 8f
+                && mouse.y <= top && mouse.y >= top - height;
+        }
+
+        private void OnGUI()
+        {
+            if (Application.isBatchMode || _dedicated) return;
+            if (!_open)
+            {
+                if (GUI.Button(new Rect(Screen.width - 82, 8, 74, 28), "LAN тест"))
+                    _open = true;
+                return;
+            }
+
+            float height = _arenaActive
+                ? (string.IsNullOrEmpty(_client.GameMatchId) ? 322f : 452f)
+                : 310f;
+            var frame = new Rect(Screen.width - 328, 8, 320, height);
+            GUI.Box(frame, "Sinbinder: сетевой тест");
+            GUILayout.BeginArea(new Rect(frame.x + 12, frame.y + 28, frame.width - 24, frame.height - 37));
+            GUILayout.Label("Тест двух игроков (НЕ сюжетный мультиплеер)");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Адрес", GUILayout.Width(50));
+            _address = GUILayout.TextField(_address, 64);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Порт", GUILayout.Width(50));
+            _portText = GUILayout.TextField(_portText, 5);
+            GUILayout.EndHorizontal();
+
+            if (!_arenaActive)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Запомнить"))
+                {
+                    if (TryPort(out int bookmarkPort) &&
+                        LanServerBookmarks.Add(_address, bookmarkPort))
+                    {
+                        _savedServers = LanServerBookmarks.Load();
+                        _selectedSavedServer = 0;
+                        _notice = "Адрес добавлен в избранное";
+                    }
+                    else _notice = "Укажи правильный IP/имя и порт";
+                }
+                if (_savedServers.Count > 0 && GUILayout.Button("Выбрать"))
+                {
+                    _selectedSavedServer =
+                        (_selectedSavedServer + 1) % _savedServers.Count;
+                    var selected = _savedServers[_selectedSavedServer];
+                    _address = selected.host;
+                    _portText = selected.port.ToString();
+                    _notice = "Избранное: " + selected.name;
+                }
+                if (_selectedSavedServer >= 0 &&
+                    _selectedSavedServer < _savedServers.Count &&
+                    GUILayout.Button("Удалить"))
+                {
+                    var selected = _savedServers[_selectedSavedServer];
+                    LanServerBookmarks.Remove(selected.host, selected.port);
+                    _savedServers = LanServerBookmarks.Load();
+                    _selectedSavedServer = -1;
+                    _notice = "Адрес удалён из избранного";
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            if (!_arenaActive)
+            {
+                if (GUILayout.Button("Карта механик (локально)"))
+                    _openMechanicsMap = true;
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Создать LAN"))
+                    StartHost();
+                if (GUILayout.Button("Подключиться"))
+                    StartClient();
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Label("Игроков: " + _client.Players + "/2; готовы: " + _client.ReadyCount);
+                GUILayout.Label("Ваш номер: " + _client.PlayerId + "; тик: " + _client.Tick);
+                if (_client.ServerMeasuredPingMs > 0f)
+                {
+                    GUILayout.Label("Пинг: " + _client.ServerMeasuredPingMs.ToString("0") +
+                        " мс; джиттер: " + _client.ServerMeasuredJitterMs.ToString("0") + " мс");
+                    GUILayout.Label("Компенсация: " + _client.PingBalanceSetting +
+                        "; доп. задержка приказа: " + _client.FairInputDelayMs + " мс");
+                }
+                GUILayout.BeginHorizontal();
+                GUI.enabled = _client.Connected && _client.PlayerId != 0 && !_client.Playing;
+                if (GUILayout.Button("Готов")) _client.Ready();
+                GUI.enabled = _client.Playing;
+                if (GUILayout.Button("Стоять")) _client.Hold();
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+                if (!_client.Connected && TryPort(out int reconnectPort))
+                {
+                    if (GUILayout.Button("Повторить подключение"))
+                        _client.Connect(_server.Active ? "127.0.0.1" : _address, reconnectPort);
+                }
+                GUILayout.Label("ПКМ по полю: капсула (локальный сетевой тест).");
+                if (!string.IsNullOrEmpty(_client.GameMatchId))
+                {
+                    GUILayout.Label("Реальный сервер: F8 = приказ своему Греховоду");
+                    GUILayout.Label("Видимых серверных воинов: " +
+                        _client.WorldActors.Count + "; тик " + _client.WorldTick);
+                    if (_client.WorldActors.TryGetValue(_client.OwnLordActorId,
+                        out var ownPosition))
+                    {
+                        GUILayout.Label("Мой Греховод: X " +
+                            ownPosition.Position.x.ToString("0.0") + ", Z " +
+                            ownPosition.Position.z.ToString("0.0"));
+                        if (ownPosition.HasHealth)
+                            GUILayout.Label("Здоровье: " +
+                                ownPosition.HP.ToString("0") + "/" +
+                                ownPosition.MaxHP.ToString("0"));
+                    }
+                    GUILayout.Label(_gameNotice);
+                }
+                if (GUILayout.Button("Выйти из теста")) Leave();
+            }
+
+            GUILayout.Label(_client.Connected ? _client.Status : (_notice.Length > 0 ? _notice : _client.Status));
+            if (GUILayout.Button("Свернуть")) _open = false;
+            GUILayout.EndArea();
+        }
+
+        private bool TryPort(out int port)
+        {
+            return int.TryParse(_portText, out port) && port > 0 && port <= 65535;
+        }
+
+        private void StartHost()
+        {
+            _notice = "";
+            if (!TryPort(out int port)) { _notice = "Неверный порт"; return; }
+            if (!_server.Start(port)) { _notice = _server.Error; return; }
+            EnterArena();
+            _client.Connect("127.0.0.1", port);
+            _notice = "Хост открыт на TCP-порту " + port;
+        }
+
+        private void StartClient()
+        {
+            _notice = "";
+            if (!TryPort(out int port)) { _notice = "Неверный порт"; return; }
+            EnterArena();
+            _client.Connect(_address, port);
+        }
+
+        private void EnterArena()
+        {
+            if (_arenaActive) return;
+            _arenaActive = true;
+            _open = true;
+
+            var scene = SceneManager.GetActiveScene();
+            if (scene.IsValid())
+            {
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    if (root == gameObject || !root.activeSelf) continue;
+                    _hiddenRoots.Add(root);
+                    root.SetActive(false);
+                }
+            }
+
+            // SelectionManager is DontDestroyOnLoad and otherwise keeps
+            // consuming right-clicks against the now-inactive game scene.
+            var selection = Sinbinder.Gameplay.SelectionManager.Instance;
+            if (selection != null && selection.isActiveAndEnabled)
+            {
+                _pausedSelection = selection;
+                selection.enabled = false;
+            }
+
+            _arena = new GameObject("Sinbinder LAN: temporary arena");
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.name = "LAN arena floor";
+            floor.transform.SetParent(_arena.transform);
+            floor.transform.localScale = new Vector3(2, 1, 2);
+            SetLayer(floor, 30);
+            Tint(floor, new Color(0.14f, 0.19f, 0.15f));
+
+            // All original scene roots (including their lights) are inactive.
+            // Without a temporary key light the URP/Lit pawns can appear black.
+            var lamp = new GameObject("LAN arena key light");
+            lamp.transform.SetParent(_arena.transform);
+            lamp.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+            var keyLight = lamp.AddComponent<Light>();
+            keyLight.type = LightType.Directional;
+            keyLight.intensity = 1.6f;
+            keyLight.cullingMask = 1 << 30;
+
+            _pawn1 = SpawnPawn("Греховод 1", new Vector3(-3, 0.8f, 0), new Color(0.38f, 0.8f, 0.55f));
+            _pawn2 = SpawnPawn("Греховод 2", new Vector3(3, 0.8f, 0), new Color(0.91f, 0.48f, 0.37f));
+
+            var cam = new GameObject("LAN spectator camera");
+            cam.transform.SetParent(_arena.transform);
+            cam.transform.position = new Vector3(0, 18, -14);
+            cam.transform.LookAt(Vector3.zero);
+            _camera = cam.AddComponent<Camera>();
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = new Color(0.07f, 0.09f, 0.1f);
+            _camera.depth = 100;
+            _camera.cullingMask = 1 << 30;
+            _camera.orthographic = true;
+            _camera.orthographicSize = 12f;
+            _camera.nearClipPlane = 0.1f;
+
+            // The arena is test-only: no scene prefabs, lobby objects or
+            // NetworkObject components are needed.
+        }
+
+        private Transform SpawnPawn(string name, Vector3 pos, Color color)
+        {
+            var pawn = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            pawn.name = name;
+            pawn.transform.SetParent(_arena.transform);
+            pawn.transform.position = pos;
+            pawn.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            SetLayer(pawn, 30);
+            Tint(pawn, color);
+            return pawn.transform;
+        }
+
+        private void RefreshWorldProxies()
+        {
+            if (_arena == null || _client.WorldFrame == _renderedWorldFrame) return;
+            _renderedWorldFrame = _client.WorldFrame;
+            _expiredWorldProxies.Clear();
+            foreach (var old in _worldProxies.Keys)
+                if (!_client.WorldActors.ContainsKey(old))
+                    _expiredWorldProxies.Add(old);
+            foreach (long id in _expiredWorldProxies)
+            {
+                var gone = _worldProxies[id];
+                if (gone != null) Destroy(gone.gameObject);
+                _worldProxies.Remove(id);
+            }
+            foreach (var kv in _client.WorldActors)
+            {
+                if (!_worldProxies.TryGetValue(kv.Key, out var proxy) ||
+                    proxy == null)
+                {
+                    proxy = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
+                    proxy.gameObject.name = "Серверный воин " + kv.Key;
+                    proxy.SetParent(_arena.transform);
+                    proxy.localScale = new Vector3(0.36f, 0.36f, 0.36f);
+                    SetLayer(proxy.gameObject, 30);
+                    // Markers must not intercept test mouse commands.
+                    var collider = proxy.GetComponent<Collider>();
+                    if (collider != null)
+                    {
+                        collider.enabled = false;
+                        Destroy(collider);
+                    }
+                    var renderer = proxy.GetComponent<Renderer>();
+                    if (renderer != null)
+                        renderer.sharedMaterial = MaterialForWorldRole(kv.Value.Role);
+                    _worldProxies[kv.Key] = proxy;
+                }
+                // 240m real map compressed to a 20m diagnostic plane:
+                // this is NOT rendering the replicated full game world.
+                var world = kv.Value.Position;
+                proxy.position = new Vector3(world.x / 12f, 0.42f,
+                    world.z / 12f);
+            }
+        }
+
+        private Material MaterialForWorldRole(NetworkActorRole role)
+        {
+            if (_worldProxyMaterials.TryGetValue(role, out var material))
+                return material;
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) shader = Shader.Find("Standard");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) return null;
+            material = new Material(shader);
+            Color color = role == NetworkActorRole.Lord
+                ? new Color(0.16f, 0.74f, 0.96f)
+                : role == NetworkActorRole.NeutralWarrior
+                    ? new Color(0.91f, 0.76f, 0.34f)
+                    : new Color(0.58f, 0.82f, 0.60f);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            else if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+            _temporaryMaterials.Add(material);
+            _worldProxyMaterials[role] = material;
+            return material;
+        }
+
+        private static void SetLayer(GameObject obj, int layer)
+        {
+            obj.layer = layer;
+            foreach (Transform child in obj.transform)
+                SetLayer(child.gameObject, layer);
+        }
+
+        private void Tint(GameObject obj, Color color)
+        {
+            var renderer = obj.GetComponent<Renderer>();
+            if (renderer == null) return;
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) shader = Shader.Find("Standard");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) return;
+            var material = new Material(shader);
+            // URP Lit uses _BaseColor, while Standard/Unlit shaders use
+            // _Color. Material.color alone is not portable across them.
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            else if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+            renderer.material = material;
+            _temporaryMaterials.Add(material);
+        }
+
+        private void Leave()
+        {
+            _verification?.Dispose();
+            _verification = null;
+            _client.Disconnect();
+            _server.Stop();
+            if (_arena != null) Destroy(_arena);
+            _arena = null;
+            foreach (var material in _temporaryMaterials)
+                if (material != null) Destroy(material);
+            _temporaryMaterials.Clear();
+            _worldProxies.Clear();
+            _worldProxyMaterials.Clear();
+            _expiredWorldProxies.Clear();
+            _renderedWorldFrame = 0;
+            _pawn1 = null;
+            _pawn2 = null;
+            _camera = null;
+            foreach (var root in _hiddenRoots)
+                if (root != null) root.SetActive(true);
+            _hiddenRoots.Clear();
+            if (_pausedSelection != null)
+            {
+                _pausedSelection.enabled = true;
+                _pausedSelection = null;
+            }
+            _arenaActive = false;
+            _autoReconnectAttempts = 30;
+            _notice = "";
+            _gameNotice = "";
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance != this) return;
+            SceneManager.activeSceneChanged -= OnSceneChanged;
+            Leave();
+            if (_instance == this) _instance = null;
+        }
+    }
+}

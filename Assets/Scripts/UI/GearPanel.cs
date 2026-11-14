@@ -353,17 +353,18 @@ namespace Sinbinder.UI
             // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.
             if (RatBanner.Reachable) { _prompt.text = RatBanner.Prompt; return; }
 
+            // F belongs to the cards whenever the player stands at that table,
+            // even if the reticle happens to point at the card-playing warrior.
+            // Otherwise the HUD promised "talk" while input opened the cards.
+            if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
+            {
+                _prompt.text = Loc.T("F — карты: смотреть или сыграть");
+                return;
+            }
+
             var w = LookedAt();
             if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
 
-            // У стола с картами F — его (CardTable), но сказать об этом некому было:
-            // автор, 21.10: «пропало взаимодействие с картами».
-            if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
-            {
-                _prompt.text = Gameplay.CardTable.Instance.Players().Count > 0
-                    ? Loc.T("F — подсесть к картам") : Loc.T("За картами никого");
-                return;
-            }
             _prompt.text = Best(out var target) ? target.Prompt : "";
         }
 
@@ -399,7 +400,13 @@ namespace Sinbinder.UI
             if (shut != null) Offer(Gaze.Miss(shut.transform), Loc.T("F — открыть сундук Марги"), shut.Open);
             var chest = TrophyChest.Reachable();
             if (chest != null) Offer(Gaze.Miss(chest.transform), Loc.T("F — сундук Марги"), () => OpenChest(chest));
-            foreach (var sack in FallenBag.InReach()) Offer(Gaze.Miss(sack.transform), sack.Prompt, sack.Take);
+            foreach (var sack in FallenBag.InReach())
+                Offer(Mathf.Min(Gaze.Miss(sack.transform),
+                    Gaze.Miss(sack.transform.position + Vector3.up * 0.5f, 0.75f)),
+                    sack.Prompt, sack.Take);
+            // Expedition gate/objective must compete fairly with nearby
+            // bags and conversations; a single F press selects one action.
+            PersonalExpedition.OfferInteractions(Offer);
             var pot = Cauldron.Nearest();
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var well = CampWell.Nearest();

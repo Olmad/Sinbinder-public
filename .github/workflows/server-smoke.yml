@@ -1,0 +1,66 @@
+name: LAN server compile and smoke
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+  pull_request:
+    paths:
+      - "Tools/server/**"
+      - ".github/workflows/server-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet-server:
+    name: Build .NET 8 server and test two real clients
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Verify multiplayer map and altar assets
+        run: python3 Tools/server/check_map_assets.py
+      - name: Compile .NET server
+        run: dotnet build Tools/server/Sinbinder.Server.csproj -c Release
+      - name: Compile actual Unity LAN source files against test stubs
+        run: dotnet build Tools/server/UnityLanHarness/UnityLanHarness.csproj -c Release
+      - name: Exercise actual Unity networking source (transport, room, client)
+        run: dotnet run --no-build -c Release --project Tools/server/UnityLanHarness/UnityLanHarness.csproj
+      - name: Compile Python smoke tests
+        run: python3 -m py_compile Tools/server/smoke_test.py Tools/server/unity_smoke_test.py Tools/server/adversarial_test.py
+      - name: Run live TCP smoke tests
+        shell: bash
+        run: |
+          dotnet run --no-build -c Release --project Tools/server/Sinbinder.Server.csproj -- --bind 127.0.0.1 --port 7777 > /tmp/sinbinder-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          python3 - <<'PY'
+          import socket, time
+          for _ in range(80):
+              try:
+                  with socket.create_connection(("127.0.0.1", 7777), timeout=0.3):
+                      break
+              except OSError:
+                  time.sleep(0.2)
+          else:
+              raise SystemExit("Server did not start")
+          PY
+          sleep 1
+          if ! timeout 30s python3 Tools/server/unity_smoke_test.py; then
+              cat /tmp/sinbinder-server.log
+              exit 1
+          fi
+          sleep 1
+          if ! timeout 30s python3 Tools/server/smoke_test.py; then
+              cat /tmp/sinbinder-server.log
+              exit 1
+          fi
+          sleep 1
+          if ! timeout 30s python3 Tools/server/adversarial_test.py; then
+              cat /tmp/sinbinder-server.log
+              exit 1
+          fi

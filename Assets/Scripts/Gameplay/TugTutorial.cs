@@ -23,7 +23,7 @@ namespace Sinbinder.Gameplay
             (Loc.N("Ничьи воины"),
              Loc.N("Воины на карте — ничьи. Дойди до деревни и наведи мышь на любого: первая строка подсказки — как он к тебе. Слушаются тех, к кому верны.")),
             (Loc.N("Приказ"),
-             Loc.N("Выдели воина левой кнопкой и прикажи идти правой. Он может отказать: голосует сам, верностью к тебе — и в журнале будет сказано почему.")),
+             Loc.N("Выдели нейтрального воина левой кнопкой и прикажи идти правой. Для перехода нужен принятый приказ. Воин может отказать: проверь причину в журнале, попробуй другого воина или иной приказ.")),
             (Loc.N("Расположить"),
              Loc.N("Каждый грех ценит своё. Жадному — монета: подойди, посмотри на него, F. Гордому — приказ ему одному. Унылому — стоять на месте. Добейся, чтобы кто-нибудь стал тебе верен.")),
             (Loc.N("Свои люди"),
@@ -38,7 +38,24 @@ namespace Sinbinder.Gameplay
              Loc.N("Греховод на севере проснулся. Веди верных на его склеп: правой кнопкой по двери, потом по трону. Разрушь его трон.")),
         };
 
+        // Короткий глагол виден всегда. Длинная причина открывается F1:
+        // девять лекций подряд не помогают человеку найти нужную кнопку.
+        private static readonly string[] Objectives =
+        {
+            Loc.N("Откройте дверь своего склепа клавишей F."),
+            Loc.N("Наведите мышь на нейтрального воина у деревни."),
+            Loc.N("Добейтесь принятого приказа: ЛКМ — выбор, ПКМ — приказ. При отказе попробуйте другого воина."),
+            Loc.N("Добейтесь верности одного нейтрального воина."),
+            Loc.N("Соберите трёх верных соратников."),
+            Loc.N("Отразите учебное нападение охотников."),
+            Loc.N("Поднимите нового воина на алтаре склепа."),
+            Loc.N("Постройте сигнальный костёр при помощи верных."),
+            Loc.N("Разрушьте чужой трон и выиграйте учебный матч.")
+        };
+
         private int _step = -1;
+        private bool _showDetails;
+        private bool _hintOffered;
         private float _since, _doneAt = -1f;
         private int _raisedBefore;
         private bool _released;
@@ -67,10 +84,22 @@ namespace Sinbinder.Gameplay
         void Update()
         {
             if (_step < 0 || _step >= Lessons.Length) return;
+            if (Input.GetKeyDown(KeyCode.F1))
+            {
+                _showDetails = !_showDetails;
+                RefreshInstruction();
+            }
             if (_doneAt > 0f)
             {
                 if (Time.unscaledTime - _doneAt > 1.6f) Next();
                 return;
+            }
+            // Новичок мог не заметить F1. После 45 секунд без результата
+            // открываем объяснение ОДИН раз, не перескакивая урок.
+            if (!_hintOffered && Time.time - _since > 45f)
+            {
+                _hintOffered = true;
+                if (!_showDetails) { _showDetails = true; RefreshInstruction(); }
             }
             if (_step == 1) WatchAttitude();
             if (Done()) { _doneAt = Time.unscaledTime; _title.text = Loc.F("Урок {0} из {1} — готово", _step + 1, Lessons.Length); }
@@ -127,8 +156,24 @@ namespace Sinbinder.Gameplay
             if (_step == 8) RivalLord.Hold = false;
 
             _title.text = Loc.F("Урок {0} из {1}: {2}", _step + 1, Lessons.Length, Loc.T(Lessons[_step].title));
-            _body.text = Loc.T(Lessons[_step].text);
+            _showDetails = false;
+            _hintOffered = false;
+            RefreshInstruction();
             Debug.Log($"[ОБУЧЕНИЕ] урок {_step + 1}: {Lessons[_step].title}");
+        }
+
+        private void RefreshInstruction()
+        {
+            if (_step < 0 || _step >= Lessons.Length || _body == null || _panel == null) return;
+            _body.text = _showDetails
+                ? Loc.T(Lessons[_step].text) + "\n" + Loc.T("F1 — свернуть объяснение")
+                : Loc.T(Objectives[_step]) + "\n" + Loc.T("F1 — объяснить подробнее");
+            // Длинный контекст не запихиваем в прежние 84 пикселя:
+            // при открытии объяснения панель подрастает вверх.
+            var panelRect = _panel.GetComponent<RectTransform>();
+            panelRect.sizeDelta = new Vector2(820f, _showDetails ? 245f : 132f);
+            var bodyRect = _body.GetComponent<RectTransform>();
+            bodyRect.sizeDelta = new Vector2(-36f, _showDetails ? 178f : 84f);
         }
 
         /// <summary>Перейти к уроку сразу (прогон обучения).</summary>
@@ -148,7 +193,8 @@ namespace Sinbinder.Gameplay
                 return;
             }
             if (_attitudeTarget != hovered) { _attitudeTarget = hovered; _attitudeReadFor = 0f; }
-            _attitudeReadFor += Time.unscaledDeltaTime;
+            // Чтение отношения не засчитывается во время паузы.
+            _attitudeReadFor += Time.deltaTime;
             if (_attitudeReadFor >= AttitudeReadSeconds) _attitudeRead = true;
         }
 

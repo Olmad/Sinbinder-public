@@ -1,0 +1,104 @@
+name: Expedition collection integrity
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs"
+      - "Assets/Scripts/AOS Engine/MemoryModule.cs"
+      - "Assets/Scripts/AOS Engine/MissionContext.cs"
+      - "Assets/Scripts/Gameplay/RivalLord.cs"
+      - "Assets/Scripts/Crypt/Retelling.cs"
+      - "Assets/Scripts/AOS Engine/AutoBattleResolver.cs"
+      - "Assets/Scripts/AOS Engine/**"
+      - "Assets/Scripts/Gameplay/SquadOrders.cs"
+      - "Assets/Scripts/Core/LocationManager.cs"
+      - "Assets/Scripts/Core/MemorySeed.cs"
+      - "Assets/Scripts/Core/Soul/**"
+      - "Assets/Scripts/AOS Engine/BattleRecord.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs"
+      - "Assets/Scripts/Gameplay/Expedition.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/UI/MissionMapUI.cs"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
+      - "Assets/Scripts/Gameplay/SoulHarvester.cs"
+      - "Assets/Scripts/Gameplay/MapEvents.cs"
+      - "Assets/Scripts/Crypt/MissionBoard.cs"
+      - "Assets/Scripts/Crypt/CryptMap.cs"
+      - "Assets/Scripts/Crypt/ExpeditionWorldClock.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs"
+      - "Assets/Scripts/Crypt/MissionCatalog.cs"
+      - "Tools/expeditions/**"
+      - ".github/workflows/expedition-integrity.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs"
+      - "Assets/Scripts/Gameplay/RivalLord.cs"
+      - "Assets/Scripts/Crypt/Retelling.cs"
+      - "Assets/Scripts/AOS Engine/AutoBattleResolver.cs"
+      - "Assets/Scripts/AOS Engine/**"
+      - "Assets/Scripts/Gameplay/SquadOrders.cs"
+      - "Assets/Scripts/Core/LocationManager.cs"
+      - "Assets/Scripts/Core/MemorySeed.cs"
+      - "Assets/Scripts/Core/Soul/**"
+      - "Assets/Scripts/AOS Engine/BattleRecord.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs"
+      - "Assets/Scripts/Gameplay/Expedition.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/UI/MissionMapUI.cs"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
+      - "Assets/Scripts/Gameplay/SoulHarvester.cs"
+      - "Assets/Scripts/Gameplay/MapEvents.cs"
+      - "Assets/Scripts/Crypt/MissionBoard.cs"
+      - "Assets/Scripts/Crypt/CryptMap.cs"
+      - "Assets/Scripts/Crypt/ExpeditionWorldClock.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs"
+      - "Assets/Scripts/Crypt/MissionCatalog.cs"
+      - "Tools/expeditions/**"
+      - ".github/workflows/expedition-integrity.yml"
+permissions:
+  contents: read
+jobs:
+  expedition-collection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/BoardShimChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/RealAosShimChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/BoardRealAosChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
+      - run: python3 Tools/expeditions/check_replay_wiring.py
+      - run: python3 Tools/expeditions/check_map_wiring.py
+      - run: python3 Tools/expeditions/check_wiring.py

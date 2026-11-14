@@ -30,9 +30,6 @@ namespace Sinbinder.UI
         private Warrior _shown;
         private float _nextRefresh;
 
-        // Строка весов — на решение, а не на кадр: голоса считаются заново, только когда воин решил снова.
-        private DecisionContext _scalesFor;
-        private string _scales;
 
         /// <summary>
         /// Над кем подсказка сейчас. Урок отказа (<see cref="Lesson"/>) ждёт,
@@ -52,8 +49,11 @@ namespace Sinbinder.UI
         /// <summary>Где «мышь»: у прогона — у груди воина, в игре — сама мышь.</summary>
         private Vector2 Pointer()
         {
-            if (Pinned == null || _cam == null) return Input.mousePosition;
+            if (Pinned == null || Pinned.IsDead || _cam == null) return Input.mousePosition;
             Vector3 p = _cam.WorldToScreenPoint(Pinned.transform.position + Vector3.up * 1.2f);
+            // A pinned warrior behind the active camera has no meaningful
+            // on-screen anchor. Avoid pinning the note to a mirrored projection.
+            if (p.z <= 0f) return Input.mousePosition;
             return new Vector2(p.x, p.y);
         }
 
@@ -67,14 +67,30 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // A modal window owns the screen: never show a world tooltip above it.
+            // Hide also clears Hovered, so tutorial reading cannot advance unseen.
+            if (Modal.Any) { Hide(); return; }
+
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) { Hide(); return; }
+
+            // The selected-unit strip owns its screen area. Do not raycast
+            // through it and mistake a warrior underneath for a hover/read.
+            // Keep scripted pinned captures independent of the mouse position.
+            if ((Pinned == null || Pinned.IsDead) && SelectedUnitPanelUI.Covers(Input.mousePosition))
+            { Hide(); return; }
 
             // Трон и дверь склепа (автор, 27.10: «нельзя посмотреть трон на количество здоровья,
             // то же самое с дверью склепа»): прочность — при любой ступени прозрачности: это вещь,
             // а не чьи-то мысли.
-            var sturdy = SturdyUnderCursor();
-            if (sturdy != null) { ShowSturdy(sturdy); return; }
+            // Scripted diagnostic capture must remain anchored to its warrior,
+            // even when the physical mouse happens to hover a sturdy object.
+            // Normal gameplay still gives sturdy objects first priority.
+            if (Pinned == null || Pinned.IsDead)
+            {
+                var sturdy = SturdyUnderCursor();
+                if (sturdy != null) { ShowSturdy(sturdy); return; }
+            }
 
             // Вторая ступень прозрачности. Игрок, выбравший только значки,
             // причин не спрашивает — и подсказка ему не мешает.
@@ -99,8 +115,45 @@ namespace Sinbinder.UI
             // Подсказку можно считать прочитанной лишь когда панель действительно видна.
             Hovered = _panel != null && _panel.gameObject.activeInHierarchy ? _shown : null;
 
-            if (_panel != null)
-                _panel.position = Pointer() + _offset;
+            PlaceNearPointer();
+        }
+
+        /// <summary>
+        /// The hover note used to disappear beyond the screen edge near the
+        /// right and bottom borders. Clamp the same overlay-space position,
+        /// respecting the prefab's pivot and actual canvas scaling.
+        /// </summary>
+        private void PlaceNearPointer(bool actualMouse = false)
+        {
+            if (_panel == null) return;
+            // Object tooltips must follow the hovered object, not a pinned warrior.
+            Vector2 pointer = actualMouse ? (Vector2)Input.mousePosition : Pointer();
+            Vector2 at = pointer + _offset;
+            Vector2 size = _panel.rect.size;
+            Vector3 scale = _panel.lossyScale;
+            float width = size.x * Mathf.Abs(scale.x);
+            float height = size.y * Mathf.Abs(scale.y);
+            const float margin = 12f;
+            float left = width * _panel.pivot.x;
+            float right = width * (1f - _panel.pivot.x);
+            float bottom = height * _panel.pivot.y;
+            float top = height * (1f - _panel.pivot.y);
+
+            // When there is room on the opposite side, flip instead of
+            // clamping the tooltip directly over the hovered unit/cursor.
+            // Keep the original offsets and panel pivot in screen pixels.
+            if (at.x + right + margin > Screen.width &&
+                pointer.x - Mathf.Abs(_offset.x) - width - margin >= 0f)
+                at.x = pointer.x - Mathf.Abs(_offset.x) - right;
+            if (at.y - bottom - margin < 0f &&
+                pointer.y + Mathf.Abs(_offset.y) + height + margin <= Screen.height)
+                at.y = pointer.y + Mathf.Abs(_offset.y) + bottom;
+
+            at.x = Mathf.Clamp(at.x, left + margin,
+                Mathf.Max(left + margin, Screen.width - right - margin));
+            at.y = Mathf.Clamp(at.y, bottom + margin,
+                Mathf.Max(bottom + margin, Screen.height - top - margin));
+            _panel.position = new Vector3(at.x, at.y, _panel.position.z);
         }
 
         private Warrior WarriorUnderCursor()
@@ -139,35 +192,79 @@ namespace Sinbinder.UI
             Tint(sturdy.Mine ? new Color(0.85f, 0.70f, 0.35f) : new Color(0.55f, 0.55f, 0.58f));
             if (_panel == null) return;
             _panel.gameObject.SetActive(true);
-            _panel.position = Pointer() + _offset;
+            PlaceNearPointer(actualMouse: true);
         }
 
         private void Refresh(Warrior warrior)
         {
             var wrapper = warrior.GetComponent<AOSWarriorWrapper>();
+            // New command, old AOS context: don't attribute the old verdict to it.
+            bool waitingForCommand = warrior.HasCommand &&
+                (wrapper == null || !wrapper.HasCurrentCommandDecision);
             bool hasDecision = wrapper != null && wrapper.LastContext != null;
             bool isNeutralInMatch = warrior.Team == Team.Neutral && Lords.Active;
             // У только появившегося ничьего ещё нет решения ИИ, но отношение к нему уже есть.
             // Без этой ветки подсказка не появлялась и второй урок мог стать непроходимым.
-            if (!hasDecision && !isNeutralInMatch) { Hide(); return; }
+            if (!hasDecision && !isNeutralInMatch && !waitingForCommand) { Hide(); return; }
 
             if (_text != null)
             {
-                _text.text = hasDecision
-                    ? PhraseGenerator.Explain(warrior, wrapper.LastContext, wrapper.LastDecisionDetail)
-                    : string.Empty;
+                // Explain what the thirteen voices genuinely voted for.
+                // If the warrior was persuaded, tell the player separately
+                // that the external whisper changed what actually happened.
+                var actualVote = hasDecision && wrapper.LastWhisperCompelled
+                    ? wrapper.NaturalDecisionDetail : hasDecision ? wrapper.LastDecisionDetail : default;
+                _text.text = waitingForCommand
+                    ? Core.Loc.T("Новый приказ отдан. Ожидаем решения воина.")
+                    : hasDecision
+                        ? PhraseGenerator.Explain(warrior, wrapper.LastContext, actualVote)
+                        : string.Empty;
                 // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
-                if (hasDecision)
+                if (hasDecision && !waitingForCommand)
                 {
-                    if (_scalesFor != wrapper.LastContext)
+                    // A context alone is not a complete visual cache key: hovering
+                    // another warrior (or compelling this verdict) must not reuse
+                    // the previous warrior's displayed voice balance.
+                    // The verdict may change while the context object and warrior stay
+                    // the same. Refresh from the current vote, not a stale UI cache.
+                    // Refresh() already runs at most once per 0.35 seconds.
+                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
+                    if (!string.IsNullOrEmpty(scales)) _text.text += "\n" + scales;
+                    if (wrapper.LastWhisperCompelled)
+                        _text.text += "\n" + Core.Loc.T(
+                            "Поддался шёпоту: согласился с текущим приказом вопреки голосованию души.");
+
+                    // После отказа игроку нужен следующий осмысленный шаг,
+                    // а не ещё один процент послушания. Весь текст исходит
+                    // из Counterfactual и положения, не гарантирует результата.
+                    if (warrior.HasCommand &&
+                        (wrapper.LastDecisionDetail.RefusedCommand || wrapper.LastDecisionDetail.Hesitated))
                     {
-                        _scalesFor = wrapper.LastContext;
-                        _scales = SoulCourt.ScalesLine(warrior, wrapper.LastDecisionDetail, wrapper.LastContext);
+                        string advice = AOSDecisionAdvice.Next(wrapper.LastDecisionDetail, wrapper.LastContext);
+                        if (!string.IsNullOrEmpty(advice))
+                            _text.text += "\n" + Core.Loc.T("Можно попробовать: ") + advice;
                     }
-                    if (!string.IsNullOrEmpty(_scales)) _text.text += "\n" + _scales;
+                    else if (warrior.HasCommand &&
+                             AOSDecisionAdvice.Fulfilled(wrapper.LastDecisionDetail, wrapper.LastContext) &&
+                             wrapper.LastDecisionDetail.Action != ActionType.ObeyCommand)
+                    {
+                        _text.text += "\n" + Core.Loc.T("Решение совпало с приказом по собственной воле.");
+                    }
+                }
+                // После суда тот же язык работает на поле боя: герой может
+                // увидеть, какое искушение принёс конкретный предмет, не
+                // возвращаясь в полный суд и не открывая панель снаряжения.
+                int shownTemptations = 0;
+                foreach (var item in warrior.Carried)
+                {
+                    if (item == null || Mathf.Approximately(item.TemptationValue, 0f)) continue;
+                    string effect = SquadGear.Effect(item);
+                    _text.text += "\n" + Core.Loc.F("{0}: {1}", Core.Loc.Name(item.Name), effect);
+                    if (++shownTemptations >= 2) break;
                 }
                 if (isNeutralInMatch)
-                    _text.text = Favor.Attitude(warrior) + (hasDecision ? "\n" + _text.text : string.Empty);
+                    _text.text = Favor.Attitude(warrior) +
+                        (hasDecision || waitingForCommand ? "\n" + _text.text : string.Empty);
                 // Титулованный или легенда — дар словами (Gift).
                 if (Lords.Active && warrior.TryGetComponent<Gift>(out var gift))
                 {
@@ -177,7 +274,11 @@ namespace Sinbinder.UI
                 }
             }
 
-            if (warrior.Soul != null) Tint(SinColor(warrior.Soul.Sin));
+            // Never carry the previous warrior's sin colour into a tooltip
+            // for a warrior whose soul has not been revealed or assigned.
+            Tint(warrior.Soul != null
+                ? SinColor(warrior.Soul.Sin)
+                : new Color(0.55f, 0.55f, 0.58f));
 
             if (_panel != null) _panel.gameObject.SetActive(true);
         }

@@ -42,9 +42,42 @@ namespace Sinbinder.Gameplay
 
         public static void Reset() => Set(SquadStrategy.Balanced);
 
-        /// <summary>Поправки текущей установки. Пусто для Balanced.</summary>
+        // Offscreen AOS sessions need their own strategy without replacing
+        // the player's current tactical setting or notifying UI listeners.
+        // Unity gameplay runs this resolver on the main thread. Nesting is
+        // supported so independent expeditions cannot leak their strategy.
+        private static SquadStrategy? _simulationStrategy;
+
+        private sealed class SimulationScope : System.IDisposable
+        {
+            private readonly SquadStrategy? _previous;
+            private bool _disposed;
+
+            public SimulationScope(SquadStrategy strategy)
+            {
+                _previous=_simulationStrategy;
+                _simulationStrategy=strategy;
+            }
+
+            public void Dispose()
+            {
+                if(_disposed) return;
+                _disposed=true;
+                _simulationStrategy=_previous;
+            }
+        }
+
+        /// <summary>
+        /// Temporarily change ONLY the AOS scoring strategy, not the
+        /// player's tactical order, saved preference or Changed event.
+        /// Must be used with a using/finally block.
+        /// </summary>
+        public static System.IDisposable UseForSimulation(SquadStrategy strategy)
+            => new SimulationScope(strategy);
+
+        /// <summary>Read by AOS votes. Outside simulation uses the player's current order.</summary>
         public static List<StrategyModifier> CurrentModifiers()
-            => StrategyDatabase.GetModifiers(Current);
+            => StrategyDatabase.GetModifiers(_simulationStrategy ?? Current);
 
         // ---------- слова для игрока ----------
         // Ни одной цифры: игрок видит склонность, а не бонус.

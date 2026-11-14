@@ -33,10 +33,12 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _allowedCorridorHalfWidth = 8f;
         [SerializeField] private string _campScene = "Prologue_Camp";
 
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, Standoff, Deciding, Temptation, Battle, Retest, FirstPerson, WarriorMode, DrawWeapon, Practice, Jars, CommanderPractice, BowFind, BowEquip, BowShot, BowTemper, Rescue, CompareSouls, EmotionShift, Puzzle, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
+        /// <summary>Разрешено отдать настоящий приказ по подвесной мишени.</summary>
+        public static bool BowShotAvailable => Instance != null && Instance._stage == Stage.BowShot;
 
         /// <summary>
         /// Весы до приказа во сне — только на проверке тем же приказом (63-TEACHING, п. 7):
@@ -44,10 +46,16 @@ namespace Sinbinder.Gameplay
         /// целится приказом, весы над воином отвечают до щелчка. До суда — нет: там весы
         /// ещё никто не объяснил.
         /// </summary>
-        public static bool Foreseeing => Instance != null && Instance._stage == Stage.Retest;
+        public static bool Foreseeing => Instance != null && (Instance._stage == Stage.Retest || Instance._stage == Stage.CompareSouls || Instance._stage == Stage.EmotionShift);
 
         /// <summary>Поднятый — для прогона.</summary>
         public Warrior Zombie => _zombie;
+        public Warrior SealCompanion => _sealCompanion;
+        public Warrior ContrastMerciful => _contrastMerciful;
+        public Warrior ContrastProud => _contrastProud;
+        public static readonly Vector3 ContrastPoint = new Vector3(0f, 0f, 25.0f);
+        public bool CompareSoulsCompleted { get; private set; }
+        public bool EmotionShiftCompleted { get; private set; }
         public Warrior Wounded => _wounded;
         public IReadOnlyList<Warrior> Killers => _killers;
         public Vector3 WoundedAt => _woundedAt;
@@ -67,17 +75,21 @@ namespace Sinbinder.Gameplay
         private bool Pressed(KeyCode key)
             => Input.GetKeyDown(key) || (_testKey == key && Time.frameCount - _testKeyFrame <= 1);
 
-        /// <summary>Прогон: управление (Tab, V, J) проверено в лагере — сразу к воротам.</summary>
+        /// <summary>Автопрогон обходится без физического ввода мыши, но ОБЯЗАН пройти печати.</summary>
         public void TestSkipControls()
         {
-            if (_stage >= Stage.FirstPerson && _stage < Stage.Return)
-                Set(Stage.Return, GateLine);
+            if (_stage >= Stage.FirstPerson && _stage < Stage.BowFind)
+            {
+                EnsureSealCompanion();
+                Set(Stage.BowFind, "Две печати склепа закрыты каменными засовами. От подвесного замка идут желоба к плитам. Мечом до замка не добраться. Слева на возвышении лежит лук: подойдите и нажмите F.");
+            }
         }
 
         private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
 
         // Дорога сна (docs/64-DREAM-ROAD.md): уроки — остановками, в конце склеп.
         private const string GateLine = "Дорога ведёт к склепу. Подойдите к воротам и нажмите F.";
+        private const string PuzzleLine = "Две печати у ворот: воин должен встать на левую, Греховод — на правую. Выделите воина ЛКМ и прикажите ПКМ идти к знаку.";
         private bool _atDummy, _atShrine, _atGate, _cryptRunning;
         private int _swingsSeen;
         private float _heldBackAt = -10f, _nudgeAt = -10f;
@@ -93,6 +105,9 @@ namespace Sinbinder.Gameplay
                 case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
                     return DreamRoad.DummyAt.z + 3f;
                 case Stage.Jars: return DreamRoad.ShrineAt.z + 3f;
+                case Stage.CommanderPractice: case Stage.BowFind: case Stage.BowEquip:
+                case Stage.BowShot: case Stage.BowTemper: case Stage.Rescue: case Stage.CompareSouls:
+                case Stage.EmotionShift: case Stage.Puzzle: return DreamRoad.GateZ;
                 case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
                 default: return 12.5f;
             }
@@ -125,6 +140,35 @@ namespace Sinbinder.Gameplay
         private int _backAttempts;
         private int _swingsBefore, _blockFramesBefore;
         private bool _squadOrdered;
+        private bool _commanderOrdered;
+        private Warrior _sealCompanion;
+        private float _temptStarted;
+        private string _whisperWas;
+        private Warrior _bowShadow;
+        private float _bowTemperSince;
+        private bool _bowTemperCommanded;
+        private AOS.DecisionContext _bowTemperBefore;
+        private Warrior _rescueWounded, _rescueDefender, _rescueAttacker;
+        private GameObject _rescueMarker;
+        private float _rescueSince, _rescueNextHit, _rescueResultAt = -1f;
+        private int _rescueCreditBefore;
+        private bool _rescueDecisionShown;
+        private bool _rescueHelpShown;
+        private Warrior _contrastMerciful, _contrastProud;
+        private bool _contrastMercifulAnswered, _contrastProudAnswered, _contrastHelpShown;
+        private bool _emotionHelpShown;
+        private float _compareIssuedAfter, _contrastStarted, _emotionIssuedAfter, _emotionStarted;
+        private AOS.Decision _mercyFirstDecision;
+        private AOS.DecisionContext _emotionContextBefore;
+        private AOS.DecisionContext _contrastMercifulBefore, _contrastProudBefore;
+        private bool _emotionApplied;
+        private GameObject _fearSign, _contrastMarker;
+        private Warrior _fearShadow;
+        private float _puzzleSince;
+        private int _puzzleHelpLevel;
+        public bool FinalTrialCompleted { get; private set; }
+        /// <summary>«спасён», «погиб», «не помогли» или пустая строка до урока.</summary>
+        public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
@@ -156,6 +200,12 @@ namespace Sinbinder.Gameplay
             var c = _zombie.Command;
             return c.Kind != _cmdMark.Kind || c.Point != _cmdMark.Point || c.Target != _cmdMark.Target
                 || !Mathf.Approximately(c.IssuedAt, _cmdMark.IssuedAt);
+        }
+
+        private bool PickedCompanion()
+        {
+            var pick = _sealCompanion != null ? _sealCompanion.GetComponent<SelectionComponent>() : null;
+            return pick != null && pick.IsSelected;
         }
 
         private bool Picked()
@@ -207,6 +257,22 @@ namespace Sinbinder.Gameplay
                                   + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
                         () => _stage != Stage.Standoff || OrderedSinceMark());
                     break;
+                case Stage.CommanderPractice:
+                    if (_sealCompanion == null) return;
+                    shown = Lesson.Guide(_sealCompanion.transform.position,
+                        () =>
+                        {
+                            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                            if (view != null && view.WarriorModeNow)
+                                return ("V", Loc.T("V — вернитесь к Командиру. В этом режиме мышь отдаёт приказы."));
+                            if (view != null && !view.FirstPersonNow)
+                                return ("Tab", Loc.T("Tab — смотрите глазами Греховода и командуйте от первого лица."));
+                            return !PickedCompanion()
+                                ? (Loc.T("ЛКМ"), Loc.T("В режиме Командира выделите соратника ЛКМ."))
+                                : (Loc.T("ПКМ"), Loc.T("Отдайте соратнику приказ ПКМ. Следом — загадка у ворот."));
+                        },
+                        () => _stage != Stage.CommanderPractice || _commanderOrdered);
+                    break;
                 case Stage.Retest:
                     if (_zombie == null) return;
                     shown = Lesson.Guide(_zombie.transform.position,
@@ -226,6 +292,8 @@ namespace Sinbinder.Gameplay
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
+        private bool _moreExplanation;
+        private GUIStyle _tutorialGoalStyle;
         private DreamHandCursor _hand;
         private int _tutorialSeed, _dreamNo;
         private bool _counterfactualWas;
@@ -300,6 +368,11 @@ namespace Sinbinder.Gameplay
             if (count <= 0 || SelectionManager.Instance == null) return;
             if (_stage == Stage.Command && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
                 _squadOrdered = true;
+            if (_stage == Stage.CommanderPractice && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
+            {
+                var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (cam != null && cam.CommanderModeNow) _commanderOrdered = true;
+            }
         }
 
         private IEnumerator Start()
@@ -364,7 +437,13 @@ namespace Sinbinder.Gameplay
         private void Set(Stage stage, string line)
         {
             _stage = stage;
+            if (stage == Stage.Puzzle)
+            {
+                _puzzleSince = Time.unscaledTime;
+                _puzzleHelpLevel = 0;
+            }
             _line = line;
+            _moreExplanation = false;
             _nextPrompt = Time.unscaledTime + 15f;
             Log(line);
         }
@@ -406,6 +485,9 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             if (_hero == null || _stage == Stage.Finished) return;
+            if (Input.GetKeyDown(KeyCode.F1) && !UI.Modal.Any &&
+                !SoulCourt.Sitting && !Lesson.Holding && !UI.TalkView.Shown)
+                _moreExplanation = !_moreExplanation;
             if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
                 Log(_line);
@@ -500,6 +582,18 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 }
+                case Stage.Temptation:
+                    // После суда убийцы замерли: игрок может безопасно попробовать Z.
+                    // Не требуем успеха искушения, только осмысленную попытку;
+                    // недоступный шёпот не должен запирать обучение.
+                    if (Whisper.LastResult != _whisperWas && !Whisper.ShowingOutcome)
+                    {
+                        StartBattle("Шёпот услышан. Теперь увидьте, как поступит воин.");
+                    }
+                    else if (Time.unscaledTime - _temptStarted > 22f && !Whisper.ShowingOutcome
+                             && (UI.Letterbox.Instance == null || !UI.Letterbox.Instance.Shown))
+                        StartBattle("Испытание продолжается. Искушение доступно при отказе рядом с воином.");
+                    break;
                 case Stage.Battle:
                     KeepHeroAlive();
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
@@ -609,9 +703,261 @@ namespace Sinbinder.Gameplay
                     }
                     // Confirm that the real SatchelHands changed the selected jar, not merely a J key press.
                     if (Satchel.Jars < 2 || Satchel.Selected != _selectedJarBefore)
-                        Set(Stage.Return, GateLine);
+                    {
+                        EnsureSealCompanion();
+                        Set(Stage.CommanderPractice, "V — вернитесь к Командиру. Выделите соратника ЛКМ и отдайте приказ ПКМ.");
+                    }
                     break;
+                case Stage.CommanderPractice:
+                {
+                    var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                    if (cam != null && cam.CommanderModeNow && _commanderOrdered)
+                        Set(Stage.BowFind, "Две печати склепа закрыты каменными засовами. От подвесного замка идут желоба к плитам. Мечом до замка не добраться. Слева на возвышении лежит лук: подойдите и нажмите F.");
+                    break;
+                }
+                case Stage.BowFind:
+                {
+                    var road = DreamRoad.Instance;
+                    if (road == null) { Set(Stage.Puzzle, PuzzleLine); break; }
+                    if (road.BowTaken || (Pressed(KeyCode.F) && road.TryTakeBow()))
+                        Set(Stage.BowEquip,
+                            "Лук в мешке. Подойдите к соратнику и нажмите F, выберите «Снаряжение», отдайте ему лук. Предмет-искуситель влияет на голосование души.");
+                    else if (Vector3.Distance(new Vector3(_hero.transform.position.x, 0f, _hero.transform.position.z),
+                                               DreamRoad.BowStandAt) < 3.1f)
+                        _line = "F — взять лук тщеславия с возвышения. Он соблазняет Гордыню, но не гарантирует послушания.";
+                    break;
+                }
+                case Stage.BowEquip:
+                {
+                    bool equipped = false;
+                    foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                        if (ally != null && !ally.IsDead && ally.Team == Team.Player &&
+                            !(ally is SinbinderPlayer) && DreamBowTarget.HasBow(ally))
+                        { equipped = true; break; }
+                    if (equipped)
+                        Set(Stage.BowShot,
+                            "Ворота склепа заперты. Лук усиливает Гордыню, но не отменяет воли. Выделите лучника ЛКМ и прикажите ПКМ сбить висящий над чашей замок противовеса: он держит засовы двух печатей.");
+                    break;
+                }
+                case Stage.BowShot:
+                    // Не хватает самого попадания: противовес должен упасть,
+                    // а засовы у напольных печатей действительно опуститься.
+                    if (DreamRoad.Instance != null && DreamRoad.Instance.MechanismReleased)
+                        BeginBowTemper();
+                    break;
+                case Stage.BowTemper:
+                {
+                    // Ситуация с настоящим искушением: безопасный противник стоит
+                    // рядом, поэтому «атаковать» и «бежать» являются альтернативами
+                    // приказу. Гордыня от лука сдвигает их веса через TemptationResolver.
+                    // Игрок сам велит отступить, исход не подстроен.
+                    if (_bowShadow != null) Hold(_bowShadow, true);
+                    Warrior archer = BowBearer();
+                    if (archer != null && archer.HasCommand && archer.Command.Kind == CommandKind.FallBack)
+                    {
+                        var mind = archer.GetComponent<AOS.AOSWarriorWrapper>();
+                        if (!_bowTemperCommanded)
+                        {
+                            _bowTemperCommanded = true;
+                            _bowTemperBefore = mind != null ? mind.LastContext : null;
+                        }
+                        else if (mind != null && mind.LastContext != null &&
+                                 mind.LastContext != _bowTemperBefore)
+                        {
+                            var decision = mind.LastDecisionDetail;
+                            UI.ScalesOverhead.Show(archer, decision, mind.LastContext, force: true);
+                            Log(decision.RefusedCommand || decision.Hesitated
+                                ? "Лучник спорит с приказом отойти. Лук усиливает Гордыню, но решение — сумма голосов."
+                                : "Лучник отступает несмотря на зов Гордыни. Предмет влияет на выбор, но не управляет душой.");
+                            EndBowTemper();
+                            break;
+                        }
+                    }
+                    if (Time.unscaledTime - _bowTemperSince > 30f)
+                    {
+                        Log("Испытание с луком можно повторить позднее: предмет по-прежнему действует на решения AOS.");
+                        EndBowTemper();
+                    }
+                    break;
+                }
+                case Stage.Rescue:
+                {
+                    if (!_rescueDecisionShown && _rescueDefender != null)
+                    {
+                        var mind = _rescueDefender.GetComponent<AOS.AOSWarriorWrapper>();
+                        if (mind != null && mind.LastDecision == AOS.ActionType.SaveAlly
+                            && mind.LastContext != null)
+                        {
+                            _rescueDecisionShown = true;
+                            UI.ScalesOverhead.Show(_rescueDefender, mind.LastDecisionDetail,
+                                mind.LastContext, force: true);
+                            _line = "Страж сам выбрал спасение. Весы показывают, какие голоса перевесили. "
+                                  + "Но помощь будет считаться настоящей, только если он примет удар.";
+                            Log(_line);
+                        }
+                    }
+                    // Игрок может изменить расположение вместо повторного
+                    // бесполезного ожидания. Это настоящий приказ и настоящая AOS.
+                    if (!_rescueHelpShown && !_rescueDecisionShown
+                        && Time.unscaledTime - _rescueSince > 11f)
+                    {
+                        _rescueHelpShown = true;
+                        _line = "Не пришёл на помощь? Выделите стража ЛКМ, ПКМ у раненого. "
+                              + "Сблизив их, посмотрите, выберет ли он защиту сам. "
+                              + "Приказ лишь меняет положение, а не заставляет спасать.";
+                        Log(_line);
+                    }
+                    if (_rescueResultAt >= 0f)
+                    {
+                        if (Time.unscaledTime - _rescueResultAt > 2.8f) EndRescueLesson();
+                        break;
+                    }
+                    if (Bodyguard.Rescues > _rescueCreditBefore
+                        && Bodyguard.LastRescued == _rescueWounded)
+                    {
+                        RescueResult = "спасён";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Настоящий удар был принят защитником. Раненый запомнил помощь; подвиг записан только теперь, а не когда воин решил подбежать.";
+                        Log(_line);
+                        break;
+                    }
+                    if (_rescueWounded == null || _rescueWounded.IsDead)
+                    {
+                        RescueResult = "погиб";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Никто не успел защитить раненого. Душа не обязана выбирать спасение; у самостоятельных решений есть последствия.";
+                        Log(_line);
+                        break;
+                    }
+
+                    // Угроза в этой учебной сцене бьёт по расписанию, чтобы
+                    // игрок мог видеть именно НЕСКРИПТОВЫЙ выбор защитника.
+                    // Урон проходит настоящим Damageable.TakeDamage и
+                    // настоящим Bodyguard.Absorb, без вызова OnAllySaved вручную.
+                    if (_rescueAttacker != null && !_rescueAttacker.IsDead
+                        && Time.time >= _rescueNextHit)
+                    {
+                        _rescueNextHit = Time.time + 4.25f;
+                        var arm = _rescueAttacker.GetComponent<WarriorAnimation>();
+                        if (arm != null) arm.Struck();
+                        _rescueWounded.GetComponent<Damageable>()?.TakeDamage(2.1f,
+                            _rescueAttacker.gameObject);
+                    }
+                    if (Time.unscaledTime - _rescueSince > 33f)
+                    {
+                        RescueResult = "не помогли";
+                        _rescueResultAt = Time.unscaledTime;
+                        _line = "Ни один защитник не успел перехватить удар. Проверьте голоса: спасение не подменяется неизбежным сценарием.";
+                        Log(_line);
+                    }
+                    break;
+                }
+                case Stage.CompareSouls:
+                {
+                    // Один и тот же приказ у двух разных душ. Важно дождаться
+                    // настоящего такта AutoAttackAOS, не вручать готовые ответы.
+                    CheckContrastCommand(_contrastMerciful, ref _contrastMercifulAnswered, true);
+                    CheckContrastCommand(_contrastProud, ref _contrastProudAnswered, false);
+                    if (_contrastMercifulAnswered && _contrastProudAnswered)
+                    {
+                        CompareSoulsCompleted = true;
+                        BeginEmotionShift();
+                    }
+                    else if (!_contrastHelpShown && Time.unscaledTime - _contrastStarted > 25f)
+                    {
+                        _contrastHelpShown = true;
+                        _line = "Поставьте по очереди двух стражей на одну точку впереди: ЛКМ по воину, ПКМ по земле у светящегося знака. "
+                              + "Наведите курсор на каждого: их голоса различаются.";
+                        Log(_line);
+                    }
+                    else if (Time.unscaledTime - _contrastStarted > 90f)
+                    {
+                        Log("[ПРОПУЩЕНО] Не удалось получить оба решения души: не запираем склеп, но урок не засчитан.");
+                        BeginEmotionShift();
+                    }
+                    break;
+                }
+                case Stage.EmotionShift:
+                {
+                    var w = _contrastMerciful;
+                    var mind = w != null ? w.GetComponent<AOS.AOSWarriorWrapper>() : null;
+                    if (w != null && !w.IsDead && w.HasCommand
+                        && _emotionApplied
+                        && AOS.EmotionSystem.Instance != null
+                        && AOS.EmotionSystem.Instance.GetDominantEmotion(w) == AOS.EmotionType.Fear
+                        && mind != null && mind.LastContext != null
+                        && DreamTutorialChecks.FreshOrderedDecision(
+                            w.Command.Kind == CommandKind.Move &&
+                                GroundDistance(w.Command.Point, ContrastPoint) < 2.5f,
+                            w.Command.IssuedAt, _emotionIssuedAfter,
+                            mind.LastContext != _emotionContextBefore, mind.LastContext.HasCommand)
+                        && mind.LastContext.NearbyEnemies > 0)
+                    {
+                        var now = mind.LastDecisionDetail;
+                        UI.ScalesOverhead.Show(w, now, mind.LastContext, force: true);
+                        EmotionShiftCompleted = true;
+                        Log("До угрозы: " + DescribeAOS(_mercyFirstDecision)
+                            + ". После появления тени: " + DescribeAOS(now)
+                            + ". Ситуация открыла бой и бегство, а эмоция усилила Страх и ослабила Гнев. "
+                            + "Победитель может не смениться, но теперь есть настоящая альтернатива приказу.");
+                        EndEmotionShift();
+                    }
+                    else if (!_emotionHelpShown && Time.unscaledTime - _emotionStarted > 20f)
+                    {
+                        _emotionHelpShown = true;
+                        _line = "После появления знака страха ещё раз прикажите милосердному стражу идти к тому же месту. "
+                              + "Сравните голосование: обстоятельства изменили веса, но не характер.";
+                        Log(_line);
+                    }
+                    else if (Time.unscaledTime - _emotionStarted > 75f)
+                    {
+                        Log("[ПРОПУЩЕНО] Второе решение под страхом не получено. Обучение не засчитано.");
+                        EndEmotionShift();
+                    }
+                    break;
+                }
+                case Stage.Puzzle:
+                {
+                    if (_sealCompanion == null || _sealCompanion.IsDead) EnsureSealCompanion();
+                    // Итоговая задача начинается без инструкции «нажмите сюда».
+                    // Помощь — по мере реального застревания, не поверх задания.
+                    float elapsed = Time.unscaledTime - _puzzleSince;
+                    if (_puzzleHelpLevel < 1 && elapsed > 18f)
+                    {
+                        _puzzleHelpLevel = 1;
+                        _line = "Вглядитесь в два знака у ворот. Каждому нужен живой человек. "
+                            + "Поставьте соратника на один знак, Греховода — на другой.";
+                    }
+                    if (_puzzleHelpLevel < 2 && elapsed > 45f)
+                    {
+                        _puzzleHelpLevel = 2;
+                        _line = PuzzleLine;
+                    }
+                    if (_puzzleHelpLevel < 3 && elapsed > 80f)
+                    {
+                        _puzzleHelpLevel = 3;
+                        _line = "Если ваш воин не пошёл, прочитайте голоса в подсказке и попробуйте другого. "
+                            + "Печати должны удерживать оба одновременно.";
+                    }
+                    var road = DreamRoad.Instance;
+                    if (road == null) { Set(Stage.Return, GateLine); break; }
+                    // Любой живой союзник может заменить учебного, если тот дошёл.
+                    Warrior onSeal = null;
+                    foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    {
+                        if (ally == null || ally.IsDead || ally is SinbinderPlayer || ally.Team != Team.Player) continue;
+                        if (Vector3.Distance(new Vector3(ally.transform.position.x, 0f, ally.transform.position.z),
+                            DreamRoad.WarriorSealAt) <= 1.35f) { onSeal = ally; break; }
+                    }
+                    if (road.CheckSeals(onSeal, _hero.transform.position))
+                    {
+                        FinalTrialCompleted = true;
+                        Set(Stage.Return, "Печати ответили обеим душам. Подойдите к воротам и нажмите F.");
+                    }
+                    break;
+                }
                 case Stage.Return:
+                    if (DreamRoad.Instance != null && !DreamRoad.Instance.SealsAwake) break;
                     if (!DreamRoad.NearGate(_hero.transform.position)) break;
                     if (!_atGate) { _atGate = true; _line = "Ворота склепа. F — открыть."; }
                     if (Pressed(KeyCode.F)) StartCoroutine(Crypt());
@@ -625,13 +971,271 @@ namespace Sinbinder.Gameplay
 
         private float _commandSinceGame;
 
+        private Warrior BowBearer()
+        {
+            foreach (var ally in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (ally != null && !ally.IsDead && !(ally is SinbinderPlayer) &&
+                    ally.Team == Team.Player && DreamBowTarget.HasBow(ally)) return ally;
+            return null;
+        }
+
+        private void BeginBowTemper()
+        {
+            if (_stage == Stage.BowTemper) return;
+            _bowTemperSince = Time.unscaledTime;
+            _bowTemperCommanded = false;
+            _bowTemperBefore = null;
+            var soul = new SoulData("Тень испытания", SinType.Wrath, MoralType.Neutral, 1, 10f);
+            _bowShadow = CreateLiving(soul, new Vector3(6f, 0f, 19.2f), Team.Enemy);
+            if (_bowShadow != null)
+            {
+                var hp = _bowShadow.GetComponent<Damageable>();
+                if (hp != null) hp.Initialize(999f, 0f);
+                Hold(_bowShadow, true);
+            }
+            Set(Stage.BowTemper,
+                "Лук зовёт к славному бою. В стороне стоит безопасная тень: выделите лучника, нажмите X и щёлкните позади него. Посмотрите, исполнит ли он приказ отступить.");
+        }
+
+        private void EndBowTemper()
+        {
+            if (_bowShadow != null) Destroy(_bowShadow.gameObject);
+            _bowShadow = null;
+            EnsureSealCompanion();
+            BeginRescueLesson();
+        }
+
+        /// <summary>
+        /// «Последний щит». Один союзник ранен, один может выбрать спасение,
+        /// лучник после испытания Гордыни может предпочесть бой.
+        /// У атакующего — учебные взмахи по времени, у защитников — ПОДЛИННАЯ
+        /// AOS без принудительного ObeyCommand или выдачи фальшивой награды.
+        /// </summary>
+        private void BeginRescueLesson()
+        {
+            RescueResult = "";
+            _rescueResultAt = -1f;
+            _rescueSince = Time.unscaledTime;
+            _rescueNextHit = Time.time + 5f;
+            _rescueCreditBefore = Bodyguard.Rescues;
+            _rescueDecisionShown = false;
+            _rescueHelpShown = false;
+
+            _rescueWounded = CreateLiving(
+                new SoulData("Раненый товарищ", SinType.Sloth, MoralType.Neutral, 1, 15f),
+                new Vector3(-0.6f, 0f, 23.3f), Team.Player);
+            _rescueDefender = CreateLiving(
+                new SoulData("Милосердный страж", SinType.Pride, MoralType.Pious, 1, 5f),
+                new Vector3(-3.1f, 0f, 23.2f), Team.Player);
+            _rescueAttacker = CreateLiving(
+                new SoulData("Тень нападающего", SinType.Wrath, MoralType.Vicious, 1, 60f),
+                new Vector3(-0.7f, 0f, 21.1f), Team.Enemy);
+
+            if (_rescueWounded == null || _rescueDefender == null || _rescueAttacker == null)
+            {
+                Debug.LogError("[СОН] Не удалось создать участников испытания спасения.");
+                RescueResult = "сцена не собрана";
+                EndRescueLesson();
+                return;
+            }
+
+            _rescueWounded.GetComponent<Damageable>()?.Wound(0.24f);
+            // Красный круг под раненым показывает цель без отдельного окна
+            // и без остановки AOS. Короткая плашка остаётся пояснением.
+            _rescueMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _rescueMarker.name = "Последний щит — круг раненого";
+            _rescueMarker.transform.position = _rescueWounded.transform.position + Vector3.up * 0.025f;
+            _rescueMarker.transform.localScale = new Vector3(2.4f, 0.03f, 2.4f);
+            var markerCollider = _rescueMarker.GetComponent<Collider>();
+            if (markerCollider != null) Destroy(markerCollider);
+            var markerVisual = _rescueMarker.GetComponent<Renderer>();
+            if (markerVisual != null) markerVisual.material.color = new Color(0.75f, 0.19f, 0.16f);
+            Hold(_rescueWounded, true);
+            Hold(_rescueAttacker, true);
+            var attackerBody = _rescueAttacker.GetComponent<Damageable>();
+            if (attackerBody != null) attackerBody.Initialize(999f, 0f);
+
+            Set(Stage.Rescue,
+                "Последний щит: раненому осталось меньше трети здоровья. Тень замахивается каждые несколько секунд. "
+                + "Смотрите, что сами выберут милосердный страж и лучник. Наведите на них курсор: голоса могут предпочесть бой спасению.");
+        }
+
+        private void EndRescueLesson()
+        {
+            if (_rescueMarker != null) Destroy(_rescueMarker);
+            _rescueMarker = null;
+            if (_rescueAttacker != null) Destroy(_rescueAttacker.gameObject);
+            _rescueAttacker = null;
+            if (_rescueWounded != null && !_rescueWounded.IsDead)
+            {
+                _rescueWounded.GetComponent<Damageable>()?.Heal(999f);
+                Hold(_rescueWounded, false);
+            }
+            EnsureSealCompanion();
+            BeginContrastSouls();
+        }
+
+        /// <summary>Один приказ для двух характеров, каждый отвечает настоящей AOS.</summary>
+        private void BeginContrastSouls()
+        {
+            CompareSoulsCompleted = false;
+            EmotionShiftCompleted = false;
+            _contrastMercifulAnswered = false;
+            _contrastProudAnswered = false;
+            _contrastHelpShown = false;
+            _contrastStarted = Time.unscaledTime;
+            _compareIssuedAfter = Time.time - 0.01f;
+            var merciful = new SoulData("Страж Милосердия", SinType.Pride, MoralType.Pious, 1, -75f);
+            merciful.Set(SinType.Wrath, -60f);
+            var proud = new SoulData("Страж Гордыни", SinType.Pride, MoralType.Vicious, 1, 95f);
+            proud.Set(SinType.Wrath, 65f);
+            _contrastMerciful = CreateLiving(merciful, new Vector3(-5.0f, 0f, 20.8f), Team.Player);
+            _contrastProud = CreateLiving(proud, new Vector3(5.0f, 0f, 20.8f), Team.Player);
+            if (_contrastMerciful != null) _contrastMerciful.ChangeLoyalty(35f);
+            if (_contrastProud != null) _contrastProud.ChangeLoyalty(35f);
+            _contrastMercifulBefore = _contrastMerciful != null
+                ? _contrastMerciful.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
+            _contrastProudBefore = _contrastProud != null
+                ? _contrastProud.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
+            // Внешняя цель делает «одно и то же место» однозначным.
+            _contrastMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _contrastMarker.name = "Знак одинакового приказа";
+            _contrastMarker.transform.position = ContrastPoint + Vector3.up * 0.05f;
+            _contrastMarker.transform.localScale = new Vector3(1.8f, 0.055f, 1.8f);
+            var markerCollider = _contrastMarker.GetComponent<Collider>();
+            if (markerCollider != null) Destroy(markerCollider);
+            var markerRenderer = _contrastMarker.GetComponent<Renderer>();
+            if (markerRenderer != null) markerRenderer.material.color = new Color(0.27f, 0.64f, 0.73f);
+            if (_contrastMerciful == null || _contrastProud == null)
+            {
+                Debug.LogError("[СОН QA] Не удалось создать двух стражей для сравнения AOS.");
+                BeginEmotionShift();
+                return;
+            }
+            Set(Stage.CompareSouls, "Две души, одна воля. Слева милосердный страж, справа гордый. "
+                + "Выделите каждого ЛКМ и прикажите ПКМ идти к месту между печатями. "
+                + "Сравните решение и самый сильный голос над их головами.");
+        }
+
+        private void CheckContrastCommand(Warrior who, ref bool recorded, bool merciful)
+        {
+            if (recorded || who == null || who.IsDead || !who.HasCommand) return;
+            bool correctOrder = who.Command.Kind == CommandKind.Move
+                && GroundDistance(who.Command.Point, ContrastPoint) < 2.5f;
+            var mind = who.GetComponent<AOS.AOSWarriorWrapper>();
+            var previous = merciful ? _contrastMercifulBefore : _contrastProudBefore;
+            if (mind == null || mind.LastContext == null ||
+                !DreamTutorialChecks.FreshOrderedDecision(
+                    correctOrder, who.Command.IssuedAt, _compareIssuedAfter,
+                    mind.LastContext != previous, mind.LastContext.HasCommand)) return;
+            recorded = true;
+            UI.ScalesOverhead.Show(who, mind.LastDecisionDetail, mind.LastContext, force: true);
+            Log(who.DisplayName + ": " + DescribeAOS(mind.LastDecisionDetail)
+                + ". Самый сильный голос: " + mind.LastDecisionDetail.TopModule
+                + ". Смотрите не только на исход, но и на то, кто его предложил.");
+            if (merciful) _mercyFirstDecision = mind.LastDecisionDetail;
+            _line = merciful
+                ? "Теперь точно такой же приказ отдайте гордому стражу справа: ЛКМ, ПКМ к тому же месту."
+                : "Сравните причины. Одинаковый приказ не означает одинаковое голосование.";
+        }
+
+        private static string DescribeAOS(AOS.Decision d)
+        {
+            if (d.Hesitated) return "колеблется";
+            if (d.RefusedCommand) return "отказывается: " + d.Action;
+            if (d.Action == AOS.ActionType.ObeyCommand) return "исполняет приказ";
+            if (d.Action == AOS.ActionType.SaveAlly) return "помогает товарищу";
+            if (d.Action == AOS.ActionType.Attack) return "выбирает атаку";
+            if (d.Action == AOS.ActionType.Flee) return "предпочитает бегство";
+            return "выбирает " + d.Action;
+        }
+
+        private void BeginEmotionShift()
+        {
+            _emotionStarted = Time.unscaledTime;
+            _emotionIssuedAfter = Time.time - 0.01f;
+            _emotionHelpShown = false;
+            _emotionApplied = false;
+            _emotionContextBefore = _contrastMerciful != null
+                ? _contrastMerciful.GetComponent<AOS.AOSWarriorWrapper>()?.LastContext : null;
+            if (_contrastMerciful == null || _contrastMerciful.IsDead)
+            {
+                Debug.LogWarning("[СОН QA] Страж для урока эмоций отсутствует.");
+                EndEmotionShift();
+                return;
+            }
+            _contrastMerciful.ClearCommand();
+            // Видимый знак — источник страха в этой учебной сцене.
+            _fearSign = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            _fearSign.name = "Знак страха над воротами";
+            _fearSign.transform.position = new Vector3(0f, 3.5f, 26.8f);
+            _fearSign.transform.localScale = Vector3.one * 1.25f;
+            var c = _fearSign.GetComponent<Collider>();
+            if (c != null) Destroy(c);
+            var renderer = _fearSign.GetComponent<Renderer>();
+            if (renderer != null) renderer.material.color = new Color(0.58f, 0.14f, 0.18f);
+            // Без угрозы голос Страха почти не участвует в выборе Move
+            // (кандидатов Flee и Attack нет): это был бы пустой урок.
+            // Безопасная тень даёт реальное присутствие врага в контексте,
+            // а видимый знак запускает временное состояние Fear.
+            _fearShadow = CreateLiving(
+                new SoulData("Тень колокола", SinType.Wrath, MoralType.Neutral, 1, 15f),
+                new Vector3(1.0f, 0f, 27.1f), Team.Enemy);
+            if (_fearShadow != null)
+            {
+                _fearShadow.GetComponent<Damageable>()?.Initialize(999f, 0f);
+                Hold(_fearShadow, true);
+            }
+            if (AOS.EmotionSystem.Instance != null)
+            {
+                AOS.EmotionSystem.Instance.TriggerEmotion(_contrastMerciful, AOS.EmotionType.Fear, 1f);
+                _emotionApplied = AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Fear") > 1f;
+                Log("Знак страха пробудился. Вес голоса Страха у милосердного стража теперь ×"
+                    + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Fear").ToString("F1")
+                    + ", голос Гнева ×"
+                    + AOS.EmotionSystem.Instance.GetEmotionWeight(_contrastMerciful, "Wrath").ToString("F1") + ".");
+            }
+            else Debug.LogError("[СОН QA] EmotionSystem отсутствует. Урок эмоций нельзя подтвердить.");
+            Set(Stage.EmotionShift, "Знак страха вызвал дрожь, рядом стоит безопасная враждебная тень. "
+                + "Стражу теперь доступны также бой и бегство. Повторите тот же приказ идти к месту между печатями, "
+                + "а затем сравните голоса. Изменились и опасность, и эмоциональные веса.");
+        }
+
+        private void EndEmotionShift()
+        {
+            if (_fearSign != null) Destroy(_fearSign);
+            _fearSign = null;
+            if (_fearShadow != null) Destroy(_fearShadow.gameObject);
+            _fearShadow = null;
+            if (_contrastMarker != null) Destroy(_contrastMarker);
+            _contrastMarker = null;
+            EnsureSealCompanion();
+            Set(Stage.Puzzle, "Последнее испытание без приказа Бога Смерти: два незапертых знака "
+                + "перед склепом и несколько воинов, каждый со своей волей. "
+                + "Откройте ворота своими действиями.");
+        }
+
+        /// <summary>
+        /// Сон даёт второго соратника у двух печатей: даже если первый пал в бою,
+        /// загадка не становится непроходимой. У него настоящая душа и настоящие
+        /// решения AOS, не скрипт, который бежит на плиту без голосования.
+        /// </summary>
+        private void EnsureSealCompanion()
+        {
+            if (_sealCompanion != null && !_sealCompanion.IsDead) return;
+            var soul = new SoulData("Безмолвный страж", SinType.Pride, MoralType.Pious, 1, 12f);
+            _sealCompanion = CreateLiving(soul, new Vector3(-1.8f, 0f, 22.0f), Team.Player);
+            if (_sealCompanion != null) _sealCompanion.ChangeLoyalty(40f);
+        }
+
         private void BeginPractice(string line)
         {
             var combat = _hero.GetComponent<FirstPersonCombat>();
             if (combat == null)
             {
                 Debug.LogError("[СОН QA] У Греховода нет FirstPersonCombat (SinbinderPlayer.Spawn).");
-                Set(Stage.Return, "Личный бой не подключён. " + GateLine);
+                EnsureSealCompanion();
+                Set(Stage.Puzzle, "Личный бой не подключён. " + PuzzleLine);
                 return;
             }
             _swingsBefore = combat.AcceptedSwings;
@@ -731,7 +1335,8 @@ namespace Sinbinder.Gameplay
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
                 Hold(_zombie, false);
-                Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. " + GateLine);
+                EnsureSealCompanion();
+                Set(Stage.Puzzle, "Убийцы не появились. Воспоминание прервано. " + PuzzleLine);
             }
         }
 
@@ -760,9 +1365,13 @@ namespace Sinbinder.Gameplay
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
             if (d.RefusedCommand || d.Hesitated)
-                StartBattle(Grammar.Pick(g,
-                    "Он решил сам. Убери причину — срази убийц. Или искуси его: подойди и нажми Z.",
-                    "Она решила сама. Убери причину — срази убийц. Или искуси её: подойди и нажми Z."));
+            {
+                _temptStarted = Time.unscaledTime;
+                _whisperWas = Whisper.LastResult;
+                Set(Stage.Temptation, Grammar.Pick(g,
+                    "Убийцы замерли. Подойди к отказавшему воину и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится.",
+                    "Убийцы замерли. Подойди к отказавшей воительнице и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится."));
+            }
             else
                 StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
         }
@@ -878,19 +1487,82 @@ namespace Sinbinder.Gameplay
             return v.sqrMagnitude < 1e-4f ? Vector3.forward : v.normalized;
         }
 
+        /// <summary>
+        /// One short action for each step. The full narrative remains in _line
+        /// and the battle log, but does not permanently fill a small HUD plate.
+        /// Do not reveal the solution to the last puzzle until the player
+        /// actually gets stuck.
+        /// </summary>
+        private string CurrentGoal()
+        {
+            switch (_stage)
+            {
+                case Stage.Approach: return "ПКМ по земле: подойдите к незнакомцу.";
+                case Stage.Dying: return "Выслушайте незнакомца.";
+                case Stage.Harvest: return "E — соберите освобождённую душу.";
+                case Stage.Rebind: return "R — верните душу в тело.";
+                case Stage.Command: return "ЛКМ — выберите воина. ПКМ — отдайте приказ.";
+                case Stage.Standoff: return "X, затем ПКМ позади воина: отступление.";
+                case Stage.Deciding: return "Посмотрите, какое решение примет душа.";
+                case Stage.Temptation: return "Z — попробуйте склонить воина; исход не гарантирован.";
+                case Stage.Battle: return "Помогите воину справиться с убийцами.";
+                case Stage.Retest: return "X и ПКМ: повторите приказ после боя.";
+                case Stage.FirstPerson: return "Tab — посмотрите глазами Греховода.";
+                case Stage.WarriorMode: return "V — переключитесь с Командира на Воина.";
+                case Stage.DrawWeapon: return "B — обнажите оружие.";
+                case Stage.Practice: return "ЛКМ — удар, ПКМ — блок. Попробуйте оба.";
+                case Stage.Jars: return "J — выберите другую банку души.";
+                case Stage.CommanderPractice: return "V — Командир; ЛКМ — выбор, ПКМ — приказ.";
+                case Stage.BowFind: return "На возвышении слева лук: подойдите и нажмите F.";
+                case Stage.BowEquip: return "F рядом с союзником → Снаряжение → передать лук.";
+                case Stage.BowShot: return "ЛКМ лучник → ПКМ по подвесному замку.";
+                case Stage.BowTemper: return "X и ПКМ — прикажите лучнику отступить от тени.";
+                case Stage.Rescue: return _rescueHelpShown
+                    ? "ЛКМ страж → ПКМ у раненого: измените его положение."
+                    : "Кто сам защитит раненого? Посмотрите на весы.";
+                case Stage.CompareSouls: return "ЛКМ страж → ПКМ к голубому знаку. Повторите со вторым.";
+                case Stage.EmotionShift: return "Повторите приказ к голубому знаку стражу под страхом.";
+                case Stage.Puzzle:
+                    return _puzzleHelpLevel == 0
+                        ? "Самостоятельно откройте ворота склепа."
+                        : _puzzleHelpLevel == 1
+                            ? "Посмотрите на два знака у ворот."
+                            : "Займите два знака одновременно: герой и союзник.";
+                case Stage.Return: return "Подойдите к воротам и нажмите F.";
+                default: return _line ?? "";
+            }
+        }
+
         private void OnGUI()
         {
-            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown) return;
-            // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
+            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding ||
+                UI.TalkView.Shown || UI.Modal.Any) return;
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
-            var style = GUI.skin.box;
-            // Упёрся в черту урока — строка урока вспыхивает: сначала это.
+
+            if (_tutorialGoalStyle == null)
+                _tutorialGoalStyle = new GUIStyle(GUI.skin.box)
+                {
+                    wordWrap = true,
+                    alignment = TextAnchor.MiddleLeft
+                };
+            _tutorialGoalStyle.fontSize = Mathf.Clamp(Screen.height / 62, 13, 19);
+
             float nudge = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
-            var was = GUI.color;
+            var previous = GUI.color;
             GUI.color = Color.Lerp(Color.white, new Color(1f, 0.82f, 0.45f), nudge);
-            GUI.Box(new Rect(16, Screen.height - 106, Mathf.Min(Screen.width - 32, 720), 80),
-                "Воспоминание\n" + _line, style);
-            GUI.color = was;
+
+            float width = Mathf.Min(Screen.width - 32f, 720f);
+            string content = _moreExplanation
+                ? Loc.T("СОН · ПОДРОБНЕЕ") + "\n" + _line + "\n" + Loc.T("F1 — свернуть")
+                : Loc.T("СОН · ЦЕЛЬ") + "\n" + Loc.T(CurrentGoal()) + "\n" + Loc.T("F1 — объяснить");
+            // A fixed 76/122px panel clips wrapped or localized dream goals.
+            // Measure the actual caption, retaining the original minimum height.
+            float measuredHeight = _tutorialGoalStyle.CalcHeight(new GUIContent(content), width);
+            float height = Mathf.Max(_moreExplanation ? 122f : 76f, Mathf.Ceil(measuredHeight));
+            height = Mathf.Min(height, Mathf.Max(1f, Screen.height - 52f));
+            GUI.Box(new Rect(16f, Screen.height - height - 26f, width, height),
+                content, _tutorialGoalStyle);
+            GUI.color = previous;
         }
     }
 }

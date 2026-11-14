@@ -1,0 +1,47 @@
+name: Dream tutorial logic smoke
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/DreamTutorialChecks.cs"
+      - "Assets/Scripts/Gameplay/DreamRoad.cs"
+      - "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
+      - "Assets/Scripts/Gameplay/Bodyguard.cs"
+      - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Tools/tutorial/**"
+      - ".github/workflows/tutorial-smoke.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/DreamTutorialChecks.cs"
+      - "Assets/Scripts/Gameplay/DreamRoad.cs"
+      - "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
+      - "Assets/Scripts/Gameplay/Bodyguard.cs"
+      - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Tools/tutorial/**"
+      - ".github/workflows/tutorial-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tutorial-rules:
+    name: Compile and exercise real dream rule sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Compile actual dream rules, without UnityEditor
+        run: dotnet build Tools/tutorial/TutorialChecks.csproj -c Release
+      - name: Execute rules against real production C#
+        run: dotnet run --no-build -c Release --project Tools/tutorial/TutorialChecks.csproj
+      - name: Compile Roslyn grammar gate (Unity editor and player)
+        working-directory: Tools/tutorial
+        run: dotnet build SyntaxChecks.csproj -c Release
+      - name: Parse all gameplay and editor C# (syntax, not Unity types)
+        working-directory: Tools/tutorial
+        run: dotnet run --no-build -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts

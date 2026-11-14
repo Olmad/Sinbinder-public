@@ -32,7 +32,12 @@ namespace Sinbinder.Gameplay
         private const float Slow = 0.3f;
         private const float Seconds = 2.4f;
 
-        private static readonly Dictionary<Warrior, float> Until = new();
+        private struct Consent
+        {
+            public float Until;
+            public uint OrderRevision;
+        }
+        private static readonly Dictionary<Warrior, Consent> Until = new();
         private static readonly Dictionary<Warrior, float> Last = new();
         private static bool _busy;
 
@@ -51,8 +56,13 @@ namespace Sinbinder.Gameplay
         /// <summary>Уговорён ли воин исполнить свой приказ (поддался шёпоту, приказ ещё в силе).</summary>
         public static bool Persuaded(Warrior w)
         {
-            if (w == null || !Until.TryGetValue(w, out var t)) return false;
-            if (!w.HasCommand || Time.time > t) { Until.Remove(w); return false; }
+            if (w == null || !Until.TryGetValue(w, out var consent)) return false;
+            if (!AOS.OrderIntegrity.WhisperApplies(
+                consent.OrderRevision, w.CommandRevision, w.HasCommand, consent.Until, Time.time))
+            {
+                Until.Remove(w);
+                return false;
+            }
             return true;
         }
 
@@ -75,6 +85,9 @@ namespace Sinbinder.Gameplay
             if (Last.TryGetValue(w, out var at) && Time.time - at < Again) return false;
             var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
             if (mind == null || !w.HasCommand) return false;
+            // An old refusal cannot make a newly issued order whisperable.
+            // Wait for the real thirteen-voice verdict on this exact revision.
+            if (!mind.HasCurrentCommandDecision) return false;
             var d = mind.LastDecisionDetail;
             return d.Hesitated || d.RefusedCommand;
         }
@@ -127,6 +140,9 @@ namespace Sinbinder.Gameplay
         {
             _busy = true;
             Last[w] = Time.time;
+            // The bargain concerns the order that was pending when Z was
+            // pressed. A new order is never automatically purchased.
+            uint agreedOrder = w.CommandRevision;
             var sin = w.Soul != null ? w.Soul.Sin : SinType.Sloth;
             var (offer, yes) = Words(sin);
             var hero = SinbinderPlayer.Instance;
@@ -140,7 +156,30 @@ namespace Sinbinder.Gameplay
             string answer = virtuous ? Loc.T("Не купишь.") : broke ? Loc.T("Половина чего? Кошель-то пуст.") : yes;
 
             float before = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
-            string outcome = Outcome(w, sin, yielded, virtuous, louder: yielded && before < Ceiling);
+            bool applied = false;
+            string outcome = "";
+            // Commit only when the soul actually answers, not at the start
+            // of the cinematic. The player may cancel the original order
+            // during the spoken offer. Such a contract costs nothing.
+            void ResolveBargain()
+            {
+                bool canPay = sin != SinType.Greed || (bag != null && bag.Gold >= GreedCoins);
+                applied = yielded && canPay && w != null && !w.IsDead &&
+                    w.Soul != null && w.HasCommand && w.CommandRevision == agreedOrder;
+                if (applied)
+                {
+                    if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
+                    Until[w] = new Consent { Until = Time.time + Holds, OrderRevision = agreedOrder };
+                    if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
+                }
+                else if (yielded)
+                    answer = canPay
+                        ? Loc.T("Приказ уже изменён. На другой я не соглашался.")
+                        : Loc.T("Кошель уже пуст.");
+                outcome = yielded && !applied
+                    ? Loc.T("Уговор не состоялся: новый приказ требует нового разговора.")
+                    : Outcome(w, sin, applied, virtuous, louder: applied && before < Ceiling);
+            }
 
             bool slowed = Time.timeScale > 0f;
             if (slowed) Time.timeScale = Slow;
@@ -162,9 +201,10 @@ namespace Sinbinder.Gameplay
             {
                 box.Say(Loc.T("Греховод, шёпотом"), offer);
                 yield return UI.Letterbox.Hold(1.9f);
+                ResolveBargain();
                 UI.Letterbox.Instance?.Say(Loc.Name(w.DisplayName), answer);
                 if (w != null && w.TryGetComponent<Audio.VoiceGenerator>(out var said)) said.Babble(answer, 0.9f);
-                if (yielded && w != null) StartCoroutine(Flare(w, SinPalette.Of(sin)));
+                if (applied && w != null) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                 yield return UI.Letterbox.Hold(1.9f);
                 UI.Letterbox.Instance?.Say(null, outcome);
                 ShowingOutcome = true;
@@ -175,7 +215,6 @@ namespace Sinbinder.Gameplay
             {
                 // Кадр занят — по-старому, пузырями над головами.
                 UI.SpeechBubbles.Say(hero, offer, 2.6f);
-                if (yielded) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                 float t = 0f;
                 bool answered = false;
                 while (t < Seconds)
@@ -183,6 +222,8 @@ namespace Sinbinder.Gameplay
                     if (!answered && t >= 1.0f && w != null)
                     {
                         answered = true;
+                        ResolveBargain();
+                        if (applied) StartCoroutine(Flare(w, SinPalette.Of(sin)));
                         UI.SpeechBubbles.Say(w, answer, 2.4f);
                         if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
                     }
@@ -191,16 +232,12 @@ namespace Sinbinder.Gameplay
                 }
             }
 
-            if (yielded && w != null)
-            {
-                if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
-                Until[w] = Time.time + Holds;
-                // Развращение: поддался — грех громче, мягко и с потолком.
-                if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
-            }
+            // The effect and its cost were applied at the time the
+            // response was chosen. Later orders are independently voted
+            // upon and automatically invalidate this consent.
             // Итог — и в журнал: перечитать, кого и чем купили.
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T("Шёпот") + ": " + outcome);
-            LastResult = $"{(w != null ? w.DisplayName : "?")} ({sin}): «{offer}» — «{answer}», {(yielded ? "поддался" : virtuous ? "не купишь" : "кошель пуст")} => {outcome}";
+            LastResult = $"{(w != null ? w.DisplayName : "?")} ({sin}): «{offer}» — «{answer}», {(applied ? "поддался" : yielded ? "приказ изменён" : virtuous ? "не купишь" : "кошель пуст")} => {outcome}";
             Debug.Log("[ШЁПОТ] " + LastResult);
 
             if (focus != null) StopCoroutine(focus);

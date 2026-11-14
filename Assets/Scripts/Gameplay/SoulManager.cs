@@ -24,6 +24,9 @@ namespace Sinbinder.Gameplay
         [SerializeField] private GameObject _soulIndicatorPrefab;
 
         private List<FadingSoul> _fadingSouls = new();
+        // One physical death may produce only one fading soul, even if
+        // a callback is accidentally delivered twice before scene unload.
+        private readonly HashSet<Warrior> _deathRegistered = new();
         private List<SoulIndicator> _indicators = new();
 
         public System.Action<FadingSoul> OnSoulHarvested;
@@ -164,7 +167,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
         {
-            if (_fadingSouls.Count == 0) return;
+            if (_fadingSouls.Count == 0) { _deathRegistered.Clear(); return; }
+            _deathRegistered.Clear();
 
             Debug.Log($"[ДУШИ] Поле ушло вместе со сценой {scene.name}: несобранных — {_fadingSouls.Count}.");
             _fadingSouls.Clear();
@@ -199,6 +203,9 @@ namespace Sinbinder.Gameplay
 
         public void StartSoulFade(Warrior warrior, Vector3 position)
         {
+            // A repeated death event must not duplicate the harvestable soul.
+            // Reject missing souls before creating an invalid FadingSoul.
+            if (warrior == null || warrior.Soul == null || !_deathRegistered.Add(warrior)) return;
             // Имя, заслуженное при жизни, переносим с тела в душу —
             // здесь и только здесь, потому что здесь душа и уходит.
             // Титул живёт в ReputationData, то есть на трупе, и вместе
@@ -288,12 +295,18 @@ namespace Sinbinder.Gameplay
         {
             for (int i = _indicators.Count - 1; i >= 0; i--)
             {
-                if (_indicators[i] != null && _indicators[i].gameObject != null)
+                var indicator = _indicators[i];
+                if (indicator == null)
                 {
-                    Destroy(_indicators[i].gameObject);
                     _indicators.RemoveAt(i);
-                    break;
+                    continue;
                 }
+                // Multiple souls can fade in the same frame. Remove the light
+                // belonging to THIS soul, not the first surviving light.
+                if (!ReferenceEquals(indicator.Soul, soul)) continue;
+                Destroy(indicator.gameObject);
+                _indicators.RemoveAt(i);
+                break;
             }
         }
 

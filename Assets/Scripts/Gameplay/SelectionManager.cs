@@ -699,7 +699,12 @@ namespace Sinbinder.Gameplay
                     }
 
                     // Чужой трон или дверь («Перетягивание»): ПКМ — осада, те же голосование и голос.
-                    var wall =!isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    // Учебная подвесная печать — осадная цель и вне «Перетягивания».
+                    // Приказ на неё идёт тем же путём (голосование AOS), что и на трон.
+                    var candidate = !isAttackOrder ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    var wall = candidate != null && (Lords.Active ||
+                        (candidate.GetComponent<DreamBowTarget>() != null &&
+                         DreamTutorialDirector.BowShotAvailable)) ? candidate : null;
                     if (wall != null && !wall.Mine && !wall.Broken)
                     {
                         int laid = 0;

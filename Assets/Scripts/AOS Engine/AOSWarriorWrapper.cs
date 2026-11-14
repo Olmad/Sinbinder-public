@@ -22,8 +22,23 @@ namespace Sinbinder.AOS
         /// <summary>Последнее решение вместе с причиной. Читают подсказка и журнал.</summary>
         public Decision LastDecisionDetail { get; private set; }
 
+        /// <summary>Unmodified thirteen-voice vote, before any explicit whisper agreement.</summary>
+        public Decision NaturalDecisionDetail { get; private set; }
+
+        /// <summary>True if an accepted whisper changed the actual action to obedience.</summary>
+        public bool LastWhisperCompelled { get; private set; }
+
         /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
         public DecisionContext LastContext { get; private set; }
+
+        /// <summary>Identity of the command for which LastDecisionDetail was calculated.</summary>
+        public uint LastDecisionCommandRevision { get; private set; }
+
+        /// <summary>Never display a previous command's refusal as the current verdict.</summary>
+        public bool HasCurrentCommandDecision =>
+            _warrior != null && _warrior.HasCommand &&
+            LastContext != null && LastContext.HasCommand &&
+            LastDecisionCommandRevision == _warrior.CommandRevision;
 
         void Awake()
         {
@@ -47,6 +62,20 @@ namespace Sinbinder.AOS
             Decision decision;
             using (Core.Cost.Of("decide.vote")) decision = _resolver.DecideDetailed(_warrior, context);
 
+            // The thirteen voices ALWAYS vote honestly. Whisper is an
+            // explicit external bargain; it changes the effective action,
+            // not the votes. Preserve the raw result for the Soul Court.
+            NaturalDecisionDetail = decision;
+            LastWhisperCompelled = context.HasCommand &&
+                Gameplay.Whisper.Persuaded(_warrior) &&
+                decision.Action != ActionType.ObeyCommand;
+            if (LastWhisperCompelled)
+            {
+                decision.Action = ActionType.ObeyCommand;
+                decision.RefusedCommand = false;
+                decision.Hesitated = false;
+            }
+
             // Смена действия — до присваивания: объявлять надо начало
             // поступка, а не каждый тик, пока он длится. Бежать можно
             // полминуты, и «сбегает» полминуты подряд — это не событие,
@@ -54,6 +83,7 @@ namespace Sinbinder.AOS
             bool changed = decision.Action != LastDecision;
 
             LastContext = context;
+            LastDecisionCommandRevision = _warrior.CommandRevision;
             LastDecisionDetail = decision;
             LastDecision = decision.Action;
 
@@ -69,7 +99,7 @@ namespace Sinbinder.AOS
 
             if (decision.RefusedCommand)
                 using (Core.Cost.Of("decide.refused")) AOSEventHub.Instance?.OnCommandRefused(_warrior, decision, context);
-            else if (changed)
+            else if (changed && !LastWhisperCompelled)
                 using (Core.Cost.Of("decide.selfwilled")) AOSEventHub.Instance?.OnSelfWilled(_warrior, decision, context);
 
             return LastDecision;
@@ -116,7 +146,8 @@ namespace Sinbinder.AOS
 
             // Жизнь в лагере (docs/32-CAMP.md): решил «стоять» — стоит там,
             // куда тянет душа. Голос решил что, лагерь — где.
-            if (action == ActionType.Idle && CampLife.Where(_warrior, out var spot, out _))
+            if (OrderIntegrity.MayRoamCamp(action == ActionType.Idle, _warrior.HasCommand) &&
+                CampLife.Where(_warrior, out var spot, out _))
             {
                 ShowDecisionIcon(action);
                 var legs = GetComponent<UnitMover>();
@@ -130,9 +161,26 @@ namespace Sinbinder.AOS
                 return;
             }
 
+            // Holding a defensive post is compatible with choosing to
+            // attack an enemy who is already in range. It is NOT a license
+            // to chase an enemy across the map and abandon the post.
+            if (_warrior != null && _warrior.HasCommand &&
+                _warrior.Command.Kind == CommandKind.Defend &&
+                (action == ActionType.Attack || action == ActionType.Idle))
+            {
+                ShowDecisionIcon(action);
+                ExecuteDefenseAtPost();
+                return;
+            }
+
             ShowDecisionIcon(action);
             switch (action)
             {
+                case ActionType.Idle:
+                    // AOS hesitation must actually stop the previous move.
+                    // TryExecuteSkill(Idle) used to leave a NavMesh path alive.
+                    GetComponent<UnitMover>()?.Stop();
+                    break;
                 case ActionType.Attack: ExecuteAttack(); break;
                 case ActionType.Flee: ExecuteFlee(); break;
                 case ActionType.Loot: ExecuteLoot(); break;
@@ -175,7 +223,8 @@ namespace Sinbinder.AOS
         /// не находил подходящего умения и вырождался в Idle.
         /// То есть подчинение исполнялось как «стоять на месте».
         /// </summary>
-        private float _obeyedAt = -1f;
+        private bool _hasObeyedOrder;
+        private uint _obeyedOrderRevision;
         private float _siegeReady;
 
         /// <summary>
@@ -209,9 +258,13 @@ namespace Sinbinder.AOS
 
             // Послушал Греховода — привыкает слушать его, а приказ по душе — сильнее (Favor, 54-TUG.md):
             // раз на приказ, а не каждый такт.
-            if (!string.IsNullOrEmpty(cmd.Lord) && !Mathf.Approximately(_obeyedAt, cmd.IssuedAt))
+            // A purchased whisper is not earned trust. The player has
+            // bought this action, not proved that the soul trusts its Lord.
+            if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord) &&
+                (!_hasObeyedOrder || _obeyedOrderRevision != _warrior.CommandRevision))
             {
-                _obeyedAt = cmd.IssuedAt;
+                _hasObeyedOrder = true;
+                _obeyedOrderRevision = _warrior.CommandRevision;
                 Favor.Obeyed(_warrior, cmd);
             }
 
@@ -243,7 +296,12 @@ namespace Sinbinder.AOS
                         var sturdy = cmd.Target.GetComponentInParent<Sturdy>();
                         if (sturdy != null && !sturdy.Broken)
                         {
-                            Siege(sturdy, mover);
+                            // Снаряжение-искуситель в обучении: настоящая команда
+                            // проходит выбор души, после послушания — стрела по
+                            // недосягаемой мечом подвесной печати.
+                            var suspended = sturdy.GetComponent<DreamBowTarget>();
+                            if (suspended != null) suspended.ExecuteShot(_warrior);
+                            else Siege(sturdy, mover);
                             return;
                         }
                     }
@@ -288,15 +346,35 @@ namespace Sinbinder.AOS
                     break;
 
                 case CommandKind.Defend:
-                    if (mover != null) mover.Stop();
-                    // Оборона: бить только того, кто подошёл сам.
-                    var near = FindBestTarget();
-                    var aa = GetComponent<AutoAttack>();
-                    if (near != null && aa != null
-                        && Vector3.Distance(transform.position, near.transform.position) <= aa.AttackRange)
-                        aa.ForceAttack(near);   // деяние — в AutoAttack.Land
+                    ExecuteDefenseAtPost();
                     break;
             }
+        }
+
+        /// <summary>
+        /// Defend means HOLD this position and repel attackers who reached
+        /// weapon range. An AOS Attack candidate may satisfy Defend, but
+        /// must not turn into an unbounded pursuit.
+        /// </summary>
+        private void ExecuteDefenseAtPost()
+        {
+            GetComponent<UnitMover>()?.Stop();
+            var aa = GetComponent<AutoAttack>();
+            if (aa == null || CombatManager.Instance == null) return;
+
+            Damageable closest = null;
+            float closestDistance = float.MaxValue;
+            foreach (var enemy in CombatManager.Instance.GetEnemies(gameObject))
+            {
+                if (enemy == null || enemy.IsDead) continue;
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance <= aa.AttackRange && distance < closestDistance)
+                {
+                    closest = enemy;
+                    closestDistance = distance;
+                }
+            }
+            if (closest != null) aa.ForceAttack(closest);
         }
 
         /// <summary>Кто позвал на себя и на чей зов этот воин повёлся. Пусто — никто.</summary>
@@ -498,29 +576,42 @@ namespace Sinbinder.AOS
             }
         }
 
+        /// <summary>
+        /// AOS решила СПАСТИ, а не просто подойти и мгновенно записать подвиг.
+        /// Выбираем раненого среди друзей ЭТОГО воина: GetAliveAllies()
+        /// возвращал только отряд игрока, и враги «спасали» не тех.
+        /// Приблизившись, воин прикрывает товарища от следующего удара.
+        /// Только реальный блок Bodyguard.Absorb создаёт событие спасения.
+        /// </summary>
         private void ExecuteSaveAlly()
         {
-            if (CombatManager.Instance == null) return;
-            var allies = CombatManager.Instance.GetAliveAllies();
-            Warrior best = null;
+            if (CombatManager.Instance == null || _warrior == null || _warrior.IsDead) return;
+            Damageable best = null;
             float bestDist = float.MaxValue;
-            foreach (var dmg in allies)
+            foreach (var dmg in CombatManager.Instance.GetAllies(gameObject))
             {
                 if (dmg == null || dmg.IsDead || dmg.Warrior == null || dmg.Warrior == _warrior) continue;
-                var w = dmg.Warrior;
-                if (w.Team != _warrior.Team) continue;
-                if (w.HP < w.MaxHP * 0.5f)
-                {
-                    float dist = Vector3.Distance(transform.position, w.transform.position);
-                    if (dist < bestDist) { bestDist = dist; best = w; }
-                }
+                if (dmg.HP >= dmg.MaxHP * 0.3f) continue;
+                float dist = Vector3.Distance(transform.position, dmg.transform.position);
+                // Голосование видит союзников максимум в 10 метрах. Исполнение
+                // не должно отправлять защитника за полкарты к другому раненому.
+                if (dist > 10f || dist >= bestDist) continue;
+                bestDist = dist;
+                best = dmg;
             }
-            if (best != null)
+            if (best == null) return;
+
+            var mover = GetComponent<UnitMover>();
+            if (bestDist > 2.5f)
             {
-                var mover = GetComponent<UnitMover>();
-                if (mover != null) mover.CommandMove(best.transform.position);
-                AOSEventHub.Instance?.OnAllySaved(_warrior, best);
+                mover?.CommandMove(best.transform.position);
+                return;
             }
+
+            mover?.Stop();
+            Bodyguard.GuardForRescue(best, _warrior);
+            // Нет OnAllySaved здесь. Пока удар не перехвачен,
+            // раненый ещё не спасён и никому ничего не должен.
         }
 
         /// <summary>

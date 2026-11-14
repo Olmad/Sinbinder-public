@@ -5541,7 +5541,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Я сам решу, за кем идти."
-msgstr ""
+msgstr "I'll decide for myself whom to follow."
 
 #: Dialogue/VillageLines.cs
 msgid "Лишь бы дело дал, а не стоять."
@@ -5549,11 +5549,11 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Пусть зовёт. Я тут посижу."
-msgstr ""
+msgstr "Let him call. I'll sit here."
 
 #: Dialogue/VillageLines.cs
 msgid "Тебя звал, а меня — нет?"
-msgstr ""
+msgstr "He called you, but not me?"
 
 #: Dialogue/VillageLines.cs
 msgid "Звал? Ласково хоть?"
@@ -5561,7 +5561,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "У него, говорят, котёл полный."
-msgstr ""
+msgstr "I hear his cooking pot is full."
 
 #: Dialogue/VillageLines.cs
 msgid "Поглядим."
@@ -5669,7 +5669,7 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Подсаживайся ближе."
-msgstr ""
+msgstr "Come sit closer."
 
 #: Dialogue/VillageLines.cs
 msgid "Хлеба бы."
@@ -7033,55 +7033,55 @@ msgstr "Guda the Younger"
 
 #: Gameplay/FallenBag.cs
 msgid "Мешок {0}"
-msgstr ""
+msgstr "{0}'s bag"
 
 #: Gameplay/FallenBag.cs
 msgid "Лопата Марги"
-msgstr ""
+msgstr "Marga's shovel"
 
 #: Gameplay/FallenBag.cs
 msgid "Он копал ею везде, где вставал лагерь."
-msgstr ""
+msgstr "He used it to dig wherever the camp was pitched."
 
 #: Gameplay/FallenBag.cs
 msgid "Воронье перо"
-msgstr ""
+msgstr "Raven feather"
 
 #: Gameplay/FallenBag.cs
 msgid "Ворон прибился к нему ещё при жизни."
-msgstr ""
+msgstr "The raven had followed him even in life."
 
 #: Gameplay/FallenBag.cs
 msgid "Огарок свечи Вейна"
-msgstr ""
+msgstr "Veyn's candle stub"
 
 #: Gameplay/FallenBag.cs
 msgid "Он читал при ней, пока лагерь спал."
-msgstr ""
+msgstr "He read by its light while the camp slept."
 
 #: Gameplay/FallenBag.cs
 msgid "F — поднять мешок {0}"
-msgstr ""
+msgstr "F — collect {0}'s bag"
 
 #: Gameplay/FallenBag.cs
 msgid "Вы подняли мешок {0}. «{1}» — с вами."
-msgstr ""
+msgstr "You collected {0}'s bag. You kept \"{1}\"."
 
 #: Gameplay/FallenBag.cs
 msgid "Вы подняли мешок {0}."
-msgstr ""
+msgstr "You collected {0}'s bag."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} несёт вам вещи {1}."
-msgstr ""
+msgstr "{0} brings you {1}'s belongings."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} обобрал {1}: не ладили."
-msgstr ""
+msgstr "{0} robbed {1}: they never got along."
 
 #: Gameplay/FallenBag.cs
 msgid "{0} не тронул мешок {1}: у мёртвых не берут."
-msgstr ""
+msgstr "{0} left {1}'s bag untouched: the dead should not be robbed."
 
 #: Gameplay/Favor.cs
 msgid "Наконец-то дело!"
@@ -12828,3 +12828,559 @@ msgstr "This is the court of her soul. The judges are her voices, all thirteen. 
 #. нет в коде
 msgid "Судьи, ваше слово. Тише — первыми, громче — последними."
 msgstr "Judges, speak. The quiet first, the loud last."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Пока держит слово, зря ругать его не стану."
+msgstr "As long as he keeps his word, I won't speak ill of him."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Не худший. Но за меня решать не надо."
+msgstr "Not the worst. But he doesn't get to decide for me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Посмотрим, каков он в настоящей драке."
+msgstr "Let's see what he's worth in a real fight."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "К нему идут охотнее, чем ко мне."
+msgstr "They go to him more readily than to me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "С ним хоть поговорить можно."
+msgstr "At least you can talk to him."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Главное, чтоб отряд без ужина не оставил."
+msgstr "As long as he doesn't leave the squad without supper."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Пока не гонит зря, пусть командует."
+msgstr "As long as he doesn't drive us needlessly, let him lead."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "С меня ему не взять ни гроша."
+msgstr "He won't get a single coin out of me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Пусть попробует мной помыкать."
+msgstr "Let him try ordering me around."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Я бы ему дорогу перегородил."
+msgstr "I'd stand in his way."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Другим он улыбается. Нам — нет."
+msgstr "He smiles at the others. Not at us."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Не нравится мне, как он смотрит на людей."
+msgstr "I don't like the way he looks at people."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "При нём и крошку поберегу."
+msgstr "I'll guard every crumb with him around."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Лишь бы мимо прошёл."
+msgstr "I just hope he walks past."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Звал — пусть сначала заплатит."
+msgstr "He called us? Let him pay first."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "В бой зовёт или просто за собой таскать?"
+msgstr "Is he calling us to fight, or just to trail after him?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Звал? Хоть по-человечески?"
+msgstr "He called? Did he at least ask nicely?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Свой счёт веди. До моего не доберёшься."
+msgstr "Count your own. You won't be counting mine."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Тебе бы чужие кошели считать."
+msgstr "All you do is count other people's purses."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Припрятал топор. Хочешь проверить?"
+msgstr "I've hidden an axe. Want to check?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Меньше твоего. Как всегда."
+msgstr "Less than you. As always."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "На двоих хватит. Может, поделюсь."
+msgstr "Enough for two. I might share."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Горбушка хлеба. До вечера не доживёт."
+msgstr "A heel of bread. It won't last until evening."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Не считал. Спать не мешай."
+msgstr "Haven't counted. Let me sleep."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Достоинство на хлеб не выменяешь."
+msgstr "You can't trade pride for bread."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "А я, значит, для вида здесь стою?"
+msgstr "And I'm just here for decoration, am I?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Поговорим, когда дело до драки дойдёт."
+msgstr "We'll talk when there's fighting to be done."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Тебя вечно первым считают. С чего бы?"
+msgstr "They always put you first. Why is that?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Уж больно много о себе говоришь."
+msgstr "You talk about yourself rather a lot."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "А поесть от этого что?"
+msgstr "And what good is that when you're hungry?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Ты стой. Я посижу."
+msgstr "You stand. I'll sit."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Только своё не ломай. За чужое платят."
+msgstr "Just don't break your own things. Other people's cost money."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Научись сначала держать себя в руках."
+msgstr "First learn to control yourself."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Если начнётся, зови меня."
+msgstr "If trouble starts, call me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Конечно. Тебе всё с рук сойдёт."
+msgstr "Naturally. You'll get away with anything."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Лучше с кем-нибудь поговори."
+msgstr "Better find someone to talk to."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Сначала поешь. Может, остынешь."
+msgstr "Eat something first. It might cool your temper."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Ты сначала встань с лавки."
+msgstr "First get up from the bench."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Видал. Если продаёт, узнаю цену."
+msgstr "I saw. If it's for sale, I'll ask the price."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "А своим ты когда-нибудь доволен?"
+msgstr "Are you ever pleased with what you have?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Мне до чужого дела нет."
+msgstr "I don't care what the neighbors own."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "У него новое, у меня старое. И ладно."
+msgstr "His is new, mine is old. So what."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Я смотрел не на обновку."
+msgstr "I wasn't looking at what he bought."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "У соседа хлеб свежий? Тогда видал."
+msgstr "Fresh bread next door? Then yes, I noticed."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Видал. И пусть носит."
+msgstr "I saw. Let him enjoy it."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Тепло пока бесплатно."
+msgstr "The warmth is still free."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Не со всяким я сяду рядом."
+msgstr "I won't sit beside just anyone."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Садись. Пока тихо, можно."
+msgstr "Sit down. While it's quiet, we can."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "К тебе все идут, ко мне никто."
+msgstr "Everyone comes to you, no one comes to me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Тепло-то тепло, а ужин где?"
+msgstr "Warm enough, but where's supper?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Пока не зовут, посижу."
+msgstr "I'll sit until someone calls."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "На чужой ужин не рассчитывай."
+msgstr "Don't count on someone else's supper."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Ты ведь только что ел."
+msgstr "You only just ate."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Не ной. Лучше дров подкинь."
+msgstr "Stop moaning. Put another log on."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Ты ешь чаще нас."
+msgstr "You eat more often than the rest of us."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Разделим хлеб, коли найдётся."
+msgstr "We'll share some bread if we find any."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "У меня горбушка осталась. Пополам?"
+msgstr "I've got a heel of bread left. Half each?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Мне бы тоже, да вставать лень."
+msgstr "I'd like some too, but I can't be bothered to get up."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Пока ты сидишь, за сундуком кто смотрит?"
+msgstr "While you sit there, who's watching the chest?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Кто-то же должен встать, когда беда придёт."
+msgstr "Someone has to stand when trouble comes."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Посидишь, когда врага выгоним."
+msgstr "You can sit when we've driven off the enemy."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Тебе легко. За тебя другие работают."
+msgstr "Easy for you. Others do your work."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Если место есть, останусь."
+msgstr "If there's room, I'll stay."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "А еды принесут?"
+msgstr "Will someone bring us food?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "И не собирался вставать."
+msgstr "Wasn't planning to get up."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Поговаривают, Орден снова на тропах. Не к добру."
+msgstr "They say the Order is back on the roads. That's trouble."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "У знака неподалёку — «{0}». Кто пойдёт посмотреть?"
+msgstr "There's something by the nearby marker: \"{0}\". Who will go and look?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/CampLines.cs
+msgid "Понял."
+msgstr "Understood."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пусть делом докажет, что ему можно верить."
+msgstr "Let him prove by his deeds that he can be trusted."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Веру пусть делами заслужит."
+msgstr "Let him earn my trust through actions."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "В бою посмотрим, чего он стоит."
+msgstr "We'll see what he's worth in battle."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Другим он обещает больше, чем нам."
+msgstr "He promises the others more than he promises us."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Сначала поговорю с ним сам."
+msgstr "I'll talk to him myself first."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Если накормит — подумаю."
+msgstr "If he feeds us, I'll consider it."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока не трогает, мне всё равно."
+msgstr "As long as he leaves me alone, I don't care."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Если слово сдержит, не стану его ругать."
+msgstr "If he keeps his word, I won't speak ill of him."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Может, и так. Но за меня решать не надо."
+msgstr "Maybe so. But he doesn't get to decide for me."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "С этим Греховодом лучше не связываться."
+msgstr "Better not get involved with that Sinbinder."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Что скажешь про Греховода? Стоит ему верить?"
+msgstr "What do you think of the Sinbinder? Can we trust him?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "В этой деревне только я чего-то стою."
+msgstr "I'm the only one in this village worth anything."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Видала, что у соседа новое?"
+msgstr "Have you seen what the neighbor got?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока цел. Была бы доля — был бы и весел."
+msgstr "Still in one piece. I'd be happier with my share."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Пока цела. Была бы доля — была бы и весела."
+msgstr "Still in one piece. I'd be happier with my share."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Устал. Можно я присяду?"
+msgstr "I'm tired. Can I sit down?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Устала. Можно я присяду?"
+msgstr "I'm tired. Can I sit down?"
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Не считай вылазки. Потребуй своё."
+msgstr "Stop counting sorties. Demand what you're owed."
+
+#: Dialogue/VillageDialogueRules.cs Dialogue/VillageLines.cs Dialogue/TalkLines.cs Dialogue/CampLines.cs
+msgid "Твоё? Так забери обратно."
+msgstr "Yours? Then take it back."
+
+#: Dialogue/CampLines.cs
+msgid "Поняла."
+msgstr "Understood."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Партия прервана: один из воинов отошёл от стола."
+msgstr "The hand was interrupted: a warrior left the table."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Перебор."
+msgstr "Bust."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Беру карту."
+msgstr "I'll draw a card."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Хватит."
+msgstr "I'll stand."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Вы"
+msgstr "You"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Тренировка: наберите от 17 до 21."
+msgstr "Practice: score between 17 and 21."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Новая раздача. Цель — ближе всех к 21, не перебрав."
+msgstr "New deal. Get closest to 21 without going over."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Ваш ход записан."
+msgstr "Your move is registered."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Ход сделан."
+msgstr "Move registered."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Никто не набрал достаточно очков."
+msgstr "Nobody scored enough to win."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Партия окончена. Выиграли: {0}."
+msgstr "Hand over. Winners: {0}."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Эта партия моя."
+msgstr "That hand is mine."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Наблюдайте за ходами или нажмите «Сыграть»."
+msgstr "Watch the game, or choose Play."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Карты у костра"
+msgstr "Cards by the campfire"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "КАРТЫ У КОСТРА · ОЧКО (21)"
+msgstr "CAMPFIRE CARDS · 21"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11. Без ставок."
+msgstr "36 cards: 6–10 face value, J=2, Q=3, K=4, A=11. No wagers."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "ПЕРЕБОР"
+msgstr "BUST"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid " ← ход"
+msgstr " ← turn"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid " · закончил"
+msgstr " · done"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "{0}: {1}  [{2}]{3}"
+msgstr "{0}: {1}  [{2}]{3}"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "За столом пока нет начатой партии."
+msgstr "No hand is in progress at this table."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Взять карту (Пробел)"
+msgstr "Draw a card (Space)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Хватит (Enter)"
+msgstr "Stand (Enter)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сыграть самому (N)"
+msgstr "Play a hand (N)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Нет соперников: доступна тренировка или игра с одним воином."
+msgstr "No full table: practise alone or play against one warrior."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сейчас ход воина. Решение зависит от его характера."
+msgstr "A warrior is playing. Their choices depend on their character."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Сыграть после этой раздачи"
+msgstr "Join after this hand"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Вы присоединитесь к следующей раздаче."
+msgstr "You will join the next deal."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Следующая раздача будет с вашим участием."
+msgstr "You are joining the next deal."
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "Встать из-за стола (F / Esc)"
+msgstr "Leave the table (F / Esc)"
+
+#: Gameplay/CardTable.cs UI/GearPanel.cs
+msgid "F — карты: смотреть или сыграть"
+msgstr "F — cards: watch or play"
+
+#: Gameplay/CardTable.cs
+msgid "Для денежной ставки нужен соперник."
+msgstr "You need an opponent to wager coins."
+
+#: Gameplay/CardTable.cs
+msgid "Воин отказался ставить столько монет."
+msgstr "A warrior declined that wager."
+
+#: Gameplay/CardTable.cs
+msgid "В вашем кошеле не хватает монет."
+msgstr "Not enough coins in your purse."
+
+#: Gameplay/CardTable.cs
+msgid "Не удалось собрать ставки: ничьи деньги не списаны."
+msgstr "The wager could not be opened. No coins were taken."
+
+#: Gameplay/CardTable.cs
+msgid "На кону {0} монет. Побеждает лучший результат до 21."
+msgstr "{0} coins in the pot. Highest score up to 21 wins."
+
+#: Gameplay/CardTable.cs
+msgid "Партия остановлена: участник погиб. Ставки возвращены."
+msgstr "The hand ended because a participant died. Stakes were refunded."
+
+#: Gameplay/CardTable.cs
+msgid "36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11."
+msgstr "36 cards: 6–10 face value, J=2, Q=3, K=4, A=11."
+
+#: Gameplay/CardTable.cs
+msgid "Ставка: {0} с игрока; в банке: {1}."
+msgstr "Stake: {0} per player; pot: {1}."
+
+#: Gameplay/CardTable.cs
+msgid "Ваш кошель: {0} монет."
+msgstr "Your purse: {0} coins."
+
+#: Gameplay/CardTable.cs
+msgid "Бесплатная партия (N)"
+msgstr "Free hand (N)"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 1"
+msgstr "Bet 1"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 5"
+msgstr "Bet 5"
+
+#: Gameplay/CardTable.cs
+msgid "Поставить 10"
+msgstr "Bet 10"
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок"
+msgstr "Bag"
+
+#: Gameplay/FallenBag.cs
+msgid "Сейчас некому забрать содержимое мешка."
+msgstr "There is nobody to carry the bag's contents."
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок {0}: места не хватило, оставшиеся вещи на земле."
+msgstr "There was not enough space in your inventory. The remaining items are still in {0}'s bag."
+
+#: Gameplay/FallenBag.cs
+msgid "Мешок {0} собран."
+msgstr "You collected everything from {0}'s bag."
+
+#: Gameplay/FallenBag.cs
+msgid "Отнесу его вещи владыке."
+msgstr "I'll bring his things to our lord."
+
+#: Gameplay/FallenBag.cs
+msgid "Мёртвому это уже ни к чему."
+msgstr "The dead have no use for this now."
+
+#: Gameplay/FallenBag.cs
+msgid "{0} забрал вещи {1} себе."
+msgstr "{0} kept {1}'s belongings."

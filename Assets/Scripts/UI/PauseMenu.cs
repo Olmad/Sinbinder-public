@@ -43,7 +43,7 @@ namespace Sinbinder.UI
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
             // Этот Esc закрыл консоль (Dev.CheatConsole) — меню он не открывает.
-            if (Dev.CheatConsole.OwnsEscape) return;
+            if (Dev.CheatConsole.OwnsEscape || Gameplay.CardTable.OwnsEscape) return;
 
             if (_open) { Close(); return; }
 

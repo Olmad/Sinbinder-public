@@ -241,19 +241,29 @@ namespace Sinbinder.UI
                 _craftLine.text = Grammar.For(shown.Gender, Loc.T("громче всех не согласен"));
 
             var odd = new System.Collections.Generic.List<string>();
-            int calm = 0;
+            int decided = 0;
+            int pending = 0;
+            int unordered = 0;
             foreach (var w in all)
             {
                 if (w == shown) continue;
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                if (d != null && d.LastContext != null && Disagrees(w))
+                // No order, awaiting AOS, and a completed verdict are distinct
+                // states. A verdict alone does not prove physical execution.
+                if (!w.HasCommand)
+                    unordered++;
+                else if (d == null || !d.HasCurrentCommandDecision)
+                    pending++;
+                else if (Disagrees(w))
                     odd.Add(Loc.F("{0} {1}", Loc.Name(w.DisplayName),
                         d.LastDecisionDetail.Hesitated ? Grammar.For(w.Gender, Loc.T("медлит"))
                                                        : PhraseGenerator.Doing(d.LastDecisionDetail.Action).ToLowerInvariant()));
-                else calm++;
+                else decided++;
             }
 
-            if (calm > 0) odd.Add(Loc.F("ещё {0} — в строю", Many(calm)));
+            if (pending > 0) odd.Add(Loc.F("ещё {0} — ожидают решения", Many(pending)));
+            if (unordered > 0) odd.Add(Loc.F("ещё {0} — без приказа", Many(unordered)));
+            if (decided > 0) odd.Add(Loc.F("ещё {0} — решение принято", Many(decided)));
             if (_groupLine != null)
             {
                 _groupLine.text = string.Join(" · ", odd);
@@ -265,7 +275,7 @@ namespace Sinbinder.UI
         private static bool Disagrees(Warrior w)
         {
             var d = w.GetComponent<AOSWarriorWrapper>();
-            if (d == null || d.LastContext == null) return false;
+            if (d == null || !d.HasCurrentCommandDecision) return false;
             return d.LastDecisionDetail.RefusedCommand || d.LastDecisionDetail.Hesitated;
         }
 
@@ -344,7 +354,7 @@ namespace Sinbinder.UI
             foreach (var w in Picked())
             {
                 var d = w.GetComponent<AOSWarriorWrapper>();
-                if (d != null && d.LastContext != null)
+                if (d != null && d.HasCurrentCommandDecision)
                 {
                     if (d.LastDecisionDetail.RefusedCommand) return w;
                     if (hesitant == null && d.LastDecisionDetail.Hesitated) hesitant = w;
@@ -432,25 +442,61 @@ namespace Sinbinder.UI
             if (wrapper == null || wrapper.LastContext == null)
             {
                 Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
-                Order(Loc.T("Приказа нет"), "", false);
+                if (who.HasCommand)
+                    Order(Loc.T("Приказ отдан — решение ожидается"), "", true);
+                else
+                    Order(Loc.T("Приказа нет"), "", false);
+                return;
+            }
+
+            // A newly issued order has not yet been voted on: never reuse an old refusal.
+            if (who.HasCommand && !wrapper.HasCurrentCommandDecision)
+            {
+                Voice(null, Loc.T("Новый приказ"), Loc.T("Ожидаем решения воина"), Faint, 27);
+                Order(Loc.T("Приказ отдан — решение ожидается"), "", true);
                 return;
             }
 
             var decision = wrapper.LastDecisionDetail;
             var context = wrapper.LastContext;
-            bool ordered = who.Command.IsSet;
+            bool ordered = who.Command.IsSet && context.HasCommand;
+
+            // The whisper is an EXTERNAL bargain, not a fourteenth AOS
+            // voice and not free loyalty. Show the difference to the player.
+            if (ordered && wrapper.LastWhisperCompelled)
+            {
+                Voice(null, Loc.T("Поддался шёпоту"),
+                    Loc.T("Голоса души спорили, но уговор изменил поступок."), Bone, 27);
+                Order(Loc.T("Согласился после уговора"),
+                    Loc.T("Шёпот действует только на этот приказ."), true);
+                return;
+            }
 
             // Исполняет приказ — громче всех ваш голос, и он один на панели:
             // строки «Верность кричит» и «Ваш приказ громче» — одна правда дважды.
-            if (ordered && !decision.Hesitated && decision.Action == ActionType.ObeyCommand)
+            if (ordered && AOSDecisionAdvice.Fulfilled(decision, context)
+                && decision.Action == ActionType.ObeyCommand)
             {
                 // Середина зоны не пустует (разбор кадра 1 октября): крупно —
                 // что он делает, тише — что в нём сейчас никто не спорит.
                 string doing = PhraseGenerator.Doing(decision.Action);
                 Voice(null, string.IsNullOrEmpty(doing) ? "" : char.ToUpper(doing[0]) + doing.Substring(1),
                       Grammar.For(who.Gender, Loc.T("ничто в нём сейчас не спорит с приказом")), Muted, 30);
-                Order(Loc.T("Ваш приказ — громче всех"),
-                      Grammar.For(who.Gender, Loc.T("громче всех его голосов")), true);
+                Order(Loc.T("Решил выполнить приказ"),
+                      Grammar.For(who.Gender, Loc.T("решил послушаться")), true);
+                return;
+            }
+
+            // Иногда душа выбирает тот же поступок не из послушания:
+            // гневный идёт атаковать сам, исполняя приказ на атаку.
+            // Называть это отказом — показывать игроку ложную причину.
+            if (ordered && AOSDecisionAdvice.Fulfilled(decision, context))
+            {
+                var doing = PhraseGenerator.Doing(decision.Action);
+                Voice(null, Loc.T("Сам выбрал: ") + doing,
+                    PhraseGenerator.Reason(who, context, decision), Bone, 27);
+                Order(Loc.T("Решение совпало с приказом"),
+                    Loc.T("Его собственное решение совпало с приказом."), true);
                 return;
             }
 
@@ -468,11 +514,16 @@ namespace Sinbinder.UI
                 return;
             }
 
-            string why = Grammar.For(who.Gender, Quieter(decision, context));
+            string suggestion = AOSDecisionAdvice.NextShort(decision, context);
+            string why = string.IsNullOrEmpty(suggestion)
+                ? Grammar.For(who.Gender, Quieter(decision, context))
+                : suggestion;
             if (decision.Hesitated)
-                Order(Loc.T("Ваш приказ — почти так же громко"), why, true);
+                Order(Loc.T("Колеблется — приказ не исполнен"), why, true);
+            else if (decision.RefusedCommand)
+                Order(Loc.T("Отказался от приказа"), why, true);
             else
-                Order(Loc.T("Ваш приказ — тише"), why, true);
+                Order(Loc.T("Решает самостоятельно"), why, true);
         }
 
         /// <summary>Тело строчными: «зомби», «скелет».</summary>
@@ -659,7 +710,10 @@ namespace Sinbinder.UI
         {
             var f = d.Weighed ? d.Decisive : Counterfactual.Factor.None;
 
-            if (f == Counterfactual.Factor.None)
+            // A completed counterfactual with no decisive factor is not evidence
+            // that distance or debt caused this verdict. Only use context as a
+            // fallback when no counterfactual weighing was performed.
+            if (!d.Weighed && f == Counterfactual.Factor.None)
             {
                 if (c.CommandVolume < 0.75f) f = Counterfactual.Factor.Distance;
                 else if (c.UnpaidMissions > 0) f = Counterfactual.Factor.Debt;

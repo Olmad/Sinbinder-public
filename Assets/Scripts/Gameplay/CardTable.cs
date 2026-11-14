@@ -9,23 +9,12 @@ using Sinbinder.Core;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
-    /// Стол с картами у огня. Автор, 2 октября: «Не хватает стола с картами,
-    /// чтобы воины хоть как-то развлекались, и возможность к ним подсесть —
-    /// понаблюдать или поучаствовать».
-    ///
-    /// <b>Кто играет</b> — решают души, тем же голосованием, что и прочие
-    /// места лагеря (<see cref="CampSpot.Cards"/>): жадность — на кон,
-    /// уныние — убить время, похоть — ради компании, зависть — смотреть,
-    /// как везёт другим; гордыне и гневу за картами не сидится. Стоят
-    /// вокруг ящика, лицом к нему (<see cref="CampLife"/>).
-    ///
-    /// <b>Подсесть</b> — F у стола: камера смотрит на игру, игроки
-    /// перебрасываются словами — каждый по своему греху, по очереди,
-    /// без жребия; F, Esc или отойти — встать. Пока играет — мир идёт:
-    /// это не сцена, а вечер у огня.
-    ///
-    /// <b>Сыграть самому</b> — ждёт решения автора: что ставят и что игра
-    /// меняет (верность, память, долг). Здесь — только смотреть.
+    /// A genuine 36-card game of ochko (21). The existing AOS camp vote
+    /// decides who comes to the table; each participant then takes real
+    /// cards, decides whether to take another, and can win, lose or bust.
+    /// F opens the table, including solo practice if nobody has arrived.
+    /// No invented cash wagers: results produce only a small honest memory
+    /// for opponents who actually played against the Sinbinder.
     /// </summary>
     public class CardTable : MonoBehaviour
     {
@@ -35,8 +24,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Как далеко от стола игрок ещё «за картами».</summary>
         private const float Seat = 2.0f;
 
-        /// <summary>Как часто звучит реплика за столом, секунд.</summary>
-        private const float Beat = 3.4f;
+        /// <summary>Задержка между физическими ходами NPC и раздачами.</summary>
+        private const float TurnBeat = 1.45f;
+        private const float NextDeal = 5.5f;
 
         public static CardTable Instance { get; private set; }
 
@@ -48,8 +38,24 @@ namespace Sinbinder.Gameplay
             Instance != null && SinbinderPlayer.Exists
             && CampFocus.GroundDistance(SinbinderPlayer.Where, Instance.transform.position) <= Reach;
 
-        private float _nextLine;
-        private int _turn;
+        private CampCardRound _round;
+        private CampCardPot _pot;
+        private readonly List<Warrior> _roundWarriors = new();
+        private float _nextMoveAt;
+        private float _nextDealAt;
+        private int _deal;
+        private bool _playedByHuman;
+        private bool _joinNext;
+        private bool _recorded;
+        private string _status = "";
+        private GUIStyle _headingStyle;
+        private GUIStyle _rowStyle;
+        private static int _escapeClosedFrame = -1;
+
+        // Esc belongs to the card window even if another Update reads it after
+        // the window has closed during the same Unity frame.
+        public static bool OwnsEscape => Watching || _escapeClosedFrame == Time.frameCount;
+
 
         void Awake()
         {
@@ -59,7 +65,10 @@ namespace Sinbinder.Gameplay
 
         void OnDestroy()
         {
-            if (Instance == this) Instance = null;
+            if (Instance != this) return;
+            AbortRound(); // scene transition never burns escrowed coins
+            if (Watching) StandUp();
+            Instance = null;
             Watching = false;
         }
 
@@ -69,7 +78,8 @@ namespace Sinbinder.Gameplay
             var list = new List<Warrior>();
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID))
             {
-                if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer) continue;
+                if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer
+                    || w.HasCommand || w.Shell == ShellType.Ghost) continue;
                 if (!CampLife.SpotOf(w, out var spot) || spot != CampSpot.Cards) continue;
                 if (CampFocus.GroundDistance(w.transform.position, transform.position) > Seat) continue;
                 list.Add(w);
@@ -225,157 +235,494 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        private sealed class WarriorWallet : ICampCardWallet
+        {
+            private readonly Warrior _warrior;
+            private readonly string _name;
+            public WarriorWallet(Warrior warrior)
+            {
+                _warrior = warrior;
+                _name = warrior != null ? warrior.DisplayName : "";
+            }
+            public int Balance => _warrior != null ? _warrior.PocketGold : 0;
+            public bool Spend(int amount) => _warrior != null && _warrior.TrySpendPocket(amount);
+            public void Credit(int amount)
+            {
+                if (amount <= 0) return;
+                if (_warrior != null) _warrior.Pocket(amount);
+                else SquadRoster.CreditPocket(_name, amount);
+            }
+        }
+
+        private sealed class PlayerWallet : ICampCardWallet
+        {
+            private readonly Inventory.PlayerInventory _inventory;
+            public PlayerWallet(Inventory.PlayerInventory inventory) { _inventory = inventory; }
+            public int Balance => _inventory != null ? _inventory.Gold : 0;
+            public bool Spend(int amount) => _inventory != null && amount > 0 &&
+                                              _inventory.SpendGold(amount);
+            public void Credit(int amount) { if (_inventory != null && amount > 0) _inventory.AddGold(amount); }
+        }
+
+        /// <summary>
+        /// Cancel immediately before the corpse's purse becomes ground loot;
+        /// a refund on the next Update would come too late and lose coins.
+        /// </summary>
+        public void CancelForDeath(Warrior warrior)
+        {
+            if (warrior == null || _round == null || _round.Finished) return;
+            if (warrior == SinbinderPlayer.Instance || _roundWarriors.Contains(warrior))
+            {
+                AbortRound();
+                _status = Loc.T("Партия остановлена: участник погиб. Ставки возвращены.");
+            }
+        }
+
+        /// <summary>
+        /// Called before recording or restoring save state. A card pot is
+        /// runtime-only, so saving debited purses without this refund would
+        /// destroy coins or permit a reload to double-pay a round.
+        /// </summary>
+        public static void BeforeSaveOrLoad()
+        {
+            if (Instance == null || Instance._pot == null) return;
+            Instance.AbortRound();
+            Instance._status = Loc.T("Ставки возвращены: сохранение прервало партию.");
+        }
+
+        private void AbortRound()
+        {
+            _pot?.Refund();
+            _pot = null;
+            _round = null;
+            _roundWarriors.Clear();
+            _playedByHuman = false;
+            _joinNext = false;
+        }
+
         void Update()
         {
             Seating();
 
-            if (!Watching)
+            // Camp scenes, battle events and another modal take precedence.
+            if (!CampLife.Enabled || RaidEvent.Running || OpeningReveal.Busy)
             {
-                // Подсесть — F у стола. Мир стоит под панелью — не наше.
-                if (!Input.GetKeyDown(KeyCode.F) || !Near) return;
+                if (Watching) StandUp();
+                AbortRound();
+                return;
+            }
+
+            if (Watching)
+            {
+                if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape) ||
+                    !SinbinderPlayer.Exists ||
+                    CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) > Reach + 1.5f)
+                {
+                    StandUp();
+                    return;
+                }
+                if (_round != null && !_round.Finished && _round.Current.Human)
+                {
+                    if (Input.GetKeyDown(KeyCode.Space)) HumanMove(true);
+                    else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+                        HumanMove(false);
+                }
+                if (Input.GetKeyDown(KeyCode.N) && (_round == null || _round.Finished))
+                    NewDeal(true);
+            }
+            else if (Input.GetKeyDown(KeyCode.F) && Near && !UI.Modal.Any &&
+                     !UI.GearPanel.Open && !UI.PauseMenu.IsOpen)
+            {
                 var pause = GamePauseController.Instance;
-                if (pause != null && pause.IsPaused) return;
-                SitDown();
-                return;
+                var camera = Dialogue.DialogueCameraController.Instance;
+                if ((pause == null || !pause.IsPaused) && camera != null && !camera.InDialogue)
+                    SitDown();
             }
 
-            if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape)
-                || !SinbinderPlayer.Exists
-                || CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) > Reach + 1.5f)
-            {
-                StandUp();
+            if (GamePauseController.Instance != null && GamePauseController.Instance.IsPaused)
                 return;
-            }
-
-            if (Time.unscaledTime >= _nextLine)
-            {
-                _nextLine = Time.unscaledTime + Beat;
-                Talk();
-            }
+            TickGame();
         }
 
-        /// <summary>Подсесть к игре. Никого — строка в журнал, кадра нет.</summary>
-        public void SitDown()
+        private void TickGame()
         {
-            var players = Players();
-            var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
-            if (players.Count == 0)
+            var available = Players();
+            available.Sort((a, b) => string.CompareOrdinal(a.DisplayName, b.DisplayName));
+
+            if (_round != null && !_round.Finished)
             {
-                log?.Write(Loc.T("За картами никого: играть не с кем."));
+                foreach (var participant in _roundWarriors)
+                    if (participant == null || participant.IsDead || participant.HasCommand ||
+                        !available.Contains(participant))
+                    {
+                        AbortRound(); // refund escrow; no phantom stakes on exit
+                        _nextDealAt = Time.unscaledTime + NextDeal;
+                        _status = Loc.T("Партия прервана: один из воинов отошёл от стола.");
+                        return;
+                    }
+
+                if (_round.Current.Human) return; // actual player input, never scripted
+
+                if (Time.unscaledTime < _nextMoveAt) return;
+                var hand = _round.Current;
+                var npc = _roundWarriors[_round.Turn];
+                bool take = CampCardRound.WantsCard(hand.Sin, hand.Score, RecentCardBias(npc));
+                _round.Play(take);
+                _nextMoveAt = Time.unscaledTime + TurnBeat;
+                if (npc != null)
+                {
+                    string action = hand.Bust ? Loc.T("Перебор.") :
+                                    take ? Loc.T("Беру карту.") : Loc.T("Хватит.");
+                    UI.SpeechBubbles.Say(npc, action, 2.2f);
+                    npc.GetComponent<WarriorAnimation>()?.TalkFor(1.2f);
+                }
+                if (_round.Finished) FinishGame();
                 return;
             }
 
+            // An observer may ask to join the *next* fair deal, without
+            // erasing the hand the NPCs are currently playing.
+            if (Watching && _joinNext && Time.unscaledTime >= _nextDealAt)
+            {
+                BeginRound(available, true);
+                return;
+            }
+            // In the background, NPCs really play the next hand rather
+            // than repeating two pre-recorded phrases forever.
+            if (!Watching && Time.unscaledTime >= _nextDealAt && available.Count >= 2)
+                BeginRound(available, false);
+        }
+
+        /// <summary>
+        /// An actual previous victory makes the warrior a little more
+        /// cautious; a loss can make the next round riskier. Only the
+        /// most recent vivid game memory against this Sinbinder counts.
+        /// This changes a game decision, never the AOS command verdict.
+        /// </summary>
+        private static int RecentCardBias(Warrior who)
+        {
+            if (who == null || !SinbinderPlayer.Exists ||
+                MemoryProcessor.Instance == null) return 0;
+
+            MemoryRecord recent = null;
+            foreach (var memory in MemoryProcessor.Instance.GetMemories(who))
+            {
+                if (memory == null || memory.TargetID != SinbinderPlayer.Instance.Id ||
+                    (memory.EventType != "CardsLostToSinbinder" &&
+                     memory.EventType != "CardsWonAgainstSinbinder")) continue;
+                if (recent == null || memory.CreationTime > recent.CreationTime)
+                    recent = memory;
+            }
+            return recent == null ? 0
+                : recent.EventType == "CardsLostToSinbinder" ? 1 : -1;
+        }
+
+        private void BeginRound(List<Warrior> available, bool includeHuman, int requestedStake = 0)
+        {
+            // A participant who was invited may leave before their first
+            // turn; taking only physically present, eligible souls is crucial.
+            _roundWarriors.Clear();
+            var seats = new List<(string Name, SinType Sin, bool Human)>();
+            for (int i = 0; i < available.Count && seats.Count < (includeHuman ? 3 : 4); i++)
+            {
+                var w = available[i];
+                if (w == null || w.Soul == null) continue;
+                _roundWarriors.Add(w);
+                seats.Add((Loc.Name(w.DisplayName), w.Soul.Sin, false));
+            }
+            if (includeHuman)
+                seats.Add((Loc.T("Вы"), SinType.Pride, true));
+
+            if (seats.Count == 0) return;
+
+            // In unattended camp life, souls may choose a modest coin
+            // wager when they possess money and their personalities allow it.
+            if (!includeHuman && seats.Count > 1)
+            {
+                requestedStake = 1;
+                foreach (var w in _roundWarriors)
+                    if (CampCardRound.MaxStake(w.Soul.Sin, w.PocketGold) < 1)
+                        requestedStake = 0;
+            }
+            if (requestedStake > 0)
+            {
+                if (seats.Count < 2)
+                {
+                    _status = Loc.T("Для денежной ставки нужен соперник.");
+                    return;
+                }
+                var wallets = new List<ICampCardWallet>();
+                foreach (var warrior in _roundWarriors)
+                {
+                    if (CampCardRound.MaxStake(warrior.Soul.Sin, warrior.PocketGold)
+                        < requestedStake)
+                    {
+                        _status = Loc.F("{0} не согласен на ставку {1}. Попробуйте меньшую ставку или бесплатную партию.",
+                            Loc.Name(warrior.DisplayName), requestedStake);
+                        return;
+                    }
+                    wallets.Add(new WarriorWallet(warrior));
+                }
+                if (includeHuman)
+                {
+                    var inventory = Inventory.PlayerInventory.Instance;
+                    if (inventory == null || inventory.Gold < requestedStake)
+                    {
+                        _status = Loc.T("В кошеле не хватает монет. Попробуйте меньшую ставку или бесплатную партию.");
+                        return;
+                    }
+                    wallets.Add(new PlayerWallet(inventory));
+                }
+                if (!CampCardPot.TryOpen(wallets, requestedStake, out var pot))
+                {
+                    _status = Loc.T("Не удалось собрать ставки: ничьи деньги не списаны.");
+                    return;
+                }
+                _pot = pot;
+            }
+            else
+                _pot = null;
+            _deal++;
+            // A new shuffled deck for every deal, with seed specific to this
+            // camp session. This is not predetermined win/lose for the player.
+            int seed = unchecked(System.Environment.TickCount ^ (int)Time.unscaledTime ^
+                                 (_deal * 7919));
+            _round = new CampCardRound(seats, seed);
+            _playedByHuman = includeHuman;
+            _joinNext = false;
+            _recorded = false;
+            _nextMoveAt = Time.unscaledTime + TurnBeat;
+            _nextDealAt = Time.unscaledTime + NextDeal;
+            _status = seats.Count == 1 ? Loc.T("Тренировка: наберите от 17 до 21.")
+                : _pot != null ? Loc.F("На кону {0} монет. Побеждает лучший результат до 21.", _pot.Total)
+                : Loc.T("Новая раздача. Цель — ближе всех к 21, не перебрав.");
+        }
+
+        private void NewDeal(bool join, int stake = 0)
+        {
+            if (_round != null && !_round.Finished) return;
+            var available = Players();
+            available.Sort((a, b) => string.CompareOrdinal(a.DisplayName, b.DisplayName));
+            BeginRound(available, join, stake);
+        }
+
+        private void HumanMove(bool take)
+        {
+            if (!Watching || _round == null || _round.Finished ||
+                !_round.Current.Human) return;
+
+            _round.Play(take);
+            _status = _round.Hands[_round.Turn - (_round.Finished ? 1 : 0)].Human
+                ? Loc.T("Ваш ход записан.") : Loc.T("Ход сделан.");
+            _nextMoveAt = Time.unscaledTime + TurnBeat;
+            if (_round.Finished) FinishGame();
+        }
+
+        private void FinishGame()
+        {
+            if (_recorded || _round == null || !_round.Finished) return;
+            _recorded = true;
+            var winners = _round.Winners();
+            if (_pot != null)
+            {
+                // The exact winners decide the pot. All-bust refunds;
+                // no negative balance, repeat payout or fictitious stake.
+                _pot.Settle(winners);
+                _pot = null;
+            }
+            if (winners.Count == 0)
+            {
+                _status = Loc.T("Никто не набрал достаточно очков.");
+            }
+            else
+            {
+                var names = new List<string>();
+                foreach (int winner in winners) names.Add(_round.Hands[winner].Name);
+                _status = Loc.F("Партия окончена. Выиграли: {0}.", string.Join(", ", names));
+                int winnerNpc = winners[0];
+                if (winnerNpc < _roundWarriors.Count && _roundWarriors[winnerNpc] != null)
+                    UI.SpeechBubbles.Say(_roundWarriors[winnerNpc], Loc.T("Эта партия моя."), 2.6f);
+            }
+
+            // Playing cards creates a modest actual memory, not fake cash
+            // or raw loyalty. Existing MemoryProcessor applies its usual
+            // decay and protects against identical reward farming.
+            if (_playedByHuman && _round.Hands.Count > 1 &&
+                SinbinderPlayer.Exists && MemoryProcessor.Instance != null)
+            {
+                int hero = _round.Hands.Count - 1;
+                bool heroWon = winners.Contains(hero);
+                for (int i = 0; i < _roundWarriors.Count; i++)
+                {
+                    var warrior = _roundWarriors[i];
+                    if (warrior == null || warrior.IsDead) continue;
+                    bool npcWon = winners.Contains(i);
+                    string eventType;
+                    EmotionType emotion;
+                    float importance;
+                    if (heroWon && !npcWon)
+                    {
+                        eventType = "CardsLostToSinbinder";
+                        emotion = warrior.Soul != null && (warrior.Soul.Sin == SinType.Greed ||
+                            warrior.Soul.Sin == SinType.Pride) ? EmotionType.Anger : EmotionType.Surprise;
+                        importance = 0.10f;
+                    }
+                    else if (npcWon && !heroWon)
+                    {
+                        eventType = "CardsWonAgainstSinbinder";
+                        emotion = EmotionType.Joy;
+                        importance = 0.10f;
+                    }
+                    else
+                    {
+                        eventType = "CardsDrewWithSinbinder";
+                        emotion = EmotionType.Calm;
+                        importance = 0.06f;
+                    }
+                    MemoryProcessor.Instance.CreateMemory(warrior, eventType,
+                        SinbinderPlayer.Instance.Id, emotion, importance);
+                }
+            }
+            _nextDealAt = Time.unscaledTime + NextDeal;
+            // Ordinary camp life should not dump a match result into the
+            // battle log every few seconds when the player is elsewhere.
+            if (Watching) Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(_status);
+        }
+
+        /// <summary>F at the table: watch a live round or play yourself.</summary>
+        public void SitDown()
+        {
+            if (Watching || !SinbinderPlayer.Exists) return;
             var camera = Dialogue.DialogueCameraController.Instance;
             var eye = Camera.main;
             if (camera == null || eye == null || camera.InDialogue) return;
 
             Watching = true;
-            _turn = 0;
-            _nextLine = Time.unscaledTime + 1.2f;
+            _joinNext = false;
+            _status = Loc.T("Наблюдайте за ходами или нажмите «Сыграть».");
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
 
-            var names = new List<string>();
-            foreach (var p in players) names.Add(Loc.Name(p.DisplayName));
-            string caption = Loc.F("За картами: {0}", string.Join(", ", names));
-            log?.Write(caption);
-
-            // Со стороны Греховода, чуть сверху: видно ящик, карты и лица.
             Vector3 table = transform.position + Vector3.up * 0.65f;
             Vector3 from = SinbinderPlayer.Where - table;
             from.y = 0f;
             from = from.sqrMagnitude < 0.01f ? -eye.transform.forward : from.normalized;
             from = table + from * 2.1f + Vector3.up * 1.1f;
-
             camera.SaveCameraPosition();
-            camera.StartCoroutine(camera.FocusOnPoint(table, from, caption, push: 12f));
-
-            // Первым — кто-то из игроков встречает.
-            UI.SpeechBubbles.Say(players[0], Loc.T("Владыка? Садитесь. Смотреть — не возбраняется."), 3f);
+            camera.StartCoroutine(camera.FocusOnPoint(table, from,
+                Loc.T("Карты у костра"), push: 12f, fov: 52f));
         }
 
-        /// <summary>Встать из-за стола: камера — домой.</summary>
         public void StandUp()
         {
             if (!Watching) return;
             Watching = false;
-
-            var camera = Dialogue.DialogueCameraController.Instance;
-            if (camera == null) return;
-            camera.StopSway();
-            camera.StartCoroutine(camera.RestoreCamera());
-        }
-
-        /// <summary>Следующий игрок говорит свою строку — по кругу.</summary>
-        private void Talk()
-        {
-            var players = Players();
-            if (players.Count == 0) { StandUp(); return; }
-
-            var who = players[_turn % players.Count];
-            UI.SpeechBubbles.Say(who, Line(who, _turn / players.Count), 3f);
-            _turn++;
-        }
-
-        /// <summary>
-        /// Слово за картами — по греху, который в нём сейчас громче всех.
-        /// Строк по две на грех, по очереди: без жребия.
-        /// </summary>
-        private static string Line(Warrior w, int round)
-        {
-            var soul = w.Soul;
-            string[] lines;
-            switch (soul != null ? soul.Sin : SinType.Pride)
+            _joinNext = false;
+            _escapeClosedFrame = Time.frameCount;
+            // Leaving a live player hand is abandonment, not a win or
+            // an event that grants AOS memory. NPCs can deal again later.
+            if (_playedByHuman && _round != null && !_round.Finished)
             {
-                case SinType.Greed:    lines = Greed;    break;
-                case SinType.Envy:     lines = Envy;     break;
-                case SinType.Sloth:    lines = Sloth;    break;
-                case SinType.Lust:     lines = Lust;     break;
-                case SinType.Gluttony: lines = Gluttony; break;
-                case SinType.Wrath:    lines = Wrath;    break;
-                default:               lines = Plain;    break;
+                AbortRound(); // player walked away: return every escrowed coin
+                _nextDealAt = Time.unscaledTime + NextDeal;
             }
-            return Loc.T(lines[round % lines.Length]);
+            var camera = Dialogue.DialogueCameraController.Instance;
+            if (camera != null)
+            {
+                camera.StopSway();
+                camera.StartCoroutine(camera.RestoreCamera());
+            }
         }
 
-        private static readonly string[] Greed =
+        private void OnGUI()
         {
-            Loc.N("Ставлю медяк. Нет — два."),
-            Loc.N("Не трогай кон, это моё."),
-        };
+            if (!Watching) return;
+            float width = Mathf.Clamp(Screen.width - 24f, 280f, 710f);
+            float height = Mathf.Clamp(Screen.height - 35f, 290f, 500f);
+            float x = (Screen.width - width) * 0.5f;
+            float y = (Screen.height - height) * 0.5f;
+            GUI.Box(new Rect(x, y, width, height), "");
+            if (_headingStyle == null)
+            {
+                _headingStyle = new GUIStyle(GUI.skin.label)
+                    { fontSize = 20, fontStyle = FontStyle.Bold, wordWrap = true };
+                _rowStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = true };
+            }
 
-        private static readonly string[] Envy =
-        {
-            Loc.N("Опять ему везёт."),
-            Loc.N("Покажи руку. Не верю я твоим тузам."),
-        };
+            GUILayout.BeginArea(new Rect(x + 16f, y + 10f, width - 32f, height - 20f));
+            GUILayout.Label(Loc.T("КАРТЫ У КОСТРА · ОЧКО (21)"), _headingStyle);
+            GUILayout.Label(Loc.T("36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11."), _rowStyle);
+            if (_pot != null)
+                GUILayout.Label(Loc.F("Ставка: {0} с игрока; в банке: {1}.",
+                    _pot.Stake, _pot.Total), _rowStyle);
+            var purse = Inventory.PlayerInventory.Instance;
+            if (purse != null)
+                GUILayout.Label(Loc.F("Ваш кошель: {0} монет.", purse.Gold), _rowStyle);
+            GUILayout.Space(9f);
+            if (_round != null)
+            {
+                for (int i = 0; i < _round.Hands.Count; i++)
+                {
+                    var hand = _round.Hands[i];
+                    string cards = "";
+                    foreach (var c in hand.Cards)
+                        cards += (cards.Length == 0 ? "" : "    ") + c.Face;
+                    string score = hand.Bust ? Loc.T("ПЕРЕБОР") : hand.Score.ToString();
+                    string state = !_round.Finished && _round.Turn == i ? Loc.T(" ← ход") :
+                                   hand.Standing ? Loc.T(" · закончил") : "";
+                    GUILayout.Label(Loc.F("{0}: {1}  [{2}]{3}", hand.Name, cards, score, state), _rowStyle);
+                    GUILayout.Space(4f);
+                }
+            }
+            else
+            {
+                GUILayout.Label(Loc.T("За столом пока нет начатой партии."), _rowStyle);
+            }
+            GUILayout.Space(12f);
+            GUILayout.Label(_status, _rowStyle);
+            if (_round != null && !_round.Finished && _round.Current.Human)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(Loc.T("Взять карту (Пробел)"), GUILayout.Height(42f)))
+                    HumanMove(true);
+                if (GUILayout.Button(Loc.T("Хватит (Enter)"), GUILayout.Height(42f)))
+                    HumanMove(false);
+                GUILayout.EndHorizontal();
+            }
+            else if (_round == null || _round.Finished)
+            {
+                if (GUILayout.Button(Loc.T("Бесплатная партия (N)"), GUILayout.Height(35f)))
+                    NewDeal(true);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(Loc.T("Поставить 1"), GUILayout.Height(33f)))
+                    NewDeal(true, 1);
+                if (GUILayout.Button(Loc.T("Поставить 5"), GUILayout.Height(33f)))
+                    NewDeal(true, 5);
+                if (GUILayout.Button(Loc.T("Поставить 10"), GUILayout.Height(33f)))
+                    NewDeal(true, 10);
+                GUILayout.EndHorizontal();
+                if (Players().Count < 2)
+                    GUILayout.Label(Loc.T("Нет соперников: доступна тренировка или игра с одним воином."),
+                        _rowStyle);
+            }
+            else
+            {
+                GUILayout.Label(Loc.T("Сейчас ход воина. Решение зависит от его характера."),
+                    _rowStyle);
+                if (!_playedByHuman && !_joinNext &&
+                    GUILayout.Button(Loc.T("Сыграть после этой раздачи"), GUILayout.Height(38f)))
+                {
+                    _joinNext = true;
+                    _status = Loc.T("Вы присоединитесь к следующей раздаче.");
+                }
+                else if (_joinNext)
+                    GUILayout.Label(Loc.T("Следующая раздача будет с вашим участием."), _rowStyle);
+            }
 
-        private static readonly string[] Sloth =
-        {
-            Loc.N("Сдавай. Я подожду."),
-            Loc.N("Мой ход? Пропущу."),
-        };
-
-        private static readonly string[] Lust =
-        {
-            Loc.N("Кто проиграл — тот наливает."),
-            Loc.N("Садись ближе, веселее будет."),
-        };
-
-        private static readonly string[] Gluttony =
-        {
-            Loc.N("На кон — вяленое мясо."),
-            Loc.N("Играем на последний сухарь."),
-        };
-
-        private static readonly string[] Wrath =
-        {
-            Loc.N("Ещё раз туз — переверну ящик."),
-            Loc.N("Кто сдавал? Ты сдавал?!"),
-        };
-
-        private static readonly string[] Plain =
-        {
-            Loc.N("Твой ход."),
-            Loc.N("Пас."),
-        };
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(Loc.T("Встать из-за стола (F / Esc)"), GUILayout.Height(35f)))
+                StandUp();
+            GUILayout.EndArea();
+        }
     }
 }

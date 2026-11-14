@@ -416,6 +416,10 @@ namespace Sinbinder.Gameplay
             Finish();
             var said = new List<string>();
             bool me = lord == Lords.Player;
+            // A remote squad may win a battle for the player but cannot
+            // see secrets or perform the Sinbinder's soul harvest.
+            bool present = me && SinbinderPlayer.Exists &&
+                CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) <= Talk;
 
             int coins = Within(o.CoinsMin, o.CoinsMax, 1);
             if (o.Gamble) coins = (MapLoader.Match * 7 + _j * 3) % 3 != 0 ? o.CoinsMax : 0;
@@ -431,7 +435,17 @@ namespace Sinbinder.Gameplay
             if (o.Trophy.Length > 0)
             {
                 var k = o.Trophy[Within(0, o.Trophy.Length - 1, 2)];
-                said.Add(Trophies.Give(lord, k));
+                bool secret = k == Trophies.Kind.GolemRecipe ||
+                              k == Trophies.Kind.Treasury ||
+                              k == Trophies.Kind.Forge ||
+                              k == Trophies.Kind.Pillory;
+                if (!secret || ExpeditionCollectionPolicy.CanCollect(
+                        ExpeditionFind.Secret, present,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSoulCollector,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSecretFinder))
+                    said.Add(Trophies.Give(lord, k));
+                else if (me)
+                    said.Add(Loc.T("Секрет остался незамеченным: отряд не умеет его искать."));
             }
             if (me)
             {
@@ -443,7 +457,15 @@ namespace Sinbinder.Gameplay
                 if (o.Bones > 0) said.Add(Loc.F("костей {0}", o.Bones));
                 if (o.Flesh > 0) said.Add(Loc.F("плоти {0}", o.Flesh));
                 int souls = 0;
-                for (int i = 0; i < o.Souls; i++)
+                if (o.Souls > 0 && !ExpeditionCollectionPolicy.CanCollect(
+                        ExpeditionFind.Soul, present,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSoulCollector,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSecretFinder))
+                    said.Add(Loc.T("Души остались на месте: Греховод не участвовал лично."));
+                for (int i = 0; i < o.Souls && ExpeditionCollectionPolicy.CanCollect(
+                        ExpeditionFind.Soul, present,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSoulCollector,
+                        ExpeditionCollectionPolicy.CurrentSquadHasSecretFinder); i++)
                 {
                     int jar = Satchel.FreeJar();
                     if (jar < 0) break;

@@ -13,6 +13,8 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)          # кор�
 $drive = Split-Path -Qualifier $root                                   # буква флешки — на другом ПК бывает другой
 $builds = Join-Path $drive 'Claude\builds'
 $log = Join-Path $root 'Logs\build-author.log'
+# The Unity launcher can retain its timestamp across builds; use a build marker.
+$buildMarker = Join-Path $root 'Build\Sinbinder\.sinbinder-author-build.txt'
 
 function Fail($text) { Write-Host ''; Write-Host $text -ForegroundColor Red; Write-Host ''; Read-Host 'Нажми Enter, чтобы закрыть'; exit 1 }
 
@@ -36,6 +38,10 @@ $work = Join-Path $root 'Build\Sinbinder'
 $running = Get-CimInstance Win32_Process -Filter "Name='Sinbinder.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -and $_.ExecutablePath -like "$work*" }
 if ($running) { Fail "Игра запущена прямо из $work — закрой её (играть лучше из папки в $builds)." }
+
+# Invalidate the previous build marker only after confirming that no active
+# Unity session or running working-copy Player blocks a new build.
+Remove-Item -LiteralPath $buildMarker -ErrorAction SilentlyContinue
 
 Write-Host ''
 Write-Host "Собираю Sinbinder (Unity $version). Обычно это 5–15 минут." -ForegroundColor Yellow
@@ -66,12 +72,68 @@ if ($text -match 'error CS') {
     Fail "Не собралось: ошибки в коде (выше). Скажи Claude — лог: $log"
 }
 if ($text -notmatch '\[СБОРКА\] Готово') { Fail "Не собралось. Лог: $log" }
+if ($p.ExitCode -ne 0) { Fail "Unity завершилась с кодом $($p.ExitCode). Лог: $log" }
+
+# Даже при строке «Готово» итоговый Player обязан существовать на диске.
+$sourceExe = Join-Path $work 'Sinbinder.exe'
+$sourceData = Join-Path $work 'Sinbinder_Data'
+if (-not (Test-Path -LiteralPath $sourceExe -PathType Leaf)) {
+    Fail "Unity сообщила об успехе, но Sinbinder.exe отсутствует: $sourceExe"
+}
+if (-not (Test-Path -LiteralPath $sourceData -PathType Container)) {
+    Fail "Unity сообщила об успехе, но папка Sinbinder_Data отсутствует: $sourceData"
+}
+
+# Reject a stale Player even when Unity exits 0 and prints a success marker.
+# The working directory can contain output from an earlier build.
+$buildStartedUtc = $start.ToUniversalTime()
+$exeWrittenUtc = (Get-Item -LiteralPath $sourceExe).LastWriteTimeUtc
+if ($exeWrittenUtc -lt $buildStartedUtc) {
+    Fail "Unity сообщила об успехе, но Sinbinder.exe не обновлён в этой сборке: $sourceExe"
+}
+$dataFiles = @(Get-ChildItem -LiteralPath $sourceData -File -Recurse -ErrorAction Stop)
+if ($dataFiles.Count -eq 0) {
+    Fail "Unity сообщила об успехе, но Sinbinder_Data пуста: $sourceData"
+}
+if (-not @($dataFiles | Where-Object { $_.LastWriteTimeUtc -ge $buildStartedUtc }).Count) {
+    Fail "Unity сообщила об успехе, но в Sinbinder_Data нет файлов этой сборки: $sourceData"
+}
 
 # Копия — в свою папку с датой; играть оттуда.
-$stamp = Get-Date -Format 'yyyy-MM-dd HH-mm'
-$dest = Join-Path $builds $stamp
-New-Item -ItemType Directory -Force $dest | Out-Null
+# Use a unique destination for every build. Reusing a minute-level directory with
+# robocopy /E retains stale files from a previous Player build.
+$stamp = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
+$dest = Join-Path $builds ("{0}-{1}" -f $stamp, [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $dest -ErrorAction Stop | Out-Null
 robocopy $work $dest /E /NFL /NDL /NJH /NJS /NP | Out-Null
+$copyCode = $LASTEXITCODE
+# robocopy: коды 0..7 = успех/предупреждение, от 8 = ошибка копирования.
+if ($copyCode -ge 8) { Fail "Ошибка копирования сборки (robocopy код $copyCode). Папка: $dest" }
+$destExe = Join-Path $dest 'Sinbinder.exe'
+$destData = Join-Path $dest 'Sinbinder_Data'
+if (-not (Test-Path -LiteralPath $destExe -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $destData -PathType Container)) {
+    Fail "Копирование неполное: нет Sinbinder.exe или Sinbinder_Data. Папка: $dest"
+}
+if ((Get-Item -LiteralPath $destExe).Length -ne (Get-Item -LiteralPath $sourceExe).Length) {
+    Fail "Sinbinder.exe скопирован не полностью: отличается размер. Папка: $dest"
+}
+# robocopy may report a non-fatal code while leaving an incomplete Player data tree.
+# Verify every source file, not just the launcher, before accepting the build.
+$sourceFiles = @(Get-ChildItem -LiteralPath $work -File -Recurse -ErrorAction Stop)
+foreach ($file in $sourceFiles) {
+    $relative = $file.FullName.Substring($work.Length).TrimStart('\\', '/')
+    $copied = Join-Path $dest $relative
+    if (-not (Test-Path -LiteralPath $copied -PathType Leaf)) {
+        Fail "Копирование неполное: отсутствует $relative. Папка: $dest"
+    }
+    if ((Get-Item -LiteralPath $copied).Length -ne $file.Length) {
+        Fail "Копирование неполное: размер $relative отличается. Папка: $dest"
+    }
+}
+# Only mark a build accepted after Unity, robocopy and output validation.
+[System.IO.File]::WriteAllText($buildMarker, [DateTime]::UtcNow.ToString('o'))
+Copy-Item -LiteralPath $buildMarker -Destination (Join-Path $dest '.sinbinder-author-build.txt') -Force
 $size = [int]((Get-ChildItem $dest -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 $took = [math]::Round(((Get-Date) - $start).TotalMinutes, 1)
 

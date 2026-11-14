@@ -78,6 +78,8 @@ namespace Sinbinder.Core
 
         public static SaveGame Snapshot()
         {
+            Gameplay.PersonalExpedition.BeforeSaveOrLoad();
+            Gameplay.CardTable.BeforeSaveOrLoad(); // no open wager escrow in a save
             var save = new SaveGame
             {
                 Scene = Here,
@@ -89,6 +91,12 @@ namespace Sinbinder.Core
             };
 
             save.Label = Label(save);
+            save.FallenBags = Gameplay.FallenBag.Snapshot();
+            save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
+            save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot();
+            save.AutoExpeditions = MissionBoard.SnapshotJourneys();
+            save.AutoExpeditionReport = MissionBoard.SnapshotReport();
+            save.ExpeditionMemories = Gameplay.ExpeditionMemoryLedger.Snapshot();
 
             if (Inventory.PlayerInventory.Instance != null)
                 save.Bag = new List<Inventory.InventoryItem>(Inventory.PlayerInventory.Instance.GetAllItems());
@@ -106,6 +114,7 @@ namespace Sinbinder.Core
                     Gender = (int)m.Gender,
                     Intensity = m.Intensity,
                     Loyalty = m.Loyalty,
+                    HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
                     Leadership = m.Leadership,
                     IsCommander = m.IsCommander,
@@ -195,6 +204,7 @@ namespace Sinbinder.Core
         {
             Arriving = false;
             StagedScene = null;
+            Gameplay.FallenBag.OnMapLoaded(scene.name);
 
             // Начало доли — её отметка: сюда вернёт «С начала доли».
             // Сцена — пришедшая, а не «открытая»: в sceneLoaded Unity могла
@@ -276,6 +286,18 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool ReturnTo(SaveGame save, bool reload = false)
         {
+            // Validate the destination before changing any live squad, soul or
+            // inventory state. A save from a missing scene must fail atomically.
+            // The raid part is hosted by the camp scene, not a standalone scene.
+            if (save == null) return false;
+            if (!string.IsNullOrEmpty(save.Scene) &&
+                (reload || save.Scene != Here) &&
+                !Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene)))
+            {
+                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{RaidEvent.HostOf(save.Scene)}» нет в сборке: загрузка отменена.");
+                return false;
+            }
+
             if (!Restore(save)) return false;
 
             // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
@@ -288,15 +310,6 @@ namespace Sinbinder.Core
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).
             string scene = RaidEvent.HostOf(save.Scene);
-
-            // Сцены нет в сборке — не падаем, а говорим. Состояние
-            // вернули, место вернуть не можем, и игрок должен это знать.
-            if (!Application.CanStreamedLevelBeLoaded(scene))
-            {
-                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{scene}» нет в сборке: "
-                               + "состояние возвращено, место — нет.");
-                return true;
-            }
 
             Arriving = true;
             _unfold = scene != save.Scene ? save.Scene : null;
@@ -314,12 +327,24 @@ namespace Sinbinder.Core
         {
             if (save == null) return false;
 
+            // Validate before touching the live game. A damaged or hand-edited
+            // save must not leave half a squad, shelf, or wager restored.
+            if (save.Squad == null || save.Shelf == null ||
+                save.Squad.Exists(m => m == null) ||
+                save.Shelf.Exists(s => s == null))
+            {
+                Debug.LogWarning("[СОХРАНЕНИЕ] Неполный список воинов или душ. Не читаю.");
+                return false;
+            }
+
             if (save.Version != SaveGame.Current)
             {
                 Debug.LogWarning($"[СОХРАНЕНИЕ] Файл другого уклада "
                                + $"({save.Version}, ждали {SaveGame.Current}). Не читаю.");
                 return false;
             }
+
+            Gameplay.CardTable.BeforeSaveOrLoad();
 
             var members = new List<SquadRoster.Member>();
             foreach (var m in save.Squad)
@@ -332,6 +357,7 @@ namespace Sinbinder.Core
                     Gender = (Gender)m.Gender,
                     Intensity = m.Intensity,
                     Loyalty = m.Loyalty,
+                    HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
                     Leadership = m.Leadership,
                     IsCommander = m.IsCommander,
@@ -349,6 +375,12 @@ namespace Sinbinder.Core
             }
 
             SquadRoster.Set(members);
+            Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
+            Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
+            Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
+            Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
+            MissionBoard.RestoreJourneys(save.AutoExpeditions);
+            MissionBoard.RestoreReport(save.AutoExpeditionReport);
             CryptUpgrades.Restore(save.Installed, save.Brought);
             Commitment.Set(save.Commitment);
 
@@ -488,15 +520,57 @@ namespace Sinbinder.Core
 
             try
             {
-                Directory.CreateDirectory(Folder);
-                File.WriteAllText(path, JsonUtility.ToJson(save, true));
-                return true;
+                // Stage the complete JSON beside the slot. Never truncate a valid
+                // save before the replacement is ready.
+                string fullPath = Path.GetFullPath(path);
+                string directory = Path.GetDirectoryName(fullPath);
+                Directory.CreateDirectory(directory);
+                string temp = fullPath + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(JsonUtility.ToJson(save, true));
+                    using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        stream.Write(bytes, 0, bytes.Length);
+                        stream.Flush(true);
+                    }
+
+                    if (File.Exists(fullPath))
+                    {
+                        // On an unsupported filesystem, fail rather than deleting
+                        // or overwriting the only known-good save.
+                        File.Replace(temp, fullPath, null);
+                    }
+                    else
+                    {
+                        File.Move(temp, fullPath);
+                    }
+                    return true;
+                }
+                finally
+                {
+                    // A cleanup failure must not turn a successful replacement into
+                    // a reported failure or conceal the original write error.
+                    try { if (File.Exists(temp)) File.Delete(temp); }
+                    catch (IOException) { }
+                    catch (System.UnauthorizedAccessException) { }
+                }
             }
             catch (IOException e)
             {
                 // Отсутствие права записи — событие, а не ноль: молча
                 // «сохранить» и не сохранить хуже любой ошибки.
                 Debug.LogWarning($"[СОХРАНЕНИЕ] Не записалось: {e.Message}");
+                return false;
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Нет доступа к слоту: {e.Message}");
+                return false;
+            }
+            catch (System.PlatformNotSupportedException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Замена слота не поддерживается: {e.Message}");
                 return false;
             }
         }
@@ -512,6 +586,17 @@ namespace Sinbinder.Core
             catch (IOException e)
             {
                 Debug.LogWarning($"[СОХРАНЕНИЕ] Не прочиталось: {e.Message}");
+                return null;
+            }
+            catch (System.ArgumentException e)
+            {
+                // Unity JsonUtility throws for malformed JSON, not IOException.
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Повреждённый формат: {e.Message}");
+                return null;
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Debug.LogWarning($"[СОХРАНЕНИЕ] Нет доступа к записи: {e.Message}");
                 return null;
             }
         }

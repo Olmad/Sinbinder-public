@@ -188,6 +188,13 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public PendingCommand Command => _command;
 
+        /// <summary>
+        /// Monotonic runtime identity for a player's order. Time.time alone
+        /// cannot distinguish two commands issued in the same Unity frame.
+        /// An internal patrol reversal does NOT create a new order.
+        /// </summary>
+        public uint CommandRevision { get; private set; }
+
         public bool HasCommand => _command.IsSet;
 
         /// <param name="muffle">Насколько приглушён голос Греховода
@@ -197,6 +204,9 @@ namespace Sinbinder.Gameplay
         public void IssueCommand(CommandKind kind, Vector3 point, GameObject target = null,
                                  float muffle = 0f, string lord = null)
         {
+            // Every newly issued order needs its own identity for AOS
+            // memories and cancellation of delayed decisions.
+            unchecked { CommandRevision++; }
             _command = new PendingCommand
             {
                 Kind = kind,
@@ -210,15 +220,25 @@ namespace Sinbinder.Gameplay
             Favor.Issued(_command.Lord, _command.IssuedAt);
         }
 
-        public void ClearCommand() => _command = default;
+        public void ClearCommand()
+        {
+            // Cancelling an order must also invalidate any pending refusal.
+            if (_command.IsSet)
+            {
+                unchecked { CommandRevision++; }
+            }
+            _command = default;
+        }
 
         /// <summary>
         /// Патруль: ходить отсюда до <paramref name="to"/> и обратно, пока
         /// не снимут. Второй конец маршрута — там, где воин стоял в миг приказа.
         /// </summary>
-        public void IssuePatrol(Vector3 to, float muffle = 0f)
+        public void IssuePatrol(Vector3 to, float muffle = 0f, string lord = null)
         {
-            IssueCommand(CommandKind.Patrol, to, null, muffle);
+            // Networked neutral warriors must remember the issuing Lord.
+            // The optional argument preserves all existing solo callers.
+            IssueCommand(CommandKind.Patrol, to, null, muffle, lord);
             _command.From = transform.position;
         }
 
@@ -325,6 +345,43 @@ namespace Sinbinder.Gameplay
         public void MarkSpokenWith(string otherId) => _spokenWithThisBattle.Add(otherId);
         public void ResetBattleDialogue() => _spokenWithThisBattle.Clear();
 
+        /// <summary>
+        /// Apply a previously witnessed health state to a surviving warrior.
+        /// This is a save/expedition restore, not a combat attack or resurrection.
+        /// </summary>
+        /// <summary>
+        /// Restore a PURELY OFFSCREEN AOS projection at a committed round
+        /// boundary. Never use this for an active scene warrior: it bypasses
+        /// real death/loot events precisely because they were already
+        /// resolved and saved by the expedition simulator.
+        /// </summary>
+        public void RestoreAutoExpeditionSnapshot(string stableId,
+            float healthFraction, bool dead, Team team)
+        {
+            if(gameObject.activeInHierarchy || GetComponent<Damageable>()!=null)
+                throw new System.InvalidOperationException(
+                    "Only inactive, bodyless expedition projections can restore combat snapshots.");
+            if(string.IsNullOrEmpty(stableId) ||
+               float.IsNaN(healthFraction) || float.IsInfinity(healthFraction) ||
+               healthFraction<0f || healthFraction>1f ||
+               (dead && healthFraction!=0f) ||
+               (!dead && healthFraction<=0f))
+                throw new System.ArgumentException("Invalid AOS combat health checkpoint.");
+            _id=stableId;
+            _team=team;
+            _isDead=dead;
+            _hp=dead ? 0f : _maxHP*healthFraction;
+        }
+
+        public void SetHealthFraction(float fraction)
+        {
+            if(IsDead || float.IsNaN(fraction) || float.IsInfinity(fraction)) return;
+            float safe=Mathf.Clamp(fraction,0.01f,1f);
+            if(Body is Damageable body)
+                body.SetHealthFraction(safe);
+            _hp=Mathf.Max(0.01f,_maxHP*safe);
+        }
+
         public void TakeDamage(float damage)
         {
             if (IsDead) return;
@@ -406,13 +463,28 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public int PocketGold { get; private set; }
 
-        public void Pocket(int gold) => PocketGold += System.Math.Max(0, gold);
+        public void Pocket(int gold)
+        {
+            if (gold <= 0) return;
+            PocketGold = checked(PocketGold + gold);
+            SquadRoster.SyncPocket(this);
+        }
+
+        /// <summary>Debit the living warrior's own coins, never the Lord's.</summary>
+        public bool TrySpendPocket(int gold)
+        {
+            if (gold <= 0 || PocketGold < gold) return false;
+            PocketGold -= gold;
+            SquadRoster.SyncPocket(this);
+            return true;
+        }
 
         /// <summary>Вынуть из кармана всё. Сколько вынуто.</summary>
         public int EmptyPocket()
         {
             int all = PocketGold;
             PocketGold = 0;
+            SquadRoster.SyncPocket(this);
             return all;
         }
 

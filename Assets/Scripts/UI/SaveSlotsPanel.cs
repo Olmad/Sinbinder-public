@@ -29,6 +29,7 @@ namespace Sinbinder.UI
         private readonly List<GameObject> _spawned = new();
         private bool _open;
         private bool _loading;
+        private string _status;
 
         void Start()
         {
@@ -57,6 +58,7 @@ namespace Sinbinder.UI
         {
             _open = true;
             _loading = false;
+            _status = null;
             if (_panel != null) _panel.SetActive(true);
             GamePauseController.Instance?.Pause();
             Draw();
@@ -65,6 +67,7 @@ namespace Sinbinder.UI
         private void Close()
         {
             _open = false;
+            _status = null;
             if (_panel != null) _panel.SetActive(false);
             GamePauseController.Instance?.Resume();
         }
@@ -75,9 +78,11 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_title != null)
-                _title.text = _loading
-                    ? Loc.T("Вернуться к записанному.  F9 или Esc — закрыть")
-                    : Loc.T("Куда записать.  F9 или Esc — закрыть");
+                _title.text = !string.IsNullOrEmpty(_status)
+                    ? _status
+                    : (_loading
+                        ? Loc.T("Вернуться к записанному.  F9 или Esc — закрыть")
+                        : Loc.T("Куда записать.  F9 или Esc — закрыть"));
 
             float y = 0f;
 
@@ -87,7 +92,7 @@ namespace Sinbinder.UI
             {
                 bool toLoad = !_loading;
                 _spawned.Add(Row(y, toLoad ? Loc.T("Вернуться к записанному") : Loc.T("Записать"),
-                    "", () => { _loading = toLoad; Draw(); }));
+                    "", () => { _loading = toLoad; _status = null; Draw(); }));
                 y -= RowHeight * 1.4f;
             }
             else
@@ -101,37 +106,62 @@ namespace Sinbinder.UI
                 var name = slot;
                 var save = SaveSystem.Read(SaveSystem.PathOf(slot));
                 bool has = save != null;
+                // An existing but unreadable file is not an empty slot.
+                // Never invite the player to load it as if it were valid.
+                bool unreadable = !has && SaveSystem.Exists(SaveSystem.PathOf(slot));
 
                 string what = has
                     ? (string.IsNullOrEmpty(save.Label) ? Loc.T("Запись") : save.Label)
-                    : Loc.T("Пусто");
+                    : (unreadable ? Loc.T("Запись не читается") : Loc.T("Пусто"));
 
                 // Загружать нечего — строка есть, но не нажимается:
                 // пустое гнездо должно быть видно, чтобы в него записали.
                 System.Action act = _loading
-                    ? (has ? () => { Load(name); Close(); } : (System.Action)null)
-                    : () => { Save(name); Draw(); };
+                    ? (has ? () => { if (Load(name)) Close(); else Draw(); } : (System.Action)null)
+                    // Do not silently overwrite an unreadable existing save.
+                    // It may be the player's only recoverable copy.
+                    : (unreadable ? (System.Action)null : () => { _status = Save(name); Draw(); });
 
                 _spawned.Add(Row(y, Loc.T(name), what, act));   // имя гнезда — ключ файла, показ — переводом
                 y -= RowHeight * 1.6f;
             }
         }
 
-        private static void Save(string slot)
+        private static string Save(string slot)
         {
-            bool ok = SaveSystem.Write(SaveSystem.Snapshot(), SaveSystem.PathOf(slot));
-            Say(ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло."));
+            string path = SaveSystem.PathOf(slot);
+            // The slot may have become unreadable after Draw() created its button.
+            // Recheck immediately before writing to avoid overwriting that file.
+            if (SaveSystem.Exists(path) && SaveSystem.Read(path) == null)
+            {
+                string warning = Loc.T("Запись не читается. Выберите другое гнездо.");
+                Say(warning);
+                return warning;
+            }
+            bool ok = SaveSystem.Write(SaveSystem.Snapshot(), path);
+            string message = ok ? Loc.F("Записано в «{0}».", Loc.T(slot)) : Loc.T("Записать не вышло.");
+            Say(message);
+            return message;
         }
 
-        private static void Load(string slot)
+        private bool Load(string slot)
         {
-            if (!Commitment.CanLoad) { Say(Commitment.WhyNoLoad); return; }
+            if (!Commitment.CanLoad) { _status = Commitment.WhyNoLoad; Say(_status); return false; }
 
             var save = SaveSystem.Read(SaveSystem.PathOf(slot));
+            if (save == null)
+            {
+                _status = Loc.T("Запись не прочиталась. Выберите другую запись или начните заново.");
+                Say(_status);
+                return false;
+            }
 
-            Say(SaveSystem.ReturnTo(save)
+            bool loaded = SaveSystem.ReturnTo(save);
+            _status = loaded
                 ? Loc.F("Вернулись к «{0}».", Loc.T(slot))
-                : Loc.T("Эта запись не от нынешней игры."));
+                : Loc.T("Не удалось восстановить запись. Выберите другую запись или начните заново.");
+            Say(_status);
+            return loaded;
         }
 
         private static void Say(string line)

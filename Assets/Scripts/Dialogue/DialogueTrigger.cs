@@ -289,6 +289,13 @@ namespace Sinbinder.Dialogue
         /// </summary>
         private string GetDialogueLine(Warrior speaker, Warrior target, string situation)
         {
+            // A joining warrior is responding to the conversation, not opening
+            // another unrelated threat. The authored JOIN_01 asset was previously
+            // unreachable because EncounterLines always supplied a generic line.
+            if (situation == "JOIN_01" &&
+                DialogueLoader.TryGetLine(speaker, situation, out string joining))
+                return joining;
+
             string said = EncounterLines.Say(speaker, target, situation);
             if (!string.IsNullOrEmpty(said)) return said;
 

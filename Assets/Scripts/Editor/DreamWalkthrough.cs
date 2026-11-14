@@ -199,6 +199,16 @@ namespace Sinbinder.EditorTools
                         && !SoulCourt.Sitting && now - _stepAt > 0.9f)
                     { _scalesShot = true; Snap("сон — весы над головой"); }
                     break;
+                case "Temptation":
+                    if (_step != "искушение")
+                    {
+                        Go("искушение");
+                        if (dream.Zombie != null)
+                            Warp(dream.Hero, dream.Zombie.transform.position + new Vector3(0f, 0f, -2f));
+                    }
+                    if (poke && now - _stepAt > 0.8f)
+                        Whisper.TryAny();  // настоящий шёпот через AOS, либо тайм-аут сцены
+                    break;
                 case "Battle":
                     if (_step != "бой")
                     {
@@ -253,14 +263,203 @@ namespace Sinbinder.EditorTools
                 case "DrawWeapon":
                 case "Practice":
                 case "Jars":
+                case "CommanderPractice":
                     if (_step != "управление")
                     {
                         Go("управление");
                         Write($"  тот же приказ без убийц: {DreamTutorialDirector.RetestResult ?? "не проверялся"}");
                     }
-                    dream.TestSkipControls();
+                    dream.TestSkipControls(); // только кнопочный блок; новые загадки проверяются отдельно
+                    break;
+                case "BowFind":
+                    if (_step != "лук — возвышение")
+                    {
+                        Go("лук — возвышение");
+                        Warp(dream.Hero, DreamRoad.BowStandAt + new Vector3(0f, 0f, -1.5f));
+                        Snap("сон — лук-искуситель на возвышении");
+                    }
+                    if (poke) dream.TestPress(KeyCode.F);
+                    break;
+                case "BowEquip":
+                    if (_step != "лук — снаряжение")
+                    {
+                        Go("лук — снаряжение");
+                        var bag = Sinbinder.Inventory.PlayerInventory.Instance;
+                        var ally = dream.SealCompanion;
+                        var item = bag?.GetAllItems().Find(i => i != null && i.Name == DreamBowTarget.BowName);
+                        if (ally == null || item == null || !SquadGear.Hand(ally, item, bag, out string reason))
+                        {
+                            End(false, "не удалось экипировать учебный лук реальной системой SquadGear");
+                            return;
+                        }
+                        Write("  передача лука через SquadGear.Hand: есть; голос искушения в вещи " +
+                              ally.Worn(Sinbinder.Inventory.GearSlot.Weapon)?.TemptationSin);
+                        Snap("сон — лук в снаряжении союзника");
+                    }
+                    break;
+                case "BowShot":
+                    if (_step != "лук — выстрел")
+                    {
+                        Go("лук — выстрел");
+                        // Инвариант: до настоящего попадания механизм ещё заперт.
+                        if (DreamRoad.Instance == null || DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "противовес отпёр засовы до попадания стрелы");
+                            return;
+                        }
+                        Write("  [МЕХАНИЗМ] до выстрела засовы закрыты");
+                        var target = DreamRoad.Instance != null ? DreamRoad.Instance.BowTarget : null;
+                        if (dream.SealCompanion == null || target == null)
+                        {
+                            End(false, "отсутствует соратник или подвесная мишень");
+                            return;
+                        }
+                        // В первую очередь: подлинный приказ и голосование. Отказ не является
+                        // багом, поэтому через 12 секунд принудительно проверим только
+                        // механику полёта стрелы, явно записав обход AOS в отчёт.
+                        dream.SealCompanion.IssueCommand(CommandKind.Attack, target.transform.position, target.gameObject);
+                        Snap("сон — высокая мишень, настоящий приказ");
+                    }
+                    if (now - _stepAt > 12f && DreamRoad.Instance != null && !DreamRoad.Instance.BowTargetBroken)
+                    {
+                        var target = DreamRoad.Instance.BowTarget?.GetComponent<DreamBowTarget>();
+                        if (target != null && dream.SealCompanion != null)
+                        {
+                            Write("  [QA ОБХОД] За 12 с AOS не исполнила приказ, выстрел проверяется прямым вызовом.");
+                            target.ExecuteShot(dream.SealCompanion);
+                        }
+                    }
+                    break;
+                case "BowTemper":
+                    if (_step != "лук — искушение в деле")
+                    {
+                        Go("лук — искушение в деле");
+                        // Падение мишени без разблокировки плит больше не считается успехом.
+                        if (DreamRoad.Instance == null || !DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "стрела сбила противовес, но засовы печатей не открылись");
+                            return;
+                        }
+                        Write("  [МЕХАНИЗМ] противовес освободил две напольные печати");
+                        var archer = dream.SealCompanion;
+                        if (archer != null)
+                        {
+                            archer.IssueCommand(CommandKind.FallBack,
+                                archer.transform.position + new Vector3(0f, 0f, -5f));
+                            Write("  попытка отступления с луком: решение принимает AOS");
+                        }
+                        Snap("сон — испытание гордыни с луком");
+                    }
+                    break;
+                case "Rescue":
+                    if (_step != "Последний щит")
+                    {
+                        Go("Последний щит");
+                        Write("  [AOS] наблюдаем настоящие решения защитника и реальный перехват входящего урона");
+                        Snap("сон — последний щит, AOS спасение");
+                    }
+                    // Не вызываем GuardForRescue и OnAllySaved из прогона:
+                    // иначе нарисуем победу там, где души на деле не спасали.
+                    break;
+                case "CompareSouls":
+                    if (_step != "две души — один приказ")
+                    {
+                        Go("две души — один приказ");
+                        var mercy = dream.ContrastMerciful;
+                        var pride = dream.ContrastProud;
+                        if (mercy == null || pride == null)
+                        {
+                            End(false, "учебные души AOS не созданы");
+                            return;
+                        }
+                        // Эмуляция только клика игрока: оба ПРИКАЗА настоящие.
+                        // AOS обязана проголосовать самостоятельно в своём обычном такте.
+                        mercy.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        pride.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        Write("  [QA ВВОД] отправлен одинаковый Move обеим душам; голосование не подменяется");
+                        Snap("сон — два характера");
+                    }
+                    break;
+                case "EmotionShift":
+                    if (_step != "одна душа — разный страх")
+                    {
+                        Go("одна душа — разный страх");
+                        if (!dream.CompareSoulsCompleted)
+                        {
+                            End(false, "урок двух душ пропущен или оба голосования не записаны");
+                            return;
+                        }
+                        var mercy = dream.ContrastMerciful;
+                        if (mercy == null)
+                        {
+                            End(false, "нет стража для повторной проверки эмоции");
+                            return;
+                        }
+                        mercy.IssueCommand(CommandKind.Move, DreamTutorialDirector.ContrastPoint);
+                        Write("  [QA ВВОД] повторён Move после настоящего EmotionSystem.TriggerEmotion");
+                        Snap("сон — изменение страха");
+                    }
+                    break;
+                case "Puzzle":
+                    if (!dream.CompareSoulsCompleted || !dream.EmotionShiftCompleted)
+                    {
+                        End(false, "не показаны два характера или влияние страха на голосование");
+                        return;
+                    }
+                    if (dream.RescueResult != "спасён")
+                    {
+                        End(false, "сцену спасения прошли без настоящего защитного удара: " + dream.RescueResult);
+                        return;
+                    }
+                    if (_step != "две печати")
+                    {
+                        Go("две печати");
+                        if (DreamRoad.Instance == null || !DreamRoad.Instance.MechanismReleased)
+                        {
+                            End(false, "достигли финальной загадки, не разблокировав плиты выстрелом");
+                            return;
+                        }
+                        Snap("сон — две печати склепа");
+                    }
+                    var companion = dream.SealCompanion;
+                    if (companion == null || companion.IsDead)
+                    {
+                        End(false, "соратник не дожил до двух печатей");
+                        return;
+                    }
+                    companion.ClearCommand();
+                    // Только автоматический прогон может варпать на плиты:
+                    // это проверка механизма, НЕ подтверждение того, что
+                    // живой игрок освоил командование.
+                    if (_step == "две печати")
+                        Write("  [QA ОБХОД УПРАВЛЕНИЯ] расстановка на плитах через NavMeshAgent.Warp, не через AOS");
+                    // Regression: «стою на печати» — расстояние, не
+                    // нормализованное направление. Испытываем 120 тактов
+                    // неверной комбинации, затем уже ставим обоих правильно.
+                    var road = DreamRoad.Instance;
+                    if (road == null) { End(false, "дорога пропала"); return; }
+                    var far = new Vector3(-5f, 0f, 17f);
+                    if (UnityEngine.Vector3.Distance(companion.transform.position, DreamRoad.WarriorSealAt) <= 1.35f)
+                        companion.transform.position = far;
+                    for (int i = 0; i < 120; i++)
+                        if (road.CheckSeals(companion, DreamRoad.LordSealAt))
+                        {
+                            End(false, "плиты сработали с союзником вне своей печати");
+                            return;
+                        }
+                    Write("  [ПЛИТЫ] 120 проверок вне круга не открывают ворота");
+                    var agent = companion.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                    if (agent != null && agent.enabled && agent.isOnNavMesh)
+                        agent.Warp(DreamRoad.WarriorSealAt);
+                    else companion.transform.position = DreamRoad.WarriorSealAt;
+                    Warp(dream.Hero, DreamRoad.LordSealAt);
                     break;
                 case "Return":
+                    if (!dream.FinalTrialCompleted)
+                    {
+                        End(false, "переход к воротам без засчитанного итогового испытания на печатях");
+                        return;
+                    }
                     if (_step != "пробуждение")
                     {
                         Go("пробуждение");
