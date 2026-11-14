@@ -111,6 +111,34 @@ internal static class GameOrderWireChecks
                 one.OwnLordActorId == lordAId && two.OwnLordActorId == lordBId,
                 "both receive server match ID and their OWN Lord actor ID");
 
+            // Pump can still report Connected after the background reader has
+            // invalidated its transport. A local rejection must not consume
+            // the monotonic command cursor or pretend an order was sent.
+            var wireField = typeof(LanRoomClient).GetField(
+                "_wire", BindingFlags.Instance | BindingFlags.NonPublic);
+            var cursorField = typeof(LanRoomClient).GetField(
+                "_nextGameCommandId", BindingFlags.Instance | BindingFlags.NonPublic);
+            Require(wireField != null && cursorField != null,
+                "production client transport and command cursor are testable");
+            object liveWire = wireField.GetValue(one);
+            long beforeRejectedSend = (long)cursorField.GetValue(one);
+            Require(liveWire != null, "live TCP client has a transport");
+            try
+            {
+                wireField.SetValue(one, null);
+                Require(!one.OrderGameplay(neutralId, NetworkOrderKind.Move,
+                    new Vector3(2f, 0f, 2f)),
+                    "stale Connected flag must not report an order sent");
+                Require((long)cursorField.GetValue(one) == beforeRejectedSend,
+                    "failed local preflight must not consume CommandId");
+            }
+            finally
+            {
+                wireField.SetValue(one, liveWire);
+            }
+            Require(one.Connected && one.Playing,
+                "restoring transport preserves the live test session");
+
             Require(one.OrderGameplay(lordBId, NetworkOrderKind.Move,
                 new Vector3(3f, 0f, 4f)), "first peer sent forged Lord order");
             await Until(room, one, two, () => rejectedA == 1,
