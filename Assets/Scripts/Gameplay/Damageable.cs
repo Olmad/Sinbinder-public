@@ -126,6 +126,9 @@ namespace Sinbinder.Gameplay
             if (_warrior is SinbinderPlayer && DreamTutorialDirector.ProtectingHero)
                 damage = Mathf.Min(damage, Mathf.Max(0f, _hp - 1f));
 
+            // Modifiers can invalidate an otherwise valid hit. Never poison HP or heal via damage.
+            if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
+
             _hp -= damage;
 
             // Удар слышно — по телу того, кого ударили (Audio.Sfx).
