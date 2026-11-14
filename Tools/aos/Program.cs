@@ -223,6 +223,12 @@ internal static class Program
                   .Contains("PlaceNearPointer();"),
             "warrior tooltip retains default pinned positioning");
 
+        // Tutorial must not mark a warrior's reason as read when the text
+        // component is absent, hidden, or empty despite an active panel.
+        Contains(tooltip, "_text != null && _text.gameObject.activeInHierarchy &&",
+            "tutorial hover requires an active readable text component");
+        Contains(tooltip, "!string.IsNullOrWhiteSpace(_text.text) ? _shown : null;",
+            "tutorial hover does not credit blank explanations");
         Contains(tooltip, "wrapper.NaturalDecisionDetail", "court tooltip retains natural thirteen-voice verdict");
         Contains(tooltip, "wrapper.LastWhisperCompelled", "tooltip distinguishes external persuasion from AOS vote");
         Contains(ui, "wrapper.LastWhisperCompelled", "selected warrior panel distinguishes compulsion from loyalty");
