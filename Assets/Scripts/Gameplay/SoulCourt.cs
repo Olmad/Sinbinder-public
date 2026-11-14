@@ -162,9 +162,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static readonly Vector3 CompassAt = new Vector3(0f, 4.45f, WallZ - 0.2f);
         private static readonly Vector3 CompassFrom = new Vector3(0f, 4.2f, -0.6f);
-        private static readonly Color PiousTone = new Color(0.98f, 0.90f, 0.62f);
-        private static readonly Color NeutralTone = new Color(0.55f, 0.56f, 0.62f);
-        private static readonly Color ViciousTone = new Color(0.85f, 0.10f, 0.08f);
+        public static readonly Color PiousTone = new Color(0.98f, 0.90f, 0.62f);
+        public static readonly Color NeutralTone = new Color(0.55f, 0.56f, 0.62f);
+        public static readonly Color ViciousTone = new Color(0.85f, 0.10f, 0.08f);
 
         /// <summary>Куда смотрит стрелка компаса: плюс — влево (добро), минус — вправо (зло).</summary>
         private static float MoralAngle(MoralType m)

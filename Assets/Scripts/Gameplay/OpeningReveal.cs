@@ -415,7 +415,10 @@ namespace Sinbinder.Gameplay
             hint.raycastTarget = false;
             var hr = (RectTransform)tg.transform;
             hr.anchorMin = hr.anchorMax = new Vector2(0.5f, 0.30f);
-            hr.sizeDelta = new Vector2(900f, 60f);
+            // Две строки: слово Бога Смерти длиннее подсказки (прогон 14.11: «обрезан»).
+            hint.horizontalOverflow = HorizontalWrapMode.Wrap;
+            hint.verticalOverflow = VerticalWrapMode.Overflow;
+            hr.sizeDelta = new Vector2(1100f, 90f);
 
             white = Full("Свет", Color.clear);
             return root;

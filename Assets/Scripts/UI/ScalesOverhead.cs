@@ -170,7 +170,7 @@ namespace Sinbinder.UI
                 }
             }
 
-            var root = Rect("Весы — " + w.DisplayName, transform, Vector2.zero, new Vector2(Size * 3f, Size + 34f));
+            var root = Rect("Весы — " + w.DisplayName, transform, Vector2.zero, new Vector2(Size * 3f, Size * 1.66f + 34f));
             root.anchorMin = root.anchorMax = Vector2.zero;
             root.pivot = new Vector2(0.5f, 0f);
             var group = root.gameObject.AddComponent<CanvasGroup>();
@@ -197,6 +197,26 @@ namespace Sinbinder.UI
             var soul = Img("Душа", beam, beadAt, new Vector2(5f, 5f), new Color(0.74f, 0.88f, 1f), Disc()).GetComponent<Image>();
             Img("Блик", beam, beadAt + new Vector2(-2.2f, 2.2f), new Vector2(2f, 2f), Color.white, Disc());
             Img("Ось", root, beamAt, new Vector2(7f, 7f), new Color(0.97f, 0.93f, 0.80f), Disc());
+            // Компас натуры над весами (план 66 §4): один язык с судом — три тона по кругу,
+            // стрелка-клинок на натуре души. Весы — решение, компас — кто решает.
+            if (w.Soul != null)
+            {
+                float dia = Size * 0.56f;
+                var compassAt = centre + new Vector2(0f, Size * 0.5f + 4f + dia * 0.5f);
+                Img("Компас — обод", root, compassAt, new Vector2(dia + 4f, dia + 4f), new Color(0.78f, 0.70f, 0.52f, 0.95f), Disc());
+                Img("Компас — круг", root, compassAt, new Vector2(dia, dia), new Color(0.11f, 0.12f, 0.19f, 0.95f), Disc());
+                foreach (var (ang, tone) in new[] { (-60f, SoulCourt.PiousTone), (0f, SoulCourt.NeutralTone), (60f, SoulCourt.ViciousTone) })
+                {
+                    var dir = new Vector2(Mathf.Sin(ang * Mathf.Deg2Rad), Mathf.Cos(ang * Mathf.Deg2Rad));
+                    Img("Компас — тон", root, compassAt + dir * (dia * 0.36f), new Vector2(6f, 6f), tone, Disc());
+                }
+                float needle = w.Soul.Moral == Core.MoralType.Pious ? -60f : w.Soul.Moral == Core.MoralType.Vicious ? 60f : 0f;
+                var nd = new Vector2(Mathf.Sin(needle * Mathf.Deg2Rad), Mathf.Cos(needle * Mathf.Deg2Rad));
+                float len = dia * 0.40f;
+                var blade = Img("Компас — стрелка", root, compassAt + nd * (len * 0.5f), new Vector2(2.4f, len), new Color(0.92f, 0.93f, 0.97f), null);
+                blade.localEulerAngles = new Vector3(0f, 0f, -needle);
+                Img("Компас — ступица", root, compassAt, new Vector2(5f, 5f), Brass, Disc());
+            }
             var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
             var panAgainst = Pan("Чаша против", root, SoulCourt.AgainstTone, out var bowlAgainst);
 
