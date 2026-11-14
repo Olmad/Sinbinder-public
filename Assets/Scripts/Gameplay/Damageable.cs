@@ -160,6 +160,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Heal(float amount)
         {
+            // Invalid healing must not poison HP or silently fill the health bar.
+            if (float.IsNaN(amount) || float.IsInfinity(amount)) return;
             if (IsDead) return;
             _hp = Mathf.Min(_maxHP, _hp + Mathf.Abs(amount));
         }
