@@ -378,29 +378,33 @@ namespace Sinbinder.Multiplayer
                 !Enum.IsDefined(typeof(NetworkOrderKind), kind) ||
                 _nextGameCommandId == long.MaxValue)
                 return false;
-            // Connected is updated by Pump, whereas the socket read loop may
-            // already have closed and cleared _wire. Reject locally if there
-            // is no live transport; this is NOT a server delivery/AOS ACK.
+            // A local queue result is not a server ACK or an AOS verdict.
+            // Keep transport selection and command ID allocation atomic with
+            // Disconnect(), so reconnect cannot reuse a stale wire/token.
             lock (_connectionGate)
             {
                 if (_wire == null || _cancel == null || _cancel.IsCancellationRequested)
                     return false;
+                var intent = new NetworkOrderIntent {
+                    Protocol = MatchAuthority.Protocol, MatchId = GameMatchId,
+                    CommandId = ++_nextGameCommandId, ActorId = actorId,
+                    TargetId = targetId, Kind = kind,
+                    X = destination.x, Y = destination.y, Z = destination.z
+                };
+                return Send(LanGameOrderCodec.Write(intent));
             }
-            var intent = new NetworkOrderIntent {
-                Protocol = MatchAuthority.Protocol, MatchId = GameMatchId,
-                CommandId = ++_nextGameCommandId, ActorId = actorId,
-                TargetId = targetId, Kind = kind,
-                X = destination.x, Y = destination.y, Z = destination.z
-            };
-            Send(LanGameOrderCodec.Write(intent));
-            return true;
         }
 
-        private void Send(LanMessage packet)
+        private bool Send(LanMessage packet)
         {
-            if (!Connected || _wire == null || _cancel == null) return;
-            string wireText = LanMessage.Encode(packet);
-            _ = SendSafeAsync(_wire, wireText, _cancel.Token, _generation);
+            lock (_connectionGate)
+            {
+                if (!Connected || _wire == null || _cancel == null ||
+                    _cancel.IsCancellationRequested) return false;
+                string wireText = LanMessage.Encode(packet);
+                _ = SendSafeAsync(_wire, wireText, _cancel.Token, _generation);
+                return true; // Local dispatch only; remote delivery is unconfirmed.
+            }
         }
 
         private async Task SendSafeAsync(LanWire wire, string text, CancellationToken token, int generation)
