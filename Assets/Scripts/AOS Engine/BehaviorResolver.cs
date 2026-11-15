@@ -107,7 +107,19 @@ namespace Sinbinder.AOS
         /// нечем объяснить игроку.
         /// </summary>
         public Decision DecideDetailed(Warrior warrior, DecisionContext context)
+            => DecideDetailed(warrior, context, null);
+
+        /// <summary>
+        /// The exact real AOS vote ledger of THIS decision. Optional UI
+        /// witness, collected inside the same Tally as the chosen action.
+        /// Never call Ballot again later to reconstruct a historical vote.
+        /// The caller owns and retains the list; normal decision callers
+        /// incur no extra allocations for the ledger.
+        /// </summary>
+        public Decision DecideDetailed(Warrior warrior, DecisionContext context,
+            List<Vote> decisionBallot)
         {
+            decisionBallot?.Clear();
             if (MemoryProcessor.Instance != null)
                 context.RecentMemories = MemoryProcessor.Instance.GetMemories(warrior);
 
@@ -116,7 +128,8 @@ namespace Sinbinder.AOS
             // Кто именно поднял каждое действие сильнее всех — это и есть причина.
             var loudest = new Dictionary<ActionType, (string module, float value)>();
 
-            var scores = Tally(warrior, context, soul, loudest);
+            var scores = Tally(warrior, context, soul, loudest,
+                               null, decisionBallot);
 
             // Фоторежим: гарантированный отказ на один дубль
             // (<see cref="Dev.CaptureMode"/>). Решение **не подменяется** —
