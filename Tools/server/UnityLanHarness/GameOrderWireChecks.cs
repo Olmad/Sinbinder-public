@@ -180,6 +180,21 @@ internal static class GameOrderWireChecks
             await Until(room, one, two, () => acceptedA == 2,
                 "pending command was accepted");
             one.Disconnect();
+            // A disposed transport must fail explicitly, not silently report
+            // successful completion of a write that never reached the server.
+            bool closedWireRejected = false;
+            try
+            {
+                await ((LanWire)liveWire).SendLineAsync(
+                    LanMessage.Encode(new LanMessage { type = "ping" }),
+                    System.Threading.CancellationToken.None);
+            }
+            catch (ObjectDisposedException)
+            {
+                closedWireRejected = true;
+            }
+            Require(closedWireRejected,
+                "disposed LAN transport must reject queued writes explicitly");
             await Until(room, one, two, () => room.PlayerCount == 1,
                 "client disconnect reaches server");
             probe.Advance(0.20f);
