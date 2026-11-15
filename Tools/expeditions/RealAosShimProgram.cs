@@ -208,6 +208,40 @@ static class RealAosShimProgram
         Check(Enum.IsDefined(typeof(ActionType),decision.Action),
             "real AOS returns an existing action rather than invalid stub output");
 
+        // Regression of the PLAYER-FACING J court, not a synthetic AOS
+        // replacement. Recorded judges must be exactly the votes of the
+        // ORIGINAL scoring pass; later changes cannot rewrite history.
+        var orderContext=new DecisionContext
+        {
+            HasCommand=true,CommandType="FallBack",
+            CommandIsFallBack=true,CommandLeavesFight=true,
+            NearbyEnemies=2,EnemiesInSight=2,NearbyLoot=1,
+            CurrentHP=60f,MaxHP=100f,DangerLevel=0.55f,
+            RecentMemories=new List<MemoryRecord>()
+        };
+        var recorded=new List<Vote>();
+        var actualOrder=resolver.DecideDetailed(actor,orderContext,recorded);
+        var directBallot=resolver.Ballot(actor,orderContext);
+        Check(recorded.Count==directBallot.Count && recorded.Count>0,
+            "real decision records same thirteen-module ballot as actual tally");
+        Check(recorded.Zip(directBallot,(x,y)=>
+             x.Module==y.Module && x.Action==y.Action &&
+             Math.Abs(x.Voice-y.Voice)<0.00001f).All(x=>x),
+            "recorded J court votes match original AOS ballot exactly");
+        Check(Enum.IsDefined(typeof(ActionType),actualOrder.Action),
+            "court recording does not replace the genuine AOS action");
+        var frozen=recorded.Select(v=>new{v.Module,v.Action,v.Voice}).ToList();
+        orderContext.CurrentHP=4f;
+        orderContext.DangerLevel=1f;
+        orderContext.Surrounded=true;
+        var laterBallot=resolver.Ballot(actor,orderContext);
+        Check(recorded.Count==frozen.Count && recorded.Zip(frozen,(v,x)=>
+              v.Module==x.Module && v.Action==x.Action &&
+              v.Voice==x.Voice).All(x=>x),
+            "past court votes remain frozen after HP and tactical context change");
+        Check(laterBallot.Count>0,
+            "later live voting remains possible without mutating previous snapshot");
+
         var caravanOptions=new List<MissionAction>
         {
             MissionAction.TakeGoodsSparePeople,
