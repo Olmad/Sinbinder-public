@@ -414,6 +414,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Heal(float amount)
         {
+            // Match Damageable.Heal: non-finite healing must never poison fallback HP.
+            if (float.IsNaN(amount) || float.IsInfinity(amount)) return;
             if (IsDead) return;
             if (Body is Damageable b) { b.Heal(amount); return; }
             _hp = Mathf.Min(_maxHP, _hp + Mathf.Abs(amount));
