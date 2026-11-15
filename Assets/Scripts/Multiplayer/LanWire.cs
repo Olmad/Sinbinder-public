@@ -45,7 +45,7 @@ namespace Sinbinder.Multiplayer
 
         public async Task SendLineAsync(string line, CancellationToken cancellation)
         {
-            if (Volatile.Read(ref _closed) != 0) return;
+            if (Volatile.Read(ref _closed) != 0)\n                throw new ObjectDisposedException(nameof(LanWire));
             byte[] bytes = Encoding.UTF8.GetBytes(line);
             if (bytes.Length > MaxInboundBytes) throw new InvalidDataException("LAN packet is too large");
             using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
@@ -54,8 +54,9 @@ namespace Sinbinder.Multiplayer
                 await _sendGate.WaitAsync(deadline.Token);
                 try
                 {
-                    if (Volatile.Read(ref _closed) == 0)
-                        await _stream.WriteAsync(bytes, 0, bytes.Length, deadline.Token);
+                    if (Volatile.Read(ref _closed) != 0)
+                        throw new ObjectDisposedException(nameof(LanWire));
+                    await _stream.WriteAsync(bytes, 0, bytes.Length, deadline.Token);
                 }
                 finally { _sendGate.Release(); }
             }
