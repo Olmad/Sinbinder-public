@@ -333,6 +333,19 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
+            // The Court needs a cinematic camera and letterbox. Give
+            // actionable feedback instead of printing "Court started"
+            // when a minimalist expedition scene has no Court rig.
+            if (Camera.main == null ||
+                (Dialogue.DialogueCameraController.Instance == null &&
+                 FindFirstObjectByType<Dialogue.DialogueCameraController>() == null) ||
+                (UI.Letterbox.Instance == null &&
+                 FindFirstObjectByType<UI.Letterbox>(FindObjectsInactive.Include) == null))
+            {
+                Notice(Core.Loc.T("Зал Суда души недоступен в этой сцене."));
+                return;
+            }
+
             Notice(Core.Loc.F("Суд души: последнее решение воина {0}.",
                 Core.Loc.Name(chosen.DisplayName)));
             bool showFullCourt = Input.GetKey(KeyCode.LeftShift) ||
