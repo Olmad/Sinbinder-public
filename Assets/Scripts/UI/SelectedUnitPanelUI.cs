@@ -438,6 +438,7 @@ namespace Sinbinder.UI
 
             var wrapper = who.GetComponent<AOSWarriorWrapper>();
             bool canReviewOrder = wrapper != null && wrapper.LastContext != null &&
+                (!who.HasCommand || wrapper.HasCurrentCommandDecision) &&
                 wrapper.LastContext.HasCommand && wrapper.LastDecisionBallot != null &&
                 wrapper.LastDecisionBallot.Count > 0;
             Set(_voicesTitle,
