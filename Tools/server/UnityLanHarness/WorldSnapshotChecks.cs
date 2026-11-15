@@ -197,6 +197,36 @@ internal static class WorldSnapshotChecks
                 Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "incomplete frame never replaces last valid snapshot");
 
+            // Duplicate actor ID rejects the pending frame. A later worldEnd
+            // must not dereference that rejected frame or kill the client Pump.
+            long duplicateFrame = c1.WorldFrame + 1;
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldBegin", matchId = c1.GameMatchId,
+                    snapshotId = duplicateFrame, actorCount = 2
+                }).TrimEnd('\n'), null
+            });
+            var duplicateActor = LanMessage.Encode(LanWorldActorState.Packet(
+                new LanWorldActorState(ownId,
+                    NetworkActorRole.Lord, new Vector3(77, 0, -80)),
+                c1.GameMatchId, duplicateFrame, probe.Tick)).TrimEnd('\n');
+            enqueue.Invoke(c1, new object[] { generation, duplicateActor, null });
+            enqueue.Invoke(c1, new object[] { generation, duplicateActor, null });
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldEnd", matchId = c1.GameMatchId,
+                    snapshotId = duplicateFrame, actorCount = 2,
+                    tick = c1.WorldTick
+                }).TrimEnd('\n'), null
+            });
+            c1.Pump();
+            Need(c1.WorldFrame < duplicateFrame &&
+                c1.WorldActors.Count == 1 &&
+                Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
+                "duplicate actor frame rejected without crashing or replacing roster");
+
             // Invalid worldBegin must not abort an otherwise valid in-flight
             // snapshot. Exercise the real client's queued wire-frame parser.
             long intactFrame = c1.WorldFrame + 2;
