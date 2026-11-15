@@ -227,6 +227,29 @@ internal static class WorldSnapshotChecks
                 Math.Abs(c1.WorldActors[ownId].Position.x - 8f) < .01f,
                 "duplicate actor frame rejected without crashing or replacing roster");
 
+            // A malformed private frame may leave stale coordinates until a
+            // subsequent complete authoritative frame. A valid empty frame
+            // MUST revoke them, even after duplicate actor IDs were rejected.
+            long revokeFrame = c1.WorldFrame + 1;
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldBegin", matchId = c1.GameMatchId,
+                    snapshotId = revokeFrame, actorCount = 0
+                }).TrimEnd('\n'), null
+            });
+            enqueue.Invoke(c1, new object[] {
+                generation,
+                LanMessage.Encode(new LanMessage {
+                    type = "worldEnd", matchId = c1.GameMatchId,
+                    snapshotId = revokeFrame, actorCount = 0,
+                    tick = c1.WorldTick
+                }).TrimEnd('\n'), null
+            });
+            c1.Pump();
+            Need(c1.WorldFrame == revokeFrame && c1.WorldActors.Count == 0,
+                "valid empty private snapshot revokes stale roster after malformed frame");
+
             // Invalid worldBegin must not abort an otherwise valid in-flight
             // snapshot. Exercise the real client's queued wire-frame parser.
             long intactFrame = c1.WorldFrame + 2;
