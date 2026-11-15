@@ -452,7 +452,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c,
             CommandKind? given = null, bool? brief = null,
-            IReadOnlyList<Vote> originalVotes = null)
+            IReadOnlyList<Vote> originalVotes = null,
+            bool compelledByWhisper = false)
         {
             if (w == null || c == null || Sitting || !Preferences.Court) yield break;
 
@@ -746,6 +747,10 @@ namespace Sinbinder.Gameplay
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
                 yield return Line(box, host, verdict, why);
+            if (compelledByWhisper)
+                yield return Line(box, host, verdict,
+                    Loc.T("Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."));
+
             if (originalVotes != null)
                 yield return Line(box, host, court,
                     Loc.T("Это голоса, записанные при решении. Помимо них, на итог могли повлиять вещи, перки и установка отряда."));
