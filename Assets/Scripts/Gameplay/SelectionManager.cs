@@ -335,9 +335,12 @@ namespace Sinbinder.Gameplay
 
             Notice(Core.Loc.F("Суд души: последнее решение воина {0}.",
                 Core.Loc.Name(chosen.DisplayName)));
+            bool showFullCourt = Input.GetKey(KeyCode.LeftShift) ||
+                                 Input.GetKey(KeyCode.RightShift);
             StartCoroutine(SoulCourt.Convene(chosen, mind.NaturalDecisionDetail,
-                mind.LastContext, mind.LastDecisionOrderKind, brief: true,
-                originalVotes: mind.LastDecisionBallot));
+                mind.LastContext, mind.LastDecisionOrderKind, brief: !showFullCourt,
+                originalVotes: mind.LastDecisionBallot,
+                compelledByWhisper: mind.LastWhisperCompelled));
         }
 
         // ---------- голос Греховода ----------
