@@ -219,7 +219,17 @@ namespace Sinbinder.Gameplay
         private static bool AnyOrdered()
         {
             foreach (var w in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
-                if (w.Team == Team.Neutral && !w.IsDead && w.HasCommand && w.Command.Lord == Lords.Player) return true;
+                if (w.Team == Team.Neutral && !w.IsDead && w.HasCommand && w.Command.Lord == Lords.Player)
+                {
+                    // A delivered command is not an AOS acceptance. Only the
+                    // effective verdict for this exact command can finish the lesson.
+                    var mind = w.GetComponent<Sinbinder.AOS.AOSWarriorWrapper>();
+                    if (mind != null && mind.HasCurrentCommandDecision &&
+                        mind.LastDecisionDetail.Action == Sinbinder.AOS.ActionType.ObeyCommand &&
+                        !mind.LastDecisionDetail.RefusedCommand &&
+                        !mind.LastDecisionDetail.Hesitated)
+                        return true;
+                }
             return false;
         }
 
