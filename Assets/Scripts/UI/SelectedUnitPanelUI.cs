@@ -436,9 +436,13 @@ namespace Sinbinder.UI
             Set(_bodyLine, string.IsNullOrEmpty(named) ? BodyLine(who) : ShellLine(who) + " · " + BodyLine(who), Muted);
             Flame(soul);
 
-            Set(_voicesTitle, Grammar.For(who.Gender, Loc.T("Что тянет его сейчас")), Bone);
-
             var wrapper = who.GetComponent<AOSWarriorWrapper>();
+            bool canReviewOrder = wrapper != null && wrapper.LastContext != null &&
+                wrapper.LastContext.HasCommand && wrapper.LastDecisionBallot != null &&
+                wrapper.LastDecisionBallot.Count > 0;
+            Set(_voicesTitle,
+                Grammar.For(who.Gender, Loc.T("Что тянет его сейчас")) +
+                (canReviewOrder ? Loc.T(" · J — Суд решения") : ""), Bone);
             if (wrapper == null || wrapper.LastContext == null)
             {
                 Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
