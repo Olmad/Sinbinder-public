@@ -22,6 +22,15 @@ namespace Sinbinder.AOS
         /// <summary>Последнее решение вместе с причиной. Читают подсказка и журнал.</summary>
         public Decision LastDecisionDetail { get; private set; }
 
+        /// <summary>
+        /// Exact 13-module votes captured when this decision was made.
+        /// This is the real decision's ballot, not a re-simulation using
+        /// a later HP, emotion, strategy or situation.
+        /// Only player-side warriors keep this UI snapshot.
+        /// </summary>
+        public IReadOnlyList<Vote> LastDecisionBallot { get; private set; }
+        public CommandKind LastDecisionOrderKind { get; private set; }
+
         /// <summary>Unmodified thirteen-voice vote, before any explicit whisper agreement.</summary>
         public Decision NaturalDecisionDetail { get; private set; }
 
@@ -59,8 +68,14 @@ namespace Sinbinder.AOS
             DecisionContext context;
             using (Core.Cost.Of("decide.context")) context = CombatDecisionContext.Create(_warrior, cmd.TypeName);
 
+            // A replay of a real vote must use the real original votes:
+            // capture alongside decision scoring instead of recomputing
+            // at the next J keypress. Enemy votes need no player UI log.
+            List<Vote> ballot = _warrior.Team == Team.Player
+                ? new List<Vote>(96) : null;
             Decision decision;
-            using (Core.Cost.Of("decide.vote")) decision = _resolver.DecideDetailed(_warrior, context);
+            using (Core.Cost.Of("decide.vote"))
+                decision = _resolver.DecideDetailed(_warrior, context, ballot);
 
             // The thirteen voices ALWAYS vote honestly. Whisper is an
             // explicit external bargain; it changes the effective action,
@@ -82,7 +97,11 @@ namespace Sinbinder.AOS
             // а мигающая надпись.
             bool changed = decision.Action != LastDecision;
 
-            LastContext = context;
+            LastContext = context.Copy();
+            if (context.RecentMemories != null)
+                LastContext.RecentMemories = new List<MemoryRecord>(context.RecentMemories);
+            LastDecisionBallot = ballot;
+            LastDecisionOrderKind = cmd.Kind;
             LastDecisionCommandRevision = _warrior.CommandRevision;
             LastDecisionDetail = decision;
             LastDecision = decision.Action;
