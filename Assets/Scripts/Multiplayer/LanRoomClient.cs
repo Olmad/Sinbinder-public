@@ -327,8 +327,7 @@ namespace Sinbinder.Multiplayer
             }
             if (packet.type == "worldEnd")
             {
-                if (_pendingWorld != null &&
-                    _pendingWorld.Count == _pendingWorldCount &&
+                if (_pendingWorld.Count == _pendingWorldCount &&
                     packet.actorCount == _pendingWorldCount &&
                     packet.tick >= WorldTick)
                 {
