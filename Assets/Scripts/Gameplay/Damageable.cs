@@ -62,6 +62,20 @@ namespace Sinbinder.Gameplay
 
         public void TakeDamage(float damage, GameObject attacker)
         {
+            ApplyDamage(damage, attacker, allowGuardInterception: true);
+        }
+
+        // A bodyguard must take the intercepted hit directly. Allowing this
+        // hit to enter Bodyguard.Absorb again could bounce between two wounded
+        // warriors who are each guarding the other, producing two false saves.
+        // The guard's own watch stays intact for the next INDEPENDENT attack.
+        internal void TakeInterceptedDamage(float damage, GameObject attacker)
+        {
+            ApplyDamage(damage, attacker, allowGuardInterception: false);
+        }
+
+        private void ApplyDamage(float damage, GameObject attacker, bool allowGuardInterception)
+        {
             // Nonpositive or nonfinite input is not a hit: never heal through damage,
             // mark hostility, consume a bodyguard watch or produce a death event.
             if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
@@ -69,7 +83,7 @@ namespace Sinbinder.Gameplay
             if (Untouchable != null && this == Untouchable) return;
 
             // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
-            if (Bodyguard.Absorb(this, attacker, damage)) return;
+            if (allowGuardInterception && Bodyguard.Absorb(this, attacker, damage)) return;
 
             // The caravan is genuinely peaceful until the first hostile
             // action. A hit by the player or a player-side warrior commits
