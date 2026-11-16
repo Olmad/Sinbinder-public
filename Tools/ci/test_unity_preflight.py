@@ -39,7 +39,7 @@ class PreflightTests(unittest.TestCase):
 
     def write_build(self, paths):
         entries = "".join(f"  - enabled: 1\n    path: {p}\n    guid: {self.guid[p]}\n" for p in paths)
-        self.write("ProjectSettings/EditorBuildSettings.asset", "m_Scenes:\n" + entries)
+        self.write("ProjectSettings/EditorBuildSettings.asset", "  m_Scenes:\n" + entries)
 
     def assert_rejected(self, message):
         with self.assertRaisesRegex(PreflightError, message):
@@ -47,6 +47,11 @@ class PreflightTests(unittest.TestCase):
 
     def test_valid_minimal_project_passes(self):
         self.assertEqual(check(self.root), 4)
+
+    def test_missing_m_scenes_header_fails(self):
+        build = (self.root / "ProjectSettings/EditorBuildSettings.asset").read_text(encoding="utf-8")
+        self.write("ProjectSettings/EditorBuildSettings.asset", build.replace("  m_Scenes:", "  otherField:", 1))
+        self.assert_rejected("exactly one m_Scenes section")
 
     def test_mismatched_meta_guid_fails(self):
         self.write(REQUIRED_SCENES[2] + ".meta", "guid: " + "e" * 32)
