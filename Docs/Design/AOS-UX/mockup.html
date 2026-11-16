@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Sinbinder — AOS UX / Черновой интерактивный макет</title>
+<style>
+:root{--bg:#0b0c0d;--panel:#181a1b;--panel2:#1e2020;--line:#4b4338;--line2:#302d27;--bone:#e0d5be;--muted:#ab9f8b;--brass:#a48c64;--red:#bd5246;--green:#72927c;--warn:#e7a76f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 10%,#222121 0%,#101112 60%,#090a0b 100%);color:var(--bone);font:15px/1.55 Georgia,"Times New Roman",serif}
+button{font:inherit;cursor:pointer;color:inherit}
+a{color:#dfc599}button:focus-visible,a:focus-visible{outline:2px solid #e8c996;outline-offset:3px}
+.layout{max-width:1600px;min-height:100vh;margin:auto;padding:22px 24px}
+.top{display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);padding:0 0 17px;margin-bottom:18px}
+.brand{font:small-caps bold 29px Georgia,serif;letter-spacing:.12em;white-space:nowrap}
+.brand i{font-style:normal;color:var(--red)}.subhead{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.marker{margin-left:auto;border:1px solid #5e453d;color:#ebae97;padding:7px 10px;font:11px/1.3 system-ui,sans-serif;letter-spacing:.07em}
+.grid{display:grid;grid-template-columns:214px minmax(0,1fr) 230px;gap:18px}
+.panel{background:linear-gradient(140deg,#1e1e1d,#111313);border:1px solid var(--line);box-shadow:0 12px 35px #0006}
+.left{padding:18px 12px}.eyebrow{color:var(--brass);font:12px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em}
+.left h2,.right h2{font-size:17px;font-weight:normal;margin:10px 8px 13px}
+.nav{display:grid;gap:6px;margin:12px 0 28px}
+.nav button{background:transparent;border:1px solid transparent;text-align:left;padding:12px 10px;line-height:1.3;color:var(--muted)}
+.nav button:hover{background:#2a2521;color:var(--bone)}
+.nav button[aria-selected="true"]{color:var(--bone);border-color:#785b4b;background:#30201f;box-shadow:inset 3px 0 var(--red)}
+.nav .number{display:inline-block;min-width:21px;color:var(--brass);font:11px system-ui,sans-serif}
+.separator{height:1px;background:var(--line2);margin:15px 6px}
+.player{font-size:13px;margin:0 9px 10px;color:var(--muted)}.player strong{color:var(--bone);font-size:19px;font-weight:normal}
+.role{font:12px system-ui,sans-serif;color:var(--muted)}
+.face{width:72px;height:72px;border:1px solid #555044;background:radial-gradient(circle at 45% 40%,#8a6953 0%,#423329 22%,#242422 56%,#121313 100%);border-radius:50%;display:grid;place-items:center;color:#d1b69e;font-size:32px;margin:5px 8px 14px}
+.right{padding:18px 16px}.right .hint{font-size:13px;color:#b8a895;padding:8px 0;border-bottom:1px solid var(--line2)}
+.right .key{font:12px ui-monospace,monospace;color:#e8d4a7;border:1px solid #695843;padding:3px 6px;display:inline-block;margin-right:5px}
+.note{font:12px/1.5 system-ui,sans-serif;color:var(--muted);margin:16px 0}
+.badge{display:inline-block;border:1px solid #6f5347;color:#f0b7a2;padding:5px 7px;font:11px system-ui,sans-serif;letter-spacing:.05em}
+.center{min-width:0;padding:18px 22px 24px;min-height:730px}
+.centerhead{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:18px}
+.centerhead h1{font-size:28px;line-height:1.2;font-weight:normal;margin:5px 0 0}
+.muted{color:var(--muted)}.small{font-size:12px;font-family:system-ui,sans-serif}
+.statusbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.statusbar button{border:1px solid var(--line);background:#191919;padding:7px 10px;font:12px system-ui,sans-serif}.statusbar button[aria-pressed="true"]{background:#534039;border-color:#a68160;color:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.plaque{position:relative;padding:18px;border:1px solid #615340;background:linear-gradient(150deg,#24211d,#111313);min-width:0}
+.plaque.critical{border-color:#8e5346;background:linear-gradient(145deg,#30201d,#151313)}
+.plaque.positive{border-color:#637b6a}.plaque h3{font-size:21px;font-weight:normal;margin:2px 0 10px}.plaque p{margin:6px 0}.plaque .cap{font:11px system-ui,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.ribbon{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border:1px solid #78564b;background:#342322;color:#f1c2b0;font:12px system-ui,sans-serif}
+.result{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);font-size:23px;line-height:1.3}
+.result strong{font-weight:normal;color:#f4d3c2}.result.ok strong{color:#bdceb9}
+.cause{margin-top:18px;border-left:3px solid var(--red);background:#241c1b;padding:13px 15px}
+.cause strong{font-weight:normal;color:#f1c2b0}.cause p{margin:5px 0 0}
+.judges{margin-top:22px}.rowtitle{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #53493d;padding-bottom:7px;margin-bottom:12px}
+.rowtitle h2{font-size:22px;font-weight:normal;margin:0}
+.voices{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.voice{border:1px solid #484039;background:#171818;min-height:82px;padding:10px 8px;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
+.voice.strong{border-color:#865449;background:#2a1d1b}.voice strong{font-size:13px;line-height:1.25;font-weight:normal;overflow-wrap:anywhere}
+.voice span{font:11px system-ui,sans-serif;color:#ad9d8d}.voice.strong span{color:#e1a18a}
+.bottom{margin-top:18px;display:flex;gap:14px;flex-wrap:wrap}
+.call{border:1px solid #7a6750;background:#302823;padding:9px 15px;color:#ead4b7}.call:hover{background:#453329}
+.secondary{border:1px solid var(--line);background:#191919;padding:9px 15px;color:#c9b9a7}.secondary:hover{background:#262323}
+.variant{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.variant button{border:1px solid var(--line);background:#1c1d1d;padding:8px 13px;font:13px system-ui,sans-serif}
+.variant button[aria-pressed="true"]{background:#44312d;border-color:#ab7160}
+.eventlist{display:grid;gap:10px;margin-top:14px}.event{display:grid;grid-template-columns:100px 1fr;gap:12px;padding:14px;background:#1d1d1c;border:1px solid var(--line2)}.event time{color:var(--brass);font:12px system-ui,sans-serif}
+.empty{margin:60px auto 20px;max-width:480px;text-align:center;padding:28px;border:1px dashed #685749}
+.empty h2{font-size:24px;font-weight:normal}.empty p{color:var(--muted)}
+.footer{padding:20px 0 0;font:12px/1.4 system-ui,sans-serif;color:#afa28d;display:flex;justify-content:space-between;gap:14px}
+.token{border:1px solid #6b574c;background:#201d1a;padding:2px 6px;font:11px ui-monospace,monospace}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1120px){.grid{grid-template-columns:180px minmax(0,1fr)}.right{grid-column:1/-1}.right .hints{display:flex;gap:20px;flex-wrap:wrap}.center{min-height:690px}.voices{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:700px){.layout{padding:10px}.top{flex-wrap:wrap}.brand{font-size:24px}.marker{margin-left:0}.grid{display:block}.left{margin-bottom:12px}.left .nav{grid-template-columns:repeat(2,1fr)}.left .face,.left .player{display:none}.center{padding:15px;min-height:auto}.centerhead{display:block}.two{grid-template-columns:1fr}.voices{grid-template-columns:repeat(3,minmax(0,1fr))}.right{margin-top:12px}.footer{display:block}.event{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.nav button,.call,.variant button{transition:background .15s ease,border-color .15s ease}}
+</style>
+</head>
+<body>
+<div class="layout">
+ <header class="top"><div class="brand">Sinbinder <i>✣</i></div><div class="subhead">AOS · объяснимость решений<br>черновой интерактивный интерфейс</div><span class="marker">МАКЕТ • НЕ ИГРОВОЙ UI • ДАННЫЕ ВЫМЫШЛЕНЫ</span></header>
+ <div class="grid">
+  <aside class="panel left"><div class="eyebrow" style="margin:0 9px">Архив души</div>
+   <nav class="nav" aria-label="Разделы интерфейса">
+    <button type="button" data-tab="trial" aria-selected="true"><span class="number">I.</span> Последнее решение</button>
+    <button type="button" data-tab="whisper" aria-selected="false"><span class="number">II.</span> Две воли</button>
+    <button type="button" data-tab="alternative" aria-selected="false"><span class="number">III.</span> Что, если?</button>
+    <button type="button" data-tab="memory" aria-selected="false"><span class="number">IV.</span> Память и хроника</button>
+   </nav><div class="separator"></div><div class="face" aria-hidden="true">✥</div><p class="player"><strong>Вейн</strong><br>Воин · тело ранено<br><span class="role">Условный персонаж макета</span></p>
+   <div class="separator"></div><div class="eyebrow" style="margin:0 9px">Состояние приказа</div>
+   <div class="variant" style="margin:10px 8px;display:grid">
+    <button data-state="resolved" aria-pressed="true">Решение сохранено</button>
+    <button data-state="pending" aria-pressed="false">Новый приказ ожидает AOS</button>
+    <button data-state="empty" aria-pressed="false">Нет записи</button>
+   </div>
+  </aside>
+  <main class="panel center" id="screen" tabindex="-1" aria-live="polite"></main>
+  <aside class="panel right"><div class="eyebrow">Назначение</div><h2>Объяснить волю, а не заменить её</h2><p class="note">Экран открывается по инициативе игрока. В бою достаточно короткой реакции. Полный суд не навязывается.</p>
+   <div class="separator"></div><div class="eyebrow">Управление в макете</div>
+   <div class="hints">
+    <div class="hint"><span class="key">J</span> Последнее решение</div>
+    <div class="hint"><span class="key">Shift+J</span> Развёрнутый суд</div>
+    <div class="hint"><span class="key">Esc</span> Вернуться к суду</div>
+    <div class="hint"><span class="key">Tab / V</span> Игровые режимы не меняем</div>
+   </div>
+   <div class="separator"></div><div class="eyebrow">Что требуется от Unity</div>
+   <p class="note">Снимок настоящего решения, актуальная ревизия приказа, естественный вердикт до Шёпота, неизменяемый контрфактический расчёт и подтверждённый журнал событий.</p>
+   <span class="badge">НЕ ПОДКЛЮЧЕНО К AOS</span>
+  </aside>
+ </div>
+ <footer class="footer"><span>Концепт по прежнему примеру «Суд души: проверка решения Вейна» · 16.11.2026</span><span>Ориентир: 42-INTERFACE.md / 02-AOS.md · Только HTML/CSS/JS без зависимостей</span></footer>
+</div>
+<script>
+(()=>{'use strict';
+ const MODULES=['Жадность','Гнев','Добродетель','Страх','Верность','Мораль','Память','Лень','Гордыня','Зависть','Похоть','Чревоугодие','Терпение'];
+ const voiceState=['молчит','настаивает','тихо','кричит','спорит','тихо','настаивает','молчит','тихо','молчит','молчит','тихо','спорит'];
+ const state={tab:'trial',order:'resolved',variable:'wound',full:false};
+ const el=document.getElementById('screen');
+ function shell(title,intro,inner){return '<div class="centerhead"><div><div class="eyebrow">Вейн · условное дело № 07</div><h1>'+title+'</h1></div><div class="small muted">Демонстрационный сценарий · не данные игры</div></div><p class="muted">'+intro+'</p>'+inner;}
+ function voices(){return '<section class="judges"><div class="rowtitle"><h2>Тринадцать голосов души</h2><span class="small muted">Без числовых весов для игрока</span></div><div class="voices">'+MODULES.map((m,i)=>'<div class="voice '+((i===3||i===4||i===6)?'strong':'')+'"><strong>'+m+'</strong><span>'+voiceState[i]+'</span></div>').join('')+'</div></section>';}
+ function trial(){if(state.order==='pending')return shell('Новый приказ ожидает решения','Последний суд не относится к новому приказу. Скрываем устаревший вердикт.', '<div class="empty"><h2>Суд ещё не состоялся</h2><p>Новый приказ принят к рассмотрению. Ждите подтверждённого результата AOS, не показывайте прежнюю причину отказа.</p><span class="badge">J временно недоступен</span></div>');
+ if(state.order==='empty')return shell('Нет сохранённого решения','Нельзя показать суд без записи решения.', '<div class="empty"><h2>Пока нечего судить</h2><p>Выберите воина после фактического решения. Никогда не подставляйте случайные аргументы.</p></div>');
+ return shell('Суд последнего решения','Вейн получил приказ отступить. Он остался в бою. Здесь показаны причины, а не повторное вычисление.',
+ '<div class="ribbon">Сохранённое событие · демонстрация</div><div class="two">'+
+ '<section class="plaque"><div class="cap">Приказ Греховода</div><h3>Отступить к лагерю</h3><p>Воин ранен. Рядом товарищ. Противник сильнее.</p><div class="result">Приказ <span class="muted">услышан</span></div></section>'+
+ '<section class="plaque critical"><div class="cap">Реальный поступок</div><h3>Остался сражаться</h3><p>Страх отступления за спину товарища и память о прежнем бегстве перевесили приказ.</p><div class="result"><strong>Отказался отступить</strong></div></section></div>'+
+ '<div class="cause"><strong>Решающая причина (пример)</strong><p>«Я не оставлю его здесь». Принятая душой причина должна поступать из текущего сохранённого вердикта, а не вычисляться для этого окна заново.</p></div>'+
+ (state.full?voices():'<p class="note">Краткий суд скрывает подробные голоса. <button type="button" class="secondary" id="expand">Раскрыть тринадцать голосов</button></p>')+
+ '<div class="bottom"><button class="call" type="button" data-goto="whisper">Посмотреть две воли</button><button class="secondary" type="button" data-goto="alternative">Что могло изменить решение?</button></div>');}
+ function whisper(){return shell('Две воли','Один персонаж, одно событие. Сравниваем сохранённое естественное намерение с результатом после Шёпота, не смешивая их с контрфактом.',
+ '<div class="two"><section class="plaque"><div class="cap">Душа · до вмешательства</div><h3>Хотела отступить</h3><p>Его испугала близкая смерть. В обычных условиях он бы оставил позицию.</p><div class="result">Намерение: <span class="muted">отступить</span></div></section>'+
+ '<section class="plaque critical"><div class="cap">Воля Греховода · Шёпот</div><h3>Заставил остаться</h3><p>После вмешательства воин продолжил сражаться. Послушание не значит согласие.</p><div class="result"><strong>Поступок: остаться</strong></div></section></div>'+
+ '<div class="cause"><strong>Нельзя подменять свидетельство выдумкой</strong><p>Если NaturalDecisionDetail или запись LastWhisperCompelled отсутствует для текущего события, эта пара не должна появляться в игровом интерфейсе.</p></div>'+
+ '<div class="bottom"><button class="call" type="button" data-goto="trial">К последнему решению</button></div>');}
+ function alternative(){const data={
+ wound:{left:'Ранен',right:'Не ранен',outcome:'Отступил',cause:'Состояние тела могло изменить итог. Пересчитывается ровно один фактор.'},
+ ally:{left:'Товарищ рядом',right:'Нет товарища рядом',outcome:'Отступил',cause:'Без близкого товарища память не удерживает его на поле.'},
+ enemy:{left:'Противник сильнее',right:'Противник равен по силе',outcome:'Остался',cause:'Изменение угрозы в этом демонстрационном наборе не переворачивает выбор.'}
+ };const d=data[state.variable];return shell('Что, если?..','Меняем одно обстоятельство; прежнее событие остаётся неизменным. В настоящей игре обе оценки должны исходить из одного BehaviourResolver и зафиксированного снимка.',
+ '<div class="variant" aria-label="Выбрать одно изменённое обстоятельство">'+
+ '<button data-variable="wound" aria-pressed="'+(state.variable==='wound')+'">Без ранения</button>'+
+ '<button data-variable="ally" aria-pressed="'+(state.variable==='ally')+'">Без товарища</button>'+
+ '<button data-variable="enemy" aria-pressed="'+(state.variable==='enemy')+'">Равный противник</button></div>'+
+ '<div class="two"><section class="plaque critical"><div class="cap">Как было · сохранённый факт</div><h3>'+d.left+'</h3><p>Ситуация, реально записанная перед решением.</p><div class="result"><strong>Остался сражаться</strong></div></section>'+
+ '<section class="plaque positive"><div class="cap">Проверка · изменён один фактор</div><h3>'+d.right+'</h3><p>Условие подставлено в неподключённую демонстрацию.</p><div class="result ok"><strong>'+d.outcome+'</strong></div></section></div>'+
+ '<div class="cause"><strong>Пояснение макета, не вывод движка</strong><p>'+d.cause+' Здесь результат написан вручную для оценки UX. Его нельзя показывать как ответ реальной AOS.</p></div>'+
+ '<div class="note">Прежний визуальный пример показывал две чаши весов и вклад 13 голосов. Для первого игрового экрана оставлены два столбца и только объяснение значимого различия. Весы можно использовать как анимацию перехода, но не как замену фактов.</div>');}
+ function memory(){return shell('Память и хроника','Показаны идеи для будущего, а не реально сохранённые воспоминания или пространственный реплей.',
+ '<div class="eventlist">'+
+ '<div class="event"><time>До приказа</time><div><strong>Вейн увидел раненого товарища</strong><div class="muted small">Контекст решения: только если событие реально зафиксировано.</div></div></div>'+
+ '<div class="event"><time>Решение AOS</time><div><strong>Остался сражаться</strong><div class="muted small">Открывается из Суда последнего решения. Факт не пересчитывается.</div></div></div>'+
+ '<div class="event"><time>После боя</time><div><strong>Возможная запись в памяти</strong><div class="muted small">Добавлять только при реальной записи MemoryRecord и подтверждённом влиянии или обозначать как архив событий без влияния.</div></div></div>'+
+ '<div class="event"><time>Другая вылазка</time><div><strong>Возможная реакция на прошлое</strong><div class="muted small">Нельзя утверждать причинную связь, пока последующее голосование не содержит соответствующий вклад памяти.</div></div></div></div>'+
+ '<div class="bottom"><button type="button" class="secondary" data-goto="trial">Вернуться к суду</button></div>');}
+ function render(){document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));document.querySelectorAll('[data-state]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.state===state.order)));
+ el.innerHTML=({trial,whisper,alternative,memory})[state.tab]();document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.goto)));const ex=document.getElementById('expand');if(ex)ex.addEventListener('click',()=>{state.full=true;render();});document.querySelectorAll('[data-variable]').forEach(b=>b.addEventListener('click',()=>{state.variable=b.dataset.variable;render();}));}
+ function go(tab){state.tab=tab;render();}
+ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+ document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{state.order=b.dataset.state;go('trial');}));
+ document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+ if(e.key.toLowerCase()==='j'&&!e.altKey&&!e.ctrlKey){if(state.order==='resolved'){state.full=e.shiftKey;go('trial');}e.preventDefault();}
+ else if(e.key==='Escape'){state.full=false;go('trial');}});
+ render();
+})();
+</script>
+</body></html>
