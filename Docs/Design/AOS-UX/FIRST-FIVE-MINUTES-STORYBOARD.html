@@ -1,0 +1,110 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sinbinder — первые 5 минут / UX-раскадровка</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0c0e;--pan:#191919;--text:#e4dacb;--muted:#b5aa97;--gold:#9b8059;--red:#b75a4a;--green:#9eaea0}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 0,#25211e 0,#101112 65%,#090a0b 100%);color:var(--text);font:15px/1.5 Georgia,'Times New Roman',serif}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #f8d095;outline-offset:3px}
+.wrap{max-width:1550px;margin:auto;padding:22px 22px 35px}
+header{display:flex;align-items:center;gap:20px;border-bottom:1px solid #554a3d;padding-bottom:18px;flex-wrap:wrap}
+header h1{font:small-caps normal 30px Georgia,serif;letter-spacing:.14em;margin:0}
+header .sub{font:12px/1.5 system-ui,sans-serif;color:var(--muted);letter-spacing:.1em}
+.warning{margin-left:auto;border:1px solid #775849;background:#33221f;color:#efbdac;font:12px system-ui,sans-serif;padding:8px 11px}
+.timeline{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:20px 0}
+.step{border:1px solid #4b463f;background:#1b1b1c;text-align:left;padding:12px 11px;min-height:83px}
+.step[aria-pressed=true]{border-color:#b18c64;background:#3a2923;box-shadow:inset 0 3px #b75a4a}
+.t{display:block;font:12px system-ui,sans-serif;color:#cbae82;margin-bottom:8px}
+.st{display:block;font-size:15px;line-height:1.3}
+.frame{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(310px,.75fr);gap:18px}
+.stage{aspect-ratio:16/9;min-height:360px;max-height:760px;border:1px solid #786047;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 10%,#555359 0,#2b3034 33%,#121b1c 63%,#090d10 90%);box-shadow:inset 0 0 90px #000}
+.stage:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,#0000 0px,#0002 2px,#0000 4px),radial-gradient(ellipse at center,transparent 20%,#0009 100%);pointer-events:none;z-index:8}
+.fog{position:absolute;width:100%;height:45%;bottom:0;background:linear-gradient(0deg,#a0afb016,transparent);filter:blur(18px)}
+.sky{position:absolute;width:90px;height:90px;border-radius:50%;background:#a5adbb33;box-shadow:0 0 70px #9daabe44;left:49%;top:13%}
+.road{position:absolute;left:22%;bottom:-15%;width:56%;height:85%;clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);background:linear-gradient(90deg,#5a4e4630 0,#998b7740 48%,#625a4e30);border-top:3px solid #a99e8c38}
+.gate{position:absolute;left:40%;width:20%;height:38%;top:26%;border:9px solid #37383b;border-bottom:0;box-shadow:0 0 34px #93a7b822,inset 0 0 25px #16191c;background:linear-gradient(180deg,#141e22,#27302f);clip-path:polygon(0 16%,14% 0,86% 0,100% 16%,100% 100%,0 100%)}
+.gate:after{content:"";position:absolute;inset:8px;border:2px solid #65727744;border-bottom:0}
+.person{position:absolute;bottom:17%;width:35px;height:100px;filter:drop-shadow(0 0 18px #000b)}
+.person:before{content:"";display:block;width:23px;height:25px;background:#171719;border:2px solid #6c6660;border-radius:45%;margin:auto}
+.person:after{content:"";display:block;width:36px;height:67px;background:linear-gradient(105deg,#3f3330,#14191d);clip-path:polygon(30% 0,75% 0,100% 100%,0 100%);border-radius:5px}
+.hero{left:38%;transform:scale(1.12)}.ally{left:61%;transform:scale(.86);filter:drop-shadow(0 0 22px #b8564a66)}
+.enemy{left:68%;bottom:40%;transform:scale(.45);filter:drop-shadow(0 0 15px #a040346e)}
+.enemy.two{left:72%;bottom:41%}
+.hud{position:absolute;z-index:10;top:16px;left:19px;font:13px system-ui,sans-serif;color:#d3c9b8;letter-spacing:.05em;display:flex;gap:10px;align-items:center}
+.plate{background:#11191edb;border:1px solid #73624b;padding:8px 13px;max-width:410px}
+.dialogue{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);z-index:11;width:min(86%,600px);padding:13px 18px;text-align:center;background:#141516ed;border:1px solid #887258;box-shadow:0 0 20px #0009}
+.dialogue strong{font-size:21px;font-weight:normal;color:#f2d5b7}
+.dialogue p{margin:5px 0;font-size:16px}
+.dialogue small{font:12px/1.5 system-ui,sans-serif;color:#b9ac9b}
+.marker{position:absolute;z-index:9;left:62.4%;bottom:40%;border:1px solid #a98666;background:#211a1ddf;color:#e8c4b5;padding:3px 8px;font:12px system-ui,sans-serif}
+.side{border:1px solid #655541;background:linear-gradient(145deg,#22211e,#151717);padding:22px}
+.side h2{font-size:26px;font-weight:normal;line-height:1.2;margin:8px 0 10px}
+.cap{font:12px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.15em;color:#d2b48e}
+.side p{font-size:18px}
+.side hr{border:0;border-top:1px solid #5a4b3d;margin:20px 0}
+.small{font:13px/1.6 system-ui,sans-serif;color:#b9a998}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}
+.action{padding:9px 12px;border:1px solid #77654b;background:#242019}
+.action:hover{background:#39302a}
+.muted{color:var(--muted)}
+footer{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding-top:20px;font:12px/1.7 system-ui,sans-serif;color:#b0a18f}
+.details{margin-top:17px;border:1px solid #564b3d;padding:12px 18px;background:#171819;font:13px/1.6 system-ui,sans-serif;color:#bbb0a1}
+select{background:#242020;border:1px solid #8d7150;color:#ede0cb;padding:7px 9px}
+@media(max-width:1000px){.timeline{grid-template-columns:repeat(3,1fr)}.frame{grid-template-columns:1fr}.stage{min-height:320px}.side{min-height:270px}}
+@media(max-width:580px){.wrap{padding:10px}.timeline{grid-template-columns:repeat(2,1fr)}.stage{min-height:285px}.person{transform:scale(.65)}.hero{transform:scale(.75)}.ally{transform:scale(.62)}.dialogue{width:94%;bottom:8%;padding:9px}.dialogue strong{font-size:18px}.dialogue p{font-size:14px}.hud{top:8px;left:6px;font-size:11px}.plate{padding:6px;max-width:280px}}
+</style></head>
+<body><div class="wrap">
+<header><h1>SINBINDER</h1><div class="sub">AOS-UX / первые пять минут<br>Интерактивная раскадровка, не видеозапись</div><span class="warning">СТАТИЧЕСКИЙ МАКЕТ • НЕ UNITY • AOS НЕ ПОДКЛЮЧЕНА</span></header>
+<div class="timeline" role="group" aria-label="Шесть минутных этапов"></div>
+<div class="frame"><section class="stage" aria-label="Концептуальный игровой кадр">
+<div class="sky"></div><div class="gate"></div><div class="road"></div><div class="fog"></div>
+<div class="person hero" aria-hidden="true"></div><div class="person ally" aria-hidden="true"></div><div class="person enemy" id="enemy1" aria-hidden="true"></div><div class="person enemy two" id="enemy2" aria-hidden="true"></div>
+<div class="hud"><span class="plate" id="hud-text">Сон Бога Смерти</span></div>
+<div class="marker" id="marker" hidden>Воля: против приказа</div>
+<div class="dialogue" id="dialogue"><strong id="speaker"></strong><p id="dialogue-text"></p><small id="label"></small></div>
+</section><aside class="side"><div class="cap">Что чувствует игрок</div><h2 id="headline"></h2><p id="why"></p><hr><div class="cap">Чего нельзя допустить</div><p class="small" id="risk"></p><div class="actions"><button class="action" type="button" id="prev">Предыдущий момент</button><button class="action" type="button" id="next">Следующий момент</button></div></aside></div>
+<div class="details"><strong>Условный результат голосования для кадра 4:</strong>
+<select id="outcome" aria-label="Какой допустимый исход показывает макет">
+<option value="refused">Отказался отступить</option>
+<option value="hesitated">Заколебался</option>
+<option value="obeyed">Подчинился приказу</option>
+<option value="fled">Отступил по собственной воле</option>
+</select>
+<span class="muted">Все четыре исхода допустимы концептуально. Настоящий выбор должен поступать из BehaviourResolver; переключатель не моделирует AOS.</span></div>
+<footer><span>Целевое время указано для проверки, а не получено из Unity. Сначала — интерес, затем — объяснение, затем — осмысленное действие.</span><span>См. FIRST-FIVE-MINUTES.md</span></footer>
+</div>
+<script>
+(function(){'use strict';
+var index=0,outcome='refused';
+var steps=[
+{t:'0:00–0:25',title:'Загадка',head:'Я хочу понять, что здесь произошло',text:'Кто-то ещё жив. Но ненадолго.',speaker:'Неизвестный',hint:'Первая понятная цель. Одно действие.',why:'Игрок оказывается внутри странного мира и уже может что-то сделать.',risk:'Вступительные титры, меню и длинные подсказки съедают время до первого действия.',enemies:false,marker:''},
+{t:'0:25–1:15',title:'Первое вмешательство',head:'Я вернул его, но кто он теперь?',text:'Его душа теперь рядом. Вложи её в тело.',speaker:'Голос Смерти',hint:'E: собрать · R: вернуть',why:'Вместо лекции о душах игрок лично вмешивается и получает нового спутника.',risk:'Нельзя считать взаимодействие выполненным, пока реальный Harvest/Rebind не подтвердил его.',enemies:false,marker:''},
+{t:'1:15–1:45',title:'Первый приказ',head:'Он выполняет команду. А обязан ли?',text:'Покажи ему путь. Он услышит. Решение будет за ним.',speaker:'Подсказка мира',hint:'Выдели союзника · ПКМ: приказ',why:'Сначала нормальное поведение: без понятного фона отказ выглядит поломкой.',risk:'Приказ без результата или неправильная камера превращают первое действие в тест кнопок.',enemies:false,marker:''},
+{t:'1:45–2:40',title:'Первая воля',head:'Это не обычный юнит',text:'',speaker:'Вейн',hint:'Настоящее голосование · сохранённый вердикт',why:'Знакомые убийцы возвращаются. Игрок видит, что память и страх сталкиваются с приказом.',risk:'Нельзя заставлять AOS отказывать ради постановки. Каждый исход должен получить честное объяснение.',enemies:true,marker:'Воля решает'},
+{t:'2:40–3:20',title:'Причина',head:'Теперь я понимаю, почему',text:'Его память тянет к бою. Приказ тоже был услышан.',speaker:'Суд души',hint:'Одно объяснение в мире, глубокий Суд по запросу',why:'Поступок связывается с конкретным контекстом сразу, пока игрок смотрит на воина.',risk:'13 подробных речей до второй попытки могут растянуть первый интерес в пассивное ожидание.',enemies:true,marker:'Память ↔ приказ'},
+{t:'3:20–5:00',title:'Моя проверка',head:'А что будет, если условия изменятся?',text:'Убийц больше нет. Попробуй тот же приказ.',speaker:'Подсказка мира',hint:'Тот же воин · другое настоящее голосование',why:'Игрок сам проверяет систему: изменение контекста не обязано менять исход, но показывает причинность.',risk:'В нынешнем порядке между Судом и Retest стоят Шёпот и бой. Достижение этой стадии до 5:00 не подтверждено.',enemies:false,marker:'Сравнить поступок'}
+];
+var tl=document.querySelector('.timeline');
+function render(){
+tl.innerHTML='';
+steps.forEach(function(s,i){var b=document.createElement('button');b.type='button';b.className='step';b.setAttribute('aria-pressed',String(i===index));b.innerHTML='<span class="t">'+s.t+'</span><span class="st">'+s.title+'</span>';b.onclick=function(){index=i;render();};tl.appendChild(b);});
+var s=steps[index];document.getElementById('headline').textContent=s.head;document.getElementById('why').textContent=s.why;document.getElementById('risk').textContent=s.risk;document.getElementById('hud-text').textContent=s.t+'  ·  '+s.title;
+document.getElementById('enemy1').hidden=!s.enemies;document.getElementById('enemy2').hidden=!s.enemies;
+var speech=s.text,by=s.speaker;
+if(index===3){var variations={
+refused:['Нет. Я его не брошу.','Вейн','Против приказа: память'],
+hesitated:['Не могу выбрать...','Вейн','Между приказом и памятью'],
+obeyed:['Я отступаю. Но они всё ещё здесь.','Вейн','За приказ: верность'],
+fled:['Мне не пережить ещё одну схватку!','Вейн','Отступил сам: страх']};
+speech=variations[outcome][0];by=variations[outcome][1];s.marker=variations[outcome][2];}
+document.getElementById('dialogue-text').textContent=speech;
+document.getElementById('speaker').textContent=by;
+document.getElementById('label').textContent=s.hint;
+var marker=document.getElementById('marker');
+marker.hidden=!s.marker;marker.textContent=s.marker;
+document.getElementById('prev').disabled=index===0;document.getElementById('next').disabled=index===steps.length-1;}
+document.getElementById('prev').onclick=function(){index=Math.max(0,index-1);render();};
+document.getElementById('next').onclick=function(){index=Math.min(steps.length-1,index+1);render();};
+document.getElementById('outcome').onchange=function(){outcome=this.value;render();};
+document.addEventListener('keydown',function(e){if(document.activeElement&&/select|input|textarea/i.test(document.activeElement.tagName))return;if(e.key==='ArrowRight'){index=Math.min(steps.length-1,index+1);render();}if(e.key==='ArrowLeft'){index=Math.max(0,index-1);render();}});
+render();
+})();
+</script></body></html>
