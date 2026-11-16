@@ -318,6 +318,11 @@ namespace Sinbinder.Gameplay
             Core.Satchel.Forget();
             _hero = SinbinderPlayer.Spawn(_start);
             if (_hero == null) { enabled = false; yield break; }
+            // Начало сна — ближе (16.11): с 22 м при угле 55° Греховод был точкой, и первый кадр
+            // игры читался чёрным полем (кадр «сон — начало»). 32° — дорога во всю ширину и он сам
+            // на ней; колесо отдаляет до прежних 55 (RTS_Camera держит предел по кадру сцены).
+            var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (eye != null) { Camera.main.fieldOfView = 32f; eye.Resync(); }
             _hand = gameObject.AddComponent<DreamHandCursor>();
             _hand.enabled = false;
 
@@ -623,7 +628,7 @@ namespace Sinbinder.Gameplay
                 {
                     // Камень — не декорация (автор, 08.11: «зачем банки по пути, если мы просто нажимаем
                     // кнопку на этом месте»). На полке банка с чужой душой: её берут в суму (E), выбирают
-                    // в суме (J) и берут душу в руку (R) и обратно — ради этого банок и несколько.
+                    // в суме (J) и берут душу в руку (R) — с ней в руке идут к воротам.
                     // J и R — настоящие SatchelHands; урок только смотрит, что стало с сумой и руками.
                     if (_jarIndex < 0)
                     {
@@ -638,15 +643,12 @@ namespace Sinbinder.Gameplay
                         _line = "Банка в суме. J — выберите её: под рукой та, что в рамке.";
                         break;
                     }
-                    if (!_soulHeld)
-                    {
-                        if (Satchel.Selected != _jarIndex) break;
-                        if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — душу в руку."; break; }
-                        _soulHeld = true;
-                        _line = "Душа в руке. R — обратно в банку.";
-                        break;
-                    }
-                    if (Sinbinder.Crypt.CryptHands.Empty) Set(Stage.Return, GateLine);
+                    // Автор, 12.11: «обязательно взять в руку душу с камня. А после просто открыть
+                    // ворота» — обратно в банку не просим. Душа видна над ладонью (SoulInHandView).
+                    if (Satchel.Selected != _jarIndex) break;
+                    if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — душу в руку."; break; }
+                    _soulHeld = true;
+                    Set(Stage.Return, "Душа в руке. " + GateLine);
                     break;
                 }
                 case Stage.Return:
@@ -911,6 +913,8 @@ namespace Sinbinder.Gameplay
                 return;
             }
             _stage = Stage.Finished;
+            // Душа с камня — сна, а не лагеря: руки статичны и пережили бы смену сцены.
+            Sinbinder.Crypt.CryptHands.Forget();
             SceneManager.LoadScene(_campScene);
         }
 
@@ -926,19 +930,19 @@ namespace Sinbinder.Gameplay
             return v.sqrMagnitude < 1e-4f ? Vector3.forward : v.normalized;
         }
 
-        private void OnGUI()
+        /// <summary>
+        /// Строка урока — табличкой игры вверху (UI.DreamHintPlate, 16.11). До того — OnGUI-коробка
+        /// внизу слева: серая, шрифтом Unity, поверх полосы выделенного, и на кадрах её не было.
+        /// </summary>
+        private void LateUpdate()
         {
-            if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown) return;
             // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
-            if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
-            var style = GUI.skin.box;
+            bool quiet = _stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown
+                      || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown);
+            if (quiet) { UI.DreamHintPlate.Hide(); return; }
             // Упёрся в черту урока — строка урока вспыхивает: сначала это.
             float nudge = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
-            var was = GUI.color;
-            GUI.color = Color.Lerp(Color.white, new Color(1f, 0.82f, 0.45f), nudge);
-            GUI.Box(new Rect(16, Screen.height - 106, Mathf.Min(Screen.width - 32, 720), 80),
-                "Воспоминание\n" + _line, style);
-            GUI.color = was;
+            UI.DreamHintPlate.Show(_line, nudge);
         }
     }
 }

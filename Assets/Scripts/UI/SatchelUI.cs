@@ -117,9 +117,24 @@ namespace Sinbinder.UI
         public static string KeysLine() => Loc.T("J — следующая банка · R — душу в руку или обратно в банку")
                                          + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
 
+        // Банка загорается, когда в неё легла душа (план 66, сцена 1): рамка вспыхивает цветом
+        // греха и за полторы секунды гаснет к обычной. Пока горит — перечитываем каждый кадр.
+        private const float FlashFor = 1.5f;
+        private readonly SoulData[] _seen = new SoulData[Satchel.Max];
+        private readonly float[] _flashAt = new float[Satchel.Max];
+        private readonly Color[] _flashTone = new Color[Satchel.Max];
+        private bool _primed;
+
+        private bool Flashing()
+        {
+            for (int j = 0; j < _flashAt.Length; j++)
+                if (_flashAt[j] > 0f && Time.unscaledTime - _flashAt[j] < FlashFor) return true;
+            return false;
+        }
+
         void Update()
         {
-            if (Time.unscaledTime < _next) return;
+            if (Time.unscaledTime < _next && !Flashing()) return;
             _next = Time.unscaledTime + _refreshEvery;
 
             // В руках что-то есть — сказать, как отпустить (КТ1 п. 17; автор, 29.10: «отпускание на G»).
@@ -174,6 +189,15 @@ namespace Sinbinder.UI
 
                 var slot = Satchel.At(j);
 
+                // Новая душа в банке — вспышка. Не при первом чтении: загруженная сума не «легла».
+                if (slot.Soul != null && slot.Soul != _seen[j] && _primed)
+                {
+                    // Летит от тела (SoulFlight) — загореться, когда долетит, а не по нажатию E.
+                    _flashAt[j] = Time.unscaledTime + (Gameplay.SoulFlight.InAir > 0 ? Gameplay.SoulFlight.FlightSeconds : 0f);
+                    _flashTone[j] = SinPalette.Of(slot.Soul.Sin);
+                }
+                _seen[j] = slot.Soul;
+
                 if (_cells[i] != null)
                 {
                     _cells[i].text = Satchel.Describe(j);
@@ -181,8 +205,18 @@ namespace Sinbinder.UI
                 }
 
                 if (_frames != null && i < _frames.Length && _frames[i] != null)
-                    _frames[i].color = j == chosen ? Chosen : Plain;
+                {
+                    var frame = j == chosen ? Chosen : Plain;
+                    float since = Time.unscaledTime - _flashAt[j];
+                    if (_flashAt[j] > 0f && since >= 0f && since < FlashFor)
+                    {
+                        var tone = _flashTone[j]; tone.a = 0.95f;
+                        frame = Color.Lerp(tone, frame, Mathf.SmoothStep(0f, 1f, since / FlashFor));
+                    }
+                    _frames[i].color = frame;
+                }
             }
+            _primed = true;
         }
 
         /// <summary>

@@ -28,6 +28,11 @@ namespace Sinbinder.Gameplay
 
         private FadingSoul _soul;
         private Vector3 _basePosition;
+        private Transform _halo;
+        private Material _haloMat;
+
+        /// <summary>Чья это душа: жатва гасит огонёк именно её (SoulManager.RemoveIndicator).</summary>
+        public FadingSoul Soul => _soul;
 
         /// <summary>Собрать огонёк на месте смерти. Префаба не требует.</summary>
         public static SoulIndicator Create(FadingSoul soul)
@@ -37,26 +42,23 @@ namespace Sinbinder.Gameplay
             var go = new GameObject($"Душа: {soul.Warrior?.DisplayName}");
             go.transform.position = soul.Position + Vector3.up * 0.9f;
 
-            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // Ядро светится само, вокруг ореол (SoulGlow, 16.11): обычный шар со светом внутри
+            // этим светом не освещался, и в тёмном сне душа была серым мячиком. Коллайдера нет:
+            // по душе не стреляют и её не выделяют, а лучу выделения он попадался бы первым.
+            var ball = SoulGlow.Shape(PrimitiveType.Sphere, go.transform, SoulGlow.Core(Color.white), Vector3.zero, 0.28f);
             ball.name = "Огонёк";
-            ball.transform.SetParent(go.transform, false);
-            ball.transform.localScale = Vector3.one * 0.28f;
+            var halo = SoulGlow.Halo();
+            var haloQuad = SoulGlow.Shape(PrimitiveType.Quad, go.transform, halo, Vector3.zero, 1f);
+            haloQuad.name = "Ореол";
 
-            // Коллайдер только мешает: по душе не стреляют и её не выделяют,
-            // а лучу выделения воинов он попадался бы первым.
-            var collider = ball.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
-
-            var lightGo = new GameObject("Свечение");
-            lightGo.transform.SetParent(go.transform, false);
-
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.range = 4f;
+            var light = SoulGlow.Lamp(go.transform, Color.white, 4f, 2f);
+            light.name = "Свечение";
 
             var indicator = go.AddComponent<SoulIndicator>();
             indicator._body = ball.GetComponent<Renderer>();
             indicator._glow = light;
+            indicator._halo = haloQuad;
+            indicator._haloMat = halo;
             indicator.Initialize(soul);
 
             return indicator;
@@ -82,6 +84,13 @@ namespace Sinbinder.Gameplay
             Repaint();
         }
 
+        void LateUpdate()
+        {
+            // Ореол плоский — лицом к камере, откуда бы ни смотрели.
+            var cam = Camera.main;
+            if (_halo != null && cam != null) _halo.rotation = cam.transform.rotation;
+        }
+
         /// <summary>
         /// Цвет и размер по нынешнему качеству. Каждый кадр, а не однажды:
         /// душа угасает, и это должно быть видно, пока смотришь.
@@ -90,10 +99,18 @@ namespace Sinbinder.Gameplay
         {
             var colour = Colour(_soul.SoulQuality);
 
+            float size = Size(_soul.SoulQuality);
             if (_body != null)
             {
-                _body.material.color = colour;
-                _body.transform.localScale = Vector3.one * Size(_soul.SoulQuality);
+                // Ядро светлее ореола: середина огня всегда почти белая.
+                _body.material.color = _halo != null ? Color.Lerp(colour, Color.white, 0.45f) * 1.3f : colour;
+                _body.transform.localScale = Vector3.one * size;
+            }
+            if (_halo != null)
+            {
+                // Ореол тускнеет быстрее ядра: угасание видно издали.
+                _halo.localScale = Vector3.one * size * 4.2f;
+                SoulGlow.Paint(_haloMat, colour, Mathf.Clamp01(Brightness(_soul.SoulQuality) / 3.2f) * 0.7f);
             }
 
             if (_glow != null)

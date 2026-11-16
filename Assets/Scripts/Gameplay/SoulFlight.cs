@@ -27,8 +27,14 @@ namespace Sinbinder.Gameplay
         private const float Seconds = 0.95f;
         private const float Arc = 1.4f;
 
+        /// <summary>Сколько душ сейчас в воздухе: сума зажигает банку, когда долетит (SatchelUI).</summary>
+        public static int InAir { get; private set; }
+
+        /// <summary>Сколько летит одна душа — до вспышки у Греховода.</summary>
+        public const float FlightSeconds = Seconds;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => _instance = null;
+        private static void Rearm() { _instance = null; InAir = 0; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -47,7 +53,11 @@ namespace Sinbinder.Gameplay
 
             if (_bound != null) _bound.OnSoulHarvested -= Fly;
             _bound = souls;
-            if (_bound != null) _bound.OnSoulHarvested += Fly;
+            if (_bound != null)
+            {
+                _bound.OnSoulHarvested += Fly;
+                Debug.Log("[ДУША] полёт душ слушает жатву сцены " + _bound.gameObject.scene.name);
+            }
         }
 
         void OnDestroy()
@@ -58,7 +68,12 @@ namespace Sinbinder.Gameplay
         private void Fly(FadingSoul soul)
         {
             var me = SinbinderPlayer.Instance;
-            if (soul == null || me == null) return;
+            if (soul == null || me == null)
+            {
+                Debug.LogWarning("[ДУША] полёта нет: " + (soul == null ? "души нет" : "Греховода нет"));
+                return;
+            }
+            Debug.Log("[ДУША] летит в банку: " + (soul.Warrior != null ? soul.Warrior.DisplayName : "?"));
 
             var sinner = soul.Warrior != null ? soul.Warrior.Soul : null;
             var color = sinner != null ? SinPalette.Of(sinner.Sin) : new Color(0.80f, 0.79f, 0.76f);
@@ -70,6 +85,7 @@ namespace Sinbinder.Gameplay
         {
             var orb = new GameObject("Душа в банку");
             orb.transform.position = from + Vector3.up * 0.6f;
+            InAir++;
 
             var light = orb.AddComponent<Light>();
             light.type = LightType.Point;
@@ -100,6 +116,7 @@ namespace Sinbinder.Gameplay
             }
 
             // Пришла — вспышка и гаснет: душа в суме.
+            InAir = Mathf.Max(0, InAir - 1);
             var core2 = core.emission; core2.enabled = false;
             var trail2 = trail.emission; trail2.enabled = false;
             core.Emit(new ParticleSystem.EmitParams { startSize = 0.6f, startColor = color }, 1);

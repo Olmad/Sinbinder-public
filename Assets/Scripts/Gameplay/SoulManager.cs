@@ -286,14 +286,16 @@ namespace Sinbinder.Gameplay
 
         public void RemoveIndicator(FadingSoul soul)
         {
+            // Огонёк этой души, а не последний в списке: до 16.11 гасился последний зажжённый,
+            // и при двух павших собранная душа продолжала гореть над телом, а гасла чужая.
             for (int i = _indicators.Count - 1; i >= 0; i--)
             {
-                if (_indicators[i] != null && _indicators[i].gameObject != null)
-                {
-                    Destroy(_indicators[i].gameObject);
-                    _indicators.RemoveAt(i);
-                    break;
-                }
+                var it = _indicators[i];
+                if (it == null) { _indicators.RemoveAt(i); continue; }
+                if (it.Soul != soul) continue;
+                Destroy(it.gameObject);
+                _indicators.RemoveAt(i);
+                return;
             }
         }
 

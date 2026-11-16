@@ -1559,6 +1559,14 @@ msgstr "fullscreen"
 msgid "в окне"
 msgstr "windowed"
 
+#: Core/Preferences.cs
+msgid "по делу"
+msgstr ""
+
+#: Core/Preferences.cs Gameplay/RavenFlight.cs UI/GearPanel.cs
+msgid "нет"
+msgstr "none"
+
 #: Core/Records.cs
 msgid "„Лунная соната“ составом „Крыс“"
 msgstr ""
@@ -5727,6 +5735,14 @@ msgstr "Quit the game"
 msgid "{0}: «Я не бегу от них, владыка. Уходите — я выиграю вам время»."
 msgstr "{0}: “I don't run from them, my lord. Go — I'll buy you time.”"
 
+#: Editor/DoorCheck.cs UI/StartPanel.cs
+msgid "Начать заново"
+msgstr "Start anew"
+
+#: Editor/DoorCheck.cs UI/PauseMenu.cs
+msgid "Проснуться"
+msgstr ""
+
 #: Gameplay/BodyWorth.cs
 msgid "Чужой клинок"
 msgstr "A stranger's blade"
@@ -6398,6 +6414,10 @@ msgstr "He fell. His own decision cost him his second life."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Она пала. Своё решение стоило ей второй жизни."
 msgstr "She fell. Her own decision cost her her second life."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Путник у дороги"
+msgstr ""
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
@@ -8283,6 +8303,18 @@ msgstr "Walk to the light — W"
 msgid "F — подняться"
 msgstr "F — get up"
 
+#: Gameplay/OpeningReveal.cs
+msgid "Обернитесь — мышь или A/D"
+msgstr ""
+
+#: Gameplay/OpeningReveal.cs
+msgid "Ты можешь бежать от меня. Но от своей сути не убежишь."
+msgstr ""
+
+#: Gameplay/OpeningReveal.cs Gameplay/SoulCourt.cs
+msgid "Бог Смерти"
+msgstr "God of Death"
+
 #: Gameplay/PrologueCampSpawner.cs
 msgid "телохранитель, не отходит от вас"
 msgstr "bodyguard, never leaves your side"
@@ -8482,10 +8514,6 @@ msgstr ""
 #: Gameplay/RavenFlight.cs
 msgid "сидит на плече"
 msgstr ""
-
-#: Gameplay/RavenFlight.cs UI/GearPanel.cs
-msgid "нет"
-msgstr "none"
 
 #: Gameplay/RecordShelf.cs
 msgid "F — вернуть пластинку на полку и взять другую"
@@ -8956,8 +8984,8 @@ msgid "ЗЛО"
 msgstr "EVIL"
 
 #: Gameplay/SoulCourt.cs
-msgid "Бог Смерти"
-msgstr "God of Death"
+msgid "Суд души"
+msgstr "The Court of the Soul"
 
 #: Gameplay/SoulCourt.cs
 msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
@@ -8984,6 +9012,10 @@ msgid "воздерж."
 msgstr "abstains"
 
 #: Gameplay/SoulCourt.cs
+msgid "Кого вопрос не задел, тот воздерживается: весы он не качает."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь."
 msgstr "I abstain."
 
@@ -9004,8 +9036,8 @@ msgid "против"
 msgstr "against"
 
 #: Gameplay/SoulCourt.cs
-msgid "Бог Смерти — вердикт"
-msgstr "God of Death — verdict"
+msgid "Вердикт"
+msgstr "Verdict"
 
 #: Gameplay/SoulCourt.cs
 msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
@@ -9018,6 +9050,30 @@ msgstr "no one"
 #: Gameplay/SoulCourt.cs
 msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}"
 msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>against</color> — {3}"
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} отказал. Судьи, ваше слово."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} отказала. Судьи, ваше слово."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} замешкался. Судьи, ваше слово."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} замешкалась. Судьи, ваше слово."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} исполнил. Судьи, ваше слово."
+msgstr ""
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} исполнила. Судьи, ваше слово."
+msgstr ""
 
 #: Gameplay/SoulCourt.cs
 msgid "Отказ. {0} не исполнил приказ."
@@ -9328,6 +9384,70 @@ msgid "Одной причины нет — так решила вся душа 
 msgstr "There is no single reason — the whole soul decided at once."
 
 #: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: владыке он ни предан, ни чужд."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: владыке она ни предана, ни чужда."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: его жизни этот приказ не грозит."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: обид и долгов тут нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: ни добра, ни зла тут нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: добрые и грешные черты тут не спорят."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: ждать тут нечего."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: делить тут нечего."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: честь его тут не задета."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гасить тут нечего."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гнева в нём нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гнева в ней нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: сравнивать тут не с кем."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: соблазна тут нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: о брюхе тут речи нет."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: труд тут невелик."
+msgstr ""
+
+#: Gameplay/SoulCourtReasons.cs
 msgid "Приказ еле слышен — но в нём верность, и он расслышал."
 msgstr "The order was barely audible — but he is loyal, and he heard it."
 
@@ -9438,6 +9558,10 @@ msgstr "He is wrathful. Wrath wants blood, and the enemy is near."
 #: Gameplay/SoulCourtReasons.cs
 msgid "В нём терпение. Терпеливому драка не к спеху."
 msgstr "He is patient. The patient are in no hurry to fight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Терпения в нём нет. Ждать он не умеет — бьёт первым."
+msgstr ""
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "В нём терпение. Их час ещё придёт — не сейчас."
@@ -10735,6 +10859,10 @@ msgstr "The crypt is yours. The crystal ball by the right wall shows the roads. 
 msgid "Никто не дошёл до склепа.\n\nДуши разойдутся Некроэфиром, и помнить о них будет некому.\n\nДемо окончено."
 msgstr "No one reached the crypt.\n\nThe souls will dissolve into the Necroether, and there will be no one left to remember them.\n\nEnd of the demo."
 
+#: UI/DreamHintPlate.cs
+msgid "Воспоминание"
+msgstr "Memory"
+
 #: UI/ExitMarker.cs
 msgid "Выход"
 msgstr "Exit"
@@ -11140,6 +11268,10 @@ msgid "Музыка"
 msgstr "Music"
 
 #: UI/PauseMenu.cs
+msgid "Показывать Суд Души"
+msgstr ""
+
+#: UI/PauseMenu.cs
 msgid "Язык"
 msgstr "Language"
 
@@ -11161,6 +11293,10 @@ msgstr ""
 
 #: UI/PauseMenu.cs
 msgid "новая карта или правка готовой"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "пропустить сон — в лагерь"
 msgstr ""
 
 #: UI/PauseMenu.cs
@@ -11616,6 +11752,10 @@ msgid "тише, чем его душа"
 msgstr "quieter than his soul"
 
 #: UI/SelectedUnitPanelUI.cs
+msgid "Кротость"
+msgstr ""
+
+#: UI/SelectedUnitPanelUI.cs
 msgid "Верность"
 msgstr "Loyalty"
 
@@ -11682,10 +11822,6 @@ msgstr "committed — no second chances"
 #: UI/StartPanel.cs
 msgid "свободно"
 msgstr "free"
-
-#: UI/StartPanel.cs
-msgid "Начать заново"
-msgstr "Start anew"
 
 #: UI/StartPanel.cs
 msgid "Начать заново, взяв обязательство"
@@ -11762,12 +11898,8 @@ msgstr ""
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
 
 #. нет в коде
-msgid "Суд души"
-msgstr "The Court of the Soul"
-
-#. нет в коде
-msgid "Вердикт"
-msgstr "Verdict"
+msgid "Бог Смерти — вердикт"
+msgstr "God of Death — verdict"
 
 #. нет в коде
 msgid "Добра в нём больше, чем греха. Добрый слушается."

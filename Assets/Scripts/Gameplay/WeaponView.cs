@@ -34,7 +34,9 @@ namespace Sinbinder.Gameplay
         private static readonly Vector3 IdleAt = new Vector3(0.30f, -0.19f, 0.50f), IdleDir = new Vector3(-0.10f, 0.93f, 0.35f);
         private static readonly Vector3 BlockAt = new Vector3(0.10f, -0.10f, 0.48f), BlockDir = new Vector3(-0.97f, 0.18f, 0.18f);
         private static readonly Vector3 WindAt = new Vector3(0.36f, -0.06f, 0.40f), WindDir = new Vector3(0.35f, 0.85f, -0.20f);
-        private static readonly Vector3 CutAt = new Vector3(-0.10f, -0.24f, 0.60f), CutDir = new Vector3(-0.75f, -0.25f, 0.60f);
+        // Конец удара — выше нижней панели: при y −0,24 взмах уходил под неё, и на кадре удара
+        // (сон, 16.11) посоха не было вовсе — игрок видел, как оружие пропадает.
+        private static readonly Vector3 CutAt = new Vector3(-0.12f, -0.13f, 0.58f), CutDir = new Vector3(-0.80f, -0.15f, 0.58f);
         private static readonly Vector3 Elbow = new Vector3(0.45f, -0.55f, 0.10f);
         private const float SwingSeconds = 0.6f;
 

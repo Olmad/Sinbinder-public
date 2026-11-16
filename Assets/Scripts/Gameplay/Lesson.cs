@@ -1110,6 +1110,9 @@ namespace Sinbinder.Gameplay
 
             var (key, words) = Words();
             _key.text = key;
+            // Рамка — на одну букву: «ЛКМ» шрифтом 46 ломалась на «ЛК / М» (кадр сна 16.11).
+            int letters = string.IsNullOrEmpty(key) ? 1 : key.Length;
+            _key.fontSize = Mathf.Clamp(Mathf.FloorToInt(80f / (letters * 0.75f)), 16, 46);
             _words.text = words;
         }
 

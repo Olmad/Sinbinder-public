@@ -138,6 +138,8 @@ namespace Sinbinder.EditorTools
             if (poke) _lastPoke = now;
 
             CourtShots(now);
+            FlightShot(dream, now);
+            AnimateAll(now);
 
             switch (stage)
             {
@@ -159,6 +161,13 @@ namespace Sinbinder.EditorTools
                     break;
                 case "Harvest":
                     if (_step != "жатва") { Go("жатва"); Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -1.6f)); }
+                    // Душа над телом (план 66, сцена 1; SoulGlow 16.11) — до жатвы, сбоку и сверху.
+                    if (!_soulOverShot)
+                    {
+                        if (now - _stepAt < 0.8f) break;
+                        _soulOverShot = true;
+                        ShotFrom("сон — душа над телом", dream.WoundedAt + new Vector3(2.6f, 1.9f, -2.6f), dream.WoundedAt + Vector3.up * 0.9f);
+                    }
                     if (poke)
                     {
                         var reaper = dream.Hero.GetComponent<SoulHarvester>();
@@ -316,6 +325,43 @@ namespace Sinbinder.EditorTools
             cam.fieldOfView = 60f;
         }
 
+        private static float _animatedAt = -10f;
+
+        /// <summary>
+        /// В пакетном прогоне камера между кадрами не рисует, и Unity считает тела невидимыми: аниматор
+        /// с отсечением стоит, и на кадрах убитый стоял в рост с огоньком души в животе (кадр
+        /// «душа над телом», 16.11), хотя в игре он лежит. Раз в секунду — всем «анимировать всегда»,
+        /// как лагерный прогон делает с Греховодом у костра (DemoWalkthrough).
+        /// </summary>
+        private static void AnimateAll(float now)
+        {
+            if (now - _animatedAt < 1f) return;
+            _animatedAt = now;
+            foreach (var a in UnityEngine.Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+                if (a.cullingMode != AnimatorCullingMode.AlwaysAnimate) a.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        private static bool _soulOverShot, _flightShot;
+        private static float _flightSeen = -1f;
+
+        /// <summary>Душа летит в банку (SoulFlight): кадр на трети полёта, с той же точки, что «душа над телом».</summary>
+        private static void FlightShot(DreamTutorialDirector dream, float now)
+        {
+            if (_flightShot || Sinbinder.Gameplay.SoulFlight.InAir == 0) return;
+            if (_flightSeen < 0f) { _flightSeen = now; Write("  душа в полёте к банке"); return; }
+            if (now - _flightSeen < 0.3f) return;
+            _flightShot = true;
+            ShotFrom("сон — душа летит в банку", dream.WoundedAt + new Vector3(2.6f, 1.9f, -2.6f), dream.WoundedAt + new Vector3(0f, 1.3f, -0.9f));
+        }
+
+        private static void EyeAlongRoad(Camera cam, DreamTutorialDirector dream)
+        {
+            var eye = dream.Hero.transform.position + Vector3.up * 1.65f;
+            var aim = new Vector3(0f, 1.2f, DreamRoad.GateZ);
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(aim - eye));
+            cam.fieldOfView = 60f;
+        }
+
         private static bool EyesShots(DreamTutorialDirector dream, float now)
         {
             var cam = Camera.main;
@@ -336,7 +382,7 @@ namespace Sinbinder.EditorTools
                     if ((talk != null && (talk.InDialogue || talk.Homebound))
                         || (Sinbinder.UI.Letterbox.Instance != null && Sinbinder.UI.Letterbox.Instance.Covering))
                     {
-                        if (now - _fpAt > 25f) { Write("  глазами: сценка не кончилась за 25 с — кадр пропущен"); _fpStep = 4; return true; }
+                        if (now - _fpAt > 25f) { Write("  глазами: сценка не кончилась за 25 с — кадр пропущен"); _fpStep = 6; return true; }
                         return false;
                     }
                     if (!view.FirstPersonNow) return now - _fpAt > 3f;
@@ -360,9 +406,31 @@ namespace Sinbinder.EditorTools
                     _fpAt = now;
                     return false;
                 case 3:
-                    if (now - _fpAt < 0.6f) return false;
-                    if (view.FirstPersonNow) view.Switch();
+                    // Ответ чучела (8e93245): через 0,5 с после удара руки идут вверх — кадр посреди замаха.
+                    EyeAtDummy(cam, dream);
+                    if (now - _fpAt < 0.55f) return false;
+                    Snap("сон — чучело отвечает замахом");
+                    Write($"  ответов чучела: {DreamRoad.DummyRipostes}, встречено блоком: {DreamRoad.DummyBlocks}");
+                    // Душа в руке (16.11, SoulInHandView): у камня с банками, глазами на дорогу к воротам.
+                    Warp(dream.Hero, DreamRoad.ShrineAt + new Vector3(-1.3f, 0f, -0.8f));
+                    Sinbinder.Crypt.CryptHands.Drop();
+                    Sinbinder.Crypt.CryptHands.TakeSoul(new Sinbinder.Core.SoulData("Путник у дороги", Sinbinder.Core.SinType.Sloth,
+                        Sinbinder.Core.MoralType.Neutral, 1, 35f), Sinbinder.Core.SoulQuality.Acceptance);
                     _fpStep = 4;
+                    _fpAt = now;
+                    return false;
+                case 4:
+                    EyeAlongRoad(cam, dream);
+                    if (now - _fpAt < 0.8f) return false;
+                    Snap("сон — душа в руке");
+                    Sinbinder.Crypt.CryptHands.Drop();
+                    _fpStep = 5;
+                    _fpAt = now;
+                    return false;
+                case 5:
+                    if (now - _fpAt < 0.3f) return false;
+                    if (view.FirstPersonNow) view.Switch();
+                    _fpStep = 6;
                     return true;
                 default:
                     return true;

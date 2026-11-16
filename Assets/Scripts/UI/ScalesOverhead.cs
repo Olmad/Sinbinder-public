@@ -170,7 +170,7 @@ namespace Sinbinder.UI
                 }
             }
 
-            var root = Rect("Весы — " + w.DisplayName, transform, Vector2.zero, new Vector2(Size * 3f, Size * 1.66f + 34f));
+            var root = Rect("Весы — " + w.DisplayName, transform, Vector2.zero, new Vector2(Size * 3f, Size * 1.95f + 34f));
             root.anchorMin = root.anchorMax = Vector2.zero;
             root.pivot = new Vector2(0.5f, 0f);
             var group = root.gameObject.AddComponent<CanvasGroup>();
@@ -201,21 +201,22 @@ namespace Sinbinder.UI
             // стрелка-клинок на натуре души. Весы — решение, компас — кто решает.
             if (w.Soul != null)
             {
-                float dia = Size * 0.56f;
-                var compassAt = centre + new Vector2(0f, Size * 0.5f + 4f + dia * 0.5f);
-                Img("Компас — обод", root, compassAt, new Vector2(dia + 4f, dia + 4f), new Color(0.78f, 0.70f, 0.52f, 0.95f), Disc());
+                // 0,8 весов, а не 0,56: на кадре 16.11 компас был с ноготь и не читался.
+                float dia = Size * 0.8f;
+                var compassAt = centre + new Vector2(0f, Size * 0.5f + 6f + dia * 0.5f);
+                Img("Компас — обод", root, compassAt, new Vector2(dia + 5f, dia + 5f), new Color(0.78f, 0.70f, 0.52f, 0.95f), Disc());
                 Img("Компас — круг", root, compassAt, new Vector2(dia, dia), new Color(0.11f, 0.12f, 0.19f, 0.95f), Disc());
                 foreach (var (ang, tone) in new[] { (-60f, SoulCourt.PiousTone), (0f, SoulCourt.NeutralTone), (60f, SoulCourt.ViciousTone) })
                 {
                     var dir = new Vector2(Mathf.Sin(ang * Mathf.Deg2Rad), Mathf.Cos(ang * Mathf.Deg2Rad));
-                    Img("Компас — тон", root, compassAt + dir * (dia * 0.36f), new Vector2(6f, 6f), tone, Disc());
+                    Img("Компас — тон", root, compassAt + dir * (dia * 0.36f), new Vector2(10f, 10f), tone, Disc());
                 }
                 float needle = w.Soul.Moral == Core.MoralType.Pious ? -60f : w.Soul.Moral == Core.MoralType.Vicious ? 60f : 0f;
                 var nd = new Vector2(Mathf.Sin(needle * Mathf.Deg2Rad), Mathf.Cos(needle * Mathf.Deg2Rad));
                 float len = dia * 0.40f;
-                var blade = Img("Компас — стрелка", root, compassAt + nd * (len * 0.5f), new Vector2(2.4f, len), new Color(0.92f, 0.93f, 0.97f), null);
+                var blade = Img("Компас — стрелка", root, compassAt + nd * (len * 0.5f), new Vector2(3.4f, len), new Color(0.92f, 0.93f, 0.97f), null);
                 blade.localEulerAngles = new Vector3(0f, 0f, -needle);
-                Img("Компас — ступица", root, compassAt, new Vector2(5f, 5f), Brass, Disc());
+                Img("Компас — ступица", root, compassAt, new Vector2(7f, 7f), Brass, Disc());
             }
             var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
             var panAgainst = Pan("Чаша против", root, SoulCourt.AgainstTone, out var bowlAgainst);
