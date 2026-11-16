@@ -37,6 +37,37 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
+
+        // An objective, no-gameplay-impact timeline for an evening Unity test.
+        // Starts at the NEW GAME button, not the first rendered dream frame;
+        // manual Play directly in Prologue_Dream falls back to its first stage.
+        private static float _firstFiveStartedAt = -1f;
+        private static bool _firstFiveBoundaryLogged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetFirstFiveTrace()
+        {
+            _firstFiveStartedAt = -1f;
+            _firstFiveBoundaryLogged = false;
+        }
+
+        public static void BeginFirstFiveTrace()
+        {
+            _firstFiveStartedAt = Time.realtimeSinceStartup;
+            _firstFiveBoundaryLogged = false;
+            Debug.Log("[AOS-5M] +0.0s new_game_clicked");
+        }
+
+        private static void TraceFirstFive(string milestone)
+        {
+            if (_firstFiveStartedAt < 0f)
+            {
+                BeginFirstFiveTrace();
+                Debug.Log("[AOS-5M] direct_dream_scene_without_menu");
+            }
+            float elapsed = Mathf.Max(0f, Time.realtimeSinceStartup - _firstFiveStartedAt);
+            Debug.Log($"[AOS-5M] +{elapsed:F1}s {milestone}");
+        }
         /// <summary>Разрешено отдать настоящий приказ по подвесной мишени.</summary>
         public static bool BowShotAvailable => Instance != null && Instance._stage == Stage.BowShot;
 
@@ -436,6 +467,7 @@ namespace Sinbinder.Gameplay
 
         private void Set(Stage stage, string line)
         {
+            TraceFirstFive("stage=" + stage);
             _stage = stage;
             if (stage == Stage.Puzzle)
             {
@@ -484,6 +516,12 @@ namespace Sinbinder.Gameplay
 
         private void Update()
         {
+            if (!_firstFiveBoundaryLogged && _firstFiveStartedAt >= 0f &&
+                Time.realtimeSinceStartup - _firstFiveStartedAt >= 300f)
+            {
+                _firstFiveBoundaryLogged = true;
+                TraceFirstFive("five_minute_mark stage=" + _stage);
+            }
             if (_hero == null || _stage == Stage.Finished) return;
             if (Input.GetKeyDown(KeyCode.F1) && !UI.Modal.Any &&
                 !SoulCourt.Sitting && !Lesson.Holding && !UI.TalkView.Shown)
@@ -525,7 +563,10 @@ namespace Sinbinder.Gameplay
                     // Первый приказ — любой. Он его исполнит: послушание — фон,
                     // на котором отказ потом читается характером, а не поломкой.
                     if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame) || OrderedSinceMark()))
+                    {
                         _orderedAt = Time.unscaledTime;
+                        TraceFirstFive("first_command_detected");
+                    }
                     if ((_orderedAt >= 0f && Time.unscaledTime - _orderedAt > 3.5f)
                         || Time.unscaledTime - _commandSince > (Lesson.Holding ? 60f : 20f))
                         BeginStandoff();
@@ -1353,6 +1394,7 @@ namespace Sinbinder.Gameplay
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
                 : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
+            TraceFirstFive("first_verdict action=" + d.Action + " outcome=" + RefusalResult);
             int murders = 0;
             if (c != null && c.RecentMemories != null)
                 foreach (var m in c.RecentMemories) if (m != null && m.EventType == "MurderedMe") murders++;
@@ -1365,8 +1407,15 @@ namespace Sinbinder.Gameplay
             if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
             yield return new WaitForSecondsRealtime(1.8f);
             if (_zombie != null && !_zombie.IsDead)
+            {
+                // Request/return are timings, not proof of a visible court.
+                TraceFirstFive("court_requested");
                 // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
                 yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false);
+                TraceFirstFive("court_coroutine_finished");
+            }
+            else
+                TraceFirstFive("court_skipped_warrior_dead");
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
@@ -1406,6 +1455,7 @@ namespace Sinbinder.Gameplay
         {
             bool obeyed = ActuallyObeyed(d);
             RetestResult = obeyed ? "послушался" : "снова нет";
+            TraceFirstFive("second_verdict action=" + d.Action + " outcome=" + RetestResult);
             Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action})");
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
