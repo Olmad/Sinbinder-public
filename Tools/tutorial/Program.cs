@@ -36,6 +36,25 @@ internal static class Program
               dreamTrace.Contains("ActuallyObeyed(d) ? \"послушался\" : \"выбрал своё\""),
             "dream never labels independent AOS Flee/Attack as obedience");
 
+        // AOS can legitimately be silent due to a broken scene or missing
+        // component. Retest must try the real vote once then recover with a
+        // truthful missing-verdict result, rather than hanging forever or
+        // inventing an ObeyCommand. Source-level only, not Play Mode.
+        int retestStart = dreamTrace.IndexOf("case Stage.Retest:\\n                {", StringComparison.Ordinal);
+        int retestEnd = dreamTrace.IndexOf("case Stage.FirstPerson:", retestStart, StringComparison.Ordinal);
+        string retest = retestStart >= 0 && retestEnd > retestStart
+            ? dreamTrace.Substring(retestStart, retestEnd - retestStart) : "";
+        Check(retest.Contains("!_retestManualDecideTried") &&
+              retest.Contains("_retestManualDecideTried = true;") &&
+              retest.Contains("mind.Decide();") &&
+              retest.Contains("Time.unscaledTime - _decideSince > 1.2f"),
+            "retest invokes production AOS exactly once when natural verdict is missing");
+        Check(retest.Contains("Time.unscaledTime - _decideSince > 6f") &&
+              retest.Contains("RetestResult = \\"решение не поступило\\";") &&
+              retest.Contains("Set(Stage.FirstPerson,") &&
+              !retest.Contains("RetestResult = \\"послушался\\";"),
+            "retest recovers from missing verdict without manufacturing obedience");
+
         // Source-linked AOS explanation viewport fitting: the *real* Unity
         // tooltip uses this solver, not a duplicated CI-only calculation.
         Check(TooltipViewportFit.Scale(280f, 130f, 1280f, 720f, 12f) == 1f,
