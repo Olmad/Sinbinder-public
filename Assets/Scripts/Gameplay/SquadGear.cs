@@ -1,5 +1,6 @@
 // Assets/Scripts/Gameplay/SquadGear.cs
 // Перевод: текст через Loc
+using UnityEngine;
 using Sinbinder.Core;
 using Sinbinder.Inventory;
 

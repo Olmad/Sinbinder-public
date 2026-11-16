@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Sinbinder.AOS;
 using Sinbinder.Core;
