@@ -152,6 +152,24 @@ internal static class Program
         // Tug tutorial: hovering over a neutral while the game is paused must not
         // earn 0.8s of reading credit. Source-linked L0, Unity pause UX still unknown.
         var tugSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/TugTutorial.cs");
+        // Tug lesson 3/9 must distinguish command delivery from an effective AOS vote.
+        // Source-linked L0 only: Unity scene and novice acceptance remain unverified.
+        int orderStart = tugSource.IndexOf("private static bool AnyOrdered()");
+        int orderEnd = tugSource.IndexOf("private static Crypt.BindingDevice Device()", orderStart);
+        string orderGate = orderStart >= 0 && orderEnd > orderStart
+            ? tugSource.Substring(orderStart, orderEnd - orderStart) : "";
+        Check(orderGate.Contains("w.HasCommand && w.Command.Lord == Lords.Player") &&
+              orderGate.Contains("mind.HasCurrentCommandDecision"),
+              "neutral order requires a current AOS decision, not delivery alone");
+        Check(orderGate.Contains("mind.LastDecisionDetail.Action == Sinbinder.AOS.ActionType.ObeyCommand") &&
+              orderGate.Contains("!mind.LastDecisionDetail.RefusedCommand") &&
+              orderGate.Contains("!mind.LastDecisionDetail.Hesitated"),
+              "pending, refused, hesitant and alternative actions cannot complete order lesson");
+        Check(!orderGate.Contains("return w.HasCommand;") &&
+              !orderGate.Contains("if (w.HasCommand) return true;"),
+              "old delivery-only tutorial shortcut is absent");
+
+
         int attitudeStart = tugSource.IndexOf("private void WatchAttitude()");
         int attitudeEnd = tugSource.IndexOf("#if UNITY_EDITOR", attitudeStart);
         string attitudeBody = attitudeStart >= 0 && attitudeEnd > attitudeStart
