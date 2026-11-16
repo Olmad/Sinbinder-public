@@ -101,7 +101,10 @@ namespace Sinbinder.Gameplay
 
             // Встретил оружием: взмах, полудара — ему.
             if (w.Guard.TryGetComponent<WarriorAnimation>(out var arm)) arm.Struck();
-            guardBody.TakeDamage(damage * Blocked, attacker);
+            // This is the ONE interception for the original hit. The
+            // protector still takes ordinary damage, but their own watch
+            // cannot send the same blow back to the first warrior.
+            guardBody.TakeInterceptedDamage(damage * Blocked, attacker);
 
             // Звать на себя — нет: только в арьергарде (28-ORDERS, «Карган разгружен»).
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F(Took, Loc.Name(w.Guard.DisplayName)));
