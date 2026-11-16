@@ -68,10 +68,12 @@ namespace Sinbinder.Gameplay
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue) return;
 
-            // J is a player-facing review of a decision that has ALREADY
+            // U is a player-facing review of a decision that has ALREADY
             // happened. It never asks the soul to decide again and cannot
             // replace the ongoing tutorial's scripted first Court.
-            if (Input.GetKeyDown(KeyCode.J) && !SoulCourt.Sitting &&
+            // Not J: J is SatchelHands' "next jar" in every scene, so one press
+            // switched the jar AND opened the Court (review 16.11).
+            if (Input.GetKeyDown(ReviewKey) && !SoulCourt.Sitting &&
                 (DreamTutorialDirector.Instance == null ||
                  DreamTutorialDirector.StageName == "Finished"))
             {
@@ -275,6 +277,9 @@ namespace Sinbinder.Gameplay
 
             TellUnheard();
         }
+
+        /// <summary>Суд над последним решением выбранного воина; Shift — полный суд.</summary>
+        public const KeyCode ReviewKey = KeyCode.U;
 
         /// <summary>
         /// Replay the exact LAST ORDER decision of one selected soldier in

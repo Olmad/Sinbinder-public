@@ -185,8 +185,10 @@ internal static class Program
               disagreementBranch > pendingBranch && decidedBranch > disagreementBranch,
             "unordered, pending, refused and decided squad members have separate branches");
         Check(groupSource.Contains("unordered++;") && groupSource.Contains("pending++;") &&
-              groupSource.Contains("ожидают решения") && groupSource.Contains("без приказа") &&
-              groupSource.Contains("решение принято") && !groupSource.Contains("в строю"),
+              // Author 16.11: the original "в строю" wording is restored for
+              // unordered and agreeing warriors; pending verdicts stay separate.
+              groupSource.Contains("ожидают решения") && groupSource.Contains("в строю") &&
+              groupSource.Contains("int calm = unordered + decided;"),
             "group feedback never presents missing orders as accepted or executed");
         Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
         Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");

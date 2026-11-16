@@ -262,8 +262,10 @@ namespace Sinbinder.UI
             }
 
             if (pending > 0) odd.Add(Loc.F("ещё {0} — ожидают решения", Many(pending)));
-            if (unordered > 0) odd.Add(Loc.F("ещё {0} — без приказа", Many(unordered)));
-            if (decided > 0) odd.Add(Loc.F("ещё {0} — решение принято", Many(decided)));
+            // Автор, 16.11: «верни старые» — без приказа и согласные снова «в строю».
+            // Ожидающие решения AOS по-прежнему отдельно: приказ отдан, голоса ещё не сказали.
+            int calm = unordered + decided;
+            if (calm > 0) odd.Add(Loc.F("ещё {0} — в строю", Many(calm)));
             if (_groupLine != null)
             {
                 _groupLine.text = string.Join(" · ", odd);
@@ -443,7 +445,7 @@ namespace Sinbinder.UI
                 wrapper.LastDecisionBallot.Count > 0;
             Set(_voicesTitle,
                 Grammar.For(who.Gender, Loc.T("Что тянет его сейчас")) +
-                (canReviewOrder ? Loc.T(" · J — Суд решения") : ""), Bone);
+                (canReviewOrder ? Loc.T(" · U — Суд решения") : ""), Bone);
             if (wrapper == null || wrapper.LastContext == null)
             {
                 Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
@@ -472,7 +474,7 @@ namespace Sinbinder.UI
             {
                 Voice(null, Loc.T("Поддался шёпоту"),
                     Loc.T("Голоса души спорили, но уговор изменил поступок."), Bone, 27);
-                Order(Loc.T("Согласился после уговора"),
+                Order(Loc.T("Исполняет уговорённый приказ"),
                     Loc.T("Шёпот действует только на этот приказ."), true);
                 return;
             }
@@ -487,7 +489,7 @@ namespace Sinbinder.UI
                 string doing = PhraseGenerator.Doing(decision.Action);
                 Voice(null, string.IsNullOrEmpty(doing) ? "" : char.ToUpper(doing[0]) + doing.Substring(1),
                       Grammar.For(who.Gender, Loc.T("ничто в нём сейчас не спорит с приказом")), Muted, 30);
-                Order(Loc.T("Решил выполнить приказ"),
+                Order(Loc.T("Исполняет приказ"),
                       Grammar.For(who.Gender, Loc.T("решил послушаться")), true);
                 return;
             }
