@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">Sinbinder — Суд души: черновой макет</title>
+<desc id="description">Редактируемый эскиз экрана: навигация, две панели сравнения настоящего решения и альтернативы, одно изменённое обстоятельство, качественные голоса тринадцати модулей. Данные демонстрационные.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1e1f20"/><stop offset="1" stop-color="#0b0c0d"/></linearGradient>
+<linearGradient id="plaque" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#242320"/><stop offset="1" stop-color="#141515"/></linearGradient>
+<style><![CDATA[
+.serif{font-family:Georgia,'Times New Roman',serif;fill:#e1d7c3}.sans{font-family:Arial,sans-serif;fill:#cbbda5}
+.muted{fill:#afa18c}.gold{fill:#c3a778}.red{fill:#e6a192}.green{fill:#b8c9b7}
+.line{stroke:#625643;stroke-width:1;fill:none}
+.panel{fill:url(#plaque);stroke:#675b4b;stroke-width:1}
+.cap{font-size:12px;letter-spacing:1.8px}
+.small{font-size:15px}.body{font-size:18px}.h{font-size:30px}
+]]></style>
+</defs>
+<rect width="1440" height="900" fill="url(#bg)"/>
+<rect x="18" y="17" width="1404" height="866" fill="none" stroke="#4e4436"/>
+<text x="38" y="65" class="serif" font-size="35" letter-spacing="3">SINBINDER</text>
+<text x="280" y="55" class="sans muted cap">AOS / СУД ДУШИ / ЧЕРНОВОЙ МАКЕТ</text>
+<rect x="1080" y="28" width="318" height="38" rx="2" fill="#35231f" stroke="#6e453a"/>
+<text x="1097" y="53" class="sans red" font-size="14">ДЕМОНСТРАЦИЯ · НЕ UNITY</text>
+<line x1="20" y1="84" x2="1420" y2="84" stroke="#75644a"/>
+<!-- NAVIGATION -->
+<rect x="28" y="99" width="220" height="750" class="panel"/>
+<text x="50" y="131" class="sans gold cap">АРХИВ ДУШИ</text>
+<rect x="40" y="149" width="197" height="53" fill="#392220" stroke="#a26153"/>
+<text x="57" y="182" class="serif body">Последнее решение</text>
+<text x="57" y="236" class="serif body muted">Две воли</text>
+<text x="57" y="287" class="serif body muted">Что, если?..</text>
+<text x="57" y="338" class="serif body muted">Воспоминания</text>
+<text x="57" y="389" class="serif body muted">Хроника боя</text>
+<line x1="44" y1="412" x2="228" y2="412" stroke="#5f5545"/>
+<circle cx="93" cy="478" r="42" fill="#2c2623" stroke="#8d755c" />
+<text x="76" y="490" class="serif" font-size="42">✥</text>
+<text x="50" y="555" class="serif" font-size="25">Вейн</text>
+<text x="50" y="584" class="sans small muted">Воин • тело ранено</text>
+<text x="50" y="611" class="sans small muted">Пример, не игровая запись</text>
+<line x1="44" y1="636" x2="228" y2="636" stroke="#5f5545"/>
+<text x="50" y="670" class="sans gold cap">СОСТОЯНИЕ</text>
+<text x="50" y="699" class="serif small">Вердикт сохранён</text>
+<text x="50" y="730" class="serif small muted">Новый приказ →</text>
+<text x="50" y="750" class="serif small muted">суд не показывать</text>
+<!-- MAIN -->
+<rect x="266" y="99" width="914" height="750" class="panel"/>
+<text x="294" y="138" class="sans gold cap">УСЛОВНОЕ ДЕЛО № 07 · ВЕЙН</text>
+<text x="294" y="190" class="serif" font-size="42">Суд последнего решения</text>
+<text x="294" y="218" class="sans small muted">Сохранённый факт и безопасная проверка одной причины</text>
+<line x1="294" y1="235" x2="1148" y2="235" stroke="#6b5b45"/>
+<!-- TWO PANELS -->
+<rect x="294" y="254" width="410" height="235" fill="#1e1d1b" stroke="#7c5148"/>
+<rect x="718" y="254" width="430" height="235" fill="#1e201f" stroke="#627966"/>
+<text x="315" y="282" class="sans gold cap">РЕАЛЬНОСТЬ · СОХРАНЁННЫЙ ИСХОД</text>
+<text x="315" y="321" class="serif h">Приказ: отступить</text>
+<text x="315" y="352" class="serif body">Ранен · товарищ рядом</text>
+<text x="315" y="383" class="serif body">Противник сильнее</text>
+<line x1="315" y1="412" x2="677" y2="412" stroke="#62433b"/>
+<text x="315" y="452" class="serif" font-size="26" fill="#e5a39a">Итог: остался сражаться</text>
+<text x="739" y="282" class="sans gold cap">ЧТО, ЕСЛИ? · НЕИЗМЕНЯЕМАЯ КОПИЯ</text>
+<text x="739" y="321" class="serif h">Изменили: не ранен</text>
+<text x="739" y="352" class="serif body">Товарищ и противник прежние</text>
+<text x="739" y="383" class="serif body">Сама история не меняется</text>
+<line x1="739" y1="412" x2="1121" y2="412" stroke="#586e5b"/>
+<text x="739" y="452" class="serif" font-size="26" fill="#b7d0b7">Пример: отступил</text>
+<!-- CAUSE -->
+<rect x="294" y="506" width="854" height="93" fill="#271f1e" stroke="#744c43"/>
+<rect x="294" y="506" width="4" height="93" fill="#bc6252"/>
+<text x="314" y="538" class="serif" font-size="23">Изменился только один фактор</text>
+<text x="314" y="568" class="sans small">В реальной игре обе оценки должны исходить из одного снимка AOS.</text>
+<text x="314" y="590" class="sans muted" font-size="13">В этом эскизе результат указан вручную, это НЕ вычисление BehaviourResolver.</text>
+<!-- VOICES -->
+<text x="294" y="631" class="serif" font-size="25">Тринадцать голосов души</text>
+<text x="695" y="632" class="sans muted" font-size="14">Только словами — без игровых числовых весов</text>
+<g>
+<rect x="294" y="646" width="116" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="416" y="646" width="116" height="65" fill="#2e201d" stroke="#8c5548"/>
+<rect x="538" y="646" width="116" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="660" y="646" width="116" height="65" fill="#2e201d" stroke="#8c5548"/>
+<rect x="782" y="646" width="116" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="904" y="646" width="116" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="1026" y="646" width="122" height="65" fill="#2e201d" stroke="#8c5548"/>
+<text x="305" y="672" class="serif small">Жадность</text><text x="305" y="696" class="sans muted" font-size="12">тихо</text>
+<text x="427" y="672" class="serif small">Гнев</text><text x="427" y="696" class="sans red" font-size="12">настаивает</text>
+<text x="549" y="672" class="serif small">Добродетель</text><text x="549" y="696" class="sans muted" font-size="12">тихо</text>
+<text x="671" y="672" class="serif small">Страх</text><text x="671" y="696" class="sans red" font-size="12">кричит</text>
+<text x="793" y="672" class="serif small">Верность</text><text x="793" y="696" class="sans muted" font-size="12">спорит</text>
+<text x="915" y="672" class="serif small">Мораль</text><text x="915" y="696" class="sans muted" font-size="12">тихо</text>
+<text x="1037" y="672" class="serif small">Память</text><text x="1037" y="696" class="sans red" font-size="12">настаивает</text>
+</g>
+<g>
+<rect x="294" y="720" width="138" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="438" y="720" width="138" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="582" y="720" width="138" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="726" y="720" width="138" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="870" y="720" width="138" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<rect x="1014" y="720" width="134" height="65" fill="#1c1e1e" stroke="#5a4c3b"/>
+<text x="304" y="747" class="serif small">Лень</text><text x="304" y="771" class="sans muted" font-size="12">молчит</text>
+<text x="448" y="747" class="serif small">Гордыня</text><text x="448" y="771" class="sans muted" font-size="12">тихо</text>
+<text x="592" y="747" class="serif small">Зависть</text><text x="592" y="771" class="sans muted" font-size="12">молчит</text>
+<text x="736" y="747" class="serif small">Похоть</text><text x="736" y="771" class="sans muted" font-size="12">молчит</text>
+<text x="880" y="747" class="serif small">Чревоугодие</text><text x="880" y="771" class="sans muted" font-size="12">тихо</text>
+<text x="1024" y="747" class="serif small">Терпение</text><text x="1024" y="771" class="sans muted" font-size="12">спорит</text>
+</g>
+<text x="294" y="822" class="sans muted" font-size="13">«Две воли» — отдельная вкладка: естественное намерение ≠ принуждение Шёпотом.</text>
+<!-- GUIDE -->
+<rect x="1197" y="99" width="215" height="750" class="panel"/>
+<text x="1214" y="132" class="sans gold cap">ЛЕСТНИЦА UX</text>
+<text x="1214" y="180" class="serif body">В мире:</text><text x="1214" y="204" class="sans small muted">краткая реакция</text>
+<line x1="1214" y1="219" x2="1394" y2="219" stroke="#5c5143"/>
+<text x="1214" y="257" class="serif body">J:</text><text x="1214" y="281" class="sans small muted">суд решения</text>
+<line x1="1214" y1="297" x2="1394" y2="297" stroke="#5c5143"/>
+<text x="1214" y="336" class="serif body">Shift+J:</text><text x="1214" y="360" class="sans small muted">полный разбор</text>
+<line x1="1214" y1="376" x2="1394" y2="376" stroke="#5c5143"/>
+<text x="1214" y="414" class="serif body">Tab / V:</text><text x="1214" y="438" class="sans small muted">не изменять</text>
+<line x1="1214" y1="460" x2="1394" y2="460" stroke="#5c5143"/>
+<text x="1214" y="511" class="sans gold cap">ЗАПРЕТ</text>
+<text x="1214" y="542" class="serif small">Не выдавать</text>
+<text x="1214" y="567" class="serif small">демоданные</text>
+<text x="1214" y="592" class="serif small">за AOS.</text>
+<line x1="1214" y1="631" x2="1394" y2="631" stroke="#5c5143"/>
+<text x="1214" y="664" class="sans muted" font-size="13">Голоса, вердикт и</text>
+<text x="1214" y="686" class="sans muted" font-size="13">контрфакт должны</text>
+<text x="1214" y="708" class="sans muted" font-size="13">сверяться с реальным</text>
+<text x="1214" y="730" class="sans muted" font-size="13">источником данных.</text>
+<text x="40" y="873" class="sans muted" font-size="12">Черновой редактируемый SVG · реконструкция по изображению «Суд души: проверка решения Вейна» · 16.11.2026</text>
+</svg>
