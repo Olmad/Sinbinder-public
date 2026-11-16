@@ -24,6 +24,9 @@ namespace Sinbinder.Multiplayer
         private LanWire _wire;
         private CancellationTokenSource _cancel;
         private int _generation;
+        // Set by the reader before queueing CLOSED/ERROR, so buffered start
+        // cannot briefly notify gameplay of a match on a dead connection.
+        private int _terminalGeneration = -1;
         private int _queued;
         private float _lastInboundAt;
         private float _lastPingAt;
@@ -137,6 +140,8 @@ namespace Sinbinder.Multiplayer
         private void Queue(int generation, string data, string status)
         {
             if (generation != Volatile.Read(ref _generation)) return;
+            if (status != null && status != "CONNECTED")
+                Volatile.Write(ref _terminalGeneration, generation);
             if (Interlocked.Increment(ref _queued) > 256)
             {
                 Interlocked.Decrement(ref _queued);
@@ -156,6 +161,11 @@ namespace Sinbinder.Multiplayer
             {
                 Interlocked.Decrement(ref _queued);
                 if (next.Generation != _generation) continue;
+                // A terminal event already observed by the TCP reader wins
+                // over earlier buffered gameplay messages from that socket.
+                if (next.Status == null &&
+                    Volatile.Read(ref _terminalGeneration) == next.Generation)
+                    continue;
                 if (next.Status == "CONNECTED")
                 {
                     Connected = true;
