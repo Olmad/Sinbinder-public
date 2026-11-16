@@ -1,5 +1,6 @@
 using System;
 using Sinbinder.Gameplay;
+using Sinbinder.UI;
 
 internal static class Program
 {
@@ -14,6 +15,36 @@ internal static class Program
 
     public static int Main()
     {
+        // Source-linked AOS explanation viewport fitting: the *real* Unity
+        // tooltip uses this solver, not a duplicated CI-only calculation.
+        Check(TooltipViewportFit.Scale(280f, 130f, 1280f, 720f, 12f) == 1f,
+            "readable normal tooltip keeps its native scale");
+        Check(TooltipViewportFit.Scale(1700f, 2000f, 1280f, 720f, 12f) < 0.35f,
+            "oversized explanations must shrink rather than clip above the screen");
+        Check(TooltipViewportFit.Scale(200f, 900f, 1280f, 720f, 12f) < 1f,
+            "narrow but tall AOS explanation is still fitted vertically");
+        float halfScreenFit = TooltipViewportFit.Scale(900f, 1100f, 800f, 600f, 12f);
+        float fullScreenFit = TooltipViewportFit.Scale(900f, 1100f, 1920f, 1080f, 12f);
+        Check(fullScreenFit > halfScreenFit &&
+              halfScreenFit == TooltipViewportFit.Scale(900f, 1100f, 800f, 600f, 12f),
+            "viewport resize recomputes from native size instead of compounding shrinkage");
+        bool fits = true;
+        foreach (float sw in new[] { 320f, 800f, 1280f, 1920f })
+        foreach (float sh in new[] { 240f, 600f, 720f, 1080f })
+        foreach (float pw in new[] { 200f, 400f, 1600f, 2400f })
+        foreach (float ph in new[] { 60f, 500f, 1250f, 3000f })
+        {
+            float fit = TooltipViewportFit.Scale(pw, ph, sw, sh, 12f);
+            if (fit <= 0f || fit > 1f || pw * fit > sw - 24.0f + 0.01f ||
+                ph * fit > sh - 24.0f + 0.01f) fits = false;
+        }
+        Check(fits, "tooltip solver keeps 256 large and small geometries within 12px margins");
+        string tooltipSource = System.IO.File.ReadAllText("Assets/Scripts/UI/WarriorTooltipUI.cs");
+        Check(tooltipSource.Contains("TooltipViewportFit.Scale(width, height, Screen.width, Screen.height, margin)") &&
+              tooltipSource.Contains("_nativePanelScale.x * fit") &&
+              tooltipSource.Contains("_nativePanelScale.y * fit"),
+            "WarriorTooltipUI uses source-tested viewport fit and restores native proportions");
+
         // Two-plate crypt puzzle. A distant ally must never activate a seal.
         Check(DreamTutorialChecks.OnSeal(-1.8f, 25.8f, -1.8f, 25.8f), "warrior stands on seal center");
         Check(DreamTutorialChecks.OnSeal(-0.45f, 25.8f, -1.8f, 25.8f), "seal includes 1.35m edge");
