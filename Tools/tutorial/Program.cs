@@ -15,6 +15,27 @@ internal static class Program
 
     public static int Main()
     {
+        // The first five minutes are measured from the actual new-game click.
+        // This is source-linked instrumentation: Unity must still produce logs
+        // before anybody may claim to have measured a player's experience.
+        var dreamTrace = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/DreamTutorialDirector.cs");
+        var startPanelTrace = System.IO.File.ReadAllText("Assets/Scripts/UI/StartPanel.cs");
+        Check(startPanelTrace.Contains("Gameplay.DreamTutorialDirector.BeginFirstFiveTrace();") &&
+              dreamTrace.Contains("Time.realtimeSinceStartup - _firstFiveStartedAt") &&
+              dreamTrace.Contains("TraceFirstFive(\"five_minute_mark stage=\" + _stage)"),
+            "new game click starts unscaled 5-minute clock, including pauses and load");
+        Check(dreamTrace.Contains("TraceFirstFive(\"first_command_detected\")") &&
+              dreamTrace.Contains("TraceFirstFive(\"first_verdict action=\"") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_requested\")") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")") &&
+              dreamTrace.Contains("TraceFirstFive(\"second_verdict action=\""),
+            "dream traces player action, real AOS verdict, court attempt and independent retry");
+        Check(dreamTrace.Contains("d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated") &&
+              dreamTrace.Contains("bool obeyed = ActuallyObeyed(d);") &&
+              dreamTrace.Contains("RefusalResult = d.RefusedCommand ?") &&
+              dreamTrace.Contains("ActuallyObeyed(d) ? \"послушался\" : \"выбрал своё\""),
+            "dream never labels independent AOS Flee/Attack as obedience");
+
         // Source-linked AOS explanation viewport fitting: the *real* Unity
         // tooltip uses this solver, not a duplicated CI-only calculation.
         Check(TooltipViewportFit.Scale(280f, 130f, 1280f, 720f, 12f) == 1f,
