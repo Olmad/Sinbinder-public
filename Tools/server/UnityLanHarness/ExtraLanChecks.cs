@@ -146,7 +146,62 @@ internal static class ExtraLanChecks
     {
         await VerifyTerminal("CLOSED");
         await VerifyTerminal("ERROR:Simulated disconnection");
+        await VerifyBufferedStartBeforeClose();
         Console.WriteLine("PASS: terminal socket events invalidate stale queued start/state packets");
+    }
+
+
+    private static async Task VerifyBufferedStartBeforeClose()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 7789);
+        var client = new LanRoomClient();
+        TcpClient remote = null;
+        try
+        {
+            listener.Start();
+            var accepted = listener.AcceptTcpClientAsync();
+            client.Connect("127.0.0.1", 7789);
+            remote = await accepted;
+            for (int i = 0; i < 400 && !client.Connected; i++)
+            {
+                client.Pump();
+                await Task.Delay(10);
+            }
+            if (!client.Connected)
+                throw new Exception("Buffered start mock transport did not connect");
+
+            int startEvents = 0;
+            client.Received += message =>
+            {
+                if (message.type == "start") startEvents++;
+            };
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var generation = (int)typeof(LanRoomClient)
+                .GetField("_generation", flags).GetValue(client);
+            var enqueue = typeof(LanRoomClient).GetMethod("Queue", flags);
+            if (enqueue == null) throw new Exception("LAN receiver queue method missing");
+
+            // The TCP reader has already queued start, then observed EOF,
+            // all before the main thread pumps. Do not transiently notify
+            // gameplay that a dead connection has started a match.
+            enqueue.Invoke(client, new object[] { generation,
+                @"{""type"":""start"",""playerId"":1,""unitId"":1}", null });
+            enqueue.Invoke(client, new object[] { generation, null, "CLOSED" });
+            client.Pump();
+            if (startEvents != 0 || client.Connected || client.Playing)
+                throw new Exception("Buffered start fired after terminal TCP close");
+
+            // A new generation must not inherit the previous terminal flag.
+            client.Disconnect();
+            remote.Close();
+            listener.Stop();
+        }
+        finally
+        {
+            client.Disconnect();
+            if (remote != null) remote.Close();
+            listener.Stop();
+        }
     }
 
     private static async Task VerifyTerminal(string terminal)
