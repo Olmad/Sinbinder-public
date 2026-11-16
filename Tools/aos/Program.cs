@@ -121,9 +121,26 @@ internal static class Program
             "zero damage or missing attacker cannot consume ordinary or rescue watch");
         Check(!absorbSource.Contains("if (w.Rescue && !RescueCreditGate.IsRealAttack"),
             "real-hit guard is not limited to AOS rescue");
-        Check(absorbSource.Contains("guardBody.TakeDamage(damage * Blocked, attacker);") &&
+        Check(absorbSource.Contains("guardBody.TakeInterceptedDamage(damage * Blocked, attacker);") &&
               absorbSource.Contains("Blocks++;") && absorbSource.Contains("return true;"),
             "real attack still follows the original interception and credit path");
+
+        // Regression for two injured allies guarding each other. A hit on A
+        // is intercepted by B exactly once; B's own watch remains available
+        // for a LATER, independent attack on B. These are source-linked
+        // production wiring assertions, not Unity runtime combat tests.
+        string damageSource = File.ReadAllText(Path.Combine(args.Length > 0 ? args[0] : ".",
+            "Assets/Scripts/Gameplay/Damageable.cs"));
+        Check(damageSource.Contains("public void TakeDamage(float damage, GameObject attacker)") &&
+              damageSource.Contains("ApplyDamage(damage, attacker, allowGuardInterception: true);"),
+            "new direct attack always enables ordinary interception");
+        Check(damageSource.Contains("internal void TakeInterceptedDamage(float damage, GameObject attacker)") &&
+              damageSource.Contains("ApplyDamage(damage, attacker, allowGuardInterception: false);"),
+            "guard's redirected damage bypasses a second bodyguard interception");
+        Check(damageSource.Contains("if (allowGuardInterception && Bodyguard.Absorb(this, attacker, damage)) return;"),
+            "bodyguard calls are guarded by the per-hit interception flag");
+        Check(!absorbSource.Contains("guardBody.TakeDamage(damage * Blocked, attacker);"),
+            "the old recursive interception route cannot return");
 
         // Wire checks are intentionally supplemental to executable tests:
         // they prevent a future refactor from silently bypassing the tested
