@@ -203,6 +203,7 @@ namespace Sinbinder.Gameplay
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
+        private bool _retestManualDecideTried;
         // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
         // душа угасала несобранной, игрок не отдавал приказ или сам рубил убийц,
         // решение не приходило за 6 с. Каждое звено теперь доходит само.
@@ -645,6 +646,7 @@ namespace Sinbinder.Gameplay
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
+                            _retestManualDecideTried = false;
                             Set(Stage.Retest, "Убийц больше нет. Отдай ему тот же приказ — отступить (X).");
                         }
                         else
@@ -665,14 +667,36 @@ namespace Sinbinder.Gameplay
                     if (!_retestOrdered && (Ordered(_retestSince) || OrderedSinceMark()))
                     {
                         _retestOrdered = true;
+                        _retestManualDecideTried = false;
                         _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
+                    }
+                    // As in the first standoff, ask the SAME real AOS once if
+                    // its normal tick has not returned a fresh verdict. Never
+                    // fake a favorable decision just to finish the tutorial.
+                    if (_retestOrdered && !_contrastRunning && !_retestManualDecideTried
+                        && mind != null && !Lesson.Holding
+                        && (mind.LastContext == null || mind.LastContext == _mindBefore)
+                        && Time.unscaledTime - _decideSince > 1.2f)
+                    {
+                        _retestManualDecideTried = true;
+                        mind.Decide();
                     }
                     if (_retestOrdered && !_contrastRunning && mind != null
                         && mind.LastContext != null && mind.LastContext != _mindBefore)
                     {
                         _contrastRunning = true;
                         StartCoroutine(Contrast(mind.LastDecisionDetail));
+                    }
+                    else if (_retestOrdered && !_contrastRunning && !Lesson.Holding
+                             && Time.unscaledTime - _decideSince > 6f)
+                    {
+                        // A missing AOS wrapper or silent vote must not trap the
+                        // player forever. Record the failure as NO verdict.
+                        RetestResult = "решение не поступило";
+                        TraceFirstFive("second_verdict_missing");
+                        Debug.LogWarning("[СОН QA] Повторный приказ не получил решения AOS за 6 с.");
+                        Set(Stage.FirstPerson, "Душа не ответила на приказ. Tab: перейди в первое лицо.");
                     }
                     else if (!_retestOrdered && !Lesson.Holding && Time.unscaledTime - _retestPrompted > 40f)
                         Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу.");
