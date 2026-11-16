@@ -47,6 +47,8 @@ def check(root):
             "Unity Test Framework missing from manifest.json")
 
     build = read(root, "ProjectSettings/EditorBuildSettings.asset")
+    require(len(re.findall(r"(?m)^  m_Scenes:\s*$", build)) == 1,
+            "EditorBuildSettings must contain exactly one m_Scenes section")
     entries = BUILD_ENTRY.findall(build)
     declared = re.findall(r"(?m)^[ \t]*-[ \t]+enabled:", build)
     require(len(entries) == len(declared),
