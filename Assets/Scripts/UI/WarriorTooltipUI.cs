@@ -29,6 +29,9 @@ namespace Sinbinder.UI
         private Outline _edge;
         private Warrior _shown;
         private float _nextRefresh;
+        // The tooltip may be resized by viewport fitting; keep the prefab's
+        // own scale so repeated hovers and resolution changes never compound it.
+        private Vector3 _nativePanelScale;
 
 
         /// <summary>
@@ -60,6 +63,7 @@ namespace Sinbinder.UI
         void Awake()
         {
             _cam = Camera.main;
+            if (_panel != null) _nativePanelScale = _panel.localScale;
             Hide();
         }
 
@@ -133,9 +137,24 @@ namespace Sinbinder.UI
             Vector2 at = pointer + _offset;
             Vector2 size = _panel.rect.size;
             Vector3 scale = _panel.lossyScale;
-            float width = size.x * Mathf.Abs(scale.x);
-            float height = size.y * Mathf.Abs(scale.y);
             const float margin = 12f;
+
+            // Bounds clamping alone cannot show a panel taller than the screen.
+            // Measure at its ORIGINAL scale, not last frame's shrunken scale,
+            // so mouse movement, text refreshes and resolution changes recover
+            // the correct size without endlessly shrinking the tooltip.
+            float width = size.x * Mathf.Abs(scale.x) *
+                (Mathf.Abs(_nativePanelScale.x) / Mathf.Max(0.0001f, Mathf.Abs(_panel.localScale.x)));
+            float height = size.y * Mathf.Abs(scale.y) *
+                (Mathf.Abs(_nativePanelScale.y) / Mathf.Max(0.0001f, Mathf.Abs(_panel.localScale.y)));
+            float availableWidth = Mathf.Max(1f, Screen.width - 2f * margin);
+            float availableHeight = Mathf.Max(1f, Screen.height - 2f * margin);
+            float fit = Mathf.Min(1f, Mathf.Min(availableWidth / Mathf.Max(1f, width),
+                                              availableHeight / Mathf.Max(1f, height)));
+            _panel.localScale = new Vector3(_nativePanelScale.x * fit,
+                                            _nativePanelScale.y * fit, _nativePanelScale.z);
+            width *= fit;
+            height *= fit;
             float left = width * _panel.pivot.x;
             float right = width * (1f - _panel.pivot.x);
             float bottom = height * _panel.pivot.y;
@@ -309,7 +328,12 @@ namespace Sinbinder.UI
         {
             _shown = null;
             Hovered = null;
-            if (_panel != null) _panel.gameObject.SetActive(false);
+            if (_panel != null)
+            {
+                // Hidden/next tooltip starts at the prefab's native size.
+                _panel.localScale = _nativePanelScale;
+                _panel.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>
