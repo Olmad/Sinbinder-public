@@ -11492,8 +11492,8 @@ msgid "Золото осталось в мешке. Отряд это запом
 msgstr "The gold stayed in the bag. The squad will remember."
 
 #: UI/SatchelUI.cs
-msgid "J — следующая банка · R — душу в руку или обратно в банку"
-msgstr "J — next jar · R — soul to hand or back into the jar"
+msgid "J — следующая банка · R — банку в руку или обратно в суму"
+msgstr "J — next jar · R — jar to hand or back into the satchel"
 
 #: UI/SatchelUI.cs
 msgid "G — отпустить"

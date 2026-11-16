@@ -389,8 +389,14 @@ namespace Sinbinder.Gameplay
         /// Голос судьи по его сути, а не по месту за кафедрой: Гнев резок, Страх, Зависть
         /// и Похоть — с придыханием, Уныние и Чревоугодие — глухо и медленно, Гордыня
         /// и Верность — низко, Страх частит, Терпение не спешит.
+        ///
+        /// 16.11 автор: «голоса слабо узнаваемые». Тринадцать голосов стояли в узком коридоре —
+        /// глубина 0,72–1,12 (85–130 Гц), темп 0,85–1,35, дрожь у всех одна. Развёл шире, по
+        /// трём осям сразу: высота (Страх и Похоть — высоко, Уныние и Гордыня — у самого низа),
+        /// темп (Страх частит вдвое против Уныния) и дрожь (Страх и Память дрожат, Гордыня
+        /// и Верность говорят ровно, как по линейке).
         /// </summary>
-        public static (float depth, Audio.VoiceGenerator.VoiceType kind, float tempo) Cast(string module)
+        public static (float depth, Audio.VoiceGenerator.VoiceType kind, float tempo, float wobble) Cast(string module)
         {
             const Audio.VoiceGenerator.VoiceType Even = Audio.VoiceGenerator.VoiceType.Square,
                                                  Breath = Audio.VoiceGenerator.VoiceType.Sine,
@@ -398,20 +404,20 @@ namespace Sinbinder.Gameplay
                                                  Sharp = Audio.VoiceGenerator.VoiceType.Sawtooth;
             switch (module)
             {
-                case "Loyalty":  return (0.78f, Even, 1.0f);
-                case "Fear":     return (1.12f, Breath, 0.85f);
-                case "Memory":   return (0.90f, Even, 1.1f);
-                case "Morality": return (0.84f, Even, 1.05f);
-                case "Virtue":   return (0.96f, Even, 1.0f);
-                case "Patience": return (0.86f, Even, 1.2f);
-                case "Greed":    return (1.00f, Even, 0.92f);
-                case "Pride":    return (0.72f, Even, 1.1f);
-                case "Wrath":    return (0.80f, Sharp, 0.88f);
-                case "Envy":     return (1.06f, Breath, 0.95f);
-                case "Lust":     return (1.02f, Breath, 1.1f);
-                case "Gluttony": return (0.76f, Dull, 1.2f);
-                case "Sloth":    return (0.86f, Dull, 1.35f);
-                default:         return (0.90f, Even, 1.0f);
+                case "Loyalty":  return (0.86f, Even,   1.00f, 0.10f);   // твёрдо и ровно
+                case "Fear":     return (1.42f, Breath, 0.70f, 1.60f);   // высоко, часто, дрожит
+                case "Memory":   return (0.92f, Breath, 1.25f, 0.90f);   // старческий шёпот, с дрожью
+                case "Morality": return (1.00f, Even,   1.10f, 0.25f);   // наставник
+                case "Virtue":   return (1.18f, Even,   1.00f, 0.35f);   // светлый
+                case "Patience": return (0.84f, Dull,   1.45f, 0.15f);   // не спешит
+                case "Greed":    return (1.10f, Sharp,  0.82f, 0.45f);   // торопливый, с прищуром
+                case "Pride":    return (0.66f, Even,   1.25f, 0.05f);   // низко, свысока, ровно
+                case "Wrath":    return (0.76f, Sharp,  0.80f, 0.60f);   // резко, отрывисто
+                case "Envy":     return (1.24f, Breath, 0.95f, 0.70f);   // шипит
+                case "Lust":     return (1.32f, Breath, 1.15f, 0.50f);   // мягко, с придыханием
+                case "Gluttony": return (0.72f, Dull,   1.30f, 0.40f);   // глухо, сыто
+                case "Sloth":    return (0.62f, Dull,   1.60f, 0.20f);   // у самого низа, тянет
+                default:         return (0.90f, Even,   1.00f, 0.30f);
             }
         }
 
@@ -1462,7 +1468,7 @@ namespace Sinbinder.Gameplay
                 root.transform.rotation = Quaternion.LookRotation(Flat(Hall - j.Seat));
                 var cast = Cast(j.Module);
                 j.Voice = Throat(root, cast.depth);
-                if (j.Voice is Audio.VoiceGenerator throat) { throat.Kind = cast.kind; throat.Tempo = cast.tempo; }
+                if (j.Voice is Audio.VoiceGenerator throat) { throat.Kind = cast.kind; throat.Tempo = cast.tempo; throat.Tremble = cast.wobble; }
 
                 // Шарнир в поясе: верх тела кланяется, ноги за кафедрой.
                 j.Waist = new GameObject("Пояс").transform;

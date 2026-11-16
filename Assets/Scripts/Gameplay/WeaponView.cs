@@ -24,6 +24,7 @@ namespace Sinbinder.Gameplay
 
         private GameObject _source;
         private Transform _holder, _fist, _sleeve;
+        private HeroArm _arm;               // его собственная кисть (16.11); нет — кулак и рукав-примитивы
         private readonly List<GameObject> _parts = new List<GameObject>();
         private float _swingT = -1f, _shown, _phase;
         private Vector3 _lastEye;
@@ -124,8 +125,14 @@ namespace Sinbinder.Gameplay
             _holder.SetPositionAndRotation(grip, Quaternion.LookRotation(face, up));
 
             // Рукав — от запястья к локтю за краем кадра.
-            var wrist = grip - up * 0.05f;
             var elbow = c.TransformPoint(Elbow + new Vector3(0f, -(1f - Smooth(_shown)) * 0.35f, 0f));
+            if (_arm != null)
+            {
+                // Кисть держит вещь, как в модели (она дочь рукояти); предплечье — к локтю.
+                _arm.Reach(_arm.Hand.position, elbow);
+                return;
+            }
+            var wrist = grip - up * 0.05f;
             var arm = elbow - wrist;
             _sleeve.SetPositionAndRotation((wrist + elbow) * 0.5f, Quaternion.FromToRotation(Vector3.up, arm));
             _sleeve.localScale = new Vector3(0.11f, arm.magnitude * 0.5f, 0.11f);
@@ -155,6 +162,8 @@ namespace Sinbinder.Gameplay
         {
             foreach (var go in _parts) if (go != null) Destroy(go);
             _parts.Clear();
+            if (_arm != null) _arm.Destroy();
+            _arm = null;
             _holder = _fist = _sleeve = null;
         }
 
@@ -214,8 +223,45 @@ namespace Sinbinder.Gameplay
                 r.receiveShadows = false;
             }
 
-            // Кулак и рукав: кость в цвет руки, рукав — сукно Греховода, если оно есть.
+            // Кисть — его собственная (автор, 16.11: «почему не использовать руку самого Греховода»):
+            // вырезана из модели в нынешней позе и держит вещь, как в модели. Посох у него в левой —
+            // глазами вещь справа, и кисть отражается в правую: большой палец там, где надо.
             var hero = SinbinderPlayer.Instance;
+            bool right = true;
+            for (var p = source.transform.parent; p != null; p = p.parent)
+            {
+                if (p.name == "LeftHand") { right = false; break; }
+                if (p.name == "RightHand") break;
+            }
+            _arm = HeroArm.Cut(hero, right, transform);
+            if (_arm != null)
+            {
+                _arm.Hand.SetParent(_holder, true);
+                if (!right)
+                {
+                    var mirror = new GameObject("Зеркало").transform;
+                    mirror.SetParent(_holder, false);
+                    mirror.localScale = new Vector3(-1f, 1f, 1f);
+                    var kids = new List<Transform>();
+                    foreach (Transform k in _holder) if (k != mirror) kids.Add(k);
+                    foreach (var k in kids) k.SetParent(mirror, false);
+                }
+                _parts.Add(_arm.Forearm.gameObject);
+                var lamp = new GameObject("Свет у руки").AddComponent<Light>();
+                lamp.type = LightType.Point;
+                lamp.range = 0.9f;
+                lamp.intensity = 0.12f;
+                lamp.color = new Color(1f, 0.82f, 0.62f);
+                lamp.shadows = LightShadows.None;
+                lamp.transform.SetParent(_holder, false);
+                lamp.transform.localPosition = new Vector3(-0.15f, 0.12f, -0.2f);
+                Debug.Log("[РУКИ] кисть Греховода держит " + source.name + (right ? "" : " (левая, отражена)"));
+                _lastEye = cam != null ? cam.transform.position : Vector3.zero;
+                Show(false);
+                return;
+            }
+
+            // Запас: кулак и рукав — кость в цвет руки, рукав — сукно Греховода, если оно есть.
             Material cloth = null;
             if (hero != null)
                 foreach (var r in hero.GetComponentsInChildren<Renderer>(true))

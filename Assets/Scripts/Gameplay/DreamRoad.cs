@@ -1266,6 +1266,8 @@ namespace Sinbinder.Gameplay
         /// раньше, чем можно что-то рассмотреть, — только силуэт против холодного света.
         /// Кончается чёрным экраном; дальше сон грузит лагерь.
         /// </summary>
+        private const float CryptFov = 55f;
+
         public IEnumerator OpenCrypt(SinbinderPlayer hero)
         {
             CryptFade = 0f;
@@ -1305,13 +1307,19 @@ namespace Sinbinder.Gameplay
             {
                 var fromPos = cam.transform.position;
                 var fromRot = cam.transform.rotation;
+                // Обзор — свой, 55°, а не тот, что был у игрока: 16.11 сон начинался с 32°, и заставка
+                // взяла их — Смерть не влезла в проём, от неё осталась чёрная грудь с двумя точками
+                // (автор, 16.11: «Смерть не величественная»; кадр 14.11 — целиком, с косой и капюшоном).
+                float fromFov = cam.fieldOfView;
                 for (float t = 0f; t < 1.3f; t += Time.unscaledDeltaTime)
                 {
                     float k = Smooth(t / 1.3f);
                     cam.transform.SetPositionAndRotation(Vector3.Lerp(fromPos, eye, k), Quaternion.Slerp(fromRot, look, k));
+                    cam.fieldOfView = Mathf.Lerp(fromFov, CryptFov, k);
                     yield return null;
                 }
                 cam.transform.SetPositionAndRotation(eye, look);
+                cam.fieldOfView = CryptFov;
             }
             yield return new WaitForSecondsRealtime(0.4f);
 

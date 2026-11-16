@@ -120,7 +120,8 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private static Color Colour(SoulQuality quality)
+        /// <summary>Цвет огонька над телом — с ним же душа и взлетает (SoulFlight).</summary>
+        internal static Color Colour(SoulQuality quality)
         {
             switch (quality)
             {
@@ -131,7 +132,7 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private static float Size(SoulQuality quality)
+        internal static float Size(SoulQuality quality)
         {
             switch (quality)
             {

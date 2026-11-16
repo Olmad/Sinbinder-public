@@ -24,8 +24,13 @@ namespace Sinbinder.Gameplay
         private static SoulFlight _instance;
         private SoulManager _bound;
 
-        private const float Seconds = 0.95f;
-        private const float Arc = 1.4f;
+        // 0,95 с при огоньке-искре читались как телепорт (автор, 16.11): белый огонёк над телом
+        // гас, а у Греховода мигало что-то цветное. Теперь тот же огонёк — того же цвета и
+        // размера — сначала поднимается над телом (Lift), потом дугой летит в банку.
+        private const float Lift = 0.45f;
+        private const float Travel = 1.25f;
+        private const float Seconds = Lift + Travel;
+        private const float Arc = 1.2f;
 
         /// <summary>Сколько душ сейчас в воздухе: сума зажигает банку, когда долетит (SatchelUI).</summary>
         public static int InAir { get; private set; }
@@ -78,60 +83,107 @@ namespace Sinbinder.Gameplay
             var sinner = soul.Warrior != null ? soul.Warrior.Soul : null;
             var color = sinner != null ? SinPalette.Of(sinner.Sin) : new Color(0.80f, 0.79f, 0.76f);
 
-            StartCoroutine(Flight(soul.Position, me.transform, color));
+            StartCoroutine(Flight(soul.Position, me.transform, SoulIndicator.Colour(soul.SoulQuality),
+                                  SoulIndicator.Size(soul.SoulQuality), color));
         }
 
-        private IEnumerator Flight(Vector3 from, Transform to, Color color)
+        /// <summary>
+        /// Куда летит: глазами — в банку на полосе сумы (низ справа, там она и вспыхнет);
+        /// сверху — к поясу Греховода, где висят банки.
+        /// </summary>
+        private static Vector3 Target(Transform hero)
         {
-            var orb = new GameObject("Душа в банку");
-            orb.transform.position = from + Vector3.up * 0.6f;
+            var cam = Camera.main;
+            var view = cam != null ? cam.GetComponent<RTS_Camera>() : null;
+            if (view != null && view.FirstPersonNow)
+                return cam.ViewportToWorldPoint(new Vector3(0.87f, 0.09f, 0.9f));
+            return hero.position + Vector3.up * 1.0f + hero.right * 0.25f;
+        }
+
+        private IEnumerator Flight(Vector3 from, Transform to, Color was, float size, Color sin)
+        {
+            var orb = new GameObject("Душа в банку").transform;
+            // С того же места, где висел огонёк над телом (SoulIndicator: +0,9).
+            orb.position = from + Vector3.up * 0.9f;
             InAir++;
 
-            var light = orb.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.shadows = LightShadows.None;
-            light.color = color;
-            light.range = 2.8f;
-            light.intensity = 2.2f;
+            var coreMat = SoulGlow.Core(was);
+            var haloMat = SoulGlow.Halo();
+            var core = SoulGlow.Shape(PrimitiveType.Sphere, orb, coreMat, Vector3.zero, size);
+            var halo = SoulGlow.Shape(PrimitiveType.Quad, orb, haloMat, Vector3.zero, size * 4.2f);
+            var light = SoulGlow.Lamp(orb, was, 3f, 1.6f);
+            var trail = Sparks(orb, "Шлейф", sin, rate: 60f, life: 0.5f, size: size * 0.45f, local: false);
 
-            var core = Sparks(orb.transform, "Огонёк", color, rate: 70f, life: 0.10f, size: 0.34f, local: true);
-            var trail = Sparks(orb.transform, "Шлейф", color, rate: 55f, life: 0.45f, size: 0.12f, local: false);
-
-            Vector3 start = orb.transform.position;
+            Vector3 start = orb.position;
+            Vector3 top = start + Vector3.up * 0.55f;
             float t = 0f;
             while (t < Seconds && to != null)
             {
-                t += Time.unscaledDeltaTime;
-                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Seconds));
+                // Шаг не длиннее 1/30 с. Жатва — тяжёлый кадр (урок кончается, строится полоса):
+                // настоящее время за него было больше всего полёта, и душа оказывалась в банке
+                // за кадр — «телепортируется, как и раньше» (автор, 16.11; на кадре прогона огонька нет).
+                float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 30f);
+                t += dt;
+                Vector3 at;
+                float k;
+                if (t < Lift)
+                {
+                    // Отрывается от тела: медленно вверх, разгораясь.
+                    k = 0f;
+                    float u = Mathf.SmoothStep(0f, 1f, t / Lift);
+                    at = Vector3.Lerp(start, top, u);
+                }
+                else
+                {
+                    // Дугой — в банку; цель берётся каждый кадр: догоняет и идущего.
+                    k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - Lift) / Travel));
+                    at = Vector3.Lerp(top, Target(to), k) + Vector3.up * Mathf.Sin(k * Mathf.PI) * Arc * (1f - k * 0.5f);
+                }
+                orb.position = at;
 
-                // Цель — грудь Греховода, где бы он ни был: догоняет и идущего.
-                Vector3 end = to.position + Vector3.up * 1.3f;
-                orb.transform.position = Vector3.Lerp(start, end, k) + Vector3.up * Mathf.Sin(k * Mathf.PI) * Arc;
+                // Цвет — из огонька над телом в цвет греха: в банке душа уже «своя».
+                var colour = Color.Lerp(was, sin, k);
+                coreMat.color = Color.Lerp(colour, Color.white, 0.45f) * 1.3f;
+                SoulGlow.Paint(haloMat, colour, 0.7f);
+                light.color = colour;
+                light.intensity = 1.6f + (t < Lift ? t / Lift : 1f) * 0.8f;
+
+                // Размер на экране почти один: у самой камеры (глазами) огонёк не раздувается.
+                var cam = Camera.main;
+                float dist = cam != null ? Vector3.Distance(cam.transform.position, at) : 10f;
+                float s = Mathf.Min(size * (1f + 0.25f * Mathf.Sin(t * 9f) * (t < Lift ? 1f : 0.3f)), dist * 0.035f);
+                core.localScale = Vector3.one * s;
+                halo.localScale = Vector3.one * s * 4.2f;
+                if (cam != null) halo.rotation = cam.transform.rotation;
 
                 // Частицы считаются по настоящему времени: мир может стоять.
-                core.Simulate(Time.unscaledDeltaTime, true, false, false);
-                trail.Simulate(Time.unscaledDeltaTime, true, false, false);
-
+                trail.Simulate(dt, true, false, false);
                 yield return null;
             }
 
-            // Пришла — вспышка и гаснет: душа в суме.
+            // Пришла — вспышка и гаснет: душа в банке (банка на полосе вспыхивает сама, SatchelUI).
             InAir = Mathf.Max(0, InAir - 1);
-            var core2 = core.emission; core2.enabled = false;
-            var trail2 = trail.emission; trail2.enabled = false;
-            core.Emit(new ParticleSystem.EmitParams { startSize = 0.6f, startColor = color }, 1);
-
+            var emission = trail.emission; emission.enabled = false;
+            Vector3 coreAt = core.localScale;
             float fade = 0f;
-            while (fade < 0.45f)
+            while (fade < 0.4f)
             {
-                fade += Time.unscaledDeltaTime;
-                light.intensity = Mathf.Lerp(3.2f, 0f, fade / 0.45f);
-                core.Simulate(Time.unscaledDeltaTime, true, false, false);
-                trail.Simulate(Time.unscaledDeltaTime, true, false, false);
+                float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 30f);
+                fade += dt;
+                float f = fade / 0.4f;
+                core.localScale = coreAt * (1f + f * 0.8f) * (1f - f);
+                halo.localScale = coreAt * 4.2f * (1f + f * 1.5f);
+                SoulGlow.Paint(haloMat, sin, 0.7f * (1f - f));
+                light.intensity = Mathf.Lerp(3.2f, 0f, f);
+                trail.Simulate(dt, true, false, false);
+                var cam = Camera.main;
+                if (cam != null) halo.rotation = cam.transform.rotation;
                 yield return null;
             }
 
-            Destroy(orb);
+            Destroy(orb.gameObject);
+            Destroy(coreMat);
+            Destroy(haloMat);
         }
 
         /// <summary>Искры огонька: материал общий с ударами (<see cref="HitBurst.Dot"/>).</summary>

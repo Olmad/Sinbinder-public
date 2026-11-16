@@ -107,14 +107,14 @@ namespace Sinbinder.UI
             text.alignment = TextAnchor.MiddleRight;
             text.color = Idle;
             text.raycastTarget = false;
-            text.text = Loc.T("J — следующая банка · R — душу в руку или обратно в банку");
+            text.text = Loc.T("J — следующая банка · R — банку в руку или обратно в суму");
             _keys = text;
         }
 
         private Text _keys;
 
         /// <summary>Строка клавиш над сумой сейчас: с «G — отпустить», пока в руках что-то есть. Её же читает проход.</summary>
-        public static string KeysLine() => Loc.T("J — следующая банка · R — душу в руку или обратно в банку")
+        public static string KeysLine() => Loc.T("J — следующая банка · R — банку в руку или обратно в суму")
                                          + (Gameplay.HandsDrop.Busy ? " · " + Loc.T("G — отпустить") : "");
 
         // Банка загорается, когда в неё легла душа (план 66, сцена 1): рамка вспыхивает цветом

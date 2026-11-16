@@ -79,6 +79,7 @@ namespace Sinbinder.EditorTools
                 voice.Depth = cast.depth;
                 voice.Kind = cast.kind;
                 voice.Tempo = cast.tempo;
+                voice.Tremble = cast.wobble;
                 float seconds = Mathf.Min(Gameplay.Herald.Hold(words) - 0.4f, words.Length / 40f * 1.6f + 0.4f);
                 var data = voice.Render(words, seconds, out rate);
                 Object.DestroyImmediate(go);

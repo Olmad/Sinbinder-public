@@ -64,6 +64,9 @@ namespace Sinbinder.Audio
         /// <summary>Темп: больше — медленнее (Уныние тянет, Страх частит).</summary>
         public float Tempo { get; set; } = 1f;
 
+        /// <summary>Дрожь высоты: 0,3 — обычная; у Страха дрожит, у Гордыни ровно (SoulCourt.Cast).</summary>
+        public float Tremble { get => _pitchVariation; set => _pitchVariation = value; }
+
         /// <summary>Основной тон мужского голоса, Гц.</summary>
         private const float Male = 118f;
 

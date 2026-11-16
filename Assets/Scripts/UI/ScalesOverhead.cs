@@ -78,7 +78,7 @@ namespace Sinbinder.UI
                 : $"<color=#{ColorUtility.ToHtmlStringRGB(d.RefusedCommand ? SoulCourt.AgainstTone : SoulCourt.ForOrderTone)}>"
                   + (d.RefusedCommand ? Loc.T("против") : Loc.T("за приказ")) + ":</color> "
                   + $"<color=#{ColorUtility.ToHtmlStringRGB(colour)}>{voice}</color>";
-            Get().Add(w, lean, label);
+            Get().Add(w, lean, label, compass: force);
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace Sinbinder.UI
             return _instance;
         }
 
-        private Mark Add(Warrior w, float lean, string label, bool preview = false)
+        private Mark Add(Warrior w, float lean, string label, bool preview = false, bool compass = false)
         {
             for (int i = _marks.Count - 1; i >= 0; i--)
                 if (_marks[i].Who == w) Drop(i);
@@ -199,7 +199,8 @@ namespace Sinbinder.UI
             Img("Ось", root, beamAt, new Vector2(7f, 7f), new Color(0.97f, 0.93f, 0.80f), Disc());
             // Компас натуры над весами (план 66 §4): один язык с судом — три тона по кругу,
             // стрелка-клинок на натуре души. Весы — решение, компас — кто решает.
-            if (w.Soul != null)
+            // Только перед судом во сне: при приказе он сбивал (автор, 16.11) — там одни весы.
+            if (compass && w.Soul != null)
             {
                 // 0,8 весов, а не 0,56: на кадре 16.11 компас был с ноготь и не читался.
                 float dia = Size * 0.8f;

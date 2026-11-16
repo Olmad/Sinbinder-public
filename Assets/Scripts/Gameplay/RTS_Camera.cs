@@ -519,14 +519,19 @@ namespace Sinbinder.Gameplay
             {
                 _fenced = true;
 
-                var ground = GameObject.Find("Земля") ?? GameObject.Find("Камень")
-                          ?? GameObject.Find("Плиты");
-
-                var renderer = ground == null ? null : ground.GetComponent<Renderer>();
-                if (renderer != null)
+                // Только настоящая земля — от 20 м в каждую сторону. В сне земли с таким
+                // именем нет, и GameObject.Find("Камень") брал придорожный камень с банками
+                // (1,3 м): камера пряталась над ним, в левом верхнем углу карты, и Греховода
+                // было не видно — играли через Tab (автор, 16.11). Мала земля — забора нет.
+                foreach (var name in new[] { "Земля", "Камень", "Плиты" })
                 {
+                    var ground = GameObject.Find(name);
+                    var renderer = ground == null ? null : ground.GetComponent<Renderer>();
+                    if (renderer == null) continue;
                     var b = renderer.bounds;
+                    if (b.size.x < 20f || b.size.z < 20f) continue;
                     _fence = new Bounds(b.center, b.size);
+                    break;
                 }
             }
 

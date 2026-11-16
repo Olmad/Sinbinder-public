@@ -322,7 +322,8 @@ namespace Sinbinder.Gameplay
             // игры читался чёрным полем (кадр «сон — начало»). 32° — дорога во всю ширину и он сам
             // на ней; колесо отдаляет до прежних 55 (RTS_Camera держит предел по кадру сцены).
             var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
-            if (eye != null) { Camera.main.fieldOfView = 32f; eye.Resync(); }
+            // Сначала — над ним: Start камеры мог пройти раньше, чем он появился.
+            if (eye != null) { eye.SetView(RTS_Camera.CameraView.Tactical); Camera.main.fieldOfView = 32f; eye.Resync(); }
             _hand = gameObject.AddComponent<DreamHandCursor>();
             _hand.enabled = false;
 
@@ -644,11 +645,12 @@ namespace Sinbinder.Gameplay
                         break;
                     }
                     // Автор, 12.11: «обязательно взять в руку душу с камня. А после просто открыть
-                    // ворота» — обратно в банку не просим. Душа видна над ладонью (SoulInHandView).
+                    // ворота» — обратно в банку не просим. 16.11: «непонятно зачем брать душу в руку —
+                    // почему бы не брать банку с душой?» — в руке банка (SoulInHandView), и сказано зачем.
                     if (Satchel.Selected != _jarIndex) break;
-                    if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — душу в руку."; break; }
+                    if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — возьмите её в руку: в склепе душу несут к телу в руках."; break; }
                     _soulHeld = true;
-                    Set(Stage.Return, "Душа в руке. " + GateLine);
+                    Set(Stage.Return, "Банка в руке. " + GateLine);
                     break;
                 }
                 case Stage.Return:

@@ -7,35 +7,41 @@ using Sinbinder.Crypt;
 namespace Sinbinder.Gameplay
 {
     /// <summary>
-    /// Душа в руке — видна (план 66, сцена 1: «душа — свет»).
+    /// Банка с душой в руке — видна (план 66, сцена 1: «душа — свет»).
     ///
-    /// До 16.11 R клал душу в руку, а на экране ничего не менялось: оружие пряталось
-    /// (<see cref="WeaponView"/>), и только строка журнала говорила, что в руке что-то есть.
-    /// Автор, 12.11: «с банками нужно обязательно взять в руку душу с камня» — значит, взятое
-    /// должно быть видно. Теперь над раскрытой ладонью огонёк цвета греха этой души: дышит,
-    /// вокруг кружат искры, ладонь под ним освещена.
+    /// До 16.11 R клал душу в руку, а на экране ничего не менялось. 16.11 над ладонью встал
+    /// огонёк — автор: «руки выглядят так себе. почему не использовать руку самого Греховода»,
+    /// «непонятно зачем брать душу в руку — почему бы не брать банку с душой?». Теперь в руке —
+    /// банка, та же, что стояла на камне: светится цветом души, под крышкой. Держит её кисть
+    /// самого Греховода (<see cref="HeroArm"/>), раскрытой ладонью снизу.
     ///
-    /// Глазами — внизу справа, как оружие. Сверху и сбоку — огонёк у правой руки Греховода,
-    /// крупнее, чтобы читался с высоты. В сценке, на паузе руки и у мёртвого — не виден.
+    /// Глазами — внизу справа, над полосой выделенного. Сверху и сбоку — банка в его правой
+    /// руке, крупнее, чтобы читалась с высоты. В сценке, на паузе руки и у мёртвого — не видна.
     /// </summary>
     public class SoulInHandView : MonoBehaviour
     {
         private static SoulInHandView _one;
 
-        private Transform _root, _palm, _sleeve, _orb, _core, _halo;
-        private readonly Transform[] _motes = new Transform[3];
-        private Material _coreMat, _haloMat, _moteMat;
+        private Transform _root, _jar, _halo;
+        private HeroArm _arm;
+        private Transform _bone;
+        private Material _soulMat, _haloMat;
         private Light _glow;
         private SoulData _soul;
         private SinbinderPlayer _builtFor;
         private Color _tint = Color.white;
         private float _shown;
 
-        // Оси камеры: x вправо, y вверх, z вперёд. Ладонь — над полосой выделенного (она
-        // занимает нижнюю пятую экрана): при y −0,24 ладонь и огонёк ушли под неё (кадр 16.11).
-        private static readonly Vector3 PalmAt = new Vector3(0.15f, -0.115f, 0.50f);
-        private static readonly Vector3 Elbow = new Vector3(0.40f, -0.60f, 0.12f);
-        private const float OrbHeight = 0.072f;
+        // Оси камеры: x вправо, y вверх, z вперёд. Банка — над полосой выделенного (она
+        // занимает нижнюю пятую экрана): при y −0,24 ладонь ушла под неё (кадр 16.11).
+        private static readonly Vector3 JarAt = new Vector3(0.17f, -0.08f, 0.52f);
+        private static readonly Vector3 Elbow = new Vector3(0.40f, -0.55f, 0.18f);
+        // Кисть держит банку сбоку, со стороны глаз: ладонь к банке, пальцы вверх вдоль неё —
+        // видны тыл кисти и пальцы. Ладонью вверх под банкой (первый заход 16.11) кисть с высоты
+        // глаз видна ребром — зонд HandProbe: три чёрточки под банкой.
+        private static readonly Vector3 PalmToJar = new Vector3(-0.25f, 0.08f, 1f);
+        private static readonly Vector3 FingersUp = new Vector3(-0.10f, 1f, 0.15f);
+        private const float JarRadius = 0.04f, JarHeight = 0.10f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { _one = null; }
@@ -44,7 +50,7 @@ namespace Sinbinder.Gameplay
         private static void Install()
         {
             if (_one != null) return;
-            var go = new GameObject("Душа в руке");
+            var go = new GameObject("Банка в руке");
             DontDestroyOnLoad(go);
             _one = go.AddComponent<SoulInHandView>();
         }
@@ -62,8 +68,8 @@ namespace Sinbinder.Gameplay
                 if (_root != null && _root.gameObject.activeSelf) _root.gameObject.SetActive(false);
                 return;
             }
-            // Новая сцена — новый Греховод: рукав берёт сукно с него, старое могло уйти со сценой.
-            if (_root != null && _builtFor != hero) { Destroy(_root.gameObject); _root = null; }
+            // Новая сцена — новый Греховод: рука и сукно — с него, старые ушли со сценой.
+            if (_root != null && _builtFor != hero) Clear();
             if (_root == null) { Build(hero); _builtFor = hero; }
             if (CryptHands.Soul != _soul) Tint(CryptHands.Soul);
             if (!_root.gameObject.activeSelf) _root.gameObject.SetActive(true);
@@ -73,47 +79,72 @@ namespace Sinbinder.Gameplay
             float t = Time.time;
             var c = cam.transform;
 
-            // Глазами — ладонь с рукавом; со стороны рука своя, у тела, — только огонёк.
+            // Глазами — кисть Греховода держит банку; со стороны рука своя, у тела, — только банка.
             bool eyes = view.FirstPersonNow;
-            if (_palm.gameObject.activeSelf != eyes) { _palm.gameObject.SetActive(eyes); _sleeve.gameObject.SetActive(eyes); }
+            if (_arm != null) _arm.Show(eyes);
             if (eyes)
             {
-                var at = PalmAt;
+                var at = JarAt;
                 at.y -= (1f - s) * 0.3f;                               // входит снизу
                 at.y += Mathf.Sin(t * 1.3f) * 0.004f;                  // рука живая, не прибита к кадру
-                _root.localScale = Vector3.one;
-                _root.SetPositionAndRotation(c.TransformPoint(at), c.rotation * Quaternion.Euler(-24f, -8f, 6f));
-                var wrist = _root.position - _root.forward * 0.05f - _root.up * 0.01f;
-                var elbow = c.TransformPoint(Elbow + new Vector3(0f, -(1f - s) * 0.3f, 0f));
-                var arm = elbow - wrist;
-                _sleeve.SetPositionAndRotation((wrist + elbow) * 0.5f, Quaternion.FromToRotation(Vector3.up, arm));
-                _sleeve.localScale = new Vector3(0.10f, arm.magnitude * 0.5f, 0.10f);
+                Hold(_arm, _jar, c, at, s);
             }
             else
             {
+                // Сверху — в его правой кисти, крупнее: с высоты банка с ноготь не читалась бы.
                 var h = hero.transform;
-                _root.localScale = Vector3.one * 2.6f;
-                _root.SetPositionAndRotation(h.position + h.right * 0.36f + h.forward * 0.30f + Vector3.up * 0.98f, h.rotation);
+                var where = _bone != null ? _bone.position - Vector3.up * 0.06f
+                                          : h.position + h.right * 0.36f + h.forward * 0.30f + Vector3.up * 0.98f;
+                _jar.SetPositionAndRotation(where, h.rotation);
+                _jar.localScale = Vector3.one * 2.2f;
             }
 
-            // Огонёк дышит; искры кружат вокруг на разной высоте.
+            // Душа в банке дышит: свет и ореол.
             float breath = 1f + Mathf.Sin(t * 2.4f) * 0.09f;
-            _orb.localPosition = new Vector3(0f, OrbHeight + Mathf.Sin(t * 1.7f) * 0.006f, 0.005f);
-            _core.localScale = Vector3.one * (0.030f * breath * s);
-            _halo.localScale = Vector3.one * (0.17f * (0.94f + 0.06f * breath) * s);
+            _halo.localScale = Vector3.one * (0.30f * breath * s);
             _halo.rotation = c.rotation;
-            for (int i = 0; i < _motes.Length; i++)
-            {
-                float a = t * (1.4f + i * 0.55f) + i * 2.1f;
-                float r = 0.034f + i * 0.007f;
-                _motes[i].localPosition = new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a * 1.3f + i) * 0.016f, Mathf.Sin(a) * r);
-                _motes[i].localScale = Vector3.one * (0.0075f * s * (0.7f + 0.3f * Mathf.Sin(t * 5f + i * 1.7f)));
-                _motes[i].rotation = c.rotation;                       // плоские — лицом к камере
-            }
-            _glow.intensity = 0.32f * s * breath;
-            _glow.range = 0.55f * _root.localScale.x;
-            var halo = _tint; halo.a = 0.55f * s;
+            _glow.intensity = 0.45f * s * breath;
+            _glow.range = 0.7f * _jar.localScale.x;
+            var halo = _tint; halo.a = 0.45f * s;
             _haloMat.SetColor("_BaseColor", halo);
+            _soulMat.color = Color.Lerp(_tint, Color.white, 0.25f) * (1.05f + 0.15f * breath);
+        }
+
+        /// <summary>
+        /// Банка в кисти глазами: банка — в точке <paramref name="at"/> (оси камеры), прямо; кисть —
+        /// сзади, ладонью к банке, пальцами вверх; предплечье — к локтю за краем кадра. Общий
+        /// с зондом (Editor/HandProbe): он снимает ровно то, что в игре.
+        /// </summary>
+        public static void Hold(HeroArm arm, Transform jar, Transform c, Vector3 at, float shown)
+        {
+            var jarCentre = c.TransformPoint(at);
+            jar.SetPositionAndRotation(jarCentre, c.rotation * Quaternion.Euler(0f, 0f, 4f));
+            jar.localScale = Vector3.one;
+            if (arm == null) return;
+            var palm = c.TransformDirection(PalmToJar.normalized);
+            var fingers = c.TransformDirection(FingersUp.normalized);
+            var rot = arm.Pose(fingers, palm);
+            // Середина кисти — у стенки банки, на ладонь ниже середины банки: пальцы обнимают её.
+            var handCentre = jarCentre - palm * (JarRadius + 0.012f) - fingers * 0.012f;
+            var wrist = handCentre - rot * arm.Centre;
+            arm.Hand.SetPositionAndRotation(wrist, rot);
+            arm.Reach(wrist, c.TransformPoint(Elbow + new Vector3(0f, -(1f - shown) * 0.3f, 0f)));
+        }
+
+        /// <summary>Банка, как на камне у дороги: светится душой, тёмная крышка и поясок. Зовёт и зонд.</summary>
+        public static Transform Jar(Transform parent, out Material soul)
+        {
+            var jar = new GameObject("Банка с душой").transform;
+            jar.SetParent(parent, false);
+            soul = SoulGlow.Core(Color.white);
+            Shape(PrimitiveType.Cylinder, jar, soul, Vector3.zero, Quaternion.identity,
+                  new Vector3(JarRadius * 2f, JarHeight * 0.5f, JarRadius * 2f));
+            Shape(PrimitiveType.Cylinder, jar, Lit(new Color(0.30f, 0.22f, 0.14f)), Vector3.up * (JarHeight * 0.5f + 0.008f),
+                  Quaternion.identity, new Vector3(JarRadius * 2.25f, 0.009f, JarRadius * 2.25f));
+            // Горлышко — тёмный поясок под крышкой: силуэт банки, а не светящейся шайбы.
+            Shape(PrimitiveType.Cylinder, jar, Lit(new Color(0.18f, 0.20f, 0.24f)), Vector3.up * (JarHeight * 0.5f - 0.006f),
+                  Quaternion.identity, new Vector3(JarRadius * 2.08f, 0.006f, JarRadius * 2.08f));
+            return jar;
         }
 
         private static bool TalkShot()
@@ -122,62 +153,40 @@ namespace Sinbinder.Gameplay
             return talk != null && (talk.InDialogue || talk.Homebound);
         }
 
-        /// <summary>Цвет — грех души, разбавленный белым: огонёк, а не лампочка греха.</summary>
+        /// <summary>Цвет — грех души, разбавленный белым: банка светится душой, а не лампочкой греха.</summary>
         private void Tint(SoulData soul)
         {
             _soul = soul;
-            var sin = soul != null ? SinPalette.Of(soul.Sin) : new Color(0.75f, 0.85f, 1f);
+            var sin = soul != null ? SinPalette.Of(soul.Sin) : new Color(0.55f, 0.75f, 1f);
             _tint = Color.Lerp(sin, Color.white, 0.3f);
-            _coreMat.color = Color.Lerp(_tint, Color.white, 0.65f) * 1.6f;
-            var mote = Color.Lerp(_tint, Color.white, 0.4f); mote.a = 0.9f;
-            _moteMat.SetColor("_BaseColor", mote);
             _glow.color = _tint;
+        }
+
+        private void Clear()
+        {
+            if (_arm != null) _arm.Destroy();
+            _arm = null;
+            if (_root != null) Destroy(_root.gameObject);
+            _root = null;
         }
 
         private void Build(SinbinderPlayer hero)
         {
-            _root = new GameObject("Ладонь").transform;
+            _root = new GameObject("Рука с банкой").transform;
             _root.SetParent(transform, false);
 
-            // Ладонь горстью: плоская кость, четыре пальца подняты краем, большой — справа.
-            var skin = Lit(new Color(0.60f, 0.56f, 0.48f));
-            _palm = new GameObject("Горсть").transform;
-            _palm.SetParent(_root, false);
-            Shape(PrimitiveType.Sphere, _palm, skin, Vector3.zero, Quaternion.identity, new Vector3(0.095f, 0.028f, 0.11f));
-            for (int i = 0; i < 4; i++)
-            {
-                float x = -0.033f + i * 0.022f;
-                float len = i == 0 || i == 3 ? 0.019f : 0.023f;
-                Shape(PrimitiveType.Capsule, _palm, skin, new Vector3(x, 0.022f, 0.062f),
-                      Quaternion.Euler(52f, 0f, 0f), new Vector3(0.019f, len, 0.019f));
-            }
-            Shape(PrimitiveType.Capsule, _palm, skin, new Vector3(0.056f, 0.016f, 0.012f),
-                  Quaternion.Euler(28f, 0f, -55f), new Vector3(0.021f, 0.022f, 0.021f));
-
-            Material cloth = null;
-            foreach (var r in hero.GetComponentsInChildren<Renderer>(true))
-                if (r.name.StartsWith("SinGarment") || r.name.StartsWith("SinSleeveRight")
-                    || r.transform.parent != null && r.transform.parent.name.StartsWith("SinSleeveRight"))
-                { cloth = r.sharedMaterial; break; }
-            if (cloth == null) cloth = Lit(new Color(0.42f, 0.05f, 0.06f));
-            _sleeve = new GameObject("Рукав").transform;
-            _sleeve.SetParent(_root, false);
-            Shape(PrimitiveType.Cylinder, _sleeve, cloth, Vector3.zero, Quaternion.identity, Vector3.one);
-
-            // Огонёк: ядро, ореол лицом к камере, три искры и слабый свет на ладонь.
-            _orb = new GameObject("Огонёк").transform;
-            _orb.SetParent(_root, false);
-            _coreMat = SoulGlow.Core(Color.white);
-            _core = SoulGlow.Shape(PrimitiveType.Sphere, _orb, _coreMat, Vector3.zero, 0.03f);
+            // Банка — как на камне у дороги (DreamRoad.BuildShrine).
+            _jar = Jar(_root, out _soulMat);
             _haloMat = SoulGlow.Halo();
-            _halo = SoulGlow.Shape(PrimitiveType.Quad, _orb, _haloMat, Vector3.zero, 0.17f);
-            _moteMat = SoulGlow.Halo("Душа — искры");
-            for (int i = 0; i < _motes.Length; i++)
-                _motes[i] = SoulGlow.Shape(PrimitiveType.Quad, _orb, _moteMat, Vector3.zero, 0.008f);
+            _halo = SoulGlow.Shape(PrimitiveType.Quad, _jar, _haloMat, Vector3.zero, 0.3f);
+            _glow = SoulGlow.Lamp(_jar, Color.white, 0.7f, 0.45f);
+            _glow.transform.localPosition = new Vector3(0f, 0.02f, -0.05f);
 
-            // Слабо и близко: у кулака свет в 0,5 выбеливал его (кадр w0811g, WeaponView).
-            _glow = SoulGlow.Lamp(_orb, Color.white, 0.55f, 0.3f);
-            _glow.transform.localPosition = new Vector3(0f, 0.03f, -0.03f);
+            // Кисть — его собственная, вырезана из модели в нынешней позе.
+            _arm = HeroArm.Cut(hero, true, _root);
+            _bone = HeroArm.Bone(hero, "RightHand");
+            if (_arm == null) Debug.LogWarning("[РУКИ] кисть Греховода не вырезалась — банка без руки");
+            else Debug.Log("[РУКИ] кисть Греховода держит банку");
             Tint(CryptHands.Soul);
         }
 

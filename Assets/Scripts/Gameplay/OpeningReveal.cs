@@ -65,7 +65,14 @@ namespace Sinbinder.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Rearm() { Showing = false; Busy = false; Dreaming = false; Lying = false; Autopilot = false; Turning = false; TurnHintShown = false; }
 
-        void OnDestroy() { Showing = false; Busy = false; Dreaming = false; Lying = false; Turning = false; TurnHintShown = false; }
+        void OnDestroy()
+        {
+            Showing = false; Busy = false; Dreaming = false; Lying = false; Turning = false; TurnHintShown = false;
+            // Ушли посреди последнего слова — мир не остаётся в тишине с меркнущими огнями.
+            if (_farewell) Audio.DeathVoice.End();
+        }
+
+        private bool _farewell;
 
         IEnumerator Start()
         {
@@ -248,8 +255,9 @@ namespace Sinbinder.Gameplay
                 {
                     spoke = true;
                     string words = Loc.T("Ты можешь бежать от меня. Но от своей сути не убежишь.");
-                    hint.text = Loc.T("Бог Смерти") + ": " + words;
-                    Audio.DeathVoice.Utter(words);
+                    // Без подписи «Бог Смерти:» (автор, 16.11): голос узнают и так — только что во сне.
+                    hint.text = "«" + words + "»";
+                    StartCoroutine(Farewell(words));
                     Debug.Log("[ОТКРЫТИЕ] Бог Смерти: " + words);
                 }
                 hint.color = spoke
@@ -490,6 +498,21 @@ namespace Sinbinder.Gameplay
             light.shadows = LightShadows.None;
             go.AddComponent<FireFlicker>().Tune(0.22f, 2.6f, 0.03f);
             return light;
+        }
+
+        /// <summary>
+        /// Последнее слово Смерти — её первым голосом, тем, что «пробирает до дрожи» (автор, 21.10):
+        /// мир замолкает, бьётся сердце, огни рядом меркнут. Голос суда (Utter) — для многих строк
+        /// подряд; на одну прощальную он терял шарм (автор, 16.11).
+        /// </summary>
+        private IEnumerator Farewell(string words)
+        {
+            _farewell = true;
+            Audio.DeathVoice.Begin(SinbinderPlayer.Where);
+            float said = Audio.DeathVoice.Say(words);
+            yield return new WaitForSecondsRealtime(said + 1.6f);
+            Audio.DeathVoice.End();
+            _farewell = false;
         }
 
         private static IEnumerator Dim(Light light)
