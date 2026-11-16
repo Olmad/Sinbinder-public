@@ -40,7 +40,8 @@ internal static class Program
         // component. Retest must try the real vote once then recover with a
         // truthful missing-verdict result, rather than hanging forever or
         // inventing an ObeyCommand. Source-level only, not Play Mode.
-        int retestStart = dreamTrace.IndexOf("case Stage.Retest:\\n                {", StringComparison.Ordinal);
+        int dreamUpdate = dreamTrace.IndexOf("private void Update()", StringComparison.Ordinal);
+        int retestStart = dreamTrace.IndexOf("case Stage.Retest:", dreamUpdate, StringComparison.Ordinal);
         int retestEnd = dreamTrace.IndexOf("case Stage.FirstPerson:", retestStart, StringComparison.Ordinal);
         string retest = retestStart >= 0 && retestEnd > retestStart
             ? dreamTrace.Substring(retestStart, retestEnd - retestStart) : "";
@@ -50,9 +51,9 @@ internal static class Program
               retest.Contains("Time.unscaledTime - _decideSince > 1.2f"),
             "retest invokes production AOS exactly once when natural verdict is missing");
         Check(retest.Contains("Time.unscaledTime - _decideSince > 6f") &&
-              retest.Contains("RetestResult = \\"решение не поступило\\";") &&
+              retest.Contains("RetestResult = \"решение не поступило\";") &&
               retest.Contains("Set(Stage.FirstPerson,") &&
-              !retest.Contains("RetestResult = \\"послушался\\";"),
+              !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
 
         // Source-linked AOS explanation viewport fitting: the *real* Unity
