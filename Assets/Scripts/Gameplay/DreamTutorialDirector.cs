@@ -1344,9 +1344,15 @@ namespace Sinbinder.Gameplay
         /// Суд над решением — каким бы оно ни было. Отказ, колебание, послушание —
         /// суд показывает, чьи голоса это решили.
         /// </summary>
+        // AOS may independently choose Flee/Attack/SaveAlly without raising
+        // RefusedCommand. Only the actual ObeyCommand verdict is obedience.
+        private static bool ActuallyObeyed(AOS.Decision d)
+            => d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated;
+
         private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
         {
-            RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался" : "послушался";
+            RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
+                : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
             int murders = 0;
             if (c != null && c.RecentMemories != null)
                 foreach (var m in c.RecentMemories) if (m != null && m.EventType == "MurderedMe") murders++;
@@ -1372,8 +1378,11 @@ namespace Sinbinder.Gameplay
                     "Убийцы замерли. Подойди к отказавшему воину и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится.",
                     "Убийцы замерли. Подойди к отказавшей воительнице и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится."));
             }
-            else
+            else if (ActuallyObeyed(d))
                 StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
+            else
+                StartBattle(Grammar.Pick(g, "Он выбрал собственный путь, а убийцы идут. Встреть их.",
+                                        "Она выбрала собственный путь, а убийцы идут. Встреть их."));
         }
 
         private void StartBattle(string line)
@@ -1395,7 +1404,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private IEnumerator Contrast(AOS.Decision d)
         {
-            bool obeyed = !d.RefusedCommand && !d.Hesitated;
+            bool obeyed = ActuallyObeyed(d);
             RetestResult = obeyed ? "послушался" : "снова нет";
             Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action})");
 
