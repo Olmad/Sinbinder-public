@@ -844,11 +844,17 @@ namespace Sinbinder.Gameplay
                 v.Add(centre + d * r);
                 v.Add(centre + d * (r - wdt));
             }
+            // Separate back-face vertices: opposite windings on the same vertices
+            // cancel their normals after RecalculateNormals(), darkening the blade.
+            int frontCount = v.Count;
+            for (int i = 0; i < frontCount; i++)
+                v.Add(v[i]);
             for (int i = 0; i < n; i++)
             {
                 int k = i * 2;
                 tri.AddRange(new[] { k, k + 1, k + 3, k, k + 3, k + 2 });
-                tri.AddRange(new[] { k, k + 3, k + 1, k, k + 2, k + 3 });
+                int back = frontCount + k;
+                tri.AddRange(new[] { back, back + 3, back + 1, back, back + 2, back + 3 });
             }
             var m = new Mesh { name = "Лезвие" };
             m.SetVertices(v);
