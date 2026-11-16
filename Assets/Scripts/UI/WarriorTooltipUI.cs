@@ -147,10 +147,7 @@ namespace Sinbinder.UI
                 (Mathf.Abs(_nativePanelScale.x) / Mathf.Max(0.0001f, Mathf.Abs(_panel.localScale.x)));
             float height = size.y * Mathf.Abs(scale.y) *
                 (Mathf.Abs(_nativePanelScale.y) / Mathf.Max(0.0001f, Mathf.Abs(_panel.localScale.y)));
-            float availableWidth = Mathf.Max(1f, Screen.width - 2f * margin);
-            float availableHeight = Mathf.Max(1f, Screen.height - 2f * margin);
-            float fit = Mathf.Min(1f, Mathf.Min(availableWidth / Mathf.Max(1f, width),
-                                              availableHeight / Mathf.Max(1f, height)));
+            float fit = TooltipViewportFit.Scale(width, height, Screen.width, Screen.height, margin);
             _panel.localScale = new Vector3(_nativePanelScale.x * fit,
                                             _nativePanelScale.y * fit, _nativePanelScale.z);
             width *= fit;
