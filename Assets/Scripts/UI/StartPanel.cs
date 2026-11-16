@@ -114,7 +114,7 @@ namespace Sinbinder.UI
             if (dream && gameObject.scene.name == "Prologue_Camp" && Application.CanStreamedLevelBeLoaded(Dream))
             {
                 // Clock starts at the player's click and includes scene loading.
-                Gameplay.DreamTutorialDirector.BeginFirstFiveTrace();
+                Sinbinder.Gameplay.DreamTutorialDirector.BeginFirstFiveTrace();
                 Debug.Log("[ДВЕРЬ] Новая игра — со сна Греховода.");
                 UnityEngine.SceneManagement.SceneManager.LoadScene(Dream);
             }
