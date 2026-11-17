@@ -52,7 +52,6 @@ namespace Sinbinder.UI
 
         private bool _wasEyes;
         private float _since = -1f;
-        private CanvasGroup _group;
 
         void Update()
         {
@@ -77,54 +76,23 @@ namespace Sinbinder.UI
 
         private bool _pending;
 
+        /// <summary>
+        /// На плашке урока — Tab в рамке, как подсказки сна (автор, 17.11: «в лагере и в сне
+        /// обучение и плашки с заданиями отличаются»). До того — курсивная строка вверху.
+        /// </summary>
         private void Show()
         {
             Shown = true;
             _since = Time.unscaledTime;
-            Build();
-            Debug.Log("[ПОДСКАЗКА] вид сверху: тихая строка о V и секретах лагеря.");
+            Lesson.Hint(this, "Tab", Loc.T(Line));
+            Debug.Log("[ПОДСКАЗКА] вид сверху: строка о Tab и секретах лагеря.");
         }
 
-        private void Build()
-        {
-            var canvas = gameObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 40;
-            var scaler = gameObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            _group = gameObject.AddComponent<CanvasGroup>();
-            _group.alpha = 0f;
-            _group.blocksRaycasts = false;
-
-            var go = new GameObject("Строка", typeof(RectTransform));
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(transform, false);
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -120f);
-            rt.sizeDelta = new Vector2(1100f, 60f);
-
-            var text = go.AddComponent<Text>();
-            text.font = UiStyle.Thought;   // курсив — голосом мысли, не приказом
-            text.fontSize = 26;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = new Color(0.86f, 0.83f, 0.76f, 1f);
-            text.text = Loc.T(Line);
-            text.raycastTarget = false;
-            var shadow = go.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            shadow.effectDistance = new Vector2(1.5f, -1.5f);
-        }
+        void OnDestroy() => Lesson.Unhint(this);
 
         private void Fade()
         {
-            float t = Time.unscaledTime - _since;
-            float a = t < FadeIn ? t / FadeIn
-                    : t < FadeIn + Hold ? 1f
-                    : 1f - (t - FadeIn - Hold) / FadeOut;
-            if (_group != null) _group.alpha = Mathf.Clamp01(a) * 0.9f;
-            if (t > FadeIn + Hold + FadeOut) Destroy(gameObject);
+            if (Time.unscaledTime - _since > FadeIn + Hold) Destroy(gameObject);
         }
     }
 }

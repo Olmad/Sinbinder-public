@@ -67,6 +67,15 @@ namespace Sinbinder.Gameplay
         /// <summary>Как кончилась проверка тем же приказом без убийц: «послушался», «снова нет».</summary>
         public static string RetestResult;
 
+        /// <summary>Как открылись печати у ворот — для прогона: оба встали, один, поднятого нет.</summary>
+        public static string SealsResult;
+
+        /// <summary>Печати горят — ворота открываются на F.</summary>
+        public bool SealsOpen => _sealsOpen;
+
+        /// <summary>Сон прячет задачи: руки заняты (наезд, ворота) или сон кончился.</summary>
+        public static bool HidesTasks => Instance != null && (Instance._stage == Stage.Finished || Instance._handBusy);
+
         /// <summary>Клавиша, нажатая прогоном (без людей Input молчит). Живёт один кадр.</summary>
         private KeyCode _testKey;
         private int _testKeyFrame = -1;
@@ -84,10 +93,11 @@ namespace Sinbinder.Gameplay
         private const string DreamsKey = "Sinbinder.DreamTutorial.Count";
 
         // Дорога сна (docs/64-DREAM-ROAD.md): уроки — остановками, в конце склеп.
-        private const string GateLine = "Дорога ведёт к склепу. Подойдите к воротам и нажмите F.";
+        // Ворота открываются не сразу: сначала печати перед ними (Seals, 17.11).
+        private static readonly string GateLine = Loc.N("Дорога ведёт к склепу. Идите к воротам.");
         private const string JarsLine = "Во дворе — камень с банками. Подойдите к нему.";
         private const string EyesLine = "Tab: перейди от тактического вида к первому лицу.";
-        private bool _atDummy, _atShrine, _atGate, _cryptRunning;
+        private bool _atDummy, _atShrine, _cryptRunning;
         private int _swingsSeen;
         private float _heldBackAt = -10f, _nudgeAt = -10f;
 
@@ -289,6 +299,7 @@ namespace Sinbinder.Gameplay
             _dreamNo = dreams + 1;
             RefusalResult = null;
             RetestResult = null;
+            SealsResult = null;
 
             // Причина отказа «от противного» — на весь сон: суд называет то,
             // без чего воин поступил бы иначе, и это должно быть посчитано.
@@ -302,7 +313,7 @@ namespace Sinbinder.Gameplay
         }
 
         private void OnEnable() { SelectionManager.OnPlayerOrder += TrackOrder; }
-        private void OnDisable() { SelectionManager.OnPlayerOrder -= TrackOrder; }
+        private void OnDisable() { SelectionManager.OnPlayerOrder -= TrackOrder; Lesson.Unhint(this); }
         private void OnDestroy()
         {
             if (Instance != this) return;
@@ -792,8 +803,9 @@ namespace Sinbinder.Gameplay
                     break;
                 }
                 case Stage.Return:
-                    if (!DreamRoad.NearGate(_hero.transform.position)) break;
-                    if (!_atGate) { _atGate = true; _line = "Ворота склепа. F — открыть."; }
+                    Seals();
+                    if (!_sealsOpen) break;
+                    if (!DreamRoad.NearGate(_hero.transform.position) && !OnSeal(_hero.transform.position, DreamRoad.LordSealAt)) break;
                     if (Pressed(KeyCode.F)) StartCoroutine(Crypt());
                     break;
             }
@@ -1136,18 +1148,140 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Строка урока — табличкой игры вверху (UI.DreamHintPlate, 16.11). До того — OnGUI-коробка
-        /// внизу слева: серая, шрифтом Unity, поверх полосы выделенного, и на кадрах её не было.
+        /// Шаг сна — как в лагере (автор, 17.11: «в лагере и в сне обучение и плашки с заданиями
+        /// отличаются»): что сделать — задачей в списке «Задачи» справа сверху (UI.TaskList), какой
+        /// клавишей — на плашке урока, клавиша в рамке (Lesson.Hint). До того у сна была своя
+        /// табличка вверху по центру («Воспоминание», 16.11), а в лагере — список и плашка.
+        /// Полная строка шага, как и раньше, — в журнале.
         /// </summary>
         private void LateUpdate()
         {
-            // Под полосами — кадр, а не урок: табличка спорила бы с репликой.
-            bool quiet = _stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding || UI.TalkView.Shown
+            // Под полосами — кадр, а не урок: плашка спорила бы с репликой.
+            bool quiet = _stage == Stage.Finished || _handBusy || SoulCourt.Sitting || UI.TalkView.Shown
                       || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown);
-            if (quiet) { UI.DreamHintPlate.Hide(); return; }
-            // Упёрся в черту урока — строка урока вспыхивает: сначала это.
-            float nudge = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
-            UI.DreamHintPlate.Show(_line, nudge);
+            if (!quiet) UI.TaskList.Step(TaskTitle());
+            // Упёрся в черту шага — задача вспыхивает: сначала это.
+            if (_nudgeAt != _nudgeSent) { _nudgeSent = _nudgeAt; UI.TaskList.Nudge(); }
+            string key = quiet || string.IsNullOrEmpty(_line) ? null : KeyNow();
+            if (key != null) Lesson.Hint(this, key, Loc.T(_line));
+            else Lesson.Unhint(this);
+        }
+
+        private float _nudgeSent = -10f;
+
+        /// <summary>Задача шага — коротко, клавиша в скобках, как задачи лагеря.</summary>
+        private string TaskTitle()
+        {
+            switch (_stage)
+            {
+                case Stage.Approach: return Loc.T("Ведите Греховода по дороге (ПКМ по земле)");
+                case Stage.Dying: return Loc.T("Выслушайте умирающего");
+                case Stage.Harvest: return Loc.T("Заберите его душу (E)");
+                case Stage.Rebind: return Loc.T("Верните душу в тело (R)");
+                case Stage.Command: return Loc.T("Отдайте поднятому первый приказ (ЛКМ, затем ПКМ)");
+                case Stage.FirstPerson: return Loc.T("Взгляните глазами Греховода (Tab)");
+                case Stage.WarriorMode: return Loc.T("Станьте Воином (V)");
+                case Stage.DrawWeapon: return Loc.T("Достаньте оружие (B)");
+                case Stage.Practice: return Loc.T("Ударьте чучело и закройтесь от ответа (ЛКМ, ПКМ)");
+                case Stage.Standoff: case Stage.Deciding: return Loc.T("Прикажите поднятому отступить (X)");
+                case Stage.Battle: return Loc.T("Отбейтесь от убийц");
+                case Stage.Retest: return Loc.T("Тот же приказ — без убийц (X)");
+                case Stage.Jars: return Loc.T("Возьмите банку с камня во дворе (E, J, R)");
+                case Stage.Return:
+                    if (_sealsOpen) return Loc.T("Откройте ворота склепа (F)");
+                    if (!_sealsAsked) return Loc.T("Идите к воротам склепа");
+                    return _zombie == null || _zombie.IsDead
+                        ? Loc.T("Встаньте на печать с венцом")
+                        : Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
+                default: return null;
+            }
+        }
+
+        /// <summary>Клавиша шага без кольца — для плашки урока; null — плашка не нужна.</summary>
+        private string KeyNow()
+        {
+            switch (_stage)
+            {
+                case Stage.Approach: return Loc.T("ПКМ");
+                case Stage.Harvest: return "E";
+                case Stage.Rebind: return "R";
+                case Stage.FirstPerson: return "Tab";
+                case Stage.WarriorMode: return "V";
+                case Stage.DrawWeapon: return "B";
+                case Stage.Practice: return Loc.T("ЛКМ");
+                case Stage.Jars:
+                    if (_jarIndex < 0) return _atShrine ? "E" : null;
+                    return Satchel.Selected != _jarIndex ? "J" : "R";
+                case Stage.Return:
+                    if (_sealsOpen) return "F";
+                    if (!_sealsAsked) return null;
+                    return _zombie == null || _zombie.IsDead ? null : Loc.T("ПКМ");
+                default: return null;
+            }
+        }
+
+        // ── Две печати у ворот (план 66, сцена 10; автор, 17.11: «плиты, которые просто есть») ──
+        // Ворота ждут двоих: Греховод — на печать с венцом, поднятый по приказу — на печать с мечом.
+        // Не встал — его воля: через полминуты ворота пустят и одного. Поднятого нет — одного сразу.
+        private bool _sealsOpen, _sealsAsked, _escortedToSeals;
+        private float _sealWaitFrom = -1f;
+        private const float SealPatience = 30f;
+
+        private static bool OnSeal(Vector3 at, Vector3 seal) => GroundDistance(at, seal) < 1.25f;
+
+        private void Seals()
+        {
+            if (_sealsOpen) return;
+            var me = _hero.transform.position;
+            bool alone = _zombie == null || _zombie.IsDead;
+            var g = alone ? Gender.Male : _zombie.Gender;
+
+            // От банок поднятый идёт за Греховодом; на площади — отпускаем: дальше его решение.
+            if (!alone && !_escortedToSeals && me.z < DreamRoad.SquareFrom) { _escortedToSeals = true; StartEscort(); }
+            if (_escorting && me.z > DreamRoad.SquareFrom + 2f) { _escorting = false; if (!alone) Hold(_zombie, false); }
+            if (me.z < DreamRoad.SquareFrom) return;
+
+            if (!_sealsAsked)
+            {
+                _sealsAsked = true;
+                _line = alone
+                    ? Loc.N("Перед воротами две печати: с мечом — для воина, с венцом — для вас. Воина нет — встаньте на свою.")
+                    : Grammar.Pick(g,
+                        Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."),
+                        Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а её поставьте на печать с мечом: выделите и ПКМ по печати."));
+                Log(_line);
+                Mark("печати");
+            }
+
+            bool mine = OnSeal(me, DreamRoad.LordSealAt);
+            bool his = !alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt);
+            DreamRoad.Instance?.LightSeal(false, mine);
+            DreamRoad.Instance?.LightSeal(true, his);
+            if (!mine) { _sealWaitFrom = -1f; return; }
+            if (_sealWaitFrom < 0f) _sealWaitFrom = Time.unscaledTime;
+
+            if (alone)
+                OpenSeals("поднятого нет — один", Loc.N("Печать с венцом горит. F — открыть ворота."));
+            else if (his)
+                OpenSeals("оба на печатях — приказ исполнен",
+                    Grammar.Pick(g, Loc.N("Печати горят: он встал на свою. F — открыть ворота."),
+                                    Loc.N("Печати горят: она встала на свою. F — открыть ворота.")));
+            else if (Time.unscaledTime - _sealWaitFrom > SealPatience)
+                OpenSeals("один — поднятый не встал на печать",
+                    Grammar.Pick(g, Loc.N("Он так и не встал на печать — это его воля. Ворота пустят и одного: F."),
+                                    Loc.N("Она так и не встала на печать — это её воля. Ворота пустят и одного: F.")));
+        }
+
+        private void OpenSeals(string result, string line)
+        {
+            _sealsOpen = true;
+            SealsResult = result;
+            Mark("печати открыты: " + result);
+            Debug.Log("[СОН] Печати: " + result);
+            _line = line;
+            Log(line);
+            DreamRoad.Instance?.LightSeal(false, true);
+            DreamRoad.Instance?.LightSeal(true, _zombie != null && !_zombie.IsDead && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt));
         }
     }
 }

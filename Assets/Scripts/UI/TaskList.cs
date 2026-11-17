@@ -100,6 +100,40 @@ namespace Sinbinder.UI
         /// <summary>На что нацелена метка задач (видна или нет) — для прогона.</summary>
         public static string Aimed => _instance != null && _instance._marker != null ? _instance._marker.Word : "";
 
+        // ── Задачи сна ──
+        // Автор, 17.11: «в лагере и в сне обучение и плашки с заданиями отличаются». Сон ставит
+        // свой шаг строкой (Step) — прежний зачёркивается, видны последние четыре. До того у сна
+        // была своя табличка вверху по центру («Воспоминание»), а задачи лагеря — здесь.
+        private readonly List<Task> _script = new();
+        private const int ScriptRows = 4;
+        private static float _nudgeAt = -10f;
+
+        /// <summary>Шаг сна: новая задача, прежняя зачёркнута. Та же строка второй раз — ничего.</summary>
+        public static void Step(string text)
+        {
+            if (_instance == null || string.IsNullOrEmpty(text) || _instance._plate == null) return;
+            var list = _instance._script;
+            if (list.Count > 0 && list[list.Count - 1].Text == text) return;
+            if (list.Count > 0) list[list.Count - 1].Finished = true;
+            var t = _instance.NewRow(text);
+            t.Opened = true;
+            list.Add(t);
+            while (list.Count > ScriptRows)
+            {
+                if (list[0].Label != null) Destroy(list[0].Label.gameObject);
+                list.RemoveAt(0);
+            }
+            // Разложить сразу: до следующего Update ушедшая строка оставляла пустое место (кадр 17.11).
+            _instance.Script();
+        }
+
+        /// <summary>Упёрся в черту шага — нынешняя задача вспыхивает.</summary>
+        public static void Nudge() => _nudgeAt = Time.unscaledTime;
+
+        /// <summary>Нынешняя задача сна — для прогона.</summary>
+        public static string Current => _instance != null && _instance._script.Count > 0
+            ? _instance._script[_instance._script.Count - 1].Text : "";
+
         void Start()
         {
             Build();
@@ -118,6 +152,8 @@ namespace Sinbinder.UI
         private void Forget(Scene scene, LoadSceneMode mode)
         {
             foreach (var t in _tasks) { t.Opened = false; t.Finished = false; }
+            foreach (var t in _script) if (t.Label != null) Destroy(t.Label.gameObject);
+            _script.Clear();
             _enemiesSeen = false;
             _outOfTent = false;
             _weapon = _ball = _chest = null;
@@ -169,7 +205,18 @@ namespace Sinbinder.UI
 
         private Task Add(string text, Func<bool> open, Func<bool> done, Func<bool> gone = null)
         {
-            var t = new Task { Text = text, Open = open, Done = done, Gone = gone };
+            var t = NewRow(text);
+            t.Open = open;
+            t.Done = done;
+            t.Gone = gone;
+            _tasks.Add(t);
+            return t;
+        }
+
+        /// <summary>Строка задачи на табличке: текст и черта, пока скрыта.</summary>
+        private Task NewRow(string text)
+        {
+            var t = new Task { Text = text };
 
             var go = new GameObject("Задача", typeof(RectTransform), typeof(Text));
             go.transform.SetParent(_plate, false);
@@ -198,7 +245,6 @@ namespace Sinbinder.UI
             line.SetActive(false);
 
             go.SetActive(false);
-            _tasks.Add(t);
             return t;
         }
 
@@ -286,12 +332,15 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            bool camp = FindFirstObjectByType<CampOpening>() != null;
-            bool quiet = !camp || PrologueTitleUI.Showing || OpeningReveal.Busy || Modal.Any
-                      || (Letterbox.Instance != null && Letterbox.Instance.Covering);
+            bool dream = DreamTutorialDirector.Instance != null;
+            bool camp = !dream && FindFirstObjectByType<CampOpening>() != null;
+            bool quiet = !(camp || dream) || PrologueTitleUI.Showing || OpeningReveal.Busy || Modal.Any
+                      || (Letterbox.Instance != null && Letterbox.Instance.Covering)
+                      || (dream && (DreamTutorialDirector.HidesTasks || SoulCourt.Sitting));
             float want = quiet ? 0f : 1f;
             _group.alpha = Mathf.MoveTowards(_group.alpha, want, Time.unscaledDeltaTime * 3f);
             if (_marker != null) _marker.Hidden = quiet;
+            if (dream) { Script(); return; }
             if (!camp) return;
 
             // Признаки дешёвые, но ищут объекты — четыре раза в секунду хватит.
@@ -341,6 +390,36 @@ namespace Sinbinder.UI
             // Длинная строка не вылезает за табличку: табличка — по самой длинной.
             _plate.sizeDelta = new Vector2(Mathf.Max(Width, widest + 48f), -y + 14f);
             _plate.gameObject.SetActive(shown > 0);
+        }
+
+        /// <summary>Задачи сна: свои строки, без метки места — место показывает кольцо урока.</summary>
+        private void Script()
+        {
+            foreach (var t in _tasks) t.Label.gameObject.SetActive(false);
+            if (_marker != null) _marker.Clear();
+
+            float y = -52f;
+            float widest = 0f;
+            float flash = Mathf.Clamp01(1f - (Time.unscaledTime - _nudgeAt) / 1.2f);
+            for (int i = 0; i < _script.Count; i++)
+            {
+                var t = _script[i];
+                if (t.Label == null) continue;
+                t.Label.gameObject.SetActive(true);
+                var rt = (RectTransform)t.Label.transform;
+                rt.anchoredPosition = new Vector2(20f, y - Row * 0.5f);
+                y -= Row;
+                bool done = t.Finished;
+                var ink = new Color(0.92f, 0.88f, 0.80f);
+                t.Label.color = done ? new Color(0.62f, 0.58f, 0.52f, 0.75f)
+                              : Color.Lerp(ink, new Color(1f, 0.82f, 0.45f), flash);
+                t.Strike.gameObject.SetActive(done);
+                float w = t.Label.preferredWidth;
+                widest = Mathf.Max(widest, w);
+                if (done) ((RectTransform)t.Strike.transform).sizeDelta = new Vector2(w, 2f);
+            }
+            _plate.sizeDelta = new Vector2(Mathf.Max(Width, widest + 48f), -y + 14f);
+            _plate.gameObject.SetActive(_script.Count > 0);
         }
 
         private static bool OutOfTent()

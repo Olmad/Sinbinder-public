@@ -93,8 +93,8 @@ namespace Sinbinder.UI
 
             // Пара форм — через Grammar, как у причин отказа.
             string line = w.Soul != null ? Grammar.Pick(w.Soul.Gender, Line, LineFemale) : Line;
-            if (_text != null) _text.text = Loc.F(line, Loc.Name(w.DisplayName));
-            if (_panel != null) _panel.SetActive(true);
+            // На плашке урока, как во сне (автор, 17.11); панель сцены больше не показывается.
+            Lesson.Hint(this, "!", Loc.F(line, Loc.Name(w.DisplayName)));
             Debug.Log($"[ПОДСКАЗКА] силы: {w.DisplayName} выдохся — строка о силах показана.");
         }
 
@@ -102,6 +102,7 @@ namespace Sinbinder.UI
         {
             _hideAt = -1f;
             if (_panel != null) _panel.SetActive(false);
+            Lesson.Unhint(this);
             enabled = false;
         }
     }

@@ -64,6 +64,7 @@ namespace Sinbinder.UI
         void OnDisable()
         {
             Gameplay.SelectionManager.OnPlayerOrder -= Noticed;
+            Gameplay.Lesson.Unhint(this);
         }
 
         void Start()
@@ -87,7 +88,7 @@ namespace Sinbinder.UI
             bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson()
                        && !(Letterbox.Instance != null && Letterbox.Instance.Covering)
                        && Gameplay.DreamTutorialDirector.Instance == null;
-            if (_showing && _panel != null && _panel.activeSelf != fit) _panel.SetActive(fit);
+            if (_showing) { if (fit) Plate(); else Gameplay.Lesson.Unhint(this); }
             if (!fit) return;
 
             // Пока не пошёл — молчим: первый урок ещё не сдан.
@@ -122,18 +123,23 @@ namespace Sinbinder.UI
 
         private void Show()
         {
-            if (_showing || _panel == null) return;
-
-            // Строка — в миг показа: язык могли сменить в меню после начала сцены.
-            if (_text != null) _text.text = Loc.T(Line);
-            _panel.SetActive(true);
+            if (_showing) return;
             _showing = true;
             Shown = true;
+            Plate();
         }
+
+        /// <summary>
+        /// На плашке урока — клавиша в рамке и слова, как во сне (автор, 17.11: «в лагере и
+        /// в сне обучение и плашки с заданиями отличаются»). Панель сцены больше не показывается.
+        /// Строка — в миг показа: язык могли сменить в меню после начала сцены.
+        /// </summary>
+        private void Plate() => Gameplay.Lesson.Hint(this, Loc.T("ПКМ"), Loc.T(Line));
 
         private void Hide()
         {
             if (_panel != null) _panel.SetActive(false);
+            Gameplay.Lesson.Unhint(this);
             _showing = false;
             enabled = false;
         }

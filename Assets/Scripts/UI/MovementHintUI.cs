@@ -137,24 +137,31 @@ namespace Sinbinder.UI
         /// что Греховод отойдёт от палатки. Вид меняется клавишей, поэтому
         /// строка выбирается в миг показа, а не при старте.
         /// </summary>
-        private string Line()
+        private (string key, string words) Line()
         {
             var view = Object.FindFirstObjectByType<Gameplay.RTS_Camera>();
             bool fromAbove = Gameplay.SinbinderPlayer.Exists && view != null && !view.FirstPersonNow;
-            return Loc.T(fromAbove ? FromAbove : Eyes);
+            return fromAbove ? (Loc.T("ПКМ"), Loc.T(FromAbove)) : ("WASD", Loc.T(Eyes));
         }
 
+        /// <summary>
+        /// На плашке урока — клавиша в рамке и слова, как во сне (автор, 17.11). Панель сцены
+        /// больше не показывается.
+        /// </summary>
         private void Show()
         {
             _showing = true;
-            if (_text != null) _text.text = Line();
-            if (_panel != null) _panel.SetActive(true);
+            var (key, words) = Line();
+            Gameplay.Lesson.Hint(this, key, words);
         }
 
         private void Hide()
         {
             _showing = false;
             if (_panel != null) _panel.SetActive(false);
+            Gameplay.Lesson.Unhint(this);
         }
+
+        void OnDisable() => Gameplay.Lesson.Unhint(this);
     }
 }

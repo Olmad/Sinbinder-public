@@ -412,13 +412,14 @@ namespace Sinbinder.Gameplay
             var bronze = Lit(new Color(0.42f, 0.30f, 0.14f), 0.62f);
             float mid = (SquareFrom + SquareTo) * 0.5f, len = SquareTo - SquareFrom;
 
-            // Мощение: общий настил и отдельные плиты вразнобой, кое-где вздыбленные.
+            // Мощение — один настил. Сорок плит вразнобой поверх него убраны (автор, 17.11: «плиты,
+            // которые просто есть»): они читались вещами, с которыми что-то делают. Жребий
+            // прокручиваем, как раньше, — ограда и колонны стоят там же, где стояли.
             Flat(root, "Мощение площади", new Vector3(0f, 0.02f, mid), new Vector2(SquareHalf * 2f, len), slab);
             for (int i = 0; i < 40; i++)
             {
-                var plate = Piece(root, PrimitiveType.Cube, "Плита", new Vector3(R(-SquareHalf + 1f, SquareHalf - 1f), 0.03f, R(SquareFrom + 1f, SquareTo - 1f)),
-                                  new Vector3(R(1.2f, 2.2f), R(0.05f, 0.14f), R(1.0f, 2.0f)), stones[rnd.Next(stones.Length)], false);
-                plate.transform.rotation = Quaternion.Euler(R(-3f, 3f), R(-8f, 8f), R(-3f, 3f));
+                R(0f, 1f); R(0f, 1f); R(0f, 1f); R(0f, 1f); R(0f, 1f); rnd.Next(stones.Length);
+                R(0f, 1f); R(0f, 1f); R(0f, 1f);
             }
 
             // Ограда: невысокая, с провалами; углы — обломки башенок.
@@ -446,7 +447,6 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cube, "Алтарь — опора", AltarAt + new Vector3(-0.6f, 0.4f, 0f), new Vector3(0.6f, 0.8f, 0.9f), dark);
             Piece(root, PrimitiveType.Cube, "Алтарь — опора", AltarAt + new Vector3(0.6f, 0.4f, 0f), new Vector3(0.6f, 0.8f, 0.9f), dark);
             Piece(root, PrimitiveType.Cube, "Алтарь — плита", AltarAt + Vector3.up * 0.9f, new Vector3(2.2f, 0.2f, 1.1f), dressed);
-            Piece(root, PrimitiveType.Cube, "Алтарь — пластина", AltarAt + Vector3.up * 1.005f, new Vector3(1.4f, 0.01f, 0.6f), bronze, false);
             foreach (float s in new[] { -1f, 1f })
                 AddCandle(root, AltarAt + new Vector3(s * 1.5f, 0f, -0.9f), dark, 2.5f);
 
@@ -463,7 +463,8 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Cylinder, "Кольцо груза", new Vector3(0f, 5.0f, ArchZ.z), new Vector3(0.3f, 0.06f, 0.3f), dark, false)
                 .transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             Piece(root, PrimitiveType.Cylinder, "Чаша противовеса", new Vector3(0f, 0.14f, ArchZ.z), new Vector3(2.4f, 0.14f, 2.4f), dark);
-            Piece(root, PrimitiveType.Cylinder, "Чаша — дно", new Vector3(0f, 0.29f, ArchZ.z), new Vector3(1.8f, 0.02f, 1.8f), Glowing(new Color(0.16f, 0.30f, 0.40f), 0.6f), false);
+            // Дно чаши — камень, а не светящийся круг: светящийся читался кнопкой в полу.
+            Piece(root, PrimitiveType.Cylinder, "Чаша — дно", new Vector3(0f, 0.29f, ArchZ.z), new Vector3(1.8f, 0.02f, 1.8f), slab, false);
 
             // Поваленная колонна справа — у неё ляжет раненый.
             var fallen = Piece(root, PrimitiveType.Cylinder, "Поваленная колонна", FallenColumnAt + Vector3.up * 0.4f, new Vector3(0.8f, 2.2f, 0.8f), dressed);
@@ -472,8 +473,9 @@ namespace Sinbinder.Gameplay
                 .transform.rotation = Quaternion.Euler(8f, 0f, 12f);
 
             // Печати перед воротами: резьба в камне — диск, кольцо и знак, свет едва тлеет.
-            Seal(root, WarriorSealAt, true, dark, dressed);
-            Seal(root, LordSealAt, false, dark, dressed);
+            // Это замок ворот (сцена 10): встал на печать — её знак разгорается (LightSeal).
+            _warriorRune = Seal(root, WarriorSealAt, true, dark, dressed);
+            _lordRune = Seal(root, LordSealAt, false, dark, dressed);
 
             // Четыре холодных фонаря по углам площади.
             var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
@@ -484,8 +486,19 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        /// <summary>Печать в полу: каменный диск, кольцо, знак воина (меч) или владыки (венец).</summary>
-        private static void Seal(Transform parent, Vector3 at, bool warrior, Material dark, Material dressed)
+        private static readonly Color RuneDim = new Color(0.22f, 0.40f, 0.56f) * 0.7f;
+        private static readonly Color RuneLit = new Color(0.62f, 0.90f, 1f) * 1.6f;
+        private Material _warriorRune, _lordRune;
+
+        /// <summary>Знак печати разгорается, пока на ней стоят (DreamTutorialDirector.Seals).</summary>
+        public void LightSeal(bool warrior, bool on)
+        {
+            var rune = warrior ? _warriorRune : _lordRune;
+            if (rune != null) rune.color = on ? RuneLit : RuneDim;
+        }
+
+        /// <summary>Печать в полу: каменный диск, кольцо, знак воина (меч) или владыки (венец). Возвращает знак.</summary>
+        private static Material Seal(Transform parent, Vector3 at, bool warrior, Material dark, Material dressed)
         {
             var root = new GameObject(warrior ? "Печать воина" : "Печать владыки").transform;
             root.SetParent(parent, false);
@@ -504,6 +517,7 @@ namespace Sinbinder.Gameplay
                 foreach (float x in new[] { -0.45f, 0f, 0.45f })
                     Piece(root, PrimitiveType.Cube, "Зубец венца", at + new Vector3(x, 0.085f, 0.1f), new Vector3(0.14f, 0.012f, 0.7f), rune, false);
             }
+            return rune;
         }
 
         private void Tree(Transform parent, Vector3 at, float h, System.Random rnd, Material bark)

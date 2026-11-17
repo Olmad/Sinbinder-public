@@ -6340,6 +6340,10 @@ msgid "Ага…"
 msgstr "Aha…"
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "Дорога ведёт к склепу. Идите к воротам."
+msgstr "The road leads to the crypt. Go to the gate."
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Подойдите к телу и нажмите R — душа вернётся в оболочку."
 msgstr "Walk up to the body and press R — the soul returns to its shell."
 
@@ -6359,7 +6363,7 @@ msgstr "Click {0} to select."
 msgid "Это ваш первый воин."
 msgstr "This is your first warrior."
 
-#: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs
+#: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs UI/CommandHintUI.cs UI/MovementHintUI.cs
 msgid "ПКМ"
 msgstr "RMB"
 
@@ -6466,6 +6470,106 @@ msgstr "No again. {0} still holds her."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "И снова нет — но причина другая. Убийц нет, теперь решает {0}."
 msgstr "No again — but for another reason. The killers are gone; now {0} decides."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ведите Греховода по дороге (ПКМ по земле)"
+msgstr "Lead the Sinbinder down the road (RMB on the ground)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Выслушайте умирающего"
+msgstr "Hear the dying man out"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Заберите его душу (E)"
+msgstr "Take his soul (E)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Верните душу в тело (R)"
+msgstr "Return the soul to the body (R)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отдайте поднятому первый приказ (ЛКМ, затем ПКМ)"
+msgstr "Give the raised one a first order (LMB, then RMB)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Взгляните глазами Греховода (Tab)"
+msgstr "Look through the Sinbinder's eyes (Tab)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Станьте Воином (V)"
+msgstr "Become the Warrior (V)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Достаньте оружие (B)"
+msgstr "Draw your weapon (B)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ударьте чучело и закройтесь от ответа (ЛКМ, ПКМ)"
+msgstr "Strike the dummy and block its answer (LMB, RMB)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Прикажите поднятому отступить (X)"
+msgstr "Order the raised one to fall back (X)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отбейтесь от убийц"
+msgstr "Fight off the killers"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ — без убийц (X)"
+msgstr "The same order — without the killers (X)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Возьмите банку с камня во дворе (E, J, R)"
+msgstr "Take the jar from the stone in the yard (E, J, R)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Откройте ворота склепа (F)"
+msgstr "Open the crypt gate (F)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Идите к воротам склепа"
+msgstr "Go to the crypt gate"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Встаньте на печать с венцом"
+msgstr "Stand on the crowned seal"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Встаньте на печать с венцом, поднятого — на печать с мечом"
+msgstr "Stand on the crowned seal, the raised one — on the sword seal"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Перед воротами две печати: с мечом — для воина, с венцом — для вас. Воина нет — встаньте на свою."
+msgstr "Two seals lie before the gate: the sword for the warrior, the crown for you. There is no warrior — stand on yours."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."
+msgstr "The gate waits for two. Stand on the crowned seal and put him on the sword seal: select him and RMB on the seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ворота ждут двоих. Встаньте на печать с венцом, а её поставьте на печать с мечом: выделите и ПКМ по печати."
+msgstr "The gate waits for two. Stand on the crowned seal and put her on the sword seal: select her and RMB on the seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печать с венцом горит. F — открыть ворота."
+msgstr "The crowned seal is lit. F — open the gate."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печати горят: он встал на свою. F — открыть ворота."
+msgstr "The seals are lit: he stood on his. F — open the gate."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печати горят: она встала на свою. F — открыть ворота."
+msgstr "The seals are lit: she stood on hers. F — open the gate."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Он так и не встал на печать — это его воля. Ворота пустят и одного: F."
+msgstr "He never stepped onto the seal — that is his will. The gate will let you in alone: F."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Она так и не встала на печать — это её воля. Ворота пустят и одного: F."
+msgstr "She never stepped onto the seal — that is her will. The gate will let you in alone: F."
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -10891,10 +10995,6 @@ msgstr "The crypt is yours. The crystal ball by the right wall shows the roads. 
 msgid "Никто не дошёл до склепа.\n\nДуши разойдутся Некроэфиром, и помнить о них будет некому.\n\nДемо окончено."
 msgstr "No one reached the crypt.\n\nThe souls will dissolve into the Necroether, and there will be no one left to remember them.\n\nEnd of the demo."
 
-#: UI/DreamHintPlate.cs
-msgid "Воспоминание"
-msgstr "Memory"
-
 #: UI/ExitMarker.cs
 msgid "Выход"
 msgstr "Exit"
@@ -11936,6 +12036,10 @@ msgid "Дар: {0}."
 msgstr ""
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Воспоминание"
+msgstr "Memory"
 
 #. нет в коде
 msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."

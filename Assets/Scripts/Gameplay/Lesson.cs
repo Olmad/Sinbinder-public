@@ -449,9 +449,49 @@ namespace Sinbinder.Gameplay
         /// <summary>Сцена сменилась под уроком — цель осталась в старой.</summary>
         private void OnScene(Scene scene, LoadSceneMode mode) => End();
 
+        // ──────────────────────────────────
+        // Подсказка без урока
+        // ──────────────────────────────────
+
+        // Автор, 17.11: «в лагере и в сне обучение и плашки с заданиями отличаются». Подсказки
+        // лагеря (как ходить, как приказать, вид, силы) и шаги сна без кольца встают на эту же
+        // плашку — клавиша в рамке и слова, справа по центру. Мир не стоит, кольца нет: это
+        // подсказка, а не урок. Урок, начавшись, плашку забирает; кончился — подсказка вернулась.
+        private object _hintOwner;
+        private string _hintKey, _hintWords;
+
+        /// <summary>Показать подсказку на плашке урока, пока её не снимет тот же <paramref name="owner"/>.</summary>
+        public static void Hint(object owner, string key, string words)
+        {
+            if (_instance == null || owner == null || string.IsNullOrEmpty(words)) return;
+            _instance._hintOwner = owner;
+            _instance._hintKey = key ?? "";
+            _instance._hintWords = words;
+        }
+
+        /// <summary>Снять подсказку — если она ещё того, кто её ставил.</summary>
+        public static void Unhint(object owner)
+        {
+            if (_instance != null && ReferenceEquals(_instance._hintOwner, owner)) _instance._hintOwner = null;
+        }
+
+        /// <summary>Что сейчас на плашке подсказкой — для прогона; пусто, если её нет.</summary>
+        public static string Hinted => _instance != null && _instance._hintOwner != null && _instance._plate != null
+                                       && _instance._plate.activeSelf ? _instance._hintWords : "";
+
+        private void ShowHint()
+        {
+            if (_hintOwner is Object gone && gone == null) _hintOwner = null;
+            bool quiet = _hintOwner == null || Paused || OpeningReveal.Busy || UI.Modal.Any || SoulCourt.Sitting
+                      || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Covering);
+            if (quiet) { if (_plate != null && _plate.activeSelf) _plate.SetActive(false); return; }
+            ShowPlate(true);
+        }
+
         void Update()
         {
             if (_now.HasValue) { Hold(); return; }
+            ShowHint();
 
             // Искать повод раз в пятую долю секунды: поиск душ и воинов
             // каждый кадр ни к чему.
@@ -1122,6 +1162,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private (string key, string words) Words()
         {
+            if (!_now.HasValue && _hintOwner != null) return (_hintKey, _hintWords);
             if (_now == LessonKind.Harvest)
                 return ("E", Loc.T("Подойдите к душе и нажмите E — она ляжет в пустую банку.")
                            + "\n" + Loc.T("Эта душа подождёт. Другие гаснут, пока вы идёте: чем позже, тем меньше от них останется."));

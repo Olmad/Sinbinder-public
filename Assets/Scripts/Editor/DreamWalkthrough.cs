@@ -312,9 +312,32 @@ namespace Sinbinder.EditorTools
                         ShotFrom("сон — алтарь лука", DreamRoad.AltarAt + new Vector3(2.8f, 1.9f, -2.6f), DreamRoad.AltarAt + Vector3.up * 0.9f);
                         ShotFrom("сон — арка противовеса", new Vector3(-3.5f, 2.0f, DreamRoad.ArchZ.z - 9f), new Vector3(0f, 4.0f, DreamRoad.ArchZ.z));
                         ShotFrom("сон — две печати у ворот", new Vector3(0f, 3.2f, DreamRoad.WarriorSealAt.z - 5f), new Vector3(0f, 0.3f, DreamRoad.WarriorSealAt.z));
-                        Warp(dream.Hero, dream.Gate + new Vector3(0f, 0f, -1f));
+                        // Печати — замок ворот (17.11): Греховод — на свою, поднятому — приказ на свою.
+                        Warp(dream.Hero, DreamRoad.LordSealAt);
+                        if (dream.Zombie != null && !dream.Zombie.IsDead)
+                        {
+                            Warp(dream.Zombie, DreamRoad.WarriorSealAt + new Vector3(0f, 0f, -4f));
+                            _sealOrderAt = now + 1.5f;
+                        }
                     }
-                    if (poke && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
+                    if (_sealOrderAt > 0f && now > _sealOrderAt)
+                    {
+                        _sealOrderAt = -1f;
+                        if (dream.Zombie != null && !dream.Zombie.IsDead)
+                        {
+                            dream.Zombie.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
+                            Write("  [ПЕЧАТИ] приказ поднятому: на печать с мечом");
+                        }
+                    }
+                    if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 0.6f;
+                    if (!_sealShot && _sealShotAt > 0f && now > _sealShotAt)
+                    {
+                        _sealShot = true;
+                        Write($"  [ПЕЧАТИ] {DreamTutorialDirector.SealsResult}; задача: {UI.TaskList.Current}; плашка: {Lesson.Hinted}");
+                        ShotFrom("сон — печати горят", new Vector3(3.6f, 5.2f, DreamRoad.WarriorSealAt.z - 6.5f),
+                                 new Vector3(0f, 0.3f, DreamRoad.WarriorSealAt.z + 0.4f));
+                    }
+                    if (poke && _sealShot && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
                     if (!_gateShot && DreamRoad.CryptFade > 0.15f) { _gateShot = true; Snap("сон — створки расходятся"); }
                     if (!_headShot && DreamRoad.CryptFade > 0.3f) { _headShot = true; Snap("сон — силуэт поднимает голову"); }
                     if (!_deathShot && DreamRoad.CryptFade > 0.45f) { _deathShot = true; Snap("сон — силуэт в склепе"); }
@@ -323,7 +346,8 @@ namespace Sinbinder.EditorTools
             }
         }
 
-        private static bool _gateShot, _deathShot, _blackShot, _headShot;
+        private static bool _gateShot, _deathShot, _blackShot, _headShot, _sealShot;
+        private static float _sealOrderAt = -1f, _sealShotAt = -1f;
         private static int _fpStep;
         private static float _fpAt;
 
@@ -497,7 +521,7 @@ namespace Sinbinder.EditorTools
             Snap($"суд {_spokenSeen:00} — {SoulCourt.Step}");
         }
 
-        private static void Warp(SinbinderPlayer hero, Vector3 to)
+        private static void Warp(Component hero, Vector3 to)
         {
             if (hero == null) return;
             var legs = hero.GetComponent<UnityEngine.AI.NavMeshAgent>();

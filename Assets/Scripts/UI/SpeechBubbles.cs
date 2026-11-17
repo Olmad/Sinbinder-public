@@ -177,8 +177,9 @@ namespace Sinbinder.UI
                     continue;
                 }
 
-                var screen = cam.WorldToScreenPoint(Head(b.Who));
-                b.Line.enabled = screen.z > 0f;
+                var head = Head(b.Who);
+                var screen = cam.WorldToScreenPoint(head);
+                b.Line.enabled = screen.z > 0f && !Behind(cam, b.Who, head - Vector3.up * 0.35f);
                 if (b.Line.enabled) b.Line.rectTransform.position = Inside(b.Line, screen);
             }
 
@@ -277,6 +278,31 @@ namespace Sinbinder.UI
                     b.Back.rectTransform.GetWorldCorners(Corners);
                     _taken.Add(Rect.MinMaxRect(Corners[0].x, Corners[0].y, Corners[2].x, Corners[2].y));
                 }
+        }
+
+        private static readonly RaycastHit[] Hits = new RaycastHit[8];
+
+        /// <summary>
+        /// Заслонён ли воин стеной: у ворот склепа реплика и весы поднятого висели на створках,
+        /// а самого его за ними видно не было (кадр сна 17.11). Считается только видимое — то,
+        /// у чего есть включённый рисунок: невидимые заборы карты строку не прячут. Другой
+        /// воин тоже не прячет: строка встанет над ним (Unstack).
+        /// </summary>
+        public static bool Behind(Camera cam, Warrior who, Vector3 point)
+        {
+            if (cam == null || who == null) return false;
+            Vector3 from = cam.transform.position;
+            Vector3 way = point - from;
+            float length = way.magnitude;
+            if (length < 0.5f) return false;
+            int n = Physics.RaycastNonAlloc(from, way / length, Hits, length - 0.2f, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var wall = Hits[i].collider;
+                if (wall == null || wall.GetComponentInParent<Warrior>() != null) continue;
+                if (wall.TryGetComponent<Renderer>(out var look) && look.enabled) return true;
+            }
+            return false;
         }
 
         /// <summary>
