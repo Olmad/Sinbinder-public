@@ -14334,8 +14334,8 @@ msgid "Показывать автоматически в важные моме�
 msgstr "Show automatically at important moments"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Не показывать автоматически (U — Суд вручную)"
-msgstr "Do not show automatically (U: open Court manually)"
+msgid "Не показывать автоматически (U — краткий Суд, Shift+U — полный)"
+msgstr "Do not show automatically (U: brief Court, Shift+U: full Court)"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Позже выбор можно изменить в меню паузы."
