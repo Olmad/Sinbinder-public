@@ -38,6 +38,19 @@ class CourtChoiceShortcutCopyTests(unittest.TestCase):
         self.assertIn("_handBusy = wasHandBusy;", preview)
         self.assertIn("while (_courtChoicePending) yield return null;", preview)
 
+    def test_disabling_cancels_pending_coroutines_before_unlock(self):
+        dream = DREAM.read_text(encoding="utf-8")
+        disable = dream.split("private void OnDisable()", 1)[1].split("private void OnDestroy()", 1)[0]
+        # Negative regression: enabled=false alone does not stop Unity coroutines.
+        # A pending choice must not later launch a brief Court or restore stale input.
+        self.assertIn("StopAllCoroutines();", disable)
+        self.assertLess(disable.index("StopAllCoroutines();"), disable.index("_handBusy = false;"))
+        self.assertIn("_courtRunning = false;", disable)
+        preview = dream.split("private IEnumerator OfferShortCourtPreview", 1)[1].split("private void ChooseAutomaticCourts", 1)[0]
+        self.assertIn("while (_courtChoicePending) yield return null;", preview)
+        self.assertIn("originalVotes: originalVotes", preview)
+        self.assertNotIn("AOS.Decide(", preview)
+
     def test_old_misleading_copy_is_absent(self):
         self.assertNotIn("Не показывать автоматически (U — Суд вручную)",
                          DREAM.read_text(encoding="utf-8"))
