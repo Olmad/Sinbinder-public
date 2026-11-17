@@ -6417,7 +6417,31 @@ msgstr "She fell. Her own decision cost her her second life."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Путник у дороги"
-msgstr ""
+msgstr "Wayfarer"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Глянь… {0}? Я ж тебя на дороге оставил."
+msgstr "Look… {0}? I left you on the road."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "{0}?! {1} {2}"
+msgstr "{0}?! {1} {2}"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ты ж подох."
+msgstr "You were dead."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ты ж подохла."
+msgstr "You were dead."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Сам проверял."
+msgstr "I checked myself."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Сама проверяла."
+msgstr "I checked myself."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
@@ -6428,12 +6452,20 @@ msgid "Тот же приказ — и она идёт. Причины боль�
 msgstr "The same order — and she goes. The reason is gone: the killers are dead."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."
-msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
+msgid "И снова нет. Мир другой — и у души нашлась другая причина."
+msgstr "No again. The world is different now — and the soul found another reason."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведите на неё мышь — узнаете, какая."
-msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
+msgid "И снова нет. Его всё так же держит {0}."
+msgstr "No again. {0} still holds him."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Её всё так же держит {0}."
+msgstr "No again. {0} still holds her."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет — но причина другая. Убийц нет, теперь решает {0}."
+msgstr "No again — but for another reason. The killers are gone; now {0} decides."
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -8311,10 +8343,6 @@ msgstr ""
 msgid "Ты можешь бежать от меня. Но от своей сути не убежишь."
 msgstr ""
 
-#: Gameplay/OpeningReveal.cs Gameplay/SoulCourt.cs
-msgid "Бог Смерти"
-msgstr "God of Death"
-
 #: Gameplay/PrologueCampSpawner.cs
 msgid "телохранитель, не отходит от вас"
 msgstr "bodyguard, never leaves your side"
@@ -9038,6 +9066,10 @@ msgstr "against"
 #: Gameplay/SoulCourt.cs
 msgid "Вердикт"
 msgstr "Verdict"
+
+#: Gameplay/SoulCourt.cs
+msgid "Бог Смерти"
+msgstr "God of Death"
 
 #: Gameplay/SoulCourt.cs
 msgid "Так решает каждый воин в отряде: приказ даёшь ты, а взвешивают его голоса. У другой души — другие голоса и другой суд."
@@ -11135,6 +11167,14 @@ msgstr "Walk up and press E to take the soul into a jar. The longer it fades, th
 msgid "Душа"
 msgstr "Soul"
 
+#: UI/Letterbox.cs
+msgid "ЛКМ — дальше"
+msgstr "LMB — next"
+
+#: UI/Letterbox.cs
+msgid "Esc — пропустить"
+msgstr "Esc — skip"
+
 #: UI/MissionMapUI.cs
 msgid "Куда послать отряд?  Esc — отойти от шара"
 msgstr "Where to send a party?  Esc — step away from the orb"
@@ -11896,6 +11936,14 @@ msgid "Дар: {0}."
 msgstr ""
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."
+msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
+
+#. нет в коде
+msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведите на неё мышь — узнаете, какая."
+msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
 
 #. нет в коде
 msgid "Бог Смерти — вердикт"

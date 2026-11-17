@@ -55,7 +55,7 @@ namespace Sinbinder.Audio
         /// <summary>Сказать строку. Возвращает, сколько она звучит до хвоста.</summary>
         public static float Say(string line)
         {
-            if (_instance == null || string.IsNullOrEmpty(line)) return 0f;
+            if (_instance == null || string.IsNullOrEmpty(line) || UI.Letterbox.Skipping) return 0f;
             var clip = Make(line, out float spoken);
             _instance._voice.Stop();
             _instance._voice.clip = clip;
@@ -81,7 +81,7 @@ namespace Sinbinder.Audio
         /// </summary>
         public static float Utter(string line)
         {
-            if (string.IsNullOrEmpty(line)) return 0f;
+            if (string.IsNullOrEmpty(line) || UI.Letterbox.Skipping) return 0f;   // суд пропускают — Смерть молчит
             if (_instance == null) _instance = new GameObject("DeathVoice").AddComponent<DeathVoice>();
             var me = _instance;
             int ticket = ++me._ticket;

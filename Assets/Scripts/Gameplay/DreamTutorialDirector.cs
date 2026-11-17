@@ -313,9 +313,16 @@ namespace Sinbinder.Gameplay
 
         private string _courtVoice;
 
-        /// <summary>Чей голос решил: взвешено «от противного» — решающий, нет — самый громкий.</summary>
-        private static string Voice(AOS.Decision d)
-            => d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
+        /// <summary>
+        /// Чей голос назвать: тот же, что малые весы над головой (SoulCourt.Loudest) — игрок видит
+        /// его там; без приказа — решающий «от противного», нет — самый громкий.
+        /// </summary>
+        private string Voice(AOS.Decision d, AOS.DecisionContext c)
+        {
+            string seen = SoulCourt.Loudest(_zombie, d, c);
+            if (!string.IsNullOrEmpty(seen)) return seen;
+            return d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
+        }
 
         private void TrackOrder(CommandKind kind, int count)
         {
@@ -682,7 +689,7 @@ namespace Sinbinder.Gameplay
                         && mind.LastContext != null && mind.LastContext != _mindBefore)
                     {
                         _contrastRunning = true;
-                        StartCoroutine(Contrast(mind.LastDecisionDetail));
+                        StartCoroutine(Contrast(mind.LastDecisionDetail, mind.LastContext));
                     }
                     else if (!_retestOrdered && !Lesson.Holding && Time.unscaledTime - _retestPrompted > 40f)
                         Set(Stage.Jars, JarsLine);
@@ -925,7 +932,17 @@ namespace Sinbinder.Gameplay
                     AOS.MemoryProcessor.Instance.CreateMemory(_zombie, "MurderedMe", enemy.Id,
                         AOS.EmotionType.Anger, 1f);
             }
-            if (_killers.Count > 0 && _zombie != null) StartCoroutine(Recognized(_killers[0], _zombie));
+            if (_killers.Count > 0 && _zombie != null)
+            {
+                // В кадре — и он, и они: вид сверху встаёт посередине (над Греховодом убийцы
+                // стояли у верхнего края кадра, 17.11).
+                var centre = Vector3.zero;
+                foreach (var k in _killers) centre += k.transform.position;
+                centre /= _killers.Count;
+                var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (eye != null) eye.Overlook(Vector3.Lerp(_zombie.transform.position, centre, 0.5f));
+                StartCoroutine(Recognized(_killers[0], _zombie));
+            }
             if (_killers.Count == 0)
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
@@ -961,7 +978,7 @@ namespace Sinbinder.Gameplay
         private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался" : "послушался";
-            _courtVoice = Voice(d);
+            _courtVoice = Voice(d, c);
             Mark($"T3 решение при убийцах: {RefusalResult} ({d.Action}, голос {_courtVoice})");
             int murders = 0;
             if (c != null && c.RecentMemories != null)
@@ -1009,11 +1026,11 @@ namespace Sinbinder.Gameplay
         /// Тот же приказ без убийц на глазах. Послушался — значит, отказ держался
         /// на причине, а не на сцене: это и есть довод, что сценария нет.
         /// </summary>
-        private IEnumerator Contrast(AOS.Decision d)
+        private IEnumerator Contrast(AOS.Decision d, AOS.DecisionContext c)
         {
             bool obeyed = !d.RefusedCommand && !d.Hesitated;
             RetestResult = obeyed ? "послушался" : "снова нет";
-            string voice = Voice(d);
+            string voice = Voice(d, c);
             Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
             Mark($"T6 тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
 

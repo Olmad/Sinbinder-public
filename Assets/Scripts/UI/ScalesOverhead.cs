@@ -30,6 +30,7 @@ namespace Sinbinder.UI
             public Warrior Who;
             public Collider Body;
             public Text Label;
+            public RectTransform Plate;     // тёмная подложка под подписью
             public bool Preview;            // весы до приказа: живут, пока игрок наводит
             public CommandKind Kind;
             public float Touched, NextLook;
@@ -48,6 +49,23 @@ namespace Sinbinder.UI
         private static readonly Color Faint = new Color(0.70f, 0.65f, 0.55f);
 
         private static ScalesOverhead _instance;
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        /// <summary>
+        /// Где на экране стоят видимые весы — реплики над головой их обходят
+        /// (<see cref="SpeechBubbles"/>): «Помню, чем это кончилось» и весы над тем же
+        /// поднятым ложились друг на друга (кадр сна 17.11).
+        /// </summary>
+        public static void Taken(List<UnityEngine.Rect> into)
+        {
+            if (_instance == null) return;
+            foreach (var m in _instance._marks)
+            {
+                if (m.Root == null || m.Group == null || m.Group.alpha < 0.05f) continue;
+                m.Root.GetWorldCorners(Corners);
+                into.Add(UnityEngine.Rect.MinMaxRect(Corners[0].x, Corners[0].y, Corners[2].x, Corners[2].y));
+            }
+        }
         private static readonly Dictionary<Warrior, float> NextFor = new();
         private static Sprite _disc, _bowl;
         // Коромысло ходит на ту же долю наклона, что в зале (SoulCourt: 22° из 70°).
@@ -222,6 +240,9 @@ namespace Sinbinder.UI
             var panFor = Pan("Чаша за", root, SoulCourt.ForOrderTone, out var bowlFor);
             var panAgainst = Pan("Чаша против", root, SoulCourt.AgainstTone, out var bowlAgainst);
 
+            // Подложка под подписью: над головой она ложилась на полоску здоровья и красную
+            // метку поднятого и читалась кашей «против: Память» (кадр сна 17.11).
+            var plate = Img("Подложка голоса", root, new Vector2(0f, 14f), new Vector2(Size * 2f, 26f), new Color(0.06f, 0.06f, 0.09f, 0.78f), null);
             var textRect = Rect("Голос", root, new Vector2(0f, 0f), new Vector2(Size * 3f, 30f));
             textRect.pivot = new Vector2(0.5f, 0f);
             var text = textRect.gameObject.AddComponent<Text>();
@@ -240,7 +261,7 @@ namespace Sinbinder.UI
             {
                 Who = w, Body = w.GetComponentInChildren<Collider>(), Root = root, Group = group,
                 Beam = beam, BeamAt = beamAt, PanFor = panFor, PanAgainst = panAgainst, BowlFor = bowlFor, BowlAgainst = bowlAgainst, Soul = soul,
-                Label = text, Preview = preview, Born = Time.unscaledTime, Touched = Time.unscaledTime, Aim = lean,
+                Label = text, Plate = plate, Preview = preview, Born = Time.unscaledTime, Touched = Time.unscaledTime, Aim = lean,
             };
             _marks.Add(mark);
             return mark;
@@ -310,6 +331,12 @@ namespace Sinbinder.UI
                                        Mathf.Min(mid.y - (34f + Size * 0.5f) / h, ceiling));
                 }
                 float w = Mathf.Max(Size + 12f, m.Label.preferredWidth + 10f) / wide;
+                if (m.Plate != null)
+                {
+                    bool said = !string.IsNullOrEmpty(m.Label.text);
+                    m.Plate.gameObject.SetActive(said);
+                    if (said) m.Plate.sizeDelta = new Vector2(m.Label.preferredWidth + 16f, 26f);
+                }
                 _shown.Add((m, new Vector2(Mathf.Clamp(spot.x, half, 1f - half), Mathf.Max(spot.y, 0.2f)), w));
             }
             Unstack();

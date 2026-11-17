@@ -1125,6 +1125,13 @@ namespace Sinbinder.Dialogue
             Vector3 startPos = cam.transform.position;
             Quaternion startRot = cam.transform.rotation;
 
+            // Сцену пропускают (Esc, Letterbox.SkipAll) — сразу на место, без перелёта.
+            if (UI.Letterbox.Skipping)
+            {
+                cam.transform.SetPositionAndRotation(targetPos, targetRot);
+                yield break;
+            }
+
             // Перебивка через стену — сразу на проверенный план. Плавный перелёт
             // разрешён лишь там, где помещается ближняя плоскость камеры.
             if ((speaker != null || avoidObstacles) && !ClearFrame(startPos, targetPos, speaker, listener))

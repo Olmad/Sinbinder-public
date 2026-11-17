@@ -456,6 +456,13 @@ namespace Sinbinder.Gameplay
         /// <paramref name="c"/>. Зовёт тот, кто ведёт миг (сон), — и ждёт конца:
         /// мир стоит, пока суд идёт.
         /// </summary>
+        /// <summary>Пауза суда; сцену пропускают (Esc, Letterbox.SkipAll) — без паузы.</summary>
+        private static IEnumerator Beat(float seconds)
+        {
+            float end = Time.realtimeSinceStartup + seconds;
+            while (!UI.Letterbox.Skipping && Time.realtimeSinceStartup < end) yield return null;
+        }
+
         public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c, CommandKind? given = null, bool? brief = null)
         {
             if (w == null || c == null || Sitting || !Preferences.Court) yield break;
@@ -559,7 +566,7 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSecondsRealtime(0.35f);
             Toll(hall.transform, 0.62f, 0.5f);
             yield return fader.To(0f, 1.6f);
-            yield return new WaitForSecondsRealtime(RiseHold + 0.5f - 0.35f - 1.6f);
+            yield return Beat(RiseHold + 0.5f - 0.35f - 1.6f);
             Step = "hall";
 
             string court = Loc.T("Суд души");
@@ -734,7 +741,7 @@ namespace Sinbinder.Gameplay
             int cut = d.Hesitated ? -1 : sentence.IndexOf(". ", System.StringComparison.Ordinal);
             if (!d.Hesitated)
             {
-                yield return new WaitForSecondsRealtime(0.6f);
+                yield return Beat(0.6f);
                 yield return Death(box, Loc.T("Бог Смерти"), cut > 0 ? sentence.Substring(0, cut + 1) : sentence);
             }
             if (d.Hesitated || cut > 0)
@@ -898,6 +905,24 @@ namespace Sinbinder.Gameplay
         /// Малые весы над головой (<see cref="UI.ScalesOverhead"/>): куда встанет стрелка —
         /// тем же счётом, что в зале, — и кто громче всех на стороне решения.
         /// </summary>
+        /// <summary>
+        /// Чей голос малые весы назовут над головой (<see cref="Lean"/>) — ключ модуля. Сон называет
+        /// его же: весы писали «против: Похоть», а строка — «теперь решает Жадность» (кадры 17.11).
+        /// </summary>
+        public static string Loudest(Warrior w, Decision d, DecisionContext c)
+        {
+            if (w == null || c == null || !c.HasCommand) return null;
+            bool against = d.RefusedCommand || d.Hesitated;
+            float loud = 0f;
+            string top = null;
+            foreach (var kv in Sums(w, d, c))
+            {
+                bool winning = against ? kv.Value > 0f : kv.Value < 0f;
+                if (winning && Mathf.Abs(kv.Value) > loud) { loud = Mathf.Abs(kv.Value); top = kv.Key; }
+            }
+            return top;
+        }
+
         public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
         {
             lean = 0f; voice = null; colour = Color.white;

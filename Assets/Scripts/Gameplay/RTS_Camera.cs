@@ -563,6 +563,42 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Вид сверху плавно переходит так, чтобы точка земли встала в середину кадра. Сон зовёт
+        /// в миг с убийцами (17.11): над Греховодом убийцы стояли у самого верхнего края кадра.
+        /// Глазами — ничего: туда камеру ведёт голова.
+        /// </summary>
+        public void Overlook(Vector3 ground)
+        {
+            if (FirstPersonNow) return;
+            ground.y = 0f;
+            if (_overlook != null) StopCoroutine(_overlook);
+            _overlook = StartCoroutine(Glide(ground, 0.8f));
+        }
+
+        private Coroutine _overlook;
+
+        /// <summary>
+        /// Переезд сам, а не через <see cref="Tactical"/>: тот стоит, пока кран не кончился или окно
+        /// без фокуса (прогон 17.11: точка сменилась, а кадр остался над Греховодом).
+        /// </summary>
+        private IEnumerator Glide(Vector3 ground, float seconds)
+        {
+            while (_craning) yield return null;
+            if (FirstPersonNow) { _overlook = null; yield break; }
+            Vector3 from = transform.position;
+            Vector3 to = Fence(Over(ground));
+            _targetPosition = to;
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                if (FirstPersonNow || _craning || _targetPosition != to) { _overlook = null; yield break; }
+                transform.position = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / seconds));
+                yield return null;
+            }
+            if (_targetPosition == to) transform.position = to;
+            _overlook = null;
+        }
+
+        /// <summary>
         /// Где встать, чтобы точка на земле была в середине кадра: на высоте
         /// и назад от неё на высоту, делённую на тангенс наклона. Отвесно
         /// сдвиг был бы нулём, под 70° — восемь метров.

@@ -37,6 +37,7 @@ namespace Sinbinder.EditorTools
         private static int _diveShots;
         private static float _riseAt = -1f;
         private static bool _riseShot;
+        private static float _skipAt = -1f;
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static bool _risenShot;
         private static string NL => Environment.NewLine;
@@ -273,7 +274,14 @@ namespace Sinbinder.EditorTools
                     }
                     var box = UI.Letterbox.Instance;
                     if (!_retestShot && box != null && box.Shown && box.Typed && now - _stepAt > 1.5f)
-                    { _retestShot = true; Snap("сон — тот же приказ без убийц"); }
+                    {
+                        _retestShot = true;
+                        Snap("сон — тот же приказ без убийц");
+                        // Кнопка «пропустить» (17.11): Esc на этой строке — сцена должна уйти сразу.
+                        _skipAt = now;
+                        box.SkipAll();
+                        Write("  [ПРОПУСК] Esc на строке повтора");
+                    }
                     break;
                 case "FirstPerson":
                 case "WarriorMode":
@@ -284,6 +292,12 @@ namespace Sinbinder.EditorTools
                     {
                         Go("управление");
                         Write($"  тот же приказ без убийц: {DreamTutorialDirector.RetestResult ?? "не проверялся"}");
+                        if (_skipAt > 0f)
+                        {
+                            Write($"  [ПРОПУСК] сцена ушла за {now - _skipAt:F2} с; полосы {(UI.Letterbox.Instance != null && UI.Letterbox.Instance.Covering ? "ещё на экране" : "ушли")}");
+                            if (now - _skipAt > 2f) Write("  [ПРОПУСК] ДОЛГО: пропуск не сработал");
+                            _skipAt = -1f;
+                        }
                     }
                     if (EyesShots(dream, now)) dream.TestSkipControls();
                     break;

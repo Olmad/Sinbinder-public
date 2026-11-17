@@ -200,7 +200,7 @@ namespace Sinbinder.UI
                     int hurry = Letterbox.Nexts;
                     foreach (char c in full)
                     {
-                        if (Letterbox.Nexts != hurry)
+                        if (Letterbox.Nexts != hurry || Letterbox.Skipping)
                         {
                             if (_dialogueText != null) _dialogueText.text = full;
                             break;

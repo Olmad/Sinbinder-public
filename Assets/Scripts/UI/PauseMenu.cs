@@ -47,6 +47,9 @@ namespace Sinbinder.UI
 
             if (_open) { Close(); return; }
 
+            // Под полосами Esc — «пропустить сцену» (Letterbox.SkipAll, 17.11); меню — на следующий Esc.
+            if (Letterbox.CanSkip) return;
+
             // Пауза открывается только на свободный Esc. Игра уже
             // на паузе — значит Esc принадлежит тому, кто её поставил.
             var pause = GamePauseController.Instance;

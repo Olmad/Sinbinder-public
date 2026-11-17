@@ -252,6 +252,7 @@ namespace Sinbinder.UI
         /// </summary>
         private void Plates()
         {
+            ScalesOverhead.Taken(_taken);   // весы над головой — тоже плашка: строка встаёт над ними
             if (_stack == null)
             {
                 var found = GameObject.Find("Над выделенным");

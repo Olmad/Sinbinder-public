@@ -94,25 +94,47 @@ namespace Sinbinder.UI
         /// </summary>
         public static int Clicks { get; private set; }
 
+        /// <summary>
+        /// Сцена пропускается целиком (автор, 17.11: «кнопку для проматывания и кнопку для полного
+        /// пропуска диалога»): до конца этой сцены — пока полосы не опустятся — каждая реплика
+        /// встаёт целиком и не держится (<see cref="Hold"/>), голоса молчат. Вопрос под полосами
+        /// (ответы, плата) ждёт ответа и при пропуске: решать за игрока пропуск не вправе.
+        /// </summary>
+        public static bool Skipping { get; private set; }
+
+        /// <summary>Можно ли сейчас пропустить: полосы подняты и это не разговор с выбором ответа.</summary>
+        public static bool CanSkip => Instance != null && Instance._shown && !TalkView.Shown;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { Nexts = 0; Clicks = 0; }
+        private static void Rearm() { Nexts = 0; Clicks = 0; Skipping = false; }
 
         /// <summary>
         /// Держать реплику: столько-то секунд настоящего времени (под наездом
         /// игра стоит) — или пока игрок не щёлкнет «дальше». Щелчок по
         /// печатающейся строке только допечатывает её, и срок идёт дальше:
-        /// прочесть её всё равно надо.
+        /// прочесть её всё равно надо. Сцену пропускают — не держать.
         /// </summary>
         public static IEnumerator Hold(float seconds)
         {
             int next = Nexts;
             float end = Time.realtimeSinceStartup + seconds;
-            while (Time.realtimeSinceStartup < end && Nexts == next) yield return null;
+            while (!Skipping && Time.realtimeSinceStartup < end && Nexts == next) yield return null;
         }
 
         void Update()
         {
-            if (!_shown || !Input.GetMouseButtonDown(0) || OverButton()) return;
+            if (!_shown) return;
+            if (Input.GetKeyDown(KeyCode.Escape)) { SkipAll(); return; }
+            if (Input.GetKeyDown(KeyCode.Space) || (Input.GetMouseButtonDown(0) && !OverButton())) Next();
+        }
+
+        /// <summary>
+        /// «Дальше»: печатается — допечатать; напечатано — следующая реплика. ЛКМ, пробел
+        /// или кнопка в углу полосы.
+        /// </summary>
+        public void Next()
+        {
+            if (!_shown) return;
 
             // Разговор вблизи ждёт ответа, а не срока: щелчок мимо ответов
             // только допечатывает реплику.
@@ -131,6 +153,86 @@ namespace Sinbinder.UI
             if (TalkView.Shown) return;
             Clicks++;
             Nexts++;
+        }
+
+        /// <summary>Пропустить сцену целиком: Esc или кнопка в углу полосы.</summary>
+        public void SkipAll()
+        {
+            if (!CanSkip) return;
+            Skipping = true;
+            if (_typing != null)
+            {
+                StopCoroutine(_typing);
+                _typing = null;
+                if (_line != null) _line.text = _full ?? "";
+            }
+            Clicks++;
+            Nexts++;
+            Audio.DeathVoice.Quiet();   // звучащая строка Смерти гаснет; голоса судей молкнут по Clicks
+            Debug.Log("[ПОЛОСЫ] сцена пропущена");
+        }
+
+        // Кнопки в правом углу верхней полосы: она пуста — реплика и имя внизу.
+        private CanvasGroup _controls;
+
+        private void BuildControls()
+        {
+            if (_top == null || _line == null) return;
+            var root = new GameObject("Дальше и пропустить", typeof(RectTransform), typeof(CanvasGroup), typeof(HorizontalLayoutGroup));
+            var rt = (RectTransform)root.transform;
+            rt.SetParent(_top, false);
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 0.5f);
+            rt.sizeDelta = new Vector2(520f, 0f);
+            rt.anchoredPosition = new Vector2(-32f, 0f);
+            var row = root.GetComponent<HorizontalLayoutGroup>();
+            row.childAlignment = TextAnchor.MiddleRight;
+            row.spacing = 34f;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = true;
+            _controls = root.GetComponent<CanvasGroup>();
+            _controls.alpha = 0f;
+            _controls.blocksRaycasts = false;
+            Control(rt, Core.Loc.T("ЛКМ — дальше"), Next);
+            Control(rt, Core.Loc.T("Esc — пропустить"), SkipAll);
+        }
+
+        private void Control(RectTransform row, string words, UnityEngine.Events.UnityAction act)
+        {
+            var go = new GameObject(words, typeof(RectTransform), typeof(Text), typeof(Button));
+            go.transform.SetParent(row, false);
+            var text = go.GetComponent<Text>();
+            text.font = _line.font;
+            text.fontSize = Mathf.Max(12, Mathf.RoundToInt(_line.fontSize * 0.6f));
+            text.color = new Color(0.86f, 0.80f, 0.68f, 1f);
+            text.alignment = TextAnchor.MiddleRight;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.text = words;
+            var button = go.GetComponent<Button>();
+            button.targetGraphic = text;
+            var tint = button.colors;
+            tint.normalColor = new Color(1f, 1f, 1f, 0.55f);
+            tint.highlightedColor = Color.white;
+            tint.pressedColor = new Color(1f, 0.9f, 0.7f, 1f);
+            tint.selectedColor = tint.normalColor;
+            tint.fadeDuration = 0.08f;
+            button.colors = tint;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            button.onClick.AddListener(act);
+        }
+
+        /// <summary>Кнопки видны, когда полосы встали: на выезде им негде поместиться.</summary>
+        private void ShowControls()
+        {
+            if (_controls == null) return;
+            float up = _height > 0f ? Current() / _height : 0f;
+            float a = _shown && !TalkView.Shown ? Mathf.Clamp01((up - 0.7f) / 0.3f) : 0f;
+            _controls.alpha = a;
+            _controls.blocksRaycasts = a > 0.5f;
         }
 
         private static readonly System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult> _hits = new();
@@ -161,6 +263,8 @@ namespace Sinbinder.UI
             Block(_top);
             Block(_bottom);
 
+            Skipping = false;
+            BuildControls();
             Set(0f);
             Clear();
         }
@@ -180,6 +284,7 @@ namespace Sinbinder.UI
         void LateUpdate()
         {
             if (!_shown) return;
+            ShowControls();
             foreach (var d in _dimmed)
                 if (d.Group != null) d.Group.alpha = 0f;
         }
@@ -214,6 +319,7 @@ namespace Sinbinder.UI
         {
             if (!_shown) return;
             _shown = false;
+            Skipping = false;   // пропуск — до конца этой сцены, не следующей
 
             // Интерфейс возвращается, когда полосы ушли (Slide), а не в первый
             // же кадр: иначе он встаёт поверх кино, которое ещё на экране.
@@ -310,7 +416,7 @@ namespace Sinbinder.UI
             // По букве, как в Undertale (автор, 21 октября: «сейчас это
             // выглядит очень тупо» — строка падала на полосу целиком).
             // Пустое, разметка или выключенный объект — сразу целиком.
-            if (string.IsNullOrEmpty(line) || line.IndexOf('<') >= 0 || !isActiveAndEnabled)
+            if (string.IsNullOrEmpty(line) || line.IndexOf('<') >= 0 || !isActiveAndEnabled || Skipping)
             {
                 _line.text = line ?? "";
                 return;
@@ -471,6 +577,7 @@ namespace Sinbinder.UI
 
             if (_top != null) _top.sizeDelta = new Vector2(_top.sizeDelta.x, height);
             if (_bottom != null) _bottom.sizeDelta = new Vector2(_bottom.sizeDelta.x, height);
+            ShowControls();
         }
 
         private float Height()

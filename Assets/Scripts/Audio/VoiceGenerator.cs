@@ -156,7 +156,7 @@ namespace Sinbinder.Audio
         public void Babble(string words, float seconds, float loud = 1f)
         {
             if (string.IsNullOrEmpty(words) || seconds <= 0f || !isActiveAndEnabled
-                || Dialogue.CampLines.Mute(_warrior)) return;
+                || Dialogue.CampLines.Mute(_warrior) || UI.Letterbox.Skipping) return;   // сцену пропускают — молчать
             _loud = Mathf.Clamp01(loud);
             if (_babble != null) StopCoroutine(_babble);
             _babble = StartCoroutine(BabbleRoutine(words, seconds));
