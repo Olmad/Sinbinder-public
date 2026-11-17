@@ -63,10 +63,11 @@ internal static class Program
         string selectionSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SelectionManager.cs");
         string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
         string pauseMenuSource = System.IO.File.ReadAllText("Assets/Scripts/UI/PauseMenu.cs");
-        Check(dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false, force: true);") &&
-              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c);") &&
+        Check(dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false,") &&
+              dreamTrace.Contains("originalVotes: originalVotes, force: true);") &&
+              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c, originalVotes);") &&
               dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,") &&
-              dreamTrace.Contains("brief: true, force: true);"),
+              dreamTrace.Contains("brief: true, originalVotes: originalVotes, force: true);"),
             "tutorial performs full then real brief preview on the SAME AOS decision");
         Check(dreamTrace.Contains("!Core.Preferences.CourtChoiceMade") &&
               dreamTrace.Contains("if (!Application.isBatchMode)") &&
