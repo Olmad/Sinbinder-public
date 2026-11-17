@@ -453,9 +453,12 @@ namespace Sinbinder.Gameplay
         public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c,
             CommandKind? given = null, bool? brief = null,
             IReadOnlyList<Vote> originalVotes = null,
-            bool compelledByWhisper = false)
+            bool compelledByWhisper = false,
+            bool force = false)
         {
-            if (w == null || c == null || Sitting || !Preferences.Court) yield break;
+            // Player choice controls only AUTOMATIC court calls. The first
+            // instructional trial and intentional U / Shift+U review still work.
+            if (w == null || c == null || Sitting || (!Preferences.Court && !force)) yield break;
 
             // Сон, открытый из лагеря (меню паузы): Managers лагеря переживает
             // смену сцен, а Managers сна гибнет как двойник — и Instance мог
