@@ -297,12 +297,6 @@ namespace Sinbinder.Gameplay
                 else Debug.Log("[СУД] " + message);
             }
 
-            if (!Core.Preferences.Court)
-            {
-                Notice(Core.Loc.T("Суд души выключен в настройках."));
-                return;
-            }
-
             Warrior chosen = null;
             foreach(var unit in _selectedUnits)
             {
@@ -358,7 +352,8 @@ namespace Sinbinder.Gameplay
             StartCoroutine(SoulCourt.Convene(chosen, mind.NaturalDecisionDetail,
                 mind.LastContext, mind.LastDecisionOrderKind, brief: !showFullCourt,
                 originalVotes: mind.LastDecisionBallot,
-                compelledByWhisper: mind.LastWhisperCompelled));
+                compelledByWhisper: mind.LastWhisperCompelled,
+                force: true));
         }
 
         // ---------- голос Греховода ----------
