@@ -167,8 +167,9 @@ namespace Sinbinder.UI
                 Draw();
             });
 
-            // Суд Души: по делу или никогда (автор, 06.11; пояснять не нужно).
-            Add(ref y, Loc.T("Показывать Суд Души"), Core.Preferences.CourtName(), () =>
+            // Only automatic important-moment courts. U / Shift+U manual
+            // replay and the first instructional court remain available.
+            Add(ref y, Loc.T("Автоматический Суд души"), Core.Preferences.CourtName(), () =>
             {
                 Core.Preferences.ToggleCourt();
                 Draw();
