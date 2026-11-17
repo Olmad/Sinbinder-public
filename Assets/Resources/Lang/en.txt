@@ -6532,16 +6532,12 @@ msgid "Идите к воротам склепа"
 msgstr "Go to the crypt gate"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Встаньте на печать с венцом"
-msgstr "Stand on the crowned seal"
+msgid "Поднимите павшего стража (E)"
+msgstr "Raise a fallen guard (E)"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Встаньте на печать с венцом, поднятого — на печать с мечом"
 msgstr "Stand on the crowned seal, the raised one — on the sword seal"
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Перед воротами две печати: с мечом — для воина, с венцом — для вас. Воина нет — встаньте на свою."
-msgstr "Two seals lie before the gate: the sword for the warrior, the crown for you. There is no warrior — stand on yours."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."
@@ -6552,8 +6548,28 @@ msgid "Ворота ждут двоих. Встаньте на печать с �
 msgstr "The gate waits for two. Stand on the crowned seal and put her on the sword seal: select her and RMB on the seal."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Печать с венцом горит. F — открыть ворота."
-msgstr "The crowned seal is lit. F — open the gate."
+msgid "Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
+msgstr "He won't step onto the seal — that is his will, no need to persuade him. Fallen guards lie by the seals: go to one and press E — raise another."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
+msgstr "She won't step onto the seal — that is her will, no need to persuade her. Fallen guards lie by the seals: go to one and press E — raise another."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его."
+msgstr "The gate waits for two: the sword seal is for a warrior. Yours is gone, but fallen guards lie by the seals. Go to one and press E — raise him."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E."
+msgstr "Still no warrior on the sword seal. Put one there with an order — or raise a fallen guard: go to him and press E."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Страж поднят. Выделите его и ПКМ по печати с мечом."
+msgstr "The guard is raised. Select him and RMB on the sword seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Стража поднята. Выделите её и ПКМ по печати с мечом."
+msgstr "The guard is raised. Select her and RMB on the sword seal."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Печати горят: он встал на свою. F — открыть ворота."
@@ -6562,14 +6578,6 @@ msgstr "The seals are lit: he stood on his. F — open the gate."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Печати горят: она встала на свою. F — открыть ворота."
 msgstr "The seals are lit: she stood on hers. F — open the gate."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Он так и не встал на печать — это его воля. Ворота пустят и одного: F."
-msgstr "He never stepped onto the seal — that is his will. The gate will let you in alone: F."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Она так и не встала на печать — это её воля. Ворота пустят и одного: F."
-msgstr "She never stepped onto the seal — that is her will. The gate will let you in alone: F."
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -12036,6 +12044,26 @@ msgid "Дар: {0}."
 msgstr ""
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Встаньте на печать с венцом"
+msgstr "Stand on the crowned seal"
+
+#. нет в коде
+msgid "Перед воротами две печати: с мечом — для воина, с венцом — для вас. Воина нет — встаньте на свою."
+msgstr "Two seals lie before the gate: the sword for the warrior, the crown for you. There is no warrior — stand on yours."
+
+#. нет в коде
+msgid "Печать с венцом горит. F — открыть ворота."
+msgstr "The crowned seal is lit. F — open the gate."
+
+#. нет в коде
+msgid "Он так и не встал на печать — это его воля. Ворота пустят и одного: F."
+msgstr "He never stepped onto the seal — that is his will. The gate will let you in alone: F."
+
+#. нет в коде
+msgid "Она так и не встала на печать — это её воля. Ворота пустят и одного: F."
+msgstr "She never stepped onto the seal — that is her will. The gate will let you in alone: F."
 
 #. нет в коде
 msgid "Воспоминание"

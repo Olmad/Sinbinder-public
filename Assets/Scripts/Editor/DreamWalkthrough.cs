@@ -319,14 +319,61 @@ namespace Sinbinder.EditorTools
                             Warp(dream.Zombie, DreamRoad.WarriorSealAt + new Vector3(0f, 0f, -4f));
                             _sealOrderAt = now + 1.5f;
                         }
+                        else _raiseAt = now + 1.5f;
                     }
                     if (_sealOrderAt > 0f && now > _sealOrderAt)
                     {
                         _sealOrderAt = -1f;
                         if (dream.Zombie != null && !dream.Zombie.IsDead)
                         {
+                            // Отказ — нарочно: ум поднятого выключен, приказ записан, а исполнять некому.
+                            // Послушание у печати видно в прогонах 17.11 («встал поднятый у дороги»);
+                            // здесь проверяется другое — отказ, подсказка и подъём стража.
+                            var mind = dream.Zombie.GetComponent<Sinbinder.AOS.AutoAttackAOS>();
+                            if (mind != null) mind.enabled = false;
                             dream.Zombie.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
-                            Write("  [ПЕЧАТИ] приказ поднятому: на печать с мечом");
+                            Write("  [ПЕЧАТИ] приказ поднятому: на печать с мечом (ум выключен — проверка отказа)");
+                            _sealCheckAt = now + 12f;
+                        }
+                    }
+                    // Не встал — половины нет (17.11): ворота ждут, поднимаем павшего стража (E у тела).
+                    if (_sealCheckAt > 0f && now > _sealCheckAt)
+                    {
+                        _sealCheckAt = -1f;
+                        if (!dream.SealsOpen)
+                        {
+                            Write($"  [ПЕЧАТИ] поднятый не встал за 12 с; задача: {UI.TaskList.Current}; плашка: {Lesson.Hinted}");
+                            _raiseAt = now;
+                        }
+                    }
+                    if (_raiseAt > 0f && now > _raiseAt && !dream.SealsOpen)
+                    {
+                        _raiseAt = -1f;
+                        if (dream.Fallen.Count == 0) Debug.LogError("[ПЕЧАТИ] у печатей нет павших стражей — поднимать некого");
+                        else
+                        {
+                            var body = dream.Fallen[dream.Fallen.Count - 1];
+                            Warp(dream.Hero, body.transform.position + new Vector3(0f, 0f, -1.4f));
+                            ShotFrom("сон — павший страж у печатей", body.transform.position + new Vector3(3.2f, 3.4f, -4.2f), body.transform.position);
+                            _raisePressAt = now + 0.6f;
+                        }
+                    }
+                    if (_raisePressAt > 0f && now > _raisePressAt)
+                    {
+                        _raisePressAt = -1f;
+                        dream.TestPress(KeyCode.E);
+                        _raiseOrderAt = now + 1.2f;
+                    }
+                    if (_raiseOrderAt > 0f && now > _raiseOrderAt)
+                    {
+                        _raiseOrderAt = -1f;
+                        var risen = dream.LastRaised;
+                        if (risen == null) Debug.LogError("[ПЕЧАТИ] E у павшего стража — никто не поднялся");
+                        else
+                        {
+                            Write($"  [ПЕЧАТИ] поднят страж {risen.DisplayName}; плашка: {Lesson.Hinted}");
+                            Warp(dream.Hero, DreamRoad.LordSealAt);
+                            risen.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
                         }
                     }
                     if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 0.6f;
@@ -347,7 +394,7 @@ namespace Sinbinder.EditorTools
         }
 
         private static bool _gateShot, _deathShot, _blackShot, _headShot, _sealShot;
-        private static float _sealOrderAt = -1f, _sealShotAt = -1f;
+        private static float _sealOrderAt = -1f, _sealShotAt = -1f, _sealCheckAt = -1f, _raiseAt = -1f, _raisePressAt = -1f, _raiseOrderAt = -1f;
         private static int _fpStep;
         private static float _fpAt;
 

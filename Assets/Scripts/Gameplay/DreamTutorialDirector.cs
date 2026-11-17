@@ -1190,9 +1190,8 @@ namespace Sinbinder.Gameplay
                 case Stage.Return:
                     if (_sealsOpen) return Loc.T("Откройте ворота склепа (F)");
                     if (!_sealsAsked) return Loc.T("Идите к воротам склепа");
-                    return _zombie == null || _zombie.IsDead
-                        ? Loc.T("Встаньте на печать с венцом")
-                        : Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
+                    if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0) return Loc.T("Поднимите павшего стража (E)");
+                    return Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
                 default: return null;
             }
         }
@@ -1215,26 +1214,47 @@ namespace Sinbinder.Gameplay
                 case Stage.Return:
                     if (_sealsOpen) return "F";
                     if (!_sealsAsked) return null;
-                    return _zombie == null || _zombie.IsDead ? null : Loc.T("ПКМ");
+                    if (NearFallen(_hero.transform.position) != null) return "E";
+                    if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0) return "E";
+                    return Loc.T("ПКМ");
                 default: return null;
             }
         }
 
-        // ── Две печати у ворот (план 66, сцена 10; автор, 17.11: «плиты, которые просто есть») ──
-        // Ворота ждут двоих: Греховод — на печать с венцом, поднятый по приказу — на печать с мечом.
-        // Не встал — его воля: через полминуты ворота пустят и одного. Поднятого нет — одного сразу.
-        private bool _sealsOpen, _sealsAsked, _escortedToSeals;
-        private float _sealWaitFrom = -1f;
-        private const float SealPatience = 30f;
+        // ── Две печати у ворот (план 66, сцена 10) ──
+        // Ворота ждут двоих: Греховод — на печать с венцом, воин — на печать с мечом. Половины нет
+        // (автор, 17.11: «загадка, которую можно решить наполовину и пройти дальше? серьёзно?») —
+        // до того через 30 с ворота пускали и одного. Не встал поднятый — его воля, уговаривать не
+        // нужно: у печатей лежат павшие стражи, поднимите другого (автор: «поднимать других воинов —
+        // какой-нибудь не откажется»). Души у стражей свои: один какой выпадет, у второго приказ
+        // «встань на печать» ничего в душе не задевает — кто-нибудь да встанет.
+        private bool _sealsOpen, _sealsAsked, _escortedToSeals, _raiseOffered, _fallenSpawned;
+        private float _sealsAskedAt = -1f, _sealOrderAt = -1f, _sealOrderIssued = -1f;
+        private const float SealPatience = 45f, SealRefusal = 10f;
+        private readonly List<Warrior> _fallen = new();
+        private readonly List<Warrior> _raised = new();
+
+        /// <summary>Павшие стражи у печатей, ещё не поднятые — для прогона.</summary>
+        public IReadOnlyList<Warrior> Fallen => _fallen;
+        /// <summary>Последний поднятый у печатей — для прогона.</summary>
+        public Warrior LastRaised => _raised.Count > 0 ? _raised[_raised.Count - 1] : null;
+
+        private static readonly Vector3[] FallenAt = { new Vector3(-5.2f, 0f, 50.2f), new Vector3(5.4f, 0f, 49.0f) };
 
         private static bool OnSeal(Vector3 at, Vector3 seal) => GroundDistance(at, seal) < 1.25f;
+
+        private bool AnyRaisedAlive()
+        {
+            foreach (var r in _raised) if (r != null && !r.IsDead) return true;
+            return false;
+        }
 
         private void Seals()
         {
             if (_sealsOpen) return;
+            if (!_fallenSpawned) { _fallenSpawned = true; SpawnFallen(); }
             var me = _hero.transform.position;
             bool alone = _zombie == null || _zombie.IsDead;
-            var g = alone ? Gender.Male : _zombie.Gender;
 
             // От банок поднятый идёт за Греховодом; на площади — отпускаем: дальше его решение.
             if (!alone && !_escortedToSeals && me.z < DreamRoad.SquareFrom) { _escortedToSeals = true; StartEscort(); }
@@ -1244,44 +1264,148 @@ namespace Sinbinder.Gameplay
             if (!_sealsAsked)
             {
                 _sealsAsked = true;
-                _line = alone
-                    ? Loc.N("Перед воротами две печати: с мечом — для воина, с венцом — для вас. Воина нет — встаньте на свою.")
-                    : Grammar.Pick(g,
+                _sealsAskedAt = Time.unscaledTime;
+                Mark("печати");
+                if (alone) OfferRaise();
+                else
+                {
+                    _line = Grammar.Pick(_zombie.Gender,
                         Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."),
                         Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а её поставьте на печать с мечом: выделите и ПКМ по печати."));
-                Log(_line);
-                Mark("печати");
+                    Log(_line);
+                }
             }
 
-            bool mine = OnSeal(me, DreamRoad.LordSealAt);
-            bool his = !alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt);
-            DreamRoad.Instance?.LightSeal(false, mine);
-            DreamRoad.Instance?.LightSeal(true, his);
-            if (!mine) { _sealWaitFrom = -1f; return; }
-            if (_sealWaitFrom < 0f) _sealWaitFrom = Time.unscaledTime;
+            // Поднять павшего можно в любой миг на площади: E у тела.
+            var near = NearFallen(me);
+            if (near != null && Pressed(KeyCode.E)) RaiseFallen(near);
 
-            if (alone)
-                OpenSeals("поднятого нет — один", Loc.N("Печать с венцом горит. F — открыть ворота."));
-            else if (his)
-                OpenSeals("оба на печатях — приказ исполнен",
-                    Grammar.Pick(g, Loc.N("Печати горят: он встал на свою. F — открыть ворота."),
-                                    Loc.N("Печати горят: она встала на свою. F — открыть ворота.")));
-            else if (Time.unscaledTime - _sealWaitFrom > SealPatience)
-                OpenSeals("один — поднятый не встал на печать",
-                    Grammar.Pick(g, Loc.N("Он так и не встал на печать — это его воля. Ворота пустят и одного: F."),
-                                    Loc.N("Она так и не встала на печать — это её воля. Ворота пустят и одного: F.")));
+            // Кто на печати с мечом: поднятый у дороги или любой поднятый страж.
+            Warrior onSeal = null;
+            if (!alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt)) onSeal = _zombie;
+            foreach (var r in _raised)
+                if (onSeal == null && r != null && !r.IsDead && OnSeal(r.transform.position, DreamRoad.WarriorSealAt)) onSeal = r;
+            bool mine = OnSeal(me, DreamRoad.LordSealAt);
+            DreamRoad.Instance?.LightSeal(false, mine);
+            DreamRoad.Instance?.LightSeal(true, onSeal != null);
+
+            if (mine && onSeal != null) { OpenSeals(onSeal); return; }
+            if (onSeal != null) return;
+
+            // Приказ «на печать» отдан, а воин за десять секунд на неё не встал — отказ: его воля.
+            Warrior ordered = null;
+            if (!alone && OrderedToSeal(_zombie)) ordered = _zombie;
+            foreach (var r in _raised) if (OrderedToSeal(r)) ordered = r;
+            if (ordered != null && ordered.Command.IssuedAt > _sealOrderIssued)
+            {
+                _sealOrderIssued = ordered.Command.IssuedAt;
+                _sealOrderAt = Time.unscaledTime;
+            }
+            bool refused = _sealOrderAt > 0f && Time.unscaledTime - _sealOrderAt > SealRefusal;
+            if (refused) { _sealOrderAt = -1f; OfferRaise(ordered); }
+            else if (!_raiseOffered && Time.unscaledTime - _sealsAskedAt > SealPatience) OfferRaise();
         }
 
-        private void OpenSeals(string result, string line)
+        private static bool OrderedToSeal(Warrior w)
+            => w != null && !w.IsDead && w.HasCommand && GroundDistance(w.Command.Point, DreamRoad.WarriorSealAt) < 2.5f;
+
+        /// <summary>Подсказка поднять другого: поднятый отказал, пал или игрок долго ищет.</summary>
+        private void OfferRaise(Warrior refused = null)
+        {
+            _raiseOffered = true;
+            if (_fallen.Count == 0) return;   // поднимать больше некого — значит, стоит кто-то другой
+            bool dead = _zombie == null || _zombie.IsDead;
+            if (refused != null)
+                _line = Grammar.Pick(refused.Gender,
+                    Loc.N("Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."),
+                    Loc.N("Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."));
+            else if (dead)
+                _line = Loc.N("Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его.");
+            else
+                _line = Loc.N("Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E.");
+            Log(_line);
+            Mark(refused != null ? "печати: " + refused.DisplayName + " не встал — поднять другого" : "печати: подсказка поднять стража");
+        }
+
+        /// <summary>
+        /// Павшие стражи склепа — лежат на площади у печатей. Живые тела с душой внутри, как
+        /// раненый у дороги до смерти: ум спит, поза падения. E у тела — душа встаёт в нём.
+        /// </summary>
+        private void SpawnFallen()
+        {
+            var names = new List<string>();
+            foreach (var k in _killerSketches) names.Add(k.Name);
+            if (_zombie != null) names.Add(_zombie.DisplayName);
+            for (int i = 0; i < FallenAt.Length; i++)
+            {
+                var sketch = WarriorGenerator.Make(_tutorialSeed + 101 + i, SoulOrigin.Harvest, names);
+                names.Add(sketch.Name);
+                // Второй — тот, кого приказ «встань на печать» ничем не задевает: тихая зависть без
+                // соперника, благочестив. Первый — какой выпал: может и отказать.
+                var soul = i == 1
+                    ? new SoulData(sketch.Name, SinType.Envy, MoralType.Pious, 1, 15f)
+                    : new SoulData(sketch.Name, sketch.Sin, sketch.Moral, 1, Mathf.Max(30f, Mathf.Abs(sketch.Strength)));
+                soul.SetTrade(sketch.Trade);
+                var body = CreateLiving(soul, FallenAt[i], Team.Neutral);
+                if (body == null) continue;
+                foreach (var talk in body.GetComponents<Dialogue.DialogueTrigger>()) talk.enabled = false;
+                _fallen.Add(body);
+                StartCoroutine(LieDown(body));
+            }
+        }
+
+        private static IEnumerator LieDown(Warrior body)
+        {
+            yield return null;
+            if (body == null) yield break;
+            Hold(body, true);
+            var pose = body.GetComponent<WarriorAnimation>();
+            if (pose != null) pose.Pose(BodyMotion.Die);
+        }
+
+        private Warrior NearFallen(Vector3 at)
+        {
+            Warrior best = null;
+            float bestD = 2.4f;
+            foreach (var f in _fallen)
+            {
+                if (f == null || !f.gameObject.activeSelf) continue;
+                float d = GroundDistance(at, f.transform.position);
+                if (d < bestD) { bestD = d; best = f; }
+            }
+            return best;
+        }
+
+        private void RaiseFallen(Warrior body)
+        {
+            var at = body.transform.position;
+            var face = Flat(_hero.transform.position - at);
+            var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            var risen = Raising.Rise(body.Soul, ShellType.Zombie, at + face * 1.1f, Quaternion.LookRotation(face), relations, corpse: body);
+            if (risen == null) { Log("Не удалось поднять тело."); return; }
+            body.gameObject.SetActive(false);
+            _fallen.Remove(body);
+            _raised.Add(risen);
+            Mark("печати: поднят страж " + risen.DisplayName);
+            Debug.Log("[СОН] Поднят страж у печатей: " + risen.DisplayName);
+            _line = Grammar.Pick(risen.Gender,
+                Loc.N("Страж поднят. Выделите его и ПКМ по печати с мечом."),
+                Loc.N("Стража поднята. Выделите её и ПКМ по печати с мечом."));
+            Log(_line);
+        }
+
+        private void OpenSeals(Warrior who)
         {
             _sealsOpen = true;
-            SealsResult = result;
-            Mark("печати открыты: " + result);
-            Debug.Log("[СОН] Печати: " + result);
-            _line = line;
-            Log(line);
+            SealsResult = who == _zombie ? "встал поднятый у дороги — " + who.DisplayName : "встал поднятый страж — " + who.DisplayName;
+            Mark("печати открыты: " + SealsResult);
+            Debug.Log("[СОН] Печати: " + SealsResult);
+            _line = Grammar.Pick(who.Gender,
+                Loc.N("Печати горят: он встал на свою. F — открыть ворота."),
+                Loc.N("Печати горят: она встала на свою. F — открыть ворота."));
+            Log(_line);
             DreamRoad.Instance?.LightSeal(false, true);
-            DreamRoad.Instance?.LightSeal(true, _zombie != null && !_zombie.IsDead && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt));
+            DreamRoad.Instance?.LightSeal(true, true);
         }
     }
 }
