@@ -1570,7 +1570,7 @@ namespace Sinbinder.Gameplay
                 ChooseAutomaticCourts(true);
             if (GUI.Button(new Rect(x + margin, buttonY + buttonHeight + 6f,
                                     width - 2f * margin, buttonHeight),
-                Loc.T("Не показывать автоматически (U — Суд вручную)"), _courtChoiceButtonStyle))
+                Loc.T("Не показывать автоматически (U — краткий Суд, Shift+U — полный)"), _courtChoiceButtonStyle))
                 ChooseAutomaticCourts(false);
             GUI.Label(new Rect(x + margin, y + height - 24f, width - 2f * margin, 20f),
                 Loc.T("Позже выбор можно изменить в меню паузы."), _courtChoiceBodyStyle);
