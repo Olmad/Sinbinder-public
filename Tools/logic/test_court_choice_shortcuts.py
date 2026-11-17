@@ -1,0 +1,37 @@
+"""Guard the actual Court onboarding copy and its manual shortcut contract.
+
+Run from repository root: python -m unittest Tools.logic.test_court_choice_shortcuts
+This is a source-linked regression guard, not a Unity UI test.
+"""
+from pathlib import Path
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+DREAM = ROOT / "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
+EN = ROOT / "Assets/Resources/Lang/en.txt"
+SELECTION = ROOT / "Assets/Scripts/Gameplay/SelectionManager.cs"
+RU = "Не показывать автоматически (U — краткий Суд, Shift+U — полный)"
+ENGLISH = "Do not show automatically (U: brief Court, Shift+U: full Court)"
+
+
+class CourtChoiceShortcutCopyTests(unittest.TestCase):
+    def test_choice_and_translation_match_real_shortcuts(self):
+        dream = DREAM.read_text(encoding="utf-8")
+        english = EN.read_text(encoding="utf-8")
+        selection = SELECTION.read_text(encoding="utf-8")
+        self.assertIn('Loc.T("' + RU + '")', dream)
+        self.assertIn('msgid "' + RU + '"\nmsgstr "' + ENGLISH + '"', english)
+        self.assertIn("bool showFullCourt = Input.GetKey(KeyCode.LeftShift)", selection)
+        self.assertIn("Input.GetKey(KeyCode.RightShift)", selection)
+        self.assertIn("brief: !showFullCourt", selection)
+        self.assertIn("force: true", selection)
+
+    def test_old_misleading_copy_is_absent(self):
+        self.assertNotIn("Не показывать автоматически (U — Суд вручную)",
+                         DREAM.read_text(encoding="utf-8"))
+        self.assertNotIn('msgstr "Do not show automatically (U: open Court manually)"',
+                         EN.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()
