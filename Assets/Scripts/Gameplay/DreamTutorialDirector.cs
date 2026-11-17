@@ -395,8 +395,11 @@ namespace Sinbinder.Gameplay
             SelectionManager.OnPlayerOrder -= TrackOrder;
             _courtChoicePending = false;
             ReleaseCourtChoicePause();
-            // Unity stops this component's coroutines on disable: the choice coroutine
-            // cannot restore its saved input lock after an interrupted modal.
+            // Disabling a MonoBehaviour does NOT stop its coroutines in Unity.
+            // Cancel the pending Court choice and its parent tutorial flow so
+            // neither can resume the preview or restore a stale input lock.
+            StopAllCoroutines();
+            _courtRunning = false;
             _handBusy = false;
         }
         private void OnDestroy()
