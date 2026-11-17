@@ -623,7 +623,9 @@ namespace Sinbinder.Gameplay
                     if (mind.LastContext != null && mind.LastContext != _mindBefore)
                     {
                         _courtRunning = true;
-                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext));
+                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext,
+                            mind.LastDecisionBallot != null
+                                ? new List<AOS.Vote>(mind.LastDecisionBallot) : null));
                     }
                     else if (Time.unscaledTime - _decideSince > 6f)
                     {
@@ -1423,7 +1425,8 @@ namespace Sinbinder.Gameplay
         private static bool ActuallyObeyed(AOS.Decision d)
             => d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated;
 
-        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
+        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c,
+            IReadOnlyList<AOS.Vote> originalVotes)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
                 : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
@@ -1447,13 +1450,14 @@ namespace Sinbinder.Gameplay
                 // automatic courts were disabled in an earlier save. A replay
                 // cannot change the AOS vote or grant rewards.
                 int heldBefore = SoulCourt.Held;
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false, force: true);
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false,
+                    originalVotes: originalVotes, force: true);
                 TraceFirstFive("court_coroutine_finished");
                 // One-time interactive onboarding: ask at the start of a
                 // SHORT preview of the SAME verdict, not on another AOS tick.
                 if (SoulCourt.Held > heldBefore && !SoulCourt.Brief &&
                     !Core.Preferences.CourtChoiceMade && _zombie != null && !_zombie.IsDead)
-                    yield return OfferShortCourtPreview(d, c);
+                    yield return OfferShortCourtPreview(d, c, originalVotes);
             }
             else
                 TraceFirstFive("court_skipped_warrior_dead");
@@ -1477,7 +1481,8 @@ namespace Sinbinder.Gameplay
         // The prompt is intentionally attached to the REAL short Soul Court,
         // not to an imitation scene. Explicit choice controls future automatic
         // CourtCaller only. The short preview plays even after opting out.
-        private IEnumerator OfferShortCourtPreview(AOS.Decision d, AOS.DecisionContext c)
+        private IEnumerator OfferShortCourtPreview(AOS.Decision d, AOS.DecisionContext c,
+            IReadOnlyList<AOS.Vote> originalVotes)
         {
             TraceFirstFive("short_court_choice_opened");
             if (!Application.isBatchMode)
@@ -1505,7 +1510,7 @@ namespace Sinbinder.Gameplay
             if (_zombie == null || _zombie.IsDead) yield break;
             TraceFirstFive("short_court_preview_requested");
             yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,
-                brief: true, force: true);
+                brief: true, originalVotes: originalVotes, force: true);
             TraceFirstFive("short_court_preview_finished");
         }
 
