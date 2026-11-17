@@ -14316,3 +14316,27 @@ msgstr "A warrior declined that wager."
 #. нет в коде
 msgid "В вашем кошеле не хватает монет."
 msgstr "Not enough coins in your purse."
+
+#: UI/PauseMenu.cs
+msgid "Автоматический Суд души"
+msgstr "Automatic Soul Court"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Суд души: показывать дальше?"
+msgstr "Soul Court: show future trials?"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Вы увидели полный Суд. Сейчас — короткая версия того же решения, без нового голосования. Выберите, когда показывать такие Суды дальше."
+msgstr "You have seen the full Court. Next is a shorter version of the same decision, without another vote. Choose when to show future Courts."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Показывать автоматически в важные моменты"
+msgstr "Show automatically at important moments"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Не показывать автоматически (U — Суд вручную)"
+msgstr "Do not show automatically (U: open Court manually)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Позже выбор можно изменить в меню паузы."
+msgstr "You can change this choice later in the pause menu."
