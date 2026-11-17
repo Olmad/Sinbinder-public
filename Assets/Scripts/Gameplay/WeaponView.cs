@@ -31,8 +31,9 @@ namespace Sinbinder.Gameplay
 
         // Позы — в осях камеры: x вправо, y вверх, z вперёд. dir — куда смотрит остриё.
         // Покой — в правой трети кадра, кулак над нижней панелью (кадр w0811f: посох шёл
-        // через середину, кулак прятался под панелью выделенного).
-        private static readonly Vector3 IdleAt = new Vector3(0.30f, -0.19f, 0.50f), IdleDir = new Vector3(-0.10f, 0.93f, 0.35f);
+        // через середину, кулак прятался под панелью выделенного). С кистью Греховода (16.11)
+        // кулак при y −0,19 стоял на 17 % высоты кадра — под панелью: −0,12 — на 29 %.
+        private static readonly Vector3 IdleAt = new Vector3(0.30f, -0.12f, 0.50f), IdleDir = new Vector3(-0.10f, 0.93f, 0.35f);
         private static readonly Vector3 BlockAt = new Vector3(0.10f, -0.10f, 0.48f), BlockDir = new Vector3(-0.97f, 0.18f, 0.18f);
         private static readonly Vector3 WindAt = new Vector3(0.36f, -0.06f, 0.40f), WindDir = new Vector3(0.35f, 0.85f, -0.20f);
         // Конец удара — выше нижней панели: при y −0,24 взмах уходил под неё, и на кадре удара

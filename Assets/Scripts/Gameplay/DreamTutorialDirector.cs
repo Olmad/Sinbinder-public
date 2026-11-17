@@ -117,6 +117,7 @@ namespace Sinbinder.Gameplay
         }
 
         private Stage _stage;
+        private bool _ready;   // Start поставил сон на дорогу — до того Update молчит
         private SinbinderPlayer _hero;
         private Warrior _wounded, _zombie;
         private readonly List<Warrior> _killers = new List<Warrior>();
@@ -266,6 +267,8 @@ namespace Sinbinder.Gameplay
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            _t0 = Time.realtimeSinceStartup;
+            _timeline.Clear();
             // Душа — новая в каждой новой игре (автор, 05.11: «одна и та же душа
             // может выглядеть скриптово»; «разные души повышают заметность AOS
             // при переигровке»). Без жребия: по счёту снов на этом ПК.
@@ -293,9 +296,16 @@ namespace Sinbinder.Gameplay
         private void OnDestroy()
         {
             if (Instance != this) return;
+            if (_stage != Stage.Finished) SaveTimeline();
             Instance = null;
             AOS.Counterfactual.Enabled = _counterfactualWas;
         }
+
+        private string _courtVoice;
+
+        /// <summary>Чей голос решил: взвешено «от противного» — решающий, нет — самый громкий.</summary>
+        private static string Voice(AOS.Decision d)
+            => d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
 
         private void TrackOrder(CommandKind kind, int count)
         {
@@ -324,6 +334,8 @@ namespace Sinbinder.Gameplay
             var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             // Сначала — над ним: Start камеры мог пройти раньше, чем он появился.
             if (eye != null) { eye.SetView(RTS_Camera.CameraView.Tactical); Camera.main.fieldOfView = 32f; eye.Resync(); }
+            Mark("T0 сон начался");
+            if (eye != null) StartCoroutine(Opening(eye));
             _hand = gameObject.AddComponent<DreamHandCursor>();
             _hand.enabled = false;
 
@@ -359,6 +371,42 @@ namespace Sinbinder.Gameplay
             var voice = _wounded.GetComponent<Sinbinder.Audio.VoiceGenerator>();
             if (voice != null) { voice.Depth = 1.12f; voice.Tempo = 1.7f; }
             Set(Stage.Approach, "Укажи Греховоду путь правой кнопкой мыши.");
+            _ready = true;
+        }
+
+        /// <summary>
+        /// Первый кадр сна — не чёрное поле сверху с точкой-Греховодом (автор, 16.11: «Греховода
+        /// в начале обучения не видно»). Камера стоит за его плечом: впереди дорога со свечами
+        /// и далёкий склеп — куда идти, видно с первой секунды; потом за три секунды поднимается
+        /// в вид сверху, над ним. Любая клавиша или щелчок — сразу сверху.
+        /// </summary>
+        private IEnumerator Opening(RTS_Camera eye)
+        {
+            var cam = Camera.main;
+            if (cam == null || _hero == null) { Mark("T1 управление у игрока"); yield break; }
+            _handBusy = true;
+            var topPos = cam.transform.position;
+            var topRot = cam.transform.rotation;
+            float topFov = cam.fieldOfView;
+            eye.enabled = false;
+            var h = _hero.transform.position;
+            var from = h + new Vector3(0.8f, 1.8f, -3.4f);
+            var fromRot = Quaternion.LookRotation(new Vector3(0f, 3.5f, DreamRoad.GateZ) - from);
+            const float hold = 1.8f, rise = 2.8f;
+            for (float t = 0f; t < hold + rise; t += Mathf.Min(Time.unscaledDeltaTime, 1f / 30f))
+            {
+                if ((t > 0.4f && Input.anyKeyDown) || _stage != Stage.Approach) break;
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - hold) / rise));
+                cam.transform.SetPositionAndRotation(Vector3.Lerp(from, topPos, k), Quaternion.Slerp(fromRot, topRot, k));
+                cam.fieldOfView = Mathf.Lerp(48f, topFov, k);
+                yield return null;
+            }
+            cam.transform.SetPositionAndRotation(topPos, topRot);
+            cam.fieldOfView = topFov;
+            eye.enabled = true;
+            eye.Resync();
+            _handBusy = false;
+            Mark("T1 управление у игрока");
         }
 
         private Warrior CreateLiving(SoulData soul, Vector3 at, Team team)
@@ -377,10 +425,41 @@ namespace Sinbinder.Gameplay
 
         private void Set(Stage stage, string line)
         {
+            if (stage != _stage) Mark(stage.ToString());
             _stage = stage;
             _line = line;
             _nextPrompt = Time.unscaledTime + 15f;
             Log(line);
+        }
+
+        // Хронометраж сна (FIRST-FIVE-MINUTES, P0.1): метки по настоящим часам от начала сцены —
+        // когда игрок получил управление, отдал приказ, увидел решение, суд, повтор. В журнал
+        // Unity и в файл dream-timeline.txt рядом с сохранениями: по нему меряем первые пять минут.
+        private float _t0 = -1f;
+        private static readonly List<string> _timeline = new List<string>();
+
+        /// <summary>Метки последнего сна — для отчёта прогона (DreamWalkthrough).</summary>
+        public static IReadOnlyList<string> Timeline => _timeline;
+
+        private void Mark(string what)
+        {
+            if (_t0 < 0f) _t0 = Time.realtimeSinceStartup;
+            float t = Time.realtimeSinceStartup - _t0;
+            string line = $"{(int)(t / 60f)}:{(int)(t % 60f):00} {what}";
+            _timeline.Add(line);
+            Debug.Log("[СОН T] " + line);
+        }
+
+        private void SaveTimeline()
+        {
+            if (_timeline.Count == 0) return;
+            try
+            {
+                var lines = new List<string> { $"Сон №{_dreamNo}, {System.DateTime.Now:dd.MM.yyyy HH:mm}" };
+                lines.AddRange(_timeline);
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(Application.persistentDataPath, "dream-timeline.txt"), lines);
+            }
+            catch (System.Exception e) { Debug.LogWarning("[СОН T] хронометраж не записан: " + e.Message); }
         }
 
         private void Log(string message)
@@ -419,7 +498,7 @@ namespace Sinbinder.Gameplay
 
         private void Update()
         {
-            if (_hero == null || _stage == Stage.Finished) return;
+            if (!_ready || _hero == null || _stage == Stage.Finished) return;
             if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
                 Log(_line);
@@ -457,7 +536,10 @@ namespace Sinbinder.Gameplay
                     // Первый приказ — любой. Он его исполнит: послушание — фон,
                     // на котором отказ потом читается характером, а не поломкой.
                     if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame) || OrderedSinceMark()))
+                    {
                         _orderedAt = Time.unscaledTime;
+                        Mark("T2 первый приказ");
+                    }
                     if ((_orderedAt >= 0f && Time.unscaledTime - _orderedAt > 3.5f)
                         || Time.unscaledTime - _commandSince > (Lesson.Holding ? 60f : 20f))
                         BeginStandoff();
@@ -485,6 +567,7 @@ namespace Sinbinder.Gameplay
                     if (_killers.Count > 0 && OrderedSinceMark())
                     {
                         _courtOrder = _zombie.Command.Kind;
+                        Mark("приказ при убийцах: " + _courtOrder);
                         var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
                         _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
@@ -735,7 +818,39 @@ namespace Sinbinder.Gameplay
             _commandSince = Time.unscaledTime;
             _commandSinceGame = Time.time;
             MarkCommand();
+            StartCoroutine(FirstWords(_zombie));
             Set(Stage.Command, "Выдели его и отдай приказ ПКМ по земле — он пойдёт.");
+        }
+
+        /// <summary>
+        /// Первые слова поднятого — его грехом (план «Первые пять минут»: характер — с первой
+        /// секунды, а не после суда). Не реплика сценария: грех у души сна каждый раз свой,
+        /// и слова — его; рассказчика нет.
+        /// </summary>
+        private IEnumerator FirstWords(Warrior w)
+        {
+            yield return new WaitForSecondsRealtime(1.4f);
+            if (w == null || w.IsDead || w.Soul == null) yield break;
+            string line = FirstWordsOf(w.Soul, w.Gender);
+            UI.SpeechBubbles.Say(w, line, 3.6f);
+            Log(w.DisplayName + ": «" + line + "»");
+            Mark("первые слова поднятого");
+        }
+
+        private static string FirstWordsOf(SoulData soul, Gender g)
+        {
+            bool sin = soul.Get(soul.Sin) >= 0f;
+            switch (soul.Sin)
+            {
+                case SinType.Greed:    return sin ? Loc.T("Кошель… где мой кошель?") : Loc.T("Жив… значит, ещё есть что отдать.");
+                case SinType.Pride:    return sin ? Loc.T("Кто посмел меня поднять?") : Loc.T("Спасибо… владыка.");
+                case SinType.Wrath:    return sin ? Loc.T("Где они? Я их найду.") : Loc.T("Не надо мести. Не надо…");
+                case SinType.Envy:     return sin ? Loc.T("Им — жить, а мне — вот так?") : Grammar.Pick(g, Loc.T("Хоть кому-то я ещё нужен."), Loc.T("Хоть кому-то я ещё нужна."));
+                case SinType.Lust:     return sin ? Loc.T("Холодно… не бросайте меня.") : Loc.T("Тихо… как тихо.");
+                case SinType.Gluttony: return sin ? Loc.T("Есть… как же хочется есть.") : Loc.T("Глотка воздуха хватит.");
+                case SinType.Sloth:    return sin ? Loc.T("Дайте ещё полежать…") : Loc.T("Что делать, владыка?");
+                default:               return Grammar.Pick(g, Loc.T("Я… живой?"), Loc.T("Я… живая?"));
+            }
         }
 
         /// <summary>
@@ -779,6 +894,7 @@ namespace Sinbinder.Gameplay
                     AOS.MemoryProcessor.Instance.CreateMemory(_zombie, "MurderedMe", enemy.Id,
                         AOS.EmotionType.Anger, 1f);
             }
+            if (_killers.Count > 0 && _zombie != null) StartCoroutine(Recognized(_killers[0], _zombie));
             if (_killers.Count == 0)
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
@@ -788,12 +904,34 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
+        /// Знакомый голос среди убийц (FIRST-FIVE-MINUTES-10-DRAMAS, 01; из черновика 16.11 оставлена
+        /// только строка узнавания): убийца узнаёт того, кого оставил на дороге, по имени. Одна
+        /// строка — и это уже не «враги», а те самые. Какая из двух — по номеру сна.
+        /// </summary>
+        private IEnumerator Recognized(Warrior killer, Warrior victim)
+        {
+            yield return new WaitForSecondsRealtime(0.9f);
+            if (killer == null || victim == null || victim.IsDead) yield break;
+            var g = victim.Gender;
+            string line = _dreamNo % 2 == 1
+                ? Loc.F("Глянь… {0}? Я ж тебя на дороге оставил.", victim.DisplayName)
+                : Loc.F("{0}?! {1} {2}", victim.DisplayName,
+                        Grammar.Pick(g, Loc.T("Ты ж подох."), Loc.T("Ты ж подохла.")),
+                        Grammar.Pick(killer.Gender, Loc.T("Сам проверял."), Loc.T("Сама проверяла.")));
+            UI.SpeechBubbles.Say(killer, line, 4f);
+            Log(killer.DisplayName + ": «" + line + "»");
+            Mark("убийца узнал его");
+        }
+
+        /// <summary>
         /// Суд над решением — каким бы оно ни было. Отказ, колебание, послушание —
         /// суд показывает, чьи голоса это решили.
         /// </summary>
         private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался" : "послушался";
+            _courtVoice = Voice(d);
+            Mark($"T3 решение при убийцах: {RefusalResult} ({d.Action}, голос {_courtVoice})");
             int murders = 0;
             if (c != null && c.RecentMemories != null)
                 foreach (var m in c.RecentMemories) if (m != null && m.EventType == "MurderedMe") murders++;
@@ -805,9 +943,13 @@ namespace Sinbinder.Gameplay
             // Во сне — при любом решении: суд разбирает любое (в лагере — только отказ).
             if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
             yield return new WaitForSecondsRealtime(1.8f);
+            // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
             if (_zombie != null && !_zombie.IsDead)
-                // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
+            {
+                Mark("T8 суд начался");
                 yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false);
+                Mark("T8 суд кончился");
+            }
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
@@ -840,14 +982,24 @@ namespace Sinbinder.Gameplay
         {
             bool obeyed = !d.RefusedCommand && !d.Hesitated;
             RetestResult = obeyed ? "послушался" : "снова нет";
-            Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action})");
+            string voice = Voice(d);
+            Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
+            Mark($"T6 тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
 
+            // Причина — названа голосом, который решил (до 16.11 — «наведите мышь — узнаете»):
+            // тот же голос — держит прежнее; другой — мир другой, и решает другое.
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            string named = _zombie != null && !string.IsNullOrEmpty(voice)
+                ? UI.SelectedUnitPanelUI.VoiceName(voice, _zombie.Soul) : null;
             string line = obeyed
                 ? Grammar.Pick(g, Loc.T("Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."),
                                   Loc.T("Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."))
-                : Grammar.Pick(g, Loc.T("И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."),
-                                  Loc.T("И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведите на неё мышь — узнаете, какая."));
+                : string.IsNullOrEmpty(named)
+                    ? Loc.T("И снова нет. Мир другой — и у души нашлась другая причина.")
+                    : voice == _courtVoice
+                        ? Grammar.Pick(g, Loc.F("И снова нет. Его всё так же держит {0}.", named),
+                                          Loc.F("И снова нет. Её всё так же держит {0}.", named))
+                        : Loc.F("И снова нет — но причина другая. Убийц нет, теперь решает {0}.", named);
 
             var camera = Dialogue.DialogueCameraController.Instance;
             if (camera != null && _zombie != null && UI.Letterbox.Instance != null)
@@ -903,6 +1055,7 @@ namespace Sinbinder.Gameplay
             var walk = _hero.GetComponent<PlayerWalk>();
             if (walk != null) walk.enabled = false;
             Debug.Log("[СОН] Ворота склепа открываются.");
+            Mark("ворота склепа");
             if (DreamRoad.Instance != null) yield return DreamRoad.Instance.OpenCrypt(_hero);
             Finish();
         }
@@ -914,6 +1067,8 @@ namespace Sinbinder.Gameplay
                 Log("Сцена лагеря отсутствует в Build Settings: " + _campScene);
                 return;
             }
+            Mark("сон кончился");
+            SaveTimeline();
             _stage = Stage.Finished;
             // Душа с камня — сна, а не лагеря: руки статичны и пережили бы смену сцены.
             Sinbinder.Crypt.CryptHands.Forget();

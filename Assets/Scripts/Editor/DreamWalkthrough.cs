@@ -497,6 +497,8 @@ namespace Sinbinder.EditorTools
             Write((ok ? "=== СОН ПРОЙДЕН: " : "=== СОН НЕ ПРОЙДЕН: ") + why);
             Write($"итог: миг при убийцах — {DreamTutorialDirector.RefusalResult ?? "не было"}; суд — {SoulCourt.Outcome ?? "не было"}; "
                 + $"без убийц — {DreamTutorialDirector.RetestResult ?? "не проверялся"}; ошибок в журнале {_errors}");
+            Write("хронометраж сна (FIRST-FIVE-MINUTES, T0–T8):");
+            foreach (var mark in DreamTutorialDirector.Timeline) Write("  " + mark);
             SessionState.SetBool(Active, false);
             EditorApplication.update -= Tick;
             Application.logMessageReceived -= Catch;
