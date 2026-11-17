@@ -321,6 +321,9 @@ namespace Sinbinder.Gameplay
             if (shown) _guidedFor = _stage;
         }
         private bool _courtRunning, _retestOrdered, _contrastRunning;
+        private bool _courtChoicePending;
+        private int _courtChoicePauseStamp = -1;
+        private GUIStyle _courtChoiceTitleStyle, _courtChoiceBodyStyle, _courtChoiceButtonStyle;
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
@@ -387,7 +390,12 @@ namespace Sinbinder.Gameplay
         }
 
         private void OnEnable() { SelectionManager.OnPlayerOrder += TrackOrder; }
-        private void OnDisable() { SelectionManager.OnPlayerOrder -= TrackOrder; }
+        private void OnDisable()
+        {
+            SelectionManager.OnPlayerOrder -= TrackOrder;
+            _courtChoicePending = false;
+            ReleaseCourtChoicePause();
+        }
         private void OnDestroy()
         {
             if (Instance != this) return;
@@ -523,7 +531,7 @@ namespace Sinbinder.Gameplay
                 _firstFiveBoundaryLogged = true;
                 TraceFirstFive("five_minute_mark stage=" + _stage);
             }
-            if (_hero == null || _stage == Stage.Finished) return;
+            if (_hero == null || _stage == Stage.Finished || _courtChoicePending) return;
             if (Input.GetKeyDown(KeyCode.F1) && !UI.Modal.Any &&
                 !SoulCourt.Sitting && !Lesson.Holding && !UI.TalkView.Shown)
                 _moreExplanation = !_moreExplanation;
@@ -1435,9 +1443,17 @@ namespace Sinbinder.Gameplay
             {
                 // Request/return are timings, not proof of a visible court.
                 TraceFirstFive("court_requested");
-                // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false);
+                // The first instructional court is always complete, even if
+                // automatic courts were disabled in an earlier save. A replay
+                // cannot change the AOS vote or grant rewards.
+                int heldBefore = SoulCourt.Held;
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false, force: true);
                 TraceFirstFive("court_coroutine_finished");
+                // One-time interactive onboarding: ask at the start of a
+                // SHORT preview of the SAME verdict, not on another AOS tick.
+                if (SoulCourt.Held > heldBefore && !SoulCourt.Brief &&
+                    !Core.Preferences.CourtChoiceMade && _zombie != null && !_zombie.IsDead)
+                    yield return OfferShortCourtPreview(d, c);
             }
             else
                 TraceFirstFive("court_skipped_warrior_dead");
@@ -1456,6 +1472,103 @@ namespace Sinbinder.Gameplay
                 // Автор, 16.11: «верни старые» — одна прежняя строка и для своего выбора души.
                 // Честный итог («выбрал своё») остаётся в RefusalResult и в журнале [AOS-5M].
                 StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
+        }
+
+        // The prompt is intentionally attached to the REAL short Soul Court,
+        // not to an imitation scene. Explicit choice controls future automatic
+        // CourtCaller only. The short preview plays even after opting out.
+        private IEnumerator OfferShortCourtPreview(AOS.Decision d, AOS.DecisionContext c)
+        {
+            TraceFirstFive("short_court_choice_opened");
+            if (!Application.isBatchMode)
+            {
+                bool wasHandBusy = _handBusy;
+                _handBusy = true;
+                var pause = Core.GamePauseController.Instance;
+                if (pause != null && !pause.IsPaused)
+                {
+                    pause.Pause();
+                    _courtChoicePauseStamp = pause.Stamp;
+                }
+                _courtChoicePending = true;
+                while (_courtChoicePending) yield return null;
+                ReleaseCourtChoicePause();
+                _handBusy = wasHandBusy;
+            }
+            else
+            {
+                // Headless Unity must not hang waiting for a mouse click.
+                // It exercises the brief court without writing a fake choice.
+                TraceFirstFive("short_court_choice_skipped_batch");
+            }
+
+            if (_zombie == null || _zombie.IsDead) yield break;
+            TraceFirstFive("short_court_preview_requested");
+            yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,
+                brief: true, force: true);
+            TraceFirstFive("short_court_preview_finished");
+        }
+
+        private void ChooseAutomaticCourts(bool enabled)
+        {
+            if (!_courtChoicePending) return;
+            Core.Preferences.SetAutomaticCourt(enabled);
+            TraceFirstFive(enabled ? "automatic_courts_keep" : "automatic_courts_disable");
+            _courtChoicePending = false;
+        }
+
+        private void ReleaseCourtChoicePause()
+        {
+            var pause = Core.GamePauseController.Instance;
+            if (_courtChoicePauseStamp >= 0 && pause != null &&
+                pause.IsPaused && pause.Stamp == _courtChoicePauseStamp)
+                pause.Resume();
+            _courtChoicePauseStamp = -1;
+        }
+
+        private void DrawCourtChoice()
+        {
+            if (_courtChoiceTitleStyle == null)
+            {
+                _courtChoiceTitleStyle = new GUIStyle(GUI.skin.label)
+                { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontStyle = FontStyle.Bold };
+                _courtChoiceTitleStyle.normal.textColor = new Color(0.95f, 0.86f, 0.67f);
+                _courtChoiceBodyStyle = new GUIStyle(GUI.skin.label)
+                { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                _courtChoiceBodyStyle.normal.textColor = Color.white;
+                _courtChoiceButtonStyle = new GUIStyle(GUI.skin.button)
+                { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            }
+            float width = Mathf.Min(680f, Mathf.Max(1f, Screen.width - 24f));
+            float height = Mathf.Min(344f, Mathf.Max(1f, Screen.height - 20f));
+            float x = (Screen.width - width) * 0.5f;
+            float y = (Screen.height - height) * 0.5f;
+            float margin = Mathf.Min(20f, width * 0.05f);
+            _courtChoiceTitleStyle.fontSize = Mathf.Clamp(Screen.height / 35, 15, 25);
+            _courtChoiceBodyStyle.fontSize = Mathf.Clamp(Screen.height / 50, 12, 18);
+            _courtChoiceButtonStyle.fontSize = Mathf.Clamp(Screen.height / 55, 12, 17);
+
+            var old = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.8f);
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = old;
+            GUI.Box(new Rect(x, y, width, height), GUIContent.none);
+            GUI.Label(new Rect(x + margin, y + 10f, width - 2 * margin, 48f),
+                Loc.T("Суд души: показывать дальше?"), _courtChoiceTitleStyle);
+            GUI.Label(new Rect(x + margin, y + 62f, width - 2 * margin, height * 0.32f),
+                Loc.T("Вы увидели полный Суд. Сейчас — короткая версия того же решения, без нового голосования. Выберите, когда показывать такие Суды дальше."),
+                _courtChoiceBodyStyle);
+            float buttonHeight = Mathf.Clamp(height * 0.16f, 30f, 48f);
+            float buttonY = y + height - 2f * buttonHeight - 46f;
+            if (GUI.Button(new Rect(x + margin, buttonY, width - 2f * margin, buttonHeight),
+                Loc.T("Показывать автоматически в важные моменты"), _courtChoiceButtonStyle))
+                ChooseAutomaticCourts(true);
+            if (GUI.Button(new Rect(x + margin, buttonY + buttonHeight + 6f,
+                                    width - 2f * margin, buttonHeight),
+                Loc.T("Не показывать автоматически (U — Суд вручную)"), _courtChoiceButtonStyle))
+                ChooseAutomaticCourts(false);
+            GUI.Label(new Rect(x + margin, y + height - 24f, width - 2f * margin, 20f),
+                Loc.T("Позже выбор можно изменить в меню паузы."), _courtChoiceBodyStyle);
         }
 
         private void StartBattle(string line)
@@ -1618,6 +1731,11 @@ namespace Sinbinder.Gameplay
 
         private void OnGUI()
         {
+            if (_courtChoicePending)
+            {
+                DrawCourtChoice();
+                return;
+            }
             if (_stage == Stage.Finished || _handBusy || SoulCourt.Sitting || Lesson.Holding ||
                 UI.TalkView.Shown || UI.Modal.Any) return;
             if (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown) return;
