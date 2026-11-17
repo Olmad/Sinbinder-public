@@ -56,6 +56,38 @@ internal static class Program
               !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
 
+        // Short-Court onboarding must reuse the production SoulCourt and
+        // the exact original verdict; consent changes automatic events only.
+        string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
+        string preferencesSource = System.IO.File.ReadAllText("Assets/Scripts/Core/Preferences.cs");
+        string selectionSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SelectionManager.cs");
+        string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
+        string pauseMenuSource = System.IO.File.ReadAllText("Assets/Scripts/UI/PauseMenu.cs");
+        Check(dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false, force: true);") &&
+              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c);") &&
+              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,") &&
+              dreamTrace.Contains("brief: true, force: true);"),
+            "tutorial performs full then real brief preview on the SAME AOS decision");
+        Check(dreamTrace.Contains("!Core.Preferences.CourtChoiceMade") &&
+              dreamTrace.Contains("if (!Application.isBatchMode)") &&
+              dreamTrace.Contains("while (_courtChoicePending) yield return null;") &&
+              dreamTrace.Contains("short_court_choice_skipped_batch") &&
+              dreamTrace.Contains("if (_courtChoicePending)") &&
+              dreamTrace.Contains("DrawCourtChoice();"),
+            "once-only explicit prompt is shown to humans, skipped by headless walkthrough");
+        Check(preferencesSource.Contains("CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0") &&
+              preferencesSource.Contains("PlayerPrefs.SetInt(CourtChoiceKey, 1);") &&
+              preferencesSource.Contains("public static void SetAutomaticCourt(bool enabled)") &&
+              preferencesSource.Contains("ToggleCourt() => SetAutomaticCourt(!Court)"),
+            "choice persists and the pause-menu toggle is the same preference");
+        Check(courtSource.Contains("bool force = false") &&
+              courtSource.Contains("(!Preferences.Court && !force)") &&
+              selectionSource.Contains("force: true));") &&
+              !selectionSource.Contains("if (!Core.Preferences.Court)") &&
+              courtCallerSource.Contains("if (!Preferences.Court || SoulCourt.Sitting") &&
+              pauseMenuSource.Contains("Автоматический Суд души"),
+            "manual U review and required tutorial work when automatic CourtCaller is disabled");
+
         // Source-linked AOS explanation viewport fitting: the *real* Unity
         // tooltip uses this solver, not a duplicated CI-only calculation.
         Check(TooltipViewportFit.Scale(280f, 130f, 1280f, 720f, 12f) == 1f,
