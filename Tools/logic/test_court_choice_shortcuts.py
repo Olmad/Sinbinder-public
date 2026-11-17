@@ -26,6 +26,18 @@ class CourtChoiceShortcutCopyTests(unittest.TestCase):
         self.assertIn("brief: !showFullCourt", selection)
         self.assertIn("force: true", selection)
 
+    def test_interrupted_choice_releases_input_lock(self):
+        dream = DREAM.read_text(encoding="utf-8")
+        disable = dream.split("private void OnDisable()", 1)[1].split("private void OnDestroy()", 1)[0]
+        self.assertIn("_courtChoicePending = false;", disable)
+        self.assertIn("ReleaseCourtChoicePause();", disable)
+        self.assertIn("_handBusy = false;", disable)
+        # Normal completion must still restore the pre-modal lock state.
+        preview = dream.split("private IEnumerator OfferShortCourtPreview", 1)[1].split("private void ChooseAutomaticCourts", 1)[0]
+        self.assertIn("bool wasHandBusy = _handBusy;", preview)
+        self.assertIn("_handBusy = wasHandBusy;", preview)
+        self.assertIn("while (_courtChoicePending) yield return null;", preview)
+
     def test_old_misleading_copy_is_absent(self):
         self.assertNotIn("Не показывать автоматически (U — Суд вручную)",
                          DREAM.read_text(encoding="utf-8"))
