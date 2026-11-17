@@ -395,6 +395,9 @@ namespace Sinbinder.Gameplay
             SelectionManager.OnPlayerOrder -= TrackOrder;
             _courtChoicePending = false;
             ReleaseCourtChoicePause();
+            // Unity stops this component's coroutines on disable: the choice coroutine
+            // cannot restore its saved input lock after an interrupted modal.
+            _handBusy = false;
         }
         private void OnDestroy()
         {
