@@ -82,8 +82,11 @@ namespace Sinbinder.UI
             // (скриншоты 21.10). Прячем на это время, не забывая урок.
             // И не поверх кино: наезд камеры снимает «первое лицо», и панель
             // включалась заново посреди мига, мимо полос (кадры 05.11).
+            // Во сне — свои уроки (кольцо Lesson.Guide: «ЛКМ — выделить», «X — отступить»): общая
+            // строка «он пойдёт туда» спорила с ними посреди мига с убийцами (кадры 17.11).
             bool fit = !Gameplay.OpeningReveal.Busy && !FirstPerson()
-                       && !(Letterbox.Instance != null && Letterbox.Instance.Covering);
+                       && !(Letterbox.Instance != null && Letterbox.Instance.Covering)
+                       && Gameplay.DreamTutorialDirector.Instance == null;
             if (_showing && _panel != null && _panel.activeSelf != fit) _panel.SetActive(fit);
             if (!fit) return;
 
