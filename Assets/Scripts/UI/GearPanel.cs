@@ -407,6 +407,8 @@ namespace Sinbinder.UI
             // Expedition gate/objective must compete fairly with nearby
             // bags and conversations; a single F press selects one action.
             PersonalExpedition.OfferInteractions(Offer);
+            // Map-authored object interactions participate in the existing F priority.
+            MapLogicRunner.OfferInteractions(Offer);
             var pot = Cauldron.Nearest();
             if (pot != null) Offer(Gaze.Miss(pot.transform), pot.Prompt, pot.Taste);
             var well = CampWell.Nearest();
