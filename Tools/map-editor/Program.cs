@@ -669,8 +669,11 @@ static class Program
               beforePaint.Count == afterPaint.Count,
               "material painting changes only terrain mesh and never respawns nature props");
         Invoke(painter, "Undo");
-        Check(map.TerrainPaints.Count == 1,
-              "undo works without relying on original map instance after preview fast path");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(painter);
+        Check(undone.TerrainPaints.Count == 0 &&
+              undone.TerrainStrokes.Count == 1,
+              "fast paint undo removes paint while preserving sculpted heights");
     }
 
     static void Main()
