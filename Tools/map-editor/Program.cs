@@ -747,6 +747,114 @@ static class Program
               "undoing all edits to last saved snapshot clears unsaved state");
     }
 
+    static void GroupEditingContracts()
+    {
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", X = 20, Z = 4, Scale = 1.2f });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Bush", X = 20, Z = 22, Scale = 0.8f });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "talk1", Event = "OnInteractObject", TargetId = "p1",
+            Action = "ShowMessage", Message = "Hello", Enabled = true
+        });
+        var e = new MapEditor();
+        Set(e, "_map", map);
+        Set(e, "_name", map.Name);
+        var field = typeof(MapEditor).GetField("_selectedThingIds",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var selected = (HashSet<string>)field.GetValue(e);
+
+        Invoke(e, "Select", new Vector3(3, 0, 4), false);
+        Check(selected.SetEquals(new[] { "p1" }),
+              "ordinary selection has exactly one stable Thing ID");
+        Invoke(e, "Select", new Vector3(20, 0, 4), true);
+        Check(selected.SetEquals(new[] { "p1", "p2" }),
+              "Shift selection adds another prop without clearing the first");
+        Invoke(e, "Select", new Vector3(20, 0, 4), true);
+        Check(selected.SetEquals(new[] { "p1" }),
+              "Shift-click on selected prop toggles it off");
+        Invoke(e, "SelectAllThings");
+        Check(selected.Count == 3 && selected.Contains("p3"),
+              "select all selects three props without crypts or regions");
+
+        float cryptX = map.Crypts[0].X, regionX = map.Regions[0].X;
+        Invoke(e, "MoveSelectedThings", 7f, -2f);
+        Check(map.Things[0].X == 10f && map.Things[1].X == 27f &&
+              map.Things[2].Z == 20f && map.Crypts[0].X == cryptX &&
+              map.Regions[0].X == regionX,
+              "moving group preserves relative positions and does not touch gameplay anchors");
+        Invoke(e, "Undo");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(e);
+        Check(undone.Things[0].X == 3 && undone.Things[1].X == 20 &&
+              undone.Things[2].Z == 22,
+              "one Undo restores all group members to original positions");
+        Invoke(e, "Redo");
+        var moved = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(e);
+        Check(moved.Things[0].X == 10 && moved.Things[1].X == 27,
+              "one Redo restores full group move");
+
+        Invoke(e, "SelectAllThings");
+        float cx = 0f, cz = 0f;
+        foreach (var t in moved.Things) { cx += t.X; cz += t.Z; }
+        cx /= moved.Things.Count; cz /= moved.Things.Count;
+        float distance = (moved.Things[0].X - cx) * (moved.Things[0].X - cx) +
+                         (moved.Things[0].Z - cz) * (moved.Things[0].Z - cz);
+        Invoke(e, "RotateSelectedThings", 90f);
+        float newDistance = (moved.Things[0].X - cx) * (moved.Things[0].X - cx) +
+                            (moved.Things[0].Z - cz) * (moved.Things[0].Z - cz);
+        Check(MathF.Abs(distance - newDistance) < 0.001f &&
+              moved.Things[0].Yaw == 90f && moved.Crypts[0].Yaw == 0f,
+              "group rotates around its centroid with matching Unity yaw");
+
+        Invoke(e, "DuplicateSelectedThings");
+        Check(moved.Things.Count == 6 && moved.Triggers.Count == 2,
+              "group copy duplicates three real props plus their F-interaction rules");
+        var ids = new HashSet<string>();
+        foreach (var t in moved.Things) ids.Add(t.Id);
+        Check(ids.Count == 6 && moved.Things[3].Id != "p1" &&
+              moved.Triggers[1].TargetId == moved.Things[3].Id &&
+              moved.Triggers[1].Message == moved.Triggers[0].Message,
+              "copied objects and interaction references receive new IDs without losing text");
+        Check(selected.SetEquals(new[] { moved.Things[3].Id,
+                                        moved.Things[4].Id, moved.Things[5].Id }),
+              "group copy selects only new objects");
+        Invoke(e, "DeleteSelectedThings");
+        Check(moved.Things.Count == 3 && moved.Triggers.Count == 1 &&
+              moved.Triggers[0].TargetId == "p1",
+              "group delete removes only selected copies and their dependent interactions");
+        Invoke(e, "Undo");
+        var restored = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(e);
+        Check(restored.Things.Count == 6 && restored.Triggers.Count == 2,
+              "group deletion and related rules undo together");
+
+        var nearBorder = Map();
+        nearBorder.Things[0].X = 149f;
+        var boundaryEditor = new MapEditor();
+        Set(boundaryEditor, "_map", nearBorder);
+        Set(boundaryEditor, "_name", nearBorder.Name);
+        Invoke(boundaryEditor, "SelectAllThings");
+        Invoke(boundaryEditor, "MoveSelectedThings", 5f, 0f);
+        Check(nearBorder.Things[0].X == 149f,
+              "out-of-bounds group action fails before mutating any member");
+
+        var single = Map();
+        single.Triggers.Add(new MapData.Trigger
+        {
+            Id = "linked", Event = "OnInteractObject", TargetId = "p1",
+            Action = "ShowMessage", Message = "Test"
+        });
+        var se = new MapEditor();
+        Set(se, "_map", single);
+        Set(se, "_name", single.Name);
+        Invoke(se, "Select", new Vector3(3,0,4), false);
+        Invoke(se, "DeleteSelected");
+        Check(single.Things.Count == 0 && single.Triggers.Count == 0,
+              "single delete never strands dangling object-interaction rule");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -762,6 +870,7 @@ static class Program
         FastBrushPreviewAndSelectionHeight();
         PaintEraserAndMaterialSlots();
         UnsavedMapExitGuard();
+        GroupEditingContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
