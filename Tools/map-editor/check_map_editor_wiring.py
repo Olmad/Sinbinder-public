@@ -16,6 +16,12 @@ assert "guid: 5da4d5bc71fa4e9b92a503154d59b1c7" in logicmeta
 assert "Sinbinder.Gameplay.MapEditor" in scene, "Scene no longer references the existing map editor"
 assert 'public string Id = ""; public string Prop = "Pine";' in data
 assert "public List<Region> Regions = new();" in data and "public List<Trigger> Triggers = new();" in data
+assert "MapTerrain.ApplyGround(ground, map, ref _terrainMesh, ref _originalGroundMesh);" in loader
+assert "MapTerrain.HeightAt(map," in loader, "Placed gameplay objects not attached to real terrain height"
+assert "MapTerrain.ApplyGround(ground, _map, ref _terrainMesh, ref _originalGroundMesh);" in editor
+assert "private void Sculpt(Vector3 at)" in editor and "_map.TerrainStrokes.Add" in editor
+assert "public List<TerrainStroke> TerrainStrokes = new();" in data
+assert "collider.sharedMesh = next != null ? next : original;" in data
 assert "map.EnsureLists();" in loader and "MapLogicRunner logic = null;" in loader
 assert "logic.Configure(map);" in loader
 assert "logic.RegisterObject(t.Id, model.transform);" in loader
@@ -32,4 +38,4 @@ assert "private List<string> Validate()" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
 assert "UnityEditor" not in runner and "System.Reflection" not in runner
-print("PASS: scene GUID intact; data and loader compatible; map ECA wired into existing F; atomic saving and validation present")
+print("PASS: scene GUID intact; shared runtime/editor terrain collider + heights; map ECA wired into F; atomic saving and validation present")
