@@ -688,6 +688,49 @@ namespace Sinbinder.Gameplay
             });
         }
 
+        private void ScaleSelectedThings(float factor)
+        {
+            var group = GroupThings();
+            if (group.Count < 2 || factor <= 0f) return;
+            float cx = 0f, cz = 0f;
+            foreach (var t in group) { cx += t.X; cz += t.Z; }
+            cx /= group.Count; cz /= group.Count;
+            float half = _map.Size * 0.5f;
+            foreach (var t in group)
+            {
+                float x = cx + (t.X - cx) * factor;
+                float z = cz + (t.Z - cz) * factor;
+                float scale = t.Scale * factor;
+                if (Mathf.Abs(x) > half || Mathf.Abs(z) > half ||
+                    scale < 0.1f || scale > 10f)
+                {
+                    _say = Loc.T("Невозможно изменить масштаб: объект выйдет за границы или допустимый размер.");
+                    return;
+                }
+            }
+            Change(() =>
+            {
+                foreach (var t in group)
+                {
+                    t.X = cx + (t.X - cx) * factor;
+                    t.Z = cz + (t.Z - cz) * factor;
+                    t.Scale *= factor;
+                }
+            });
+        }
+
+        private void ApplyGroupMaterial(string materialId)
+        {
+            var group = GroupThings();
+            if (group.Count < 2) return;
+            if (!string.IsNullOrEmpty(materialId) && MapAssets.ObjectMaterial(materialId) == null)
+            {
+                _say = Loc.T("Материал не найден в библиотеке.");
+                return;
+            }
+            Change(() => { foreach (var t in group) t.MaterialId = materialId; });
+        }
+
         private bool CanDuplicateThings(List<MapData.Thing> group, float offset)
         {
             float half = _map.Size * 0.5f;
@@ -793,6 +836,16 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button("↶ 90°")) RotateSelectedThings(-90f);
             if (GUILayout.Button("↷ 90°")) RotateSelectedThings(90f);
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(Loc.T("Уменьшить ×0.9"))) ScaleSelectedThings(0.9f);
+            if (GUILayout.Button(Loc.T("Увеличить ×1.1"))) ScaleSelectedThings(1.1f);
+            GUILayout.EndHorizontal();
+            GUILayout.Label(Loc.T("Материал всей группы:"));
+            if (GUILayout.Button(Loc.T("Вернуть исходные материалы")))
+                ApplyGroupMaterial("");
+            foreach (var material in _objectMaterials)
+                if (material != null && GUILayout.Button(material.name))
+                    ApplyGroupMaterial(material.name);
             if (GUILayout.Button(Loc.T("Копировать группу"))) DuplicateSelectedThings();
             if (GUILayout.Button(Loc.T("Удалить группу"))) DeleteSelectedThings();
             if (GUILayout.Button(Loc.T("Снять выделение")))
