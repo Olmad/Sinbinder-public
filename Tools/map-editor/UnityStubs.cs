@@ -27,14 +27,36 @@ namespace UnityEngine
     public enum PrimitiveType { Cylinder }
     public class GameObject : Object
     {
+        private readonly System.Collections.Generic.Dictionary<Type, Component> _components = new();
         public string name;
         public Transform transform = new Transform();
         public GameObject(string name = "") { this.name = name; }
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType t) => new GameObject();
-        public T GetComponent<T>() where T : Component, new() => new T();
+        public T GetComponent<T>() where T : Component, new()
+        {
+            if (!_components.TryGetValue(typeof(T), out var component))
+                _components[typeof(T)] = component = new T();
+            return (T)component;
+        }
     }
-    public class Collider : Component { }
+    public struct RaycastHit { public Vector3 point; }
+    public class Collider : Component
+    {
+        public bool Raycast(Ray ray, out RaycastHit hit, float distance)
+        { hit = default; return false; }
+    }
+    public class Mesh : Object
+    {
+        public string name;
+        public Vector3[] vertices;
+        public Vector2[] uv;
+        public int[] triangles;
+        public void RecalculateNormals() { }
+        public void RecalculateBounds() { }
+    }
+    public class MeshFilter : Component { public Mesh sharedMesh; }
+    public class MeshCollider : Collider { public Mesh sharedMesh; }
     public class Renderer : Component { public Material sharedMaterial; }
     public class Shader : Object { public static Shader Find(string name) => new Shader(); }
     public class Material : Object
@@ -60,6 +82,7 @@ namespace UnityEngine
         public float x, y, z;
         public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
         public static Vector3 zero => new Vector3();
+        public static Vector3 one => new Vector3(1,1,1);
         public static Vector3 up => new Vector3(0,1,0);
         public static Vector3 forward => new Vector3(0,0,1);
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
