@@ -50,7 +50,9 @@ class CorrectedTextRegressions(unittest.TestCase):
         self.assertEqual(3, int(m.group(1)),
                          "When price changes, update localized offer and tests")
         self.assertIn("За твой ответ я заплачу три монеты.", self.whisper)
-        self.assertIn("bag.SpendGold(GreedCoins)", self.whisper)
+        self.assertIn("!bag.SpendGold(GreedCoins)", self.whisper)
+        self.assertIn("w.Pocket(GreedCoins)", self.whisper)
+        self.assertIn("canPay = false;", self.whisper)
         self.assertIn("w.CommandRevision == agreedOrder", self.whisper)
 
     def test_whisper_insufficient_funds_not_described_as_empty_wallet(self):
