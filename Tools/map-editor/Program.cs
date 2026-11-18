@@ -339,6 +339,108 @@ static class Program
               "bad brush parameters block editor save");
     }
 
+    static void MaterialsAndVegetation()
+    {
+        Check(MapAssets.ValidId("Ground048") && MapAssets.ValidId("User_Rock-2") &&
+              !MapAssets.ValidId("../evil") && !MapAssets.ValidId("a/b") &&
+              !MapAssets.ValidId("a:b") && !MapAssets.ValidId(""),
+              "map asset identifiers reject path traversal and executable references");
+        Resources.Register("MapUserProps/CustomFern", new GameObject("CustomFern"));
+        Resources.Register("MapUserMaterials/Leaf", new Material(Shader.Find("Lit")) { name = "Leaf" });
+        Check(MapAssets.IsUserProp("user:CustomFern") &&
+              MapAssets.UserPrefab("user:CustomFern") != null &&
+              MapAssets.UserPrefab("user:../../escape") == null,
+              "Unity imported prefab is addressable only through safe catalog");
+        var instance = new GameObject("instance");
+        MapAssets.ApplyObjectMaterial(instance, "Leaf");
+        Check(instance.GetComponent<Renderer>().sharedMaterial ==
+              MapAssets.ObjectMaterial("Leaf"), "imported object material overrides actual renderer");
+        var map = Map();
+        map.TerrainPaints.Add(new MapData.TerrainPaint
+        { X = 0f, Z = 0f, Radius = 24f, MaterialId = "Ground048" });
+        Check(MapTerrain.Valid(map) && MapTerrain.HeightAt(map, 0f, 0f) == 0f,
+              "terrain paint on a flat map keeps zero-height physics");
+        Check(MapTerrain.PaintedMaterialAt(map, 0f, 0f) == "Ground048" &&
+              MapTerrain.PaintedMaterialAt(map, 100f, 100f) == "",
+              "paint affects only cells inside its authored radius");
+        var mesh = MapTerrain.BuildMesh(map);
+        Check(mesh != null && mesh.subMeshCount == 2 &&
+              mesh.triangles.Length == 75 * 75 * 6,
+              "paint partitions real terrain mesh into material submeshes");
+        // Map() has 300 metres, so GridCells = 75.
+        var ground = new GameObject("painted");
+        var initial = new Material(Shader.Find("Lit")) { name = "OriginalGround" };
+        ground.GetComponent<MeshRenderer>().sharedMaterial = initial;
+        ground.GetComponent<MeshFilter>().sharedMesh = new Mesh();
+        ground.GetComponent<MeshCollider>().sharedMesh = new Mesh();
+        Mesh generated = null, original = null;
+        MapTerrain.ApplyGround(ground, map, ref generated, ref original);
+        var mats = ground.GetComponent<MeshRenderer>().sharedMaterials;
+        Check(mats.Length == 2 && mats[0] == initial && mats[1].name == "Ground048" &&
+              ground.GetComponent<MeshCollider>().sharedMesh == generated,
+              "terrain brush assigns a real bundled Unity material to its mesh and collider");
+        map.TerrainPaints.Add(new MapData.TerrainPaint
+        { X = 0f, Z = 0f, Radius = 8f, MaterialId = "Ground077" });
+        Check(MapTerrain.PaintedMaterialAt(map, 0f, 0f) == "Ground077" &&
+              MapTerrain.PaintedMaterialAt(map, 15f, 0f) == "Ground048",
+              "newer material strokes win only within their brush radius");
+        map.TerrainPaints[1].MaterialId = "../../hack";
+        Check(!MapTerrain.Valid(map) && MapTerrain.BuildMesh(map) == null,
+              "untrusted terrain material names fail validation");
+        map.TerrainPaints[1].MaterialId = "Ground077";
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Set(editor, "_paintMaterial", "Gravel043");
+        Invoke(editor, "PaintTerrain", new Vector3(42f, 0f, 30f));
+        Check(map.TerrainPaints.Count == 3 &&
+              MapTerrain.PaintedMaterialAt(map, 42f, 30f) == "Gravel043",
+              "editor material paint adds persisted actual terrain stroke");
+        Invoke(editor, "Undo");
+        var undo = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(undo.TerrainPaints.Count == 2,
+              "terrain material painting is undoable");
+        Invoke(editor, "Redo");
+        var redo = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(redo.TerrainPaints.Count == 3,
+              "terrain material painting is redoable");
+        redo.TerrainPaints[0].MaterialId = "Ground048";
+        string root = Path.Combine(Path.GetTempPath(), "Sinbinder.Paint." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            string path = Path.Combine(root, "paint.json");
+            redo.Things[0].MaterialId = "Leaf";
+            redo.Save(path);
+            var loaded = MapData.Load(path);
+            Check(loaded.TerrainPaints.Count == 3 &&
+                  loaded.TerrainPaints[2].MaterialId == "Gravel043" &&
+                  loaded.Things[0].MaterialId == "Leaf",
+                  "paint and object material override survive JSON roundtrip");
+        }
+        finally { Directory.Delete(root, true); }
+
+        var garden = Map();
+        var vegetation = new MapEditor();
+        Set(vegetation, "_map", garden);
+        Set(vegetation, "_name", garden.Name);
+        Invoke(vegetation, "ScatterVegetation", new Vector3(40f, 0f, 30f));
+        Check(garden.Things.Count == 13 &&
+              garden.Things[1].Prop == "GrassTuft" &&
+              garden.Things[12].Id != garden.Things[1].Id,
+              "vegetation brush places twelve terrain-aware unique map props");
+        Invoke(vegetation, "Undo");
+        var before = (MapData)typeof(MapEditor).GetField("_map",
+                         BindingFlags.Instance | BindingFlags.NonPublic).GetValue(vegetation);
+        Check(before.Things.Count == 1, "one undo removes full vegetation cluster");
+        Invoke(vegetation, "Redo");
+        var after = (MapData)typeof(MapEditor).GetField("_map",
+                        BindingFlags.Instance | BindingFlags.NonPublic).GetValue(vegetation);
+        Check(after.Things.Count == 13, "redo restores full vegetation cluster");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -347,6 +449,7 @@ static class Program
         ObjectInteractionWizard();
         EditorContracts();
         TerrainRoundtripAndCollider();
+        MaterialsAndVegetation();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
