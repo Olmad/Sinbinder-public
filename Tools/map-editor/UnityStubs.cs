@@ -75,6 +75,9 @@ namespace UnityEngine
     public static class Mathf
     {
         public const float Deg2Rad = MathF.PI/180f;
+        public static float Max(float a,float b) => MathF.Max(a,b);
+        public static int Max(int a,int b) => Math.Max(a,b);
+        public static float Min(float a,float b) => MathF.Min(a,b);
         public static float Abs(float a) => MathF.Abs(a);
         public static int Abs(int a) => Math.Abs(a);
         public static float Cos(float a) => MathF.Cos(a);
