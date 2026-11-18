@@ -74,7 +74,9 @@ namespace Sinbinder.Gameplay
             {
                 var t = runner._map.Triggers[i];
                 if (t == null || !t.Enabled || t.Event != "OnInteractObject" ||
-                    string.IsNullOrEmpty(t.TargetId) || !offered.Add(t.TargetId)) continue;
+                    string.IsNullOrEmpty(t.TargetId) ||
+                    (t.Once && runner._fired.Contains(t.Id)) ||
+                    !runner.AllowedCondition(t) || !offered.Add(t.TargetId)) continue;
                 if (!runner._objects.TryGetValue(t.TargetId, out var target) || target == null) continue;
                 if (CampFocus.GroundDistance(target.position, SinbinderPlayer.Where) > UseRange) continue;
                 string id = t.TargetId;
