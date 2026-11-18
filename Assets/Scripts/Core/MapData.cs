@@ -41,8 +41,9 @@ namespace Sinbinder.Core
 
         /// <summary>
         /// Safe data-driven ECA rule, NOT executable C#/Lua/JASS supplied by a map.
-        /// Event: OnStart / OnEnterRegion; Condition: Always / FlagIsTrue;
-        /// Action: ShowMessage / SetFlag. RegionId and Flag are references.
+        /// Event: OnStart / OnEnterRegion / OnInteractObject;
+        /// Condition: Always / FlagIsTrue / FlagIsFalse;
+        /// Action: ShowMessage / SetFlag / ClearFlag. RegionId, TargetId, and Flag are references.
         /// Executed only by the explicit allowlist in MapLogicRunner.
         /// </summary>
         [System.Serializable] public class Trigger
