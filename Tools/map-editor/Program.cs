@@ -518,6 +518,20 @@ static class Program
         Check(!preview.activeSelf, "brush preview hides outside the paint canvas");
     }
 
+    static void AuthoringImportContracts()
+    {
+        var importer = typeof(Sinbinder.EditorTools.MapAssetImporter);
+        var valid = importer.GetMethod("ValidName", BindingFlags.Static | BindingFlags.NonPublic);
+        Check(valid != null && (bool)valid.Invoke(null, new object[] { "Rock_02" }) &&
+              (bool)valid.Invoke(null, new object[] { "Forest-Moss" }),
+              "real compiled Unity Editor importer accepts safe asset IDs");
+        Check(!(bool)valid.Invoke(null, new object[] { "../Secrets" }) &&
+              !(bool)valid.Invoke(null, new object[] { "a/b" }) &&
+              !(bool)valid.Invoke(null, new object[] { "" }) &&
+              !(bool)valid.Invoke(null, new object[] { new string('x', 49) }),
+              "real compiled Unity Editor importer blocks traversal and invalid IDs");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -528,6 +542,7 @@ static class Program
         TerrainRoundtripAndCollider();
         MaterialsAndVegetation();
         DragAndFlattenTools();
+        AuthoringImportContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
