@@ -127,13 +127,13 @@ namespace Sinbinder.Gameplay
         /// <summary>Что шепчет Греховод греху и что отвечает поддавшийся.</summary>
         private static (string offer, string yes) Words(SinType sin) => sin switch
         {
-            SinType.Greed    => (Loc.T("Половина добычи — твоя."), Loc.T("…Половина. Запомню.")),
-            SinType.Pride    => (Loc.T("Пусть все видят — первым будешь ты."), Loc.T("Смотрите же.")),
-            SinType.Wrath    => (Loc.T("Он смеялся над тобой у огня."), Loc.T("Смеялся?!")),
-            SinType.Envy     => (Loc.T("Карган бы смог. А ты?"), Loc.T("Я — не хуже.")),
-            SinType.Lust     => (Loc.T("Она смотрит."), Loc.T("…Ну, раз смотрит.")),
-            SinType.Gluttony => (Loc.T("После — котёл твой."), Loc.T("Весь котёл.")),
-            _                => (Loc.T("Сделаешь — до утра никто не тронет."), Loc.T("До утра. Ладно.")),
+            SinType.Greed    => (Loc.T("За твой ответ я заплачу три монеты."), Loc.T("Три монеты. Договорились.")),
+            SinType.Pride    => (Loc.T("Докажи, что тебе по силам этот приказ."), Loc.T("Докажу.")),
+            SinType.Wrath    => (Loc.T("Обрати свой гнев в дело. Исполни приказ."), Loc.T("Гнев со мной. Сделаю.")),
+            SinType.Envy     => (Loc.T("Докажи, что справишься не хуже других."), Loc.T("Ещё лучше справлюсь.")),
+            SinType.Lust     => (Loc.T("Направь своё желание на этот приказ."), Loc.T("Я выбираю. Сделаю.")),
+            SinType.Gluttony => (Loc.T("Сперва исполни приказ. О сытости подумаешь потом."), Loc.T("Сначала дело. Ладно.")),
+            _                => (Loc.T("Хочешь покоя? Не затягивай с приказом."), Loc.T("Поскорее покончить с этим. Ладно.")),
         };
 
         private IEnumerator Moment(Warrior w)
@@ -153,7 +153,7 @@ namespace Sinbinder.Gameplay
             var bag = Inventory.PlayerInventory.Instance;
             bool broke = sin == SinType.Greed && (bag == null || bag.Gold < GreedCoins);
             bool yielded = !virtuous && !broke;
-            string answer = virtuous ? Loc.T("Не купишь.") : broke ? Loc.T("Половина чего? Кошель-то пуст.") : yes;
+            string answer = virtuous ? Loc.T("Не купишь.") : broke ? Loc.T("Трёх монет у тебя нет.") : yes;
 
             float before = w.Soul != null ? w.Soul.Get(sin) : Ceiling;
             bool applied = false;
@@ -175,9 +175,11 @@ namespace Sinbinder.Gameplay
                 else if (yielded)
                     answer = canPay
                         ? Loc.T("Приказ уже изменён. На другой я не соглашался.")
-                        : Loc.T("Кошель уже пуст.");
+                        : Loc.T("Монет на уговор больше не хватает.");
                 outcome = yielded && !applied
-                    ? Loc.T("Уговор не состоялся: новый приказ требует нового разговора.")
+                    ? (canPay
+                        ? Loc.T("Уговор не состоялся: приказ изменился или воин выбыл.")
+                        : Loc.T("Уговор не состоялся: не хватает монет."))
                     : Outcome(w, sin, applied, virtuous, louder: applied && before < Ceiling);
             }
 
@@ -274,7 +276,7 @@ namespace Sinbinder.Gameplay
                 return Grammar.Pick(gender,
                     Loc.F("{0} не поддался: {1} в нём сильнее греха.", name, SoulData.GetVirtueName(sin)),
                     Loc.F("{0} не поддалась: {1} в ней сильнее греха.", name, SoulData.GetVirtueName(sin)));
-            return Loc.T("Жадному нечего обещать: кошель пуст.");
+            return Loc.T("На уговор жадного не хватило монет.");
         }
 
         /// <summary>Глаза вспыхивают цветом греха и гаснут к своему — за полторы секунды реального времени.</summary>
