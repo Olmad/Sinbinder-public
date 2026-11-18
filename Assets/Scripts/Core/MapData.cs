@@ -166,7 +166,7 @@ namespace Sinbinder.Core
         }
 
         /// <summary>Atomic save with an original .bak file on overwrite; never truncate the only map.</summary>
-        public void Save(string path)
+        public void Save(string path, bool overwrite = true)
         {
             EnsureLists();
             var directory = Path.GetDirectoryName(path);
@@ -180,10 +180,17 @@ namespace Sinbinder.Core
                                   new System.Text.UTF8Encoding(false));
                 if (File.Exists(path))
                 {
-                    // File.Replace writes the new file and retains a backup atomically.
+                    // Create-only saves MUST fail closed, including on a concurrent
+                    // filename collision. Existing maps continue to keep a .bak.
+                    if (!overwrite) throw new IOException("Map already exists: " + path);
                     File.Replace(temp, path, path + ".bak");
                 }
-                else File.Move(temp, path);
+                else
+                {
+                    // File.Move(source, dest) does not overwrite a concurrently
+                    // created destination, unlike a second File.WriteAllText.
+                    File.Move(temp, path);
+                }
             }
             finally
             {
