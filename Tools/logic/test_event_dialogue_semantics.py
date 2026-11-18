@@ -23,11 +23,16 @@ class PrisonerAndSharedHistoryText(unittest.TestCase):
         cls.locale = read("Assets/Resources/Lang/en.txt")
 
     def test_legacy_event_id_preserved_and_story_no_longer_invents_female_healer(self):
-        m = re.search(r'new\(\) \{ Id = "healer", Title = Loc\.N\("([^"]+)"\), Story = Loc\.N\("([^"]+)"\),'
-                      r'\s*Guards = 3,\s*A = new\(\) \{ ([^}]+)\},\s*B = new\(\) \{ ([^}]+)\} \},',
-                      self.events)
-        self.assertIsNotNone(m, "Check the event and update this test when its source structure changes")
-        title, story, a, b = m.groups()
+        # The option has nested new[] { ... } initializers. Never parse it
+        # with [^}]+: that stops at the first enum array's closing brace.
+        start = self.events.index('new() { Id = "healer"')
+        end = self.events.index('new() { Id = "relic"', start)
+        event = self.events[start:end]
+        m = re.search(r'Title = Loc\.N\("([^"]+)"\), Story = Loc\.N\("([^"]+)"\),', event)
+        self.assertIsNotNone(m, "Check the title and story fields")
+        title, story = m.groups()
+        a, b = event.split('B = new() {', 1)
+        self.assertIn("Guards = 3", a)
         self.assertEqual("Конвой с пленником", title)
         self.assertIn("пленника", story)
         self.assertNotIn("знахар", title.lower() + story.lower())
