@@ -532,6 +532,98 @@ static class Program
               "real compiled Unity Editor importer blocks traversal and invalid IDs");
     }
 
+    static void ExternalEditConflictAndSafeCopy()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "Sinbinder.EditorConflict." +
+                                     Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string path = Path.Combine(folder, "Map.json");
+            var source = Map();
+            source.Name = "Original map";
+            source.Save(path);
+            var originalBytes = File.ReadAllText(path);
+
+            bool collision = false;
+            try { source.Save(path, overwrite: false); }
+            catch (IOException) { collision = true; }
+            Check(collision && File.ReadAllText(path) == originalBytes,
+                  "create-only JSON cannot overwrite an existing map");
+
+            var editor = new MapEditor();
+            Set(editor, "_map", MapData.Load(path));
+            Set(editor, "_name", "Local work");
+            Set(editor, "_path", path);
+            var fingerprint = typeof(MapEditor).GetMethod("FileFingerprint",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Set(editor, "_openedFingerprint",
+                fingerprint.Invoke(null, new object[] { path }));
+            Invoke(editor, "Save");
+            Check(MapData.Load(path).Name == "Local work",
+                  "unchanged map can save normally");
+            Check(File.Exists(path + ".bak") &&
+                  File.ReadAllText(path + ".bak") == originalBytes,
+                  "normal save preserves exact previous bytes as backup");
+
+            string conflictingText = File.ReadAllText(path).Replace("Local work", "Someone else");
+            File.WriteAllText(path, conflictingText);
+            Set(editor, "_name", "Unsaved edits");
+            Invoke(editor, "Save");
+            Check(File.ReadAllText(path) == conflictingText &&
+                  MapData.Load(path).Name == "Someone else",
+                  "external edits cannot be silently overwritten");
+            var statusField = typeof(MapEditor).GetField("_say",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Check(((string)statusField.GetValue(editor)).Contains("изменён"),
+                  "external-edit conflict reports actionable UI warning");
+            Invoke(editor, "SaveCopy");
+            var newPath = (string)typeof(MapEditor).GetField("_path",
+                          BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(newPath != path && Path.GetDirectoryName(newPath) == folder &&
+                  MapData.Load(newPath).Name == "Unsaved edits" &&
+                  File.ReadAllText(path) == conflictingText,
+                  "save-copy creates a separate map beside original without changing it");
+            Invoke(editor, "Save");
+            Check(MapData.Load(newPath).Name == "Unsaved edits",
+                  "safe copy becomes the tracked map for subsequent saves");
+
+            var damaged = Map();
+            damaged.Name = "Readable lobby data";
+            MapSession.Choose(path, damaged);
+            File.WriteAllText(path, "{not parseable json}");
+            var reader = new MapEditor();
+            Invoke(reader, "Start");
+            Set(reader, "_name", "Recovered work");
+            Invoke(reader, "Save");
+            Check(File.ReadAllText(path) == "{not parseable json}",
+                  "unreadable source remains untouched when saving after opening");
+            Invoke(reader, "SaveCopy");
+            Check(File.ReadAllText(path) == "{not parseable json}",
+                  "copying a damaged source keeps its original bytes intact");
+
+            var newest = Map();
+            newest.Name = "Disk version";
+            newest.Save(path);
+            var stale = Map();
+            stale.Name = "Stale lobby version";
+            MapSession.Choose(path, stale);
+            var freshEditor = new MapEditor();
+            Invoke(freshEditor, "Start");
+            var active = (MapData)typeof(MapEditor).GetField("_map",
+                         BindingFlags.Instance | BindingFlags.NonPublic).GetValue(freshEditor);
+            Check(active.Name == "Disk version",
+                  "opening editor reads latest disk map, not outdated lobby snapshot");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+            MapSession.Path = null;
+            MapSession.Map = null;
+            MapSession.Seats.Clear();
+        }
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -543,6 +635,7 @@ static class Program
         MaterialsAndVegetation();
         DragAndFlattenTools();
         AuthoringImportContracts();
+        ExternalEditConflictAndSafeCopy();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
