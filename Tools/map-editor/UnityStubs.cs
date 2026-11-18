@@ -261,7 +261,11 @@ namespace UnityEngine
 }
 namespace UnityEngine.SceneManagement
 {
-    public static class SceneManager { public static void LoadScene(int index) { } }
+    public static class SceneManager
+    {
+        public static int LastLoadedScene = -1;
+        public static void LoadScene(int index) { LastLoadedScene = index; }
+    }
 }
 namespace Sinbinder.Core
 {
