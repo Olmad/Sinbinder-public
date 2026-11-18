@@ -1,7 +1,7 @@
 # INDEPENDENT_TEXT_AUDIT_PASS=4 BASE_SHA=3b642a701a990ace58556b2afc2de04fd517b351
 path	blob_sha	bytes	audit_class	found_text_candidates	checked_text_candidates	failed_text_candidates	unknown_text_candidates	status	evidence
 Assets/Models/Сцены/Холм.asset	7b314279dc229d96032641be4e4721ea4fe7cf44	604627	UnitySerialized	0	0	0	0	UNINSPECTED	
-Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 33-line YAML inspected: Unity URP template Readme ScriptableObject; title and sections are editor onboarding/docs (Welcome to Universal Render Pipeline, documentation/forums/bug links), not game UI; no runtime dialogue or localization binding in this asset. 0 player-facing lines; editor-visible English excluded, RU/EN game comparison N/A. Source blob 77c2f83ce8f788e94bcca20d047cf5bff16c9f5; runtime reference reachability UNKNOWN.
 Assets/Resources/AOSConfig.asset	25496e7483e77c4971e4dc2600b0ef28eaccc5f8	2993	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/DialogueDatabase.asset	833e9bd0202d79a1614c5b5835c59fafc4dec1cb	10704	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	UNINSPECTED	
@@ -571,7 +571,7 @@ ProjectSettings/PackageManagerSettings.asset	be4a7974ec170d9bfa288154684b318966c
 ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/ProjectSettings.asset	e0bd16d751c8aee0d0bbf7b0994c0194ad4653d8	25533	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	UNINSPECTED	
+ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	EXCLUDED_TECH	Full 2-line file inspected: Unity editor version 6000.3.22f1 and revision hash only; build metadata, not in-game text; 0 player-facing lines; RU/EN N/A. Source blob b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb.
 ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
 ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
