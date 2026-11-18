@@ -122,6 +122,65 @@ static class Program
         Invoke(runner, "OnDestroy");
         SinbinderPlayer.Exists = false;
     }
+    static void BooleanTriggerBranching()
+    {
+        var map = Map();
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "before", Event = "OnStart", Condition = "FlagIsFalse",
+            Flag = "gate", Action = "ShowMessage", Message = "Gate closed"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "open", Event = "OnStart", Action = "SetFlag", Flag = "gate"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "after", Event = "OnStart", Condition = "FlagIsTrue",
+            Flag = "gate", Action = "ShowMessage", Message = "Gate opened"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "clear", Event = "OnStart", Action = "ClearFlag", Flag = "gate"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "closed-again", Event = "OnStart", Condition = "FlagIsFalse",
+            Flag = "gate", Action = "ShowMessage", Message = "Gate closed again"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "missing", Event = "OnStart", Condition = "FlagIsFalse",
+            Flag = "", Action = "ShowMessage", Message = "Should never show"
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "unknown", Event = "OnStart", Action = "ExecuteCSharp",
+            Message = "System.IO.File.DeleteAll();"
+        });
+        var runner = new MapLogicRunner();
+        Herald.Lines.Clear();
+        runner.Configure(map);
+        Invoke(runner, "Start");
+        Check(Herald.Lines.Count == 3, "false/true/cleared flag branches all fire in order");
+        Check(Herald.Lines[0] == "Gate closed" && Herald.Lines[1] == "Gate opened"
+              && Herald.Lines[2] == "Gate closed again", "ordered condition sequence");
+        Check(!Herald.Lines.Exists(line => line.Contains("Should never") ||
+              line.Contains("DeleteAll")), "missing flag and arbitrary action fail closed");
+        Invoke(runner, "Start");
+        Check(Herald.Lines.Count == 3, "once-only boolean branches remain once only");
+        Invoke(runner, "OnDestroy");
+
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        var errors = (List<string>)Invoke(editor, "Validate");
+        Check(errors.Exists(error => error.Contains("допустимый флаг")),
+              "invalid empty flag rejected at editor save");
+        map.Triggers.RemoveAll(t => t.Id == "missing" || t.Id == "unknown");
+        errors = (List<string>)Invoke(editor, "Validate");
+        Check(errors.Count == 0, "safe false-flag and clear-flag actions are saveable");
+    }
     static void EditorContracts()
     {
         var map = Map();
@@ -154,6 +213,7 @@ static class Program
     {
         LegacyJsonAndAtomicWrite();
         RulesRuntime();
+        BooleanTriggerBranching();
         EditorContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
