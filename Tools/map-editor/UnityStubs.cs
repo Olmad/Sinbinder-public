@@ -31,6 +31,8 @@ namespace UnityEngine
         public string name;
         public Transform transform = new Transform();
         public GameObject(string name = "") { this.name = name; }
+        public bool activeSelf = true;
+        public void SetActive(bool active) { activeSelf = active; }
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType t) => new GameObject();
         public T[] GetComponentsInChildren<T>() where T : Component, new()
@@ -180,6 +182,7 @@ namespace UnityEngine
         public static bool GetKey(KeyCode code) => false;
         public static bool GetKeyDown(KeyCode code) => false;
         public static bool GetMouseButtonDown(int button) => false;
+        public static bool GetMouseButton(int button) => false;
         public static float GetAxisRaw(string name) => 0;
     }
     public static class Screen { public static int width = 1600, height = 900; }
