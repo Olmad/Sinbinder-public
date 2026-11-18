@@ -247,9 +247,9 @@ static class Program
         Check(MapTerrain.Valid(map), "bounded hill passes validation");
         Check(MathF.Abs(MapTerrain.HeightAt(map, 0f, 0f) - 6f) < 0.0001f,
               "hill raises exact centre by authored height");
-        Check(MathF.Abs(MapTerrain.HeightAt(map, 10f, 0f) - 3.375f) < 0.0001f &&
+        Check(MathF.Abs(MapTerrain.HeightAt(map, 10f, 0f) - 3.3456f) < 0.0001f &&
               MapTerrain.HeightAt(map, 20f, 0f) == 0f,
-              "radial terrain brush tapers to unchanged edge");
+              "triangle-aligned terrain height tapers to unchanged edge");
         var mesh = MapTerrain.BuildMesh(map);
         Check(mesh != null && mesh.vertices.Length == 81 * 81 &&
               mesh.triangles.Length == 80 * 80 * 6,
