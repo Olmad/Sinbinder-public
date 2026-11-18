@@ -52,13 +52,26 @@ namespace Sinbinder.Gameplay
                     if (args[a] == "-tugAi" && System.Enum.TryParse<MapSession.Seat>("Ai" + args[a + 1], out var level))
                         for (int s = 1; s < MapSession.Seats.Count; s++) MapSession.Seats[s] = level;
             }
+            map.EnsureLists();
             Current = map;
+            // Map-authored rules are a small allowlisted ECA language, never arbitrary code.
+            MapLogicRunner logic = null;
+            if (map.Triggers.Count > 0)
+            {
+                logic = gameObject.AddComponent<MapLogicRunner>();
+                logic.Configure(map);
+            }
 
             var ground = GameObject.Find("Поле");
             if (ground != null) ground.transform.localScale = new Vector3(map.Size / 10f, 1f, map.Size / 10f);
 
             var root = new GameObject(Loc.F("Карта — {0}", map.Name)).transform;
-            foreach (var t in map.Things) Place(t.Prop, root, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
+            foreach (var t in map.Things)
+            {
+                var model = Place(t.Prop, root, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
+                if (logic != null && model != null && !string.IsNullOrEmpty(t.Id))
+                    logic.RegisterObject(t.Id, model.transform);
+            }
 
             // Склеп — пол, стены, дверь на петле и трон (автор, 27.10: «у склепа не хватает стен и
             // возможности открывать дверь и пола»), префабом сборщика (TugSceneBuilder.BuildCrypt).
@@ -248,13 +261,14 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Модель — как ставит сборщик сцен: поворот импорта сохраняется.</summary>
-        private static void Place(string prop, Transform parent, Vector3 at, float yaw, float scale)
+        private static GameObject Place(string prop, Transform parent, Vector3 at, float yaw, float scale)
         {
             var prefab = Prefab(prop);
-            if (prefab == null) { Debug.LogWarning($"[КАРТЫ] Нет модели «{prop}» в Resources/Props."); return; }
+            if (prefab == null) { Debug.LogWarning($"[КАРТЫ] Нет модели «{prop}» в Resources/Props."); return null; }
             var go = Instantiate(prefab, parent);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
             go.transform.localScale = prefab.transform.localScale * scale;
+            return go;
         }
 
         /// <summary>Невидимая метка места: по ней ставят жителей, охотников и события (шаги 1–4).</summary>
