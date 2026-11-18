@@ -145,7 +145,7 @@ Assets/Scripts/Core/Grammar.cs	1b8a1a099e9474ae251b6d4314d97827bd2b159c	11173	CS
 Assets/Scripts/Core/GraphicsOptions.cs	4ee341038530ec0f06f07b3d5938d8eea00817d1	15118	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Core/Loc.cs	0865eeb9310031767ae5f4f726e6e7715dd239aa	10310	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Core/LocSetup.cs	69e2549e92a0c4f34d2b089b0e17d21fadec552d	4489	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Core/LocationDatabase.asset	f028a7b03a9e23f830fa7f312a7f6b9e992bde03	1135	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/LocationDatabase.asset	f028a7b03a9e23f830fa7f312a7f6b9e992bde03	1135	UnitySerialized	10	10	0	10	UNKNOWN	FULL YAML read, 38 physical lines, blob f028a7b03a9e23f830fa7f312a7f6b9e992bde03: 10 Locations records with SceneName/DisplayName/Tag. All 10 DisplayName values inspected: Prologue_Camp, SampleScene, Prologue_Raid, Prologue_Escape, Crypt_Entrance, Crypt_Test, Tug_2, Tug_4, Field, MapEditor. All duplicate raw SceneName identifiers, not localized RU/EN labels. UNKNOWN whether DisplayName is shown to players, whether these scenes are reachable, and whether a localization/fallback transforms it. Need LocationDatabase.cs consumers and scene existence to establish semantic correctness. No runtime.
 Assets/Scripts/Core/LocationDatabase.cs	0a8e1931e18b4e3026ad70c863c5d4b1b53d8c4b	707	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Core/LocationManager.cs	80cc265a1d12038e3319bce7f16ebe12c48fa7e8	4451	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Core/MapData.cs	57b01d191db80094c048fb512bb22d2ba6da7ba7	12905	CSharp	0	0	0	0	UNINSPECTED	
@@ -557,7 +557,7 @@ Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs	ad55ecaa457fec5a68095795cb247
 Assets/TutorialInfo/Scripts/Readme.cs	95f62693b6368237a9586e6ffce4670961877066	302	CSharp	0	0	0	0	UNINSPECTED	
 Packages/manifest.json	86d10be374c31b52df7100903261f0351b3a7e89	2062	JSON	0	0	0	0	UNINSPECTED	
 Packages/packages-lock.json	71b2ac61051147e693b3488b53c5e0337320cd0c	13242	JSON	0	0	0	0	UNINSPECTED	
-ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 20 physical lines, blob 27287fec5f4e4b712cbdd5b3a6383cbfd900b940: only audio device/voice/DSP numeric settings and empty plugin identifiers, no player-facing string or localization. EXCLUDED_TECH, not audio content verification.
 ProjectSettings/ClusterInputManager.asset	e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b	114	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/DynamicsManager.asset	fc90ab9589af00aa403b7aeb17cf53779a9aa571	1254	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/EditorBuildSettings.asset	5662e39e7b36e52ffd4e6fb6d405d9b3e48f3d6c	1313	UnitySerialized	0	0	0	0	UNINSPECTED	
@@ -575,7 +575,7 @@ ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	T
 ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
 ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 71 physical lines, blob 6413d11ff54dc0a0b364765f1d35bbd42d7d79cf: Unity engine tags/layers/rendering layer names only (Default, TransparentFX, Ignore Raycast, Water, UI, Light Layer 1..7); no dialogue, UI copy, or localized game text. EXCLUDED_TECH, not a review of scenes referencing tags.
 ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca9	461	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
