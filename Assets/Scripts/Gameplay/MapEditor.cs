@@ -85,6 +85,8 @@ namespace Sinbinder.Gameplay
         private Mode _mode = Mode.Place;
         private Kind _selectionKind;
         private int _selectionIndex = -1;
+        private readonly HashSet<string> _selectedThingIds = new();
+        private float _groupStep = 5f;
         private float _snap = 2f;
         private float _terrainRadius = 18f;
         private float _terrainDelta = 3f;
@@ -186,10 +188,16 @@ namespace Sinbinder.Gameplay
                 else if (Input.GetKeyDown(KeyCode.Y)) Redo();
                 else if (Input.GetKeyDown(KeyCode.S)) Save();
                 else if (Input.GetKeyDown(KeyCode.D)) DuplicateSelected();
+                else if (Input.GetKeyDown(KeyCode.A) && _mode == Mode.Select) SelectAllThings();
                 return;
             }
             if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
-            if (Input.GetKeyDown(KeyCode.Escape)) _selectionIndex = -1;
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                _selectionIndex = -1;
+                _selectedThingIds.Clear();
+                Redraw();
+            }
             // The GUI takes no world clicks, including the right-hand inspector.
             if (Input.mousePosition.y > Screen.height - ToolbarHeight ||
                 Input.mousePosition.x < PanelWidth + 20f ||
@@ -207,7 +215,8 @@ namespace Sinbinder.Gameplay
             if (Input.GetMouseButtonDown(0))
             {
                 if (_mode == Mode.Place) Put(Snapped(at));
-                else if (_mode == Mode.Select) Select(at);
+                else if (_mode == Mode.Select)
+                    Select(at, Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
                 else if (_mode == Mode.Terrain || _mode == Mode.Paint)
                 {
                     int before = _mode == Mode.Terrain
@@ -546,6 +555,7 @@ namespace Sinbinder.Gameplay
             _map.EnsureLists();
             _name = _map.Name;
             _selectionIndex = -1;
+            _selectedThingIds.Clear();
             if (_savedSnapshot != null)
                 _dirty = JsonUtility.ToJson(_map) != _savedSnapshot;
             Redraw();
@@ -558,17 +568,30 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
-        private void Select(Vector3 at)
+        /// <summary>Select only regular props in groups; crypts, regions and triggers
+        /// retain their existing single-item inspector, and are never moved accidentally.</summary>
+        private void SelectAllThings()
+        {
+            _selectedThingIds.Clear();
+            foreach (var t in _map.Things)
+                if (t != null && !string.IsNullOrEmpty(t.Id)) _selectedThingIds.Add(t.Id);
+            _selectionKind = Kind.Thing;
+            _selectionIndex = _map.Things.Count > 0 ? 0 : -1;
+            Redraw();
+        }
+
+        private void Select(Vector3 at, bool additive = false)
         {
             float best = 6f;
-            _selectionIndex = -1;
-            void Candidate(Kind kind, int index, float x, float z)
+            int selected = -1;
+            Kind kind = Kind.Thing;
+            void Candidate(Kind candidate, int index, float x, float z)
             {
                 float d = Vector2.Distance(new Vector2(x, z), new Vector2(at.x, at.z));
                 if (d >= best) return;
                 best = d;
-                _selectionKind = kind;
-                _selectionIndex = index;
+                kind = candidate;
+                selected = index;
             }
             for (int i = 0; i < _map.Things.Count; i++)
                 Candidate(Kind.Thing, i, _map.Things[i].X, _map.Things[i].Z);
@@ -582,7 +605,38 @@ namespace Sinbinder.Gameplay
                 Candidate(Kind.Event, i, _map.Events[i].X, _map.Events[i].Z);
             for (int i = 0; i < _map.Regions.Count; i++)
                 Candidate(Kind.Region, i, _map.Regions[i].X, _map.Regions[i].Z);
+            if (selected < 0)
+            {
+                if (!additive) { _selectedThingIds.Clear(); _selectionIndex = -1; }
+            }
+            else if (kind == Kind.Thing)
+            {
+                var id = _map.Things[selected].Id;
+                if (!additive) _selectedThingIds.Clear();
+                if (!string.IsNullOrEmpty(id))
+                {
+                    if (additive && _selectedThingIds.Contains(id)) _selectedThingIds.Remove(id);
+                    else _selectedThingIds.Add(id);
+                }
+                _selectionKind = Kind.Thing;
+                _selectionIndex = _selectedThingIds.Contains(id) ? selected
+                    : _map.Things.FindIndex(t => t != null && _selectedThingIds.Contains(t.Id));
+            }
+            else if (!additive)
+            {
+                _selectedThingIds.Clear();
+                _selectionKind = kind;
+                _selectionIndex = selected;
+            }
             Redraw();
+        }
+
+        private List<MapData.Thing> GroupThings()
+        {
+            var group = new List<MapData.Thing>();
+            foreach (var t in _map.Things)
+                if (t != null && _selectedThingIds.Contains(t.Id)) group.Add(t);
+            return group;
         }
 
         private bool SelectedPosition(out Vector3 position)
@@ -608,7 +662,13 @@ namespace Sinbinder.Gameplay
 
         private void HighlightSelection()
         {
-            if (SelectedPosition(out var p))
+            if (_selectedThingIds.Count > 1)
+            {
+                foreach (var t in GroupThings())
+                    Disc(new Vector3(t.X, 0.12f, t.Z), 1.4f,
+                        new Color(1f, 0.78f, 0.14f, 0.55f));
+            }
+            else if (SelectedPosition(out var p))
                 Disc(p, 1.4f, new Color(1f, 0.78f, 0.14f, 0.55f));
         }
 
@@ -799,6 +859,12 @@ namespace Sinbinder.Gameplay
                                         Mathf.Max(120f, Screen.height - ToolbarHeight - 20f)),
                                         GUI.skin.box);
             GUILayout.Label(Loc.T("Карта"));
+            if (_mode == Mode.Select)
+            {
+                if (GUILayout.Button(Loc.T("Выделить все объекты (Ctrl+A)")))
+                    SelectAllThings();
+                GUILayout.Label(Loc.F("Выделено объектов: {0}", _selectedThingIds.Count));
+            }
             GUILayout.Label(Loc.T("Имя карты"));
             string name = GUILayout.TextField(_name ?? "");
             if (name != _name) { Record(); _name = name; _map.Name = name; }
