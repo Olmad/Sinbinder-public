@@ -5,6 +5,7 @@ namespace UnityEngine
     public class Object
     {
         public static void Destroy(Object o) { }
+        public static void DestroyImmediate(Object o) { }
         public static T Instantiate<T>(T prefab) where T : Object => prefab;
     }
     public class Component : Object
@@ -21,6 +22,8 @@ namespace UnityEngine
         public Vector3 localScale = new Vector3(1, 1, 1);
         public Vector3 localPosition;
         public Quaternion rotation;
+        public Vector3 InverseTransformPoint(Vector3 p) => p;
+        public Vector3 InverseTransformVector(Vector3 v) => v;
         public void SetPositionAndRotation(Vector3 at, Quaternion orientation)
         { position = at; rotation = orientation; }
     }
@@ -39,6 +42,8 @@ namespace UnityEngine
         {
             return new T[] { GetComponent<T>() };
         }
+        public T GetComponentInChildren<T>() where T : Component, new() => GetComponent<T>();
+        public T AddComponent<T>() where T : Component, new() => GetComponent<T>();
         public T GetComponent<T>() where T : Component, new()
         {
             if (!_components.TryGetValue(typeof(T), out var component))
@@ -73,8 +78,20 @@ namespace UnityEngine
     }
     public class MeshFilter : Component { public Mesh sharedMesh; }
     public class MeshCollider : Collider { public Mesh sharedMesh; }
+    public class BoxCollider : Collider
+    {
+        public Vector3 center;
+        public Vector3 size;
+    }
+    public struct Bounds
+    {
+        public Vector3 center;
+        public Vector3 size;
+        public void Encapsulate(Bounds b) { }
+    }
     public class Renderer : Component
     {
+        public Bounds bounds;
         private Material[] _shared = Array.Empty<Material>();
         public Material sharedMaterial
         {
@@ -114,7 +131,11 @@ namespace UnityEngine
         public string name;
         public Color color;
         public Material(Shader shader) { }
+        public Material(Material other) { name = other.name; }
+        public void SetTexture(string property, Texture2D texture) { }
+        public void SetTextureScale(string property, Vector2 scale) { }
     }
+    public class Texture2D : Object { }
     public struct Color
     {
         public float r, g, b, a;
@@ -124,6 +145,7 @@ namespace UnityEngine
     public struct Vector2
     {
         public float x, y;
+        public static Vector2 one => new Vector2(1,1);
         public Vector2(float x, float y) { this.x = x; this.y = y; }
         public static float Distance(Vector2 a, Vector2 b)
         { float x = a.x - b.x, y = a.y - b.y; return MathF.Sqrt(x*x + y*y); }
@@ -202,6 +224,7 @@ namespace UnityEngine
         public static GUILayoutOption MinHeight(float size)=>new GUILayoutOption();
         public static GUILayoutOption Width(float size)=>new GUILayoutOption();
         public static void BeginArea(Rect bounds, GUIStyle style) { }
+        public static void Space(float amount) { }
         public static void EndArea() { }
         public static void BeginHorizontal() { }
         public static void EndHorizontal() { }
@@ -232,6 +255,7 @@ namespace UnityEngine
     public static class Debug
     {
         public static void LogWarning(string text) { }
+        public static void Log(string text) { }
         public static void LogError(string text) { }
     }
 }
