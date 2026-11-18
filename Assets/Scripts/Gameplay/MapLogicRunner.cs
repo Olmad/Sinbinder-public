@@ -108,6 +108,7 @@ namespace Sinbinder.Gameplay
             {
                 case "Always": return true;
                 case "FlagIsTrue": return !string.IsNullOrEmpty(t.Flag) && _flags.Contains(t.Flag);
+                case "FlagIsFalse": return !string.IsNullOrEmpty(t.Flag) && !_flags.Contains(t.Flag);
                 default: return false; // Unknown condition fails closed.
             }
         }
@@ -123,6 +124,10 @@ namespace Sinbinder.Gameplay
                 case "SetFlag":
                     if (string.IsNullOrWhiteSpace(t.Flag) || t.Flag.Length > 64) return false;
                     _flags.Add(t.Flag);
+                    return true;
+                case "ClearFlag":
+                    if (string.IsNullOrWhiteSpace(t.Flag) || t.Flag.Length > 64) return false;
+                    _flags.Remove(t.Flag);
                     return true;
                 default: return false; // No arbitrary user-supplied code.
             }
