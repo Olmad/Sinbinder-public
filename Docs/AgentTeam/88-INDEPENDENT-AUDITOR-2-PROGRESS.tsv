@@ -557,9 +557,9 @@ Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs	ad55ecaa457fec5a68095795cb247
 Assets/TutorialInfo/Scripts/Readme.cs	95f62693b6368237a9586e6ffce4670961877066	302	CSharp	0	0	0	0	UNINSPECTED	
 Packages/manifest.json	86d10be374c31b52df7100903261f0351b3a7e89	2062	JSON	0	0	0	0	UNINSPECTED	
 Packages/packages-lock.json	71b2ac61051147e693b3488b53c5e0337320cd0c	13242	JSON	0	0	0	0	UNINSPECTED	
-ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/ClusterInputManager.asset	e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b	114	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/DynamicsManager.asset	fc90ab9589af00aa403b7aeb17cf53779a9aa571	1254	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML read lines 1-19, blob 27287fec5f4e4b712cbdd5b3a6383cbfd900b940; audio mixer/voice counts and DSP numeric settings; empty plugin names; 0 player-facing strings in file; runtime-generated text and linked resources not assessed
+ProjectSettings/ClusterInputManager.asset	e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b	114	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML read lines 1-6, blob e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b; m_Inputs empty; no user text; 0 player-facing strings in file; runtime-generated text and linked resources not assessed
+ProjectSettings/DynamicsManager.asset	fc90ab9589af00aa403b7aeb17cf53779a9aa571	1254	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML read lines 1-36, blob fc90ab9589af00aa403b7aeb17cf53779a9aa571; physics numerical parameters and collision matrix only; 0 player-facing strings in file; runtime-generated text and linked resources not assessed
 ProjectSettings/EditorBuildSettings.asset	5662e39e7b36e52ffd4e6fb6d405d9b3e48f3d6c	1313	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/EditorSettings.asset	878c4cb8d33ea203c002885f3f658b5c52d5e3dd	1585	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/GraphicsSettings.asset	84b2182fe3e3bc3e639c1e90e9e979e5a2515cc2	2615	UnitySerialized	0	0	0	0	UNINSPECTED	
@@ -575,8 +575,8 @@ ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	T
 ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
 ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML read lines 1-76, blob 6413d11ff54dc0a0b364765f1d35bbd42d7d79cf; Unity layer/sorting names Default, UI, Water, Light Layer 1-7; engine identifiers, no display text or dialogue; 0 player-facing strings in file; runtime-generated text and linked resources not assessed
+ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML read lines 1-14, blob 2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1; timesteps and time scale numerical values only; 0 player-facing strings in file; runtime-generated text and linked resources not assessed
 ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca9	461	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VFXManager.asset	3a95c98bec50cf72538061fd26eee95398f72128	308	UnitySerialized	0	0	0	0	UNINSPECTED	
