@@ -557,7 +557,7 @@ Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs	ad55ecaa457fec5a68095795cb247
 Assets/TutorialInfo/Scripts/Readme.cs	95f62693b6368237a9586e6ffce4670961877066	302	CSharp	0	0	0	0	UNINSPECTED	
 Packages/manifest.json	86d10be374c31b52df7100903261f0351b3a7e89	2062	JSON	0	0	0	0	UNINSPECTED	
 Packages/packages-lock.json	71b2ac61051147e693b3488b53c5e0337320cd0c	13242	JSON	0	0	0	0	UNINSPECTED	
-ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full 19-line YAML read on feature/server-prototype; blob 27287fec5f4e4b712cbdd5b3a6383cbdd5b3a6383cbfd900b940; AudioManager engine configuration only (volume, rolloff, doppler, speaker mode, DSP buffer, voice counts, plugin slots); no serialized dialogue, UI labels, localization keys or player-facing text; 0/0 player-facing strings; linked plugin/runtime generated messages UNKNOWN
 ProjectSettings/ClusterInputManager.asset	e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b	114	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/DynamicsManager.asset	fc90ab9589af00aa403b7aeb17cf53779a9aa571	1254	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/EditorBuildSettings.asset	5662e39e7b36e52ffd4e6fb6d405d9b3e48f3d6c	1313	UnitySerialized	0	0	0	0	UNINSPECTED	
