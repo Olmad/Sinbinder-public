@@ -14,7 +14,7 @@ logicmeta=src("Assets/Scripts/Gameplay/MapLogicRunner.cs.meta")
 assert "guid: 545372576548c774b8f6dca21dc8760b" in metadata, "Existing MapEditor Unity reference changed"
 assert "guid: 5da4d5bc71fa4e9b92a503154d59b1c7" in logicmeta
 assert "Sinbinder.Gameplay.MapEditor" in scene, "Scene no longer references the existing map editor"
-assert 'public string Id = ""; public string Prop = "Pine";' in data
+assert 'public string Prop = "Pine";' in data and 'public string MaterialId = "";' in data
 assert "public List<Region> Regions = new();" in data and "public List<Trigger> Triggers = new();" in data
 assert "MapTerrain.ApplyGround(ground, map, ref _terrainMesh, ref _originalGroundMesh);" in loader
 assert "MapTerrain.HeightAt(map," in loader, "Placed gameplay objects not attached to real terrain height"
@@ -22,7 +22,21 @@ assert "MapTerrain.ApplyGround(ground, _map, ref _terrainMesh, ref _originalGrou
 assert "private void Sculpt(Vector3 at)" in editor and "_map.TerrainStrokes.Add" in editor
 assert "public List<TerrainStroke> TerrainStrokes = new();" in data
 assert "collider.sharedMesh = next != null ? next : original;" in data
-assert "map.EnsureLists();" in loader and "MapLogicRunner logic = null;" in loader
+assert "map.EnsureLists();" in loader
+assert "MapAssets.ApplyObjectMaterial(model, t.MaterialId);" in loader
+assert 'MapAssets.UserPrefab(prop)' in loader
+assert 'public List<TerrainPaint> TerrainPaints = new();' in data
+assert 'mesh.SetTriangles(groups[g].ToArray(), g);' in data
+assert 'MapAssets.TerrainMaterial(ids[i])' in data
+assert 'private void PaintTerrain(Vector3 at)' in editor
+assert 'private void ScatterVegetation(Vector3 at)' in editor
+importer = src("Assets/Editor/MapAssetImporter.cs")
+assert 'PrefabUtility.SaveAsPrefabAsset(obj, target);' in importer
+assert 'AssetDatabase.CreateAsset(material, target);' in importer
+assert 'Path.GetExtension(file).ToLowerInvariant()' in importer
+assert 'if (!CheckNewAsset(target)) return;' in importer
+for mat in ["Ground048", "Ground077", "Gravel043", "Rock022"]:
+    assert (root / ("Assets/Resources/MapTerrainMaterials/" + mat + ".mat")).is_file(), mat and "MapLogicRunner logic = null;" in loader
 assert "logic.Configure(map);" in loader
 assert "logic.RegisterObject(t.Id, model.transform);" in loader
 assert "MapLogicRunner.OfferInteractions(Offer);" in gear, "Object events not reachable through actual F stack"
@@ -38,4 +52,4 @@ assert "private List<string> Validate()" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
 assert "UnityEditor" not in runner and "System.Reflection" not in runner
-print("PASS: scene GUID intact; shared runtime/editor terrain collider + heights; map ECA wired into F; atomic saving and validation present")
+print("PASS: scene GUID intact; imported material/prefab authoring paths; terrain paint/vegetation/mesh; F-ECA integration; atomic save")
