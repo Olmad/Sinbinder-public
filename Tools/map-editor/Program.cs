@@ -439,6 +439,25 @@ static class Program
         var after = (MapData)typeof(MapEditor).GetField("_map",
                         BindingFlags.Instance | BindingFlags.NonPublic).GetValue(vegetation);
         Check(after.Things.Count == 13, "redo restores full vegetation cluster");
+        foreach (var biome in new[] { "Forest", "DeadForest", "Meadow", "Wasteland" })
+        {
+            var world = Map();
+            var biomes = new MapEditor();
+            Set(biomes, "_map", world);
+            Set(biomes, "_name", world.Name);
+            Set(biomes, "_vegetationPreset", biome);
+            Invoke(biomes, "ScatterVegetation", new Vector3(40f, 0f, 30f));
+            var kinds = new HashSet<string>();
+            for (int i = 1; i < world.Things.Count; i++)
+                kinds.Add(world.Things[i].Prop);
+            Check(world.Things.Count == 13 && kinds.Count >= 2,
+                  "biome " + biome + " creates a mixed authored nature group");
+            Invoke(biomes, "Undo");
+            var clean = (MapData)typeof(MapEditor).GetField("_map",
+                        BindingFlags.Instance | BindingFlags.NonPublic).GetValue(biomes);
+            Check(clean.Things.Count == 1,
+                  "biome " + biome + " is one undoable group command");
+        }
     }
 
     static void DragAndFlattenTools()
