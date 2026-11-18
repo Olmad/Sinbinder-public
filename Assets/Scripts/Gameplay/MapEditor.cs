@@ -20,7 +20,8 @@ namespace Sinbinder.Gameplay
     /// </summary>
     public class MapEditor : MonoBehaviour
     {
-        private enum Kind { Thing, Crypt, Location, Trail, Event }
+        private enum Kind { Thing, Crypt, Location, Trail, Event, Region, Trigger }
+        private enum Mode { Place, Select, Erase }
 
         private struct Brush { public string Title; public Kind Kind; public string Arg; }
 
@@ -44,6 +45,7 @@ namespace Sinbinder.Gameplay
             new() { Title = Loc.N("Тропа охотников"), Kind = Kind.Trail, Arg = "hunters" },
             new() { Title = Loc.N("Событие: обоз"), Kind = Kind.Event, Arg = "caravan" },
             new() { Title = Loc.N("Событие: деревня"), Kind = Kind.Event, Arg = "village" },
+            new() { Title = Loc.N("Область события"), Kind = Kind.Region, Arg = "region" },
         };
 
         private MapData _map;
@@ -57,6 +59,17 @@ namespace Sinbinder.Gameplay
         private readonly List<Material> _previewMaterials = new();
         private Camera _cam;
         private float _height = 70f;
+        private Mode _mode = Mode.Place;
+        private Kind _selectionKind;
+        private int _selectionIndex = -1;
+        private float _snap = 2f;
+        private string _filter = "";
+        private Vector2 _inspectorScroll;
+        private readonly List<string> _undo = new();
+        private readonly List<string> _redo = new();
+        private const int MaxHistory = 35;
+        private const float InspectorWidth = 300f;
+        private const float ToolbarHeight = 44f;
 
         void Start()
         {
@@ -69,6 +82,8 @@ namespace Sinbinder.Gameplay
             _map = MapSession.Map == null
                 ? new MapData { Name = Loc.T("Новая карта"), Size = 300f }
                 : JsonUtility.FromJson<MapData>(JsonUtility.ToJson(MapSession.Map));
+            _map.EnsureLists();
+            EnsureIds();
             _path = MapSession.Path;
             _name = _map.Name;
             if (_cam != null) _cam.transform.SetPositionAndRotation(new Vector3(0f, _height, -_height * 0.35f), Quaternion.Euler(72f, 0f, 0f));
@@ -88,11 +103,28 @@ namespace Sinbinder.Gameplay
             if (Input.GetKey(KeyCode.Q)) _yaw -= 90f * Time.unscaledDeltaTime;
             if (Input.GetKey(KeyCode.E)) _yaw += 90f * Time.unscaledDeltaTime;
 
-            // Щелчок по окну палитры — не по карте.
-            if (Input.mousePosition.x < PanelWidth + 20f) return;
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            {
+                if (Input.GetKeyDown(KeyCode.Z)) Undo();
+                else if (Input.GetKeyDown(KeyCode.Y)) Redo();
+                else if (Input.GetKeyDown(KeyCode.S)) Save();
+                else if (Input.GetKeyDown(KeyCode.D)) DuplicateSelected();
+                return;
+            }
+            if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
+            if (Input.GetKeyDown(KeyCode.Escape)) _selectionIndex = -1;
+            // The GUI takes no world clicks, including the right-hand inspector.
+            if (Input.mousePosition.y > Screen.height - ToolbarHeight ||
+                Input.mousePosition.x < PanelWidth + 20f ||
+                Input.mousePosition.x > Screen.width - InspectorWidth - 20f) return;
             if (!Ground(out var at)) return;
-            if (Input.GetMouseButtonDown(0)) Put(at);
-            if (Input.GetMouseButtonDown(1)) Remove(at);
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (_mode == Mode.Place) Put(Snapped(at));
+                else if (_mode == Mode.Select) Select(at);
+                else Remove(at);
+            }
+            if (Input.GetMouseButtonDown(1)) Select(at);
         }
 
         private const float PanelWidth = 260f;
@@ -110,14 +142,16 @@ namespace Sinbinder.Gameplay
 
         private void Put(Vector3 at)
         {
+            Record();
             var b = Palette[_brush];
             switch (b.Kind)
             {
-                case Kind.Thing: _map.Things.Add(new MapData.Thing { Prop = b.Arg, X = at.x, Z = at.z, Yaw = _yaw, Scale = 1f }); break;
+                case Kind.Thing: _map.Things.Add(new MapData.Thing { Id = NewId(), Prop = b.Arg, X = at.x, Z = at.z, Yaw = _yaw, Scale = 1f }); break;
                 case Kind.Crypt: _map.Crypts.Add(new MapData.Crypt { X = at.x, Z = at.z, Yaw = _yaw }); break;
                 case Kind.Location: _map.Locations.Add(new MapData.Location { Kind = b.Arg, Name = Loc.T(b.Title), X = at.x, Z = at.z }); break;
                 case Kind.Trail: _map.Trails.Add(new MapData.Spot { Kind = b.Arg, X = at.x, Z = at.z }); break;
                 case Kind.Event: _map.Events.Add(new MapData.Spot { Kind = b.Arg, X = at.x, Z = at.z }); break;
+                case Kind.Region: _map.Regions.Add(new MapData.Region { Id = NewId(), Name = Loc.T("Новая область"), X = at.x, Z = at.z }); break;
             }
             Redraw();
         }
@@ -136,8 +170,11 @@ namespace Sinbinder.Gameplay
             foreach (var l in _map.Locations) { var k = l; Try(k.X, k.Z, () => _map.Locations.Remove(k)); }
             foreach (var s in _map.Trails) { var k = s; Try(k.X, k.Z, () => _map.Trails.Remove(k)); }
             foreach (var s in _map.Events) { var k = s; Try(k.X, k.Z, () => _map.Events.Remove(k)); }
+            foreach (var region in _map.Regions) { var k = region; Try(k.X, k.Z, () => _map.Regions.Remove(k)); }
             if (drop == null) return;
+            Record();
             drop();
+            _selectionIndex = -1;
             Redraw();
         }
 
@@ -166,6 +203,9 @@ namespace Sinbinder.Gameplay
             foreach (var l in _map.Locations) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
             foreach (var s in _map.Trails) Disc(new Vector3(s.X, 0.06f, s.Z), 3f, new Color(0.8f, 0.15f, 0.12f));
             foreach (var s in _map.Events) Disc(new Vector3(s.X, 0.07f, s.Z), 2.5f, new Color(0.95f, 0.8f, 0.2f));
+            foreach (var region in _map.Regions)
+                Disc(new Vector3(region.X, 0.045f, region.Z), region.Radius, new Color(0.25f, 0.4f, 0.75f, 0.23f));
+            HighlightSelection();
         }
 
         private static Color LocationColour(string kind) => kind switch
