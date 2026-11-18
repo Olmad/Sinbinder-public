@@ -30,6 +30,8 @@ namespace Sinbinder.Core
         // Optional since v2: maps saved before the editor upgrade remain loadable.
         public List<Region> Regions = new();
         public List<Trigger> Triggers = new();
+        // Optional since v3: no height strokes means the original, perfectly flat map.
+        public List<TerrainStroke> TerrainStrokes = new();
 
         /// <summary>Named playable zone for safe event-condition-action logic.</summary>
         [System.Serializable] public class Region
@@ -61,6 +63,14 @@ namespace Sinbinder.Core
             public bool Once = true;
         }
 
+        /// <summary>One bounded, deterministic terrain brush impression (world metres).</summary>
+        [System.Serializable] public class TerrainStroke
+        {
+            public float X, Z;
+            public float Radius = 18f;
+            public float Delta = 3f;
+        }
+
         /// <summary>Склеп игрока с троном: здесь появляется Греховод стороны.</summary>
         [System.Serializable] public class Crypt { public float X, Z, Yaw; }
 
@@ -85,6 +95,7 @@ namespace Sinbinder.Core
             Events ??= new List<Spot>();
             Regions ??= new List<Region>();
             Triggers ??= new List<Trigger>();
+            TerrainStrokes ??= new List<TerrainStroke>();
         }
 
         // ---------------------------------------------------------- папка
@@ -239,6 +250,120 @@ namespace Sinbinder.Core
                     map.Things.Add(new Thing { Prop = kind, X = cx + Mathf.Cos(a) * r, Z = cz + Mathf.Sin(a) * r, Yaw = i * 37f % 360f, Scale = 0.9f + (i * 7 % 5) * 0.06f });
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Shared map-authoring terrain contract. Uses exactly the same height function to
+    /// construct the editor's ground and the playable map's physics/navigation surface.
+    /// The default (missing/empty strokes) retains Unity's original plane mesh.
+    /// </summary>
+    public static class MapTerrain
+    {
+        public const int MaxStrokes = 128;
+        public const float MaxHeight = 24f;
+
+        private static bool Finite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+
+        public static bool Valid(MapData map)
+        {
+            if (map == null || !Finite(map.Size) || map.Size < 150f || map.Size > 800f)
+                return false;
+            if (map.TerrainStrokes == null || map.TerrainStrokes.Count == 0) return true;
+            if (map.TerrainStrokes.Count > MaxStrokes) return false;
+            float half = map.Size * 0.5f;
+            foreach (var stroke in map.TerrainStrokes)
+                if (stroke == null || !Finite(stroke.X) || !Finite(stroke.Z) ||
+                    !Finite(stroke.Radius) || !Finite(stroke.Delta) ||
+                    Mathf.Abs(stroke.X) > half || Mathf.Abs(stroke.Z) > half ||
+                    stroke.Radius < 4f || stroke.Radius > 100f ||
+                    Mathf.Abs(stroke.Delta) < 0.01f || Mathf.Abs(stroke.Delta) > 12f)
+                    return false;
+            return true;
+        }
+
+        /// <summary>Deterministic world height. Invalid downloaded terrain stays flat.</summary>
+        public static float HeightAt(MapData map, float x, float z)
+        {
+            if (!Valid(map) || map.TerrainStrokes == null) return 0f;
+            float height = 0f;
+            foreach (var stroke in map.TerrainStrokes)
+            {
+                float dx = x - stroke.X, dz = z - stroke.Z;
+                float radiusSq = stroke.Radius * stroke.Radius;
+                float d2 = dx * dx + dz * dz;
+                if (d2 >= radiusSq) continue;
+                float fade = 1f - d2 / radiusSq;
+                height += stroke.Delta * fade * fade;
+            }
+            return Mathf.Clamp(height, -MaxHeight, MaxHeight);
+        }
+
+        /// <summary>Real triangular terrain surface for rendering, physics and NavMesh.</summary>
+        public static Mesh BuildMesh(MapData map)
+        {
+            if (!Valid(map) || map.TerrainStrokes == null ||
+                map.TerrainStrokes.Count == 0) return null;
+            int cells = Mathf.Clamp(Mathf.RoundToInt(map.Size / 4f), 32, 128);
+            int stride = cells + 1;
+            var vertices = new Vector3[stride * stride];
+            var uvs = new Vector2[vertices.Length];
+            var triangles = new int[cells * cells * 6];
+            float step = map.Size / cells;
+            float half = map.Size * 0.5f;
+            for (int z = 0; z <= cells; z++)
+                for (int x = 0; x <= cells; x++)
+                {
+                    int index = z * stride + x;
+                    float wx = x * step - half, wz = z * step - half;
+                    vertices[index] = new Vector3(wx, HeightAt(map, wx, wz), wz);
+                    uvs[index] = new Vector2((float)x / cells, (float)z / cells);
+                }
+            int tri = 0;
+            for (int z = 0; z < cells; z++)
+                for (int x = 0; x < cells; x++)
+                {
+                    int a = z * stride + x;
+                    // Clockwise viewed from above => upward normal in Unity.
+                    triangles[tri++] = a;
+                    triangles[tri++] = a + stride;
+                    triangles[tri++] = a + 1;
+                    triangles[tri++] = a + 1;
+                    triangles[tri++] = a + stride;
+                    triangles[tri++] = a + stride + 1;
+                }
+            var mesh = new Mesh { name = "Sinbinder authored terrain" };
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        /// <summary>
+        /// Replace the existing plane mesh, not an overlapping decorative hill.
+        /// Preserves its material and collider, so NavMeshSurface sees actual slopes.
+        /// The original plane is restored if the last stroke is undone.
+        /// </summary>
+        public static void ApplyGround(GameObject ground, MapData map,
+                                       ref Mesh generated, ref Mesh original)
+        {
+            if (ground == null) return;
+            var filter = ground.GetComponent<MeshFilter>();
+            var collider = ground.GetComponent<MeshCollider>();
+            if (filter == null || collider == null) return;
+            if (original == null) original = filter.sharedMesh;
+            Mesh next = BuildMesh(map);
+            // Remove old physics mesh before replacing/destroying it.
+            collider.sharedMesh = null;
+            filter.sharedMesh = next != null ? next : original;
+            collider.sharedMesh = next != null ? next : original;
+            ground.transform.localScale = next != null
+                ? Vector3.one : new Vector3(map.Size / 10f, 1f, map.Size / 10f);
+            if (generated != null) UnityEngine.Object.Destroy(generated);
+            generated = next;
         }
     }
 
