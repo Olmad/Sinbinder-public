@@ -47,7 +47,13 @@ assert "default: return false;" in runner, "Missing fail-closed rule dispatch"
 assert "File.Replace(temp, path, path + \".bak\");" in data
 assert "File.Move(temp, path);" in data
 assert "private void Undo()" in editor and "private void Redo()" in editor
-assert "private void Select(Vector3 at)" in editor
+assert "private void Select(Vector3 at, bool additive = false)" in editor
+assert "private void SelectAllThings()" in editor
+assert "private void DuplicateSelectedThings()" in editor
+assert "private void DeleteSelectedThings()" in editor
+assert "private void RotateSelectedThings(float degrees)" in editor
+assert "private void MoveSelectedThings(float dx, float dz)" in editor
+assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
 assert "private List<string> Validate()" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
