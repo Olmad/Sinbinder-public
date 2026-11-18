@@ -639,6 +639,170 @@ namespace Sinbinder.Gameplay
             return group;
         }
 
+        private void MoveSelectedThings(float dx, float dz)
+        {
+            var group = GroupThings();
+            if (group.Count == 0 || (dx == 0f && dz == 0f)) return;
+            float half = _map.Size * 0.5f;
+            foreach (var t in group)
+                if (Mathf.Abs(t.X + dx) > half || Mathf.Abs(t.Z + dz) > half)
+                {
+                    _say = Loc.T("Группа выходит за границы карты. Изменения отменены.");
+                    return;
+                }
+            Change(() => { foreach (var t in group) { t.X += dx; t.Z += dz; } });
+        }
+
+        private void RotateSelectedThings(float degrees)
+        {
+            var group = GroupThings();
+            if (group.Count < 2 || degrees == 0f) return;
+            float cx = 0f, cz = 0f;
+            foreach (var t in group) { cx += t.X; cz += t.Z; }
+            cx /= group.Count; cz /= group.Count;
+            float angle = degrees * Mathf.Deg2Rad;
+            float c = Mathf.Cos(angle), v = Mathf.Sin(angle);
+            var positions = new List<Vector2>();
+            float half = _map.Size * 0.5f;
+            foreach (var t in group)
+            {
+                float dx = t.X - cx, dz = t.Z - cz;
+                // Same clockwise convention as a positive Unity Y yaw.
+                float nx = cx + dx * c + dz * v;
+                float nz = cz - dx * v + dz * c;
+                if (Mathf.Abs(nx) > half || Mathf.Abs(nz) > half)
+                {
+                    _say = Loc.T("Группа после поворота выйдет за границы карты.");
+                    return;
+                }
+                positions.Add(new Vector2(nx, nz));
+            }
+            Change(() =>
+            {
+                for (int i = 0; i < group.Count; i++)
+                {
+                    group[i].X = positions[i].x;
+                    group[i].Z = positions[i].y;
+                    group[i].Yaw = Mathf.Repeat(group[i].Yaw + degrees, 360f);
+                }
+            });
+        }
+
+        private bool CanDuplicateThings(List<MapData.Thing> group, float offset)
+        {
+            float half = _map.Size * 0.5f;
+            var ids = new HashSet<string>();
+            foreach (var t in group)
+            {
+                if (Mathf.Abs(t.X + offset) > half || Mathf.Abs(t.Z + offset) > half)
+                {
+                    _say = Loc.T("Группа не помещается на карте.");
+                    return false;
+                }
+                ids.Add(t.Id);
+            }
+            int linked = 0;
+            foreach (var rule in _map.Triggers)
+                if (rule != null && rule.Event == "OnInteractObject" &&
+                    ids.Contains(rule.TargetId)) linked++;
+            if (_map.Triggers.Count + linked > 128)
+            {
+                _say = Loc.T("Копии превысят лимит правил взаимодействия.");
+                return false;
+            }
+            return true;
+        }
+
+        private MapData.Thing CopyThingWithRules(MapData.Thing t, float offset)
+        {
+            var copy = new MapData.Thing
+            {
+                Id = NewId(), Prop = t.Prop, MaterialId = t.MaterialId,
+                X = t.X + offset, Z = t.Z + offset, Yaw = t.Yaw, Scale = t.Scale
+            };
+            _map.Things.Add(copy);
+            int before = _map.Triggers.Count;
+            for (int i = 0; i < before; i++)
+            {
+                var rule = _map.Triggers[i];
+                if (rule == null || rule.Event != "OnInteractObject" ||
+                    rule.TargetId != t.Id) continue;
+                _map.Triggers.Add(new MapData.Trigger
+                {
+                    Id = NewId(), Name = rule.Name, Enabled = rule.Enabled,
+                    Once = rule.Once, Event = rule.Event, RegionId = rule.RegionId,
+                    TargetId = copy.Id, Condition = rule.Condition, Flag = rule.Flag,
+                    Action = rule.Action, Message = rule.Message
+                });
+            }
+            return copy;
+        }
+
+        private void DuplicateSelectedThings()
+        {
+            var group = GroupThings();
+            if (group.Count == 0) return;
+            float offset = Mathf.Max(2f, _snap);
+            if (!CanDuplicateThings(group, offset)) return;
+            Change(() =>
+            {
+                var copies = new List<MapData.Thing>();
+                foreach (var t in group) copies.Add(CopyThingWithRules(t, offset));
+                _selectedThingIds.Clear();
+                foreach (var item in copies) _selectedThingIds.Add(item.Id);
+                _selectionKind = Kind.Thing;
+                _selectionIndex = _map.Things.IndexOf(copies[0]);
+            });
+            _say = Loc.F("Скопировано объектов: {0}. Их взаимодействия также скопированы.", group.Count);
+        }
+
+        private void DeleteSelectedThings()
+        {
+            var group = GroupThings();
+            if (group.Count == 0) return;
+            var ids = new HashSet<string>();
+            foreach (var t in group) ids.Add(t.Id);
+            int removedRules = 0;
+            Change(() =>
+            {
+                _map.Things.RemoveAll(t => t != null && ids.Contains(t.Id));
+                // Never leave dangling OnInteractObject references.
+                removedRules = _map.Triggers.RemoveAll(t =>
+                    t != null && t.Event == "OnInteractObject" && ids.Contains(t.TargetId));
+                _selectedThingIds.Clear();
+                _selectionIndex = -1;
+            });
+            _say = Loc.F("Удалено объектов: {0}, правил: {1}. Ctrl+Z вернёт всё.", group.Count, removedRules);
+        }
+
+        private void DrawGroupInspector()
+        {
+            GUILayout.Label(Loc.F("Группа объектов: {0}", GroupThings().Count));
+            GUILayout.Label(Loc.T("Shift+ЛКМ: добавить / исключить; Ctrl+A: все объекты."));
+            GUILayout.Label(Loc.F("Шаг перемещения: {0} м", Mathf.RoundToInt(_groupStep)));
+            _groupStep = Mathf.Round(GUILayout.HorizontalSlider(_groupStep, 1f, 20f));
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("←")) MoveSelectedThings(-_groupStep, 0f);
+            if (GUILayout.Button("→")) MoveSelectedThings(_groupStep, 0f);
+            if (GUILayout.Button("↑")) MoveSelectedThings(0f, _groupStep);
+            if (GUILayout.Button("↓")) MoveSelectedThings(0f, -_groupStep);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("↶ 15°")) RotateSelectedThings(-15f);
+            if (GUILayout.Button("↷ 15°")) RotateSelectedThings(15f);
+            if (GUILayout.Button("↶ 90°")) RotateSelectedThings(-90f);
+            if (GUILayout.Button("↷ 90°")) RotateSelectedThings(90f);
+            GUILayout.EndHorizontal();
+            if (GUILayout.Button(Loc.T("Копировать группу"))) DuplicateSelectedThings();
+            if (GUILayout.Button(Loc.T("Удалить группу"))) DeleteSelectedThings();
+            if (GUILayout.Button(Loc.T("Снять выделение")))
+            {
+                _selectedThingIds.Clear();
+                _selectionIndex = -1;
+                Redraw();
+            }
+        }
+
         private bool SelectedPosition(out Vector3 position)
         {
             position = Vector3.zero;
@@ -674,13 +838,20 @@ namespace Sinbinder.Gameplay
 
         private void DeleteSelected()
         {
+            if (_selectedThingIds.Count > 1) { DeleteSelectedThings(); return; }
             int i = _selectionIndex;
             if (i < 0) return;
             Change(() =>
             {
                 switch (_selectionKind)
                 {
-                    case Kind.Thing when i < _map.Things.Count: _map.Things.RemoveAt(i); break;
+                    case Kind.Thing when i < _map.Things.Count:
+                        var removedId = _map.Things[i].Id;
+                        _map.Things.RemoveAt(i);
+                        _map.Triggers.RemoveAll(rule => rule != null &&
+                            rule.Event == "OnInteractObject" && rule.TargetId == removedId);
+                        _selectedThingIds.Clear();
+                        break;
                     case Kind.Crypt when i < _map.Crypts.Count: _map.Crypts.RemoveAt(i); break;
                     case Kind.Location when i < _map.Locations.Count: _map.Locations.RemoveAt(i); break;
                     case Kind.Trail when i < _map.Trails.Count: _map.Trails.RemoveAt(i); break;
@@ -694,7 +865,15 @@ namespace Sinbinder.Gameplay
 
         private void DuplicateSelected()
         {
+            if (_selectedThingIds.Count > 1) { DuplicateSelectedThings(); return; }
             int i = _selectionIndex;
+            if (_selectionKind == Kind.Thing && i >= 0 && i < _map.Things.Count)
+            {
+                _selectedThingIds.Clear();
+                _selectedThingIds.Add(_map.Things[i].Id);
+                DuplicateSelectedThings();
+                return;
+            }
             if (i < 0) return;
             Change(() =>
             {
@@ -1118,6 +1297,11 @@ namespace Sinbinder.Gameplay
 
         private void DrawInspector()
         {
+            if (_selectedThingIds.Count > 1)
+            {
+                DrawGroupInspector();
+                return;
+            }
             int i = _selectionIndex;
             if (i < 0)
             {
