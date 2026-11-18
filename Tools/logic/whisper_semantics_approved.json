@@ -4,7 +4,7 @@
     "Greed": {
       "offer": "За твой ответ я заплачу три монеты.",
       "reply": "Три монеты. Договорились.",
-      "grounding": "Whisper.Moment checks bag.Gold >= GreedCoins (3), deducts exactly GreedCoins through bag.SpendGold when consent is applied, and never claims to credit spoils to the warrior.",
+      "grounding": "Whisper.Moment checks bag.Gold >= GreedCoins (3), requires bag.SpendGold(GreedCoins) to succeed, credits exactly that sum to w.Pocket(GreedCoins), and only then stores consent. Warrior.Pocket syncs the roster used by saves.",
       "negative_case": "With only 0–2 coins, w replies that three coins are unavailable and Outcome reports insufficient coins; changing the order cancels the charge.",
       "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
     },
