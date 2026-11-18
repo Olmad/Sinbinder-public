@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Sinbinder.Core;
@@ -62,6 +63,8 @@ namespace Sinbinder.Gameplay
 
         private MapData _map;
         private string _path;
+        private string _openedFingerprint;
+        private bool _unreadableSource;
         private int _brush;
         private float _yaw;
         private string _name;
@@ -115,10 +118,24 @@ namespace Sinbinder.Gameplay
             _map = MapSession.Map == null
                 ? new MapData { Name = Loc.T("Новая карта"), Size = 300f }
                 : JsonUtility.FromJson<MapData>(JsonUtility.ToJson(MapSession.Map));
+            _path = MapSession.Path;
+            // Always read the current on-disk map when available. Using an old
+            // lobby snapshot and fingerprinting a newer file would conceal
+            // external changes made between the lobby and opening this scene.
+            if (!string.IsNullOrEmpty(_path) && File.Exists(_path))
+            {
+                var latest = MapData.Load(_path);
+                if (latest != null) _map = latest;
+                else
+                {
+                    _unreadableSource = true;
+                    _say = Loc.T("Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию».");
+                }
+            }
+            _openedFingerprint = FileFingerprint(_path);
             _map.EnsureLists();
             RefreshAssets();
             EnsureIds();
-            _path = MapSession.Path;
             _name = _map.Name;
             if (_cam != null) _cam.transform.SetPositionAndRotation(new Vector3(0f, _height, -_height * 0.35f), Quaternion.Euler(72f, 0f, 0f));
             Redraw();
@@ -713,6 +730,7 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button("↶", GUILayout.Width(36f))) Undo();
             if (GUILayout.Button("↷", GUILayout.Width(36f))) Redo();
             if (GUILayout.Button(Loc.T("Записать"), GUILayout.Width(95f))) Save();
+            if (GUILayout.Button(Loc.T("Сохранить копию"), GUILayout.Width(144f))) SaveCopy();
             GUILayout.Label(Loc.F("Режим: {0}", _mode), GUILayout.Width(160f));
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
@@ -1202,7 +1220,21 @@ namespace Sinbinder.Gameplay
             return errors;
         }
 
-        private void Save()
+        /// <summary>
+        /// Compare actual file contents, not timestamps: clocks and sync tools can
+        /// preserve mtimes while changing map bytes. Errors block normal saves.
+        /// </summary>
+        private static string FileFingerprint(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            using (var hash = SHA256.Create())
+                return System.Convert.ToBase64String(hash.ComputeHash(File.ReadAllBytes(path)));
+        }
+
+        private void Save() => SaveInternal(false);
+        private void SaveCopy() => SaveInternal(true);
+
+        private void SaveInternal(bool saveCopy)
         {
             var errors = Validate();
             if (errors.Count > 0)
@@ -1214,20 +1246,37 @@ namespace Sinbinder.Gameplay
             _map.Name = string.IsNullOrWhiteSpace(_name) ? Loc.T("Новая карта") : _name.Trim();
             try
             {
-                string destination = _path;
-                if (string.IsNullOrEmpty(destination))
+                bool createNew = saveCopy || string.IsNullOrEmpty(_path);
+                string destination = createNew ? null : _path;
+                if (!createNew)
+                {
+                    // No overwrite of unreadable or externally edited data.
+                    if (_unreadableSource || FileFingerprint(destination) != _openedFingerprint)
+                    {
+                        _say = Loc.T("Файл карты изменён или повреждён на диске. Оригинал не перезаписан. Используйте «Сохранить копию».");
+                        return;
+                    }
+                }
+                else
                 {
                     string file = string.Join("_", _map.Name.Split(Path.GetInvalidFileNameChars())).Trim().Trim('.');
                     if (string.IsNullOrEmpty(file)) file = "SinbinderMap";
-                    destination = Path.Combine(MapData.Folder, file + ".json");
+                    string folder = !string.IsNullOrEmpty(_path)
+                        ? Path.GetDirectoryName(_path) : MapData.Folder;
+                    if (string.IsNullOrEmpty(folder)) folder = MapData.Folder;
+                    destination = Path.Combine(folder, file + ".json");
                     int suffix = 2;
                     while (File.Exists(destination))
-                        destination = Path.Combine(MapData.Folder, file + "_" + suffix++ + ".json");
+                        destination = Path.Combine(folder, file + "_" + suffix++ + ".json");
                 }
-                var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
-                // MapData.Save performs an atomic replace and retains the old .bak.
-                _map.Save(destination);
+
+                // CreateNew must not overwrite an existing destination even if
+                // another process creates the name after the File.Exists check.
+                _map.Save(destination, overwrite: !createNew);
                 _path = destination;
+                _openedFingerprint = FileFingerprint(_path);
+                _unreadableSource = false;
+                var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
                 {
                     MapSession.Path = _path;
@@ -1243,5 +1292,6 @@ namespace Sinbinder.Gameplay
                 Debug.LogError("[Редактор карт] " + error);
             }
         }
+
     }
 }
