@@ -4308,8 +4308,8 @@ msgid "Наше — только наше. Остальным ни монеты.
 msgstr "Ours is ours alone. Not a coin for the rest."
 
 #: Dialogue/EncounterLines.cs
-msgid "Делим пополам, как всегда. Без счёта."
-msgstr "We split it down the middle, as always. No counting."
+msgid "Свою долю я посчитаю. Твою не трону."
+msgstr "I'll count my share. I won't touch yours."
 
 #: Dialogue/EncounterLines.cs
 msgid "Тебе первому. Я перебьюсь."
@@ -4320,8 +4320,8 @@ msgid "Пусть видят, кто мы. Остальные — пыль."
 msgstr "Let them see who we are. The rest are dust."
 
 #: Dialogue/EncounterLines.cs
-msgid "При тебе я отступать не стану. Ты знаешь."
-msgstr "With you here, I won't retreat. You know that."
+msgid "При тебе отступить? Да мне потом самому в глаза не смотреть."
+msgstr "Retreat in front of you? I couldn't look myself in the eye."
 
 #: Dialogue/EncounterLines.cs
 msgid "Встань рядом. Вдвоём и стоять легче."
@@ -4332,8 +4332,8 @@ msgid "Разорвём их. На обоих хватит."
 msgstr "We'll tear them apart. There's enough for both of us."
 
 #: Dialogue/EncounterLines.cs
-msgid "Ты слева. Я справа. Как тогда."
-msgstr "You take the left. I'll take the right. Like back then."
+msgid "Ты слева. Я справа. Только под руку не попадись."
+msgstr "You take the left. I'll take the right. Just stay out of my swing."
 
 #: Dialogue/EncounterLines.cs
 msgid "Живой останься. Об остальном потом."
@@ -4348,44 +4348,44 @@ msgid "Тебе я не завидую. Тебе — нет."
 msgstr "I don't envy you. Not you."
 
 #: Dialogue/EncounterLines.cs
-msgid "С тобой одним я себя не меряю."
-msgstr "You're the only one I don't measure myself against."
+msgid "Сейчас не до зависти. Стань рядом."
+msgstr "No time for envy now. Stand beside me."
 
 #: Dialogue/EncounterLines.cs
 msgid "Ты мой. Кто тронет — пожалеет."
 msgstr "You're mine. Whoever touches you will regret it."
 
 #: Dialogue/EncounterLines.cs
-msgid "Без тебя мне тут делать нечего."
-msgstr "Without you there's nothing for me here."
+msgid "Не вздумай исчезнуть. Я должен тебя видеть."
+msgstr "Don't you dare vanish. I need to keep you in sight."
 
 #: Dialogue/EncounterLines.cs
 msgid "Я тебя отсюда вынесу. Хоть на себе."
 msgstr "I'll get you out of here. Carry you if I have to."
 
 #: Dialogue/EncounterLines.cs
-msgid "Их припасы поделим на двоих. Только на двоих."
-msgstr "We'll split their supplies between the two of us. Just the two of us."
+msgid "Будет еда, делим на двоих. Чужих не зови."
+msgstr "If there's food, we'll split it. Don't invite anyone else."
 
 #: Dialogue/EncounterLines.cs
-msgid "Вернёмся — накрою стол. Не спорь."
-msgstr "When we get back, I'll lay the table. Don't argue."
+msgid "Доживём до ужина, тогда и о еде поспорим."
+msgstr "Live until supper, then we'll argue about the food."
 
 #: Dialogue/EncounterLines.cs
 msgid "Последний кусок тебе. Я потерплю."
 msgstr "The last bite is yours. I can wait."
 
 #: Dialogue/EncounterLines.cs
-msgid "Нам обоим всё равно. Хоть вместе."
-msgstr "Neither of us cares. At least we're together."
+msgid "Мне всё равно, чем кончится. Но в одиночку хуже."
+msgstr "I don't care how it ends. Being alone is worse."
 
 #: Dialogue/EncounterLines.cs
-msgid "Ты один меня с места и сдвигаешь."
-msgstr "You're the only one who ever gets me moving."
+msgid "Мне бы не шевелиться. А придётся тебя прикрывать."
+msgstr "I'd rather not move. But I'll have to cover you."
 
 #: Dialogue/EncounterLines.cs
-msgid "С тобой ещё можно. Спасибо, что позвал."
-msgstr "With you it's bearable. Thanks for asking me along."
+msgid "Постоим рядом. Так хоть молчать легче."
+msgstr "Let's stand together. Even silence is easier that way."
 
 #: Dialogue/EncounterLines.cs
 msgid "Легенда. За твою голову дадут столько, что можно не воевать."
@@ -7353,20 +7353,24 @@ msgid "Мука! Целый мешок!"
 msgstr ""
 
 #: Gameplay/ExpeditionBook.cs
-msgid "Пленённая знахарка"
-msgstr ""
+msgid "Конвой с пленником"
+msgstr "Convoy with a prisoner"
 
 #: Gameplay/ExpeditionBook.cs
-msgid "Её ведут на суд. Она знает травы — и души."
-msgstr ""
+msgid "Стража ведёт связанного человека на суд. Вмешаться можно, но без боя не обойдётся."
+msgstr "The guards are taking a bound prisoner to trial. Intervening means a fight."
 
 #: Gameplay/ExpeditionBook.cs
 msgid "Освободить"
 msgstr ""
 
 #: Gameplay/ExpeditionBook.cs
-msgid "Отдать Ордену за награду"
-msgstr ""
+msgid "Забрать золото, пленника оставить"
+msgstr "Take the gold and leave the prisoner"
+
+#: Gameplay/ExpeditionBook.cs
+msgid "Освободить пленника"
+msgstr "Free the prisoner"
 
 #: Gameplay/ExpeditionBook.cs
 msgid "Реликвия Ордена"
