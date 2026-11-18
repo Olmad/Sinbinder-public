@@ -581,4 +581,4 @@ ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca
 ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VFXManager.asset	3a95c98bec50cf72538061fd26eee95398f72128	308	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VersionControlSettings.asset	dca288142fc043d5a749e9058fe625505008834f	188	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full JSON read 8 lines; blob 482590c196f7a82116679f58176b9d1aff21d7f9; only XR configuration keys VR Device Disabled and VR Device User Alert with False/False values; neither is a runtime text payload or localization key; 0/0 player-facing strings; whether Unity emits an external VR alert remains UNKNOWN
