@@ -49,6 +49,8 @@ assert "File.Move(temp, path);" in data
 assert "private void Undo()" in editor and "private void Redo()" in editor
 assert "private void Select(Vector3 at, bool additive = false)" in editor
 assert "private void SelectAllThings()" in editor
+assert "private void SelectRectangle(Vector3 first, Vector3 last, bool additive = false)" in editor
+assert "GetMouseButtonUp(0)" in editor
 assert "private void DuplicateSelectedThings()" in editor
 assert "private void DeleteSelectedThings()" in editor
 assert "private void RotateSelectedThings(float degrees)" in editor
