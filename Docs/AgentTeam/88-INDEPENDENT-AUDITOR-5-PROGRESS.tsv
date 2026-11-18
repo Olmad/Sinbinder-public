@@ -568,7 +568,7 @@ ProjectSettings/MemorySettings.asset	5b5facecace9276319b6e497953ab0429de65b61	11
 ProjectSettings/MultiplayerManager.asset	2a936644e0d87339f17484efc93de6f0de5774b1	157	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/NavMeshAreas.asset	3b0b7c3d183abdd300112f56965916ef11667f54	1308	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/PackageManagerSettings.asset	be4a7974ec170d9bfa288154684b318966c43f13	1003	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full YAML read 55 lines; blob 6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f; Physics2DSettings numeric physics/solver flags, layer collision bitmask and editor collider colors only; no runtime player-facing text, Loc keys, Text/TMP or dialogue; 0 player-facing strings; Unity runtime and referenced materials UNKNOWN
 ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/ProjectSettings.asset	e0bd16d751c8aee0d0bbf7b0994c0194ad4653d8	25533	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	EXCLUDED_TECH	L0 full 2-line UTF-8 read at branch HEAD 25a3205849c5f595ca637e0cdb64ded4bc97a589; blob b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb; Unity Editor version and revision metadata only, no runtime dialogue/UI/Loc or player-facing strings; 0/0 semantic strings; installed Unity runtime UNKNOWN
