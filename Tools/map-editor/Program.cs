@@ -441,6 +441,64 @@ static class Program
         Check(after.Things.Count == 13, "redo restores full vegetation cluster");
     }
 
+    static void DragAndFlattenTools()
+    {
+        var map = Map();
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        var modeField = typeof(MapEditor).GetField("_mode",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        modeField.SetValue(editor, Enum.Parse(modeField.FieldType, "Terrain"));
+        var start = new Vector3(30f, 0f, 35f);
+        Invoke(editor, "Sculpt", start);
+        Set(editor, "_lastBrush", start);
+        Invoke(editor, "ContinueBrush", new Vector3(65f, 0f, 35f));
+        Check(map.TerrainStrokes.Count > 1 &&
+              map.TerrainStrokes.Count <= 1 + 8,
+              "held terrain brush adds spaced bounded impressions");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(undone.TerrainStrokes.Count == 0,
+              "one undo removes entire dragged terrain gesture");
+        Invoke(editor, "Redo");
+        var redone = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(redone.TerrainStrokes.Count > 1,
+              "redo restores all samples of dragged terrain gesture");
+
+        Set(editor, "_terrainFlatten", true);
+        Invoke(editor, "Sculpt", new Vector3(34f, 0f, 35f));
+        Check(redone.TerrainStrokes[redone.TerrainStrokes.Count - 1].Mode == "Flatten",
+              "flatten brush produces serialized safe terrain mode");
+        Invoke(editor, "Undo");
+
+        var paint = Map();
+        var painter = new MapEditor();
+        Set(painter, "_map", paint);
+        Set(painter, "_name", paint.Name);
+        modeField.SetValue(painter, Enum.Parse(modeField.FieldType, "Paint"));
+        var at = new Vector3(-15f, 0f, -15f);
+        Invoke(painter, "PaintTerrain", at);
+        Set(painter, "_lastBrush", at);
+        Invoke(painter, "ContinueBrush", new Vector3(25f, 0f, -15f));
+        Check(paint.TerrainPaints.Count > 1,
+              "paint brush supports continuous real material placement");
+        Invoke(painter, "Undo");
+        var paintUndone = (MapData)typeof(MapEditor).GetField("_map",
+                          BindingFlags.Instance | BindingFlags.NonPublic).GetValue(painter);
+        Check(paintUndone.TerrainPaints.Count == 0,
+              "one undo removes entire dragged paint gesture");
+        Invoke(painter, "ShowBrushCursor", at);
+        var preview = (GameObject)typeof(MapEditor).GetField("_brushCursor",
+                      BindingFlags.Instance | BindingFlags.NonPublic).GetValue(painter);
+        Check(preview != null && preview.activeSelf,
+              "brush has visible preview footprint over terrain");
+        Invoke(painter, "HideBrushCursor");
+        Check(!preview.activeSelf, "brush preview hides outside the paint canvas");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -450,6 +508,7 @@ static class Program
         EditorContracts();
         TerrainRoundtripAndCollider();
         MaterialsAndVegetation();
+        DragAndFlattenTools();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
