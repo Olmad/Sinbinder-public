@@ -166,14 +166,17 @@ namespace Sinbinder.Gameplay
                 bool canPay = sin != SinType.Greed || (bag != null && bag.Gold >= GreedCoins);
                 applied = yielded && canPay && w != null && !w.IsDead &&
                     w.Soul != null && w.HasCommand && w.CommandRevision == agreedOrder;
+                // Debit first, and only grant consent when the transfer succeeds.
+                // A bribe cannot count as paid if the purse has changed.
+                if (applied && sin == SinType.Greed && !bag.SpendGold(GreedCoins))
+                {
+                    applied = false;
+                    canPay = false;
+                }
                 if (applied)
                 {
-                    if (sin == SinType.Greed)
-                    {
-                        // A bribe must reach the warrior, not just disappear from the Lord's purse.
-                        // Pocket() also synchronizes the roster for subsequent saves.
-                        if (bag.SpendGold(GreedCoins)) w.Pocket(GreedCoins);
-                    }
+                    // Pocket() credits the warrior and synchronizes the roster for saves.
+                    if (sin == SinType.Greed) w.Pocket(GreedCoins);
                     Until[w] = new Consent { Until = Time.time + Holds, OrderRevision = agreedOrder };
                     if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
                 }
