@@ -88,6 +88,11 @@ namespace Sinbinder.Gameplay
         private GameObject[] _customPrefabs = new GameObject[0];
         private Material[] _terrainMaterials = new Material[0];
         private Material[] _objectMaterials = new Material[0];
+        private bool _draggingBrush;
+        private Vector3 _lastBrush;
+        private float _dragFlattenHeight;
+        private GameObject _brushCursor;
+        private Material _brushCursorMaterial;
         private Mesh _terrainMesh;
         private Mesh _originalGroundMesh;
         private string _filter = "";
@@ -110,9 +115,7 @@ namespace Sinbinder.Gameplay
                 ? new MapData { Name = Loc.T("Новая карта"), Size = 300f }
                 : JsonUtility.FromJson<MapData>(JsonUtility.ToJson(MapSession.Map));
             _map.EnsureLists();
-            _customPrefabs = Resources.LoadAll<GameObject>("MapUserProps");
-            _terrainMaterials = Resources.LoadAll<Material>("MapTerrainMaterials");
-            _objectMaterials = Resources.LoadAll<Material>("MapUserMaterials");
+            RefreshAssets();
             EnsureIds();
             _path = MapSession.Path;
             _name = _map.Name;
@@ -122,6 +125,7 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
+            if (!Input.GetMouseButton(0)) _draggingBrush = false;
             if (_cam == null) return;
             var input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
             float speed = (Input.GetKey(KeyCode.LeftShift) ? 90f : 35f) * Time.unscaledDeltaTime;
@@ -135,6 +139,8 @@ namespace Sinbinder.Gameplay
 
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {
+                _draggingBrush = false;
+                HideBrushCursor();
                 if (Input.GetKeyDown(KeyCode.Z)) Undo();
                 else if (Input.GetKeyDown(KeyCode.Y)) Redo();
                 else if (Input.GetKeyDown(KeyCode.S)) Save();
@@ -146,18 +152,41 @@ namespace Sinbinder.Gameplay
             // The GUI takes no world clicks, including the right-hand inspector.
             if (Input.mousePosition.y > Screen.height - ToolbarHeight ||
                 Input.mousePosition.x < PanelWidth + 20f ||
-                Input.mousePosition.x > Screen.width - InspectorWidth - 20f) return;
-            if (!Ground(out var at)) return;
+                Input.mousePosition.x > Screen.width - InspectorWidth - 20f)
+            {
+                HideBrushCursor();
+                return;
+            }
+            if (!Ground(out var at))
+            {
+                HideBrushCursor();
+                return;
+            }
+            ShowBrushCursor(at);
             if (Input.GetMouseButtonDown(0))
             {
                 if (_mode == Mode.Place) Put(Snapped(at));
                 else if (_mode == Mode.Select) Select(at);
-                else if (_mode == Mode.Terrain) Sculpt(Snapped(at));
-                else if (_mode == Mode.Paint) PaintTerrain(Snapped(at));
+                else if (_mode == Mode.Terrain || _mode == Mode.Paint)
+                {
+                    int before = _mode == Mode.Terrain
+                        ? _map.TerrainStrokes.Count : _map.TerrainPaints.Count;
+                    var point = Snapped(at);
+                    if (_mode == Mode.Terrain) Sculpt(point);
+                    else PaintTerrain(point);
+                    int after = _mode == Mode.Terrain
+                        ? _map.TerrainStrokes.Count : _map.TerrainPaints.Count;
+                    _draggingBrush = after > before;
+                    _lastBrush = point;
+                }
                 else if (_mode == Mode.Vegetation) ScatterVegetation(Snapped(at));
                 else Remove(at);
             }
-            if (Input.GetMouseButtonDown(1)) Select(at);
+            else if (_draggingBrush && Input.GetMouseButton(0) &&
+                     (_mode == Mode.Terrain || _mode == Mode.Paint))
+                ContinueBrush(Snapped(at));
+            if (Input.GetMouseButtonDown(1) && _mode != Mode.Terrain &&
+                _mode != Mode.Paint && _mode != Mode.Vegetation) Select(at);
         }
 
         private const float PanelWidth = 260f;
@@ -199,6 +228,17 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
+        private void RefreshAssets()
+        {
+            _customPrefabs = Resources.LoadAll<GameObject>("MapUserProps");
+            _terrainMaterials = Resources.LoadAll<Material>("MapTerrainMaterials");
+            _objectMaterials = Resources.LoadAll<Material>("MapUserMaterials");
+        }
+
+        private void AppendPaint(Vector3 at) =>
+            _map.TerrainPaints.Add(new MapData.TerrainPaint
+            { X = at.x, Z = at.z, Radius = _paintRadius, MaterialId = _paintMaterial });
+
         /// <summary>Paint real terrain triangles using a bundled or imported Unity material.</summary>
         private void PaintTerrain(Vector3 at)
         {
@@ -219,10 +259,9 @@ namespace Sinbinder.Gameplay
                 _say = Loc.T("На карте может быть не более семи материалов земли.");
                 return;
             }
-            Change(() => _map.TerrainPaints.Add(new MapData.TerrainPaint
-            {
-                X = at.x, Z = at.z, Radius = _paintRadius, MaterialId = _paintMaterial
-            }));
+            Record();
+            AppendPaint(at);
+            Redraw();
         }
 
         /// <summary>Deterministic terrain-aware vegetation cluster; one Undo = whole cluster.</summary>
@@ -296,14 +335,94 @@ namespace Sinbinder.Gameplay
             }
             float half = _map.Size * 0.5f;
             if (Mathf.Abs(at.x) > half || Mathf.Abs(at.z) > half) return;
-            Change(() => _map.TerrainStrokes.Add(new MapData.TerrainStroke
+            _dragFlattenHeight = MapTerrain.HeightAt(_map, at.x, at.z);
+            Record();
+            AppendTerrain(at);
+            Redraw();
+        }
+
+        private void AppendTerrain(Vector3 at) =>
+            _map.TerrainStrokes.Add(new MapData.TerrainStroke
             {
                 X = at.x, Z = at.z,
                 Radius = _terrainRadius,
                 Delta = _terrainRaise ? _terrainDelta : -_terrainDelta,
                 Mode = _terrainFlatten ? "Flatten" : "Add",
-                TargetHeight = _terrainFlatten ? MapTerrain.HeightAt(_map, at.x, at.z) : 0f
-            }));
+                TargetHeight = _terrainFlatten ? _dragFlattenHeight : 0f
+            });
+
+        /// <summary>One mouse drag is one Undo transaction, not dozens of history entries.</summary>
+        private void ContinueBrush(Vector3 at)
+        {
+            float radius = _mode == Mode.Terrain ? _terrainRadius : _paintRadius;
+            float spacing = Mathf.Max(4f, radius * 0.6f);
+            float dx = at.x - _lastBrush.x, dz = at.z - _lastBrush.z;
+            float distance = Mathf.Sqrt(dx * dx + dz * dz);
+            if (distance < spacing) return;
+            int count = Mathf.Min(8, (int)(distance / spacing));
+            bool touched = false;
+            for (int i = 0; i < count; i++)
+            {
+                if (_mode == Mode.Terrain &&
+                    _map.TerrainStrokes.Count >= MapTerrain.MaxStrokes) break;
+                if (_mode == Mode.Paint &&
+                    _map.TerrainPaints.Count >= MapTerrain.MaxPaints) break;
+                if (!MapTerrain.Valid(_map)) break;
+                float fraction = spacing / distance;
+                float x = _lastBrush.x + (at.x - _lastBrush.x) * fraction;
+                float z = _lastBrush.z + (at.z - _lastBrush.z) * fraction;
+                var next = new Vector3(x, 0f, z);
+                float half = _map.Size * 0.5f;
+                if (Mathf.Abs(next.x) > half || Mathf.Abs(next.z) > half) break;
+                if (_mode == Mode.Terrain) AppendTerrain(next);
+                else AppendPaint(next);
+                _lastBrush = next;
+                touched = true;
+                dx = at.x - _lastBrush.x;
+                dz = at.z - _lastBrush.z;
+                distance = Mathf.Sqrt(dx * dx + dz * dz);
+                if (distance < spacing) break;
+            }
+            if (touched) Redraw();
+        }
+
+        private void HideBrushCursor()
+        {
+            if (_brushCursor != null) _brushCursor.SetActive(false);
+        }
+
+        private void ShowBrushCursor(Vector3 at)
+        {
+            if (_mode != Mode.Terrain && _mode != Mode.Paint &&
+                _mode != Mode.Vegetation)
+            {
+                HideBrushCursor();
+                return;
+            }
+            if (_brushCursor == null)
+            {
+                _brushCursor = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                _brushCursor.name = "Sinbinder editor brush preview only";
+                Destroy(_brushCursor.GetComponent<Collider>());
+                _brushCursorMaterial = new Material(Shader.Find("Sprites/Default"));
+                _brushCursor.GetComponent<Renderer>().sharedMaterial = _brushCursorMaterial;
+            }
+            _brushCursor.SetActive(true);
+            float radius = _mode == Mode.Terrain ? _terrainRadius :
+                           _mode == Mode.Paint ? _paintRadius : _vegetationRadius;
+            _brushCursor.transform.position = new Vector3(at.x,
+                MapTerrain.HeightAt(_map, at.x, at.z) + 0.18f, at.z);
+            _brushCursor.transform.localScale =
+                new Vector3(radius * 2f, 0.02f, radius * 2f);
+            _brushCursorMaterial.color = _mode == Mode.Paint
+                ? new Color(0.2f, 0.75f, 0.95f, 0.24f)
+                : _mode == Mode.Vegetation
+                    ? new Color(0.2f, 0.9f, 0.25f, 0.24f)
+                    : _terrainFlatten
+                        ? new Color(0.9f, 0.76f, 0.3f, 0.24f)
+                        : _terrainRaise
+                            ? new Color(0.4f, 0.85f, 0.25f, 0.24f)
+                            : new Color(0.8f, 0.25f, 0.55f, 0.24f);
         }
 
         // ---------------------------------------------------------- selection and history
@@ -337,6 +456,7 @@ namespace Sinbinder.Gameplay
 
         private void Undo()
         {
+            _draggingBrush = false;
             if (_undo.Count == 0) return;
             _redo.Add(JsonUtility.ToJson(_map));
             Restore(_undo[_undo.Count - 1]);
@@ -346,6 +466,7 @@ namespace Sinbinder.Gameplay
 
         private void Redo()
         {
+            _draggingBrush = false;
             if (_redo.Count == 0) return;
             _undo.Add(JsonUtility.ToJson(_map));
             if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
@@ -492,6 +613,8 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             ClearPreview();
+            if (_brushCursor != null) Destroy(_brushCursor);
+            if (_brushCursorMaterial != null) Destroy(_brushCursorMaterial);
             if (_terrainMesh != null) Destroy(_terrainMesh);
         }
 
@@ -612,7 +735,7 @@ namespace Sinbinder.Gameplay
                 _terrainRadius = Mathf.Round(GUILayout.HorizontalSlider(_terrainRadius, 8f, 60f));
                 GUILayout.Label(Loc.F("Шаг высоты: {0} м", Mathf.RoundToInt(_terrainDelta)));
                 _terrainDelta = Mathf.Round(GUILayout.HorizontalSlider(_terrainDelta, 1f, 8f));
-                GUILayout.Label(Loc.T("ЛКМ: изменить высоту; Ctrl+Z: отменить."));
+                GUILayout.Label(Loc.T("ЛКМ удерживать: рисовать; Ctrl+Z: отменить весь мазок."));
             }
             if (_mode == Mode.Paint)
             {
@@ -622,7 +745,8 @@ namespace Sinbinder.Gameplay
                         _paintMaterial = mat.name;
                 GUILayout.Label(Loc.F("Радиус кисти: {0} м", Mathf.RoundToInt(_paintRadius)));
                 _paintRadius = Mathf.Round(GUILayout.HorizontalSlider(_paintRadius, 4f, 60f));
-                GUILayout.Label(Loc.T("Чтобы добавить материалы, используйте меню Sinbinder в Unity."));
+                GUILayout.Label(Loc.T("Удерживайте ЛКМ для покраски. Ctrl+Z отменяет мазок."));
+                GUILayout.Label(Loc.T("Новые материалы: Sinbinder → Редактор карт → Импорт."));
             }
             if (_mode == Mode.Vegetation)
             {
@@ -640,6 +764,12 @@ namespace Sinbinder.Gameplay
                 _vegetationCount = Mathf.RoundToInt(GUILayout.HorizontalSlider(_vegetationCount, 1, 40));
                 GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_vegetationRadius)));
                 _vegetationRadius = Mathf.Round(GUILayout.HorizontalSlider(_vegetationRadius, 4, 65));
+            }
+
+            if (GUILayout.Button(Loc.T("Обновить библиотеку моделей и материалов")))
+            {
+                RefreshAssets();
+                _say = Loc.T("Библиотека ассетов обновлена.");
             }
 
             _logicTab = GUILayout.Toolbar(_logicTab ? 1 : 0,
