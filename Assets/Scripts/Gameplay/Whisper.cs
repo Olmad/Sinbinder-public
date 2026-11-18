@@ -168,7 +168,12 @@ namespace Sinbinder.Gameplay
                     w.Soul != null && w.HasCommand && w.CommandRevision == agreedOrder;
                 if (applied)
                 {
-                    if (sin == SinType.Greed) bag.SpendGold(GreedCoins);
+                    if (sin == SinType.Greed)
+                    {
+                        // A bribe must reach the warrior, not just disappear from the Lord's purse.
+                        // Pocket() also synchronizes the roster for subsequent saves.
+                        if (bag.SpendGold(GreedCoins)) w.Pocket(GreedCoins);
+                    }
                     Until[w] = new Consent { Until = Time.time + Holds, OrderRevision = agreedOrder };
                     if (before < Ceiling) w.Soul.Change(sin, Mathf.Min(Corrupts, Ceiling - before));
                 }
