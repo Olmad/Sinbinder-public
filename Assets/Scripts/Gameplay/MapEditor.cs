@@ -1117,6 +1117,10 @@ namespace Sinbinder.Gameplay
                 errors.Add(Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."));
             if (!MapTerrain.Valid(_map))
                 errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
+            foreach (var paint in _map.TerrainPaints)
+                if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
+                    MapAssets.TerrainMaterial(paint.MaterialId) == null))
+                    errors.Add(Loc.F("Материал земли не найден: {0}", paint.MaterialId));
             foreach (var t in _map.Things)
                 if (t != null && !string.IsNullOrEmpty(t.MaterialId) &&
                     MapAssets.ObjectMaterial(t.MaterialId) == null)
