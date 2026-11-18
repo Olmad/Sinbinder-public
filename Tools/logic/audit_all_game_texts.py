@@ -47,6 +47,18 @@ SUSPECT = [
      "Is half of the spoils actually transferred or merely gold spent?"),
     ("PROMISED_SAFETY", re.compile(r"до утра никто не тронет", re.I),
      "Can the game truthfully guarantee safety until morning?"),
+    ("UNVERIFIED_TASTED_VIALS", re.compile(r"Твои склянки на вкус пробовал", re.I),
+     "Character claims prior personal interaction with alchemist without event memory gate"),
+    ("SHARED_HISTORY_UNPROVEN", re.compile(r"(?:как тогда|как всегда|с тобой (?:с детства|вместе))", re.I),
+     "Check whether both characters actually share the asserted history"),
+    ("UNVERIFIED_PERSONAL_RESCUE", re.compile(r"(?:Его однажды спасли|Его однажды предали)", re.I),
+     "Does exact MemoryRecord support the named historical event?"),
+    ("UNVERIFIED_FULL_WALLET", re.compile(r"У него полный кошель", re.I),
+     "Source condition is PocketGold>0, which may be a single coin"),
+    ("FUTURE_REWARD_CLAIM", re.compile(r"(?:Вечером будет мясо|Вернёмся — накрою стол)", re.I),
+     "Does stated resource/meal actually exist, or is this a character's mere intention?"),
+    ("REFERENCE_TO_WOMAN", re.compile(r"(?:Она смотрит|взгляд женщины|та девушка)", re.I),
+     "Check whether such a woman is present and known in this playable section"),
 ]
 INTERP = re.compile(r'(?<!\{)\{(\d+)(?:[^{}]*)\}(?!\})')
 LOCALE_ID = re.compile(r'^msgid "((?:\\.|[^"])*)"\s*$')
@@ -323,10 +335,14 @@ def main() -> int:
     for item in translations[:30]:
         print("LOCALIZATION_REVIEW: " + json.dumps(item, ensure_ascii=False)[:400])
 
-    print("known_suspect_details:")
-    for f in findings[:60]:
-        print(f"[{f['severity']}] {f['path']}:{f['line']} "
-              f"{f['pattern']}: {f['text'][:130]}")
+    print("known_suspect_categories:")
+    category_counter = collections.Counter(x["pattern"] for x in findings)
+    print(json.dumps(category_counter, ensure_ascii=False))
+    for pattern in sorted(category_counter):
+        representative = [x for x in findings if x["pattern"] == pattern]
+        for f in representative[:6]:
+            print(f"[{f['severity']}] {f['path']}:{f['line']} "
+                  f"{f['pattern']}: {f['text'][:130]}")
     if counts["read_errors"]:
         return 2
     return 0
