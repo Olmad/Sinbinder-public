@@ -9,15 +9,14 @@ namespace UnityEngine
     }
     public class Component : Object
     {
-        public Transform transform = new Transform(false);
+        public Transform transform;
+        public Component() { transform = this is Transform own ? own : new Transform(); }
         public T GetComponent<T>() where T : Component, new() => new T();
     }
     public class Behaviour : Component { public bool enabled = true; }
     public class MonoBehaviour : Behaviour { }
     public class Transform : Component
     {
-        public Transform() : this(false) { }
-        public Transform(bool ignored) { if (ignored) transform = this; }
         public Vector3 position;
         public Vector3 localScale = new Vector3(1, 1, 1);
         public Vector3 localPosition;
