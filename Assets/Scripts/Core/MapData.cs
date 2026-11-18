@@ -291,6 +291,7 @@ namespace Sinbinder.Core
         public const int MaxStrokes = 128;
         public const int MaxPaints = 256;
         public const int MaxTerrainMaterials = 8;
+        public const string RestoreOriginalMaterial = "_Original";
         public const float MaxHeight = 24f;
 
         private static bool Finite(float value) =>
@@ -311,7 +312,10 @@ namespace Sinbinder.Core
                         Mathf.Abs(paint.Z) > map.Size * 0.5f ||
                         paint.Radius < 4f || paint.Radius > 100f ||
                         !MapAssets.ValidId(paint.MaterialId)) return false;
-                    materials.Add(paint.MaterialId);
+                    // The eraser references the already-present base material.
+                    // It must never consume one of the seven extra material slots.
+                    if (paint.MaterialId != RestoreOriginalMaterial)
+                        materials.Add(paint.MaterialId);
                     if (materials.Count >= MaxTerrainMaterials) return false;
                 }
             }
@@ -466,7 +470,8 @@ namespace Sinbinder.Core
                 if (p == null) continue;
                 float dx = x - p.X, dz = z - p.Z;
                 if (dx * dx + dz * dz <= p.Radius * p.Radius)
-                    return MapAssets.ValidId(p.MaterialId) ? p.MaterialId : "";
+                    return p.MaterialId == RestoreOriginalMaterial
+                        ? "" : MapAssets.ValidId(p.MaterialId) ? p.MaterialId : "";
             }
             return "";
         }
@@ -476,7 +481,8 @@ namespace Sinbinder.Core
             var ids = new List<string> { "" };
             if (map?.TerrainPaints == null) return ids;
             foreach (var p in map.TerrainPaints)
-                if (p != null && MapAssets.ValidId(p.MaterialId) &&
+                if (p != null && p.MaterialId != RestoreOriginalMaterial &&
+                    MapAssets.ValidId(p.MaterialId) &&
                     !ids.Contains(p.MaterialId) && ids.Count < MaxTerrainMaterials)
                     ids.Add(p.MaterialId);
             return ids;
