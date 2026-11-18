@@ -808,12 +808,31 @@ static class Program
               moved.Things[0].Yaw == 90f && moved.Crypts[0].Yaw == 0f,
               "group rotates around its centroid with matching Unity yaw");
 
+        float oldScale = moved.Things[0].Scale;
+        Invoke(e, "ScaleSelectedThings", 1.1f);
+        Check(MathF.Abs(moved.Things[0].Scale - oldScale * 1.1f) < 0.001f &&
+              MathF.Abs(moved.Things[1].Scale - 1.2f * 1.1f) < 0.001f,
+              "group scaling changes size of every selected prop");
+        float afterScale = moved.Things[0].Scale;
+        Invoke(e, "ScaleSelectedThings", 100f);
+        Check(MathF.Abs(moved.Things[0].Scale - afterScale) < 0.001f &&
+              MathF.Abs(moved.Things[1].Scale - 1.2f * 1.1f) < 0.001f,
+              "invalid group scaling fails without partial mutation");
+        Resources.Register("MapUserMaterials/Stone", new Material(Shader.Find("Lit"))
+        { name = "Stone" });
+        Invoke(e, "ApplyGroupMaterial", "Stone");
+        Check(moved.Things.TrueForAll(t => t.MaterialId == "Stone"),
+              "one material action changes all selected prop renderers");
+        Invoke(e, "ApplyGroupMaterial", "DoesNotExist");
+        Check(moved.Things.TrueForAll(t => t.MaterialId == "Stone"),
+              "missing imported material is rejected without touching group");
         Invoke(e, "DuplicateSelectedThings");
         Check(moved.Things.Count == 6 && moved.Triggers.Count == 2,
               "group copy duplicates three real props plus their F-interaction rules");
         var ids = new HashSet<string>();
         foreach (var t in moved.Things) ids.Add(t.Id);
         Check(ids.Count == 6 && moved.Things[3].Id != "p1" &&
+              moved.Things[3].MaterialId == "Stone" &&
               moved.Triggers[1].TargetId == moved.Things[3].Id &&
               moved.Triggers[1].Message == moved.Triggers[0].Message,
               "copied objects and interaction references receive new IDs without losing text");
