@@ -274,13 +274,15 @@ namespace Sinbinder.Gameplay
                 return;
             }
             if (!MapAssets.ValidId(_paintMaterial) ||
-                MapAssets.TerrainMaterial(_paintMaterial) == null)
+                (_paintMaterial != MapTerrain.RestoreOriginalMaterial &&
+                 MapAssets.TerrainMaterial(_paintMaterial) == null))
             {
                 _say = Loc.T("Материал земли отсутствует. Импортируйте его в Unity.");
                 return;
             }
             var ids = MapTerrain.PaintMaterialIds(_map);
-            if (!ids.Contains(_paintMaterial) && ids.Count >= MapTerrain.MaxTerrainMaterials)
+            if (_paintMaterial != MapTerrain.RestoreOriginalMaterial &&
+                !ids.Contains(_paintMaterial) && ids.Count >= MapTerrain.MaxTerrainMaterials)
             {
                 _say = Loc.T("На карте может быть не более семи материалов земли.");
                 return;
@@ -818,6 +820,9 @@ namespace Sinbinder.Gameplay
             if (_mode == Mode.Paint)
             {
                 GUILayout.Label(Loc.T("Материалы ландшафта"));
+                if (GUILayout.Toggle(_paintMaterial == MapTerrain.RestoreOriginalMaterial,
+                    Loc.T("Ластик: вернуть исходную землю"), "Button"))
+                    _paintMaterial = MapTerrain.RestoreOriginalMaterial;
                 foreach (var mat in _terrainMaterials)
                     if (mat != null && GUILayout.Toggle(_paintMaterial == mat.name, mat.name, "Button"))
                         _paintMaterial = mat.name;
@@ -1210,7 +1215,8 @@ namespace Sinbinder.Gameplay
                 errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
             foreach (var paint in _map.TerrainPaints)
                 if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
-                    MapAssets.TerrainMaterial(paint.MaterialId) == null))
+                    (paint.MaterialId != MapTerrain.RestoreOriginalMaterial &&
+                     MapAssets.TerrainMaterial(paint.MaterialId) == null)))
                     errors.Add(Loc.F("Материал земли не найден: {0}", paint.MaterialId));
             foreach (var t in _map.Things)
                 if (t != null && !string.IsNullOrEmpty(t.MaterialId) &&
