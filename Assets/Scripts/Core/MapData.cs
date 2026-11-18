@@ -32,6 +32,8 @@ namespace Sinbinder.Core
         public List<Trigger> Triggers = new();
         // Optional since v3: no height strokes means the original, perfectly flat map.
         public List<TerrainStroke> TerrainStrokes = new();
+        // Optional v3.2: terrain surface paint, empty for old maps.
+        public List<TerrainPaint> TerrainPaints = new();
 
         /// <summary>Named playable zone for safe event-condition-action logic.</summary>
         [System.Serializable] public class Region
@@ -75,6 +77,14 @@ namespace Sinbinder.Core
             public float TargetHeight;
         }
 
+        /// <summary>Last paint stroke wins for the terrain cells it covers.</summary>
+        [System.Serializable] public class TerrainPaint
+        {
+            public float X, Z;
+            public float Radius = 18f;
+            public string MaterialId = "Ground048";
+        }
+
         /// <summary>Склеп игрока с троном: здесь появляется Греховод стороны.</summary>
         [System.Serializable] public class Crypt { public float X, Z, Yaw; }
 
@@ -82,7 +92,13 @@ namespace Sinbinder.Core
         [System.Serializable] public class Location { public string Kind = "village"; public string Name = ""; public float X, Z, Radius = 18f; public int People = 12; }
 
         /// <summary>Вещь: модель из Resources/Props (Pine, Tent, Rock…), место, поворот, размер.</summary>
-        [System.Serializable] public class Thing { public string Id = ""; public string Prop = "Pine"; public float X, Z, Yaw, Scale = 1f; }
+        [System.Serializable] public class Thing
+        {
+            public string Id = "";
+            public string Prop = "Pine";
+            public string MaterialId = ""; // Optional object material override
+            public float X, Z, Yaw, Scale = 1f;
+        }
 
         /// <summary>Точка: тропа охотников или событие («обоз», «деревня»…).</summary>
         [System.Serializable] public class Spot { public string Kind = ""; public float X, Z; }
@@ -100,6 +116,7 @@ namespace Sinbinder.Core
             Regions ??= new List<Region>();
             Triggers ??= new List<Trigger>();
             TerrainStrokes ??= new List<TerrainStroke>();
+            TerrainPaints ??= new List<TerrainPaint>();
         }
 
         // ---------------------------------------------------------- папка
@@ -265,6 +282,8 @@ namespace Sinbinder.Core
     public static class MapTerrain
     {
         public const int MaxStrokes = 128;
+        public const int MaxPaints = 256;
+        public const int MaxTerrainMaterials = 8;
         public const float MaxHeight = 24f;
 
         private static bool Finite(float value) =>
@@ -274,6 +293,16 @@ namespace Sinbinder.Core
         {
             if (map == null || !Finite(map.Size) || map.Size < 150f || map.Size > 800f)
                 return false;
+            if (map.TerrainPaints != null)
+            {
+                if (map.TerrainPaints.Count > MaxPaints) return false;
+                foreach (var paint in map.TerrainPaints)
+                    if (paint == null || !Finite(paint.X) || !Finite(paint.Z) ||
+                        !Finite(paint.Radius) || Mathf.Abs(paint.X) > map.Size * 0.5f ||
+                        Mathf.Abs(paint.Z) > map.Size * 0.5f ||
+                        paint.Radius < 4f || paint.Radius > 100f ||
+                        !MapAssets.ValidId(paint.MaterialId)) return false;
+            }
             if (map.TerrainStrokes == null || map.TerrainStrokes.Count == 0) return true;
             if (map.TerrainStrokes.Count > MaxStrokes) return false;
             float half = map.Size * 0.5f;
@@ -350,8 +379,8 @@ namespace Sinbinder.Core
         /// <summary>Real triangular terrain surface for rendering, physics and NavMesh.</summary>
         public static Mesh BuildMesh(MapData map)
         {
-            if (!Valid(map) || map.TerrainStrokes == null ||
-                map.TerrainStrokes.Count == 0) return null;
+            if (!Valid(map) || ((map.TerrainStrokes == null || map.TerrainStrokes.Count == 0) &&
+                (map.TerrainPaints == null || map.TerrainPaints.Count == 0))) return null;
             int cells = GridCells(map);
             int stride = cells + 1;
             var vertices = new Vector3[stride * stride];
@@ -383,10 +412,61 @@ namespace Sinbinder.Core
             var mesh = new Mesh { name = "Sinbinder authored terrain" };
             mesh.vertices = vertices;
             mesh.uv = uvs;
-            mesh.triangles = triangles;
+            // Multi-material cells become bounded submeshes; each triangle has exactly
+            // one material. Collision stays the same geometry, not decorative overlays.
+            if (map.TerrainPaints != null && map.TerrainPaints.Count > 0)
+            {
+                var ids = PaintMaterialIds(map);
+                var groups = new List<int>[ids.Count];
+                for (int g = 0; g < groups.Length; g++) groups[g] = new List<int>();
+                for (int z = 0; z < cells; z++)
+                    for (int x = 0; x < cells; x++)
+                    {
+                        float cx = (x + 0.5f) * step - half;
+                        float cz = (z + 0.5f) * step - half;
+                        string id = PaintedMaterialAt(map, cx, cz);
+                        int group = ids.IndexOf(id);
+                        if (group < 0) group = 0;
+                        int t = (z * cells + x) * 6;
+                        for (int k = 0; k < 6; k++) groups[group].Add(triangles[t + k]);
+                    }
+                mesh.subMeshCount = groups.Length;
+                for (int g = 0; g < groups.Length; g++)
+                    mesh.SetTriangles(groups[g].ToArray(), g);
+            }
+            else mesh.triangles = triangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        /// <summary>
+        /// Deterministic paint selection: the latest stroke containing a cell wins.
+        /// Empty string means original terrain material.
+        /// </summary>
+        public static string PaintedMaterialAt(MapData map, float x, float z)
+        {
+            if (map == null || map.TerrainPaints == null) return "";
+            for (int i = map.TerrainPaints.Count - 1; i >= 0; i--)
+            {
+                var p = map.TerrainPaints[i];
+                if (p == null) continue;
+                float dx = x - p.X, dz = z - p.Z;
+                if (dx * dx + dz * dz <= p.Radius * p.Radius)
+                    return MapAssets.ValidId(p.MaterialId) ? p.MaterialId : "";
+            }
+            return "";
+        }
+
+        public static List<string> PaintMaterialIds(MapData map)
+        {
+            var ids = new List<string> { "" };
+            if (map?.TerrainPaints == null) return ids;
+            foreach (var p in map.TerrainPaints)
+                if (p != null && MapAssets.ValidId(p.MaterialId) &&
+                    !ids.Contains(p.MaterialId) && ids.Count < MaxTerrainMaterials)
+                    ids.Add(p.MaterialId);
+            return ids;
         }
 
         /// <summary>
@@ -407,10 +487,67 @@ namespace Sinbinder.Core
             collider.sharedMesh = null;
             filter.sharedMesh = next != null ? next : original;
             collider.sharedMesh = next != null ? next : original;
+            var renderer = ground.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                var originalMaterial = renderer.sharedMaterial;
+                if (next != null && map.TerrainPaints != null && map.TerrainPaints.Count > 0)
+                {
+                    var ids = PaintMaterialIds(map);
+                    var mats = new Material[ids.Count];
+                    mats[0] = originalMaterial;
+                    for (int i = 1; i < mats.Length; i++)
+                        mats[i] = MapAssets.TerrainMaterial(ids[i]) ?? originalMaterial;
+                    renderer.sharedMaterials = mats;
+                }
+                else renderer.sharedMaterials = new[] { originalMaterial };
+            }
             ground.transform.localScale = next != null
                 ? Vector3.one : new Vector3(map.Size / 10f, 1f, map.Size / 10f);
             if (generated != null) UnityEngine.Object.Destroy(generated);
             generated = next;
+        }
+    }
+
+    /// <summary>
+    /// Serialized map references may point only to known Resource catalogs.
+    /// Actual imports happen explicitly inside Unity Editor, never from map JSON.
+    /// </summary>
+    public static class MapAssets
+    {
+        public static bool ValidId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length > 48) return false;
+            foreach (char c in id)
+                if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') &&
+                    !(c >= '0' && c <= '9') && c != '_' && c != '-')
+                    return false;
+            return true;
+        }
+
+        public static bool IsUserProp(string prop) =>
+            prop != null && prop.StartsWith("user:", System.StringComparison.Ordinal) &&
+            ValidId(prop.Substring(5));
+
+        public static GameObject UserPrefab(string prop)
+        {
+            if (!IsUserProp(prop)) return null;
+            return Resources.Load<GameObject>("MapUserProps/" + prop.Substring(5));
+        }
+
+        public static Material TerrainMaterial(string id) =>
+            ValidId(id) ? Resources.Load<Material>("MapTerrainMaterials/" + id) : null;
+
+        public static Material ObjectMaterial(string id) =>
+            ValidId(id) ? Resources.Load<Material>("MapUserMaterials/" + id) : null;
+
+        public static void ApplyObjectMaterial(GameObject go, string materialId)
+        {
+            if (go == null || string.IsNullOrEmpty(materialId)) return;
+            var material = ObjectMaterial(materialId);
+            if (material == null) return;
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+                r.sharedMaterial = material;
         }
     }
 
