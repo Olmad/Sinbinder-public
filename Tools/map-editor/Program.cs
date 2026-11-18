@@ -676,6 +676,34 @@ static class Program
               "fast paint undo removes paint while preserving sculpted heights");
     }
 
+    static void PaintEraserAndMaterialSlots()
+    {
+        var map = Map();
+        map.TerrainPaints.Add(new MapData.TerrainPaint
+        { X = 0f, Z = 0f, Radius = 40f, MaterialId = "Ground048" });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Set(editor, "_paintMaterial", MapTerrain.RestoreOriginalMaterial);
+        Invoke(editor, "PaintTerrain", new Vector3(0f, 0f, 0f));
+        Check(map.TerrainPaints.Count == 2 && MapTerrain.Valid(map),
+              "paint eraser adds valid serializable stroke");
+        Check(MapTerrain.PaintedMaterialAt(map, 0f, 0f) == "" &&
+              MapTerrain.PaintedMaterialAt(map, 25f, 0f) == "Ground048",
+              "paint eraser restores original terrain only within brush footprint");
+        Check(MapTerrain.PaintMaterialIds(map).Count == 2 &&
+              MapTerrain.BuildMesh(map).subMeshCount == 2,
+              "eraser does not consume extra material slot or submesh");
+        Check(((List<string>)Invoke(editor, "Validate")).Count == 0,
+              "paint eraser passes whole editor save validation");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(undone.TerrainPaints.Count == 1 &&
+              MapTerrain.PaintedMaterialAt(undone, 0f, 0f) == "Ground048",
+              "erasing a paint stroke is undoable back to previous material");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -689,6 +717,7 @@ static class Program
         AuthoringImportContracts();
         ExternalEditConflictAndSafeCopy();
         FastBrushPreviewAndSelectionHeight();
+        PaintEraserAndMaterialSlots();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
