@@ -197,7 +197,7 @@ namespace UnityEngine
         public Plane(Vector3 normal,Vector3 point) { }
         public bool Raycast(Ray ray,out float d){d=0;return true;}
     }
-    public enum KeyCode { LeftShift, LeftControl, RightControl, Z, Y, S, D, Delete, Escape, Q, E }
+    public enum KeyCode { LeftShift, RightShift, LeftControl, RightControl, A, Z, Y, S, D, Delete, Escape, Q, E }
     public static class Input
     {
         public static Vector3 mousePosition;
