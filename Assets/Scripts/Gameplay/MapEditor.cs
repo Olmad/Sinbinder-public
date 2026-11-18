@@ -178,6 +178,179 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
+        // ---------------------------------------------------------- selection and history
+
+        private static string NewId() => System.Guid.NewGuid().ToString("N");
+
+        private void EnsureIds()
+        {
+            foreach (var item in _map.Things)
+                if (item != null && string.IsNullOrEmpty(item.Id)) item.Id = NewId();
+            foreach (var region in _map.Regions)
+                if (region != null && string.IsNullOrEmpty(region.Id)) region.Id = NewId();
+            foreach (var rule in _map.Triggers)
+                if (rule != null && string.IsNullOrEmpty(rule.Id)) rule.Id = NewId();
+        }
+
+        private Vector3 Snapped(Vector3 p)
+        {
+            if (_snap < 0.5f) return p;
+            p.x = Mathf.Round(p.x / _snap) * _snap;
+            p.z = Mathf.Round(p.z / _snap) * _snap;
+            return p;
+        }
+
+        private void Record()
+        {
+            _undo.Add(JsonUtility.ToJson(_map));
+            if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
+            _redo.Clear();
+        }
+
+        private void Undo()
+        {
+            if (_undo.Count == 0) return;
+            _redo.Add(JsonUtility.ToJson(_map));
+            Restore(_undo[_undo.Count - 1]);
+            _undo.RemoveAt(_undo.Count - 1);
+            _say = Loc.T("Действие отменено");
+        }
+
+        private void Redo()
+        {
+            if (_redo.Count == 0) return;
+            _undo.Add(JsonUtility.ToJson(_map));
+            if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
+            Restore(_redo[_redo.Count - 1]);
+            _redo.RemoveAt(_redo.Count - 1);
+            _say = Loc.T("Действие повторено");
+        }
+
+        private void Restore(string data)
+        {
+            _map = JsonUtility.FromJson<MapData>(data);
+            _map.EnsureLists();
+            _name = _map.Name;
+            _selectionIndex = -1;
+            Redraw();
+        }
+
+        private void Change(System.Action action)
+        {
+            Record();
+            action();
+            Redraw();
+        }
+
+        private void Select(Vector3 at)
+        {
+            float best = 6f;
+            _selectionIndex = -1;
+            void Candidate(Kind kind, int index, float x, float z)
+            {
+                float d = Vector2.Distance(new Vector2(x, z), new Vector2(at.x, at.z));
+                if (d >= best) return;
+                best = d;
+                _selectionKind = kind;
+                _selectionIndex = index;
+            }
+            for (int i = 0; i < _map.Things.Count; i++)
+                Candidate(Kind.Thing, i, _map.Things[i].X, _map.Things[i].Z);
+            for (int i = 0; i < _map.Crypts.Count; i++)
+                Candidate(Kind.Crypt, i, _map.Crypts[i].X, _map.Crypts[i].Z);
+            for (int i = 0; i < _map.Locations.Count; i++)
+                Candidate(Kind.Location, i, _map.Locations[i].X, _map.Locations[i].Z);
+            for (int i = 0; i < _map.Trails.Count; i++)
+                Candidate(Kind.Trail, i, _map.Trails[i].X, _map.Trails[i].Z);
+            for (int i = 0; i < _map.Events.Count; i++)
+                Candidate(Kind.Event, i, _map.Events[i].X, _map.Events[i].Z);
+            for (int i = 0; i < _map.Regions.Count; i++)
+                Candidate(Kind.Region, i, _map.Regions[i].X, _map.Regions[i].Z);
+            Redraw();
+        }
+
+        private bool SelectedPosition(out Vector3 position)
+        {
+            position = Vector3.zero;
+            int i = _selectionIndex;
+            if (i < 0) return false;
+            float x, z;
+            switch (_selectionKind)
+            {
+                case Kind.Thing when i < _map.Things.Count: x = _map.Things[i].X; z = _map.Things[i].Z; break;
+                case Kind.Crypt when i < _map.Crypts.Count: x = _map.Crypts[i].X; z = _map.Crypts[i].Z; break;
+                case Kind.Location when i < _map.Locations.Count: x = _map.Locations[i].X; z = _map.Locations[i].Z; break;
+                case Kind.Trail when i < _map.Trails.Count: x = _map.Trails[i].X; z = _map.Trails[i].Z; break;
+                case Kind.Event when i < _map.Events.Count: x = _map.Events[i].X; z = _map.Events[i].Z; break;
+                case Kind.Region when i < _map.Regions.Count: x = _map.Regions[i].X; z = _map.Regions[i].Z; break;
+                default: return false;
+            }
+            position = new Vector3(x, 0.12f, z);
+            return true;
+        }
+
+        private void HighlightSelection()
+        {
+            if (SelectedPosition(out var p))
+                Disc(p, 1.4f, new Color(1f, 0.78f, 0.14f, 0.55f));
+        }
+
+        private void DeleteSelected()
+        {
+            int i = _selectionIndex;
+            if (i < 0) return;
+            Change(() =>
+            {
+                switch (_selectionKind)
+                {
+                    case Kind.Thing when i < _map.Things.Count: _map.Things.RemoveAt(i); break;
+                    case Kind.Crypt when i < _map.Crypts.Count: _map.Crypts.RemoveAt(i); break;
+                    case Kind.Location when i < _map.Locations.Count: _map.Locations.RemoveAt(i); break;
+                    case Kind.Trail when i < _map.Trails.Count: _map.Trails.RemoveAt(i); break;
+                    case Kind.Event when i < _map.Events.Count: _map.Events.RemoveAt(i); break;
+                    case Kind.Region when i < _map.Regions.Count: _map.Regions.RemoveAt(i); break;
+                    case Kind.Trigger when i < _map.Triggers.Count: _map.Triggers.RemoveAt(i); break;
+                }
+                _selectionIndex = -1;
+            });
+        }
+
+        private void DuplicateSelected()
+        {
+            int i = _selectionIndex;
+            if (i < 0) return;
+            Change(() =>
+            {
+                switch (_selectionKind)
+                {
+                    case Kind.Thing when i < _map.Things.Count:
+                        var t = _map.Things[i];
+                        _map.Things.Add(new MapData.Thing { Id = NewId(), Prop = t.Prop,
+                            X = t.X + Mathf.Max(2f, _snap), Z = t.Z + Mathf.Max(2f, _snap),
+                            Yaw = t.Yaw, Scale = t.Scale });
+                        _selectionIndex = _map.Things.Count - 1;
+                        break;
+                    case Kind.Region when i < _map.Regions.Count:
+                        var region = _map.Regions[i];
+                        _map.Regions.Add(new MapData.Region { Id = NewId(),
+                            Name = region.Name + " (копия)", X = region.X + 5f,
+                            Z = region.Z + 5f, Radius = region.Radius });
+                        _selectionIndex = _map.Regions.Count - 1;
+                        break;
+                    case Kind.Trigger when i < _map.Triggers.Count:
+                        var src = _map.Triggers[i];
+                        _map.Triggers.Add(new MapData.Trigger { Id = NewId(),
+                            Name = src.Name + " (копия)", Event = src.Event,
+                            RegionId = src.RegionId, TargetId = src.TargetId,
+                            Condition = src.Condition, Flag = src.Flag,
+                            Action = src.Action, Message = src.Message,
+                            Enabled = src.Enabled, Once = src.Once });
+                        _selectionIndex = _map.Triggers.Count - 1;
+                        break;
+                }
+            });
+        }
+
         // ---------------------------------------------------------- вид
 
         private void ClearPreview()
