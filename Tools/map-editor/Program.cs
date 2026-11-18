@@ -874,6 +874,37 @@ static class Program
               "single delete never strands dangling object-interaction rule");
     }
 
+    static void RectangleSelectionContracts()
+    {
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock",
+            X = 20f, Z = 5f, Scale = 1f });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Pine",
+            X = 30f, Z = 35f, Scale = 1f });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        string original = JsonUtility.ToJson(map);
+        var f = typeof(MapEditor).GetField("_selectedThingIds",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var selected = (HashSet<string>)f.GetValue(editor);
+        Invoke(editor, "SelectRectangle",
+            new Vector3(21f, 0f, 10f), new Vector3(0f, 0f, 0f), false);
+        Check(selected.SetEquals(new[] { "p1", "p2" }),
+              "drag rectangle works with reverse corners and excludes unboxed props");
+        Check(map.Crypts.Count == 2 && map.Regions.Count == 1 &&
+              JsonUtility.ToJson(map) == original,
+              "marquee does not modify map data, crypts or regions");
+        Invoke(editor, "SelectRectangle",
+            new Vector3(25f, 0f, 25f), new Vector3(35f, 0f, 40f), true);
+        Check(selected.SetEquals(new[] { "p1", "p2", "p3" }),
+              "Shift drag adds distant props without clearing earlier selection");
+        Invoke(editor, "SelectRectangle",
+            new Vector3(-40f, 0f, -40f), new Vector3(-10f, 0f, -10f), false);
+        Check(selected.Count == 0,
+              "dragging an empty rectangle clears selection in normal mode");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -890,6 +921,7 @@ static class Program
         PaintEraserAndMaterialSlots();
         UnsavedMapExitGuard();
         GroupEditingContracts();
+        RectangleSelectionContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
