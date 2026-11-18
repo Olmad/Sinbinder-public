@@ -69,6 +69,10 @@ namespace Sinbinder.Core
             public float X, Z;
             public float Radius = 18f;
             public float Delta = 3f;
+            // Optional v3.1: old JSON has no Mode, which means Add.
+            // Flatten means approach TargetHeight inside the brush radius.
+            public string Mode = "Add";
+            public float TargetHeight;
         }
 
         /// <summary>Склеп игрока с троном: здесь появляется Греховод стороны.</summary>
@@ -274,12 +278,23 @@ namespace Sinbinder.Core
             if (map.TerrainStrokes.Count > MaxStrokes) return false;
             float half = map.Size * 0.5f;
             foreach (var stroke in map.TerrainStrokes)
+            {
                 if (stroke == null || !Finite(stroke.X) || !Finite(stroke.Z) ||
                     !Finite(stroke.Radius) || !Finite(stroke.Delta) ||
+                    !Finite(stroke.TargetHeight) ||
                     Mathf.Abs(stroke.X) > half || Mathf.Abs(stroke.Z) > half ||
-                    stroke.Radius < 8f || stroke.Radius > 100f ||
-                    Mathf.Abs(stroke.Delta) < 0.01f || Mathf.Abs(stroke.Delta) > 12f)
+                    stroke.Radius < 8f || stroke.Radius > 100f)
                     return false;
+                bool flatten = stroke.Mode == "Flatten";
+                if (!flatten && !string.IsNullOrEmpty(stroke.Mode) && stroke.Mode != "Add")
+                    return false;
+                if (flatten)
+                {
+                    if (Mathf.Abs(stroke.TargetHeight) > MaxHeight) return false;
+                }
+                else if (Mathf.Abs(stroke.Delta) < 0.01f || Mathf.Abs(stroke.Delta) > 12f)
+                    return false;
+            }
             return true;
         }
 
@@ -297,7 +312,11 @@ namespace Sinbinder.Core
                 float d2 = dx * dx + dz * dz;
                 if (d2 >= radiusSq) continue;
                 float fade = 1f - d2 / radiusSq;
-                height += stroke.Delta * fade * fade;
+                float weight = fade * fade;
+                // Ordered flatten is fully data-driven; no external map code runs.
+                if (stroke.Mode == "Flatten")
+                    height += (stroke.TargetHeight - height) * weight;
+                else height += stroke.Delta * weight;
             }
             return Mathf.Clamp(height, -MaxHeight, MaxHeight);
         }
