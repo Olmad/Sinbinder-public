@@ -7,7 +7,7 @@ Assets/Resources/DialogueDatabase.asset	833e9bd0202d79a1614c5b5835c59fafc4dec1cb
 Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Resources/Fonts/OFL-PTSerif.txt	e9f47cb8b582b7277c90c706f1a688348554a2c3	4434	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Resources/Lang/en.txt	c12806f2da2b415092b903b85c8ae489ebc46c78	474526	Text_Locale	0	0	0	0	UNINSPECTED	
-Assets/Resources/MapProps/Barrel.prefab	bdc6b9beb57a65807e84768fac7e4b0d9686c615	2753	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/Barrel.prefab	bdc6b9beb57a65807e84768fac7e4b0d9686c615	2753	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full YAML read 103 lines blob bdc6b9beb57a65807e84768fac7e4b0d9686c615; only GameObject Barrel name, Transform, MeshFilter, MeshRenderer, GUID and material references; 0 player-facing text or localization keys; visual text in referenced meshes/materials remains separately UNKNOWN
 Assets/Resources/MapProps/Bush.prefab	1f2f43d6aa33bbe738b63826444095a8d794c5cb	2677	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/MapProps/Campfire.prefab	1316f1d329febab1d9b6b119509cbc5137246c9a	240463	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/MapProps/Chest.prefab	7d088b8415ec7f0bbef7d95c90d4b66adc74cce1	2751	UnitySerialized	0	0	0	0	UNINSPECTED	
