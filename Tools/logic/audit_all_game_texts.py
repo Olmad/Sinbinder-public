@@ -299,6 +299,15 @@ def main() -> int:
                 "suspect_occurrences", "read_errors"):
         print(f"{key}: {counts[key]}")
     print("semantic_pass_count: 0 (not a semantic validator)")
+    for status in statuses:
+        if status["error"]:
+            print(f"UNREADABLE_SOURCE: {status['path']} : {status['error']}")
+    flags = collections.Counter(flag for item in translations
+                                for flag in item.get("flags", []))
+    print("localization_warning_categories: " + json.dumps(flags, ensure_ascii=False))
+    for item in translations[:30]:
+        print("LOCALIZATION_REVIEW: " + json.dumps(item, ensure_ascii=False)[:400])
+
     print("known_suspect_details:")
     for f in findings[:60]:
         print(f"[{f['severity']}] {f['path']}:{f['line']} "
