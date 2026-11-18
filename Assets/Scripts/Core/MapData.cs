@@ -27,6 +27,37 @@ namespace Sinbinder.Core
         public List<Thing> Things = new();
         public List<Spot> Trails = new();
         public List<Spot> Events = new();
+        // Optional since v2: maps saved before the editor upgrade remain loadable.
+        public List<Region> Regions = new();
+        public List<Trigger> Triggers = new();
+
+        /// <summary>Named playable zone for safe event-condition-action logic.</summary>
+        [System.Serializable] public class Region
+        {
+            public string Id = "";
+            public string Name = "";
+            public float X, Z, Radius = 15f;
+        }
+
+        /// <summary>
+        /// Safe data-driven ECA rule, NOT executable C#/Lua/JASS supplied by a map.
+        /// Event: OnStart / OnEnterRegion; Condition: Always / FlagIsTrue;
+        /// Action: ShowMessage / SetFlag. RegionId and Flag are references.
+        /// Executed only by the explicit allowlist in MapLogicRunner.
+        /// </summary>
+        [System.Serializable] public class Trigger
+        {
+            public string Id = "";
+            public string Name = "";
+            public bool Enabled = true;
+            public string Event = "OnEnterRegion";
+            public string RegionId = "";
+            public string Condition = "Always";
+            public string Flag = "";
+            public string Action = "ShowMessage";
+            public string Message = "";
+            public bool Once = true;
+        }
 
         /// <summary>Склеп игрока с троном: здесь появляется Греховод стороны.</summary>
         [System.Serializable] public class Crypt { public float X, Z, Yaw; }
@@ -40,7 +71,19 @@ namespace Sinbinder.Core
         /// <summary>Точка: тропа охотников или событие («обоз», «деревня»…).</summary>
         [System.Serializable] public class Spot { public string Kind = ""; public float X, Z; }
 
-        public int Players => Crypts.Count;
+        public int Players => Crypts?.Count ?? 0;
+
+        /// <summary>Normalize nullable lists from old or incomplete JSON maps.</summary>
+        public void EnsureLists()
+        {
+            Crypts ??= new List<Crypt>();
+            Locations ??= new List<Location>();
+            Things ??= new List<Thing>();
+            Trails ??= new List<Spot>();
+            Events ??= new List<Spot>();
+            Regions ??= new List<Region>();
+            Triggers ??= new List<Trigger>();
+        }
 
         // ---------------------------------------------------------- папка
 
@@ -75,7 +118,9 @@ namespace Sinbinder.Core
             try
             {
                 var map = JsonUtility.FromJson<MapData>(File.ReadAllText(path));
-                if (map == null || map.Crypts.Count < 2) { Debug.LogWarning($"[КАРТЫ] {path}: меньше двух склепов — не карта."); return null; }
+                if (map == null) { Debug.LogWarning($"[КАРТЫ] {path}: пустое описание карты."); return null; }
+                map.EnsureLists();
+                if (map.Crypts.Count < 2) { Debug.LogWarning($"[КАРТЫ] {path}: меньше двух склепов — не карта."); return null; }
                 if (string.IsNullOrEmpty(map.Name)) map.Name = Path.GetFileNameWithoutExtension(path);
                 return map;
             }
@@ -86,10 +131,30 @@ namespace Sinbinder.Core
             }
         }
 
+        /// <summary>Atomic save with an original .bak file on overwrite; never truncate the only map.</summary>
         public void Save(string path)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? Folder);
-            File.WriteAllText(path, JsonUtility.ToJson(this, true));
+            EnsureLists();
+            var directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrEmpty(directory)) directory = Folder;
+            Directory.CreateDirectory(directory);
+            string temp = Path.Combine(directory, "." + Path.GetFileName(path) + "." +
+                                                System.Guid.NewGuid().ToString("N") + ".tmp");
+            try
+            {
+                File.WriteAllText(temp, JsonUtility.ToJson(this, true),
+                                  new System.Text.UTF8Encoding(false));
+                if (File.Exists(path))
+                {
+                    // File.Replace writes the new file and retains a backup atomically.
+                    File.Replace(temp, path, path + ".bak");
+                }
+                else File.Move(temp, path);
+            }
+            finally
+            {
+                if (File.Exists(temp)) File.Delete(temp);
+            }
         }
 
         // ---------------------------------------------------------- по умолчанию
