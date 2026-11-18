@@ -565,20 +565,20 @@ ProjectSettings/EditorSettings.asset	878c4cb8d33ea203c002885f3f658b5c52d5e3dd	15
 ProjectSettings/GraphicsSettings.asset	84b2182fe3e3bc3e639c1e90e9e979e5a2515cc2	2615	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/InputManager.asset	b16147e954fd861c2e2db769449894d310aa7b26	9731	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/MemorySettings.asset	5b5facecace9276319b6e497953ab0429de65b61	1192	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/MultiplayerManager.asset	2a936644e0d87339f17484efc93de6f0de5774b1	157	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/MultiplayerManager.asset	2a936644e0d87339f17484efc93de6f0de5774b1	157	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 8 physical lines, blob 2a936644e0d87339f17484efc93de6f0de5774b1: engine multiplayer roles flag 0 and empty stripping map; no dialogue/UI strings. EXCLUDED_TECH; multiplayer player-facing strings elsewhere remain UNINSPECTED.
 ProjectSettings/NavMeshAreas.asset	3b0b7c3d183abdd300112f56965916ef11667f54	1308	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/PackageManagerSettings.asset	be4a7974ec170d9bfa288154684b318966c43f13	1003	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 7 physical lines, blob 67a94daefe2e6bce3ec73546ad7cda94f702ad22: PresetManager contains empty m_DefaultPresets map, Unity identifiers only; no player-facing strings or linked preset assets in this file. EXCLUDED_TECH, not a verdict on other assets.
 ProjectSettings/ProjectSettings.asset	e0bd16d751c8aee0d0bbf7b0994c0194ad4653d8	25533	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	UNINSPECTED	
+ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	EXCLUDED_TECH	FULL TXT read, 2 physical lines, blob b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb: only Unity editor version 6000.3.22f1 and editor revision 1c726e1fb402; neither is player-facing game copy. EXCLUDED_TECH.
 ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
 ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 71 physical lines, blob 6413d11ff54dc0a0b364765f1d35bbd42d7d79cf: Unity engine tags/layers/rendering layer names only (Default, TransparentFX, Ignore Raycast, Water, UI, Light Layer 1..7); no dialogue, UI copy, or localized game text. EXCLUDED_TECH, not a review of scenes referencing tags.
-ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 15 physical lines, blob 2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1: engine fixed timestep, maximum timestep, timescale, particle timestep numeric settings; no strings exposed to players. EXCLUDED_TECH, no runtime behavior claimed.
 ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca9	461	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VFXManager.asset	3a95c98bec50cf72538061fd26eee95398f72128	308	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/VersionControlSettings.asset	dca288142fc043d5a749e9058fe625505008834f	188	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/VersionControlSettings.asset	dca288142fc043d5a749e9058fe625505008834f	188	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, 9 physical lines, blob dca288142fc043d5a749e9058fe625505008834f: Unity version control metadata m_Mode Visible Meta Files and inProgressEnabled flag; no player-facing text. EXCLUDED_TECH.
 ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	UNINSPECTED	
