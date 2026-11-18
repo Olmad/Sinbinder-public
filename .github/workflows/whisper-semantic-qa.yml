@@ -1,0 +1,37 @@
+name: Whisper semantic truth gate
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/Whisper.cs"
+      - "Assets/Resources/Lang/en.txt"
+      - "Tools/logic/check_whisper_semantics.py"
+      - "Tools/logic/whisper_semantics_approved.json"
+      - "Tools/logic/test_whisper_semantics_checker.py"
+      - ".github/workflows/whisper-semantic-qa.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/Whisper.cs"
+      - "Assets/Resources/Lang/en.txt"
+      - "Tools/logic/check_whisper_semantics.py"
+      - "Tools/logic/whisper_semantics_approved.json"
+      - "Tools/logic/test_whisper_semantics_checker.py"
+      - ".github/workflows/whisper-semantic-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  whisper-semantic:
+    name: Verify that all seven Whisper lines have grounded approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the semantic gate catches false claims
+        run: python3 -m unittest Tools.logic.test_whisper_semantics_checker -v
+      - name: Block known false or unreviewed Whisper dialogue
+        run: python3 Tools/logic/check_whisper_semantics.py --strict
