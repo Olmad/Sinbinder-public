@@ -624,6 +624,55 @@ static class Program
         }
     }
 
+    static void FastBrushPreviewAndSelectionHeight()
+    {
+        var map = Map();
+        var brush = new MapEditor();
+        Set(brush, "_map", map);
+        Set(brush, "_name", map.Name);
+        Invoke(brush, "Redraw");
+        var previewField = typeof(MapEditor).GetField("_shown",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var original = (List<GameObject>)previewField.GetValue(brush);
+        Check(original.Count > 1, "existing map provides preview models and markers");
+        GameObject firstObject = original[0];
+        float initialY = firstObject.transform.position.y;
+        Invoke(brush, "Sculpt", new Vector3(3f, 0f, 4f));
+        var afterSculpt = (List<GameObject>)previewField.GetValue(brush);
+        Check(ReferenceEquals(firstObject, afterSculpt[0]) &&
+              afterSculpt.Count == original.Count,
+              "height painting preserves existing preview objects and marker count");
+        Check(firstObject.transform.position.y > initialY,
+              "existing preview objects follow newly sculpted collision height");
+
+        var kindField = typeof(MapEditor).GetField("_selectionKind",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        kindField.SetValue(brush, Enum.Parse(kindField.FieldType, "Thing"));
+        Set(brush, "_selectionIndex", 0);
+        Invoke(brush, "Redraw");
+        var shown = (List<GameObject>)previewField.GetValue(brush);
+        var selection = shown[shown.Count - 1];
+        float expected = MapTerrain.HeightAt(map, map.Things[0].X,
+            map.Things[0].Z) + 0.12f;
+        Check(MathF.Abs(selection.transform.position.y - expected) < 0.001f,
+              "selection indicator follows terrain once without doubled height");
+
+        var painter = new MapEditor();
+        Set(painter, "_map", map);
+        Set(painter, "_name", map.Name);
+        Invoke(painter, "Redraw");
+        var beforePaint = (List<GameObject>)previewField.GetValue(painter);
+        var existing = beforePaint[0];
+        Invoke(painter, "PaintTerrain", new Vector3(10f, 0f, 10f));
+        var afterPaint = (List<GameObject>)previewField.GetValue(painter);
+        Check(ReferenceEquals(existing, afterPaint[0]) &&
+              beforePaint.Count == afterPaint.Count,
+              "material painting changes only terrain mesh and never respawns nature props");
+        Invoke(painter, "Undo");
+        Check(map.TerrainPaints.Count == 1,
+              "undo works without relying on original map instance after preview fast path");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -636,6 +685,7 @@ static class Program
         DragAndFlattenTools();
         AuthoringImportContracts();
         ExternalEditConflictAndSafeCopy();
+        FastBrushPreviewAndSelectionHeight();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
