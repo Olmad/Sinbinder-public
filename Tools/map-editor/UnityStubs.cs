@@ -206,6 +206,7 @@ namespace UnityEngine
         public static bool GetKeyDown(KeyCode code) => false;
         public static bool GetMouseButtonDown(int button) => false;
         public static bool GetMouseButton(int button) => false;
+        public static bool GetMouseButtonUp(int button) => false;
         public static float GetAxisRaw(string name) => 0;
     }
     public static class Screen { public static int width = 1600, height = 900; }
@@ -213,7 +214,11 @@ namespace UnityEngine
     public class GUILayoutOption { }
     public class GUIStyle { }
     public class GUISkin { public GUIStyle box = new GUIStyle(); }
-    public static class GUI { public static GUISkin skin = new GUISkin(); }
+    public static class GUI
+    {
+        public static GUISkin skin = new GUISkin();
+        public static void Box(Rect r, string caption) { }
+    }
     public struct Rect
     {
         public Rect(float x,float y,float width,float height) { }
