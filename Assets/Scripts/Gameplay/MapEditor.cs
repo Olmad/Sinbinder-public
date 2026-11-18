@@ -21,7 +21,7 @@ namespace Sinbinder.Gameplay
     public class MapEditor : MonoBehaviour
     {
         private enum Kind { Thing, Crypt, Location, Trail, Event, Region, Trigger }
-        private enum Mode { Place, Select, Erase }
+        private enum Mode { Place, Select, Erase, Terrain }
 
         private struct Brush { public string Title; public Kind Kind; public string Arg; }
 
@@ -63,6 +63,11 @@ namespace Sinbinder.Gameplay
         private Kind _selectionKind;
         private int _selectionIndex = -1;
         private float _snap = 2f;
+        private float _terrainRadius = 18f;
+        private float _terrainDelta = 3f;
+        private bool _terrainRaise = true;
+        private Mesh _terrainMesh;
+        private Mesh _originalGroundMesh;
         private string _filter = "";
         private Vector2 _inspectorScroll;
         private readonly List<string> _undo = new();
@@ -122,6 +127,7 @@ namespace Sinbinder.Gameplay
             {
                 if (_mode == Mode.Place) Put(Snapped(at));
                 else if (_mode == Mode.Select) Select(at);
+                else if (_mode == Mode.Terrain) Sculpt(Snapped(at));
                 else Remove(at);
             }
             if (Input.GetMouseButtonDown(1)) Select(at);
@@ -133,9 +139,17 @@ namespace Sinbinder.Gameplay
         {
             at = default;
             var ray = _cam.ScreenPointToRay(Input.mousePosition);
-            var plane = new Plane(Vector3.up, Vector3.zero);
-            if (!plane.Raycast(ray, out float d)) return false;
-            at = ray.GetPoint(d);
+            // Hit the authored physics surface first, not the old horizontal y=0 plane.
+            var ground = GameObject.Find("Поле");
+            var collider = ground != null ? ground.GetComponent<Collider>() : null;
+            if (collider != null && collider.Raycast(ray, out var hit, 2000f))
+                at = hit.point;
+            else
+            {
+                var plane = new Plane(Vector3.up, Vector3.zero);
+                if (!plane.Raycast(ray, out float d)) return false;
+                at = ray.GetPoint(d);
+            }
             float half = _map.Size * 0.5f;
             return Mathf.Abs(at.x) <= half && Mathf.Abs(at.z) <= half;
         }
@@ -176,6 +190,25 @@ namespace Sinbinder.Gameplay
             drop();
             _selectionIndex = -1;
             Redraw();
+        }
+
+        /// <summary>One true height edit, saved in JSON and shared with playable terrain.</summary>
+        private void Sculpt(Vector3 at)
+        {
+            _map.EnsureLists();
+            if (_map.TerrainStrokes.Count >= MapTerrain.MaxStrokes)
+            {
+                _say = Loc.T("Достигнут предел изменений рельефа (128).");
+                return;
+            }
+            float half = _map.Size * 0.5f;
+            if (Mathf.Abs(at.x) > half || Mathf.Abs(at.z) > half) return;
+            Change(() => _map.TerrainStrokes.Add(new MapData.TerrainStroke
+            {
+                X = at.x, Z = at.z,
+                Radius = _terrainRadius,
+                Delta = _terrainRaise ? _terrainDelta : -_terrainDelta
+            }));
         }
 
         // ---------------------------------------------------------- selection and history
@@ -285,7 +318,7 @@ namespace Sinbinder.Gameplay
                 case Kind.Region when i < _map.Regions.Count: x = _map.Regions[i].X; z = _map.Regions[i].Z; break;
                 default: return false;
             }
-            position = new Vector3(x, 0.12f, z);
+            position = new Vector3(x, MapTerrain.HeightAt(_map, x, z) + 0.12f, z);
             return true;
         }
 
@@ -361,18 +394,23 @@ namespace Sinbinder.Gameplay
             _previewMaterials.Clear();
         }
 
-        void OnDestroy() => ClearPreview();
+        void OnDestroy()
+        {
+            ClearPreview();
+            if (_terrainMesh != null) Destroy(_terrainMesh);
+        }
 
         private void Redraw()
         {
             ClearPreview();
 
             var ground = GameObject.Find("Поле");
-            if (ground != null) ground.transform.localScale = new Vector3(_map.Size / 10f, 1f, _map.Size / 10f);
+            if (ground != null)
+                MapTerrain.ApplyGround(ground, _map, ref _terrainMesh, ref _originalGroundMesh);
 
-            foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
+            foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale);
             // Склеп — тот же, что встанет на поле: пол, стены, дверь, трон (MapLoader).
-            foreach (var c in _map.Crypts) Model("Crypt", new Vector3(c.X, 0f, c.Z), c.Yaw, 1f);
+            foreach (var c in _map.Crypts) Model("Crypt", new Vector3(c.X, MapTerrain.HeightAt(_map, c.X, c.Z), c.Z), c.Yaw, 1f);
             foreach (var l in _map.Locations) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
             foreach (var s in _map.Trails) Disc(new Vector3(s.X, 0.06f, s.Z), 3f, new Color(0.8f, 0.15f, 0.12f));
             foreach (var s in _map.Events) Disc(new Vector3(s.X, 0.07f, s.Z), 2.5f, new Color(0.95f, 0.8f, 0.2f));
@@ -401,6 +439,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Плоский круг на земле — граница подлокации, тропа, событие.</summary>
         private void Disc(Vector3 at, float radius, Color colour)
         {
+            at.y += MapTerrain.HeightAt(_map, at.x, at.z);
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             Destroy(go.GetComponent<Collider>());
             go.transform.position = at;
@@ -428,6 +467,7 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Разместить"), GUILayout.Width(92f))) _mode = Mode.Place;
             if (GUILayout.Button(Loc.T("Выделить"), GUILayout.Width(92f))) _mode = Mode.Select;
             if (GUILayout.Button(Loc.T("Стереть"), GUILayout.Width(92f))) _mode = Mode.Erase;
+            if (GUILayout.Button(Loc.T("Рельеф"), GUILayout.Width(92f))) _mode = Mode.Terrain;
             if (GUILayout.Button("↶", GUILayout.Width(36f))) Undo();
             if (GUILayout.Button("↷", GUILayout.Width(36f))) Redo();
             if (GUILayout.Button(Loc.T("Записать"), GUILayout.Width(95f))) Save();
@@ -457,6 +497,21 @@ namespace Sinbinder.Gameplay
                 if (GUILayout.Toggle(_snap == step, step == 0f ? "Off" : step.ToString("0"), "Button"))
                     _snap = step;
             GUILayout.EndHorizontal();
+
+            // A sculpt click updates the real mesh collider in both editor and game.
+            GUILayout.Label(Loc.F("Рельеф: {0}/{1}", _map.TerrainStrokes.Count, MapTerrain.MaxStrokes));
+            if (_mode == Mode.Terrain)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(_terrainRaise, Loc.T("Поднять"), "Button")) _terrainRaise = true;
+                if (GUILayout.Toggle(!_terrainRaise, Loc.T("Опустить"), "Button")) _terrainRaise = false;
+                GUILayout.EndHorizontal();
+                GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_terrainRadius)));
+                _terrainRadius = Mathf.Round(GUILayout.HorizontalSlider(_terrainRadius, 4f, 60f));
+                GUILayout.Label(Loc.F("Шаг высоты: {0} м", Mathf.RoundToInt(_terrainDelta)));
+                _terrainDelta = Mathf.Round(GUILayout.HorizontalSlider(_terrainDelta, 1f, 8f));
+                GUILayout.Label(Loc.T("ЛКМ: изменить высоту; Ctrl+Z: отменить."));
+            }
 
             _logicTab = GUILayout.Toolbar(_logicTab ? 1 : 0,
                 new[] { Loc.T("Объекты"), Loc.T("Логика") }) == 1;
@@ -521,7 +576,7 @@ namespace Sinbinder.Gameplay
                     {
                         _map.Things.Clear(); _map.Crypts.Clear(); _map.Locations.Clear();
                         _map.Trails.Clear(); _map.Events.Clear(); _map.Regions.Clear();
-                        _map.Triggers.Clear();
+                        _map.Triggers.Clear(); _map.TerrainStrokes.Clear();
                         _selectionIndex = -1;
                     });
                     _confirmClear = false;
@@ -782,6 +837,8 @@ namespace Sinbinder.Gameplay
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Тропа вне карты."));
             foreach (var t in _map.Events)
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
+            if (!MapTerrain.Valid(_map))
+                errors.Add(Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."));
             var regionIds = new HashSet<string>();
             foreach (var region in _map.Regions)
                 if (region == null || string.IsNullOrEmpty(region.Id) ||
