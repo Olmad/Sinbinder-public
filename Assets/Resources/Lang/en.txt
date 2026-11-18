@@ -4868,8 +4868,8 @@ msgid "Ты мало ешь. Оттого и злой."
 msgstr "You eat too little. That's why you're so bitter."
 
 #: Dialogue/EncounterLines.cs
-msgid "Алхимик. Твои склянки на вкус пробовал."
-msgstr "An alchemist. I've tasted your vials."
+msgid "Алхимик. От твоих зелий хоть сытым станешь?"
+msgstr "Alchemist. Can your potions actually fill a belly?"
 
 #: Dialogue/EncounterLines.cs
 msgid "Алхимик. Варить умеешь, а готовить нет."
@@ -7000,20 +7000,17 @@ msgid "Она пала. Своё решение стоило ей второй �
 msgstr "She fell. Her own decision cost her her second life."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and he goes. The reason is gone: the killers are dead."
+msgid "Теперь он послушался приказа. Убийц рядом больше нет."
+msgstr "This time he obeyed the order. The killers are no longer nearby."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and she goes. The reason is gone: the killers are dead."
+msgid "Теперь она послушалась приказа. Убийц рядом больше нет."
+msgstr "This time she obeyed the order. The killers are no longer nearby."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у его души нашлась другая причина. Наведите на него мышь — узнаете, какая."
-msgstr "No again. The court judged that moment; the world has changed since — and his soul found another reason. Hover over him to see which."
+msgid "Приказ снова не выполнен. Обстановка изменилась. Наведите на воина мышь, чтобы узнать, что повлияло на решение."
+msgstr "The order went unfulfilled again. Circumstances changed. Hover over the warrior to see what influenced the decision."
 
-#: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Суд судил тот миг, а теперь мир другой — и у её души нашлась другая причина. Наведите на неё мышь — узнаете, какая."
-msgstr "No again. The court judged that moment; the world has changed since — and her soul found another reason. Hover over her to see which."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "СОН · ПОДРОБНЕЕ"
@@ -10408,8 +10405,8 @@ msgid "Рядом добыча. Драться — значит её упуст�
 msgstr "There is loot nearby. Fighting means letting it slip away."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "У него полный кошель. Жалко рисковать им в драке."
-msgstr "His purse is full. A pity to risk it in a fight."
+msgid "В кошеле есть золото. Жалко рисковать им в драке."
+msgstr "There is gold in the purse. It is a pity to risk it in a fight."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "В нём жадность. Драться даром жадный не станет."
@@ -10492,8 +10489,8 @@ msgid "В нём воздержанность. Сытая лень ему чуж
 msgstr "He is temperate. Well-fed idleness is foreign to him."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "У него полный кошель. Лучше переждать в стороне."
-msgstr "His purse is full. Better to wait it out on the side."
+msgid "В кошеле есть золото. Лучше переждать в стороне."
+msgstr "There is gold in the purse. Better to wait on the sidelines."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Желанию некуда деться — и он застыл на месте."
@@ -10616,12 +10613,12 @@ msgid "Рядом тот, кто ему дорог. Привязанность �
 msgstr "Someone dear to him is near. Attachment is stronger than the order."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Его однажды спасли. Он помнит долг."
-msgstr "He was saved once. He remembers the debt."
+msgid "Память тянет помочь союзнику."
+msgstr "Memory urges him to help an ally."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Его однажды предали. Он это помнит."
-msgstr "He was betrayed once. He remembers it."
+msgid "Память удерживает от помощи."
+msgstr "Memory holds him back from helping."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Спасать даром? Жадность за чужую жизнь не платит."
@@ -14344,3 +14341,15 @@ msgstr "Do not show automatically (U: brief Court, Shift+U: full Court)"
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Позже выбор можно изменить в меню паузы."
 msgstr "You can change this choice later in the pause menu."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Добрых черт в ней больше, чем грешных. А добрая слушается."
+msgstr "She has more good traits than sinful ones. And the good obey."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Грешных черт в ней больше, чем добрых. А грешница слушаться не привыкла."
+msgstr "She has more sinful traits than good ones. And a sinner is not used to obeying."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Жадность велит держаться в стороне."
+msgstr "Greed says to stay out of it."
