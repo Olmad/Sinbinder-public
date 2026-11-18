@@ -91,7 +91,7 @@ namespace Sinbinder.EditorTools
 
         private void ImportModelFile()
         {
-            string file = EditorUtility.OpenFilePanel("Импорт FBX или OBJ", "", "fbx,obj");
+            string file = EditorUtility.OpenFilePanel("Импорт FBX или OBJ", "", "");
             if (string.IsNullOrEmpty(file)) return;
             string ext = Path.GetExtension(file).ToLowerInvariant();
             if (ext != ".fbx" && ext != ".obj") return;
@@ -108,7 +108,7 @@ namespace Sinbinder.EditorTools
 
         private void ImportTextureFile()
         {
-            string file = EditorUtility.OpenFilePanel("Импорт PNG / JPG", "", "png,jpg,jpeg");
+            string file = EditorUtility.OpenFilePanel("Импорт PNG / JPG", "", "");
             if (string.IsNullOrEmpty(file)) return;
             string ext = Path.GetExtension(file).ToLowerInvariant();
             if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") return;
