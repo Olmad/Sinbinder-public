@@ -333,6 +333,7 @@ namespace Sinbinder.Core
         // Evaluate only the authored brush field at grid vertices.
         private static float RawHeight(MapData map, float x, float z)
         {
+            if (map.TerrainStrokes == null) return 0f;
             float height = 0f;
             foreach (var stroke in map.TerrainStrokes)
             {
