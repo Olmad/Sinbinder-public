@@ -133,17 +133,28 @@ namespace Sinbinder.Gameplay
             // Always read the current on-disk map when available. Using an old
             // lobby snapshot and fingerprinting a newer file would conceal
             // external changes made between the lobby and opening this scene.
-            if (!string.IsNullOrEmpty(_path) && File.Exists(_path))
+            try
             {
-                var latest = MapData.Load(_path);
-                if (latest != null) _map = latest;
-                else
+                if (!string.IsNullOrEmpty(_path) && File.Exists(_path))
                 {
-                    _unreadableSource = true;
-                    _say = Loc.T("Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию».");
+                    var latest = MapData.Load(_path);
+                    if (latest != null) _map = latest;
+                    else
+                    {
+                        _unreadableSource = true;
+                        _say = Loc.T("Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию».");
+                    }
                 }
+                _openedFingerprint = FileFingerprint(_path);
             }
-            _openedFingerprint = FileFingerprint(_path);
+            catch (System.Exception error)
+            {
+                // A locked/unreadable disk must not crash the editor or allow
+                // it to overwrite a map whose original version is unknown.
+                _unreadableSource = true;
+                _say = Loc.T("Не удалось прочитать карту с диска. Оригинал защищён; используйте «Сохранить копию».");
+                Debug.LogWarning("[Редактор карт] Невозможно проверить файл: " + error.Message);
+            }
             _map.EnsureLists();
             RefreshAssets();
             EnsureIds();
@@ -961,7 +972,8 @@ namespace Sinbinder.Gameplay
             if (_confirmExit && GUILayout.Button(Loc.T("Отменить выход")))
                 _confirmExit = false;
             GUILayout.Label(_dirty ? Loc.T("Есть несохранённые изменения")
-                                   : Loc.T("Изменения сохранены"));
+                : string.IsNullOrEmpty(_path) ? Loc.T("Новая карта ещё не записана")
+                : Loc.T("Изменения сохранены"));
             GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
             GUILayout.EndArea();
