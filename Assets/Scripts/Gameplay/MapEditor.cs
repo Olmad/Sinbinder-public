@@ -694,7 +694,8 @@ namespace Sinbinder.Gameplay
             {
                 GUILayout.Label(Loc.T("Предмет:"));
                 foreach (var thing in _map.Things)
-                    if (GUILayout.Toggle(thing.Id == t.TargetId, thing.Prop + " · " + thing.Id.Substring(0, 6), "Button") &&
+                    if (GUILayout.Toggle(thing.Id == t.TargetId,
+                        thing.Prop + " · " + (thing.Id.Length > 6 ? thing.Id.Substring(0, 6) : thing.Id), "Button") &&
                         thing.Id != t.TargetId)
                         Change(() => t.TargetId = thing.Id);
             }
@@ -709,9 +710,88 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(Loc.T("Это безопасная система событий без произвольного исполнения кода."));
         }
 
+        private List<string> Validate()
+        {
+            _map.EnsureLists();
+            var errors = new List<string>();
+            if (_map.Crypts.Count < 2)
+                errors.Add(Loc.T("Нужно минимум два склепа игроков."));
+            if (_map.Crypts.Count > 8)
+                errors.Add(Loc.T("Поддерживается не более восьми склепов."));
+            if (float.IsNaN(_map.Size) || float.IsInfinity(_map.Size) ||
+                _map.Size < 150f || _map.Size > 800f)
+                errors.Add(Loc.T("Неверный размер поля."));
+            float half = _map.Size * 0.5f;
+            bool InField(float x, float z)
+                => !float.IsNaN(x) && !float.IsNaN(z) &&
+                   !float.IsInfinity(x) && !float.IsInfinity(z) &&
+                   Mathf.Abs(x) <= half && Mathf.Abs(z) <= half;
+            foreach (var c in _map.Crypts)
+                if (c == null || !InField(c.X, c.Z)) errors.Add(Loc.T("Склеп вне карты."));
+            foreach (var t in _map.Things)
+            {
+                if (t == null || !InField(t.X, t.Z) || t.Scale <= 0f ||
+                    float.IsNaN(t.Scale) || float.IsInfinity(t.Scale))
+                    errors.Add(Loc.T("Неверная позиция или размер объекта."));
+                else if (string.IsNullOrWhiteSpace(t.Prop) || MapLoader.Prefab(t.Prop) == null)
+                    errors.Add(Loc.F("Модель не найдена: {0}", t.Prop));
+            }
+            foreach (var l in _map.Locations)
+                if (l == null || !InField(l.X, l.Z) || l.Radius <= 0f ||
+                    l.People < 0) errors.Add(Loc.T("Неверная подлокация."));
+            foreach (var t in _map.Trails)
+                if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Тропа вне карты."));
+            foreach (var t in _map.Events)
+                if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
+            var regionIds = new HashSet<string>();
+            foreach (var region in _map.Regions)
+                if (region == null || string.IsNullOrEmpty(region.Id) ||
+                    !regionIds.Add(region.Id) || !InField(region.X, region.Z) ||
+                    region.Radius <= 0f || float.IsNaN(region.Radius))
+                    errors.Add(Loc.T("Неверная область или повтор ID."));
+            var objectIds = new HashSet<string>();
+            foreach (var thing in _map.Things)
+                if (thing != null && (string.IsNullOrEmpty(thing.Id) ||
+                    !objectIds.Add(thing.Id)))
+                    errors.Add(Loc.T("Объект без уникального ID."));
+            if (_map.Triggers.Count > 128)
+                errors.Add(Loc.T("Максимум 128 правил на карте."));
+            var triggerIds = new HashSet<string>();
+            foreach (var rule in _map.Triggers)
+            {
+                if (rule == null || string.IsNullOrEmpty(rule.Id) ||
+                    !triggerIds.Add(rule.Id))
+                { errors.Add(Loc.T("Триггер без уникального ID.")); continue; }
+                if (rule.Event != "OnStart" && rule.Event != "OnEnterRegion" &&
+                    rule.Event != "OnInteractObject")
+                    errors.Add(Loc.T("Неизвестное событие правила."));
+                if (rule.Condition != "Always" && rule.Condition != "FlagIsTrue")
+                    errors.Add(Loc.T("Неизвестное условие правила."));
+                if (rule.Action != "ShowMessage" && rule.Action != "SetFlag")
+                    errors.Add(Loc.T("Неизвестное действие правила."));
+                if (rule.Event == "OnEnterRegion" && !regionIds.Contains(rule.RegionId))
+                    errors.Add(Loc.T("Триггер ссылается на отсутствующую область."));
+                if (rule.Event == "OnInteractObject" && !objectIds.Contains(rule.TargetId))
+                    errors.Add(Loc.T("Триггер ссылается на отсутствующий предмет."));
+                if ((rule.Action == "SetFlag" || rule.Condition == "FlagIsTrue") &&
+                    (string.IsNullOrWhiteSpace(rule.Flag) || rule.Flag.Length > 64))
+                    errors.Add(Loc.T("Условие или действие не содержит допустимый флаг."));
+                if (rule.Action == "ShowMessage" &&
+                    (string.IsNullOrWhiteSpace(rule.Message) || rule.Message.Length > 240))
+                    errors.Add(Loc.T("Сообщение правила отсутствует или слишком длинное."));
+            }
+            return errors;
+        }
+
         private void Save()
         {
-            if (_map.Crypts.Count < 2) { _say = Loc.T("Нужно хотя бы два склепа — по одному на игрока."); return; }
+            var errors = Validate();
+            if (errors.Count > 0)
+            {
+                _say = Loc.F("Карта не записана: {0} ошибок. Первая: {1}",
+                    errors.Count, errors[0]);
+                return;
+            }
             _map.Name = string.IsNullOrWhiteSpace(_name) ? Loc.T("Новая карта") : _name.Trim();
             try
             {
@@ -726,7 +806,7 @@ namespace Sinbinder.Gameplay
                         destination = Path.Combine(MapData.Folder, file + "_" + suffix++ + ".json");
                 }
                 var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
-                if (File.Exists(destination)) File.Copy(destination, destination + ".bak", true);
+                // MapData.Save performs an atomic replace and retains the old .bak.
                 _map.Save(destination);
                 _path = destination;
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
