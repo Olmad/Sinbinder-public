@@ -74,6 +74,7 @@ namespace Sinbinder.Gameplay
             foreach (var t in map.Things)
             {
                 var model = Place(t.Prop, root, At(map, t.X, t.Z), t.Yaw, t.Scale);
+                MapAssets.ApplyObjectMaterial(model, t.MaterialId);
                 if (logic != null && model != null && !string.IsNullOrEmpty(t.Id))
                     logic.RegisterObject(t.Id, model.transform);
             }
@@ -270,6 +271,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static GameObject Prefab(string prop)
         {
+            if (MapAssets.IsUserProp(prop)) return MapAssets.UserPrefab(prop);
+            if (string.IsNullOrWhiteSpace(prop) || !MapAssets.ValidId(prop)) return null;
             var dressed = Resources.Load<GameObject>("MapProps/" + prop);
             return dressed != null ? dressed : Resources.Load<GameObject>("Props/" + prop);
         }
