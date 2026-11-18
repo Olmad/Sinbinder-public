@@ -296,12 +296,17 @@ namespace Sinbinder.Core
             if (map.TerrainPaints != null)
             {
                 if (map.TerrainPaints.Count > MaxPaints) return false;
+                var materials = new HashSet<string>();
                 foreach (var paint in map.TerrainPaints)
+                {
                     if (paint == null || !Finite(paint.X) || !Finite(paint.Z) ||
                         !Finite(paint.Radius) || Mathf.Abs(paint.X) > map.Size * 0.5f ||
                         Mathf.Abs(paint.Z) > map.Size * 0.5f ||
                         paint.Radius < 4f || paint.Radius > 100f ||
                         !MapAssets.ValidId(paint.MaterialId)) return false;
+                    materials.Add(paint.MaterialId);
+                    if (materials.Count >= MaxTerrainMaterials) return false;
+                }
             }
             if (map.TerrainStrokes == null || map.TerrainStrokes.Count == 0) return true;
             if (map.TerrainStrokes.Count > MaxStrokes) return false;
