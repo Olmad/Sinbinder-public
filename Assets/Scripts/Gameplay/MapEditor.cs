@@ -21,7 +21,7 @@ namespace Sinbinder.Gameplay
     public class MapEditor : MonoBehaviour
     {
         private enum Kind { Thing, Crypt, Location, Trail, Event, Region, Trigger }
-        private enum Mode { Place, Select, Erase, Terrain }
+        private enum Mode { Place, Select, Erase, Terrain, Paint, Vegetation }
 
         private struct Brush { public string Title; public Kind Kind; public string Arg; }
 
@@ -29,7 +29,12 @@ namespace Sinbinder.Gameplay
         {
             new() { Title = Loc.N("Сосна"), Kind = Kind.Thing, Arg = "Pine" },
             new() { Title = Loc.N("Высокая сосна"), Kind = Kind.Thing, Arg = "TallPineA" },
+            new() { Title = Loc.N("Высокая сосна B"), Kind = Kind.Thing, Arg = "TallPineB" },
+            new() { Title = Loc.N("Высокая сосна C"), Kind = Kind.Thing, Arg = "TallPineC" },
             new() { Title = Loc.N("Сухое дерево"), Kind = Kind.Thing, Arg = "DeadTreeA" },
+            new() { Title = Loc.N("Сухое дерево B"), Kind = Kind.Thing, Arg = "DeadTreeB" },
+            new() { Title = Loc.N("Сухое дерево C"), Kind = Kind.Thing, Arg = "DeadTreeC" },
+            new() { Title = Loc.N("Пучок травы"), Kind = Kind.Thing, Arg = "GrassTuft" },
             new() { Title = Loc.N("Куст"), Kind = Kind.Thing, Arg = "Bush" },
             new() { Title = Loc.N("Камень"), Kind = Kind.Thing, Arg = "Rock" },
             new() { Title = Loc.N("Пень"), Kind = Kind.Thing, Arg = "Stump" },
@@ -38,6 +43,13 @@ namespace Sinbinder.Gameplay
             new() { Title = Loc.N("Частокол"), Kind = Kind.Thing, Arg = "Palisade" },
             new() { Title = Loc.N("Бочка"), Kind = Kind.Thing, Arg = "Barrel" },
             new() { Title = Loc.N("Ящик"), Kind = Kind.Thing, Arg = "Crate" },
+            new() { Title = Loc.N("Сундук"), Kind = Kind.Thing, Arg = "Chest" },
+            new() { Title = Loc.N("Поленница"), Kind = Kind.Thing, Arg = "Woodpile" },
+            new() { Title = Loc.N("Плетень"), Kind = Kind.Thing, Arg = "Wattle" },
+            new() { Title = Loc.N("Колодец"), Kind = Kind.Thing, Arg = "Well" },
+            new() { Title = Loc.N("Бревно-скамья"), Kind = Kind.Thing, Arg = "LogBench" },
+            new() { Title = Loc.N("Факел"), Kind = Kind.Thing, Arg = "Torch" },
+            new() { Title = Loc.N("Хижина"), Kind = Kind.Thing, Arg = "Izba" },
             new() { Title = Loc.N("Склеп игрока"), Kind = Kind.Crypt },
             new() { Title = Loc.N("Деревня"), Kind = Kind.Location, Arg = "village" },
             new() { Title = Loc.N("Лес"), Kind = Kind.Location, Arg = "forest" },
@@ -66,6 +78,16 @@ namespace Sinbinder.Gameplay
         private float _terrainRadius = 18f;
         private float _terrainDelta = 3f;
         private bool _terrainRaise = true;
+        private bool _terrainFlatten;
+        private string _paintMaterial = "Ground048";
+        private float _paintRadius = 16f;
+        private string _vegetationProp = "GrassTuft";
+        private int _vegetationCount = 12;
+        private float _vegetationRadius = 18f;
+        private string _customProp = "";
+        private GameObject[] _customPrefabs = new GameObject[0];
+        private Material[] _terrainMaterials = new Material[0];
+        private Material[] _objectMaterials = new Material[0];
         private Mesh _terrainMesh;
         private Mesh _originalGroundMesh;
         private string _filter = "";
@@ -88,6 +110,9 @@ namespace Sinbinder.Gameplay
                 ? new MapData { Name = Loc.T("Новая карта"), Size = 300f }
                 : JsonUtility.FromJson<MapData>(JsonUtility.ToJson(MapSession.Map));
             _map.EnsureLists();
+            _customPrefabs = Resources.LoadAll<GameObject>("MapUserProps");
+            _terrainMaterials = Resources.LoadAll<Material>("MapTerrainMaterials");
+            _objectMaterials = Resources.LoadAll<Material>("MapUserMaterials");
             EnsureIds();
             _path = MapSession.Path;
             _name = _map.Name;
@@ -128,6 +153,8 @@ namespace Sinbinder.Gameplay
                 if (_mode == Mode.Place) Put(Snapped(at));
                 else if (_mode == Mode.Select) Select(at);
                 else if (_mode == Mode.Terrain) Sculpt(Snapped(at));
+                else if (_mode == Mode.Paint) PaintTerrain(Snapped(at));
+                else if (_mode == Mode.Vegetation) ScatterVegetation(Snapped(at));
                 else Remove(at);
             }
             if (Input.GetMouseButtonDown(1)) Select(at);
@@ -157,7 +184,9 @@ namespace Sinbinder.Gameplay
         private void Put(Vector3 at)
         {
             Record();
-            var b = Palette[_brush];
+            var b = _brush < 0
+                ? new Brush { Title = _customProp, Kind = Kind.Thing, Arg = _customProp }
+                : Palette[_brush];
             switch (b.Kind)
             {
                 case Kind.Thing: _map.Things.Add(new MapData.Thing { Id = NewId(), Prop = b.Arg, X = at.x, Z = at.z, Yaw = _yaw, Scale = 1f }); break;
@@ -168,6 +197,70 @@ namespace Sinbinder.Gameplay
                 case Kind.Region: _map.Regions.Add(new MapData.Region { Id = NewId(), Name = Loc.T("Новая область"), X = at.x, Z = at.z }); break;
             }
             Redraw();
+        }
+
+        /// <summary>Paint real terrain triangles using a bundled or imported Unity material.</summary>
+        private void PaintTerrain(Vector3 at)
+        {
+            if (_map.TerrainPaints.Count >= MapTerrain.MaxPaints)
+            {
+                _say = Loc.T("Достигнут предел кистей покрытия (256).");
+                return;
+            }
+            if (!MapAssets.ValidId(_paintMaterial) ||
+                MapAssets.TerrainMaterial(_paintMaterial) == null)
+            {
+                _say = Loc.T("Материал земли отсутствует. Импортируйте его в Unity.");
+                return;
+            }
+            var ids = MapTerrain.PaintMaterialIds(_map);
+            if (!ids.Contains(_paintMaterial) && ids.Count >= MapTerrain.MaxTerrainMaterials)
+            {
+                _say = Loc.T("На карте может быть не более семи материалов земли.");
+                return;
+            }
+            Change(() => _map.TerrainPaints.Add(new MapData.TerrainPaint
+            {
+                X = at.x, Z = at.z, Radius = _paintRadius, MaterialId = _paintMaterial
+            }));
+        }
+
+        /// <summary>Deterministic terrain-aware vegetation cluster; one Undo = whole cluster.</summary>
+        private void ScatterVegetation(Vector3 at)
+        {
+            if (MapLoader.Prefab(_vegetationProp) == null)
+            {
+                _say = Loc.T("Модель растительности не найдена.");
+                return;
+            }
+            float half = _map.Size * 0.5f;
+            int placed = 0;
+            Record();
+            for (int i = 0; i < _vegetationCount; i++)
+            {
+                float angle = i * 2.39996323f;
+                float r = _vegetationRadius * Mathf.Sqrt((i + 0.5f) / _vegetationCount);
+                float x = at.x + Mathf.Cos(angle) * r;
+                float z = at.z + Mathf.Sin(angle) * r;
+                if (Mathf.Abs(x) > half || Mathf.Abs(z) > half) continue;
+                bool inCrypt = false;
+                foreach (var crypt in _map.Crypts)
+                {
+                    float dx = x - crypt.X, dz = z - crypt.Z;
+                    if (dx * dx + dz * dz < 144f) { inCrypt = true; break; }
+                }
+                if (inCrypt) continue;
+                _map.Things.Add(new MapData.Thing
+                {
+                    Id = NewId(), Prop = _vegetationProp, X = x, Z = z,
+                    Yaw = Mathf.Repeat(i * 137.5f, 360f),
+                    Scale = 0.8f + (i % 7) * 0.07f
+                });
+                placed++;
+            }
+            if (placed == 0) { Undo(); return; }
+            Redraw();
+            _say = Loc.F("Добавлено растений: {0}", placed);
         }
 
         /// <summary>Убрать ближайшее к точке (в 4 м), что бы это ни было.</summary>
@@ -207,7 +300,9 @@ namespace Sinbinder.Gameplay
             {
                 X = at.x, Z = at.z,
                 Radius = _terrainRadius,
-                Delta = _terrainRaise ? _terrainDelta : -_terrainDelta
+                Delta = _terrainRaise ? _terrainDelta : -_terrainDelta,
+                Mode = _terrainFlatten ? "Flatten" : "Add",
+                TargetHeight = _terrainFlatten ? MapTerrain.HeightAt(_map, at.x, at.z) : 0f
             }));
         }
 
@@ -360,7 +455,7 @@ namespace Sinbinder.Gameplay
                         var t = _map.Things[i];
                         _map.Things.Add(new MapData.Thing { Id = NewId(), Prop = t.Prop,
                             X = t.X + Mathf.Max(2f, _snap), Z = t.Z + Mathf.Max(2f, _snap),
-                            Yaw = t.Yaw, Scale = t.Scale });
+                            Yaw = t.Yaw, Scale = t.Scale, MaterialId = t.MaterialId });
                         _selectionIndex = _map.Things.Count - 1;
                         break;
                     case Kind.Region when i < _map.Regions.Count:
@@ -408,7 +503,7 @@ namespace Sinbinder.Gameplay
             if (ground != null)
                 MapTerrain.ApplyGround(ground, _map, ref _terrainMesh, ref _originalGroundMesh);
 
-            foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale);
+            foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale, t.MaterialId);
             // Склеп — тот же, что встанет на поле: пол, стены, дверь, трон (MapLoader).
             foreach (var c in _map.Crypts) Model("Crypt", new Vector3(c.X, MapTerrain.HeightAt(_map, c.X, c.Z), c.Z), c.Yaw, 1f);
             foreach (var l in _map.Locations) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
@@ -426,13 +521,14 @@ namespace Sinbinder.Gameplay
             _ => new Color(0.45f, 0.30f, 0.18f),
         };
 
-        private void Model(string prop, Vector3 at, float yaw, float scale)
+        private void Model(string prop, Vector3 at, float yaw, float scale, string materialId = "")
         {
             var prefab = MapLoader.Prefab(prop);
             if (prefab == null) return;
             var go = Instantiate(prefab);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
             go.transform.localScale = prefab.transform.localScale * scale;
+            MapAssets.ApplyObjectMaterial(go, materialId);
             _shown.Add(go);
         }
 
@@ -468,6 +564,8 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Выделить"), GUILayout.Width(92f))) _mode = Mode.Select;
             if (GUILayout.Button(Loc.T("Стереть"), GUILayout.Width(92f))) _mode = Mode.Erase;
             if (GUILayout.Button(Loc.T("Рельеф"), GUILayout.Width(92f))) _mode = Mode.Terrain;
+            if (GUILayout.Button(Loc.T("Материал"), GUILayout.Width(92f))) _mode = Mode.Paint;
+            if (GUILayout.Button(Loc.T("Растения"), GUILayout.Width(92f))) _mode = Mode.Vegetation;
             if (GUILayout.Button("↶", GUILayout.Width(36f))) Undo();
             if (GUILayout.Button("↷", GUILayout.Width(36f))) Redo();
             if (GUILayout.Button(Loc.T("Записать"), GUILayout.Width(95f))) Save();
@@ -503,14 +601,45 @@ namespace Sinbinder.Gameplay
             if (_mode == Mode.Terrain)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Toggle(_terrainRaise, Loc.T("Поднять"), "Button")) _terrainRaise = true;
-                if (GUILayout.Toggle(!_terrainRaise, Loc.T("Опустить"), "Button")) _terrainRaise = false;
+                if (GUILayout.Toggle(_terrainRaise && !_terrainFlatten, Loc.T("Поднять"), "Button"))
+                    { _terrainRaise = true; _terrainFlatten = false; }
+                if (GUILayout.Toggle(!_terrainRaise && !_terrainFlatten, Loc.T("Опустить"), "Button"))
+                    { _terrainRaise = false; _terrainFlatten = false; }
                 GUILayout.EndHorizontal();
+                if (GUILayout.Toggle(_terrainFlatten, Loc.T("Выровнять по точке"), "Button"))
+                    _terrainFlatten = true;
                 GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_terrainRadius)));
                 _terrainRadius = Mathf.Round(GUILayout.HorizontalSlider(_terrainRadius, 8f, 60f));
                 GUILayout.Label(Loc.F("Шаг высоты: {0} м", Mathf.RoundToInt(_terrainDelta)));
                 _terrainDelta = Mathf.Round(GUILayout.HorizontalSlider(_terrainDelta, 1f, 8f));
                 GUILayout.Label(Loc.T("ЛКМ: изменить высоту; Ctrl+Z: отменить."));
+            }
+            if (_mode == Mode.Paint)
+            {
+                GUILayout.Label(Loc.T("Материалы ландшафта"));
+                foreach (var mat in _terrainMaterials)
+                    if (mat != null && GUILayout.Toggle(_paintMaterial == mat.name, mat.name, "Button"))
+                        _paintMaterial = mat.name;
+                GUILayout.Label(Loc.F("Радиус кисти: {0} м", Mathf.RoundToInt(_paintRadius)));
+                _paintRadius = Mathf.Round(GUILayout.HorizontalSlider(_paintRadius, 4f, 60f));
+                GUILayout.Label(Loc.T("Чтобы добавить материалы, используйте меню Sinbinder в Unity."));
+            }
+            if (_mode == Mode.Vegetation)
+            {
+                GUILayout.Label(Loc.T("Генератор растительности"));
+                foreach (string kind in new[] { "GrassTuft", "Bush", "Pine", "TallPineA",
+                                                 "TallPineB", "TallPineC", "DeadTreeA",
+                                                 "DeadTreeB", "Stump", "Rock" })
+                    if (GUILayout.Toggle(_vegetationProp == kind, kind, "Button"))
+                        _vegetationProp = kind;
+                foreach (var prefab in _customPrefabs)
+                    if (prefab != null && GUILayout.Toggle(_vegetationProp == "user:" + prefab.name,
+                                                           prefab.name, "Button"))
+                        _vegetationProp = "user:" + prefab.name;
+                GUILayout.Label(Loc.F("Количество: {0}", _vegetationCount));
+                _vegetationCount = Mathf.RoundToInt(GUILayout.HorizontalSlider(_vegetationCount, 1, 40));
+                GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_vegetationRadius)));
+                _vegetationRadius = Mathf.Round(GUILayout.HorizontalSlider(_vegetationRadius, 4, 65));
             }
 
             _logicTab = GUILayout.Toolbar(_logicTab ? 1 : 0,
@@ -531,6 +660,15 @@ namespace Sinbinder.Gameplay
                     { _brush = i; _mode = Mode.Place; }
                 }
                 GUILayout.EndScrollView();
+                GUILayout.Label(Loc.T("Импортированные модели"));
+                foreach (var prefab in _customPrefabs)
+                {
+                    if (prefab == null) continue;
+                    string key = "user:" + prefab.name;
+                    if (GUILayout.Toggle(_mode == Mode.Place && _brush == -1 &&
+                        _customProp == key, prefab.name, "Button"))
+                    { _brush = -1; _customProp = key; _mode = Mode.Place; }
+                }
             }
             else
             {
@@ -576,7 +714,7 @@ namespace Sinbinder.Gameplay
                     {
                         _map.Things.Clear(); _map.Crypts.Clear(); _map.Locations.Clear();
                         _map.Trails.Clear(); _map.Events.Clear(); _map.Regions.Clear();
-                        _map.Triggers.Clear(); _map.TerrainStrokes.Clear();
+                        _map.Triggers.Clear(); _map.TerrainStrokes.Clear(); _map.TerrainPaints.Clear();
                         _selectionIndex = -1;
                     });
                     _confirmClear = false;
@@ -681,6 +819,14 @@ namespace Sinbinder.Gameplay
                     FloatField("Поворот", t.Yaw, -360, 360, value => t.Yaw = value);
                     FloatField("Масштаб", t.Scale, 0.1f, 10f, value => t.Scale = value);
                     GUILayout.Label("ID: " + t.Id);
+                    GUILayout.Label(Loc.T("Материал модели: оригинальный / импортированный"));
+                    if (GUILayout.Toggle(string.IsNullOrEmpty(t.MaterialId), Loc.T("Оригинальный"), "Button") &&
+                        !string.IsNullOrEmpty(t.MaterialId))
+                        Change(() => t.MaterialId = "");
+                    foreach (var material in _objectMaterials)
+                        if (material != null && GUILayout.Toggle(t.MaterialId == material.name,
+                            material.name, "Button") && t.MaterialId != material.name)
+                            Change(() => t.MaterialId = material.name);
                     if (GUILayout.Button(Loc.T("Добавить событие взаимодействия (F)")))
                         AddObjectInteraction(t);
                     break;
@@ -839,6 +985,12 @@ namespace Sinbinder.Gameplay
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
             if (!MapTerrain.Valid(_map))
                 errors.Add(Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."));
+            if (!MapTerrain.Valid(_map))
+                errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
+            foreach (var t in _map.Things)
+                if (t != null && !string.IsNullOrEmpty(t.MaterialId) &&
+                    MapAssets.ObjectMaterial(t.MaterialId) == null)
+                    errors.Add(Loc.F("Нет материала объекта: {0}", t.MaterialId));
             var regionIds = new HashSet<string>();
             foreach (var region in _map.Regions)
                 if (region == null || string.IsNullOrEmpty(region.Id) ||
