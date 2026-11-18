@@ -111,6 +111,9 @@ namespace Sinbinder.Gameplay
         private Vector2 _inspectorScroll;
         private readonly List<string> _undo = new();
         private readonly List<string> _redo = new();
+        private bool _dirty;
+        private bool _confirmExit;
+        private string _savedSnapshot;
         private const int MaxHistory = 35;
         private const float InspectorWidth = 300f;
         private const float ToolbarHeight = 44f;
@@ -145,6 +148,7 @@ namespace Sinbinder.Gameplay
             RefreshAssets();
             EnsureIds();
             _name = _map.Name;
+            _savedSnapshot = JsonUtility.ToJson(_map);
             if (_cam != null) _cam.transform.SetPositionAndRotation(new Vector3(0f, _height, -_height * 0.35f), Quaternion.Euler(72f, 0f, 0f));
             Redraw();
         }
@@ -497,6 +501,8 @@ namespace Sinbinder.Gameplay
 
         private void Record()
         {
+            _dirty = true;
+            _confirmExit = false;
             _undo.Add(JsonUtility.ToJson(_map));
             if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
             _redo.Clear();
@@ -529,6 +535,8 @@ namespace Sinbinder.Gameplay
             _map.EnsureLists();
             _name = _map.Name;
             _selectionIndex = -1;
+            if (_savedSnapshot != null)
+                _dirty = JsonUtility.ToJson(_map) != _savedSnapshot;
             Redraw();
         }
 
@@ -947,7 +955,13 @@ namespace Sinbinder.Gameplay
                 }
                 else { _confirmClear = true; _say = Loc.T("Нажмите «Очистить всё» ещё раз для подтверждения."); }
             }
-            if (GUILayout.Button(Loc.T("Выйти в игру"))) SceneManager.LoadScene(0);
+            if (GUILayout.Button(_confirmExit
+                ? Loc.T("Выйти без сохранения?")
+                : Loc.T("Выйти в игру"))) RequestExit();
+            if (_confirmExit && GUILayout.Button(Loc.T("Отменить выход")))
+                _confirmExit = false;
+            GUILayout.Label(_dirty ? Loc.T("Есть несохранённые изменения")
+                                   : Loc.T("Изменения сохранены"));
             GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
             GUILayout.EndArea();
@@ -1269,6 +1283,17 @@ namespace Sinbinder.Gameplay
         /// Compare actual file contents, not timestamps: clocks and sync tools can
         /// preserve mtimes while changing map bytes. Errors block normal saves.
         /// </summary>
+        private void RequestExit()
+        {
+            if (_dirty && !_confirmExit)
+            {
+                _confirmExit = true;
+                _say = Loc.T("Карта изменена. Сохраните её или подтвердите выход без сохранения.");
+                return;
+            }
+            SceneManager.LoadScene(0);
+        }
+
         private static string FileFingerprint(string path)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
@@ -1321,6 +1346,9 @@ namespace Sinbinder.Gameplay
                 _path = destination;
                 _openedFingerprint = FileFingerprint(_path);
                 _unreadableSource = false;
+                _savedSnapshot = JsonUtility.ToJson(_map);
+                _dirty = false;
+                _confirmExit = false;
                 var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
                 {
