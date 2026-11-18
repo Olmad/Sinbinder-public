@@ -256,10 +256,10 @@ Assets/Scripts/Gameplay/AskableSkill.cs	a123aaa178d8e2d52156d374177883c783a5d80c
 Assets/Scripts/Gameplay/AutoAttack.cs	8c4bac86d9f805f8c280602d55a2fa43dc731780	8564	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BalalaikaHabit.cs	a2f6adc4350625752618a087bc22bff6ece5c963	27829	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BattleTest.cs	41b48c3799d41d12582cc252f40b43cb96fd6fc7	2473	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/BattlefieldData.cs	8cdc955d88b78561bb0d1910e96ed3b03dd9b026	893	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BattlefieldData.cs	8cdc955d88b78561bb0d1910e96ed3b03dd9b026	893	CSharp	0	0	0	1	NEEDS_CONTEXT	L0 full file read blob 8cdc955d88b78561bb0d1910e96ed3b03dd9b026; 0 literal player-facing strings; Name is injected constructor argument and may surface to player; upstream callers and dynamic names not verified
 Assets/Scripts/Gameplay/BattlefieldManager.cs	c6a4dbbf141b9361e761de4c66d9f5cf5cd917dc	1598	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Beat.cs	361db2df077d1945e45411d550cd2735fb54df23	6148	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/BodyComponent.cs	da690a77d36e33ac7d6b5c2c8660415332bd8a5d	332	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BodyComponent.cs	da690a77d36e33ac7d6b5c2c8660415332bd8a5d	332	CSharp	0	0	0	0	EXCLUDED_TECH	L0 full file read blob da690a77d36e33ac7d6b5c2c8660415332bd8a5d; 0 literal player-facing strings; Collect only sets IsCollected and Destroy; comments technical
 Assets/Scripts/Gameplay/BodyMotion.cs	47a88f1f9b7c4bc1f85aea1831c7488361fd527b	7043	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BodyWorth.cs	abc22701e3b4edf020713a1283c49f365bab55db	10554	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Bodyguard.cs	05db6f31264382e2e334b20cd4e0a535b33da417	8356	CSharp	0	0	0	0	UNINSPECTED	
@@ -281,7 +281,7 @@ Assets/Scripts/Gameplay/CandleHabit.cs	528d0c3f9fea382b2288b1f1bd0953eaca9710a0	
 Assets/Scripts/Gameplay/CardTable.cs	1efb1e1d05f8457b3992cf11d3f21aaa1175dc7e	33819	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Cauldron.cs	8c9023a1c6f0fcfb131a6742d98f71a4a484f790	7135	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Champions.cs	2825715f5d4480665062ac3e6dfbfd0fd25d7451	6342	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/ClassData.cs	b76ae313ea16083f2123b516b49d0ba799a07176	676	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ClassData.cs	b76ae313ea16083f2123b516b49d0ba799a07176	676	CSharp	0	0	0	1	NEEDS_CONTEXT	L0 full file read blob b76ae313ea16083f2123b516b49d0ba799a07176; 0 literal player-facing strings; className serialized field may surface; actual ScriptableObject instances and display path not verified; CreateAssetMenu labels editor-only
 Assets/Scripts/Gameplay/CombatManager.cs	8523c6eb1dcc183e075fd3b6ec8ae714aba7cac7	11118	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CombatMath.cs	1fcd11a92024c3a2ba232a9a345b5e121b1e6c10	3332	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CourtCaller.cs	f9fb72c8968d7bc386b5a98eeb2ee8fc37bf0b0a	4342	CSharp	0	0	0	0	UNINSPECTED	
