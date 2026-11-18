@@ -1,8 +1,8 @@
 # INDEPENDENT_TEXT_AUDIT_PASS=5 BASE_SHA=3b642a701a990ace58556b2afc2de04fd517b351
 path	blob_sha	bytes	audit_class	found_text_candidates	checked_text_candidates	failed_text_candidates	unknown_text_candidates	status	evidence
 Assets/Models/Сцены/Холм.asset	7b314279dc229d96032641be4e4721ea4fe7cf44	604627	UnitySerialized	0	0	0	0	UNINSPECTED	
-Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	UNINSPECTED	
-Assets/Resources/AOSConfig.asset	25496e7483e77c4971e4dc2600b0ef28eaccc5f8	2993	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full YAML read 32 lines; blob 77c2f83ce8f788e94bcca20d047cf5bff16c9f5c; Unity URP template editor Readme only (title/sections/links), not runtime game text; 0 player-facing strings; linked icon UNKNOWN
+Assets/Resources/AOSConfig.asset	25496e7483e77c4971e4dc2600b0ef28eaccc5f8	2993	UnitySerialized	0	0	0	0	EXCLUDED_TECH	L0 full YAML read 100 lines; blob 25496e7483e77c4971e4dc2600b0ef28eaccc5f8; MonoBehaviour AOSConfig numeric balance parameters only; m_Name/editor class technical; 0 player-facing strings
 Assets/Resources/DialogueDatabase.asset	833e9bd0202d79a1614c5b5835c59fafc4dec1cb	10704	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Resources/Fonts/OFL-PTSerif.txt	e9f47cb8b582b7277c90c706f1a688348554a2c3	4434	Text_Locale	0	0	0	0	UNINSPECTED	
