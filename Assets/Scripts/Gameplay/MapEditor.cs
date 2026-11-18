@@ -72,6 +72,14 @@ namespace Sinbinder.Gameplay
         private Vector2 _scroll;
         private readonly List<GameObject> _shown = new();
         private readonly List<Material> _previewMaterials = new();
+        // Existing prop and marker previews remain alive while painting/sculpting;
+        // only their height needs updating after a geometry change.
+        private struct HeightFollower
+        {
+            public GameObject Object;
+            public float X, Z, Offset;
+        }
+        private readonly List<HeightFollower> _heightFollowers = new();
         private Camera _cam;
         private float _height = 70f;
         private Mode _mode = Mode.Place;
@@ -279,7 +287,7 @@ namespace Sinbinder.Gameplay
             }
             Record();
             AppendPaint(at);
-            Redraw();
+            RedrawTerrainOnly(false);
         }
 
         private string VegetationProp(int index)
@@ -376,7 +384,7 @@ namespace Sinbinder.Gameplay
             _dragFlattenHeight = MapTerrain.HeightAt(_map, at.x, at.z);
             Record();
             AppendTerrain(at);
-            Redraw();
+            RedrawTerrainOnly(true);
         }
 
         private void AppendTerrain(Vector3 at) =>
@@ -421,7 +429,7 @@ namespace Sinbinder.Gameplay
                 distance = Mathf.Sqrt(dx * dx + dz * dz);
                 if (distance < spacing) break;
             }
-            if (touched) Redraw();
+            if (touched) RedrawTerrainOnly(_mode == Mode.Terrain);
         }
 
         private void HideBrushCursor()
@@ -572,7 +580,8 @@ namespace Sinbinder.Gameplay
                 case Kind.Region when i < _map.Regions.Count: x = _map.Regions[i].X; z = _map.Regions[i].Z; break;
                 default: return false;
             }
-            position = new Vector3(x, MapTerrain.HeightAt(_map, x, z) + 0.12f, z);
+            // Disc() samples terrain height itself. Do not add it twice.
+            position = new Vector3(x, 0.12f, z);
             return true;
         }
 
@@ -644,6 +653,7 @@ namespace Sinbinder.Gameplay
         {
             foreach (var go in _shown) if (go != null) Destroy(go);
             _shown.Clear();
+            _heightFollowers.Clear();
             foreach (var material in _previewMaterials) if (material != null) Destroy(material);
             _previewMaterials.Clear();
         }
@@ -656,13 +666,37 @@ namespace Sinbinder.Gameplay
             if (_terrainMesh != null) Destroy(_terrainMesh);
         }
 
-        private void Redraw()
+        private void RedrawGround()
         {
-            ClearPreview();
-
             var ground = GameObject.Find("Поле");
             if (ground != null)
                 MapTerrain.ApplyGround(ground, _map, ref _terrainMesh, ref _originalGroundMesh);
+        }
+
+        /// <summary>
+        /// Terrain brush feedback should not reinstantiate every forest prop, crypt,
+        /// region and marker for every mouse sample. Paint changes submeshes only;
+        /// sculpting also lifts preview transforms onto the updated collider.
+        /// </summary>
+        private void RedrawTerrainOnly(bool geometryChanged)
+        {
+            if (_shown.Count == 0) { Redraw(); return; }
+            RedrawGround();
+            if (!geometryChanged) return;
+            foreach (var follower in _heightFollowers)
+            {
+                if (follower.Object == null) continue;
+                var position = follower.Object.transform.position;
+                position.y = MapTerrain.HeightAt(_map, follower.X, follower.Z) +
+                             follower.Offset;
+                follower.Object.transform.position = position;
+            }
+        }
+
+        private void Redraw()
+        {
+            ClearPreview();
+            RedrawGround();
 
             foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale, t.MaterialId);
             // Склеп — тот же, что встанет на поле: пол, стены, дверь, трон (MapLoader).
@@ -691,11 +725,14 @@ namespace Sinbinder.Gameplay
             go.transform.localScale = prefab.transform.localScale * scale;
             MapAssets.ApplyObjectMaterial(go, materialId);
             _shown.Add(go);
+            _heightFollowers.Add(new HeightFollower
+            { Object = go, X = at.x, Z = at.z, Offset = 0f });
         }
 
         /// <summary>Плоский круг на земле — граница подлокации, тропа, событие.</summary>
         private void Disc(Vector3 at, float radius, Color colour)
         {
+            float offset = at.y;
             at.y += MapTerrain.HeightAt(_map, at.x, at.z);
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             Destroy(go.GetComponent<Collider>());
@@ -706,6 +743,8 @@ namespace Sinbinder.Gameplay
             r.sharedMaterial = material;
             _previewMaterials.Add(material);
             _shown.Add(go);
+            _heightFollowers.Add(new HeightFollower
+            { Object = go, X = at.x, Z = at.z, Offset = offset });
         }
 
         // ---------------------------------------------------------- окно
