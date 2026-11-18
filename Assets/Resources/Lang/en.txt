@@ -6165,11 +6165,11 @@ msgstr "The proving ground. Set a condition — and repeat."
 
 #: Editor/DemoSceneBuilder.cs
 msgid "Ямка — копателю"
-msgstr ""
+msgstr "Digger's pit"
 
 #: Editor/DemoSceneBuilder.cs
 msgid "Двор уникальности — здесь живут созданные"
-msgstr ""
+msgstr "Hall of individuality — the created dwell here"
 
 #: Editor/DemoSceneBuilder.cs
 msgid "Карта вылазок"
@@ -8650,7 +8650,7 @@ msgstr ""
 
 #: Gameplay/MapEditor.cs
 msgid "Новая карта"
-msgstr ""
+msgstr "New map"
 
 #: Gameplay/MapEditor.cs UI/PauseMenu.cs
 msgid "Редактор карт"
@@ -8658,11 +8658,11 @@ msgstr ""
 
 #: Gameplay/MapEditor.cs
 msgid "Имя карты"
-msgstr ""
+msgstr "Map name"
 
 #: Gameplay/MapEditor.cs
 msgid "Поле: {0} м"
-msgstr ""
+msgstr "Field: {0} m"
 
 #: Gameplay/MapEditor.cs
 msgid "Склепов: {0}  ·  подлокаций: {1}  ·  событий: {2}"
@@ -8678,11 +8678,11 @@ msgstr "Save"
 
 #: Gameplay/MapEditor.cs
 msgid "Очистить всё"
-msgstr ""
+msgstr "Clear all"
 
 #: Gameplay/MapEditor.cs
 msgid "Выйти в игру"
-msgstr ""
+msgstr "Exit to game"
 
 #: Gameplay/MapEditor.cs
 msgid "ЛКМ — поставить, ПКМ — убрать, W A S D — камера, колесо — высота"
@@ -8694,7 +8694,7 @@ msgstr ""
 
 #: Gameplay/MapEditor.cs
 msgid "Записано: {0}"
-msgstr ""
+msgstr "Saved: {0}"
 
 #: Gameplay/MapEditor.cs
 msgid "Не удалось сохранить карту: {0}"
@@ -14357,3 +14357,295 @@ msgstr "She has more sinful traits than good ones. And a sinner is not used to o
 #: Gameplay/SoulCourtReasons.cs
 msgid "Жадность велит держаться в стороне."
 msgstr "Greed says to stay out of it."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Новая область"
+msgstr "New region"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Действие отменено"
+msgstr "Action undone"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Действие повторено"
+msgstr "Action redone"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "SINBINDER • РЕДАКТОР КАРТ"
+msgstr "SINBINDER • MAP EDITOR"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Разместить"
+msgstr "Place"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Выделить"
+msgstr "Select"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Стереть"
+msgstr "Erase"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Режим: {0}"
+msgstr "Mode: {0}"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Карта"
+msgstr "Map"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Склепов: {0} · мест: {1} · событий: {2}"
+msgstr "Crypts: {0} · locations: {1} · events: {2}"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Поворот Q/E: {0}°"
+msgstr "Rotation Q/E: {0}°"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Сетка:"
+msgstr "Snap:"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Объекты"
+msgstr "Objects"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Логика"
+msgstr "Logic"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Поиск в палитре"
+msgstr "Search palette"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "+ Новый триггер"
+msgstr "+ New trigger"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Новое правило"
+msgstr "New rule"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Вы вошли в область."
+msgstr "You entered the region."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Событие → условие → действие"
+msgstr "Event → condition → action"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Проверить карту"
+msgstr "Validate map"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Ошибок формата карты нет."
+msgstr "No map-format errors found."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Ошибок: {0}. {1}"
+msgstr "Errors: {0}. {1}"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Нажмите «Очистить всё» ещё раз для подтверждения."
+msgstr "Click Clear all again to confirm."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"
+msgstr "Ctrl+S save · Ctrl+Z/Y undo/redo"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "ИНСПЕКТОР"
+msgstr "INSPECTOR"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Выберите объект правой кнопкой мыши или инструментом «Выделить»."
+msgstr "Select an object with right-click or the Select tool."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Области и предметы можно связывать с правилами на вкладке «Логика»."
+msgstr "Link regions and objects to rules in the Logic tab."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Объект удалён или изменился. Выберите другой."
+msgstr "The object was deleted or changed. Select another."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Создать копию"
+msgstr "Duplicate"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Удалить выбранное"
+msgstr "Delete selection"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Область:"
+msgstr "Region:"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Предмет:"
+msgstr "Object:"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Это безопасная система событий без произвольного исполнения кода."
+msgstr "These are safe events; map files cannot execute arbitrary code."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Нужно минимум два склепа игроков."
+msgstr "At least two player crypts are required."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Поддерживается не более восьми склепов."
+msgstr "At most eight player crypts are supported."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неверный размер поля."
+msgstr "Invalid map size."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Склеп вне карты."
+msgstr "Crypt outside map bounds."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неверная позиция или размер объекта."
+msgstr "Invalid object position or scale."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Модель не найдена: {0}"
+msgstr "Model not found: {0}"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неверная подлокация."
+msgstr "Invalid location data."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Тропа вне карты."
+msgstr "Trail outside map bounds."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Событие вне карты."
+msgstr "Event outside map bounds."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неверная область или повтор ID."
+msgstr "Invalid region or duplicate ID."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Объект без уникального ID."
+msgstr "Object without a unique ID."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Максимум 128 правил на карте."
+msgstr "At most 128 map rules are allowed."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Триггер без уникального ID."
+msgstr "Trigger without a unique ID."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неизвестное событие правила."
+msgstr "Unknown trigger event."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неизвестное условие правила."
+msgstr "Unknown trigger condition."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Неизвестное действие правила."
+msgstr "Unknown trigger action."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Триггер ссылается на отсутствующую область."
+msgstr "Trigger refers to a missing region."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Триггер ссылается на отсутствующий предмет."
+msgstr "Trigger refers to a missing object."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Условие или действие не содержит допустимый флаг."
+msgstr "Condition/action has no valid flag."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Сообщение правила отсутствует или слишком длинное."
+msgstr "Rule message is missing or too long."
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Карта не записана: {0} ошибок. Первая: {1}"
+msgstr "Map not saved: {0} errors. First: {1}"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "F — взаимодействовать"
+msgstr "F — interact"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Название правила"
+msgstr "Rule name"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Включено"
+msgstr "Enabled"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Только один раз"
+msgstr "Once only"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Событие"
+msgstr "Event"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Условие"
+msgstr "Condition"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Действие"
+msgstr "Action"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Название области"
+msgstr "Region name"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Имя"
+msgstr "Name"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Тип"
+msgstr "Type"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "X"
+msgstr "X"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Z"
+msgstr "Z"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Радиус"
+msgstr "Radius"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Жители"
+msgstr "Residents"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Поворот"
+msgstr "Rotation"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Масштаб"
+msgstr "Scale"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Модель Resources"
+msgstr "Resources model"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Логический флаг"
+msgstr "Boolean flag"
+
+#: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
+msgid "Сообщение игроку"
+msgstr "Player message"
