@@ -142,7 +142,7 @@ def main() -> int:
             try:
                 s = b.decode("utf-8-sig")
             except UnicodeDecodeError:
-                if b.startswith(b"\\xff\\xfe") or b.startswith(b"\\xfe\\xff"):
+                if b[:2] in (bytes((255, 254)), bytes((254, 255))):
                     s = b.decode("utf-16")
                     fallback_encoding = "utf-16"
                 else:
