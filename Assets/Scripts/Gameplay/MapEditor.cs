@@ -626,6 +626,8 @@ namespace Sinbinder.Gameplay
                     FloatField("Поворот", t.Yaw, -360, 360, value => t.Yaw = value);
                     FloatField("Масштаб", t.Scale, 0.1f, 10f, value => t.Scale = value);
                     GUILayout.Label("ID: " + t.Id);
+                    if (GUILayout.Button(Loc.T("Добавить событие взаимодействия (F)")))
+                        AddObjectInteraction(t);
                     break;
                 case Kind.Crypt when i < _map.Crypts.Count:
                     var crypt = _map.Crypts[i];
@@ -672,6 +674,42 @@ namespace Sinbinder.Gameplay
             }
             if (GUILayout.Button(Loc.T("Создать копию"))) DuplicateSelected();
             if (GUILayout.Button(Loc.T("Удалить выбранное"))) DeleteSelected();
+        }
+
+        /// <summary>
+        /// Turns an existing placed object into an interactive map object using
+        /// the same F priority stack as the game. Does not attach arbitrary code.
+        /// </summary>
+        private void AddObjectInteraction(MapData.Thing thing)
+        {
+            if (thing == null || string.IsNullOrWhiteSpace(thing.Id))
+            {
+                _say = Loc.T("У предмета нет ID. Сначала исправьте карту.");
+                return;
+            }
+            if (_map.Triggers.Count >= 128)
+            {
+                _say = Loc.T("Нельзя добавить правило: достигнут предел 128.");
+                return;
+            }
+            Change(() =>
+            {
+                _map.Triggers.Add(new MapData.Trigger
+                {
+                    Id = NewId(),
+                    Name = Loc.T("Взаимодействие: ") + thing.Prop,
+                    Enabled = true, Once = false,
+                    Event = "OnInteractObject",
+                    TargetId = thing.Id,
+                    Condition = "Always",
+                    Action = "ShowMessage",
+                    Message = Loc.T("Вы осмотрели предмет.")
+                });
+                _logicTab = true;
+                _selectionKind = Kind.Trigger;
+                _selectionIndex = _map.Triggers.Count - 1;
+            });
+            _say = Loc.T("Событие создано. Отредактируйте его сообщение и условия на вкладке «Логика».");
         }
 
         private void DrawTrigger(MapData.Trigger t)
