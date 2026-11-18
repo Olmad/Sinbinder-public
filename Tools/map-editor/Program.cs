@@ -46,6 +46,7 @@ static class Program
             var loaded = MapData.Load(path);
             Check(loaded != null && loaded.Players == 2, "load old maps without v2 fields");
             Check(loaded.Regions != null && loaded.Triggers != null, "optional v2 lists normalized");
+            Check(loaded.TerrainStrokes != null && loaded.TerrainStrokes.Count == 0, "old maps default to flat terrain");
             loaded.Regions.Add(new MapData.Region { Id = "r1", Radius = 12, Name = "Patrol" });
             loaded.Triggers.Add(new MapData.Trigger
             {
@@ -235,6 +236,101 @@ static class Program
         saved = (MapData)typeof(MapEditor).GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
         Check(saved.Things.Count == 2, "Redo restores object list");
     }
+    static void TerrainRoundtripAndCollider()
+    {
+        var map = Map();
+        map.Size = 320f; // even grid resolution includes an exact centre vertex
+        Check(MapTerrain.Valid(map) && MapTerrain.HeightAt(map, 0f, 0f) == 0f &&
+              MapTerrain.BuildMesh(map) == null, "legacy flat map keeps original ground");
+        var hill = new MapData.TerrainStroke { X = 0f, Z = 0f, Radius = 20f, Delta = 6f };
+        map.TerrainStrokes.Add(hill);
+        Check(MapTerrain.Valid(map), "bounded hill passes validation");
+        Check(MathF.Abs(MapTerrain.HeightAt(map, 0f, 0f) - 6f) < 0.0001f,
+              "hill raises exact centre by authored height");
+        Check(MathF.Abs(MapTerrain.HeightAt(map, 10f, 0f) - 3.375f) < 0.0001f &&
+              MapTerrain.HeightAt(map, 20f, 0f) == 0f,
+              "radial terrain brush tapers to unchanged edge");
+        var mesh = MapTerrain.BuildMesh(map);
+        Check(mesh != null && mesh.vertices.Length == 81 * 81 &&
+              mesh.triangles.Length == 80 * 80 * 6,
+              "real terrain mesh has bounded triangulated geometry");
+        Check(MathF.Abs(mesh.vertices[40 * 81 + 40].y - 6f) < 0.0001f,
+              "mesh centre vertex follows the same gameplay height function");
+        int a = mesh.triangles[0], b = mesh.triangles[1], c = mesh.triangles[2];
+        var va = mesh.vertices[a]; var vb = mesh.vertices[b]; var vc = mesh.vertices[c];
+        float up = (vb.z - va.z) * (vc.x - va.x) -
+                   (vb.x - va.x) * (vc.z - va.z);
+        Check(up > 0f, "terrain triangles face up for rendering and collision");
+
+        var ground = new GameObject("Test ground");
+        var original = new Mesh();
+        ground.GetComponent<MeshFilter>().sharedMesh = original;
+        ground.GetComponent<MeshCollider>().sharedMesh = original;
+        Mesh generated = null, flat = null;
+        MapTerrain.ApplyGround(ground, map, ref generated, ref flat);
+        Check(generated != null && ground.GetComponent<MeshFilter>().sharedMesh == generated &&
+              ground.GetComponent<MeshCollider>().sharedMesh == generated &&
+              ground.transform.localScale.x == 1f,
+              "authored ground replaces flat rendering and physics with matching mesh");
+        map.TerrainStrokes.Clear();
+        MapTerrain.ApplyGround(ground, map, ref generated, ref flat);
+        Check(generated == null && ground.GetComponent<MeshFilter>().sharedMesh == original &&
+              ground.GetComponent<MeshCollider>().sharedMesh == original &&
+              ground.transform.localScale.x == 32f,
+              "undoing last hill restores original flat surface and scale");
+
+        map.TerrainStrokes.Add(hill);
+        string dir = Path.Combine(Path.GetTempPath(), "Sinbinder.Terrain." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string path = Path.Combine(dir, "terrain.json");
+            map.Save(path);
+            var loaded = MapData.Load(path);
+            Check(loaded != null && loaded.TerrainStrokes.Count == 1 &&
+                  MathF.Abs(MapTerrain.HeightAt(loaded, 0f, 0f) - 6f) < 0.0001f,
+                  "JSON save and load preserve functional sculpted terrain");
+        }
+        finally { Directory.Delete(dir, true); }
+
+        hill.Delta = float.NaN;
+        Check(!MapTerrain.Valid(map) && MapTerrain.BuildMesh(map) == null &&
+              MapTerrain.HeightAt(map, 0f, 0f) == 0f,
+              "malformed untrusted height data fails closed to flat");
+        hill.Delta = 6f;
+        hill.Radius = 200f;
+        Check(!MapTerrain.Valid(map), "oversized terrain brush is rejected");
+        hill.Radius = 20f;
+        map.TerrainStrokes.Clear();
+        for (int i = 0; i <= MapTerrain.MaxStrokes; i++)
+            map.TerrainStrokes.Add(new MapData.TerrainStroke
+            { X = 0f, Z = 0f, Radius = 15f, Delta = 8f });
+        Check(!MapTerrain.Valid(map), "untrusted terrain stroke count is bounded");
+        map.TerrainStrokes.RemoveAt(map.TerrainStrokes.Count - 1);
+        Check(MapTerrain.HeightAt(map, 0f, 0f) == MapTerrain.MaxHeight,
+              "overlapping hills clamp max world height");
+
+        map.TerrainStrokes.Clear();
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Invoke(editor, "Sculpt", new Vector3(12f, 0f, -8f));
+        Check(map.TerrainStrokes.Count == 1 &&
+              map.TerrainStrokes[0].X == 12f && map.TerrainStrokes[0].Delta == 3f,
+              "sculpting records an actual positive height stroke");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+                        BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(undone.TerrainStrokes.Count == 0, "terrain sculpt is undoable");
+        Invoke(editor, "Redo");
+        var redone = (MapData)typeof(MapEditor).GetField("_map",
+                        BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(redone.TerrainStrokes.Count == 1, "terrain sculpt redo recovers height data");
+        redone.TerrainStrokes[0].Radius = -1f;
+        Check(((List<string>)Invoke(editor, "Validate")).Exists(e => e.Contains("рельефа")),
+              "bad brush parameters block editor save");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -242,6 +338,7 @@ static class Program
         BooleanTriggerBranching();
         ObjectInteractionWizard();
         EditorContracts();
+        TerrainRoundtripAndCollider();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
