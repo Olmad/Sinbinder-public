@@ -34,7 +34,7 @@ class PrisonerAndSharedHistoryText(unittest.TestCase):
         a, b = event.split('B = new() {', 1)
         self.assertIn("Guards = 3", a)
         self.assertEqual("Конвой с пленником", title)
-        self.assertIn("пленника", story)
+        self.assertIn("связанного человека", story)
         self.assertNotIn("знахар", title.lower() + story.lower())
         self.assertNotIn("она", story.lower())
         self.assertIn("Recruits = 1", a)
