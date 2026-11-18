@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - 'feature/map-editor-terrain-*'
     paths:
       - "Assets/Scripts/Core/MapData.cs"
       - "Assets/Scripts/Gameplay/MapEditor.cs"
