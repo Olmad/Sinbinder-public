@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="UnityStubs.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MapData.cs" Link="MapData.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/MapEditor.cs" Link="MapEditor.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/MapLogicRunner.cs" Link="MapLogicRunner.cs" />
+  </ItemGroup>
+</Project>
