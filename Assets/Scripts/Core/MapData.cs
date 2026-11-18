@@ -52,6 +52,7 @@ namespace Sinbinder.Core
             public bool Enabled = true;
             public string Event = "OnEnterRegion";
             public string RegionId = "";
+            public string TargetId = "";
             public string Condition = "Always";
             public string Flag = "";
             public string Action = "ShowMessage";
@@ -66,7 +67,7 @@ namespace Sinbinder.Core
         [System.Serializable] public class Location { public string Kind = "village"; public string Name = ""; public float X, Z, Radius = 18f; public int People = 12; }
 
         /// <summary>Вещь: модель из Resources/Props (Pine, Tent, Rock…), место, поворот, размер.</summary>
-        [System.Serializable] public class Thing { public string Prop = "Pine"; public float X, Z, Yaw, Scale = 1f; }
+        [System.Serializable] public class Thing { public string Id = ""; public string Prop = "Pine"; public float X, Z, Yaw, Scale = 1f; }
 
         /// <summary>Точка: тропа охотников или событие («обоз», «деревня»…).</summary>
         [System.Serializable] public class Spot { public string Kind = ""; public float X, Z; }
