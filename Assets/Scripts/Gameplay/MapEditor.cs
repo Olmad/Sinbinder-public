@@ -82,6 +82,7 @@ namespace Sinbinder.Gameplay
         private string _paintMaterial = "Ground048";
         private float _paintRadius = 16f;
         private string _vegetationProp = "GrassTuft";
+        private string _vegetationPreset = "Single";
         private int _vegetationCount = 12;
         private float _vegetationRadius = 18f;
         private string _customProp = "";
@@ -264,10 +265,28 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
+        private string VegetationProp(int index)
+        {
+            string[] kinds = _vegetationPreset switch
+            {
+                "Forest" => new[] { "Pine", "TallPineA", "TallPineB", "Bush", "GrassTuft",
+                                    "Pine", "Stump", "Rock", "GrassTuft" },
+                "DeadForest" => new[] { "DeadTreeA", "DeadTreeB", "DeadTreeC", "Stump",
+                                        "Rock", "DeadTreeA", "GrassTuft" },
+                "Meadow" => new[] { "GrassTuft", "GrassTuft", "Bush",
+                                    "GrassTuft", "Rock", "Bush" },
+                "Wasteland" => new[] { "Rock", "Rock", "Stump", "DeadTreeA",
+                                       "Rock", "GrassTuft" },
+                _ => null
+            };
+            return kinds == null ? _vegetationProp
+                                 : kinds[(index * 7 + index / 3) % kinds.Length];
+        }
+
         /// <summary>Deterministic terrain-aware vegetation cluster; one Undo = whole cluster.</summary>
         private void ScatterVegetation(Vector3 at)
         {
-            if (MapLoader.Prefab(_vegetationProp) == null)
+            if (MapLoader.Prefab(VegetationProp(0)) == null)
             {
                 _say = Loc.T("Модель растительности не найдена.");
                 return;
@@ -289,9 +308,11 @@ namespace Sinbinder.Gameplay
                     if (dx * dx + dz * dz < 144f) { inCrypt = true; break; }
                 }
                 if (inCrypt) continue;
+                string kind = VegetationProp(i);
+                if (MapLoader.Prefab(kind) == null) continue;
                 _map.Things.Add(new MapData.Thing
                 {
-                    Id = NewId(), Prop = _vegetationProp, X = x, Z = z,
+                    Id = NewId(), Prop = kind, X = x, Z = z,
                     Yaw = Mathf.Repeat(i * 137.5f, 360f),
                     Scale = 0.8f + (i % 7) * 0.07f
                 });
@@ -751,6 +772,18 @@ namespace Sinbinder.Gameplay
             if (_mode == Mode.Vegetation)
             {
                 GUILayout.Label(Loc.T("Генератор растительности"));
+                foreach (var option in new[]
+                {
+                    ("Single", Loc.T("Один вид")),
+                    ("Forest", Loc.T("Смешанный лес")),
+                    ("DeadForest", Loc.T("Мёртвый лес")),
+                    ("Meadow", Loc.T("Луг")),
+                    ("Wasteland", Loc.T("Каменистая пустошь"))
+                })
+                    if (GUILayout.Toggle(_vegetationPreset == option.Item1,
+                        option.Item2, "Button")) _vegetationPreset = option.Item1;
+                if (_vegetationPreset == "Single")
+                {
                 foreach (string kind in new[] { "GrassTuft", "Bush", "Pine", "TallPineA",
                                                  "TallPineB", "TallPineC", "DeadTreeA",
                                                  "DeadTreeB", "Stump", "Rock" })
@@ -760,6 +793,7 @@ namespace Sinbinder.Gameplay
                     if (prefab != null && GUILayout.Toggle(_vegetationProp == "user:" + prefab.name,
                                                            prefab.name, "Button"))
                         _vegetationProp = "user:" + prefab.name;
+                }
                 GUILayout.Label(Loc.F("Количество: {0}", _vegetationCount));
                 _vegetationCount = Mathf.RoundToInt(GUILayout.HorizontalSlider(_vegetationCount, 1, 40));
                 GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_vegetationRadius)));
