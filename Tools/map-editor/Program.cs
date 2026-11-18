@@ -704,6 +704,49 @@ static class Program
               "erasing a paint stroke is undoable back to previous material");
     }
 
+    static void UnsavedMapExitGuard()
+    {
+        var map = Map();
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Set(editor, "_savedSnapshot", JsonUtility.ToJson(map));
+        UnityEngine.SceneManagement.SceneManager.LastLoadedScene = -1;
+        Invoke(editor, "RequestExit");
+        Check(UnityEngine.SceneManagement.SceneManager.LastLoadedScene == 0,
+              "clean map exits without redundant warning");
+
+        UnityEngine.SceneManagement.SceneManager.LastLoadedScene = -1;
+        Set(editor, "_dirty", true);
+        Invoke(editor, "RequestExit");
+        var confirm = typeof(MapEditor).GetField("_confirmExit",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Check(UnityEngine.SceneManagement.SceneManager.LastLoadedScene == -1 &&
+              (bool)confirm.GetValue(editor),
+              "first exit click cannot discard unsaved authored edits");
+        Invoke(editor, "Record");
+        Check(!(bool)confirm.GetValue(editor),
+              "making another edit resets any stale destructive confirmation");
+        Invoke(editor, "RequestExit");
+        Check(UnityEngine.SceneManagement.SceneManager.LastLoadedScene == -1,
+              "exit is still blocked after further edits");
+        Invoke(editor, "RequestExit");
+        Check(UnityEngine.SceneManagement.SceneManager.LastLoadedScene == 0,
+              "second explicit confirmation permits intentional discard");
+
+        var other = new MapEditor();
+        var original = Map();
+        Set(other, "_map", original);
+        Set(other, "_savedSnapshot", JsonUtility.ToJson(original));
+        Invoke(other, "Record");
+        original.Things.Add(new MapData.Thing { Id = "extra", Prop = "Rock", Scale = 1 });
+        Invoke(other, "Undo");
+        var dirty = typeof(MapEditor).GetField("_dirty",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Check(!(bool)dirty.GetValue(other),
+              "undoing all edits to last saved snapshot clears unsaved state");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -718,6 +761,7 @@ static class Program
         ExternalEditConflictAndSafeCopy();
         FastBrushPreviewAndSelectionHeight();
         PaintEraserAndMaterialSlots();
+        UnsavedMapExitGuard();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
