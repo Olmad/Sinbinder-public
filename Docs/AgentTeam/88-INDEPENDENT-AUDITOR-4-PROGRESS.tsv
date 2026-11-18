@@ -68,7 +68,7 @@ Assets/Scripts/AOS Engine/AOSEventHub.cs	134ced529ab091544decb5ab6b0e9b3f530eed3
 Assets/Scripts/AOS Engine/AOSSceneSetup.cs	befc1dfa76205fa9b3b53d726b1c6fb4230023d9	8087	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AOSStats.cs	e17f006adf66cb3140b8fc227de86db79bad2c93	5359	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	4878de0743d9f53fcb22eb7240a1340fe9ebeb10	41478	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa	2920	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa	2920	CSharp	0	0	0	0	EXCLUDED_TECH	Base blob 2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa; entire 103-line enum inspected: identifiers and Russian developer comments only, no runtime strings/Loc.T/Loc.F/UI text; English labels require separate localization source review.
 Assets/Scripts/AOS Engine/AutoAttackAOS.cs	28b01f5aa2f3c04eb64090012a4e0eb434fa0b5a	4813	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleContext.cs	bc6fefc5f44b37b699979dcc1602c5840f1200be	3920	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleResolver.cs	ba1ed56d7e7b7b499b9a3ec7c972724f8bff5e96	14938	CSharp	0	0	0	0	UNINSPECTED	
