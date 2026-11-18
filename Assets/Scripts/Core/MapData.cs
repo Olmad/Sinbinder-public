@@ -277,16 +277,18 @@ namespace Sinbinder.Core
                 if (stroke == null || !Finite(stroke.X) || !Finite(stroke.Z) ||
                     !Finite(stroke.Radius) || !Finite(stroke.Delta) ||
                     Mathf.Abs(stroke.X) > half || Mathf.Abs(stroke.Z) > half ||
-                    stroke.Radius < 4f || stroke.Radius > 100f ||
+                    stroke.Radius < 8f || stroke.Radius > 100f ||
                     Mathf.Abs(stroke.Delta) < 0.01f || Mathf.Abs(stroke.Delta) > 12f)
                     return false;
             return true;
         }
 
-        /// <summary>Deterministic world height. Invalid downloaded terrain stays flat.</summary>
-        public static float HeightAt(MapData map, float x, float z)
+        private static int GridCells(MapData map) =>
+            Mathf.Clamp(Mathf.RoundToInt(map.Size / 4f), 32, 128);
+
+        // Evaluate only the authored brush field at grid vertices.
+        private static float RawHeight(MapData map, float x, float z)
         {
-            if (!Valid(map) || map.TerrainStrokes == null) return 0f;
             float height = 0f;
             foreach (var stroke in map.TerrainStrokes)
             {
@@ -300,12 +302,38 @@ namespace Sinbinder.Core
             return Mathf.Clamp(height, -MaxHeight, MaxHeight);
         }
 
+        /// <summary>
+        /// Height ON the generated triangle surface, not the smooth hypothetical brush
+        /// curve. Props/spawn points therefore agree with the actual MeshCollider.
+        /// Invalid downloaded terrain fails closed to flat.
+        /// </summary>
+        public static float HeightAt(MapData map, float x, float z)
+        {
+            if (!Valid(map) || map.TerrainStrokes == null ||
+                map.TerrainStrokes.Count == 0) return 0f;
+            int cells = GridCells(map);
+            float step = map.Size / cells, half = map.Size * 0.5f;
+            float gx = Mathf.Clamp((x + half) / step, 0f, cells);
+            float gz = Mathf.Clamp((z + half) / step, 0f, cells);
+            int ix = Mathf.Clamp((int)gx, 0, cells - 1);
+            int iz = Mathf.Clamp((int)gz, 0, cells - 1);
+            float fx = gx - ix, fz = gz - iz;
+            float wx = ix * step - half, wz = iz * step - half;
+            float h00 = RawHeight(map, wx, wz);
+            float h10 = RawHeight(map, wx + step, wz);
+            float h01 = RawHeight(map, wx, wz + step);
+            if (fx + fz <= 1f)
+                return h00 * (1f - fx - fz) + h10 * fx + h01 * fz;
+            float h11 = RawHeight(map, wx + step, wz + step);
+            return h11 * (fx + fz - 1f) + h10 * (1f - fz) + h01 * (1f - fx);
+        }
+
         /// <summary>Real triangular terrain surface for rendering, physics and NavMesh.</summary>
         public static Mesh BuildMesh(MapData map)
         {
             if (!Valid(map) || map.TerrainStrokes == null ||
                 map.TerrainStrokes.Count == 0) return null;
-            int cells = Mathf.Clamp(Mathf.RoundToInt(map.Size / 4f), 32, 128);
+            int cells = GridCells(map);
             int stride = cells + 1;
             var vertices = new Vector3[stride * stride];
             var uvs = new Vector2[vertices.Length];
@@ -317,7 +345,7 @@ namespace Sinbinder.Core
                 {
                     int index = z * stride + x;
                     float wx = x * step - half, wz = z * step - half;
-                    vertices[index] = new Vector3(wx, HeightAt(map, wx, wz), wz);
+                    vertices[index] = new Vector3(wx, RawHeight(map, wx, wz), wz);
                     uvs[index] = new Vector2((float)x / cells, (float)z / cells);
                 }
             int tri = 0;
