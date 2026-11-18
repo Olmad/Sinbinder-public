@@ -507,7 +507,7 @@ namespace Sinbinder.Gameplay
                 if (GUILayout.Toggle(!_terrainRaise, Loc.T("Опустить"), "Button")) _terrainRaise = false;
                 GUILayout.EndHorizontal();
                 GUILayout.Label(Loc.F("Радиус: {0} м", Mathf.RoundToInt(_terrainRadius)));
-                _terrainRadius = Mathf.Round(GUILayout.HorizontalSlider(_terrainRadius, 4f, 60f));
+                _terrainRadius = Mathf.Round(GUILayout.HorizontalSlider(_terrainRadius, 8f, 60f));
                 GUILayout.Label(Loc.F("Шаг высоты: {0} м", Mathf.RoundToInt(_terrainDelta)));
                 _terrainDelta = Mathf.Round(GUILayout.HorizontalSlider(_terrainDelta, 1f, 8f));
                 GUILayout.Label(Loc.T("ЛКМ: изменить высоту; Ctrl+Z: отменить."));
