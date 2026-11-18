@@ -1,0 +1,192 @@
+# SOURCE_BASE_SHA=3b642a701a990ace58556b2afc2de04fd517b351
+# BATCH_START=0 SCANNED=12 COUNT=12
+# COVERAGE=[{"path":"Assets/Scripts/AOS Engine/ActionType.cs","count":0,"error":null},{"path":"Assets/Scripts/AOS Engine/AOSConfig.cs","count":75,"error":null},{"path":"Assets/Scripts/AOS Engine/AOSEventHub.cs","count":25,"error":null},{"path":"Assets/Scripts/AOS Engine/AOSSceneSetup.cs","count":5,"error":null},{"path":"Assets/Scripts/AOS Engine/AOSStats.cs","count":13,"error":null},{"path":"Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs","count":23,"error":null},{"path":"Assets/Scripts/AOS Engine/AutoAttackAOS.cs","count":7,"error":null},{"path":"Assets/Scripts/AOS Engine/AutoBattleContext.cs","count":0,"error":null},{"path":"Assets/Scripts/AOS Engine/AutoBattleResolver.cs","count":4,"error":null},{"path":"Assets/Scripts/AOS Engine/BattleNarrator.cs","count":7,"error":null},{"path":"Assets/Scripts/AOS Engine/BattleRecord.cs","count":0,"error":null},{"path":"Assets/Scripts/AOS Engine/BehaviorResolver.cs","count":29,"error":null}]
+path	line	lang	text
+Assets/Scripts/AOS Engine/AOSConfig.cs	7	TECH	AOSConfig
+Assets/Scripts/AOS Engine/AOSConfig.cs	7	EN	Sinbinder/AOS Config
+Assets/Scripts/AOS Engine/AOSConfig.cs	25	TECH	AOSConfig
+Assets/Scripts/AOS Engine/AOSConfig.cs	31	RU	AOSConfig (значения по умолчанию)
+Assets/Scripts/AOS Engine/AOSConfig.cs	32	RU	[AOS] Resources/AOSConfig не найден. 
+Assets/Scripts/AOS Engine/AOSConfig.cs	33	RU	Работаю на значениях по умолчанию — создай ассет 
+Assets/Scripts/AOS Engine/AOSConfig.cs	34	RU	через Assets → Create → Sinbinder → AOS Config 
+Assets/Scripts/AOS Engine/AOSConfig.cs	35	RU	и положи в папку Resources, чтобы настраивать баланс.
+Assets/Scripts/AOS Engine/AOSConfig.cs	40	RU	Жадность
+Assets/Scripts/AOS Engine/AOSConfig.cs	73	RU	Гнев
+Assets/Scripts/AOS Engine/AOSConfig.cs	79	RU	Атака с ходу гневному — праздник: прибавка к послушанию, пока он 
+Assets/Scripts/AOS Engine/AOSConfig.cs	80	RU	идёт к драке. docs/33-COMMANDS.md.
+Assets/Scripts/AOS Engine/AOSConfig.cs	85	RU	Уныние
+Assets/Scripts/AOS Engine/AOSConfig.cs	89	RU	Голос Греховода: далёкий приказ — законный повод не вставать. 
+Assets/Scripts/AOS Engine/AOSConfig.cs	90	RU	Умножается на уныние и на то, насколько приказ приглушён. 
+Assets/Scripts/AOS Engine/AOSConfig.cs	91	RU	Усердному расстояние не помеха. docs/31-VOICE.md.
+Assets/Scripts/AOS Engine/AOSConfig.cs	94	RU	Патруль скучен унылому: насколько он голосует против. Усердию 
+Assets/Scripts/AOS Engine/AOSConfig.cs	95	RU	(уныние со знаком минус) — наоборот. docs/33-COMMANDS.md.
+Assets/Scripts/AOS Engine/AOSConfig.cs	102	RU	Страх: чем его пересиливают
+Assets/Scripts/AOS Engine/AOSConfig.cs	103	RU	Своей шкалы у Страха нет — храбрость собирается из трёх 
+Assets/Scripts/AOS Engine/AOSConfig.cs	104	RU	имеющихся. Доли складываются в «стойкость», и весь голос 
+Assets/Scripts/AOS Engine/AOSConfig.cs	105	RU	Страха делится на неё. Ноль во всех трёх снова уравняет 
+Assets/Scripts/AOS Engine/AOSConfig.cs	106	RU	гордеца с унылым.
+Assets/Scripts/AOS Engine/AOSConfig.cs	111	RU	Границы множителя страха. Меньше единицы — храбрее 
+Assets/Scripts/AOS Engine/AOSConfig.cs	112	RU	среднего. Ноль снизу означал бы душу, не знающую страха 
+Assets/Scripts/AOS Engine/AOSConfig.cs	113	RU	вовсе, — такой в игре быть не должно.
+Assets/Scripts/AOS Engine/AOSConfig.cs	122	RU	Страх
+Assets/Scripts/AOS Engine/AOSConfig.cs	129	RU	Добродетель
+Assets/Scripts/AOS Engine/AOSConfig.cs	135	RU	Верность
+Assets/Scripts/AOS Engine/AOSConfig.cs	151	RU	Мораль
+Assets/Scripts/AOS Engine/AOSConfig.cs	161	RU	Голосование
+Assets/Scripts/AOS Engine/AOSConfig.cs	162	RU	Насколько второй голос должен отставать от первого, чтобы 
+Assets/Scripts/AOS Engine/AOSConfig.cs	163	RU	решение считалось принятым. Доля, а не очки: 0.15 значит 
+Assets/Scripts/AOS Engine/AOSConfig.cs	164	RU	«второй тише первого меньше чем на шестую часть — воин 
+Assets/Scripts/AOS Engine/AOSConfig.cs	165	RU	колеблется». Больше значение — чаще колебание. 
+Assets/Scripts/AOS Engine/AOSConfig.cs	166	RU	Первое, что придётся крутить руками (11-MISSING §2.4).
+Assets/Scripts/AOS Engine/AOSConfig.cs	169	RU	Потолок вклада одного модуля в одно действие. 
+Assets/Scripts/AOS Engine/AOSConfig.cs	170	RU	Нужен, чтобы совет остался советом: без него Страх выдавал 
+Assets/Scripts/AOS Engine/AOSConfig.cs	171	RU	до пятисот очков там, где остальные голоса дают по сорок, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	172	RU	и решал в одиночку. Ноль отключает ограничение.
+Assets/Scripts/AOS Engine/AOSConfig.cs	175	RU	Сила установки отряда. При единице самая решительная 
+Assets/Scripts/AOS Engine/AOSConfig.cs	176	RU	поправка (полсотни очков) сопоставима с сильным голосом 
+Assets/Scripts/AOS Engine/AOSConfig.cs	177	RU	характера, но слабее потолка: установка склоняет, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	178	RU	а не решает. Ноль отключает рычаг.
+Assets/Scripts/AOS Engine/AOSConfig.cs	181	RU	Цена одной единицы искушения от вещи. Предмет обязан быть 
+Assets/Scripts/AOS Engine/AOSConfig.cs	182	RU	слабее характера, но сильнее шума: он переворачивает только 
+Assets/Scripts/AOS Engine/AOSConfig.cs	183	RU	то решение, которое и так было близким. Подняв это число, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	184	RU	вы сделаете снаряжение сильнее души — а это уже другая игра.
+Assets/Scripts/AOS Engine/AOSConfig.cs	187	RU	Пол: усталость, зацепление, спина
+Assets/Scripts/AOS Engine/AOSConfig.cs	196	RU	Гордыня
+Assets/Scripts/AOS Engine/AOSConfig.cs	202	RU	Какая доля штрафа Гордыни остаётся на приказе, который 
+Assets/Scripts/AOS Engine/AOSConfig.cs	203	RU	не унижает: «встань здесь» в лагере против «отойди» под 
+Assets/Scripts/AOS Engine/AOSConfig.cs	204	RU	взглядом врага. Единица снова уравняет любые приказы.
+Assets/Scripts/AOS Engine/AOSConfig.cs	208	RU	Голос Греховода: насколько гордыня противится приказу, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	209	RU	крикнутому издали. Умножается на гордыню и на то, насколько 
+Assets/Scripts/AOS Engine/AOSConfig.cs	210	RU	приказ приглушён. Смирение (гордыня со знаком минус) — 
+Assets/Scripts/AOS Engine/AOSConfig.cs	211	RU	наоборот, слушает и далёкий. docs/31-VOICE.md.
+Assets/Scripts/AOS Engine/AOSConfig.cs	215	RU	Провокация
+Assets/Scripts/AOS Engine/AOSConfig.cs	216	RU	Насколько Гнев и Гордыня ведутся на зов: голос «бить того, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	217	RU	кто зовёт» за единицу шкалы. Терпение и Смирение — против.
+Assets/Scripts/AOS Engine/AOSConfig.cs	219	RU	Насколько Жадность, Зависть и Уныние не ведутся: голос 
+Assets/Scripts/AOS Engine/AOSConfig.cs	220	RU	против за единицу шкалы.
+Assets/Scripts/AOS Engine/AOSConfig.cs	222	RU	Прибавка к драке у гневного и гордого, когда враг зовёт 
+Assets/Scripts/AOS Engine/AOSConfig.cs	223	RU	на себя: не уйти от того, кто тебя оскорбил.
+Assets/Scripts/AOS Engine/AOSConfig.cs	226	RU	Зависть
+Assets/Scripts/AOS Engine/AOSConfig.cs	232	RU	Похоть
+Assets/Scripts/AOS Engine/AOSConfig.cs	238	RU	Чревоугодие
+Assets/Scripts/AOS Engine/AOSConfig.cs	249	RU	Мирные миссии
+Assets/Scripts/AOS Engine/AOSConfig.cs	264	RU	Память: чем держатся за прошлое
+Assets/Scripts/AOS Engine/AOSConfig.cs	265	RU	Своей шкалы у памяти нет — цепкость собирается из 
+Assets/Scripts/AOS Engine/AOSConfig.cs	266	RU	имеющихся, своя на каждый род воспоминания. Ноль во всех 
+Assets/Scripts/AOS Engine/AOSConfig.cs	267	RU	долях снова уравняет злопамятного с отходчивым.
+Assets/Scripts/AOS Engine/AOSConfig.cs	275	RU	Границы множителя памяти. Ноль снизу означал бы душу, 
+Assets/Scripts/AOS Engine/AOSConfig.cs	276	RU	не помнящую вовсе, — такой в игре быть не должно.
+Assets/Scripts/AOS Engine/AOSConfig.cs	280	RU	Память
+Assets/Scripts/AOS Engine/AOSEventHub.cs	41	TECH	death.emotion
+Assets/Scripts/AOS Engine/AOSEventHub.cs	42	RU	Убийство
+Assets/Scripts/AOS Engine/AOSEventHub.cs	48	TECH	KilledEnemy
+Assets/Scripts/AOS Engine/AOSEventHub.cs	66	RU	Мститель
+Assets/Scripts/AOS Engine/AOSEventHub.cs	66	RU	Бандит
+Assets/Scripts/AOS Engine/AOSEventHub.cs	68	RU	Бывший Охотник (ненавидит)
+Assets/Scripts/AOS Engine/AOSEventHub.cs	73	TECH	death.title
+Assets/Scripts/AOS Engine/AOSEventHub.cs	77	TECH	death.witnesses
+Assets/Scripts/AOS Engine/AOSEventHub.cs	88	TECH	AllyDied
+Assets/Scripts/AOS Engine/AOSEventHub.cs	91	TECH	EnemyKilledAlly
+Assets/Scripts/AOS Engine/AOSEventHub.cs	101	RU	Спасение союзника
+Assets/Scripts/AOS Engine/AOSEventHub.cs	115	TECH	AllySavedMe
+Assets/Scripts/AOS Engine/AOSEventHub.cs	116	TECH	SavedAlly
+Assets/Scripts/AOS Engine/AOSEventHub.cs	163	TECH	RefusedCommand
+Assets/Scripts/AOS Engine/AOSEventHub.cs	163	TECH	
+Assets/Scripts/AOS Engine/AOSEventHub.cs	170	TECH	AllyDisobeyed
+Assets/Scripts/AOS Engine/AOSEventHub.cs	176	RU	[AOS] ОТКАЗ: {PhraseGenerator.LogLine(warrior, context, decision)}
+Assets/Scripts/AOS Engine/AOSEventHub.cs	186	TECH	Moment
+Assets/Scripts/AOS Engine/AOSEventHub.cs	194	TECH	self.worth
+Assets/Scripts/AOS Engine/AOSEventHub.cs	198	RU	[AOS] САМ: {PhraseGenerator.LogLine(warrior, context, decision)}
+Assets/Scripts/AOS Engine/AOSEventHub.cs	201	TECH	self>
+Assets/Scripts/AOS Engine/AOSEventHub.cs	214	TECH	AllyBetrayedMe
+Assets/Scripts/AOS Engine/AOSEventHub.cs	223	TECH	WitnessedBetrayal
+Assets/Scripts/AOS Engine/AOSEventHub.cs	253	RU	Выживание в миссии
+Assets/Scripts/AOS Engine/AOSEventHub.cs	273	RU	Последний рубеж
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	80	EN	Setup AOS on Scene
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	85	RU	[AOS] Сцена настроена.
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	91	TECH	Managers
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	94	RU	[AOS] Объект 'Managers' не найден на сцене! Создайте его вручную и добавьте CombatManager, SelectionManager.
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	116	RU	[AOS] Настроено {warriors.Length} воинов.
+Assets/Scripts/AOS Engine/AOSStats.cs	69	RU	[AOS] Решений не принималось.
+Assets/Scripts/AOS Engine/AOSStats.cs	72	RU	[AOS] Решений: {_decisions}. Из них при отданном приказе: {_withCommand}.
+Assets/Scripts/AOS Engine/AOSStats.cs	78	RU	редко — главную механику могут не заметить
+Assets/Scripts/AOS Engine/AOSStats.cs	79	RU	часто — рискует читаться как поломка
+Assets/Scripts/AOS Engine/AOSStats.cs	80	RU	в разумных пределах
+Assets/Scripts/AOS Engine/AOSStats.cs	81	RU	[AOS] Приказ выполнен {_obeyed}, отказ {_refused}, 
+Assets/Scripts/AOS Engine/AOSStats.cs	82	RU	оцепенение {_hesitated}. Отказов {rate * 100f:F0}% — {verdict}.
+Assets/Scripts/AOS Engine/AOSStats.cs	86	RU	[AOS] Приказов не отдавали — доля отказов не измерена.
+Assets/Scripts/AOS Engine/AOSStats.cs	89	RU	[AOS] Действия: 
+Assets/Scripts/AOS Engine/AOSStats.cs	90	RU	[AOS] Голоса: 
+Assets/Scripts/AOS Engine/AOSStats.cs	102	RU	нет
+Assets/Scripts/AOS Engine/AOSStats.cs	113	TECH	, 
+Assets/Scripts/AOS Engine/AOSStats.cs	114	TECH	{items[i].Key} {items[i].Value * 100 / Mathf.Max(total, 1)}%
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	69	TECH	decide.context
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	77	TECH	decide.vote
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	120	TECH	decide.refused
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	122	TECH	decide.selfwilled
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	146	RU	[НАБЕГ] {_warrior.DisplayName} сбежал с поля
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	223	RU	[AOS] {_warrior.DisplayName} принял подкуп и перешёл на сторону противника!
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	442	TECH	DecisionContext.NearbyEnemies
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	497	TECH	Damageable.TakeDamage
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	526	TECH	SquadRoster
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	544	RU	[AOS] {_warrior.DisplayName} ушёл к чужим, 
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	545	RU	а старшего в отряде нет — предательство некому 
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	546	RU	запомнить.
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	577	TECH	FoundLoot
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	577	TECH	
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	580	RU	[LOOT] {_warrior.DisplayName} собрал {gold} золота и {equip ?? 
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	580	TECH	}
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	706	TECH	Icons/Attack
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	707	TECH	Icons/SaveAlly
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	708	TECH	Icons/Loot
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	709	TECH	Icons/Flee
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	749	RU	Мститель
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	749	RU	Бандит
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	751	RU	Бывший Охотник (ненавидит)
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	17	RU	Момент отказа
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	18	RU	Задержка между решением ослушаться и его исполнением. 
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	19	RU	В эти доли секунды игрок успевает заметить значок. 
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	20	RU	Ноль — выключить.
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	60	TECH	decide
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	75	TECH	execute
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	97	TECH	execute
+Assets/Scripts/AOS Engine/AutoBattleResolver.cs	75	EN	An AOS combat step failed after partial world mutation; restore a verified checkpoint.
+Assets/Scripts/AOS Engine/AutoBattleResolver.cs	132	TECH	Enemy
+Assets/Scripts/AOS Engine/AutoBattleResolver.cs	133	TECH	Draw
+Assets/Scripts/AOS Engine/AutoBattleResolver.cs	133	TECH	Squad
+Assets/Scripts/AOS Engine/BattleNarrator.cs	22	RU	Бой прошёл без единого спора. Отряд слушался.
+Assets/Scripts/AOS Engine/BattleNarrator.cs	25	RU	Как это было.
+Assets/Scripts/AOS Engine/BattleNarrator.cs	40	TECH	— 
+Assets/Scripts/AOS Engine/BattleNarrator.cs	41	RU	 И снова.
+Assets/Scripts/AOS Engine/BattleNarrator.cs	41	RU	 И так раз за разом.
+Assets/Scripts/AOS Engine/BattleNarrator.cs	51	RU	Отряд, которым не столько командовали, сколько договаривались.
+Assets/Scripts/AOS Engine/BattleNarrator.cs	52	RU	В остальном приказы исполнялись.
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	11	TECH	BehaviourResolver.Ballot
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	63	TECH	PerkDatabase
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	65	RU	[AOS] Resources/PerkDatabase не найден — 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	66	RU	сюжетные перки не влияют на решения. Создай ассет через 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	67	RU	Assets → Create → Sinbinder → Perk Database и положи в Resources.
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	135	TECH	Dev.CaptureMode
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	191	TECH	
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	198	TECH	
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	209	RU	[AOS] {warrior.DisplayName} колеблется 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	210	RU	(gap={gap:F1}, уверенность={confidence:F2})
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	215	RU	[AOS] {warrior.DisplayName} выбрал {best.Key} 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	216	RU	(очки: {best.Value:F1}, gap: {gap:F1}, 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	217	RU	уверенность: {confidence:F2}, 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	218	RU	громче всех: {decision.TopModule}, 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	219	RU	приказ: {(context.HasCommand ? context.CommandType : 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	219	TECH	)})
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	256	TECH	Counterfactual
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	278	TECH	DecideDetailed
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	301	TECH	Tally
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	302	TECH	Gameplay.SoulCourt
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	316	TECH	Gameplay.Provocation
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	326	TECH	loudest
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	330	TECH	
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	355	TECH	loudest
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	356	TECH	silenced
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	493	RU	[AOS MISSION] {warrior.DisplayName}: пустой список действий.
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	515	RU	[AOS MISSION] Ни один модуль не голосует по миссиям: 
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	516	RU	решение определяется порядком списка, а не характером.
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	519	RU	[AOS MISSION] {warrior.DisplayName} выбрал {best.Key} (очки: {best.Value:F1}, голосов: {voices})
