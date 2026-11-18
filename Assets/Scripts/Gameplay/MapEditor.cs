@@ -86,6 +86,10 @@ namespace Sinbinder.Gameplay
         private Kind _selectionKind;
         private int _selectionIndex = -1;
         private readonly HashSet<string> _selectedThingIds = new();
+        private bool _selectionDragActive;
+        private bool _selectionDragAdditive;
+        private Vector3 _selectionDragWorld;
+        private Vector3 _selectionDragScreen;
         private float _groupStep = 5f;
         private float _snap = 2f;
         private float _terrainRadius = 18f;
@@ -194,6 +198,7 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                _selectionDragActive = false;
                 _selectionIndex = -1;
                 _selectedThingIds.Clear();
                 Redraw();
@@ -203,11 +208,13 @@ namespace Sinbinder.Gameplay
                 Input.mousePosition.x < PanelWidth + 20f ||
                 Input.mousePosition.x > Screen.width - InspectorWidth - 20f)
             {
+                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
                 HideBrushCursor();
                 return;
             }
             if (!Ground(out var at))
             {
+                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
                 HideBrushCursor();
                 return;
             }
@@ -216,7 +223,14 @@ namespace Sinbinder.Gameplay
             {
                 if (_mode == Mode.Place) Put(Snapped(at));
                 else if (_mode == Mode.Select)
-                    Select(at, Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+                {
+                    _selectionDragActive = true;
+                    _selectionDragWorld = at;
+                    _selectionDragScreen = Input.mousePosition;
+                    _selectionDragAdditive = Input.GetKey(KeyCode.LeftShift) ||
+                                             Input.GetKey(KeyCode.RightShift);
+                    Select(at, _selectionDragAdditive);
+                }
                 else if (_mode == Mode.Terrain || _mode == Mode.Paint)
                 {
                     int before = _mode == Mode.Terrain
@@ -235,6 +249,14 @@ namespace Sinbinder.Gameplay
             else if (_draggingBrush && Input.GetMouseButton(0) &&
                      (_mode == Mode.Terrain || _mode == Mode.Paint))
                 ContinueBrush(Snapped(at));
+            if (_selectionDragActive && Input.GetMouseButtonUp(0))
+            {
+                float sx = Input.mousePosition.x - _selectionDragScreen.x;
+                float sy = Input.mousePosition.y - _selectionDragScreen.y;
+                if (_mode == Mode.Select && sx * sx + sy * sy > 64f)
+                    SelectRectangle(_selectionDragWorld, at, _selectionDragAdditive);
+                _selectionDragActive = false;
+            }
             if (Input.GetMouseButtonDown(1) && _mode != Mode.Terrain &&
                 _mode != Mode.Paint && _mode != Mode.Vegetation) Select(at);
         }
@@ -631,6 +653,26 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
+        /// <summary>
+        /// World-space rectangle selects only props, not crypts or gameplay regions.
+        /// Keeps existing selection when Shift is held. This is an editor operation,
+        /// never serialized into the map.
+        /// </summary>
+        private void SelectRectangle(Vector3 first, Vector3 last, bool additive = false)
+        {
+            float minX = Mathf.Min(first.x, last.x), maxX = Mathf.Max(first.x, last.x);
+            float minZ = Mathf.Min(first.z, last.z), maxZ = Mathf.Max(first.z, last.z);
+            if (!additive) _selectedThingIds.Clear();
+            foreach (var t in _map.Things)
+                if (t != null && !string.IsNullOrEmpty(t.Id) &&
+                    t.X >= minX && t.X <= maxX && t.Z >= minZ && t.Z <= maxZ)
+                    _selectedThingIds.Add(t.Id);
+            _selectionKind = Kind.Thing;
+            _selectionIndex = _map.Things.FindIndex(t => t != null &&
+                _selectedThingIds.Contains(t.Id));
+            Redraw();
+        }
+
         private List<MapData.Thing> GroupThings()
         {
             var group = new List<MapData.Thing>();
@@ -821,7 +863,7 @@ namespace Sinbinder.Gameplay
         private void DrawGroupInspector()
         {
             GUILayout.Label(Loc.F("Группа объектов: {0}", GroupThings().Count));
-            GUILayout.Label(Loc.T("Shift+ЛКМ: добавить / исключить; Ctrl+A: все объекты."));
+            GUILayout.Label(Loc.T("Shift+ЛКМ: добавить/исключить; протянуть ЛКМ: рамка; Ctrl+A: всё."));
             GUILayout.Label(Loc.F("Шаг перемещения: {0} м", Mathf.RoundToInt(_groupStep)));
             _groupStep = Mathf.Round(GUILayout.HorizontalSlider(_groupStep, 1f, 20f));
             GUILayout.BeginHorizontal();
@@ -1288,6 +1330,17 @@ namespace Sinbinder.Gameplay
                 DrawInspector();
                 GUILayout.EndScrollView();
                 GUILayout.EndArea();
+            }
+            if (_selectionDragActive && _mode == Mode.Select &&
+                Input.GetMouseButton(0))
+            {
+                float startX = _selectionDragScreen.x, endX = Input.mousePosition.x;
+                float startY = _selectionDragScreen.y, endY = Input.mousePosition.y;
+                float width = Mathf.Abs(endX - startX), height = Mathf.Abs(endY - startY);
+                if (width + height > 8f)
+                    GUI.Box(new Rect(Mathf.Min(startX, endX),
+                        Screen.height - Mathf.Max(startY, endY),
+                        width, height), "");
             }
         }
 
