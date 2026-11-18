@@ -571,7 +571,7 @@ ProjectSettings/PackageManagerSettings.asset	be4a7974ec170d9bfa288154684b318966c
 ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/ProjectSettings.asset	e0bd16d751c8aee0d0bbf7b0994c0194ad4653d8	25533	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	UNINSPECTED	
+ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	EXCLUDED_TECH	L0 full 2-line UTF-8 read at branch HEAD 25a3205849c5f595ca637e0cdb64ded4bc97a589; blob b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb; Unity Editor version and revision metadata only, no runtime dialogue/UI/Loc or player-facing strings; 0/0 semantic strings; installed Unity runtime UNKNOWN
 ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
 ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
