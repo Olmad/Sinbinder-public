@@ -699,11 +699,12 @@ namespace Sinbinder.Gameplay
                         thing.Id != t.TargetId)
                         Change(() => t.TargetId = thing.Id);
             }
-            ChoiceField("Условие", t.Condition, new[] { "Always", "FlagIsTrue" },
+            ChoiceField("Условие", t.Condition, new[] { "Always", "FlagIsTrue", "FlagIsFalse" },
                 value => t.Condition = value);
-            ChoiceField("Действие", t.Action, new[] { "ShowMessage", "SetFlag" },
+            ChoiceField("Действие", t.Action, new[] { "ShowMessage", "SetFlag", "ClearFlag" },
                 value => t.Action = value);
-            if (t.Action == "SetFlag" || t.Condition == "FlagIsTrue")
+            if (t.Action == "SetFlag" || t.Action == "ClearFlag" ||
+                t.Condition == "FlagIsTrue" || t.Condition == "FlagIsFalse")
                 TextField("Логический флаг", t.Flag, value => t.Flag = value);
             if (t.Action == "ShowMessage")
                 TextField("Сообщение игроку", t.Message, value => t.Message = value, true);
@@ -765,15 +766,18 @@ namespace Sinbinder.Gameplay
                 if (rule.Event != "OnStart" && rule.Event != "OnEnterRegion" &&
                     rule.Event != "OnInteractObject")
                     errors.Add(Loc.T("Неизвестное событие правила."));
-                if (rule.Condition != "Always" && rule.Condition != "FlagIsTrue")
+                if (rule.Condition != "Always" && rule.Condition != "FlagIsTrue" &&
+                    rule.Condition != "FlagIsFalse")
                     errors.Add(Loc.T("Неизвестное условие правила."));
-                if (rule.Action != "ShowMessage" && rule.Action != "SetFlag")
+                if (rule.Action != "ShowMessage" && rule.Action != "SetFlag" &&
+                    rule.Action != "ClearFlag")
                     errors.Add(Loc.T("Неизвестное действие правила."));
                 if (rule.Event == "OnEnterRegion" && !regionIds.Contains(rule.RegionId))
                     errors.Add(Loc.T("Триггер ссылается на отсутствующую область."));
                 if (rule.Event == "OnInteractObject" && !objectIds.Contains(rule.TargetId))
                     errors.Add(Loc.T("Триггер ссылается на отсутствующий предмет."));
-                if ((rule.Action == "SetFlag" || rule.Condition == "FlagIsTrue") &&
+                if ((rule.Action == "SetFlag" || rule.Action == "ClearFlag" ||
+                    rule.Condition == "FlagIsTrue" || rule.Condition == "FlagIsFalse") &&
                     (string.IsNullOrWhiteSpace(rule.Flag) || rule.Flag.Length > 64))
                     errors.Add(Loc.T("Условие или действие не содержит допустимый флаг."));
                 if (rule.Action == "ShowMessage" &&
