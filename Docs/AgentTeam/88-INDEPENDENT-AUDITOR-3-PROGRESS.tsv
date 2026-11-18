@@ -4,8 +4,8 @@ Assets/Models/Сцены/Холм.asset	7b314279dc229d96032641be4e4721ea4fe7cf44
 Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read at blob 77c2f83ce8f788e94bcca20d047cf5bff16c9f5c: Unity URP starter Readme editor onboarding text and links, not in-game UI/dialogue; excluded from player-facing scope.
 Assets/Resources/AOSConfig.asset	25496e7483e77c4971e4dc2600b0ef28eaccc5f8	2993	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read at blob 25496e7483e77c4971e4dc2600b0ef28eaccc5f8: only numeric AOS configuration parameters and Unity serialization identifiers; zero dialogue/UI strings; no gameplay-facing copy. Exclusion only, not AOS semantics PASS.
 Assets/Resources/DialogueDatabase.asset	833e9bd0202d79a1614c5b5835c59fafc4dec1cb	10704	UnitySerialized	0	0	0	0	UNINSPECTED	
-Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	UNINSPECTED	
-Assets/Resources/Fonts/OFL-PTSerif.txt	e9f47cb8b582b7277c90c706f1a688348554a2c3	4434	Text_Locale	0	0	0	0	UNINSPECTED	
+Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	EXCLUDED_TECH	FULL FILE read, blob 507d70f4565352dbfcf2dfc9b42eb092b57c0be8: Cormorant SIL OFL 1.1 copyright/license, no dialogue, UI text, or game-world claims; excluded from player-facing semantic audit, not a license-compliance verdict.
+Assets/Resources/Fonts/OFL-PTSerif.txt	e9f47cb8b582b7277c90c706f1a688348554a2c3	4434	Text_Locale	0	0	0	0	EXCLUDED_TECH	FULL FILE read, blob e9f47cb8b582b7277c90c706f1a688348554a2c3: ParaType PT Serif SIL OFL 1.1 copyright/license and reserved font names, no player-facing story/UI copy; excluded from semantic audit, not a license-compliance verdict.
 Assets/Resources/Lang/en.txt	c12806f2da2b415092b903b85c8ae489ebc46c78	474526	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Resources/MapProps/Barrel.prefab	bdc6b9beb57a65807e84768fac7e4b0d9686c615	2753	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Resources/MapProps/Bush.prefab	1f2f43d6aa33bbe738b63826444095a8d794c5cb	2677	UnitySerialized	0	0	0	0	UNINSPECTED	
