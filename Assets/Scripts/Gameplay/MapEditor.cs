@@ -414,35 +414,299 @@ namespace Sinbinder.Gameplay
 
         // ---------------------------------------------------------- окно
 
+        private bool _logicTab;
+        private bool _confirmClear;
+
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(10, 10, PanelWidth, Screen.height - 20), GUI.skin.box);
-            GUILayout.Label(Loc.T("Редактор карт"));
+            // Warcraft-style editor layout: top commands, left catalog,
+            // central live map, right properties/trigger inspector.
+            GUILayout.BeginArea(new Rect(10f, 7f, Mathf.Max(350f, Screen.width - 20f),
+                                         ToolbarHeight - 8f), GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Loc.T("SINBINDER • РЕДАКТОР КАРТ"), GUILayout.Width(245f));
+            if (GUILayout.Button(Loc.T("Разместить"), GUILayout.Width(92f))) _mode = Mode.Place;
+            if (GUILayout.Button(Loc.T("Выделить"), GUILayout.Width(92f))) _mode = Mode.Select;
+            if (GUILayout.Button(Loc.T("Стереть"), GUILayout.Width(92f))) _mode = Mode.Erase;
+            if (GUILayout.Button("↶", GUILayout.Width(36f))) Undo();
+            if (GUILayout.Button("↷", GUILayout.Width(36f))) Redo();
+            if (GUILayout.Button(Loc.T("Записать"), GUILayout.Width(95f))) Save();
+            GUILayout.Label(Loc.F("Режим: {0}", _mode), GUILayout.Width(160f));
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
 
+            GUILayout.BeginArea(new Rect(10f, ToolbarHeight + 10f, PanelWidth,
+                                        Mathf.Max(120f, Screen.height - ToolbarHeight - 20f)),
+                                        GUI.skin.box);
+            GUILayout.Label(Loc.T("Карта"));
             GUILayout.Label(Loc.T("Имя карты"));
-            _name = GUILayout.TextField(_name ?? "");
+            string name = GUILayout.TextField(_name ?? "");
+            if (name != _name) { Record(); _name = name; _map.Name = name; }
             GUILayout.Label(Loc.F("Поле: {0} м", Mathf.RoundToInt(_map.Size)));
             float size = GUILayout.HorizontalSlider(_map.Size, 150f, 800f);
-            if (Mathf.Abs(size - _map.Size) > 1f) { _map.Size = Mathf.Round(size / 10f) * 10f; Redraw(); }
-
-            GUILayout.Label(Loc.F("Склепов: {0}  ·  подлокаций: {1}  ·  событий: {2}",
+            float rounded = Mathf.Round(size / 10f) * 10f;
+            if (Mathf.Abs(rounded - _map.Size) >= 1f)
+                Change(() => _map.Size = rounded);
+            GUILayout.Label(Loc.F("Склепов: {0} · мест: {1} · событий: {2}",
                 _map.Crypts.Count, _map.Locations.Count, _map.Events.Count));
-            GUILayout.Label(Loc.F("Поворот (Q / E): {0}°", Mathf.RoundToInt(Mathf.Repeat(_yaw, 360f))));
+            GUILayout.Label(Loc.F("Поворот Q/E: {0}°", Mathf.RoundToInt(Mathf.Repeat(_yaw, 360f))));
 
-            _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(Screen.height * 0.45f));
-            for (int i = 0; i < Palette.Length; i++)
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Loc.T("Сетка:"), GUILayout.Width(50f));
+            foreach (var step in new[] { 0f, 1f, 2f, 5f, 10f })
+                if (GUILayout.Toggle(_snap == step, step == 0f ? "Off" : step.ToString("0"), "Button"))
+                    _snap = step;
+            GUILayout.EndHorizontal();
+
+            _logicTab = GUILayout.Toolbar(_logicTab ? 1 : 0,
+                new[] { Loc.T("Объекты"), Loc.T("Логика") }) == 1;
+            if (!_logicTab)
             {
-                bool on = GUILayout.Toggle(i == _brush, Loc.T(Palette[i].Title), "Button");
-                if (on) _brush = i;
+                GUILayout.Label(Loc.T("Поиск в палитре"));
+                _filter = GUILayout.TextField(_filter ?? "");
+                _scroll = GUILayout.BeginScrollView(_scroll,
+                    GUILayout.Height(Mathf.Max(110f, Screen.height * 0.37f)));
+                for (int i = 0; i < Palette.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(_filter) &&
+                        Palette[i].Title.IndexOf(_filter,
+                            System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    bool current = _mode == Mode.Place && i == _brush;
+                    if (GUILayout.Toggle(current, Loc.T(Palette[i].Title), "Button"))
+                    { _brush = i; _mode = Mode.Place; }
+                }
+                GUILayout.EndScrollView();
             }
-            GUILayout.EndScrollView();
-
-            if (GUILayout.Button(Loc.T("Записать"))) Save();
-            if (GUILayout.Button(Loc.T("Очистить всё"))) { _map.Things.Clear(); _map.Crypts.Clear(); _map.Locations.Clear(); _map.Trails.Clear(); _map.Events.Clear(); Redraw(); }
+            else
+            {
+                if (GUILayout.Button(Loc.T("+ Новый триггер")))
+                {
+                    Change(() =>
+                    {
+                        var region = _map.Regions.Count > 0 ? _map.Regions[0] : null;
+                        _map.Triggers.Add(new MapData.Trigger
+                        {
+                            Id = NewId(), Name = Loc.T("Новое правило"),
+                            Event = region == null ? "OnStart" : "OnEnterRegion",
+                            RegionId = region == null ? "" : region.Id,
+                            Message = Loc.T("Вы вошли в область.")
+                        });
+                        _selectionKind = Kind.Trigger;
+                        _selectionIndex = _map.Triggers.Count - 1;
+                    });
+                }
+                _scroll = GUILayout.BeginScrollView(_scroll,
+                    GUILayout.Height(Mathf.Max(110f, Screen.height * 0.37f)));
+                for (int i = 0; i < _map.Triggers.Count; i++)
+                {
+                    int index = i;
+                    var t = _map.Triggers[i];
+                    if (GUILayout.Button((t.Enabled ? "● " : "○ ") + (t.Name ?? t.Id)))
+                    { _selectionKind = Kind.Trigger; _selectionIndex = index; Redraw(); }
+                }
+                GUILayout.EndScrollView();
+                GUILayout.Label(Loc.T("Событие → условие → действие"));
+            }
+            if (GUILayout.Button(Loc.T("Проверить карту")))
+            {
+                var issues = Validate();
+                _say = issues.Count == 0 ? Loc.T("Ошибок формата карты нет.")
+                    : Loc.F("Ошибок: {0}. {1}", issues.Count, issues[0]);
+            }
+            if (GUILayout.Button(Loc.T("Очистить всё")))
+            {
+                if (_confirmClear)
+                {
+                    Change(() =>
+                    {
+                        _map.Things.Clear(); _map.Crypts.Clear(); _map.Locations.Clear();
+                        _map.Trails.Clear(); _map.Events.Clear(); _map.Regions.Clear();
+                        _map.Triggers.Clear();
+                        _selectionIndex = -1;
+                    });
+                    _confirmClear = false;
+                }
+                else { _confirmClear = true; _say = Loc.T("Нажмите «Очистить всё» ещё раз для подтверждения."); }
+            }
             if (GUILayout.Button(Loc.T("Выйти в игру"))) SceneManager.LoadScene(0);
+            GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
-            GUILayout.Label(Loc.T("ЛКМ — поставить, ПКМ — убрать, W A S D — камера, колесо — высота"));
             GUILayout.EndArea();
+
+            // Keep the 3D view usable. The right pane edits selected objects.
+            if (Screen.width > PanelWidth + InspectorWidth + 100f)
+            {
+                GUILayout.BeginArea(new Rect(Screen.width - InspectorWidth - 10f,
+                    ToolbarHeight + 10f, InspectorWidth,
+                    Mathf.Max(120f, Screen.height - ToolbarHeight - 20f)),
+                    GUI.skin.box);
+                _inspectorScroll = GUILayout.BeginScrollView(_inspectorScroll);
+                GUILayout.Label(Loc.T("ИНСПЕКТОР"));
+                DrawInspector();
+                GUILayout.EndScrollView();
+                GUILayout.EndArea();
+            }
+        }
+
+        private void FloatField(string label, float value, float min, float max,
+                                System.Action<float> apply)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Loc.T(label), GUILayout.Width(108f));
+            string shown = value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+            string entered = GUILayout.TextField(shown);
+            if (entered != shown && float.TryParse(entered.Replace(',', '.'),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float result)
+                && !float.IsNaN(result) && !float.IsInfinity(result))
+                Change(() => apply(Mathf.Clamp(result, min, max)));
+            GUILayout.EndHorizontal();
+        }
+
+        private void IntField(string label, int value, int min, int max,
+                              System.Action<int> apply)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Loc.T(label), GUILayout.Width(108f));
+            string entered = GUILayout.TextField(value.ToString());
+            if (entered != value.ToString() && int.TryParse(entered, out int result))
+                Change(() => apply(Mathf.Clamp(result, min, max)));
+            GUILayout.EndHorizontal();
+        }
+
+        private void TextField(string label, string value, System.Action<string> apply,
+                               bool multiline = false)
+        {
+            GUILayout.Label(Loc.T(label));
+            string previous = value ?? "";
+            string entered = multiline
+                ? GUILayout.TextArea(previous, GUILayout.MinHeight(64f))
+                : GUILayout.TextField(previous);
+            if (entered != previous)
+                Change(() => apply(entered.Length <= 240 ? entered : entered.Substring(0, 240)));
+        }
+
+        private void ToggleField(string label, bool value, System.Action<bool> apply)
+        {
+            bool next = GUILayout.Toggle(value, Loc.T(label));
+            if (next != value) Change(() => apply(next));
+        }
+
+        private void ChoiceField(string label, string current, string[] variants,
+                                 System.Action<string> apply)
+        {
+            GUILayout.Label(Loc.T(label) + ": " + current);
+            GUILayout.BeginVertical();
+            foreach (string option in variants)
+            {
+                if (GUILayout.Toggle(current == option, option, "Button") && current != option)
+                    Change(() => apply(option));
+            }
+            GUILayout.EndVertical();
+        }
+
+        private void DrawInspector()
+        {
+            int i = _selectionIndex;
+            if (i < 0)
+            {
+                GUILayout.Label(Loc.T("Выберите объект правой кнопкой мыши или инструментом «Выделить»."));
+                GUILayout.Label(Loc.T("Области и предметы можно связывать с правилами на вкладке «Логика»."));
+                return;
+            }
+            GUILayout.Label(_selectionKind + " #" + (i + 1));
+            float half = _map.Size * 0.5f;
+            switch (_selectionKind)
+            {
+                case Kind.Thing when i < _map.Things.Count:
+                    var t = _map.Things[i];
+                    TextField("Модель Resources", t.Prop, value => t.Prop = value);
+                    FloatField("X", t.X, -half, half, value => t.X = value);
+                    FloatField("Z", t.Z, -half, half, value => t.Z = value);
+                    FloatField("Поворот", t.Yaw, -360, 360, value => t.Yaw = value);
+                    FloatField("Масштаб", t.Scale, 0.1f, 10f, value => t.Scale = value);
+                    GUILayout.Label("ID: " + t.Id);
+                    break;
+                case Kind.Crypt when i < _map.Crypts.Count:
+                    var crypt = _map.Crypts[i];
+                    FloatField("X", crypt.X, -half, half, value => crypt.X = value);
+                    FloatField("Z", crypt.Z, -half, half, value => crypt.Z = value);
+                    FloatField("Поворот", crypt.Yaw, -360, 360, value => crypt.Yaw = value);
+                    break;
+                case Kind.Location when i < _map.Locations.Count:
+                    var loc = _map.Locations[i];
+                    TextField("Имя", loc.Name, value => loc.Name = value);
+                    ChoiceField("Тип", loc.Kind, new[] { "village", "forest", "field" },
+                        value => loc.Kind = value);
+                    FloatField("X", loc.X, -half, half, value => loc.X = value);
+                    FloatField("Z", loc.Z, -half, half, value => loc.Z = value);
+                    FloatField("Радиус", loc.Radius, 3f, 80f, value => loc.Radius = value);
+                    IntField("Жители", loc.People, 0, 100, value => loc.People = value);
+                    break;
+                case Kind.Trail when i < _map.Trails.Count:
+                    var trail = _map.Trails[i];
+                    FloatField("X", trail.X, -half, half, value => trail.X = value);
+                    FloatField("Z", trail.Z, -half, half, value => trail.Z = value);
+                    break;
+                case Kind.Event when i < _map.Events.Count:
+                    var ev = _map.Events[i];
+                    ChoiceField("Тип", ev.Kind, new[] { "caravan", "village" },
+                        value => ev.Kind = value);
+                    FloatField("X", ev.X, -half, half, value => ev.X = value);
+                    FloatField("Z", ev.Z, -half, half, value => ev.Z = value);
+                    break;
+                case Kind.Region when i < _map.Regions.Count:
+                    var rg = _map.Regions[i];
+                    TextField("Название области", rg.Name, value => rg.Name = value);
+                    FloatField("X", rg.X, -half, half, value => rg.X = value);
+                    FloatField("Z", rg.Z, -half, half, value => rg.Z = value);
+                    FloatField("Радиус", rg.Radius, 1f, half, value => rg.Radius = value);
+                    GUILayout.Label("ID: " + rg.Id);
+                    break;
+                case Kind.Trigger when i < _map.Triggers.Count:
+                    DrawTrigger(_map.Triggers[i]);
+                    break;
+                default:
+                    GUILayout.Label(Loc.T("Объект удалён или изменился. Выберите другой."));
+                    return;
+            }
+            if (GUILayout.Button(Loc.T("Создать копию"))) DuplicateSelected();
+            if (GUILayout.Button(Loc.T("Удалить выбранное"))) DeleteSelected();
+        }
+
+        private void DrawTrigger(MapData.Trigger t)
+        {
+            TextField("Название правила", t.Name, value => t.Name = value);
+            ToggleField("Включено", t.Enabled, value => t.Enabled = value);
+            ToggleField("Только один раз", t.Once, value => t.Once = value);
+            ChoiceField("Событие", t.Event,
+                new[] { "OnStart", "OnEnterRegion", "OnInteractObject" },
+                value => t.Event = value);
+            if (t.Event == "OnEnterRegion")
+            {
+                GUILayout.Label(Loc.T("Область:"));
+                foreach (var region in _map.Regions)
+                    if (GUILayout.Toggle(region.Id == t.RegionId, region.Name ?? region.Id, "Button") &&
+                        region.Id != t.RegionId)
+                        Change(() => t.RegionId = region.Id);
+            }
+            else if (t.Event == "OnInteractObject")
+            {
+                GUILayout.Label(Loc.T("Предмет:"));
+                foreach (var thing in _map.Things)
+                    if (GUILayout.Toggle(thing.Id == t.TargetId, thing.Prop + " · " + thing.Id.Substring(0, 6), "Button") &&
+                        thing.Id != t.TargetId)
+                        Change(() => t.TargetId = thing.Id);
+            }
+            ChoiceField("Условие", t.Condition, new[] { "Always", "FlagIsTrue" },
+                value => t.Condition = value);
+            ChoiceField("Действие", t.Action, new[] { "ShowMessage", "SetFlag" },
+                value => t.Action = value);
+            if (t.Action == "SetFlag" || t.Condition == "FlagIsTrue")
+                TextField("Логический флаг", t.Flag, value => t.Flag = value);
+            if (t.Action == "ShowMessage")
+                TextField("Сообщение игроку", t.Message, value => t.Message = value, true);
+            GUILayout.Label(Loc.T("Это безопасная система событий без произвольного исполнения кода."));
         }
 
         private void Save()
