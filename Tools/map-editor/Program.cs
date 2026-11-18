@@ -181,6 +181,32 @@ static class Program
         errors = (List<string>)Invoke(editor, "Validate");
         Check(errors.Count == 0, "safe false-flag and clear-flag actions are saveable");
     }
+    static void ObjectInteractionWizard()
+    {
+        var map = Map();
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        var item = map.Things[0];
+        Invoke(editor, "AddObjectInteraction", item);
+        Check(map.Triggers.Count == 1, "selected prop gains a safe interaction rule");
+        var rule = map.Triggers[0];
+        Check(rule.TargetId == item.Id && rule.Event == "OnInteractObject" &&
+              rule.Action == "ShowMessage" && rule.Condition == "Always",
+              "interaction wizard binds the exact object's stable ID");
+        Check(rule.Enabled && !rule.Once, "interactive object remains available on repeat use");
+        Check(((List<string>)Invoke(editor, "Validate")).Count == 0,
+              "generated object rule validates for saving");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(undone.Triggers.Count == 0, "quick interaction is undoable");
+        Invoke(editor, "Redo");
+        var redone = (MapData)typeof(MapEditor).GetField("_map",
+                       BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(redone.Triggers.Count == 1 && redone.Triggers[0].TargetId == item.Id,
+              "redo restores object interaction and its target ID");
+    }
     static void EditorContracts()
     {
         var map = Map();
@@ -214,6 +240,7 @@ static class Program
         LegacyJsonAndAtomicWrite();
         RulesRuntime();
         BooleanTriggerBranching();
+        ObjectInteractionWizard();
         EditorContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
