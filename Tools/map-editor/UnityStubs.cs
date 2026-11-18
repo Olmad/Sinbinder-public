@@ -33,6 +33,10 @@ namespace UnityEngine
         public GameObject(string name = "") { this.name = name; }
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType t) => new GameObject();
+        public T[] GetComponentsInChildren<T>() where T : Component, new()
+        {
+            return new T[] { GetComponent<T>() };
+        }
         public T GetComponent<T>() where T : Component, new()
         {
             if (!_components.TryGetValue(typeof(T), out var component))
@@ -52,15 +56,60 @@ namespace UnityEngine
         public Vector3[] vertices;
         public Vector2[] uv;
         public int[] triangles;
+        public int subMeshCount;
+        private readonly System.Collections.Generic.Dictionary<int, int[]> _submeshes = new();
+        public void SetTriangles(int[] triangles, int index)
+        {
+            _submeshes[index] = triangles;
+            var combined = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < subMeshCount; i++)
+                if (_submeshes.TryGetValue(i, out var data)) combined.AddRange(data);
+            this.triangles = combined.ToArray();
+        }
         public void RecalculateNormals() { }
         public void RecalculateBounds() { }
     }
     public class MeshFilter : Component { public Mesh sharedMesh; }
     public class MeshCollider : Collider { public Mesh sharedMesh; }
-    public class Renderer : Component { public Material sharedMaterial; }
+    public class Renderer : Component
+    {
+        private Material[] _shared = Array.Empty<Material>();
+        public Material sharedMaterial
+        {
+            get => _shared.Length > 0 ? _shared[0] : null;
+            set => _shared = new[] { value };
+        }
+        public Material[] sharedMaterials
+        {
+            get => _shared;
+            set => _shared = value;
+        }
+    }
+    public class MeshRenderer : Renderer { }
+    public static class Resources
+    {
+        private static readonly System.Collections.Generic.Dictionary<string,Object> Assets = new();
+        static Resources()
+        {
+            foreach (var name in new[] { "Ground048", "Ground077", "Gravel043", "Rock022" })
+                Assets["MapTerrainMaterials/" + name] = new Material(Shader.Find("Lit")) { name = name };
+        }
+        public static void Register(string path,Object asset) => Assets[path] = asset;
+        public static T Load<T>(string path) where T : Object
+            => Assets.TryGetValue(path, out var asset) ? asset as T : null;
+        public static T[] LoadAll<T>(string directory) where T : Object
+        {
+            var all = new System.Collections.Generic.List<T>();
+            foreach (var pair in Assets)
+                if (pair.Key.StartsWith(directory + "/", StringComparison.Ordinal) &&
+                    pair.Value is T resource) all.Add(resource);
+            return all.ToArray();
+        }
+    }
     public class Shader : Object { public static Shader Find(string name) => new Shader(); }
     public class Material : Object
     {
+        public string name;
         public Color color;
         public Material(Shader shader) { }
     }
@@ -105,6 +154,7 @@ namespace UnityEngine
         public static int Abs(int a) => Math.Abs(a);
         public static float Cos(float a) => MathF.Cos(a);
         public static float Sin(float a) => MathF.Sin(a);
+        public static float Sqrt(float a) => MathF.Sqrt(a);
         public static float Round(float a) => MathF.Round(a);
         public static int RoundToInt(float a) => (int)MathF.Round(a);
         public static float Clamp(float v,float min,float max)=> MathF.Max(min,MathF.Min(max,v));
