@@ -136,12 +136,20 @@ def main() -> int:
         path = root / p
         start = len(records)
         error = None
+        fallback_encoding = None
         try:
             b = path.read_bytes()
             try:
                 s = b.decode("utf-8-sig")
             except UnicodeDecodeError:
-                s = b.decode("utf-8")
+                if b.startswith(b"\\xff\\xfe") or b.startswith(b"\\xfe\\xff"):
+                    s = b.decode("utf-16")
+                    fallback_encoding = "utf-16"
+                else:
+                    # Historic technical TXT files can be Windows-1251.
+                    # Record fallback explicitly; never claim semantic approval.
+                    s = b.decode("cp1251")
+                    fallback_encoding = "cp1251"
             kind = bucket(p)
             if kind == "CS":
                 for m in CS_LITERAL.finditer(s):
@@ -232,8 +240,13 @@ def main() -> int:
                          if path.is_file() else "", "bucket": bucket(p),
                          "source_bytes": path.stat().st_size if path.exists() else 0,
                          "extracted_candidates": len(records) - start,
-                         "parse_status": "ERROR" if error else "EXTRACTED",
+                         "parse_status": "ERROR" if error else
+                         ("EXTRACTED_WITH_LEGACY_ENCODING" if fallback_encoding
+                          else "EXTRACTED"),
+                         "encoding_fallback": fallback_encoding,
                          "semantic_status": "UNREVIEWED", "error": error})
+        if fallback_encoding:
+            counts["legacy_encoding_fallbacks"] += 1
         counts["source_files"] += 1
 
     dup = {k: sorted(v) for k, v in locale_pairs.items() if len(v) > 1}
@@ -263,6 +276,7 @@ def main() -> int:
         f"- Candidate text-bearing sources inspected: {len(candidates)}",
         f"- Candidate files read without errors: {len(candidates) - counts['read_errors']}",
         f"- Candidate files not readable: {counts['read_errors']}",
+        f"- Decoded with legacy encoding (needs source review): {counts['legacy_encoding_fallbacks']}",
         f"- Extracted string candidates: {counts['strings_extracted']}",
         f"- Human-like candidates (heuristic): {counts['human_like']}",
         f"- Russian-containing strings: {counts['russian']}",
@@ -298,6 +312,7 @@ def main() -> int:
                 "localization_keys", "localization_warnings",
                 "suspect_occurrences", "read_errors"):
         print(f"{key}: {counts[key]}")
+    print("legacy_encoding_fallbacks: " + str(counts["legacy_encoding_fallbacks"]))
     print("semantic_pass_count: 0 (not a semantic validator)")
     for status in statuses:
         if status["error"]:
