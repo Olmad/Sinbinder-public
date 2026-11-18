@@ -293,6 +293,14 @@ static class Program
         }
         finally { Directory.Delete(dir, true); }
 
+        hill.Delta = -6f;
+        Check(MathF.Abs(MapTerrain.HeightAt(map, 0f, 0f) + 6f) < 0.0001f,
+              "negative terrain stroke creates a real ravine below original ground");
+        var valley = MapTerrain.BuildMesh(map);
+        Check(valley != null && MathF.Abs(valley.vertices[40 * 81 + 40].y + 6f) < 0.0001f,
+              "ravine geometry is negative in the same gameplay mesh");
+        hill.Delta = 6f;
+
         hill.Delta = float.NaN;
         Check(!MapTerrain.Valid(map) && MapTerrain.BuildMesh(map) == null &&
               MapTerrain.HeightAt(map, 0f, 0f) == 0f,
