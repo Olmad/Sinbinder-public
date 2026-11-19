@@ -210,6 +210,31 @@ class GateTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(report["unique_source_fails"], 1)
 
+    def test_qa2_does_not_accept_duplicate_blob_in_plain_commentary(self):
+        ev = ("QA2: source=Assets/Resources/Lang/en.txt; blob=" + SHA +
+              "; lines=445-464; context=not proven; negative=unknown; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN. "
+              "Baseline inventory blob=b" + ("b" * 39) +
+              " differs from current source blob; 0 completed semantic checks.")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "UNKNOWN", found=1, checked=1,
+                           unknown=1, evidence=ev)])
+        errors, _, report = self.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_last_qa2_block_has_precedence_over_old_batch(self):
+        ev = ("QA2: source=WRONG; blob=short; lines=1; context=old; "
+              "negative=old; verified=0; total=0; RU_EN=UNKNOWN; outcome=UNKNOWN. "
+              "QA2: source=Assets/Resources/Lang/en.txt; blob=" + SHA +
+              "; lines=445-464; context=unknown; negative=no target; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN.")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "UNKNOWN", found=1, checked=1,
+                           unknown=1, evidence=ev)])
+        errors, _, _ = self.check()
+        self.assertEqual(errors, [])
+
     def test_invalid_outcome_prefix_is_not_accepted(self):
         ev = ("QA2: source=Assets/Resources/Lang/en.txt; blob=" + SHA +
               "; lines=445-464; context=unknown; negative=none; "
