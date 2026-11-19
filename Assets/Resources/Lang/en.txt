@@ -10254,7 +10254,7 @@ msgstr "I abstain: there is nothing to quench here."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь: мстить тут некому."
-msgstr "I abstain: there is no one to avenge here."
+msgstr "I abstain: there is no one to take revenge on here."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь: сравнивать тут не с кем."
