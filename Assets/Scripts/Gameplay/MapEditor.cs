@@ -711,6 +711,37 @@ namespace Sinbinder.Gameplay
             Redraw();
         }
 
+        // Selection is editor-only: no MapData writes and no Undo transactions.
+        private void SetThingSelection(HashSet<string> next)
+        {
+            if (next == null || _selectedThingIds.SetEquals(next)) return;
+            _selectedThingIds.Clear();
+            foreach (var id in next) _selectedThingIds.Add(id);
+            _selectionKind = Kind.Thing;
+            _selectionIndex = _map.Things.FindIndex(t =>
+                t != null && _selectedThingIds.Contains(t.Id));
+            Redraw();
+        }
+
+        private void SelectMatchingThings(MapObjectSelection.Property property)
+        {
+            if (_selectedThingIds.Count == 0)
+            {
+                _say = Loc.T("Сначала выберите модель или группу моделей.");
+                return;
+            }
+            var next = MapObjectSelection.Matching(_map.Things, _selectedThingIds, property);
+            if (next.Count == 0)
+            {
+                _say = Loc.T("Не найдено подходящих объектов.");
+                return;
+            }
+            SetThingSelection(next);
+        }
+
+        private void InvertThingSelection() =>
+            SetThingSelection(MapObjectSelection.Inverted(_map.Things, _selectedThingIds));
+
         private void Select(Vector3 at, bool additive = false)
         {
             float best = 6f;
@@ -812,6 +843,24 @@ namespace Sinbinder.Gameplay
             if (!MapObjectArrange.TryPlan(selected, _map.Size, axis, operation, out var planned))
             {
                 _say = Loc.T("Расстановка не изменена: выберите минимум два объекта, для равных интервалов — три.");
+                return;
+            }
+            Change(() =>
+            {
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    selected[i].X = planned[i].x;
+                    selected[i].Z = planned[i].y;
+                }
+            });
+        }
+
+        private void SnapSelectedThingsToGrid()
+        {
+            var selected = GroupThings();
+            if (!MapObjectArrange.TrySnap(selected, _map.Size, _snap, out var planned))
+            {
+                _say = Loc.T("Группа уже на сетке, сетка выключена или перенос невозможен.");
                 return;
             }
             Change(() =>
@@ -1033,6 +1082,8 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Равные интервалы по Z")))
                 ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Distribute);
             GUILayout.Label(Loc.T("Выравнивание сохраняет выделение, порядок и ID."));
+            if (GUILayout.Button(Loc.T("Привязать всю группу к сетке")))
+                SnapSelectedThingsToGrid();
             GUILayout.Label(Loc.T("Материал всей группы:"));
             if (GUILayout.Button(Loc.T("Вернуть исходные материалы")))
                 ApplyGroupMaterial("");
@@ -1359,6 +1410,12 @@ namespace Sinbinder.Gameplay
                 if (GUILayout.Button(Loc.T("Выделить все объекты (Ctrl+A)")))
                     SelectAllThings();
                 if (GUILayout.Button(Loc.T("К выделению (Ctrl+F)"))) FocusSelection();
+                if (GUILayout.Button(Loc.T("Выделить такие же модели")))
+                    SelectMatchingThings(MapObjectSelection.Property.Model);
+                if (GUILayout.Button(Loc.T("Выделить с тем же материалом")))
+                    SelectMatchingThings(MapObjectSelection.Property.Material);
+                if (GUILayout.Button(Loc.T("Инвертировать выделение")))
+                    InvertThingSelection();
                 GUILayout.Label(Loc.F("Выделено объектов: {0}", _selectedThingIds.Count));
                 GUILayout.Label(Loc.T("ЛКМ по выделенному + протянуть: переместить группу."));
             }
