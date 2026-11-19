@@ -166,6 +166,56 @@ class GateTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(report["semantic_pass_source_count"], 1)
 
+    def test_incremental_unknown_keeps_cumulative_partial_fail(self):
+        # Auditor reviews lines 111-115, while failures 1-110 still count.
+        ev = ("Earlier six failures remain; QA2: "
+              "source=Assets/Resources/Lang/en.txt + Assets/Scripts/AOS Engine/PhraseGenerator.cs; "
+              "blob=" + SHA + "; lines=en.txt:445-464 + PhraseGenerator.cs:479-494; "
+              "context=caller and outcome not yet reproduced; "
+              "negative=EternalSleep described as ordinary sleep; "
+              "verified=0; total=115; RU_EN=translation nuance UNKNOWN; outcome=UNKNOWN")
+        self.write(1, [
+            self.payload[0],
+            row(self.paths[1], "PARTIAL_FAIL", found=115, checked=115,
+                fail=6, unknown=109, evidence=ev),
+        ])
+        errors, _, report = self.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(report["unique_source_fails"], 1)
+        self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_incremental_unknown_cannot_mask_zero_failures(self):
+        ev = ("QA2: source=Assets/Resources/Lang/en.txt; "
+              "blob=" + SHA + "; lines=en.txt:445-464; context=unverified; "
+              "negative=UNKNOWN; verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "PARTIAL_FAIL", found=1, checked=1,
+                           fail=0, unknown=1, evidence=ev)])
+        errors, _, _ = self.check()
+        self.assertTrue(any("outcome and status disagree" in msg or
+                            "zero failed" in msg for msg in errors))
+
+    def test_caller_reference_cannot_replace_ledger_source(self):
+        ev = ("QA2: source=Assets/Scripts/AOS Engine/PhraseGenerator.cs + "
+              "Assets/Resources/Lang/en.txt; blob=" + SHA +
+              "; lines=445-464; context=unknown; negative=unknown; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "UNKNOWN", found=1, checked=1,
+                           unknown=1, evidence=ev)])
+        errors, _, _ = self.check()
+        self.assertTrue(any("source does not match ledger path" in msg for msg in errors))
+
+    def test_cumulative_partial_fail_cannot_claim_latest_full_pass(self):
+        ev = ("QA2: source=Assets/Resources/Lang/en.txt; blob=" + SHA +
+              "; lines=445-464; context=unknown; negative=bad prior output; "
+              "verified=0; total=2; RU_EN=checked; outcome=PASS")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "PARTIAL_FAIL", found=2, checked=2,
+                           fail=1, unknown=1, evidence=ev)])
+        errors, _, _ = self.check()
+        self.assertTrue(any("outcome and status disagree" in msg for msg in errors))
+
     def test_independent_disagreement_is_reported(self):
         self.write(1, [
             row(self.paths[0], "FAIL", found=1, checked=1, fail=1,
