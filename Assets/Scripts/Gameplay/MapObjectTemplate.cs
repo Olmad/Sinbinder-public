@@ -153,21 +153,57 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
-        // No writes on failure. New GUIDs for every pasted object AND F-trigger.
+        // Pure geometry: Unity positive Y rotation turns +Z towards +X.
+        // The preview and the committed paste MUST use the exact same projection.
+        // Out-of-bounds geometry returns false but retains finite projected points
+        // for red preview markers. Invalid/unsafe input returns no points at all.
+        internal static bool TryProject(Layout layout, float mapSize,
+            float x, float z, float rotationDegrees, out List<Vector2> positions)
+        {
+            positions = null;
+            if (!Valid(layout) || !Finite(mapSize) || mapSize <= 0f ||
+                !Finite(x) || !Finite(z) || !Finite(rotationDegrees))
+                return false;
+
+            double radians = ((double)rotationDegrees % 360d) * Math.PI / 180d;
+            double cosine = Math.Cos(radians), sine = Math.Sin(radians);
+            double half = mapSize * 0.5d;
+            var projected = new List<Vector2>(layout.Items.Count);
+            bool fits = true;
+            foreach (var item in layout.Items)
+            {
+                double px = (double)x + item.Dx * cosine + item.Dz * sine;
+                double pz = (double)z - item.Dx * sine + item.Dz * cosine;
+                if (double.IsNaN(px) || double.IsInfinity(px) ||
+                    double.IsNaN(pz) || double.IsInfinity(pz) ||
+                    Math.Abs(px) > float.MaxValue || Math.Abs(pz) > float.MaxValue)
+                    return false;
+                if (Math.Abs(px) > half || Math.Abs(pz) > half) fits = false;
+                projected.Add(new Vector2((float)px, (float)pz));
+            }
+            positions = projected;
+            return fits;
+        }
+
+        // Legacy zero-rotation caller remains equivalent for all existing maps.
         internal static bool TryPlanPaste(Layout layout, MapData map,
             float x, float z, out List<MapData.Thing> things,
-            out List<MapData.Trigger> triggers)
+            out List<MapData.Trigger> triggers) =>
+            TryPlanPaste(layout, map, x, z, 0f, out things, out triggers);
+
+        // No writes on failure. New GUIDs for every pasted object AND F-trigger.
+        internal static bool TryPlanPaste(Layout layout, MapData map,
+            float x, float z, float rotationDegrees,
+            out List<MapData.Thing> things, out List<MapData.Trigger> triggers)
         {
             things = null;
             triggers = null;
-            if (!Valid(layout) || map == null || map.Things == null ||
-                map.Triggers == null || !Finite(map.Size) || map.Size <= 0f ||
-                !Finite(x) || !Finite(z) ||
+            if (map == null || map.Things == null || map.Triggers == null ||
+                !Valid(layout) ||
                 map.Things.Count + layout.Items.Count > MaxMapThings ||
-                map.Triggers.Count + layout.Interactions.Count > MaxMapRules)
+                map.Triggers.Count + layout.Interactions.Count > MaxMapRules ||
+                !TryProject(layout, map.Size, x, z, rotationDegrees, out var positions))
                 return false;
-
-            float half = map.Size * 0.5f;
             var props = new List<MapData.Thing>(layout.Items.Count);
             var rules = new List<MapData.Trigger>(layout.Interactions.Count);
             var refs = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -179,17 +215,20 @@ namespace Sinbinder.Gameplay
                 if (existing != null && !string.IsNullOrEmpty(existing.Id))
                     existingIds.Add(existing.Id);
 
-            foreach (var item in layout.Items)
+            for (int i = 0; i < layout.Items.Count; i++)
             {
-                float atX = x + item.Dx, atZ = z + item.Dz;
-                if (!Finite(atX) || !Finite(atZ) ||
-                    Math.Abs(atX) > half || Math.Abs(atZ) > half) return false;
+                var item = layout.Items[i];
                 string guid = NextId(existingIds);
                 refs.Add(item.Ref, guid);
+                // Normalise in double precision before converting back to float:
+                // even valid imported template yaws may be very large.
+                double yaw = ((double)item.Yaw + rotationDegrees) % 360d;
+                if (yaw < 0d) yaw += 360d;
                 props.Add(new MapData.Thing
                 {
                     Id = guid, Prop = item.Prop, MaterialId = item.MaterialId,
-                    X = atX, Z = atZ, Yaw = item.Yaw, Scale = item.Scale
+                    X = positions[i].x, Z = positions[i].y,
+                    Yaw = (float)yaw, Scale = item.Scale
                 });
             }
 
