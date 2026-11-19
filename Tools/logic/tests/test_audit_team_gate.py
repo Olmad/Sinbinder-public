@@ -103,7 +103,9 @@ class GateTests(unittest.TestCase):
         old = ledger(1, self.payload)
         self.write(1, [
             row(self.paths[0], "UNKNOWN", found=1, checked=3, unknown=1,
-                evidence="QA2: source Assets/Scripts/A.cs blob aaa L12; context pending"),
+                evidence="QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+                         "; lines=L12; context=pending; negative=UNKNOWN; verified=0; "
+                         "total=1; RU_EN=UNKNOWN; outcome=UNKNOWN"),
             self.payload[1],
         ])
         with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
@@ -129,8 +131,9 @@ class GateTests(unittest.TestCase):
         old = ledger(1, self.payload)
         self.write(1, [
             row(self.paths[0], "UNKNOWN", found=1, checked=1, unknown=1,
-                evidence="QA2: source=Assets/Scripts/A.cs L12 blob=aaa; "
-                         "context=referent unknown; negative=missing target"),
+                evidence="QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+                         "; lines=L12; context=referent unknown; negative=missing target; "
+                         "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN"),
             self.payload[1],
         ])
         with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
@@ -138,6 +141,30 @@ class GateTests(unittest.TestCase):
                           (self.root / path).read_text(encoding="utf-8")):
             errors, warnings, _ = self.check(base_ref="HEAD^", enforce_changed=True)
         self.assertEqual(errors, [])
+
+    def test_fake_complete_pass_with_unchecked_candidates_fails(self):
+        ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=reviewed; negative=Build(null); "
+              "verified=1; total=1; RU_EN=checked; outcome=PASS")
+        self.write(2, [
+            row(self.paths[0], "PASS", found=2, checked=1, evidence=ev),
+            self.payload[1],
+        ])
+        errors, _, report = self.check()
+        self.assertTrue(any("PASS not all source candidates" in e for e in errors))
+        self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_valid_full_pass_with_qa2_is_counted(self):
+        ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=verified in caller; negative=Build(null); "
+              "verified=1; total=1; RU_EN=checked; outcome=PASS")
+        self.write(2, [
+            row(self.paths[0], "PASS", found=1, checked=1, evidence=ev),
+            self.payload[1],
+        ])
+        errors, _, report = self.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(report["semantic_pass_source_count"], 1)
 
     def test_independent_disagreement_is_reported(self):
         self.write(1, [
