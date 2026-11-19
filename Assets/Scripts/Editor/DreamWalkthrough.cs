@@ -39,7 +39,9 @@ namespace Sinbinder.EditorTools
         private static bool _riseShot;
         private static float _skipAt = -1f;
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
-        private static bool _risenShot;
+        private static bool _risenShot, _bridgeUpShot, _leverOrdered, _leverByRun, _leverHintShot;
+        private static string _lastAim = "";
+        private static float _legsAt = -10f, _leverOrderAt = -1f, _lowSince = -1f;
         private static string NL => Environment.NewLine;
 
         static DreamWalkthrough()
@@ -139,10 +141,69 @@ namespace Sinbinder.EditorTools
             bool poke = now - _lastPoke > 0.5f;
             if (poke) _lastPoke = now;
 
+            // Стрелка к месту шага (19.11): куда она нацелена — в отчёт при каждой смене.
+            if (UI.TaskList.Aimed != _lastAim) { _lastAim = UI.TaskList.Aimed; Write("  [СТРЕЛКА] " + (_lastAim == "" ? "нет" : _lastAim)); }
             CourtShots(now);
             FlightShot(dream, now);
             AnimateAll(now);
 
+            // Только мост (отладка этапа): суд проматывается, конец — когда поднятый опустил мост.
+            bool untilBridge = Environment.GetEnvironmentVariable("SINBINDER_UNTIL") == "bridge";
+            if (untilBridge && SoulCourt.Sitting && poke) UI.Letterbox.Instance?.SkipAll();
+            if (untilBridge && (_leverOrdered || _leverByRun) && !DreamRoad.BridgeRaised)
+            {
+                // Лёг — и по настилу снова можно пройти (вырез навмеша снят). Ждём, пока ляжет целиком:
+                // под судом мир стоит, и настил замирает на полпути.
+                if (!DreamRoad.BridgeFullyDown) return;
+                if (_lowSince < 0f) _lowSince = now;
+                if (now - _lowSince < 1f) return;
+                var across = new UnityEngine.AI.NavMeshPath();
+                UnityEngine.AI.NavMesh.SamplePosition(DreamRoad.BridgeWestEnd + new Vector3(-2f, 0f, 0f), out var wa, 3f, UnityEngine.AI.NavMesh.AllAreas);
+                UnityEngine.AI.NavMesh.SamplePosition(DreamRoad.LeverStand, out var ea, 3f, UnityEngine.AI.NavMesh.AllAreas);
+                UnityEngine.AI.NavMesh.CalculatePath(wa.position, ea.position, UnityEngine.AI.NavMesh.AllAreas, across);
+                float len = 0f;
+                for (int i = 0; i + 1 < across.corners.Length; i++) len += Vector3.Distance(across.corners[i], across.corners[i + 1]);
+                End(across.status == UnityEngine.AI.NavMeshPathStatus.PathComplete && len < 30f,
+                    $"мост опустил {(_leverByRun ? "прогон (душа не пошла; рычаг ей не поддался — верно)" : "поднятый")} (стадия {stage}); "
+                    + $"путь по мосту: {across.status}, {len:F0} м");
+                return;
+            }
+            if (untilBridge && (stage == "Jars" || stage == "Return"))
+            {
+                if (_step != "ждём мост")
+                {
+                    // Ещё раз к рычагу — как игрок после проверки: провожание кончается, решает душа.
+                    Go("ждём мост");
+                    _leverOrderAt = now + 0.6f;   // провожание к камню начинается кадром позже смены шага
+                }
+                var z = dream.Zombie;
+                if (_leverOrderAt > 0f && now > _leverOrderAt && z != null && !z.IsDead)
+                {
+                    _leverOrderAt = -1f;
+                    z.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
+                    Write("  приказ к рычагу: " + DreamTutorialDirector.Legs(z));
+                }
+                {
+                    // Отказ души — не поломка рычага: поломка — когда решил исполнить, а мост лежит поднятым.
+                    var mind = z != null ? z.GetComponent<Sinbinder.AOS.AOSWarriorWrapper>() : null;
+                    var d = mind != null && mind.LastContext != null ? mind.LastDecisionDetail : (Sinbinder.AOS.Decision?)null;
+                    bool obeys = d.HasValue && !d.Value.RefusedCommand && !d.Value.Hesitated && d.Value.Action == Sinbinder.AOS.ActionType.ObeyCommand;
+                    // Не пошла за 12 с — рычаг тянет прогон: проверить сам мост (лёг ли, открылся ли путь).
+                    if (!obeys && !_leverByRun && now - _stepAt > 12f && DreamRoad.Instance != null)
+                    {
+                        _leverByRun = true;
+                        Write($"  душа не пошла ({(d.HasValue ? d.Value.Action.ToString() : "нет решения")}) — рычаг тянет прогон");
+                        DreamRoad.Instance.PullLever("прогон");
+                    }
+                    if (now - _stepAt > 45f)
+                    {
+                        End(false, $"мост не опустили за 45 с; решение души: {(d.HasValue ? d.Value.Action.ToString() : "нет")}"
+                            + (obeys ? " — РЫЧАГ НЕ СРАБОТАЛ" : "") + "; " + DreamTutorialDirector.Legs(z));
+                        return;
+                    }
+                }
+                return;
+            }
             switch (stage)
             {
                 case "Approach":
@@ -227,8 +288,45 @@ namespace Sinbinder.EditorTools
                         Snap("сон — убийцы вернулись");
                         Write($"  поднятый: {dream.Zombie.DisplayName} ({dream.Zombie.Soul.Sin}); убийцы в "
                             + $"{Vector3.Distance(dream.Zombie.transform.position, dream.Killers[0].transform.position):F1} м");
-                        // Отступить — назад по дороге, от убийц.
-                        dream.Zombie.IssueCommand(CommandKind.FallBack, dream.Zombie.transform.position + new Vector3(0f, 0f, -7f));
+                    }
+                    break;
+                case "Chase":
+                    // Убийцы бегут к мосту (docs/68, этап 2–3); Греховод идёт следом до настила.
+                    if (_step != "погоня")
+                    {
+                        Go("погоня");
+                        dream.Hero.GetComponent<UnitMover>()?.CommandMove(DreamRoad.BridgeWestEnd + new Vector3(-2f, 0f, 0f));
+                    }
+                    if (now - _legsAt > 3f)
+                    {
+                        _legsAt = now;
+                        Write("    погоня: " + DreamTutorialDirector.Legs(dream.Killers.Count > 0 ? dream.Killers[0] : null)
+                            + " | поднятый " + DreamTutorialDirector.Legs(dream.Zombie));
+                    }
+                    if (!_bridgeUpShot && DreamRoad.BridgeRaised && DreamRoad.BridgeFullyUp)
+                    {
+                        _bridgeUpShot = true;
+                        ShotFrom("сон — мост подняли", new Vector3(-73f, 8.5f, 41f), new Vector3(-53f, 2.4f, 28.5f), clear: false);
+                    }
+                    break;
+                case "Bridge":
+                    if (_step != "мост")
+                    {
+                        Go("мост");
+                        Write($"  поднятый за рекой: {(dream.Zombie != null ? $"{dream.Zombie.transform.position.x:F1}; {dream.Zombie.transform.position.z:F1}" : "нет")}");
+                        if (!_bridgeUpShot)
+                        {
+                            _bridgeUpShot = true;
+                            ShotFrom("сон — мост подняли", new Vector3(-73f, 8.5f, 41f), new Vector3(-53f, 2.4f, 28.5f), clear: false);
+                        }
+                    }
+                    // Как видит игрок: урок у поднятого и стрелка на рычаг (19.11) — до приказа.
+                    if (!_leverHintShot && now - _stepAt > 0.7f) { _leverHintShot = true; Snap("сон — мост поднят, стрелка на рычаг"); Write($"  метка: нацелена «{UI.TaskList.Aimed}», видна «{UI.TaskList.Marked}»"); }
+                    // Приказ к рычагу — как игрок: ПКМ по рычагу. Через секунду: сон ждёт приказа после отметки.
+                    if (!_leverOrdered && now - _stepAt > 1f && dream.Zombie != null)
+                    {
+                        _leverOrdered = true;
+                        dream.Zombie.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
                     }
                     break;
                 case "Deciding":
@@ -280,7 +378,7 @@ namespace Sinbinder.EditorTools
                     if (!_retestIssued && _foreseeShot && now - _stepAt > 1f && dream.Zombie != null)
                     {
                         _retestIssued = true;
-                        dream.Zombie.IssueCommand(CommandKind.FallBack, dream.Zombie.transform.position + new Vector3(0f, 0f, -6f));
+                        dream.Zombie.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
                     }
                     var box = UI.Letterbox.Instance;
                     if (!_retestShot && box != null && box.Shown && box.Typed && now - _stepAt > 1.5f)
@@ -302,6 +400,7 @@ namespace Sinbinder.EditorTools
                     {
                         Go("управление");
                         Write($"  тот же приказ без убийц: {DreamTutorialDirector.RetestResult ?? "не проверялся"}");
+                        Write($"  мост: {(DreamRoad.BridgeRaised ? "поднят" : "опущен")}");
                         if (_skipAt > 0f)
                         {
                             Write($"  [ПРОПУСК] сцена ушла за {now - _skipAt:F2} с; полосы {(UI.Letterbox.Instance != null && UI.Letterbox.Instance.Covering ? "ещё на экране" : "ушли")}");
@@ -525,6 +624,8 @@ namespace Sinbinder.EditorTools
                 case 5:
                     if (now - _fpAt < 0.3f) return false;
                     if (view.FirstPersonNow) view.Switch();
+                    // Назад к чучелу: убийцы встают у стоянки, погоня — к мосту (кадр души в руке — у колонн).
+                    Warp(dream.Hero, DreamRoad.DummyFront(1.7f));
                     _fpStep = 6;
                     return true;
                 default:

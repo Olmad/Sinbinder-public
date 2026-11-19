@@ -35,7 +35,8 @@ namespace Sinbinder.Gameplay
 
         public const float ChasmX = -21f, ChasmHalf = 2.6f, LogHalf = 1.4f, RiverHalf = 2.8f;
         public const float PlazaWest = ChasmX + ChasmHalf, PlazaEast = -7.2f, PlazaSouth = -28f, PlazaNorth = -20f;
-        private const float DeckWest = -63.6f, DeckEast = -50.8f, DeckHalf = 2f;
+        // Настил 8,2 м над рекой в 5,6 м (до 19.11 — 12,8 м: поднятый стоял стеной в 12 м посреди кадра).
+        private const float DeckWest = -61.4f, DeckEast = -53.2f, DeckHalf = 2f;
         private const float MapWest = -136f, MapEast = -6f, MapSouth = -46f, MapNorth = 46f, ChasmNorth = 72f;
 
         /// <summary>Главный путь: звезда → развилка → мост → поворот к засаде → ряд бревна → старая дорога → ворота.</summary>
@@ -421,8 +422,26 @@ namespace Sinbinder.Gameplay
             foreach (float s in new[] { -1f, 1f })
                 Piece(root, PrimitiveType.Cube, "Столб ворота", new Vector3(gx, 2.1f, BridgeAt.z + s * (DeckHalf + 0.35f)), new Vector3(0.4f, 4.2f, 0.4f), wood);
             Piece(root, PrimitiveType.Cube, "Перекладина ворота", new Vector3(gx, 4.25f, BridgeAt.z), new Vector3(0.45f, 0.4f, DeckHalf * 2f + 1.3f), wood);
-            foreach (float s in new[] { -1f, 1f })
-                Rod(root, "Цепь моста", new Vector3(gx, 4.1f, BridgeAt.z + s * (DeckHalf - 0.3f)), new Vector3(DeckWest + 0.4f, 0.3f, BridgeAt.z + s * (DeckHalf - 0.3f)), 0.05f, iron);
+            // Цепи держат настил за треть длины: поднятый мост висит на них почти ровно.
+            for (int i = 0; i < 2; i++)
+            {
+                float z = BridgeAt.z + (i == 0 ? -1f : 1f) * (DeckHalf - 0.3f);
+                var end = new Vector3(DeckEast - 4.2f, 0.3f, z);
+                _chainTop[i] = new Vector3(gx, 4.1f, z);
+                _chainEnd[i] = _bridge.InverseTransformPoint(end);
+                _chains[i] = Rod(root, "Цепь моста", _chainTop[i], end, 0.05f, iron).transform;
+            }
+            // Поднят — над рекой прохода нет: навмеш вырезается, пока настил не ляжет обратно.
+            var gap = new GameObject("Мост поднят — прохода нет").transform;
+            gap.SetParent(root, false);
+            float gapW = BridgeAt.x - RiverHalf - 0.4f, gapE = BridgeAt.x + RiverHalf + 0.8f;
+            gap.position = new Vector3((gapW + gapE) * 0.5f, 0.6f, BridgeAt.z);
+            _gap = gap.gameObject.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            _gap.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+            _gap.size = new Vector3(gapE - gapW, 2.4f, DeckHalf * 2f + 0.8f);
+            _gap.carving = true;
+            _gap.carveOnlyStationary = false;
+            _gap.enabled = false;
             var lever = new GameObject("Рычаг моста").transform;
             lever.SetParent(root, false);
             lever.position = LeverAt;
@@ -622,6 +641,134 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Тонкий стержень (цепь, жердь) от a до b.</summary>
+        // ── подъёмный мост (этап 2–3, 19.11) ──
+        // Рычаг общий для всех: кто дошёл до него по приказу (и ноги ведут к рычагу) — тот и тянет.
+        // Убийц ведёт сон — они тянут через PullLever. Мост поднят — над рекой навмеш вырезан.
+        public const float BridgeLiftDeg = 72f;
+        public static readonly Vector3 LeverStand = LeverAt + new Vector3(0f, 0f, -1.1f);
+        public static readonly Vector3 BridgeWestEnd = new Vector3(DeckWest, 0f, BridgeAt.z);
+        private readonly Transform[] _chains = new Transform[2];
+        private readonly Vector3[] _chainTop = new Vector3[2], _chainEnd = new Vector3[2];
+        private UnityEngine.AI.NavMeshObstacle _gap;
+        private float _bridgeLift, _bridgeGoal, _leverSwing, _nearAt;
+        private Warrior[] _near = new Warrior[0];
+        private readonly System.Collections.Generic.Dictionary<Warrior, float> _leverServed =
+            new System.Collections.Generic.Dictionary<Warrior, float>();
+        private readonly System.Collections.Generic.Dictionary<Warrior, (float issued, AOS.DecisionContext ctx)> _leverSeen =
+            new System.Collections.Generic.Dictionary<Warrior, (float issued, AOS.DecisionContext ctx)>();
+
+        public static bool BridgeRaised => Instance != null && Instance._bridgeGoal > 0.5f;
+        public static bool BridgeFullyUp => Instance != null && Instance._bridgeLift > 0.98f;
+        public static bool BridgeFullyDown => Instance == null || (Instance._bridgeGoal < 0.5f && Instance._bridgeLift < 0.02f);
+        /// <summary>Над рекой (под настилом) — тут стоящему мост не поднять.</summary>
+        public static bool OnRiverSpan(Vector3 p)
+            => p.x > BridgeAt.x - RiverHalf - 0.6f && p.x < BridgeAt.x + RiverHalf + 1.5f && Mathf.Abs(p.z - BridgeAt.z) < DeckHalf + 0.8f;
+        /// <summary>Перешёл реку по мосту — на восточном берегу.</summary>
+        public static bool PastRiver(Vector3 p) => p.x > BridgeAt.x + RiverHalf + 1.5f;
+        // 2,4 м: ноги встают у колоды в 1,8 м от её середины (прогон 19.11: 1,80 — «не дошёл»).
+        public static bool AtLever(Vector3 p, float r = 2.4f) { var d = p - LeverAt; d.y = 0f; return d.magnitude < r; }
+
+        /// <summary>Лесная тропа (ветка отказа): от развилки серпантином в обход реки и озера — к бревну.</summary>
+        private static readonly Vector2[] ForestTrail =
+        {
+            new Vector2(-70f, 29f), new Vector2(-70f, 1f), new Vector2(-124f, 1f), new Vector2(-124f, -17f),
+            new Vector2(-67f, -17f), new Vector2(-67f, -34f), new Vector2(-31f, -34f),
+        };
+
+        /// <summary>
+        /// Куда идти в обход реки, когда мост поднят: с дороги у стоянки — в начало лесной тропы, с тропы — к её
+        /// следующему повороту. null — уже за рекой и озером: к цели прямо.
+        /// </summary>
+        public static Vector3? Detour(Vector3 p)
+        {
+            if (p.x > -36f) return null;   // восточнее озера и реки
+            var q = new Vector2(p.x, p.z);
+            int best = -1;
+            float bestD = 4.5f;
+            for (int i = 0; i + 1 < ForestTrail.Length; i++)
+            {
+                var a = ForestTrail[i]; var ab = ForestTrail[i + 1] - a;
+                float t = Mathf.Clamp01(Vector2.Dot(q - a, ab) / ab.sqrMagnitude);
+                float d = (a + ab * t - q).magnitude;
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            if (best >= 0)
+            {
+                int next = best + 1;
+                if ((ForestTrail[next] - q).magnitude < 3.5f && next + 1 < ForestTrail.Length) next++;
+                return new Vector3(ForestTrail[next].x, 0f, ForestTrail[next].y);
+            }
+            if (p.x < BridgeAt.x - RiverHalf && p.z > 15f) return new Vector3(ForestTrail[0].x, 0f, ForestTrail[0].y - 6f);
+            return null;
+        }
+
+        public void PullLever(string who)
+        {
+            _bridgeGoal = _bridgeGoal > 0.5f ? 0f : 1f;
+            Debug.Log($"[СОН] Рычаг моста: {who} — мост {(_bridgeGoal > 0.5f ? "поднимается" : "опускается")}");
+        }
+
+        private void BridgeTick(float dt)
+        {
+            if (_bridge == null) return;
+            LeverCalls();
+            _leverSwing = Mathf.MoveTowards(_leverSwing, _bridgeGoal, dt / 0.45f);
+            _leverArm.rotation = Quaternion.Euler(Mathf.Lerp(-35f, 35f, Mathf.SmoothStep(0f, 1f, _leverSwing)), 0f, 0f);
+            // Настил трогается, когда рычаг дошёл.
+            if (Mathf.Abs(_leverSwing - _bridgeGoal) < 0.01f)
+                _bridgeLift = Mathf.MoveTowards(_bridgeLift, _bridgeGoal, dt / 2.6f);
+            _bridge.rotation = Quaternion.Euler(0f, 0f, -BridgeLiftDeg * Mathf.SmoothStep(0f, 1f, _bridgeLift));
+            for (int i = 0; i < _chains.Length; i++)
+                if (_chains[i] != null) PlaceRod(_chains[i], _chainTop[i], _bridge.TransformPoint(_chainEnd[i]));
+            bool cut = _bridgeGoal > 0.5f || _bridgeLift > 0.02f;
+            if (_gap != null && _gap.enabled != cut) _gap.enabled = cut;
+        }
+
+        private void LeverCalls()
+        {
+            if (Time.time > _nearAt)
+            {
+                _nearAt = Time.time + 0.8f;
+                _near = FindObjectsByType<Warrior>(FindObjectsSortMode.None);
+            }
+            foreach (var w in _near)
+            {
+                if (w == null || w.IsDead || !w.HasCommand) continue;
+                var c = w.Command;
+                if (!AtLever(c.Point, 3f)) continue;   // приказ не к рычагу
+                if (_leverServed.TryGetValue(w, out float served) && Mathf.Approximately(served, c.IssuedAt)) continue;
+                // Тянет только тот, чья душа после приказа решила его исполнить (прогон 19.11: стоявший
+                // у рычага опускал мост раньше, чем решил, — до суда). Решение — свежее, не прежнее.
+                var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
+                if (mind != null)
+                {
+                    if (!_leverSeen.TryGetValue(w, out var seen) || !Mathf.Approximately(seen.issued, c.IssuedAt))
+                    {
+                        _leverSeen[w] = (c.IssuedAt, mind.LastContext);
+                        continue;
+                    }
+                    var d = mind.LastDecisionDetail;
+                    if (mind.LastContext == null || mind.LastContext == seen.ctx || d.RefusedCommand || d.Hesitated
+                        || d.Action != AOS.ActionType.ObeyCommand) continue;
+                }
+                if (!AtLever(w.transform.position)) continue;   // ещё не дошёл
+                // Ноги ведут не к рычагу — душа решила другое (гонится, отступает): мимо рычага не тянут.
+                var legs = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (legs != null && legs.enabled && legs.hasPath && !AtLever(legs.destination, 3f)) continue;
+                _leverServed[w] = c.IssuedAt;
+                PullLever(w.DisplayName);
+            }
+        }
+
+        private static void PlaceRod(Transform rod, Vector3 a, Vector3 b)
+        {
+            rod.position = (a + b) * 0.5f;
+            rod.rotation = Quaternion.FromToRotation(Vector3.up, b - a);
+            var s = rod.localScale;
+            s.y = (b - a).magnitude * 0.5f;
+            rod.localScale = s;
+        }
+
         private static GameObject Rod(Transform parent, string name, Vector3 a, Vector3 b, float thick, Material m)
         {
             var go = Piece(parent, PrimitiveType.Cylinder, name, (a + b) * 0.5f, new Vector3(thick, (b - a).magnitude * 0.5f, thick), m, false);

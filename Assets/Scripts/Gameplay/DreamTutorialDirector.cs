@@ -40,7 +40,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _campScene = "Prologue_Camp";
 
         // Порядок шагов — порядок сна (17.11: уроки глазами — до убийц).
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Deciding, Battle, Retest, Jars, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Chase, Bridge, Deciding, Battle, Retest, Jars, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -113,8 +113,12 @@ namespace Sinbinder.Gameplay
             {
                 case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
                     return DreamRoad.Progress(DreamRoad.DummyAt) + 3f;
-                case Stage.Standoff: case Stage.Deciding: case Stage.Battle: case Stage.Retest:
-                    return DreamRoad.Progress(DreamRoad.ForkAt) - 4f;
+                case Stage.Standoff: case Stage.Chase: case Stage.Bridge: case Stage.Deciding:
+                    // До моста: на настил Греховод не ступает — мост поднимают у него перед носом.
+                    return DreamRoad.Progress(DreamRoad.BridgeWestEnd) - 0.8f;
+                case Stage.Battle: case Stage.Retest:
+                    // Бой — у засады за мостом; мост поднят — в обход лесом, до бревна.
+                    return DreamRoad.Progress(DreamRoad.LogAt) - 3f;
                 case Stage.Jars: return DreamRoad.Progress(DreamRoad.ShrineAt) + 3f;
                 case Stage.Return: case Stage.Finished: return DreamRoad.RouteLength;
                 default: return DreamRoad.Progress(DreamRoad.DummyAt) - 7f;
@@ -161,6 +165,10 @@ namespace Sinbinder.Gameplay
         private float _standoffReal, _harvestSince;
         private bool _autoOrdered;
         private SoulData _fallbackSoul;
+        // Мост (этап 2–3 карты, 19.11): убийцы бегут, мост поднимают, приказ — к рычагу.
+        private bool _fleeing;
+        private float _fleeSince;
+        private readonly HashSet<Warrior> _armed = new HashSet<Warrior>();
 
         // Круг обучения на каждом шаге к суду (автор, 06.11: «у нас есть круг
         // обучения. Возможно, он может решить почти все проблемы»).
@@ -227,23 +235,22 @@ namespace Sinbinder.Gameplay
                     shown = Lesson.Guide(_zombie.transform.position, FirstOrderHint,
                         () => _stage != Stage.Command || _orderedAt >= 0f || OrderedSinceMark());
                     break;
-                case Stage.Standoff:
-                    if (_zombie == null || _killers.Count == 0) return;   // убийцы ещё не встали
+                case Stage.Bridge:
+                    if (_zombie == null || _zombie.IsDead) return;
                     shown = Lesson.Guide(_zombie.transform.position,
                         () => !Picked()
-                            ? (Loc.T("ЛКМ"), Grammar.Pick(g, Loc.T("Его убийцы вернулись."), Loc.T("Её убийцы вернулись."))
+                            ? (Loc.T("ЛКМ"), Grammar.Pick(g, Loc.T("Он за рекой, у рычага моста."), Loc.T("Она за рекой, у рычага моста."))
                                              + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
-                            : ("X", Grammar.Pick(g, Loc.T("X, затем щелчок по земле позади него — приказ отступить."),
-                                                    Loc.T("X, затем щелчок по земле позади неё — приказ отступить."))
+                            : (Loc.T("ПКМ"), Loc.T("Правой кнопкой — по рычагу: приказ опустить мост.")
                                   + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
-                        () => _stage != Stage.Standoff || OrderedSinceMark());
+                        () => _stage != Stage.Bridge || OrderedSinceMark());
                     break;
                 case Stage.Retest:
                     if (_zombie == null) return;
                     shown = Lesson.Guide(_zombie.transform.position,
                         () => !Picked()
                             ? (Loc.T("ЛКМ"), Loc.T("Убийц больше нет.") + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
-                            : ("X", Loc.T("Тот же приказ: X и щелчок позади.")
+                            : (Loc.T("ПКМ"), Loc.T("Тот же приказ: правой кнопкой — по рычагу.")
                                   + "\n" + Loc.T("Причины больше нет — что решит душа теперь?")),
                         () => _stage != Stage.Retest || OrderedSinceMark());
                     break;
@@ -475,12 +482,23 @@ namespace Sinbinder.Gameplay
         {
             if (_zombie == null || _zombie.IsDead) return;
             Hold(_zombie, true);
+            MarkCommand();
             _escorting = true;
         }
 
         private void Escort()
         {
             if (_zombie == null || _zombie.IsDead) { _escorting = false; return; }
+            // Приказ игрока сильнее провожания: ум проснулся и решает (к рычагу — тоже приказ).
+            if (OrderedSinceMark())
+            {
+                // Путь провожания — прочь: решит стоять — стоит, а не идёт по старому пути за Греховодом.
+                var stale = _zombie.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                if (stale != null && stale.enabled && stale.isOnNavMesh) stale.ResetPath();
+                _escorting = false;
+                Hold(_zombie, false);
+                return;
+            }
             if (Time.unscaledTime < _escortAt) return;
             _escortAt = Time.unscaledTime + 0.4f;
             var legs = _zombie.GetComponent<UnityEngine.AI.NavMeshAgent>();
@@ -639,25 +657,23 @@ namespace Sinbinder.Gameplay
                     break;
                 case Stage.Standoff:
                     if (_zombie == null || _zombie.IsDead) { StartBattle("Первый воин пал."); break; }
-                    if (_killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
-                    {
-                        // Игрок сразил их сам раньше приказа — тоже выбор; миг отказа ушёл.
-                        Hold(_zombie, false);
-                        Set(Stage.Jars, "Убийцы пали. " + JarsLine);
-                        break;
-                    }
+                    // Узнали — и бегут: от мёртвого, которого сами оставили на дороге.
+                    if (_killers.Count > 0 && !_fleeing && Time.time - _standoffSince > 3.2f) Flee();
+                    break;
+                case Stage.Chase:
+                    Chase();
+                    break;
+                case Stage.Bridge:
+                    if (_zombie == null || _zombie.IsDead) { StartBattle("Первый воин пал."); break; }
                     // Игрок медлит — приказ отдаёт сам Греховод: суд важнее урока клавиш.
-                    if (!_autoOrdered && _killers.Count > 0 && !OrderedSinceMark()
+                    if (!_autoOrdered && !OrderedSinceMark()
                         && Time.unscaledTime - _standoffReal > (Lesson.Holding ? 45f : 14f) && !SoulCourt.Sitting)
                     {
                         _autoOrdered = true;
-                        Vector3 away = _zombie.transform.position - _killers[0].transform.position;
-                        away.y = 0f;
-                        away = away.sqrMagnitude < 0.01f ? Vector3.back : away.normalized;
-                        Log("Греховод сам велит ему отступить.");
-                        _zombie.IssueCommand(CommandKind.FallBack, _zombie.transform.position + away * 6f);
+                        Log("Греховод сам велит опустить мост.");
+                        _zombie.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
                     }
-                    if (_killers.Count > 0 && OrderedSinceMark())
+                    if (OrderedSinceMark())
                     {
                         _courtOrder = _zombie.Command.Kind;
                         Mark("приказ при убийцах: " + _courtOrder);
@@ -692,21 +708,23 @@ namespace Sinbinder.Gameplay
                 }
                 case Stage.Battle:
                     KeepHeroAlive();
+                    ArmArrived();
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
                     {
-                        if (_zombie != null && !_zombie.IsDead && RefusalResult != "послушался")
+                        bool refused = RefusalResult == "отказал" || RefusalResult == "колебался";
+                        if (_zombie != null && !_zombie.IsDead && refused)
                         {
                             _retestSince = Time.time;
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
-                            Set(Stage.Retest, "Убийц больше нет. Отдай ему тот же приказ — отступить (X).");
+                            Set(Stage.Retest, "Убийц больше нет. Отдайте ему тот же приказ — ПКМ по рычагу.");
                         }
                         else
                         {
                             // Пал в бою — сказать, а не молча перейти к управлению: проверка тем же
                             // приказом пропала не сама, её съело его решение (прогон 06.11: кинулся мстить).
-                            if (_zombie != null && _zombie.IsDead && RefusalResult != "послушался")
+                            if (_zombie != null && _zombie.IsDead && refused)
                                 Log(Grammar.Pick(_zombie.Gender, Loc.T("Он пал. Своё решение стоило ему второй жизни."),
                                                                  Loc.T("Она пала. Своё решение стоило ей второй жизни.")));
                             Set(Stage.Jars, JarsLine);
@@ -945,8 +963,121 @@ namespace Sinbinder.Gameplay
             _autoOrdered = false;
             MarkCommand();
             Hold(_zombie, true);
-            Set(Stage.Standoff, "Его убийцы вернулись. Прикажи ему отступить: выдели его, нажми X и щёлкни по земле позади (или Shift + ПКМ).");
+            _fleeing = false;
+            Set(Stage.Standoff, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
+                "Его убийцы вернулись.", "Её убийцы вернулись."));
             StartCoroutine(ReleaseKillers());
+        }
+
+        /// <summary>
+        /// Убийцы узнали того, кого оставили на дороге, — и бегут (замысел автора, docs/68): один к рычагу
+        /// моста, другой к засаде за рекой. Поднятого отпускают: гнаться или нет — решает его душа.
+        /// </summary>
+        private void Flee()
+        {
+            _fleeing = true;
+            _fleeSince = Time.time;
+            for (int i = 0; i < _killers.Count; i++)
+            {
+                var k = _killers[i];
+                if (k == null || k.IsDead) continue;
+                Hold(k, true);   // ум молчит — ведут ноги
+                Run(k, i == 0 ? DreamRoad.LeverStand : DreamRoad.AmbushAt + new Vector3(1.4f, 0f, 1.0f));
+            }
+            // Прежний приказ (первый урок) — снят: иначе душа «отказывает» давно исполненному приказу.
+            if (_zombie != null) _zombie.ClearCommand();
+            Hold(_zombie, false);
+            Mark("убийцы бегут");
+            Set(Stage.Chase, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
+                "Убийцы бегут к мосту. Гнаться ли за ними — решает его душа.",
+                "Убийцы бегут к мосту. Гнаться ли за ними — решает её душа."));
+        }
+
+        /// <summary>Где и как идёт — для отчёта прогона.</summary>
+        public static string Legs(Warrior w)
+        {
+            if (w == null) return "нет";
+            var p = w.transform.position;
+            var legs = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            string s = $"{w.DisplayName} ({p.x:F1}; {p.z:F1})" + (w.IsDead ? " мёртв" : "");
+            if (legs == null) return s + ", ног нет";
+            if (!legs.enabled || !legs.isOnNavMesh) return s + $", ноги {(legs.enabled ? "вне навмеша" : "выключены")}";
+            return s + $", стоп {legs.isStopped}, путь {(legs.hasPath ? legs.pathStatus.ToString() : "нет")}, "
+                     + $"до цели {legs.remainingDistance:F1}, цель ({legs.destination.x:F1}; {legs.destination.z:F1}), скорость {legs.velocity.magnitude:F1}";
+        }
+
+        private static void Run(Warrior w, Vector3 to)
+        {
+            var legs = w != null ? w.GetComponent<UnityEngine.AI.NavMeshAgent>() : null;
+            if (legs == null || !legs.enabled || !legs.isOnNavMesh) return;
+            legs.isStopped = false;
+            legs.SetDestination(to);
+        }
+
+        /// <summary>
+        /// Погоня к мосту. Тот, кто у рычага, поднимает мост, когда поднятый проскочил (или не погнался)
+        /// и над рекой никого: хозяин остаётся на этом берегу, воин — на том.
+        /// </summary>
+        private void Chase()
+        {
+            var road = DreamRoad.Instance;
+            var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            bool alive = _zombie != null && !_zombie.IsDead;
+            if (road == null) { StartBattle("Убийцы идут."); return; }
+            var puller = _killers.Count > 0 ? _killers[0] : null;
+            if (!DreamRoad.BridgeRaised)
+            {
+                bool there = puller != null && !puller.IsDead && DreamRoad.AtLever(puller.transform.position);
+                if (!there && Time.time - _fleeSince < 25f) return;
+                if (!there) Debug.LogWarning("[СОН QA] Убийца не дошёл до рычага за 25 с: " + Legs(puller));
+                bool crossed = alive && DreamRoad.PastRiver(_zombie.transform.position);
+                if (alive && !crossed && Time.time - _fleeSince < 16f) return;
+                if ((alive && DreamRoad.OnRiverSpan(_zombie.transform.position)) || DreamRoad.OnRiverSpan(_hero.transform.position)) return;
+                road.PullLever(puller != null ? puller.DisplayName : "убийца");
+                if (puller != null) Run(puller, DreamRoad.AmbushAt + new Vector3(-1.4f, 0f, -1.0f));
+                Mark("мост подняли");
+                return;
+            }
+            if (!DreamRoad.BridgeFullyUp) return;
+            if (alive && DreamRoad.PastRiver(_zombie.transform.position))
+            {
+                _standoffReal = Time.unscaledTime;
+                _autoOrdered = false;
+                MarkCommand();
+                // В кадре — оба берега: Греховод у настила, воин у рычага (кадр 19.11: вид остался у стоянки,
+                // и поднятого, которого урок просит выделить, на экране не было).
+                var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (eye != null) eye.Overlook(Vector3.Lerp(_zombie.transform.position, _hero.transform.position, 0.5f));
+                Set(Stage.Bridge, Grammar.Pick(g,
+                    "Мост подняли у него за спиной. Он за рекой, у рычага. Прикажите ему опустить мост: выделите его и ПКМ по рычагу.",
+                    "Мост подняли у неё за спиной. Она за рекой, у рычага. Прикажите ей опустить мост: выделите её и ПКМ по рычагу."));
+                return;
+            }
+            // Не погнался — тоже его решение: суда нет, мост поднят, к засаде — лесом.
+            RefusalResult = alive ? "не погнался" : null;
+            Mark("не погнался");
+            _battleStarted = true;
+            Set(Stage.Battle, alive
+                ? Grammar.Pick(g, "Он не погнался — остался с вами. Мост поднят: к засаде — в обход, лесом.",
+                                  "Она не погналась — осталась с вами. Мост поднят: к засаде — в обход, лесом.")
+                : "Мост поднят. К засаде — в обход, лесом.");
+        }
+
+        /// <summary>Добежавшие до засады (или стоящие) убийцы — снова обычные противники.</summary>
+        private void ArmArrived()
+        {
+            foreach (var k in _killers)
+            {
+                if (k == null || k.IsDead || _armed.Contains(k)) continue;
+                var legs = k.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                bool running = legs != null && legs.enabled && legs.isOnNavMesh && !legs.isStopped
+                    && (legs.pathPending || legs.remainingDistance > 0.6f);
+                if (running) continue;
+                _armed.Add(k);
+                Hold(k, false);
+                var hp = k.GetComponent<Damageable>();
+                if (hp != null) hp.Initialize(9f, 0f);   // теперь — обычные противники
+            }
         }
 
         private IEnumerator ReleaseKillers()
@@ -1048,20 +1179,17 @@ namespace Sinbinder.Gameplay
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
             if (d.RefusedCommand || d.Hesitated)
                 StartBattle(Grammar.Pick(g,
-                    "Он решил сам. Убери причину — срази убийц. Или искуси его: подойди и нажми Z.",
-                    "Она решила сама. Убери причину — срази убийц. Или искуси её: подойди и нажми Z."));
+                    "Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.",
+                    "Она решила сама — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом."));
             else
-                StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
+                StartBattle(Grammar.Pick(g, "Он идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады.",
+                                            "Она идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады."));
         }
 
+        /// <summary>Бой: убийцы становятся обычными противниками, добежав до засады (ArmArrived).</summary>
         private void StartBattle(string line)
         {
-            foreach (var k in _killers)
-            {
-                Hold(k, false);
-                var hp = k != null && !k.IsDead ? k.GetComponent<Damageable>() : null;
-                if (hp != null) hp.Initialize(9f, 0f);   // теперь — обычные противники
-            }
+            ArmArrived();
             if (_zombie != null) Hold(_zombie, false);
             _battleStarted = true;
             Set(Stage.Battle, line);
@@ -1194,6 +1322,7 @@ namespace Sinbinder.Gameplay
                       || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown);
             // Упёрся в черту шага — задача вспыхивает: сначала это.
             if (_nudgeAt != _nudgeSent) { _nudgeSent = _nudgeAt; UI.TaskList.Nudge(); }
+            PlaceNow();
             if (!quiet && _stage == Stage.Return)
             {
                 var prompt = SealPrompt();
@@ -1216,6 +1345,40 @@ namespace Sinbinder.Gameplay
 
         private float _nudgeSent = -10f;
 
+        /// <summary>
+        /// Стрелка к месту шага (автор, 19.11: «не забывай про подсказывающую стрелку»): метка задач, как
+        /// в лагере, — над местом его имя, вне кадра — у края со стрелкой. Мост поднят, а цель за рекой —
+        /// стрелка ведёт лесной тропой, от поворота к повороту.
+        /// </summary>
+        private void PlaceNow()
+        {
+            switch (_stage)
+            {
+                case Stage.Approach: Place(Loc.T("Умирающий"), _woundedAt, 1.2f, 3f); break;
+                case Stage.Practice: Place(Loc.T("Чучело"), DreamRoad.DummyAt, 2.0f, 2.4f); break;
+                case Stage.Chase: Place(Loc.T("Мост"), DreamRoad.BridgeWestEnd, 1.4f, 3f); break;
+                case Stage.Bridge: case Stage.Retest:
+                    // Приказ — через реку: стрелка на рычаг, в обход не ведёт.
+                    UI.TaskList.Place(Loc.T("Рычаг"), DreamRoad.LeverAt + Vector3.up * 2.1f, 0f);
+                    break;
+                case Stage.Battle: Place(Loc.T("Засада"), DreamRoad.AmbushAt, 1.6f, 6f); break;
+                case Stage.Jars: Place(Loc.T("Камень с банками"), DreamRoad.ShrineAt, 1.5f, 2.5f); break;
+                case Stage.Return:
+                    if (_hero != null && DreamRoad.OnSquare(_hero.transform.position)) UI.TaskList.Place(null, null);
+                    else Place(Loc.T("Ворота склепа"), new Vector3(0f, 0f, DreamRoad.GateZ), 3.5f, 6f);
+                    break;
+                default: UI.TaskList.Place(null, null); break;
+            }
+        }
+
+        private void Place(string word, Vector3 goal, float up, float near)
+        {
+            var bypass = DreamRoad.BridgeRaised && _hero != null && goal.x > DreamRoad.BridgeAt.x
+                ? DreamRoad.Detour(_hero.transform.position) : null;
+            if (bypass.HasValue) UI.TaskList.Place(Loc.T("Лесная тропа"), bypass.Value + Vector3.up * 1.5f, 0f);
+            else UI.TaskList.Place(word, goal + Vector3.up * up, near);
+        }
+
         /// <summary>Задача шага — коротко, клавиша в скобках, как задачи лагеря.</summary>
         private string TaskTitle()
         {
@@ -1232,9 +1395,11 @@ namespace Sinbinder.Gameplay
                 case Stage.WarriorMode: return Loc.T("Станьте Воином (V)");
                 case Stage.DrawWeapon: return Loc.T("Достаньте оружие (B)");
                 case Stage.Practice: return Loc.T("Ударьте чучело и закройтесь от ответа (ЛКМ, ПКМ)");
-                case Stage.Standoff: case Stage.Deciding: return Loc.T("Прикажите поднятому отступить (X)");
-                case Stage.Battle: return Loc.T("Отбейтесь от убийц");
-                case Stage.Retest: return Loc.T("Тот же приказ — без убийц (X)");
+                case Stage.Standoff: return Loc.T("Убийцы вернулись");
+                case Stage.Chase: return Loc.T("Идите к мосту");
+                case Stage.Bridge: case Stage.Deciding: return Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
+                case Stage.Battle: return DreamRoad.BridgeRaised ? Loc.T("Обойдите реку лесом — к засаде") : Loc.T("Отбейтесь от убийц");
+                case Stage.Retest: return Loc.T("Тот же приказ — без убийц (ПКМ по рычагу)");
                 case Stage.Jars: return Loc.T("Возьмите банку с камня у колонн (E, J, R)");
                 default: return null;
             }

@@ -13170,3 +13170,56 @@ msgstr "The crown seal is lit. Order a warrior onto the sword seal."
 
 msgid "Рядом павший страж. Нажмите E, чтобы поднять его."
 msgstr "A fallen guard is nearby. Press E to raise them."
+
+#. Сон: мост с рычагом и стрелка к месту (19.11)
+msgid "Он за рекой, у рычага моста."
+msgstr "He is across the river, by the bridge lever."
+
+msgid "Она за рекой, у рычага моста."
+msgstr "She is across the river, by the bridge lever."
+
+msgid "Правой кнопкой — по рычагу: приказ опустить мост."
+msgstr "Right-click the lever to order the bridge lowered."
+
+msgid "Тот же приказ: правой кнопкой — по рычагу."
+msgstr "The same order: right-click the lever."
+
+msgid "Убийцы вернулись"
+msgstr "The killers are back"
+
+msgid "Идите к мосту"
+msgstr "Go to the bridge"
+
+msgid "Прикажите опустить мост (ПКМ по рычагу)"
+msgstr "Order the bridge lowered (RMB on the lever)"
+
+msgid "Обойдите реку лесом — к засаде"
+msgstr "Go round the river through the forest to the ambush"
+
+msgid "Тот же приказ — без убийц (ПКМ по рычагу)"
+msgstr "The same order, without the killers (RMB on the lever)"
+
+msgid "Умирающий"
+msgstr "The dying man"
+
+msgid "Чучело"
+msgstr "Dummy"
+
+msgid "Мост"
+msgstr "Bridge"
+
+msgid "Рычаг"
+msgstr "Lever"
+
+msgid "Засада"
+msgstr "Ambush"
+
+msgid "Камень с банками"
+msgstr "Stone with jars"
+
+msgid "Ворота склепа"
+msgstr "Crypt gates"
+
+msgid "Лесная тропа"
+msgstr "Forest trail"
+

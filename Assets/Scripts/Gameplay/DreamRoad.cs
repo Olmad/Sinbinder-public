@@ -1236,6 +1236,7 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             float dt = Time.deltaTime;
+            BridgeTick(dt);
             if (_dummy != null && (_tilt.sqrMagnitude > 1e-4f || _tiltVel.sqrMagnitude > 1e-4f
                                    || Mathf.Abs(_spin) > 0.01f || Mathf.Abs(_spinVel) > 0.01f))
             {

@@ -67,7 +67,7 @@ namespace Sinbinder.UI
         private static TaskList _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() => _instance = null;
+        private static void Rearm() { _instance = null; _placeWord = null; _placeAt = null; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -107,6 +107,22 @@ namespace Sinbinder.UI
         private readonly List<Task> _script = new();
         private const int ScriptRows = 4;
         private static float _nudgeAt = -10f;
+
+        // Стрелка к месту шага сна (автор, 19.11: «не забывай про подсказывающую стрелку») — та же
+        // метка, что у задач лагеря. Сон ставит место каждый кадр; null — места нет.
+        private static string _placeWord;
+        private static Vector3? _placeAt;
+        private static float _placeNear;
+        private static readonly Func<Vector3?> PlaceWhere = () => _placeAt;
+
+        /// <summary>Место нынешнего шага сна: <paramref name="word"/> над точкой <paramref name="at"/>,
+        /// вне кадра — у края со стрелкой; ближе <paramref name="near"/> м — гаснет. null — снять.</summary>
+        public static void Place(string word, Vector3? at, float near = 2.5f)
+        {
+            _placeWord = word;
+            _placeAt = string.IsNullOrEmpty(word) ? null : at;
+            _placeNear = near;
+        }
 
         /// <summary>Шаг сна: новая задача, прежняя зачёркнута. Та же строка второй раз — ничего.</summary>
         public static void Step(string text)
@@ -159,6 +175,8 @@ namespace Sinbinder.UI
             _weapon = _ball = _chest = null;
             _tent = null;
             _debtor = _hunter = null;
+            _placeWord = null;
+            _placeAt = null;
             if (_marker != null) _marker.Clear();
         }
 
@@ -392,11 +410,15 @@ namespace Sinbinder.UI
             _plate.gameObject.SetActive(shown > 0);
         }
 
-        /// <summary>Задачи сна: свои строки, без метки места — место показывает кольцо урока.</summary>
+        /// <summary>Задачи сна: свои строки; метка — у места, которое назвал сон (Place).</summary>
         private void Script()
         {
             foreach (var t in _tasks) t.Label.gameObject.SetActive(false);
-            if (_marker != null) _marker.Clear();
+            if (_marker != null)
+            {
+                if (_placeAt.HasValue) _marker.Aim(_placeWord, PlaceWhere, _placeNear);
+                else _marker.Clear();
+            }
 
             float y = -52f;
             float widest = 0f;
