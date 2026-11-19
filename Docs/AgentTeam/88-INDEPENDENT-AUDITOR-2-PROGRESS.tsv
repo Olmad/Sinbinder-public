@@ -105,7 +105,7 @@ Assets/Scripts/AOS Engine/Modules/PatienceModule.cs	76ad5059e3f1dd50172b032f12b9
 Assets/Scripts/AOS Engine/Modules/PrideModule.cs	44d0b0688240ea8f514e4743b75683b85c3c8935	9919	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Moment.cs	3a0422e3d61ec623c4bc4d0059c93f3d86ca4da8	7022	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MoralityModule.cs	b4625c6db1baa094c2ee6060857adb8e7da7ec66	6069	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	0	0	0	0	EXCLUDED_TECH	Full base-SHA source read lines 1-16, blob 302532ad0ff3d10e2dd3e7a7ed9a55194093709b: serializable NPCData container with Id, DisplayName, IsInnocent, IsAlive; no initialized literal values, dialogue, Loc.T/F or UI rendering. DisplayName is a runtime-populated potentially player-facing value: its assignments and consumers are UNKNOWN and not covered by this exclusion. XML summary is developer-facing.
 Assets/Scripts/AOS Engine/OrderIntegrity.cs	cb54b867e839a0d370abe2bfabf074b46120c303	3815	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/PerkResolver.cs	e6e5ddcefffaca74c97ddd488f087a93aaf9670f	5606	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/PhraseGenerator.cs	da6ce1b5be754f8577772a6beb986d276e7d1c79	43924	CSharp	0	0	0	0	UNINSPECTED	
