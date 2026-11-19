@@ -905,6 +905,37 @@ static class Program
               "dragging an empty rectangle clears selection in normal mode");
     }
 
+    static void MissingPreviewAssetsAreVisible()
+    {
+        var map = Map();
+        map.Things[0].Prop = "NoSuchTree";
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Invoke(editor, "Redraw");
+
+        var missingField = typeof(MapEditor).GetField("_missingPreviewModels",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var missing = (HashSet<string>)missingField.GetValue(editor);
+        var shownField = typeof(MapEditor).GetField("_shown",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var shown = (List<GameObject>)shownField.GetValue(editor);
+        Check(missing.Contains("NoSuchTree") &&
+              shown.Exists(x => x.name == "Отсутствующая модель карты: NoSuchTree"),
+              "missing tree asset is represented by a visible named warning marker");
+        Check(shown.Count >= map.Things.Count,
+              "missing models no longer disappear from authored map preview");
+
+        Resources.Register("MapProps/NoSuchTree", new GameObject("NoSuchTree"));
+        Resources.Register("MapProps/Crypt", new GameObject("Crypt"));
+        Invoke(editor, "Redraw");
+        missing = (HashSet<string>)missingField.GetValue(editor);
+        var count = (int)typeof(MapEditor).GetField("_loadedPreviewModels",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(!missing.Contains("NoSuchTree") && count >= 1,
+              "reloading a now-available prefab replaces warning with normal model");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -922,6 +953,7 @@ static class Program
         UnsavedMapExitGuard();
         GroupEditingContracts();
         RectangleSelectionContracts();
+        MissingPreviewAssetsAreVisible();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
