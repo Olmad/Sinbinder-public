@@ -114,6 +114,15 @@ namespace UnityEngine
         {
             foreach (var name in new[] { "Ground048", "Ground077", "Gravel043", "Rock022" })
                 Assets["MapTerrainMaterials/" + name] = new Material(Shader.Find("Lit")) { name = name };
+            // Mirror the checked-in Resources/MapProps catalog. The old stub
+            // returned a fake prefab for ANY string, masking missing assets.
+            foreach (var name in new[] { "Pine", "TallPineA", "TallPineB",
+                "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "GrassTuft",
+                "Bush", "Rock", "Stump", "Tent", "Campfire", "Palisade",
+                "Barrel", "Crate", "Chest", "Woodpile", "Wattle", "Well",
+                "LogBench", "Torch", "Izba", "Crypt", "Cradle", "Pechka",
+                "Spinner", "SoulJar", "TorchStand" })
+                Assets["MapProps/" + name] = new GameObject(name);
         }
         public static void Register(string path,Object asset) => Assets[path] = asset;
         public static T Load<T>(string path) where T : Object
@@ -292,7 +301,15 @@ namespace Sinbinder.Gameplay
     public static class MapLoader
     {
         public static UnityEngine.GameObject Prefab(string name)
-            => string.IsNullOrWhiteSpace(name) ? null : new UnityEngine.GameObject(name);
+        {
+            if (Sinbinder.Core.MapAssets.IsUserProp(name))
+                return Sinbinder.Core.MapAssets.UserPrefab(name);
+            if (string.IsNullOrWhiteSpace(name) ||
+                !Sinbinder.Core.MapAssets.ValidId(name)) return null;
+            var loaded = UnityEngine.Resources.Load<UnityEngine.GameObject>("MapProps/" + name);
+            return loaded != null ? loaded
+                : UnityEngine.Resources.Load<UnityEngine.GameObject>("Props/" + name);
+        }
     }
     public static class Gaze
     {
