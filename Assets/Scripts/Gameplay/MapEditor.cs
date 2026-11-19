@@ -90,6 +90,8 @@ namespace Sinbinder.Gameplay
         private readonly HashSet<string> _selectedThingIds = new();
         private bool _selectionDragActive;
         private bool _selectionDragAdditive;
+        private bool _selectionDragMovesGroup;
+        private List<string> _validationIssues = new();
         private Vector3 _selectionDragWorld;
         private Vector3 _selectionDragScreen;
         private float _groupStep = 5f;
@@ -193,6 +195,68 @@ namespace Sinbinder.Gameplay
                 Quaternion.Euler(72f, 0f, 0f));
         }
 
+
+        /// <summary>Center the authoring camera on props or another selected item.</summary>
+        private void FocusSelection()
+        {
+            if (_cam == null) return;
+            float x = 0f, z = 0f;
+            var group = GroupThings();
+            if (group.Count > 0)
+            {
+                foreach (var thing in group) { x += thing.X; z += thing.Z; }
+                x /= group.Count;
+                z /= group.Count;
+            }
+            else if (SelectedPosition(out var selection))
+            {
+                x = selection.x;
+                z = selection.z;
+            }
+            else
+            {
+                _say = Loc.T("Сначала выберите объект или область.");
+                return;
+            }
+            _cam.transform.position = new Vector3(x, _height, z - _height * 0.35f);
+            _say = Loc.T("Камера переведена к выделению.");
+        }
+
+        // Move only props that were selected BEFORE the drag began.
+        private bool NearSelectedThing(Vector3 at)
+        {
+            if (_selectedThingIds.Count == 0) return false;
+            foreach (var t in _map.Things)
+                if (t != null && _selectedThingIds.Contains(t.Id))
+                {
+                    float dx = t.X - at.x, dz = t.Z - at.z;
+                    if (dx * dx + dz * dz <= 16f) return true;
+                }
+            return false;
+        }
+
+        // One mouse drag = one boundary-checked group edit and one Undo step.
+        private void CommitSelectionDrag(Vector3 start, Vector3 finish)
+        {
+            float dx = finish.x - start.x, dz = finish.z - start.z;
+            if (_snap > 0f)
+            {
+                dx = Mathf.Round(dx / _snap) * _snap;
+                dz = Mathf.Round(dz / _snap) * _snap;
+            }
+            MoveSelectedThings(dx, dz);
+        }
+
+        // Display all failures, not merely the first of potentially many.
+        private int RunValidation()
+        {
+            _validationIssues = Validate();
+            _say = _validationIssues.Count == 0
+                ? Loc.T("Ошибок формата карты нет.")
+                : Loc.F("Ошибок карты: {0}. Исправьте список ниже.", _validationIssues.Count);
+            return _validationIssues.Count;
+        }
+
         void Update()
         {
             if (!Input.GetMouseButton(0)) _draggingBrush = false;
@@ -213,7 +277,13 @@ namespace Sinbinder.Gameplay
                 HideBrushCursor();
                 if (Input.GetKeyDown(KeyCode.Z)) Undo();
                 else if (Input.GetKeyDown(KeyCode.Y)) Redo();
-                else if (Input.GetKeyDown(KeyCode.S)) Save();
+                else if (Input.GetKeyDown(KeyCode.S))
+                {
+                    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                        SaveCopy();
+                    else Save();
+                }
+                else if (Input.GetKeyDown(KeyCode.F)) FocusSelection();
                 else if (Input.GetKeyDown(KeyCode.D)) DuplicateSelected();
                 else if (Input.GetKeyDown(KeyCode.A) && _mode == Mode.Select) SelectAllThings();
                 return;
@@ -222,6 +292,7 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 _selectionDragActive = false;
+                _selectionDragMovesGroup = false;
                 _selectionIndex = -1;
                 _selectedThingIds.Clear();
                 Redraw();
@@ -231,13 +302,21 @@ namespace Sinbinder.Gameplay
                 Input.mousePosition.x < PanelWidth + 20f ||
                 Input.mousePosition.x > Screen.width - InspectorWidth - 20f)
             {
-                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
+                if (Input.GetMouseButtonUp(0))
+                {
+                    _selectionDragActive = false;
+                    _selectionDragMovesGroup = false;
+                }
                 HideBrushCursor();
                 return;
             }
             if (!Ground(out var at))
             {
-                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
+                if (Input.GetMouseButtonUp(0))
+                {
+                    _selectionDragActive = false;
+                    _selectionDragMovesGroup = false;
+                }
                 HideBrushCursor();
                 return;
             }
@@ -252,7 +331,8 @@ namespace Sinbinder.Gameplay
                     _selectionDragScreen = Input.mousePosition;
                     _selectionDragAdditive = Input.GetKey(KeyCode.LeftShift) ||
                                              Input.GetKey(KeyCode.RightShift);
-                    Select(at, _selectionDragAdditive);
+                    _selectionDragMovesGroup = !_selectionDragAdditive && NearSelectedThing(at);
+                    if (!_selectionDragMovesGroup) Select(at, _selectionDragAdditive);
                 }
                 else if (_mode == Mode.Terrain || _mode == Mode.Paint)
                 {
@@ -277,8 +357,12 @@ namespace Sinbinder.Gameplay
                 float sx = Input.mousePosition.x - _selectionDragScreen.x;
                 float sy = Input.mousePosition.y - _selectionDragScreen.y;
                 if (_mode == Mode.Select && sx * sx + sy * sy > 64f)
-                    SelectRectangle(_selectionDragWorld, at, _selectionDragAdditive);
+                {
+                    if (_selectionDragMovesGroup) CommitSelectionDrag(_selectionDragWorld, at);
+                    else SelectRectangle(_selectionDragWorld, at, _selectionDragAdditive);
+                }
                 _selectionDragActive = false;
+                _selectionDragMovesGroup = false;
             }
             if (Input.GetMouseButtonDown(1) && _mode != Mode.Terrain &&
                 _mode != Mode.Paint && _mode != Mode.Vegetation) Select(at);
@@ -568,6 +652,7 @@ namespace Sinbinder.Gameplay
         {
             _dirty = true;
             _confirmExit = false;
+            _validationIssues.Clear();
             _undo.Add(JsonUtility.ToJson(_map));
             if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
             _redo.Clear();
@@ -601,6 +686,7 @@ namespace Sinbinder.Gameplay
             _name = _map.Name;
             _selectionIndex = -1;
             _selectedThingIds.Clear();
+            _validationIssues.Clear();
             if (_savedSnapshot != null)
                 _dirty = JsonUtility.ToJson(_map) != _savedSnapshot;
             Redraw();
@@ -1230,7 +1316,9 @@ namespace Sinbinder.Gameplay
             {
                 if (GUILayout.Button(Loc.T("Выделить все объекты (Ctrl+A)")))
                     SelectAllThings();
+                if (GUILayout.Button(Loc.T("К выделению (Ctrl+F)"))) FocusSelection();
                 GUILayout.Label(Loc.F("Выделено объектов: {0}", _selectedThingIds.Count));
+                GUILayout.Label(Loc.T("ЛКМ по выделенному + протянуть: переместить группу."));
             }
             GUILayout.Label(Loc.T("Имя карты"));
             string name = GUILayout.TextField(_name ?? "");
@@ -1378,11 +1466,16 @@ namespace Sinbinder.Gameplay
                 GUILayout.EndScrollView();
                 GUILayout.Label(Loc.T("Событие → условие → действие"));
             }
-            if (GUILayout.Button(Loc.T("Проверить карту")))
+            if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
+            if (_validationIssues.Count > 0)
             {
-                var issues = Validate();
-                _say = issues.Count == 0 ? Loc.T("Ошибок формата карты нет.")
-                    : Loc.F("Ошибок: {0}. {1}", issues.Count, issues[0]);
+                GUILayout.Label(Loc.F("Ошибок проверки: {0}", _validationIssues.Count));
+                for (int i = 0; i < Mathf.Min(3, _validationIssues.Count); i++)
+                    GUILayout.Label((i + 1) + ". " + _validationIssues[i]);
+                if (_validationIssues.Count > 3)
+                    GUILayout.Label(Loc.F("Ещё ошибок: {0}. Скопируйте весь список.", _validationIssues.Count - 3));
+                if (GUILayout.Button(Loc.T("Копировать список ошибок")))
+                    GUIUtility.systemCopyBuffer = string.Join("\n", _validationIssues);
             }
             if (GUILayout.Button(Loc.T("Очистить всё")))
             {
@@ -1407,7 +1500,7 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(_dirty ? Loc.T("Есть несохранённые изменения")
                 : string.IsNullOrEmpty(_path) ? Loc.T("Новая карта ещё не записана")
                 : Loc.T("Изменения сохранены"));
-            GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"));
+            GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Shift+S — копию · Ctrl+Z/Y — история"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
             GUILayout.EndArea();
 
@@ -1424,8 +1517,8 @@ namespace Sinbinder.Gameplay
                 GUILayout.EndScrollView();
                 GUILayout.EndArea();
             }
-            if (_selectionDragActive && _mode == Mode.Select &&
-                Input.GetMouseButton(0))
+            if (_selectionDragActive && !_selectionDragMovesGroup &&
+                _mode == Mode.Select && Input.GetMouseButton(0))
             {
                 float startX = _selectionDragScreen.x, endX = Input.mousePosition.x;
                 float startY = _selectionDragScreen.y, endY = Input.mousePosition.y;
@@ -1685,8 +1778,6 @@ namespace Sinbinder.Gameplay
             foreach (var t in _map.Events)
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
             if (!MapTerrain.Valid(_map))
-                errors.Add(Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."));
-            if (!MapTerrain.Valid(_map))
                 errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
             foreach (var paint in _map.TerrainPaints)
                 if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
@@ -1770,6 +1861,7 @@ namespace Sinbinder.Gameplay
             var errors = Validate();
             if (errors.Count > 0)
             {
+                _validationIssues = errors;
                 _say = Loc.F("Карта не записана: {0} ошибок. Первая: {1}",
                     errors.Count, errors[0]);
                 return;
@@ -1810,6 +1902,7 @@ namespace Sinbinder.Gameplay
                 _savedSnapshot = JsonUtility.ToJson(_map);
                 _dirty = false;
                 _confirmExit = false;
+                _validationIssues.Clear();
                 var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
                 {
