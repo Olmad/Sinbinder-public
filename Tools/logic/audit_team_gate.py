@@ -65,11 +65,25 @@ def verify_qa2(path: str, status: str, row: dict, metrics: dict):
     for field in sorted(required & values.keys()):
         if not values[field]:
             errors.append(f"empty QA2 {field}=")
-    if values.get("source") != path:
+    source = values.get("source", "")
+    # One ledger row can audit a locale file together with the C# caller.
+    # The first path must still be the precise ledger path; appended
+    # cross-references do not change ownership of the ledger source.
+    if source != path and not (
+        source.startswith(path + " + ") and SOURCE_REF.search(source[len(path) + 3:])
+    ):
         errors.append("QA2 source does not match ledger path")
     if values.get("blob") and not SHA_RE.fullmatch(values["blob"]):
         errors.append("QA2 blob requires full 40-character SHA")
-    if values.get("outcome") and values["outcome"] != status:
+    outcome = values.get("outcome", "")
+    # The row is an aggregate. A newly reviewed batch may remain UNKNOWN
+    # even if earlier reviewed batches already make the whole file PARTIAL_FAIL.
+    # This DOES NOT clear the recorded failures or accept any new PASS.
+    incremental_context = (
+        status == "PARTIAL_FAIL" and outcome in CONTEXT and
+        metrics["failed_text_candidates"] > 0
+    )
+    if outcome and outcome != status and not incremental_context:
         errors.append("QA2 outcome and status disagree")
     try:
         verified = int(values["verified"])
