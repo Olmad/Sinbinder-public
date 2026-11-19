@@ -37,6 +37,8 @@ namespace Sinbinder.EditorTools
         private static int _diveShots;
         private static float _riseAt = -1f;
         private static bool _riseShot;
+        private static float _walkAt = -1f;
+        private static bool _walkShot, _seatShot;
         private static float _skipAt = -1f;
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static bool _risenShot, _bridgeUpShot, _leverOrdered, _leverByRun, _leverHintShot;
@@ -798,6 +800,13 @@ namespace Sinbinder.EditorTools
             {
                 if (_riseAt < 0f) _riseAt = now;
                 if (!_riseShot && now - _riseAt > 2.3f) { _riseShot = true; Snap("суд 01б — зал снизу"); }
+            }
+            // «Вы — судья»: на ходу к месту приказа и уже на нём — видна ли фигура во тьме, в кадре ли место.
+            if (SoulCourt.Step == "walk")
+            {
+                if (_walkAt < 0f) _walkAt = now;
+                if (!_walkShot && now - _walkAt > 2.8f) { _walkShot = true; Snap("суд 01в — идёте к месту приказа"); }
+                if (!_seatShot && !string.IsNullOrEmpty(SoulCourt.TookSeat)) { _seatShot = true; Snap("суд 01г — на месте приказа"); }
             }
             if (SoulCourt.Spoken != _spokenSeen) { _spokenSeen = SoulCourt.Spoken; _spokenAt = now; }
             var box = UI.Letterbox.Instance;

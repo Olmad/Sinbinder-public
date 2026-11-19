@@ -1000,7 +1000,8 @@ namespace Sinbinder.Gameplay
             }
             // Прежний приказ (первый урок) — снят: иначе душа «отказывает» давно исполненному приказу.
             if (_zombie != null) _zombie.ClearCommand();
-            Hold(_zombie, false);
+            // Прогон ветки «не погнался» (верстак: dream nochase): ум молчит до приказа «догнать».
+            Hold(_zombie, Application.isBatchMode && System.Environment.GetEnvironmentVariable("SINBINDER_NOCHASE") == "1");
             Mark("убийцы бегут");
             Set(Stage.Chase, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
                 "Убийцы бегут к мосту. Гнаться ли за ними — решает его душа.",
@@ -1120,6 +1121,7 @@ namespace Sinbinder.Gameplay
                 _mindBefore = mind != null ? mind.LastContext : null;
                 _decideSince = Time.unscaledTime;
                 _chaseCourt = true;
+                Hold(_zombie, false);      // теперь решает он
                 _stage = Stage.Deciding;   // дальше — как у рычага: решение, весы над головой, суд
             }
             return true;   // мост не поднимают, пока он решает
