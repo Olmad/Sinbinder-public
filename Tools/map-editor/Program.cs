@@ -920,6 +920,10 @@ static class Program
         var shownField = typeof(MapEditor).GetField("_shown",
             BindingFlags.Instance | BindingFlags.NonPublic);
         var shown = (List<GameObject>)shownField.GetValue(editor);
+        Console.WriteLine("DEBUG missing tree prefab=" + (MapLoader.Prefab("NoSuchTree") == null) +
+            "; prop=" + map.Things[0].Prop +
+            "; missing=" + string.Join(",", missing) +
+            "; shown=" + string.Join(",", shown.ConvertAll(x => x.name)));
         Check(missing.Contains("NoSuchTree"),
               "missing tree ID appears in the editor's visible diagnostic list");
         Check(shown.Exists(x => x.name == "Отсутствующая модель карты: NoSuchTree"),
