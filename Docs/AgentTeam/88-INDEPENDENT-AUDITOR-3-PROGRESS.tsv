@@ -68,7 +68,7 @@ Assets/Scripts/AOS Engine/AOSEventHub.cs	134ced529ab091544decb5ab6b0e9b3f530eed3
 Assets/Scripts/AOS Engine/AOSSceneSetup.cs	befc1dfa76205fa9b3b53d726b1c6fb4230023d9	8087	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AOSStats.cs	e17f006adf66cb3140b8fc227de86db79bad2c93	5359	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	4878de0743d9f53fcb22eb7240a1340fe9ebeb10	41478	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa	2920	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa	2920	CSharp	0	0	0	0	EXCLUDED_TECH	FULL source read at baseline blob 2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa: enum ActionType only, action/skill identifiers and developer comments; no quoted player-facing strings, Loc calls or UI output. EXCLUDED_TECH applies only to this declaration; any enum ToString/display mappings and RU/EN in consumers remain UNKNOWN.
 Assets/Scripts/AOS Engine/AutoAttackAOS.cs	28b01f5aa2f3c04eb64090012a4e0eb434fa0b5a	4813	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleContext.cs	bc6fefc5f44b37b699979dcc1602c5840f1200be	3920	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleResolver.cs	ba1ed56d7e7b7b499b9a3ec7c972724f8bff5e96	14938	CSharp	0	0	0	0	UNINSPECTED	
@@ -78,7 +78,7 @@ Assets/Scripts/AOS Engine/BehaviorResolver.cs	77c02f01b186d8da072a519e708a4ab648
 Assets/Scripts/AOS Engine/CombatDecisionContext.cs	342803f26060d9e93a8a29c7b04d1f02cdfd0be3	13693	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Counterfactual.cs	1a70366c45b70ce1ead084ddb1ea2b7df914163c	15911	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/DebugAOS.cs	ffd7c5d9fe40969e42f96fce3b67f7812e2b6e6a	2951	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/Decision.cs	92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62	4151	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Decision.cs	92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62	4151	CSharp	0	0	0	0	EXCLUDED_TECH	FULL source read at baseline blob 92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62: struct Decision with fields Action, TopModule, TopContender, RunnerUp, Gap, Confidence, Hesitated, RefusedCommand, Weighed, Decisive, DecisiveAlso, DecisiveVoice; XML comments are developer documentation, not player text; no runtime text literals/Loc/UI calls. EXCLUDED_TECH only for this file; factual truth of downstream tooltips/logs, counterfactual and RU/EN remains UNKNOWN.
 Assets/Scripts/AOS Engine/DecisionContext.cs	d38c4552b5a99a3caf212cdc031e07c3ef718eb8	9235	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/DeedType.cs	9073ac7a17bbfe9370f8c52b7487eb4d9b303688	1381	CSharp	0	0	0	0	EXCLUDED_TECH	FULL SOURCE READ at blob 9073ac7a17bbfe9370f8c52b7487eb4d9b303688: 38 physical lines, enum DeedType with 14 identifiers and developer-only XML comments; no player-facing string literals, Loc calls, display output or localized values. Zero directly player-facing strings. Indirect title mapping via TitleManager and ReputationData remains UNKNOWN, not verified by this exclusion. No runtime test.
 Assets/Scripts/AOS Engine/EmotionSystem.cs	5dbc7cb459db09204ac38f8996d5802258720fb7	3611	CSharp	0	0	0	0	UNINSPECTED	
