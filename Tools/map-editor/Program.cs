@@ -1163,6 +1163,140 @@ static class Program
               "no-op layout does not allocate a second undo entry");
     }
 
+    static void SelectionAndGroupGridContracts()
+    {
+        var all = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", Prop = "Pine", MaterialId = null, X = 3, Z = 4 },
+            new MapData.Thing { Id = "b", Prop = "Pine", MaterialId = "Stone", X = 12, Z = 8 },
+            new MapData.Thing { Id = "c", Prop = "Rock", MaterialId = "Stone", X = 21, Z = 15 },
+            new MapData.Thing { Id = "d", Prop = "Bush", MaterialId = "", X = -11, Z = -14 },
+            new MapData.Thing { Id = "e", Prop = "Pine", MaterialId = null, X = 0, Z = 0 },
+            new MapData.Thing { Id = "", Prop = "Pine", MaterialId = null },
+            null,
+        };
+        var pick = new HashSet<string> { "a" };
+        Check(MapObjectSelection.Matching(all, pick, MapObjectSelection.Property.Model)
+              .SetEquals(new[] { "a", "b", "e" }),
+              "matching models includes all authored identical props, not anonymous entries");
+        Check(MapObjectSelection.Matching(all, pick, MapObjectSelection.Property.Material)
+              .SetEquals(new[] { "a", "d", "e" }),
+              "null and empty original materials are one intentional matching group");
+        Check(MapObjectSelection.Matching(all, new HashSet<string> { "a", "c" },
+              MapObjectSelection.Property.Material).SetEquals(new[] { "a", "b", "c", "d", "e" }),
+              "multi-seed matching expands across every selected material");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string> { "a", "c" })
+              .SetEquals(new[] { "b", "d", "e" }),
+              "inverse selection never includes anonymous or null props");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string> { "a", "b", "c", "d", "e" }).Count == 0,
+              "inverting a full selection produces an empty selection");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string>()).Count == 5,
+              "inverting an empty selection selects all valid map prop IDs");
+        Check(MapObjectSelection.Matching(all, new HashSet<string> { "stale" },
+              MapObjectSelection.Property.Model).Count == 0,
+              "missing IDs cannot accidentally select a model family");
+        Check(MapObjectSelection.Matching(null, pick, MapObjectSelection.Property.Material).Count == 0 &&
+              MapObjectSelection.Inverted(null, pick).Count == 0,
+              "selection helpers fail closed on absent map data");
+        Check(all[0].X == 3 && all[1].MaterialId == "Stone",
+              "selection plans leave authored map data unchanged");
+
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Pine", MaterialId = "Stone",
+                                           X = 12, Z = 8, Scale = 1 });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Rock", MaterialId = "Stone",
+                                           X = 21, Z = 15, Scale = 1 });
+        map.Things.Add(new MapData.Thing { Id = "p4", Prop = "Bush", MaterialId = null,
+                                           X = -11, Z = -14, Scale = 1 });
+        map.Triggers.Add(new MapData.Trigger {
+            Id = "F", Event = "OnInteractObject", TargetId = "p3",
+            Action = "ShowMessage", Message = "Keep", Enabled = true
+        });
+        var e = new MapEditor();
+        Set(e, "_map", map);
+        Set(e, "_name", map.Name);
+        var selected = (HashSet<string>)typeof(MapEditor)
+            .GetField("_selectedThingIds", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        var undo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Invoke(e, "Select", new Vector3(3, 0, 4), false);
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Model);
+        Check(selected.SetEquals(new[] { "p1", "p2" }),
+              "editor expands single Pine selection to all Pine props");
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Material);
+        Check(selected.SetEquals(new[] { "p1", "p2", "p3", "p4" }),
+              "editor expands multiselection by original and imported materials");
+        Check(undo.Count == 0 && map.Things[0].X == 3 && map.Triggers[0].TargetId == "p3",
+              "selection changes neither Undo nor positions, anchors or F rules");
+        Invoke(e, "InvertThingSelection");
+        Check(selected.Count == 0, "editor can invert a full selection");
+        Invoke(e, "InvertThingSelection");
+        Check(selected.SetEquals(new[] { "p1", "p2", "p3", "p4" }),
+              "editor inverts empty selection back to all map props");
+        Invoke(e, "SetThingSelection", new HashSet<string> { "p1" });
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Material);
+        Check(selected.SetEquals(new[] { "p1", "p4" }),
+              "editor matches original materials without changing Stone objects");
+
+        // Snap applies once to all selected Thing objects, with no JSON schema change.
+        Invoke(e, "SelectAllThings");
+        Set(e, "_snap", 5f);
+        Invoke(e, "SnapSelectedThingsToGrid");
+        Check(map.Things[0].X == 5 && map.Things[0].Z == 5 &&
+              map.Things[1].X == 10 && map.Things[1].Z == 10 &&
+              map.Things[2].X == 20 && map.Things[2].Z == 15 &&
+              map.Things[3].X == -10 && map.Things[3].Z == -15,
+              "group grid snap quantizes X/Z of all selected props");
+        Check(undo.Count == 1 &&
+              map.Triggers[0].TargetId == "p3" && map.Triggers[0].Message == "Keep" &&
+              map.Crypts[0].X == 0 && map.Regions[0].X == 1,
+              "one grid snap makes exactly one Undo without altering gameplay anchors");
+        Invoke(e, "Undo");
+        var prior = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Check(prior.Things[0].X == 3 && prior.Things[1].X == 12 &&
+              prior.Things[3].Z == -14,
+              "one Undo restores the complete unsnapped group");
+        Invoke(e, "Redo");
+        var redoMap = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Check(redoMap.Things[0].X == 5 && redoMap.Things[3].Z == -15 &&
+              redoMap.Triggers[0].TargetId == "p3",
+              "Redo restores grid positions and preserved interaction references");
+        Invoke(e, "SelectAllThings");
+        Invoke(e, "SnapSelectedThingsToGrid");
+        Check(undo.Count == 1 && redoMap.Things[1].X == 10,
+              "already-snapped group does not allocate an unnecessary Undo");
+
+        var edge = Map();
+        edge.Things[0].X = 149f;
+        var edgeEditor = new MapEditor();
+        Set(edgeEditor, "_map", edge);
+        Set(edgeEditor, "_name", edge.Name);
+        Set(edgeEditor, "_snap", 40f);
+        Invoke(edgeEditor, "SelectAllThings");
+        Invoke(edgeEditor, "SnapSelectedThingsToGrid");
+        var edgeUndo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(edgeEditor);
+        Check(edge.Things[0].X == 149f && edge.Things[0].Z == 4f && edgeUndo.Count == 0,
+              "snap outside map bounds is rejected atomically without history pollution");
+        Check(!MapObjectArrange.TrySnap(edge.Things, edge.Size, float.NaN, out _) &&
+              !MapObjectArrange.TrySnap(edge.Things, edge.Size, 0f, out _),
+              "non-finite and disabled grid spacing are rejected");
+        var invalid = new List<MapData.Thing> {
+            new MapData.Thing { Id = "a", X = 3, Z = 4 },
+            new MapData.Thing { Id = "bad", X = float.PositiveInfinity, Z = 0 }
+        };
+        Check(!MapObjectArrange.TrySnap(invalid, 300f, 5f, out _) &&
+              invalid[0].X == 3 && float.IsInfinity(invalid[1].X),
+              "invalid selected prop cannot cause a partial grid snap");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -1184,6 +1318,7 @@ static class Program
         AuthoringCameraFallback();
         WorldForgeBestImprovementsContracts();
         LayoutPlannerContracts();
+        SelectionAndGroupGridContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
