@@ -284,6 +284,18 @@ namespace Sinbinder.Gameplay
             return null;
         }
 
+        /// <summary>Убрать огонёк и душу тела, которую урок уже вернул напрямую.</summary>
+        internal void RemoveFadingSoul(Warrior body)
+        {
+            for (int i = _fadingSouls.Count - 1; i >= 0; i--)
+            {
+                var soul = _fadingSouls[i];
+                if (soul.Warrior != body) continue;
+                _fadingSouls.RemoveAt(i);
+                RemoveIndicator(soul);
+            }
+        }
+
         public void RemoveIndicator(FadingSoul soul)
         {
             // Огонёк этой души, а не последний в списке: до 16.11 гасился последний зажжённый,

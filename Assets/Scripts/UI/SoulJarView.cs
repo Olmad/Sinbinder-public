@@ -39,7 +39,8 @@ namespace Sinbinder.UI
         /// <summary>Поставить банку поверх капли. Нет модели — null, капля остаётся.</summary>
         public static SoulJarView Over(Image drop)
         {
-            if (drop == null) return null;
+            if (drop == null || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+                return null;
             var full = Resources.Load<GameObject>("Props/SoulJarFull");
             if (full == null) return null;
 

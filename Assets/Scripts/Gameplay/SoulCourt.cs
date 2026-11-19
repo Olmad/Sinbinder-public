@@ -328,7 +328,8 @@ namespace Sinbinder.Gameplay
         /// у Каргана на наезде, — <see cref="Audio.VoiceGenerator"/>). Щелчок —
         /// дальше (<see cref="UI.Letterbox.Hold"/>).
         /// </summary>
-        private static IEnumerator Line(UI.Letterbox box, MonoBehaviour speaker, string name, string words)
+        private static IEnumerator Line(UI.Letterbox box, MonoBehaviour speaker, string name, string words,
+                                        float? hold = null)
         {
             box.Say(name, words);
             Spoken++;
@@ -336,7 +337,13 @@ namespace Sinbinder.Gameplay
             // Суд говорит не спеша и до конца фразы: времени голосу — больше, чем у наезда.
             if (speaker != null && speaker.TryGetComponent<Audio.VoiceGenerator>(out var voice))
                 voice.Babble(words, Mathf.Min(Herald.Hold(words) - 0.4f, words.Length / 40f * 1.6f + 0.4f));
-            yield return UI.Letterbox.Hold(Herald.Hold(words) + 0.5f);
+            yield return UI.Letterbox.Hold(hold ?? (Herald.Hold(words) + 0.5f));
+        }
+
+        private static float GreetingSeconds(UI.Letterbox box, string words)
+        {
+            // Сохраняем время на чтение после печати и даём голосу закончить фразу.
+            return Mathf.Max(2.3f, Mathf.Max(box.TypeSeconds(words) + 0.9f, 0.6f + words.Length / 24f));
         }
 
         /// <summary>
@@ -618,13 +625,15 @@ namespace Sinbinder.Gameplay
             foreach (var j in judges)
             {
                 Step = "judge";
+                string greeting = Introduce(j, w);
+                float hold = GreetingSeconds(box, greeting);
                 Vector3 dir = Flat(j.Seat - Hall);
                 host.StartCoroutine(camera.FocusOnPoint(j.Seat + Vector3.up * (Dais + 1.35f),
                     j.Seat - dir * 1.25f + Vector3.up * (Dais + 1.55f), null, push: 9f));
                 host.StartCoroutine(SpotOn(spot, j));
-                host.StartCoroutine(Greet(j));
+                host.StartCoroutine(Greet(j, hold));
                 Show(j.Tag as Tag);
-                yield return Line(box, j.Voice, j.Title, Introduce(j, w));
+                yield return Line(box, j.Voice, j.Title, greeting, hold);
             }
 
             // 5. Слово каждого (автор: «а после каждый высказался»): тише — первыми,
@@ -690,7 +699,7 @@ namespace Sinbinder.Gameplay
                 Debug.Log($"[СУД] {j.Title}: воздерживается — {idle}");
                 if (j.Voice != null && j.Voice.TryGetComponent<Audio.VoiceGenerator>(out var murmur))
                     murmur.Babble(idle, 1.2f);
-                yield return UI.Letterbox.Hold(2.0f);
+                yield return UI.Letterbox.Hold(Mathf.Max(2f, box.TypeSeconds(idle) + 0.6f));
             }
 
             foreach (var j in order.FindAll(x => !x.Abstains))
@@ -2371,7 +2380,7 @@ namespace Sinbinder.Gameplay
         /// Верность и Совесть кланяются, Гордыня откидывается, Гнев подаётся
         /// вперёд, Зависть косится, Лень садится.
         /// </summary>
-        private static IEnumerator Greet(Judge j)
+        private static IEnumerator Greet(Judge j, float hold)
         {
             string state = "Idle";
             float pitch = 0f, roll = 0f, seconds = 1.6f;
@@ -2392,6 +2401,9 @@ namespace Sinbinder.Gameplay
                 case "Gluttony": state = "Dig"; pitch = 16f; break;                     // тянется к блюду
                 case "Sloth":    state = "Sit"; seconds = 1.8f; break;                  // садится — лень вставать
             }
+            // Если приветствие короткое, жест полностью помещается в его кадр.
+            const float rest = 0.6f;
+            seconds = Mathf.Min(seconds, (hold - rest) / beats);
             Play(j, state);
             for (int b = 0; b < beats; b++)
             {
@@ -2408,7 +2420,7 @@ namespace Sinbinder.Gameplay
                 }
             }
             if (j.Waist != null) j.Waist.localRotation = Quaternion.identity;
-            yield return new WaitForSecondsRealtime(0.6f);
+            yield return new WaitForSecondsRealtime(rest);
             Play(j, "Idle");
         }
 

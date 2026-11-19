@@ -54,18 +54,31 @@ namespace Sinbinder.Core
             }
         }
 
-        /// <summary>Все карты папки: имя файла → описание. Битый файл — пропускаем, с предупреждением.</summary>
+        /// <summary>Читаемые карты папки или стандартные карты, если ни одной не удалось загрузить.</summary>
         public static List<(string path, MapData map)> List()
         {
-            var all = new List<(string, MapData)>();
-            Directory.CreateDirectory(Folder);
-            if (Directory.GetFiles(Folder, "*.json").Length == 0) WriteDefaults();
-
-            foreach (var path in Directory.GetFiles(Folder, "*.json"))
+            var all = new List<(string path, MapData map)>();
+            var folder = Folder;
+            string[] paths;
+            try
             {
-                var map = Load(path);
-                if (map != null) all.Add((path, map));
+                Directory.CreateDirectory(folder);
+                paths = Directory.GetFiles(folder, "*.json");
             }
+            catch (System.Exception e) when (e is IOException || e is System.UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[КАРТЫ] {folder}: не удалось открыть папку ({e.Message}).");
+                paths = null;
+            }
+
+            if (paths != null)
+                foreach (var path in paths)
+                {
+                    var map = Load(path);
+                    if (map != null) all.Add((path, map));
+                }
+
+            if (all.Count == 0) AddDefaults(all, folder, paths != null && paths.Length == 0);
             all.Sort((a, b) => string.CompareOrdinal(a.Item2.Name, b.Item2.Name));
             return all;
         }
@@ -75,7 +88,24 @@ namespace Sinbinder.Core
             try
             {
                 var map = JsonUtility.FromJson<MapData>(File.ReadAllText(path));
-                if (map == null || map.Crypts.Count < 2) { Debug.LogWarning($"[КАРТЫ] {path}: меньше двух склепов — не карта."); return null; }
+                if (map == null || map.Size <= 0f || float.IsNaN(map.Size) || float.IsInfinity(map.Size))
+                {
+                    Debug.LogWarning($"[КАРТЫ] {path}: неверный размер поля или пустое описание.");
+                    return null;
+                }
+                if (map.Crypts == null || map.Crypts.Count < 2 || map.Crypts.Exists(crypt => crypt == null))
+                {
+                    Debug.LogWarning($"[КАРТЫ] {path}: нужны как минимум два склепа и ни одной пустой записи склепа.");
+                    return null;
+                }
+                map.Locations ??= new();
+                map.Things ??= new();
+                map.Trails ??= new();
+                map.Events ??= new();
+                map.Locations.RemoveAll(location => location == null);
+                map.Things.RemoveAll(thing => thing == null);
+                map.Trails.RemoveAll(spot => spot == null);
+                map.Events.RemoveAll(spot => spot == null);
                 if (string.IsNullOrEmpty(map.Name)) map.Name = Path.GetFileNameWithoutExtension(path);
                 return map;
             }
@@ -88,16 +118,47 @@ namespace Sinbinder.Core
 
         public void Save(string path)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? Folder);
-            File.WriteAllText(path, JsonUtility.ToJson(this, true));
+            path = Path.GetFullPath(path);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            // Keep the previous map readable until the complete replacement is on disk.
+            string temporary = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, JsonUtility.ToJson(this, true));
+                if (File.Exists(path)) File.Replace(temporary, path, null);
+                else File.Move(temporary, path);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         // ---------------------------------------------------------- по умолчанию
 
-        private static void WriteDefaults()
+        private static void AddDefaults(List<(string path, MapData map)> all, string folder, bool save)
         {
             foreach (var map in Defaults())
-                map.Save(Path.Combine(Folder, map.Name + ".json"));
+            {
+                string path = null;
+                if (save)
+                {
+                    var destination = Path.Combine(folder, map.Name + ".json");
+                    try
+                    {
+                        if (!File.Exists(destination))
+                        {
+                            map.Save(destination);
+                            path = destination;
+                        }
+                    }
+                    catch (System.Exception e) when (e is IOException || e is System.UnauthorizedAccessException)
+                    {
+                        Debug.LogWarning($"[КАРТЫ] {destination}: не удалось записать стандартную карту ({e.Message}).");
+                    }
+                }
+                all.Add((path, map));
+            }
         }
 
         /// <summary>
