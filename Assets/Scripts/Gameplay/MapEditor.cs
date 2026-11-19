@@ -112,6 +112,10 @@ namespace Sinbinder.Gameplay
         private MapObjectTemplate.Layout _activeTemplateLayout;
         private readonly List<GameObject> _templatePreviewMarkers = new();
         private readonly List<Material> _templatePreviewMaterials = new();
+        private readonly List<GameObject> _templateGhostMeshes = new();
+        private readonly List<GameObject> _templateGhostSources = new();
+        private bool _templateGhostEnabled = true;
+        private bool _templateAssetsAvailable;
         private List<string> _templateNames = new();
         private Vector2 _templateScroll;
         private GameObject[] _customPrefabs = new GameObject[0];
@@ -305,6 +309,7 @@ namespace Sinbinder.Gameplay
                     _activeTemplateName = "";
                     _activeTemplateLayout = null;
                     HideBrushCursor();
+                    ClearTemplateGhostMeshes();
                     _say = Loc.T("Размещение шаблона отменено.");
                     return;
                 }
@@ -462,6 +467,7 @@ namespace Sinbinder.Gameplay
             }
             _activeTemplateName = name;
             _activeTemplateLayout = layout;
+            PrepareTemplateGhostMeshes();
             _mode = Mode.Template;
             _say = Loc.F("Шаблон {0}: ЛКМ — установить; Q/E — повернуть; Esc — отмена.", name);
         }
@@ -477,12 +483,14 @@ namespace Sinbinder.Gameplay
             {
                 _activeTemplateLayout = null;
                 HideBrushCursor();
+                ClearTemplateGhostMeshes();
                 _say = error;
                 return;
             }
             // Reload from disk on every paste: an edited/deleted template cannot
             // be silently inserted from a stale in-memory preview.
             _activeTemplateLayout = layout;
+            PrepareTemplateGhostMeshes();
             if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z, _yaw,
                     out var things, out var rules))
             {
@@ -684,10 +692,52 @@ namespace Sinbinder.Gameplay
             if (touched) RedrawTerrainOnly(_mode == Mode.Terrain);
         }
 
+        private void ClearTemplateGhostMeshes()
+        {
+            foreach (var ghost in _templateGhostMeshes)
+                if (ghost != null) Destroy(ghost);
+            _templateGhostMeshes.Clear();
+            _templateGhostSources.Clear();
+            _templateAssetsAvailable = false;
+        }
+
+        // Build previews only when selecting/reloading a template, never on
+        // each pointer frame. The helper copies just mesh renderers and meshes:
+        // user prefab scripts, colliders and animation are not instantiated.
+        private void PrepareTemplateGhostMeshes()
+        {
+            ClearTemplateGhostMeshes();
+            if (_activeTemplateLayout == null) return;
+            _templateAssetsAvailable = true;
+            int remainingNodes = 256;
+            foreach (var item in _activeTemplateLayout.Items)
+            {
+                var prefab = MapLoader.Prefab(item.Prop);
+                _templateGhostSources.Add(prefab);
+                var overrideMaterial = string.IsNullOrEmpty(item.MaterialId)
+                    ? null : MapAssets.ObjectMaterial(item.MaterialId);
+                if (prefab == null ||
+                    (!string.IsNullOrEmpty(item.MaterialId) && overrideMaterial == null))
+                {
+                    _templateAssetsAvailable = false;
+                    _templateGhostMeshes.Add(null);
+                    continue;
+                }
+                var ghost = MapTemplateGhost.Create(prefab, overrideMaterial,
+                    Mathf.Min(48, remainingNodes), out int nodesUsed);
+                if (ghost != null) remainingNodes -= nodesUsed;
+                // A complex or skinned mesh keeps its footprint marker even
+                // when a safe render-only clone cannot be built.
+                _templateGhostMeshes.Add(ghost);
+            }
+        }
+
         private void HideTemplatePreview()
         {
             foreach (var marker in _templatePreviewMarkers)
                 if (marker != null) marker.SetActive(false);
+            foreach (var ghost in _templateGhostMeshes)
+                if (ghost != null) ghost.SetActive(false);
         }
 
         private void HideBrushCursor()
@@ -713,7 +763,7 @@ namespace Sinbinder.Gameplay
                 HideTemplatePreview();
                 return;
             }
-            bool fits = withinBounds &&
+            bool fits = withinBounds && _templateAssetsAvailable &&
                 _map.Things.Count + _activeTemplateLayout.Items.Count <= 4096 &&
                 _map.Triggers.Count + _activeTemplateLayout.Interactions.Count <= 128;
             while (_templatePreviewMarkers.Count < positions.Count)
@@ -744,6 +794,24 @@ namespace Sinbinder.Gameplay
                 _templatePreviewMaterials[i].color = fits && pointFits
                     ? new Color(0.25f, 0.9f, 0.5f, 0.42f)
                     : new Color(0.95f, 0.25f, 0.25f, 0.55f);
+                if (i >= _templateGhostMeshes.Count ||
+                    _templateGhostMeshes[i] == null) continue;
+                var ghost = _templateGhostMeshes[i];
+                // Do not show a false 3D promise outside the map or when the
+                // placement would fail: the red footprint remains visible.
+                ghost.SetActive(fits && pointFits && _templateGhostEnabled);
+                if (!(fits && pointFits && _templateGhostEnabled)) continue;
+                var item = _activeTemplateLayout.Items[i];
+                // Cached when the template was selected: avoid 64 Resource.Load
+                // calls per cursor frame when placing a full composition.
+                var source = _templateGhostSources[i];
+                if (source == null) { ghost.SetActive(false); continue; }
+                double rotatedYaw = ((double)item.Yaw + _yaw) % 360d;
+                if (rotatedYaw < 0d) rotatedYaw += 360d;
+                ghost.transform.SetPositionAndRotation(
+                    new Vector3(point.x, MapTerrain.HeightAt(_map, point.x, point.y), point.y),
+                    Quaternion.Euler(0f, (float)rotatedYaw, 0f) * source.transform.rotation);
+                ghost.transform.localScale = source.transform.localScale * item.Scale;
             }
         }
 
@@ -1387,6 +1455,7 @@ namespace Sinbinder.Gameplay
                 if (material != null) Destroy(material);
             _templatePreviewMarkers.Clear();
             _templatePreviewMaterials.Clear();
+            ClearTemplateGhostMeshes();
             if (_brushCursor != null) Destroy(_brushCursor);
             if (_brushCursorMaterial != null) Destroy(_brushCursorMaterial);
             if (_terrainMesh != null) Destroy(_terrainMesh);
@@ -1746,7 +1815,11 @@ namespace Sinbinder.Gameplay
                     ChooseTemplate(templateName);
             GUILayout.EndScrollView();
             if (_mode == Mode.Template)
+            {
+                _templateGhostEnabled = GUILayout.Toggle(_templateGhostEnabled,
+                    Loc.T("3D-предпросмотр моделей"));
                 GUILayout.Label(Loc.T("ЛКМ: вставить · Q/E: повернуть · Esc: выйти. Зелёный: внутри карты; красный: границы/лимиты."));
+            }
             if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
             if (_validationIssues.Count > 0)
             {
