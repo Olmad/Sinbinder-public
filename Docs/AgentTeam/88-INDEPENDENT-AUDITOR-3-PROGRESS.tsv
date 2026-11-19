@@ -251,12 +251,12 @@ Assets/Scripts/Editor/TugSceneBuilder.cs	40a437911527a339fa5bba5ca717c555a8f082a
 Assets/Scripts/Editor/VoiceSamples.cs	f18f408eaabaa22c43195a9fb3c71ad9c36f0ebe	8531	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Editor/WearImport.cs	0ff3bd93b7d6d30b1308bec06302149a6c38575f	2435	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/AltarVisualEnhancer.cs	9797edb34d97adc30e1422c13c1faa7c107262ab	8252	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/Armament.cs	94e89c3b74e1b092489e06e668931e2fce44375f	2699	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Armament.cs	94e89c3b74e1b092489e06e668931e2fce44375f	2699	CSharp	0	0	0	0	EXCLUDED_TECH	FULL SOURCE READ at base blob 94e89c3b74e1b092489e06e668931e2fce44375f: 63 physical lines; only weapon visibility logic and developer XML comments; no player-facing literals, Loc calls or UI emission. Prefab object names and visuals not audited by this exclusion.
 Assets/Scripts/Gameplay/AskableSkill.cs	a123aaa178d8e2d52156d374177883c783a5d80c	1934	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/AutoAttack.cs	8c4bac86d9f805f8c280602d55a2fa43dc731780	8564	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BalalaikaHabit.cs	a2f6adc4350625752618a087bc22bff6ece5c963	27829	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BattleTest.cs	41b48c3799d41d12582cc252f40b43cb96fd6fc7	2473	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/BattlefieldData.cs	8cdc955d88b78561bb0d1910e96ed3b03dd9b026	893	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BattlefieldData.cs	8cdc955d88b78561bb0d1910e96ed3b03dd9b026	893	CSharp	0	0	0	0	EXCLUDED_TECH	FULL SOURCE READ at base blob 8cdc955d88b78561bb0d1910e96ed3b03dd9b026: 30 physical lines; only BattlefieldData fields, constructor, GUID and numeric defaults; no player-facing literals, Loc calls or display methods. Name is externally supplied, so its source/display and RU/EN remain UNKNOWN in callers; exclusion applies only to this file.
 Assets/Scripts/Gameplay/BattlefieldManager.cs	c6a4dbbf141b9361e761de4c66d9f5cf5cd917dc	1598	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Beat.cs	361db2df077d1945e45411d550cd2735fb54df23	6148	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BodyComponent.cs	da690a77d36e33ac7d6b5c2c8660415332bd8a5d	332	CSharp	0	0	0	0	UNINSPECTED	
