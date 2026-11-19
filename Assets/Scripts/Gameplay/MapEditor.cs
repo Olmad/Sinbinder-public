@@ -22,7 +22,7 @@ namespace Sinbinder.Gameplay
     public class MapEditor : MonoBehaviour
     {
         private enum Kind { Thing, Crypt, Location, Trail, Event, Region, Trigger }
-        private enum Mode { Place, Select, Erase, Terrain, Paint, Vegetation }
+        private enum Mode { Place, Select, Erase, Terrain, Paint, Vegetation, Template }
 
         private struct Brush { public string Title; public Kind Kind; public string Arg; }
 
@@ -107,6 +107,10 @@ namespace Sinbinder.Gameplay
         private int _vegetationCount = 12;
         private float _vegetationRadius = 18f;
         private string _customProp = "";
+        private string _templateDraftName = "Camp";
+        private string _activeTemplateName = "";
+        private List<string> _templateNames = new();
+        private Vector2 _templateScroll;
         private GameObject[] _customPrefabs = new GameObject[0];
         private Material[] _terrainMaterials = new Material[0];
         private Material[] _objectMaterials = new Material[0];
@@ -179,6 +183,7 @@ namespace Sinbinder.Gameplay
             }
             _map.EnsureLists();
             RefreshAssets();
+            RefreshTemplates();
             EnsureIds();
             _name = _map.Name;
             _savedSnapshot = JsonUtility.ToJson(_map);
@@ -291,6 +296,14 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                if (_mode == Mode.Template)
+                {
+                    _mode = Mode.Select;
+                    _activeTemplateName = "";
+                    HideBrushCursor();
+                    _say = Loc.T("Размещение шаблона отменено.");
+                    return;
+                }
                 _selectionDragActive = false;
                 _selectionDragMovesGroup = false;
                 _selectionIndex = -1;
@@ -347,6 +360,7 @@ namespace Sinbinder.Gameplay
                     _lastBrush = point;
                 }
                 else if (_mode == Mode.Vegetation) ScatterVegetation(Snapped(at));
+                else if (_mode == Mode.Template) PasteActiveTemplate(Snapped(at));
                 else Remove(at);
             }
             else if (_draggingBrush && Input.GetMouseButton(0) &&
@@ -365,7 +379,8 @@ namespace Sinbinder.Gameplay
                 _selectionDragMovesGroup = false;
             }
             if (Input.GetMouseButtonDown(1) && _mode != Mode.Terrain &&
-                _mode != Mode.Paint && _mode != Mode.Vegetation) Select(at);
+                _mode != Mode.Paint && _mode != Mode.Vegetation &&
+                _mode != Mode.Template) Select(at);
         }
 
         private const float PanelWidth = 260f;
@@ -412,6 +427,74 @@ namespace Sinbinder.Gameplay
             _customPrefabs = Resources.LoadAll<GameObject>("MapUserProps");
             _terrainMaterials = Resources.LoadAll<Material>("MapTerrainMaterials");
             _objectMaterials = Resources.LoadAll<Material>("MapUserMaterials");
+        }
+
+        private void RefreshTemplates() =>
+            _templateNames = MapObjectTemplate.ListNames();
+
+        // Template files are a separate library; saving never mutates a map or Undo.
+        private void SaveSelectedTemplate()
+        {
+            if (!MapObjectTemplate.TryCapture(_map, _selectedThingIds,
+                _templateDraftName, out var layout))
+            {
+                _say = Loc.T("Не удалось создать шаблон. Выберите до 64 моделей и имя латиницей (A-Z, 0-9, _ или -).");
+                return;
+            }
+            if (MapObjectTemplate.TrySaveNew(layout, out _, out string error))
+            {
+                RefreshTemplates();
+                _say = Loc.F("Шаблон сохранён: {0}. Объектов: {1}.", layout.Name, layout.Items.Count);
+            }
+            else _say = error;
+        }
+
+        private void ChooseTemplate(string name)
+        {
+            if (!MapObjectTemplate.TryLoad(name, out _, out string error))
+            {
+                _say = error;
+                return;
+            }
+            _activeTemplateName = name;
+            _mode = Mode.Template;
+            _say = Loc.F("Шаблон {0}: нажмите ЛКМ на карте для установки. Esc — отмена.", name);
+        }
+
+        private void PasteActiveTemplate(Vector3 at)
+        {
+            if (string.IsNullOrEmpty(_activeTemplateName) ||
+                !MapObjectTemplate.TryLoad(_activeTemplateName, out var layout, out string error))
+            {
+                _say = error ?? Loc.T("Шаблон не выбран.");
+                return;
+            }
+            if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z,
+                    out var things, out var rules))
+            {
+                _say = Loc.T("Шаблон не помещается на карте, повреждён или превышен лимит объектов/правил.");
+                return;
+            }
+            foreach (var thing in things)
+            {
+                if (MapLoader.Prefab(thing.Prop) == null ||
+                    (!string.IsNullOrEmpty(thing.MaterialId) &&
+                     MapAssets.ObjectMaterial(thing.MaterialId) == null))
+                {
+                    _say = Loc.F("Для шаблона отсутствует модель или материал: {0}", thing.Prop);
+                    return;
+                }
+            }
+            Change(() =>
+            {
+                _map.Things.AddRange(things);
+                _map.Triggers.AddRange(rules);
+                _selectedThingIds.Clear();
+                foreach (var thing in things) _selectedThingIds.Add(thing.Id);
+                _selectionKind = Kind.Thing;
+                _selectionIndex = _map.Things.Count - things.Count;
+            });
+            _say = Loc.F("Шаблон установлен: {0}. Ctrl+Z отменит всю группу.", layout.Name);
         }
 
         private void AppendPaint(Vector3 at) =>
@@ -595,7 +678,7 @@ namespace Sinbinder.Gameplay
         private void ShowBrushCursor(Vector3 at)
         {
             if (_mode != Mode.Terrain && _mode != Mode.Paint &&
-                _mode != Mode.Vegetation)
+                _mode != Mode.Vegetation && _mode != Mode.Template)
             {
                 HideBrushCursor();
                 return;
@@ -610,13 +693,16 @@ namespace Sinbinder.Gameplay
             }
             _brushCursor.SetActive(true);
             float radius = _mode == Mode.Terrain ? _terrainRadius :
-                           _mode == Mode.Paint ? _paintRadius : _vegetationRadius;
+                           _mode == Mode.Paint ? _paintRadius :
+                           _mode == Mode.Template ? 3f : _vegetationRadius;
             _brushCursor.transform.position = new Vector3(at.x,
                 MapTerrain.HeightAt(_map, at.x, at.z) + 0.18f, at.z);
             _brushCursor.transform.localScale =
                 new Vector3(radius * 2f, 0.02f, radius * 2f);
-            _brushCursorMaterial.color = _mode == Mode.Paint
-                ? new Color(0.2f, 0.75f, 0.95f, 0.24f)
+            _brushCursorMaterial.color = _mode == Mode.Template
+                ? new Color(0.85f, 0.55f, 0.95f, 0.35f)
+                : _mode == Mode.Paint
+                    ? new Color(0.2f, 0.75f, 0.95f, 0.24f)
                 : _mode == Mode.Vegetation
                     ? new Color(0.2f, 0.9f, 0.25f, 0.24f)
                     : _terrainFlatten
@@ -1416,6 +1502,10 @@ namespace Sinbinder.Gameplay
                     SelectMatchingThings(MapObjectSelection.Property.Material);
                 if (GUILayout.Button(Loc.T("Инвертировать выделение")))
                     InvertThingSelection();
+                GUILayout.Label(Loc.T("Имя нового шаблона (латиница, 1–48 символов):"));
+                _templateDraftName = GUILayout.TextField(_templateDraftName ?? "");
+                if (GUILayout.Button(Loc.T("Сохранить выделение как шаблон")))
+                    SaveSelectedTemplate();
                 GUILayout.Label(Loc.F("Выделено объектов: {0}", _selectedThingIds.Count));
                 GUILayout.Label(Loc.T("ЛКМ по выделенному + протянуть: переместить группу."));
             }
@@ -1504,6 +1594,7 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Обновить библиотеку моделей и материалов")))
             {
                 RefreshAssets();
+                RefreshTemplates();
                 _say = Loc.T("Библиотека ассетов обновлена.");
             }
 
@@ -1565,6 +1656,16 @@ namespace Sinbinder.Gameplay
                 GUILayout.EndScrollView();
                 GUILayout.Label(Loc.T("Событие → условие → действие"));
             }
+            GUILayout.Label(Loc.T("Шаблоны композиций:"));
+            if (GUILayout.Button(Loc.T("Обновить список шаблонов"))) RefreshTemplates();
+            _templateScroll = GUILayout.BeginScrollView(_templateScroll,
+                GUILayout.Height(112f));
+            foreach (var templateName in _templateNames)
+                if (GUILayout.Button(Loc.F("Установить: {0}", templateName)))
+                    ChooseTemplate(templateName);
+            GUILayout.EndScrollView();
+            if (_mode == Mode.Template)
+                GUILayout.Label(Loc.T("ЛКМ: вставить композицию · Esc: выйти из режима."));
             if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
             if (_validationIssues.Count > 0)
             {
