@@ -68,6 +68,18 @@ assert "private void DrawGroupInspector()" in editor
 assert "Равные интервалы по X" in editor and "Равные интервалы по Z" in editor
 layout=src("Assets/Scripts/Gameplay/MapObjectArrange.cs")
 assert "internal static bool TryPlan(" in layout and "sorted.Sort" in layout
+assert "internal static bool TrySnap(" in layout
+assert "private void SnapSelectedThingsToGrid()" in editor
+assert "Привязать всю группу к сетке" in editor
+assert "private void SelectMatchingThings(MapObjectSelection.Property property)" in editor
+assert "private void InvertThingSelection()" in editor
+assert "Выделить такие же модели" in editor
+assert "Выделить с тем же материалом" in editor
+assert "Инвертировать выделение" in editor
+selector=src("Assets/Scripts/Gameplay/MapObjectSelection.cs")
+assert "internal static HashSet<string> Matching(" in selector
+assert "internal static HashSet<string> Inverted(" in selector
+assert "guid: 376d5cd4c38b4b34b550d7b60e2a8e11" in src("Assets/Scripts/Gameplay/MapObjectSelection.cs.meta")
 assert "guid: b4b295570ea247138f4a5ea2896c29f3" in src("Assets/Scripts/Gameplay/MapObjectArrange.cs.meta")
 assert "private void MoveSelectedThings(float dx, float dz)" in editor
 assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
