@@ -95,26 +95,29 @@ namespace Sinbinder.Gameplay
         // Дорога сна (docs/64-DREAM-ROAD.md): уроки — остановками, в конце склеп.
         // Ворота открываются не сразу: сначала печати перед ними (Seals, 17.11).
         private static readonly string GateLine = Loc.N("Дорога ведёт к склепу. Идите к воротам.");
-        private const string JarsLine = "Во дворе — камень с банками. Подойдите к нему.";
+        private static readonly string JarsLine = Loc.N("За мостом и расщелиной, у колонн, — камень с банками. Идите к нему.");
         private const string EyesLine = "Tab: перейди от тактического вида к первому лицу.";
         private bool _atDummy, _atShrine, _cryptRunning;
         private int _swingsSeen;
         private float _heldBackAt = -10f, _nudgeAt = -10f;
 
         /// <summary>
-        /// Докуда пускает дорога на этом шаге: урок не сделан — дальше не пройти. Первый приказ —
-        /// до форта, уроки глазами — до чучела, убийцы, суд, бой и банки — двор форта, потом до ворот.
+        /// Докуда пускает дорога на этом шаге — в метрах главного пути карты (DreamRoad.Progress; карта
+        /// обучения, 19.11: дорога больше не прямая по z). Урок не сделан — дальше не пройти. Первый приказ —
+        /// до стоянки убийц, уроки глазами — до чучела на стоянке, убийцы, суд и бой — стоянка (до развилки
+        /// к мосту), банки — до камня у колонн за расщелиной, потом до ворот.
         /// </summary>
         private float AheadLimit()
         {
             switch (_stage)
             {
                 case Stage.FirstPerson: case Stage.WarriorMode: case Stage.DrawWeapon: case Stage.Practice:
-                    return DreamRoad.DummyAt.z + 3f;
-                case Stage.Standoff: case Stage.Deciding: case Stage.Battle: case Stage.Retest: case Stage.Jars:
-                    return DreamRoad.FortBack - 0.5f;
-                case Stage.Return: case Stage.Finished: return DreamRoad.GateZ;
-                default: return 12.5f;
+                    return DreamRoad.Progress(DreamRoad.DummyAt) + 3f;
+                case Stage.Standoff: case Stage.Deciding: case Stage.Battle: case Stage.Retest:
+                    return DreamRoad.Progress(DreamRoad.ForkAt) - 4f;
+                case Stage.Jars: return DreamRoad.Progress(DreamRoad.ShrineAt) + 3f;
+                case Stage.Return: case Stage.Finished: return DreamRoad.RouteLength;
+                default: return DreamRoad.Progress(DreamRoad.DummyAt) - 7f;
             }
         }
 
@@ -124,17 +127,19 @@ namespace Sinbinder.Gameplay
             _nudgeAt = Time.unscaledTime;
             if (Time.unscaledTime - _heldBackAt < 1f) return;
             _heldBackAt = Time.unscaledTime;
-            var p = _hero.transform.position;
             var mover = _hero.GetComponent<UnitMover>();
-            if (mover != null) mover.CommandMove(new Vector3(p.x, p.y, AheadLimit() - 1.2f));
+            if (mover != null) mover.CommandMove(DreamRoad.RoutePoint(AheadLimit() - 1.2f));
         }
 
         /// <summary>Куда тянет рука, если Греховод упрямо идёт назад: вперёд по дороге, не дальше урока.</summary>
         private Vector3 Ahead()
         {
-            float z = _hero != null ? _hero.transform.position.z + 4f : _start.z + 4f;
-            return new Vector3(0f, 0f, Mathf.Min(z, AheadLimit() - 1.5f));
+            float s = (_hero != null ? DreamRoad.Progress(_hero.transform.position) : 0f) + 4f;
+            return DreamRoad.RoutePoint(Mathf.Min(s, AheadLimit() - 1.5f));
         }
+
+        /// <summary>Позади опушки — туда дороги нет.</summary>
+        private static bool Behind(Vector3 p) => p.x < DreamRoad.StarAt.x - 3f;
 
         private Stage _stage;
         private bool _ready;   // Start поставил сон на дорогу — до того Update молчит
@@ -145,11 +150,10 @@ namespace Sinbinder.Gameplay
         private bool _handBusy, _battleStarted;
         private int _backAttempts;
         private int _swingsBefore, _blockFramesBefore, _blocksBefore, _ripostesBefore;
-        private bool _squadOrdered;
         private int _hitsBefore, _missesSaid;
         private int _jarIndex = -1;
         private bool _soulHeld;
-        private float _commandSince, _orderedAt = -1f;
+        private float _commandWait, _orderedAt = -1f;
         private float _standoffSince, _decideSince, _retestSince;
         // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
         // душа угасала несобранной, игрок не отдавал приказ или сам рубил убийц,
@@ -187,6 +191,16 @@ namespace Sinbinder.Gameplay
             return pick != null && pick.IsSelected;
         }
 
+        private (string key, string words) FirstOrderHint()
+        {
+            if (!Picked())
+                return (Loc.T("ЛКМ"), Loc.F("Щёлкните по {0} — выделить.", Whom())
+                    + "\n" + Loc.T("Это ваш первый воин."));
+
+            return (Loc.T("ПКМ"), Loc.T("Правой кнопкой — по земле, чтобы приказать идти.")
+                + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа."));
+        }
+
         private string Whom() => _zombie != null ? Grammar.Dative(_zombie.DisplayName, _zombie.Gender) : "";
 
         /// <summary>
@@ -209,15 +223,9 @@ namespace Sinbinder.Gameplay
                         () => _stage != Stage.Rebind);
                     break;
                 case Stage.Command:
-                    if (_zombie == null) return;
-                    shown = Lesson.Guide(_zombie.transform.position,
-                        () => !Picked()
-                            ? (Loc.T("ЛКМ"), Loc.F("Щёлкните по {0} — выделить.", Whom())
-                                             + "\n" + Loc.T("Это ваш первый воин."))
-                            : (Loc.T("ПКМ"), Grammar.Pick(g, Loc.T("Правой кнопкой — по земле: он пойдёт туда."),
-                                                             Loc.T("Правой кнопкой — по земле: она пойдёт туда."))
-                                             + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа.")),
-                        () => _stage != Stage.Command || _squadOrdered || OrderedSinceMark());
+                    if (_zombie == null || _zombie.IsDead || _orderedAt >= 0f) return;
+                    shown = Lesson.Guide(_zombie.transform.position, FirstOrderHint,
+                        () => _stage != Stage.Command || _orderedAt >= 0f || OrderedSinceMark());
                     break;
                 case Stage.Standoff:
                     if (_zombie == null || _killers.Count == 0) return;   // убийцы ещё не встали
@@ -260,8 +268,8 @@ namespace Sinbinder.Gameplay
             var dream = Instance;
             if (dream == null || dream._stage == Stage.Finished) return true;
             if (dream._handBusy) return false;
-            if (worldPoint.z >= dream._backBoundary &&
-                (dream._backAttempts < 3 || Mathf.Abs(worldPoint.x) <= dream._allowedCorridorHalfWidth)) return true;
+            if (!Behind(worldPoint) &&
+                (dream._backAttempts < 3 || DreamRoad.OffRoute(worldPoint) <= dream._allowedCorridorHalfWidth)) return true;
             dream.BackAttempt();
             return false;
         }
@@ -272,13 +280,17 @@ namespace Sinbinder.Gameplay
             var dream = Instance;
             if (dream == null || dream._stage == Stage.Finished) return true;
             if (dream._handBusy) return false;
-            if (dream._hero != null && futurePoint.z > dream.AheadLimit() && futurePoint.z > dream._hero.transform.position.z)
+            if (dream._hero != null)
             {
-                dream._nudgeAt = Time.unscaledTime;
-                return false;
+                float ahead = DreamRoad.Progress(futurePoint);
+                if (ahead > dream.AheadLimit() && ahead > DreamRoad.Progress(dream._hero.transform.position))
+                {
+                    dream._nudgeAt = Time.unscaledTime;
+                    return false;
+                }
             }
-            if (futurePoint.z >= dream._backBoundary &&
-                (dream._backAttempts < 3 || Mathf.Abs(futurePoint.x) <= dream._allowedCorridorHalfWidth)) return true;
+            if (!Behind(futurePoint) &&
+                (dream._backAttempts < 3 || DreamRoad.OffRoute(futurePoint) <= dream._allowedCorridorHalfWidth)) return true;
             dream.BackAttempt();
             return false;
         }
@@ -309,11 +321,12 @@ namespace Sinbinder.Gameplay
             // Дорога — до выпечки навмеша (GroundNavMesh печёт в Start): обочины держат на ней.
             DreamRoad.Build();
             _allowed = DreamRoad.GateFront;
-            _backBoundary = DreamRoad.From + 0.5f;
+            // Карта обучения (19.11): начало — на опушке (звезда автора), умирающий — на дороге к стоянке убийц.
+            _start = DreamRoad.StarAt;
+            _woundedAt = DreamRoad.DyingAt;
         }
 
-        private void OnEnable() { SelectionManager.OnPlayerOrder += TrackOrder; }
-        private void OnDisable() { SelectionManager.OnPlayerOrder -= TrackOrder; Lesson.Unhint(this); }
+        private void OnDisable() => Lesson.Unhint(this);
         private void OnDestroy()
         {
             if (Instance != this) return;
@@ -333,13 +346,6 @@ namespace Sinbinder.Gameplay
             string seen = SoulCourt.Loudest(_zombie, d, c);
             if (!string.IsNullOrEmpty(seen)) return seen;
             return d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice) ? d.DecisiveVoice : d.TopModule;
-        }
-
-        private void TrackOrder(CommandKind kind, int count)
-        {
-            if (count <= 0 || SelectionManager.Instance == null) return;
-            if (_stage == Stage.Command && SelectionManager.Instance.Selection == SelectionManager.Picked.Squad)
-                _squadOrdered = true;
         }
 
         private IEnumerator Start()
@@ -418,8 +424,9 @@ namespace Sinbinder.Gameplay
             float topFov = cam.fieldOfView;
             eye.enabled = false;
             var h = _hero.transform.position;
-            var from = h + new Vector3(0.8f, 1.8f, -3.4f);
-            var fromRot = Quaternion.LookRotation(new Vector3(0f, 3.5f, DreamRoad.GateZ) - from);
+            var fwd = DreamRoad.RouteForward(0f);
+            var from = h - fwd * 3.4f + new Vector3(fwd.z, 0f, -fwd.x) * 0.8f + Vector3.up * 1.8f;
+            var fromRot = Quaternion.LookRotation(h + fwd * 40f + Vector3.up * 3.5f - from);
             const float hold = 1.8f, rise = 2.8f;
             for (float t = 0f; t < hold + rise; t += Mathf.Min(Time.unscaledDeltaTime, 1f / 30f))
             {
@@ -461,7 +468,7 @@ namespace Sinbinder.Gameplay
 
         // Поднятый идёт за Греховодом от первого приказа до убийц (17.11): миг у чучела — его миг,
         // он должен быть рядом. Это не приказ и не решение души — ум его на это время спит.
-        private bool _escorting;
+        private bool _escorting, _jarsWalk;
         private float _escortAt;
 
         private void StartEscort()
@@ -562,20 +569,30 @@ namespace Sinbinder.Gameplay
             if (!_ready || _hero == null || _stage == Stage.Finished) return;
             if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
-                Log(_line);
+                Log(_stage == Stage.Return ? SealPrompt().words : _line);
                 _nextPrompt = Time.unscaledTime + 25f;
             }
             Guide();
+            // От стоянки к колоннам — вместе (карта обучения, 19.11): камень с банками за мостом и бревном,
+            // и поднятый, оставшись на стоянке, отстал бы на полторы сотни метров.
+            if (_stage == Stage.Jars && !_jarsWalk) { _jarsWalk = true; if (_zombie != null && !_zombie.IsDead) StartEscort(); }
             if (_escorting) Escort();
-            if (!_handBusy && _hero.transform.position.z > AheadLimit() + 0.4f) HoldBack();
+            if (!_handBusy && DreamRoad.Progress(_hero.transform.position) > AheadLimit() + 0.4f) HoldBack();
             switch (_stage)
             {
                 case Stage.Approach:
                     if (_wounded != null && GroundDistance(_hero.transform.position, _woundedAt) <= 4.8f)
                     {
-                        Set(Stage.Dying, "Незнакомец пытается что-то сказать.");
-                        StartCoroutine(DyingEncounter());
+                        if (_wounded.IsDead) BeginHarvest();
+                        else
+                        {
+                            Set(Stage.Dying, "Незнакомец пытается что-то сказать.");
+                            StartCoroutine(DyingEncounter());
+                        }
                     }
+                    break;
+                case Stage.Dying:
+                    if (_wounded != null && _wounded.IsDead) BeginHarvest();
                     break;
                 case Stage.Harvest:
                     // The actual SoulHarvester puts the soul in a jar after E.
@@ -583,7 +600,7 @@ namespace Sinbinder.Gameplay
                     {
                         Set(Stage.Rebind, "Подойди к телу. Нажми R, чтобы вернуть душу в оболочку.");
                     }
-                    else if (Time.unscaledTime - _harvestSince > 50f && _wounded != null && _wounded.Soul != null)
+                    else if (Time.time - _harvestSince > 50f && _wounded != null && _wounded.Soul != null)
                     {
                         // Душа угасает за минуту; несобранная — сон не должен на этом встать.
                         _fallbackSoul = _wounded.Soul;
@@ -595,19 +612,29 @@ namespace Sinbinder.Gameplay
                         TryRebind();
                     break;
                 case Stage.Command:
-                    // Первый приказ — любой. Он его исполнит: послушание — фон,
-                    // на котором отказ потом читается характером, а не поломкой.
-                    if (_orderedAt < 0f && (_squadOrdered || Ordered(_commandSinceGame) || OrderedSinceMark()))
+                    if (GamePauseController.Instance?.IsPaused == true || UI.Modal.Any || Speaking()) break;
+                    if (_zombie == null || _zombie.IsDead)
                     {
-                        _orderedAt = Time.unscaledTime;
-                        Mark("T2 первый приказ");
+                        Set(Stage.FirstPerson, Loc.T(EyesLine));
+                        break;
                     }
-                    if (((_orderedAt >= 0f && Time.unscaledTime - _orderedAt > 3.5f)
-                        || Time.unscaledTime - _commandSince > (Lesson.Holding ? 60f : 20f)) && !Speaking())
+                    if (_orderedAt < 0f)
+                    {
+                        // Движение самого Греховода в составе отряда не считается приказом поднятому.
+                        if (OrderedSinceMark())
+                        {
+                            _orderedAt = Time.time;
+                            Mark("T2 первый приказ");
+                            Set(Stage.Command, Loc.T("Воин услышал приказ. Посмотрите, как он ответит."));
+                        }
+                        else _commandWait += Time.unscaledDeltaTime;
+                    }
+                    bool ordered = _orderedAt >= 0f;
+                    if (ordered ? Time.time - _orderedAt > 3.5f : _commandWait > (Lesson.Holding ? 60f : 20f))
                     {
                         StartEscort();
-                        Set(Stage.FirstPerson, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
-                            "Он пойдёт за вами. ", "Она пойдёт за вами. ") + EyesLine);
+                        Set(Stage.FirstPerson, (ordered ? "" : Loc.T("Приказ можно попробовать позже.") + " ")
+                            + Loc.T(EyesLine));
                     }
                     break;
                 case Stage.Standoff:
@@ -815,8 +842,6 @@ namespace Sinbinder.Gameplay
         private bool Ordered(float since)
             => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.Command.IssuedAt > since;
 
-        private float _commandSinceGame;
-
         private void BeginPractice(string line)
         {
             var combat = _hero.GetComponent<FirstPersonCombat>();
@@ -851,7 +876,12 @@ namespace Sinbinder.Gameplay
             var hp = _wounded.GetComponent<Damageable>();
             if (hp == null) { Log("Нет Damageable у раненого."); yield break; }
             hp.TakeDamage(hp.HP + hp.MaxHP + 1f, null);
-            _harvestSince = Time.unscaledTime;
+        }
+
+        private void BeginHarvest()
+        {
+            // Отсчёт запасного пути стоит вместе с миром, пока игрок читает урок.
+            _harvestSince = Time.time;
             Set(Stage.Harvest, "Подойди к душе и нажми E. Свежая душа сохраняет память.");
         }
 
@@ -874,6 +904,7 @@ namespace Sinbinder.Gameplay
                 _woundedAt + new Vector3(2f, 0f, 0f), Quaternion.identity, relations, corpse: _wounded);
             if (risen == null) { Log("Не удалось поднять тело. Душа осталась в банке."); return; }
             if (jar >= 0) Satchel.TakeSoul(jar); // Only remove after successful creation.
+            else if (_wounded != null) SoulManager.Instance?.RemoveFadingSoul(_wounded);
             _fallbackSoul = null;
             if (_wounded != null) _wounded.gameObject.SetActive(false);
             _zombie = risen;
@@ -882,8 +913,8 @@ namespace Sinbinder.Gameplay
                 foreach (var killer in _killerSketches)
                     AOS.MemoryProcessor.Instance.CreateMemory(_zombie, "MurderedMe", killer.Name,
                         AOS.EmotionType.Anger, 0.95f);
-            _commandSince = Time.unscaledTime;
-            _commandSinceGame = Time.time;
+            _commandWait = 0f;
+            _orderedAt = -1f;
             MarkCommand();
             Set(Stage.Command, "Выдели его и отдай приказ ПКМ по земле — он пойдёт.");
         }
@@ -927,9 +958,11 @@ namespace Sinbinder.Gameplay
                 var k = _killerSketches[i];
                 var soul = new SoulData(k.Name, k.Sin, k.Moral, 1, k.Strength, k.Seed);
                 soul.SetTrade(k.Trade);
-                // В задних воротах форта, на дороге к склепу: перед ним, видно, но не вплотную.
-                float z = Mathf.Max(Mathf.Min(near.z + 9f, DreamRoad.FortBack - 1.5f), near.z + 4f);
-                var at = new Vector3(-1.3f + i * 2.6f, 0f, z);
+                // На дороге перед ним, со стороны моста: видно, но не вплотную.
+                float sNear = DreamRoad.Progress(near);
+                float s = Mathf.Max(Mathf.Min(sNear + 9f, AheadLimit() - 1.5f), sNear + 4f);
+                var fwd = DreamRoad.RouteForward(s);
+                var at = DreamRoad.RoutePoint(s) + new Vector3(fwd.z, 0f, -fwd.x) * (-1.3f + i * 2.6f);
                 var enemy = CreateLiving(soul, at, Team.Enemy);
                 if (enemy == null) continue;
                 enemy.Attack = Mathf.Min(enemy.Attack, 2.5f); // Weaker than the hero.
@@ -1159,9 +1192,23 @@ namespace Sinbinder.Gameplay
             // Под полосами — кадр, а не урок: плашка спорила бы с репликой.
             bool quiet = _stage == Stage.Finished || _handBusy || SoulCourt.Sitting || UI.TalkView.Shown
                       || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown);
-            if (!quiet) UI.TaskList.Step(TaskTitle());
             // Упёрся в черту шага — задача вспыхивает: сначала это.
             if (_nudgeAt != _nudgeSent) { _nudgeSent = _nudgeAt; UI.TaskList.Nudge(); }
+            if (!quiet && _stage == Stage.Return)
+            {
+                var prompt = SealPrompt();
+                UI.TaskList.Step(prompt.task);
+                if (prompt.key != null) Lesson.Hint(this, prompt.key, prompt.words);
+                else Lesson.Unhint(this);
+                return;
+            }
+            if (!quiet) UI.TaskList.Step(TaskTitle());
+            if (!quiet && _stage == Stage.Command)
+            {
+                var hint = _orderedAt < 0f ? FirstOrderHint() : ("", _line);
+                Lesson.Hint(this, hint.Item1, hint.Item2);
+                return;
+            }
             string key = quiet || string.IsNullOrEmpty(_line) ? null : KeyNow();
             if (key != null) Lesson.Hint(this, key, Loc.T(_line));
             else Lesson.Unhint(this);
@@ -1178,7 +1225,9 @@ namespace Sinbinder.Gameplay
                 case Stage.Dying: return Loc.T("Выслушайте умирающего");
                 case Stage.Harvest: return Loc.T("Заберите его душу (E)");
                 case Stage.Rebind: return Loc.T("Верните душу в тело (R)");
-                case Stage.Command: return Loc.T("Отдайте поднятому первый приказ (ЛКМ, затем ПКМ)");
+                case Stage.Command: return _orderedAt < 0f
+                    ? Loc.T("Отдайте поднятому первый приказ (ЛКМ, затем ПКМ)")
+                    : Loc.T("Посмотрите, как воин ответит на приказ");
                 case Stage.FirstPerson: return Loc.T("Взгляните глазами Греховода (Tab)");
                 case Stage.WarriorMode: return Loc.T("Станьте Воином (V)");
                 case Stage.DrawWeapon: return Loc.T("Достаньте оружие (B)");
@@ -1186,12 +1235,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Standoff: case Stage.Deciding: return Loc.T("Прикажите поднятому отступить (X)");
                 case Stage.Battle: return Loc.T("Отбейтесь от убийц");
                 case Stage.Retest: return Loc.T("Тот же приказ — без убийц (X)");
-                case Stage.Jars: return Loc.T("Возьмите банку с камня во дворе (E, J, R)");
-                case Stage.Return:
-                    if (_sealsOpen) return Loc.T("Откройте ворота склепа (F)");
-                    if (!_sealsAsked) return Loc.T("Идите к воротам склепа");
-                    if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0) return Loc.T("Поднимите павшего стража (E)");
-                    return Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
+                case Stage.Jars: return Loc.T("Возьмите банку с камня у колонн (E, J, R)");
                 default: return null;
             }
         }
@@ -1211,14 +1255,33 @@ namespace Sinbinder.Gameplay
                 case Stage.Jars:
                     if (_jarIndex < 0) return _atShrine ? "E" : null;
                     return Satchel.Selected != _jarIndex ? "J" : "R";
-                case Stage.Return:
-                    if (_sealsOpen) return "F";
-                    if (!_sealsAsked) return null;
-                    if (NearFallen(_hero.transform.position) != null) return "E";
-                    if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0) return "E";
-                    return Loc.T("ПКМ");
                 default: return null;
             }
+        }
+
+        private (string task, string key, string words) SealPrompt()
+        {
+            if (_sealsOpen) return (Loc.T("Откройте ворота склепа (F)"), "F", Loc.T(_line));
+            if (!_sealsAsked || _hero == null || !DreamRoad.OnSquare(_hero.transform.position))
+            {
+                string approach = Loc.T("Идите к воротам склепа");
+                return (approach, null, approach);
+            }
+
+            if (_swordLit)
+            {
+                string crown = Loc.T("Меч горит. Встаньте на печать с венцом.");
+                return (crown, Loc.T("ПКМ"), crown);
+            }
+
+            if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0)
+                return (Loc.T("Поднимите павшего стража (E)"), "E", Loc.T(_line));
+
+            string task = _crownLit ? Loc.T("Венец горит. Прикажите воину встать на печать с мечом.")
+                : Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
+            if (NearFallen(_hero.transform.position) != null)
+                return (task, "E", Loc.T("Рядом павший страж. Нажмите E, чтобы поднять его."));
+            return (task, Loc.T("ПКМ"), task);
         }
 
         // ── Две печати у ворот (план 66, сцена 10) ──
@@ -1229,6 +1292,7 @@ namespace Sinbinder.Gameplay
         // какой-нибудь не откажется»). Души у стражей свои: один какой выпадет, у второго приказ
         // «встань на печать» ничего в душе не задевает — кто-нибудь да встанет.
         private bool _sealsOpen, _sealsAsked, _escortedToSeals, _raiseOffered, _fallenSpawned;
+        private bool _crownLit, _swordLit;
         private float _sealsAskedAt = -1f, _sealOrderAt = -1f, _sealOrderIssued = -1f;
         private const float SealPatience = 45f, SealRefusal = 10f;
         private readonly List<Warrior> _fallen = new();
@@ -1257,9 +1321,9 @@ namespace Sinbinder.Gameplay
             bool alone = _zombie == null || _zombie.IsDead;
 
             // От банок поднятый идёт за Греховодом; на площади — отпускаем: дальше его решение.
-            if (!alone && !_escortedToSeals && me.z < DreamRoad.SquareFrom) { _escortedToSeals = true; StartEscort(); }
-            if (_escorting && me.z > DreamRoad.SquareFrom + 2f) { _escorting = false; if (!alone) Hold(_zombie, false); }
-            if (me.z < DreamRoad.SquareFrom) return;
+            if (!alone && !_escortedToSeals && !DreamRoad.OnSquare(me)) { _escortedToSeals = true; StartEscort(); }
+            if (_escorting && DreamRoad.OnSquare(me, 2f)) { _escorting = false; if (!alone) Hold(_zombie, false); }
+            if (!DreamRoad.OnSquare(me)) return;
 
             if (!_sealsAsked)
             {
@@ -1285,12 +1349,13 @@ namespace Sinbinder.Gameplay
             if (!alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt)) onSeal = _zombie;
             foreach (var r in _raised)
                 if (onSeal == null && r != null && !r.IsDead && OnSeal(r.transform.position, DreamRoad.WarriorSealAt)) onSeal = r;
-            bool mine = OnSeal(me, DreamRoad.LordSealAt);
-            DreamRoad.Instance?.LightSeal(false, mine);
-            DreamRoad.Instance?.LightSeal(true, onSeal != null);
+            _crownLit = OnSeal(me, DreamRoad.LordSealAt);
+            _swordLit = onSeal != null;
+            DreamRoad.Instance?.LightSeal(false, _crownLit);
+            DreamRoad.Instance?.LightSeal(true, _swordLit);
 
-            if (mine && onSeal != null) { OpenSeals(onSeal); return; }
-            if (onSeal != null) return;
+            if (_crownLit && _swordLit) { OpenSeals(onSeal); return; }
+            if (_swordLit) return;
 
             // Приказ «на печать» отдан, а воин за десять секунд на неё не встал — отказ: его воля.
             Warrior ordered = null;

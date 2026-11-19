@@ -23,7 +23,7 @@ namespace Sinbinder.Gameplay
     /// Ворота (<see cref="OpenCrypt"/>): створки расходятся внутрь, экран гаснет раньше, чем
     /// успеешь рассмотреть склеп, — видно только силуэт Бога Смерти против холодного света.
     /// </summary>
-    public class DreamRoad : MonoBehaviour
+    public partial class DreamRoad : MonoBehaviour
     {
         public static DreamRoad Instance { get; private set; }
 
@@ -38,8 +38,11 @@ namespace Sinbinder.Gameplay
         public static readonly Vector3 LordSealAt = new Vector3(1.9f, 0f, 53.4f);
         /// <summary>Форт: передняя стена с воротами, задняя с проломом, полуширина двора.</summary>
         public const float FortFront = 14f, FortBack = 24f, FortHalf = 13f;
-        public static readonly Vector3 DummyAt = new Vector3(4.2f, 0f, 17.5f);
-        public static readonly Vector3 ShrineAt = new Vector3(-4.6f, 0f, 20.5f);
+        // Карта обучения (19.11, DreamRoadMap): чучело — на стоянке убийц у дороги, грудью к ней (на юг);
+        // камень с банками — на площади у колонн, за бревном через расщелину.
+        public static readonly Vector3 DummyAt = new Vector3(-82.6f, 0f, 34.4f);
+        public const float DummyYaw = 180f;
+        public static readonly Vector3 ShrineAt = new Vector3(-12.6f, 0f, -21.1f);
         public static readonly Vector3 GateFront = new Vector3(0f, 0f, GateZ - 1.6f);
 
         /// <summary>Ворота склепа: −1 — не открывали; 0…1 — сколько погас экран. Спрашивает прогон.</summary>
@@ -126,11 +129,15 @@ namespace Sinbinder.Gameplay
                     {
                         float l = Mathf.Min(R(1.6f, 2.4f), z1 - z + 0.3f);
                         var stone = stones[rnd.Next(stones.Length)];
-                        var rock = Piece(t, PrimitiveType.Cube, "Кладка", new Vector3(Half * s + R(-0.15f, 0.15f), 0f, z + l * 0.5f),
-                                         new Vector3(R(0.8f, 1.0f), R(0.6f, 1.0f), l + 0.25f), stone);
-                        rock.transform.position += Vector3.up * rock.transform.localScale.y * 0.5f;
-                        rock.transform.rotation = Quaternion.Euler(0f, R(-5f, 5f), R(-3f, 3f));
+                        var pos = new Vector3(Half * s + R(-0.15f, 0.15f), 0f, z + l * 0.5f);
+                        var size = new Vector3(R(0.8f, 1.0f), R(0.6f, 1.0f), l + 0.25f);
+                        var turn = Quaternion.Euler(0f, R(-5f, 5f), R(-3f, 3f));
                         z += l;
+                        // Пролом к колоннам карты обучения: камней западной обочины напротив площади нет, жребий тот же.
+                        if (s < 0f && pos.z > PlazaSouth + 0.6f && pos.z < PlazaNorth - 0.6f) continue;
+                        var rock = Piece(t, PrimitiveType.Cube, "Кладка", pos, size, stone);
+                        rock.transform.position += Vector3.up * size.y * 0.5f;
+                        rock.transform.rotation = turn;
                     }
                 }
             road.Fort(t, rnd, stones);
@@ -150,6 +157,9 @@ namespace Sinbinder.Gameplay
                 float s = i % 2 == 0 ? -1f : 1f;
                 var at = new Vector3(s * R(12.5f, 18f), 0f, Mathf.Lerp(From + 2f, GateZ - 3f, i / 23f) + R(-2f, 2f));
                 road.Tree(t, at, R(4f, 6.5f), rnd, bark);
+                // Площадь у колонн — без деревьев; жребий тот же.
+                if (at.x > PlazaWest - 1.5f && at.x < PlazaEast && at.z > PlazaSouth - 1.5f && at.z < PlazaNorth + 1.5f)
+                    DestroyImmediate(t.GetChild(t.childCount - 1).gameObject);
             }
 
             // Свечи на столбиках, через шесть шагов, то слева, то справа.
@@ -179,6 +189,8 @@ namespace Sinbinder.Gameplay
             foreach (float s in new[] { -1f, 1f })
                 road.Torch(t, new Vector3(3.9f * s, 2.9f, FortFront - 1.3f), Vector3.back, warm, iron);
             road.Torch(t, new Vector3(-3.9f, 2.9f, FortFront + 1.3f), Vector3.forward, warm, iron);
+            // Карта обучения — западнее (docs/68): опушка, стоянка, мост, засада, лес, бревно, колонны.
+            road.BuildMap(t, earth, rut, bark, stones, post);
             return road;
         }
 
@@ -594,7 +606,7 @@ namespace Sinbinder.Gameplay
                 var part = _dummy.GetChild(i);
                 if (part.name == "Руки" || part.name == "Пучок") part.SetParent(_dummyArms, true);
             }
-            _dummyRest = Quaternion.Euler(0f, -90f, 0f);
+            _dummyRest = Quaternion.Euler(0f, DummyYaw, 0f);
             _dummy.rotation = _dummyRest;
         }
 
@@ -1218,6 +1230,7 @@ namespace Sinbinder.Gameplay
         {
             for (float z = From; z <= GateZ + 12f; z += 4f)
                 FogOfWar.Reveal(new Vector3(0f, 0f, z), 15f);
+            RevealMap();
         }
 
         private void Update()
@@ -1266,7 +1279,7 @@ namespace Sinbinder.Gameplay
             float now = Time.unscaledTime;
             foreach (var c in _candles)
             {
-                if (c.Lit < 0f && hero != null && Mathf.Abs(hero.transform.position.z - c.At.z) < 10f) c.Lit = now;
+                if (c.Lit < 0f && hero != null && Flat(hero.transform.position - c.At).magnitude < 11.5f) c.Lit = now;
                 if (c.Lit < 0f || c.Flame == null) continue;
                 float k = Mathf.Clamp01((now - c.Lit) / 0.6f);
                 float flick = 1f + 0.08f * Mathf.Sin(now * 9f + c.At.z) + 0.05f * Mathf.Sin(now * 23f + c.At.x);

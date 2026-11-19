@@ -108,6 +108,7 @@ namespace Sinbinder.EditorTools
 
         private static void Snap(string name)
         {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
             try { Utilets.Snapshot.Now(Shots, name); Write("  [КАДР] " + name); }
             catch (Exception e) { Write("  [СНИМОК НЕ ВЫШЕЛ] " + name + ": " + e.Message); }
         }
@@ -152,16 +153,25 @@ namespace Sinbinder.EditorTools
                         // Дорога целиком (docs/64-DREAM-ROAD.md): от начала до склепа. Свечи
                         // загораются у идущего — для кадров издалека зажигаем все.
                         DreamRoad.Instance?.LightAll();
-                        // С начала дороги — как видит игрок: впереди туман войны, разведанное серым.
-                        ShotFrom("сон — дорога к склепу", new Vector3(0f, 9f, -36f), new Vector3(0f, 1.5f, 18f), clear: false);
+                        // Карта обучения (docs/68): проходима ли и куда ведёт; сверху — разметка целиком.
+                        MapCheck();
+                        MapShot("сон — карта обучения сверху", new Vector3(-62f, 0f, 2f), 150f);
+                        ShotFrom("сон — опушка, путь на восток", DreamRoad.StarAt + new Vector3(-2.5f, 2.4f, -1.2f), DreamRoad.DyingAt + Vector3.up * 1.0f, clear: false);
+                        ShotFrom("сон — стоянка убийц, чучело", new Vector3(-89f, 2.2f, 27.6f), DreamRoad.DummyAt + Vector3.up * 1.1f);
+                        ShotFrom("сон — мост с рычагом", new Vector3(-69f, 2.6f, 26.8f), new Vector3(-53f, 1.0f, 29.6f));
+                        ShotFrom("сон — засада, валуны", new Vector3(-31f, 3.0f, 21f), DreamRoad.AmbushAt + Vector3.up * 0.8f);
+                        ShotFrom("сон — бревно через расщелину", new Vector3(-31.5f, 3.2f, -20.5f), new Vector3(-14f, 1.0f, -24f));
+                        ShotFrom("сон — колонны, камень с банками", new Vector3(-17.5f, 2.3f, -26.6f), DreamRoad.ShrineAt + Vector3.up * 0.9f);
+                        // С площади — по привычной дороге к склепу.
+                        ShotFrom("сон — дорога к склепу", new Vector3(-6f, 9f, -30f), new Vector3(0f, 1.5f, 18f), clear: false);
                         ShotFrom("сон — ворота форта", new Vector3(3f, 2.6f, 3.5f), new Vector3(0f, 3.2f, 15f));
-                        ShotFrom("сон — двор форта, чучело", new Vector3(0.5f, 2.3f, 13.6f), new Vector3(4.2f, 1.0f, 17.5f));
-                        ShotFrom("сон — двор форта, камень с банками", new Vector3(-0.5f, 2.2f, 16.5f), new Vector3(-4.6f, 0.9f, 20.5f));
-                        Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -3.2f));
+                        // Только карта (разметка, дыры) — без сна целиком: минута вместо пяти.
+                        if (Environment.GetEnvironmentVariable("SINBINDER_MAP_ONLY") == "1") { End(true, "только карта"); return; }
+                        Warp(dream.Hero, DreamRoad.Behind(dream.WoundedAt, 3.2f));
                     }
                     break;
                 case "Harvest":
-                    if (_step != "жатва") { Go("жатва"); Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -1.6f)); }
+                    if (_step != "жатва") { Go("жатва"); Warp(dream.Hero, DreamRoad.Behind(dream.WoundedAt, 1.6f)); }
                     // Душа над телом (план 66, сцена 1; SoulGlow 16.11) — до жатвы, сбоку и сверху.
                     if (!_soulOverShot)
                     {
@@ -186,7 +196,7 @@ namespace Sinbinder.EditorTools
                     }
                     break;
                 case "Rebind":
-                    if (_step != "поднятие") { Go("поднятие"); Warp(dream.Hero, dream.WoundedAt + new Vector3(0f, 0f, -2f)); }
+                    if (_step != "поднятие") { Go("поднятие"); Warp(dream.Hero, DreamRoad.Behind(dream.WoundedAt, 2f)); }
                     if (poke) dream.TestPress(KeyCode.R);
                     break;
                 case "Command":
@@ -455,7 +465,7 @@ namespace Sinbinder.EditorTools
             switch (_fpStep)
             {
                 case 0:
-                    Warp(dream.Hero, DreamRoad.DummyAt + new Vector3(-1.7f, 0f, -0.2f));
+                    Warp(dream.Hero, DreamRoad.DummyFront(1.7f));
                     if (!view.FirstPersonNow) view.Switch();
                     _fpStep = 1;
                     _fpAt = now;
@@ -527,8 +537,108 @@ namespace Sinbinder.EditorTools
         /// Кадр с точки. clear — без тумана войны: место, каким его видит игрок, когда
         /// Греховод там (вблизи туман рассеян); иначе дальний план чёрный — не разведан.
         /// </summary>
+        /// <summary>
+        /// Карта обучения: проходимость по навмешу. Главный путь — по участкам, с проверкой, что идёт через мост
+        /// и бревно (вода и расщелина не пропускают мимо), и лесная ветка — в обход реки к бревну.
+        /// </summary>
+        private static void MapCheck()
+        {
+            var path = new UnityEngine.AI.NavMeshPath();
+            Vector3 OnMesh(Vector3 p) => UnityEngine.AI.NavMesh.SamplePosition(p, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas) ? hit.position : p;
+            void Leg(string what, Vector3 a, Vector3 b, Vector3? via, string viaName)
+            {
+                UnityEngine.AI.NavMesh.CalculatePath(OnMesh(a), OnMesh(b), UnityEngine.AI.NavMesh.AllAreas, path);
+                float len = 0f;
+                bool passes = !via.HasValue;
+                var c = path.corners;
+                for (int i = 0; i + 1 < c.Length; i++)
+                {
+                    len += Vector3.Distance(c[i], c[i + 1]);
+                    if (via.HasValue && SegmentNear(c[i], c[i + 1], via.Value, 3f)) passes = true;
+                }
+                if (via.HasValue && c.Length == 1) passes = SegmentNear(c[0], c[0], via.Value, 3f);
+                Write($"  [КАРТА] {what}: {path.status}, {len:F0} м, углов {c.Length}"
+                      + (via.HasValue ? (passes ? $", через {viaName}" : $", МИМО: {viaName}") : ""));
+                if (via.HasValue && !passes)
+                    Write("    путь: " + string.Join(" ", System.Array.ConvertAll(c, p => $"({p.x:F0};{p.z:F0})")));
+            }
+            // Чего быть не должно: сквозь лес, в озеро — путь неполный; на воде и в расщелине навмеша нет.
+            void Shut(string what, Vector3 a, Vector3 b)
+            {
+                UnityEngine.AI.NavMesh.CalculatePath(OnMesh(a), OnMesh(b), UnityEngine.AI.NavMesh.AllAreas, path);
+                bool open = path.status == UnityEngine.AI.NavMeshPathStatus.PathComplete;
+                Write($"  [КАРТА] {what}: " + (open ? "ПРОХОДИМО — ДЫРА" : "закрыто"));
+                if (open) Write("    путь: " + string.Join(" ", System.Array.ConvertAll(path.corners, p => $"({p.x:F1};{p.z:F1};{p.y:F2})")));
+            }
+            // Навмеш целиком — в файл: Tools/… рисует его сверху (где дыры в буреломе).
+            var tri = UnityEngine.AI.NavMesh.CalculateTriangulation();
+            var dump = new System.Text.StringBuilder();
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var v in tri.vertices) dump.Append(v.x.ToString("F2", inv)).Append(' ').Append(v.z.ToString("F2", inv)).Append(' ').Append(v.y.ToString("F2", inv)).Append('\n');
+            dump.Append("#\n");
+            for (int i = 0; i + 2 < tri.indices.Length; i += 3) dump.Append(tri.indices[i]).Append(' ').Append(tri.indices[i + 1]).Append(' ').Append(tri.indices[i + 2]).Append('\n');
+            File.WriteAllText("Logs/dream-navmesh.txt", dump.ToString());
+            void Ground(string what, Vector3 p, bool walkable)
+            {
+                bool has = UnityEngine.AI.NavMesh.SamplePosition(p, out _, 0.6f, UnityEngine.AI.NavMesh.AllAreas);
+                Write($"  [КАРТА] {what}: " + (has == walkable ? (has ? "проход есть" : "прохода нет") : (has ? "ПРОХОД ЕСТЬ — ДЫРА" : "ПРОХОДА НЕТ")));
+            }
+            Shut("с лесной тропы в чащу", new Vector3(-100f, 0f, -17f), new Vector3(-100f, 0f, -8f));
+            Shut("с дороги к засаде — в чащу у реки", new Vector3(-31f, 0f, 5f), new Vector3(-44f, 0f, 5f));
+            Shut("с дороги — к озеру", new Vector3(-31f, 0f, -17f), new Vector3(-40f, 0f, -17.7f));
+            Ground("река у моста", new Vector3(BridgeX, 0f, 33f), false);
+            Ground("настил моста", new Vector3(BridgeX, 0.16f, 29f), true);
+            Ground("расщелина", new Vector3(DreamRoad.ChasmX, 0f, -10f), false);
+            Ground("расщелина у бревна", new Vector3(DreamRoad.ChasmX, 0f, DreamRoad.LogAt.z - DreamRoad.LogHalf - 0.6f), false);
+            Ground("бревно", DreamRoad.LogAt + Vector3.up * 0.25f, true);
+            var beyond = new Vector3(-45f, 0f, 29f);
+            var plaza = new Vector3(-12f, 0f, -24f);
+            Leg("опушка → умирающий", DreamRoad.StarAt, DreamRoad.DyingAt, null, null);
+            Leg("умирающий → стоянка", DreamRoad.DyingAt, DreamRoad.DummyFront(1.7f), null, null);
+            Leg("стоянка → за реку", DreamRoad.CampAt, beyond, DreamRoad.BridgeAt, "мост");
+            Leg("за рекой → площадь", beyond, plaza, DreamRoad.LogAt, "бревно");
+            Leg("площадь → камень с банками", plaza, DreamRoad.ShrineAt + new Vector3(0f, 0f, -1.2f), null, null);
+            Leg("площадь → ворота склепа", plaza, DreamRoad.GateFront, null, null);
+            Leg("лес → к бревну", new Vector3(-124f, 0f, -8f), new Vector3(-31f, 0f, -33f), new Vector3(-67f, 0f, -25f), "лесную тропу");
+            Leg("вся дорога: опушка → ворота", DreamRoad.StarAt, DreamRoad.GateFront, DreamRoad.LogAt, "бревно");
+        }
+
+        private static float BridgeX => DreamRoad.BridgeAt.x;
+
+        private static bool SegmentNear(Vector3 a, Vector3 b, Vector3 p, float r)
+        {
+            var ab = new Vector2(b.x - a.x, b.z - a.z);
+            var ap = new Vector2(p.x - a.x, p.z - a.z);
+            float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector2.Dot(ap, ab) / ab.sqrMagnitude) : 0f;
+            return (ap - ab * t).magnitude <= r;
+        }
+
+        /// <summary>Карта сверху — без тумана и с ровным светом: проверка разметки, не кадр игры.</summary>
+        private static void MapShot(string name, Vector3 center, float height)
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            bool fog = RenderSettings.fog;
+            var mode = RenderSettings.ambientMode;
+            var ambient = RenderSettings.ambientLight;
+            float far = cam.farClipPlane, fov = cam.fieldOfView;
+            RenderSettings.fog = false;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.6f, 0.6f, 0.65f);
+            cam.farClipPlane = Mathf.Max(far, height + 60f);
+            cam.fieldOfView = 50f;
+            ShotFrom(name, center + Vector3.up * height, center + new Vector3(0f, 0f, 4f));
+            cam.farClipPlane = far;
+            cam.fieldOfView = fov;
+            RenderSettings.fog = fog;
+            RenderSettings.ambientMode = mode;
+            RenderSettings.ambientLight = ambient;
+        }
+
         private static void ShotFrom(string name, Vector3 from, Vector3 look, bool clear = true)
         {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
             var cam = Camera.main;
             if (cam == null) return;
             var rts = cam.GetComponent<RTS_Camera>();

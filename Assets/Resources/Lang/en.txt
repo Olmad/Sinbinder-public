@@ -6344,6 +6344,10 @@ msgid "Дорога ведёт к склепу. Идите к воротам."
 msgstr "The road leads to the crypt. Go to the gate."
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "За мостом и расщелиной, у колонн, — камень с банками. Идите к нему."
+msgstr "Past the bridge and the chasm, by the columns, there is a stone with jars. Go to it."
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Подойдите к телу и нажмите R — душа вернётся в оболочку."
 msgstr "Walk up to the body and press R — the soul returns to its shell."
 
@@ -6520,8 +6524,8 @@ msgid "Тот же приказ — без убийц (X)"
 msgstr "The same order — without the killers (X)"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Возьмите банку с камня во дворе (E, J, R)"
-msgstr "Take the jar from the stone in the yard (E, J, R)"
+msgid "Возьмите банку с камня у колонн (E, J, R)"
+msgstr "Take the jar from the stone by the columns (E, J, R)"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Откройте ворота склепа (F)"
@@ -13140,3 +13144,29 @@ msgstr "This is the court of her soul. The judges are her voices, all thirteen. 
 #. нет в коде
 msgid "Судьи, ваше слово. Тише — первыми, громче — последними."
 msgstr "Judges, speak. The quiet first, the loud last."
+
+#. Первый приказ во сне
+msgid "Правой кнопкой — по земле, чтобы приказать идти."
+msgstr "Right-click the ground to order the warrior to move."
+
+msgid "Воин услышал приказ. Посмотрите, как он ответит."
+msgstr "The warrior heard your order. Watch how they respond."
+
+msgid "Посмотрите, как воин ответит на приказ"
+msgstr "Watch how the warrior responds to your order"
+
+msgid "Приказ можно попробовать позже."
+msgstr "You can try giving an order later."
+
+msgid "Tab: перейди от тактического вида к первому лицу."
+msgstr "Press Tab to switch from tactical view to first person."
+
+#. Печати у ворот во сне
+msgid "Меч горит. Встаньте на печать с венцом."
+msgstr "The sword seal is lit. Stand on the crown seal."
+
+msgid "Венец горит. Прикажите воину встать на печать с мечом."
+msgstr "The crown seal is lit. Order a warrior onto the sword seal."
+
+msgid "Рядом павший страж. Нажмите E, чтобы поднять его."
+msgstr "A fallen guard is nearby. Press E to raise them."
