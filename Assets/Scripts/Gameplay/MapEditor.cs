@@ -515,6 +515,12 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(string.IsNullOrEmpty(_path)
                 ? Loc.T("Источник: новая карта")
                 : Loc.F("Файл: {0}", Path.GetFileName(_path)));
+            if (GUILayout.Button(Loc.T("Копировать путь к карте")))
+            {
+                GUIUtility.systemCopyBuffer = string.IsNullOrEmpty(_path)
+                    ? MapData.Folder : _path;
+                _say = Loc.T("Путь к карте скопирован.");
+            }
             GUILayout.Label(Loc.T("Имя карты"));
             string name = GUILayout.TextField(_name ?? "");
             if (name != _name) { Record(); _name = name; _map.Name = name; }
