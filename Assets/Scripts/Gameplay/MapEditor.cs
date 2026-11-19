@@ -1778,7 +1778,7 @@ namespace Sinbinder.Gameplay
             foreach (var t in _map.Events)
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
             if (!MapTerrain.Valid(_map))
-                errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
+                errors.Add(Loc.T("Некорректные параметры рельефа или материалов земли."));
             foreach (var paint in _map.TerrainPaints)
                 if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
                     (paint.MaterialId != MapTerrain.RestoreOriginalMaterial &&
