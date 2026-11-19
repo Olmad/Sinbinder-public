@@ -8,6 +8,10 @@ msgid "Бой прошёл без единого спора. Отряд слуш
 msgstr "The fight went by without a single argument. The squad obeyed."
 
 #: AOS Engine/BattleNarrator.cs
+msgid "Записей о ходе боя нет."
+msgstr "No battle events were recorded."
+
+#: AOS Engine/BattleNarrator.cs
 msgid "Как это было."
 msgstr "How it went."
 
