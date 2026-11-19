@@ -32,6 +32,7 @@ namespace UnityEngine
     {
         private readonly System.Collections.Generic.Dictionary<Type, Component> _components = new();
         public string name;
+        public string tag = "Untagged";
         public Transform transform = new Transform();
         public GameObject(string name = "") { this.name = name; }
         public bool activeSelf = true;
@@ -187,9 +188,12 @@ namespace UnityEngine
         public static int Clamp(int v,int min,int max) => Math.Max(min,Math.Min(max,v));
         public static float Repeat(float value, float length) => value-MathF.Floor(value/length)*length;
     }
+    public enum CameraClearFlags { Skybox, SolidColor, Depth, Nothing }
     public class Camera : Behaviour
     {
         public static Camera main;
+        public CameraClearFlags clearFlags;
+        public Color backgroundColor;
         public Ray ScreenPointToRay(Vector3 point) => new Ray();
     }
     public struct Ray { public Vector3 GetPoint(float d) => Vector3.zero; }
