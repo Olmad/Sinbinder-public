@@ -1343,8 +1343,8 @@ static class Program
             Check(!MapObjectTemplate.TrySaveNew(template, out _, out _) &&
                   File.ReadAllText(path) == originalBytes,
                   "existing template cannot be overwritten by repeated saves");
-            Check(MapObjectTemplate.ListNames().Contains(name) &&
-                  MapObjectTemplate.TryLoad(name, out var loaded, out _) &&
+            bool loadedOk = MapObjectTemplate.TryLoad(name, out var loaded, out _);
+            Check(MapObjectTemplate.ListNames().Contains(name) && loadedOk &&
                   loaded.Items.Count == 2 && loaded.Interactions.Count == 1,
                   "template is discoverable and roundtrips via separate library");
             Check(!MapObjectTemplate.TryLoad("../outside", out _, out _),
