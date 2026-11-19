@@ -100,6 +100,47 @@ namespace Sinbinder.Gameplay
             return true;
         }
 
+        /// <summary>
+        /// Snap ALL selected props to the current map grid as one validated plan.
+        /// A no-op or one out-of-bounds result cannot create a history entry.
+        /// Coordinates on the other axis are retained if already on grid.
+        /// </summary>
+        internal static bool TrySnap(IList<MapData.Thing> selected,
+            float mapSize, float step, out Vector2[] positions)
+        {
+            positions = null;
+            if (selected == null || selected.Count == 0 ||
+                !Finite(mapSize) || mapSize <= 0f ||
+                !Finite(step) || step <= 0f)
+                return false;
+
+            float half = mapSize * 0.5f;
+            if (!Finite(half)) return false;
+            var result = new Vector2[selected.Count];
+            bool changed = false;
+
+            for (int i = 0; i < selected.Count; i++)
+            {
+                var thing = selected[i];
+                if (thing == null || !Finite(thing.X) || !Finite(thing.Z) ||
+                    Mathf.Abs(thing.X) > half || Mathf.Abs(thing.Z) > half)
+                    return false;
+                float x = Mathf.Round(thing.X / step) * step;
+                float z = Mathf.Round(thing.Z / step) * step;
+                if (!Finite(x) || !Finite(z) ||
+                    Mathf.Abs(x) > half || Mathf.Abs(z) > half)
+                    return false;
+                result[i] = new Vector2(x, z);
+                if (Mathf.Abs(x - thing.X) > Epsilon ||
+                    Mathf.Abs(z - thing.Z) > Epsilon)
+                    changed = true;
+            }
+
+            if (!changed) return false;
+            positions = result;
+            return true;
+        }
+
         private static bool Finite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);
     }
