@@ -47,8 +47,10 @@ class GateTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(ledger(number, rows), encoding="utf-8")
 
-    def check(self, **kwargs):
-        with patch.object(gate, "SOURCE_COUNT", 2):
+    def check(self, tracked=None, **kwargs):
+        current = tracked if tracked is not None else {path: SHA for path in self.paths}
+        with patch.object(gate, "SOURCE_COUNT", 2), \
+             patch.object(gate, "tracked_text_blobs", return_value=current):
             return gate.validate(self.root, **kwargs)
 
     def test_clean_five_way_baseline(self):
@@ -238,6 +240,49 @@ class GateTests(unittest.TestCase):
                            fail=1, unknown=1, evidence=ev)])
         errors, _, _ = self.check()
         self.assertTrue(any("outcome and status disagree" in msg for msg in errors))
+
+    def test_delta_inventory_reports_new_missing_and_changed_sources(self):
+        current = {self.paths[0]: "b" * 40,
+                   "Assets/Scripts/NewDialogue.cs": "c" * 40}
+        errors, warnings, report = self.check(tracked=current)
+        self.assertEqual(errors, [])
+        delta = report["delta_inventory"]
+        self.assertTrue(delta["verified"])
+        self.assertEqual(delta["new_source_count"], 1)
+        self.assertEqual(delta["missing_source_count"], 1)
+        self.assertEqual(delta["changed_source_count"], 1)
+        self.assertEqual(delta["new_sources"], ["Assets/Scripts/NewDialogue.cs"])
+        self.assertTrue(any("DELTA:" in item for item in warnings))
+        self.assertFalse(report["semantic_audit_accepted"])
+        self.assertFalse(report["ux_sprint_unblocked"])
+
+    def test_delta_inventory_unknown_when_git_index_not_available(self):
+        errors, warnings, report = self.check(tracked={})
+        self.assertEqual(errors, [])
+        self.assertEqual(report["delta_inventory"]["missing_source_count"], 2)
+        with patch.object(gate, "SOURCE_COUNT", 2), \
+             patch.object(gate, "tracked_text_blobs", return_value=None):
+            errors, warnings, report = gate.validate(self.root)
+        self.assertEqual(errors, [])
+        self.assertEqual(report["delta_inventory"], {"verified": False})
+        self.assertTrue(any("UNKNOWN" in item for item in warnings))
+
+    def test_git_text_source_filter_excludes_meta_and_unrelated_files(self):
+        import subprocess
+        sample = (
+            b"100644 " + SHA.encode() + b" 0\tAssets/Scripts/A.cs\0"
+            b"100644 " + SHA.encode() + b" 0\tAssets/Scripts/A.cs.meta\0"
+            b"100644 " + SHA.encode() + b" 0\tAssets/Textures/T.png\0"
+            b"100644 " + SHA.encode() + b" 0\tTools/logic/audit_team_gate.py\0"
+            b"100644 " + SHA.encode() + b" 0\tProjectSettings/GraphicsSettings.asset\0"
+        )
+        with patch.object(gate.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0, sample, b"")):
+            actual = gate.tracked_text_blobs(self.root)
+        self.assertEqual(actual, {
+            "Assets/Scripts/A.cs": SHA,
+            "ProjectSettings/GraphicsSettings.asset": SHA,
+        })
 
     def test_independent_disagreement_is_reported(self):
         self.write(1, [
