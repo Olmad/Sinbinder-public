@@ -14,6 +14,13 @@ logicmeta=src("Assets/Scripts/Gameplay/MapLogicRunner.cs.meta")
 assert "guid: 545372576548c774b8f6dca21dc8760b" in metadata, "Existing MapEditor Unity reference changed"
 assert "guid: 5da4d5bc71fa4e9b92a503154d59b1c7" in logicmeta
 assert "Sinbinder.Gameplay.MapEditor" in scene, "Scene no longer references the existing map editor"
+assert "m_Fog: 0" in scene, "Authoring scene must not start with gameplay fog"
+assert "m_AmbientSkyColor: {r: 0.6, g: 0.66, b: 0.74, a: 1}" in scene, "Authoring scene is too dark"
+assert "m_RenderPostProcessing: 0" in scene, "Gameplay post processing must not darken the editor"
+assert "m_GameObject: {fileID: 1309223881}\\n  m_Enabled: 0" .replace("\\n", "\n") in scene, "Horror Volume still active"
+assert "m_GameObject: {fileID: 423919928}\\n  m_Enabled: 0" .replace("\\n", "\n") in scene, "NavMesh baker must not run while authoring"
+assert "MissingModelMarker(at, prop);" in editor and "_missingPreviewModels.Add" in editor
+
 assert 'public string Prop = "Pine";' in data and 'public string MaterialId = "";' in data
 assert "public List<Region> Regions = new();" in data and "public List<Trigger> Triggers = new();" in data
 assert "MapTerrain.ApplyGround(ground, map, ref _terrainMesh, ref _originalGroundMesh);" in loader
