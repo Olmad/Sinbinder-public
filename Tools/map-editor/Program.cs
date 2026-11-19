@@ -1153,6 +1153,7 @@ static class Program
         Check(redone.Things[1].X == 16.5f &&
               redone.Triggers[0].TargetId == "p2",
               "Redo restores arrangement with intact linked interaction references");
+        Invoke(editor, "SelectAllThings");
         Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
                MapObjectArrange.Operation.Distribute);
         Check(redone.Things[1].X == 16.5f &&
