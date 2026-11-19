@@ -40,6 +40,67 @@ GOOD_EVIDENCE = re.compile(r"(?:blob|SHA|line|строк|method|метод|кл�
 SOURCE_REF = re.compile(r"(?:\.(?:cs|txt|json|asset|prefab|unity)|L\d+|lines? \d+|строк)", re.I)
 QA2_RE = re.compile(r"(?<!\w)QA2:", re.I)
 
+QA2_FIELD_RE = re.compile(
+    r"(?i)(?<![A-Za-z_])(source|blob|lines|key|context|negative|verified|total|RU_EN|outcome)"
+    r"\s*=\s*([^;\r\n]*)"
+)
+
+
+def qa2_values(evidence: str):
+    return {name.lower(): value.strip()
+            for name, value in QA2_FIELD_RE.findall(evidence)}
+
+
+def verify_qa2(path: str, status: str, row: dict, metrics: dict):
+    errors = []
+    if not QA2_RE.search(row["evidence"]):
+        return ["missing QA2 evidence"]
+    values = qa2_values(row["evidence"])
+    required = {"source", "blob", "context", "negative", "verified", "total",
+                "ru_en", "outcome"}
+    if not ({"lines", "key"} & values.keys()):
+        errors.append("missing lines/key source locator")
+    for field in sorted(required - values.keys()):
+        errors.append(f"missing QA2 {field}=")
+    for field in sorted(required & values.keys()):
+        if not values[field]:
+            errors.append(f"empty QA2 {field}=")
+    if values.get("source") != path:
+        errors.append("QA2 source does not match ledger path")
+    if values.get("blob") and not SHA_RE.fullmatch(values["blob"]):
+        errors.append("QA2 blob requires full 40-character SHA")
+    if values.get("outcome") and values["outcome"] != status:
+        errors.append("QA2 outcome and status disagree")
+    try:
+        verified = int(values["verified"])
+        total = int(values["total"])
+        if verified < 0 or total < 0 or verified > total:
+            errors.append("QA2 verified/total totals inconsistent")
+        if verified > metrics["checked_text_candidates"]:
+            errors.append("QA2 verified exceeds checked")
+        if total > metrics["found_text_candidates"]:
+            errors.append("QA2 total exceeds found")
+        if status == "PASS":
+            if verified != total or total != metrics["found_text_candidates"]:
+                errors.append("PASS not all source candidates semantically verified")
+            if (metrics["failed_text_candidates"] != 0 or
+                    metrics["unknown_text_candidates"] != 0 or
+                    metrics["checked_text_candidates"] != total):
+                errors.append("PASS still has failures/unknown or unread candidates")
+            if values.get("ru_en", "").upper() == "UNKNOWN":
+                errors.append("PASS has unverified RU/EN")
+            if values.get("negative", "").upper() == "UNKNOWN":
+                errors.append("PASS has no tested counterexample")
+        elif status in {"FAIL", "PARTIAL_FAIL"}:
+            if not metrics["failed_text_candidates"]:
+                errors.append("FAIL/PARTIAL_FAIL with zero failed candidates")
+            if values.get("negative", "").upper() == "UNKNOWN":
+                errors.append("FAIL has no reproducible counterexample")
+    except (KeyError, ValueError):
+        errors.append("invalid QA2 verified= or total=")
+    return errors
+
+
 
 def ledger_path(index: int) -> str:
     return f"Docs/AgentTeam/88-INDEPENDENT-AUDITOR-{index}-PROGRESS.tsv"
@@ -166,11 +227,10 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
                 warnings.append(f"Auditor {number}, {path}: LEGACY evidence lacks source locator")
             if status == "PASS":
                 # Never grandfather an unsubstantiated semantic PASS.
-                if not (QA2_RE.search(evidence) and
-                        re.search(r"(?:verified|проверено)\s*[:=]\s*\d+", evidence, re.I) and
-                        re.search(r"(?:total|всего)\s*[:=]\s*\d+", evidence, re.I) and
-                        re.search(r"(?:context|контекст)", evidence, re.I)):
-                    issues.append(f"Auditor {number}, {path}: PASS has no QA2 semantic proof")
+                proof_errors = verify_qa2(path, status, row, metrics)
+                if proof_errors:
+                    issues.extend(f"Auditor {number}, {path}: PASS has no QA2 semantic proof: {msg}"
+                                  for msg in proof_errors)
                 else:
                     semantics_passed.add(path)
             if status in {"FAIL", "PARTIAL_FAIL"}:
@@ -180,20 +240,21 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
             # Legacy rows are retained, not silently rewritten. New edits need QA2 proof.
             old_row = previous.get(number, {}).get(path)
             changed = bool(old_row is None or old_row != row)
-            if base_ref and enforce_changed and changed:
-                if status != "UNINSPECTED":
-                    if not QA2_RE.search(evidence):
-                        issues.append(f"Auditor {number}, {path}: changed row lacks QA2 evidence")
-                    if not SOURCE_REF.search(evidence):
-                        issues.append(f"Auditor {number}, {path}: changed row lacks source locator")
-                    if metrics["checked_text_candidates"] > metrics["found_text_candidates"]:
-                        issues.append(f"Auditor {number}, {path}: checked > found")
-                    if metrics["failed_text_candidates"] > metrics["checked_text_candidates"]:
-                        issues.append(f"Auditor {number}, {path}: failed > checked")
-                    if metrics["unknown_text_candidates"] > metrics["found_text_candidates"]:
-                        issues.append(f"Auditor {number}, {path}: unknown > found")
-                    if status == "EXCLUDED_TECH" and any(metrics.values()):
-                        issues.append(f"Auditor {number}, {path}: technical exclusion has text metrics")
+            qa2 = QA2_RE.search(evidence) is not None
+            if base_ref and enforce_changed and changed and not qa2:
+                issues.append(f"Auditor {number}, {path}: changed row lacks QA2 evidence")
+            if qa2:
+                if status != "PASS":
+                    issues.extend(f"Auditor {number}, {path}: QA2: {msg}"
+                                  for msg in verify_qa2(path, status, row, metrics))
+                if metrics["checked_text_candidates"] > metrics["found_text_candidates"]:
+                    issues.append(f"Auditor {number}, {path}: checked > found")
+                if metrics["failed_text_candidates"] > metrics["checked_text_candidates"]:
+                    issues.append(f"Auditor {number}, {path}: failed > checked")
+                if metrics["unknown_text_candidates"] > metrics["found_text_candidates"]:
+                    issues.append(f"Auditor {number}, {path}: unknown > found")
+                if status == "EXCLUDED_TECH" and any(metrics.values()):
+                    issues.append(f"Auditor {number}, {path}: technical exclusion has text metrics")
             elif metrics["checked_text_candidates"] > metrics["found_text_candidates"]:
                 warnings.append(f"Auditor {number}, {path}: LEGACY checked > found")
             elif metrics["unknown_text_candidates"] > metrics["found_text_candidates"]:
