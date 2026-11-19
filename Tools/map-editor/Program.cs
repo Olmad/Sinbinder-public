@@ -1470,7 +1470,7 @@ static class Program
             var ghostField = typeof(MapEditor).GetField("_templatePreviewMarkers",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             var ghosts = (List<GameObject>)ghostField.GetValue(editor);
-            Check(ghosts.Count == 2 && ghosts.All(g => g.activeSelf) &&
+            Check(ghosts.Count == 2 && ghosts[0].activeSelf && ghosts[1].activeSelf &&
                   Math.Abs(ghosts[0].transform.position.x - 55f) < 0.001f &&
                   Math.Abs(ghosts[0].transform.position.z - 70f) < 0.001f &&
                   Math.Abs(ghosts[1].transform.position.x - 65f) < 0.001f &&
