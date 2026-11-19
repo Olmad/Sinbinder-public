@@ -195,6 +195,29 @@ class GateTests(unittest.TestCase):
         self.assertTrue(any("outcome and status disagree" in msg or
                             "zero failed" in msg for msg in errors))
 
+    def test_trailing_legacy_comment_after_outcome(self):
+        ev = ("QA2: source=Assets/Resources/Lang/en.txt + Assets/Scripts/AOS Engine/PhraseGenerator.cs; "
+              "blob=" + SHA + "; lines=445-464; context=still unclear; "
+              "negative=unverified physical effect; verified=0; total=2; "
+              "RU_EN=translation uncertain; outcome=UNKNOWN. "
+              "Legacy metrics corrected without inventing a complete PASS.")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "PARTIAL_FAIL", found=2, checked=2,
+                           fail=1, unknown=1, evidence=ev)])
+        errors, _, report = self.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(report["unique_source_fails"], 1)
+
+    def test_invalid_outcome_prefix_is_not_accepted(self):
+        ev = ("QA2: source=Assets/Resources/Lang/en.txt; blob=" + SHA +
+              "; lines=445-464; context=unknown; negative=none; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWNISH")
+        self.write(1, [self.payload[0],
+                       row(self.paths[1], "UNKNOWN", found=1, checked=1,
+                           unknown=1, evidence=ev)])
+        errors, _, _ = self.check()
+        self.assertTrue(any("outcome and status disagree" in msg for msg in errors))
+
     def test_caller_reference_cannot_replace_ledger_source(self):
         ev = ("QA2: source=Assets/Scripts/AOS Engine/PhraseGenerator.cs + "
               "Assets/Resources/Lang/en.txt; blob=" + SHA +
