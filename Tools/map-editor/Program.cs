@@ -1424,7 +1424,55 @@ static class Program
 
             // Existing Unity API doubles must know about visible resources. The
             // production editor uses the same MapLoader/MapAssets lookups.
-            Resources.Register("MapProps/Pine", new GameObject("Pine"));
+            // A visible user prefab may contain gameplay scripts and physics.
+            // The cursor preview must copy only its mesh hierarchy and original
+            // material references, never its behaviours or colliders.
+            var sourcePine = new GameObject("Authored pine prefab");
+            var pineMesh = new Mesh();
+            var pineMat = new Material(Shader.Find("Lit")) { name = "Pine bark" };
+            sourcePine.AddComponent<MeshFilter>().sharedMesh = pineMesh;
+            sourcePine.AddComponent<MeshRenderer>().sharedMaterials = new[] { pineMat };
+            sourcePine.AddComponent<Collider>();
+            sourcePine.AddComponent<MonoBehaviour>();
+            var pineChild = new GameObject("Pine foliage");
+            pineChild.transform.SetParent(sourcePine.transform, false);
+            pineChild.transform.localPosition = new Vector3(0f, 3f, 0f);
+            pineChild.transform.localScale = new Vector3(2f, 2f, 2f);
+            var leavesMesh = new Mesh();
+            pineChild.AddComponent<MeshFilter>().sharedMesh = leavesMesh;
+            pineChild.AddComponent<MeshRenderer>().sharedMaterials = new[] { pineMat };
+            var pureGhost = MapTemplateGhost.Create(sourcePine, null, 48,
+                out int pureNodes);
+            Check(pureGhost != null && pureNodes == 2 &&
+                  pureGhost.TryGetComponent<MeshFilter>(out var clonedMesh) &&
+                  clonedMesh.sharedMesh == pineMesh &&
+                  pureGhost.TryGetComponent<MeshRenderer>(out var clonedRenderer) &&
+                  clonedRenderer.sharedMaterials[0] == pineMat &&
+                  pureGhost.transform.childCount == 1,
+                  "mesh ghost retains mesh and material references with nested geometry");
+            var ghostChild = pureGhost.transform.GetChild(0);
+            Check(ghostChild.localPosition.y == 3f &&
+                  ghostChild.localScale.x == 2f &&
+                  ghostChild.gameObject.TryGetComponent<MeshFilter>(out var clonedLeaf) &&
+                  clonedLeaf.sharedMesh == leavesMesh,
+                  "mesh ghost preserves child-local position, scale and meshes");
+            Check(!pureGhost.TryGetComponent<Collider>(out _) &&
+                  !pureGhost.TryGetComponent<MonoBehaviour>(out _) &&
+                  !ghostChild.gameObject.TryGetComponent<Collider>(out _),
+                  "template ghost cannot run a source prefab script or physics collider");
+            var customMaterial = new Material(Shader.Find("Lit")) { name = "User override" };
+            var overrideGhost = MapTemplateGhost.Create(sourcePine,
+                customMaterial, 48, out _);
+            Check(overrideGhost != null &&
+                  overrideGhost.TryGetComponent<MeshRenderer>(out var overriddenRenderer) &&
+                  overriddenRenderer.sharedMaterials[0] == customMaterial &&
+                  sourcePine.GetComponent<MeshRenderer>().sharedMaterials[0] == pineMat,
+                  "custom material preview never mutates original prefab materials");
+            Check(MapTemplateGhost.Create(sourcePine, null, 1, out _) == null &&
+                  MapTemplateGhost.Create(new GameObject("Invisible model"), null,
+                  48, out _) == null,
+                  "over-budget and meshless prefabs fall back to safe position discs");
+            Resources.Register("MapProps/Pine", sourcePine);
             Resources.Register("MapProps/Rock", new GameObject("Rock"));
             Resources.Register("MapUserMaterials/Stone",
                 new Material(Shader.Find("Lit")) { name = "Stone" });
@@ -1444,6 +1492,13 @@ static class Program
                   map.Things.Count == 2 && File.ReadAllText(path) == originalBytes,
                   "editor template save does not overwrite existing file or mark map dirty");
             Invoke(editor, "ChooseTemplate", name);
+            var meshGhostField = typeof(MapEditor).GetField("_templateGhostMeshes",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var previewMeshes = (List<GameObject>)meshGhostField.GetValue(editor);
+            Check(previewMeshes.Count == 2 && previewMeshes[0] != null &&
+                  previewMeshes[1] == null &&
+                  !previewMeshes[0].activeSelf,
+                  "editor caches safe 3D mesh where available and retains disc fallback");
             Invoke(editor, "PasteActiveTemplate", new Vector3(60f, 0f, 65f));
             Check(map.Things.Count == 4 && map.Triggers.Count == 2 &&
                   map.Things[2].X == 55f && map.Things[3].X == 65f &&
@@ -1476,6 +1531,10 @@ static class Program
                   Math.Abs(ghosts[1].transform.position.x - 65f) < 0.001f &&
                   Math.Abs(ghosts[1].transform.position.z - 60f) < 0.001f,
                   "editor previews every prop at the same rotated coordinates as placement");
+            Check(previewMeshes[0].activeSelf &&
+                  Math.Abs(previewMeshes[0].transform.position.x - 55f) < 0.001f &&
+                  Math.Abs(previewMeshes[0].transform.position.z - 70f) < 0.001f,
+                  "visible template mesh ghost follows same footprint as marker");
             Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
                   ((List<string>)undoField.GetValue(editor)).Count == 1,
                   "moving template ghost never mutates map or Undo history");
