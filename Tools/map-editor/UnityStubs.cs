@@ -228,6 +228,7 @@ namespace UnityEngine
     public class GUILayoutOption { }
     public class GUIStyle { }
     public class GUISkin { public GUIStyle box = new GUIStyle(); }
+    public static class GUIUtility { public static string systemCopyBuffer = ""; }
     public static class GUI
     {
         public static GUISkin skin = new GUISkin();
