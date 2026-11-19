@@ -5,6 +5,7 @@ namespace UnityEngine
     public class Object
     {
         public static void Destroy(Object o) { }
+        public static void DestroyImmediate(Object o) { }
         public static T Instantiate<T>(T prefab) where T : Object => prefab;
     }
     public class Component : Object
@@ -21,27 +22,131 @@ namespace UnityEngine
         public Vector3 localScale = new Vector3(1, 1, 1);
         public Vector3 localPosition;
         public Quaternion rotation;
+        public Vector3 InverseTransformPoint(Vector3 p) => p;
+        public Vector3 InverseTransformVector(Vector3 v) => v;
         public void SetPositionAndRotation(Vector3 at, Quaternion orientation)
         { position = at; rotation = orientation; }
     }
-    public enum PrimitiveType { Cylinder }
+    public enum PrimitiveType { Cylinder, Cube }
     public class GameObject : Object
     {
+        private readonly System.Collections.Generic.Dictionary<Type, Component> _components = new();
         public string name;
+        public string tag = "Untagged";
         public Transform transform = new Transform();
         public GameObject(string name = "") { this.name = name; }
+        public bool activeSelf = true;
+        public void SetActive(bool active) { activeSelf = active; }
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType t) => new GameObject();
-        public T GetComponent<T>() where T : Component, new() => new T();
+        public T[] GetComponentsInChildren<T>() where T : Component, new()
+        {
+            return new T[] { GetComponent<T>() };
+        }
+        public T GetComponentInChildren<T>() where T : Component, new() => GetComponent<T>();
+        public T AddComponent<T>() where T : Component, new() => GetComponent<T>();
+        public T GetComponent<T>() where T : Component, new()
+        {
+            if (!_components.TryGetValue(typeof(T), out var component))
+                _components[typeof(T)] = component = new T();
+            return (T)component;
+        }
     }
-    public class Collider : Component { }
-    public class Renderer : Component { public Material sharedMaterial; }
+    public struct RaycastHit { public Vector3 point; }
+    public class Collider : Component
+    {
+        public bool Raycast(Ray ray, out RaycastHit hit, float distance)
+        { hit = default; return false; }
+    }
+    public class Mesh : Object
+    {
+        public string name;
+        public Vector3[] vertices;
+        public Vector2[] uv;
+        public int[] triangles;
+        public int subMeshCount;
+        private readonly System.Collections.Generic.Dictionary<int, int[]> _submeshes = new();
+        public void SetTriangles(int[] triangles, int index)
+        {
+            _submeshes[index] = triangles;
+            var combined = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < subMeshCount; i++)
+                if (_submeshes.TryGetValue(i, out var data)) combined.AddRange(data);
+            this.triangles = combined.ToArray();
+        }
+        public void RecalculateNormals() { }
+        public void RecalculateBounds() { }
+    }
+    public class MeshFilter : Component { public Mesh sharedMesh; }
+    public class MeshCollider : Collider { public Mesh sharedMesh; }
+    public class BoxCollider : Collider
+    {
+        public Vector3 center;
+        public Vector3 size;
+    }
+    public struct Bounds
+    {
+        public Vector3 center;
+        public Vector3 size;
+        public void Encapsulate(Bounds b) { }
+    }
+    public class Renderer : Component
+    {
+        public bool enabled = true;
+        public Bounds bounds;
+        private Material[] _shared = Array.Empty<Material>();
+        public Material sharedMaterial
+        {
+            get => _shared.Length > 0 ? _shared[0] : null;
+            set => _shared = new[] { value };
+        }
+        public Material[] sharedMaterials
+        {
+            get => _shared;
+            set => _shared = value;
+        }
+    }
+    public class MeshRenderer : Renderer { }
+    public static class Resources
+    {
+        private static readonly System.Collections.Generic.Dictionary<string,Object> Assets = new();
+        static Resources()
+        {
+            foreach (var name in new[] { "Ground048", "Ground077", "Gravel043", "Rock022" })
+                Assets["MapTerrainMaterials/" + name] = new Material(Shader.Find("Lit")) { name = name };
+            // Mirror the checked-in Resources/MapProps catalog. The old stub
+            // returned a fake prefab for ANY string, masking missing assets.
+            foreach (var name in new[] { "Pine", "TallPineA", "TallPineB",
+                "TallPineC", "DeadTreeA", "DeadTreeB", "DeadTreeC", "GrassTuft",
+                "Bush", "Rock", "Stump", "Tent", "Campfire", "Palisade",
+                "Barrel", "Crate", "Chest", "Woodpile", "Wattle", "Well",
+                "LogBench", "Torch", "Izba", "Crypt", "Cradle", "Pechka",
+                "Spinner", "SoulJar", "TorchStand" })
+                Assets["MapProps/" + name] = new GameObject(name);
+        }
+        public static void Register(string path,Object asset) => Assets[path] = asset;
+        public static T Load<T>(string path) where T : Object
+            => Assets.TryGetValue(path, out var asset) ? asset as T : null;
+        public static T[] LoadAll<T>(string directory) where T : Object
+        {
+            var all = new System.Collections.Generic.List<T>();
+            foreach (var pair in Assets)
+                if (pair.Key.StartsWith(directory + "/", StringComparison.Ordinal) &&
+                    pair.Value is T resource) all.Add(resource);
+            return all.ToArray();
+        }
+    }
     public class Shader : Object { public static Shader Find(string name) => new Shader(); }
     public class Material : Object
     {
+        public string name;
         public Color color;
         public Material(Shader shader) { }
+        public Material(Material other) { name = other.name; }
+        public void SetTexture(string property, Texture2D texture) { }
+        public void SetTextureScale(string property, Vector2 scale) { }
     }
+    public class Texture2D : Object { }
     public struct Color
     {
         public float r, g, b, a;
@@ -51,6 +156,7 @@ namespace UnityEngine
     public struct Vector2
     {
         public float x, y;
+        public static Vector2 one => new Vector2(1,1);
         public Vector2(float x, float y) { this.x = x; this.y = y; }
         public static float Distance(Vector2 a, Vector2 b)
         { float x = a.x - b.x, y = a.y - b.y; return MathF.Sqrt(x*x + y*y); }
@@ -60,6 +166,7 @@ namespace UnityEngine
         public float x, y, z;
         public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
         public static Vector3 zero => new Vector3();
+        public static Vector3 one => new Vector3(1,1,1);
         public static Vector3 up => new Vector3(0,1,0);
         public static Vector3 forward => new Vector3(0,0,1);
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
@@ -78,19 +185,24 @@ namespace UnityEngine
         public static float Max(float a,float b) => MathF.Max(a,b);
         public static int Max(int a,int b) => Math.Max(a,b);
         public static float Min(float a,float b) => MathF.Min(a,b);
+        public static int Min(int a,int b) => Math.Min(a,b);
         public static float Abs(float a) => MathF.Abs(a);
         public static int Abs(int a) => Math.Abs(a);
         public static float Cos(float a) => MathF.Cos(a);
         public static float Sin(float a) => MathF.Sin(a);
+        public static float Sqrt(float a) => MathF.Sqrt(a);
         public static float Round(float a) => MathF.Round(a);
         public static int RoundToInt(float a) => (int)MathF.Round(a);
         public static float Clamp(float v,float min,float max)=> MathF.Max(min,MathF.Min(max,v));
         public static int Clamp(int v,int min,int max) => Math.Max(min,Math.Min(max,v));
         public static float Repeat(float value, float length) => value-MathF.Floor(value/length)*length;
     }
+    public enum CameraClearFlags { Skybox, SolidColor, Depth, Nothing }
     public class Camera : Behaviour
     {
         public static Camera main;
+        public CameraClearFlags clearFlags;
+        public Color backgroundColor;
         public Ray ScreenPointToRay(Vector3 point) => new Ray();
     }
     public struct Ray { public Vector3 GetPoint(float d) => Vector3.zero; }
@@ -99,7 +211,7 @@ namespace UnityEngine
         public Plane(Vector3 normal,Vector3 point) { }
         public bool Raycast(Ray ray,out float d){d=0;return true;}
     }
-    public enum KeyCode { LeftShift, LeftControl, RightControl, Z, Y, S, D, Delete, Escape, Q, E }
+    public enum KeyCode { LeftShift, RightShift, LeftControl, RightControl, A, Z, Y, S, D, Delete, Escape, Q, E }
     public static class Input
     {
         public static Vector3 mousePosition;
@@ -107,6 +219,8 @@ namespace UnityEngine
         public static bool GetKey(KeyCode code) => false;
         public static bool GetKeyDown(KeyCode code) => false;
         public static bool GetMouseButtonDown(int button) => false;
+        public static bool GetMouseButton(int button) => false;
+        public static bool GetMouseButtonUp(int button) => false;
         public static float GetAxisRaw(string name) => 0;
     }
     public static class Screen { public static int width = 1600, height = 900; }
@@ -114,7 +228,12 @@ namespace UnityEngine
     public class GUILayoutOption { }
     public class GUIStyle { }
     public class GUISkin { public GUIStyle box = new GUIStyle(); }
-    public static class GUI { public static GUISkin skin = new GUISkin(); }
+    public static class GUIUtility { public static string systemCopyBuffer = ""; }
+    public static class GUI
+    {
+        public static GUISkin skin = new GUISkin();
+        public static void Box(Rect r, string caption) { }
+    }
     public struct Rect
     {
         public Rect(float x,float y,float width,float height) { }
@@ -125,6 +244,7 @@ namespace UnityEngine
         public static GUILayoutOption MinHeight(float size)=>new GUILayoutOption();
         public static GUILayoutOption Width(float size)=>new GUILayoutOption();
         public static void BeginArea(Rect bounds, GUIStyle style) { }
+        public static void Space(float amount) { }
         public static void EndArea() { }
         public static void BeginHorizontal() { }
         public static void EndHorizontal() { }
@@ -155,12 +275,17 @@ namespace UnityEngine
     public static class Debug
     {
         public static void LogWarning(string text) { }
+        public static void Log(string text) { }
         public static void LogError(string text) { }
     }
 }
 namespace UnityEngine.SceneManagement
 {
-    public static class SceneManager { public static void LoadScene(int index) { } }
+    public static class SceneManager
+    {
+        public static int LastLoadedScene = -1;
+        public static void LoadScene(int index) { LastLoadedScene = index; }
+    }
 }
 namespace Sinbinder.Core
 {
@@ -177,7 +302,15 @@ namespace Sinbinder.Gameplay
     public static class MapLoader
     {
         public static UnityEngine.GameObject Prefab(string name)
-            => string.IsNullOrWhiteSpace(name) ? null : new UnityEngine.GameObject(name);
+        {
+            if (Sinbinder.Core.MapAssets.IsUserProp(name))
+                return Sinbinder.Core.MapAssets.UserPrefab(name);
+            if (string.IsNullOrWhiteSpace(name) ||
+                !Sinbinder.Core.MapAssets.ValidId(name)) return null;
+            var loaded = UnityEngine.Resources.Load<UnityEngine.GameObject>("MapProps/" + name);
+            return loaded != null ? loaded
+                : UnityEngine.Resources.Load<UnityEngine.GameObject>("Props/" + name);
+        }
     }
     public static class Gaze
     {

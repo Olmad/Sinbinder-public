@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - 'feature/map-editor-terrain-*'
+      - 'integration/worldforge-*'
     paths:
       - "Assets/Scripts/Core/MapData.cs"
       - "Assets/Scripts/Gameplay/MapEditor.cs"
@@ -11,6 +13,15 @@ on:
       - "Assets/Scripts/UI/GearPanel.cs"
       - "Tools/map-editor/**"
       - ".github/workflows/map-editor-smoke.yml"
+  pull_request:
+    paths:
+      - 'Assets/Scripts/Core/MapData.cs'
+      - 'Assets/Scripts/Gameplay/MapEditor.cs'
+      - 'Assets/Scripts/Gameplay/MapLoader.cs'
+      - 'Assets/Scripts/Gameplay/MapLogicRunner.cs'
+      - 'Assets/Editor/**'
+      - 'Tools/map-editor/**'
+      - '.github/workflows/map-editor-smoke.yml'
   workflow_dispatch:
 
 permissions:
