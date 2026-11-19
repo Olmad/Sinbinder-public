@@ -1,0 +1,27 @@
+name: Map editor visibility hotfix guard
+
+on:
+  push:
+    branches:
+      - 'fix/map-editor-black-screen-*'
+    paths:
+      - 'Assets/Scenes/Tug/MapEditor.unity'
+      - 'Assets/Scripts/Gameplay/MapEditor.cs'
+      - 'Assets/Scripts/Gameplay/MapLoader.cs'
+      - 'Assets/Resources/MapProps/Pine.prefab'
+      - 'Assets/Resources/Props/Pine.fbx.meta'
+      - 'Tools/map-editor-visibility/**'
+      - '.github/workflows/map-editor-visibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scene-visibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source-level visible editor scene and prefab checks
+        run: python3 Tools/map-editor-visibility/check_visibility.py
