@@ -39,6 +39,15 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool Court { get; private set; } = true;
 
+        private const string CourtWalkKey = "sinbinder.court.walk";
+
+        /// <summary>
+        /// Первый суд — вариант (docs/68; автор, 19.11: «несколько вариантов собрать»):
+        /// «вы — судья» — во тьме зала игрок сам идёт к месту своего приказа среди судей;
+        /// «как раньше» — сразу кран на общий план.
+        /// </summary>
+        public static bool CourtWalk { get; private set; } = true;
+
         /// <summary>
         /// Облегчённая графика: без теней и без затенения углов
         /// (<see cref="FrameBudget"/>). Пока игрок не выбрал сам — по
@@ -85,6 +94,7 @@ namespace Sinbinder.Core
             SensitivityScale = PlayerPrefs.GetFloat(SensitivityKey, 1f);
             MusicScale = PlayerPrefs.GetFloat(MusicKey, 1f);
             Court = Application.isBatchMode || PlayerPrefs.GetInt(CourtKey, 1) != 0;
+            CourtWalk = PlayerPrefs.GetInt(CourtWalkKey, 1) != 0;
 
             LightGraphics = PlayerPrefs.HasKey(GraphicsKey)
                 ? PlayerPrefs.GetInt(GraphicsKey, 0) != 0
@@ -178,6 +188,15 @@ namespace Sinbinder.Core
         {
             Court = !Court;
             PlayerPrefs.SetInt(CourtKey, Court ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        public static string CourtWalkName() => CourtWalk ? Loc.T("вы — судья") : Loc.T("как раньше");
+
+        public static void ToggleCourtWalk()
+        {
+            CourtWalk = !CourtWalk;
+            PlayerPrefs.SetInt(CourtWalkKey, CourtWalk ? 1 : 0);
             PlayerPrefs.Save();
         }
 

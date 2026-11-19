@@ -177,6 +177,13 @@ namespace Sinbinder.UI
                 Draw();
             });
 
+            // Первый суд — вариант (docs/68): «вы — судья» (идёте к месту своего приказа) или как раньше.
+            Add(ref y, Loc.T("Первый суд"), Core.Preferences.CourtWalkName(), () =>
+            {
+                Core.Preferences.ToggleCourtWalk();
+                Draw();
+            });
+
             // Язык — названием на самом языке (LocSetup.Languages): включивший
             // чужой по ошибке узнает свой, не читая чужого.
             Add(ref y, Loc.T("Язык"), Core.LocSetup.CurrentName(), () =>

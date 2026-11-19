@@ -820,6 +820,7 @@ namespace Sinbinder.EditorTools
             Write((ok ? "=== СОН ПРОЙДЕН: " : "=== СОН НЕ ПРОЙДЕН: ") + why);
             Write($"итог: миг при убийцах — {DreamTutorialDirector.RefusalResult ?? "не было"}; суд — {SoulCourt.Outcome ?? "не было"}; "
                 + $"без убийц — {DreamTutorialDirector.RetestResult ?? "не проверялся"}; шёпот — {DreamTutorialDirector.WhisperResult ?? "не шептали"}; "
+                + $"место приказа в суде — {(string.IsNullOrEmpty(SoulCourt.TookSeat) ? "не ходили" : SoulCourt.TookSeat)}; "
                 + $"ошибок в журнале {_errors}");
             Write("хронометраж сна (FIRST-FIVE-MINUTES, T0–T8):");
             foreach (var mark in DreamTutorialDirector.Timeline) Write("  " + mark);

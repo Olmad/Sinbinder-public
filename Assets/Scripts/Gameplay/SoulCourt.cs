@@ -53,6 +53,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Последний суд был коротким — для прогона.</summary>
         public static bool Brief { get; private set; }
 
+        /// <summary>Как игрок дошёл до места приказа (вариант «вы — судья») — для прогона; пусто — не ходил.</summary>
+        public static string TookSeat { get; private set; } = "";
+
         private const string SeenKey = "sinbinder.court.seen";
 
         /// <summary>
@@ -69,7 +72,7 @@ namespace Sinbinder.Gameplay
         private static void Rearm()
         {
             Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0;
-            Held = 0; Decided.Clear();
+            Held = 0; Decided.Clear(); TookSeat = "";
             // Суд, оборванный сменой сцены (выход в меню посреди суда), запирал
             // все следующие до перезапуска игры: Sitting оставался true.
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Unstick;
@@ -464,6 +467,171 @@ namespace Sinbinder.Gameplay
         /// мир стоит, пока суд идёт.
         /// </summary>
         /// <summary>Пауза суда; сцену пропускают (Esc, Letterbox.SkipAll) — без паузы.</summary>
+        /// <summary>
+        /// Суд «вы — судья» (замысел автора, docs/68): тьма, свет — только над вашим местом,
+        /// судьи уже стоят, огни их голосов горят. Игрок сам (W, A, S, D) идёт к месту своего
+        /// приказа и встаёт на него — телом понимает, что его приказ — один голос из многих.
+        /// Место — на стороне «за приказ», с краю. Чем тише дошёл приказ (CommandVolume — та же
+        /// глушь, что слышат Уныние и Гордыня), тем дальше оно от середины. Фигура — судейская:
+        /// ряса судей, глаза цвета «за приказ». Сам суд дальше прежний. Только первый суд;
+        /// без шагов 6 с, через 12 с или по пропуску полос (Esc) фигура дойдёт сама.
+        /// </summary>
+        private static IEnumerator TakeSeat(SoulCourt host, Dialogue.DialogueCameraController camera, UI.Letterbox box,
+                                            Fader fader, Transform hall, float volume, string court, Vector3 look, Vector3 overview)
+        {
+            Step = "walk";
+            TookSeat = "";
+            const float Angle = 168f, Pace = 1.5f;
+            float a = Angle * Mathf.Deg2Rad;
+            Vector3 seat = Hall + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Mathf.Lerp(3.1f, 2.0f, Mathf.Clamp01(volume));
+            Vector3 dir = Flat(seat - Hall);
+            var face = Quaternion.LookRotation(-dir);
+            var dark = Lit(new Color(0.11f, 0.07f, 0.045f), 0.35f);
+            var wax = Lit(new Color(0.78f, 0.72f, 0.60f), 0.2f);
+
+            // Место как у судей: помост и спинка; вместо кафедры — свеча приказа у ног.
+            Piece(hall, PrimitiveType.Cube, "Место приказа, помост", seat + Vector3.up * (Dais * 0.5f),
+                  new Vector3(0.84f, Dais, 1.2f), dark).transform.rotation = face;
+            Piece(hall, PrimitiveType.Cube, "Место приказа, спинка", seat + dir * 0.42f + Vector3.up * (Dais + 0.95f),
+                  new Vector3(0.56f, 1.9f, 0.08f), dark).transform.rotation = face;
+            var candle = Candle(hall, seat - dir * 0.3f + Vector3.Cross(Vector3.up, dir) * 0.38f + Vector3.up * Dais, 0.18f,
+                                ForOrderTone, wax, out _, 1f);
+            candle.intensity = 0.25f;
+            candle.range = 2.2f;
+            var spot = new GameObject("Свет над местом приказа").AddComponent<Light>();
+            spot.transform.SetParent(hall, false);
+            spot.transform.position = seat + Vector3.up * 4.6f;
+            spot.transform.rotation = Quaternion.LookRotation(Vector3.down);
+            spot.type = LightType.Spot;
+            spot.spotAngle = 34f;
+            spot.innerSpotAngle = 16f;
+            spot.range = 7f;
+            spot.intensity = 6f;
+            spot.color = new Color(1f, 0.86f, 0.62f);
+            spot.shadows = LightShadows.None;
+            var tag = host.AddTag(seat + Vector3.up * (Dais + 2.15f), Loc.T("Ваш приказ"), ForOrderTone, 0.024f, true);
+            Show(tag);
+
+            // Вы — из глубины зала, за спиной подсудимого.
+            Vector3 start = Hall + new Vector3(-0.9f, 0f, -3.4f);
+            Vector3 heading = Flat(seat - start), right = Vector3.Cross(Vector3.up, heading);
+            var me = new GameObject("Вы").transform;
+            me.SetParent(hall, false);
+            me.SetPositionAndRotation(start, Quaternion.LookRotation(heading));
+            var body = SinbinderPlayer.Judge(me, ForOrderTone);
+            var anims = body != null ? body.GetComponentsInChildren<Animator>() : new Animator[0];
+            foreach (var an in anims) an.updateMode = AnimatorUpdateMode.UnscaledTime;
+            string pose = "";
+            void Pose(string state)
+            {
+                if (pose == state) return;
+                pose = state;
+                int hash = Animator.StringToHash(state);
+                foreach (var an in anims)
+                    if (an != null && an.runtimeAnimatorController != null && an.HasState(0, hash)) an.CrossFade(hash, 0.15f, 0);
+            }
+            Pose(BodyMotion.Idle);
+            // Во тьме зала себя должно быть видно: тусклый свет идёт с вами.
+            var own = new GameObject("Свет над вами").AddComponent<Light>();
+            own.transform.SetParent(me, false);
+            own.transform.localPosition = new Vector3(0f, 2.3f, -0.6f);
+            own.type = LightType.Point;
+            own.range = 3.2f;
+            own.intensity = 1.1f;
+            own.color = new Color(1f, 0.82f, 0.62f);
+            own.shadows = LightShadows.None;
+
+            // Камера — за плечами, курс — на место: W всегда ведёт к нему.
+            Vector3 Eye(Vector3 at) => at - heading * 2.9f + Vector3.up * 1.75f;
+            Vector3 Aim(Vector3 at) => at + heading * 1.8f + Vector3.up * 0.95f;
+            Vector3 follow = start;
+            camera.Crane(Aim(follow), Eye(follow), WideFov, Aim(follow), Eye(follow), WideFov, 999f, 0.1f, 0f, 0f);
+            yield return new WaitForSecondsRealtime(0.35f);
+            Toll(hall, 0.62f, 0.5f);
+            yield return fader.To(0f, 1.2f);
+            host.StartCoroutine(Line(box, host, court,
+                Loc.T("Ваш приказ — тоже голос в этом суде. Его место — в свете. Займите его: W, A, S, D."), 12f));
+
+            float t0 = Time.unscaledTime, still = Time.unscaledTime;
+            bool led = Application.isBatchMode;   // прогон ведёт фигуру сам
+            while (true)
+            {
+                float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+                Vector3 at = me.position, to = seat - at;
+                to.y = 0f;
+                if (to.magnitude < 0.3f) break;
+                Vector3 move = Vector3.zero;
+                if (!led)
+                {
+                    if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) move += heading;
+                    if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) move -= heading;
+                    if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) move += right;
+                    if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) move -= right;
+                    if (move.sqrMagnitude > 0f) still = Time.unscaledTime;
+                    if (UI.Letterbox.Skipping || Time.unscaledTime - t0 > 12f || Time.unscaledTime - still > 6f) led = true;
+                }
+                if (led) move = to;
+                if (move.sqrMagnitude > 1e-4f)
+                {
+                    move.Normalize();
+                    me.position = InHall(at + move * Mathf.Min(Pace * dt, led ? to.magnitude : 1f));
+                    me.rotation = Quaternion.Slerp(me.rotation, Quaternion.LookRotation(move), 1f - Mathf.Exp(-10f * dt));
+                    Pose(BodyMotion.Walk);
+                }
+                else Pose(BodyMotion.Idle);
+                follow = Vector3.Lerp(follow, me.position, 1f - Mathf.Exp(-5f * dt));
+                camera.Crane(Aim(follow), Eye(follow), WideFov, Aim(follow), Eye(follow), WideFov, 999f, 0.1f, 0f, 0f);
+                yield return null;
+            }
+
+            // На месте: шаг на помост — и лицом к подсудимому, как все судьи.
+            Pose(BodyMotion.Idle);
+            Vector3 from = me.position;
+            var turn = me.rotation;
+            for (float t = 0f; t < 0.4f; t += Time.unscaledDeltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / 0.4f);
+                me.SetPositionAndRotation(Vector3.Lerp(from, seat + Vector3.up * Dais, k), Quaternion.Slerp(turn, face, k));
+                yield return null;
+            }
+            me.SetPositionAndRotation(seat + Vector3.up * Dais, face);
+            candle.intensity = 0.6f;
+            TookSeat = (led ? "довела игра" : "сам") + $" за {Time.unscaledTime - t0:F1} с, громкость приказа {volume:F2}";
+            Debug.Log($"[СУД] место приказа заняли: {TookSeat}");
+
+            // Встали — камера поднимается на общий план, дальше привычный суд.
+            yield return Beat(0.5f);
+            var eye = Camera.main;
+            Vector3 eyeAt = eye != null ? eye.transform.position : Eye(follow);
+            Vector3 aimAt = eye != null ? eyeAt + eye.transform.forward * 4f : Aim(follow);
+            camera.Crane(aimAt, eyeAt, WideFov, look, overview, WideFov, 0.2f, RiseSeconds * 0.8f, 20f, OverviewPush);
+            host.StartCoroutine(SunbeamFade(0.6f, RiseSeconds * 0.7f));
+            spot.intensity = 2.5f;
+            yield return Beat(0.2f + RiseSeconds * 0.8f);
+        }
+
+        /// <summary>Пол зала для идущего к месту: к судьям не подняться, сквозь скамью подсудимого и аналой не пройти.</summary>
+        private static Vector3 InHall(Vector3 p)
+        {
+            Vector3 d = p - Hall;
+            d.y = 0f;
+            d.x = Mathf.Clamp(d.x, -4.4f, 4.4f);
+            d.z = Mathf.Clamp(d.z, -4.8f, 3.0f);
+            if (d.z > -1f && d.magnitude > 3.2f) d = d.normalized * 3.2f;
+            d = Outside(d, Vector2.zero, new Vector2(0.8f, 0.75f));                    // скамья подсудимого
+            d = Outside(d, new Vector2(0f, 1.45f), new Vector2(0.42f, 0.36f));          // аналой с приказом
+            return Hall + d;
+        }
+
+        private static Vector3 Outside(Vector3 d, Vector2 centre, Vector2 half)
+        {
+            float x = d.x - centre.x, z = d.z - centre.y;
+            if (Mathf.Abs(x) >= half.x || Mathf.Abs(z) >= half.y) return d;
+            if (half.x - Mathf.Abs(x) < half.y - Mathf.Abs(z)) d.x = centre.x + (x < 0f ? -half.x : half.x);
+            else d.z = centre.y + (z < 0f ? -half.y : half.y);
+            return d;
+        }
+
         private static IEnumerator Beat(float seconds)
         {
             float end = Time.realtimeSinceStartup + seconds;
@@ -567,16 +735,21 @@ namespace Sinbinder.Gameplay
             var before = Audio.Music.Current;
             Audio.Music.Play(Audio.Track.Court, 2.5f);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
-            camera.Crane(Hall + RiseLook, Hall + RiseFrom, RiseFov, look, overview, WideFov,
-                         RiseHold, RiseSeconds, 20f, OverviewPush);
-            host.StartCoroutine(SunbeamFade(RiseHold + 0.4f, RiseSeconds * 0.7f));
-            yield return new WaitForSecondsRealtime(0.35f);
-            Toll(hall.transform, 0.62f, 0.5f);
-            yield return fader.To(0f, 1.6f);
-            yield return Beat(RiseHold + 0.5f - 0.35f - 1.6f);
+            string court = Loc.T("Суд души");
+            if (!shortly && Preferences.CourtWalk)
+                yield return TakeSeat(host, camera, box, fader, hall.transform, c.CommandVolume, court, look, overview);
+            else
+            {
+                camera.Crane(Hall + RiseLook, Hall + RiseFrom, RiseFov, look, overview, WideFov,
+                             RiseHold, RiseSeconds, 20f, OverviewPush);
+                host.StartCoroutine(SunbeamFade(RiseHold + 0.4f, RiseSeconds * 0.7f));
+                yield return new WaitForSecondsRealtime(0.35f);
+                Toll(hall.transform, 0.62f, 0.5f);
+                yield return fader.To(0f, 1.6f);
+                yield return Beat(RiseHold + 0.5f - 0.35f - 1.6f);
+            }
             Step = "hall";
 
-            string court = Loc.T("Суд души");
             var spot = Spotlight(host.transform);
             if (shortly)
             {
