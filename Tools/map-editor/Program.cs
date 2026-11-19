@@ -971,6 +971,81 @@ static class Program
         }
     }
 
+    static void WorldForgeBestImprovementsContracts()
+    {
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", X = 20f, Z = 4f, Scale = 1f });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Set(editor, "_snap", 2f);
+        Invoke(editor, "SelectAllThings");
+        Check((bool)Invoke(editor, "NearSelectedThing", new Vector3(3f, 0f, 4f)),
+              "only already-selected props can start a world drag");
+        Check(!(bool)Invoke(editor, "NearSelectedThing", new Vector3(100f, 0f, 100f)),
+              "clicking empty ground does not start a group drag");
+        Invoke(editor, "CommitSelectionDrag",
+               new Vector3(3f, 0f, 4f), new Vector3(7.8f, 0f, 7.2f));
+        Check(map.Things[0].X == 7f && map.Things[0].Z == 8f &&
+              map.Things[1].X == 24f && map.Things[1].Z == 8f,
+              "viewport drag moves selected group by a snapped relative delta");
+        Check(map.Crypts[0].X == 0f && map.Regions[0].X == 1f &&
+              map.Triggers.Count == 0,
+              "viewport group move does not mutate gameplay anchors or trigger references");
+        var undoField = typeof(MapEditor).GetField("_undo",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Check(((List<string>)undoField.GetValue(editor)).Count == 1,
+              "one viewport group drag makes one undo transaction");
+        Invoke(editor, "Undo");
+        var reverted = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(reverted.Things[0].X == 3f && reverted.Things[1].X == 20f,
+              "one Undo reverts every moved prop");
+        Invoke(editor, "Redo");
+        var movedAgain = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(movedAgain.Things[0].X == 7f && movedAgain.Things[1].X == 24f,
+              "Redo restores viewport group move");
+
+        // A near-edge drag must reject the entire move without recording history.
+        var edgeMap = Map();
+        edgeMap.Things[0].X = 149f;
+        var edgeEditor = new MapEditor();
+        Set(edgeEditor, "_map", edgeMap);
+        Set(edgeEditor, "_name", edgeMap.Name);
+        Set(edgeEditor, "_snap", 2f);
+        Invoke(edgeEditor, "SelectAllThings");
+        Invoke(edgeEditor, "CommitSelectionDrag",
+               new Vector3(149f, 0f, 4f), new Vector3(154f, 0f, 4f));
+        Check(edgeMap.Things[0].X == 149f &&
+              ((List<string>)undoField.GetValue(edgeEditor)).Count == 0,
+              "out-of-bounds viewport drags are rejected atomically");
+
+        var camera = new Camera();
+        Set(editor, "_cam", camera);
+        Invoke(editor, "SelectAllThings");
+        Invoke(editor, "FocusSelection");
+        Check(MathF.Abs(camera.transform.position.x - 15.5f) < 0.001f &&
+              MathF.Abs(camera.transform.position.z - (8f - 70f * 0.35f)) < 0.001f,
+              "Ctrl+F focus centers the existing editor camera on selected group centroid");
+
+        var invalid = Map();
+        invalid.Things[0].X = 1000f;
+        invalid.Regions[0].Radius = -1f;
+        var diagnostics = new MapEditor();
+        Set(diagnostics, "_map", invalid);
+        Set(diagnostics, "_name", invalid.Name);
+        int count = (int)Invoke(diagnostics, "RunValidation");
+        var issueField = typeof(MapEditor).GetField("_validationIssues",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var issues = (List<string>)issueField.GetValue(diagnostics);
+        Check(count >= 2 && issues.Count == count,
+              "validation retains all map errors instead of the first only");
+        Invoke(diagnostics, "Record");
+        Check(issues.Count == 0,
+              "a new edit invalidates cached diagnostics rather than showing stale errors");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -990,6 +1065,7 @@ static class Program
         RectangleSelectionContracts();
         MissingPreviewAssetsAreVisible();
         AuthoringCameraFallback();
+        WorldForgeBestImprovementsContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
