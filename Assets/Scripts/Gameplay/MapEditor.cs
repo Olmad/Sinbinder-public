@@ -109,6 +109,9 @@ namespace Sinbinder.Gameplay
         private string _customProp = "";
         private string _templateDraftName = "Camp";
         private string _activeTemplateName = "";
+        private MapObjectTemplate.Layout _activeTemplateLayout;
+        private readonly List<GameObject> _templatePreviewMarkers = new();
+        private readonly List<Material> _templatePreviewMaterials = new();
         private List<string> _templateNames = new();
         private Vector2 _templateScroll;
         private GameObject[] _customPrefabs = new GameObject[0];
@@ -300,6 +303,7 @@ namespace Sinbinder.Gameplay
                 {
                     _mode = Mode.Select;
                     _activeTemplateName = "";
+                    _activeTemplateLayout = null;
                     HideBrushCursor();
                     _say = Loc.T("Размещение шаблона отменено.");
                     return;
@@ -451,14 +455,15 @@ namespace Sinbinder.Gameplay
 
         private void ChooseTemplate(string name)
         {
-            if (!MapObjectTemplate.TryLoad(name, out _, out string error))
+            if (!MapObjectTemplate.TryLoad(name, out var layout, out string error))
             {
                 _say = error;
                 return;
             }
             _activeTemplateName = name;
+            _activeTemplateLayout = layout;
             _mode = Mode.Template;
-            _say = Loc.F("Шаблон {0}: нажмите ЛКМ на карте для установки. Esc — отмена.", name);
+            _say = Loc.F("Шаблон {0}: ЛКМ — установить; Q/E — повернуть; Esc — отмена.", name);
         }
 
         private void PasteActiveTemplate(Vector3 at)
@@ -470,10 +475,15 @@ namespace Sinbinder.Gameplay
             }
             if (!MapObjectTemplate.TryLoad(_activeTemplateName, out var layout, out string error))
             {
+                _activeTemplateLayout = null;
+                HideBrushCursor();
                 _say = error;
                 return;
             }
-            if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z,
+            // Reload from disk on every paste: an edited/deleted template cannot
+            // be silently inserted from a stale in-memory preview.
+            _activeTemplateLayout = layout;
+            if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z, _yaw,
                     out var things, out var rules))
             {
                 _say = Loc.T("Шаблон не помещается на карте, повреждён или превышен лимит объектов/правил.");
@@ -674,13 +684,72 @@ namespace Sinbinder.Gameplay
             if (touched) RedrawTerrainOnly(_mode == Mode.Terrain);
         }
 
+        private void HideTemplatePreview()
+        {
+            foreach (var marker in _templatePreviewMarkers)
+                if (marker != null) marker.SetActive(false);
+        }
+
         private void HideBrushCursor()
         {
             if (_brushCursor != null) _brushCursor.SetActive(false);
+            HideTemplatePreview();
+        }
+
+        // Map-only ghost markers. No new authored objects, colliders, selection
+        // or Undo entries are generated while the mouse moves.
+        private void ShowTemplatePreview(Vector3 center)
+        {
+            if (_activeTemplateLayout == null || _map == null)
+            {
+                HideTemplatePreview();
+                return;
+            }
+            bool withinBounds = MapObjectTemplate.TryProject(
+                _activeTemplateLayout, _map.Size, center.x, center.z, _yaw,
+                out var positions);
+            if (positions == null)
+            {
+                HideTemplatePreview();
+                return;
+            }
+            bool fits = withinBounds &&
+                _map.Things.Count + _activeTemplateLayout.Items.Count <= 4096 &&
+                _map.Triggers.Count + _activeTemplateLayout.Interactions.Count <= 128;
+            while (_templatePreviewMarkers.Count < positions.Count)
+            {
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                marker.name = "Sinbinder template footprint preview only";
+                Destroy(marker.GetComponent<Collider>());
+                var material = new Material(Shader.Find("Sprites/Default"));
+                marker.GetComponent<Renderer>().sharedMaterial = material;
+                _templatePreviewMarkers.Add(marker);
+                _templatePreviewMaterials.Add(material);
+            }
+            for (int i = 0; i < _templatePreviewMarkers.Count; i++)
+            {
+                var marker = _templatePreviewMarkers[i];
+                bool visible = i < positions.Count;
+                marker.SetActive(visible);
+                if (!visible) continue;
+                var point = positions[i];
+                float radius = Mathf.Clamp(
+                    _activeTemplateLayout.Items[i].Scale * 0.8f, 0.35f, 2.5f);
+                marker.transform.position = new Vector3(point.x,
+                    MapTerrain.HeightAt(_map, point.x, point.y) + 0.22f, point.y);
+                marker.transform.localScale = new Vector3(
+                    radius * 2f, 0.02f, radius * 2f);
+                bool pointFits = Mathf.Abs(point.x) <= _map.Size * 0.5f &&
+                                 Mathf.Abs(point.y) <= _map.Size * 0.5f;
+                _templatePreviewMaterials[i].color = fits && pointFits
+                    ? new Color(0.25f, 0.9f, 0.5f, 0.42f)
+                    : new Color(0.95f, 0.25f, 0.25f, 0.55f);
+            }
         }
 
         private void ShowBrushCursor(Vector3 at)
         {
+            if (_mode == Mode.Template) at = Snapped(at);
             if (_mode != Mode.Terrain && _mode != Mode.Paint &&
                 _mode != Mode.Vegetation && _mode != Mode.Template)
             {
@@ -714,6 +783,8 @@ namespace Sinbinder.Gameplay
                         : _terrainRaise
                             ? new Color(0.4f, 0.85f, 0.25f, 0.24f)
                             : new Color(0.8f, 0.25f, 0.55f, 0.24f);
+            if (_mode == Mode.Template) ShowTemplatePreview(at);
+            else HideTemplatePreview();
         }
 
         // ---------------------------------------------------------- selection and history
@@ -1310,6 +1381,12 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             ClearPreview();
+            foreach (var marker in _templatePreviewMarkers)
+                if (marker != null) Destroy(marker);
+            foreach (var material in _templatePreviewMaterials)
+                if (material != null) Destroy(material);
+            _templatePreviewMarkers.Clear();
+            _templatePreviewMaterials.Clear();
             if (_brushCursor != null) Destroy(_brushCursor);
             if (_brushCursorMaterial != null) Destroy(_brushCursorMaterial);
             if (_terrainMesh != null) Destroy(_terrainMesh);
@@ -1669,7 +1746,7 @@ namespace Sinbinder.Gameplay
                     ChooseTemplate(templateName);
             GUILayout.EndScrollView();
             if (_mode == Mode.Template)
-                GUILayout.Label(Loc.T("ЛКМ: вставить композицию · Esc: выйти из режима."));
+                GUILayout.Label(Loc.T("ЛКМ: вставить · Q/E: повернуть · Esc: выйти. Зелёный: внутри карты; красный: границы/лимиты."));
             if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
             if (_validationIssues.Count > 0)
             {

@@ -1357,6 +1357,38 @@ static class Program
                   props[0].X == 25f && props[0].Z == 35f &&
                   props[1].X == 35f && props[1].Z == 45f,
                   "pasted layout preserves shape at clicked anchor");
+            Check(MapObjectTemplate.TryProject(loaded, map.Size, 30f, 40f, 90f,
+                  out var footprint) && footprint.Count == 2 &&
+                  Math.Abs(footprint[0].x - 25f) < 0.001f &&
+                  Math.Abs(footprint[0].y - 45f) < 0.001f &&
+                  Math.Abs(footprint[1].x - 35f) < 0.001f &&
+                  Math.Abs(footprint[1].y - 35f) < 0.001f,
+                  "positive Y quarter-turn rotates template footprints around the center");
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f, 90f,
+                  out var rotatedProps, out var rotatedRules) &&
+                  Math.Abs(rotatedProps[0].X - footprint[0].x) < 0.001f &&
+                  Math.Abs(rotatedProps[0].Z - footprint[0].y) < 0.001f &&
+                  Math.Abs(rotatedProps[0].Yaw - 125f) < 0.001f &&
+                  Math.Abs(rotatedProps[1].Yaw - 180f) < 0.001f &&
+                  rotatedRules[0].TargetId == rotatedProps[1].Id,
+                  "rotated paste agrees with ghost footprint and preserves F links");
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f, -90f,
+                  out var counterclockwise, out _) &&
+                  Math.Abs(counterclockwise[0].X - 35f) < 0.001f &&
+                  Math.Abs(counterclockwise[0].Z - 35f) < 0.001f &&
+                  Math.Abs(counterclockwise[0].Yaw - 305f) < 0.001f,
+                  "negative rotation counter-rotates layout and normalises object yaw");
+            Check(MapObjectTemplate.TryProject(loaded, map.Size, 149f, 149f, 90f,
+                  out var invalidFootprint) == false &&
+                  invalidFootprint != null && invalidFootprint.Count == 2 &&
+                  !MapObjectTemplate.TryPlanPaste(loaded, map, 149f, 149f, 90f,
+                  out _, out _),
+                  "out-of-bounds rotated preview stays visible but paste fails atomically");
+            Check(!MapObjectTemplate.TryProject(loaded, map.Size, 0f, 0f,
+                  float.NaN, out var noFootprint) && noFootprint == null &&
+                  !MapObjectTemplate.TryPlanPaste(loaded, map, 0f, 0f,
+                  float.PositiveInfinity, out _, out _),
+                  "non-finite template rotation is rejected before preview or paste");
             Check(props[0].Id != "p1" && props[1].Id != "p2" &&
                   props[0].Id != props[1].Id &&
                   rules[0].Id != "rule1" && rules[0].TargetId == props[1].Id &&
@@ -1432,6 +1464,35 @@ static class Program
             Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
                   redone.Triggers[1].TargetId == redone.Things[3].Id,
                   "Redo restores pasted composition and exact new reference mapping");
+            // Moving the ghost must not dirty authored map or push Undo history.
+            Set(editor, "_yaw", 90f);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            var ghostField = typeof(MapEditor).GetField("_templatePreviewMarkers",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var ghosts = (List<GameObject>)ghostField.GetValue(editor);
+            Check(ghosts.Count == 2 && ghosts[0].activeSelf && ghosts[1].activeSelf &&
+                  Math.Abs(ghosts[0].transform.position.x - 55f) < 0.001f &&
+                  Math.Abs(ghosts[0].transform.position.z - 70f) < 0.001f &&
+                  Math.Abs(ghosts[1].transform.position.x - 65f) < 0.001f &&
+                  Math.Abs(ghosts[1].transform.position.z - 60f) < 0.001f,
+                  "editor previews every prop at the same rotated coordinates as placement");
+            Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
+                  ((List<string>)undoField.GetValue(editor)).Count == 1,
+                  "moving template ghost never mutates map or Undo history");
+            Invoke(editor, "PasteActiveTemplate", new Vector3(80f, 0f, 85f));
+            Check(redone.Things.Count == 6 && redone.Triggers.Count == 3 &&
+                  Math.Abs(redone.Things[4].X - 75f) < 0.001f &&
+                  Math.Abs(redone.Things[4].Z - 90f) < 0.001f &&
+                  Math.Abs(redone.Things[4].Yaw - 125f) < 0.001f &&
+                  redone.Triggers[2].TargetId == redone.Things[5].Id &&
+                  ((List<string>)undoField.GetValue(editor)).Count == 2,
+                  "actual editor placement rotates full template as single Undo transaction");
+            Invoke(editor, "Undo");
+            var unrotated = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(unrotated.Things.Count == 4 && unrotated.Triggers.Count == 2,
+                  "Undo deletes rotated props AND their duplicated interaction");
+            Invoke(editor, "Redo");
 
             // Simulate external corruption and ensure the loader refuses it.
             File.WriteAllText(path, "{bad-json");
