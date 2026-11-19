@@ -72,7 +72,7 @@ Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa
 Assets/Scripts/AOS Engine/AutoAttackAOS.cs	28b01f5aa2f3c04eb64090012a4e0eb434fa0b5a	4813	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleContext.cs	bc6fefc5f44b37b699979dcc1602c5840f1200be	3920	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/AutoBattleResolver.cs	ba1ed56d7e7b7b499b9a3ec7c972724f8bff5e96	14938	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/BattleNarrator.cs	b1a75d7c901f410f2a017924ee20504f5c9a1224	2278	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/BattleNarrator.cs	b1a75d7c901f410f2a017924ee20504f5c9a1224	2278	CSharp	6	6	3	0	FAIL	Full source read lines 1-57 at base blob b1a75d7c901f410f2a017924ee20504f5c9a1224; six Loc.T phrases independently checked against en.txt lines 6-28 base blob c12806f2da2b415092b903b85c8ae489ebc46c78. FAIL: Build(null/empty) asserts no disputes and obedience without any evidence (lines 18-19); entries.Count>4 treats five arbitrary journal strings as proof squad negotiated rather than obeyed (lines 46-48); 1-4 entries assert all other orders obeyed without order outcome evidence (line 49). Concrete counterexamples Build(null), Build(new[]{"retreat","wounded","fire","rain","victory"}), Build(new[]{"refused"}). Heading/repetition suffixes match loop behavior; EN translations convey same unsupported assertions. No runtime tested; caller contract not verified; no production edit.
 Assets/Scripts/AOS Engine/BattleRecord.cs	5ead96068234cf3877818d4c33fba407b78da041	2457	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/BehaviorResolver.cs	77c02f01b186d8da072a519e708a4ab648825799	30712	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/CombatDecisionContext.cs	342803f26060d9e93a8a29c7b04d1f02cdfd0be3	13693	CSharp	0	0	0	0	UNINSPECTED	
@@ -95,7 +95,7 @@ Assets/Scripts/AOS Engine/MemoryRecord.cs	db45ac40321e7fde8d5dc39cb2224cfd7aeeb5
 Assets/Scripts/AOS Engine/MissionAction.cs	b66adc1d0c18411beb4dbbabd8c931eccf177f75	1594	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MissionContext.cs	0906ad0a823613c3b99731460635c9fc2f915cb7	1391	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MissionID.cs	4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164	285	CSharp	0	0	0	0	EXCLUDED_TECH	Independent full C# source read lines 1-11 at baseline blob 4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164: enum declaration only (None/FalseGod/Plague); no string literals, Loc.T/Loc.F, serialized display values, UI text or dialogue. Enum identifiers are code symbols, not verified player-facing labels. Any downstream ToString() display or generated localization remains UNKNOWN and requires separate caller audit.
-Assets/Scripts/AOS Engine/MissionOutcome.cs	88586e1a961307b8fc82a302af5bc65d56693930	870	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MissionOutcome.cs	88586e1a961307b8fc82a302af5bc65d56693930	870	CSharp	0	0	0	0	EXCLUDED_TECH	Full source read lines 1-29 at base blob 88586e1a961307b8fc82a302af5bc65d56693930; enum MissionOutcome only, seven identifier members and XML comments, no literals, Loc.T/Loc.F or player-facing content; rendering via other call sites remains UNKNOWN.
 Assets/Scripts/AOS Engine/MissionResolver.cs	a09504986e5d7116c4abb6f2fa76c18be413b7fc	1160	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Modules/EnvyModule.cs	477923d69b5a66e1776c5f94e6b7e6e55d6e3f13	5430	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs	4992fb5ce5c328e4e668bd174dfd98f2004e31b8	4506	CSharp	0	0	0	0	UNINSPECTED	
