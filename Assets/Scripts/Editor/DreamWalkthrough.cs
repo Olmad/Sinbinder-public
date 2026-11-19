@@ -43,6 +43,10 @@ namespace Sinbinder.EditorTools
         private static string _lastAim = "";
         private static float _legsAt = -10f, _leverOrderAt = -1f, _lowSince = -1f;
         private static string NL => Environment.NewLine;
+        private static float _pausedAt = -1f;
+
+        /// <summary>Шаг прогона — для верстака (Workbench: «ping», «стоп на шаге»).</summary>
+        public static string Step => _step;
 
         static DreamWalkthrough()
         {
@@ -64,7 +68,7 @@ namespace Sinbinder.EditorTools
                 Utilets.DemoSceneBuilder.BuildDreamTutorial();
                 Write(File.Exists(ScenePath) ? "сцена сна собрана: " + ScenePath : "СЦЕНА СНА НЕ СОБРАЛАСЬ");
             }
-            if (!File.Exists(ScenePath)) { EditorApplication.Exit(1); return; }
+            if (!File.Exists(ScenePath)) { if (Workbench.Hosting) Workbench.DreamEnded(); else EditorApplication.Exit(1); return; }
 
             SessionState.SetBool(Active, true);
             EditorSceneManager.OpenScene(ScenePath);
@@ -106,6 +110,7 @@ namespace Sinbinder.EditorTools
             _step = step;
             _stepAt = Time.realtimeSinceStartup;
             Write("шаг: " + step);
+            if (Workbench.StopAt(step)) Write("  [ВЕРСТАК] стоп на шаге — пауза");
         }
 
         private static void Snap(string name)
@@ -119,6 +124,9 @@ namespace Sinbinder.EditorTools
         {
             if (!SessionState.GetBool(Active, false) || !EditorApplication.isPlaying || _done) return;
             float now = Time.realtimeSinceStartup;
+            // Пауза верстака (стоп на шаге, осмотр): часы прогона стоят, иначе после неё сработают сроки шагов.
+            if (EditorApplication.isPaused) { if (_pausedAt < 0f) _pausedAt = now; return; }
+            if (_pausedAt >= 0f) { float held = now - _pausedAt; _pausedAt = -1f; if (_t0 >= 0f) _t0 += held; _stepAt += held; _lastPoke += held; }
             if (_t0 < 0f) { _t0 = now; Go("ждём сон"); }
 
             // Экран пакетного прогона — 640×480, кадр (Snapshot) — 1600×900: подписи суда
@@ -801,6 +809,8 @@ namespace Sinbinder.EditorTools
             UI.Letterbox.Said -= Line;
             EditorApplication.isPlaying = false;
             int code = ok && _errors == 0 ? 0 : 1;
+            // Под верстаком Unity не закрывается: отчёт — ждущей команде, дальше новые команды.
+            if (Workbench.Hosting) { Workbench.DreamEnded(); return; }
             EditorApplication.delayCall += () => EditorApplication.Exit(code);
         }
     }
