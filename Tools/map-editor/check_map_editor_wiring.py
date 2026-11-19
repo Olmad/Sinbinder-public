@@ -86,5 +86,20 @@ assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
 assert "private List<string> Validate()" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
+assert "private void SaveSelectedTemplate()" in editor
+assert "private void ChooseTemplate(string name)" in editor
+assert "private void PasteActiveTemplate(Vector3 at)" in editor
+assert "MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z," in editor
+assert "MapObjectTemplate.TrySaveNew(layout, out _, out string error)" in editor
+assert "_map.Triggers.AddRange(rules);" in editor
+assert "Mode.Template" in editor and "Установить: {0}" in editor
+templates=src("Assets/Scripts/Gameplay/MapObjectTemplate.cs")
+assert "internal static bool TryPlanPaste(" in templates
+assert "internal static bool TryCapture(" in templates
+assert "internal static bool TrySaveNew(" in templates
+assert "internal static bool TryLoad(" in templates
+assert "File.Move(temp, destination);" in templates
+assert "guid: f786ecc0c1634fd39b2b7a53fa2e80b1" in src("Assets/Scripts/Gameplay/MapObjectTemplate.cs.meta")
+
 assert "UnityEditor" not in runner and "System.Reflection" not in runner
 print("PASS: scene GUID intact; imported material/prefab authoring paths; terrain paint/vegetation/mesh; F-ECA integration; atomic save")

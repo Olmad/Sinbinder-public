@@ -1297,6 +1297,153 @@ static class Program
               "invalid selected prop cannot cause a partial grid snap");
     }
 
+    static void ReusableTemplateContracts()
+    {
+        var map = Map();
+        map.Things[0].Yaw = 35f;
+        map.Things[0].Scale = 1.2f;
+        map.Things.Add(new MapData.Thing
+        {
+            Id = "p2", Prop = "Rock", MaterialId = "Stone",
+            X = 13f, Z = 14f, Yaw = 90f, Scale = 0.8f
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "rule1", Name = "Read sign", Event = "OnInteractObject",
+            TargetId = "p2", Action = "ShowMessage", Condition = "Always",
+            Message = "This is a test.", Once = false, Enabled = true
+        });
+        var ids = new HashSet<string> { "p1", "p2" };
+        var name = "Camp_" + Guid.NewGuid().ToString("N");
+        string path = null;
+        try
+        {
+            Check(!MapObjectTemplate.ValidName("../outside") &&
+                  !MapObjectTemplate.ValidName("one/two") &&
+                  !MapObjectTemplate.ValidName("") &&
+                  MapObjectTemplate.ValidName(name),
+                  "template filenames are strictly bounded and cannot traverse folders");
+            Check(MapObjectTemplate.TryCapture(map, ids, name, out var template),
+                  "selected authored props capture into reusable layout");
+            Check(template.Items.Count == 2 && template.Interactions.Count == 1 &&
+                  template.Items[0].Dx == -5 && template.Items[1].Dx == 5 &&
+                  template.Items[0].Dz == -5 && template.Items[1].Dz == 5,
+                  "template captures relative positions and linked F rules");
+            Check(template.Items[0].Prop == "Pine" && template.Items[0].Yaw == 35f &&
+                  template.Items[1].MaterialId == "Stone" && template.Items[1].Scale == 0.8f,
+                  "template retains prefabs, materials, rotations and scales");
+            Check(template.Interactions[0].TargetRef == template.Items[1].Ref &&
+                  template.Interactions[0].Message == "This is a test." &&
+                  !template.Interactions[0].Once,
+                  "template refers to its own local target, without original map GUID");
+            Check(MapObjectTemplate.TrySaveNew(template, out path, out _) &&
+                  File.Exists(path),
+                  "template is created as separate disk JSON without writing authored map");
+            string originalBytes = File.ReadAllText(path);
+            Check(!MapObjectTemplate.TrySaveNew(template, out _, out _) &&
+                  File.ReadAllText(path) == originalBytes,
+                  "existing template cannot be overwritten by repeated saves");
+            bool loadedOk = MapObjectTemplate.TryLoad(name, out var loaded, out _);
+            Check(MapObjectTemplate.ListNames().Contains(name) && loadedOk &&
+                  loaded.Items.Count == 2 && loaded.Interactions.Count == 1,
+                  "template is discoverable and roundtrips via separate library");
+            Check(!MapObjectTemplate.TryLoad("../outside", out _, out _),
+                  "loader rejects path traversal even when called directly");
+
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f,
+                  out var props, out var rules),
+                  "valid template plans a paste in open map bounds");
+            Check(props.Count == 2 && rules.Count == 1 &&
+                  props[0].X == 25f && props[0].Z == 35f &&
+                  props[1].X == 35f && props[1].Z == 45f,
+                  "pasted layout preserves shape at clicked anchor");
+            Check(props[0].Id != "p1" && props[1].Id != "p2" &&
+                  props[0].Id != props[1].Id &&
+                  rules[0].Id != "rule1" && rules[0].TargetId == props[1].Id &&
+                  rules[0].RegionId == "",
+                  "pasted props and F events use fresh remapped IDs without stale region links");
+            Check(map.Things.Count == 2 && map.Triggers.Count == 1 &&
+                  map.Things[0].X == 3f,
+                  "failed or pending template plan does not mutate source map");
+            Check(!MapObjectTemplate.TryPlanPaste(loaded, map, 149f, 149f,
+                  out _, out _) && map.Things.Count == 2,
+                  "entire out-of-bounds template paste is rejected without partial objects");
+            var overfull = Map();
+            for (int i = 0; i < 128; i++)
+                overfull.Triggers.Add(new MapData.Trigger { Id = "limit" + i });
+            Check(!MapObjectTemplate.TryPlanPaste(loaded, overfull, 0f, 0f,
+                  out _, out _) && overfull.Triggers.Count == 128,
+                  "template cannot exceed total 128-map-trigger budget");
+
+            var corrupted = new MapObjectTemplate.Layout { Name = name };
+            corrupted.Items.Add(new MapObjectTemplate.Entry
+                { Ref = "a", Prop = "../escape", Scale = 1f });
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "template cannot contain arbitrary script or traversal asset names");
+            corrupted.Items[0].Prop = "Pine";
+            corrupted.Items[0].Dx = float.NaN;
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "non-finite relative geometry fails closed");
+            corrupted.Items[0].Dx = 0f;
+            corrupted.Interactions.Add(new MapObjectTemplate.Interaction
+                { TargetRef = "unknown", Message = "No target" });
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "a dangling interaction target is invalid before any map edit");
+
+            // Existing Unity API doubles must know about visible resources. The
+            // production editor uses the same MapLoader/MapAssets lookups.
+            Resources.Register("MapProps/Pine", new GameObject("Pine"));
+            Resources.Register("MapProps/Rock", new GameObject("Rock"));
+            Resources.Register("MapUserMaterials/Stone",
+                new Material(Shader.Find("Lit")) { name = "Stone" });
+            var editor = new MapEditor();
+            Set(editor, "_map", map);
+            Set(editor, "_name", map.Name);
+            var selectionField = typeof(MapEditor).GetField("_selectedThingIds",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var selection = (HashSet<string>)selectionField.GetValue(editor);
+            selection.Add("p1"); selection.Add("p2");
+            Set(editor, "_templateDraftName", name);
+            // A duplicate must fail, never mutate authoring map or Undo.
+            Invoke(editor, "SaveSelectedTemplate");
+            var undoField = typeof(MapEditor).GetField("_undo",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Check(((List<string>)undoField.GetValue(editor)).Count == 0 &&
+                  map.Things.Count == 2 && File.ReadAllText(path) == originalBytes,
+                  "editor template save does not overwrite existing file or mark map dirty");
+            Invoke(editor, "ChooseTemplate", name);
+            Invoke(editor, "PasteActiveTemplate", new Vector3(60f, 0f, 65f));
+            Check(map.Things.Count == 4 && map.Triggers.Count == 2 &&
+                  map.Things[2].X == 55f && map.Things[3].X == 65f &&
+                  map.Triggers[1].TargetId == map.Things[3].Id,
+                  "editor click-to-place inserts two authored props with linked interaction");
+            Check(((List<string>)undoField.GetValue(editor)).Count == 1 &&
+                  selection.Contains(map.Things[2].Id) &&
+                  selection.Contains(map.Things[3].Id),
+                  "one template placement is one Undo and selects only inserted group");
+            Invoke(editor, "Undo");
+            var undone = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(undone.Things.Count == 2 && undone.Triggers.Count == 1,
+                  "Undo fully removes inserted props AND copied F events");
+            Invoke(editor, "Redo");
+            var redone = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
+                  redone.Triggers[1].TargetId == redone.Things[3].Id,
+                  "Redo restores pasted composition and exact new reference mapping");
+
+            // Simulate external corruption and ensure the loader refuses it.
+            File.WriteAllText(path, "{bad-json");
+            Check(!MapObjectTemplate.TryLoad(name, out _, out _),
+                  "corrupted template files are rejected without crashing editor");
+        }
+        finally
+        {
+            if (path != null && File.Exists(path)) File.Delete(path);
+        }
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -1319,6 +1466,7 @@ static class Program
         WorldForgeBestImprovementsContracts();
         LayoutPlannerContracts();
         SelectionAndGroupGridContracts();
+        ReusableTemplateContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
