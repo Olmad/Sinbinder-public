@@ -55,7 +55,7 @@ Assets/Scenes/Crypt_Entrance.unity	3ab7171d01aaffa915011d36b002afa41250bd3e	1116
 Assets/Scenes/Crypt_Test.unity	f716c8e52bdaf776c62801432f7efe6803010ee3	705457	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Scenes/Prologue_Camp.unity	43f6f4a9cf2738a5c0ed646ac281030f931a7ded	6360580	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Scenes/Prologue_Dream.unity	d5d514c3a0c64d9bba6796da27d2bb7250d835c5	279467	UnitySerialized	0	0	0	0	UNINSPECTED	
-Assets/Scenes/SampleScene.unity	1c63aa8ded8c325623e162675b13bfcd0b50aa5a	11413	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/SampleScene.unity	1c63aa8ded8c325623e162675b13bfcd0b50aa5a	11413	UnitySerialized	0	0	0	0	EXCLUDED_TECH	FULL YAML read, blob 1c63aa8ded8c325623e162675b13bfcd0b50aa5a: scene has exactly 3 GameObjects (Main Camera, Directional Light, Global Volume), camera/light/URP volume components and SceneRoots. No TMP/Text, dialogue, MonoBehaviour serialized player-facing strings, localization keys or narrative data. Names are Unity object identifiers only. Linked skybox/volume assets and runtime-created text are outside this file and remain UNKNOWN; no runtime claim.
 Assets/Scenes/SoulCourt.unity	e4d6790524c59d9d21b95d4d702f5637916a745e	3742161	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Scenes/Tug/Field.unity	0f31408b8f5d775e04b8d887bb38f120d8618ba1	234248	UnitySerialized	0	0	0	0	UNINSPECTED	
 Assets/Scenes/Tug/MapEditor.unity	f303386c6946fced899e1ec4c3b362939f0c68a3	19349	UnitySerialized	0	0	0	0	UNINSPECTED	
