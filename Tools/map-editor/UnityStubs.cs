@@ -27,7 +27,7 @@ namespace UnityEngine
         public void SetPositionAndRotation(Vector3 at, Quaternion orientation)
         { position = at; rotation = orientation; }
     }
-    public enum PrimitiveType { Cylinder }
+    public enum PrimitiveType { Cylinder, Cube }
     public class GameObject : Object
     {
         private readonly System.Collections.Generic.Dictionary<Type, Component> _components = new();
@@ -91,6 +91,7 @@ namespace UnityEngine
     }
     public class Renderer : Component
     {
+        public bool enabled = true;
         public Bounds bounds;
         private Material[] _shared = Array.Empty<Material>();
         public Material sharedMaterial
