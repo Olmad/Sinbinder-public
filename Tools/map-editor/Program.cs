@@ -1046,6 +1046,122 @@ static class Program
               "a new edit invalidates cached diagnostics rather than showing stale errors");
     }
 
+    static void LayoutPlannerContracts()
+    {
+        var things = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "one", Prop = "Pine", X = 3, Z = 4, Yaw = 15, Scale = 1.2f },
+            new MapData.Thing { Id = "two", Prop = "Rock", X = 9, Z = 8, Yaw = 45, Scale = 0.8f },
+            new MapData.Thing { Id = "three", Prop = "Bush", X = 16, Z = 12, Yaw = 90, Scale = 1.5f },
+            new MapData.Thing { Id = "four", Prop = "Pine", X = 30, Z = 20, Yaw = 180, Scale = 1f },
+        };
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out var spaced),
+              "spacing planner accepts four nonuniform selected props");
+        Check(spaced[0].x == 3f && spaced[1].x == 12f &&
+              spaced[2].x == 21f && spaced[3].x == 30f,
+              "equal-X spacing keeps extremes and correctly interpolates inner props");
+        Check(things[1].X == 9f && spaced[1].y == 8f,
+              "planning is pure and leaves the other axis unchanged");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.Z,
+              MapObjectArrange.Operation.Minimum, out var minZ) &&
+              minZ[0].y == 4f && minZ[1].y == 4f && minZ[2].y == 4f && minZ[3].y == 4f && minZ[1].x == 9f,
+              "Z minimum alignment preserves all X values");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Center, out var middleX) &&
+              MathF.Abs(middleX[0].x - 16.5f) < 0.0001f &&
+              MathF.Abs(middleX[3].x - 16.5f) < 0.0001f,
+              "X center alignment uses bounding-box midpoint rather than arbitrary first prop");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Maximum, out var maxX) &&
+              maxX[0].x == 30f && maxX[3].x == 30f,
+              "maximum alignment targets rightmost selected prop");
+
+        var tie = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", X = 3, Z = 0 },
+            new MapData.Thing { Id = "b", X = 3, Z = 0 },
+            new MapData.Thing { Id = "c", X = 10, Z = 0 },
+            new MapData.Thing { Id = "d", X = 20, Z = 0 },
+        };
+        Check(MapObjectArrange.TryPlan(tie, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out var stable) &&
+              stable[0].x == 3f && stable[1].x > 3f && stable[2].x > stable[1].x &&
+              stable[3].x == 20f,
+              "tied coordinates use original selection order for deterministic distribution");
+        Check(!MapObjectArrange.TryPlan(new List<MapData.Thing> { things[0], things[1] },
+              300f, MapObjectArrange.Axis.X, MapObjectArrange.Operation.Distribute,
+              out _),
+              "two objects cannot be distributed into intermediate equal gaps");
+        Check(!MapObjectArrange.TryPlan(things, float.NaN, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Minimum, out _),
+              "NaN map size is rejected");
+        var invalid = new List<MapData.Thing>(things);
+        invalid[1] = new MapData.Thing { Id = "bad", X = float.PositiveInfinity, Z = 3 };
+        Check(!MapObjectArrange.TryPlan(invalid, 300f, MapObjectArrange.Axis.Z,
+              MapObjectArrange.Operation.Minimum, out _),
+              "infinite object coordinate cannot produce partial layout");
+        invalid[1] = new MapData.Thing { Id = "outside", X = 151, Z = 3 };
+        Check(!MapObjectArrange.TryPlan(invalid, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Center, out _),
+              "out-of-bounds source blocks atomic layout");
+        var equallySpaced = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", X = 0, Z = 0 },
+            new MapData.Thing { Id = "b", X = 5, Z = 0 },
+            new MapData.Thing { Id = "c", X = 10, Z = 0 },
+        };
+        Check(!MapObjectArrange.TryPlan(equallySpaced, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out _),
+              "no-op distribution does not create an unnecessary Undo");
+
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", X = 9f, Z = 8f });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Bush", X = 30f, Z = 20f });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "interaction", Event = "OnInteractObject", TargetId = "p2",
+            Action = "ShowMessage", Message = "Hello", Enabled = true
+        });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Invoke(editor, "SelectAllThings");
+        Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
+               MapObjectArrange.Operation.Distribute);
+        Check(map.Things[0].X == 3f && map.Things[1].X == 16.5f &&
+              map.Things[2].X == 30f,
+              "real editor applies equal spacing in the map rather than only preview");
+        Check(map.Triggers[0].TargetId == "p2" && map.Triggers[0].Message == "Hello" &&
+              map.Crypts[0].X == 0f && map.Regions[0].X == 1f,
+              "layout never changes gameplay anchors, triggering rules or text");
+        var undo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(undo.Count == 1, "three-object arrangement is exactly one undo step");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(undone.Things[0].X == 3f && undone.Things[1].X == 9f &&
+              undone.Things[2].X == 30f,
+              "one Undo restores all previous object coordinates");
+        Invoke(editor, "Redo");
+        var redone = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(redone.Things[1].X == 16.5f &&
+              redone.Triggers[0].TargetId == "p2",
+              "Redo restores arrangement with intact linked interaction references");
+        Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
+               MapObjectArrange.Operation.Distribute);
+        Check(redone.Things[1].X == 16.5f &&
+              ((List<string>)typeof(MapEditor)
+                .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(editor)).Count == 1,
+              "no-op layout does not allocate a second undo entry");
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -1066,6 +1182,7 @@ static class Program
         MissingPreviewAssetsAreVisible();
         AuthoringCameraFallback();
         WorldForgeBestImprovementsContracts();
+        LayoutPlannerContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
