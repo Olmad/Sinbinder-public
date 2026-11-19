@@ -56,4 +56,6 @@ require('new GameObject("Sinbinder - резервная камера редак�
         "editor lacks fallback camera")
 require('Не загружено видов моделей' in editor,
         "editor has no visual missing-asset diagnostics")
+require('GUIUtility.systemCopyBuffer' in editor and 'MapData.Folder' in editor,
+        "editor must expose exact map save location for build-to-build investigations")
 print("PASS: editor scene daylight, no horror Volume/NavMesh bake, valid bundled Pine GUID, camera recovery and missing-model diagnostics (SOURCE ONLY)")
