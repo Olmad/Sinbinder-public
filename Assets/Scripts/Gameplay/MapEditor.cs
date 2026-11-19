@@ -806,9 +806,11 @@ namespace Sinbinder.Gameplay
                 // calls per cursor frame when placing a full composition.
                 var source = _templateGhostSources[i];
                 if (source == null) { ghost.SetActive(false); continue; }
+                double rotatedYaw = ((double)item.Yaw + _yaw) % 360d;
+                if (rotatedYaw < 0d) rotatedYaw += 360d;
                 ghost.transform.SetPositionAndRotation(
                     new Vector3(point.x, MapTerrain.HeightAt(_map, point.x, point.y), point.y),
-                    Quaternion.Euler(0f, item.Yaw + _yaw, 0f) * source.transform.rotation);
+                    Quaternion.Euler(0f, (float)rotatedYaw, 0f) * source.transform.rotation);
                 ghost.transform.localScale = source.transform.localScale * item.Scale;
             }
         }
