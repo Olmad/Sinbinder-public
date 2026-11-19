@@ -113,6 +113,8 @@ namespace Sinbinder.Gameplay
         private readonly List<GameObject> _templatePreviewMarkers = new();
         private readonly List<Material> _templatePreviewMaterials = new();
         private readonly List<GameObject> _templateGhostMeshes = new();
+        private readonly List<GameObject> _templateGhostSources = new();
+        private bool _templateGhostEnabled = true;
         private bool _templateAssetsAvailable;
         private List<string> _templateNames = new();
         private Vector2 _templateScroll;
@@ -695,6 +697,7 @@ namespace Sinbinder.Gameplay
             foreach (var ghost in _templateGhostMeshes)
                 if (ghost != null) Destroy(ghost);
             _templateGhostMeshes.Clear();
+            _templateGhostSources.Clear();
             _templateAssetsAvailable = false;
         }
 
@@ -710,6 +713,7 @@ namespace Sinbinder.Gameplay
             foreach (var item in _activeTemplateLayout.Items)
             {
                 var prefab = MapLoader.Prefab(item.Prop);
+                _templateGhostSources.Add(prefab);
                 var overrideMaterial = string.IsNullOrEmpty(item.MaterialId)
                     ? null : MapAssets.ObjectMaterial(item.MaterialId);
                 if (prefab == null ||
@@ -795,10 +799,12 @@ namespace Sinbinder.Gameplay
                 var ghost = _templateGhostMeshes[i];
                 // Do not show a false 3D promise outside the map or when the
                 // placement would fail: the red footprint remains visible.
-                ghost.SetActive(fits && pointFits);
-                if (!(fits && pointFits)) continue;
+                ghost.SetActive(fits && pointFits && _templateGhostEnabled);
+                if (!(fits && pointFits && _templateGhostEnabled)) continue;
                 var item = _activeTemplateLayout.Items[i];
-                var source = MapLoader.Prefab(item.Prop);
+                // Cached when the template was selected: avoid 64 Resource.Load
+                // calls per cursor frame when placing a full composition.
+                var source = _templateGhostSources[i];
                 if (source == null) { ghost.SetActive(false); continue; }
                 ghost.transform.SetPositionAndRotation(
                     new Vector3(point.x, MapTerrain.HeightAt(_map, point.x, point.y), point.y),
@@ -1807,7 +1813,11 @@ namespace Sinbinder.Gameplay
                     ChooseTemplate(templateName);
             GUILayout.EndScrollView();
             if (_mode == Mode.Template)
+            {
+                _templateGhostEnabled = GUILayout.Toggle(_templateGhostEnabled,
+                    Loc.T("3D-предпросмотр моделей"));
                 GUILayout.Label(Loc.T("ЛКМ: вставить · Q/E: повернуть · Esc: выйти. Зелёный: внутри карты; красный: границы/лимиты."));
+            }
             if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
             if (_validationIssues.Count > 0)
             {
