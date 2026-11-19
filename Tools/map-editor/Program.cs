@@ -1535,6 +1535,14 @@ static class Program
                   Math.Abs(previewMeshes[0].transform.position.x - 55f) < 0.001f &&
                   Math.Abs(previewMeshes[0].transform.position.z - 70f) < 0.001f,
                   "visible template mesh ghost follows same footprint as marker");
+            Set(editor, "_templateGhostEnabled", false);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            Check(!previewMeshes[0].activeSelf && ghosts[0].activeSelf,
+                  "3D preview toggle disables only mesh ghosts, not footprint safety markers");
+            Set(editor, "_templateGhostEnabled", true);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            Check(previewMeshes[0].activeSelf,
+                  "3D preview can be re-enabled without recreating source prefabs");
             Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
                   ((List<string>)undoField.GetValue(editor)).Count == 1,
                   "moving template ghost never mutates map or Undo history");
