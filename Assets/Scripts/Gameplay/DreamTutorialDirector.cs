@@ -172,6 +172,10 @@ namespace Sinbinder.Gameplay
         // Мост (этап 2–3 карты, 19.11): убийцы бегут, мост поднимают, приказ — к рычагу.
         private bool _fleeing;
         private float _fleeSince;
+        // «Не погнался» (docs/68): сам не гонится — сон просит приказ «догнать», и суд идёт на нём.
+        private bool _chaseAsked, _chaseCourt, _chaseDecided, _chaseRefused, _autoChase;
+        private float _chaseFrom, _chaseAskedAt, _chaseDecidedAt;
+        private int _courts;
         private readonly HashSet<Warrior> _armed = new HashSet<Warrior>();
 
         // Круг обучения на каждом шаге к суду (автор, 06.11: «у нас есть круг
@@ -986,6 +990,7 @@ namespace Sinbinder.Gameplay
         {
             _fleeing = true;
             _fleeSince = Time.time;
+            _chaseFrom = _zombie != null ? Vector3.Distance(_zombie.transform.position, DreamRoad.BridgeWestEnd) : 0f;
             for (int i = 0; i < _killers.Count; i++)
             {
                 var k = _killers[i];
@@ -1034,13 +1039,16 @@ namespace Sinbinder.Gameplay
             bool alive = _zombie != null && !_zombie.IsDead;
             if (road == null) { StartBattle("Убийцы идут."); return; }
             var puller = _killers.Count > 0 ? _killers[0] : null;
+            if (AskChase(puller, alive, g)) return;
             if (!DreamRoad.BridgeRaised)
             {
                 bool there = puller != null && !puller.IsDead && DreamRoad.AtLever(puller.transform.position);
                 if (!there && Time.time - _fleeSince < 25f) return;
                 if (!there) Debug.LogWarning("[СОН QA] Убийца не дошёл до рычага за 25 с: " + Legs(puller));
                 bool crossed = alive && DreamRoad.PastRiver(_zombie.transform.position);
-                if (alive && !crossed && Time.time - _fleeSince < 16f) return;
+                // После суда над приказом «догнать» — свои 16 с на бег; отказал — ждать нечего.
+                float since = Time.time - (_chaseDecided ? _chaseDecidedAt : _fleeSince);
+                if (alive && !crossed && !_chaseRefused && since < 16f) return;
                 if ((alive && DreamRoad.OnRiverSpan(_zombie.transform.position)) || DreamRoad.OnRiverSpan(_hero.transform.position)) return;
                 road.PullLever(puller != null ? puller.DisplayName : "убийца");
                 if (puller != null) Run(puller, DreamRoad.AmbushAt + new Vector3(-1.4f, 0f, -1.0f));
@@ -1070,6 +1078,51 @@ namespace Sinbinder.Gameplay
                 ? Grammar.Pick(g, "Он не погнался — остался с вами. Мост поднят: к засаде — в обход, лесом.",
                                   "Она не погналась — осталась с вами. Мост поднят: к засаде — в обход, лесом.")
                 : "Мост поднят. К засаде — в обход, лесом.");
+        }
+
+        /// <summary>
+        /// Не гонится сам — это тоже решение его души, но суд взвешивает приказ, а приказа не было:
+        /// в этой ветке игрок не видел бы ни суда, ни проверки. Через 6 с, если он не идёт к мосту,
+        /// сон просит приказ «догнать» (ПКМ по убийце) и держит мост опущенным, пока душа решает;
+        /// решение идёт в суд, как у рычага. Медлит игрок — через 14 с (под плашкой 45) приказ
+        /// отдаёт сам Греховод. Это не сценарий под один грех: просьба та же при любой душе.
+        /// </summary>
+        private bool AskChase(Warrior puller, bool alive, Gender g)
+        {
+            if (!alive || _chaseDecided || DreamRoad.BridgeRaised) return false;
+            if (!_chaseAsked)
+            {
+                if (Time.time - _fleeSince < 6f || DreamRoad.PastRiver(_zombie.transform.position)
+                    || DreamRoad.OnRiverSpan(_zombie.transform.position)
+                    || Vector3.Distance(_zombie.transform.position, DreamRoad.BridgeWestEnd) < _chaseFrom - 4f)
+                    return false;
+                _chaseAsked = true;
+                _chaseAskedAt = Time.unscaledTime;
+                MarkCommand();
+                Mark("не гонится сам — нужен приказ");
+                Set(Stage.Chase, Grammar.Pick(g,
+                    "Он не гонится сам. Прикажите ему догнать убийц: выделите его и ПКМ по убийце.",
+                    "Она не гонится сама. Прикажите ей догнать убийц: выделите её и ПКМ по убийце."));
+                return true;
+            }
+            if (!_autoChase && !OrderedSinceMark() && !SoulCourt.Sitting && puller != null && !puller.IsDead
+                && Time.unscaledTime - _chaseAskedAt > (Lesson.Holding ? 45f : 14f))
+            {
+                _autoChase = true;
+                Log("Греховод сам велит догнать убийц.");
+                _zombie.IssueCommand(CommandKind.Attack, puller.transform.position, puller.gameObject);
+            }
+            if (OrderedSinceMark())
+            {
+                _courtOrder = _zombie.Command.Kind;
+                Mark("приказ догнать: " + _courtOrder);
+                var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
+                _mindBefore = mind != null ? mind.LastContext : null;
+                _decideSince = Time.unscaledTime;
+                _chaseCourt = true;
+                _stage = Stage.Deciding;   // дальше — как у рычага: решение, весы над головой, суд
+            }
+            return true;   // мост не поднимают, пока он решает
         }
 
         /// <summary>Добежавшие до засады (или стоящие) убийцы — снова обычные противники.</summary>
@@ -1176,16 +1229,29 @@ namespace Sinbinder.Gameplay
             // Во сне — при любом решении: суд разбирает любое (в лагере — только отказ).
             if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
             yield return new WaitForSecondsRealtime(1.8f);
-            // Суд во сне — всегда полный: это урок (суды по делу потом идут коротко).
+            // Первый суд во сне — всегда полный: это урок. Второй (у рычага после суда над
+            // «догнать») — коротко, как суды по делу потом.
             if (_zombie != null && !_zombie.IsDead)
             {
                 Mark("T8 суд начался");
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false);
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0);
                 Mark("T8 суд кончился");
             }
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
+            if (_chaseCourt)
+            {
+                // Суд над приказом «догнать»: дальше снова погоня — с ним или без него.
+                _chaseCourt = false;
+                _chaseDecided = true;
+                _chaseDecidedAt = Time.time;
+                _chaseRefused = d.RefusedCommand || d.Hesitated;
+                Set(Stage.Chase, _chaseRefused
+                    ? Grammar.Pick(g, "Не погнался и по приказу. Убийцы уходят за мост.", "Не погналась и по приказу. Убийцы уходят за мост.")
+                    : Grammar.Pick(g, "Гонится — по вашему приказу. Идите за ним к мосту.", "Гонится — по вашему приказу. Идите за ней к мосту."));
+                yield break;
+            }
             if (d.RefusedCommand || d.Hesitated)
                 StartBattle(Grammar.Pick(g,
                     "Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.",
@@ -1452,8 +1518,9 @@ namespace Sinbinder.Gameplay
                 case Stage.DrawWeapon: return Loc.T("Достаньте оружие (B)");
                 case Stage.Practice: return Loc.T("Ударьте чучело и закройтесь от ответа (ЛКМ, ПКМ)");
                 case Stage.Standoff: return Loc.T("Убийцы вернулись");
-                case Stage.Chase: return Loc.T("Идите к мосту");
-                case Stage.Bridge: case Stage.Deciding: return Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
+                case Stage.Chase: return _chaseAsked && !_chaseDecided ? Loc.T("Прикажите догнать убийц (ПКМ по убийце)") : Loc.T("Идите к мосту");
+                case Stage.Bridge: case Stage.Deciding:
+                    return _chaseCourt ? Loc.T("Прикажите догнать убийц (ПКМ по убийце)") : Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
                 case Stage.Battle: return DreamRoad.BridgeRaised ? Loc.T("Обойдите реку лесом — к засаде") : Loc.T("Отбейтесь от убийц");
                 case Stage.Retest: return Loc.T("Тот же приказ — без убийц (ПКМ по рычагу)");
                 case Stage.Whisper: return Loc.T("Шепните греху поднятого (Z)");
