@@ -56,6 +56,8 @@ namespace Sinbinder.Gameplay
         private string _say = "";
         private Vector2 _scroll;
         private readonly List<GameObject> _shown = new();
+        private readonly HashSet<string> _missingPreviewModels = new();
+        private int _loadedPreviewModels;
         private readonly List<Material> _previewMaterials = new();
         private Camera _cam;
         private float _height = 70f;
@@ -357,6 +359,8 @@ namespace Sinbinder.Gameplay
         {
             foreach (var go in _shown) if (go != null) Destroy(go);
             _shown.Clear();
+            _missingPreviewModels.Clear();
+            _loadedPreviewModels = 0;
             foreach (var material in _previewMaterials) if (material != null) Destroy(material);
             _previewMaterials.Clear();
         }
@@ -391,11 +395,45 @@ namespace Sinbinder.Gameplay
         private void Model(string prop, Vector3 at, float yaw, float scale)
         {
             var prefab = MapLoader.Prefab(prop);
-            if (prefab == null) return;
+            if (prefab == null)
+            {
+                _missingPreviewModels.Add(prop ?? "(empty)");
+                MissingModelMarker(at, prop);
+                return;
+            }
             var go = Instantiate(prefab);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
             go.transform.localScale = prefab.transform.localScale * scale;
+            bool hasRenderer = false;
+            foreach (var renderer in go.GetComponentsInChildren<Renderer>())
+                if (renderer != null && renderer.enabled) { hasRenderer = true; break; }
+            if (!hasRenderer)
+            {
+                _missingPreviewModels.Add(prop ?? "(empty)");
+                Destroy(go);
+                MissingModelMarker(at, prop);
+                return;
+            }
+            _loadedPreviewModels++;
             _shown.Add(go);
+        }
+
+        private void MissingModelMarker(Vector3 at, string prop)
+        {
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            marker.name = "Отсутствующая модель карты: " + prop;
+            Destroy(marker.GetComponent<Collider>());
+            marker.transform.position = at + new Vector3(0f, 1.5f, 0f);
+            marker.transform.localScale = new Vector3(2f, 3f, 2f);
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ??
+                         Shader.Find("Sprites/Default");
+            if (shader != null)
+            {
+                var material = new Material(shader) { color = new Color(1f, 0.15f, 0.65f) };
+                marker.GetComponent<Renderer>().sharedMaterial = material;
+                _previewMaterials.Add(material);
+            }
+            _shown.Add(marker);
         }
 
         /// <summary>Плоский круг на земле — граница подлокации, тропа, событие.</summary>
@@ -439,6 +477,20 @@ namespace Sinbinder.Gameplay
                                         Mathf.Max(120f, Screen.height - ToolbarHeight - 20f)),
                                         GUI.skin.box);
             GUILayout.Label(Loc.T("Карта"));
+            GUILayout.Label(Loc.F("Объектов: {0}; моделей в предпросмотре: {1}",
+                _map.Things.Count, _loadedPreviewModels));
+            if (_missingPreviewModels.Count > 0)
+            {
+                GUILayout.Label(Loc.F("Не загружено видов моделей: {0}", _missingPreviewModels.Count));
+                foreach (var missing in _missingPreviewModels)
+                {
+                    GUILayout.Label(Loc.F("Отсутствует: {0}", missing));
+                    break;
+                }
+            }
+            GUILayout.Label(string.IsNullOrEmpty(_path)
+                ? Loc.T("Источник: новая карта")
+                : Loc.F("Файл: {0}", Path.GetFileName(_path)));
             GUILayout.Label(Loc.T("Имя карты"));
             string name = GUILayout.TextField(_name ?? "");
             if (name != _name) { Record(); _name = name; _map.Name = name; }
