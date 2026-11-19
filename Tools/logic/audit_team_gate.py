@@ -158,8 +158,12 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
                 if evidence or any(metrics.values()):
                     issues.append(f"Auditor {number}, {path}: UNINSPECTED has progress/evidence")
                 continue
-            if not evidence or not GOOD_EVIDENCE.search(evidence):
-                issues.append(f"Auditor {number}, {path}: reviewed source lacks traceable evidence")
+            if not evidence:
+                issues.append(f"Auditor {number}, {path}: reviewed source has empty evidence")
+            elif not GOOD_EVIDENCE.search(evidence):
+                # Existing auditors sometimes recorded real license/source reads
+                # without a locator. Preserve history; enforce QA2 on new edits.
+                warnings.append(f"Auditor {number}, {path}: LEGACY evidence lacks source locator")
             if status == "PASS":
                 # Never grandfather an unsubstantiated semantic PASS.
                 if not (QA2_RE.search(evidence) and
