@@ -129,6 +129,18 @@ namespace Sinbinder.Gameplay
         void Start()
         {
             _cam = Camera.main;
+            if (_cam == null)
+            {
+                // Scene/pipeline modifications should not leave a black
+                // authoring viewport just because the MainCamera tag is absent.
+                var fallback = new GameObject("Sinbinder - резервная камера редактора");
+                fallback.tag = "MainCamera";
+                _cam = fallback.AddComponent<Camera>();
+                _say = Loc.T("Основная камера отсутствовала: создана резервная камера.");
+            }
+            _cam.enabled = true;
+            _cam.clearFlags = CameraClearFlags.SolidColor;
+            _cam.backgroundColor = new Color(0.28f, 0.38f, 0.48f);
             // Свободная камера редактора: тела нет, и игровая камера не нужна.
             var rig = _cam != null ? _cam.GetComponent<RTS_Camera>() : null;
             if (rig != null) rig.enabled = false;
@@ -168,8 +180,17 @@ namespace Sinbinder.Gameplay
             EnsureIds();
             _name = _map.Name;
             _savedSnapshot = JsonUtility.ToJson(_map);
-            if (_cam != null) _cam.transform.SetPositionAndRotation(new Vector3(0f, _height, -_height * 0.35f), Quaternion.Euler(72f, 0f, 0f));
+            CenterCamera();
             Redraw();
+        }
+
+        private void CenterCamera()
+        {
+            if (_cam == null) return;
+            _height = 70f;
+            _cam.transform.SetPositionAndRotation(
+                new Vector3(0f, _height, -_height * 0.35f),
+                Quaternion.Euler(72f, 0f, 0f));
         }
 
         void Update()
@@ -1180,6 +1201,11 @@ namespace Sinbinder.Gameplay
                                         Mathf.Max(120f, Screen.height - ToolbarHeight - 20f)),
                                         GUI.skin.box);
             GUILayout.Label(Loc.T("Карта"));
+            if (GUILayout.Button(Loc.T("Центрировать камеру")))
+            {
+                CenterCamera();
+                _say = Loc.T("Камера направлена в центр карты.");
+            }
             GUILayout.Label(Loc.F("Объектов: {0}; моделей в предпросмотре: {1}",
                 _map.Things.Count, _loadedPreviewModels));
             if (_missingPreviewModels.Count > 0)
