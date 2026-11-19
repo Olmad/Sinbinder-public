@@ -78,9 +78,9 @@ Assets/Scripts/AOS Engine/BehaviorResolver.cs	77c02f01b186d8da072a519e708a4ab648
 Assets/Scripts/AOS Engine/CombatDecisionContext.cs	342803f26060d9e93a8a29c7b04d1f02cdfd0be3	13693	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Counterfactual.cs	1a70366c45b70ce1ead084ddb1ea2b7df914163c	15911	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/DebugAOS.cs	ffd7c5d9fe40969e42f96fce3b67f7812e2b6e6a	2951	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/Decision.cs	92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62	4151	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Decision.cs	92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62	4151	CSharp	0	0	0	0	EXCLUDED_TECH	Full 77-line C# source inspected at blob 92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62: Decision struct only typed fields (Action, TopModule, TopContender, RunnerUp, Gap, Confidence, Hesitated, RefusedCommand, Weighed, Decisive, DecisiveAlso, DecisiveVoice) and developer XML comments; no player-facing literals or Loc.T/F. 0 player-facing lines; eventual renderers of decision fields and RU/EN remain separate UNKNOWN. Unity NOT VERIFIED.
 Assets/Scripts/AOS Engine/DecisionContext.cs	d38c4552b5a99a3caf212cdc031e07c3ef718eb8	9235	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/DeedType.cs	9073ac7a17bbfe9370f8c52b7487eb4d9b303688	1381	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/DeedType.cs	9073ac7a17bbfe9370f8c52b7487eb4d9b303688	1381	CSharp	0	0	0	0	EXCLUDED_TECH	Full 37-line C# source inspected at blob 9073ac7a17bbfe9370f8c52b7487eb4d9b303688: enum DeedType has 14 identifiers (Kill through StayedOut), developer XML comments and see cref references only; no runtime string literals, Loc.T/F, UI or dialogue. 0 player-facing lines in this source; any title mapping by TitleManager is a separate UNKNOWN source. RU/EN N/A; Unity NOT VERIFIED.
 Assets/Scripts/AOS Engine/EmotionSystem.cs	5dbc7cb459db09204ac38f8996d5802258720fb7	3611	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/FalseGodQuest.cs	6a86ff689fd37499b93a6300dcaea7c895f4fde0	7784	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/FearModule.cs	bca652eff7865aab20edc5cb7183bf158373ec95	3935	CSharp	0	0	0	0	UNINSPECTED	
