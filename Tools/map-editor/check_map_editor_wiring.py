@@ -62,6 +62,13 @@ assert "GetMouseButtonUp(0)" in editor
 assert "private void DuplicateSelectedThings()" in editor
 assert "private void DeleteSelectedThings()" in editor
 assert "private void RotateSelectedThings(float degrees)" in editor
+assert "private void ArrangeSelectedThings(MapObjectArrange.Axis axis, MapObjectArrange.Operation operation)" in editor
+assert "MapObjectArrange.TryPlan(selected, _map.Size, axis, operation, out var planned)" in editor
+assert "private void DrawGroupInspector()" in editor
+assert "Равные интервалы по X" in editor and "Равные интервалы по Z" in editor
+layout=src("Assets/Scripts/Gameplay/MapObjectArrange.cs")
+assert "internal static bool TryPlan(" in layout and "sorted.Sort" in layout
+assert "guid: b4b295570ea247138f4a5ea2896c29f3" in src("Assets/Scripts/Gameplay/MapObjectArrange.cs.meta")
 assert "private void MoveSelectedThings(float dx, float dz)" in editor
 assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
 assert "private List<string> Validate()" in editor
