@@ -1,5 +1,7 @@
 # Sinbinder WorldForge — генеральная дорожная карта до «опасного конкурента Warcraft III World Editor»
 
+
+> **Актуализация 19.11.2026:** WorldForge и исправление чёрного экрана **объединены** с `feature/server-prototype` через [PR #6](https://github.com/Olmad/Sinbinder-public/pull/6), merge `fc11a68d2c3730681e07a1be02d7a72a0165b435`. Автор подтвердил работоспособное отображение редактора в актуальной Unity-версии. Остальные возможности редактора требуют отдельной Unity-приёмки. Все утверждения ниже о «не слито» и «нет подтверждения экрана» относятся к прежнему состоянию на 18–19 ноября. См. [отчёт об интеграции](MAP-EDITOR-INTEGRATION-2026-11-19.md).
 > **Версия:** 1.0 • **Дата:** 18.11.2026 • **Статус:** ПЛАН, не перечень готовых возможностей • **Рабочее название:** WorldForge, подлежит согласованию.  
 > **Действующий редактор:** \`Assets/Scripts/Gameplay/MapEditor.cs\`, \`Core/MapData.cs\`, \`Gameplay/MapLoader.cs\`, \`Gameplay/MapLogicRunner.cs\`.  
 > **Ветка прототипа:** \`feature/map-editor-terrain-2026-11-18\`, draft PR #4, **не слита** с \`feature/server-prototype\`; \`main\` не трогать.  
