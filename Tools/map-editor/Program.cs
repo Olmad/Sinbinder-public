@@ -936,6 +936,40 @@ static class Program
               "reloading a now-available prefab replaces warning with normal model");
     }
 
+    static void AuthoringCameraFallback()
+    {
+        var oldCam = Camera.main;
+        var oldMap = MapSession.Map;
+        var oldPath = MapSession.Path;
+        try
+        {
+            Camera.main = null;
+            MapSession.Map = Map();
+            MapSession.Path = null;
+            var editor = new MapEditor();
+            Invoke(editor, "Start");
+            var camera = (Camera)typeof(MapEditor).GetField("_cam",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(camera != null && camera.enabled &&
+                  camera.clearFlags == CameraClearFlags.SolidColor,
+                  "editor creates an enabled visible camera when MainCamera is missing");
+            Check(camera.backgroundColor.r >= 0.25f,
+                  "authoring camera uses a neutral nonblack background");
+            Set(editor, "_height", 250f);
+            Invoke(editor, "CenterCamera");
+            var value = (float)typeof(MapEditor).GetField("_height",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(value == 70f && camera.transform.position.y == 70f,
+                  "recenter command restores map camera position");
+        }
+        finally
+        {
+            Camera.main = oldCam;
+            MapSession.Map = oldMap;
+            MapSession.Path = oldPath;
+        }
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -954,6 +988,7 @@ static class Program
         GroupEditingContracts();
         RectangleSelectionContracts();
         MissingPreviewAssetsAreVisible();
+        AuthoringCameraFallback();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
