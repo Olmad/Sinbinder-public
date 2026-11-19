@@ -150,6 +150,10 @@ namespace Sinbinder.Gameplay
         {
             if (_instance != null) return;
 
+            // Редактор карт: земля есть, а разведывать некому — ни воинов, ни лагеря. Туман закрывал всё
+            // чернотой, вместе с поставленными вещами (автор, 19.11: «просто чёрный, даже если поставить объекты»).
+            if (Object.FindFirstObjectByType<MapEditor>() != null) return;
+
             var ground = Object.FindFirstObjectByType<GroundNavMesh>();
             if (ground == null) return;
 
