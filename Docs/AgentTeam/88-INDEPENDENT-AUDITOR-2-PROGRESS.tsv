@@ -85,8 +85,8 @@ Assets/Scripts/AOS Engine/EmotionSystem.cs	5dbc7cb459db09204ac38f8996d5802258720
 Assets/Scripts/AOS Engine/FalseGodQuest.cs	6a86ff689fd37499b93a6300dcaea7c895f4fde0	7784	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/FearModule.cs	bca652eff7865aab20edc5cb7183bf158373ec95	3935	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/ICampModule.cs	9ed654959215f4188791335d914a946e0726fe4f	7995	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/IMissionModule.cs	a4db8b87a77885ac0a8dc69b9572fa61c3f82f32	984	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/IPersonalityModule.cs	a6888f136668fa58949c84336efa33c98ce6c48d	287	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/IMissionModule.cs	a4db8b87a77885ac0a8dc69b9572fa61c3f82f32	984	CSharp	0	0	0	0	EXCLUDED_TECH	Full source read lines 1-20 at base blob a4db8b87a77885ac0a8dc69b9572fa61c3f82f32: interface EvaluateMission signature and XML developer summary describing peace mission voice; no runtime string, dialogue or UI; implementation and BehaviourResolver.DecideMission behavior not asserted
+Assets/Scripts/AOS Engine/IPersonalityModule.cs	a6888f136668fa58949c84336efa33c98ce6c48d	287	CSharp	0	0	0	0	EXCLUDED_TECH	Full source read lines 1-10 at base blob a6888f136668fa58949c84336efa33c98ce6c48d: interface only, ModuleID string property declaration (no value), Evaluate method signature; comments are developer-only; no literals, Loc calls, or UI bindings; consumers of ModuleID remain UNKNOWN
 Assets/Scripts/AOS Engine/ISkillSet.cs	489b9553af3d16a125578b359b4f4d3e3ed826a3	1398	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/LoyaltyModule.cs	e68ab4d6b814c5cd20bc7fb57556ca695b179b11	5536	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MemoryModule.cs	bed6f4b20037384c80da12715fcf8053693e723c	5533	CSharp	0	0	0	0	UNINSPECTED	
