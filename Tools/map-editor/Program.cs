@@ -920,9 +920,10 @@ static class Program
         var shownField = typeof(MapEditor).GetField("_shown",
             BindingFlags.Instance | BindingFlags.NonPublic);
         var shown = (List<GameObject>)shownField.GetValue(editor);
-        Check(missing.Contains("NoSuchTree") &&
-              shown.Exists(x => x.name == "Отсутствующая модель карты: NoSuchTree"),
-              "missing tree asset is represented by a visible named warning marker");
+        Check(missing.Contains("NoSuchTree"),
+              "missing tree ID appears in the editor's visible diagnostic list");
+        Check(shown.Exists(x => x.name == "Отсутствующая модель карты: NoSuchTree"),
+              "missing tree asset is represented by a bright named warning marker");
         Check(shown.Count >= map.Things.Count,
               "missing models no longer disappear from authored map preview");
 
