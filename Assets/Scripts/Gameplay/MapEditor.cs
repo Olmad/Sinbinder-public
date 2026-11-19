@@ -1220,6 +1220,12 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(string.IsNullOrEmpty(_path)
                 ? Loc.T("Источник: новая карта")
                 : Loc.F("Файл: {0}", Path.GetFileName(_path)));
+            if (GUILayout.Button(Loc.T("Копировать путь к карте")))
+            {
+                GUIUtility.systemCopyBuffer = string.IsNullOrEmpty(_path)
+                    ? MapData.Folder : _path;
+                _say = Loc.T("Путь к карте скопирован.");
+            }
             if (_mode == Mode.Select)
             {
                 if (GUILayout.Button(Loc.T("Выделить все объекты (Ctrl+A)")))
