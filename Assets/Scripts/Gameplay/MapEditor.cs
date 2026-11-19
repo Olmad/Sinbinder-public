@@ -804,6 +804,26 @@ namespace Sinbinder.Gameplay
             Change(() => { foreach (var t in group) { t.X += dx; t.Z += dz; } });
         }
 
+        // Keep arrangement separate from gameplay logic and number-field editing.
+        // A fully validated plan is committed in one transaction; no partial moves.
+        private void ArrangeSelectedThings(MapObjectArrange.Axis axis, MapObjectArrange.Operation operation)
+        {
+            var selected = GroupThings();
+            if (!MapObjectArrange.TryPlan(selected, _map.Size, axis, operation, out var planned))
+            {
+                _say = Loc.T("Расстановка не изменена: выберите минимум два объекта, для равных интервалов — три.");
+                return;
+            }
+            Change(() =>
+            {
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    selected[i].X = planned[i].x;
+                    selected[i].Z = planned[i].y;
+                }
+            });
+        }
+
         private void RotateSelectedThings(float degrees)
         {
             var group = GroupThings();
@@ -991,6 +1011,28 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Уменьшить ×0.9"))) ScaleSelectedThings(0.9f);
             if (GUILayout.Button(Loc.T("Увеличить ×1.1"))) ScaleSelectedThings(1.1f);
             GUILayout.EndHorizontal();
+            GUILayout.Label(Loc.T("Выравнивание группы (X / Z):"));
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(Loc.T("X: мин")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Minimum);
+            if (GUILayout.Button(Loc.T("X: центр")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Center);
+            if (GUILayout.Button(Loc.T("X: макс")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Maximum);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(Loc.T("Z: мин")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Minimum);
+            if (GUILayout.Button(Loc.T("Z: центр")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Center);
+            if (GUILayout.Button(Loc.T("Z: макс")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Maximum);
+            GUILayout.EndHorizontal();
+            if (GUILayout.Button(Loc.T("Равные интервалы по X")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Distribute);
+            if (GUILayout.Button(Loc.T("Равные интервалы по Z")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Distribute);
+            GUILayout.Label(Loc.T("Выравнивание сохраняет выделение, порядок и ID."));
             GUILayout.Label(Loc.T("Материал всей группы:"));
             if (GUILayout.Button(Loc.T("Вернуть исходные материалы")))
                 ApplyGroupMaterial("");
