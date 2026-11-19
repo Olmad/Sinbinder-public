@@ -121,6 +121,40 @@ def verify_qa2(path: str, status: str, row: dict, metrics: dict):
 
 
 
+# Match the same file families as the original whole-tree collector.
+# New files are reported as DELTA inventory, never silently marked audited.
+SCAN_EXT = {".cs", ".txt", ".json", ".csv", ".tsv", ".xml", ".yaml", ".yml",
+            ".asset", ".prefab", ".unity", ".uxml", ".uss", ".ink", ".yarn",
+            ".po", ".strings", ".bytes"}
+SCAN_ROOTS = ("Assets/", "StreamingAssets/", "Packages/", "ProjectSettings/")
+
+
+def tracked_text_blobs(root: Path):
+    """Return Git-index content SHAs, not mtimes or guessed working-tree state."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "--stage", "-z"], cwd=root, check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    files = {}
+    for record in result.stdout.split(b"\0"):
+        if not record or b"\t" not in record:
+            continue
+        prefix, raw_path = record.split(b"\t", 1)
+        metadata = prefix.decode("ascii", "replace").split()
+        if len(metadata) != 3 or metadata[2] != "0":
+            continue
+        path = raw_path.decode("utf-8", "replace")
+        if (path.startswith(SCAN_ROOTS) and
+                Path(path).suffix.lower() in SCAN_EXT and
+                metadata[0] in {"100644", "100755"} and
+                SHA_RE.fullmatch(metadata[1])):
+            files[path] = metadata[1]
+    return files
+
+
 def ledger_path(index: int) -> str:
     return f"Docs/AgentTeam/88-INDEPENDENT-AUDITOR-{index}-PROGRESS.tsv"
 
@@ -286,6 +320,39 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
             normalized = {("UNKNOWN" if s in CONTEXT else s) for s in active.values()}
             if len(normalized) > 1:
                 mismatch.append({"path": path, "statuses": active})
+    # The original 582-source audit is immutable. New/changed source files
+    # are tracked separately, otherwise a green five-way count would be stale.
+    current = tracked_text_blobs(root)
+    if current is None:
+        warnings.append("Cannot enumerate Git-index text sources; delta coverage UNKNOWN")
+        report["delta_inventory"] = {"verified": False}
+    else:
+        added = sorted(set(current) - all_paths)
+        missing = sorted(all_paths - set(current))
+        changed_sources = sorted(
+            p for p in all_paths & set(current)
+            if current[p] != ledgers[1][p]["blob_sha"]
+        )
+        report["delta_inventory"] = {
+            "verified": True,
+            "new_source_count": len(added),
+            "missing_source_count": len(missing),
+            "changed_source_count": len(changed_sources),
+            "new_sources": added[:100],
+            "missing_sources": missing[:100],
+            "changed_sources": changed_sources[:100],
+            "truncated_lists": (len(added) > 100 or len(missing) > 100 or
+                                len(changed_sources) > 100),
+        }
+        if added:
+            warnings.append(f"DELTA: {len(added)} new source files NOT in baseline inventory")
+        if missing:
+            warnings.append(f"DELTA: {len(missing)} baseline sources absent from current Git index")
+        if changed_sources:
+            warnings.append(
+                f"DELTA: {len(changed_sources)} baseline sources changed; previous "
+                "semantic decisions need rechecking against current blob SHAs"
+            )
     report.update({
         "unique_inspected_sources": len(checked_by_any),
         "untouched_by_all": len(all_paths - checked_by_any),
@@ -328,6 +395,25 @@ def markdown(report: dict, issues: list[str], warnings: list[str]) -> str:
             f"| {context} | {a['confirmed_or_partial_fail_sources']} "
             f"| {a['semantic_pass_sources']} |"
         )
+    delta = report.get("delta_inventory", {})
+    if delta.get("verified"):
+        lines.extend([
+            "",
+            "## Drift from immutable 18 November baseline",
+            "",
+            f"- New text-bearing files outside 582-source inventory: **{delta['new_source_count']}**",
+            f"- Baseline source files missing from HEAD: **{delta['missing_source_count']}**",
+            f"- Existing baseline source files with changed Git blob SHA: **{delta['changed_source_count']}**",
+            "- Changed sources remain audited only at their recorded SHA; revalidation is required.",
+        ])
+        for key, title in (("new_sources", "New text-bearing sources"),
+                           ("missing_sources", "Missing baseline sources"),
+                           ("changed_sources", "Modified source blobs")):
+            if delta[key]:
+                lines.extend(["", "**" + title + "** (first 100):", ""])
+                lines.extend(f"- \`{path}\`" for path in delta[key])
+    else:
+        lines.extend(["", "**Source drift UNKNOWN:** Git index unavailable."])
     if report["fail_source_paths"]:
         lines.extend(["", "## Sources with reported defects", ""])
         lines.extend(f"- \`{path}\`" for path in report["fail_source_paths"])
