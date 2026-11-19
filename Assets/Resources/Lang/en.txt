@@ -13223,3 +13223,34 @@ msgstr "Crypt gates"
 msgid "Лесная тропа"
 msgstr "Forest trail"
 
+#. Сон: шёпот после «снова нет» (19.11)
+msgid "Приказ можно и не повторять. Подойдите к нему и нажмите Z — шепните его греху. Что шепнуть, решит его душа."
+msgstr "No need to repeat the order. Go up to him and press Z to whisper to his sin. What to whisper, his soul decides."
+
+msgid "Приказ можно и не повторять. Подойдите к ней и нажмите Z — шепните её греху. Что шепнуть, решит её душа."
+msgstr "No need to repeat the order. Go up to her and press Z to whisper to her sin. What to whisper, her soul decides."
+
+msgid "Шептать не обязательно: дорога к колоннам открыта."
+msgstr "You need not whisper: the road to the columns is open."
+
+msgid "Поддался. Приказ тот же — другим стало то, что вы пообещали его греху. Он идёт к рычагу."
+msgstr "He gave in. The order is the same; what changed is what you promised his sin. He is going to the lever."
+
+msgid "Поддалась. Приказ тот же — другим стало то, что вы пообещали её греху. Она идёт к рычагу."
+msgstr "She gave in. The order is the same; what changed is what you promised her sin. She is going to the lever."
+
+msgid "Не поддался: не всякую душу купишь шёпотом."
+msgstr "He did not give in: not every soul can be bought with a whisper."
+
+msgid "Не поддалась: не всякую душу купишь шёпотом."
+msgstr "She did not give in: not every soul can be bought with a whisper."
+
+msgid "Поднятый"
+msgstr "The risen"
+
+msgid "Поднятая"
+msgstr "The risen"
+
+msgid "Шепните греху поднятого (Z)"
+msgstr "Whisper to the risen one's sin (Z)"
+

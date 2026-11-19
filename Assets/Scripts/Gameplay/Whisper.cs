@@ -87,6 +87,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Итог шёпота сейчас на полосе — прогон снимает кадр.</summary>
         public static bool ShowingOutcome { get; private set; }
 
+        /// <summary>Миг шёпота идёт (сон ждёт его конца, прежде чем подвести итог).</summary>
+        public static bool Busy => _busy;
+
         void Awake() => _one = this;
 
         void Update()

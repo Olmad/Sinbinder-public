@@ -40,7 +40,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _campScene = "Prologue_Camp";
 
         // Порядок шагов — порядок сна (17.11: уроки глазами — до убийц).
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Chase, Bridge, Deciding, Battle, Retest, Jars, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Chase, Bridge, Deciding, Battle, Retest, Whisper, Jars, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -67,6 +67,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Как кончилась проверка тем же приказом без убийц: «послушался», «снова нет».</summary>
         public static string RetestResult;
 
+        /// <summary>Шёпот после «снова нет»: «поддался», «не поддался»; null — не шептали.</summary>
+        public static string WhisperResult;
+
         /// <summary>Как открылись печати у ворот — для прогона: оба встали, один, поднятого нет.</summary>
         public static string SealsResult;
 
@@ -87,6 +90,7 @@ namespace Sinbinder.Gameplay
         public void TestSkipControls()
         {
             if (_stage >= Stage.FirstPerson && _stage <= Stage.Practice) { if (!Speaking()) BeginStandoff(); }
+            else if (_stage == Stage.Whisper) Set(Stage.Jars, JarsLine);
             else if (_stage == Stage.Jars) Set(Stage.Return, GateLine);
         }
 
@@ -116,7 +120,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Standoff: case Stage.Chase: case Stage.Bridge: case Stage.Deciding:
                     // До моста: на настил Греховод не ступает — мост поднимают у него перед носом.
                     return DreamRoad.Progress(DreamRoad.BridgeWestEnd) - 0.8f;
-                case Stage.Battle: case Stage.Retest:
+                case Stage.Battle: case Stage.Retest: case Stage.Whisper:
                     // Бой — у засады за мостом; мост поднят — в обход лесом, до бревна.
                     return DreamRoad.Progress(DreamRoad.LogAt) - 3f;
                 case Stage.Jars: return DreamRoad.Progress(DreamRoad.ShrineAt) + 3f;
@@ -261,6 +265,7 @@ namespace Sinbinder.Gameplay
             if (shown) _guidedFor = _stage;
         }
         private bool _courtRunning, _retestOrdered, _contrastRunning;
+        private float _whisperSince;
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
@@ -318,6 +323,7 @@ namespace Sinbinder.Gameplay
             _dreamNo = dreams + 1;
             RefusalResult = null;
             RetestResult = null;
+            WhisperResult = null;
             SealsResult = null;
 
             // Причина отказа «от противного» — на весь сон: суд называет то,
@@ -751,6 +757,9 @@ namespace Sinbinder.Gameplay
                         Set(Stage.Jars, JarsLine);
                     break;
                 }
+                case Stage.Whisper:
+                    WhisperStep();
+                    break;
                 case Stage.FirstPerson:
                 {
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
@@ -1234,6 +1243,48 @@ namespace Sinbinder.Gameplay
             }
             Log(line);
             _contrastRunning = false;
+            // «Снова нет» — приказ можно не повторять, а искусить (вариант «Шёпот», docs/68): Z рядом с отказавшим.
+            // Шёпот — общая механика игры, на любой грех; у моста через реку он не достаёт (слышен вблизи), здесь — рядом.
+            if (!obeyed && _zombie != null && !_zombie.IsDead && (Whisper.Can(_zombie) || Whisper.CanIfCloser(_zombie)))
+            {
+                Whisper.LastResult = null;
+                _whisperSince = Time.unscaledTime;
+                Set(Stage.Whisper, Grammar.Pick(g,
+                    "Приказ можно и не повторять. Подойдите к нему и нажмите Z — шепните его греху. Что шепнуть, решит его душа.",
+                    "Приказ можно и не повторять. Подойдите к ней и нажмите Z — шепните её греху. Что шепнуть, решит её душа."));
+            }
+            else Set(Stage.Jars, JarsLine);
+        }
+
+        /// <summary>
+        /// Шёпот после «снова нет». Поддался — исполняет тот же приказ: идёт к рычагу, мост опускается (рычаг
+        /// принимает и уговорённого — DreamRoad.LeverCalls). Не поддался или не шептали — дорога к колоннам и так открыта.
+        /// </summary>
+        private void WhisperStep()
+        {
+            if (_zombie == null || _zombie.IsDead) { Set(Stage.Jars, JarsLine); return; }
+            if (Whisper.LastResult == null || Whisper.Busy)
+            {
+                if (Whisper.LastResult == null && !Whisper.Busy && Time.unscaledTime - _whisperSince > (Lesson.Holding ? 60f : 30f))
+                {
+                    Log(Loc.T("Шептать не обязательно: дорога к колоннам открыта."));
+                    Set(Stage.Jars, JarsLine);
+                }
+                return;
+            }
+            bool yielded = Whisper.Persuaded(_zombie);
+            WhisperResult = yielded ? "поддался" : "не поддался";
+            Mark("шёпот: " + WhisperResult);
+            var g = _zombie.Gender;
+            if (yielded)
+            {
+                // Исполнять — сразу, не ждать такта решения: уговор держится недолго.
+                _zombie.GetComponent<AOS.AOSWarriorWrapper>()?.Decide();
+                Log(Grammar.Pick(g, Loc.T("Поддался. Приказ тот же — другим стало то, что вы пообещали его греху. Он идёт к рычагу."),
+                                    Loc.T("Поддалась. Приказ тот же — другим стало то, что вы пообещали её греху. Она идёт к рычагу.")));
+            }
+            else Log(Grammar.Pick(g, Loc.T("Не поддался: не всякую душу купишь шёпотом."),
+                                     Loc.T("Не поддалась: не всякую душу купишь шёпотом.")));
             Set(Stage.Jars, JarsLine);
         }
 
@@ -1362,6 +1413,11 @@ namespace Sinbinder.Gameplay
                     UI.TaskList.Place(Loc.T("Рычаг"), DreamRoad.LeverAt + Vector3.up * 2.1f, 0f);
                     break;
                 case Stage.Battle: Place(Loc.T("Засада"), DreamRoad.AmbushAt, 1.6f, 6f); break;
+                case Stage.Whisper:
+                    // К отказавшему — пока шёпот его не достаёт; подошли ближе — метка гаснет.
+                    if (_zombie != null)
+                        Place(Grammar.Pick(_zombie.Gender, Loc.T("Поднятый"), Loc.T("Поднятая")), _zombie.transform.position, 2.4f, 10f);
+                    break;
                 case Stage.Jars: Place(Loc.T("Камень с банками"), DreamRoad.ShrineAt, 1.5f, 2.5f); break;
                 case Stage.Return:
                     if (_hero != null && DreamRoad.OnSquare(_hero.transform.position)) UI.TaskList.Place(null, null);
@@ -1400,6 +1456,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Bridge: case Stage.Deciding: return Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
                 case Stage.Battle: return DreamRoad.BridgeRaised ? Loc.T("Обойдите реку лесом — к засаде") : Loc.T("Отбейтесь от убийц");
                 case Stage.Retest: return Loc.T("Тот же приказ — без убийц (ПКМ по рычагу)");
+                case Stage.Whisper: return Loc.T("Шепните греху поднятого (Z)");
                 case Stage.Jars: return Loc.T("Возьмите банку с камня у колонн (E, J, R)");
                 default: return null;
             }
@@ -1417,6 +1474,7 @@ namespace Sinbinder.Gameplay
                 case Stage.WarriorMode: return "V";
                 case Stage.DrawWeapon: return "B";
                 case Stage.Practice: return Loc.T("ЛКМ");
+                case Stage.Whisper: return "Z";
                 case Stage.Jars:
                     if (_jarIndex < 0) return _atShrine ? "E" : null;
                     return Satchel.Selected != _jarIndex ? "J" : "R";

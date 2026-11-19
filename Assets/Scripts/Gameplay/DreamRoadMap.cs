@@ -739,8 +739,10 @@ namespace Sinbinder.Gameplay
                 if (_leverServed.TryGetValue(w, out float served) && Mathf.Approximately(served, c.IssuedAt)) continue;
                 // Тянет только тот, чья душа после приказа решила его исполнить (прогон 19.11: стоявший
                 // у рычага опускал мост раньше, чем решил, — до суда). Решение — свежее, не прежнее.
+                // Поддался шёпоту — исполняет приказ, что бы ни решил сам (Whisper.Persuaded, общее для всех грехов):
+                // в журнале души при этом остаётся её отказ, и без этой строки уговорённый рычага не тянул.
                 var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
-                if (mind != null)
+                if (mind != null && !Whisper.Persuaded(w))
                 {
                     if (!_leverSeen.TryGetValue(w, out var seen) || !Mathf.Approximately(seen.issued, c.IssuedAt))
                     {

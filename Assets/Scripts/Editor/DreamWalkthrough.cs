@@ -41,6 +41,7 @@ namespace Sinbinder.EditorTools
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static bool _risenShot, _bridgeUpShot, _leverOrdered, _leverByRun, _leverHintShot;
         private static string _lastAim = "";
+        private static bool _whisperTried, _whisperShot;
         private static float _legsAt = -10f, _leverOrderAt = -1f, _lowSince = -1f;
         private static string NL => Environment.NewLine;
         private static float _pausedAt = -1f;
@@ -398,6 +399,24 @@ namespace Sinbinder.EditorTools
                         box.SkipAll();
                         Write("  [ПРОПУСК] Esc на строке повтора");
                     }
+                    break;
+                case "Whisper":
+                    // «Снова нет» — шёпот (docs/68, вариант «Шёпот»): как игрок — подойти к отказавшему и Z.
+                    if (_step != "шёпот") Go("шёпот");
+                    if (!_whisperTried && now - _stepAt > 1f && dream.Zombie != null && dream.Hero != null)
+                    {
+                        _whisperTried = true;
+                        var zp = dream.Zombie.transform.position;
+                        var away = dream.Hero.transform.position - zp; away.y = 0f;
+                        if (away.sqrMagnitude < 0.01f) away = Vector3.back;
+                        if (away.magnitude > 5f) Warp(dream.Hero, zp + away.normalized * 4f);
+                        bool started = Whisper.TryAny();
+                        Write($"  Z — шепнуть: {(started ? "начат" : "НЕКОМУ")}; {DreamTutorialDirector.Legs(dream.Zombie)}");
+                    }
+                    // Итог — когда строка допечатана (первый кадр 19.11 поймал одну букву).
+                    var said = UI.Letterbox.Instance;
+                    if (!_whisperShot && Whisper.ShowingOutcome && said != null && said.Typed)
+                    { _whisperShot = true; Snap("сон — шёпот после «снова нет»"); }
                     break;
                 case "FirstPerson":
                 case "WarriorMode":
@@ -800,7 +819,8 @@ namespace Sinbinder.EditorTools
             _done = true;
             Write((ok ? "=== СОН ПРОЙДЕН: " : "=== СОН НЕ ПРОЙДЕН: ") + why);
             Write($"итог: миг при убийцах — {DreamTutorialDirector.RefusalResult ?? "не было"}; суд — {SoulCourt.Outcome ?? "не было"}; "
-                + $"без убийц — {DreamTutorialDirector.RetestResult ?? "не проверялся"}; ошибок в журнале {_errors}");
+                + $"без убийц — {DreamTutorialDirector.RetestResult ?? "не проверялся"}; шёпот — {DreamTutorialDirector.WhisperResult ?? "не шептали"}; "
+                + $"ошибок в журнале {_errors}");
             Write("хронометраж сна (FIRST-FIVE-MINUTES, T0–T8):");
             foreach (var mark in DreamTutorialDirector.Timeline) Write("  " + mark);
             SessionState.SetBool(Active, false);
