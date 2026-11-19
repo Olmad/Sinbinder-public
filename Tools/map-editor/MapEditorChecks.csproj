@@ -15,6 +15,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="../../Assets/Scripts/Core/MapData.cs" Link="MapData.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapEditor.cs" Link="MapEditor.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/MapObjectArrange.cs" Link="MapObjectArrange.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/MapObjectSelection.cs" Link="MapObjectSelection.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/MapObjectTemplate.cs" Link="MapObjectTemplate.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapLogicRunner.cs" Link="MapLogicRunner.cs" />
   </ItemGroup>
 </Project>
