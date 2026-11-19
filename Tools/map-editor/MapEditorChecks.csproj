@@ -6,9 +6,12 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>UNITY_EDITOR</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="UnityStubs.cs" />
+    <Compile Include="UnityEditorStubs.cs" />
+    <Compile Include="../../Assets/Editor/MapAssetImporter.cs" Link="MapAssetImporter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="../../Assets/Scripts/Core/MapData.cs" Link="MapData.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapEditor.cs" Link="MapEditor.cs" />
