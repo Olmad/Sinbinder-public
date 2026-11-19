@@ -411,7 +411,7 @@ Assets/Scripts/Gameplay/SkillManager.cs	a42eea76388a97803a61950541e13ba9ef26c0a8
 Assets/Scripts/Gameplay/SkyEyes.cs	1f60d29f25150e77a0880ad6eb80f621ba0e24c0	9826	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/SlothSkills.cs	aa3f49dddb5ba39c649ff79bcf5fee6b5d1ef37e	3373	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/SoulCourt.cs	cabf5abd8eb65f04449e20209bfa02ff95983f6f	166767	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/SoulCourtReasons.cs	78d34638a88e04d5cb962ecad43692c516350d47	24391	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulCourtReasons.cs	78d34638a88e04d5cb962ecad43692c516350d47	24391	CSharp	3	3	1	2	PARTIAL_FAIL	QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=40-49,157-164; context=Memory Attack wants true and KnownMurdererInSight, MemoryModule.Evaluate allows EnemyKilledAlly or MurderedMe; negative=EnemyKilledAlly plus KnownMurdererInSight produces claim 'Это они его убили' without identifying victim or linking sighted murderer to memory; verified=3; total=3; RU_EN=en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 10228-10229,10372-10377 translated faithfully; outcome=FAIL; 1 conditional source defect and 2 context UNKNOWN; previous 0/0/0/0 UNINSPECTED; full file not accepted
 Assets/Scripts/Gameplay/SoulFlight.cs	7e16ded3da8ec9f2bdfec15656e3b6e2804e2538	7327	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/SoulHarvester.cs	11b476a52146964b8609d79ec30bb3873c858a8f	11247	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/SoulIndicator.cs	54c568b40b0f86e3078e2579231514b38cdaf334	5816	CSharp	0	0	0	0	UNINSPECTED	
