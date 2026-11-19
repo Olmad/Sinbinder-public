@@ -79,7 +79,7 @@ def verify_qa2(path: str, status: str, row: dict, metrics: dict):
     # Legacy evidence can append an explanation after outcome=UNKNOWN.
     # Match the exact leading enum token, never a substring of UNKNOWNISH.
     token = re.match(r"^(" + "|".join(sorted(KNOWN, key=len, reverse=True)) +
-                     r")(?=$|[.;\\s])", raw_outcome)
+                     r")(?=$|[.;\s])", raw_outcome)
     outcome = token.group(1) if token else raw_outcome
     # The row is an aggregate. A newly reviewed batch may remain UNKNOWN
     # even if earlier reviewed batches already make the whole file PARTIAL_FAIL.
