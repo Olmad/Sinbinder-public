@@ -47,8 +47,14 @@ QA2_FIELD_RE = re.compile(
 
 
 def qa2_values(evidence: str):
-    return {name.lower(): value.strip()
-            for name, value in QA2_FIELD_RE.findall(evidence)}
+    # Only the last explicit QA2 record is authoritative for this batch.
+    # Later ordinary prose often says "baseline blob=..." and MUST NOT
+    # overwrite fields from the actual QA2 record.
+    _, _, qa2 = evidence.rpartition("QA2:")
+    values = {}
+    for name, value in QA2_FIELD_RE.findall(qa2):
+        values.setdefault(name.lower(), value.strip())
+    return values
 
 
 def verify_qa2(path: str, status: str, row: dict, metrics: dict):
