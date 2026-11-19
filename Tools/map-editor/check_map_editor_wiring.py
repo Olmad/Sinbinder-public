@@ -20,6 +20,7 @@ assert "m_RenderPostProcessing: 0" in scene, "Gameplay post processing must not 
 assert "m_GameObject: {fileID: 1309223881}\\n  m_Enabled: 0" .replace("\\n", "\n") in scene, "Horror Volume still active"
 assert "m_GameObject: {fileID: 423919928}\\n  m_Enabled: 0" .replace("\\n", "\n") in scene, "NavMesh baker must not run while authoring"
 assert "MissingModelMarker(at, prop);" in editor and "_missingPreviewModels.Add" in editor
+assert "GUIUtility.systemCopyBuffer" in editor and "MapData.Folder" in editor
 
 assert 'public string Prop = "Pine";' in data and 'public string MaterialId = "";' in data
 assert "public List<Region> Regions = new();" in data and "public List<Trigger> Triggers = new();" in data
