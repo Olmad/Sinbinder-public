@@ -439,7 +439,7 @@ Assets/Scripts/Gameplay/WarriorAnimation.cs	b38b97169551d73cb4257b8a0545a169cf36
 Assets/Scripts/Gameplay/WarriorLook.cs	f2308ba188bfe254438f3fcba1023de5f35a933a	11667	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/WarriorRig.cs	8572b69925e8398a2ab74cb036eeab248156f79a	10214	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/WeaponPickup.cs	2b2d43bb6d450fd5e90303b6662346522edd3356	5754	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/Whisper.cs	f0ef02a280108b3c304efa3bb0c5eb679c395f73	17674	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Whisper.cs	f0ef02a280108b3c304efa3bb0c5eb679c395f73	17674	CSharp	30	2	2	28	FAIL	QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=175-190,250; context=ResolveBargain yielded=true canPay=true but w.IsDead=true or w.HasCommand=false without order revision change; negative=dead warrior with unchanged revision produces 'Приказ уже изменён' line185 and LastResult 'приказ изменён' line250 despite no replacement order; verified=2; total=30; RU_EN=UNKNOWN; outcome=FAIL; 28 other Loc.T/Loc.F callsites UNKNOWN pending semantic context and EN; baseline blob_sha intentionally retained; 30 current source calls counted, baseline zero was UNINSPECTED
 Assets/Scripts/Gameplay/WrathSkills.cs	a02f982a448ee35230e4401c08df50393f12a8bd	3304	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Inventory/InventoryItem.cs	e06d72f644ce0972c898685b3034e3a15a96e9c4	4468	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Inventory/PlayerInventory.cs	83385c84212bdf81da593600196721271549e53d	5289	CSharp	0	0	0	0	UNINSPECTED	
