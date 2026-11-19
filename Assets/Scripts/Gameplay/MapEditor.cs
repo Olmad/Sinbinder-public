@@ -463,10 +463,14 @@ namespace Sinbinder.Gameplay
 
         private void PasteActiveTemplate(Vector3 at)
         {
-            if (string.IsNullOrEmpty(_activeTemplateName) ||
-                !MapObjectTemplate.TryLoad(_activeTemplateName, out var layout, out string error))
+            if (string.IsNullOrEmpty(_activeTemplateName))
             {
-                _say = error ?? Loc.T("Шаблон не выбран.");
+                _say = Loc.T("Шаблон не выбран.");
+                return;
+            }
+            if (!MapObjectTemplate.TryLoad(_activeTemplateName, out var layout, out string error))
+            {
+                _say = error;
                 return;
             }
             if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z,
