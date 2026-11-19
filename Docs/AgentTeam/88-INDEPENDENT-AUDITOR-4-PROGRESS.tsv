@@ -95,7 +95,7 @@ Assets/Scripts/AOS Engine/MemoryRecord.cs	db45ac40321e7fde8d5dc39cb2224cfd7aeeb5
 Assets/Scripts/AOS Engine/MissionAction.cs	b66adc1d0c18411beb4dbbabd8c931eccf177f75	1594	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MissionContext.cs	0906ad0a823613c3b99731460635c9fc2f915cb7	1391	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MissionID.cs	4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164	285	CSharp	0	0	0	0	EXCLUDED_TECH	Full 12-line source reviewed on blob 4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
-Assets/Scripts/AOS Engine/MissionOutcome.cs	88586e1a961307b8fc82a302af5bc65d56693930	870	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MissionOutcome.cs	88586e1a961307b8fc82a302af5bc65d56693930	870	CSharp	0	0	0	0	EXCLUDED_TECH	Full 25-line C# enum inspected at blob 88586e1a961307b8fc82a302af5bc65d56693930: only MissionOutcome identifiers VillageSaved/VillageDestroyed/VillageAbandoned/NewCultEstablished/TravelerEscaped/TravelerKilled/None, with developer comments on serialization; no literals, localization keys, display annotations or player-facing prose. Outcome-to-text mapping in consumers is separately UNKNOWN; 0/0 player-facing strings in this file.
 Assets/Scripts/AOS Engine/MissionResolver.cs	a09504986e5d7116c4abb6f2fa76c18be413b7fc	1160	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Modules/EnvyModule.cs	477923d69b5a66e1776c5f94e6b7e6e55d6e3f13	5430	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs	4992fb5ce5c328e4e668bd174dfd98f2004e31b8	4506	CSharp	0	0	0	0	UNINSPECTED	
@@ -105,14 +105,14 @@ Assets/Scripts/AOS Engine/Modules/PatienceModule.cs	76ad5059e3f1dd50172b032f12b9
 Assets/Scripts/AOS Engine/Modules/PrideModule.cs	44d0b0688240ea8f514e4743b75683b85c3c8935	9919	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Moment.cs	3a0422e3d61ec623c4bc4d0059c93f3d86ca4da8	7022	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/MoralityModule.cs	b4625c6db1baa094c2ee6060857adb8e7da7ec66	6069	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	1	1	0	1	UNKNOWN	Full 19-line C# source inspected at blob 302532ad0ff3d10e2dd3e7a7ed9a55194093709b: serializable NPCData declares DisplayName potentially player-facing; Id technical, IsInnocent/IsAlive flags not prose. No literal NPC name or Loc key. Name source, presence, RU/EN, consumer and flag correspondence remain UNKNOWN; 1/1 text-bearing field inspected, 0 semantic PASS.
 Assets/Scripts/AOS Engine/OrderIntegrity.cs	cb54b867e839a0d370abe2bfabf074b46120c303	3815	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/PerkResolver.cs	e6e5ddcefffaca74c97ddd488f087a93aaf9670f	5606	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/PhraseGenerator.cs	da6ce1b5be754f8577772a6beb986d276e7d1c79	43924	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/Quest.cs	7ef9ce15524b2e251564acea11d4b618a0479f98	2502	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/RefusalPresenter.cs	05e67a4e6e353889196bd2b8cde7d62c4d5e3b68	15256	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/ReputationData.cs	6be256050b3ecc14ca8e70c4d25ba7045f526a4a	1679	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/Rumour.cs	82f150722bd0fe416d0bf475b3edd757b7f7331d	651	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Rumour.cs	82f150722bd0fe416d0bf475b3edd757b7f7331d	651	CSharp	1	1	0	1	UNKNOWN	Full 21-line C# source inspected at blob 82f150722bd0fe416d0bf475b3edd757b7f7331d: serializable Rumour has one potentially player-facing string Text, plus SubjectId, Progress, Confirmed. No hardcoded dialogue or Loc key; Text value, origin, consumers, RU/EN and truth of rumour are external and UNKNOWN. 1/1 field inspected; 0 semantic PASS; no runtime claim.
 Assets/Scripts/AOS Engine/RumourManager.cs	29825db74fb8f8e9055c9195d7533768d24302dc	7433	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/SkillCatalog.cs	a0ef40a2ad0c4cbd26b1ff253d376fdcd9d9fc61	4967	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/SlothModule.cs	149a6903b8a1dd8cf1ac6d36224a859d39a90447	8079	CSharp	0	0	0	0	UNINSPECTED	
