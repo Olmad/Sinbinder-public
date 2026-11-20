@@ -31,3 +31,12 @@
 - **Source SHA:** before `92a86ee8b9000c4020187e8195c50aba8ed453a1`, after `65f8aceaa74f82eedac74b514ffef31796b4e310`. [Production commit a68f6ed](https://github.com/Olmad/Sinbinder-public/commit/a68f6ed55220aab73b9d1f3ed1aeb6d2103c1590).
 - **Source-level checks:** exact old block unique; null/dead guard in ResolveBargain exists; neutral RU outcome exists; English translation in `en.txt` blob `413688e1522d7f0f95ae42fd04806170b157caf5` exists (4/4 checks). **Не компилируемый C# test**. Runtime/Unity UNKNOWN. Нужен независимый QA №5, включая случай уничтожения воина во время корутины.
 - **QA2:** source=Assets/Scripts/Gameplay/Whisper.cs; blob=65f8aceaa74f82eedac74b514ffef31796b4e310; lines=230-243; context=SpeechBubbles fallback, t>=1.0f, warrior destroyed; negative=previous guard skipped resolution and emitted empty battle log; verified=1; total=1; RU_EN=neutral Loc.T outcome and EN translation present; outcome=FIX_PENDING_QA5.
+
+## 2026-11-20 — ExpeditionReplayViewer: replay controls RU/EN
+
+- Основание: аудитор №2, hardcoded Russian GUI labels in English locale; source before 3b4468fc57067a2d6557e60f890a27ca18284456.
+- Контрпример: with EN selected and nonempty replay, header and Close/Back/Pause/Play/Forward controls remained Russian. Existing «Пауза» translates as «Paused», so action key «Приостановить» maps to «Pause».
+- QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=bc75e8fa7caad015fc1e36754847ce446399c306; lines=OnGUI header and controls; context=nonempty replay in English locale; negative=previously displayed hardcoded Russian buttons; verified=6; total=6; RU_EN=en.txt blob 961bf2ac4e9eb09b37dbf169ef8c0630152519ef six exact matches; outcome=FIX_PENDING_QA5.
+- Source-level RU/EN assertions: 6/6 PASS. Compiled C# NOT RUN; Unity UNKNOWN. Other replay captions still hardcoded Russian; entire viewer NOT PASS.
+- Commits: 23c9d08d6614f2b9149e57f58fbebd48a996efdf; 3c140ca408aa68a8e5450b41e877470ebb3f28a9; b59e9e4a43b2cb207a2f58bfd0b2d30b861e810f; b83f8dadf6cf97bee6a134a6198f8761d5d855c3.
+- Independent QA #5 pending; stage 1 remains open.
