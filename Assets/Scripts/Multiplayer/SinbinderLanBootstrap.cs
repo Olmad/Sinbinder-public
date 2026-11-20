@@ -46,6 +46,7 @@ namespace Sinbinder.Multiplayer
         private string _launchConnect;
         private bool _launchMechanicsMap;
         private bool _openMechanicsMap;
+        private bool _openExpeditionTest;
         private float _nextAutoReconnect;
         private int _autoReconnectAttempts;
 
@@ -102,6 +103,8 @@ namespace Sinbinder.Multiplayer
                     _verifyClient = true;
                 else if (args[i] == "-mp-test-map")
                     _launchMechanicsMap = true;
+                else if (args[i] == "-expedition-test-map")
+                    _openExpeditionTest = true;
             }
 
             if (_verifyClient)
@@ -118,7 +121,7 @@ namespace Sinbinder.Multiplayer
                 _verification = new LanWorldAutoVerifier(_client);
             }
 
-            if (_launchMechanicsMap && !_dedicated)
+            if ((_launchMechanicsMap || _openExpeditionTest) && !_dedicated)
             {
                 // Defer scene loading until the first Update, outside Awake
                 // and IMGUI's layout pass.
@@ -152,6 +155,18 @@ namespace Sinbinder.Multiplayer
 
         private void Update()
         {
+            if (_openExpeditionTest)
+            {
+                _openExpeditionTest = false;
+                _open = false;
+                // Crypt_Test owns the real MissionBoard and MissionMapUI.
+                // No stub expedition or separate reward calculator.
+                if (Application.CanStreamedLevelBeLoaded("Crypt_Test"))
+                    SceneManager.LoadScene("Crypt_Test");
+                else
+                    Debug.LogError("[EXPEDITION QA] Crypt_Test absent from build scenes");
+                return;
+            }
             if (_openMechanicsMap)
             {
                 _openMechanicsMap = false;
@@ -296,6 +311,8 @@ namespace Sinbinder.Multiplayer
             {
                 if (GUILayout.Button("Карта механик (локально)"))
                     _openMechanicsMap = true;
+                if (GUILayout.Button("Проверка экспедиций (склеп)"))
+                    _openExpeditionTest = true;
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Создать LAN"))
                     StartHost();
