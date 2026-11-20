@@ -47,8 +47,14 @@ namespace Sinbinder.Gameplay
         /// <summary>Сколько реплик суд сказал с запуска — прогон снимает кадр на каждую.</summary>
         public static int Spoken { get; private set; }
 
-        /// <summary>Сколько судов прошло с запуска.</summary>
+        /// <summary>Сколько раз Суд начал показ, включая прерванные попытки.</summary>
         public static int Held { get; private set; }
+
+        /// <summary>Количество Судов, дошедших до восстановления камеры и выхода из зала.</summary>
+        public static int Completed { get; private set; }
+
+        /// <summary>Длительность последнего ЗАВЕРШЁННОГО Суда, в реальных секундах. -1: замера нет.</summary>
+        public static float LastDurationSeconds { get; private set; } = -1f;
 
         /// <summary>Последний суд был коротким — для прогона.</summary>
         public static bool Brief { get; private set; }
@@ -63,7 +69,7 @@ namespace Sinbinder.Gameplay
         /// себя целиком (компас, весы, тринадцать судей); после него суды по делу идут
         /// коротко: приказ, голоса, вердикт. Иначе загрузка записи снова учила бы три минуты.
         /// </summary>
-        public static bool Seen => Held > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
+        public static bool Seen => Completed > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
 
         /// <summary>Какие голоса уже решали суд на глазах у игрока: новый — интереснее.</summary>
         private static readonly HashSet<string> Decided = new();
@@ -72,7 +78,8 @@ namespace Sinbinder.Gameplay
         private static void Rearm()
         {
             Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0;
-            Held = 0; Decided.Clear(); TookSeat = "";
+            Held = 0; Completed = 0; LastDurationSeconds = -1f;
+            Decided.Clear(); TookSeat = "";
             // Суд, оборванный сменой сцены (выход в меню посреди суда), запирал
             // все следующие до перезапуска игры: Sitting оставался true.
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Unstick;
@@ -675,6 +682,9 @@ namespace Sinbinder.Gameplay
                 yield break;
             }
 
+            // Real elapsed time, including animations, pauses, and player walking.
+            // This is measured in Unity, never inferred from scripted line counts.
+            float startedAt = Time.realtimeSinceStartup;
             Sitting = true;
             Step = "enter";
             bool shortly = brief ?? Seen;
@@ -1011,6 +1021,13 @@ namespace Sinbinder.Gameplay
             if (pause != null && pause.IsPaused && pause.Stamp == mine) pause.Resume();
             Sitting = false;
             Step = "";
+            // Count ONLY fully restored presentations. A missing camera or
+            // an interrupted coroutine cannot masquerade as a completed lesson.
+            LastDurationSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAt);
+            Completed++;
+            Debug.Log($"[СУД ЗАМЕР] completed={Completed} full={!shortly} " +
+                $"duration_s={LastDurationSeconds:F1} outcome={Outcome} " +
+                $"walk={(!shortly && Preferences.CourtWalk)}");
         }
 
         // ──────────────────────────────────
