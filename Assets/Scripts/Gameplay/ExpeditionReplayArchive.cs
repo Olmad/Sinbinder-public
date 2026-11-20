@@ -30,6 +30,7 @@ namespace Sinbinder.Gameplay
                 {
                     Kind = frame.Kind,
                     Actor = frame.Actor ?? "",
+                    ActorId = frame.ActorId ?? "",
                     Target = frame.Target ?? "",
                     Description = frame.Description ?? "",
                     Damage = frame.Damage,
