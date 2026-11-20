@@ -22,9 +22,27 @@ namespace Sinbinder.UI
             _open._data = data;
             _open._index = 0;
             _open._running = true;
+            // Legacy traces have no AOS action code; preserve the old honest
+            // schematic instead of pretending to animate unrecorded actions.
+            bool recordedActions = false;
+            foreach (var frame in data.Frames)
+                if (frame != null && frame.Kind == ExpeditionReplayKind.CombatAction &&
+                    !string.IsNullOrEmpty(frame.ActionCode))
+                { recordedActions = true; break; }
+            if (recordedActions)
+            {
+                try { _open._stage = new ExpeditionReplayStage3D(data); }
+                catch (System.Exception error)
+                {
+                    Debug.LogWarning("[REPLAY] 3D reconstruction unavailable: " + error);
+                    _open._stage?.Dispose();
+                    _open._stage = null;
+                }
+            }
         }
 
         private ExpeditionReplayData _data;
+        private ExpeditionReplayStage3D _stage;
         private int _index;
         private bool _running;
         private float _clock, _speed = 1f;
@@ -35,18 +53,23 @@ namespace Sinbinder.UI
         {
             if (_data == null) { Close(); return; }
             if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
-            if (!_running || _index >= _data.Frames.Count - 1) return;
-            _clock += Time.unscaledDeltaTime * _speed;
-            if (_clock >= 1.1f)
+            if (_running && _index < _data.Frames.Count - 1)
             {
-                _clock = 0f;
-                _index++;
-                if (_index == _data.Frames.Count - 1) _running = false;
+                _clock += Time.unscaledDeltaTime * _speed;
+                if (_clock >= 1.1f)
+                {
+                    _clock = 0f;
+                    _index++;
+                    if (_index == _data.Frames.Count - 1) _running = false;
+                }
             }
+            _stage?.Show(_index, _running ? Mathf.Clamp01(_clock / 1.1f) : 0.6f);
         }
 
         private void OnDestroy()
         {
+            _stage?.Dispose();
+            _stage = null;
             if (_open == this) _open = null;
         }
 
@@ -81,7 +104,10 @@ namespace Sinbinder.UI
             float mapWidth = Mathf.Min(w*0.58f,w-205f);
             float mapHeight = Mathf.Min(350f,h*0.48f);
             var mapRect=new Rect(left+15f,top+50f,mapWidth,mapHeight);
-            DrawSchematicMap(mapRect,frame);
+            if (_stage != null && _stage.Texture != null)
+                GUI.DrawTexture(mapRect, _stage.Texture, ScaleMode.StretchToFill);
+            else
+                DrawSchematicMap(mapRect,frame);
 
             float sideX=mapRect.xMax+12f,sideW=Mathf.Max(150f,w-mapWidth-44f);
             GUI.Box(new Rect(sideX,top+50f,sideW,mapHeight),"");
@@ -94,8 +120,10 @@ namespace Sinbinder.UI
                 frame.Description + ObservedEffect(frame),
                 _item);
 
-            GUI.Label(new Rect(mapRect.x,top+58f+mapHeight,w-30f,23f),
-                "Схематическая реконструкция: боевые решения из движка, точные координаты в старой записи отсутствуют.",
+            GUI.Label(new Rect(mapRect.x,top+58f+mapHeight,w-30f,31f),
+                _stage != null
+                    ? "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
+                    : "Схематическая хронология: точные координаты в старой записи отсутствуют.",
                 _item);
 
             float y=top+89f+mapHeight;
