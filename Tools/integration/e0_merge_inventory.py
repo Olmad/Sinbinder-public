@@ -73,6 +73,19 @@ def inventory(root: Path, author_ref: str, incoming_ref: str) -> dict:
     incoming = paths_since(root, ancestor, incoming_sha)
     overlap = author & incoming
 
+    # Two branches may modify the same path to identical bytes. Such a
+    # converged path is not a content divergence and needs no merge choice.
+    overlap_blobs = {
+        path: (object_id(root, author_sha, path),
+               object_id(root, incoming_sha, path))
+        for path in overlap
+    }
+    overlap_identical = sorted(
+        path for path, (a, b) in overlap_blobs.items()
+        if a is not None and a == b
+    )
+    overlap_distinct = sorted(set(overlap) - set(overlap_identical))
+
     canon = {}
     for path in CANON:
         a = object_id(root, author_sha, path)
@@ -90,9 +103,13 @@ def inventory(root: Path, author_ref: str, incoming_ref: str) -> dict:
         "author_changed_count": len(author),
         "incoming_changed_count": len(incoming),
         "overlap_count": len(overlap),
+        "overlap_identical_count": len(overlap_identical),
+        "overlap_distinct_count": len(overlap_distinct),
         "author_only": sorted(author - incoming),
         "incoming_only": sorted(incoming - author),
         "overlapping_paths": sorted(overlap),
+        "overlap_identical_paths": overlap_identical,
+        "overlap_distinct_paths": overlap_distinct,
         "protected_paths": {
             p: {
                 "author_changed": p in author,
@@ -126,9 +143,14 @@ def main(argv=None) -> int:
     print("E0 author-only paths:", len(report["author_only"]))
     print("E0 incoming-only paths:", len(report["incoming_only"]))
     print("E0 overlapping changed paths:", report["overlap_count"])
+    print("E0 same-blob overlaps:", report["overlap_identical_count"])
+    print("E0 different-blob overlaps:", report["overlap_distinct_count"])
+    identical = set(report["overlap_identical_paths"])
     for path in PROTECTED:
         state = report["protected_paths"][path]
-        if state["both_changed"] or state["author_changed"]:
+        if path in identical:
+            print("SAME CONTENT:", path)
+        elif state["both_changed"] or state["author_changed"]:
             print("REVIEW:", path, "BOTH" if state["both_changed"] else "AUTHOR")
     for path, info in report["canonical_docs"].items():
         print("CANON:", info["status"], path)
