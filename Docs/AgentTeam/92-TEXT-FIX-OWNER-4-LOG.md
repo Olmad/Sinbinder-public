@@ -49,3 +49,12 @@
 - QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=f0d36ad782883556f8cf31e14ca9a94efde32c5f; lines=DrawSchematicMap GUI.Box/GUI.Label; context=nonempty expedition replay and schematic map visible; negative=EN locale previously displayed three Russian labels; verified=3; total=3; RU_EN=en.txt blob 278672b5b86a49357e301411a03f945ddb1c3579 matched 3 pairs; outcome=FIX_PENDING_QA5.
 - JS source-level проверки: 6/6 (каждый Loc.T вызов и точный RU/EN ключ). Компилируемый C# и Unity не запускались, runtime UNKNOWN; весь файл не PASS.
 - Коммиты: [C# cb1da0d](https://github.com/Olmad/Sinbinder-public/commit/cb1da0d5b78f44f75843ffadd30c9e4e5aeaef2d), [EN 717f50c](https://github.com/Olmad/Sinbinder-public/commit/717f50cee67afcc21303c07e9bc337bd4245f77e). Независимая QA №5 ожидается.
+
+## 2026-11-20 — ExpeditionReplayViewer: счётчик события и ход AOS
+
+- Основание: подтверждённый source-level FAIL непереведённых русских подписей в `ExpeditionReplayViewer.OnGUI()`, строки блока справа от карты, исходный blob `f0d36ad782883556f8cf31e14ca9a94efde32c5f`.
+- Контрпример: английская локаль, открытый непустой реплей; `"Событие "+(_index+1)+" из "+Frames.Count` и `"Ход AOS: "+frame.Round` оставались русскими.
+- Минимальная правка: `Loc.F("Событие {0} из {1}",_index+1,_data.Frames.Count)` и `frame.Round>0 ? "\\n"+Loc.F("Ход AOS: {0}",frame.Round) : ""`; условие показа раунда и параметры не менялись. EN: `Event {0} of {1}`, `AOS turn: {0}`.
+- QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=1a69c2aa000d68df3cb31cd9a1d461993d02243d; lines=OnGUI side panel event and round; context=nonempty expedition replay, frame.Round>0 for round; negative=English locale previously displayed Russian counter and round; verified=2; total=2; RU_EN=en.txt blob a8e5a95cd3d5b9fc6cf337d6ba3935a8835a2255 placeholders matched; outcome=FIX_PENDING_QA5.
+- Source-level JS assertions 8/8 PASS: exact callers, round guard, two translations, uniqueness, absence of previous hardcoded forms. **Compiled C# test NOT RUN; Unity UNKNOWN; independent QA #5 PENDING.** Remaining replay labels are not covered; entire file NOT PASS.
+- Commits: [C# d114e06](https://github.com/Olmad/Sinbinder-public/commit/d114e067e348c87a5366733a43422c29ed22009b), [EN 7114598](https://github.com/Olmad/Sinbinder-public/commit/7114598fef3393edd7485cdc2e8a76fa069d00f6).
