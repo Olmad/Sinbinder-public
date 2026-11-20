@@ -14673,3 +14673,12 @@ msgstr "Forward"
 #: UI/ExpeditionReplayViewer.cs
 msgid "Приостановить"
 msgstr "Pause"
+
+msgid "СХЕМА МАРШРУТА"
+msgstr "ROUTE SCHEMATIC"
+
+msgid "Цель"
+msgstr "Objective"
+
+msgid "Выход / возврат"
+msgstr "Departure / return"
