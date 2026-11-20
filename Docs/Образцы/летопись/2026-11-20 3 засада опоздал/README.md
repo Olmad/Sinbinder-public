@@ -2,7 +2,7 @@
 
 Поднятый пал в засаде до прихода владыки: душа угасает у тела, E — в банку, R — встаёт в то же тело. Отказывал или колебался — помнит, пришёл ли владыка: «Вы не пришли.», верность −15 (пришёл — «Вы пришли.», +10). Не успели — душа угасла, он больше не встанет. Прогон 20.11 с ключом SINBINDER_LATE: прошло до лагеря, ошибок 0. В первом кадре тело заслоняет стоящий над ним убийца — переснять.
 
-Записано: DreamTutorialDirector.Fallen · DreamTutorialDirector.Remember. Автор: ждём.
+Записано: DreamTutorialDirector.Fallen · DreamTutorialDirector.Remember. коммит [`b9e153f5`](https://github.com/Olmad/Sinbinder-public/commit/b9e153f5). Автор: ждём.
 
 [← летопись](../README.md)
 
