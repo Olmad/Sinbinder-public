@@ -14,6 +14,7 @@ on:
       - "Assets/Resources/Lang/en.txt"
       - "Assets/Scripts/Gameplay/Bodyguard.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
       - "Tools/tutorial/**"
       - ".github/workflows/tutorial-smoke.yml"
   pull_request:
@@ -26,6 +27,7 @@ on:
       - "Assets/Resources/Lang/en.txt"
       - "Assets/Scripts/Gameplay/Bodyguard.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
       - "Tools/tutorial/**"
       - ".github/workflows/tutorial-smoke.yml"
 
