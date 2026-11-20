@@ -214,6 +214,32 @@ class GateTests(unittest.TestCase):
             errors, warnings, _ = self.check(base_ref="HEAD^", enforce_changed=True)
         self.assertEqual(errors, [])
 
+    def test_qa2_latest_total_with_inline_comment_is_rejected(self):
+        evidence = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+                    "; lines=L12; context=caller found; negative=unknown; "
+                    "verified=0; total=17 previously read, no new count; "
+                    "RU_EN=UNKNOWN; outcome=UNKNOWN_CONTEXT")
+        # The evidence is a single TSV cell; newline and spaces must not
+        # turn a numeric field into a free-text field silently.
+        metrics = {"found_text_candidates": 122,
+                   "checked_text_candidates": 105,
+                   "failed_text_candidates": 1}
+        errors = gate.verify_qa2(self.paths[0], "UNKNOWN_CONTEXT",
+                                 {"evidence": evidence}, metrics)
+        self.assertIn("invalid QA2 verified= or total=", errors)
+
+    def test_qa2_latest_total_can_preserve_comment_in_separate_field(self):
+        evidence = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+                    "; lines=L12; context=caller found; negative=unknown; "
+                    "verified=0; total=17; note=previously read, no new count; "
+                    "RU_EN=UNKNOWN; outcome=UNKNOWN_CONTEXT")
+        metrics = {"found_text_candidates": 122,
+                   "checked_text_candidates": 105,
+                   "failed_text_candidates": 1}
+        errors = gate.verify_qa2(self.paths[0], "UNKNOWN_CONTEXT",
+                                 {"evidence": evidence}, metrics)
+        self.assertEqual(errors, [])
+
     def test_fake_complete_pass_with_unchecked_candidates_fails(self):
         ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
               "; lines=L12; context=reviewed; negative=Build(null); "
