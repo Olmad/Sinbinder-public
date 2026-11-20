@@ -1158,9 +1158,7 @@ namespace Sinbinder.Crypt
                     continue;
                 }
                 if (!SquadRoster.TryGet(entry.Key, out var member)) continue;
-                w.UnpaidMissions = member.UnpaidMissions;
-                w.ChangeLoyalty(member.Loyalty - w.Loyalty);
-                w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
+                w.RestoreExpeditionCondition(member);
                 w.gameObject.SetActive(true);
             }
             if (spawner != null && arrivals.Count > 0) spawner.Arrive(arrivals, restoreHealth: true);

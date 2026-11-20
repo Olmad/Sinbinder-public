@@ -162,6 +162,16 @@ namespace Sinbinder.Gameplay
     {
         public UnityEngine.GameObject gameObject {get;}=
             new UnityEngine.GameObject("Shim Warrior");
+        public bool IsCommander {get; private set;}
+
+        internal void RestoreExpeditionCondition(SquadRoster.Member member)
+        {
+            UnpaidMissions=member.UnpaidMissions;
+            ChangeLoyalty(member.Loyalty-Loyalty);
+            SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
+            IsCommander=member.IsCommander;
+            PocketGold=Math.Max(0,member.Pocket);
+        }
     }
     public sealed class SinbinderPlayer : Warrior {}
     public sealed class PrologueCampSpawner : UnityEngine.MonoBehaviour
@@ -174,11 +184,13 @@ namespace Sinbinder.Gameplay
                 var warrior=new Warrior(name,Team.Player);
                 if(!string.IsNullOrEmpty(member.WarriorId)) warrior.Id=member.WarriorId;
                 warrior.gameObject.scene=gameObject.scene;
-                warrior.UnpaidMissions=member.UnpaidMissions;
-                warrior.ChangeLoyalty(member.Loyalty-warrior.Loyalty);
-                if (restoreHealth)
-                    warrior.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
-                warrior.Pocket(member.Pocket);
+                if (restoreHealth) warrior.RestoreExpeditionCondition(member);
+                else
+                {
+                    warrior.UnpaidMissions=member.UnpaidMissions;
+                    warrior.ChangeLoyalty(member.Loyalty-warrior.Loyalty);
+                    warrior.Pocket(member.Pocket);
+                }
                 UnityEngine.Object.SceneWarriors.Add(warrior);
             }
         }

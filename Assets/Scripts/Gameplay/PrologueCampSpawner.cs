@@ -600,12 +600,15 @@ namespace Sinbinder.Gameplay
 
             // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
             AOS.TitleManager.Bestow(warrior, member.Title);
-            warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
-            warrior.UnpaidMissions = member.UnpaidMissions;
 
             // Сбежавший уносит своё, включая раскладку по местам.
             warrior.RestoreEquipment(member.Equipment, member.Gear);
-            warrior.Pocket(member.Pocket);
+            if (!restoreHealth)
+            {
+                warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
+                warrior.UnpaidMissions = member.UnpaidMissions;
+                warrior.Pocket(member.Pocket);
+            }
 
             // Ноги, урон, усталость, значок над головой — всё общее сразу.
             // Собиралось это только в UnitFactory, которым пролог
@@ -613,7 +616,7 @@ namespace Sinbinder.Gameplay
             // ни шага, а без значка не работала первая ступень лестницы.
             WarriorRig.Attach(go);
             if (restoreHealth)
-                warrior.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
+                warrior.RestoreExpeditionCondition(member);
 
             // Жатва душ: сцена 4 учит ей, а научить некому, если её
             // некому и делать. Раньше жнец висел только в тестовой сцене.

@@ -375,13 +375,22 @@ internal static class Program
         Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
               returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
               "missing destination scene rejects save before live state restoration");
-        Check(returnToBody.Contains("(reload || save.Scene != Here || sandboxChanged || WorkshopRecruitsChanged(save))") &&
+        Check(returnToBody.Contains("reload || save.Scene != Here || sandboxChanged") &&
               returnToBody.Contains("if (!changeScene) return true;") &&
               returnToBody.Contains("string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;") &&
               returnToBody.Contains("SceneManager.LoadScene(scene);"),
               "same-stage and valid hosted raid destinations still follow original restore paths");
         Check(returnToBody.Contains("save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened"),
               "loading a different crypt story stage rebuilds the scene before restoring its sandbox state");
+        int cryptSquadGuard = returnToBody.IndexOf("|| CryptSquadChanged(save) ||");
+        Check(cryptSquadGuard >= 0 && cryptSquadGuard < sceneGuard &&
+              returnToBody.Contains("CryptSquadChanged(SaveGame save) => save.OpensCryptSandbox") &&
+              returnToBody.Contains("warrior.gameObject.activeInHierarchy"),
+              "quickload checks the saved crypt squad before choosing whether to rebuild the scene");
+        Check(saveSource.Contains("w.Id == m.WarriorId") &&
+              saveSource.Contains("restoreCryptCondition && !member.IsAway") &&
+              saveSource.Contains("warrior.RestoreExpeditionCondition(member);"),
+              "same-lineup crypt quickload restores condition for each saved fighter present in the crypt");
         Check(!returnToBody.Contains("состояние возвращено, место — нет") &&
               !returnToBody.Contains("return true;\n            }\n\n            Arriving = true;"),
               "missing scene cannot be reported as successful partial restoration");

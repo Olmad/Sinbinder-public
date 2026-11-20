@@ -78,6 +78,8 @@ namespace Sinbinder.Tests
                 Spoils();
                 Saving();
                 SavingCryptSandbox();
+                SavingCryptSquad();
+                SavingExpeditionCondition();
                 SavingEquipment();
                 SavingCustody();
                 Bodies();
@@ -1914,6 +1916,99 @@ namespace Sinbinder.Tests
             Check(olderExpedition.OpensCryptSandbox, "старая запись с вылазкой возвращает в песочницу");
             olderExpedition.Scene = "Camp_Day";
             Check(!olderExpedition.OpensCryptSandbox, "наличие вылазки не открывает песочницу в другой сцене");
+        }
+
+        private static void SavingCryptSquad()
+        {
+            var guard = SavedWarrior("Сторож пробы", "selfcheck-crypt-guard", NewObject("Сторож склепа"));
+            var scout = SavedWarrior("Разведчик пробы", "selfcheck-crypt-scout", NewObject("Разведчик склепа"));
+            var inactiveParent = NewObject("Скрытый отряд");
+            scout.transform.SetParent(inactiveParent.transform);
+            inactiveParent.SetActive(false);
+
+            var savedGuard = new SavedMember { Name = guard.DisplayName, WarriorId = guard.Id };
+            var savedScout = new SavedMember { Name = scout.DisplayName, WarriorId = scout.Id, IsAway = true };
+            var save = new SaveGame
+            {
+                Scene = Crypt.CryptMap.SceneName,
+                CryptSandboxOpened = true,
+                Squad = new List<SavedMember> { savedScout, savedGuard },
+            };
+            var bodies = new[] { guard, scout };
+            Check(SaveSystem.CryptSquadMatches(save, bodies) &&
+                  SaveSystem.CryptSquadMatches(save, new[] { guard }),
+                "совпавший состав можно загрузить в той же сцене со скрытым или отсутствующим ушедшим");
+
+            savedScout.IsAway = false;
+            Check(!SaveSystem.CryptSquadMatches(save, bodies),
+                "запись до вылазки требует вернуть скрытого бойца в склеп");
+            inactiveParent.SetActive(true);
+            Check(SaveSystem.CryptSquadMatches(save, bodies),
+                "порядок бойцов в записи не меняет совпадение состава");
+            Check(!SaveSystem.CryptSquadMatches(save, new[] { guard }),
+                "запись до потери бойца требует пересобрать отряд даже без текущих вылазок");
+
+            savedScout.IsAway = true;
+            Check(!SaveSystem.CryptSquadMatches(save, bodies),
+                "запись с вылазкой требует убрать бойца, который успел вернуться");
+            inactiveParent.SetActive(false);
+            savedGuard.WarriorId = "selfcheck-crypt-namesake";
+            Check(!SaveSystem.CryptSquadMatches(save, bodies),
+                "одноимённый боец с другим идентификатором не заменяет сохранённого");
+            savedGuard.WarriorId = null;
+            Check(!SaveSystem.CryptSquadMatches(save, bodies),
+                "для старой записи без идентификатора готового бойца нужен новый состав сцены");
+        }
+
+        private static void SavingExpeditionCondition()
+        {
+            var kept = new List<SquadRoster.Member>(SquadRoster.Members);
+            var warrior = SavedWarrior("Боец после вылазки", "selfcheck-expedition-condition", NewObject("Боец после вылазки"));
+            var body = warrior.gameObject.AddComponent<Damageable>();
+            var saved = new SquadRoster.Member
+            {
+                Name = warrior.DisplayName,
+                WarriorId = warrior.Id,
+                HealthFraction = 0.4f,
+                Loyalty = 32f,
+                IsCommander = true,
+                UnpaidMissions = 3,
+                Pocket = 4,
+            };
+            var rosterMember = saved;
+            rosterMember.Pocket = 11;
+
+            try
+            {
+                warrior.Pocket(15);
+                SquadRoster.Set(new[] { rosterMember });
+                warrior.RestoreExpeditionCondition(saved);
+                warrior.RestoreExpeditionCondition(saved);
+                Near(body.HP, body.MaxHP * 0.4f, "запись возвращает раны на настоящее тело бойца");
+                Near(warrior.Loyalty, 32f, "запись возвращает верность бойца");
+                Check(warrior.IsCommander && warrior.UnpaidMissions == 3 && warrior.PocketGold == 4,
+                    "повторное восстановление сохраняет старшинство, долг и точную сумму в кармане");
+                var snapshot = new List<SquadRoster.Member>(SquadRoster.SaveSnapshot(new[] { warrior }, true));
+                Check(snapshot.Count == 1 && snapshot[0].Pocket == 4,
+                    "снимок склепа записывает карман живого бойца");
+                if (snapshot.Count == 1)
+                    Near(snapshot[0].HealthFraction, 0.4f, "снимок склепа записывает раны живого бойца");
+
+                saved.HealthFraction = 0f;
+                saved.IsCommander = false;
+                saved.UnpaidMissions = 0;
+                saved.Pocket = 0;
+                warrior.RestoreExpeditionCondition(saved);
+                Near(body.HP, body.MaxHP, "старая запись без доли здоровья возвращает бойца целым");
+                Check(!warrior.IsCommander && warrior.UnpaidMissions == 0 && warrior.PocketGold == 0,
+                    "восстановление снимает старшинство и убирает долг и монеты из будущего");
+                Check(SquadRoster.TryGet(saved.Name, out var unchanged) && unchanged.Pocket == rosterMember.Pocket,
+                    "восстановление тела не меняет карман в реестре");
+            }
+            finally
+            {
+                SquadRoster.Set(kept);
+            }
         }
 
         private static void SavingEquipment()

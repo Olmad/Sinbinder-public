@@ -417,7 +417,7 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        internal static IEnumerable<Member> EquipmentSnapshot(IEnumerable<Warrior> liveWarriors)
+        internal static IEnumerable<Member> SaveSnapshot(IEnumerable<Warrior> liveWarriors, bool captureCondition)
         {
             var owners = new Dictionary<int, Warrior>();
             var ambiguous = new HashSet<int>();
@@ -432,8 +432,12 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < _members.Count; i++)
             {
                 var member = _members[i];
-                yield return !ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior)
-                    ? CaptureEquipment(warrior, member) : member;
+                if (!ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior))
+                {
+                    member = CaptureEquipment(warrior, member);
+                    if (captureCondition) member = CaptureCondition(warrior, member);
+                }
+                yield return member;
             }
         }
 
@@ -561,15 +565,20 @@ namespace Sinbinder.Gameplay
             member.Sin = w.Soul.Sin;
             member.Moral = w.Soul.Moral;
             member.Intensity = w.Soul.Get(w.Soul.Sin);
-            member.Loyalty = w.Loyalty;
-            member.HealthFraction = ExpeditionHealthRules.Capture(w.HP, w.MaxHP);
-            member.UnpaidMissions = w.UnpaidMissions;
-            member.IsCommander = w.IsCommander;
             member.IsAway = false;
             member.Shell = w.Shell;
             member.Title = AOS.TitleManager.TitleOf(w);
-            member.Pocket = w.PocketGold;
-            return CaptureEquipment(w, member);
+            return CaptureEquipment(w, CaptureCondition(w, member));
+        }
+
+        private static Member CaptureCondition(Warrior warrior, Member member)
+        {
+            member.Loyalty = warrior.Loyalty;
+            member.HealthFraction = ExpeditionHealthRules.Capture(warrior.HP, warrior.MaxHP);
+            member.UnpaidMissions = warrior.UnpaidMissions;
+            member.IsCommander = warrior.IsCommander;
+            member.Pocket = warrior.PocketGold;
+            return member;
         }
 
         /// <summary>

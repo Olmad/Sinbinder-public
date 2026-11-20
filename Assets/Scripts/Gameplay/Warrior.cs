@@ -470,6 +470,15 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public int PocketGold { get; private set; }
 
+        internal void RestoreExpeditionCondition(SquadRoster.Member member)
+        {
+            SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
+            ChangeLoyalty(member.Loyalty - Loyalty);
+            UnpaidMissions = member.UnpaidMissions;
+            SetCommander(member.IsCommander);
+            PocketGold = Mathf.Max(0, member.Pocket);
+        }
+
         public void Pocket(int gold)
         {
             if (gold <= 0) return;

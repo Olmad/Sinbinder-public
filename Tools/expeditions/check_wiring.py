@@ -116,11 +116,12 @@ warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
 rules=(r/"Assets/Scripts/Gameplay/ExpeditionHealthRules.cs").read_text(encoding="utf-8")
 assert "public float HealthFraction;" in roster
 assert "survivors.Add(Capture(w, Previous(w)));" in roster
-assert "member.HealthFraction = ExpeditionHealthRules.Capture(w.HP, w.MaxHP);" in roster
+assert "member.HealthFraction = ExpeditionHealthRules.Capture(warrior.HP, warrior.MaxHP);" in roster
 assert "public static void ApplyExpeditionHealth(string name, float fraction)" in roster
 assert "journey.SurvivorHealth=CopyHealth(fight.Health);" in m
 assert "SquadRoster.ApplyExpeditionHealth(condition.Name" in m
-assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));" in m
+assert "w.RestoreExpeditionCondition(member);" in m
+assert "SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));" in warrior
 assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));" in fight
 assert "public void SetHealthFraction(float fraction)" in warrior
 assert "public void SetHealthFraction(float fraction)" in body
@@ -228,7 +229,7 @@ assert "spawner.Arrive(arrivals, restoreHealth: true);" in m
 assert "if (!m.IsAway) squad.Add(m);" in camp
 arrive=camp.split("public void Arrive(",1)[1].split("private Warrior SpawnMember(",1)[0]
 assert "var warrior = SpawnMember(" in arrive and "setup.SetupWarrior(warrior.gameObject);" in arrive
-assert "warrior.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));" in camp
+assert "warrior.RestoreExpeditionCondition(member);" in camp
 print("PASS: cold-loaded survivors settle through the local camp spawner with saved HP and AOS")
 
 demo=(r/"Assets/Scripts/UI/DemoEndUI.cs").read_text(encoding="utf-8")

@@ -109,7 +109,8 @@ namespace Sinbinder.Core
             float now = Time.time;
             save.EmotionDecayDelay = AOS.EmotionSystem.DecayDelay;
             IEnumerable<SquadRoster.Member> squad = SquadRoster.Members;
-            if (captureLiveEquipment) squad = SquadRoster.EquipmentSnapshot(LivingSquadIn(scene));
+            if (captureLiveEquipment)
+                squad = SquadRoster.SaveSnapshot(LivingSquadIn(scene), save.CryptSandboxOpened);
             foreach (var m in squad)
             {
                 save.Squad.Add(new SavedMember
@@ -317,10 +318,8 @@ namespace Sinbinder.Core
         /// сброс новой игры. Загрузи лагерь без флага, и он молча
         /// выбросит только что восстановленную запись.
         ///
-        /// <b>Загрузка в той же доле остаётся прежней</b> — состояние
-        /// на месте, без перезагрузки. Перезагружать сцену значило бы
-        /// заново проиграть её доли, а это уже решение, а не починка
-        /// (разбор — 14-HANDOFF §56).
+        /// В той же доле состояние возвращается на месте. В песочнице
+        /// склеп пересобирается, если состав на сцене расходится с записью.
         /// </summary>
         public static bool ReturnTo(SaveGame save, bool reload = false)
         {
@@ -330,7 +329,8 @@ namespace Sinbinder.Core
             if (save == null || Arriving) return false;
             bool sandboxChanged = save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened;
             bool changeScene = !string.IsNullOrEmpty(save.Scene)
-                && (reload || save.Scene != Here || sandboxChanged || WorkshopRecruitsChanged(save));
+                && (reload || save.Scene != Here || sandboxChanged || CryptSquadChanged(save) ||
+                    WorkshopRecruitsChanged(save));
             string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
             if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {
@@ -354,6 +354,31 @@ namespace Sinbinder.Core
             GamePauseController.Instance?.Resume();
             UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
             return true;
+        }
+
+        private static bool CryptSquadChanged(SaveGame save) => save.OpensCryptSandbox &&
+            !CryptSquadMatches(save, LivingSquadIn(SceneManager.GetActiveScene()));
+
+        internal static bool CryptSquadMatches(SaveGame save, IEnumerable<Warrior> livingWarriors)
+        {
+            if (save.Squad == null) return false;
+            var presentIds = new HashSet<string>();
+            foreach (var warrior in livingWarriors)
+                if (warrior.gameObject.activeInHierarchy &&
+                    (string.IsNullOrEmpty(warrior.Id) || !presentIds.Add(warrior.Id)))
+                    return false;
+
+            // Legacy members without verified IDs are rebuilt by the scene spawner.
+            var savedIds = new HashSet<string>();
+            foreach (var member in save.Squad)
+            {
+                if (member == null) return false;
+                if (!string.IsNullOrEmpty(member.WarriorId) && !savedIds.Add(member.WarriorId))
+                    return false;
+                if (!member.IsAway && !presentIds.Remove(member.WarriorId))
+                    return false;
+            }
+            return presentIds.Count == 0;
         }
 
         private static bool WorkshopRecruitsChanged(SaveGame save)
@@ -405,6 +430,7 @@ namespace Sinbinder.Core
             // вернувшихся с автоматической вылазки. Если запись из другой
             // партии, переносим память на живой состав и поправляем её цели.
             var scene = SceneManager.GetActiveScene();
+            bool restoreCryptCondition = keepScene && save.OpensCryptSandbox && CryptMap.IsOpenIn(scene);
             var liveWarriors = keepScene ? LivingSquadIn(scene).ToArray() : System.Array.Empty<Warrior>();
             var liveNames = liveWarriors.ToLookup(w => w.DisplayName);
             var savedNames = save.Squad.ToLookup(m => m.Name);
@@ -427,9 +453,11 @@ namespace Sinbinder.Core
             foreach (var m in save.Squad)
             {
                 var living = !string.IsNullOrEmpty(m.WarriorId)
-                    ? liveWarriors.FirstOrDefault(w => w.Id == m.WarriorId) : null;
+                    ? liveWarriors.FirstOrDefault(w => w.Id == m.WarriorId &&
+                        (!restoreCryptCondition || w.gameObject.activeInHierarchy == !m.IsAway)) : null;
                 var namesakes = liveNames[m.Name];
-                if (living == null && namesakes.Count() == 1 && savedNames[m.Name].Count() == 1)
+                if (living == null && (!restoreCryptCondition || string.IsNullOrEmpty(m.WarriorId)) &&
+                    namesakes.Count() == 1 && savedNames[m.Name].Count() == 1)
                     living = namesakes.First();
                 if (living != null && mappedBodies.ContainsKey(living)) living = null;
 
@@ -471,7 +499,7 @@ namespace Sinbinder.Core
             SquadRoster.Set(members);
             if (keepScene)
             {
-                RestoreEquipmentInScene(liveWarriors, mappedBodies, itemIds);
+                RestoreWarriorsInScene(liveWarriors, mappedBodies, itemIds, restoreCryptCondition);
                 RestoreAos(save);
             }
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
@@ -507,14 +535,17 @@ namespace Sinbinder.Core
         private static bool ClaimItem(Inventory.InventoryItem item, HashSet<string> itemIds) =>
             string.IsNullOrEmpty(item.Id) || itemIds.Add(item.Id);
 
-        private static void RestoreEquipmentInScene(IEnumerable<Warrior> liveWarriors,
-            Dictionary<Warrior, SquadRoster.Member> mappedBodies, HashSet<string> itemIds)
+        private static void RestoreWarriorsInScene(IEnumerable<Warrior> liveWarriors,
+            Dictionary<Warrior, SquadRoster.Member> mappedBodies, HashSet<string> itemIds,
+            bool restoreCryptCondition)
         {
             foreach (var warrior in liveWarriors)
             {
                 if (mappedBodies.TryGetValue(warrior, out var member))
                 {
                     warrior.RestoreEquipment(member.Equipment, member.Gear);
+                    if (restoreCryptCondition && !member.IsAway)
+                        warrior.RestoreExpeditionCondition(member);
                     continue;
                 }
 

@@ -30,6 +30,17 @@ assert 'foreach(var frame in Frames) yield return frame' in data
 assert 'Frames.Count' in viewer and 'GUI.BeginScrollView' in viewer
 print("PASS: automatic mission replay retains all source events and opens timeline viewer")
 
+viewer_code = " ".join(viewer.split())
+assert (
+    "if (_clock >= 1.1f) { _clock -= 1.1f; _index++; "
+    "if (_index == _data.Frames.Count - 1) { _running = false; _clock = 0f; }"
+) in viewer_code, "playback carries leftover time forward until the last frame"
+assert (
+    "if (!_running && _index >= _data.Frames.Count - 1) _index = 0; "
+    "_running = !_running; _clock = 0f;"
+) in viewer_code, "playing a finished replay restarts at the first frame"
+print("PASS: replay restarts from the beginning and carries time between frames")
+
 # AOS decision != executed effect: a fighter who actually flees leaves the
 # encounter, and a converted enemy must not take a turn for the old side.
 resolver=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")
