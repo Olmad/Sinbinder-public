@@ -111,6 +111,30 @@ internal static class Program
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
+        // Production classifier, not a duplicate copy of its arithmetic.
+        // A flag saying "obeyed" cannot turn Attack into a completed Hold.
+        Check(SoulCourtVerdict.Classify(true, false, false, false) ==
+              SoulCourtVerdictKind.Refused &&
+              SoulCourtVerdict.Classify(true, false, false, true) ==
+              SoulCourtVerdictKind.Refused,
+            "Court cannot call an action obeyed just because refusal flag is missing");
+        Check(SoulCourtVerdict.Classify(true, true, false, true) ==
+              SoulCourtVerdictKind.Obeyed &&
+              SoulCourtVerdict.Classify(true, true, false, false) ==
+              SoulCourtVerdictKind.Obeyed,
+            "Court accepts real matching action even with stale refusal flag");
+        Check(SoulCourtVerdict.Classify(true, true, true, false) ==
+              SoulCourtVerdictKind.Hesitated &&
+              SoulCourtVerdict.Classify(true, false, true, true) ==
+              SoulCourtVerdictKind.Hesitated,
+            "hesitation is never misreported as completed obedience or refusal");
+        Check(SoulCourtVerdict.Classify(false, false, false, true) ==
+              SoulCourtVerdictKind.Refused &&
+              SoulCourtVerdict.Classify(false, false, false, false) ==
+              SoulCourtVerdictKind.Obeyed,
+            "legacy no-command court outcome is not manufactured from absent context");
+
+
         string preferencesSource = System.IO.File.ReadAllText("Assets/Scripts/Core/Preferences.cs");
         string selectionSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SelectionManager.cs");
         string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
@@ -123,6 +147,21 @@ internal static class Program
               dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,") &&
               dreamTrace.Contains("originalVotes: ballot, force: true);"),
             "dream court judges the SAME AOS decision with its original ballot, full first then brief");
+        Check(courtSource.Contains("var verdict = Verdict(d, c);") &&
+              courtSource.Contains("c.SatisfiedBy(d.Action)") &&
+              courtSource.Contains("bool recordedRefusal = d.RefusedCommand;") &&
+              courtSource.Contains("d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;") &&
+              courtSource.Contains("Outcome = verdict == SoulCourtVerdictKind.Hesitated") &&
+              courtSource.Contains("Причина отказа не установлена.") &&
+              !courtSource.Contains("Outcome = d.RefusedCommand ?") &&
+              courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
+            "real Soul Court classifies chosen action using original command and preserves historical votes");
+        Check(courtSource.Split(new[] { "var verdict = Verdict(d, c);" },
+              StringSplitOptions.None).Length == 4 &&
+              courtSource.Contains("bool against = d.RefusedCommand || d.Hesitated;") &&
+              courtSource.Contains("host._aim = Final(d, total, reach);"),
+            "court, overhead leading voice and scale direction share the same action-based verdict");
+
         Check(!dreamTrace.Contains("DrawCourtChoice") &&
               !dreamTrace.Contains("_courtChoicePending") &&
               courtSource.Contains("The original vote and original cause are authoritative.") &&
