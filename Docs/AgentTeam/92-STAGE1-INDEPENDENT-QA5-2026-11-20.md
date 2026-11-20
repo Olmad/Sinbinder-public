@@ -150,3 +150,18 @@ QA2: source=Assets/Scripts/Dialogue/VillageLines.cs; blob=23dadf30fbdd93cf6b1070
 QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Resources/Lang/en.txt; blob=23dadf30fbdd93cf6b1070dec9a54612de7f4cba; lines=SinOpening Greed/Pride/Wrath/Sloth/Envy male+female/Lust/Gluttony; context=Exchange topic Sin or Lord without player Lord and speaker not mute; negative=Greed opening and male Envy opening have empty EN msgstr while female Envy has translation; verified=0; total=8; RU_EN=6 empty EN, 2 nonempty, localization blob a8e5a95cd3d5b9fc6cf337d6ba3935a8835a2255; outcome=FAIL.
 
 Новых source-level FAIL-ключей EN: 6; новых полностью SEMANTIC VERIFIED: 0; новых runtime проверок: 0. Предыдущие 14 отсутствующих переводов сохраняются отдельным набором: суммарно по двум независимо указанным блокам 20 пустых ключей, без заявления о полном количестве по всей локализации. **Этап 1 NO-GO**. .NET, Unity и CI в этом запуске не запускались. Необходимо заполнить шесть EN значений и отдельно проверить фактологию Envy и последствия реплик.
+
+
+## QA №5: новый доказанный FAIL, пол говорящего в SinOpening/Envy (20.11.2026)
+
+Независимо прочитаны **три** актуальных источника: `Assets/Scripts/Dialogue/VillageLines.cs` blob `23dadf30fbdd93cf6b1070dec9a54612de7f4cba` (строки 18–37, 89–100); `Assets/Scripts/Core/Grammar.cs` blob `1b8a1a099e9474ae251b6d4314d97827bd2b159c` (строки 6–9, 35–36); `Assets/Resources/Lang/en.txt` blob `03d46e460af2f5e616f9635de0e570958969502c` (строки 6143–6148). Сверка выполнена по текущему содержимому ветки `feature/server-prototype`, не по старым SHA локализации.
+
+**Воспроизводимый source-level контрпример:** `Exchange(a,b)` возвращает `SinOpening(a,b)` как **First**, то есть произносимую `a` реплику. Для `a.Soul.Sin=Envy`, `a.Gender=Female`, `b.Gender=Male`, немого `a` нет, тема Sin, `SinOpening` использует `Grammar.Pick(b.Gender, "Видал...", "Видала...")`. `Grammar.Pick` выбирает мужской текст для Male и женский для Female. **Фактически:** женщина `a` произносит «Видал, что у соседа новое?», вместо женского «Видала...». Обратный контрпример: мужчина `a`, женщина `b` → говорящий мужчина произносит «Видала...». При теме Lord и отсутствии `Lords.Player` тот же `SinOpening(a,b)` также достижим. Это **новый FAIL_GENDER_SPEAKER_SOURCE**, не повтор прежнего FAIL_EN_COVERAGE.
+
+**RU/EN:** для мужского ключа `msgstr ""` (en.txt 6143–6144), для женского `msgstr "Have you seen what the neighbor got?"` (6147–6148). При ошибочно выбранном мужском ключе дополнительно срабатывает ранее зарегистрированный дефект пустого EN. Поведение `Loc.T` при пустом переводе и Unity не проверялись: runtime UNKNOWN.
+
+**Минимальное исправление для №4:** заменить аргумент `b.Gender` на `a.Gender` **только в выборе формы речи SinOpening/Envy**; отдельно заполнить мужской EN ключ, затем проверить четыре комбинации `a.Gender × b.Gender` и две ветки caller (Sin / Lord fallback). Не изменять AOS, управление, сейвы, голоса и другие диалоги без доказательств.
+
+QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Core/Grammar.cs; blob=23dadf30fbdd93cf6b1070dec9a54612de7f4cba; lines=VillageLines.cs:18-37,89-100;Grammar.cs:35-36; context=Exchange(a,b)->SinOpening(a,b) as First, a.Soul.Sin=Envy, b.Gender used instead of a.Gender; negative=a.Gender=Female,b.Gender=Male yields masculine «Видал», and inverse yields feminine «Видала»; verified=0; total=2; RU_EN=en.txt blob 03d46e460af2f5e616f9635de0e570958969502c lines 6143-6148, male msgstr empty, female nonempty; outcome=FAIL.
+
+**Новый результат:** 1 доказанный source-level FAIL в 2 гендерных комбинациях; 0 новых SEMANTIC VERIFIED; Unity/.NET/CI не запускались. Этап 1 остаётся **NO-GO**, независимая приёмка патча после исправления обязательна.
