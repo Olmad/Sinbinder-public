@@ -10341,8 +10341,8 @@ msgid "Он завидует владыке. А тому, кому завиду�
 msgstr "He envies his lord. And you do not serve the one you envy."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Ему не заплатили за прошлые дела. Жадность ведёт счёт."
-msgstr "He was not paid for his past work. Greed keeps count."
+msgid "Жадность ставит выгоду выше приказа."
+msgstr "Greed puts profit before the order."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Рядом то, чего он жаждет. Приказа он не слышит."
