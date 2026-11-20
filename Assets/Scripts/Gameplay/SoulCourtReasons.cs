@@ -122,7 +122,7 @@ namespace Sinbinder.Gameplay
                 case "Envy":
                     return likes ? null : Loc.T("Он завидует владыке. А тому, кому завидуешь, не служат.");
                 case "Greed":
-                    return likes ? null : Loc.T("Ему не заплатили за прошлые дела. Жадность ведёт счёт.");
+                    return likes ? null : Loc.T("Жадность ставит выгоду выше приказа.");
                 case "Lust":
                     return likes ? null : Loc.T("Рядом то, чего он жаждет. Приказа он не слышит.");
                 case "Sloth":
