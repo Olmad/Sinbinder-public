@@ -22,3 +22,12 @@
 - **Source-level assertions 6/6:** ключ единственный, `Loc.F` использует тот же ключ, `gold<=0` исключён, `AddGold` предшествует журналу, placeholder `{0}` присутствует в RU и EN. Проверки JS по реальным исходникам, **не компилируемый C# test**. Unity/CI не запускались.
 - **QA2:** source=Assets/Scripts/Gameplay/SoulHarvester.cs; blob=11b476a52146964b8609d79ec30bb3873c858a8f; lines=182-198; context=TakePurse CollectGold positive then AddGold and Loc.F; negative=English locale previously had empty msgstr for positive purse reward; verified=1; total=1; RU_EN=en.txt blob 413688e1522d7f0f95ae42fd04806170b157caf5 placeholder matched; outcome=FIX_PENDING_QA5.
 - **Статус:** source-level localization fix; независимая приёмка №5 PENDING, runtime UNKNOWN. Исторический TSV №4 и механики не изменены.
+
+## 2026-11-20 — Whisper: пустой итог при исчезновении воина
+
+- **Основание:** QA №5, `88-INDEPENDENT-AUDITOR-5-PROGRESS.tsv`, строка `Assets/Scripts/Gameplay/Whisper.cs`, QA2 `lines=209-251`; исходный baseline blob `6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a`. Повторно воспроизведено в текущем исходнике.
+- **Контрпример:** режим SpeechBubbles, воин уничтожен до `t>=1.0f`; старый guard `w != null` пропускал `ResolveBargain()`, поэтому `outcome=""` попадал в `BattleLogUI.Write`.
+- **Минимальное исправление:** на `t>=1.0f` всегда вызвать `ResolveBargain()`; показ пузыря, голоса и Flare оставить под `w != null`. Внутренний `ResolveBargain` уже отказывает при отсутствующем воине, не тратит золото и формирует нейтральный результат. Не менять голоса, AOS, Суд, сейвы или Tab/V.
+- **Source SHA:** before `92a86ee8b9000c4020187e8195c50aba8ed453a1`, after `65f8aceaa74f82eedac74b514ffef31796b4e310`. [Production commit a68f6ed](https://github.com/Olmad/Sinbinder-public/commit/a68f6ed55220aab73b9d1f3ed1aeb6d2103c1590).
+- **Source-level checks:** exact old block unique; null/dead guard in ResolveBargain exists; neutral RU outcome exists; English translation in `en.txt` blob `413688e1522d7f0f95ae42fd04806170b157caf5` exists (4/4 checks). **Не компилируемый C# test**. Runtime/Unity UNKNOWN. Нужен независимый QA №5, включая случай уничтожения воина во время корутины.
+- **QA2:** source=Assets/Scripts/Gameplay/Whisper.cs; blob=65f8aceaa74f82eedac74b514ffef31796b4e310; lines=230-243; context=SpeechBubbles fallback, t>=1.0f, warrior destroyed; negative=previous guard skipped resolution and emitted empty battle log; verified=1; total=1; RU_EN=neutral Loc.T outcome and EN translation present; outcome=FIX_PENDING_QA5.
