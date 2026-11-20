@@ -360,7 +360,7 @@ Assets/Scripts/Gameplay/LootChain.cs	74d4c211c0dcd9bab2d2ce103347dd141ee25cea	65
 Assets/Scripts/Gameplay/LootDrop.cs	69c345abb4545e830448a0203cabf59f6273e74b	512	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/LordPurse.cs	f062f68ebe62d324b84baa7c4dfad6cddefbd34c	3623	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/LustSkills.cs	48abe18ed1926098030bb568348116e40e62aad3	4679	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/MapEditor.cs	c05605621a3aa6b945db6cf523be852fce87d5d0	14386	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MapEditor.cs	c05605621a3aa6b945db6cf523be852fce87d5d0	14386	CSharp	0	0	0	0	UNINSPECTED	QA2 DELTA (not baseline row): source=Assets/Scripts/Gameplay/MapLogicRunner.cs; blob=f7c502940337c7df33c1bf3f9adbc37c71163c2f; lines=67-140; context=OfferInteractions filters Enabled/OnInteractObject/TargetId/registered object/distance<=3/AllowedCondition, callback Fire rechecks then Apply; negative=two enabled OnInteractObject triggers for same TargetId can both execute in Fire although only one F prompt offered; actual map JSON and outcome UNKNOWN; verified=0; total=2; RU_EN=F — взаимодействовать / F — interact confirmed en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13; t.Message dynamic JSON via Loc.T(t.Message), EN coverage UNKNOWN; outcome=UNKNOWN. Baseline MapEditor still UNINSPECTED, counters unchanged; source-level only. 
 Assets/Scripts/Gameplay/MapEvents.cs	6ffb9950c852afe2d3b4c14dc8b35c4c417b7e0d	42541	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/MapLoader.cs	bfb8ce64930e7a43c904f1136929e4a56093290b	17147	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/MatchEnd.cs	ff98e8515aa698fd4e9f549ade5a9e10c20a4d49	7341	CSharp	0	0	0	0	UNINSPECTED	
