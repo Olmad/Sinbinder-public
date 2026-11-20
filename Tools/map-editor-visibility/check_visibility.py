@@ -8,6 +8,7 @@ read = lambda p: (root / p).read_text(encoding="utf-8")
 scene = read("Assets/Scenes/Tug/MapEditor.unity")
 editor = read("Assets/Scripts/Gameplay/MapEditor.cs")
 loader = read("Assets/Scripts/Gameplay/MapLoader.cs")
+fog_source = read("Assets/Scripts/Gameplay/FogOfWar.cs")
 meta = read("Assets/Scripts/Gameplay/MapEditor.cs.meta")
 pine = read("Assets/Resources/MapProps/Pine.prefab")
 pine_meta = read("Assets/Resources/Props/Pine.fbx.meta")
@@ -19,6 +20,19 @@ def require(check, description):
 def enabled_component(game_object_id, state):
     return (f"m_GameObject: {{fileID: {game_object_id}}}\n"
             f"  m_Enabled: {state}\n") in scene
+
+# Rendering fog is separate from RenderSettings.fog: gameplay FogOfWar installs
+# itself whenever GroundNavMesh exists, so the map editor needs an early exit.
+install_start = fog_source.index("private static void Install()")
+install_end = fog_source.index("private void Build(", install_start)
+install = fog_source[install_start:install_end]
+editor_guard = "if (Object.FindFirstObjectByType<MapEditor>() != null) return;"
+ground_lookup = "var ground = Object.FindFirstObjectByType<GroundNavMesh>();"
+require(editor_guard in install, "runtime FogOfWar would black out WorldForge viewport")
+require(ground_lookup in install and install.index(editor_guard) < install.index(ground_lookup),
+        "FogOfWar's editor exclusion must run before gameplay ground discovery")
+require('go.AddComponent<FogOfWar>().Build(renderer.bounds);' in install,
+        "gameplay fog must continue installing outside the editor")
 
 require('m_Fog: 0' in scene, "editor scene fog is still active")
 require('m_AmbientSkyColor: {r: 0.6, g: 0.66, b: 0.74, a: 1}' in scene,
@@ -58,4 +72,4 @@ require('Не загружено видов моделей' in editor,
         "editor has no visual missing-asset diagnostics")
 require('GUIUtility.systemCopyBuffer' in editor and 'MapData.Folder' in editor,
         "editor must expose exact map save location for build-to-build investigations")
-print("PASS: editor scene daylight, no horror Volume/NavMesh bake, valid bundled Pine GUID, camera recovery and missing-model diagnostics (SOURCE ONLY)")
+print("PASS: editor scene daylight, no gameplay FogOfWar, valid bundled Pine GUID, camera recovery and missing-model diagnostics (SOURCE ONLY)")

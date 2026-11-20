@@ -90,11 +90,15 @@ def verify_qa2(path: str, status: str, row: dict, metrics: dict):
     # The row is an aggregate. A newly reviewed batch may remain UNKNOWN
     # even if earlier reviewed batches already make the whole file PARTIAL_FAIL.
     # This DOES NOT clear the recorded failures or accept any new PASS.
+    # A file-wide status and the newest QA2 batch have different scopes.
+    # UNKNOWN, UNKNOWN_CONTEXT and NEEDS_CONTEXT all mean unresolved
+    # context; a new unknown batch cannot erase older recorded failures.
+    equivalent_pending = status in CONTEXT and outcome in CONTEXT
     incremental_context = (
-        status == "PARTIAL_FAIL" and outcome in CONTEXT and
+        status in {"FAIL", "PARTIAL_FAIL"} and outcome in CONTEXT and
         metrics["failed_text_candidates"] > 0
     )
-    if outcome and outcome != status and not incremental_context:
+    if outcome and outcome != status and not (equivalent_pending or incremental_context):
         errors.append("QA2 outcome and status disagree")
     try:
         verified = int(values["verified"])
@@ -186,6 +190,32 @@ def read_ledger(content: str, number: int):
     return match.group(2), rows
 
 
+def read_previous_ledger(content: str, number: int):
+    """Read a historical ledger, allowing ONLY a missing final empty TSV cell.
+
+    This recovers an old all-UNINSPECTED last row whose empty evidence field
+    lost its trailing tab. No audit decision, metric, source or evidence is
+    inferred. Current ledgers remain strictly parsed with read_ledger().
+    """
+    try:
+        sha, rows = read_ledger(content, number)
+        return sha, rows, False
+    except ValueError:
+        lines = content.splitlines()
+        if not lines:
+            raise
+        final = lines[-1].split("\t")
+        if (len(final) != len(FIELDS) - 1 or
+                final[-1] != "UNINSPECTED" or
+                final[4:8] != ["0", "0", "0", "0"]):
+            raise
+        # Parsing the whole amended ledger still rejects ALL other damage:
+        # wrong headings, duplicate paths, extra tabs and missing columns.
+        recovered = "\n".join(lines[:-1] + [lines[-1] + "\t"]) + "\n"
+        sha, rows = read_ledger(recovered, number)
+        return sha, rows, True
+
+
 def previous_content(root: Path, ref: str, path: str):
     try:
         proc = subprocess.run(
@@ -214,9 +244,17 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
             old = previous_content(root, base_ref, path)
             if old is not None:
                 try:
-                    _, previous[number] = read_ledger(old, number)
+                    _, previous[number], recovered = read_previous_ledger(old, number)
+                    if recovered:
+                        warnings.append(
+                            f"Auditor {number}: LEGACY previous TSV had one missing "
+                            "empty final evidence cell; exact historical rows recovered"
+                        )
                 except ValueError as exc:
                     issues.append(f"Auditor {number}: invalid previous ledger: {exc}")
+                    # Avoid implying every old row is newly added. The root
+                    # parse error still blocks CI; we cannot compare histories.
+                    previous[number] = None
     if len(base_shas) != 1:
         issues.append("all five ledgers must share one immutable BASE_SHA")
     if len(ledgers) != PASS_COUNT:
@@ -297,10 +335,15 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
             if status == "EXCLUDED_TECH" and metrics["found_text_candidates"] > 0:
                 warnings.append(f"Auditor {number}, {path}: excluded despite candidates")
             # Legacy rows are retained, not silently rewritten. New edits need QA2 proof.
-            old_row = previous.get(number, {}).get(path)
+            # A missing historical ledger differs from an invalid one:
+            # newly introduced rows must still supply QA2 evidence.
+            old_ledger = previous.get(number, {})
+            old_row = old_ledger.get(path) if old_ledger is not None else None
             changed = bool(old_row is None or old_row != row)
             qa2 = QA2_RE.search(evidence) is not None
-            if base_ref and enforce_changed and changed and not qa2:
+            # Invalid historical ledger has already been reported as an
+            # error. Do not manufacture hundreds of "new row" errors.
+            if base_ref and enforce_changed and old_ledger is not None and changed and not qa2:
                 issues.append(f"Auditor {number}, {path}: changed row lacks QA2 evidence")
             if qa2:
                 if status != "PASS":

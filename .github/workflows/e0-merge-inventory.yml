@@ -1,0 +1,105 @@
+name: E0 merge inventory source contract
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - 'Tools/integration/**'
+      - '.github/workflows/e0-merge-inventory.yml'
+  pull_request:
+    paths:
+      - 'Tools/integration/**'
+      - '.github/workflows/e0-merge-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-branch-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check E0 inventory cannot merge or erase author canon
+        run: python3 -m unittest discover -s Tools/integration/tests -p 'test_*.py' -v
+
+  real-e0-overlap:
+    name: Compare real author and integration refs (read-only)
+    needs: read-only-branch-inventory
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Entire ancestry is required for an honest merge-base.
+          # Partial blob clone avoids downloading unused binary assets.
+          fetch-depth: 0
+          filter: blob:none
+      - name: Check refs exist (no merge or checkout of another branch)
+        run: |
+          git show-ref --verify refs/remotes/origin/claude/3d-horror-survival-game-ckrslc
+          git show-ref --verify refs/remotes/origin/feature/server-prototype
+      - name: Produce reproducible real-branch intersection and canon report
+        run: |
+          python3 Tools/integration/e0_merge_inventory.py \
+            --author-ref origin/claude/3d-horror-survival-game-ckrslc \
+            --incoming-ref origin/feature/server-prototype \
+            --json-out e0-integration-report/branch-overlap.json
+      - name: Publish observed SHA, overlap and protected-path summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          source = Path("e0-integration-report/branch-overlap.json")
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          if not source.is_file():
+              summary.open("a", encoding="utf-8").write(
+                  "E0 real branch comparison did not produce a report. "
+                  "The E0 stage stays UNVERIFIED.\n"
+              )
+          else:
+              r = json.loads(source.read_text(encoding="utf-8"))
+              lines = [
+                  "## E0 real Git branch overlap (read-only)",
+                  "",
+                  f"- Author: `{r['author_sha']}`",
+                  f"- Integration: `{r['incoming_sha']}`",
+                  f"- Merge base: `{r['merge_base']}`",
+                  f"- Author-only changed paths: {r['author_changed_count'] - r['overlap_count']}",
+                  f"- Integration-only changed paths: {r['incoming_changed_count'] - r['overlap_count']}",
+                  f"- Changed in BOTH branches: **{r['overlap_count']}**",
+                  f"- Converged to same blob: **{r['overlap_identical_count']}**",
+                  f"- Different blobs requiring triage: **{r['overlap_distinct_count']}**",
+                  f"- Canon 68.md/.meta identical: **{r['canonical_docs_identical']}**",
+                  "",
+                  "### Protected source overlap (not proof of conflict)",
+              ]
+              for path, item in r["protected_paths"].items():
+                  same = (item["author_blob"] is not None and
+                          item["author_blob"] == item["incoming_blob"])
+                  status = "SAME CONTENT" if same else (
+                      "BOTH - DIFFERENT CONTENT" if item["both_changed"] else (
+                          "AUTHOR ONLY" if item["author_changed"] else (
+                              "INTEGRATION ONLY" if item["incoming_changed"] else "UNCHANGED"
+                          )
+                      )
+                  )
+                  lines.append(f"- `{path}`: {status}")
+              lines += ["", "### Different-content paths (full list in artifact)"]
+              lines += [f"- `{p}`" for p in r["overlap_distinct_paths"][:40]]
+              lines += ["", "This does NOT run Unity or merge either branch."]
+              summary.open("a", encoding="utf-8").write("\n".join(lines) + "\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e0-real-branch-overlap-${{ github.run_id }}
+          path: e0-integration-report/
+          if-no-files-found: warn
+          retention-days: 30
