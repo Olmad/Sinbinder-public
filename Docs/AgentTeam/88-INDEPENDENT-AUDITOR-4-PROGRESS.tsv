@@ -349,7 +349,7 @@ Assets/Scripts/Gameplay/HunterGoal.cs	744af03921698ae0e12da3ac8fb4d3e63dd36660	4
 Assets/Scripts/Gameplay/HunterSquadSpawner.cs	bf1144ae9b5dd4df14dd7e52d5ab164e0e9bd14a	27700	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/HunterWaves.cs	f37e34d3f842bef7875d7526ebef46b40085501e	14593	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Idleness.cs	cee94d35c0180425ee941f9dc6e2c23b640e602c	4242	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/InspectTexts.cs	1e650874a9edd49b6fd2d5702fc6e6beec553a18	9990	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/InspectTexts.cs	1e650874a9edd49b6fd2d5702fc6e6beec553a18	9990	CSharp	28	28	0	28	UNKNOWN_CONTEXT	QA2: source=Assets/Scripts/Gameplay/InspectTexts.cs; blob=1e650874a9edd49b6fd2d5702fc6e6beec553a18; lines=43-131; context=InspectTexts.For(key) via Inspectable.Awake then Inspectable.Tell Loc.T Letterbox.Say/Think; negative=Jars line 113 predicts someone at fire will enter jar tonight without runtime proof and Map line 100 predicts sortie destination; verified=0; total=28; RU_EN=28/28 msgid-msgstr nonempty in en.txt blob 02ea41317c03d7ab8126339c9e7770df2efa5d47; outcome=UNKNOWN; note=28 real Loc.N strings excluding comment at line 14; scene wiring and future truth unverified
 Assets/Scripts/Gameplay/Inspectable.cs	9bcb6fb92aa37f27cc02e8e5a54e9b3364d2b4cf	11423	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/IzbaInterior.cs	d130bbf27d536ff1d26563eea9a27c843ad6b2bd	8951	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Leadership.cs	9f545c93821643484bea83990b9943f8ff28ef9b	7441	CSharp	0	0	0	0	UNINSPECTED	
