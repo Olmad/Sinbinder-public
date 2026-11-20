@@ -39,9 +39,13 @@ namespace Sinbinder.UI
             _clock += Time.unscaledDeltaTime * _speed;
             if (_clock >= 1.1f)
             {
-                _clock = 0f;
+                _clock -= 1.1f;
                 _index++;
-                if (_index == _data.Frames.Count - 1) _running = false;
+                if (_index == _data.Frames.Count - 1)
+                {
+                    _running = false;
+                    _clock = 0f;
+                }
             }
         }
 
@@ -104,7 +108,11 @@ namespace Sinbinder.UI
             if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< Назад"))
             { _index=Mathf.Max(0,_index-1);_running=false; }
             if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?"Пауза":"Играть"))
-            { _running=!_running;_clock=0f; }
+            {
+                if (!_running && _index >= _data.Frames.Count - 1) _index = 0;
+                _running = !_running;
+                _clock = 0f;
+            }
             if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),"Вперёд >"))
             { _index=Mathf.Min(_data.Frames.Count-1,_index+1);_running=false; }
             if(GUI.Button(new Rect(left+27f+4*buttonW,y,buttonW,34f),"x"+_speed.ToString("0")))
