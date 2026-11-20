@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - claude/3d-horror-survival-game-ckrslc
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
       - "Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs"
@@ -63,6 +64,7 @@ on:
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
       - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
