@@ -105,7 +105,7 @@ internal static class Program
         };
         bool translated = true;
         foreach (var item in retestTranslations)
-            translated &= langSource.Contains("msgid \\"" + item.ru + "\\"\\nmsgstr \\"" + item.en + "\\"");
+            translated &= langSource.Contains("msgid " + '"' + item.ru + '"' + "\nmsgstr " + '"' + item.en + '"');
         Check(translated, "six honest retest prompts and verdicts have direct EN catalog entries");
 
         // Short-Court onboarding must reuse the production SoulCourt and
