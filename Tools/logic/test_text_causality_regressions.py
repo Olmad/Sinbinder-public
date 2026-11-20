@@ -114,7 +114,7 @@ class CorrectedTextRegressions(unittest.TestCase):
             with self.subTest(ru=ru):
                 self.assertIn('Loc.T("' + ru + '")', attack)
                 self.assertEqual(1, self.locale.count('msgid "' + ru + '"'))
-                self.assertIn('msgid "' + ru + '"\\nmsgstr "' + en + '"',
+                self.assertIn('msgid "' + ru + '"\nmsgstr "' + en + '"',
                               self.locale)
 
     def test_all_revised_ru_lines_have_single_english_translation(self):
