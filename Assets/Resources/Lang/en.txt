@@ -5812,8 +5812,8 @@ msgid "Я бы ему дорогу перегородил."
 msgstr "I'd stand in his way."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Другим он улыбается. Нам — нет."
-msgstr "He smiles at the others. Not at us."
+msgid "Пусть другим нравится. Я ему не верю."
+msgstr "Others may like him. I don't trust him."
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Не нравится мне, как он смотрит на людей."
@@ -5840,8 +5840,8 @@ msgid "В бою посмотрим, чего он стоит."
 msgstr "We'll see what he's worth in battle."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Другим он обещает больше, чем нам."
-msgstr "He promises the others more than he promises us."
+msgid "Посмотрим, кому от его власти станет лучше."
+msgstr "We'll see who benefits from his rule."
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Сначала поговорю с ним сам."
@@ -5868,8 +5868,8 @@ msgid "Припрятал топор. Хочешь проверить?"
 msgstr "I've hidden an axe. Want to check?"
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Меньше твоего. Как всегда."
-msgstr "Less than you. As always."
+msgid "Сначала своим похвастайся, потом моё считай."
+msgstr "Show off what you have first, then count mine."
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "На двоих хватит. Может, поделюсь."
@@ -5980,8 +5980,8 @@ msgid "Садись. Пока тихо, можно."
 msgstr "Sit down. While it's quiet, we can."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "К тебе все идут, ко мне никто."
-msgstr "Everyone comes to you, no one comes to me."
+msgid "А ко мне кто-нибудь подсесть захочет?"
+msgstr "And would anyone want to sit beside me?"
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Подсаживайся ближе."
@@ -6008,8 +6008,8 @@ msgid "Не ной. Лучше дров подкинь."
 msgstr "Stop moaning. Put another log on."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Ты ешь чаще нас."
-msgstr "You eat more often than the rest of us."
+msgid "Тебе хочется, а мне что достанется?"
+msgstr "You're hungry, but what will I get?"
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Разделим хлеб, коли найдётся."
@@ -6036,8 +6036,8 @@ msgid "Посидишь, когда врага выгоним."
 msgstr "You can sit when we've driven off the enemy."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Тебе легко. За тебя другие работают."
-msgstr "Easy for you. Others do your work."
+msgid "Тебе бы всё сидеть. А мне что, за всех вставать?"
+msgstr "You'd rather sit all day. And I'm supposed to get up for everyone?"
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Если место есть, останусь."
