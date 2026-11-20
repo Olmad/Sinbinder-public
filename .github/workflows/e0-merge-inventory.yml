@@ -74,19 +74,25 @@ jobs:
                   f"- Author-only changed paths: {r['author_changed_count'] - r['overlap_count']}",
                   f"- Integration-only changed paths: {r['incoming_changed_count'] - r['overlap_count']}",
                   f"- Changed in BOTH branches: **{r['overlap_count']}**",
+                  f"- Converged to same blob: **{r['overlap_identical_count']}**",
+                  f"- Different blobs requiring triage: **{r['overlap_distinct_count']}**",
                   f"- Canon 68.md/.meta identical: **{r['canonical_docs_identical']}**",
                   "",
                   "### Protected source overlap (not proof of conflict)",
               ]
               for path, item in r["protected_paths"].items():
-                  status = "BOTH" if item["both_changed"] else (
-                      "AUTHOR ONLY" if item["author_changed"] else (
-                          "INTEGRATION ONLY" if item["incoming_changed"] else "UNCHANGED"
+                  same = (item["author_blob"] is not None and
+                          item["author_blob"] == item["incoming_blob"])
+                  status = "SAME CONTENT" if same else (
+                      "BOTH - DIFFERENT CONTENT" if item["both_changed"] else (
+                          "AUTHOR ONLY" if item["author_changed"] else (
+                              "INTEGRATION ONLY" if item["incoming_changed"] else "UNCHANGED"
+                          )
                       )
                   )
                   lines.append(f"- `{path}`: {status}")
-              lines += ["", "### Sample overlapping paths (full list in artifact)"]
-              lines += [f"- `{p}`" for p in r["overlapping_paths"][:40]]
+              lines += ["", "### Different-content paths (full list in artifact)"]
+              lines += [f"- `{p}`" for p in r["overlap_distinct_paths"][:40]]
               lines += ["", "This does NOT run Unity or merge either branch."]
               summary.open("a", encoding="utf-8").write("\n".join(lines) + "\n")
           PY
