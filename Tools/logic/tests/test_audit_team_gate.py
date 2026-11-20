@@ -256,6 +256,61 @@ class GateTests(unittest.TestCase):
         self.assertEqual(report["unique_source_fails"], 1)
         self.assertEqual(report["semantic_pass_source_count"], 0)
 
+    def test_context_status_synonyms_preserve_unknown_not_pass(self):
+        ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=real caller unknown; negative=counterexample open; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN")
+        for state in ("NEEDS_CONTEXT", "UNKNOWN_CONTEXT"):
+            with self.subTest(state=state):
+                self.write(1, [
+                    row(self.paths[0], state, found=1, checked=1, unknown=1,
+                        evidence=ev),
+                    self.payload[1],
+                ])
+                errors, _, report = self.check()
+                self.assertEqual(errors, [])
+                self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_cumulative_fail_can_keep_new_qa2_batch_unknown(self):
+        ev = ("Earlier verified failure preserved; QA2: "
+              "source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=last batch caller unknown; "
+              "negative=old failure still reproducible; verified=0; total=2; "
+              "RU_EN=UNKNOWN; outcome=UNKNOWN")
+        self.write(1, [
+            row(self.paths[0], "FAIL", found=2, checked=2, fail=1, unknown=1,
+                evidence=ev),
+            self.payload[1],
+        ])
+        errors, _, report = self.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(report["unique_source_fails"], 1)
+        self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_fail_status_cannot_mask_zero_failed_candidates(self):
+        ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=unknown; negative=not reproduced; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=UNKNOWN")
+        self.write(1, [
+            row(self.paths[0], "FAIL", found=1, checked=1, fail=0,
+                unknown=1, evidence=ev),
+            self.payload[1],
+        ])
+        errors, _, _ = self.check()
+        self.assertTrue(any("zero failed" in e for e in errors))
+
+    def test_unproven_pass_outcome_still_cannot_replace_failed_source(self):
+        ev = ("QA2: source=Assets/Scripts/A.cs; blob=" + SHA +
+              "; lines=L12; context=unknown; negative=repro unchanged; "
+              "verified=0; total=1; RU_EN=UNKNOWN; outcome=PASS")
+        self.write(1, [
+            row(self.paths[0], "FAIL", found=1, checked=1, fail=1,
+                evidence=ev),
+            self.payload[1],
+        ])
+        errors, _, _ = self.check()
+        self.assertTrue(any("outcome and status disagree" in e for e in errors))
+
     def test_incremental_unknown_cannot_mask_zero_failures(self):
         ev = ("QA2: source=Assets/Resources/Lang/en.txt; "
               "blob=" + SHA + "; lines=en.txt:445-464; context=unverified; "
