@@ -123,8 +123,8 @@ namespace Sinbinder.UI
                 if(i==_index)
                     GUI.Box(new Rect(0f,i*rowH,content.width,rowH),"");
                 string line=(i+1)+". "+StageName(step.Kind)+
-                    (step.Round>0?" · Ход "+step.Round:"")+
-                    (step.HasOutcome ? step.Resolved?" · исполнено":" · без результата" : "")+
+                    (step.Round>0?" · "+Loc.F("Ход {0}",step.Round):"")+
+                    (step.HasOutcome ? step.Resolved?" · "+Loc.T("исполнено"):" · "+Loc.T("без результата") : "")+
                     " · "+(string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
                 { _index=i;_running=false;_clock=0f; }
