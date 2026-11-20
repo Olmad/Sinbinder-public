@@ -111,3 +111,14 @@ QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d7835
 QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=92-100; context=VillageLines.Exchange topic Sin and speaker Gluttony, responder Gluttony, no food inventory predicate; negative=responder owns no bread but claims to have a heel; verified=0; total=7; RU_EN=6 compared with en.txt blob 413688e1522d7f0f95ae42fd04806170b157caf5, Sloth UNKNOWN; outcome=FAIL.
 
 **Этап 1 остаётся NO-GO.** Исторический TSV не менялся; runtime и независимая приёмка исправления UNKNOWN.
+
+
+## QA №5: закрытие ранее неизвестной EN-пары Gluttony/Sloth, 20.11.2026
+
+Новая конкретная проверка (не повторное начисление READ): в актуальном `Assets/Resources/Lang/en.txt` Git blob `961bf2ac4e9eb09b37dbf169ef8c0630152519ef`, строки 6023–6024, найдено точное соответствие ключу из `Assets/Scripts/Dialogue/VillageDialogueRules.cs` blob `4a690bc08d783562c89f20aa8790c4b3548a48bd`, `SinReplies[Gluttony][Sloth]`: RU «Мне бы тоже, да вставать лень.» / EN «I'd like some too, but I can't be bothered to get up.»
+
+Caller проверен по `Assets/Scripts/Dialogue/VillageLines.cs` blob `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`, строки 18–35 и 89–99: `Exchange(a,b)`, оба `Soul != null`, `a.Sin=Gluttony`, `b.Sin=Sloth`, `Topic=Sin` (либо `Lord` при отсутствии `Lords.Player`), отвечающий не Mute. Вступление «Что-то есть хочется. Опять.»; ответ сообщает о желании и лени, но не утверждает наличие еды, предмета или свидетеля. Отрицательный пример: у обоих нет еды; обе реплики остаются логически совместимы с этим состоянием. EN передаёт желание и нежелание вставать, без дополнительного факта. **Вердикт для этой ограниченной пары: PASS_SOURCE_SEMANTICS; runtime UNKNOWN** (реальный выбор темы и отображение в Unity не проверялись). Ранее указанное `Sloth EN UNKNOWN` исправлено: для ряда Gluttony теперь **7/7 пар RU/EN сопоставлены**, но весь ряд по-прежнему имеет `FAIL` на Gluttony/Gluttony и не получает полного PASS.
+
+QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=SinReplies[Gluttony][Sloth]; context=VillageLines.Exchange -> SinOpening Gluttony -> SinAnswer(Gluttony,Sloth), responder not Mute; negative=no bread in inventory, but the answer asserts only desire and laziness; verified=1; total=1; RU_EN=exact match en.txt blob 961bf2ac4e9eb09b37dbf169ef8c0630152519ef lines 6023-6024; outcome=PASS_SOURCE_SEMANTICS; runtime=UNKNOWN.
+
+Новый инкремент: READ=0 (повторно открытый блок), SEMANTIC VERIFIED source-level=1 пара, FAIL=0, закрыт один прежний EN UNKNOWN. Исполняемые .NET, Unity и CI в этом сеансе не запускались. Общий статус этапа 1 **NO-GO**. Исторический TSV №5 не изменён.
