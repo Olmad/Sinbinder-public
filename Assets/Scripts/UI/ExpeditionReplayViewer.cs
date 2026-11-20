@@ -73,8 +73,8 @@ namespace Sinbinder.UI
                 _item = new GUIStyle(GUI.skin.label){fontSize=14,wordWrap=true};
             }
             GUI.Label(new Rect(left+15f, top+9f,w-170f,34f),
-                "ПОЛНЫЙ ПРОТОКОЛ · "+_data.MissionName,_caption);
-            if(GUI.Button(new Rect(left+w-142f,top+8f,130f,32f),"Закрыть (Esc)"))Close();
+                Loc.T("ПОЛНЫЙ ПРОТОКОЛ")+" · "+_data.MissionName,_caption);
+            if(GUI.Button(new Rect(left+w-142f,top+8f,130f,32f),Loc.T("Закрыть (Esc)")))Close();
             if (_data == null) return;
 
             var frame = _data.Frames[_index];
@@ -101,11 +101,11 @@ namespace Sinbinder.UI
             float y=top+89f+mapHeight;
             float buttonW=Mathf.Min(150f,(w-40f)/5f);
             if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")){_index=0;_running=false;}
-            if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< Назад"))
+            if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< "+Loc.T("Назад")))
             { _index=Mathf.Max(0,_index-1);_running=false; }
-            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?"Пауза":"Играть"))
+            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?Loc.T("Пауза"):Loc.T("Играть")))
             { _running=!_running;_clock=0f; }
-            if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),"Вперёд >"))
+            if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),Loc.T("Вперёд")+ " >"))
             { _index=Mathf.Min(_data.Frames.Count-1,_index+1);_running=false; }
             if(GUI.Button(new Rect(left+27f+4*buttonW,y,buttonW,34f),"x"+_speed.ToString("0")))
                 _speed=_speed>=4f?1f:_speed*2f;
