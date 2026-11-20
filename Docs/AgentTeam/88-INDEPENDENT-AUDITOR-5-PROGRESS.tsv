@@ -251,7 +251,7 @@ Assets/Scripts/Editor/TugSceneBuilder.cs	40a437911527a339fa5bba5ca717c555a8f082a
 Assets/Scripts/Editor/VoiceSamples.cs	f18f408eaabaa22c43195a9fb3c71ad9c36f0ebe	8531	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Editor/WearImport.cs	0ff3bd93b7d6d30b1308bec06302149a6c38575f	2435	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/AltarVisualEnhancer.cs	9797edb34d97adc30e1422c13c1faa7c107262ab	8252	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/Armament.cs	94e89c3b74e1b092489e06e668931e2fce44375f	2699	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Armament.cs	94e89c3b74e1b092489e06e668931e2fce44375f	2699	CSharp	0	0	0	0	EXCLUDED_TECH	QA2: source=Assets/Scripts/Gameplay/Armament.cs; blob=94e89c3b74e1b092489e06e668931e2fce44375f; lines=1-61; context=Armament MonoBehaviour exposes Drawn/CanSheathe and Bind/Show, toggles GameObject active state only; negative=no Loc.T/Loc.F, UI assignment, dialogue, log or string-valued runtime property; all Russian prose appears exclusively in comments and XML documentation; verified=0; total=0; RU_EN=not applicable, no player-facing literals; outcome=EXCLUDED_TECH; entire source read, 0 player-facing strings; no Unity runtime asserted
 Assets/Scripts/Gameplay/AskableSkill.cs	a123aaa178d8e2d52156d374177883c783a5d80c	1934	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/AutoAttack.cs	8c4bac86d9f805f8c280602d55a2fa43dc731780	8564	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/BalalaikaHabit.cs	a2f6adc4350625752618a087bc22bff6ece5c963	27829	CSharp	0	0	0	0	UNINSPECTED	
