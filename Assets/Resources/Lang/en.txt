@@ -5896,8 +5896,8 @@ msgid "Поговорим, когда дело до драки дойдёт."
 msgstr "We'll talk when there's fighting to be done."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Тебя вечно первым считают. С чего бы?"
-msgstr "They always put you first. Why is that?"
+msgid "Думаешь, тебе первому место? С чего бы?"
+msgstr "You think you deserve to go first? Why?"
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Уж больно много о себе говоришь."
@@ -6000,8 +6000,8 @@ msgid "На чужой ужин не рассчитывай."
 msgstr "Don't count on someone else's supper."
 
 #: Dialogue/VillageDialogueRules.cs
-msgid "Ты ведь только что ел."
-msgstr "You only just ate."
+msgid "Тебе только еда на уме?"
+msgstr "Is food all you think about?"
 
 #: Dialogue/VillageDialogueRules.cs
 msgid "Не ной. Лучше дров подкинь."
