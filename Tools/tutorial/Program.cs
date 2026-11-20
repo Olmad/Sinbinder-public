@@ -1,6 +1,7 @@
 using System;
 using Sinbinder.Gameplay;
 using Sinbinder.UI;
+using Sinbinder.AOS;
 
 internal static class Program
 {
@@ -15,6 +16,33 @@ internal static class Program
 
     public static int Main()
     {
+        // Production OrderIntegrity code, compiled directly from Assets.
+        // A matching autonomous choice must stay autonomous even when
+        // the warrior previously accepted a Whisper bargain.
+        Check(!OrderIntegrity.MustCompelByWhisper(true, true, false, true) &&
+              !OrderIntegrity.MustCompelByWhisper(false, true, false, false) &&
+              !OrderIntegrity.MustCompelByWhisper(true, false, false, false),
+            "whisper cannot replace a matching natural vote, absent order or unpersuaded choice");
+        Check(OrderIntegrity.MustCompelByWhisper(true, true, false, false) &&
+              OrderIntegrity.MustCompelByWhisper(true, true, true, true),
+            "whisper compels only a conflicting or hesitant decision under an active order");
+        Check(OrderIntegrity.MayApplyWhisperOverride(false, true, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(true, true, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, false, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, true, false, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, true, true, false),
+            "execution never forces a matching, stale, un-compelled or expired whisper action");
+
+        var wrapperSource = System.IO.File.ReadAllText("Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
+        Check(wrapperSource.Contains("LastWhisperCompelled = OrderIntegrity.MustCompelByWhisper(") &&
+              wrapperSource.Contains("context.SatisfiedBy(decision.Action)") &&
+              wrapperSource.Contains("decision.Hesitated, context.SatisfiedBy(decision.Action)") &&
+              wrapperSource.Contains("OrderIntegrity.MayApplyWhisperOverride(") &&
+              wrapperSource.Contains("HasCurrentCommandDecision,") &&
+              !wrapperSource.Contains("decision.Action != ActionType.ObeyCommand;") &&
+              !wrapperSource.Contains("action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded"),
+            "both real AOS vote and action execution use the guarded Whisper integrity rules");
+
         // The first five minutes are measured from the actual new-game click.
         // This is source-linked instrumentation: Unity must still produce logs
         // before anybody may claim to have measured a player's experience.
