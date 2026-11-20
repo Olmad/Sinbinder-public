@@ -107,8 +107,8 @@ class E0MergeInventoryTests(unittest.TestCase):
         self.make_author()
         before = self.make_incoming()
         output = Path(tempfile.mkdtemp()) / "e0-report.json"
-        self.addCleanup(lambda: output.unlink(missing_ok=True))
-        self.addCleanup(lambda: output.parent.rmdir())
+        self.addCleanup(lambda: (output.unlink(missing_ok=True),
+                                 output.parent.rmdir()))
         result = module.main(["--repo", str(self.root), "--author-ref", "author",
                               "--incoming-ref", "incoming", "--json-out", str(output)])
         self.assertEqual(result, 0)
