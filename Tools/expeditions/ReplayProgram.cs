@@ -197,6 +197,20 @@ static class Program
              !stageSource.Contains("AutoBattleResolver.Resolve(") &&
              !stageSource.Contains("CombatDecisionContext.Create("),
             "3D replay reconstructs chronology without rerolling AOS or touching the live battle");
+        var polygon=System.IO.File.ReadAllText("Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs");
+        var buildScenes=System.IO.File.ReadAllText("ProjectSettings/EditorBuildSettings.asset");
+        var missionUi=System.IO.File.ReadAllText("Assets/Scripts/UI/MissionMapUI.cs");
+        var launcher=System.IO.File.ReadAllText("Test-Expeditions.cmd");
+        Test(polygon.Contains("Проверка экспедиций (склеп)") &&
+             polygon.Contains("SceneManager.LoadScene(\"Crypt_Test\")") &&
+             polygon.Contains("-expedition-test-map") &&
+             launcher.Contains("-expedition-test-map"),
+             "mechanics polygon and dedicated launcher open the actual expedition QA scene");
+        Test(buildScenes.Contains("enabled: 1\\n    path: Assets/Scenes/Crypt_Test.unity".Replace("\\n", "\n")) &&
+             missionUi.Contains("PersonalExpedition.Enter(_chosen") &&
+             missionUi.Contains("ExpeditionReplayViewer.Open(replay)") &&
+             missionUi.Contains("MissionBoard.Journeys"),
+             "the QA build includes real personal and automatic missions plus recorded replay UI");
         Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
     }
 }
