@@ -95,6 +95,28 @@ class CorrectedTextRegressions(unittest.TestCase):
         self.assertNotIn("Твои склянки на вкус пробовал.", self.encounter)
         self.assertIn("Алхимик. От твоих зелий хоть сытым станешь?", self.encounter)
 
+    def test_court_attack_reasons_do_not_invent_unobserved_events(self):
+        # Wrath/Patience choose explanations from the judge's preference,
+        # not from a checked enemy range or the first actual attack tick.
+        attack = self.court.split("private static string Attack(", 1)[1].split(
+            "private static string Idle(", 1)[0]
+        for old in ("В нём гнев. Гнев хочет крови, а враг рядом.",
+                    "Терпения в нём нет. Ждать он не умеет — бьёт первым."):
+            self.assertNotIn(old, attack)
+            self.assertNotIn('msgid "' + old + '"', self.locale)
+        revisions = (
+            ("В нём гнев. Гнев требует драки.",
+             "Wrath burns within. Wrath demands a fight."),
+            ("В нём нет терпения. Ему не терпится вступить в бой.",
+             "Patience is gone. This warrior is eager to fight."),
+        )
+        for ru, en in revisions:
+            with self.subTest(ru=ru):
+                self.assertIn('Loc.T("' + ru + '")', attack)
+                self.assertEqual(1, self.locale.count('msgid "' + ru + '"'))
+                self.assertIn('msgid "' + ru + '"\\nmsgstr "' + en + '"',
+                              self.locale)
+
     def test_all_revised_ru_lines_have_single_english_translation(self):
         phrases = (
             "За твой ответ я заплачу три монеты.",
