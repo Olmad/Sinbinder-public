@@ -1,5 +1,7 @@
 # SINBINDER — единый глобальный план разработки
 
+> **История с 20.11.2026.** Действующий план один — [`69-PLAN.md`](../../Assets/Scripts/docs/69-PLAN.md): он собран из лучшего в этом и других планах (что взято — там же, §0).
+
 **Редакция:** 16.11.2026 · **Режим:** SOLO DEMO FIRST · **Рабочая ветка:** `feature/server-prototype` · **PR:** [№1, draft](https://github.com/Olmad/Sinbinder-public/pull/1).  
 **Операционный план по неделям:** [81-WEEKLY-ROADMAP-26-WEEKS.md](81-WEEKLY-ROADMAP-26-WEEKS.md). **Текущая неделя:** [82-CURRENT-WEEK-2026-11-16.md](82-CURRENT-WEEK-2026-11-16.md). **Проверка в Unity:** [55-EVENING-UNITY-TEST-PLAN-2026-11-16.md](55-EVENING-UNITY-TEST-PLAN-2026-11-16.md).
 
