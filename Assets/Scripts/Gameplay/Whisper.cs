@@ -182,7 +182,7 @@ namespace Sinbinder.Gameplay
                 }
                 else if (yielded)
                     answer = canPay
-                        ? Loc.T("Приказ уже изменён. На другой я не соглашался.")
+                        ? Loc.T("Уговор не состоялся: приказ изменился или воин выбыл.")
                         : Loc.T("Монет на уговор больше не хватает.");
                 outcome = yielded && !applied
                     ? (canPay
