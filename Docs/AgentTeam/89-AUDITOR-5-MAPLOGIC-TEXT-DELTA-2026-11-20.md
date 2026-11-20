@@ -1,0 +1,13 @@
+# Auditor 5: independent delta source review, 2026-11-20
+
+Branch: `feature/server-prototype`. Source: `Assets/Scripts/Gameplay/MapLogicRunner.cs`, blob `f7c502940337c7df33c1bf3f9adbc37c71163c2f`. Reviewed complete 150-line source at branch head `9e4a30f12f5c55a37092326c8f7318c690db10d7`. This file is outside the immutable 582-source baseline. No baseline TSV rows changed.
+
+## QA2: interaction prompt
+source=Assets/Scripts/Gameplay/MapLogicRunner.cs; blob=f7c502940337c7df33c1bf3f9adbc37c71163c2f; lines=60-83; context=OfferInteractions(Action<float,string,Action>) only when Instance/map/player/offer exist; enabled OnInteractObject trigger with TargetId, unused Once, AllowedCondition, registered nearby object <=3 units; negative=target farther than UseRange or FlagIsTrue without flag gives no prompt; verified=0; total=1; RU_EN=UNKNOWN (en.txt mapping and runtime Loc not independently checked in this run); outcome=UNKNOWN. Literal `Loc.T("F — взаимодействовать")` is player-facing, NOT EXCLUDED_TECH. Prompt promises interaction but callback may produce no visible effect if later Fire/Apply fails; this is a possible runtime/context risk, not established semantic FAIL.
+
+## QA2: dynamic message
+source=Assets/Scripts/Gameplay/MapLogicRunner.cs; blob=f7c502940337c7df33c1bf3f9adbc37c71163c2f; lines=85-130; context=Start->Fire(OnStart), Update->Fire(OnEnterRegion), or OfferInteractions callback->Fire(OnInteractObject); Fire filters Enabled/Event/Id/Once/target/AllowedCondition; Apply ShowMessage requires nonblank Message <=240 chars, calls Herald.Line(Loc.T(t.Message)); negative=Message empty or >240 chars yields no message, FlagIsTrue without set flag suppresses it, OnStart ignores target matching; verified=0; total=1 dynamic text channel (actual JSON messages not inventoried); RU_EN=UNKNOWN because JSON payloads, translations, speaker and world-state claims were not examined; outcome=UNKNOWN. Potentially authored JSON text is rendered directly, so checking only C# literals cannot establish semantic coverage.
+
+Source-level findings: two player-facing text channels, one literal and one dynamic. The dynamic channel can express arbitrary map-authored claims with no speaker, presence, event-truth or localization guarantee established by this file. This is an audit coverage gap, not proof of a broken gameplay message. No Unity or compiled test run, no QA acceptance.
+
+Next independent work: inventory every map JSON Trigger.Message, trace map loading and Herald.Line/Loc.T; compare exact RU/EN values and trigger world-state. Preserve baseline ledger and do not count these as SEMANTIC VERIFIED.
