@@ -156,6 +156,11 @@ internal static class Program
               !courtSource.Contains("Outcome = d.RefusedCommand ?") &&
               courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
             "real Soul Court classifies chosen action using original command and preserves historical votes");
+        Check(courtSource.Contains("recordedRefusal != d.RefusedCommand)") &&
+              courtSource.Contains("d.Weighed = false;") &&
+              courtSource.Contains("The original vote and original cause are authoritative.") &&
+              courtSource.Contains("return d.Weighed ? Loc.T("),
+            "Court never attributes a stale counterfactual cause to a corrected action verdict");
         Check(courtSource.Split(new[] { "var verdict = Verdict(d, c);" },
               StringSplitOptions.None).Length == 4 &&
               courtSource.Contains("bool against = d.RefusedCommand || d.Hesitated;") &&
