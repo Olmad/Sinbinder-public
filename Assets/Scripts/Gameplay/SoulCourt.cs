@@ -697,7 +697,18 @@ namespace Sinbinder.Gameplay
                 (d.RefusedCommand || (d.Hesitated && c.HasCommand)))
                 new BehaviourResolver().Weigh(w, c, ref d);
 
-            Outcome = d.RefusedCommand ? "refused" : d.Hesitated ? "hesitated" : "obeyed";
+            // The original AOS verdict is passed BY VALUE. Normalize only this
+            // Court's copy of the refusal flag against the original command
+            // and chosen action; never rewrite stored votes or counterfactuals.
+            bool recordedRefusal = d.RefusedCommand;
+            var verdict = Verdict(d, c);
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
+            if (c.HasCommand && !d.Hesitated && recordedRefusal != d.RefusedCommand)
+                Debug.LogWarning($"[СУД QA] Флаг и действие расходились: action={d.Action}, "
+                    + $"command={c.CommandType}, recorded={recordedRefusal}, actual={verdict}");
+            Outcome = verdict == SoulCourtVerdictKind.Hesitated ? "hesitated"
+                : verdict == SoulCourtVerdictKind.Refused ? "refused" : "obeyed";
             var rival = Rival(d);
             var judges = Seat(w, c, rival, out float total, originalVotes);
             Seated = judges.Count;
@@ -1132,6 +1143,10 @@ namespace Sinbinder.Gameplay
         public static string Loudest(Warrior w, Decision d, DecisionContext c)
         {
             if (w == null || c == null || !c.HasCommand) return null;
+            var verdict = Verdict(d, c);
+            // The same local-copy rule as in Convene: do not modify recorded votes.
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
             bool against = d.RefusedCommand || d.Hesitated;
             float loud = 0f;
             string top = null;
@@ -1147,6 +1162,10 @@ namespace Sinbinder.Gameplay
         {
             lean = 0f; voice = null; colour = Color.white;
             if (w == null || c == null || !c.HasCommand) return false;
+            var verdict = Verdict(d, c);
+            // The same local-copy rule as in Convene: do not modify recorded votes.
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
             bool against = d.RefusedCommand || d.Hesitated;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
@@ -1211,6 +1230,16 @@ namespace Sinbinder.Gameplay
             }
             return true;
         }
+
+        /// <summary>
+        /// Court outcome reads the action against the ORIGINAL decision context.
+        /// A later Warrior.Command cannot rewrite an earlier Soul Court.
+        /// </summary>
+        private static SoulCourtVerdictKind Verdict(Decision d, DecisionContext c)
+            => SoulCourtVerdict.Classify(
+                c != null && c.HasCommand,
+                c != null && c.SatisfiedBy(d.Action),
+                d.Hesitated, d.RefusedCommand);
 
         /// <summary>
         /// Слово Смерти в коротком суде: приказ и что сделал воин — и слово судьям.
@@ -1619,7 +1648,10 @@ namespace Sinbinder.Gameplay
                 return Loc.F("Решил один голос — {0}. Без него {1}.",
                     Lower(UI.SelectedUnitPanelUI.VoiceName(d.DecisiveVoice, w.Soul)), obeyed);
 
-            return Loc.T("Одной причины нет — так решила вся душа разом.");
+            // Absence of a stored counterfactual is NOT evidence of a
+            // collective motive. A fresh analysis would rewrite history.
+            return d.Weighed ? Loc.T("Одной причины нет — так решила вся душа разом.")
+                             : Loc.T("Причина отказа не установлена.");
         }
 
         private static string Lower(string s)
