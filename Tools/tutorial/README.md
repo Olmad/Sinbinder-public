@@ -18,8 +18,21 @@ dotnet run -c Release --project Tools/tutorial/TutorialChecks.csproj
 dotnet run -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
 ```
 
+Без SDK — компилятором и рантаймом из папки Unity 6 (те же исходники, что в `TutorialChecks.csproj`):
+
+```powershell
+powershell -File Tools/tutorial/run-unity-roslyn.ps1
+```
+
 GitHub Actions: [Dream tutorial logic smoke](../../.github/workflows/tutorial-smoke.yml).
 На push в `feature/server-prototype` и на подходящий PR проверяются оба теста.
+
+**С 20.11.2026 проверки описывают наш сон**, а не сон ветки ботов. Переписаны восемь проверок:
+- «послушался» — по правилу движка `DecisionContext.SatisfiedBy`;
+- повтор приказа без решения уходит к банкам;
+- суд — на записанных голосах, без окна «показывать суд?».
+
+Окно «показывать суд?» и лук-искуситель из их сна не взяты (`docs/69-PLAN.md`, Э0).
 
 ## Что действительно проверяется
 
@@ -50,8 +63,8 @@ GitHub Actions: [Dream tutorial logic smoke](../../.github/workflows/tutorial-sm
 ## Полное принятие обучения
 
 1. Компиляция в Unity и отсутствие `MissingScript`.
-2. Ручной путь: суд, виды Tab/V, лук, противовес, реальное SaveAlly,
-   два характера, страх, две плиты, пробуждение.
+2. Ручной путь нашего сна: первый приказ, Tab/V и чучело, убийцы и суд, мост и рычаг,
+   засада, жатва и подъём павшего, повтор приказа, шёпот, банки, ворота склепа.
 3. Прогон `Sinbinder.EditorTools.DreamWalkthrough.Run` в Unity и
    анализ `Logs/dream-walkthrough.txt` с выделением обходов.
 4. Отдельная проверка отказов AOS, гибели, повторов и восстановления.

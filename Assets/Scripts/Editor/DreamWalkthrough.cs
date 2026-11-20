@@ -400,6 +400,11 @@ namespace Sinbinder.EditorTools
                         // от камеры, в 1,3 м: жатва берёт душу не дальше 1,8 м (SoulManager._harvestRadius).
                         var body = dream.Zombie != null ? dream.Zombie.transform.position : dream.LateAt;
                         Warp(dream.Hero, body + new Vector3(0f, 0f, 1.3f));
+                        // Лежит ли павший: голова ниже 0,7 м над ногами — лёг (кадр 20.11 не дал разглядеть).
+                        var bones = dream.Zombie != null ? dream.Zombie.GetComponentInChildren<Animator>() : null;
+                        var head = bones != null && bones.isHuman ? bones.GetBoneTransform(HumanBodyBones.Head) : null;
+                        Write($"    павший: голова {(head != null ? (head.position.y - body.y).ToString("F2") + " м над ногами" : "не найдена")}, "
+                            + $"Греховод {SinbinderPlayer.Where}, тело {body}");
                         ShotFrom("сон — пал в засаде, душа у тела", body + new Vector3(0f, 4.5f, -2.8f),
                                  body, clear: false);
                     }

@@ -30,11 +30,19 @@ internal static class Program
               dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")") &&
               dreamTrace.Contains("TraceFirstFive(\"second_verdict action=\""),
             "dream traces player action, real AOS verdict, court attempt and independent retry");
-        Check(dreamTrace.Contains("d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated") &&
-              dreamTrace.Contains("bool obeyed = ActuallyObeyed(d);") &&
+        // 20.11: obedience is the engine's own rule (DecisionContext.SatisfiedBy) — Attack on
+        // "chase" IS the order; independent Flee/Attack that the order did not ask for is not.
+        // Before, the dream said "did not chase even when ordered" while the court said "obeyed".
+        var contextSource = System.IO.File.ReadAllText("Assets/Scripts/AOS Engine/DecisionContext.cs");
+        Check(dreamTrace.Contains("!d.RefusedCommand && !d.Hesitated &&") &&
+              dreamTrace.Contains("(d.Action == AOS.ActionType.ObeyCommand || (c != null && c.SatisfiedBy(d.Action)))") &&
+              dreamTrace.Contains("bool obeyed = ActuallyObeyed(d, c);") &&
               dreamTrace.Contains("RefusalResult = d.RefusedCommand ?") &&
-              dreamTrace.Contains("ActuallyObeyed(d) ? \"послушался\" : \"выбрал своё\""),
-            "dream never labels independent AOS Flee/Attack as obedience");
+              dreamTrace.Contains("ActuallyObeyed(d, c) ? \"послушался\" : \"выбрал своё\"") &&
+              !dreamTrace.Contains("ActuallyObeyed(d)") &&
+              contextSource.Contains("case \"FallBack\": return action == ActionType.Flee;") &&
+              !contextSource.Contains("case \"Move\""),
+            "dream calls obedience only what the engine's order accepts, never a free Flee/Attack");
 
         // AOS can legitimately be silent due to a broken scene or missing
         // component. Retest must try the real vote once then recover with a
@@ -52,7 +60,7 @@ internal static class Program
             "retest invokes production AOS exactly once when natural verdict is missing");
         Check(retest.Contains("Time.unscaledTime - _decideSince > 6f") &&
               retest.Contains("RetestResult = \"решение не поступило\";") &&
-              retest.Contains("Set(Stage.FirstPerson,") &&
+              retest.Contains("Set(Stage.Jars, JarsLine);") &&
               !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
 
@@ -63,19 +71,19 @@ internal static class Program
         string selectionSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SelectionManager.cs");
         string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
         string pauseMenuSource = System.IO.File.ReadAllText("Assets/Scripts/UI/PauseMenu.cs");
-        Check(dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false,") &&
-              dreamTrace.Contains("originalVotes: originalVotes, force: true);") &&
-              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c, originalVotes);") &&
-              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,") &&
-              dreamTrace.Contains("brief: true, originalVotes: originalVotes, force: true);"),
-            "tutorial performs full then real brief preview on the SAME AOS decision");
-        Check(dreamTrace.Contains("!Core.Preferences.CourtChoiceMade") &&
-              dreamTrace.Contains("if (!Application.isBatchMode)") &&
-              dreamTrace.Contains("while (_courtChoicePending) yield return null;") &&
-              dreamTrace.Contains("short_court_choice_skipped_batch") &&
-              dreamTrace.Contains("if (_courtChoicePending)") &&
-              dreamTrace.Contains("DrawCourtChoice();"),
-            "once-only explicit prompt is shown to humans, skipped by headless walkthrough");
+        // Our dream (20.11): the first court is full, later ones brief — each on the SAME
+        // decision and the votes recorded at the moment of the decision (Ballot), not reweighed.
+        // The bots' "show the court?" IMGUI prompt was not taken: the court toggle lives in the
+        // pause menu (checked below), and the dream court is a lesson, so it is always forced.
+        Check(dreamTrace.Contains("StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext, Ballot(mind)));") &&
+              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,") &&
+              dreamTrace.Contains("originalVotes: ballot, force: true);"),
+            "dream court judges the SAME AOS decision with its original ballot, full first then brief");
+        Check(!dreamTrace.Contains("DrawCourtChoice") &&
+              !dreamTrace.Contains("_courtChoicePending") &&
+              courtSource.Contains("The original vote and original cause are authoritative.") &&
+              courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
+            "no extra court prompt in the dream; recorded votes are never reweighed");
         Check(preferencesSource.Contains("CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0") &&
               preferencesSource.Contains("PlayerPrefs.SetInt(CourtChoiceKey, 1);") &&
               preferencesSource.Contains("public static void SetAutomaticCourt(bool enabled)") &&
@@ -176,7 +184,7 @@ internal static class Program
         var soulManagerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulManager.cs");
         var soulIndicatorSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulIndicator.cs");
         Check(soulIndicatorSource.Contains("public FadingSoul Soul => _soul;") &&
-              soulManagerSource.Contains("ReferenceEquals(indicator.Soul, soul)"),
+              soulManagerSource.Contains("ReferenceEquals(it.Soul, soul)"),
               "fading soul removal targets its own indicator identity");
         Check(!soulManagerSource.Contains("if (_indicators[i] != null && _indicators[i].gameObject != null)"),
               "soul removal no longer deletes an arbitrary surviving light");

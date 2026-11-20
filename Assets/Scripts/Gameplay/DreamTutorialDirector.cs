@@ -323,7 +323,7 @@ namespace Sinbinder.Gameplay
             }
             if (shown) _guidedFor = _stage;
         }
-        private bool _courtRunning, _retestOrdered, _contrastRunning;
+        private bool _courtRunning, _retestOrdered, _contrastRunning, _retestManualDecideTried, _fiveMarked;
         private float _whisperSince;
         private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
@@ -652,6 +652,12 @@ namespace Sinbinder.Gameplay
         private void Update()
         {
             if (!_ready || _hero == null || _stage == Stage.Finished) return;
+            // [AOS-5M]: где игрок через пять минут после «Новой игры» — по часам без паузы.
+            if (!_fiveMarked && _firstFiveStartedAt >= 0f && Time.realtimeSinceStartup - _firstFiveStartedAt >= 300f)
+            {
+                _fiveMarked = true;
+                TraceFirstFive("five_minute_mark stage=" + _stage);
+            }
             if (Time.unscaledTime >= _nextPrompt && !SoulCourt.Sitting && !Lesson.Holding)
             {
                 Log(_stage == Stage.Return ? SealPrompt().words : _line);
@@ -710,6 +716,7 @@ namespace Sinbinder.Gameplay
                         {
                             _orderedAt = Time.time;
                             Mark("T2 первый приказ");
+                            TraceFirstFive("first_command_detected");
                             Set(Stage.Command, Loc.T("Воин услышал приказ. Посмотрите, как он ответит."));
                         }
                         else _commandWait += Time.unscaledDeltaTime;
@@ -789,6 +796,7 @@ namespace Sinbinder.Gameplay
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
+                            _retestManualDecideTried = false;
                             Set(Stage.Retest, Loc.N("Убийц больше нет. Отдайте ему тот же приказ — ПКМ по рычагу."));
                         }
                         else
@@ -825,11 +833,29 @@ namespace Sinbinder.Gameplay
                         _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
                     }
-                    if (_retestOrdered && !_contrastRunning && mind != null
-                        && mind.LastContext != null && mind.LastContext != _mindBefore)
+                    bool fresh = mind != null && mind.LastContext != null && mind.LastContext != _mindBefore;
+                    if (_retestOrdered && !_contrastRunning && fresh)
                     {
                         _contrastRunning = true;
                         StartCoroutine(Contrast(mind.LastDecisionDetail, mind.LastContext));
+                    }
+                    else if (_retestOrdered && !_contrastRunning)
+                    {
+                        // Голоса молчат: раз спросить душу напрямую (как в Deciding), а не дождалась
+                        // и после — честно «решение не поступило», без выдуманного послушания.
+                        // До 20.11 повтор без решения висел вечно (тест ботов, Tools/tutorial).
+                        if (mind != null && !_retestManualDecideTried && Time.unscaledTime - _decideSince > 1.2f)
+                        {
+                            _retestManualDecideTried = true;
+                            mind.Decide();
+                        }
+                        else if (Time.unscaledTime - _decideSince > 6f)
+                        {
+                            RetestResult = "решение не поступило";
+                            Debug.LogWarning("[СОН QA] Воин не принял решения за 6 с после повтора приказа.");
+                            Mark("T6 тот же приказ без убийц: решение не поступило");
+                            Set(Stage.Jars, JarsLine);
+                        }
                     }
                     else if (!_retestOrdered && !Lesson.Holding && Time.unscaledTime - _retestPrompted > 40f)
                         Set(Stage.Jars, JarsLine);
