@@ -267,7 +267,7 @@ Assets/Scripts/Gameplay/Brew.cs	117b9e8b310143b25abaafe299272bf6c1b13844	7861	CS
 Assets/Scripts/Gameplay/BuildSite.cs	f238b8f75e76566db9f2c212d81a66375ebc0740	19985	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CameraPullback.cs	3a6211e027d90dbcc6d566036645bcef504495b7	6134	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CampAir.cs	630b5398bab921a71076c8aab6a3e263d88d0c74	12659	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/CampCardRules.cs	c2c547fabde47eed4653edc7682ca19bda40ad7b	6186	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampCardRules.cs	c2c547fabde47eed4653edc7682ca19bda40ad7b	6186	CSharp	8	8	0	8	UNKNOWN_CONTEXT	QA2: source=Assets/Scripts/Gameplay/CampCardRules.cs; blob=c2c547fabde47eed4653edc7682ca19bda40ad7b; lines=22-26,31-38,73-81,110-127; context=CampCard.Face computed from Rank and Suit; Rank validated 6..14 and Suit 0..3 in constructor; caller rendering Face in UI UNKNOWN; negative=English locale with face card Rank=11 renders Cyrillic В plus suit ♠, because Face does not call Loc.T and no EN branch is present; verified=0; total=8; RU_EN=UNKNOWN (4 Cyrillic rank glyphs and 4 suit glyphs inspected, no EN selection in this source); outcome=UNKNOWN_CONTEXT; note=8 distinct presentation literals in Face; two ArgumentException messages are developer-facing exceptions, not counted; runtime visibility and caller remain UNKNOWN; source-level counterexample only, no Unity test
 Assets/Scripts/Gameplay/CampCardWagers.cs	72440f46b2264ef69f6654f36077110f65a2fd44	3425	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CampFocus.cs	9b6ca15686ee7e3ae87152d9812ef787e6eed2f3	4859	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/CampLife.cs	17fa5d65b0d84c7ce45ec5b464193b74da0c2ef2	32454	CSharp	0	0	0	0	UNINSPECTED	
