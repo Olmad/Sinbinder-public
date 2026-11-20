@@ -705,8 +705,13 @@ namespace Sinbinder.Gameplay
             if (c.HasCommand && !d.Hesitated)
                 d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
             if (c.HasCommand && !d.Hesitated && recordedRefusal != d.RefusedCommand)
+            {
+                // A cause weighed for the opposite classification is not
+                // evidence for this one. Invalidate only the Court's struct copy.
+                d.Weighed = false;
                 Debug.LogWarning($"[СУД QA] Флаг и действие расходились: action={d.Action}, "
                     + $"command={c.CommandType}, recorded={recordedRefusal}, actual={verdict}");
+            }
             Outcome = verdict == SoulCourtVerdictKind.Hesitated ? "hesitated"
                 : verdict == SoulCourtVerdictKind.Refused ? "refused" : "obeyed";
             var rival = Rival(d);
