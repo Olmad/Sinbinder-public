@@ -61,16 +61,16 @@ jobs:
           if not source.is_file():
               summary.open("a", encoding="utf-8").write(
                   "E0 real branch comparison did not produce a report. "
-                  "The E0 stage stays UNVERIFIED.\\n"
+                  "The E0 stage stays UNVERIFIED.\n"
               )
           else:
               r = json.loads(source.read_text(encoding="utf-8"))
               lines = [
                   "## E0 real Git branch overlap (read-only)",
                   "",
-                  f"- Author: \`{r['author_sha']}\`",
-                  f"- Integration: \`{r['incoming_sha']}\`",
-                  f"- Merge base: \`{r['merge_base']}\`",
+                  f"- Author: `{r['author_sha']}`",
+                  f"- Integration: `{r['incoming_sha']}`",
+                  f"- Merge base: `{r['merge_base']}`",
                   f"- Author-only changed paths: {r['author_changed_count'] - r['overlap_count']}",
                   f"- Integration-only changed paths: {r['incoming_changed_count'] - r['overlap_count']}",
                   f"- Changed in BOTH branches: **{r['overlap_count']}**",
@@ -84,11 +84,11 @@ jobs:
                           "INTEGRATION ONLY" if item["incoming_changed"] else "UNCHANGED"
                       )
                   )
-                  lines.append(f"- \`{path}\`: {status}")
+                  lines.append(f"- `{path}`: {status}")
               lines += ["", "### Sample overlapping paths (full list in artifact)"]
-              lines += [f"- \`{p}\`" for p in r["overlapping_paths"][:40]]
+              lines += [f"- `{p}`" for p in r["overlapping_paths"][:40]]
               lines += ["", "This does NOT run Unity or merge either branch."]
-              summary.open("a", encoding="utf-8").write("\\n".join(lines) + "\\n")
+              summary.open("a", encoding="utf-8").write("\n".join(lines) + "\n")
           PY
       - uses: actions/upload-artifact@v4
         if: always()
