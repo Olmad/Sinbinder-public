@@ -900,14 +900,6 @@ static class Bench
         Console.WriteLine(bad == 0 ? "  все проверки прошли" : $"  ПРОВАЛОВ: {bad}");
     }
 
-    /// <summary>
-    /// Лестница прозрачности: кому что позволено видеть.
-    ///
-    /// Главное здесь — что четвёртая ступень заперта, а не выключена.
-    /// Выключенное однажды включают по ошибке, и тогда игрок видит очки
-    /// и веса — то самое, чего правило «игрок не видит цифр» не допускает
-    /// нигде и никогда.
-    /// </summary>
     static void BodyMotionCheck()
     {
         Console.WriteLine("\n=== ТЕЛО: во что превращается решение ===");
@@ -918,23 +910,30 @@ static class Bench
             if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); }
         }
 
+        var decisionStates = new[] { BodyMotion.Idle, BodyMotion.Walk, BodyMotion.Attack, BodyMotion.Flee };
+        var sceneStates = new[]
+        {
+            BodyMotion.Die, BodyMotion.Talk, BodyMotion.Draw, BodyMotion.Sheathe,
+            BodyMotion.Sit, BodyMotion.Dig, BodyMotion.Challenge, BodyMotion.Gather, BodyMotion.Strum
+        };
         var contract = BodyMotion.All();
         Console.WriteLine($"  договор с художником: {string.Join(", ", contract)}");
 
-        // Каждое решение обязано во что-то превращаться, и только
-        // в то, что художник обещал нарисовать. Состояние, которого
-        // нет в договоре, — это анимация, которую никто не заказывал:
-        // Animator.Play по чужому имени молча ничего не делает.
+        // Решения пользуются четырьмя общими движениями. События сцены
+        // запрашивают свои состояния напрямую через WarriorAnimation.
+        foreach (string state in decisionStates.Concat(sceneStates))
+            Check(contract.Contains(state), $"в договоре отсутствует состояние «{state}»");
+
         var used = new Dictionary<string, int>();
 
         foreach (ActionType act in Enum.GetValues(typeof(ActionType)))
         {
             string state = BodyMotion.For(act);
-
-            Check(!string.IsNullOrWhiteSpace(state), $"{act} не превращается ни во что");
-            Check(contract.Contains(state),
-                  $"{act} просит состояние «{state}», которого нет в договоре");
-
+            if (!decisionStates.Contains(state))
+            {
+                Check(false, $"{act} просит недопустимое для решения состояние «{state}»");
+                continue;
+            }
             used[state] = used.GetValueOrDefault(state) + 1;
         }
 
@@ -956,17 +955,30 @@ static class Bench
         Check(BodyMotion.For(ActionType.Loot) == BodyMotion.Walk,
               "поход за добычей выглядит не ходьбой");
 
-        // Пять состояний, разговор и пара «достать — убрать оружие» (автор,
-        // 29 сентября: «сделай возможность доставать и убирать оружие»;
-        // клипы Draw и Sheathe — коммит ba0f038, 1 октября). Девятое означает,
-        // что кто-то начал заводить анимацию на каждое умение, а их полсотни.
-        // До 16 октября рамка стояла на шести и падала с 1 октября молча:
-        // вывод стенда никто не читал целиком.
-        Check(contract.Length <= 8,
-              $"состояний стало {contract.Length}: рамка «пять анимаций, "
-            + "не пятьдесят» поехала");
+        string root = AssetsRoot();
+        string bodies = root == null ? null : Path.Combine(root, "Resources", "Bodies");
+        var models = Directory.Exists(bodies) ? Directory.GetFiles(bodies, "*.fbx") : Array.Empty<string>();
+        Check(models.Length > 0, "Resources/Bodies не содержит моделей для проверки контроллеров");
+        foreach (string model in models.OrderBy(path => path, StringComparer.Ordinal))
+        {
+            string name = Path.GetFileNameWithoutExtension(model) + "Motion.controller";
+            string path = Path.Combine(bodies, name);
+            if (!File.Exists(path))
+            {
+                Check(false, $"файл контроллера {name} отсутствует");
+                continue;
+            }
 
-        Console.WriteLine(bad == 0 ? "  Тело: чисто." : $"  Тело: провалов {bad}.");
+            // m_Name встречается и у других объектов в YAML контроллера.
+            var states = Regex.Matches(ReadAsset(path), @"^AnimatorState:\n(?:^  [^\n]*\n)*?^  m_Name: ([^\n]+)$",
+                                       RegexOptions.Multiline)
+                .Select(match => match.Groups[1].Value.TrimEnd())
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (string state in contract)
+                Check(states.Contains(state), $"в {name} отсутствует состояние «{state}»");
+        }
+
+        Console.WriteLine(bad == 0 ? $"  Тело: проверено контроллеров {models.Length}." : $"  Тело: провалов {bad}.");
     }
 
     static void GenderCheck()
@@ -5255,14 +5267,15 @@ static class Bench
         // Бой, которого игрок не видел, до сих пор возвращал только
         // список выживших: запись боя заполнялась и не читалась никем.
         var record = new BattleRecord();
-        void Log(string who, ActionType act)
-            => record.AddEvent(new BattleEvent { ActorName = who, Action = act });
+        void Log(string who, ActionType act, bool resolved = false)
+            => record.AddEvent(new BattleEvent { ActorName = who, Action = act, Resolved = resolved });
 
         Log("Марга", ActionType.Attack);
         Log("Ловчий", ActionType.Loot);
         Log("Кир", ActionType.Attack);
-        Log("Мясник", ActionType.Flee);
-        Log("Мясник", ActionType.Flee);      // то же самое второй раз
+        Log("Мясник", ActionType.Flee, resolved: true);
+        Log("Мясник", ActionType.Flee, resolved: true); // то же самое второй раз
+        Log("Кир", ActionType.Flee);
         Log("Марга", ActionType.SaveAlly);
         Log("Ловчий", ActionType.Loot);      // и это тоже
 
@@ -5293,8 +5306,10 @@ static class Bench
                                        && e.ActorName == "Мясник");
         Check(fleeTimes <= 1, "один и тот же побег пересказан дважды");
 
-        Check(story.Contains("сбежал"),
-              "побег на вылазке назван отходом — а приказов там не отдают");
+        Check(story.Contains("Мясник вышел из боя"),
+              "пересказ потерял подтверждённый выход из боя");
+        Check(story.Contains("Кир попытался отступить, но не смог"),
+              "пересказ не отличил попытку от подтверждённого выхода из боя");
 
         Check(Sinbinder.Crypt.Retelling.Tell(null) == "",
               "пересказ пустой записи что-то выдумал");

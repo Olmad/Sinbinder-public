@@ -47,10 +47,16 @@ namespace Sinbinder.UI
         private float _next;
         private float _flashUntil;
         private string _shown;
+        private uint _shownCommandRevision;
+        private Warrior _warrior;
 
         public void SetText(Text text) => _text = text;
 
-        void OnEnable() => _alive++;
+        void OnEnable()
+        {
+            _alive++;
+            Retarget();
+        }
 
         void OnDisable()
         {
@@ -58,13 +64,25 @@ namespace Sinbinder.UI
             Lit.Remove(this);
         }
 
-        void Update()
-        {
-            if (_text == null || Time.unscaledTime < _next) return;
-            _next = Time.unscaledTime + RefreshEvery;
+        void OnTransformParentChanged() => Retarget();
 
-            var warrior = GetComponentInParent<Warrior>();
-            string word = Word(warrior);
+        private void Retarget()
+        {
+            _warrior = GetComponentInParent<Warrior>();
+            _next = 0f;
+            _shown = null;
+            Lit.Remove(this);
+        }
+
+        void LateUpdate()
+        {
+            if (_text == null) return;
+
+            uint revision = _warrior != null ? _warrior.CommandRevision : 0u;
+            if (revision == _shownCommandRevision && Time.unscaledTime < _next) return;
+            _shownCommandRevision = revision;
+            _next = Time.unscaledTime + RefreshEvery;
+            string word = Word(_warrior);
 
             if (word == null)
             {
@@ -83,7 +101,7 @@ namespace Sinbinder.UI
             bool bright = Time.unscaledTime < _flashUntil;
             if (!bright) Lit.Remove(this);
 
-            var sin = warrior.Soul != null ? SinPalette.Of(warrior.Soul.Sin) : Color.gray;
+            var sin = _warrior.Soul != null ? SinPalette.Of(_warrior.Soul.Sin) : Color.gray;
             var dot = bright ? sin : sin * 0.72f;
             _text.text = $"<color=#{ColorUtility.ToHtmlStringRGB(dot)}>●</color> {word}";
             _text.color = bright ? sin : new Color(0.90f, 0.86f, 0.78f, 0.85f);
@@ -121,7 +139,7 @@ namespace Sinbinder.UI
             if (!Transparency.Shows(Detail.Moments)) return null;
 
             var d = w.GetComponent<AOSWarriorWrapper>();
-            if (d == null || d.LastContext == null) return null;
+            if (d == null || !d.HasCurrentDecision) return null;
 
             var detail = d.LastDecisionDetail;
             // Можно шепнуть (60-TEMPTATION) — сказать как: без подсказки глагол «искушай» никто не найдёт.

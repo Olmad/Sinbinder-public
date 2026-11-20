@@ -36,6 +36,7 @@ namespace Sinbinder.AOS
 
         /// <summary>True if an accepted whisper changed the actual action to obedience.</summary>
         public bool LastWhisperCompelled { get; private set; }
+        private bool _persuadedAtVote;
 
         /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
         public DecisionContext LastContext { get; private set; }
@@ -43,11 +44,14 @@ namespace Sinbinder.AOS
         /// <summary>Identity of the command for which LastDecisionDetail was calculated.</summary>
         public uint LastDecisionCommandRevision { get; private set; }
 
+        /// <summary>Whether the last vote still describes the warrior's current orders.</summary>
+        public bool HasCurrentDecision =>
+            _warrior != null && LastContext != null &&
+            LastDecisionCommandRevision == _warrior.CommandRevision;
+
         /// <summary>Never display a previous command's refusal as the current verdict.</summary>
         public bool HasCurrentCommandDecision =>
-            _warrior != null && _warrior.HasCommand &&
-            LastContext != null && LastContext.HasCommand &&
-            LastDecisionCommandRevision == _warrior.CommandRevision;
+            HasCurrentDecision && _warrior.HasCommand && LastContext.HasCommand;
 
         void Awake()
         {
@@ -81,9 +85,8 @@ namespace Sinbinder.AOS
             // explicit external bargain; it changes the effective action,
             // not the votes. Preserve the raw result for the Soul Court.
             NaturalDecisionDetail = decision;
-            LastWhisperCompelled = context.HasCommand &&
-                Gameplay.Whisper.Persuaded(_warrior) &&
-                decision.Action != ActionType.ObeyCommand;
+            _persuadedAtVote = context.HasCommand && Gameplay.Whisper.Persuaded(_warrior);
+            LastWhisperCompelled = _persuadedAtVote && decision.Action != ActionType.ObeyCommand;
             if (LastWhisperCompelled)
             {
                 decision.Action = ActionType.ObeyCommand;
@@ -124,10 +127,23 @@ namespace Sinbinder.AOS
             return LastDecision;
         }
 
-        public void Execute(ActionType action)
+        internal bool TryExecuteDecision(DecisionContext context)
         {
-            if (_self != null && _self.IsDead) return;
+            if (_warrior == null || (_self != null && _self.IsDead) ||
+                context == null || !ReferenceEquals(context, LastContext))
+                return false;
 
+            bool persuadedNow = context.HasCommand && Gameplay.Whisper.Persuaded(_warrior);
+            if (!OrderIntegrity.MayExecuteDecision(LastDecisionCommandRevision, _warrior.CommandRevision,
+                _persuadedAtVote, persuadedNow))
+                return false;
+
+            Execute(LastDecision);
+            return true;
+        }
+
+        private void Execute(ActionType action)
+        {
             // Охотник пришёл убивать: враг рядом — он не стоит, что бы ни шептал грех. Стоящий у лагеря охотник
             // читался поломкой, а не характером (трейлер 29.10: охотники и наши стояли друг против друга; 59-PATH,
             // «набег как зрелище»). Грех у охотника — в том, как бьёт и когда бежит, а не в «стоять или нет».
@@ -147,10 +163,6 @@ namespace Sinbinder.AOS
                 Destroy(gameObject);
                 return;
             }
-
-            // Поддался шёпоту Греховода (Whisper, 60-TEMPTATION) — исполняет приказ, что бы ни решил сам.
-            if (action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded(_warrior))
-                action = ActionType.ObeyCommand;
 
             // Охотник без врага рядом идёт к своей цели, что бы ни выбрал голос
             // (HunterGoal): первая волна — к костру, вторая — по следу
@@ -244,130 +256,123 @@ namespace Sinbinder.AOS
         /// </summary>
         private bool _hasObeyedOrder;
         private uint _obeyedOrderRevision;
+        private uint? _moveOrderRevision;
         private float _siegeReady;
 
         /// <summary>
         /// Бить трон или дверь (54-TUG.md: «конец партии — уничтожение тронов»): дойти до вещи и бить её
         /// тем же уроном и темпом, что и тело (AutoAttack), — у вещи нет ни защиты, ни сдачи.
         /// </summary>
-        private void Siege(Sturdy target, UnitMover mover)
+        private bool Siege(Sturdy target, UnitMover mover)
         {
             var hit = target.GetComponentInChildren<Collider>();
             var near = hit != null ? hit.ClosestPoint(transform.position) : target.transform.position;
             var auto = GetComponent<AutoAttack>();
             float range = (auto != null ? auto.AttackRange : 2f) + 0.4f;
             bool reach = Vector3.Distance(new Vector3(transform.position.x, near.y, transform.position.z), near) <= range;
-            if (mover != null) { if (reach) mover.Stop(); else mover.CommandMove(near); }
-            if (!reach || Time.time < _siegeReady) return;
+            if (!reach) return MoveToward(mover, near);
+            mover?.Stop();
+            if (Time.time < _siegeReady) return false;
 
             _siegeReady = Time.time + SiegeBeat;
             target.TakeDamage(auto != null ? auto.AttackDamage : 6f, _warrior);
             var to = near - transform.position; to.y = 0f;
             if (to.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(to);
             GetComponent<WarriorAnimation>()?.Struck();
+            return true;
         }
 
         /// <summary>Удар по трону или двери — раз в столько секунд.</summary>
         private const float SiegeBeat = 1.3f;
+        private const float OrderReach = 1.5f;
+
+        private static bool MoveToward(UnitMover mover, Vector3 point)
+            => mover != null && mover.CommandMove(point) && mover.HasMovePath;
+
+        private (bool Accepted, bool Finished) ExecuteAttackOrder(GameObject target, UnitMover mover)
+        {
+            if (target == null || !target.activeInHierarchy) return (false, true);
+
+            var body = target.GetComponent<Damageable>();
+            if (body != null && !body.IsDead)
+            {
+                var attack = GetComponent<AutoAttack>();
+                if (attack == null) return (false, true);
+                if (Vector3.Distance(transform.position, target.transform.position) > attack.AttackRange)
+                    return (MoveToward(mover, target.transform.position), false);
+                mover?.Stop();
+                return (attack.ForceAttack(body), false);
+            }
+
+            // Осада тронов, дверей и подвесной печати из обучения.
+            var sturdy = target.GetComponentInParent<Sturdy>();
+            if (sturdy == null || sturdy.Broken) return (false, true);
+            var suspended = sturdy.GetComponent<DreamBowTarget>();
+            return (suspended != null ? suspended.ExecuteShot(_warrior) : Siege(sturdy, mover), false);
+        }
 
         private void ExecuteCommand()
         {
             var cmd = _warrior.Command;
             if (!cmd.IsSet) { Execute(ActionType.Idle); return; }
-
-            // Послушал Греховода — привыкает слушать его, а приказ по душе — сильнее (Favor, 54-TUG.md):
-            // раз на приказ, а не каждый такт.
-            // A purchased whisper is not earned trust. The player has
-            // bought this action, not proved that the soul trusts its Lord.
-            if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord) &&
-                (!_hasObeyedOrder || _obeyedOrderRevision != _warrior.CommandRevision))
-            {
-                _hasObeyedOrder = true;
-                _obeyedOrderRevision = _warrior.CommandRevision;
-                Favor.Obeyed(_warrior, cmd);
-            }
-
+            uint revision = _warrior.CommandRevision;
             var mover = GetComponent<UnitMover>();
+            bool accepted;
+            bool finished = false;
 
             switch (cmd.Kind)
             {
                 case CommandKind.Attack:
-                    if (cmd.Target != null)
-                    {
-                        var dmg = cmd.Target.GetComponent<Damageable>();
-                        if (dmg != null && !dmg.IsDead)
-                        {
-                            var autoAttack = GetComponent<AutoAttack>();
-                            bool reach = autoAttack != null
-                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.AttackRange;
-                            // В досягаемости — стоит и бьёт; не дошёл — идёт. Раньше шёл
-                            // и в досягаемости: упирался в цель грудью (п. 8 отзыва 21.10).
-                            if (mover != null)
-                            {
-                                if (reach) mover.Stop(); else mover.CommandMove(cmd.Target.transform.position);
-                            }
-                            // Деяние за убийство — когда клинок дойдёт (AutoAttack.Land).
-                            if (reach) autoAttack.ForceAttack(dmg);
-                            return;
-                        }
-
-                        // Осада: трон или дверь склепа («Перетягивание», Sturdy) — не тело, а вещь.
-                        var sturdy = cmd.Target.GetComponentInParent<Sturdy>();
-                        if (sturdy != null && !sturdy.Broken)
-                        {
-                            // Снаряжение-искуситель в обучении: настоящая команда
-                            // проходит выбор души, после послушания — стрела по
-                            // недосягаемой мечом подвесной печати.
-                            var suspended = sturdy.GetComponent<DreamBowTarget>();
-                            if (suspended != null) suspended.ExecuteShot(_warrior);
-                            else Siege(sturdy, mover);
-                            return;
-                        }
-                    }
-                    // Цель мертва или исчезла: приказ выполнен, снимаем.
-                    _warrior.ClearCommand();
+                    (accepted, finished) = ExecuteAttackOrder(cmd.Target, mover);
                     break;
 
-                // Отход исполняется тем же движением, что и обычный переход:
-                // разница между ними не в ногах, а в том, как приказ звучит
-                // для характера и что считать его исполнением.
                 case CommandKind.Move:
                 case CommandKind.FallBack:
-                    if (mover != null) mover.CommandMove(cmd.Point);
-                    // Дошёл — приказ исчерпан. Или дошёл, докуда пускают: точка
-                    // в предмете или за толпой (22 октября: такие приказы висели
-                    // вечно и выводили воина из жизни лагеря — «со временем всё
-                    // замирает», отзыв автора п. 16).
-                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f
-                        || (mover != null && Time.time - cmd.IssuedAt > 1f && mover.Arrived))
-                        _warrior.ClearCommand();
+                case CommandKind.AttackMove:
+                    bool atPoint = Vector3.Distance(transform.position, cmd.Point) < OrderReach;
+                    bool gracePassed = Time.time - cmd.IssuedAt > 1f;
+                    // Проверяем старый маршрут до запроса нового. Иначе агент
+                    // опять ждёт расчёта пути к недоступной точке на каждом такте.
+                    bool settled = gracePassed && _moveOrderRevision == revision
+                        && mover != null && mover.FinishedMove(cmd.Point);
+                    bool requested = !settled && mover != null && mover.CommandMove(cmd.Point);
+                    if (requested) _moveOrderRevision = revision;
+                    accepted = atPoint || (requested && mover.HasMovePath);
+                    finished = atPoint || settled || (gracePassed && !requested);
                     break;
 
                 // Патруль: туда и обратно, пока не снимут. Драка по дороге —
                 // уже решение голоса, а не маршрут.
                 case CommandKind.Patrol:
                     var leg = cmd.Back ? cmd.From : cmd.Point;
-                    if (mover != null) mover.CommandMove(leg);
-                    if (Vector3.Distance(transform.position, leg) < 1.5f) _warrior.TurnPatrol();
-                    break;
-
-                // Атака с ходу: идти в точку. Бить по дороге — дело голоса,
-                // и удар приказ исполняет (DecisionContext.SatisfiedBy).
-                case CommandKind.AttackMove:
-                    if (mover != null) mover.CommandMove(cmd.Point);
-                    if (Vector3.Distance(transform.position, cmd.Point) < 1.5f
-                        || (mover != null && Time.time - cmd.IssuedAt > 1f && mover.Arrived))
-                        _warrior.ClearCommand();
+                    accepted = MoveToward(mover, leg);
+                    if (Vector3.Distance(transform.position, leg) < OrderReach) _warrior.TurnPatrol();
                     break;
 
                 case CommandKind.Hold:
-                    if (mover != null) mover.Stop();
+                    mover?.Stop();
+                    accepted = mover != null;
                     break;
 
                 case CommandKind.Defend:
-                    ExecuteDefenseAtPost();
+                    accepted = ExecuteDefenseAtPost();
                     break;
+
+                default:
+                    return;
             }
+
+            // Привычка слушать растёт, когда воин смог начать исполнение
+            // или уже стоит в нужной точке. Шёпот не приносит верности.
+            if (_warrior.CommandRevision != revision) return;
+            if (accepted && !_persuadedAtVote && !string.IsNullOrEmpty(cmd.Lord) &&
+                (!_hasObeyedOrder || _obeyedOrderRevision != revision))
+            {
+                _hasObeyedOrder = true;
+                _obeyedOrderRevision = revision;
+                Favor.Obeyed(_warrior, cmd);
+            }
+            if (finished && _warrior.CommandRevision == revision) _warrior.ClearCommand();
         }
 
         /// <summary>
@@ -375,11 +380,12 @@ namespace Sinbinder.AOS
         /// weapon range. An AOS Attack candidate may satisfy Defend, but
         /// must not turn into an unbounded pursuit.
         /// </summary>
-        private void ExecuteDefenseAtPost()
+        private bool ExecuteDefenseAtPost()
         {
-            GetComponent<UnitMover>()?.Stop();
+            var mover = GetComponent<UnitMover>();
+            mover?.Stop();
             var aa = GetComponent<AutoAttack>();
-            if (aa == null || CombatManager.Instance == null) return;
+            if (aa == null || CombatManager.Instance == null) return mover != null;
 
             Damageable closest = null;
             float closestDistance = float.MaxValue;
@@ -393,7 +399,8 @@ namespace Sinbinder.AOS
                     closestDistance = distance;
                 }
             }
-            if (closest != null) aa.ForceAttack(closest);
+            bool attacking = closest != null && aa.ForceAttack(closest);
+            return attacking || mover != null;
         }
 
         /// <summary>Кто позвал на себя и на чей зов этот воин повёлся. Пусто — никто.</summary>
@@ -734,25 +741,6 @@ namespace Sinbinder.AOS
                 count++;
             }
             return count > 0 ? sum / count : transform.position + Vector3.back * 10f;
-        }
-
-        // Запись деяния при убийстве врага
-        public void OnKilledEnemy(Warrior enemy)
-        {
-            if (enemy == null) return;
-            _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 0.5f });
-            // Специальные деяния для перков
-            if (_warrior.Soul.Memory?.NarrativePerks != null)
-            {
-                foreach (var perk in _warrior.Soul.Memory.NarrativePerks)
-                {
-                    if (perk.PerkName == "Мститель" && enemy.DisplayName.Contains("Бандит"))
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
-                    if (perk.PerkName == "Бывший Охотник (ненавидит)" && enemy.Soul != null && Trades.OfOrder(enemy.Soul.Trade))
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
-                }
-            }
-            TitleManager.UpdateTitle(_warrior);
         }
     }
 }

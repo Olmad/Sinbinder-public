@@ -171,6 +171,14 @@ namespace Sinbinder.Crypt
                 float trust = KilledBy(Lords.Player) ? RisenTrust - KillerDebt : RisenTrust;
                 Allegiance.Change(risen.Id, risen.Loyalty, Lords.Player, trust - Allegiance.Of(risen.Id, risen.Loyalty, Lords.Player));
             }
+            else if (CryptWorkshop.Device == this)
+            {
+                // Запись сразу после рычага уже должна содержать поднятого.
+                SquadRoster.Recruit(risen);
+                var spawner = Object.FindFirstObjectByType<PrologueCampSpawner>();
+                if (spawner != null && spawner.gameObject.scene == gameObject.scene)
+                    risen.transform.SetParent(spawner.transform, worldPositionStays: true);
+            }
 
             // «Spark of Eternity» автора — «Новая душа»: душа получила тело.
             Audio.Music.Play(Audio.Cue.Spark);

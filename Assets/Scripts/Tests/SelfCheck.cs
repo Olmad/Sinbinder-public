@@ -94,6 +94,7 @@ namespace Sinbinder.Tests
                 ContextualTalkLines();
                 PatrolAndRush();
                 Titles();
+                KillDeeds();
                 Pursuit();
                 Sides();
                 HunterGoals();
@@ -975,6 +976,50 @@ namespace Sinbinder.Tests
             Same(TitleManager.TitleOf(killer), "Убийца Мертвецов", "охотник за семерых — не «Убийца Охотников»");
         }
 
+        private static void KillDeeds()
+        {
+            var killer = NewObject("Мстительный охотник").AddComponent<Warrior>();
+            var memory = new MemorySeed
+            {
+                NarrativePerks = new List<NarrativePerk>
+                {
+                    new() { PerkName = "Мститель" },
+                    new() { PerkName = "Бывший Охотник (ненавидит)" }
+                }
+            };
+            killer.Initialize(new SoulData("Мстительный охотник", MoralType.Neutral, 1,
+                    new float[SoulData.SpectrumCount], memory),
+                ShellType.Skeleton, new RelationshipSystem(null));
+
+            var bandit = MakeWarrior("Бандит", SinType.Greed, 50f);
+            var inquisitor = MakeWarrior("Ульрих", SinType.Pride, 50f);
+            inquisitor.Soul.SetTrade(Trade.Inquisitor);
+            var other = MakeWarrior("Страж", SinType.Wrath, 50f);
+
+            AOSEventHub.RecordKill(killer, bandit);
+            AOSEventHub.RecordKill(killer, inquisitor);
+            AOSEventHub.RecordKill(killer, other);
+
+            var deeds = killer.Reputation.Deeds;
+            var kills = deeds.FindAll(deed => deed.Type == DeedType.Kill);
+            Same(kills.Count, 3, "каждая павшая цель даёт ровно одно убийство");
+            if (kills.Count == 3)
+            {
+                Near(kills[0].Importance, 2f, "месть бандиту повышает важность убийства");
+                Near(kills[1].Importance, 2.5f, "смерть охотника повышает важность убийства для бывшего охотника");
+                Near(kills[2].Importance, 0.5f, "остальным убийствам остаётся базовая важность");
+            }
+            Same(deeds.FindAll(deed => deed.Type == DeedType.KillCommander).Count, 1,
+                "смерть инквизитора учитывается для титула «Каратель»");
+
+            var body = NewObject("Проверка события смерти").AddComponent<Damageable>();
+            body.Initialize(10f, 0f);
+            Check(!body.TryReportDeath(), "живое тело не выпускает событие смерти");
+            body.Initialize(0f, 0f);
+            Check(body.TryReportDeath(), "погибшее тело выпускает событие смерти");
+            Check(!body.TryReportDeath(), "одна гибель не выпускает событие повторно");
+        }
+
         /// <summary>
         /// Погоня (§62): «атаковать» было кандидатом только при враге рядом,
         /// и отбежавший на двенадцать метров переставал существовать.
@@ -1680,6 +1725,7 @@ namespace Sinbinder.Tests
         {
             var wasCommitment = Commitment.On;
             var kept = new List<SquadRoster.Member>(SquadRoster.Members);
+            var keptSave = SaveSystem.Snapshot();
 
             try
             {
@@ -1708,10 +1754,27 @@ namespace Sinbinder.Tests
 
                 Commitment.Set(true);
 
+                var memory = MemoryProcessor.Instance != null ? MemoryProcessor.Instance
+                    : NewObject("Память пробы").AddComponent<MemoryProcessor>();
+                var emotion = EmotionSystem.Instance != null ? EmotionSystem.Instance
+                    : NewObject("Эмоции пробы").AddComponent<EmotionSystem>();
+                string firstId = SquadRoster.Members[0].WarriorId;
+                string secondId = SquadRoster.Members[1].WarriorId;
+                var warrior = SavedWarrior("Проба", firstId, NewObject("Воин записи"));
+                memory.CreateMemory(warrior, "AllySavedMe", secondId, EmotionType.Joy, 0.9f);
+                memory.CreateMemory(warrior, "AllySavedMe", secondId, EmotionType.Joy, 1.1f);
+                var rescue = memory.GetMemories(warrior)[0];
+                rescue.CreationTime = Time.time - 120f;
+                float rescueStrength = rescue.Strength;
+                emotion.TriggerEmotion(warrior, EmotionType.Fear, 0.6f);
+
                 var snapshot = SaveSystem.Snapshot();
                 Same(snapshot.Squad.Count, 2, "снимок взял не весь отряд");
                 snapshot.Bag.Add(new InventoryItem("Мясо пробы", "", ItemType.Provision, 3));
                 snapshot.ChestLooted = true;
+
+                memory.CreateMemory(warrior, "AllyBetrayedMe", secondId, EmotionType.Anger, 1f);
+                emotion.TriggerEmotion(warrior, EmotionType.Anger, 1f);
 
                 // Через текст и обратно: в игре между снимком и возвратом
                 // всегда стоит файл, и проверять надо путь целиком.
@@ -1729,6 +1792,7 @@ namespace Sinbinder.Tests
 
                 var first = SquadRoster.Members[0];
                 Same(first.Name, "Проба", "имя не пережило файл");
+                Same(first.WarriorId, firstId, "личность воина не пережила файл");
                 Same(first.Sin, SinType.Greed, "грех не пережил файл");
                 Same(first.Moral, MoralType.Vicious, "мораль не пережила файл");
                 Near(first.Loyalty, 42f, "верность не пережила файл");
@@ -1758,6 +1822,16 @@ namespace Sinbinder.Tests
                 Same(first.Shell, ShellType.Zombie, "тело не пережило файл — зомби вернулся скелетом");
                 Same(second.Shell, ShellType.Skeleton, "тело по умолчанию — не скелет");
 
+                var memories = memory.GetMemories(warrior);
+                Check(memories.Count == 1 && memories[0].EventType == "AllySavedMe"
+                      && memories[0].TargetID == secondId, "возврат принёс память из будущего или потерял цель");
+                if (memories.Count == 1)
+                    Near(memories[0].Strength, rescueStrength, "загрузка изменила силу памяти");
+                Same(emotion.GetDominantEmotion(warrior), EmotionType.Fear,
+                    "загрузка потеряла прежнюю эмоцию");
+                Near(emotion.GetEmotionWeight(warrior, "Fear"), 1.5f,
+                    "загрузка изменила вес Страха");
+
                 Check(Commitment.On, "режим обязательств не пережил файл — "
                                    + "ответственную игру можно было бы открыть свободной");
 
@@ -1769,6 +1843,38 @@ namespace Sinbinder.Tests
                 Check(Commitment.On && !SaveSystem.CanRestartPart,
                       "в игре с обязательством «С начала доли» не предлагается");
 
+                // В той же сцене тела остаются, включая скрытое тело ушедшего.
+                var present = SavedWarrior(first.Name, null, Visible("Воин на месте"));
+                var ally = SavedWarrior(second.Name, null, Visible("Союзник на месте"));
+                ally.gameObject.SetActive(false);
+                back.Squad[0].Memories.Add(new SavedMemory
+                {
+                    EventType = "AllyBetrayedMe", Emotion = EmotionType.Anger,
+                    Importance = 1f, Age = -1f,
+                });
+                back.Squad[0].Memories.Add(new SavedMemory
+                {
+                    EventType = "EnemyKilledAlly", Emotion = EmotionType.Anger,
+                    Importance = 1f, DecayRate = float.PositiveInfinity,
+                });
+                back.Squad[0].Emotions.Add(new SavedEmotion
+                {
+                    Type = EmotionType.Anger, Intensity = float.PositiveInfinity,
+                });
+                Check(SaveSystem.ReturnTo(back), "сохранение своей доли не открывается");
+                memories = memory.GetMemories(present);
+                Check(memories.Count == 1 && memories[0].TargetID == ally.Id,
+                    "память потеряла скрытую цель или приняла испорченную запись");
+                Same(emotion.GetDominantEmotion(present), EmotionType.Fear,
+                    "эмоция потерялась или испорченная запись её перебила");
+
+                var legacy = JsonUtility.FromJson<SaveGame>(
+                    "{\"Version\":1,\"Squad\":[{\"Name\":\"Проба\"}],\"Shelf\":[]}");
+                Check(SaveSystem.Restore(legacy), "старый снимок без состояния AOS больше не читается");
+                Check(memory.GetMemories(present).Count == 0
+                      && emotion.GetDominantEmotion(present) == EmotionType.Calm,
+                    "снимок без состояния AOS оставил опыт нынешней партии");
+
                 // Файл другого уклада обязан быть отвергнут целиком.
                 back.Version = SaveGame.Current + 1;
                 Check(!SaveSystem.Restore(back),
@@ -1778,8 +1884,17 @@ namespace Sinbinder.Tests
             finally
             {
                 SquadRoster.Set(kept);
+                SaveSystem.RestoreAos(keptSave);
                 Commitment.Set(wasCommitment);
             }
+        }
+
+        private static Warrior SavedWarrior(string name, string id, GameObject holder)
+        {
+            var warrior = holder.AddComponent<Warrior>();
+            warrior.Initialize(new SoulData(name, SinType.Greed, MoralType.Neutral, 1), ShellType.Skeleton,
+                null, warriorId: id);
+            return warrior;
         }
 
         // ================= утверждения =================

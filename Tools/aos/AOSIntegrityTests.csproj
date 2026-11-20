@@ -9,7 +9,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="AutoAttackTickChecks.cs" />
     <!-- The production AOS source, not a reconstructed copy. -->
     <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AutoAttackAOS.cs" Link="AutoAttackAOS.cs" />
   </ItemGroup>
 </Project>

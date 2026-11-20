@@ -88,8 +88,11 @@ class CorrectedTextRegressions(unittest.TestCase):
     def test_tutorial_does_not_claim_sole_cause_of_changed_decision(self):
         self.assertNotIn("Причины больше нет: убийцы мертвы.", self.tutorial)
         self.assertNotIn("у его души нашлась другая причина.", self.tutorial)
-        self.assertIn("Теперь он послушался приказа.", self.tutorial)
-        self.assertIn("Приказ снова не выполнен. Обстановка изменилась.", self.tutorial)
+        self.assertNotIn("Приказ снова не выполнен.", self.tutorial)
+        for phrase in ("На этот раз душа решила послушаться.", "Душа колеблется.",
+                       "Душа отказалась от приказа.", "Душа выбрала собственный поступок."):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.tutorial)
 
     def test_combat_dialogue_does_not_invent_tasting_specific_vials(self):
         self.assertNotIn("Твои склянки на вкус пробовал.", self.encounter)
@@ -128,9 +131,11 @@ class CorrectedTextRegressions(unittest.TestCase):
             "Память удерживает от помощи.",
             "Добрых черт в ней больше, чем грешных. А добрая слушается.",
             "Грешных черт в ней больше, чем добрых. А грешница слушаться не привыкла.",
-            "Теперь он послушался приказа. Убийц рядом больше нет.",
-            "Теперь она послушалась приказа. Убийц рядом больше нет.",
-            "Приказ снова не выполнен. Обстановка изменилась. Наведите на воина мышь, чтобы узнать, что повлияло на решение.",
+            "На этот раз душа решила послушаться.",
+            "Душа колеблется.",
+            "Душа отказалась от приказа.",
+            "Душа выбрала собственный поступок.",
+            "Голос души: {0}.",
             "Алхимик. От твоих зелий хоть сытым станешь?",
         )
         for phrase in phrases:

@@ -41,8 +41,11 @@ assert "attacker.GetComponentInParent<Warrior>()" in p
 damage=src("Assets/Scripts/Gameplay/Damageable.cs")
 combat=src("Assets/Scripts/Gameplay/CombatManager.cs")
 assert "PersonalExpedition.OnGuardAttacked(_warrior,attacker);" in damage
-assert "bool alreadyEnemy=unit!=null && _enemyUnits.Contains(unit);" in combat
-assert "if (!alreadyEnemy && unit != null && !unit.IsDead)" in combat
+assert "RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits)" in combat
+assert "if (unit == null || unit.IsDead) return;" in combat
+registration = combat.split("private void Register(", 1)[1].split("private bool RemoveFromTeams(", 1)[0]
+assert registration.index("if (destination.Contains(unit)") < registration.index("destination.Add(unit)")
+assert registration.index("RemoveFromTeams(unit);") < registration.index("ObserveBattleRoster();")
 assert "_state.CaravanPassed=true;" in p and "_state.CaravanAssaulted=true;" in p
 assert "expedition.OpenCaravanChoice" in p
 assert "GUI.Button(" in p

@@ -195,6 +195,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public uint CommandRevision { get; private set; }
 
+        internal static event System.Action CommandChanged;
+
         public bool HasCommand => _command.IsSet;
 
         /// <param name="muffle">Насколько приглушён голос Греховода
@@ -218,16 +220,17 @@ namespace Sinbinder.Gameplay
                 Lord = lord ?? Lords.Player,
             };
             Favor.Issued(_command.Lord, _command.IssuedAt);
+            CommandChanged?.Invoke();
         }
 
         public void ClearCommand()
         {
             // Cancelling an order must also invalidate any pending refusal.
-            if (_command.IsSet)
-            {
-                unchecked { CommandRevision++; }
-            }
+            bool hadCommand = _command.IsSet;
             _command = default;
+            if (!hadCommand) return;
+            unchecked { CommandRevision++; }
+            CommandChanged?.Invoke();
         }
 
         /// <summary>
@@ -268,12 +271,13 @@ namespace Sinbinder.Gameplay
         /// оставалась косметикой, хотя <see cref="ShellData"/> уже читали
         /// и экран сборки, и <see cref="Core.ShellBinder"/>.
         /// </summary>
-        public void Initialize(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem, bool isCommander = false, Team team = Team.Player)
+        public void Initialize(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem,
+            bool isCommander = false, Team team = Team.Player, string warriorId = null)
         {
             var data = Core.ShellLibrary.Get(shell);
 
             Core.ShellBinder.Bind(soul, data);
-            InitializeCore(soul, shell, relSystem, isCommander, team);
+            InitializeCore(soul, shell, relSystem, isCommander, team, warriorId);
             ApplyShellBody(data);
         }
 
@@ -302,9 +306,10 @@ namespace Sinbinder.Gameplay
                 agent.speed = shell.movementSpeed;
         }
 
-        private void InitializeCore(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem, bool isCommander, Team team)
+        private void InitializeCore(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem,
+            bool isCommander, Team team, string warriorId = null)
         {
-            _id = System.Guid.NewGuid().ToString();
+            _id = string.IsNullOrEmpty(warriorId) ? System.Guid.NewGuid().ToString() : warriorId;
             _soul = soul;
             _shell = shell;
             _virtue = new Core.VirtueSystem(soul);

@@ -1,6 +1,7 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
@@ -9,10 +10,10 @@ namespace Sinbinder.Gameplay
     {
         public static CombatManager Instance { get; private set; }
 
-        private List<Damageable> _playerUnits = new();
-        private List<Damageable> _enemyUnits = new();
+        private readonly List<Damageable> _playerUnits = new();
+        private readonly List<Damageable> _enemyUnits = new();
         private readonly List<Damageable> _neutralUnits = new();
-        private List<HarvestableBody> _bodiesOnField = new();
+        private readonly List<HarvestableBody> _bodiesOnField = new();
         private readonly BattleEndGate _battleEndGate = new BattleEndGate();
 
         public System.Action<Damageable, GameObject> OnAnyDeath;
@@ -22,32 +23,39 @@ namespace Sinbinder.Gameplay
 
         void Awake()
         {
-            if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
-            else Destroy(gameObject);
+            if (Instance != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
-        public void RegisterEnemyUnit(Damageable unit)
+        void OnDestroy()
         {
-            // The same living guard can be registered by a hostility
-            // transition and later by Damageable.Start. Count it once;
-            // duplicated registration should not restart battle completion.
-            bool alreadyEnemy=unit!=null && _enemyUnits.Contains(unit);
-            Register(unit, _enemyUnits);
-            if (!alreadyEnemy && unit != null && !unit.IsDead)
-                _battleEndGate.EnemyRegistered();
+            if (Instance != this) return;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            Instance = null;
         }
+
+        private void OnSceneUnloaded(Scene scene) => _battleEndGate.Reset();
+
+        public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
+        public void RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits);
         public void RegisterNeutralUnit(Damageable unit) => Register(unit, _neutralUnits);
 
         private void Register(Damageable unit, List<Damageable> destination)
         {
-            if (unit == null) return;
+            if (unit == null || unit.IsDead) return;
             if (destination.Contains(unit)
                 && (destination == _playerUnits || !_playerUnits.Contains(unit))
                 && (destination == _enemyUnits || !_enemyUnits.Contains(unit))
                 && (destination == _neutralUnits || !_neutralUnits.Contains(unit))) return;
             RemoveFromTeams(unit);
             destination.Add(unit);
+            ObserveBattleRoster();
             OnUnitsChanged?.Invoke();
         }
 
@@ -60,8 +68,15 @@ namespace Sinbinder.Gameplay
 
         public void UnregisterUnit(Damageable unit)
         {
-            if (!ReferenceEquals(unit, null) && RemoveFromTeams(unit)) OnUnitsChanged?.Invoke();
+            if (ReferenceEquals(unit, null) || !RemoveFromTeams(unit)) return;
+            ObserveBattleRoster();
+            OnUnitsChanged?.Invoke();
         }
+
+        private static bool IsAlive(Damageable unit) => unit != null && !unit.IsDead;
+
+        private void ObserveBattleRoster() =>
+            _battleEndGate.RosterChanged(_playerUnits.Exists(IsAlive), _enemyUnits.Exists(IsAlive));
 
         public void UpdateTeam(Damageable unit, Team newTeam)
         {
@@ -127,28 +142,43 @@ namespace Sinbinder.Gameplay
             return closest;
         }
 
-        public void OnUnitKilled(Damageable killed, GameObject killer)
+        internal void OnUnitKilled(Damageable killed, GameObject killer)
         {
+            if (killed == null || !killed.TryReportDeath()) return;
             using var cost = Core.Cost.Of("death");
-            UnregisterUnit(killed);
+            var victim = killed.Warrior;
+            bool lordDown = Lords.Active && victim != null && Lords.Of(victim) != null;
+            bool playerUnit = _playerUnits.Contains(killed);
+            bool enemyUnit = _enemyUnits.Contains(killed);
+            bool registered = RemoveFromTeams(killed);
+            if (lordDown)
+                ObserveBattleRoster();
+            else if (playerUnit)
+                _battleEndGate.RecordDeath(true, _playerUnits.Exists(IsAlive), victim?.Id);
+            else if (enemyUnit)
+                _battleEndGate.RecordDeath(false, _enemyUnits.Exists(IsAlive), null);
+            if (registered) OnUnitsChanged?.Invoke();
+
             // «Перетягивание»: спас, победа под началом Греховода (Favor); в демо — ничего.
             if (Lords.Active && killer != null)
             {
-                Favor.Killed(killed.Warrior, killer.GetComponent<Warrior>());
-                Hostility.NoteKill(killed.Warrior, killer.GetComponent<Warrior>());
+                var attacker = killer.GetComponent<Warrior>();
+                Favor.Killed(victim, attacker);
+                Hostility.NoteKill(victim, attacker);
             }
 
             // Пал Греховод («Перетягивание», автор 28.10): ни тела для жатвы, ни души — только кошель
             // на земле, и через минуту он встаёт у трона (TugMatch).
-            if (Lords.Active && killed.Warrior != null && Lords.Of(killed.Warrior) != null)
+            if (lordDown)
             {
-                TugMatch.LordDown(killed.Warrior);
+                TugMatch.LordDown(victim);
+                AOS.AOSEventHub.Instance?.OnUnitDied(killed, killer, lordDown: true);
                 return;
             }
-            if (killed.Warrior != null)
+            if (victim != null)
             {
                 // Resolve card escrow before the fallen wallet becomes loot.
-                CardTable.Instance?.CancelForDeath(killed.Warrior);
+                CardTable.Instance?.CancelForDeath(victim);
                 var bodyLoot = CreateLootOnField(killed);
                 // Direct death path: independent of watcher Update timing.
                 // The bag takes tangible belongings. If LootChain is off,
@@ -156,11 +186,11 @@ namespace Sinbinder.Gameplay
                 // once so enemies do not leave untouchable invisible loot.
                 FallenBag.CreateFor(killed, bodyLoot);
             }
+            AOS.AOSEventHub.Instance?.OnUnitDied(killed, killer);
             if (OnAnyDeath != null)
                 foreach (var d in OnAnyDeath.GetInvocationList())
                     using (Core.Cost.Of(Core.Cost.On ? "death>" + d.Method.DeclaringType?.Name : null))
                         ((System.Action<Damageable, GameObject>)d)(killed, killer);
-            CheckBattleEnd();
         }
 
         /// <summary>
@@ -189,24 +219,31 @@ namespace Sinbinder.Gameplay
             return harvestableBody;
         }
 
-        private void CheckBattleEnd()
+        // Resolve after attacks and death callbacks so both sides can fall in the same frame.
+        void LateUpdate()
         {
-            if (_battleEndGate.TryComplete(_enemyUnits.Exists(e => e != null && !e.IsDead)))
-            {
-                int enemiesKilled = _enemyUnits.Count;
-                int alliesLost = 0;
-                foreach (var unit in _playerUnits)
-                    if (unit == null || unit.IsDead) alliesLost++;
-                Debug.Log("[COMBAT] Бой окончен! Лут остался на поле боя.");
-                AOS.AOSEventHub.Instance?.OnBattleEnd(true, enemiesKilled, alliesLost);
+            if (!_battleEndGate.TryComplete(out var result)) return;
+            // In Tug, a lord can rise again and only the throne determines match defeat.
+            if (Lords.Active && result.Outcome != BattleOutcome.Victory) return;
 
-                // Цепь добычи (§41): грех решает, кто что понесёт.
-                LootChain.Share(_playerUnits, _bodiesOnField);
-            }
+            Debug.Log($"[COMBAT] {result.Outcome}: врагов пало {result.EnemiesKilled}, своих {result.AlliesLost}.");
+            AOS.AOSEventHub.Instance?.OnBattleEnd(result);
+
+            // Цепь добычи (§41): грех решает, кто что понесёт.
+            if (result.Outcome == BattleOutcome.Victory) LootChain.Share(_playerUnits, _bodiesOnField);
         }
 
-        public int GetAlivePlayerCount() { _playerUnits.RemoveAll(u => u == null || u.IsDead); return _playerUnits.Count; }
-        public int GetAliveEnemyCount() { _enemyUnits.RemoveAll(u => u == null || u.IsDead); return _enemyUnits.Count; }
+        public int GetAlivePlayerCount() => CountAlive(_playerUnits);
+        public int GetAliveEnemyCount() => CountAlive(_enemyUnits);
+
+        private static int CountAlive(List<Damageable> units)
+        {
+            int count = 0;
+            foreach (var unit in units)
+                if (IsAlive(unit)) count++;
+            return count;
+        }
+
         public List<Damageable> GetAliveAllies() => new List<Damageable>(_playerUnits);
         public List<Damageable> GetAliveEnemies() => new List<Damageable>(_enemyUnits);
         public List<Warrior> GetAllWarriors()

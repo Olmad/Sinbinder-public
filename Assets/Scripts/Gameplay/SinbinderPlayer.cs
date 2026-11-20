@@ -124,7 +124,9 @@ namespace Sinbinder.Gameplay
             //
             // Он командует приказом (ActionType.ObeyCommand), а не флагом.
             // Старшего отряду выбирают на совете — вот он и помечается.
-            player.Initialize(soul, ShellType.Skeleton, null, isCommander: false, team: Team.Player);
+            // Собранный заново Греховод остаётся целью прежних воспоминаний отряда.
+            player.Initialize(soul, ShellType.Skeleton, null, isCommander: false, team: Team.Player,
+                warriorId: "SinbinderPlayer");
 
             // Ноги, урон, выделение — как у всех. Скорость чуть выше
             // отрядной: за героем, который ходит медленнее свиты,

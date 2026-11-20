@@ -115,7 +115,8 @@ body=(r/"Assets/Scripts/Gameplay/Damageable.cs").read_text(encoding="utf-8")
 warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
 rules=(r/"Assets/Scripts/Gameplay/ExpeditionHealthRules.cs").read_text(encoding="utf-8")
 assert "public float HealthFraction;" in roster
-assert "m.HealthFraction=ExpeditionHealthRules.Capture(w.HP,w.MaxHP)" in roster
+assert "survivors.Add(Capture(w, Previous(w)));" in roster
+assert "member.HealthFraction = ExpeditionHealthRules.Capture(w.HP, w.MaxHP);" in roster
 assert "public static void ApplyExpeditionHealth(string name, float fraction)" in roster
 assert "journey.SurvivorHealth=CopyHealth(fight.Health);" in m
 assert "SquadRoster.ApplyExpeditionHealth(condition.Name" in m

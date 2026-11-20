@@ -16,62 +16,31 @@ namespace Sinbinder.AOS
             else Destroy(gameObject);
         }
 
-        void Start()
-        {
-            if (CombatManager.Instance != null)
-                CombatManager.Instance.OnAnyDeath += OnUnitDied;
-        }
-
         void OnDestroy()
         {
-            if (CombatManager.Instance != null)
-                CombatManager.Instance.OnAnyDeath -= OnUnitDied;
+            if (Instance == this) Instance = null;
         }
 
-        private void OnUnitDied(Damageable killed, GameObject killer)
+        internal void OnUnitDied(Damageable killed, GameObject killer, bool lordDown = false)
         {
-            if (killed?.Warrior == null) return;
+            if (killed == null || killed.Warrior == null) return;
 
             var victim = killed.Warrior;
-            var killerWarrior = killer?.GetComponent<Warrior>();
+            var killerWarrior = killer != null ? killer.GetComponent<Warrior>() : null;
 
             if (killerWarrior != null)
             {
-                // Эмоции
-                using (Core.Cost.Of("death.emotion")) EmotionSystem.Instance?.TriggerEmotion(killerWarrior, EmotionType.Joy, 0.3f);
-                // Запись деяния "Убийство" для убийцы
-                killerWarrior.Reputation.Deeds.Add(new DeedRecord
+                if (!lordDown)
                 {
-                    Type = DeedType.Kill,
-                    Importance = 0.5f
-                });
-                MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, EmotionType.Joy, 0.5f);
-
-                // Инквизитор — командир охотников и ловчих (слово автора,
-                // 17 сентября). Убить его — другое деяние, и титул на нём
-                // свой: «Каратель». До этого KillCommander не писал никто,
-                // и титул был недостижим по данным, а не по цене.
-                //
-                // Опознаётся по чину (ремеслу души) — с 16 октября он есть:
-                // имя у инквизитора своё («Ульрих»), и по строке его не узнать.
-                if (victim.Soul != null && victim.Soul.Trade == Trade.Inquisitor)
-                    killerWarrior.Reputation.Deeds.Add(new DeedRecord
-                        { Type = DeedType.KillCommander, Importance = 0.5f });
-
-                // Проверка специальных перков убийцы (Мститель, Бывший Охотник и т.д.)
-                if (killerWarrior.Soul.Memory?.NarrativePerks != null)
-                {
-                    foreach (var perk in killerWarrior.Soul.Memory.NarrativePerks)
-                    {
-                        if (perk.PerkName == "Мститель" && victim.DisplayName.Contains("Бандит"))
-                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 1.5f });
-                        if (perk.PerkName == "Бывший Охотник (ненавидит)" && victim.Soul != null && Trades.OfOrder(victim.Soul.Trade))
-                            killerWarrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = 2.0f });
-                    }
+                    using (Core.Cost.Of("death.emotion"))
+                        EmotionSystem.Instance?.TriggerEmotion(killerWarrior, EmotionType.Joy, 0.3f);
+                    MemoryProcessor.Instance?.CreateMemory(killerWarrior, "KilledEnemy", victim.Id, EmotionType.Joy, 0.5f);
                 }
-                // Обновляем титул убийцы
-                using (Core.Cost.Of("death.title")) TitleManager.UpdateTitle(killerWarrior);
+                RecordKill(killerWarrior, victim);
             }
+
+            // В «Перетягивании» Греховод вернётся к трону.
+            if (lordDown) return;
 
             // Реакция союзников на смерть
             using var witnesses = Core.Cost.Of("death.witnesses");
@@ -91,6 +60,31 @@ namespace Sinbinder.AOS
                         MemoryProcessor.Instance?.CreateMemory(w, "EnemyKilledAlly", killerWarrior.Id, EmotionType.Anger, 0.8f);
                 }
             }
+        }
+
+        internal static void RecordKill(Warrior killer, Warrior victim)
+        {
+            // Титулы проверяют и число убийств, и их суммарную важность.
+            // Бонусы за черты личности входят в важность единственного деяния.
+            float importance = 0.5f;
+            var perks = killer.Soul?.Memory?.NarrativePerks;
+            if (perks != null)
+            {
+                foreach (var perk in perks)
+                {
+                    if (perk?.PerkName == "Мститель" && victim.DisplayName.Contains("Бандит"))
+                        importance += 1.5f;
+                    if (perk?.PerkName == "Бывший Охотник (ненавидит)" && victim.Soul != null && Trades.OfOrder(victim.Soul.Trade))
+                        importance += 2.0f;
+                }
+            }
+            killer.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.Kill, Importance = importance });
+
+            // Смерть инквизитора даёт отдельное деяние для титула «Каратель».
+            if (victim.Soul != null && victim.Soul.Trade == Trade.Inquisitor)
+                killer.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.KillCommander, Importance = 0.5f });
+
+            using (Core.Cost.Of("death.title")) TitleManager.UpdateTitle(killer);
         }
 
         public void OnAllySaved(Warrior savior, Warrior saved)
@@ -225,7 +219,7 @@ namespace Sinbinder.AOS
             }
         }
 
-        public void OnBattleEnd(bool playerWon, int enemiesKilled, int alliesLost)
+        internal void OnBattleEnd(BattleResult result)
         {
             // Сводка по решениям — единственное место, где видно долю
             // отказов при отданном приказе. Разработчику, не игроку:
@@ -239,16 +233,25 @@ namespace Sinbinder.AOS
             // и молчал во всех следующих. В демо с одним боем это невидимо,
             // а в бесконечных миссиях воины замолкали бы навсегда.
             // Снимаем в конце боя: к следующему они снова при голосе.
-            if (CombatManager.Instance != null)
-                Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()
-                      ?.ResetAllBattleDialogues();
-            var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
-            foreach (var w in allWarriors)
+            Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()?.ResetAllBattleDialogues();
+
+            var memories = MemoryProcessor.Instance;
+            // При полном разгроме записываем исход по идентификаторам павших.
+            if (result.Outcome != BattleOutcome.Victory && memories != null)
+                foreach (string warriorId in result.FallenAllies)
+                    memories.RecordBattle(warriorId, result);
+
+            var combat = CombatManager.Instance;
+            var allies = combat.GetAliveAllies();
+            int alliesAlive = combat.GetAlivePlayerCount();
+            foreach (var ally in allies)
             {
-                if (w.IsDead) continue;
-                if (w.Team == Team.Player)
+                if (ally == null || ally.IsDead) continue;
+                var w = ally.Warrior;
+                if (w != null)
                 {
-                    MemoryProcessor.Instance?.RecordBattle(w, playerWon, enemiesKilled, alliesLost);
+                    if (memories != null && !string.IsNullOrEmpty(w.Id))
+                        memories.RecordBattle(w.Id, result);
 
                     // Деяние "Выживание в миссии"
                     w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
@@ -271,7 +274,7 @@ namespace Sinbinder.AOS
                     if (body != null) body.ForgetBattle();
 
                     // Если союзников не осталось – "Последний рубеж"
-                    if (alliesLost >= CombatManager.Instance.GetAlivePlayerCount())
+                    if (result.AlliesLost > 0 && result.AlliesLost >= alliesAlive)
                         w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.LastStand, Importance = 1.0f });
 
                     TitleManager.UpdateTitle(w);

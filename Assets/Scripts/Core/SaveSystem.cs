@@ -1,6 +1,7 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
@@ -18,10 +19,8 @@ namespace Sinbinder.Core
     /// по кускам из пяти вызывающих значило бы завести пятую и шестую
     /// правду о том, что такое «игра» — поэтому сборка одна и она здесь.
     ///
-    /// <b>Чего снимок не содержит.</b> Середины боя. Бой длится минуту,
-    /// решает его движок, и скрытого состояния у движка нет: те же души
-    /// в том же положении дадут тот же исход. Переигрывать бой незачем —
-    /// а вот переигрывать вылазку очень хочется, и ровно поэтому есть
+    /// Состояние отряда включает память и эмоции. Позиции, приказы и
+    /// текущий ход боя остаются в сцене. Возврат к началу доли регулирует
     /// <see cref="Commitment"/>.
     /// </summary>
     public static class SaveSystem
@@ -104,11 +103,17 @@ namespace Sinbinder.Core
             save.Chest = TrophyChest.Remaining();
             save.Lessons = Lesson.Saved();
 
+            float now = Time.time;
+            save.EmotionDecayDelay = AOS.EmotionSystem.DecayDelay;
             foreach (var m in SquadRoster.Members)
             {
                 save.Squad.Add(new SavedMember
                 {
                     Name = m.Name,
+                    WarriorId = m.WarriorId,
+                    JoinedAfterRaid = m.JoinedAfterRaid,
+                    Memories = AOS.MemoryProcessor.Capture(m.WarriorId, now),
+                    Emotions = AOS.EmotionSystem.Capture(m.WarriorId),
                     Sin = (int)m.Sin,
                     Moral = (int)m.Moral,
                     Gender = (int)m.Gender,
@@ -188,13 +193,17 @@ namespace Sinbinder.Core
         /// от <see cref="ReturnTo"/> до <c>sceneLoaded</c>.
         /// </summary>
         private static string _unfold;
+        private static (SaveGame Save, string[] WarriorIds)? _aosOnArrival;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Listen()
         {
+            AOS.MemoryProcessor.Forget();
+            AOS.EmotionSystem.Forget();
             Arriving = false;
             StagedScene = null;
             _unfold = null;
+            _aosOnArrival = null;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Arrived;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += Arrived;
         }
@@ -205,6 +214,13 @@ namespace Sinbinder.Core
             Arriving = false;
             StagedScene = null;
             Gameplay.FallenBag.OnMapLoaded(scene.name);
+
+            // Уходящая сцена может доиграть кадр после LoadScene. Заменяем
+            // память сейчас, когда те события уже не могут попасть в запись.
+            var savedAos = _aosOnArrival;
+            _aosOnArrival = null;
+            if (savedAos.HasValue)
+                RestoreAos(savedAos.Value.Save, savedAos.Value.WarriorIds);
 
             // Начало доли — её отметка: сюда вернёт «С начала доли».
             // Сцена — пришедшая, а не «открытая»: в sceneLoaded Unity могла
@@ -290,28 +306,26 @@ namespace Sinbinder.Core
             // inventory state. A save from a missing scene must fail atomically.
             // The raid part is hosted by the camp scene, not a standalone scene.
             if (save == null) return false;
-            if (!string.IsNullOrEmpty(save.Scene) &&
-                (reload || save.Scene != Here) &&
-                !Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene)))
+            bool changeScene = !string.IsNullOrEmpty(save.Scene) && (reload || save.Scene != Here);
+            string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
+            if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {
-                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{RaidEvent.HostOf(save.Scene)}» нет в сборке: загрузка отменена.");
+                Debug.LogWarning($"[ЗАПИСЬ] Сцены «{scene}» нет в сборке: загрузка отменена.");
                 return false;
             }
 
-            if (!Restore(save)) return false;
+            if (!Restore(save, keepScene: !changeScene)) return false;
 
             // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
             // и запись «лагерь до совета» по сцене совпала бы с ним: состав
             // вернулся бы, а охотники остались бы на поле. «С начала доли»
             // (reload) грузит сцену и в той же доле — начать её заново.
-            if (string.IsNullOrEmpty(save.Scene)) return true;
-            if (save.Scene == Here && !reload) return true;
+            if (!changeScene) return true;
 
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).
-            string scene = RaidEvent.HostOf(save.Scene);
-
             Arriving = true;
+            _aosOnArrival = (save, SavedWarriorIds());
             _unfold = scene != save.Scene ? save.Scene : null;
             GamePauseController.Instance?.Resume();
             UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
@@ -323,7 +337,9 @@ namespace Sinbinder.Core
         /// не от этой игры: молча прочитать половину хуже, чем не
         /// прочитать ничего, — половина выглядит целой.
         /// </summary>
-        public static bool Restore(SaveGame save)
+        public static bool Restore(SaveGame save) => Restore(save, keepScene: true);
+
+        private static bool Restore(SaveGame save, bool keepScene)
         {
             if (save == null) return false;
 
@@ -346,12 +362,29 @@ namespace Sinbinder.Core
 
             Gameplay.CardTable.BeforeSaveOrLoad();
 
+            // В той же доле тела остаются на месте, включая ещё не
+            // вернувшихся с автоматической вылазки. Если запись из другой
+            // партии, переносим память на живой состав и поправляем её цели.
+            var liveWarriors = keepScene
+                ? Object.FindObjectsByType<Warrior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .Where(w => w != null && w.Soul != null && !w.IsDead
+                        && w.Team == Team.Player && !(w is SinbinderPlayer))
+                    .ToLookup(w => w.DisplayName)
+                : null;
+            var savedNames = save.Squad.ToLookup(m => m.Name);
             var members = new List<SquadRoster.Member>();
             foreach (var m in save.Squad)
             {
+                var namesakes = liveWarriors?[m.Name];
+                var living = namesakes?.FirstOrDefault(w => w.Id == m.WarriorId);
+                if (living == null && namesakes?.Count() == 1 && savedNames[m.Name].Count() == 1)
+                    living = namesakes.First();
+
                 members.Add(new SquadRoster.Member
                 {
                     Name = m.Name,
+                    WarriorId = living != null ? living.Id : m.WarriorId,
+                    JoinedAfterRaid = m.JoinedAfterRaid,
                     Sin = (SinType)m.Sin,
                     Moral = (MoralType)m.Moral,
                     Gender = (Gender)m.Gender,
@@ -375,6 +408,7 @@ namespace Sinbinder.Core
             }
 
             SquadRoster.Set(members);
+            if (keepScene) RestoreAos(save);
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
@@ -401,6 +435,36 @@ namespace Sinbinder.Core
             }
 
             return true;
+        }
+
+        private static string[] SavedWarriorIds()
+            => SquadRoster.Members.Select(member => member.WarriorId).ToArray();
+
+        internal static void RestoreAos(SaveGame save) => RestoreAos(save, SavedWarriorIds());
+
+        private static void RestoreAos(SaveGame save, IReadOnlyList<string> warriorIds)
+        {
+            AOS.MemoryProcessor.Forget();
+            // Старые записи не содержали ни эмоций, ни фазы их затухания.
+            float delay = save.Squad.Any(m => m.Emotions?.Count > 0) ? save.EmotionDecayDelay : -1f;
+            AOS.EmotionSystem.Forget(delay);
+
+            var targetIds = new Dictionary<string, string>();
+            for (int i = 0; i < save.Squad.Count; i++)
+            {
+                string savedId = save.Squad[i].WarriorId;
+                if (!string.IsNullOrEmpty(savedId))
+                    targetIds.TryAdd(savedId, warriorIds[i]);
+            }
+
+            float now = Time.time;
+            for (int i = 0; i < save.Squad.Count; i++)
+            {
+                var member = save.Squad[i];
+                string id = warriorIds[i];
+                AOS.MemoryProcessor.Restore(id, member.Memories, targetIds, now);
+                AOS.EmotionSystem.Restore(id, member.Emotions);
+            }
         }
 
         // ──────────────────────────────────

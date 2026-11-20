@@ -42,6 +42,10 @@ namespace Sinbinder.Core
     public class SavedMember
     {
         public string Name;
+        public string WarriorId;
+        public bool JoinedAfterRaid;
+        public List<SavedMemory> Memories;
+        public List<SavedEmotion> Emotions;
         public int Sin;
         public int Moral;
         public int Gender;
@@ -98,15 +102,31 @@ namespace Sinbinder.Core
         public string Title;
     }
 
+    /// <summary>Возраст записи измеряется от момента снимка.</summary>
+    [System.Serializable]
+    public struct SavedMemory
+    {
+        public string EventType;
+        public string TargetId;
+        public AOS.EmotionType Emotion;
+        public float Importance;
+        public float DecayRate;
+        public float Age;
+    }
+
+    [System.Serializable]
+    public struct SavedEmotion
+    {
+        public AOS.EmotionType Type;
+        public float Intensity;
+    }
+
     /// <summary>
     /// Снимок игры.
     ///
     /// Сохраняется <b>состояние склепа между вылазками</b>: отряд, полка
-    /// душ, казна, улучшения. Положение тел на поле и середина боя —
-    /// нет, и это не упущение: бой длится минуту, а решает его движок,
-    /// у которого нет скрытого состояния. Переигрывать середину боя
-    /// незачем — а вот переигрывать вылазку очень хочется, и именно
-    /// поэтому есть режим, где нельзя.
+    /// душ, казна, улучшения. Отряд сохраняет память и эмоции. Положение
+    /// тел и текущий ход боя остаются в сцене.
     ///
     /// Плоские поля и массивы: <c>JsonUtility</c> не умеет ни словари,
     /// ни свойства, ни вложенные обобщения. Узнаётся это обычно на пустом
@@ -143,6 +163,7 @@ namespace Sinbinder.Core
 
         public List<SavedMember> Squad = new();
         public List<SavedSoul> Shelf = new();
+        public float EmotionDecayDelay = -1f;
 
         public int Gold;
 

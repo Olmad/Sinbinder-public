@@ -16,8 +16,8 @@ namespace Sinbinder.Gameplay
     ///
     /// Ничего не подстроено (автор: «игра должна показать, что она не скриптовая»):
     /// душа каждый раз новая, решение принимает движок, а после боя тот же приказ
-    /// звучит ещё раз — уже без убийц на глазах, — и игрок видит, что решение
-    /// держалось на причине. Подстроено только положение: эти двое его убили,
+    /// звучит ещё раз — уже без убийц на глазах, — и игрок сравнивает решения.
+    /// Подстроено только положение: эти двое его убили,
     /// и они стоят перед ним.
     /// </summary>
     public class DreamTutorialDirector : MonoBehaviour
@@ -96,7 +96,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Как кончился миг приказа при убийцах — для прогона: «отказал», «колебался», «послушался».</summary>
         public static string RefusalResult;
 
-        /// <summary>Как кончилась проверка тем же приказом без убийц: «послушался», «снова нет».</summary>
+        /// <summary>Результат голосования по повторному приказу об отходе.</summary>
         public static string RetestResult;
 
         /// <summary>Клавиша, нажатая прогоном (без людей Input молчит). Живёт один кадр.</summary>
@@ -202,7 +202,7 @@ namespace Sinbinder.Gameplay
         public string RescueResult { get; private set; } = "";
         private int _selectedJarBefore;
         private float _commandSince, _orderedAt = -1f;
-        private float _standoffSince, _decideSince, _retestSince;
+        private float _decideSince;
         private bool _retestManualDecideTried;
         // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
         // душа угасала несобранной, игрок не отдавал приказ или сам рубил убийц,
@@ -218,20 +218,26 @@ namespace Sinbinder.Gameplay
 
         // Приказ замечаем по самому приказу, а не по игровому времени: под кругом
         // мир стоит, и время приказа равно времени начала шага.
-        private PendingCommand _cmdMark;
+        private uint _cmdMark;
         private CommandKind? _courtOrder;
 
         private void MarkCommand()
         {
-            if (_zombie != null) _cmdMark = _zombie.Command;
+            if (_zombie != null) _cmdMark = _zombie.CommandRevision;
         }
 
         private bool OrderedSinceMark()
+            => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.CommandRevision != _cmdMark;
+
+        private bool RetreatSinceMark() => OrderedSinceMark() && _zombie.Command.Kind == CommandKind.FallBack;
+
+        private bool HasNewOrderVote(AOS.AOSWarriorWrapper mind)
         {
-            if (_zombie == null || _zombie.IsDead || !_zombie.HasCommand) return false;
-            var c = _zombie.Command;
-            return c.Kind != _cmdMark.Kind || c.Point != _cmdMark.Point || c.Target != _cmdMark.Target
-                || !Mathf.Approximately(c.IssuedAt, _cmdMark.IssuedAt);
+            if (mind == null || mind.LastContext?.HasCommand != true) return false;
+            return _zombie.HasCommand
+                ? OrderedSinceMark() && mind.LastDecisionCommandRevision == _zombie.CommandRevision
+                : DreamTutorialChecks.IsVoteForClearedLessonOrder(_cmdMark, _zombie.CommandRevision,
+                    mind.LastDecisionCommandRevision);
         }
 
         private bool PickedCompanion()
@@ -311,8 +317,8 @@ namespace Sinbinder.Gameplay
                         () => !Picked()
                             ? (Loc.T("ЛКМ"), Loc.T("Убийц больше нет.") + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
                             : ("X", Loc.T("Тот же приказ: X и щелчок позади.")
-                                  + "\n" + Loc.T("Причины больше нет — что решит душа теперь?")),
-                        () => _stage != Stage.Retest || OrderedSinceMark());
+                                  + "\n" + Loc.T("Убийц больше нет. Что решит душа теперь?")),
+                        () => _stage != Stage.Retest || RetreatSinceMark());
                     break;
                 default:
                     _guidedFor = _stage;   // этому шагу кольцо не нужно
@@ -324,7 +330,6 @@ namespace Sinbinder.Gameplay
         private bool _courtChoicePending;
         private int _courtChoicePauseStamp = -1;
         private GUIStyle _courtChoiceTitleStyle, _courtChoiceBodyStyle, _courtChoiceButtonStyle;
-        private AOS.DecisionContext _mindBefore;
         private float _nextPrompt;
         private string _line;
         private bool _moreExplanation;
@@ -608,9 +613,6 @@ namespace Sinbinder.Gameplay
                     }
                     if (_killers.Count > 0 && OrderedSinceMark())
                     {
-                        _courtOrder = _zombie.Command.Kind;
-                        var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                        _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
                         Hold(_zombie, false);   // теперь решает он
                         _stage = Stage.Deciding;
@@ -623,15 +625,17 @@ namespace Sinbinder.Gameplay
                     if (_courtRunning) break;
                     // Голоса не заговорили сами за секунду с лишним — спросить душу напрямую:
                     // тот же Decide, что зовёт её мозг, просто сейчас.
-                    if ((mind.LastContext == null || mind.LastContext == _mindBefore)
+                    if (OrderedSinceMark() && !HasNewOrderVote(mind)
                         && Time.unscaledTime - _decideSince > 1.2f)
                         mind.Decide();
-                    if (mind.LastContext != null && mind.LastContext != _mindBefore)
+                    if (HasNewOrderVote(mind))
                     {
+                        _courtOrder = mind.LastDecisionOrderKind;
                         _courtRunning = true;
-                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext,
+                        StartCoroutine(Judge(mind.NaturalDecisionDetail, mind.LastContext,
                             mind.LastDecisionBallot != null
-                                ? new List<AOS.Vote>(mind.LastDecisionBallot) : null));
+                                ? new List<AOS.Vote>(mind.LastDecisionBallot) : null,
+                            mind.LastWhisperCompelled));
                     }
                     else if (Time.unscaledTime - _decideSince > 6f)
                     {
@@ -656,14 +660,14 @@ namespace Sinbinder.Gameplay
                     KeepHeroAlive();
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
                     {
-                        if (_zombie != null && !_zombie.IsDead && RefusalResult != "послушался")
+                        if (_zombie != null && !_zombie.IsDead && _courtOrder == CommandKind.FallBack &&
+                            RefusalResult != "послушался")
                         {
-                            _retestSince = Time.time;
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
                             _retestManualDecideTried = false;
-                            Set(Stage.Retest, "Убийц больше нет. Отдай ему тот же приказ — отступить (X).");
+                            Set(Stage.Retest, Loc.T("Убийц больше нет. Отдайте тот же приказ — отступить (X)."));
                         }
                         else
                         {
@@ -680,29 +684,29 @@ namespace Sinbinder.Gameplay
                 {
                     if (_zombie == null || _zombie.IsDead) { Set(Stage.FirstPerson, "Tab: перейди от тактического вида к первому лицу."); break; }
                     var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                    if (!_retestOrdered && (Ordered(_retestSince) || OrderedSinceMark()))
+                    bool retreatPending = RetreatSinceMark();
+                    bool retreatVoted = HasNewOrderVote(mind) && mind.LastDecisionOrderKind == CommandKind.FallBack;
+                    if (!_retestOrdered && (retreatPending || retreatVoted))
                     {
                         _retestOrdered = true;
                         _retestManualDecideTried = false;
-                        _mindBefore = mind != null ? mind.LastContext : null;
                         _decideSince = Time.unscaledTime;
                     }
                     // As in the first standoff, ask the SAME real AOS once if
                     // its normal tick has not returned a fresh verdict. Never
                     // fake a favorable decision just to finish the tutorial.
                     if (_retestOrdered && !_contrastRunning && !_retestManualDecideTried
-                        && mind != null && !Lesson.Holding
-                        && (mind.LastContext == null || mind.LastContext == _mindBefore)
+                        && mind != null && !Lesson.Holding && retreatPending && !retreatVoted
                         && Time.unscaledTime - _decideSince > 1.2f)
                     {
                         _retestManualDecideTried = true;
                         mind.Decide();
+                        retreatVoted = HasNewOrderVote(mind) && mind.LastDecisionOrderKind == CommandKind.FallBack;
                     }
-                    if (_retestOrdered && !_contrastRunning && mind != null
-                        && mind.LastContext != null && mind.LastContext != _mindBefore)
+                    if (_retestOrdered && !_contrastRunning && retreatVoted)
                     {
                         _contrastRunning = true;
-                        StartCoroutine(Contrast(mind.LastDecisionDetail));
+                        StartCoroutine(Contrast(mind.NaturalDecisionDetail, mind.LastContext));
                     }
                     else if (_retestOrdered && !_contrastRunning && !Lesson.Holding
                              && Time.unscaledTime - _decideSince > 6f)
@@ -1378,7 +1382,6 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private void BeginStandoff()
         {
-            _standoffSince = Time.time;
             _standoffReal = Time.unscaledTime;
             _autoOrdered = false;
             MarkCommand();
@@ -1432,7 +1435,7 @@ namespace Sinbinder.Gameplay
             => d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated;
 
         private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c,
-            IReadOnlyList<AOS.Vote> originalVotes)
+            IReadOnlyList<AOS.Vote> originalVotes, bool compelledByWhisper)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
                 : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
@@ -1457,20 +1460,20 @@ namespace Sinbinder.Gameplay
                 // cannot change the AOS vote or grant rewards.
                 int heldBefore = SoulCourt.Held;
                 yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false,
-                    originalVotes: originalVotes, force: true);
+                    originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true);
                 TraceFirstFive("court_coroutine_finished");
                 // One-time interactive onboarding: ask at the start of a
                 // SHORT preview of the SAME verdict, not on another AOS tick.
                 if (SoulCourt.Held > heldBefore && !SoulCourt.Brief &&
                     !Core.Preferences.CourtChoiceMade && _zombie != null && !_zombie.IsDead)
-                    yield return OfferShortCourtPreview(d, c, originalVotes);
+                    yield return OfferShortCourtPreview(d, c, originalVotes, compelledByWhisper);
             }
             else
                 TraceFirstFive("court_skipped_warrior_dead");
             _courtRunning = false;
 
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
-            if (d.RefusedCommand || d.Hesitated)
+            if ((d.RefusedCommand || d.Hesitated) && !compelledByWhisper)
             {
                 _temptStarted = Time.unscaledTime;
                 _whisperWas = Whisper.LastResult;
@@ -1478,17 +1481,19 @@ namespace Sinbinder.Gameplay
                     "Убийцы замерли. Подойди к отказавшему воину и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится.",
                     "Убийцы замерли. Подойди к отказавшей воительнице и нажми Z — попытайся искусить. Если не хочешь, испытание продолжится."));
             }
-            else
+            else if (_courtOrder == CommandKind.FallBack)
                 // Автор, 16.11: «верни старые» — одна прежняя строка и для своего выбора души.
                 // Честный итог («выбрал своё») остаётся в RefusalResult и в журнале [AOS-5M].
                 StartBattle(Grammar.Pick(g, "Он уходит, а убийцы идут. Встреть их.", "Она уходит, а убийцы идут. Встреть их."));
+            else
+                StartBattle(Loc.T("Убийцы идут. Встреть их."));
         }
 
         // The prompt is intentionally attached to the REAL short Soul Court,
         // not to an imitation scene. Explicit choice controls future automatic
         // CourtCaller only. The short preview plays even after opting out.
         private IEnumerator OfferShortCourtPreview(AOS.Decision d, AOS.DecisionContext c,
-            IReadOnlyList<AOS.Vote> originalVotes)
+            IReadOnlyList<AOS.Vote> originalVotes, bool compelledByWhisper)
         {
             TraceFirstFive("short_court_choice_opened");
             if (!Application.isBatchMode)
@@ -1516,7 +1521,7 @@ namespace Sinbinder.Gameplay
             if (_zombie == null || _zombie.IsDead) yield break;
             TraceFirstFive("short_court_preview_requested");
             yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,
-                brief: true, originalVotes: originalVotes, force: true);
+                brief: true, originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true);
             TraceFirstFive("short_court_preview_finished");
         }
 
@@ -1596,22 +1601,24 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Сравнение решений в разных обстоятельствах. Одно только новое
-        /// послушание не доказывает, какой именно фактор повлиял на исход.
+        /// Сравнение решений по отходу до и после боя. Повторное голосование
+        /// само по себе не показывает, какой именно фактор повлиял на исход.
         /// </summary>
-        private IEnumerator Contrast(AOS.Decision d)
+        private IEnumerator Contrast(AOS.Decision d, AOS.DecisionContext context)
         {
             bool obeyed = ActuallyObeyed(d);
-            RetestResult = obeyed ? "послушался" : "снова нет";
+            RetestResult = obeyed ? "послушался" : d.Hesitated ? "колебался"
+                : d.RefusedCommand ? "отказал" : "выбрал своё";
             TraceFirstFive("second_verdict action=" + d.Action + " outcome=" + RetestResult);
             Debug.Log($"[СОН] Повторная проверка приказа без убийц: {RetestResult} ({d.Action})");
 
-            var g = _zombie != null ? _zombie.Gender : Gender.Male;
-            string line = obeyed
-                ? Grammar.Pick(g, Loc.T("Теперь он послушался приказа. Убийц рядом больше нет."),
-                                  Loc.T("Теперь она послушалась приказа. Убийц рядом больше нет."))
-                : Grammar.Pick(g, Loc.T("Приказ снова не выполнен. Обстановка изменилась. Наведите на воина мышь, чтобы узнать, что повлияло на решение."),
-                                  Loc.T("Приказ снова не выполнен. Обстановка изменилась. Наведите на воина мышь, чтобы узнать, что повлияло на решение."));
+            string verdict = obeyed ? Loc.T("На этот раз душа решила послушаться.")
+                : d.Hesitated ? Loc.T("Душа колеблется.")
+                : d.RefusedCommand ? Loc.T("Душа отказалась от приказа.")
+                : Loc.T("Душа выбрала собственный поступок.");
+            string line = Loc.T("Убийц больше нет.") + " " + verdict;
+            string reason = AOS.PhraseGenerator.Reason(_zombie, context, d);
+            if (!string.IsNullOrEmpty(reason)) line += "\n" + Loc.F("Голос души: {0}.", reason);
 
             var camera = Dialogue.DialogueCameraController.Instance;
             if (camera != null && _zombie != null && UI.Letterbox.Instance != null)

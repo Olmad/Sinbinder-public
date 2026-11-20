@@ -13,11 +13,12 @@ SOURCE = ROOT / "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
 
 def valid_replay(source):
     return all((
+        "StartCoroutine(Judge(mind.NaturalDecisionDetail, mind.LastContext," in source,
         "new List<AOS.Vote>(mind.LastDecisionBallot)" in source,
-        re.search(r"Judge\(AOS.Decision d, AOS.DecisionContext c,\s*IReadOnlyList<AOS.Vote> originalVotes\)", source),
-        re.search(r"Convene\(_zombie, d, c, _courtOrder, brief: false,\s*originalVotes: originalVotes, force: true\)", source),
-        re.search(r"OfferShortCourtPreview\(d, c, originalVotes\)", source),
-        re.search(r"brief: true, originalVotes: originalVotes, force: true", source),
+        re.search(r"Judge\(AOS.Decision d, AOS.DecisionContext c,\s*IReadOnlyList<AOS.Vote> originalVotes, bool compelledByWhisper\)", source),
+        re.search(r"Convene\(_zombie, d, c, _courtOrder, brief: false,\s*originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true\)", source),
+        "OfferShortCourtPreview(d, c, originalVotes, compelledByWhisper)" in source,
+        "brief: true, originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true" in source,
         ".Decide(" not in source[source.index("private IEnumerator Judge("):source.index("private void StartBattle(")],
     ))
 
@@ -28,8 +29,8 @@ class DreamCourtBallotReplayTests(unittest.TestCase):
 
     def test_missing_short_court_ballot_is_detected(self):
         source = SOURCE.read_text(encoding="utf-8")
-        changed = source.replace("brief: true, originalVotes: originalVotes, force: true",
-                                 "brief: true, force: true")
+        changed = source.replace("brief: true, originalVotes: originalVotes, compelledByWhisper:",
+                                 "brief: true, compelledByWhisper:")
         self.assertNotEqual(source, changed)
         self.assertFalse(valid_replay(changed))
 

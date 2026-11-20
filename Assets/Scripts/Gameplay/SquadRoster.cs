@@ -20,14 +20,16 @@ namespace Sinbinder.Gameplay
     /// памяти и считаются заново, а отдельное поле связи создало бы вторую
     /// правду о персонаже.
     ///
-    /// Опознаём по имени, а не по Id: идентификатор у души новый при каждой
-    /// сборке, имя — то же самое во всех восьми долях.
+    /// Приказы и вылазки опознают бойцов по имени. Память и эмоции
+    /// идут за идентификатором воина, даже когда тело создаётся заново.
     /// </summary>
     public static class SquadRoster
     {
         public struct Member
         {
             public string Name;
+            public string WarriorId;
+            public bool JoinedAfterRaid;
             public SinType Sin;
             public MoralType Moral;
             public Gender Gender;
@@ -356,7 +358,17 @@ namespace Sinbinder.Gameplay
         public static void Set(IEnumerable<Member> members)
         {
             _members.Clear();
-            _members.AddRange(members);
+            var ids = new HashSet<string>();
+            foreach (var member in members)
+            {
+                var m = member;
+                if (string.IsNullOrEmpty(m.WarriorId) || !ids.Add(m.WarriorId))
+                {
+                    m.WarriorId = System.Guid.NewGuid().ToString();
+                    ids.Add(m.WarriorId);
+                }
+                _members.Add(m);
+            }
         }
 
         /// <summary>
@@ -411,6 +423,25 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[ОТРЯД] Командиром выбран {name}.");
         }
 
+        /// <summary>Вписать поднятого в склепе воина сразу после связывания.</summary>
+        internal static void Recruit(Warrior warrior)
+        {
+            foreach (var member in _members)
+                if (member.WarriorId == warrior.Id) return;
+
+            var recruit = Capture(warrior, NewMember(warrior));
+            recruit.JoinedAfterRaid = true;
+            _members.Add(recruit);
+        }
+
+        internal static bool OwedRaidPay(Warrior warrior)
+        {
+            if (!HasSquad) return true;
+            foreach (var member in _members)
+                if (member.WarriorId == warrior.Id) return !member.JoinedAfterRaid;
+            return TryGet(warrior.DisplayName, out var namedMember) && !namedMember.JoinedAfterRaid;
+        }
+
         /// <summary>
         /// Снять состояние с живых воинов сцены: кто дожил и с чем.
         /// Кого в списке нет — тот не дожил, и в следующей сцене
@@ -446,24 +477,7 @@ namespace Sinbinder.Gameplay
                 // и запрет — а пол, ремесло, братство и слава обнулялись при
                 // каждой смене доли: уникальная женщина входила в склеп
                 // мужчиной, братья переставали быть братьями.
-                var m = Previous(w);
-
-                // Со сцены — только то, что сцена меняет.
-                m.Name = w.DisplayName;
-                m.Sin = w.Soul.Sin;
-                m.Moral = w.Soul.Moral;
-                m.Intensity = w.Soul.Get(w.Soul.Sin);
-                m.Loyalty = w.Loyalty;
-                m.HealthFraction=ExpeditionHealthRules.Capture(w.HP,w.MaxHP);
-                m.UnpaidMissions = w.UnpaidMissions;
-                m.IsCommander = w.IsCommander;
-                m.IsAway = false;
-                m.Shell = w.Shell;
-                m.Title = AOS.TitleManager.TitleOf(w);
-                m.Gear = new List<Inventory.InventoryItem>(w.Carried);
-                m.Pocket = w.PocketGold;
-
-                survivors.Add(m);
+                survivors.Add(Capture(w, Previous(w)));
             }
 
             // Сцену закрыли до сборки отряда. Ушедшие не в счёт: они живы
@@ -477,6 +491,25 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[ОТРЯД] Дальше идут {survivors.Count}.");
         }
 
+        private static Member Capture(Warrior w, Member member)
+        {
+            member.Name = w.DisplayName;
+            member.WarriorId = w.Id;
+            member.Sin = w.Soul.Sin;
+            member.Moral = w.Soul.Moral;
+            member.Intensity = w.Soul.Get(w.Soul.Sin);
+            member.Loyalty = w.Loyalty;
+            member.HealthFraction = ExpeditionHealthRules.Capture(w.HP, w.MaxHP);
+            member.UnpaidMissions = w.UnpaidMissions;
+            member.IsCommander = w.IsCommander;
+            member.IsAway = false;
+            member.Shell = w.Shell;
+            member.Title = AOS.TitleManager.TitleOf(w);
+            member.Gear = new List<Inventory.InventoryItem>(w.Carried);
+            member.Pocket = w.PocketGold;
+            return member;
+        }
+
         /// <summary>
         /// Прежняя запись о воине. Нет её — он пришёл не из состава
         /// (поднятый в склепе): пол и ремесло берём у его души, остальное
@@ -484,15 +517,19 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static Member Previous(Warrior w)
         {
+            foreach (var m in _members) if (m.WarriorId == w.Id) return m;
             foreach (var m in _members) if (m.Name == w.DisplayName) return m;
 
-            return new Member
+            return NewMember(w);
+        }
+
+        private static Member NewMember(Warrior w)
+            => new Member
             {
                 Gender = w.Gender,
                 Trade = w.Soul.Trade,
                 Unavailable = "",
             };
-        }
 
         /// <summary>Найти воина в составе по имени.</summary>
         public static bool TryGet(string name, out Member member)

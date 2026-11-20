@@ -57,16 +57,23 @@ internal static class Program
 
         // A refusal pause must never launch an old vote after the
         // commander changes the order in the same Unity frame.
-        Check(OrderIntegrity.MayExecuteDelayed(5u, 5u),
-            "unchanged order permits pending act");
-        Check(!OrderIntegrity.MayExecuteDelayed(5u, 6u),
+        Check(OrderIntegrity.MayExecuteDecision(5u, 5u, false, false),
+            "unchanged order and ordinary vote permit a pending act");
+        Check(!OrderIntegrity.MayExecuteDecision(5u, 6u, false, false),
             "new order cancels old pending act");
-        Check(!OrderIntegrity.MayExecuteDelayed(5u, 7u),
+        Check(!OrderIntegrity.MayExecuteDecision(5u, 7u, true, true),
             "multiple same-frame orders invalidate old act");
-        Check(!OrderIntegrity.MayExecuteDelayed(5u, 0u),
+        Check(!OrderIntegrity.MayExecuteDecision(5u, 0u, false, false),
             "cancel or reset invalidates stale act");
-        Check(OrderIntegrity.MayExecuteDelayed(0u, 0u),
+        Check(OrderIntegrity.MayExecuteDecision(0u, 0u, false, false),
             "initial order identity remains usable");
+        Check(OrderIntegrity.MayExecuteDecision(5u, 5u, true, true),
+            "a still-valid whisper permits its recorded effective action");
+        Check(!OrderIntegrity.MayExecuteDecision(5u, 5u, false, true),
+            "a whisper accepted during the refusal pause requires a fresh vote");
+        Check(!OrderIntegrity.MayExecuteDecision(5u, 5u, true, false),
+            "an expired whisper requires a fresh vote before compelled obedience");
+        AutoAttackTickChecks.Run(Check);
 
         Check(OrderIntegrity.ShouldPresentRefusal(false, 0u, 0u),
             "first refusal gets a visible pause");
@@ -153,8 +160,11 @@ internal static class Program
         Contains(gameplay, "unchecked { CommandRevision++; }", "issuing and clearing commands update revision");
         Contains(hub, "_refusalEvents.TryRecord(", "real memory event uses checked per-command identity");
         Contains(hub, "warrior.GetInstanceID(), warrior.CommandRevision", "event keyed by runtime identity and revision");
-        Contains(tick, "OrderIntegrity.MayExecuteDelayed(", "real AOS tick checks paused command freshness");
-        Contains(tick, "yield break;", "stale decision can be discarded without executing");
+        Contains(tick, "_wrapper.TryExecuteDecision(context)", "the AOS tick sends the voted context to execution");
+        Contains(tick, "_lastDecisionTime = Time.time - _decisionInterval;",
+            "a stale vote is retried on the next active tick");
+        Contains(tick, "if (_pausing || Time.deltaTime <= 0f) return;",
+            "a forced retry still waits for active gameplay");
         Contains(tick, "OrderIntegrity.ShouldPresentRefusal(", "production tick uses single-refusal-pause rule");
         string whisper = Path.Combine(root, "Assets/Scripts/Gameplay/Whisper.cs");
         string aosWrapper = Path.Combine(root, "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
@@ -162,6 +172,12 @@ internal static class Program
         Contains(whisper, "OrderIntegrity.WhisperApplies(", "whisper checks the production per-order guard");
         Contains(whisper, "OrderRevision = agreedOrder", "accepted whisper records exact order identity");
         Contains(aosWrapper, "NaturalDecisionDetail = decision;", "true 13-voice vote is preserved");
+        Contains(aosWrapper, "context == null || !ReferenceEquals(context, LastContext)",
+            "a newer ballot for the same order invalidates the pending vote");
+        Contains(aosWrapper, "OrderIntegrity.MayExecuteDecision(LastDecisionCommandRevision, _warrior.CommandRevision,",
+            "actual execution checks the exact command revision and whisper state");
+        Check(!File.ReadAllText(aosWrapper).Contains("action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded"),
+            "execution cannot silently replace the already published action");
         // Source-level wiring guards: no old refusal can be displayed while
         // a new command waits for its first genuine AOS decision.
         string tooltip = Path.Combine(root, "Assets/Scripts/UI/WarriorTooltipUI.cs");
@@ -169,6 +185,8 @@ internal static class Program
         Contains(aosWrapper, "LastDecisionCommandRevision = _warrior.CommandRevision;", "each real vote stamps the current command");
         Contains(aosWrapper, "LastDecisionCommandRevision == _warrior.CommandRevision", "verdict freshness compares exact revision");
         Contains(ui, "if (who.HasCommand && !wrapper.HasCurrentCommandDecision)", "selected unit shows pending verdict for a new order");
+        Contains(ui, "if (!wrapper.HasCurrentDecision)", "selected unit hides old reasons after cancelling an order");
+        Contains(ui, "Warrior.CommandChanged += InvalidateRefresh", "issuing or cancelling orders invalidates the throttled panel");
         Contains(ui, "if (d == null || !d.HasCurrentCommandDecision) return false;", "group refuses only for current order");
         // Group UI must distinguish an undeliberated order from a genuine
         // non-refusal; otherwise "in formation" implies obedience prematurely.
@@ -191,6 +209,24 @@ internal static class Program
               groupSource.Contains("int calm = unordered + decided;"),
             "group feedback never presents missing orders as accepted or executed");
         Contains(tooltip, "if (hasDecision && !waitingForCommand)", "tooltip hides old decision while order pending");
+        Contains(tooltip, "bool hasDecision = wrapper != null && wrapper.HasCurrentDecision;",
+            "tooltip suppresses old refusal and whisper after cancelling an order");
+        Contains(tooltip, "warrior.CommandRevision != _shownCommandRevision", "tooltip refreshes immediately when the order changes");
+        Contains(tooltip, "originalVotes: wrapper.LastDecisionBallot", "tooltip scales use the captured vote when available");
+        string word = Path.Combine(root, "Assets/Scripts/UI/OverheadWord.cs");
+        Contains(word, "if (d == null || !d.HasCurrentDecision) return null;",
+            "overhead word requires the latest order revision");
+        string scales = Path.Combine(root, "Assets/Scripts/UI/ScalesOverhead.cs");
+        string presenter = Path.Combine(root, "Assets/Scripts/AOS Engine/RefusalPresenter.cs");
+        Contains(tick, "_presenter.Play(_wrapper.LastDecisionDetail, context);",
+            "live refusal passes the stored vote context to its presenter");
+        Contains(presenter, "UI.ScalesOverhead.Show(_warrior, decision, context);",
+            "live refusal presenter forwards that same decision context to the scales");
+        Contains(scales, "mind.LastContext == c", "live scales match their context to the stored decision");
+        Contains(scales, "if (!force) mark.OrderRevision = mind.LastDecisionCommandRevision;",
+            "live overhead scales keep order identity while tutorial replay stays historical");
+        Contains(scales, "m.OrderRevision.Value != m.Who.CommandRevision",
+            "live overhead scales expire on replacement or cancellation");
         Contains(tooltip, "Новый приказ отдан. Ожидаем решения воина.", "tooltip explains pending status without promising obedience");
         // Neutral match warriors have an attitude prefix. It must not hide
         // the first pending AOS verdict when no LastContext exists yet.
@@ -201,10 +237,23 @@ internal static class Program
         Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
         Contains(aosWrapper, "ExecuteDefenseAtPost();", "Defend uses the no-pursuit executor");
         Contains(aosWrapper, "distance <= aa.AttackRange", "defensive attack requires an actually reachable enemy");
-        Contains(aosWrapper, "LastWhisperCompelled = context.HasCommand", "effective action is labelled as whisper-driven");
+        Contains(aosWrapper, "_persuadedAtVote = context.HasCommand && Gameplay.Whisper.Persuaded(_warrior);",
+            "real vote captures whether a whisper was accepted");
+        Contains(aosWrapper, "LastWhisperCompelled = _persuadedAtVote && decision.Action != ActionType.ObeyCommand;",
+            "effective action is labelled as whisper-driven");
         Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");
-        Contains(aosWrapper, "_obeyedOrderRevision != _warrior.CommandRevision", "obedience credit distinguishes two same-frame commands");
-        Contains(aosWrapper, "if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord)", "whisper compulsion cannot farm earned loyalty");
+        Contains(aosWrapper, "_obeyedOrderRevision != revision", "obedience credit distinguishes two same-frame commands");
+        Contains(aosWrapper, "if (accepted && !_persuadedAtVote && !string.IsNullOrEmpty(cmd.Lord)",
+            "favor requires an action the warrior can start and an unpaid vote");
+        Contains(aosWrapper, "if (target == null || !target.activeInHierarchy) return (false, true);",
+            "a missing attack target clears the order without awarding favor");
+        Contains(aosWrapper, "accepted = atPoint || (requested && mover.HasMovePath);",
+            "movement earns favor only after reaching the point or acquiring a route");
+        string mover = Path.Combine(root, "Assets/Scripts/Gameplay/UnitMover.cs");
+        Contains(mover, "!_agent.pathPending && _agent.hasPath && _agent.pathStatus != NavMeshPathStatus.PathInvalid",
+            "a queued or invalid path cannot earn favor");
+        Contains(aosWrapper, "return (attack.ForceAttack(body), false);",
+            "a melee order depends on an actual accepted swing");
         Contains(whisper, "void ResolveBargain()", "whisper settles only after the soul speaks");
         Contains(whisper, "w.CommandRevision == agreedOrder", "cancelled or changed orders cannot be paid for");
         Contains(whisper, "if (applied)", "false agreement cannot consume money or corrupt the soul");
@@ -235,10 +284,10 @@ internal static class Program
             "sturdy tooltip uses actual hovered cursor despite a pinned warrior");
         Check(tooltipSource.Contains("Vector2 pointer = actualMouse ? (Vector2)Input.mousePosition : Pointer();"),
             "tooltip placement supports separate real cursor and pinned QA anchor");
-        Check(tooltipSource.Contains("void Update()") &&
-              tooltipSource.Substring(tooltipSource.IndexOf("void Update()", StringComparison.Ordinal),
+        Check(tooltipSource.Contains("void LateUpdate()") &&
+              tooltipSource.Substring(tooltipSource.IndexOf("void LateUpdate()", StringComparison.Ordinal),
                   tooltipSource.IndexOf("private void PlaceNearPointer(", StringComparison.Ordinal) -
-                  tooltipSource.IndexOf("void Update()", StringComparison.Ordinal))
+                  tooltipSource.IndexOf("void LateUpdate()", StringComparison.Ordinal))
                   .Contains("PlaceNearPointer();"),
             "warrior tooltip retains default pinned positioning");
 

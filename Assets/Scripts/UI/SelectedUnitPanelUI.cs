@@ -110,6 +110,12 @@ namespace Sinbinder.UI
 
         void Awake() => _instance = this;
 
+        void OnEnable() => Warrior.CommandChanged += InvalidateRefresh;
+
+        void OnDisable() => Warrior.CommandChanged -= InvalidateRefresh;
+
+        private void InvalidateRefresh() => _next = 0f;
+
         void OnDestroy()
         {
             if (_instance == this) _instance = null;
@@ -183,7 +189,7 @@ namespace Sinbinder.UI
             }
         }
 
-        void Update()
+        void LateUpdate()
         {
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + _refreshEvery;
@@ -461,6 +467,13 @@ namespace Sinbinder.UI
             {
                 Voice(null, Loc.T("Новый приказ"), Loc.T("Ожидаем решения воина"), Faint, 27);
                 Order(Loc.T("Приказ отдан — решение ожидается"), "", true);
+                return;
+            }
+
+            if (!wrapper.HasCurrentDecision)
+            {
+                Voice(null, Loc.T("Пока молчит"), "", Faint, 22);
+                Order(Loc.T("Приказа нет"), "", false);
                 return;
             }
 

@@ -6992,8 +6992,16 @@ msgid "Тот же приказ: X и щелчок позади."
 msgstr "The same order: X and a click behind."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Причины больше нет — что решит душа теперь?"
-msgstr "The reason is gone — what will the soul decide now?"
+msgid "Убийц больше нет. Что решит душа теперь?"
+msgstr "The killers are gone. What will the soul decide now?"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Убийц больше нет. Отдайте тот же приказ — отступить (X)."
+msgstr "The killers are gone. Give the same order to retreat (X)."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Убийцы идут. Встреть их."
+msgstr "The killers are coming. Face them."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Он пал. Своё решение стоило ему второй жизни."
@@ -7004,17 +7012,24 @@ msgid "Она пала. Своё решение стоило ей второй �
 msgstr "She fell. Her own decision cost her her second life."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Теперь он послушался приказа. Убийц рядом больше нет."
-msgstr "This time he obeyed the order. The killers are no longer nearby."
+msgid "На этот раз душа решила послушаться."
+msgstr "This time, the soul chose to obey."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Теперь она послушалась приказа. Убийц рядом больше нет."
-msgstr "This time she obeyed the order. The killers are no longer nearby."
+msgid "Душа колеблется."
+msgstr "The soul hesitates."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Приказ снова не выполнен. Обстановка изменилась. Наведите на воина мышь, чтобы узнать, что повлияло на решение."
-msgstr "The order went unfulfilled again. Circumstances changed. Hover over the warrior to see what influenced the decision."
+msgid "Душа отказалась от приказа."
+msgstr "The soul refused the order."
 
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Душа выбрала собственный поступок."
+msgstr "The soul chose its own course."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Голос души: {0}."
+msgstr "Voice of the soul: {0}."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "СОН · ПОДРОБНЕЕ"

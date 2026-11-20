@@ -70,6 +70,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _campGrace = 30f;
 
         private bool _battleJoined;
+        private bool _battleRosterChanged;
         private bool _leaving;
         private float _sinceCommander;
 
@@ -102,6 +103,8 @@ namespace Sinbinder.Gameplay
             if (Core.SaveSystem.Arriving) return;
 
             SquadRoster.Clear();
+            AOS.MemoryProcessor.Forget();
+            AOS.EmotionSystem.Forget();
 
             // Отъезд камеры один на весь пролог, а не на сцену: его
             // счётчик переживает смену сцен и потому обязан забываться
@@ -153,7 +156,10 @@ namespace Sinbinder.Gameplay
         void Start()
         {
             if (CombatManager.Instance != null)
+            {
                 CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
+                OnUnitsChanged();
+            }
 
             if (!string.IsNullOrEmpty(_arrivalLine))
                 Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T(_arrivalLine));
@@ -302,41 +308,33 @@ namespace Sinbinder.Gameplay
 
         private void OnUnitsChanged()
         {
-            if (_leaving) return;
+            if (_leaving || !isActiveAndEnabled) return;
 
             var combat = CombatManager.Instance;
             if (combat == null) return;
 
-            // Отряд, которого не стало, дальше не идёт ни по какому условию.
-            // Проверяем это в любом режиме: на побеге ждать края было бы
-            // некому, и демо заперлось бы на мёртвом поле.
-            if (_battleJoined && combat.GetAlivePlayerCount() == 0)
-            {
+            // Спавнеры встречаются в любом порядке. Бой начался, когда
+            // на поле впервые оказались обе стороны.
+            if (combat.GetAliveEnemyCount() > 0 && combat.GetAlivePlayerCount() > 0)
+                _battleJoined = true;
+            _battleRosterChanged = true;
+        }
+
+        void LateUpdate()
+        {
+            if (!_battleRosterChanged) return;
+            _battleRosterChanged = false;
+            if (_leaving || !_battleJoined) return;
+
+            var combat = CombatManager.Instance;
+            if (combat == null) return;
+
+            // Последние воины обеих сторон могут погибнуть в одном кадре.
+            // Если отряда больше нет, переходить к следующей доле некому.
+            if (combat.GetAlivePlayerCount() == 0)
                 Leave(Loc.T("Отряд не вернулся."), wiped: true);
-                return;
-            }
-
-            // До первой встречи с врагом ноль на поле ничего не значит:
-            // отряд ещё только собирается.
-            //
-            // Встречей считается миг, когда на поле видны <b>обе</b> стороны.
-            // До 14 сентября хватало одних врагов — и в начале набега
-            // охотники, случалось, регистрировались раньше отряда: воинов
-            // ставят спавнеры в своих Start, и порядок этих Start Unity
-            // не обещает. Директор видел врагов, видел ноль своих, решал
-            // «отряд не вернулся» — и демо кончалось, не начав боя.
-            // Зависело от порядка загрузки, то есть ломалось через раз.
-            // Нашёл прогон DemoWalkthrough.
-            if (combat.GetAliveEnemyCount() > 0)
-            {
-                if (combat.GetAlivePlayerCount() > 0) _battleJoined = true;
-                return;
-            }
-
-            if (!_waitForBattle) return;   // уходим не по концу боя
-            if (!_battleJoined) return;
-
-            Leave(Loc.T("Поле осталось за отрядом."));
+            else if (_waitForBattle && combat.GetAliveEnemyCount() == 0)
+                Leave(Loc.T("Поле осталось за отрядом."));
         }
 
         private void Leave(string line, bool wiped = false)
@@ -410,6 +408,7 @@ namespace Sinbinder.Gameplay
             _waitForEscape = true;
             _waitForBattle = false;
             _battleJoined = false;
+            _battleRosterChanged = false;
             _leaving = false;
         }
     }

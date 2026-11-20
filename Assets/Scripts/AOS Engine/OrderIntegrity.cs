@@ -66,11 +66,12 @@ namespace Sinbinder.AOS
             => !presented || presentedRevision != currentRevision;
 
         /// <summary>
-        /// Reject an action decided before the latest order was issued or
-        /// cancelled. The next AOS tick will vote again in the new context.
+        /// The action was chosen for a particular order and whisper state.
+        /// If either changes before execution, the warrior needs a fresh vote.
         /// </summary>
-        public static bool MayExecuteDelayed(uint decidedForRevision, uint currentRevision)
-            => decidedForRevision == currentRevision;
+        public static bool MayExecuteDecision(
+            uint decidedForRevision, uint currentRevision, bool persuadedAtVote, bool persuadedNow)
+            => decidedForRevision == currentRevision && persuadedAtVote == persuadedNow;
 
         /// <summary>
         /// A successful whisper buys obedience to ONE specific order, not

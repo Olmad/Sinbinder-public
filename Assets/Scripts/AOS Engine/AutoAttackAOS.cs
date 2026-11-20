@@ -23,7 +23,6 @@ namespace Sinbinder.AOS
         private AOSWarriorWrapper _wrapper;
         private RefusalPresenter _presenter;
         private Gameplay.Damageable _self;
-        private Gameplay.Warrior _warrior;
         private float _lastDecisionTime;
         private bool _pausing;
         private bool _hasPresentedRefusal;
@@ -34,7 +33,6 @@ namespace Sinbinder.AOS
             _wrapper = GetComponent<AOSWarriorWrapper>();
             _presenter = GetComponent<RefusalPresenter>();
             _self = GetComponent<Gameplay.Damageable>();
-            _warrior = GetComponent<Gameplay.Warrior>();
 
             // Свой такт у каждого: все думали в один и тот же кадр раз в секунду,
             // и на поле в 400 этот кадр стоил секунду и больше (замер 27.10). Сдвиг —
@@ -42,6 +40,14 @@ namespace Sinbinder.AOS
             int stamp = 0;
             foreach (char c in gameObject.name) stamp = (stamp * 31 + c) & 0x7fffffff;
             _lastDecisionTime = Time.time - (stamp % 1000) / 1000f * _decisionInterval;
+        }
+
+        void OnDisable()
+        {
+            if (!_pausing) return;
+            StopAllCoroutines();
+            _pausing = false;
+            _lastDecisionTime = Time.time - _decisionInterval;
         }
 
         void Update()
@@ -52,49 +58,50 @@ namespace Sinbinder.AOS
             // реплика над трупом (автор: «мёртвые воины говорят»).
             if (_self != null && _self.IsDead) return;
 
-            if (_pausing) return;
+            if (_pausing || Time.deltaTime <= 0f) return;
             if (Time.time - _lastDecisionTime < _decisionInterval) return;
             _lastDecisionTime = Time.time;
 
-            ActionType action;
-            using (Core.Cost.Of("decide")) action = _wrapper.Decide();
+            using (Core.Cost.Of("decide")) _wrapper.Decide();
+            var context = _wrapper.LastContext;
 
             // Отказ исполняется не сразу. Без этой задержки значок
             // намерения появляется и тонет в бою: игрок физически
             // не успевает связать приказ, поступок и причину.
-            uint currentOrder = _warrior != null ? _warrior.CommandRevision : 0u;
-            if (_wrapper.LastDecisionDetail.RefusedCommand && _refusalPause > 0f &&
+            uint decidedForOrder = _wrapper.LastDecisionCommandRevision;
+            if (_wrapper.HasCurrentCommandDecision && _wrapper.LastDecisionDetail.RefusedCommand &&
+                _refusalPause > 0f &&
                 OrderIntegrity.ShouldPresentRefusal(
-                    _hasPresentedRefusal, _lastPresentedRefusalOrder, currentOrder))
+                    _hasPresentedRefusal, _lastPresentedRefusalOrder, decidedForOrder))
             {
                 _hasPresentedRefusal = true;
-                _lastPresentedRefusalOrder = currentOrder;
-                StartCoroutine(ExecuteAfterBeat(action, currentOrder));
+                _lastPresentedRefusalOrder = decidedForOrder;
+                StartCoroutine(ExecuteAfterBeat(context));
             }
             else
-                using (Core.Cost.Of("execute")) _wrapper.Execute(action);
+                ExecuteOrRetry(context);
         }
 
-        private IEnumerator ExecuteAfterBeat(ActionType action, uint decidedForOrder)
+        private IEnumerator ExecuteAfterBeat(DecisionContext context)
         {
             _pausing = true;
 
             if (_presenter != null)
-                _presenter.Play(_wrapper.LastDecisionDetail, _wrapper.LastContext);
+                _presenter.Play(_wrapper.LastDecisionDetail, context);
 
             yield return new WaitForSeconds(_refusalPause);
 
             _pausing = false;
+            ExecuteOrRetry(context);
+        }
 
-            // The player may change or cancel the command during the
-            // refusal beat. Never execute a vote against an older order;
-            // let the next scheduled AOS tick evaluate the new situation.
-            if (_warrior != null &&
-                !OrderIntegrity.MayExecuteDelayed(decidedForOrder, _warrior.CommandRevision))
-                yield break;
+        private void ExecuteOrRetry(DecisionContext context)
+        {
+            using var cost = Core.Cost.Of("execute");
+            if (_wrapper.TryExecuteDecision(context)) return;
 
-            if (_self != null && _self.IsDead) yield break;
-            using (Core.Cost.Of("execute")) _wrapper.Execute(action);
+            // После смены приказа или уговора спросить душу в ближайший игровой кадр.
+            _lastDecisionTime = Time.time - _decisionInterval;
         }
     }
 }

@@ -32,6 +32,7 @@ namespace Sinbinder.UI
             public Text Label;
             public bool Preview;            // весы до приказа: живут, пока игрок наводит
             public CommandKind Kind;
+            public uint? OrderRevision;
             public float Touched, NextLook;
             public RectTransform Root;
             public RectTransform Beam, PanFor, PanAgainst;
@@ -68,9 +69,14 @@ namespace Sinbinder.UI
         {
             if (w == null || w.IsDead || SoulCourt.Sitting) return;
             if (!force && !Transparency.Shows(Detail.Moments)) return;
+            var mind = w.GetComponent<AOSWarriorWrapper>();
+            bool fromLastDecision = mind != null && mind.LastContext == c;
+            if (!force && (!fromLastDecision || !mind.HasCurrentCommandDecision)) return;
+            if (fromLastDecision && mind.LastWhisperCompelled) d = mind.NaturalDecisionDetail;
             float now = Time.unscaledTime;
             if (!force && NextFor.TryGetValue(w, out float next) && now < next) return;
-            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour)) return;
+            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour,
+                fromLastDecision ? mind.LastDecisionBallot : null)) return;
             NextFor[w] = now + Cooldown;
 
             string label = d.Hesitated
@@ -78,7 +84,10 @@ namespace Sinbinder.UI
                 : $"<color=#{ColorUtility.ToHtmlStringRGB(d.RefusedCommand ? SoulCourt.AgainstTone : SoulCourt.ForOrderTone)}>"
                   + (d.RefusedCommand ? Loc.T("против") : Loc.T("за приказ")) + ":</color> "
                   + $"<color=#{ColorUtility.ToHtmlStringRGB(colour)}>{voice}</color>";
-            Get().Add(w, lean, label);
+            var mark = Get().Add(w, lean, label);
+            // The tutorial may deliberately replay a recorded decision.
+            // Live scales expire when the player replaces or cancels the order.
+            if (!force) mark.OrderRevision = mind.LastDecisionCommandRevision;
         }
 
         /// <summary>
@@ -238,7 +247,8 @@ namespace Sinbinder.UI
                 var m = _marks[i];
                 float age = now - m.Born;
                 bool over = m.Preview ? now - m.Touched > 0.25f : age > Life;
-                if (m.Root == null || m.Who == null || m.Who.IsDead || over || SoulCourt.Sitting || eye == null)
+                if (m.Root == null || m.Who == null || m.Who.IsDead || over || SoulCourt.Sitting || eye == null ||
+                    (m.OrderRevision.HasValue && m.OrderRevision.Value != m.Who.CommandRevision))
                 {
                     Drop(i);
                     continue;

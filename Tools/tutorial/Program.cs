@@ -55,6 +55,20 @@ internal static class Program
               retest.Contains("Set(Stage.FirstPerson,") &&
               !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
+        Check(dreamTrace.Contains("_courtOrder = mind.LastDecisionOrderKind;") &&
+              dreamTrace.Contains("_courtOrder == CommandKind.FallBack &&") &&
+              retest.Contains("HasNewOrderVote(mind) && mind.LastDecisionOrderKind == CommandKind.FallBack") &&
+              retest.Contains("Contrast(mind.NaturalDecisionDetail, mind.LastContext)") &&
+              dreamTrace.Contains("mind.LastDecisionCommandRevision == _zombie.CommandRevision"),
+            "retest only compares real votes for retreat and cannot credit a different or stale order");
+        Check(DreamTutorialChecks.IsVoteForClearedLessonOrder(100u, 102u, 101u),
+            "retest accepts a new retreat voted and cleared in one tick");
+        Check(!DreamTutorialChecks.IsVoteForClearedLessonOrder(100u, 101u, 100u),
+            "cancelling the order present before the lesson cannot count as a new vote");
+        Check(!DreamTutorialChecks.IsVoteForClearedLessonOrder(100u, 103u, 101u),
+            "retest discards a vote superseded by additional commands");
+        Check(DreamTutorialChecks.IsVoteForClearedLessonOrder(uint.MaxValue - 1u, 0u, uint.MaxValue),
+            "retest recognizes a completed retreat across revision overflow");
 
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
@@ -64,10 +78,10 @@ internal static class Program
         string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
         string pauseMenuSource = System.IO.File.ReadAllText("Assets/Scripts/UI/PauseMenu.cs");
         Check(dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: false,") &&
-              dreamTrace.Contains("originalVotes: originalVotes, force: true);") &&
-              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c, originalVotes);") &&
+              dreamTrace.Contains("originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true);") &&
+              dreamTrace.Contains("yield return OfferShortCourtPreview(d, c, originalVotes, compelledByWhisper);") &&
               dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder,") &&
-              dreamTrace.Contains("brief: true, originalVotes: originalVotes, force: true);"),
+              dreamTrace.Contains("brief: true, originalVotes: originalVotes, compelledByWhisper: compelledByWhisper, force: true);"),
             "tutorial performs full then real brief preview on the SAME AOS decision");
         Check(dreamTrace.Contains("!Core.Preferences.CourtChoiceMade") &&
               dreamTrace.Contains("if (!Application.isBatchMode)") &&
@@ -154,22 +168,57 @@ internal static class Program
         Check(!DreamTutorialChecks.FreshOrderedDecision(true, 11f, 10f, true, false),
             "idle vote without command rejected");
 
-        // Production battle-end gate: one real victory per enemy wave,
-        // never a second victory when an ally dies after the enemy is gone.
+        // The production gate records casualties independently of the live lists.
         var battle = new BattleEndGate();
-        Check(!battle.TryComplete(false), "empty scene is not an earned victory");
-        battle.EnemyRegistered();
-        Check(!battle.TryComplete(true), "living enemy prevents victory");
-        Check(battle.TryComplete(false), "last enemy death triggers exactly one victory");
-        Check(!battle.TryComplete(false), "later allied death cannot replay victory");
-        battle.EnemyRegistered();
-        Check(!battle.TryComplete(true), "new enemy wave remains active");
-        Check(battle.TryComplete(false), "new wave earns its own victory once");
-        Check(!battle.TryComplete(false), "second wave cannot duplicate rewards");
-        var combatSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CombatManager.cs");
-        Check(combatSource.Contains("_battleEndGate.EnemyRegistered()") &&
-              combatSource.Contains("_battleEndGate.TryComplete(_enemyUnits.Exists("),
-              "real CombatManager registers enemy waves and gates OnBattleEnd");
+        Check(!battle.TryComplete(out _), "empty scene has no battle outcome");
+        battle.RosterChanged(false, true);
+        battle.RecordDeath(false, false, null);
+        Check(!battle.TryComplete(out _), "an enemy dying before the squad arrives does not award victory");
+
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(false, true, null);
+        battle.RecordDeath(true, true, "ally-1");
+        battle.RecordDeath(false, true, null);
+        Check(!battle.TryComplete(out _), "living members on both sides keep the battle active");
+        battle.RecordDeath(false, false, null);
+        Check(battle.TryComplete(out var victory) && victory.Outcome == BattleOutcome.Victory &&
+              victory.EnemiesKilled == 3 && victory.AlliesLost == 1,
+              "victory keeps all three enemy deaths and the allied loss");
+        battle.RecordDeath(true, false, "late");
+        Check(!battle.TryComplete(out _), "a later death cannot replay victory");
+
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(true, false, "ally-2");
+        Check(battle.TryComplete(out var defeat) && defeat.Outcome == BattleOutcome.Defeat &&
+              defeat.EnemiesKilled == 0 && defeat.AlliesLost == 1 &&
+              defeat.FallenAllies.Length == 1 && defeat.FallenAllies[0] == "ally-2",
+              "the next wave resets totals and remembers whose soul lost the battle");
+        Check(!battle.TryComplete(out _), "defeat is emitted once");
+
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(false, false, null);
+        battle.RecordDeath(true, false, "ally-3");
+        Check(battle.TryComplete(out var draw) && draw.Outcome == BattleOutcome.Draw &&
+              draw.EnemiesKilled == 1 && draw.AlliesLost == 1,
+              "eliminating both sides before resolution produces a draw");
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(true, false, "ally-4");
+        battle.RecordDeath(false, false, null);
+        Check(battle.TryComplete(out var reverseDraw) && reverseDraw.Outcome == BattleOutcome.Draw,
+              "a draw is independent of which side falls first");
+
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(false, false, null);
+        battle.RosterChanged(true, true);
+        Check(!battle.TryComplete(out _), "reinforcements arriving before resolution keep the battle open");
+        battle.RosterChanged(true, false);
+        Check(!battle.TryComplete(out _), "unregistering the last live enemy does not count as a kill or victory");
+        battle.RosterChanged(true, true);
+        battle.RecordDeath(false, false, null);
+        battle.Reset();
+        Check(!battle.TryComplete(out _), "scene unload discards unfinished battle state");
+
+        CombatIntegrationChecks.Run(Check);
 
         // Source-linked visual causality: removing soul B must not delete A's light.
         // Runtime Play Mode with two simultaneous souls is still required.
@@ -308,14 +357,14 @@ internal static class Program
         int restoreStart = saveSource.IndexOf("public static bool Restore(SaveGame save)", returnToStart);
         string returnToBody = returnToStart >= 0 && restoreStart > returnToStart
             ? saveSource.Substring(returnToStart, restoreStart - returnToStart) : "";
-        int sceneGuard = returnToBody.IndexOf("!Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene))");
-        int restoreCall = returnToBody.IndexOf("if (!Restore(save)) return false;");
+        int sceneGuard = returnToBody.IndexOf("changeScene && !Application.CanStreamedLevelBeLoaded(scene)");
+        int restoreCall = returnToBody.IndexOf("if (!Restore(save, keepScene: !changeScene)) return false;");
         Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
               returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
               "missing destination scene rejects save before live state restoration");
         Check(returnToBody.Contains("(reload || save.Scene != Here)") &&
-              returnToBody.Contains("if (save.Scene == Here && !reload) return true;") &&
-              returnToBody.Contains("string scene = RaidEvent.HostOf(save.Scene);") &&
+              returnToBody.Contains("if (!changeScene) return true;") &&
+              returnToBody.Contains("string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;") &&
               returnToBody.Contains("SceneManager.LoadScene(scene);"),
               "same-scene and valid hosted raid destination still follow original restore paths");
         Check(!returnToBody.Contains("состояние возвращено, место — нет") &&

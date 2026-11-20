@@ -11,7 +11,8 @@ namespace Sinbinder.AOS
     {
         public static MemoryProcessor Instance { get; private set; }
 
-        private Dictionary<string, List<MemoryRecord>> _memories = new();
+        // Загрузка может восстановить мир до появления компонента в сцене.
+        private static readonly Dictionary<string, List<MemoryRecord>> _memories = new();
 
         [SerializeField] private int _maxRecordsPerWarrior = 50;
         [SerializeField] private float _cleanupInterval = 10f;
@@ -29,6 +30,61 @@ namespace Sinbinder.AOS
         {
             if (Instance == this) Instance = null;
         }
+
+        internal static List<Core.SavedMemory> Capture(string warriorId, float now)
+        {
+            if (string.IsNullOrEmpty(warriorId) || !_memories.TryGetValue(warriorId, out var records))
+                return null;
+
+            var copy = new List<Core.SavedMemory>(records.Count);
+            foreach (var record in records)
+            {
+                copy.Add(new Core.SavedMemory
+                {
+                    EventType = record.EventType,
+                    TargetId = record.TargetID,
+                    Emotion = record.Emotion,
+                    Importance = record.Importance,
+                    DecayRate = record.DecayRate,
+                    Age = Mathf.Max(0f, now - record.CreationTime),
+                });
+            }
+            return copy;
+        }
+
+        internal static void Restore(string warriorId, List<Core.SavedMemory> saved,
+            IReadOnlyDictionary<string, string> targetIds, float now)
+        {
+            if (saved == null || saved.Count == 0) return;
+
+            var records = new List<MemoryRecord>(saved.Count);
+            foreach (var record in saved)
+            {
+                if (string.IsNullOrEmpty(record.EventType) ||
+                    !System.Enum.IsDefined(typeof(EmotionType), record.Emotion) ||
+                    float.IsNaN(record.Importance) || float.IsInfinity(record.Importance) || record.Importance < 0f ||
+                    float.IsNaN(record.DecayRate) || float.IsInfinity(record.DecayRate) || record.DecayRate < 0f ||
+                    float.IsNaN(record.Age) || float.IsInfinity(record.Age) || record.Age < 0f)
+                    continue;
+
+                string targetId = record.TargetId;
+                if (targetId != null && targetIds.TryGetValue(targetId, out var liveId))
+                    targetId = liveId;
+
+                records.Add(new MemoryRecord
+                {
+                    EventType = record.EventType,
+                    TargetID = targetId,
+                    Emotion = record.Emotion,
+                    Importance = record.Importance,
+                    DecayRate = record.DecayRate,
+                    CreationTime = now - record.Age,
+                });
+            }
+            if (records.Count > 0) _memories[warriorId] = records;
+        }
+
+        internal static void Forget() => _memories.Clear();
 
         public void CreateMemory(Warrior warrior, string eventType, string targetId, EmotionType emotion, float importance)
         {
@@ -113,18 +169,20 @@ namespace Sinbinder.AOS
             }
         }
 
-        public void RecordBattle(Warrior warrior, bool won, int enemiesKilled, int alliesLost)
+        internal void RecordBattle(string warriorId, BattleResult result)
         {
-            if (won)
+            switch (result.Outcome)
             {
-                CreateMemory(warrior, "WonBattle", "", EmotionType.Joy, 0.6f + enemiesKilled * 0.1f);
-                if (alliesLost > 0)
-                    CreateMemory(warrior, "AlliesLost", "", EmotionType.Sadness, alliesLost * 0.3f);
+                case BattleOutcome.Victory:
+                    CreateMemoryById(warriorId, "WonBattle", "", EmotionType.Joy, 0.6f + result.EnemiesKilled * 0.1f);
+                    break;
+                case BattleOutcome.Defeat:
+                    CreateMemoryById(warriorId, "LostBattle", "", EmotionType.Anger, 0.7f + result.AlliesLost * 0.2f);
+                    return;
             }
-            else
-            {
-                CreateMemory(warrior, "LostBattle", "", EmotionType.Anger, 0.7f + alliesLost * 0.2f);
-            }
+
+            if (result.AlliesLost > 0)
+                CreateMemoryById(warriorId, "AlliesLost", "", EmotionType.Sadness, result.AlliesLost * 0.3f);
         }
 
         public void RecordInteraction(Warrior subject, Warrior target, string eventType)

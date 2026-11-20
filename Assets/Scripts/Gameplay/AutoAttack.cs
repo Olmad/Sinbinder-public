@@ -93,7 +93,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private float _lastSwing = float.NegativeInfinity;
 
-        private void Attack(Damageable target, bool credit = false)
+        private void Attack(Damageable target)
         {
             _cooldownTimer = _attackCooldown;
             _lastSwing = Time.time;
@@ -118,10 +118,10 @@ namespace Sinbinder.Gameplay
 
             // Взмах — сейчас, урон — когда клинок дойдёт.
             if (TryGetComponent<WarriorAnimation>(out var arm)) arm.Struck();
-            StartCoroutine(Land(target, damage, credit));
+            StartCoroutine(Land(target, damage));
         }
 
-        private System.Collections.IEnumerator Land(Damageable target, float damage, bool credit)
+        private System.Collections.IEnumerator Land(Damageable target, float damage)
         {
             yield return new WaitForSeconds(HitDelay);
             if (_self.IsDead || target == null || target.IsDead) yield break;
@@ -129,10 +129,6 @@ namespace Sinbinder.Gameplay
             if (Vector3.Distance(transform.position, target.transform.position) > _attackRange + 0.6f) yield break;
 
             target.TakeDamage(damage, gameObject);
-
-            // Убийство по приказу — деяние (AOSWarriorWrapper, как и до задержки).
-            if (credit && target.IsDead && TryGetComponent<AOS.AOSWarriorWrapper>(out var mind))
-                mind.OnKilledEnemy(target.Warrior);
         }
 
         private void FindClosestEnemy()
@@ -165,18 +161,17 @@ namespace Sinbinder.Gameplay
             _isPlayerControlled = false;
         }
 
-        public void ForceAttack(Damageable target)
+        public bool ForceAttack(Damageable target)
         {
-            if (target != null && !target.IsDead)
-            {
-                _currentTarget = target;
-                _isPlayerControlled = true;
-                // Решение приходит каждый такт, и до 22 октября каждый такт
-                // начинал удар заново, не докончив прежний (п. 8 отзыва 21.10).
-                // Темп боя по приказу при этом был около двух ударов в секунду —
-                // на нём держится бой демо. Его и оставляем, но взмах доигрывается.
-                if (Time.time - _lastSwing >= ForcedPace) Attack(target, credit: true);
-            }
+            if (target == null || target.IsDead || _self == null || _self.IsDead || !gameObject.activeInHierarchy)
+                return false;
+
+            _currentTarget = target;
+            _isPlayerControlled = true;
+            // Новый взмах ждёт своего темпа, чтобы предыдущий успел дойти.
+            if (Time.time - _lastSwing < ForcedPace) return false;
+            Attack(target);
+            return true;
         }
     }
 }

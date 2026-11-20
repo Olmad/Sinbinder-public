@@ -6,11 +6,19 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Scene assets supply the values of Unity's serialized fields. -->
+    <NoWarn>$(NoWarn);CS0649</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="CombatIntegrationChecks.cs" />
+    <Compile Include="CombatIntegrationShim.cs" />
     <!-- Compile the exact same production file that the Unity dream uses. -->
     <Compile Include="../../Assets/Scripts/Gameplay/DreamTutorialChecks.cs" Link="DreamTutorialChecks.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CombatManager.cs" Link="CombatManager.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CombatMath.cs" Link="CombatMath.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Damageable.cs" Link="Damageable.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/PrologueDirector.cs" Link="PrologueDirector.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
     <Compile Include="../../Assets/Scripts/UI/TooltipViewportFit.cs" Link="TooltipViewportFit.cs" />
   </ItemGroup>

@@ -595,7 +595,7 @@ namespace Sinbinder.Gameplay
             // Слава не зарабатывается на месте: она пришла с ним.
             // Дальше её читают те, кто встречает его через строй.
             if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
-            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player);
+            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player, member.WarriorId);
 
             // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
             AOS.TitleManager.Bestow(warrior, member.Title);

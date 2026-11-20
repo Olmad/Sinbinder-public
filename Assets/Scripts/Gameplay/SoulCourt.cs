@@ -868,10 +868,11 @@ namespace Sinbinder.Gameplay
         /// «Весы: за приказ — Верность, Страх · против — Память». Имена — цветами голосов,
         /// стороны — цветами сторон весов, как в зале. Пусто — приказа не было или голоса молчат.
         /// </summary>
-        public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3)
+        public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             if (w == null || c == null || !c.HasCommand) return null;
-            var sum = Sums(w, d, c);
+            var sum = Sums(w, d, c, originalVotes);
             var pro = new List<KeyValuePair<string, float>>();
             var con = new List<KeyValuePair<string, float>>();
             foreach (var kv in sum)
@@ -892,11 +893,13 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Голос каждого модуля: минус — за приказ, плюс — против (как Net судьи).</summary>
-        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c)
+        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c,
+            IReadOnlyList<Vote> originalVotes)
         {
             var rival = Rival(d);
             var sum = new Dictionary<string, float>();
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            var votes = originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c);
+            foreach (var v in votes)
             {
                 if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
                 sum.TryGetValue(v.Module, out float net);
@@ -909,14 +912,15 @@ namespace Sinbinder.Gameplay
         /// Малые весы над головой (<see cref="UI.ScalesOverhead"/>): куда встанет стрелка —
         /// тем же счётом, что в зале, — и кто громче всех на стороне решения.
         /// </summary>
-        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
+        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice,
+            out Color colour, IReadOnlyList<Vote> originalVotes = null)
         {
             lean = 0f; voice = null; colour = Color.white;
             if (w == null || c == null || !c.HasCommand) return false;
             bool against = d.RefusedCommand || d.Hesitated;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
-            foreach (var kv in Sums(w, d, c))
+            foreach (var kv in Sums(w, d, c, originalVotes))
             {
                 total += kv.Value;
                 reach += Mathf.Abs(kv.Value);

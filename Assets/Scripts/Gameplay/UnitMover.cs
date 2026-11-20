@@ -104,31 +104,45 @@ namespace Sinbinder.Gameplay
         /// Точка бывает недостижима (в предмете, за толпой) — тогда «в полутора
         /// метрах от неё» не наступает никогда, а приказ висит вечно.
         /// </summary>
-        public bool Arrived => _agent.enabled && !_agent.pathPending
+        public bool Arrived => _agent.enabled && _agent.isOnNavMesh && !_agent.pathPending
             && (!_agent.hasPath || _agent.remainingDistance <= _agent.stoppingDistance + 0.3f)
             && _agent.velocity.sqrMagnitude < 0.01f;
 
-        public void CommandMove(Vector3 destination)
+        private Vector3? _moveRequest;
+
+        // A request can be queued before Unity knows whether a path exists.
+        internal bool HasMovePath => _agent.enabled && _agent.isOnNavMesh
+            && !_agent.pathPending && _agent.hasPath && _agent.pathStatus != NavMeshPathStatus.PathInvalid
+            && !Arrived;
+
+        internal bool FinishedMove(Vector3 destination) => SameMoveRequest(destination) && Arrived;
+
+        private bool SameMoveRequest(Vector3 destination)
+            => _moveRequest.HasValue && (_moveRequest.Value - destination).sqrMagnitude < 0.25f;
+
+        public bool CommandMove(Vector3 destination)
         {
-            if (_self != null && _self.IsDead) return;
-            if (!_agent.enabled) return;
+            if (_self != null && _self.IsDead) return false;
+            if (!_agent.enabled) return false;
 
             // Урок стоп-кадром: агент стоит вместе с миром, и Греховода
             // ведёт урок — по реальному времени и внутри кольца.
             if (Lesson.Holding && GetComponent<SinbinderPlayer>() != null)
-            {
-                Lesson.WalkTo(destination);
-                return;
-            }
+                return Lesson.WalkTo(destination);
+            if (!_agent.isOnNavMesh) return false;
 
             // Тот же приказ раз в секунду (решение повторяется) — не прокладывать путь заново.
             // Сверяем с тем, куда агент правда идёт: путь мог задать и кто-то мимо нас.
             var going = _agent.destination - destination;
             going.y = 0f;
-            bool same = !_isAttacking && _agent.hasPath && going.sqrMagnitude < 0.25f;
+            bool same = !_isAttacking && (_agent.pathPending
+                ? SameMoveRequest(destination)
+                : _agent.hasPath && going.sqrMagnitude < 0.25f);
             _isAttacking = false;
             _attackTarget = null;
-            if (!same) Go(destination);
+            bool requested = same || Go(destination);
+            _moveRequest = requested ? destination : (Vector3?)null;
+            return requested;
         }
 
         private Vector3 _pathTo = new(float.MaxValue, 0f, 0f);
@@ -137,11 +151,11 @@ namespace Sinbinder.Gameplay
         /// <summary>Насколько цель удара должна сдвинуться, чтобы проложить путь заново, м.</summary>
         private const float RepathShift = 0.75f;
 
-        private void Go(Vector3 to)
+        private bool Go(Vector3 to)
         {
             _pathTo = to;
             _repathAt = Time.time + 0.25f;
-            _agent.SetDestination(to);
+            return _agent.SetDestination(to);
         }
 
         public void CommandAttack(GameObject target)
@@ -156,16 +170,16 @@ namespace Sinbinder.Gameplay
             bool same = _isAttacking && _attackTarget == target && _agent.hasPath;
             _isAttacking = true;
             _attackTarget = target;
+            _moveRequest = null;
             if (!same) Go(target.transform.position);
         }
 
         public void Stop()
         {
-            if (!_agent.enabled) return;
-
             _isAttacking = false;
             _attackTarget = null;
-            _agent.ResetPath();
+            _moveRequest = null;
+            if (_agent.enabled && _agent.isOnNavMesh) _agent.ResetPath();
         }
     }
 }

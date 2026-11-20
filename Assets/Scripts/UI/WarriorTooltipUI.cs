@@ -28,6 +28,7 @@ namespace Sinbinder.UI
         private Camera _cam;
         private Outline _edge;
         private Warrior _shown;
+        private uint _shownCommandRevision;
         private float _nextRefresh;
         // The tooltip may be resized by viewport fitting; keep the prefab's
         // own scale so repeated hovers and resolution changes never compound it.
@@ -69,7 +70,7 @@ namespace Sinbinder.UI
 
         void OnDisable() => Hide();
 
-        void Update()
+        void LateUpdate()
         {
             // A modal window owns the screen: never show a world tooltip above it.
             // Hide also clears Hovered, so tutorial reading cannot advance unseen.
@@ -110,9 +111,11 @@ namespace Sinbinder.UI
 
             // При подарке или приказе отношение меняется, даже если мышь не сдвинулась.
             // Не перерисовываем сложное объяснение каждый кадр: достаточно 3 раз в секунду.
-            if (warrior != _shown || Time.unscaledTime >= _nextRefresh)
+            if (warrior != _shown || warrior.CommandRevision != _shownCommandRevision ||
+                Time.unscaledTime >= _nextRefresh)
             {
                 _shown = warrior;
+                _shownCommandRevision = warrior.CommandRevision;
                 Refresh(warrior);
                 _nextRefresh = Time.unscaledTime + 0.35f;
             }
@@ -219,7 +222,7 @@ namespace Sinbinder.UI
             // New command, old AOS context: don't attribute the old verdict to it.
             bool waitingForCommand = warrior.HasCommand &&
                 (wrapper == null || !wrapper.HasCurrentCommandDecision);
-            bool hasDecision = wrapper != null && wrapper.LastContext != null;
+            bool hasDecision = wrapper != null && wrapper.HasCurrentDecision;
             bool isNeutralInMatch = warrior.Team == Team.Neutral && Lords.Active;
             // У только появившегося ничьего ещё нет решения ИИ, но отношение к нему уже есть.
             // Без этой ветки подсказка не появлялась и второй урок мог стать непроходимым.
@@ -240,13 +243,8 @@ namespace Sinbinder.UI
                 // Весы — языком суда из сна: кто за приказ, кто против, цветами голосов (63-TEACHING, п. 4).
                 if (hasDecision && !waitingForCommand)
                 {
-                    // A context alone is not a complete visual cache key: hovering
-                    // another warrior (or compelling this verdict) must not reuse
-                    // the previous warrior's displayed voice balance.
-                    // The verdict may change while the context object and warrior stay
-                    // the same. Refresh from the current vote, not a stale UI cache.
-                    // Refresh() already runs at most once per 0.35 seconds.
-                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
+                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext,
+                        originalVotes: wrapper.LastDecisionBallot);
                     if (!string.IsNullOrEmpty(scales)) _text.text += "\n" + scales;
                     if (wrapper.LastWhisperCompelled)
                         _text.text += "\n" + Core.Loc.T(

@@ -44,9 +44,9 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Вызывается только после AOS-исполнения приказа атаковать мишень.</summary>
-        public void ExecuteShot(Warrior warrior)
+        public bool ExecuteShot(Warrior warrior)
         {
-            if (Broken || warrior == null || warrior.IsDead) return;
+            if (Broken || warrior == null || warrior.IsDead) return false;
             if (!HasBow(warrior))
             {
                 if (Time.time >= _nextShot)
@@ -55,20 +55,19 @@ namespace Sinbinder.Gameplay
                     Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
                         "Замок противовеса слишком высоко для клинка. Передайте воину лук тщеславия через F — снаряжение.");
                 }
-                return;
+                return false;
             }
             Vector3 from = warrior.transform.position + Vector3.up * 1.3f;
             Vector3 to = transform.position;
+            var mover = warrior.GetComponent<UnitMover>();
             if (Vector3.Distance(from, to) > Range)
-            {
-                warrior.GetComponent<UnitMover>()?.CommandMove(new Vector3(-1.7f, 0f, 19.6f));
-                return;
-            }
-            warrior.GetComponent<UnitMover>()?.Stop();
-            if (Time.time < _nextShot || _falling) return;
+                return mover != null && mover.CommandMove(new Vector3(-1.7f, 0f, 19.6f)) && mover.HasMovePath;
+            mover?.Stop();
+            if (Time.time < _nextShot || _falling) return false;
             _nextShot = Time.time + Cadence;
             warrior.GetComponent<WarriorAnimation>()?.Struck();
             StartCoroutine(Arrow(from, to, warrior));
+            return true;
         }
 
         private IEnumerator Arrow(Vector3 from, Vector3 to, Warrior warrior)

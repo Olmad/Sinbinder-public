@@ -1000,8 +1000,32 @@ namespace Sinbinder.EditorTools
             }
 
             string no = device.NotReady;
-            if (!string.IsNullOrEmpty(no)) Write("  [СВЯЗЫВАНИЕ] не готово: " + no);
-            else if (device.Bind()) Write("  [СВЯЗЫВАНИЕ] воин поднят в склепе");
+            if (!string.IsNullOrEmpty(no))
+            {
+                Write("  [СВЯЗЫВАНИЕ] не готово: " + no);
+                return;
+            }
+
+            string name = device.SoulInside.Name;
+            var shell = device.ShellInside;
+            var oldIds = new HashSet<string>();
+            foreach (var member in SquadRoster.Members) oldIds.Add(member.WarriorId);
+            if (!device.Bind()) return;
+
+            // До открытия карты и обычной сверки живого состава.
+            string json = JsonUtility.ToJson(Core.SaveSystem.Snapshot());
+            var saved = JsonUtility.FromJson<Core.SaveGame>(json);
+            bool written = saved != null && saved.Squad.Exists(m => m.Name == name
+                && m.Shell == (int)shell && m.JoinedAfterRaid && !string.IsNullOrEmpty(m.WarriorId)
+                && !oldIds.Contains(m.WarriorId));
+            if (!written)
+                Debug.LogError("[СВЯЗЫВАНИЕ] Поднятого воина нет в записи сразу после рычага.");
+            else
+                Write("  [СВЯЗЫВАНИЕ] Воин поднят в склепе и вошёл в запись.");
+
+            foreach (var warrior in Crypt.MissionBoard.Squad())
+                if (warrior.DisplayName == name && !oldIds.Contains(warrior.Id) && SquadRoster.OwedRaidPay(warrior))
+                    Debug.LogError("[СВЯЗЫВАНИЕ] Воин, поднятый после набега, попал в расчёт платы за набег.");
         }
 
         /// <summary>
