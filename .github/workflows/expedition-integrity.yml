@@ -113,7 +113,9 @@ jobs:
       - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py
       - name: Compile syntax gate for all Unity gameplay code
-        run: dotnet build Tools/tutorial/SyntaxChecks.csproj -c Release
+        working-directory: Tools/tutorial
+        run: dotnet build SyntaxChecks.csproj -c Release
       - name: Parse all Unity gameplay C# (grammar only, not Unity runtime)
-        run: dotnet run --no-build --project Tools/tutorial/SyntaxChecks.csproj -c Release -- Assets/Scripts
+        working-directory: Tools/tutorial
+        run: dotnet run --no-build --project SyntaxChecks.csproj -c Release -- ../../Assets/Scripts
 
