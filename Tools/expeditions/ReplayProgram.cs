@@ -211,6 +211,50 @@ static class Program
              missionUi.Contains("ExpeditionReplayViewer.Open(replay)") &&
              missionUi.Contains("MissionBoard.Journeys"),
              "the QA build includes real personal and automatic missions plus recorded replay UI");
+        // Execute the actual production console grammar rather than a copy.
+        Test(Sinbinder.Dev.ConsoleCommandSyntax.Normalize("  EXPEDITION   SALT ~ ") ==
+                 "expedition salt" &&
+             Sinbinder.Dev.ConsoleCommandSyntax.Normalize("REPLAY\\tLATEST".Replace("\\t", "\t")) ==
+                 "replay latest" &&
+             Sinbinder.Dev.ConsoleCommandSyntax.Normalize("ЁMISSIONS`") == "missions",
+             "English commands parse deterministically under Russian or US layout");
+        Test(Sinbinder.Dev.ConsoleCommandSyntax.IsToggleCharacter('ё') &&
+             Sinbinder.Dev.ConsoleCommandSyntax.IsToggleCharacter('Ё') &&
+             Sinbinder.Dev.ConsoleCommandSyntax.IsToggleCharacter('~') &&
+             Sinbinder.Dev.ConsoleCommandSyntax.IsToggleCharacter('`') &&
+             !Sinbinder.Dev.ConsoleCommandSyntax.IsToggleCharacter('e'),
+             "the physical tilde/backtick and Russian Ё open the same console");
+        var consoleSource=System.IO.File.ReadAllText("Assets/Scripts/Dev/CheatConsole.cs");
+        var testChamberSource=System.IO.File.ReadAllText("Assets/Scripts/Crypt/TestChamber.cs");
+        var personalSource=System.IO.File.ReadAllText("Assets/Scripts/Gameplay/PersonalExpedition.cs");
+        var testScene=System.IO.File.ReadAllText("Assets/Scenes/Crypt_Test.unity");
+        string[] requiredCommands={
+            "[\"chamber\"]", "[\"chamber reset\"]", "[\"chamber next\"]",
+            "[\"chamber status\"]", "[\"missions\"]", "[\"expeditions\"]",
+            "[\"expedition salt\"]", "[\"expedition chapel\"]",
+            "[\"replay latest\"]", "[\"help\"]"
+        };
+        Test(requiredCommands.All(consoleSource.Contains) &&
+             consoleSource.Contains("ConsoleCommandSyntax.Normalize(typed)") &&
+             consoleSource.Contains("ConsoleCommandSyntax.IsToggleCharacter(key)"),
+             "existing tilde console routes English TestChamber/expedition commands");
+        Test(testChamberSource.Contains("public bool OpenExpeditions(out string error)") &&
+             testChamberSource.Contains("SquadRoster.Remember(MissionBoard.Squad())") &&
+             testChamberSource.Contains("map.Open();") &&
+             testChamberSource.Contains("MissionCatalog.All()") &&
+             testChamberSource.Contains("PersonalExpedition.Enter(") &&
+             !testChamberSource.Contains("AutoBattleResolver.Resolve("),
+             "TestChamber uses actual mission roster, commander UI and personal maps");
+        Test(testScene.Contains("guid: 1598b704e9e9c03438f66565d155b3ca") &&
+             testScene.Contains("guid: 8428c55a7d80023449a5462753d8a6d4") &&
+             testScene.Contains("guid: 04efb9ffcd7da614983f3a951e75cfe4") &&
+             buildScenes.Contains("path: Assets/Scenes/Crypt_Test.unity"),
+             "test scene really hosts TestChamber, MissionBoard and MissionMapUI");
+        Test(personalSource.Contains("var board = CryptMap.Board ??") &&
+             personalSource.Contains("board?.RecordPersonal(_mission,") &&
+             viewSource.Contains("_open._ownsPause = true;") &&
+             viewSource.Contains("pause.Stamp == _pauseStamp"),
+             "personal outcomes are reported in test scene and console replays pause safely");
         Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
     }
 }
