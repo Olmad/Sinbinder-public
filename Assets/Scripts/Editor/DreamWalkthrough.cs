@@ -395,8 +395,13 @@ namespace Sinbinder.EditorTools
                     if (!_fallenShot && now - _stepAt > 0.8f)
                     {
                         _fallenShot = true;
-                        ShotFrom("сон — пал в засаде, душа у тела", dream.LateAt + new Vector3(2.6f, 2.0f, -2.6f),
-                                 dream.LateAt + Vector3.up * 0.7f, clear: false);
+                        // Сверху и наискось, на само тело (не на точку засады — тело падает где пришлось):
+                        // сбоку его заслоняли то убийца, то сам Греховод (дубли 20.11). Греховод — за телом
+                        // от камеры, в 1,3 м: жатва берёт душу не дальше 1,8 м (SoulManager._harvestRadius).
+                        var body = dream.Zombie != null ? dream.Zombie.transform.position : dream.LateAt;
+                        Warp(dream.Hero, body + new Vector3(0f, 0f, 1.3f));
+                        ShotFrom("сон — пал в засаде, душа у тела", body + new Vector3(0f, 4.5f, -2.8f),
+                                 body, clear: false);
                     }
                     if (poke && _fallenShot && now - _stepAt > 1.5f)
                     {

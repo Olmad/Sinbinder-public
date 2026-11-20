@@ -69,11 +69,15 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Послушался — только вердикт ObeyCommand. AOS может сам выбрать нападение или бегство,
-        /// не подняв флага отказа; до 16.11 такое считалось послушанием (ветка ботов).
+        /// Послушался — как решил сам движок (<see cref="AOS.DecisionContext.SatisfiedBy"/>): голос «исполнить»
+        /// или действие, которое и есть приказ — нападение по «догнать», бегство по «отойти». Без приказа
+        /// в контексте послушаться нечему — тогда только ObeyCommand.
+        /// До 20.11 сон считал послушанием лишь ObeyCommand (ветка ботов, 16.11). Бросился на убийцу
+        /// по «догнать» — движок и суд: «исполнил», а сон: «не погнался и по приказу» (аудит 84, п. 3).
         /// </summary>
-        private static bool ActuallyObeyed(AOS.Decision d)
-            => d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated;
+        private static bool ActuallyObeyed(AOS.Decision d, AOS.DecisionContext c)
+            => !d.RefusedCommand && !d.Hesitated &&
+               (d.Action == AOS.ActionType.ObeyCommand || (c != null && c.SatisfiedBy(d.Action)));
 
         /// <summary>Голоса, записанные в миг решения: суд показывает их, а не пересчитывает (ветка ботов, 17.11).</summary>
         private static List<AOS.Vote> Ballot(AOS.AOSWarriorWrapper mind)
@@ -1288,7 +1292,7 @@ namespace Sinbinder.Gameplay
         private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c, List<AOS.Vote> ballot)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
-                : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
+                : ActuallyObeyed(d, c) ? "послушался" : "выбрал своё";
             TraceFirstFive("first_verdict action=" + d.Action + " outcome=" + RefusalResult);
             _courtVoice = Voice(d, c);
             Mark($"T3 решение при убийцах: {RefusalResult} ({d.Action}, голос {_courtVoice})");
@@ -1324,13 +1328,13 @@ namespace Sinbinder.Gameplay
                 _chaseCourt = false;
                 _chaseDecided = true;
                 _chaseDecidedAt = Time.time;
-                _chaseRefused = !ActuallyObeyed(d);
+                _chaseRefused = !ActuallyObeyed(d, c);
                 Set(Stage.Chase, _chaseRefused
                     ? Grammar.Pick(g, Loc.N("Не погнался и по приказу. Убийцы уходят за мост."), Loc.N("Не погналась и по приказу. Убийцы уходят за мост."))
                     : Grammar.Pick(g, Loc.N("Гонится — по вашему приказу. Идите за ним к мосту."), Loc.N("Гонится — по вашему приказу. Идите за ней к мосту.")));
                 yield break;
             }
-            if (!ActuallyObeyed(d))
+            if (!ActuallyObeyed(d, c))
                 StartBattle(Grammar.Pick(g,
                     Loc.N("Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом."),
                     Loc.N("Она решила сама — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.")));
@@ -1450,7 +1454,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private IEnumerator Contrast(AOS.Decision d, AOS.DecisionContext c)
         {
-            bool obeyed = ActuallyObeyed(d);
+            bool obeyed = ActuallyObeyed(d, c);
             RetestResult = obeyed ? "послушался" : "снова нет";
             TraceFirstFive("second_verdict action=" + d.Action + " outcome=" + RetestResult);
             string voice = Voice(d, c);
