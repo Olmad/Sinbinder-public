@@ -58,3 +58,26 @@ QA2: source=Assets/Scripts/AOS Engine/BattleNarrator.cs; blob=974273d50701ef0676
 **QA-приёмка:** шесть ранее изменённых ответов `LordReplies Envy/Distrusted,Undecided` и `SinReplies Envy на Greed/Lust/Gluttony/Sloth` нельзя принять как полный сценарий Envy, поскольку новая проверка обнаружила дефект в соседнем исходном вопросе и некоторых ответах; их точная RU/EN проверка harness не заменяет проверку условий. **QA_REJECTED_SCENARIO_ENVY** (полный сценарий), **QA_UNKNOWN** (приёмка всего патча шести строк до самостоятельного исполнения тестов). Передать №4 минимальную правку только неподтверждённых фактов с сохранением характера персонажей, затем проверить все 7 ответов на вопрос и EN. Статус этапа 1 остаётся **NO-GO**.
 
 QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=23dadf30fbdd93cf6b1070dec9a54612de7f4cba; lines=VillageLines:18-35,52-55,89-99 + VillageDialogueRules:72-81; context=Exchange topic Sin and unmuted pair, a.Sin Envy, b.Sin Greed/Envy/Sloth, no observed-neighbor predicate; negative=neighbor/item never existed but lines assert Vidал or new belongings; verified=0; total=3; RU_EN=Envy/Greed and Envy/Envy EN preserve unsupported assertion; outcome=FAIL. Note: QA2 blob belongs to primary caller VillageLines; related rules blob=4a690bc08d783562c89f20aa8790c4b3548a48bd.
+
+
+## Дополнительная независимая проверка: все семь ответов Envy, 20.11.2026
+
+Прочитана вся строка `SinReplies[Envy]` (семь столбцов в порядке Greed/Pride/Wrath/Envy/Lust/Gluttony/Sloth), вместе с `VillageLines.SinOpening` и `Exchange`. Текущие blob: `VillageLines.cs` `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`; `VillageDialogueRules.cs` `4a690bc08d783562c89f20aa8790c4b3548a48bd`; `en.txt` `413688e1522d7f0f95ae42fd04806170b157caf5` (изменился после предыдущей записи; точная сверка семи пар выполнена по этому blob). Проверка чтением source-level; Unity/.NET в этом запуске не исполнялись.
+
+Условие: `Exchange(a,b)`, обе Soul существуют, `a` не Mute, `b` не Mute, topic=Sin (либо Lord при `Lords.Player == null`), `a.Soul.Sin=Envy`. Открывающий вопрос зависит от `b.Gender`: «Видал/Видала, что у соседа новое?». Существование соседа, обновки и факт наблюдения в этих ветвях не проверяются. Таблица ниже описывает семь **отдельных** ответов и EN, не семь подтверждённых runtime-событий.
+
+| Ответчик | RU | EN | Source-level QA |
+|---|---|---|---|
+| Greed | Видал. Если продаёт, узнаю цену. | I saw. If it's for sale, I'll ask the price. | FAIL: утверждает наблюдение без проверки |
+| Pride | А своим ты когда-нибудь доволен? | Are you ever pleased with what you have? | UNKNOWN_CONTEXT: ответ не утверждает факт наблюдения; исходный вопрос всё равно предполагает обновку |
+| Wrath | Мне до чужого дела нет. | I don't care what the neighbors own. | UNKNOWN_CONTEXT: позиция персонажа, без подтверждённого наблюдения; EN «neighbors own» более предметно, чем RU «чужого дела» |
+| Envy | У него новое, у меня старое. И ладно. | His is new, mine is old. So what. | FAIL: утверждает наличие двух предметов без проверки |
+| Lust | Я смотрел не на обновку. | I wasn't looking at what he bought. | FAIL: утверждает наблюдение и покупку; RU не утверждает покупку, EN добавляет недоказанное событие |
+| Gluttony | У соседа хлеб свежий? Тогда видал. | Fresh bread next door? Then yes, I noticed. | FAIL EN: RU задаёт условный вопрос, EN дополнительно утверждает, что говорящий заметил хлеб |
+| Sloth | Видал. И пусть носит. | I saw. Let him enjoy it. | FAIL: утверждает наблюдение без проверки |
+
+**Новый конкретный дефект локализации:** для `Envy/Lust` английское `what he bought` добавляет покупку, которой нет в RU и которая не проверяется в игровом состоянии. Для `Envy/Gluttony` английское `Then yes, I noticed` утверждает наблюдение, тогда как русское `Тогда видал` остаётся условным ответом на вопрос о хлебе. Обе EN-строки требуют минимального согласованного исправления без новых игровых механик. Контрпример: в сцене нет сведений о покупке и о свежем хлебе, но английская реплика сообщает об этих событиях как о фактах.
+
+**Итог ограниченного блока:** 7/7 RU/EN пар прочитаны и сопоставлены; 5/7 имеют доказанный source-level FAIL (Greed, Envy, Lust, Gluttony EN, Sloth), 2/7 UNKNOWN_CONTEXT (Pride, Wrath), 0/7 полный semantic PASS с учётом общего неподтверждённого вступительного вопроса. Это не заменяет проверку полного массива 7×7 и не означает подтверждённого runtime-проявления. `QA_REJECTED_SCENARIO_ENVY` сохраняется; исправление №4 не принято для всего сценария. Проверки 13 голосов, сохранений, суда и Tab/V не запускались и остаются UNKNOWN.
+
+QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=SinReplies Envy row (7 keys); context=VillageLines.Exchange topic Sin, unmuted pair, a.Sin Envy, b.Sin variable; negative=Envy/Lust EN says bought without purchase evidence and Envy/Gluttony EN claims noticed bread; verified=0; total=7; RU_EN=all seven pairs compared with en.txt blob 413688e1522d7f0f95ae42fd04806170b157caf5; outcome=FAIL.
