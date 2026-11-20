@@ -27,7 +27,8 @@ internal static class Program
         Check(dreamTrace.Contains("TraceFirstFive(\"first_command_detected\")") &&
               dreamTrace.Contains("TraceFirstFive(\"first_verdict action=\"") &&
               dreamTrace.Contains("TraceFirstFive(\"court_requested\")") &&
-              dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_completed duration_s=\"") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_not_shown\")") &&
               dreamTrace.Contains("TraceFirstFive(\"second_verdict action=\""),
             "dream traces player action, real AOS verdict, court attempt and independent retry");
         // 20.11: obedience is the engine's own rule (DecisionContext.SatisfiedBy) — Attack on
@@ -144,9 +145,39 @@ internal static class Program
         // The bots' "show the court?" IMGUI prompt was not taken: the court toggle lives in the
         // pause menu (checked below), and the dream court is a lesson, so it is always forced.
         Check(dreamTrace.Contains("StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext, Ballot(mind)));") &&
-              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,") &&
+              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: briefCourt,") &&
+              dreamTrace.Contains("bool briefCourt = _courts > 0;") &&
+              dreamTrace.Contains("if (SoulCourt.Completed > completedBefore)") &&
+              dreamTrace.Contains("_courts++;") &&
               dreamTrace.Contains("originalVotes: ballot, force: true);"),
             "dream court judges the SAME AOS decision with its original ballot, full first then brief");
+        // Source-backed evidence, not a guessed duration: only the fully
+        // finished Court increments Completed and produces a Unity wall-clock
+        // duration. Early yield breaks do neither. The dream's first Court
+        // stays full until that concrete completion happens.
+        int completionPos = courtSource.IndexOf("Completed++;", StringComparison.Ordinal);
+        int finishPos = courtSource.LastIndexOf("yield return fader.To(0f, 0.6f);", StringComparison.Ordinal);
+        int lastExitPos = courtSource.LastIndexOf("Step = \"\";", StringComparison.Ordinal);
+        Check(courtSource.Contains("public static int Completed { get; private set; }") &&
+              courtSource.Contains("public static float LastDurationSeconds { get; private set; } = -1f;") &&
+              courtSource.Contains("float startedAt = Time.realtimeSinceStartup;") &&
+              courtSource.Contains("LastDurationSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAt);") &&
+              courtSource.Contains("[СУД ЗАМЕР]") &&
+              finishPos >= 0 && completionPos > finishPos &&
+              lastExitPos > finishPos && completionPos > lastExitPos,
+            "real Court timing is recorded only after camera and scene restoration");
+
+        Check(courtSource.Contains("public static bool Seen => Completed > 0") &&
+              courtSource.Contains("Held = 0; Completed = 0; LastDurationSeconds = -1f;") &&
+              dreamTrace.Contains("int completedBefore = SoulCourt.Completed;") &&
+              dreamTrace.Contains("bool briefCourt = _courts > 0;") &&
+              dreamTrace.Contains("if (SoulCourt.Completed > completedBefore)") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_not_shown\")") &&
+              dreamTrace.Contains("T8 суд не состоялся") &&
+              !dreamTrace.Contains("brief: _courts++ > 0") &&
+              !dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")"),
+            "an aborted Court is not logged as a lesson and cannot shorten the next first Court");
+
         Check(courtSource.Contains("var verdict = Verdict(d, c);") &&
               courtSource.Contains("c.SatisfiedBy(d.Action)") &&
               courtSource.Contains("bool recordedRefusal = d.RefusedCommand;") &&
