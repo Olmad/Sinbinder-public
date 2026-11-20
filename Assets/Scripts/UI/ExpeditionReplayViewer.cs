@@ -103,7 +103,7 @@ namespace Sinbinder.UI
             if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")){_index=0;_running=false;}
             if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< "+Loc.T("Назад")))
             { _index=Mathf.Max(0,_index-1);_running=false; }
-            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?Loc.T("Пауза"):Loc.T("Играть")))
+            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?Loc.T("Приостановить"):Loc.T("Играть")))
             { _running=!_running;_clock=0f; }
             if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),Loc.T("Вперёд")+ " >"))
             { _index=Mathf.Min(_data.Frames.Count-1,_index+1);_running=false; }
