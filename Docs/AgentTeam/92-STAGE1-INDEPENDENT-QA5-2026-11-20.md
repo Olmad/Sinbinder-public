@@ -122,3 +122,18 @@ Caller проверен по `Assets/Scripts/Dialogue/VillageLines.cs` blob `23d
 QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=SinReplies[Gluttony][Sloth]; context=VillageLines.Exchange -> SinOpening Gluttony -> SinAnswer(Gluttony,Sloth), responder not Mute; negative=no bread in inventory, but the answer asserts only desire and laziness; verified=1; total=1; RU_EN=exact match en.txt blob 961bf2ac4e9eb09b37dbf169ef8c0630152519ef lines 6023-6024; outcome=PASS_SOURCE_SEMANTICS; runtime=UNKNOWN.
 
 Новый инкремент: READ=0 (повторно открытый блок), SEMANTIC VERIFIED source-level=1 пара, FAIL=0, закрыт один прежний EN UNKNOWN. Исполняемые .NET, Unity и CI в этом сеансе не запускались. Общий статус этапа 1 **NO-GO**. Исторический TSV №5 не изменён.
+
+
+## QA №5: VillageLines Order/Event EN coverage, 20.11.2026
+
+Новый ограниченный source-level блок: прочитаны `Assets/Scripts/Dialogue/VillageLines.cs` blob `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`, строки 18–35, 68–86; `Assets/Resources/Lang/en.txt` blob `278672b5b86a49357e301411a03f945ddb1c3579`, строки 6054–6118. Проверено 13 отдельных ответов: семь `OrderAnswer` (Wrath, Pride, Sloth, Greed, Envy, Lust, default Gluttony) и шесть `EventAnswer` (Greed, Wrath, Sloth, Pride, Envy, default Wrath/Lust/Gluttony). У всех 13 точных `msgid` имеется `msgstr ""`, то есть нет содержательного английского перевода. Дополнительно `LordTalk` при Respected использует `Наш-то Греховод — не худший из них.`, у которого `msgstr ""`. Это 14 проверенных пустых EN-значений, не 14 доказанных показов русского текста в Unity.
+
+**Условия:** `Exchange(a,b)` требует `a.Soul,b.Soul != null`, говорящий не Mute; `TopicIndex(k)==Order` выбирает `OrderAnswer(b)` при немом=false; `TopicIndex(k)==Event` и `Nearest(a)!=null` выбирает `EventAnswer(b)` при немом=false. Если события рядом нет, Event переводится в Sin. Для Lord/Respected нужны `Lords.Player!=null`, `Allegiance.Of(a.Id,a.Loyalty,Lords.Player)>=Hostility.Follows`. Пустые EN значения доказаны по файлу, но поведение `Loc.T` при пустом переводе и runtime язык остаются UNKNOWN до чтения реализации Loc и Unity.
+
+**Контрпример:** английский язык выбран, воин Wrath отвечает на тему Order: `Loc.T("Пусть приходят. Топор наточен.")` имеет пустой `msgstr`; следовательно, полноценный EN-эквивалент отсутствует в проверенном каталоге. Отдельный смысловой риск: `Поговаривают, Орден снова на тропах` оформлено как слух, а не доказанный факт, поэтому не классифицируется автоматически как ложное событие. `Топор наточен` утверждает состояние оружия без проверки экипировки: это потенциальный source-level factual FAIL, но связь оружия и текстового утверждения требует отдельной проверки.
+
+**Вердикт:** `FAIL_EN_COVERAGE_SOURCE` для 14 точных ключей; `UNKNOWN_RUNTIME` для фактического fallback/display; `SEMANTIC VERIFIED=0` для контекста реальных сцен. Проверка не является полным PASS для Order/Event/Lord, не изменяет ранее проверенные строки. Исполняемые .NET, CI и Unity в этом запуске не запускались. Минимальный следующий шаг для разработчика №4: заполнить EN для указанных ключей без изменения механик, затем независимый QA переводов и `Loc.T` fallback.
+
+QA2: source=Assets/Scripts/Dialogue/VillageLines.cs; blob=23dadf30fbdd93cf6b1070dec9a54612de7f4cba; lines=18-35,68-86 and LordTalk; context=Exchange -> OrderAnswer/EventAnswer/LordTalk gated by TopicIndex, Nearest, Mute, Allegiance; negative=Order Wrath msgid has empty EN msgstr and Event Greed msgid has empty EN msgstr; verified=0; total=14; RU_EN=14 empty msgstr in en.txt blob 278672b5b86a49357e301411a03f945ddb1c3579 lines 6062-6118; outcome=FAIL_EN_COVERAGE_SOURCE.
+
+Этап 1: **NO-GO**. Исторический TSV №5 и другие реестры не менялись.
