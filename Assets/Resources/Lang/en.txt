@@ -8102,11 +8102,11 @@ msgstr ""
 
 #: Gameplay/Idleness.cs
 msgid "Без платы не стою, владыка."
-msgstr ""
+msgstr "I won’t stay without pay, my lord."
 
 #: Gameplay/Idleness.cs
 msgid "Скучно, владыка. Дайте дело."
-msgstr ""
+msgstr "I’m bored, my lord. Give me something to do."
 
 #: Gameplay/InspectTexts.cs
 msgid "F — прочесть вырезанное"
