@@ -25,6 +25,10 @@ on:
       - "Assets/Scripts/Gameplay/Expedition.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayStage3D.cs"
+      - "Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs"
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Test-Expeditions.cmd"
       - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
       - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
@@ -63,6 +67,10 @@ on:
       - "Assets/Scripts/Gameplay/Expedition.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayStage3D.cs"
+      - "Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs"
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Test-Expeditions.cmd"
       - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
       - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
       - "Assets/Scripts/Gameplay/FallenBag.cs"
@@ -104,3 +112,8 @@ jobs:
       - run: python3 Tools/expeditions/check_replay_wiring.py
       - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py
+      - name: Compile syntax gate for all Unity gameplay code
+        run: dotnet build Tools/tutorial/SyntaxChecks.csproj -c Release
+      - name: Parse all Unity gameplay C# (grammar only, not Unity runtime)
+        run: dotnet run --no-build --project Tools/tutorial/SyntaxChecks.csproj -c Release -- Assets/Scripts
+
