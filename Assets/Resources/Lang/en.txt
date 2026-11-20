@@ -14682,3 +14682,11 @@ msgstr "Objective"
 
 msgid "Выход / возврат"
 msgstr "Departure / return"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Событие {0} из {1}"
+msgstr "Event {0} of {1}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Ход AOS: {0}"
+msgstr "AOS turn: {0}"
