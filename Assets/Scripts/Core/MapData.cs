@@ -2,6 +2,7 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using UnityEngine;
 
 namespace Sinbinder.Core
@@ -18,6 +19,9 @@ namespace Sinbinder.Core
     [System.Serializable]
     public class MapData
     {
+        public const int CurrentSchemaVersion = 3;
+        // Zero represents JSON written before maps stored a format version.
+        public int SchemaVersion;
         public string Name = "";
         public string Author = "";
         /// <summary>Сторона квадрата поля, метры.</summary>
@@ -160,11 +164,43 @@ namespace Sinbinder.Core
             return all;
         }
 
-        public static MapData Load(string path)
+        internal static bool SupportsSchema(int version) => version >= 0 && version <= CurrentSchemaVersion;
+
+        [System.Serializable]
+        private sealed class SchemaHeader { public int SchemaVersion = 0; }
+
+        internal static MapData ReadJson(string json, out int? unsupportedSchema)
         {
+            unsupportedSchema = null;
+            var header = JsonUtility.FromJson<SchemaHeader>(json);
+            if (header == null) return null;
+            // A newer format can use a different shape even for known fields such as Crypts.
+            if (!SupportsSchema(header.SchemaVersion))
+            {
+                unsupportedSchema = header.SchemaVersion;
+                return null;
+            }
+            return JsonUtility.FromJson<MapData>(json);
+        }
+
+        public static MapData Load(string path) => Load(path, out _);
+
+        internal static MapData Load(string path, out int? unsupportedSchema)
+            => Load(path, out unsupportedSchema, out _);
+
+        internal static MapData Load(string path, out int? unsupportedSchema, out string fingerprint)
+        {
+            unsupportedSchema = null;
+            fingerprint = null;
             try
             {
-                var map = JsonUtility.FromJson<MapData>(File.ReadAllText(path));
+                byte[] bytes = File.ReadAllBytes(path);
+                var map = ReadBytes(bytes, out unsupportedSchema);
+                if (unsupportedSchema.HasValue)
+                {
+                    Debug.LogWarning($"[КАРТЫ] {path}: версия формата {unsupportedSchema.Value} не поддерживается (максимум {CurrentSchemaVersion}).");
+                    return null;
+                }
                 if (map == null || map.Size <= 0f || float.IsNaN(map.Size) || float.IsInfinity(map.Size))
                 {
                     Debug.LogWarning($"[КАРТЫ] {path}: неверный размер поля или пустое описание.");
@@ -185,6 +221,7 @@ namespace Sinbinder.Core
                 map.TerrainStrokes.RemoveAll(stroke => stroke == null);
                 map.TerrainPaints.RemoveAll(paint => paint == null);
                 if (string.IsNullOrEmpty(map.Name)) map.Name = Path.GetFileNameWithoutExtension(path);
+                fingerprint = Fingerprint(bytes);
                 return map;
             }
             catch (System.Exception e)
@@ -194,25 +231,74 @@ namespace Sinbinder.Core
             }
         }
 
+        private static MapData ReadBytes(byte[] bytes, out int? unsupportedSchema)
+        {
+            using var reader = new StreamReader(new MemoryStream(bytes));
+            return ReadJson(reader.ReadToEnd(), out unsupportedSchema);
+        }
+
+        private static string Fingerprint(byte[] bytes)
+        {
+            using var hash = SHA256.Create();
+            return System.Convert.ToBase64String(hash.ComputeHash(bytes));
+        }
+
+        internal sealed class SaveConflict : IOException
+        {
+            public SaveConflict(string path) : base("Map changed since opening: " + path) { }
+        }
+
+        internal sealed class SaveLockFailure : IOException
+        {
+            public SaveLockFailure(string path, IOException cause) : base("Cannot lock map for writing: " + path, cause) { }
+        }
+
+        internal static string WriteLockPath(string path) => Path.GetFullPath(path) + ".write-lock";
+
+        private static FileStream AcquireWriteLock(string path)
+        {
+            // Keep the empty sidecar between saves. Only an open handle owns the lock.
+            // Removing it on close would let two processes lock different files at once.
+            try { return new FileStream(WriteLockPath(path), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
+            catch (IOException error) { throw new SaveLockFailure(path, error); }
+        }
+
         /// <summary>Atomic save with an original .bak file on overwrite; never truncate the only map.</summary>
         public void Save(string path, bool overwrite = true)
+            => WriteMap(path, overwrite, checkFingerprint: false, expectedFingerprint: null);
+
+        internal string SaveEditor(string path, bool createNew, string expectedFingerprint)
+            => WriteMap(path, overwrite: !createNew, checkFingerprint: !createNew, expectedFingerprint: expectedFingerprint);
+
+        private string WriteMap(string path, bool overwrite, bool checkFingerprint, string expectedFingerprint)
         {
+            if (!SupportsSchema(SchemaVersion))
+                throw new InvalidDataException("Unsupported map schema: " + SchemaVersion);
             EnsureLists();
             path = Path.GetFullPath(path);
             var directory = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(directory)) directory = Folder;
             Directory.CreateDirectory(directory);
-            string temp = Path.Combine(directory, "." + Path.GetFileName(path) + "." +
-                                                System.Guid.NewGuid().ToString("N") + ".tmp");
+            using var writeLock = AcquireWriteLock(path);
+
+            byte[] originalBytes = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            if (checkFingerprint && (originalBytes == null || expectedFingerprint == null ||
+                Fingerprint(originalBytes) != expectedFingerprint))
+                throw new SaveConflict(path);
+            if (!overwrite && originalBytes != null) throw new IOException("Map already exists: " + path);
+
+            byte[] updatedBytes = System.Text.Encoding.UTF8.GetBytes(CurrentJson());
+            string updatedFingerprint = Fingerprint(updatedBytes);
+            string temp = TemporaryMapPath(directory);
             try
             {
-                File.WriteAllText(temp, JsonUtility.ToJson(this, true),
-                                  new System.Text.UTF8Encoding(false));
-                if (File.Exists(path))
+                WriteTemporaryFile(temp, updatedBytes);
+                if (originalBytes != null)
                 {
-                    // Create-only saves MUST fail closed, including on a concurrent
-                    // filename collision. Existing maps continue to keep a .bak.
-                    if (!overwrite) throw new IOException("Map already exists: " + path);
+                    var original = ReadBytes(originalBytes, out _);
+                    if (original == null || original.Players < 2)
+                        throw new InvalidDataException("Refusing to overwrite an unreadable or unsupported map: " + path);
+                    if (original.SchemaVersion < CurrentSchemaVersion)
+                        PreserveLegacyMap(path, directory, originalBytes);
                     File.Replace(temp, path, path + ".bak");
                 }
                 else
@@ -221,11 +307,49 @@ namespace Sinbinder.Core
                     // created destination, unlike a second File.WriteAllText.
                     File.Move(temp, path);
                 }
+                SchemaVersion = CurrentSchemaVersion;
+                return updatedFingerprint;
             }
             finally
             {
                 if (File.Exists(temp)) File.Delete(temp);
             }
+        }
+
+        private string CurrentJson()
+        {
+            int originalVersion = SchemaVersion;
+            try
+            {
+                SchemaVersion = CurrentSchemaVersion;
+                return JsonUtility.ToJson(this, true);
+            }
+            finally { SchemaVersion = originalVersion; }
+        }
+
+        internal static string TemporaryMapPath(string directory)
+            => Path.Combine(directory, ".sinbinder-map-" + System.Guid.NewGuid().ToString("N") + ".tmp");
+
+        internal static void WriteTemporaryFile(string path, byte[] bytes)
+        {
+            using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            stream.Write(bytes, 0, bytes.Length);
+            stream.Flush(flushToDisk: true);
+        }
+
+        private static void PreserveLegacyMap(string path, string directory, byte[] bytes)
+        {
+            // The rolling .bak is for the last save. This separate file keeps the pre-upgrade bytes.
+            string backup = path + ".pre-v" + CurrentSchemaVersion + ".bak";
+            if (File.Exists(backup)) return;
+            string temp = TemporaryMapPath(directory);
+            try
+            {
+                WriteTemporaryFile(temp, bytes);
+                try { File.Move(temp, backup); }
+                catch (IOException) when (File.Exists(backup)) { }
+            }
+            finally { if (File.Exists(temp)) File.Delete(temp); }
         }
 
         // ---------------------------------------------------------- по умолчанию

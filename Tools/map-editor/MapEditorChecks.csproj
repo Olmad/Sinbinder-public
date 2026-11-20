@@ -14,6 +14,9 @@
     <Compile Include="../../Assets/Editor/MapAssetImporter.cs" Link="MapAssetImporter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="../../Assets/Scripts/Core/MapData.cs" Link="MapData.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MapDraftJournal.cs" Link="MapDraftJournal.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MapEditHistory.cs" Link="MapEditHistory.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MapValidator.cs" Link="MapValidator.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapEditor.cs" Link="MapEditor.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapObjectArrange.cs" Link="MapObjectArrange.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/MapObjectSelection.cs" Link="MapObjectSelection.cs" />

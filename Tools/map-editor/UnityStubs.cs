@@ -22,6 +22,7 @@ namespace UnityEngine
         public Vector3 localScale = new Vector3(1, 1, 1);
         public Vector3 localPosition;
         public Quaternion localRotation;
+        public Vector3 forward = new Vector3(0f, -1f, 0f);
         public Quaternion rotation;
         public GameObject gameObject;
         private Transform _parent;
@@ -250,10 +251,15 @@ namespace UnityEngine
         public static float GetAxisRaw(string name) => 0;
     }
     public static class Screen { public static int width = 1600, height = 900; }
-    public static class Time { public static float unscaledDeltaTime = 0.016f; }
+    public static class Time { public static float unscaledDeltaTime = 0.016f, unscaledTime = 0f; }
     public class GUILayoutOption { }
-    public class GUIStyle { }
-    public class GUISkin { public GUIStyle box = new GUIStyle(); }
+    public class GUIStyle
+    {
+        public bool wordWrap;
+        public GUIStyle() { }
+        public GUIStyle(GUIStyle copy) { wordWrap = copy.wordWrap; }
+    }
+    public class GUISkin { public GUIStyle box = new GUIStyle(), label = new GUIStyle(); }
     public static class GUIUtility { public static string systemCopyBuffer = ""; }
     public static class GUI
     {
@@ -277,6 +283,7 @@ namespace UnityEngine
         public static void BeginVertical() { }
         public static void EndVertical() { }
         public static void Label(string value, params GUILayoutOption[] options) { }
+        public static void Label(string value, GUIStyle style, params GUILayoutOption[] options) { }
         public static bool Button(string label, params GUILayoutOption[] options) => false;
         public static bool Toggle(bool value,string label,string style)=>value;
         public static bool Toggle(bool value,string label)=>value;
@@ -290,6 +297,7 @@ namespace UnityEngine
     public static class Application
     {
         public static string dataPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(),"SinbinderMapSmoke","Assets");
+        public static string persistentDataPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(),"SinbinderMapSmoke","Persistent");
     }
     public static class JsonUtility
     {

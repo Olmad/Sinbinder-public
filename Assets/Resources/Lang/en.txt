@@ -9172,6 +9172,10 @@ msgid "Новая карта"
 msgstr "New map"
 
 #: Gameplay/MapEditor.cs
+msgid "Версия карты {0} не поддерживается. Оригинал защищён от записи."
+msgstr "Map version {0} is unsupported. The original is protected from overwrite."
+
+#: Gameplay/MapEditor.cs
 msgid "Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию»."
 msgstr "The map on disk is damaged. The original is protected; use “Save a copy”."
 
@@ -9192,8 +9196,8 @@ msgid "Ошибок формата карты нет."
 msgstr "No map-format errors found."
 
 #: Gameplay/MapEditor.cs
-msgid "Ошибок карты: {0}. Исправьте список ниже."
-msgstr "Map errors: {0}. Fix the list below."
+msgid "Ошибки: {0}. Предупреждения: {1}."
+msgstr "Errors: {0}. Warnings: {1}."
 
 #: Gameplay/MapEditor.cs
 msgid "Размещение шаблона отменено."
@@ -9262,6 +9266,10 @@ msgstr "Action undone"
 #: Gameplay/MapEditor.cs
 msgid "Действие повторено"
 msgstr "Action redone"
+
+#: Gameplay/MapEditor.cs
+msgid "Не удалось применить правку. Карта восстановлена."
+msgstr "Could not apply the edit. The map has been restored."
 
 #: Gameplay/MapEditor.cs
 msgid "Сначала выберите модель или группу моделей."
@@ -9672,14 +9680,6 @@ msgid "Проверить карту"
 msgstr "Validate map"
 
 #: Gameplay/MapEditor.cs
-msgid "Ошибок проверки: {0}"
-msgstr "Validation errors: {0}"
-
-#: Gameplay/MapEditor.cs
-msgid "Ещё ошибок: {0}. Скопируйте весь список."
-msgstr "{0} more errors. Copy the full list."
-
-#: Gameplay/MapEditor.cs
 msgid "Копировать список ошибок"
 msgstr "Copy error list"
 
@@ -9788,6 +9788,18 @@ msgid "Это безопасная система событий без прои
 msgstr "These are safe events; map files cannot execute arbitrary code."
 
 #: Gameplay/MapEditor.cs
+msgid "Карта отсутствует."
+msgstr "The map is missing."
+
+#: Gameplay/MapEditor.cs
+msgid "Имя не задано. Карта будет записана как «Новая карта»."
+msgstr "No name was given. The map will be saved as “New map”."
+
+#: Gameplay/MapEditor.cs
+msgid "Неверный размер поля."
+msgstr "Invalid map size."
+
+#: Gameplay/MapEditor.cs
 msgid "Нужно минимум два склепа игроков."
 msgstr "At least two player crypts are required."
 
@@ -9796,12 +9808,8 @@ msgid "Поддерживается не более восьми склепов.
 msgstr "At most eight player crypts are supported."
 
 #: Gameplay/MapEditor.cs
-msgid "Неверный размер поля."
-msgstr "Invalid map size."
-
-#: Gameplay/MapEditor.cs
-msgid "Склеп вне карты."
-msgstr "Crypt outside map bounds."
+msgid "Неверная позиция или поворот склепа."
+msgstr "Invalid crypt position or rotation."
 
 #: Gameplay/MapEditor.cs
 msgid "Неверная позиция или размер объекта."
@@ -9810,6 +9818,14 @@ msgstr "Invalid object position or scale."
 #: Gameplay/MapEditor.cs
 msgid "Модель не найдена: {0}"
 msgstr "Model not found: {0}"
+
+#: Gameplay/MapEditor.cs
+msgid "Нет материала объекта: {0}"
+msgstr "Object material missing: {0}"
+
+#: Gameplay/MapEditor.cs
+msgid "Объект без уникального ID."
+msgstr "Object without a unique ID."
 
 #: Gameplay/MapEditor.cs
 msgid "Неверная подлокация."
@@ -9824,24 +9840,20 @@ msgid "Событие вне карты."
 msgstr "Event outside map bounds."
 
 #: Gameplay/MapEditor.cs
-msgid "Некорректные параметры рельефа или материалов земли."
-msgstr "Invalid terrain or ground material settings."
+msgid "Некорректные изменения рельефа (высота, радиус, позиция или лимит)."
+msgstr "Invalid terrain edits (height, radius, position or limit)."
 
 #: Gameplay/MapEditor.cs
 msgid "Материал земли не найден: {0}"
 msgstr "Ground material not found: {0}"
 
 #: Gameplay/MapEditor.cs
-msgid "Нет материала объекта: {0}"
-msgstr "Object material missing: {0}"
+msgid "Неверная позиция или радиус области."
+msgstr "Invalid region position or radius."
 
 #: Gameplay/MapEditor.cs
-msgid "Неверная область или повтор ID."
-msgstr "Invalid region or duplicate ID."
-
-#: Gameplay/MapEditor.cs
-msgid "Объект без уникального ID."
-msgstr "Object without a unique ID."
+msgid "Область без уникального ID."
+msgstr "The region has no unique ID."
 
 #: Gameplay/MapEditor.cs
 msgid "Максимум 128 правил на карте."
@@ -9880,6 +9892,62 @@ msgid "Сообщение правила отсутствует или слиш�
 msgstr "Rule message is missing or too long."
 
 #: Gameplay/MapEditor.cs
+msgid "Запись {0}: {1}"
+msgstr "Entry {0}: {1}"
+
+#: Gameplay/MapEditor.cs
+msgid "Запись {0} ({1}): {2}"
+msgstr "Entry {0} ({1}): {2}"
+
+#: Gameplay/MapEditor.cs
+msgid "Проблемы карты"
+msgstr "Map problems"
+
+#: Gameplay/MapEditor.cs
+msgid "Ошибка"
+msgstr "Error"
+
+#: Gameplay/MapEditor.cs
+msgid "Предупреждение"
+msgstr "Warning"
+
+#: Gameplay/MapEditor.cs
+msgid "Перейти к записи"
+msgstr "Go to entry"
+
+#: Gameplay/MapEditor.cs
+msgid "Не удалось записать черновик. Сохраните карту вручную."
+msgstr "Could not write the draft. Save the map manually."
+
+#: Gameplay/MapEditor.cs
+msgid "Найден черновик с несохранёнными правками."
+msgstr "A draft with unsaved changes was found."
+
+#: Gameplay/MapEditor.cs
+msgid "Карта на диске изменилась. Черновик можно сохранить отдельной копией."
+msgstr "The map on disk has changed. You can save the draft as a separate copy."
+
+#: Gameplay/MapEditor.cs
+msgid "Восстановить черновик"
+msgstr "Restore draft"
+
+#: Gameplay/MapEditor.cs
+msgid "Удалить черновик и продолжить"
+msgstr "Discard draft and continue"
+
+#: Gameplay/MapEditor.cs
+msgid "Черновик восстановлен. Используйте «Сохранить копию»."
+msgstr "Draft restored. Use “Save copy”."
+
+#: Gameplay/MapEditor.cs
+msgid "Черновик восстановлен. Сохраните карту, чтобы записать правки."
+msgstr "Draft restored. Save the map to keep your changes."
+
+#: Gameplay/MapEditor.cs
+msgid "Не удалось удалить черновик. Повторите попытку."
+msgstr "Could not discard the draft. Try again."
+
+#: Gameplay/MapEditor.cs
 msgid "Карта изменена. Сохраните её или подтвердите выход без сохранения."
 msgstr "The map has changed. Save it or confirm exiting without saving."
 
@@ -9888,12 +9956,16 @@ msgid "Карта не записана: {0} ошибок. Первая: {1}"
 msgstr "Map not saved: {0} errors. First: {1}"
 
 #: Gameplay/MapEditor.cs
+msgid "Записано: {0}"
+msgstr "Saved: {0}"
+
+#: Gameplay/MapEditor.cs
 msgid "Файл карты изменён или повреждён на диске. Оригинал не перезаписан. Используйте «Сохранить копию»."
 msgstr "The map file was changed or damaged on disk. The original was not overwritten. Use “Save a copy”."
 
 #: Gameplay/MapEditor.cs
-msgid "Записано: {0}"
-msgstr "Saved: {0}"
+msgid "Не удалось получить доступ к записи карты. Повторите попытку или сохраните копию."
+msgstr "Could not lock the map for writing. Try again or save a copy."
 
 #: Gameplay/MapEditor.cs
 msgid "Не удалось сохранить карту: {0}"
@@ -14438,22 +14510,6 @@ msgstr "Let them talk. Maybe it'll blow over."
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
 
 #. нет в коде
-msgid "Ошибок: {0}. {1}"
-msgstr "Errors: {0}. {1}"
-
-#. нет в коде
-msgid "Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"
-msgstr "Ctrl+S save · Ctrl+Z/Y undo/redo"
-
-#. нет в коде
-msgid "Некорректные изменения рельефа (высота, радиус, позиция или лимит)."
-msgstr "Invalid terrain edits (height, radius, position or limit)."
-
-#. нет в коде
-msgid "Некорректные данные высот или материалов земли."
-msgstr "Invalid height or ground material data."
-
-#. нет в коде
 msgid " · Брат по оружию"
 msgstr " · Brother-in-arms"
 
@@ -14508,6 +14564,10 @@ msgstr "2 · Nothing is owed to him"
 #. нет в коде
 msgid "36 карт: 6–10 по номиналу, В=2, Д=3, К=4, Т=11. Без ставок."
 msgstr "36 cards: 6–10 face value, J=2, Q=3, K=4, A=11. No wagers."
+
+#. нет в коде
+msgid "Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"
+msgstr "Ctrl+S save · Ctrl+Z/Y undo/redo"
 
 #. нет в коде
 msgid "F или Esc — закончить разговор."
@@ -14894,6 +14954,14 @@ msgid "Долг"
 msgstr "Debt"
 
 #. нет в коде
+msgid "Другим он обещает больше, чем нам."
+msgstr "He promises the others more than he promises us."
+
+#. нет в коде
+msgid "Другим он улыбается. Нам — нет."
+msgstr "He smiles at the others. Not at us."
+
+#. нет в коде
 msgid "Душа: {0}\n"
 msgstr "Soul: {0}\n"
 
@@ -14908,6 +14976,10 @@ msgstr "He was saved once. He remembers the debt."
 #. нет в коде
 msgid "Ему задолжали. В разговоре долг отдают из рук в руки."
 msgstr "He's owed pay. In a conversation, debts are paid hand to hand."
+
+#. нет в коде
+msgid "Ещё ошибок: {0}. Скопируйте весь список."
+msgstr "{0} more errors. Copy the full list."
 
 #. нет в коде
 msgid "Ещё раз туз — переверну ящик."
@@ -15046,6 +15118,10 @@ msgid "Их там столько же."
 msgstr "There are as many of them."
 
 #. нет в коде
+msgid "К тебе все идут, ко мне никто."
+msgstr "Everyone comes to you, no one comes to me."
+
+#. нет в коде
 msgid "Карган бы смог. А ты?"
 msgstr "Kargan could. Can you?"
 
@@ -15130,6 +15206,10 @@ msgid "Масштаб"
 msgstr "Scale"
 
 #. нет в коде
+msgid "Меньше твоего. Как всегда."
+msgstr "Less than you. As always."
+
+#. нет в коде
 msgid "Мне? Раньше других? …Спасибо."
 msgstr "Me? Before the others? …Thank you."
 
@@ -15198,8 +15278,20 @@ msgid "Не худший. Но за меня решать не надо."
 msgstr "Not the worst. But he doesn't get to decide for me."
 
 #. нет в коде
+msgid "Неверная область или повтор ID."
+msgstr "Invalid region or duplicate ID."
+
+#. нет в коде
 msgid "Нейтральна"
 msgstr "Indifferent"
+
+#. нет в коде
+msgid "Некорректные данные высот или материалов земли."
+msgstr "Invalid height or ground material data."
+
+#. нет в коде
+msgid "Некорректные параметры рельефа или материалов земли."
+msgstr "Invalid terrain or ground material settings."
 
 #. нет в коде
 msgid "Нет души."
@@ -15372,6 +15464,18 @@ msgstr "Brought back from there: {0}. Find a socket and set it up."
 #. нет в коде
 msgid "Охотник-следопыт"
 msgstr "Tracker"
+
+#. нет в коде
+msgid "Ошибок карты: {0}. Исправьте список ниже."
+msgstr "Map errors: {0}. Fix the list below."
+
+#. нет в коде
+msgid "Ошибок проверки: {0}"
+msgstr "Validation errors: {0}"
+
+#. нет в коде
+msgid "Ошибок: {0}. {1}"
+msgstr "Errors: {0}. {1}"
 
 #. нет в коде
 msgid "Память: Дремлет...\n"
@@ -15646,6 +15750,10 @@ msgid "Сейчас: "
 msgstr "Now: "
 
 #. нет в коде
+msgid "Склеп вне карты."
+msgstr "Crypt outside map bounds."
+
+#. нет в коде
 msgid "Склеп обведён углём. Рядом приписка: «Только если всё потеряно»."
 msgstr "The crypt is circled in charcoal. A note beside it: “Only if all is lost.”"
 
@@ -15734,8 +15842,16 @@ msgid "Твой ход."
 msgstr "Your move."
 
 #. нет в коде
+msgid "Тебе легко. За тебя другие работают."
+msgstr "Easy for you. Others do your work."
+
+#. нет в коде
 msgid "Тебе-то что жаловаться."
 msgstr "What have you got to complain about."
+
+#. нет в коде
+msgid "Тебя вечно первым считают. С чего бы?"
+msgstr "They always put you first. Why is that?"
 
 #. нет в коде
 msgid "Тебя звал, а меня — нет?"
@@ -15780,6 +15896,14 @@ msgstr "Point of interest"
 #. нет в коде
 msgid "Трус исполнит охотно и по-своему — побежит. Гордец отходить не любит."
 msgstr "The coward will obey gladly and in his own way — he'll run. The proud don't like to fall back."
+
+#. нет в коде
+msgid "Ты ведь только что ел."
+msgstr "You only just ate."
+
+#. нет в коде
+msgid "Ты ешь чаще нас."
+msgstr "You eat more often than the rest of us."
 
 #. нет в коде
 msgid "Ты один меня с места и сдвигаешь."

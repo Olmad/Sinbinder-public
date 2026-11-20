@@ -8,6 +8,9 @@ on:
       - 'feature/worldforge-best-*'
     paths:
       - "Assets/Scripts/Core/MapData.cs"
+      - "Assets/Scripts/Core/MapDraftJournal.cs"
+      - "Assets/Scripts/Core/MapEditHistory.cs"
+      - "Assets/Scripts/Core/MapValidator.cs"
       - "Assets/Scripts/Gameplay/MapEditor.cs"
       - "Assets/Scripts/Gameplay/MapLogicRunner.cs"
       - "Assets/Scripts/Gameplay/MapLoader.cs"

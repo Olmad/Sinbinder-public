@@ -2,7 +2,6 @@
 // Перевод: текст через Loc
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Sinbinder.Core;
@@ -91,7 +90,6 @@ namespace Sinbinder.Gameplay
         private bool _selectionDragActive;
         private bool _selectionDragAdditive;
         private bool _selectionDragMovesGroup;
-        private List<string> _validationIssues = new();
         private Vector3 _selectionDragWorld;
         private Vector3 _selectionDragScreen;
         private float _groupStep = 5f;
@@ -130,12 +128,21 @@ namespace Sinbinder.Gameplay
         private Mesh _originalGroundMesh;
         private string _filter = "";
         private Vector2 _inspectorScroll;
-        private readonly List<string> _undo = new();
-        private readonly List<string> _redo = new();
+        private Vector2 _validationScroll;
+        private List<MapIssue> _validationIssues;
+        private GUIStyle _validationLabel;
+        private readonly MapEditHistory _history = new();
         private bool _dirty;
         private bool _confirmExit;
+        private const float DraftInterval = 10f;
+        private MapDraftJournal _draft;
+        private MapDraftJournal.Snapshot _pendingDraft;
+        private string _lastDraftJson;
+        private float _nextDraftAt;
+        private bool _draftWriteFailed;
+
+        private static string DraftRoot => Path.Combine(Application.persistentDataPath, "WorldForgeDrafts");
         private string _savedSnapshot;
-        private const int MaxHistory = 35;
         private const float InspectorWidth = 300f;
         private const float ToolbarHeight = 44f;
 
@@ -170,15 +177,16 @@ namespace Sinbinder.Gameplay
             {
                 if (!string.IsNullOrEmpty(_path) && File.Exists(_path))
                 {
-                    var latest = MapData.Load(_path);
+                    var latest = MapData.Load(_path, out int? unsupportedSchema, out _openedFingerprint);
                     if (latest != null) _map = latest;
                     else
                     {
                         _unreadableSource = true;
-                        _say = Loc.T("Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию».");
+                        _say = unsupportedSchema.HasValue
+                            ? Loc.F("Версия карты {0} не поддерживается. Оригинал защищён от записи.", unsupportedSchema.Value)
+                            : Loc.T("Карта на диске повреждена. Оригинал защищён; используйте «Сохранить копию».");
                     }
                 }
-                _openedFingerprint = FileFingerprint(_path);
             }
             catch (System.Exception error)
             {
@@ -196,6 +204,7 @@ namespace Sinbinder.Gameplay
             _savedSnapshot = JsonUtility.ToJson(_map);
             CenterCamera();
             Redraw();
+            FindRecoveryDraft();
         }
 
         private void CenterCamera()
@@ -262,15 +271,18 @@ namespace Sinbinder.Gameplay
         // Display all failures, not merely the first of potentially many.
         private int RunValidation()
         {
-            _validationIssues = Validate();
-            _say = _validationIssues.Count == 0
+            var issues = Validate();
+            int errors = issues.FindAll(issue => issue.IsError).Count;
+            _say = issues.Count == 0
                 ? Loc.T("Ошибок формата карты нет.")
-                : Loc.F("Ошибок карты: {0}. Исправьте список ниже.", _validationIssues.Count);
-            return _validationIssues.Count;
+                : Loc.F("Ошибки: {0}. Предупреждения: {1}.", errors, issues.Count - errors);
+            return issues.Count;
         }
 
         void Update()
         {
+            if (_pendingDraft != null) return;
+            UpdateDraft();
             if (!Input.GetMouseButton(0)) _draggingBrush = false;
             if (_cam == null) return;
             var input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
@@ -877,45 +889,42 @@ namespace Sinbinder.Gameplay
             return p;
         }
 
-        private void Record()
+        private string Record()
         {
+            _validationIssues = null;
+            if (!_dirty) _nextDraftAt = Time.unscaledTime + DraftInterval;
             _dirty = true;
             _confirmExit = false;
-            _validationIssues.Clear();
-            _undo.Add(JsonUtility.ToJson(_map));
-            if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
-            _redo.Clear();
+            string before = JsonUtility.ToJson(_map);
+            _history.Begin(before);
+            return before;
         }
 
         private void Undo()
         {
             _draggingBrush = false;
-            if (_undo.Count == 0) return;
-            _redo.Add(JsonUtility.ToJson(_map));
-            Restore(_undo[_undo.Count - 1]);
-            _undo.RemoveAt(_undo.Count - 1);
+            if (!_history.TryUndo(JsonUtility.ToJson(_map), out var previous)) return;
+            Restore(previous);
+            if (!_dirty) DiscardDraft();
             _say = Loc.T("Действие отменено");
         }
 
         private void Redo()
         {
             _draggingBrush = false;
-            if (_redo.Count == 0) return;
-            _undo.Add(JsonUtility.ToJson(_map));
-            if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
-            Restore(_redo[_redo.Count - 1]);
-            _redo.RemoveAt(_redo.Count - 1);
+            if (!_history.TryRedo(JsonUtility.ToJson(_map), out var next)) return;
+            Restore(next);
             _say = Loc.T("Действие повторено");
         }
 
         private void Restore(string data)
         {
+            _validationIssues = null;
             _map = JsonUtility.FromJson<MapData>(data);
             _map.EnsureLists();
             _name = _map.Name;
             _selectionIndex = -1;
             _selectedThingIds.Clear();
-            _validationIssues.Clear();
             if (_savedSnapshot != null)
                 _dirty = JsonUtility.ToJson(_map) != _savedSnapshot;
             Redraw();
@@ -923,8 +932,18 @@ namespace Sinbinder.Gameplay
 
         private void Change(System.Action action)
         {
-            Record();
-            action();
+            bool wasDirty = _dirty;
+            string before = Record();
+            try { action(); }
+            catch (System.Exception error)
+            {
+                _history.Cancel();
+                Restore(before);
+                _dirty = wasDirty;
+                _say = Loc.T("Не удалось применить правку. Карта восстановлена.");
+                Debug.LogError("[Редактор карт] " + error);
+                return;
+            }
             Redraw();
         }
 
@@ -1346,6 +1365,7 @@ namespace Sinbinder.Gameplay
                 default: return false;
             }
             // Disc() samples terrain height itself. Do not add it twice.
+            if (!Finite(x) || !Finite(z)) return false;
             position = new Vector3(x, 0.12f, z);
             return true;
         }
@@ -1448,6 +1468,7 @@ namespace Sinbinder.Gameplay
 
         void OnDestroy()
         {
+            _draft?.Dispose();
             ClearPreview();
             foreach (var marker in _templatePreviewMarkers)
                 if (marker != null) Destroy(marker);
@@ -1493,14 +1514,21 @@ namespace Sinbinder.Gameplay
             ClearPreview();
             RedrawGround();
 
-            foreach (var t in _map.Things) Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale, t.MaterialId);
+            foreach (var t in _map.Things)
+                if (t != null && Finite(t.X) && Finite(t.Z))
+                    Model(t.Prop, new Vector3(t.X, MapTerrain.HeightAt(_map, t.X, t.Z), t.Z), t.Yaw, t.Scale, t.MaterialId);
             // Склеп — тот же, что встанет на поле: пол, стены, дверь, трон (MapLoader).
-            foreach (var c in _map.Crypts) Model("Crypt", new Vector3(c.X, MapTerrain.HeightAt(_map, c.X, c.Z), c.Z), c.Yaw, 1f);
-            foreach (var l in _map.Locations) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
-            foreach (var s in _map.Trails) Disc(new Vector3(s.X, 0.06f, s.Z), 3f, new Color(0.8f, 0.15f, 0.12f));
-            foreach (var s in _map.Events) Disc(new Vector3(s.X, 0.07f, s.Z), 2.5f, new Color(0.95f, 0.8f, 0.2f));
+            foreach (var c in _map.Crypts)
+                if (c != null && Finite(c.X) && Finite(c.Z))
+                    Model("Crypt", new Vector3(c.X, MapTerrain.HeightAt(_map, c.X, c.Z), c.Z), c.Yaw, 1f);
+            foreach (var l in _map.Locations)
+                if (l != null) Disc(new Vector3(l.X, 0.05f, l.Z), l.Radius, LocationColour(l.Kind));
+            foreach (var s in _map.Trails)
+                if (s != null) Disc(new Vector3(s.X, 0.06f, s.Z), 3f, new Color(0.8f, 0.15f, 0.12f));
+            foreach (var s in _map.Events)
+                if (s != null) Disc(new Vector3(s.X, 0.07f, s.Z), 2.5f, new Color(0.95f, 0.8f, 0.2f));
             foreach (var region in _map.Regions)
-                Disc(new Vector3(region.X, 0.045f, region.Z), region.Radius, new Color(0.25f, 0.4f, 0.75f, 0.23f));
+                if (region != null) Disc(new Vector3(region.X, 0.045f, region.Z), region.Radius, new Color(0.25f, 0.4f, 0.75f, 0.23f));
             HighlightSelection();
         }
 
@@ -1513,6 +1541,8 @@ namespace Sinbinder.Gameplay
 
         private void Model(string prop, Vector3 at, float yaw, float scale, string materialId = "")
         {
+            if (string.IsNullOrWhiteSpace(prop) || !Finite(at.y) || !Finite(yaw) || !Finite(scale) || scale <= 0f)
+                return;
             var prefab = MapLoader.Prefab(prop);
             if (prefab == null)
             {
@@ -1570,6 +1600,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Плоский круг на земле — граница подлокации, тропа, событие.</summary>
         private void Disc(Vector3 at, float radius, Color colour)
         {
+            if (!Finite(at.x) || !Finite(at.z) || !Finite(radius) || radius <= 0f) return;
             float offset = at.y;
             at.y += MapTerrain.HeightAt(_map, at.x, at.z);
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -1592,6 +1623,11 @@ namespace Sinbinder.Gameplay
 
         void OnGUI()
         {
+            if (_pendingDraft != null)
+            {
+                DrawRecoveryPrompt();
+                return;
+            }
             // Warcraft-style editor layout: top commands, left catalog,
             // central live map, right properties/trigger inspector.
             GUILayout.BeginArea(new Rect(10f, 7f, Mathf.Max(350f, Screen.width - 20f),
@@ -1745,6 +1781,7 @@ namespace Sinbinder.Gameplay
             {
                 RefreshAssets();
                 RefreshTemplates();
+                _validationIssues = null;
                 _say = Loc.T("Библиотека ассетов обновлена.");
             }
 
@@ -1820,17 +1857,11 @@ namespace Sinbinder.Gameplay
                     Loc.T("3D-предпросмотр моделей"));
                 GUILayout.Label(Loc.T("ЛКМ: вставить · Q/E: повернуть · Esc: выйти. Зелёный: внутри карты; красный: границы/лимиты."));
             }
+            // Список проблем с «Перейти к записи» — в инспекторе (DrawValidationIssues); здесь — проверка и копия списка.
             if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
-            if (_validationIssues.Count > 0)
-            {
-                GUILayout.Label(Loc.F("Ошибок проверки: {0}", _validationIssues.Count));
-                for (int i = 0; i < Mathf.Min(3, _validationIssues.Count); i++)
-                    GUILayout.Label((i + 1) + ". " + _validationIssues[i]);
-                if (_validationIssues.Count > 3)
-                    GUILayout.Label(Loc.F("Ещё ошибок: {0}. Скопируйте весь список.", _validationIssues.Count - 3));
-                if (GUILayout.Button(Loc.T("Копировать список ошибок")))
-                    GUIUtility.systemCopyBuffer = string.Join("\n", _validationIssues);
-            }
+            if (_validationIssues != null && _validationIssues.Count > 0 &&
+                GUILayout.Button(Loc.T("Копировать список ошибок")))
+                GUIUtility.systemCopyBuffer = string.Join("\n", _validationIssues.ConvertAll(DescribeIssue));
             if (GUILayout.Button(Loc.T("Очистить всё")))
             {
                 if (_confirmClear)
@@ -1856,10 +1887,12 @@ namespace Sinbinder.Gameplay
                 : Loc.T("Изменения сохранены"));
             GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Shift+S — копию · Ctrl+Z/Y — история"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
+            bool wideInspector = Screen.width > PanelWidth + InspectorWidth + 100f;
+            if (!wideInspector) DrawValidationIssues();
             GUILayout.EndArea();
 
             // Keep the 3D view usable. The right pane edits selected objects.
-            if (Screen.width > PanelWidth + InspectorWidth + 100f)
+            if (wideInspector)
             {
                 GUILayout.BeginArea(new Rect(Screen.width - InspectorWidth - 10f,
                     ToolbarHeight + 10f, InspectorWidth,
@@ -1867,6 +1900,7 @@ namespace Sinbinder.Gameplay
                     GUI.skin.box);
                 _inspectorScroll = GUILayout.BeginScrollView(_inspectorScroll);
                 GUILayout.Label(Loc.T("ИНСПЕКТОР"));
+                DrawValidationIssues();
                 DrawInspector();
                 GUILayout.EndScrollView();
                 GUILayout.EndArea();
@@ -2098,97 +2132,238 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(Loc.T("Это безопасная система событий без произвольного исполнения кода."));
         }
 
-        private List<string> Validate()
+        private List<MapIssue> Validate()
         {
-            _map.EnsureLists();
-            var errors = new List<string>();
-            if (_map.Crypts.Count < 2)
-                errors.Add(Loc.T("Нужно минимум два склепа игроков."));
-            if (_map.Crypts.Count > 8)
-                errors.Add(Loc.T("Поддерживается не более восьми склепов."));
-            if (float.IsNaN(_map.Size) || float.IsInfinity(_map.Size) ||
-                _map.Size < 150f || _map.Size > 800f)
-                errors.Add(Loc.T("Неверный размер поля."));
-            float half = _map.Size * 0.5f;
-            bool InField(float x, float z)
-                => !float.IsNaN(x) && !float.IsNaN(z) &&
-                   !float.IsInfinity(x) && !float.IsInfinity(z) &&
-                   Mathf.Abs(x) <= half && Mathf.Abs(z) <= half;
-            foreach (var c in _map.Crypts)
-                if (c == null || !InField(c.X, c.Z)) errors.Add(Loc.T("Склеп вне карты."));
-            foreach (var t in _map.Things)
-            {
-                if (t == null || !InField(t.X, t.Z) || t.Scale <= 0f ||
-                    float.IsNaN(t.Scale) || float.IsInfinity(t.Scale))
-                    errors.Add(Loc.T("Неверная позиция или размер объекта."));
-                else if (string.IsNullOrWhiteSpace(t.Prop) || MapLoader.Prefab(t.Prop) == null)
-                    errors.Add(Loc.F("Модель не найдена: {0}", t.Prop));
-            }
-            foreach (var l in _map.Locations)
-                if (l == null || !InField(l.X, l.Z) || l.Radius <= 0f ||
-                    l.People < 0) errors.Add(Loc.T("Неверная подлокация."));
-            foreach (var t in _map.Trails)
-                if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Тропа вне карты."));
-            foreach (var t in _map.Events)
-                if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
-            if (!MapTerrain.Valid(_map))
-                errors.Add(Loc.T("Некорректные параметры рельефа или материалов земли."));
-            foreach (var paint in _map.TerrainPaints)
-                if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
-                    (paint.MaterialId != MapTerrain.RestoreOriginalMaterial &&
-                     MapAssets.TerrainMaterial(paint.MaterialId) == null)))
-                    errors.Add(Loc.F("Материал земли не найден: {0}", paint.MaterialId));
-            foreach (var t in _map.Things)
-                if (t != null && !string.IsNullOrEmpty(t.MaterialId) &&
-                    MapAssets.ObjectMaterial(t.MaterialId) == null)
-                    errors.Add(Loc.F("Нет материала объекта: {0}", t.MaterialId));
-            var regionIds = new HashSet<string>();
-            foreach (var region in _map.Regions)
-                if (region == null || string.IsNullOrEmpty(region.Id) ||
-                    !regionIds.Add(region.Id) || !InField(region.X, region.Z) ||
-                    region.Radius <= 0f || float.IsNaN(region.Radius))
-                    errors.Add(Loc.T("Неверная область или повтор ID."));
-            var objectIds = new HashSet<string>();
-            foreach (var thing in _map.Things)
-                if (thing != null && (string.IsNullOrEmpty(thing.Id) ||
-                    !objectIds.Add(thing.Id)))
-                    errors.Add(Loc.T("Объект без уникального ID."));
-            if (_map.Triggers.Count > 128)
-                errors.Add(Loc.T("Максимум 128 правил на карте."));
-            var triggerIds = new HashSet<string>();
-            foreach (var rule in _map.Triggers)
-            {
-                if (rule == null || string.IsNullOrEmpty(rule.Id) ||
-                    !triggerIds.Add(rule.Id))
-                { errors.Add(Loc.T("Триггер без уникального ID.")); continue; }
-                if (rule.Event != "OnStart" && rule.Event != "OnEnterRegion" &&
-                    rule.Event != "OnInteractObject")
-                    errors.Add(Loc.T("Неизвестное событие правила."));
-                if (rule.Condition != "Always" && rule.Condition != "FlagIsTrue" &&
-                    rule.Condition != "FlagIsFalse")
-                    errors.Add(Loc.T("Неизвестное условие правила."));
-                if (rule.Action != "ShowMessage" && rule.Action != "SetFlag" &&
-                    rule.Action != "ClearFlag")
-                    errors.Add(Loc.T("Неизвестное действие правила."));
-                if (rule.Event == "OnEnterRegion" && !regionIds.Contains(rule.RegionId))
-                    errors.Add(Loc.T("Триггер ссылается на отсутствующую область."));
-                if (rule.Event == "OnInteractObject" && !objectIds.Contains(rule.TargetId))
-                    errors.Add(Loc.T("Триггер ссылается на отсутствующий предмет."));
-                if ((rule.Action == "SetFlag" || rule.Action == "ClearFlag" ||
-                    rule.Condition == "FlagIsTrue" || rule.Condition == "FlagIsFalse") &&
-                    (string.IsNullOrWhiteSpace(rule.Flag) || rule.Flag.Length > 64))
-                    errors.Add(Loc.T("Условие или действие не содержит допустимый флаг."));
-                if (rule.Action == "ShowMessage" &&
-                    (string.IsNullOrWhiteSpace(rule.Message) || rule.Message.Length > 240))
-                    errors.Add(Loc.T("Сообщение правила отсутствует или слишком длинное."));
-            }
-            return errors;
+            _validationScroll = default;
+            return _validationIssues = MapValidator.Check(_map, MapTerrain.Valid,
+                id => MapLoader.Prefab(id) != null,
+                id => MapAssets.ObjectMaterial(id) != null,
+                id => id == MapTerrain.RestoreOriginalMaterial || MapAssets.TerrainMaterial(id) != null);
         }
 
-        /// <summary>
-        /// Compare actual file contents, not timestamps: clocks and sync tools can
-        /// preserve mtimes while changing map bytes. Errors block normal saves.
-        /// </summary>
+        private static string DescribeIssue(MapIssue issue)
+        {
+            string message = issue.Code switch
+            {
+                MapIssueCode.MapMissing => Loc.T("Карта отсутствует."),
+                MapIssueCode.MapNameMissing => Loc.T("Имя не задано. Карта будет записана как «Новая карта»."),
+                MapIssueCode.UnsupportedSchema => Loc.F("Версия карты {0} не поддерживается. Оригинал защищён от записи.", issue.Value),
+                MapIssueCode.FieldSize => Loc.T("Неверный размер поля."),
+                MapIssueCode.TooFewCrypts => Loc.T("Нужно минимум два склепа игроков."),
+                MapIssueCode.TooManyCrypts => Loc.T("Поддерживается не более восьми склепов."),
+                MapIssueCode.CryptPosition => Loc.T("Неверная позиция или поворот склепа."),
+                MapIssueCode.ObjectGeometry => Loc.T("Неверная позиция или размер объекта."),
+                MapIssueCode.ObjectModelMissing => Loc.F("Модель не найдена: {0}", issue.Value),
+                MapIssueCode.ObjectMaterialMissing => Loc.F("Нет материала объекта: {0}", issue.Value),
+                MapIssueCode.ObjectId => Loc.T("Объект без уникального ID."),
+                MapIssueCode.LocationGeometry => Loc.T("Неверная подлокация."),
+                MapIssueCode.TrailPosition => Loc.T("Тропа вне карты."),
+                MapIssueCode.EventPosition => Loc.T("Событие вне карты."),
+                MapIssueCode.TerrainInvalid => Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."),
+                MapIssueCode.TerrainMaterialMissing => Loc.F("Материал земли не найден: {0}", issue.Value),
+                MapIssueCode.RegionGeometry => Loc.T("Неверная позиция или радиус области."),
+                MapIssueCode.RegionId => Loc.T("Область без уникального ID."),
+                MapIssueCode.TooManyRules => Loc.T("Максимум 128 правил на карте."),
+                MapIssueCode.RuleId => Loc.T("Триггер без уникального ID."),
+                MapIssueCode.RuleEvent => Loc.T("Неизвестное событие правила."),
+                MapIssueCode.RuleCondition => Loc.T("Неизвестное условие правила."),
+                MapIssueCode.RuleAction => Loc.T("Неизвестное действие правила."),
+                MapIssueCode.RuleRegionMissing => Loc.T("Триггер ссылается на отсутствующую область."),
+                MapIssueCode.RuleTargetMissing => Loc.T("Триггер ссылается на отсутствующий предмет."),
+                MapIssueCode.RuleFlag => Loc.T("Условие или действие не содержит допустимый флаг."),
+                MapIssueCode.RuleMessage => Loc.T("Сообщение правила отсутствует или слишком длинное."),
+                _ => issue.Code.ToString()
+            };
+            if (issue.Index < 0) return message;
+            return string.IsNullOrEmpty(issue.EntityId) ? Loc.F("Запись {0}: {1}", issue.Index + 1, message)
+                : Loc.F("Запись {0} ({1}): {2}", issue.Index + 1, issue.EntityId, message);
+        }
+
+        private void DrawValidationIssues()
+        {
+            if (_validationIssues == null || _validationIssues.Count == 0) return;
+            GUILayout.Label(Loc.T("Проблемы карты"));
+            _validationScroll = GUILayout.BeginScrollView(_validationScroll, GUILayout.Height(120f));
+            _validationLabel ??= new GUIStyle(GUI.skin.label) { wordWrap = true };
+            foreach (var issue in _validationIssues)
+            {
+                GUILayout.Label((issue.IsError ? Loc.T("Ошибка") : Loc.T("Предупреждение")) + ": " + DescribeIssue(issue),
+                    _validationLabel);
+                if (TryIssueTarget(issue, out _) && GUILayout.Button(Loc.T("Перейти к записи")))
+                    JumpToIssue(issue);
+            }
+            GUILayout.EndScrollView();
+        }
+
+        private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private bool TryIssueTarget(MapIssue issue, out Kind kind)
+        {
+            int i = issue.Index;
+            kind = default;
+            if (i < 0) return false;
+            switch (issue.Code)
+            {
+                case MapIssueCode.ObjectGeometry:
+                case MapIssueCode.ObjectModelMissing:
+                case MapIssueCode.ObjectMaterialMissing:
+                case MapIssueCode.ObjectId:
+                    kind = Kind.Thing;
+                    return i < _map.Things.Count && _map.Things[i] != null && _map.Things[i].Id == issue.EntityId;
+                case MapIssueCode.CryptPosition:
+                    kind = Kind.Crypt;
+                    return i < _map.Crypts.Count && _map.Crypts[i] != null;
+                case MapIssueCode.LocationGeometry:
+                    kind = Kind.Location;
+                    return i < _map.Locations.Count && _map.Locations[i] != null;
+                case MapIssueCode.TrailPosition:
+                    kind = Kind.Trail;
+                    return i < _map.Trails.Count && _map.Trails[i] != null;
+                case MapIssueCode.EventPosition:
+                    kind = Kind.Event;
+                    return i < _map.Events.Count && _map.Events[i] != null;
+                case MapIssueCode.RegionGeometry:
+                case MapIssueCode.RegionId:
+                    kind = Kind.Region;
+                    return i < _map.Regions.Count && _map.Regions[i] != null && _map.Regions[i].Id == issue.EntityId;
+                case MapIssueCode.RuleId:
+                case MapIssueCode.RuleEvent:
+                case MapIssueCode.RuleCondition:
+                case MapIssueCode.RuleAction:
+                case MapIssueCode.RuleRegionMissing:
+                case MapIssueCode.RuleTargetMissing:
+                case MapIssueCode.RuleFlag:
+                case MapIssueCode.RuleMessage:
+                    kind = Kind.Trigger;
+                    return i < _map.Triggers.Count && _map.Triggers[i] != null && _map.Triggers[i].Id == issue.EntityId;
+                default:
+                    return false;
+            }
+        }
+
+        private bool JumpToIssue(MapIssue issue)
+        {
+            if (!TryIssueTarget(issue, out var kind)) return false;
+
+            _selectedThingIds.Clear();
+            _selectionIndex = issue.Index;
+            _selectionKind = kind;
+            // A duplicate or empty ID still selects this exact row, never the whole group with that ID.
+            if (kind == Kind.Thing && !string.IsNullOrEmpty(issue.EntityId) &&
+                _map.Things.FindIndex(thing => thing?.Id == issue.EntityId) ==
+                _map.Things.FindLastIndex(thing => thing?.Id == issue.EntityId))
+                _selectedThingIds.Add(issue.EntityId);
+            _mode = Mode.Select;
+            _inspectorScroll = default;
+            if (_cam != null && SelectedPosition(out var point))
+            {
+                point.y = MapTerrain.HeightAt(_map, point.x, point.z);
+                if (Finite(point.y) && _cam.transform.forward.y < -0.01f)
+                {
+                    _height = Mathf.Max(_height, point.y + 18f);
+                    var forward = _cam.transform.forward;
+                    _cam.transform.position = point - forward * ((_height - point.y) / -forward.y);
+                }
+            }
+            Redraw();
+            return true;
+        }
+
+        private void FindRecoveryDraft()
+        {
+            try
+            {
+                _draft = MapDraftJournal.FindLatest(DraftRoot, _path, out _pendingDraft);
+                if (_pendingDraft != null && _pendingDraft.MapJson == _savedSnapshot)
+                {
+                    DiscardDraft();
+                    _pendingDraft = null;
+                }
+            }
+            catch (System.Exception error) when (error is IOException || error is System.UnauthorizedAccessException)
+            {
+                Debug.LogWarning("[WorldForge] Cannot open the draft directory: " + error.Message);
+            }
+        }
+
+        private void UpdateDraft()
+        {
+            if (!_dirty || _map == null || Time.unscaledTime < _nextDraftAt) return;
+            _nextDraftAt = Time.unscaledTime + DraftInterval;
+            try
+            {
+                string json = JsonUtility.ToJson(_map);
+                if (json == _lastDraftJson) return;
+                _draft ??= MapDraftJournal.Create(DraftRoot, _path);
+                _draft.Write(json, _openedFingerprint);
+                _lastDraftJson = json;
+                _draftWriteFailed = false;
+            }
+            catch (System.Exception error) when (error is IOException || error is System.UnauthorizedAccessException)
+            {
+                if (!_draftWriteFailed)
+                {
+                    _say = Loc.T("Не удалось записать черновик. Сохраните карту вручную.");
+                    Debug.LogWarning("[WorldForge] Cannot save draft: " + error.Message);
+                }
+                _draftWriteFailed = true;
+            }
+        }
+
+        private bool DraftSourceChanged() => !string.IsNullOrEmpty(_path) &&
+            (_unreadableSource || (_pendingDraft.BaseFingerprint ?? "") != (_openedFingerprint ?? ""));
+
+        private void DrawRecoveryPrompt()
+        {
+            const float width = 460f;
+            GUILayout.BeginArea(new Rect((Screen.width - width) / 2f, Screen.height * 0.25f, width, 240f), GUI.skin.box);
+            GUILayout.Label(Loc.T("Найден черновик с несохранёнными правками."));
+            if (DraftSourceChanged())
+                GUILayout.Label(Loc.T("Карта на диске изменилась. Черновик можно сохранить отдельной копией."));
+            if (GUILayout.Button(Loc.T("Восстановить черновик"))) ResolveDraft(true);
+            if (GUILayout.Button(Loc.T("Удалить черновик и продолжить"))) ResolveDraft(false);
+            if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
+            GUILayout.EndArea();
+        }
+
+        private void ResolveDraft(bool recover)
+        {
+            if (_pendingDraft == null) return;
+            if (!recover)
+            {
+                if (DiscardDraft()) _pendingDraft = null;
+                return;
+            }
+
+            bool changed = DraftSourceChanged();
+            var snapshot = _pendingDraft;
+            _pendingDraft = null;
+            _unreadableSource |= changed;
+            _openedFingerprint = snapshot.BaseFingerprint;
+            _lastDraftJson = snapshot.MapJson;
+            _nextDraftAt = Time.unscaledTime + DraftInterval;
+            Restore(snapshot.MapJson);
+            _say = changed ? Loc.T("Черновик восстановлен. Используйте «Сохранить копию».")
+                : Loc.T("Черновик восстановлен. Сохраните карту, чтобы записать правки.");
+        }
+
+        private bool DiscardDraft()
+        {
+            try
+            {
+                _draft?.Discard();
+                _draft = null;
+                _lastDraftJson = null;
+                return true;
+            }
+            catch (System.Exception error) when (error is IOException || error is System.UnauthorizedAccessException)
+            {
+                _say = Loc.T("Не удалось удалить черновик. Повторите попытку.");
+                Debug.LogWarning("[WorldForge] Cannot remove draft: " + error.Message);
+                return false;
+            }
+        }
+
         private void RequestExit()
         {
             if (_dirty && !_confirmExit)
@@ -2197,14 +2372,7 @@ namespace Sinbinder.Gameplay
                 _say = Loc.T("Карта изменена. Сохраните её или подтвердите выход без сохранения.");
                 return;
             }
-            SceneManager.LoadScene(0);
-        }
-
-        private static string FileFingerprint(string path)
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
-            using (var hash = SHA256.Create())
-                return System.Convert.ToBase64String(hash.ComputeHash(File.ReadAllBytes(path)));
+            if (DiscardDraft()) SceneManager.LoadScene(0);
         }
 
         private void Save() => SaveInternal(false);
@@ -2212,31 +2380,25 @@ namespace Sinbinder.Gameplay
 
         private void SaveInternal(bool saveCopy)
         {
-            var errors = Validate();
+            var errors = Validate().FindAll(issue => issue.IsError);
             if (errors.Count > 0)
             {
                 _validationIssues = errors;
                 _say = Loc.F("Карта не записана: {0} ошибок. Первая: {1}",
-                    errors.Count, errors[0]);
+                    errors.Count, DescribeIssue(errors[0]));
                 return;
             }
-            _map.Name = string.IsNullOrWhiteSpace(_name) ? Loc.T("Новая карта") : _name.Trim();
             try
             {
+                string before = JsonUtility.ToJson(_map);
+                var savedMap = JsonUtility.FromJson<MapData>(before);
+                savedMap.Name = string.IsNullOrWhiteSpace(_name) ? Loc.T("Новая карта") : _name.Trim();
                 bool createNew = saveCopy || string.IsNullOrEmpty(_path);
                 string destination = createNew ? null : _path;
-                if (!createNew)
+                if (!createNew && _unreadableSource) throw new MapData.SaveConflict(destination);
+                if (createNew)
                 {
-                    // No overwrite of unreadable or externally edited data.
-                    if (_unreadableSource || FileFingerprint(destination) != _openedFingerprint)
-                    {
-                        _say = Loc.T("Файл карты изменён или повреждён на диске. Оригинал не перезаписан. Используйте «Сохранить копию».");
-                        return;
-                    }
-                }
-                else
-                {
-                    string file = string.Join("_", _map.Name.Split(Path.GetInvalidFileNameChars())).Trim().Trim('.');
+                    string file = string.Join("_", savedMap.Name.Split(Path.GetInvalidFileNameChars())).Trim().Trim('.');
                     if (string.IsNullOrEmpty(file)) file = "SinbinderMap";
                     string folder = !string.IsNullOrEmpty(_path)
                         ? Path.GetDirectoryName(_path) : MapData.Folder;
@@ -2247,17 +2409,18 @@ namespace Sinbinder.Gameplay
                         destination = Path.Combine(folder, file + "_" + suffix++ + ".json");
                 }
 
-                // CreateNew must not overwrite an existing destination even if
-                // another process creates the name after the File.Exists check.
-                _map.Save(destination, overwrite: !createNew);
+                string fingerprint = savedMap.SaveEditor(destination, createNew, _openedFingerprint);
                 _path = destination;
-                _openedFingerprint = FileFingerprint(_path);
+                _openedFingerprint = fingerprint;
                 _unreadableSource = false;
+                _map.Name = _name = savedMap.Name;
+                _map.SchemaVersion = savedMap.SchemaVersion;
+                _map.EnsureLists();
                 _savedSnapshot = JsonUtility.ToJson(_map);
+                _history.Rebase(before, _savedSnapshot);
                 _dirty = false;
+                _validationIssues = null;
                 _confirmExit = false;
-                _validationIssues.Clear();
-                var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
                 {
                     MapSession.Path = _path;
@@ -2266,6 +2429,15 @@ namespace Sinbinder.Gameplay
                 }
                 else MapSession.Choose(_path, savedMap);
                 _say = Loc.F("Записано: {0}", Path.GetFileName(_path));
+                DiscardDraft();
+            }
+            catch (MapData.SaveConflict)
+            {
+                _say = Loc.T("Файл карты изменён или повреждён на диске. Оригинал не перезаписан. Используйте «Сохранить копию».");
+            }
+            catch (MapData.SaveLockFailure)
+            {
+                _say = Loc.T("Не удалось получить доступ к записи карты. Повторите попытку или сохраните копию.");
             }
             catch (System.Exception error)
             {

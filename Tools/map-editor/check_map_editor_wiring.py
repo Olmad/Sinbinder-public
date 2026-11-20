@@ -54,6 +54,8 @@ assert 'case "ShowMessage":' in runner and 'case "SetFlag":' in runner
 assert "default: return false;" in runner, "Missing fail-closed rule dispatch"
 assert "File.Replace(temp, path, path + \".bak\");" in data
 assert "File.Move(temp, path);" in data
+assert "using var writeLock = AcquireWriteLock(path);" in data
+assert "savedMap.SaveEditor(destination, createNew, _openedFingerprint)" in editor
 assert "private void Undo()" in editor and "private void Redo()" in editor
 assert "private void Select(Vector3 at, bool additive = false)" in editor
 assert "private void SelectAllThings()" in editor
@@ -83,7 +85,8 @@ assert "guid: 376d5cd4c38b4b34b550d7b60e2a8e11" in src("Assets/Scripts/Gameplay/
 assert "guid: b4b295570ea247138f4a5ea2896c29f3" in src("Assets/Scripts/Gameplay/MapObjectArrange.cs.meta")
 assert "private void MoveSelectedThings(float dx, float dz)" in editor
 assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
-assert "private List<string> Validate()" in editor
+assert "MapValidator.Check(_map" in editor
+assert "DrawValidationIssues();" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
 assert "private void SaveSelectedTemplate()" in editor

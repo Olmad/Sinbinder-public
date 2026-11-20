@@ -67,6 +67,272 @@ static class Program
         }
         finally { Directory.Delete(root, recursive: true); }
     }
+    static void VersionedMapMigration()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "Sinbinder.MapVersions." + Guid.NewGuid().ToString("N"));
+        string blockedBackup = Path.Combine(root, "protected.json.pre-v" + MapData.CurrentSchemaVersion + ".bak");
+        Directory.CreateDirectory(root);
+        try
+        {
+            const string legacy = "{\"Name\":\"Рубеж\",\"Size\":300,\"Crypts\":[{\"X\":2,\"Z\":-100},"
+                + "{\"X\":3,\"Z\":100}],\"Things\":[{\"Id\":\"p1\",\"Prop\":\"Pine\",\"X\":13,\"Z\":17}],"
+                + "\"Regions\":[{\"Id\":\"grove\",\"Radius\":10}],\"Triggers\":[{\"Id\":\"meet\","
+                + "\"Event\":\"OnEnterRegion\",\"RegionId\":\"grove\",\"Message\":\"Подойдите\"}],"
+                + "\"OldNote\":\"Сохранить дословно\"}";
+            foreach (int version in new[] { 0, 1, 2 })
+            {
+                string path = Path.Combine(root, "legacy-" + version + ".json");
+                string source = version == 0 ? legacy : "{\"SchemaVersion\":" + version + "," + legacy.Substring(1);
+                File.WriteAllText(path, source, System.Text.Encoding.Unicode);
+                string bytes = Convert.ToBase64String(File.ReadAllBytes(path));
+                var map = MapData.Load(path, out int? unsupported);
+                Check(map != null && map.SchemaVersion == version && !unsupported.HasValue,
+                      "old version opens without modifying its schema marker");
+                Check(Convert.ToBase64String(File.ReadAllBytes(path)) == bytes,
+                      "opening a legacy map does not touch its bytes");
+                map.Save(path);
+                var upgraded = MapData.Load(path);
+                string backup = path + ".pre-v" + MapData.CurrentSchemaVersion + ".bak";
+                Check(upgraded.SchemaVersion == MapData.CurrentSchemaVersion &&
+                      upgraded.Crypts[1].Z == 100 && upgraded.Things[0].X == 13 &&
+                      upgraded.Triggers[0].RegionId == upgraded.Regions[0].Id,
+                      "migration preserves positions and logic links");
+                Check(Convert.ToBase64String(File.ReadAllBytes(backup)) == bytes,
+                      "pre-migration copy keeps the exact UTF-16 bytes including unknown fields");
+                string current = File.ReadAllText(path);
+                upgraded.Save(path);
+                Check(current == File.ReadAllText(path) &&
+                      Convert.ToBase64String(File.ReadAllBytes(backup)) == bytes,
+                      "repeated migration is idempotent and does not roll the original backup");
+            }
+
+            string future = Path.Combine(root, "future.json");
+            int next = MapData.CurrentSchemaVersion + 1;
+            string futureText = "{\"SchemaVersion\":" + next + ",\"Crypts\":{\"layout\":\"future\"}}";
+            File.WriteAllText(future, futureText);
+            Check(MapData.Load(future, out int? unsupportedFuture) == null && unsupportedFuture == next,
+                  "newer schema is explicitly rejected before interpreting incompatible fields");
+            bool blocked = false;
+            try { Map().Save(future); }
+            catch (InvalidDataException) { blocked = true; }
+            Check(blocked && File.ReadAllText(future) == futureText && !File.Exists(future + ".bak"),
+                  "direct saves cannot overwrite a newer schema");
+            var incompatible = Map();
+            incompatible.SchemaVersion = next;
+            var editor = new MapEditor();
+            Set(editor, "_map", incompatible);
+            var issues = (List<MapIssue>)Invoke(editor, "Validate");
+            Check(issues.Count == 1 && issues[0].Code == MapIssueCode.UnsupportedSchema && issues[0].IsError,
+                  "editor reports an incompatible schema as a blocking error");
+            MapSession.Choose(future, Map());
+            var futureEditor = new MapEditor();
+            Invoke(futureEditor, "Start");
+            var status = typeof(MapEditor).GetField("_say", BindingFlags.Instance | BindingFlags.NonPublic);
+            Check(((string)status.GetValue(futureEditor)).Contains("Версия карты " + next),
+                  "a newer on-disk map has a specific compatibility message");
+            Invoke(futureEditor, "Save");
+            Check(File.ReadAllText(future) == futureText, "an older lobby snapshot cannot overwrite newer map data");
+
+            string protectedPath = Path.Combine(root, "protected.json");
+            File.WriteAllText(protectedPath, legacy);
+            Directory.CreateDirectory(blockedBackup);
+            var protectedMap = MapData.Load(protectedPath);
+            blocked = false;
+            try { protectedMap.Save(protectedPath); }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException) { blocked = true; }
+            Check(blocked && File.ReadAllText(protectedPath) == legacy && protectedMap.SchemaVersion == 0 &&
+                  Directory.GetFiles(root, "*.tmp").Length == 0,
+                  "a failed backup leaves the old map, editor version and temporary files intact");
+        }
+        finally
+        {
+            MapSession.Path = null;
+            MapSession.Map = null;
+            MapSession.Seats.Clear();
+            foreach (string file in Directory.GetFiles(root)) File.Delete(file);
+            if (Directory.Exists(blockedBackup)) Directory.Delete(blockedBackup);
+            Directory.Delete(root);
+        }
+    }
+
+    private static System.Diagnostics.Process ConcurrentWriter(string path, string fingerprint, string name)
+        => FixtureProcess("--write-map-fixture", path, fingerprint, name);
+
+    private static System.Diagnostics.Process FixtureProcess(params string[] args)
+    {
+        string process = Environment.ProcessPath;
+        var info = new System.Diagnostics.ProcessStartInfo(process) { UseShellExecute = false, CreateNoWindow = true };
+        if (string.Equals(Path.GetFileNameWithoutExtension(process), "dotnet", StringComparison.OrdinalIgnoreCase))
+            info.ArgumentList.Add(typeof(Program).Assembly.Location);
+        foreach (string arg in args) info.ArgumentList.Add(arg);
+        return System.Diagnostics.Process.Start(info);
+    }
+
+    private static int WriterResult(System.Diagnostics.Process process)
+    {
+        if (!process.WaitForExit(10000))
+        {
+            process.Kill();
+            process.WaitForExit();
+            throw new TimeoutException("Concurrent writer did not exit.");
+        }
+        return process.ExitCode;
+    }
+
+    private static int WriteMapFixture(string path, string fingerprint, string name)
+    {
+        var map = Map();
+        map.Name = name;
+        try { map.SaveEditor(path, createNew: false, expectedFingerprint: fingerprint); return 0; }
+        catch (MapData.SaveConflict) { return 10; }
+        catch (MapData.SaveLockFailure) { return 11; }
+    }
+
+    static void ConcurrentSaveGuard()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "Sinbinder.MapWriters." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            string path = Path.Combine(root, "map.json");
+            var original = Map();
+            original.Save(path);
+            byte[] originalBytes = File.ReadAllBytes(path);
+            using var hash = System.Security.Cryptography.SHA256.Create();
+            var stale = MapData.Load(path, out _, out string openedFingerprint);
+            Check(openedFingerprint == Convert.ToBase64String(hash.ComputeHash(originalBytes)),
+                  "load fingerprints the exact bytes that it parsed");
+
+            using (var held = new FileStream(MapData.WriteLockPath(path), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (var blocked = ConcurrentWriter(path, openedFingerprint, "Blocked"))
+                Check(WriterResult(blocked) == 11 && MapData.Load(path).Name == original.Name,
+                      "a second process cannot save while the map write lock is held");
+
+            using var first = ConcurrentWriter(path, openedFingerprint, "First");
+            using var second = ConcurrentWriter(path, openedFingerprint, "Second");
+            int firstResult = WriterResult(first), secondResult = WriterResult(second);
+            Check((firstResult == 0 && (secondResult == 10 || secondResult == 11)) ||
+                  (secondResult == 0 && (firstResult == 10 || firstResult == 11)),
+                  "only one of two processes can save the same opened snapshot");
+            string winningName = firstResult == 0 ? "First" : "Second";
+            Check(MapData.Load(path).Name == winningName &&
+                  Convert.ToBase64String(File.ReadAllBytes(path + ".bak")) == Convert.ToBase64String(originalBytes),
+                  "the winning save preserves the original backup");
+
+            stale.Name = "Stale";
+            bool rejected = false;
+            try { stale.SaveEditor(path, createNew: false, expectedFingerprint: openedFingerprint); }
+            catch (MapData.SaveConflict) { rejected = true; }
+            Check(rejected && MapData.Load(path).Name == winningName && Directory.GetFiles(root, "*.tmp").Length == 0,
+                  "a stale opened map cannot overwrite the winner after the lock is released");
+
+            var refreshed = MapData.Load(path, out _, out string updated);
+            refreshed.Name = "Next save";
+            string written = refreshed.SaveEditor(path, createNew: false, expectedFingerprint: updated);
+            Check(written == Convert.ToBase64String(hash.ComputeHash(File.ReadAllBytes(path))),
+                  "save returns the fingerprint of the bytes it committed");
+            File.Delete(path);
+            rejected = false;
+            try { refreshed.SaveEditor(path, createNew: false, expectedFingerprint: written); }
+            catch (MapData.SaveConflict) { rejected = true; }
+            Check(rejected && !File.Exists(path), "an externally deleted map is not silently recreated");
+        }
+        finally
+        {
+            foreach (string file in Directory.GetFiles(root)) File.Delete(file);
+            Directory.Delete(root);
+        }
+    }
+
+    static void DraftRecoveryContracts()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "Sinbinder.MapDrafts." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        string previousPersistent = Application.persistentDataPath;
+        float previousTime = Time.unscaledTime;
+        MapEditor first = null, reopened = null;
+        try
+        {
+            Application.persistentDataPath = root;
+            Time.unscaledTime = 0f;
+            string drafts = Path.Combine(root, "WorldForgeDrafts");
+            string path = Path.Combine(root, "map.json");
+            var disk = Map();
+            disk.Save(path);
+            string original = File.ReadAllText(path);
+            MapSession.Choose(path, disk);
+            first = new MapEditor();
+            Invoke(first, "Start");
+            Invoke(first, "Record");
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var mapField = typeof(MapEditor).GetField("_map", flags);
+            ((MapData)mapField.GetValue(first)).Name = "Unsaved draft";
+            Set(first, "_name", "Unsaved draft");
+            Invoke(first, "UpdateDraft");
+            Check(!Directory.Exists(drafts), "draft writes respect the initial interval");
+            Time.unscaledTime = 11f;
+            Invoke(first, "UpdateDraft");
+            Check(File.ReadAllText(path) == original, "autosave writes the draft, never the source JSON");
+            using (var active = MapDraftJournal.FindLatest(drafts, path, out _))
+                Check(active == null, "a live editor's draft is not offered to another editor");
+            Invoke(first, "OnDestroy");
+            first = null;
+
+            var external = Map();
+            external.Name = "New disk version";
+            external.Save(path);
+            MapSession.Choose(path, external);
+            reopened = new MapEditor();
+            Invoke(reopened, "Start");
+            var pending = typeof(MapEditor).GetField("_pendingDraft", flags);
+            Check(pending.GetValue(reopened) != null && ((MapData)mapField.GetValue(reopened)).Name == external.Name,
+                  "opening a draft waits for the user's choice");
+            Check((bool)Invoke(reopened, "DraftSourceChanged"), "draft detects a changed source");
+            Invoke(reopened, "ResolveDraft", true);
+            Check(((MapData)mapField.GetValue(reopened)).Name == "Unsaved draft", "restore adopts unsaved editor data");
+            Invoke(reopened, "Save");
+            Check(MapData.Load(path).Name == external.Name, "restoring against changed disk does not permit overwrite");
+            Invoke(reopened, "SaveCopy");
+            var copy = (string)typeof(MapEditor).GetField("_path", flags).GetValue(reopened);
+            Check(copy != path && MapData.Load(copy).Name == "Unsaved draft" && MapData.Load(path).Name == external.Name,
+                  "restored draft can safely be saved as a copy");
+            using (var removed = MapDraftJournal.FindLatest(drafts, path, out _))
+                Check(removed == null, "successful save retires the draft");
+
+            using (var child = FixtureProcess("--write-draft-fixture", drafts))
+                Check(WriterResult(child) == 0, "fixture process exits without disposing its draft lease");
+            using (var recovered = MapDraftJournal.FindLatest(drafts, null, out var snapshot))
+            {
+                var partial = snapshot == null ? null : JsonUtility.FromJson<MapData>(snapshot.MapJson);
+                Check(recovered != null && partial != null && partial.Crypts.Count == 1,
+                      "an abandoned draft of an unfinished new map can be recovered");
+            }
+            MapSession.Path = null;
+            MapSession.Map = null;
+            var cleanEditor = new MapEditor();
+            Invoke(cleanEditor, "Start");
+            Invoke(cleanEditor, "ResolveDraft", false);
+            Invoke(cleanEditor, "OnDestroy");
+            using (var discarded = MapDraftJournal.FindLatest(drafts, null, out _))
+                Check(discarded == null, "discard does not offer the same draft on the next open");
+        }
+        finally
+        {
+            if (first != null) Invoke(first, "OnDestroy");
+            if (reopened != null) Invoke(reopened, "OnDestroy");
+            Application.persistentDataPath = previousPersistent;
+            Time.unscaledTime = previousTime;
+            MapSession.Path = null;
+            MapSession.Map = null;
+            MapSession.Seats.Clear();
+            foreach (string file in Directory.GetFiles(root, "*", SearchOption.AllDirectories)) File.Delete(file);
+            var directories = Directory.GetDirectories(root, "*", SearchOption.AllDirectories);
+            Array.Sort(directories, (a, b) => b.Length.CompareTo(a.Length));
+            foreach (string directory in directories) Directory.Delete(directory);
+            Directory.Delete(root);
+        }
+    }
+
     static void RulesRuntime()
     {
         var map = Map();
@@ -175,11 +441,11 @@ static class Program
         var editor = new MapEditor();
         Set(editor, "_map", map);
         Set(editor, "_name", map.Name);
-        var errors = (List<string>)Invoke(editor, "Validate");
-        Check(errors.Exists(error => error.Contains("допустимый флаг")),
+        var errors = (List<MapIssue>)Invoke(editor, "Validate");
+        Check(errors.Exists(error => error.Code == MapIssueCode.RuleFlag),
               "invalid empty flag rejected at editor save");
         map.Triggers.RemoveAll(t => t.Id == "missing" || t.Id == "unknown");
-        errors = (List<string>)Invoke(editor, "Validate");
+        errors = (List<MapIssue>)Invoke(editor, "Validate");
         Check(errors.Count == 0, "safe false-flag and clear-flag actions are saveable");
     }
     static void ObjectInteractionWizard()
@@ -196,7 +462,7 @@ static class Program
               rule.Action == "ShowMessage" && rule.Condition == "Always",
               "interaction wizard binds the exact object's stable ID");
         Check(rule.Enabled && !rule.Once, "interactive object remains available on repeat use");
-        Check(((List<string>)Invoke(editor, "Validate")).Count == 0,
+        Check(((List<MapIssue>)Invoke(editor, "Validate")).Count == 0,
               "generated object rule validates for saving");
         Invoke(editor, "Undo");
         var undone = (MapData)typeof(MapEditor).GetField("_map",
@@ -214,18 +480,18 @@ static class Program
         var editor = new MapEditor();
         Set(editor, "_map", map);
         Set(editor, "_name", map.Name);
-        var issues = (List<string>)Invoke(editor, "Validate");
+        var issues = (List<MapIssue>)Invoke(editor, "Validate");
         Check(issues.Count == 0, "valid map has no structural errors");
         map.Triggers.Add(new MapData.Trigger
         {
             Id = "badref", Event = "OnEnterRegion",
             RegionId = "missing", Action = "ShowMessage", Message = "Oops"
         });
-        issues = (List<string>)Invoke(editor, "Validate");
-        Check(issues.Exists(s => s.Contains("отсутствующую область")),
+        issues = (List<MapIssue>)Invoke(editor, "Validate");
+        Check(issues.Exists(s => s.Code == MapIssueCode.RuleRegionMissing),
               "invalid region reference blocks saving");
         map.Triggers[0].RegionId = "r1";
-        issues = (List<string>)Invoke(editor, "Validate");
+        issues = (List<MapIssue>)Invoke(editor, "Validate");
         Check(issues.Count == 0, "valid region reference unblocks saving");
         Invoke(editor, "Record");
         map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", Scale = 1 });
@@ -335,7 +601,7 @@ static class Program
                         BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
         Check(redone.TerrainStrokes.Count == 1, "terrain sculpt redo recovers height data");
         redone.TerrainStrokes[0].Radius = -1f;
-        Check(((List<string>)Invoke(editor, "Validate")).Exists(e => e.Contains("рельефа")),
+        Check(((List<MapIssue>)Invoke(editor, "Validate")).Exists(e => e.Code == MapIssueCode.TerrainInvalid),
               "bad brush parameters block editor save");
     }
 
@@ -552,13 +818,10 @@ static class Program
                   "create-only JSON cannot overwrite an existing map");
 
             var editor = new MapEditor();
-            Set(editor, "_map", MapData.Load(path));
+            Set(editor, "_map", MapData.Load(path, out _, out string fingerprint));
             Set(editor, "_name", "Local work");
             Set(editor, "_path", path);
-            var fingerprint = typeof(MapEditor).GetMethod("FileFingerprint",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            Set(editor, "_openedFingerprint",
-                fingerprint.Invoke(null, new object[] { path }));
+            Set(editor, "_openedFingerprint", fingerprint);
             Invoke(editor, "Save");
             Check(MapData.Load(path).Name == "Local work",
                   "unchanged map can save normally");
@@ -604,7 +867,8 @@ static class Program
 
             var newest = Map();
             newest.Name = "Disk version";
-            newest.Save(path);
+            // Simulate an external repair of the corrupt fixture before reopening it in WorldForge.
+            File.WriteAllText(path, JsonUtility.ToJson(newest));
             var stale = Map();
             stale.Name = "Stale lobby version";
             MapSession.Choose(path, stale);
@@ -694,7 +958,7 @@ static class Program
         Check(MapTerrain.PaintMaterialIds(map).Count == 2 &&
               MapTerrain.BuildMesh(map).subMeshCount == 2,
               "eraser does not consume extra material slot or submesh");
-        Check(((List<string>)Invoke(editor, "Validate")).Count == 0,
+        Check(((List<MapIssue>)Invoke(editor, "Validate")).Count == 0,
               "paint eraser passes whole editor save validation");
         Invoke(editor, "Undo");
         var undone = (MapData)typeof(MapEditor).GetField("_map",
@@ -971,6 +1235,17 @@ static class Program
         }
     }
 
+    // Undo is MapEditHistory now (200 reversible deltas): a command stays pending until the next
+    // one begins, so flush it the way Undo does before counting steps.
+    static int UndoSteps(MapEditor editor)
+    {
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var history = typeof(MapEditor).GetField("_history", flags).GetValue(editor);
+        var map = (MapData)typeof(MapEditor).GetField("_map", flags).GetValue(editor);
+        history.GetType().GetMethod("Complete").Invoke(history, new object[] { JsonUtility.ToJson(map) });
+        return ((System.Collections.ICollection)history.GetType().GetField("_undo", flags).GetValue(history)).Count;
+    }
+
     static void WorldForgeBestImprovementsContracts()
     {
         var map = Map();
@@ -992,9 +1267,7 @@ static class Program
         Check(map.Crypts[0].X == 0f && map.Regions[0].X == 1f &&
               map.Triggers.Count == 0,
               "viewport group move does not mutate gameplay anchors or trigger references");
-        var undoField = typeof(MapEditor).GetField("_undo",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        Check(((List<string>)undoField.GetValue(editor)).Count == 1,
+        Check(UndoSteps(editor) == 1,
               "one viewport group drag makes one undo transaction");
         Invoke(editor, "Undo");
         var reverted = (MapData)typeof(MapEditor).GetField("_map",
@@ -1018,7 +1291,7 @@ static class Program
         Invoke(edgeEditor, "CommitSelectionDrag",
                new Vector3(149f, 0f, 4f), new Vector3(154f, 0f, 4f));
         Check(edgeMap.Things[0].X == 149f &&
-              ((List<string>)undoField.GetValue(edgeEditor)).Count == 0,
+              UndoSteps(edgeEditor) == 0,
               "out-of-bounds viewport drags are rejected atomically");
 
         var camera = new Camera();
@@ -1038,11 +1311,11 @@ static class Program
         int count = (int)Invoke(diagnostics, "RunValidation");
         var issueField = typeof(MapEditor).GetField("_validationIssues",
             BindingFlags.Instance | BindingFlags.NonPublic);
-        var issues = (List<string>)issueField.GetValue(diagnostics);
+        var issues = (List<MapIssue>)issueField.GetValue(diagnostics);
         Check(count >= 2 && issues.Count == count,
               "validation retains all map errors instead of the first only");
         Invoke(diagnostics, "Record");
-        Check(issues.Count == 0,
+        Check(issueField.GetValue(diagnostics) == null,
               "a new edit invalidates cached diagnostics rather than showing stale errors");
     }
 
@@ -1135,10 +1408,7 @@ static class Program
         Check(map.Triggers[0].TargetId == "p2" && map.Triggers[0].Message == "Hello" &&
               map.Crypts[0].X == 0f && map.Regions[0].X == 1f,
               "layout never changes gameplay anchors, triggering rules or text");
-        var undo = (List<string>)typeof(MapEditor)
-            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
-            .GetValue(editor);
-        Check(undo.Count == 1, "three-object arrangement is exactly one undo step");
+        Check(UndoSteps(editor) == 1, "three-object arrangement is exactly one undo step");
         Invoke(editor, "Undo");
         var undone = (MapData)typeof(MapEditor)
             .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -1157,9 +1427,7 @@ static class Program
         Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
                MapObjectArrange.Operation.Distribute);
         Check(redone.Things[1].X == 16.5f &&
-              ((List<string>)typeof(MapEditor)
-                .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
-                .GetValue(editor)).Count == 1,
+              UndoSteps(editor) == 1,
               "no-op layout does not allocate a second undo entry");
     }
 
@@ -1218,9 +1486,6 @@ static class Program
         var selected = (HashSet<string>)typeof(MapEditor)
             .GetField("_selectedThingIds", BindingFlags.Instance | BindingFlags.NonPublic)
             .GetValue(e);
-        var undo = (List<string>)typeof(MapEditor)
-            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
-            .GetValue(e);
         Invoke(e, "Select", new Vector3(3, 0, 4), false);
         Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Model);
         Check(selected.SetEquals(new[] { "p1", "p2" }),
@@ -1228,7 +1493,7 @@ static class Program
         Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Material);
         Check(selected.SetEquals(new[] { "p1", "p2", "p3", "p4" }),
               "editor expands multiselection by original and imported materials");
-        Check(undo.Count == 0 && map.Things[0].X == 3 && map.Triggers[0].TargetId == "p3",
+        Check(UndoSteps(e) == 0 && map.Things[0].X == 3 && map.Triggers[0].TargetId == "p3",
               "selection changes neither Undo nor positions, anchors or F rules");
         Invoke(e, "InvertThingSelection");
         Check(selected.Count == 0, "editor can invert a full selection");
@@ -1249,7 +1514,7 @@ static class Program
               map.Things[2].X == 20 && map.Things[2].Z == 15 &&
               map.Things[3].X == -10 && map.Things[3].Z == -15,
               "group grid snap quantizes X/Z of all selected props");
-        Check(undo.Count == 1 &&
+        Check(UndoSteps(e) == 1 &&
               map.Triggers[0].TargetId == "p3" && map.Triggers[0].Message == "Keep" &&
               map.Crypts[0].X == 0 && map.Regions[0].X == 1,
               "one grid snap makes exactly one Undo without altering gameplay anchors");
@@ -1269,7 +1534,7 @@ static class Program
               "Redo restores grid positions and preserved interaction references");
         Invoke(e, "SelectAllThings");
         Invoke(e, "SnapSelectedThingsToGrid");
-        Check(undo.Count == 1 && redoMap.Things[1].X == 10,
+        Check(UndoSteps(e) == 1 && redoMap.Things[1].X == 10,
               "already-snapped group does not allocate an unnecessary Undo");
 
         var edge = Map();
@@ -1280,10 +1545,7 @@ static class Program
         Set(edgeEditor, "_snap", 40f);
         Invoke(edgeEditor, "SelectAllThings");
         Invoke(edgeEditor, "SnapSelectedThingsToGrid");
-        var edgeUndo = (List<string>)typeof(MapEditor)
-            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
-            .GetValue(edgeEditor);
-        Check(edge.Things[0].X == 149f && edge.Things[0].Z == 4f && edgeUndo.Count == 0,
+        Check(edge.Things[0].X == 149f && edge.Things[0].Z == 4f && UndoSteps(edgeEditor) == 0,
               "snap outside map bounds is rejected atomically without history pollution");
         Check(!MapObjectArrange.TrySnap(edge.Things, edge.Size, float.NaN, out _) &&
               !MapObjectArrange.TrySnap(edge.Things, edge.Size, 0f, out _),
@@ -1486,9 +1748,7 @@ static class Program
             Set(editor, "_templateDraftName", name);
             // A duplicate must fail, never mutate authoring map or Undo.
             Invoke(editor, "SaveSelectedTemplate");
-            var undoField = typeof(MapEditor).GetField("_undo",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Check(((List<string>)undoField.GetValue(editor)).Count == 0 &&
+            Check(UndoSteps(editor) == 0 &&
                   map.Things.Count == 2 && File.ReadAllText(path) == originalBytes,
                   "editor template save does not overwrite existing file or mark map dirty");
             Invoke(editor, "ChooseTemplate", name);
@@ -1504,7 +1764,7 @@ static class Program
                   map.Things[2].X == 55f && map.Things[3].X == 65f &&
                   map.Triggers[1].TargetId == map.Things[3].Id,
                   "editor click-to-place inserts two authored props with linked interaction");
-            Check(((List<string>)undoField.GetValue(editor)).Count == 1 &&
+            Check(UndoSteps(editor) == 1 &&
                   selection.Contains(map.Things[2].Id) &&
                   selection.Contains(map.Things[3].Id),
                   "one template placement is one Undo and selects only inserted group");
@@ -1544,7 +1804,7 @@ static class Program
             Check(previewMeshes[0].activeSelf,
                   "3D preview can be re-enabled without recreating source prefabs");
             Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
-                  ((List<string>)undoField.GetValue(editor)).Count == 1,
+                  UndoSteps(editor) == 1,
                   "moving template ghost never mutates map or Undo history");
             Invoke(editor, "PasteActiveTemplate", new Vector3(80f, 0f, 85f));
             Check(redone.Things.Count == 6 && redone.Triggers.Count == 3 &&
@@ -1552,7 +1812,7 @@ static class Program
                   Math.Abs(redone.Things[4].Z - 90f) < 0.001f &&
                   Math.Abs(redone.Things[4].Yaw - 125f) < 0.001f &&
                   redone.Triggers[2].TargetId == redone.Things[5].Id &&
-                  ((List<string>)undoField.GetValue(editor)).Count == 2,
+                  UndoSteps(editor) == 2,
                   "actual editor placement rotates full template as single Undo transaction");
             Invoke(editor, "Undo");
             var unrotated = (MapData)typeof(MapEditor).GetField("_map",
@@ -1572,9 +1832,190 @@ static class Program
         }
     }
 
-    static void Main()
+    static void StructuredValidation()
     {
+        var map = Map();
+        map.Name = "";
+        map.Trails = null;
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        var valid = (List<MapIssue>)Invoke(editor, "Validate");
+        Check(valid.Count == 1 && valid[0].Code == MapIssueCode.MapNameMissing && !valid[0].IsError,
+              "an unnamed legacy map has a warning and can still be saved");
+        Check(map.Trails == null, "validation does not mutate the map");
+
+        map.Things.Add(new MapData.Thing { Id = "broken", Prop = "", Scale = 1 });
+        map.Regions[0].Radius = float.PositiveInfinity;
+        map.Triggers.Add(new MapData.Trigger { Id = "rule", Event = "OnInteractObject",
+            TargetId = "missing", Action = "ShowMessage", Message = "Text" });
+        map.TerrainStrokes.Add(new MapData.TerrainStroke { Radius = -1 });
+        var issues = (List<MapIssue>)Invoke(editor, "Validate");
+        Check(issues.Exists(issue => issue.Code == MapIssueCode.ObjectModelMissing &&
+              issue.Index == 1 && issue.EntityId == "broken"), "missing model identifies its exact object");
+        Check(issues.Exists(issue => issue.Code == MapIssueCode.RegionGeometry &&
+              issue.EntityId == "r1"), "infinite region radius is rejected");
+        Check(issues.Exists(issue => issue.Code == MapIssueCode.RuleTargetMissing &&
+              issue.EntityId == "rule" && issue.Value == "missing"), "broken reference identifies rule and target");
+        Check(issues.FindAll(issue => issue.Code == MapIssueCode.TerrainInvalid).Count == 1,
+              "a single bad terrain stroke does not report duplicate terrain errors");
+        Invoke(editor, "Save");
+        Check(map.Name == "", "errors block saving before changing map data");
+        map.Regions[0].Radius = 15;
+        Invoke(editor, "Record");
+        var report = typeof(MapEditor).GetField("_validationIssues", BindingFlags.Instance | BindingFlags.NonPublic);
+        Check(report.GetValue(editor) == null, "an edit discards stale validation results");
+    }
+
+    static void ValidationNavigation()
+    {
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "broken", Prop = "", X = 18, Z = 22, Scale = 1 });
+        map.Triggers.Add(new MapData.Trigger { Id = "rule", Event = "OnInteractObject",
+            TargetId = "missing", Action = "ShowMessage", Message = "Example" });
+        var editor = new MapEditor();
+        var camera = new Camera();
+        Set(editor, "_map", map);
+        Set(editor, "_cam", camera);
+        var issues = (List<MapIssue>)Invoke(editor, "Validate");
+        var missingModel = issues.Find(issue => issue.Code == MapIssueCode.ObjectModelMissing);
+        var badRule = issues.Find(issue => issue.Code == MapIssueCode.RuleTargetMissing);
+        string before = JsonUtility.ToJson(map);
+        Check((bool)Invoke(editor, "JumpToIssue", missingModel), "object issue can be opened");
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var index = typeof(MapEditor).GetField("_selectionIndex", flags);
+        var kind = typeof(MapEditor).GetField("_selectionKind", flags);
+        Check((int)index.GetValue(editor) == 1 && kind.GetValue(editor).ToString() == "Thing" &&
+              camera.transform.position.x == 18 && camera.transform.position.z == 22,
+              "navigation selects the intended object and centers the camera");
+        Check((bool)Invoke(editor, "JumpToIssue", badRule) && (int)index.GetValue(editor) == 0 &&
+              kind.GetValue(editor).ToString() == "Trigger" && camera.transform.position.x == 18,
+              "missing target leads to its rule without moving the camera");
+        Check(JsonUtility.ToJson(map) == before, "diagnostic navigation leaves map data unchanged");
+        map.Things[1].Id = "replacement";
+        Check(!(bool)Invoke(editor, "JumpToIssue", missingModel), "stale diagnosis cannot select a replacement object");
+        map.Things[1].Id = "p1";
+        var selected = (HashSet<string>)typeof(MapEditor).GetField("_selectedThingIds", flags).GetValue(editor);
+        Check((bool)Invoke(editor, "JumpToIssue", new MapIssue(MapIssueCode.ObjectId, 1, "p1")) &&
+              (int)index.GetValue(editor) == 1 && selected.Count == 0,
+              "duplicated ID opens only the reported row instead of selecting both objects");
+
+        map.Regions[0].X = float.NaN;
+        map.Things.Add(null);
+        issues = (List<MapIssue>)Invoke(editor, "Validate");
+        var badRegion = issues.Find(issue => issue.Code == MapIssueCode.RegionGeometry);
+        Check((bool)Invoke(editor, "JumpToIssue", badRegion) && kind.GetValue(editor).ToString() == "Region" &&
+              camera.transform.position.x == 18, "unrenderable region remains editable without moving the camera");
+        Check(!(bool)Invoke(editor, "JumpToIssue", new MapIssue(MapIssueCode.FieldSize)),
+              "map-wide issue has no jump target");
+    }
+
+    static void LongEditHistory()
+    {
+        var editor = new MapEditor();
+        Set(editor, "_map", Map());
+        var field = typeof(MapEditor).GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic);
+        MapData Current() => (MapData)field.GetValue(editor);
+        for (int i = 1; i <= 205; i++)
+        {
+            int position = i;
+            Invoke(editor, "Change", (Action)(() => Current().Things[0].X = position));
+        }
+        bool ordered = true;
+        for (int i = 204; i >= 5; i--)
+        {
+            Invoke(editor, "Undo");
+            ordered &= Current().Things[0].X == i;
+        }
+        Check(ordered && Current().Regions[0].Id == "r1", "all 200 retained edits undo in order without losing other entities");
+        Invoke(editor, "Undo");
+        Check(Current().Things[0].X == 5, "extra undo stops at the oldest retained edit");
+        ordered = true;
+        for (int i = 6; i <= 205; i++)
+        {
+            Invoke(editor, "Redo");
+            ordered &= Current().Things[0].X == i;
+        }
+        Check(ordered, "all 200 retained edits redo in order");
+        Invoke(editor, "Undo");
+        string before = JsonUtility.ToJson(Current());
+        Invoke(editor, "Change", (Action)(() =>
+        {
+            Current().Things.Clear();
+            throw new InvalidOperationException("simulated interrupted group edit");
+        }));
+        Check(JsonUtility.ToJson(Current()) == before, "an interrupted command rolls back its partial mutation");
+        Invoke(editor, "Change", (Action)(() => { }));
+        Invoke(editor, "Redo");
+        Check(Current().Things[0].X == 205, "rollback and a no-op do not discard redo");
+        Invoke(editor, "Undo");
+        Invoke(editor, "Change", (Action)(() => Current().Things[0].X = 42));
+        Invoke(editor, "Redo");
+        Check(Current().Things[0].X == 42, "a new command invalidates the old redo branch");
+    }
+
+    static void HistoryAcrossSave()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "Sinbinder.MapHistory." + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            string path = Path.Combine(root, "legacy.json");
+            var map = Map();
+            File.WriteAllText(path, JsonUtility.ToJson(map));
+            MapSession.Choose(path, map);
+            var editor = new MapEditor();
+            Invoke(editor, "Start");
+            var field = typeof(MapEditor).GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic);
+            MapData Current() => (MapData)field.GetValue(editor);
+            Invoke(editor, "Change", (Action)(() =>
+            {
+                Current().Name = "  Renamed  ";
+                Set(editor, "_name", Current().Name);
+            }));
+            Invoke(editor, "Change", (Action)(() => Current().Things[0].X = 100));
+            Invoke(editor, "Undo");
+            Invoke(editor, "Save");
+            Check(Current().Name == "Renamed" && MapData.Load(path).SchemaVersion == MapData.CurrentSchemaVersion,
+                  "save normalizes name and upgrades legacy format at the current point");
+            Invoke(editor, "Undo");
+            Check(Current().Name == map.Name, "undo still crosses the normalized save point");
+            Invoke(editor, "Redo");
+            Check(Current().Name == "Renamed", "redo restores the exact normalized save point");
+            Invoke(editor, "Redo");
+            Check(Current().Things[0].X == 100 && MapData.Load(path).Things[0].X == 3,
+                  "the existing redo branch survives save without modifying the disk again");
+        }
+        finally
+        {
+            MapSession.Path = null;
+            MapSession.Map = null;
+            MapSession.Seats.Clear();
+            foreach (string path in Directory.GetFiles(root)) File.Delete(path);
+            Directory.Delete(root);
+        }
+    }
+
+    static int Main(string[] args)
+    {
+        if (args.Length == 4 && args[0] == "--write-map-fixture")
+            return WriteMapFixture(args[1], args[2], args[3]);
+        if (args.Length == 2 && args[0] == "--write-draft-fixture")
+        {
+            var draft = MapDraftJournal.Create(args[1], null);
+            var partial = Map();
+            partial.Crypts.RemoveAt(0);
+            draft.Write(JsonUtility.ToJson(partial), null);
+            Environment.Exit(0);
+        }
+        StructuredValidation();
+        ValidationNavigation();
         LegacyJsonAndAtomicWrite();
+        VersionedMapMigration();
+        ConcurrentSaveGuard();
+        DraftRecoveryContracts();
+        LongEditHistory();
+        HistoryAcrossSave();
         RulesRuntime();
         BooleanTriggerBranching();
         ObjectInteractionWizard();
@@ -1596,5 +2037,6 @@ static class Program
         SelectionAndGroupGridContracts();
         ReusableTemplateContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
+        return 0;
     }
 }
