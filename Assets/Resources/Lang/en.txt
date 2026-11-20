@@ -14653,3 +14653,19 @@ msgstr "Boolean flag"
 #: Gameplay/MapEditor.cs | Gameplay/MapLogicRunner.cs
 msgid "Сообщение игроку"
 msgstr "Player message"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "ПОЛНЫЙ ПРОТОКОЛ"
+msgstr "FULL RECORD"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Закрыть (Esc)"
+msgstr "Close (Esc)"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Играть"
+msgstr "Play"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Вперёд"
+msgstr "Forward"
