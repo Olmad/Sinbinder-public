@@ -74,6 +74,35 @@ python Tools/integration/e0_merge_inventory.py --author-ref origin/claude/3d-hor
 
 ---
 
+## Реальная карта пересечений Git-веток (20.11, CI)
+
+**Источник проверки:** [GitHub Actions #44702715302](https://github.com/Olmad/Sinbinder-public/actions/runs/44702715302), оба job `success`, JSON-артефакт `e0-real-branch-overlap-44702715302` (полный список в `branch-overlap.json`). Скрипт `Tools/integration/e0_merge_inventory.py` выполнял сравнение **реального полного графа Git** (`fetch-depth: 0`, `blob:none`), ни один merge/checkout/reset не производился.
+
+- Авторская ветка: `414915af8ec61ae70d731ea3aa4aeca4a9a00073`;
+- Входящая интеграционная ветка: `bfc438c530ab601928c873d8bb5d52062d160914`;
+- Общий предок: `cce5f0a0f8573d9ab3eab9afb1008a839d8993e5`;
+- Только авторские изменения от общего предка: **247 файлов**; только интеграционные: **367 файлов**;
+- Изменены с обеих сторон: **16 путей**. По полным blob SHA совпадают **2** (канон `68-TUTORIAL-MAP.md` и его `.meta`), отличаются по содержимому **14**. **Различающийся blob не означает автоматический конфликт Git**.
+
+### 14 пересечений, где содержимое разное
+
+| Группа | Точные пути | Правило слияния |
+|---|---|---|
+| **Сон, Суд, AOS** | `Assets/Scripts/Editor/DreamWalkthrough.cs`, `Assets/Scripts/Gameplay/DreamRoad.cs`, `Assets/Scripts/Gameplay/DreamTutorialDirector.cs`, `Assets/Scripts/Gameplay/SoulCourt.cs`, `Assets/Scripts/Gameplay/SoulCourtReasons.cs`, `Assets/Scripts/Gameplay/SoulIndicator.cs`, `Assets/Scripts/Gameplay/SoulManager.cs` | **Авторский сон №68 прежде всего**; сохранить только согласованные интеграционные диагностику `[AOS-5M]`, реальный снимок голосов и исправления, не заимствовать отвергнутые уроки |
+| **Управление/UI** | `Assets/Scripts/Gameplay/RTS_Camera.cs`, `Assets/Scripts/Gameplay/Wardrobe.cs`, `Assets/Scripts/UI/PauseMenu.cs` | Не потерять Tab/V, ЛКМ/ПКМ, авторскую обработку первого лица и настройки; проверить в Unity |
+| **Данные и видимость** | `Assets/Scripts/Core/MapData.cs`, `Assets/Scripts/Gameplay/FogOfWar.cs` | Не потерять WorldForge: рельеф/шаблоны/формат карт и ранний выход FogOfWar из редактора; отдельно проверить игровой туман |
+| **Локализация и история** | `Assets/Resources/Lang/en.txt`, `Assets/Scripts/docs/64-DREAM-ROAD.md` | Объединить реальные RU/EN ключи и историю решений без затирки пользовательского текста |
+
+### Авторские файлы, отсутствующие среди пересечений, но обязательные для сохранения
+
+`Assets/Scenes/Prologue_Dream.unity`, `Assets/Scripts/Gameplay/DreamRoadMap.cs` с `.meta`, `Assets/Scripts/Gameplay/SinbinderPlayer.cs`, а также авторские `HeroArm.cs`, `WeaponView.cs`, `SoulInHandView.cs` и их `.meta` **изменены только на стороне автора** (по сравнению с общим предком). Отсутствие пересечения не означает автоматической совместимости; проверить зависимости и GUID после фактического объединения.
+
+**Важное различие:** `68-TUTORIAL-MAP.md` и `.meta` отмечены исходно как изменённые с обеих сторон, но по SHA они **идентичны**, не требуют выбора авторской версии; 14 оставшихся содержательно разных путей требуют ручного анализа. Не заменять этот список числом коммитов или перечнем якобы возникших Git merge conflicts.
+
+**Для локального Codex:** после `git fetch origin` повторить read-only команду из секции выше с актуальными ссылками, приложить `branch-overlap.json` и запись о решениях по каждой из 14 позиций. Затем только собственно merge, компиляция и пробный проход сна; если авторский HEAD изменится, старый отчёт не доказывает безопасность нового HEAD.
+
+---
+
 ## Критерий закрытия Э0
 
 1. Свести локальный авторский `main` и GitHub-изменения с явным сохранением сна по №68, без потери GUID/.meta и сейвов.
