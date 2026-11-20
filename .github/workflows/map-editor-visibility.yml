@@ -3,6 +3,7 @@ name: Map editor visibility hotfix guard
 on:
   push:
     branches:
+      - feature/server-prototype
       - 'fix/map-editor-black-screen-*'
       - 'integration/worldforge-*'
       - 'feature/worldforge-best-*'
@@ -10,6 +11,7 @@ on:
       - 'Assets/Scenes/Tug/MapEditor.unity'
       - 'Assets/Scripts/Gameplay/MapEditor.cs'
       - 'Assets/Scripts/Gameplay/MapLoader.cs'
+      - 'Assets/Scripts/Gameplay/FogOfWar.cs'
       - 'Assets/Resources/MapProps/Pine.prefab'
       - 'Assets/Resources/Props/Pine.fbx.meta'
       - 'Tools/map-editor-visibility/**'
@@ -17,6 +19,7 @@ on:
   pull_request:
     paths:
       - 'Assets/Scenes/Tug/MapEditor.unity'
+      - 'Assets/Scripts/Gameplay/FogOfWar.cs'
       - 'Assets/Scripts/Gameplay/MapEditor.cs'
       - 'Tools/map-editor-visibility/**'
       - '.github/workflows/map-editor-visibility.yml'
