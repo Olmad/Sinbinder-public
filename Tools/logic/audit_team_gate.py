@@ -90,11 +90,15 @@ def verify_qa2(path: str, status: str, row: dict, metrics: dict):
     # The row is an aggregate. A newly reviewed batch may remain UNKNOWN
     # even if earlier reviewed batches already make the whole file PARTIAL_FAIL.
     # This DOES NOT clear the recorded failures or accept any new PASS.
+    # A file-wide status and the newest QA2 batch have different scopes.
+    # UNKNOWN, UNKNOWN_CONTEXT and NEEDS_CONTEXT all mean unresolved
+    # context; a new unknown batch cannot erase older recorded failures.
+    equivalent_pending = status in CONTEXT and outcome in CONTEXT
     incremental_context = (
-        status == "PARTIAL_FAIL" and outcome in CONTEXT and
+        status in {"FAIL", "PARTIAL_FAIL"} and outcome in CONTEXT and
         metrics["failed_text_candidates"] > 0
     )
-    if outcome and outcome != status and not incremental_context:
+    if outcome and outcome != status and not (equivalent_pending or incremental_context):
         errors.append("QA2 outcome and status disagree")
     try:
         verified = int(values["verified"])
