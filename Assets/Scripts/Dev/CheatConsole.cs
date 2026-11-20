@@ -273,6 +273,17 @@ namespace Sinbinder.Dev
 
         private void ReplayLatest()
         {
+            if (UI.ExpeditionReplayViewer.IsOpen)
+            {
+                Write("Close the current replay before opening another.");
+                return;
+            }
+            if (Core.GamePauseController.Instance != null &&
+                Core.GamePauseController.Instance.IsPaused)
+            {
+                Write("Close the pause/mission menu first, or select a replay there.");
+                return;
+            }
             var entries = Gameplay.ExpeditionReplayArchive.History;
             if (entries.Count == 0)
             {
