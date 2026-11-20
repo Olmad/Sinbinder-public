@@ -5,6 +5,7 @@ on:
     branches:
       - 'fix/map-editor-black-screen-*'
       - 'integration/worldforge-*'
+      - 'feature/worldforge-best-*'
     paths:
       - 'Assets/Scenes/Tug/MapEditor.unity'
       - 'Assets/Scripts/Gameplay/MapEditor.cs'

@@ -62,10 +62,44 @@ assert "GetMouseButtonUp(0)" in editor
 assert "private void DuplicateSelectedThings()" in editor
 assert "private void DeleteSelectedThings()" in editor
 assert "private void RotateSelectedThings(float degrees)" in editor
+assert "private void ArrangeSelectedThings(MapObjectArrange.Axis axis, MapObjectArrange.Operation operation)" in editor
+assert "MapObjectArrange.TryPlan(selected, _map.Size, axis, operation, out var planned)" in editor
+assert "private void DrawGroupInspector()" in editor
+assert "Равные интервалы по X" in editor and "Равные интервалы по Z" in editor
+layout=src("Assets/Scripts/Gameplay/MapObjectArrange.cs")
+assert "internal static bool TryPlan(" in layout and "sorted.Sort" in layout
+assert "internal static bool TrySnap(" in layout
+assert "private void SnapSelectedThingsToGrid()" in editor
+assert "Привязать всю группу к сетке" in editor
+assert "private void SelectMatchingThings(MapObjectSelection.Property property)" in editor
+assert "private void InvertThingSelection()" in editor
+assert "Выделить такие же модели" in editor
+assert "Выделить с тем же материалом" in editor
+assert "Инвертировать выделение" in editor
+selector=src("Assets/Scripts/Gameplay/MapObjectSelection.cs")
+assert "internal static HashSet<string> Matching(" in selector
+assert "internal static HashSet<string> Inverted(" in selector
+assert "guid: 376d5cd4c38b4b34b550d7b60e2a8e11" in src("Assets/Scripts/Gameplay/MapObjectSelection.cs.meta")
+assert "guid: b4b295570ea247138f4a5ea2896c29f3" in src("Assets/Scripts/Gameplay/MapObjectArrange.cs.meta")
 assert "private void MoveSelectedThings(float dx, float dz)" in editor
 assert "rule.TargetId = copy.Id" in editor or "TargetId = copy.Id" in editor
 assert "private List<string> Validate()" in editor
 assert "if (errors.Count > 0)" in editor
 assert "private void DrawTrigger(MapData.Trigger t)" in editor
+assert "private void SaveSelectedTemplate()" in editor
+assert "private void ChooseTemplate(string name)" in editor
+assert "private void PasteActiveTemplate(Vector3 at)" in editor
+assert "MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z," in editor
+assert "MapObjectTemplate.TrySaveNew(layout, out _, out string error)" in editor
+assert "_map.Triggers.AddRange(rules);" in editor
+assert "Mode.Template" in editor and "Установить: {0}" in editor
+templates=src("Assets/Scripts/Gameplay/MapObjectTemplate.cs")
+assert "internal static bool TryPlanPaste(" in templates
+assert "internal static bool TryCapture(" in templates
+assert "internal static bool TrySaveNew(" in templates
+assert "internal static bool TryLoad(" in templates
+assert "File.Move(temp, destination);" in templates
+assert "guid: f786ecc0c1634fd39b2b7a53fa2e80b1" in src("Assets/Scripts/Gameplay/MapObjectTemplate.cs.meta")
+
 assert "UnityEditor" not in runner and "System.Reflection" not in runner
 print("PASS: scene GUID intact; imported material/prefab authoring paths; terrain paint/vegetation/mesh; F-ECA integration; atomic save")
