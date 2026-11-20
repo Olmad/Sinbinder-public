@@ -129,6 +129,76 @@ class GateTests(unittest.TestCase):
             errors, _, _ = self.check(base_ref="HEAD^", enforce_changed=True)
         self.assertTrue(any("lacks QA2" in msg for msg in errors))
 
+    def test_previous_trailing_empty_field_recovers_without_faking_qa2(self):
+        # Real November 20 regression: old auditor-3 final UNINSPECTED row
+        # had 9 TSV columns instead of ten; no audited state changed.
+        previous = ledger(3, self.payload)
+        self.assertTrue(previous.endswith("\t\n"))
+        previous = previous[:-2] + "\n"
+        with self.assertRaisesRegex(ValueError, "missing column"):
+            gate.read_ledger(previous, 3)
+        with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
+                          previous if path == gate.ledger_path(3) else
+                          (self.root / path).read_text(encoding="utf-8")):
+            errors, warnings, report = self.check(base_ref="HEAD^", enforce_changed=True)
+        self.assertEqual(errors, [])
+        self.assertTrue(any("LEGACY previous TSV" in w for w in warnings))
+        self.assertEqual(report["semantic_pass_source_count"], 0)
+
+    def test_recovered_previous_does_not_hide_changed_unproven_row(self):
+        old = ledger(3, [
+            row(self.paths[0], "UNKNOWN", found=1, checked=1, unknown=1,
+                evidence="Read Assets/Scripts/A.cs line 12: context unknown"),
+            self.payload[1],
+        ])
+        old = old[:-2] + "\n"
+        self.write(3, [
+            row(self.paths[0], "UNKNOWN", found=1, checked=1, unknown=1,
+                evidence="Read Assets/Scripts/A.cs line 13: context unknown"),
+            self.payload[1],
+        ])
+        with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
+                          old if path == gate.ledger_path(3) else
+                          (self.root / path).read_text(encoding="utf-8")):
+            errors, warnings, _ = self.check(base_ref="HEAD^", enforce_changed=True)
+        self.assertTrue(any("Auditor 3" in e and "changed row lacks QA2" in e
+                            for e in errors), errors)
+        self.assertTrue(any("LEGACY previous TSV" in w for w in warnings))
+
+    def test_nonterminal_damage_does_not_recover_previous_ledger(self):
+        old = ledger(3, self.payload)
+        # A missing column in the first row is not the single allowed repair.
+        old = old.replace(self.payload[0], self.payload[0][:-1], 1)
+        with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
+                          old if path == gate.ledger_path(3) else
+                          (self.root / path).read_text(encoding="utf-8")):
+            errors, _, _ = self.check(base_ref="HEAD^", enforce_changed=True)
+        self.assertTrue(any("invalid previous ledger" in e for e in errors))
+        self.assertFalse(any("changed row lacks QA2" in e for e in errors))
+
+    def test_previous_with_missing_nonempty_evidence_is_not_recovered(self):
+        old = ledger(3, [
+            self.payload[0],
+            row(self.paths[1], "UNKNOWN", found=1, checked=1, unknown=1,
+                evidence="Read source at line 99"),
+        ])
+        old = old.replace("\tRead source at line 99\n", "\n")
+        with self.assertRaises(ValueError):
+            gate.read_previous_ledger(old, 3)
+
+    def test_missing_previous_ledger_still_requires_qa2_for_new_rows(self):
+        self.write(3, [
+            row(self.paths[0], "UNKNOWN", found=1, checked=1, unknown=1,
+                evidence="Read Assets/Scripts/A.cs line 12: unknown"),
+            self.payload[1],
+        ])
+        with patch.object(gate, "previous_content", side_effect=lambda root, ref, path:
+                          None if path == gate.ledger_path(3) else
+                          (self.root / path).read_text(encoding="utf-8")):
+            errors, _, _ = self.check(base_ref="HEAD^", enforce_changed=True)
+        self.assertTrue(any("Auditor 3" in e and "changed row lacks QA2" in e
+                            for e in errors), errors)
+
     def test_new_qa2_unknown_accepted(self):
         old = ledger(1, self.payload)
         self.write(1, [
