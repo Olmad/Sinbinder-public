@@ -302,7 +302,7 @@ Assets/Scripts/Gameplay/DreamTutorialDirector.cs	b3a5c12dcff1b3216d4d4a0066d1f33
 Assets/Scripts/Gameplay/EmberBed.cs	c093e41b72ae6ac08b5bf74499a910f13034acd1	8045	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Engagement.cs	a69647c36305847891fc86d3553faf2e0a5a7312	5165	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/EscapeZone.cs	7b9228e9bdd3e2753e7a1f2dc6e6ce067af3cb13	25537	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/EventPlaque.cs	dcc6fdd693070a30b6857a55e53b83e50c1908e9	4006	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/EventPlaque.cs	dcc6fdd693070a30b6857a55e53b83e50c1908e9	4006	CSharp	2	2	0	2	UNKNOWN_CONTEXT	QA2: source=Assets/Scripts/Gameplay/EventPlaque.cs; blob=dcc6fdd693070a30b6857a55e53b83e50c1908e9; lines=20-35,37-41,72-90; context=EventPlaque.Ask(title,body) creates EventPlaque and Set assigns _title.text=title and _body.text=body; caller=UNKNOWN; negative=Ask("Русское событие","Награда получена") directly displays untranslated Russian in EN mode if caller supplies RU strings; verified=0; total=2; RU_EN=UNKNOWN (no Loc.T at sink, caller translation untraced); outcome=UNKNOWN; note=two dynamic player-facing fields inspected, GameObject.name labels are internal identifiers not UI labels; source-level bypass confirmed, shipped caller UNKNOWN
 Assets/Scripts/Gameplay/ExitCircle.cs	891146f36a08d97b2f2fdba3ed7d0baca598b6b9	8224	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/Expedition.cs	30ab79b6977604f34be7d3503a27c10e26450ab0	19911	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs	ae627b68275b0c9f10cd5f9e82bbaa34b39c588c	2755	CSharp	0	0	0	0	UNINSPECTED	
