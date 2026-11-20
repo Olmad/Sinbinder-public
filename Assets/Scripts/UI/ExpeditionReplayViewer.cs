@@ -35,6 +35,19 @@ namespace Sinbinder.UI
         {
             if (_data == null) { Close(); return; }
             if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+
+            // Навигация работает даже при остановленном времени игры.
+            if (Input.GetKeyDown(KeyCode.Home)) { Seek(0); return; }
+            if (Input.GetKeyDown(KeyCode.End)) { Seek(_data.Frames.Count - 1); return; }
+            if (Input.GetKeyDown(KeyCode.LeftArrow)) { Seek(_index - 1); return; }
+            if (Input.GetKeyDown(KeyCode.RightArrow)) { Seek(_index + 1); return; }
+            if (Input.GetKeyDown(KeyCode.PageUp)) { SeekCombat(-1); return; }
+            if (Input.GetKeyDown(KeyCode.PageDown)) { SeekCombat(1); return; }
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                TogglePlayback();
+                return;
+            }
             if (!_running || _index >= _data.Frames.Count - 1) return;
             _clock += Time.unscaledDeltaTime * _speed;
             if (_clock >= 1.1f)
@@ -47,6 +60,42 @@ namespace Sinbinder.UI
                     _clock = 0f;
                 }
             }
+        }
+
+        // Все ручные переходы останавливают воспроизведение и сбрасывают
+        // остаток времени, чтобы следующий шаг не перескочил событие.
+        private void Seek(int index)
+        {
+            if (_data == null || _data.Frames == null || _data.Frames.Count == 0) return;
+            _index = Mathf.Clamp(index, 0, _data.Frames.Count - 1);
+            _running = false;
+            _clock = 0f;
+            _scroll.y = Mathf.Max(0f, _index * 27f - 54f);
+        }
+
+        private void SeekCombat(int direction)
+        {
+            if (_data == null || _data.Frames == null) return;
+            for (int index = _index + direction;
+                 index >= 0 && index < _data.Frames.Count;
+                 index += direction)
+            {
+                var frame = _data.Frames[index];
+                if (frame != null && frame.Kind == ExpeditionReplayKind.CombatAction)
+                {
+                    Seek(index);
+                    return;
+                }
+            }
+            // Если боёв больше нет, не создаём фиктивное событие.
+        }
+
+        private void TogglePlayback()
+        {
+            if (_data == null || _data.Frames == null || _data.Frames.Count == 0) return;
+            if (!_running && _index >= _data.Frames.Count - 1) _index = 0;
+            _running = !_running;
+            _clock = 0f;
         }
 
         private void OnDestroy()
@@ -99,22 +148,18 @@ namespace Sinbinder.UI
                 _item);
 
             GUI.Label(new Rect(mapRect.x,top+58f+mapHeight,w-30f,23f),
-                "Схематическая реконструкция: боевые решения из движка, точные координаты в старой записи отсутствуют.",
+                "Схема, не координаты боя. ←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: пауза.",
                 _item);
 
             float y=top+89f+mapHeight;
             float buttonW=Mathf.Min(150f,(w-40f)/5f);
-            if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")){_index=0;_running=false;}
+            if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")) Seek(0);
             if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< Назад"))
-            { _index=Mathf.Max(0,_index-1);_running=false; }
+                Seek(_index - 1);
             if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?"Пауза":"Играть"))
-            {
-                if (!_running && _index >= _data.Frames.Count - 1) _index = 0;
-                _running = !_running;
-                _clock = 0f;
-            }
+                TogglePlayback();
             if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),"Вперёд >"))
-            { _index=Mathf.Min(_data.Frames.Count-1,_index+1);_running=false; }
+                Seek(_index + 1);
             if(GUI.Button(new Rect(left+27f+4*buttonW,y,buttonW,34f),"x"+_speed.ToString("0")))
                 _speed=_speed>=4f?1f:_speed*2f;
 
@@ -135,7 +180,7 @@ namespace Sinbinder.UI
                     (step.HasOutcome ? step.Resolved?" · исполнено":" · без результата" : "")+
                     " · "+(string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
-                { _index=i;_running=false;_clock=0f; }
+                Seek(i);
             }
             GUI.EndScrollView();
         }
