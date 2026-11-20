@@ -10698,7 +10698,7 @@ msgstr "Only its will remains. A soul like that will rise as a zombie."
 
 #: Gameplay/SoulHarvester.cs
 msgid "Кошель убитого — в ваш: +{0}."
-msgstr ""
+msgstr "The fallen enemy’s purse is yours: +{0}."
 
 #: Gameplay/SquadGear.cs UI/TaskList.cs
 msgid "Оружие"
