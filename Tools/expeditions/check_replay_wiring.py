@@ -27,6 +27,7 @@ assert 'ExpeditionReplayViewer.OwnsEscape' in ui
 assert 'Time.unscaledDeltaTime' in viewer
 # New saves with recorded AOS action identities use a 3D event display.
 # Old saves must still use honest schematic fallback, not invented events.
+archive=(r/"Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs").read_text(encoding="utf-8")
 stage=(r/"Assets/Scripts/UI/ExpeditionReplayStage3D.cs").read_text(encoding="utf-8")
 assert 'Схематическая хронология' in viewer
 assert 'Расстановка условная' in viewer
@@ -69,7 +70,6 @@ print("PASS: AOS retreat/bribe effects and expedition outcomes are distinguished
 # Round number is the genuine AOS turn, not fabricated spatial timing.
 resolver=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")
 battle=(r/"Assets/Scripts/AOS Engine/BattleRecord.cs").read_text(encoding="utf-8")
-archive=(r/"Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs").read_text(encoding="utf-8")
 assert "public int Round;" in battle and "Round = round" in resolver
 assert "public int Round;" in data
 assert "ev.HealDealt,ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
