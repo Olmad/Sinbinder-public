@@ -25,7 +25,21 @@ assert 'ExpeditionReplays' in (r/"Assets/Scripts/Core/SaveGame.cs").read_text(en
 assert 'public readonly List<ExpeditionReplayFrame>' not in data
 assert 'ExpeditionReplayViewer.OwnsEscape' in ui
 assert 'Time.unscaledDeltaTime' in viewer
-assert 'Схематическая реконструкция' in viewer
+# New saves with recorded AOS action identities use a 3D event display.
+# Old saves must still use honest schematic fallback, not invented events.
+stage=(r/"Assets/Scripts/UI/ExpeditionReplayStage3D.cs").read_text(encoding="utf-8")
+assert 'Схематическая хронология' in viewer
+assert 'Расстановка условная' in viewer
+assert 'new ExpeditionReplayStage3D(data)' in viewer
+assert 'string.IsNullOrEmpty(frame.ActionCode)' in viewer
+assert 'frame.ActionCode == "Flee"' in stage
+assert 'if (frame.TargetKilled)' in stage
+assert 'ApplyPast(_data.Frames[i])' in stage
+assert 'frame.ActorId,frame.ActionCode' in board
+assert 'ev.ActorId,ev.Action.ToString()' in board
+assert 'ActorId = frame.ActorId' in archive
+assert 'ActionCode = frame.ActionCode' in archive
+assert 'AutoBattleResolver.Resolve(' not in stage
 assert 'foreach(var frame in Frames) yield return frame' in data
 assert 'Frames.Count' in viewer and 'GUI.BeginScrollView' in viewer
 print("PASS: automatic mission replay retains all source events and opens timeline viewer")
