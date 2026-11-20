@@ -331,7 +331,9 @@ def validate(root: Path, base_ref: str | None = None, enforce_changed=False):
             if status == "EXCLUDED_TECH" and metrics["found_text_candidates"] > 0:
                 warnings.append(f"Auditor {number}, {path}: excluded despite candidates")
             # Legacy rows are retained, not silently rewritten. New edits need QA2 proof.
-            old_ledger = previous.get(number)
+            # A missing historical ledger differs from an invalid one:
+            # newly introduced rows must still supply QA2 evidence.
+            old_ledger = previous.get(number, {})
             old_row = old_ledger.get(path) if old_ledger is not None else None
             changed = bool(old_row is None or old_row != row)
             qa2 = QA2_RE.search(evidence) is not None
