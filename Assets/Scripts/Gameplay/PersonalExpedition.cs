@@ -514,7 +514,12 @@ namespace Sinbinder.Gameplay
             if (commitResult)
             {
                 SquadRoster.Remember(MissionBoard.Squad());
-                CryptMap.Board?.RecordPersonal(_mission,
+                // The separate TestChamber scene owns a real MissionBoard,
+                // but has no CryptMap component. Preserve its authentic
+                // expedition report rather than discarding the visit.
+                var board = CryptMap.Board ??
+                    UnityEngine.Object.FindFirstObjectByType<MissionBoard>();
+                board?.RecordPersonal(_mission,
                     _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
             }
             UnityEngine.Object.Destroy(gameObject);
