@@ -1,0 +1,26 @@
+name: E0 merge inventory source contract
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - 'Tools/integration/**'
+      - '.github/workflows/e0-merge-inventory.yml'
+  pull_request:
+    paths:
+      - 'Tools/integration/**'
+      - '.github/workflows/e0-merge-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-branch-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check E0 inventory cannot merge or erase author canon
+        run: python3 -m unittest discover -s Tools/integration/tests -p 'test_*.py' -v
