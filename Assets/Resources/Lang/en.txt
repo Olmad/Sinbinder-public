@@ -10377,16 +10377,16 @@ msgid "Враг убил его товарищей. Я это помню."
 msgstr "The enemy killed his comrades. I remember that."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "В нём гнев. Гнев хочет крови, а враг рядом."
-msgstr "He is wrathful. Wrath wants blood, and the enemy is near."
+msgid "В нём гнев. Гнев требует драки."
+msgstr "Wrath burns within. Wrath demands a fight."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "В нём терпение. Терпеливому драка не к спеху."
 msgstr "He is patient. The patient are in no hurry to fight."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Терпения в нём нет. Ждать он не умеет — бьёт первым."
-msgstr "He has no patience. He cannot wait, so he strikes first."
+msgid "В нём нет терпения. Ему не терпится вступить в бой."
+msgstr "Patience is gone. This warrior is eager to fight."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "В нём терпение. Их час ещё придёт — не сейчас."
