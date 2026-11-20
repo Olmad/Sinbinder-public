@@ -203,10 +203,10 @@ namespace Sinbinder.Core
 
         /// <summary>Душа со всеми семью спектрами сразу.</summary>
         public SoulData(string name, MoralType moral, int level, float[] spectra,
-            MemorySeed memory = null, Gender gender = Gender.Male)
+            MemorySeed memory = null, Gender gender = Gender.Male, string soulId = null)
         {
             _gender = (int)gender;
-            _id = System.Guid.NewGuid().ToString();
+            _id = string.IsNullOrEmpty(soulId) ? System.Guid.NewGuid().ToString() : soulId;
             _name = name;
             _moralType = (int)moral;
             _level = level;

@@ -195,6 +195,15 @@ namespace Sinbinder.Crypt
             return true;
         }
 
+        internal void RestoreContents(SoulData soul, SoulQuality quality, bool hasShell, ShellType shell, int raised)
+        {
+            _soul = soul;
+            _quality = quality;
+            _hasShell = hasShell;
+            _shell = shell;
+            Raised = raised;
+        }
+
         /// <summary>
         /// Вернуть недовселённую душу на полку при уходе со сцены.
         ///
@@ -206,7 +215,9 @@ namespace Sinbinder.Crypt
         {
             if (_soul == null) return;
 
-            SoulManager.Instance?.PutBack(new SoulManager.Kept(_soul, _quality));
+            // При загрузке содержимое полки и гнезда берётся из снимка.
+            if (!SaveSystem.Arriving)
+                SoulManager.Instance?.PutBack(new SoulManager.Kept(_soul, _quality));
             _soul = null;
         }
 

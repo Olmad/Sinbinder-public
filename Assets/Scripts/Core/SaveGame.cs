@@ -3,15 +3,18 @@ using System.Collections.Generic;
 
 namespace Sinbinder.Core
 {
-    /// <summary>Душа на полке, как она ложится в файл.</summary>
+    /// <summary>Состояние собранной души.</summary>
     [System.Serializable]
     public class SavedSoul
     {
+        public string Id;
         public string Name;
         public int Moral;
         public int Level;
         public float[] Spectra;
         public int Quality;
+        public bool HasMemorySeed;
+        public MemorySeed Memory;
 
         /// <summary>
         /// Пол, ремесло и заслуженное при жизни имя.
@@ -62,6 +65,8 @@ namespace Sinbinder.Core
         // Надетое и карман (docs/34-GEAR.md §9.4). Вещь — [Serializable],
         // JsonUtility пишет её список как есть.
         public List<Inventory.InventoryItem> Gear = new List<Inventory.InventoryItem>();
+        public bool HasEquipmentLayout;
+        public List<Inventory.EquippedItem> Equipment;
         public int Pocket;
 
         /// <summary>
@@ -163,6 +168,7 @@ namespace Sinbinder.Core
 
         public List<SavedMember> Squad = new();
         public List<SavedSoul> Shelf = new();
+        public SavedSoulCustody SoulCustody;
         public float EmotionDecayDelay = -1f;
 
         public int Gold;

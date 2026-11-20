@@ -498,6 +498,38 @@ namespace Sinbinder.Gameplay
         /// <summary>Что надето на этом месте. Пусто — null.</summary>
         public Inventory.InventoryItem Worn(Inventory.GearSlot slot) => _worn[(int)slot];
 
+        internal List<Inventory.EquippedItem> CaptureEquipment()
+        {
+            var equipment = new List<Inventory.EquippedItem>(_carried.Count);
+            for (int slot = (int)Inventory.GearSlot.Weapon; slot < _worn.Length; slot++)
+            {
+                var item = _worn[slot];
+                if (item != null)
+                    equipment.Add(new Inventory.EquippedItem { Slot = (Inventory.GearSlot)slot, Item = item });
+            }
+            return equipment;
+        }
+
+        internal void RestoreEquipment(IReadOnlyList<Inventory.EquippedItem> equipment,
+            IReadOnlyList<Inventory.InventoryItem> legacy = null)
+        {
+            TakeAll();
+            if (equipment == null)
+            {
+                if (legacy != null)
+                    foreach (var item in legacy) Give(item);
+                return;
+            }
+
+            foreach (var entry in equipment)
+            {
+                if (!entry.IsValid || Worn(entry.Slot) != null
+                    || System.Array.IndexOf(_worn, entry.Item) >= 0) continue;
+                _worn[(int)entry.Slot] = entry.Item;
+            }
+            RefreshCarried();
+        }
+
         /// <summary>
         /// Свободное место, куда встанет вещь. Оружие — в руку, а если рука
         /// занята, во вторую. None — всё, куда она встаёт, занято: тогда
@@ -508,7 +540,7 @@ namespace Sinbinder.Gameplay
             if (item == null) return Inventory.GearSlot.None;
 
             var own = item.Slot;
-            if (own == Inventory.GearSlot.None) return own;
+            if (!Inventory.EquippedItem.IsSupported(own)) return Inventory.GearSlot.None;
             if (Worn(own) == null) return own;
             if (own == Inventory.GearSlot.Weapon && Worn(Inventory.GearSlot.Offhand) == null)
                 return Inventory.GearSlot.Offhand;
@@ -565,6 +597,11 @@ namespace Sinbinder.Gameplay
                 _worn[main] = second;
             }
 
+            RefreshCarried();
+        }
+
+        private void RefreshCarried()
+        {
             _carried.Clear();
             foreach (var i in _worn) if (i != null) _carried.Add(i);
         }

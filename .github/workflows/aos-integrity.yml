@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - "feature/sinbinder-gameplay-improvements-*"
     paths:
       - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
       - "Assets/Scripts/AOS Engine/AOSEventHub.cs"

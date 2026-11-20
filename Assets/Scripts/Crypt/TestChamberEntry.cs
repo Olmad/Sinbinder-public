@@ -17,13 +17,16 @@ namespace Sinbinder.Crypt
     /// </summary>
     public class TestChamberEntry : MonoBehaviour
     {
-        void Start()
+        void Awake()
         {
             // Руки — статика, а статика переживает смену сцены. Не забыв
             // их, мы принесли бы в новый склеп банку из старого: душа
             // была бы и в руках, и на полке разом.
             CryptHands.Forget();
+        }
 
+        void Start()
+        {
             if (SinbinderPlayer.Exists) return;
 
             var player = SinbinderPlayer.Spawn(transform.position, transform.parent);

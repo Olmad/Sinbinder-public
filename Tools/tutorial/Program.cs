@@ -340,15 +340,25 @@ internal static class Program
         int validateSave = saveSource.IndexOf("if (save.Squad == null || save.Shelf == null");
         int firstMutation = saveSource.IndexOf("Gameplay.CardTable.BeforeSaveOrLoad();", saveSource.IndexOf("public static bool Restore(SaveGame save)"));
         Check(validateSave >= 0 && firstMutation > validateSave &&
-              saveSource.Contains("save.Squad.Exists(m => m == null)") &&
-              saveSource.Contains("save.Shelf.Exists(s => s == null)"),
-              "corrupt squad or soul shelf rejected before Restore changes live state");
+              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)))") &&
+              saveSource.Contains("save.Shelf.Exists(s => !IsValidSoul(s))") &&
+              saveSource.Contains("!SoulCustody.IsValid(save.SoulCustody, save.Shelf)"),
+              "corrupt squad, equipment and soul ownership rejected before Restore changes live state");
         Check(saveSource.Contains("catch (System.ArgumentException e)") &&
               saveSource.Contains("catch (System.UnauthorizedAccessException e)"),
               "malformed JSON and denied access fail safely in SaveSystem.Read");
         Check(saveSource.Contains("foreach (var m in save.Squad)") &&
               saveSource.Contains("foreach (var s in save.Shelf)"),
               "valid squad and soul restoration paths remain present");
+        int arrivedStart = saveSource.IndexOf("private static void Arrived(");
+        int arrivedSouls = saveSource.IndexOf("RestoreSouls(restored.Value.Save, scene);", arrivedStart);
+        int checkpoint = saveSource.IndexOf("MarkCheckpoint(scene.name, scene, captureLiveEquipment: false);", arrivedStart);
+        Check(arrivedSouls > arrivedStart && checkpoint > arrivedSouls,
+              "the destination receives its souls before the arrival checkpoint");
+        var deviceSource = System.IO.File.ReadAllText("Assets/Scripts/Crypt/BindingDevice.cs");
+        Check(deviceSource.Contains("if (!SaveSystem.Arriving)") &&
+              deviceSource.Contains("SoulManager.Instance?.PutBack(new SoulManager.Kept(_soul, _quality));"),
+              "unloading a socket returns its soul only on ordinary scene transitions");
 
         // A missing destination scene must fail before Restore mutates live state.
         // Positive paths: same part without reload and valid raid-host scenes
@@ -359,10 +369,13 @@ internal static class Program
             ? saveSource.Substring(returnToStart, restoreStart - returnToStart) : "";
         int sceneGuard = returnToBody.IndexOf("changeScene && !Application.CanStreamedLevelBeLoaded(scene)");
         int restoreCall = returnToBody.IndexOf("if (!Restore(save, keepScene: !changeScene)) return false;");
+        int arrivalGuard = returnToBody.IndexOf("if (save == null || Arriving) return false;");
+        Check(arrivalGuard >= 0 && arrivalGuard < restoreCall,
+              "a second load cannot replace a scene transition already in progress");
         Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
               returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
               "missing destination scene rejects save before live state restoration");
-        Check(returnToBody.Contains("(reload || save.Scene != Here)") &&
+        Check(returnToBody.Contains("(reload || save.Scene != Here || WorkshopRecruitsChanged(save))") &&
               returnToBody.Contains("if (!changeScene) return true;") &&
               returnToBody.Contains("string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;") &&
               returnToBody.Contains("SceneManager.LoadScene(scene);"),

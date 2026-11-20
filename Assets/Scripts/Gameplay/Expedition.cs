@@ -362,8 +362,7 @@ namespace Sinbinder.Gameplay
 
             // Надетое и карман спорят в голове (искушение, Жадность) —
             // спрошенный на развилке обязан решать с ними же.
-            if (m.Gear != null)
-                foreach (var item in m.Gear) w.Give(item);
+            w.RestoreEquipment(m.Equipment, m.Gear);
             w.Pocket(m.Pocket);
             return w;
         }

@@ -240,6 +240,7 @@ namespace Sinbinder.Gameplay
                 if (item != null) bag._items.Add(item);
             }
             w.TakeAll();
+            SquadRoster.SyncEquipment(w);
             bag._gold = w.EmptyPocket();
             bag._memento = keepsake;
             if (collectCorpseLoot)

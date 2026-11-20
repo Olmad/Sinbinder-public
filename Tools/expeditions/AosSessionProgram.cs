@@ -89,6 +89,7 @@ namespace Sinbinder.Core
 namespace Sinbinder.Inventory
 {
     public sealed partial class InventoryItem {}
+    public struct EquippedItem {}
 }
 namespace Sinbinder.Gameplay
 {
@@ -111,6 +112,7 @@ namespace Sinbinder.Gameplay
             public int UnpaidMissions, Pocket;
             public Core.MemorySeed Seed;
             public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
+            public List<Inventory.EquippedItem> Equipment;
         }
     }
     public partial class Warrior
@@ -148,7 +150,8 @@ namespace Sinbinder.Gameplay
         {
             Id=stableId;Team=team;HP=dead ? 0f : MaxHP*fraction;
         }
-        public void Give(Inventory.InventoryItem item) {}
+        public void RestoreEquipment(IReadOnlyList<Inventory.EquippedItem> equipment,
+            IReadOnlyList<Inventory.InventoryItem> legacy) {}
         public void Pocket(int coins) {}
         public void TakeDamage(float damage)
         {

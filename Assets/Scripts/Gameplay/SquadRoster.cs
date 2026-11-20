@@ -46,6 +46,7 @@ namespace Sinbinder.Gameplay
             /// До этого всё надетое пропадало при каждой смене доли.
             /// </summary>
             public List<Inventory.InventoryItem> Gear;
+            public List<Inventory.EquippedItem> Equipment;
 
             /// <summary>Золото в личном кармане (§9.3). Уходит вместе с ним.</summary>
             public int Pocket;
@@ -411,6 +412,63 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        internal static IEnumerable<Member> EquipmentSnapshot(IEnumerable<Warrior> liveWarriors)
+        {
+            var owners = new Dictionary<int, Warrior>();
+            var ambiguous = new HashSet<int>();
+            foreach (var warrior in liveWarriors)
+            {
+                if (!IsEquipmentOwner(warrior) || !warrior.gameObject.activeInHierarchy || warrior.IsDead) continue;
+                int index = EquipmentMemberIndex(warrior);
+                if (index >= 0 && !owners.TryAdd(index, warrior) && owners[index] != warrior)
+                    ambiguous.Add(index);
+            }
+
+            for (int i = 0; i < _members.Count; i++)
+            {
+                var member = _members[i];
+                yield return !ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior)
+                    ? CaptureEquipment(warrior, member) : member;
+            }
+        }
+
+        internal static void SyncEquipment(Warrior warrior)
+        {
+            if (!IsEquipmentOwner(warrior)) return;
+            int index = EquipmentMemberIndex(warrior);
+            if (index >= 0) _members[index] = CaptureEquipment(warrior, _members[index]);
+        }
+
+        private static bool IsEquipmentOwner(Warrior warrior)
+            => warrior != null && warrior.Soul != null && warrior.Team == Team.Player && !(warrior is SinbinderPlayer);
+
+        private static int EquipmentMemberIndex(Warrior warrior)
+        {
+            int named = -1;
+            bool ambiguous = false;
+            for (int i = 0; i < _members.Count; i++)
+            {
+                var member = _members[i];
+                if (!string.IsNullOrEmpty(member.WarriorId) && member.WarriorId == warrior.Id)
+                    return member.IsAway ? -1 : i;
+                if (member.Name != warrior.DisplayName) continue;
+                if (named >= 0) ambiguous = true;
+                named = i;
+            }
+            // На старых записях имени хватает, только если оно единственное.
+            if (!ambiguous && named >= 0 && !_members[named].IsAway
+                && string.IsNullOrEmpty(_members[named].WarriorId))
+                return named;
+            return -1;
+        }
+
+        private static Member CaptureEquipment(Warrior warrior, Member member)
+        {
+            member.Equipment = warrior.CaptureEquipment();
+            member.Gear = new List<Inventory.InventoryItem>(warrior.Carried);
+            return member;
+        }
+
         public static void ChooseCommander(string name)
         {
             for (int i = 0; i < _members.Count; i++)
@@ -505,9 +563,8 @@ namespace Sinbinder.Gameplay
             member.IsAway = false;
             member.Shell = w.Shell;
             member.Title = AOS.TitleManager.TitleOf(w);
-            member.Gear = new List<Inventory.InventoryItem>(w.Carried);
             member.Pocket = w.PocketGold;
-            return member;
+            return CaptureEquipment(w, member);
         }
 
         /// <summary>

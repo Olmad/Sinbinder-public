@@ -77,6 +77,8 @@ namespace Sinbinder.Tests
                 Ladder();
                 Spoils();
                 Saving();
+                SavingEquipment();
+                SavingCustody();
                 Bodies();
                 Blows();
                 Gear();
@@ -1895,6 +1897,154 @@ namespace Sinbinder.Tests
             warrior.Initialize(new SoulData(name, SinType.Greed, MoralType.Neutral, 1), ShellType.Skeleton,
                 null, warriorId: id);
             return warrior;
+        }
+
+        private static void SavingEquipment()
+        {
+            const string name = "Проверка сохранения снаряжения";
+            var keptRoster = new List<SquadRoster.Member>(SquadRoster.Members);
+            var keptSave = SaveSystem.Snapshot();
+            var keptBag = PlayerInventory.Instance;
+            // Подставляем настоящий мешок, не запуская Awake временного компонента.
+            var inventoryInstance = typeof(PlayerInventory).GetProperty(nameof(PlayerInventory.Instance));
+            var bagObject = NewObject("Мешок проверки снаряжения");
+            bagObject.SetActive(false);
+            var bag = bagObject.AddComponent<PlayerInventory>();
+            var body = Visible("Тело проверки снаряжения");
+
+            try
+            {
+                inventoryInstance.SetValue(null, bag);
+                var warrior = SavedWarrior(name, null, body);
+                var blade = new InventoryItem("Меч пробы", "", ItemType.Equipment, attack: 2f);
+                var shield = new InventoryItem("Щит пробы", "", ItemType.Equipment, defense: 3f, slot: GearSlot.Offhand);
+                SquadRoster.Set(new[] { new SquadRoster.Member { Name = name, WarriorId = warrior.Id } });
+                Check(warrior.Give(blade) && bag.AddItem(shield), "снаряжение пробы готово к передаче");
+
+                var before = EquipmentRoundTrip();
+                Same(before.Squad[0].Equipment?.Count, 1, "снимок увидел оружие на живом воине");
+                Check(SquadRoster.Members[0].Equipment == null && SquadRoster.Members[0].Gear == null,
+                    "снимок обновляет снаряжение в записи без изменения реестра");
+
+                Check(SquadGear.Hand(warrior, shield, bag, out _), "щит передан из мешка воину");
+                var after = EquipmentRoundTrip();
+                Check(after.Bag.Count == 0 && after.Squad[0].Equipment?.Count == 2,
+                    "снимок после передачи оставляет щит только на воине");
+
+                var missingScene = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(before));
+                missingScene.Scene = "SelfCheck_missing_scene_" + Guid.NewGuid().ToString("N");
+                Check(!SaveSystem.ReturnTo(missingScene) && warrior.Worn(GearSlot.Offhand)?.Id == shield.Id && bag.Count == 0,
+                    "недоступная сцена оставляет снаряжение и мешок на месте");
+
+                for (int attempt = 0; attempt < 2; attempt++)
+                {
+                    Check(SaveSystem.ReturnTo(before), "запись до передачи открывается в той же доле");
+                    Check(warrior.Worn(GearSlot.Weapon)?.Id == blade.Id && warrior.Worn(GearSlot.Offhand) == null
+                          && warrior.Carried.Count == 1 && bag.Count == 1 && bag.GetAllItems()[0].Id == shield.Id,
+                        "возврат до передачи снимает щит и оставляет ровно один экземпляр в мешке");
+                    Check(SaveSystem.ReturnTo(after), "запись после передачи открывается в той же доле");
+                    Check(warrior.Worn(GearSlot.Weapon)?.Id == blade.Id && warrior.Worn(GearSlot.Offhand)?.Id == shield.Id
+                          && warrior.Carried.Count == 2 && bag.Count == 0,
+                        "возврат после передачи восстанавливает обе руки и пустой мешок");
+                }
+
+                // В старой записи мог одновременно сохраниться щит из устаревшего реестра и из мешка.
+                string legacyJson = "{\"Version\":1,\"Squad\":[{\"Name\":\"" + name + "\",\"Gear\":["
+                    + JsonUtility.ToJson(blade) + "," + JsonUtility.ToJson(shield) + "]}],\"Shelf\":[],\"Bag\":["
+                    + JsonUtility.ToJson(shield) + "]}";
+                var legacy = JsonUtility.FromJson<SaveGame>(legacyJson);
+                Check(SaveSystem.Restore(legacy), "старая запись со списком вещей читается");
+                Check(warrior.Worn(GearSlot.Weapon)?.Id == blade.Id && warrior.Worn(GearSlot.Offhand) == null
+                      && bag.Count == 1 && bag.GetAllItems()[0].Id == shield.Id,
+                    "старый список надевает меч и оставляет единственный щит в мешке");
+
+                UnityEngine.Object.DestroyImmediate(body);
+                Check(SaveSystem.Restore(after), "снаряжение восстанавливается при отсутствии прежнего тела");
+                var restoredHolder = NewObject("Тело из записи");
+                restoredHolder.SetActive(false);
+                var restored = Expedition.Summon(restoredHolder, SquadRoster.Members[0], new RelationshipSystem(null));
+                Check(restored.Worn(GearSlot.Weapon)?.Id == blade.Id && restored.Worn(GearSlot.Offhand)?.Id == shield.Id
+                      && restored.Carried.Count == 2 && bag.Count == 0,
+                    "созданный заново воин получает оба сохранённых места без копий в мешке");
+            }
+            finally
+            {
+                if (body != null) UnityEngine.Object.DestroyImmediate(body);
+                inventoryInstance.SetValue(null, keptBag);
+                SaveSystem.Restore(keptSave);
+                SquadRoster.Set(keptRoster);
+            }
+        }
+
+        private static SaveGame EquipmentRoundTrip()
+            => JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(SaveSystem.Snapshot()));
+
+        private static void SavingCustody()
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            var original = SoulCustody.Capture(scene);
+            try
+            {
+                Satchel.Forget();
+                Crypt.CryptHands.Forget();
+                Check(Satchel.AddJar(), "добытая банка не добавилась к пробе записи");
+                for (int i = 0; i < Satchel.Jars - 1; i++) Satchel.Next();
+
+                var memory = new MemorySeed { Story = "Помнит переход через реку." };
+                memory.NarrativePerks.Add(new NarrativePerk { PerkName = "Проводник" });
+                var inJar = new SoulData("Душа в банке", SinType.Pride, MoralType.Neutral, 2, 48f, memory);
+                inJar.Set(SinType.Envy, -22f);
+                inJar.Remember("Проводник");
+                var inHand = new SoulData("Душа в руках", SinType.Greed, MoralType.Neutral, 1, 19f);
+                Check(Satchel.Fill(3, inJar, SoulQuality.Acceptance)
+                      && Crypt.CryptHands.TakeSoul(inHand, SoulQuality.Fading),
+                    "проба мест хранения душ не подготовилась");
+
+                var snapshot = SaveSystem.Snapshot();
+                // Снимок в памяти должен быть отделён от живой души.
+                inJar.Set(SinType.Envy, 40f);
+                memory.NarrativePerks[0].PerkName = "Чужой перк";
+                Satchel.TakeSoul(3);
+                Crypt.CryptHands.Drop();
+                Crypt.CryptHands.TakeShell(ShellType.Zombie);
+
+                var loaded = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(snapshot));
+                if (loaded == null || loaded.SoulCustody == null)
+                {
+                    Fail("места хранения душ не пережили JSON");
+                    return;
+                }
+                Check(SoulCustody.IsValid(loaded.SoulCustody, loaded.Shelf),
+                    "исправная запись мест хранения душ отклоняется");
+                SoulCustody.Restore(loaded.SoulCustody, scene);
+
+                Same(Satchel.Jars, 4, "запись потеряла число банок");
+                Same(Satchel.Selected, 3, "запись потеряла выбранную банку");
+                Check(Satchel.At(0).EmptyJar, "загрузка заполнила пустую банку");
+                var jar = Satchel.At(3);
+                Check(jar.FullJar && jar.Soul.Id == inJar.Id && jar.Quality == SoulQuality.Acceptance,
+                    "запись перепутала душу, её банку или свежесть");
+                if (jar.FullJar)
+                {
+                    Near(jar.Soul.Get(SinType.Envy), -22f, "банка потеряла второй спектр");
+                    Same(jar.Soul.EarnedTitle, "Проводник", "банка потеряла титул души");
+                    Same(jar.Soul.Memory?.NarrativePerks?[0]?.PerkName, "Проводник", "банка потеряла перк души");
+                }
+                Check(Crypt.CryptHands.HasSoul && !Crypt.CryptHands.HasShell &&
+                      Crypt.CryptHands.Soul.Id == inHand.Id && Crypt.CryptHands.Quality == SoulQuality.Fading,
+                    "запись потеряла душу в руках или оставила тело из будущего");
+
+                Check(!SoulCustody.IsValid(loaded.SoulCustody,
+                          new[] { SaveSystem.Record(inJar, SoulQuality.Acceptance) }),
+                    "одна душа принята одновременно в банке и на полке");
+                SoulCustody.Restore(null, scene);
+                Check(Satchel.Jars == Satchel.StartingJars && Satchel.At(0).EmptyJar && Crypt.CryptHands.Empty,
+                    "старая запись не убрала содержимое рук и сумы из будущего");
+            }
+            finally
+            {
+                SoulCustody.Restore(original, scene);
+            }
         }
 
         // ================= утверждения =================

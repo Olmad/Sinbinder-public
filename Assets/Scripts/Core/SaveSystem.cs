@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
 
@@ -75,13 +76,15 @@ namespace Sinbinder.Core
         // Снимок
         // ──────────────────────────────────
 
-        public static SaveGame Snapshot()
+        public static SaveGame Snapshot() => Snapshot(SceneManager.GetActiveScene(), captureLiveEquipment: true);
+
+        private static SaveGame Snapshot(Scene scene, bool captureLiveEquipment)
         {
             Gameplay.PersonalExpedition.BeforeSaveOrLoad();
             Gameplay.CardTable.BeforeSaveOrLoad(); // no open wager escrow in a save
             var save = new SaveGame
             {
-                Scene = Here,
+                Scene = string.IsNullOrEmpty(StagedScene) ? scene.name : StagedScene,
                 Gold = Inventory.PlayerInventory.Instance != null
                      ? Inventory.PlayerInventory.Instance.Gold : 0,
                 Installed = CryptUpgrades.InstalledAll(),
@@ -89,7 +92,6 @@ namespace Sinbinder.Core
                 Commitment = Commitment.On,
             };
 
-            save.Label = Label(save);
             save.FallenBags = Gameplay.FallenBag.Snapshot();
             save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
             save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot();
@@ -105,7 +107,9 @@ namespace Sinbinder.Core
 
             float now = Time.time;
             save.EmotionDecayDelay = AOS.EmotionSystem.DecayDelay;
-            foreach (var m in SquadRoster.Members)
+            IEnumerable<SquadRoster.Member> squad = SquadRoster.Members;
+            if (captureLiveEquipment) squad = SquadRoster.EquipmentSnapshot(LivingSquadIn(scene));
+            foreach (var m in squad)
             {
                 save.Squad.Add(new SavedMember
                 {
@@ -127,6 +131,8 @@ namespace Sinbinder.Core
                     Unavailable = m.Unavailable,
                     Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear)
                                           : new List<Inventory.InventoryItem>(),
+                    HasEquipmentLayout = m.Equipment != null,
+                    Equipment = m.Equipment != null ? new List<Inventory.EquippedItem>(m.Equipment) : null,
                     Pocket = m.Pocket,
                     IsAway = m.IsAway,
                     Trade = (int)m.Trade,
@@ -148,6 +154,8 @@ namespace Sinbinder.Core
                 }
             }
 
+            save.SoulCustody = SoulCustody.Capture(scene);
+            save.Label = Label(save);
             return save;
         }
 
@@ -193,7 +201,7 @@ namespace Sinbinder.Core
         /// от <see cref="ReturnTo"/> до <c>sceneLoaded</c>.
         /// </summary>
         private static string _unfold;
-        private static (SaveGame Save, string[] WarriorIds)? _aosOnArrival;
+        private static (SaveGame Save, string[] WarriorIds)? _saveOnArrival;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Listen()
@@ -203,7 +211,7 @@ namespace Sinbinder.Core
             Arriving = false;
             StagedScene = null;
             _unfold = null;
-            _aosOnArrival = null;
+            _saveOnArrival = null;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Arrived;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += Arrived;
         }
@@ -215,17 +223,20 @@ namespace Sinbinder.Core
             StagedScene = null;
             Gameplay.FallenBag.OnMapLoaded(scene.name);
 
-            // Уходящая сцена может доиграть кадр после LoadScene. Заменяем
-            // память сейчас, когда те события уже не могут попасть в запись.
-            var savedAos = _aosOnArrival;
-            _aosOnArrival = null;
-            if (savedAos.HasValue)
-                RestoreAos(savedAos.Value.Save, savedAos.Value.WarriorIds);
+            // Уходящая сцена может доиграть кадр после LoadScene. Здесь
+            // новая полка и устройство уже существуют, а старые ушли.
+            var restored = _saveOnArrival;
+            _saveOnArrival = null;
+            if (restored.HasValue)
+            {
+                RestoreAos(restored.Value.Save, restored.Value.WarriorIds);
+                RestoreSouls(restored.Value.Save, scene);
+            }
 
             // Начало доли — её отметка: сюда вернёт «С начала доли».
             // Сцена — пришедшая, а не «открытая»: в sceneLoaded Unity могла
             // ещё не сделать её открытой.
-            MarkCheckpoint(scene.name);
+            MarkCheckpoint(scene.name, scene, captureLiveEquipment: false);
 
             // Запись посреди разгрома: лагерь открыт — разгром разворачивается
             // в нём сейчас же, до Start сцены. Шар, совет и открытие лагеря
@@ -254,11 +265,17 @@ namespace Sinbinder.Core
         /// (<see cref="RaidEvent"/>). <paramref name="part"/> — доля; пусто —
         /// нынешняя (<see cref="Here"/>).
         /// </summary>
-        public static void MarkCheckpoint(string part = null)
+        public static void MarkCheckpoint(string part = null) =>
+            MarkCheckpoint(part, SceneManager.GetActiveScene(), captureLiveEquipment: true);
+
+        private static void MarkCheckpoint(string part, Scene scene, bool captureLiveEquipment)
         {
-            var save = Snapshot();
-            if (!string.IsNullOrEmpty(StagedScene)) save.Scene = StagedScene;
-            else if (!string.IsNullOrEmpty(part)) save.Scene = part;
+            var save = Snapshot(scene, captureLiveEquipment);
+            if (string.IsNullOrEmpty(StagedScene) && !string.IsNullOrEmpty(part) && save.Scene != part)
+            {
+                save.Scene = part;
+                save.Label = Label(save);
+            }
             Checkpoint = save;
         }
 
@@ -305,8 +322,9 @@ namespace Sinbinder.Core
             // Validate the destination before changing any live squad, soul or
             // inventory state. A save from a missing scene must fail atomically.
             // The raid part is hosted by the camp scene, not a standalone scene.
-            if (save == null) return false;
-            bool changeScene = !string.IsNullOrEmpty(save.Scene) && (reload || save.Scene != Here);
+            if (save == null || Arriving) return false;
+            bool changeScene = !string.IsNullOrEmpty(save.Scene)
+                && (reload || save.Scene != Here || WorkshopRecruitsChanged(save));
             string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
             if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {
@@ -325,11 +343,25 @@ namespace Sinbinder.Core
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).
             Arriving = true;
-            _aosOnArrival = (save, SavedWarriorIds());
+            _saveOnArrival = (save, SavedWarriorIds());
             _unfold = scene != save.Scene ? save.Scene : null;
             GamePauseController.Instance?.Resume();
             UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
             return true;
+        }
+
+        private static bool WorkshopRecruitsChanged(SaveGame save)
+        {
+            var device = CryptWorkshop.Device;
+            if (device == null || device.gameObject.scene != SceneManager.GetActiveScene() || save.Squad == null)
+                return false;
+
+            // Запись до связывания возвращает душу в гнездо или суму.
+            // Пересобираем склеп, чтобы в нём не осталось поднятого из этой души бойца.
+            var current = new HashSet<string>(SquadRoster.Members
+                .Where(member => member.JoinedAfterRaid).Select(member => member.WarriorId));
+            return !current.SetEquals(save.Squad.Where(member => member != null && member.JoinedAfterRaid)
+                .Select(member => member.WarriorId));
         }
 
         /// <summary>
@@ -346,10 +378,11 @@ namespace Sinbinder.Core
             // Validate before touching the live game. A damaged or hand-edited
             // save must not leave half a squad, shelf, or wager restored.
             if (save.Squad == null || save.Shelf == null ||
-                save.Squad.Exists(m => m == null) ||
-                save.Shelf.Exists(s => s == null))
+                save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment))) ||
+                save.Shelf.Exists(s => !IsValidSoul(s)) ||
+                !SoulCustody.IsValid(save.SoulCustody, save.Shelf))
             {
-                Debug.LogWarning("[СОХРАНЕНИЕ] Неполный список воинов или душ. Не читаю.");
+                Debug.LogWarning("[СОХРАНЕНИЕ] Повреждены данные отряда, снаряжения или душ.");
                 return false;
             }
 
@@ -365,22 +398,41 @@ namespace Sinbinder.Core
             // В той же доле тела остаются на месте, включая ещё не
             // вернувшихся с автоматической вылазки. Если запись из другой
             // партии, переносим память на живой состав и поправляем её цели.
-            var liveWarriors = keepScene
-                ? Object.FindObjectsByType<Warrior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                    .Where(w => w != null && w.Soul != null && !w.IsDead
-                        && w.Team == Team.Player && !(w is SinbinderPlayer))
-                    .ToLookup(w => w.DisplayName)
-                : null;
+            var scene = SceneManager.GetActiveScene();
+            var liveWarriors = keepScene ? LivingSquadIn(scene).ToArray() : System.Array.Empty<Warrior>();
+            var liveNames = liveWarriors.ToLookup(w => w.DisplayName);
             var savedNames = save.Squad.ToLookup(m => m.Name);
+
+            // Старый снимок мог записать меч в актуальный мешок и в прежний
+            // состав. Запись мешка делалась с живого состояния.
+            var itemIds = new HashSet<string>();
+            var bag = save.Bag?.Where(item => item != null && item.Type != Inventory.ItemType.Gold &&
+                                             ClaimItem(item, itemIds)).ToList();
+            if (save.FallenBags != null)
+                foreach (var bodyBag in save.FallenBags)
+                {
+                    if (bodyBag?.Memento != null) ClaimItem(bodyBag.Memento, itemIds);
+                    if (bodyBag?.Items == null) continue;
+                    foreach (var item in bodyBag.Items)
+                        if (item != null) ClaimItem(item, itemIds);
+                }
+            var mappedBodies = new Dictionary<Warrior, SquadRoster.Member>();
             var members = new List<SquadRoster.Member>();
             foreach (var m in save.Squad)
             {
-                var namesakes = liveWarriors?[m.Name];
-                var living = namesakes?.FirstOrDefault(w => w.Id == m.WarriorId);
-                if (living == null && namesakes?.Count() == 1 && savedNames[m.Name].Count() == 1)
+                var living = !string.IsNullOrEmpty(m.WarriorId)
+                    ? liveWarriors.FirstOrDefault(w => w.Id == m.WarriorId) : null;
+                var namesakes = liveNames[m.Name];
+                if (living == null && namesakes.Count() == 1 && savedNames[m.Name].Count() == 1)
                     living = namesakes.First();
+                if (living != null && mappedBodies.ContainsKey(living)) living = null;
 
-                members.Add(new SquadRoster.Member
+                var equipment = m.HasEquipmentLayout
+                    ? m.Equipment.Where(entry => ClaimItem(entry.Item, itemIds)).ToList() : null;
+                var gear = equipment != null
+                    ? equipment.Select(entry => entry.Item).ToList()
+                    : m.Gear?.Where(item => CanWear(item) && ClaimItem(item, itemIds)).ToList();
+                var member = new SquadRoster.Member
                 {
                     Name = m.Name,
                     WarriorId = living != null ? living.Id : m.WarriorId,
@@ -396,7 +448,8 @@ namespace Sinbinder.Core
                     IsCommander = m.IsCommander,
                     IsCandidate = m.IsCandidate,
                     Unavailable = m.Unavailable,
-                    Gear = m.Gear != null ? new List<Inventory.InventoryItem>(m.Gear) : null,
+                    Gear = gear,
+                    Equipment = equipment,
                     Pocket = m.Pocket,
                     IsAway = m.IsAway,
                     Trade = (Trade)m.Trade,
@@ -404,11 +457,17 @@ namespace Sinbinder.Core
                     Legend = m.Legend,
                     Shell = (ShellType)m.Shell,
                     Title = m.Title ?? "",
-                });
+                };
+                members.Add(member);
+                if (living != null) mappedBodies.Add(living, member);
             }
 
             SquadRoster.Set(members);
-            if (keepScene) RestoreAos(save);
+            if (keepScene)
+            {
+                RestoreEquipmentInScene(liveWarriors, mappedBodies, itemIds);
+                RestoreAos(save);
+            }
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
@@ -419,10 +478,50 @@ namespace Sinbinder.Core
             Commitment.Set(save.Commitment);
 
             Inventory.PlayerInventory.Instance?.SetGold(save.Gold);
-            Inventory.PlayerInventory.Instance?.ReplaceItems(save.Bag);
+            Inventory.PlayerInventory.Instance?.ReplaceItems(bag);
             TrophyChest.Restore(save.ChestLooted, save.Chest);
             Lesson.Restore(save.Lessons);
 
+            if (keepScene) RestoreSouls(save, scene);
+            return true;
+        }
+
+        private static IEnumerable<Warrior> LivingSquadIn(Scene scene) =>
+            Object.FindObjectsByType<Warrior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Where(w => w != null && w.gameObject.scene == scene && w.Soul != null && !w.IsDead
+                    && w.Team == Team.Player && !(w is SinbinderPlayer));
+
+        private static bool InvalidEquipment(List<Inventory.EquippedItem> equipment) =>
+            equipment == null || equipment.Any(entry => !entry.IsValid)
+                || equipment.Select(entry => entry.Slot).Distinct().Count() != equipment.Count;
+
+        private static bool CanWear(Inventory.InventoryItem item) =>
+            item != null && item.Slot > Inventory.GearSlot.None && item.Slot <= Inventory.GearSlot.Belt;
+
+        private static bool ClaimItem(Inventory.InventoryItem item, HashSet<string> itemIds) =>
+            string.IsNullOrEmpty(item.Id) || itemIds.Add(item.Id);
+
+        private static void RestoreEquipmentInScene(IEnumerable<Warrior> liveWarriors,
+            Dictionary<Warrior, SquadRoster.Member> mappedBodies, HashSet<string> itemIds)
+        {
+            foreach (var warrior in liveWarriors)
+            {
+                if (mappedBodies.TryGetValue(warrior, out var member))
+                {
+                    warrior.RestoreEquipment(member.Equipment, member.Gear);
+                    continue;
+                }
+
+                // Воин, поднятый после записи, остаётся на сцене при загрузке
+                // на месте. Предметы из записи возвращаются к своим владельцам.
+                var equipment = warrior.CaptureEquipment();
+                if (equipment.RemoveAll(entry => itemIds.Contains(entry.Item.Id)) > 0)
+                    warrior.RestoreEquipment(equipment);
+            }
+        }
+
+        private static void RestoreSouls(SaveGame save, Scene scene)
+        {
             var souls = SoulManager.Instance;
             if (souls != null)
             {
@@ -434,7 +533,7 @@ namespace Sinbinder.Core
                 }
             }
 
-            return true;
+            SoulCustody.Restore(save.SoulCustody, scene);
         }
 
         private static string[] SavedWarriorIds()
@@ -486,6 +585,7 @@ namespace Sinbinder.Core
 
             return new SavedSoul
             {
+                Id = soul.Id,
                 Name = soul.Name,
                 Moral = (int)soul.Moral,
                 Level = soul.Level,
@@ -494,6 +594,8 @@ namespace Sinbinder.Core
                 Gender = (int)soul.Gender,
                 Trade = (int)soul.Trade,
                 Title = soul.EarnedTitle,
+                HasMemorySeed = soul.Memory != null,
+                Memory = CopyMemorySeed(soul.Memory),
             };
         }
 
@@ -506,12 +608,24 @@ namespace Sinbinder.Core
         {
             if (s == null) return null;
 
+            var memory = s.HasMemorySeed ? CopyMemorySeed(s.Memory) : null;
             var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level,
-                                    s.Spectra, null, (Gender)s.Gender);
+                                    s.Spectra, memory, (Gender)s.Gender, s.Id);
             soul.SetTrade((Trade)s.Trade);
             soul.Remember(s.Title);
             return soul;
         }
+
+        internal static bool IsValidSoul(SavedSoul soul) => soul != null &&
+            System.Enum.IsDefined(typeof(SoulQuality), soul.Quality) &&
+            System.Enum.IsDefined(typeof(MoralType), soul.Moral) &&
+            System.Enum.IsDefined(typeof(Gender), soul.Gender) &&
+            System.Enum.IsDefined(typeof(Trade), soul.Trade) &&
+            !(soul.HasMemorySeed && soul.Memory == null) &&
+            (soul.Spectra == null || soul.Spectra.All(value => !float.IsNaN(value) && !float.IsInfinity(value)));
+
+        private static MemorySeed CopyMemorySeed(MemorySeed memory) =>
+            memory != null ? JsonUtility.FromJson<MemorySeed>(JsonUtility.ToJson(memory)) : null;
 
         // ──────────────────────────────────
         // Файл

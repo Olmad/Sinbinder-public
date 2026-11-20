@@ -82,6 +82,7 @@ namespace Sinbinder.Crypt
 
         private GameObject _shown;
         private string _shownKey;
+        private SoulData _shownSoul;
 
         /// <summary>
         /// Положенное видно на устройстве (автор, 26.10: «при постановке души и тела
@@ -92,11 +93,13 @@ namespace Sinbinder.Crypt
         {
             if (_device == null) return;
 
+            var soul = _slot == Slot.Soul ? _device.SoulInside : null;
             string key = _slot == Slot.Soul
-                ? (_device.HasSoul ? "soul:" + _device.SoulInside.Name : "")
+                ? (soul != null ? "soul" : "")
                 : (_device.HasShell ? "shell:" + _device.ShellInside : "");
-            if (key == _shownKey) return;
+            if (key == _shownKey && soul == _shownSoul) return;
             _shownKey = key;
+            _shownSoul = soul;
 
             if (_shown != null) Destroy(_shown);
             _shown = null;
