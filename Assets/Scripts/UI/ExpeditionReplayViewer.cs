@@ -134,7 +134,7 @@ namespace Sinbinder.UI
 
         private void DrawSchematicMap(Rect rect,ExpeditionReplayFrame frame)
         {
-            GUI.Box(rect,"СХЕМА МАРШРУТА");
+            GUI.Box(rect,Loc.T("СХЕМА МАРШРУТА"));
             Rect ground=new Rect(rect.x+12f,rect.y+27f,rect.width-24f,rect.height-40f);
             GUI.DrawTexture(ground,Texture2D.whiteTexture,ScaleMode.StretchToFill);
             var previous=GUI.color;
@@ -154,8 +154,8 @@ namespace Sinbinder.UI
             float sx=ground.x+ground.width*0.15f;
             float ex=ground.x+ground.width*0.85f;
             float y=ground.y+ground.height*(1f-progress);
-            GUI.Label(new Rect(sx-20f,ground.y+5f,140f,20f),"Цель");
-            GUI.Label(new Rect(sx-20f,ground.yMax-24f,160f,20f),"Выход / возврат");
+            GUI.Label(new Rect(sx-20f,ground.y+5f,140f,20f),Loc.T("Цель"));
+            GUI.Label(new Rect(sx-20f,ground.yMax-24f,160f,20f),Loc.T("Выход / возврат"));
             var a=new Rect(sx,y-8f,22f,22f);
             GUI.color=new Color(0.28f,0.82f,0.91f);
             GUI.DrawTexture(a,Texture2D.whiteTexture);
