@@ -155,7 +155,8 @@ namespace Sinbinder.Crypt
                         copy.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
                             frame.Damage,frame.Healing,frame.Round,
                             frame.TargetName,frame.HasOutcome,frame.Resolved,
-                            frame.TargetKilled,frame.TargetHealthAfter);
+                            frame.TargetKilled,frame.TargetHealthAfter,
+                            frame.ActorId,frame.ActionCode);
             return copy;
         }
 
@@ -545,7 +546,8 @@ namespace Sinbinder.Crypt
                         nextTrace.Append(ExpeditionReplayKind.CombatAction,actor,
                             Retelling.Describe(ev),ev.TargetId,ev.DamageDealt,
                             ev.HealDealt,ev.Round,ev.TargetName,true,
-                            ev.Resolved,ev.TargetKilled,ev.TargetHealthAfter);
+                            ev.Resolved,ev.TargetKilled,ev.TargetHealthAfter,
+                            ev.ActorId,ev.Action.ToString());
                     }
 
                     // Commit both lists only after the entire round completed.
@@ -1035,7 +1037,8 @@ namespace Sinbinder.Crypt
                         replay.Append(frame.Kind,frame.Actor,frame.Description,frame.Target,
                             frame.Damage,frame.Healing,frame.Round,
                             frame.TargetName,frame.HasOutcome,frame.Resolved,
-                            frame.TargetKilled,frame.TargetHealthAfter);
+                            frame.TargetKilled,frame.TargetHealthAfter,
+                            frame.ActorId,frame.ActionCode);
 
             if(!outcome.EncounterFought)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
