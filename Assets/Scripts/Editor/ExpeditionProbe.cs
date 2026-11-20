@@ -60,6 +60,9 @@ namespace Sinbinder.EditorTools
             switch (_step)
             {
                 case Step.Camp:
+                    // Стартовое окно ждёт ответа, как ждёт человека (прогон демо отвечает так же).
+                    if (UI.StartPanel.Waiting) { UI.StartPanel.ChooseFresh(); Write("стартовое окно: «начать заново»"); _since = now; return; }
+                    if (spent < 3) return;
                     if (!SquadRoster.HasSquad) { if (spent > 90) Finish("НЕ ПРОЙДЕНО: в лагере за 90 с не завёлся отряд"); return; }
                     Write("отряд " + Roster());
                     // Уже в склепе (второй поход подряд) — не перезагружать: склеп жив, отряд дома.
