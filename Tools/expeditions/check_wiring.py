@@ -59,9 +59,14 @@ assert "var reserved=new HashSet<string>();" in m
 assert "if (!valid || !item.Party.Contains(item.Commander)) continue;" in m
 assert "if (selected.Count+1>maxSize)" in m
 assert "SquadRoster.SendAway(commanderName, companions);" in m
-assert "if(MissionBoard.Journeys.Count==before && _title!=null)" in ui
+assert "if (MissionBoard.Journeys.Count != before)" in ui
+assert "_gathering = true;\n            ShowParty(result);" in ui
+assert "MissionBoard.Fits(_leader, _chosen)" in ui and "int maxSize=Fits(commanderName, mission);" in m
+assert 'Loc.T("Продолжить игру")' in ui and '"", Close, 68f)' in ui
+assert "if (journey.CombatBlocked) continue;" in m
 roster=(r/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
-assert "if (alreadyAway) continue;" in roster
+assert "if (previous.IsAway) continue;" in roster
+assert "SquadRoster.RefreshFromScene(MissionBoard.Squad());" in ui
 
 # Causal contract: encounter first, recorded result on return, no replay reroll,
 # winner not merely body count, no absent warrior in a second scene.
@@ -115,7 +120,7 @@ body=(r/"Assets/Scripts/Gameplay/Damageable.cs").read_text(encoding="utf-8")
 warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
 rules=(r/"Assets/Scripts/Gameplay/ExpeditionHealthRules.cs").read_text(encoding="utf-8")
 assert "public float HealthFraction;" in roster
-assert "survivors.Add(Capture(w, Previous(w)));" in roster
+assert "survivors.Add(Capture(w, previous));" in roster
 assert "member.HealthFraction = ExpeditionHealthRules.Capture(warrior.HP, warrior.MaxHP);" in roster
 assert "public static void ApplyExpeditionHealth(string name, float fraction)" in roster
 assert "journey.SurvivorHealth=CopyHealth(fight.Health);" in m

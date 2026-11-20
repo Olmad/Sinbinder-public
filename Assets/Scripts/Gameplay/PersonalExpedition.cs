@@ -110,6 +110,7 @@ namespace Sinbinder.Gameplay
             // replacing one would erase its real memories and equipment.
             if (party != null)
             {
+                var scene = SceneManager.GetActiveScene();
                 var seen = new HashSet<string>();
                 foreach (string name in party)
                 {
@@ -117,7 +118,7 @@ namespace Sinbinder.Gameplay
                     // Recheck the selected roster at the moment of departure.
                     // UI was opened earlier, and a soldier might now be away,
                     // unavailable or on another mission. Never teleport them.
-                    if (!SquadRoster.TryGet(name, out var member) ||
+                    if (!SquadRoster.HasUniqueName(name) || !SquadRoster.TryGet(name, out var member) ||
                         !SquadRoster.CanGo(member))
                     {
                         error = Loc.F("Воин {0} сейчас не может выйти в экспедицию.", Loc.Name(name));
@@ -132,7 +133,8 @@ namespace Sinbinder.Gameplay
                     foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(
                                  FindObjectsSortMode.None))
                         if (w != null && !(w is SinbinderPlayer) && !w.IsDead &&
-                            w.Team == Team.Player && w.DisplayName == name)
+                            w.Team == Team.Player && w.gameObject.scene == scene &&
+                            (string.IsNullOrEmpty(member.WarriorId) ? w.DisplayName == name : w.Id == member.WarriorId))
                         { found = w; break; }
                     if (found == null)
                     {
@@ -501,7 +503,11 @@ namespace Sinbinder.Gameplay
             FallenBag.OnMapLoaded(SceneManager.GetActiveScene().name);
             var surface=_mapRoot!=null ? _mapRoot.GetComponent<NavMeshSurface>() : null;
             surface?.RemoveData();
-            if(_mapRoot!=null) UnityEngine.Object.Destroy(_mapRoot);
+            if (_mapRoot != null)
+            {
+                _mapRoot.SetActive(false);
+                UnityEngine.Object.Destroy(_mapRoot);
+            }
             _mapRoot=null;
 
             var camera=Camera.main!=null ? Camera.main.GetComponent<RTS_Camera>() : null;
@@ -513,7 +519,7 @@ namespace Sinbinder.Gameplay
             // loaded save snapshot or award an unearned mission result.
             if (commitResult)
             {
-                SquadRoster.Remember(MissionBoard.Squad());
+                SquadRoster.RefreshFromScene(MissionBoard.Squad());
                 CryptMap.Board?.RecordPersonal(_mission,
                     _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
             }

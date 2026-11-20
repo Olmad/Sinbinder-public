@@ -264,6 +264,7 @@ namespace Sinbinder.Crypt
             for (int i=ActiveJourneys.Count-1;i>=0;i--)
             {
                 var journey=ActiveJourneys[i];
+                if (journey.CombatBlocked) continue;
                 journey.SecondsRemaining=ExpeditionJourneyTiming.Advance(
                     journey.SecondsRemaining,gameDelta);
                 if (!ExpeditionJourneyTiming.Finished(journey.SecondsRemaining)) continue;
@@ -317,7 +318,6 @@ namespace Sinbinder.Crypt
                 {
                     // ONE genuine AOS round per 2 seconds of game time,
                     // not a previously simulated film played frame by frame.
-                    if(journey.CombatBlocked) continue;
                     if(AdvanceEncounterRound(journey))
                     {
                         journey.Phase=2;
@@ -381,7 +381,7 @@ namespace Sinbinder.Crypt
         {
             foreach (var journey in ActiveJourneys)
             {
-                if (journey.Commander!=commanderName || journey.Phase!=1) continue;
+                if (journey.Commander!=commanderName || journey.Phase!=1 || journey.CombatBlocked) continue;
                 Mission mission=default;
                 foreach(var candidate in MissionCatalog.All())
                     if(candidate.Name==journey.MissionName) { mission=candidate; break; }
@@ -610,7 +610,7 @@ namespace Sinbinder.Crypt
         {
             foreach (var journey in ActiveJourneys)
             {
-                if (journey.Commander!=commanderName || journey.Phase!=0) continue;
+                if (journey.Commander!=commanderName || journey.Phase!=0 || journey.CombatBlocked) continue;
                 journey.Recalled=true;
                 journey.Phase=2;
                 journey.SecondsRemaining=ReturnSeconds;
@@ -719,15 +719,19 @@ namespace Sinbinder.Crypt
         {
             if (!string.IsNullOrEmpty(member.Unavailable)) return Loc.T(member.Unavailable);
             if (member.IsAway) return Loc.T("В пути с другим отрядом.");
+            if (!SquadRoster.HasUniqueName(member.Name)) return AmbiguousWarrior(member.Name);
             return "";
         }
+
+        private static string AmbiguousWarrior(string name)
+            => Loc.F("В отряде несколько бойцов с именем «{0}». Выберите другого бойца.", Loc.Name(name));
 
         /// <summary>Сколько людей сейчас может уйти. Ушедшие с другим отрядом — не здесь.</summary>
         public int Ready()
         {
             int ready = 0;
             foreach (var m in SquadRoster.Members)
-                if (SquadRoster.CanGo(m)) ready++;
+                if (SquadRoster.CanGo(m) && SquadRoster.HasUniqueName(m.Name)) ready++;
             return ready;
         }
 
@@ -780,8 +784,6 @@ namespace Sinbinder.Crypt
         {
             if (ActiveJourneys.Count>=MaxActiveJourneys)
                 return Loc.T("Слишком много одновременных экспедиций.");
-            if (Ready() == 0)
-                return Loc.T("Послать некого.");
 
             // Вылазка — только те, кого послали сейчас. Отряд, ушедший
             // из лагеря, ещё в пути и вернётся в эпилоге: до 29 сентября
@@ -790,9 +792,9 @@ namespace Sinbinder.Crypt
             // старшего с того отряда (SquadRoster.ChooseCommander).
             var before = new HashSet<string>();
             foreach (var m in SquadRoster.Away) before.Add(m.Name);
-            if (!SquadRoster.TryGet(commanderName, out var commander) ||
-                !SquadRoster.CanGo(commander))
-                return Loc.T("Выбранный старший недоступен.");
+            if (!SquadRoster.TryGet(commanderName, out var commander) || !SquadRoster.CanGo(commander))
+                return Ready() == 0 ? Loc.T("Послать некого.") : Loc.T("Выбранный старший недоступен.");
+            if (!SquadRoster.HasUniqueName(commanderName)) return AmbiguousWarrior(commanderName);
             if (before.Contains(commanderName))
                 return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
 
@@ -800,8 +802,7 @@ namespace Sinbinder.Crypt
             // SendAway silently skipped unavailable soldiers, making the
             // on-screen party differ from the group actually sent.
             var selected=new HashSet<string>();
-            int maxSize=System.Math.Min(mission.Squad,
-                Leadership.SquadSize(commander.Leadership));
+            int maxSize=Fits(commanderName, mission);
             if (companions!=null)
                 foreach (var name in companions)
                 {
@@ -810,6 +811,7 @@ namespace Sinbinder.Crypt
                         !SquadRoster.TryGet(name,out var member) ||
                         !SquadRoster.CanGo(member))
                         return Loc.T("Неверный состав: один из спутников недоступен или указан повторно.");
+                    if (!SquadRoster.HasUniqueName(name)) return AmbiguousWarrior(name);
                 }
             if (selected.Count+1>maxSize)
                 return Loc.T("Старший не может вести столько спутников.");
@@ -834,8 +836,15 @@ namespace Sinbinder.Crypt
             // Hide their scene objects too; otherwise one warrior can fight
             // beside the player in the crypt while simultaneously on a raid.
             foreach (var warrior in Squad())
-                if (party.Contains(warrior.DisplayName))
-                    warrior.gameObject.SetActive(false);
+            {
+                if (warrior.gameObject.scene != gameObject.scene) continue;
+                foreach (var member in away)
+                    if (MatchesMember(warrior, member))
+                    {
+                        warrior.gameObject.SetActive(false);
+                        break;
+                    }
+            }
             Sent++;
             ActiveJourneys.Add(new SavedAutoExpedition
             {
@@ -997,9 +1006,12 @@ namespace Sinbinder.Crypt
                 }
 
                 // Пластинка — награда вылазки песочницы (37-DEMO §8.4): тема по месту, не сила.
-                var record = Core.Records.FromMission(mission.Name);
-                if (secured && record != null)
-                    Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
+                if (secured)
+                {
+                    var record = Core.Records.FromMission(mission.Name);
+                    if (record != null)
+                        Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
+                }
             }
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,

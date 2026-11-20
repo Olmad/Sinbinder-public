@@ -34,6 +34,7 @@ static class BoardShimTests
     {
         MissionBoard.Forget();
         ExpeditionReplayArchive.Forget();
+        Records.MissionRequests.Clear();
         SquadRoster.Members.Clear();
         Sinbinder.Core.SaveSystem.Arriving=false;
         Sinbinder.Core.SaveSystem.SaveCount=0;
@@ -63,6 +64,124 @@ static class BoardShimTests
         warrior.gameObject.SetActive(active);
         SceneObjects.SceneWarriors.Add(warrior);
         return warrior;
+    }
+
+    static void AmbiguousPartyIsRejected(Mission mission)
+    {
+        Reset();
+        var board=new MissionBoard();
+        var commander=Make("Старший");
+        var first=Make("Тёзка");
+        var second=Make(first.Name);
+        second.WarriorId="another-roster-id";
+        SquadRoster.Members.AddRange(new[]{commander,first,second});
+        var bodies=SquadRoster.Members.Select(m=>PlaceWarrior(m,true)).ToArray();
+
+        board.Send(mission,first.Name,new[]{commander.Name},null);
+        Check(!SquadRoster.Away.Any() && bodies.All(w=>w.gameObject.activeSelf) &&
+              MissionBoard.Journeys.Count==0 && board.Sent==0 && SaveSystem.SaveCount==0,
+            "duplicate commander names reject dispatch without reserving anyone or saving");
+
+        board.Send(mission,commander.Name,new[]{first.Name},null);
+        Check(!SquadRoster.Away.Any() && bodies.All(w=>w.gameObject.activeSelf) &&
+              MissionBoard.Journeys.Count==0 && board.Sent==0 && SaveSystem.SaveCount==0,
+            "duplicate companion names reject the whole party before mutation or autosave");
+    }
+
+    static void DepartureHidesSelectedIdentities(Mission mission)
+    {
+        Reset();
+        var board=new MissionBoard();
+        var commander=Make("Старший");
+        var companion=Make("Спутник");
+        var alreadyAway=Make("Ранее ушедший");
+        alreadyAway.IsAway=true;
+        SquadRoster.Members.AddRange(new[]{commander,companion,alreadyAway});
+        var captainBody=PlaceWarrior(commander,true);
+        var namesake=PlaceWarrior(companion,true);
+        namesake.Id="unrelated-scene-id";
+        var companionBody=PlaceWarrior(companion,true);
+
+        board.Send(mission,commander.Name,new[]{companion.Name},null);
+        var party=new[]{commander.Name,companion.Name};
+        Check(commander.IsAway && companion.IsAway && alreadyAway.IsAway &&
+              MissionBoard.Journeys.Count==1 && MissionBoard.Journeys[0].Party.SequenceEqual(party) &&
+              SaveSystem.LastSave?.Count==1 && SaveSystem.LastSave[0].Party.SequenceEqual(party),
+            "departure reserves and saves exactly the newly selected party");
+        Check(!captainBody.gameObject.activeSelf && !companionBody.gameObject.activeSelf &&
+              namesake.gameObject.activeSelf,
+            "departure hides only the selected IDs when another scene actor shares a name");
+    }
+
+    static void MissionRecordsRequireSecuredObjective(Mission mission)
+    {
+        foreach(var won in new[]{false,true})
+        {
+            Reset();
+            var board=new MissionBoard();
+            var survivor=Make("Вернувшийся");
+            survivor.IsAway=true;
+            SquadRoster.Members.Add(survivor);
+            MissionBoard.RestoreJourneys(JsonRoundtrip(new List<SavedAutoExpedition>
+            {
+                new SavedAutoExpedition
+                {
+                    MissionName=mission.Name,
+                    Commander=survivor.Name,
+                    Party=new List<string>{survivor.Name},
+                    Phase=2,
+                    EncounterResolved=true,
+                    EncounterFought=true,
+                    BattleWon=won,
+                    Survivors=new List<string>{survivor.Name},
+                    EncounterTrace=new ExpeditionReplayData(),
+                    FoesFallen=1,
+                    TakenCoins=12
+                }
+            }));
+
+            board.AdvanceJourneys(0.1f,true);
+            Check(MissionBoard.Journeys.Count==0 && !survivor.IsAway &&
+                  ExpeditionReplayArchive.History.Count==1,
+                "a surviving fighter completes homecoming after either combat outcome");
+            board.AdvanceJourneys(1f,true);
+            if(won)
+                Check(Records.MissionRequests.SequenceEqual(new[]{mission.Name}) &&
+                      PlayerInventory.Instance.Gold==12+MissionCatalog.Coin(mission.Prize),
+                    "secured objective acquires its mission record once");
+            else
+                Check(Records.MissionRequests.Count==0 && PlayerInventory.Instance.Gold==0,
+                    "defeat with a survivor never attempts to acquire a mission record or payout");
+        }
+    }
+
+    static void BlockedEncountersStayBlocked()
+    {
+        foreach (int phase in new[] { 0, 1 })
+        {
+            Reset();
+            var board = new MissionBoard();
+            var commander = Make("Старший остановленного похода");
+            commander.IsAway = true;
+            SquadRoster.Members.Add(commander);
+            MissionBoard.RestoreJourneys(new List<SavedAutoExpedition>
+            {
+                new SavedAutoExpedition
+                {
+                    MissionName = "Соляной обоз",
+                    Commander = commander.Name,
+                    Party = new List<string> { commander.Name },
+                    Phase = phase,
+                    CombatBlocked = true,
+                }
+            });
+            board.AdvanceJourneys(30f, true);
+            Check(MissionBoard.Journeys.Count == 1 && MissionBoard.Journeys[0].Phase == phase &&
+                  MissionBoard.Journeys[0].CombatBlocked && SaveSystem.SaveCount == 0,
+                "blocked encounters never retry their decisions on the next tick");
+            Check(!board.OfferJourneyOrder(commander.Name, null) && !board.RecallJourney(commander.Name),
+                "player actions do not re-enter blocked encounters");
+        }
     }
 
     static void ColdHomecoming(MissionBoard board, Mission mission)
@@ -367,6 +486,10 @@ static class BoardShimTests
 
         ColdHomecoming(board,mission);
         RecallWithAndWithoutBody(board,mission);
+        BlockedEncountersStayBlocked();
+        AmbiguousPartyIsRejected(mission);
+        DepartureHidesSelectedIdentities(mission);
+        MissionRecordsRequireSecuredObjective(mission);
 
         Console.WriteLine("PASS: "+assertions+
             " real MissionBoard Unity API shim scenarios, JSON roundtrips and single payout");

@@ -12060,8 +12060,24 @@ msgid "Душа"
 msgstr "Soul"
 
 #: UI/MissionMapUI.cs
-msgid "Куда послать отряд?  Esc — отойти от шара"
-msgstr "Where to send a party?  Esc — step away from the orb"
+msgid "Куда послать отряд?"
+msgstr "Where should the squad go?"
+
+#: UI/MissionMapUI.cs
+msgid "Продолжить игру"
+msgstr "Resume game"
+
+#: UI/MissionMapUI.cs
+msgid "Время вылазок остановлено, пока открыта карта."
+msgstr "Expedition timers are paused while the map is open."
+
+#: UI/MissionMapUI.cs
+msgid "Свободных мест в отряде нет. Сначала снимите выбор с другого бойца."
+msgstr "The squad is full. Deselect another fighter first."
+
+#: Crypt/MissionBoard.cs
+msgid "В отряде несколько бойцов с именем «{0}». Выберите другого бойца."
+msgstr "Several fighters are named “{0}”. Choose another fighter."
 
 #: UI/MissionMapUI.cs
 msgid "AOS-бой остановлен: снимок требует проверки"

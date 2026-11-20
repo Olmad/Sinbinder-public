@@ -65,7 +65,12 @@ namespace Sinbinder.Core
     }
     public static class Records
     {
-        public static Record FromMission(string name) => null;
+        public static readonly List<string> MissionRequests=new List<string>();
+        public static Record FromMission(string name)
+        {
+            MissionRequests.Add(name);
+            return null;
+        }
         public static string MetalWord(Record r) => "пластинка";
     }
     public static class SaveSystem
@@ -229,6 +234,8 @@ namespace Sinbinder.Gameplay
     {
         public static readonly List<Member> Members=new List<Member>();
         public static IEnumerable<Member> Away => Members.Where(m=>m.IsAway);
+        public static bool HasUniqueName(string name)
+            => !string.IsNullOrEmpty(name) && Members.Count(m=>m.Name==name)==1;
         public static bool TryGet(string name,out Member m)
         {
             m=Members.FirstOrDefault(x=>x.Name==name);

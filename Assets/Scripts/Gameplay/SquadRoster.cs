@@ -172,7 +172,7 @@ namespace Sinbinder.Gameplay
             foreach (var m in _members)
             {
                 if (party.Count >= size - 1) break;
-                if (m.Name == commanderName || !CanGo(m)) continue;
+                if (m.Name == commanderName || !CanGo(m) || !HasUniqueName(m.Name)) continue;
                 if (keepExperienced && Leadership.IsExperienced(m.Leadership)) continue;
                 party.Add(m.Name);
             }
@@ -407,14 +407,12 @@ namespace Sinbinder.Gameplay
         public static void SyncPocket(Warrior warrior)
         {
             if (warrior == null || warrior.Soul == null) return;
-            for (int i = 0; i < _members.Count; i++)
-            {
-                var member = _members[i];
-                if (member.IsAway || member.Name != warrior.DisplayName) continue;
-                member.Pocket = warrior.PocketGold;
-                _members[i] = member;
-                break;
-            }
+            int index = PresentMemberIndex(warrior);
+            if (index < 0) return;
+
+            var member = _members[index];
+            member.Pocket = warrior.PocketGold;
+            _members[index] = member;
         }
 
         internal static IEnumerable<Member> SaveSnapshot(IEnumerable<Warrior> liveWarriors, bool captureCondition)
@@ -424,7 +422,7 @@ namespace Sinbinder.Gameplay
             foreach (var warrior in liveWarriors)
             {
                 if (!IsEquipmentOwner(warrior) || !warrior.gameObject.activeInHierarchy || warrior.IsDead) continue;
-                int index = EquipmentMemberIndex(warrior);
+                int index = PresentMemberIndex(warrior);
                 if (index >= 0 && !owners.TryAdd(index, warrior) && owners[index] != warrior)
                     ambiguous.Add(index);
             }
@@ -444,14 +442,20 @@ namespace Sinbinder.Gameplay
         internal static void SyncEquipment(Warrior warrior)
         {
             if (!IsEquipmentOwner(warrior)) return;
-            int index = EquipmentMemberIndex(warrior);
+            int index = PresentMemberIndex(warrior);
             if (index >= 0) _members[index] = CaptureEquipment(warrior, _members[index]);
         }
 
         private static bool IsEquipmentOwner(Warrior warrior)
             => warrior != null && warrior.Soul != null && warrior.Team == Team.Player && !(warrior is SinbinderPlayer);
 
-        private static int EquipmentMemberIndex(Warrior warrior)
+        private static int PresentMemberIndex(Warrior warrior)
+        {
+            int index = MemberIndex(warrior);
+            return index >= 0 && !_members[index].IsAway ? index : -1;
+        }
+
+        private static int MemberIndex(Warrior warrior)
         {
             int named = -1;
             bool ambiguous = false;
@@ -459,14 +463,13 @@ namespace Sinbinder.Gameplay
             {
                 var member = _members[i];
                 if (!string.IsNullOrEmpty(member.WarriorId) && member.WarriorId == warrior.Id)
-                    return member.IsAway ? -1 : i;
+                    return i;
                 if (member.Name != warrior.DisplayName) continue;
                 if (named >= 0) ambiguous = true;
                 named = i;
             }
             // На старых записях имени хватает, только если оно единственное.
-            if (!ambiguous && named >= 0 && !_members[named].IsAway
-                && string.IsNullOrEmpty(_members[named].WarriorId))
+            if (!ambiguous && named >= 0 && string.IsNullOrEmpty(_members[named].WarriorId))
                 return named;
             return -1;
         }
@@ -515,6 +518,13 @@ namespace Sinbinder.Gameplay
         /// его не будет.
         /// </summary>
         public static void Remember(IEnumerable<Warrior> warriors)
+            => CaptureSceneRoster(warriors, preserveWhenEmpty: true);
+
+        /// <summary>Обновить состав с живой сцены, даже если в ней никого не осталось.</summary>
+        public static void RefreshFromScene(IEnumerable<Warrior> warriors)
+            => CaptureSceneRoster(warriors, preserveWhenEmpty: false);
+
+        private static void CaptureSceneRoster(IEnumerable<Warrior> warriors, bool preserveWhenEmpty)
         {
             var survivors = new List<Member>();
 
@@ -522,6 +532,7 @@ namespace Sinbinder.Gameplay
             // значит потерять отряд, который обязан вернуться в эпилоге,
             // и вместе с ним весь смысл военного совета.
             foreach (var m in _members) if (m.IsAway) survivors.Add(m);
+            int awayCount = survivors.Count;
 
             foreach (var w in warriors)
             {
@@ -532,11 +543,8 @@ namespace Sinbinder.Gameplay
                 // re-import their lingering GameObjects as available units:
                 // doing so would create two entries for one soul and permit
                 // the same soldier to join overlapping missions.
-                bool alreadyAway=false;
-                foreach (var existing in _members)
-                    if (existing.IsAway && existing.Name==w.DisplayName)
-                    { alreadyAway=true; break; }
-                if (alreadyAway) continue;
+                var previous = Previous(w);
+                if (previous.IsAway) continue;
 
                 // Начинаем с прежней записи, а не с пустой: пол, ремесло,
                 // братство, слава, навык и запрет живут только здесь, и снять
@@ -544,14 +552,12 @@ namespace Sinbinder.Gameplay
                 // и запрет — а пол, ремесло, братство и слава обнулялись при
                 // каждой смене доли: уникальная женщина входила в склеп
                 // мужчиной, братья переставали быть братьями.
-                survivors.Add(Capture(w, Previous(w)));
+                survivors.Add(Capture(w, previous));
             }
 
             // Сцену закрыли до сборки отряда. Ушедшие не в счёт: они живы
             // и без сцены, но одни они отрядом не считаются.
-            bool anyoneHere = false;
-            foreach (var m in survivors) if (!m.IsAway) { anyoneHere = true; break; }
-            if (!anyoneHere) return;
+            if (preserveWhenEmpty && survivors.Count == awayCount) return;
 
             _members.Clear();
             _members.AddRange(survivors);
@@ -588,10 +594,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private static Member Previous(Warrior w)
         {
-            foreach (var m in _members) if (m.WarriorId == w.Id) return m;
-            foreach (var m in _members) if (m.Name == w.DisplayName) return m;
-
-            return NewMember(w);
+            int index = MemberIndex(w);
+            return index >= 0 ? _members[index] : NewMember(w);
         }
 
         private static Member NewMember(Warrior w)
@@ -601,6 +605,20 @@ namespace Sinbinder.Gameplay
                 Trade = w.Soul.Trade,
                 Unavailable = "",
             };
+
+        public static bool HasUniqueName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+
+            bool found = false;
+            foreach (var member in _members)
+            {
+                if (member.Name != name) continue;
+                if (found) return false;
+                found = true;
+            }
+            return found;
+        }
 
         /// <summary>Найти воина в составе по имени.</summary>
         public static bool TryGet(string name, out Member member)

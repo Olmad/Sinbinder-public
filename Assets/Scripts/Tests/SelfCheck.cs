@@ -1129,18 +1129,18 @@ namespace Sinbinder.Tests
             try
             {
                 const string name = "Проверка переноса";
+                var her = MakeWarrior(name, SinType.Greed, 40f, ShellType.Ghost);
                 SquadRoster.Set(new[]
                 {
                     new SquadRoster.Member
                     {
-                        Name = name, Sin = SinType.Greed, Moral = MoralType.Neutral,
+                        Name = name, WarriorId = her.Id, Sin = SinType.Greed, Moral = MoralType.Neutral,
                         Gender = Gender.Female, Trade = Trade.Archer,
                         Brother = true, Legend = true, Intensity = 40f, Loyalty = 60f,
                         Unavailable = "",
                     },
                 });
 
-                var her = MakeWarrior(name, SinType.Greed, 40f, ShellType.Ghost);
                 var axe = new InventoryItem("Топор беглянки", "", ItemType.Equipment, attack: 2f);
                 her.Give(axe);
                 her.Pocket(7);
@@ -1164,6 +1164,22 @@ namespace Sinbinder.Tests
                 // скелеты). Призрак у костра обязан войти в склеп призраком.
                 Same(m.Shell, ShellType.Ghost, "смена доли меняет тело — призрак вошёл скелетом");
                 Same(again.Shell, ShellType.Ghost, "воин из записи вернулся не в своём теле");
+
+                m.IsAway = true;
+                SquadRoster.Set(new[] { m });
+                var namesake = MakeWarrior(name, SinType.Pride, 40f);
+                SquadRoster.RefreshFromScene(new[] { her, namesake });
+                Check(SquadRoster.Members.Count == 2 && !SquadRoster.HasUniqueName(name),
+                    "тёзка в склепе остаётся отдельным от одноимённого бойца в походе");
+                namesake.Pocket(8);
+                Check(SquadRoster.Members[0].IsAway && SquadRoster.Members[0].Pocket == 7 &&
+                      SquadRoster.Members[1].WarriorId == namesake.Id && SquadRoster.Members[1].Pocket == 8,
+                    "тёзки хранят монеты в разных карманах");
+
+                SquadRoster.RefreshFromScene(Array.Empty<Warrior>());
+                Check(SquadRoster.Members.Count == 1 && SquadRoster.Members[0].IsAway &&
+                      SquadRoster.Members[0].WarriorId == her.Id,
+                    "пустая сцена убирает павших дома и сохраняет тех, кто в походе");
             }
             finally
             {
