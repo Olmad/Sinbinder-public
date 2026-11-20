@@ -108,7 +108,7 @@ Assets/Scripts/AOS Engine/MoralityModule.cs	b4625c6db1baa094c2ee6060857adb8e7da7
 Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/OrderIntegrity.cs	cb54b867e839a0d370abe2bfabf074b46120c303	3815	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/PerkResolver.cs	e6e5ddcefffaca74c97ddd488f087a93aaf9670f	5606	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/AOS Engine/PhraseGenerator.cs	da6ce1b5be754f8577772a6beb986d276e7d1c79	43924	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/PhraseGenerator.cs	da6ce1b5be754f8577772a6beb986d276e7d1c79	43924	CSharp	5	0	0	5	UNKNOWN_CONTEXT	QA2: source=Assets/Scripts/AOS Engine/PhraseGenerator.cs; blob=da6ce1b5be754f8577772a6beb986d276e7d1c79; lines=80-109,125-220,337-361; context=BattleLogUI.Told calls LogLine then Reason/Because; Greed branch selected if voice Greed and no prior decisive-factor return; debt branches ordered by context.UnpaidMissions, also Generosity; negative=UnpaidMissions=2 yields second sortie and 3 yields third, but upstream source of UnpaidMissions and consecutive-outing semantics UNKNOWN; verified=0; total=5; RU_EN=five debt/loot strings have nonempty corresponding EN msgstr in en.txt blob 03d46e460af2f5e616f9635de0e570958969502c; outcome=UNKNOWN; note=partial review of five unique strings, other branches not yet inspected, no semantic PASS
 Assets/Scripts/AOS Engine/Quest.cs	7ef9ce15524b2e251564acea11d4b618a0479f98	2502	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/RefusalPresenter.cs	05e67a4e6e353889196bd2b8cde7d62c4d5e3b68	15256	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/AOS Engine/ReputationData.cs	6be256050b3ecc14ca8e70c4d25ba7045f526a4a	1679	CSharp	0	0	0	0	UNINSPECTED	
