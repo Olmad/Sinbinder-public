@@ -21,7 +21,19 @@ namespace UnityEngine
         public Vector3 position;
         public Vector3 localScale = new Vector3(1, 1, 1);
         public Vector3 localPosition;
+        public Quaternion localRotation;
         public Quaternion rotation;
+        public GameObject gameObject;
+        private Transform _parent;
+        private readonly System.Collections.Generic.List<Transform> _children = new();
+        public int childCount => _children.Count;
+        public Transform GetChild(int index) => _children[index];
+        public void SetParent(Transform parent, bool worldPositionStays = true)
+        {
+            if (_parent != null) _parent._children.Remove(this);
+            _parent = parent;
+            if (_parent != null) _parent._children.Add(this);
+        }
         public Vector3 InverseTransformPoint(Vector3 p) => p;
         public Vector3 InverseTransformVector(Vector3 v) => v;
         public void SetPositionAndRotation(Vector3 at, Quaternion orientation)
@@ -34,7 +46,11 @@ namespace UnityEngine
         public string name;
         public string tag = "Untagged";
         public Transform transform = new Transform();
-        public GameObject(string name = "") { this.name = name; }
+        public GameObject(string name = "")
+        {
+            this.name = name;
+            transform.gameObject = this;
+        }
         public bool activeSelf = true;
         public void SetActive(bool active) { activeSelf = active; }
         public static GameObject Find(string name) => null;
@@ -45,6 +61,16 @@ namespace UnityEngine
         }
         public T GetComponentInChildren<T>() where T : Component, new() => GetComponent<T>();
         public T AddComponent<T>() where T : Component, new() => GetComponent<T>();
+        public bool TryGetComponent<T>(out T component) where T : Component
+        {
+            if (_components.TryGetValue(typeof(T), out var found))
+            {
+                component = (T)found;
+                return true;
+            }
+            component = null;
+            return false;
+        }
         public T GetComponent<T>() where T : Component, new()
         {
             if (!_components.TryGetValue(typeof(T), out var component))
@@ -211,7 +237,7 @@ namespace UnityEngine
         public Plane(Vector3 normal,Vector3 point) { }
         public bool Raycast(Ray ray,out float d){d=0;return true;}
     }
-    public enum KeyCode { LeftShift, RightShift, LeftControl, RightControl, A, Z, Y, S, D, Delete, Escape, Q, E }
+    public enum KeyCode { LeftShift, RightShift, LeftControl, RightControl, A, Z, Y, S, D, F, Delete, Escape, Q, E }
     public static class Input
     {
         public static Vector3 mousePosition;

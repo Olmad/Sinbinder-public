@@ -5,6 +5,7 @@ on:
       - feature/server-prototype
       - 'feature/map-editor-terrain-*'
       - 'integration/worldforge-*'
+      - 'feature/worldforge-best-*'
     paths:
       - "Assets/Scripts/Core/MapData.cs"
       - "Assets/Scripts/Gameplay/MapEditor.cs"

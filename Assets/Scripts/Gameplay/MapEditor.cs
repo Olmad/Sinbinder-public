@@ -22,7 +22,7 @@ namespace Sinbinder.Gameplay
     public class MapEditor : MonoBehaviour
     {
         private enum Kind { Thing, Crypt, Location, Trail, Event, Region, Trigger }
-        private enum Mode { Place, Select, Erase, Terrain, Paint, Vegetation }
+        private enum Mode { Place, Select, Erase, Terrain, Paint, Vegetation, Template }
 
         private struct Brush { public string Title; public Kind Kind; public string Arg; }
 
@@ -90,6 +90,8 @@ namespace Sinbinder.Gameplay
         private readonly HashSet<string> _selectedThingIds = new();
         private bool _selectionDragActive;
         private bool _selectionDragAdditive;
+        private bool _selectionDragMovesGroup;
+        private List<string> _validationIssues = new();
         private Vector3 _selectionDragWorld;
         private Vector3 _selectionDragScreen;
         private float _groupStep = 5f;
@@ -105,6 +107,17 @@ namespace Sinbinder.Gameplay
         private int _vegetationCount = 12;
         private float _vegetationRadius = 18f;
         private string _customProp = "";
+        private string _templateDraftName = "Camp";
+        private string _activeTemplateName = "";
+        private MapObjectTemplate.Layout _activeTemplateLayout;
+        private readonly List<GameObject> _templatePreviewMarkers = new();
+        private readonly List<Material> _templatePreviewMaterials = new();
+        private readonly List<GameObject> _templateGhostMeshes = new();
+        private readonly List<GameObject> _templateGhostSources = new();
+        private bool _templateGhostEnabled = true;
+        private bool _templateAssetsAvailable;
+        private List<string> _templateNames = new();
+        private Vector2 _templateScroll;
         private GameObject[] _customPrefabs = new GameObject[0];
         private Material[] _terrainMaterials = new Material[0];
         private Material[] _objectMaterials = new Material[0];
@@ -177,6 +190,7 @@ namespace Sinbinder.Gameplay
             }
             _map.EnsureLists();
             RefreshAssets();
+            RefreshTemplates();
             EnsureIds();
             _name = _map.Name;
             _savedSnapshot = JsonUtility.ToJson(_map);
@@ -191,6 +205,68 @@ namespace Sinbinder.Gameplay
             _cam.transform.SetPositionAndRotation(
                 new Vector3(0f, _height, -_height * 0.35f),
                 Quaternion.Euler(72f, 0f, 0f));
+        }
+
+
+        /// <summary>Center the authoring camera on props or another selected item.</summary>
+        private void FocusSelection()
+        {
+            if (_cam == null) return;
+            float x = 0f, z = 0f;
+            var group = GroupThings();
+            if (group.Count > 0)
+            {
+                foreach (var thing in group) { x += thing.X; z += thing.Z; }
+                x /= group.Count;
+                z /= group.Count;
+            }
+            else if (SelectedPosition(out var selection))
+            {
+                x = selection.x;
+                z = selection.z;
+            }
+            else
+            {
+                _say = Loc.T("Сначала выберите объект или область.");
+                return;
+            }
+            _cam.transform.position = new Vector3(x, _height, z - _height * 0.35f);
+            _say = Loc.T("Камера переведена к выделению.");
+        }
+
+        // Move only props that were selected BEFORE the drag began.
+        private bool NearSelectedThing(Vector3 at)
+        {
+            if (_selectedThingIds.Count == 0) return false;
+            foreach (var t in _map.Things)
+                if (t != null && _selectedThingIds.Contains(t.Id))
+                {
+                    float dx = t.X - at.x, dz = t.Z - at.z;
+                    if (dx * dx + dz * dz <= 16f) return true;
+                }
+            return false;
+        }
+
+        // One mouse drag = one boundary-checked group edit and one Undo step.
+        private void CommitSelectionDrag(Vector3 start, Vector3 finish)
+        {
+            float dx = finish.x - start.x, dz = finish.z - start.z;
+            if (_snap > 0f)
+            {
+                dx = Mathf.Round(dx / _snap) * _snap;
+                dz = Mathf.Round(dz / _snap) * _snap;
+            }
+            MoveSelectedThings(dx, dz);
+        }
+
+        // Display all failures, not merely the first of potentially many.
+        private int RunValidation()
+        {
+            _validationIssues = Validate();
+            _say = _validationIssues.Count == 0
+                ? Loc.T("Ошибок формата карты нет.")
+                : Loc.F("Ошибок карты: {0}. Исправьте список ниже.", _validationIssues.Count);
+            return _validationIssues.Count;
         }
 
         void Update()
@@ -213,7 +289,13 @@ namespace Sinbinder.Gameplay
                 HideBrushCursor();
                 if (Input.GetKeyDown(KeyCode.Z)) Undo();
                 else if (Input.GetKeyDown(KeyCode.Y)) Redo();
-                else if (Input.GetKeyDown(KeyCode.S)) Save();
+                else if (Input.GetKeyDown(KeyCode.S))
+                {
+                    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                        SaveCopy();
+                    else Save();
+                }
+                else if (Input.GetKeyDown(KeyCode.F)) FocusSelection();
                 else if (Input.GetKeyDown(KeyCode.D)) DuplicateSelected();
                 else if (Input.GetKeyDown(KeyCode.A) && _mode == Mode.Select) SelectAllThings();
                 return;
@@ -221,7 +303,18 @@ namespace Sinbinder.Gameplay
             if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                if (_mode == Mode.Template)
+                {
+                    _mode = Mode.Select;
+                    _activeTemplateName = "";
+                    _activeTemplateLayout = null;
+                    HideBrushCursor();
+                    ClearTemplateGhostMeshes();
+                    _say = Loc.T("Размещение шаблона отменено.");
+                    return;
+                }
                 _selectionDragActive = false;
+                _selectionDragMovesGroup = false;
                 _selectionIndex = -1;
                 _selectedThingIds.Clear();
                 Redraw();
@@ -231,13 +324,21 @@ namespace Sinbinder.Gameplay
                 Input.mousePosition.x < PanelWidth + 20f ||
                 Input.mousePosition.x > Screen.width - InspectorWidth - 20f)
             {
-                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
+                if (Input.GetMouseButtonUp(0))
+                {
+                    _selectionDragActive = false;
+                    _selectionDragMovesGroup = false;
+                }
                 HideBrushCursor();
                 return;
             }
             if (!Ground(out var at))
             {
-                if (Input.GetMouseButtonUp(0)) _selectionDragActive = false;
+                if (Input.GetMouseButtonUp(0))
+                {
+                    _selectionDragActive = false;
+                    _selectionDragMovesGroup = false;
+                }
                 HideBrushCursor();
                 return;
             }
@@ -252,7 +353,8 @@ namespace Sinbinder.Gameplay
                     _selectionDragScreen = Input.mousePosition;
                     _selectionDragAdditive = Input.GetKey(KeyCode.LeftShift) ||
                                              Input.GetKey(KeyCode.RightShift);
-                    Select(at, _selectionDragAdditive);
+                    _selectionDragMovesGroup = !_selectionDragAdditive && NearSelectedThing(at);
+                    if (!_selectionDragMovesGroup) Select(at, _selectionDragAdditive);
                 }
                 else if (_mode == Mode.Terrain || _mode == Mode.Paint)
                 {
@@ -267,6 +369,7 @@ namespace Sinbinder.Gameplay
                     _lastBrush = point;
                 }
                 else if (_mode == Mode.Vegetation) ScatterVegetation(Snapped(at));
+                else if (_mode == Mode.Template) PasteActiveTemplate(Snapped(at));
                 else Remove(at);
             }
             else if (_draggingBrush && Input.GetMouseButton(0) &&
@@ -277,11 +380,16 @@ namespace Sinbinder.Gameplay
                 float sx = Input.mousePosition.x - _selectionDragScreen.x;
                 float sy = Input.mousePosition.y - _selectionDragScreen.y;
                 if (_mode == Mode.Select && sx * sx + sy * sy > 64f)
-                    SelectRectangle(_selectionDragWorld, at, _selectionDragAdditive);
+                {
+                    if (_selectionDragMovesGroup) CommitSelectionDrag(_selectionDragWorld, at);
+                    else SelectRectangle(_selectionDragWorld, at, _selectionDragAdditive);
+                }
                 _selectionDragActive = false;
+                _selectionDragMovesGroup = false;
             }
             if (Input.GetMouseButtonDown(1) && _mode != Mode.Terrain &&
-                _mode != Mode.Paint && _mode != Mode.Vegetation) Select(at);
+                _mode != Mode.Paint && _mode != Mode.Vegetation &&
+                _mode != Mode.Template) Select(at);
         }
 
         private const float PanelWidth = 260f;
@@ -328,6 +436,87 @@ namespace Sinbinder.Gameplay
             _customPrefabs = Resources.LoadAll<GameObject>("MapUserProps");
             _terrainMaterials = Resources.LoadAll<Material>("MapTerrainMaterials");
             _objectMaterials = Resources.LoadAll<Material>("MapUserMaterials");
+        }
+
+        private void RefreshTemplates() =>
+            _templateNames = MapObjectTemplate.ListNames();
+
+        // Template files are a separate library; saving never mutates a map or Undo.
+        private void SaveSelectedTemplate()
+        {
+            if (!MapObjectTemplate.TryCapture(_map, _selectedThingIds,
+                _templateDraftName, out var layout))
+            {
+                _say = Loc.T("Не удалось создать шаблон. Выберите до 64 моделей и имя латиницей (A-Z, 0-9, _ или -).");
+                return;
+            }
+            if (MapObjectTemplate.TrySaveNew(layout, out _, out string error))
+            {
+                RefreshTemplates();
+                _say = Loc.F("Шаблон сохранён: {0}. Объектов: {1}.", layout.Name, layout.Items.Count);
+            }
+            else _say = error;
+        }
+
+        private void ChooseTemplate(string name)
+        {
+            if (!MapObjectTemplate.TryLoad(name, out var layout, out string error))
+            {
+                _say = error;
+                return;
+            }
+            _activeTemplateName = name;
+            _activeTemplateLayout = layout;
+            PrepareTemplateGhostMeshes();
+            _mode = Mode.Template;
+            _say = Loc.F("Шаблон {0}: ЛКМ — установить; Q/E — повернуть; Esc — отмена.", name);
+        }
+
+        private void PasteActiveTemplate(Vector3 at)
+        {
+            if (string.IsNullOrEmpty(_activeTemplateName))
+            {
+                _say = Loc.T("Шаблон не выбран.");
+                return;
+            }
+            if (!MapObjectTemplate.TryLoad(_activeTemplateName, out var layout, out string error))
+            {
+                _activeTemplateLayout = null;
+                HideBrushCursor();
+                ClearTemplateGhostMeshes();
+                _say = error;
+                return;
+            }
+            // Reload from disk on every paste: an edited/deleted template cannot
+            // be silently inserted from a stale in-memory preview.
+            _activeTemplateLayout = layout;
+            PrepareTemplateGhostMeshes();
+            if (!MapObjectTemplate.TryPlanPaste(layout, _map, at.x, at.z, _yaw,
+                    out var things, out var rules))
+            {
+                _say = Loc.T("Шаблон не помещается на карте, повреждён или превышен лимит объектов/правил.");
+                return;
+            }
+            foreach (var thing in things)
+            {
+                if (MapLoader.Prefab(thing.Prop) == null ||
+                    (!string.IsNullOrEmpty(thing.MaterialId) &&
+                     MapAssets.ObjectMaterial(thing.MaterialId) == null))
+                {
+                    _say = Loc.F("Для шаблона отсутствует модель или материал: {0}", thing.Prop);
+                    return;
+                }
+            }
+            Change(() =>
+            {
+                _map.Things.AddRange(things);
+                _map.Triggers.AddRange(rules);
+                _selectedThingIds.Clear();
+                foreach (var thing in things) _selectedThingIds.Add(thing.Id);
+                _selectionKind = Kind.Thing;
+                _selectionIndex = _map.Things.Count - things.Count;
+            });
+            _say = Loc.F("Шаблон установлен: {0}. Ctrl+Z отменит всю группу.", layout.Name);
         }
 
         private void AppendPaint(Vector3 at) =>
@@ -503,15 +692,134 @@ namespace Sinbinder.Gameplay
             if (touched) RedrawTerrainOnly(_mode == Mode.Terrain);
         }
 
+        private void ClearTemplateGhostMeshes()
+        {
+            foreach (var ghost in _templateGhostMeshes)
+                if (ghost != null) Destroy(ghost);
+            _templateGhostMeshes.Clear();
+            _templateGhostSources.Clear();
+            _templateAssetsAvailable = false;
+        }
+
+        // Build previews only when selecting/reloading a template, never on
+        // each pointer frame. The helper copies just mesh renderers and meshes:
+        // user prefab scripts, colliders and animation are not instantiated.
+        private void PrepareTemplateGhostMeshes()
+        {
+            ClearTemplateGhostMeshes();
+            if (_activeTemplateLayout == null) return;
+            _templateAssetsAvailable = true;
+            int remainingNodes = 256;
+            foreach (var item in _activeTemplateLayout.Items)
+            {
+                var prefab = MapLoader.Prefab(item.Prop);
+                _templateGhostSources.Add(prefab);
+                var overrideMaterial = string.IsNullOrEmpty(item.MaterialId)
+                    ? null : MapAssets.ObjectMaterial(item.MaterialId);
+                if (prefab == null ||
+                    (!string.IsNullOrEmpty(item.MaterialId) && overrideMaterial == null))
+                {
+                    _templateAssetsAvailable = false;
+                    _templateGhostMeshes.Add(null);
+                    continue;
+                }
+                var ghost = MapTemplateGhost.Create(prefab, overrideMaterial,
+                    Mathf.Min(48, remainingNodes), out int nodesUsed);
+                if (ghost != null) remainingNodes -= nodesUsed;
+                // A complex or skinned mesh keeps its footprint marker even
+                // when a safe render-only clone cannot be built.
+                _templateGhostMeshes.Add(ghost);
+            }
+        }
+
+        private void HideTemplatePreview()
+        {
+            foreach (var marker in _templatePreviewMarkers)
+                if (marker != null) marker.SetActive(false);
+            foreach (var ghost in _templateGhostMeshes)
+                if (ghost != null) ghost.SetActive(false);
+        }
+
         private void HideBrushCursor()
         {
             if (_brushCursor != null) _brushCursor.SetActive(false);
+            HideTemplatePreview();
+        }
+
+        // Map-only ghost markers. No new authored objects, colliders, selection
+        // or Undo entries are generated while the mouse moves.
+        private void ShowTemplatePreview(Vector3 center)
+        {
+            if (_activeTemplateLayout == null || _map == null)
+            {
+                HideTemplatePreview();
+                return;
+            }
+            bool withinBounds = MapObjectTemplate.TryProject(
+                _activeTemplateLayout, _map.Size, center.x, center.z, _yaw,
+                out var positions);
+            if (positions == null)
+            {
+                HideTemplatePreview();
+                return;
+            }
+            bool fits = withinBounds && _templateAssetsAvailable &&
+                _map.Things.Count + _activeTemplateLayout.Items.Count <= 4096 &&
+                _map.Triggers.Count + _activeTemplateLayout.Interactions.Count <= 128;
+            while (_templatePreviewMarkers.Count < positions.Count)
+            {
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                marker.name = "Sinbinder template footprint preview only";
+                Destroy(marker.GetComponent<Collider>());
+                var material = new Material(Shader.Find("Sprites/Default"));
+                marker.GetComponent<Renderer>().sharedMaterial = material;
+                _templatePreviewMarkers.Add(marker);
+                _templatePreviewMaterials.Add(material);
+            }
+            for (int i = 0; i < _templatePreviewMarkers.Count; i++)
+            {
+                var marker = _templatePreviewMarkers[i];
+                bool visible = i < positions.Count;
+                marker.SetActive(visible);
+                if (!visible) continue;
+                var point = positions[i];
+                float radius = Mathf.Clamp(
+                    _activeTemplateLayout.Items[i].Scale * 0.8f, 0.35f, 2.5f);
+                marker.transform.position = new Vector3(point.x,
+                    MapTerrain.HeightAt(_map, point.x, point.y) + 0.22f, point.y);
+                marker.transform.localScale = new Vector3(
+                    radius * 2f, 0.02f, radius * 2f);
+                bool pointFits = Mathf.Abs(point.x) <= _map.Size * 0.5f &&
+                                 Mathf.Abs(point.y) <= _map.Size * 0.5f;
+                _templatePreviewMaterials[i].color = fits && pointFits
+                    ? new Color(0.25f, 0.9f, 0.5f, 0.42f)
+                    : new Color(0.95f, 0.25f, 0.25f, 0.55f);
+                if (i >= _templateGhostMeshes.Count ||
+                    _templateGhostMeshes[i] == null) continue;
+                var ghost = _templateGhostMeshes[i];
+                // Do not show a false 3D promise outside the map or when the
+                // placement would fail: the red footprint remains visible.
+                ghost.SetActive(fits && pointFits && _templateGhostEnabled);
+                if (!(fits && pointFits && _templateGhostEnabled)) continue;
+                var item = _activeTemplateLayout.Items[i];
+                // Cached when the template was selected: avoid 64 Resource.Load
+                // calls per cursor frame when placing a full composition.
+                var source = _templateGhostSources[i];
+                if (source == null) { ghost.SetActive(false); continue; }
+                double rotatedYaw = ((double)item.Yaw + _yaw) % 360d;
+                if (rotatedYaw < 0d) rotatedYaw += 360d;
+                ghost.transform.SetPositionAndRotation(
+                    new Vector3(point.x, MapTerrain.HeightAt(_map, point.x, point.y), point.y),
+                    Quaternion.Euler(0f, (float)rotatedYaw, 0f) * source.transform.rotation);
+                ghost.transform.localScale = source.transform.localScale * item.Scale;
+            }
         }
 
         private void ShowBrushCursor(Vector3 at)
         {
+            if (_mode == Mode.Template) at = Snapped(at);
             if (_mode != Mode.Terrain && _mode != Mode.Paint &&
-                _mode != Mode.Vegetation)
+                _mode != Mode.Vegetation && _mode != Mode.Template)
             {
                 HideBrushCursor();
                 return;
@@ -526,13 +834,16 @@ namespace Sinbinder.Gameplay
             }
             _brushCursor.SetActive(true);
             float radius = _mode == Mode.Terrain ? _terrainRadius :
-                           _mode == Mode.Paint ? _paintRadius : _vegetationRadius;
+                           _mode == Mode.Paint ? _paintRadius :
+                           _mode == Mode.Template ? 3f : _vegetationRadius;
             _brushCursor.transform.position = new Vector3(at.x,
                 MapTerrain.HeightAt(_map, at.x, at.z) + 0.18f, at.z);
             _brushCursor.transform.localScale =
                 new Vector3(radius * 2f, 0.02f, radius * 2f);
-            _brushCursorMaterial.color = _mode == Mode.Paint
-                ? new Color(0.2f, 0.75f, 0.95f, 0.24f)
+            _brushCursorMaterial.color = _mode == Mode.Template
+                ? new Color(0.85f, 0.55f, 0.95f, 0.35f)
+                : _mode == Mode.Paint
+                    ? new Color(0.2f, 0.75f, 0.95f, 0.24f)
                 : _mode == Mode.Vegetation
                     ? new Color(0.2f, 0.9f, 0.25f, 0.24f)
                     : _terrainFlatten
@@ -540,6 +851,8 @@ namespace Sinbinder.Gameplay
                         : _terrainRaise
                             ? new Color(0.4f, 0.85f, 0.25f, 0.24f)
                             : new Color(0.8f, 0.25f, 0.55f, 0.24f);
+            if (_mode == Mode.Template) ShowTemplatePreview(at);
+            else HideTemplatePreview();
         }
 
         // ---------------------------------------------------------- selection and history
@@ -568,6 +881,7 @@ namespace Sinbinder.Gameplay
         {
             _dirty = true;
             _confirmExit = false;
+            _validationIssues.Clear();
             _undo.Add(JsonUtility.ToJson(_map));
             if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
             _redo.Clear();
@@ -601,6 +915,7 @@ namespace Sinbinder.Gameplay
             _name = _map.Name;
             _selectionIndex = -1;
             _selectedThingIds.Clear();
+            _validationIssues.Clear();
             if (_savedSnapshot != null)
                 _dirty = JsonUtility.ToJson(_map) != _savedSnapshot;
             Redraw();
@@ -624,6 +939,37 @@ namespace Sinbinder.Gameplay
             _selectionIndex = _map.Things.Count > 0 ? 0 : -1;
             Redraw();
         }
+
+        // Selection is editor-only: no MapData writes and no Undo transactions.
+        private void SetThingSelection(HashSet<string> next)
+        {
+            if (next == null || _selectedThingIds.SetEquals(next)) return;
+            _selectedThingIds.Clear();
+            foreach (var id in next) _selectedThingIds.Add(id);
+            _selectionKind = Kind.Thing;
+            _selectionIndex = _map.Things.FindIndex(t =>
+                t != null && _selectedThingIds.Contains(t.Id));
+            Redraw();
+        }
+
+        private void SelectMatchingThings(MapObjectSelection.Property property)
+        {
+            if (_selectedThingIds.Count == 0)
+            {
+                _say = Loc.T("Сначала выберите модель или группу моделей.");
+                return;
+            }
+            var next = MapObjectSelection.Matching(_map.Things, _selectedThingIds, property);
+            if (next.Count == 0)
+            {
+                _say = Loc.T("Не найдено подходящих объектов.");
+                return;
+            }
+            SetThingSelection(next);
+        }
+
+        private void InvertThingSelection() =>
+            SetThingSelection(MapObjectSelection.Inverted(_map.Things, _selectedThingIds));
 
         private void Select(Vector3 at, bool additive = false)
         {
@@ -716,6 +1062,44 @@ namespace Sinbinder.Gameplay
                     return;
                 }
             Change(() => { foreach (var t in group) { t.X += dx; t.Z += dz; } });
+        }
+
+        // Keep arrangement separate from gameplay logic and number-field editing.
+        // A fully validated plan is committed in one transaction; no partial moves.
+        private void ArrangeSelectedThings(MapObjectArrange.Axis axis, MapObjectArrange.Operation operation)
+        {
+            var selected = GroupThings();
+            if (!MapObjectArrange.TryPlan(selected, _map.Size, axis, operation, out var planned))
+            {
+                _say = Loc.T("Расстановка не изменена: выберите минимум два объекта, для равных интервалов — три.");
+                return;
+            }
+            Change(() =>
+            {
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    selected[i].X = planned[i].x;
+                    selected[i].Z = planned[i].y;
+                }
+            });
+        }
+
+        private void SnapSelectedThingsToGrid()
+        {
+            var selected = GroupThings();
+            if (!MapObjectArrange.TrySnap(selected, _map.Size, _snap, out var planned))
+            {
+                _say = Loc.T("Группа уже на сетке, сетка выключена или перенос невозможен.");
+                return;
+            }
+            Change(() =>
+            {
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    selected[i].X = planned[i].x;
+                    selected[i].Z = planned[i].y;
+                }
+            });
         }
 
         private void RotateSelectedThings(float degrees)
@@ -905,6 +1289,30 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Уменьшить ×0.9"))) ScaleSelectedThings(0.9f);
             if (GUILayout.Button(Loc.T("Увеличить ×1.1"))) ScaleSelectedThings(1.1f);
             GUILayout.EndHorizontal();
+            GUILayout.Label(Loc.T("Выравнивание группы (X / Z):"));
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(Loc.T("X: мин")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Minimum);
+            if (GUILayout.Button(Loc.T("X: центр")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Center);
+            if (GUILayout.Button(Loc.T("X: макс")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Maximum);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(Loc.T("Z: мин")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Minimum);
+            if (GUILayout.Button(Loc.T("Z: центр")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Center);
+            if (GUILayout.Button(Loc.T("Z: макс")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Maximum);
+            GUILayout.EndHorizontal();
+            if (GUILayout.Button(Loc.T("Равные интервалы по X")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.X, MapObjectArrange.Operation.Distribute);
+            if (GUILayout.Button(Loc.T("Равные интервалы по Z")))
+                ArrangeSelectedThings(MapObjectArrange.Axis.Z, MapObjectArrange.Operation.Distribute);
+            GUILayout.Label(Loc.T("Выравнивание сохраняет выделение, порядок и ID."));
+            if (GUILayout.Button(Loc.T("Привязать всю группу к сетке")))
+                SnapSelectedThingsToGrid();
             GUILayout.Label(Loc.T("Материал всей группы:"));
             if (GUILayout.Button(Loc.T("Вернуть исходные материалы")))
                 ApplyGroupMaterial("");
@@ -1041,6 +1449,13 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             ClearPreview();
+            foreach (var marker in _templatePreviewMarkers)
+                if (marker != null) Destroy(marker);
+            foreach (var material in _templatePreviewMaterials)
+                if (material != null) Destroy(material);
+            _templatePreviewMarkers.Clear();
+            _templatePreviewMaterials.Clear();
+            ClearTemplateGhostMeshes();
             if (_brushCursor != null) Destroy(_brushCursor);
             if (_brushCursorMaterial != null) Destroy(_brushCursorMaterial);
             if (_terrainMesh != null) Destroy(_terrainMesh);
@@ -1230,7 +1645,19 @@ namespace Sinbinder.Gameplay
             {
                 if (GUILayout.Button(Loc.T("Выделить все объекты (Ctrl+A)")))
                     SelectAllThings();
+                if (GUILayout.Button(Loc.T("К выделению (Ctrl+F)"))) FocusSelection();
+                if (GUILayout.Button(Loc.T("Выделить такие же модели")))
+                    SelectMatchingThings(MapObjectSelection.Property.Model);
+                if (GUILayout.Button(Loc.T("Выделить с тем же материалом")))
+                    SelectMatchingThings(MapObjectSelection.Property.Material);
+                if (GUILayout.Button(Loc.T("Инвертировать выделение")))
+                    InvertThingSelection();
+                GUILayout.Label(Loc.T("Имя нового шаблона (латиница, 1–48 символов):"));
+                _templateDraftName = GUILayout.TextField(_templateDraftName ?? "");
+                if (GUILayout.Button(Loc.T("Сохранить выделение как шаблон")))
+                    SaveSelectedTemplate();
                 GUILayout.Label(Loc.F("Выделено объектов: {0}", _selectedThingIds.Count));
+                GUILayout.Label(Loc.T("ЛКМ по выделенному + протянуть: переместить группу."));
             }
             GUILayout.Label(Loc.T("Имя карты"));
             string name = GUILayout.TextField(_name ?? "");
@@ -1317,6 +1744,7 @@ namespace Sinbinder.Gameplay
             if (GUILayout.Button(Loc.T("Обновить библиотеку моделей и материалов")))
             {
                 RefreshAssets();
+                RefreshTemplates();
                 _say = Loc.T("Библиотека ассетов обновлена.");
             }
 
@@ -1378,11 +1806,30 @@ namespace Sinbinder.Gameplay
                 GUILayout.EndScrollView();
                 GUILayout.Label(Loc.T("Событие → условие → действие"));
             }
-            if (GUILayout.Button(Loc.T("Проверить карту")))
+            GUILayout.Label(Loc.T("Шаблоны композиций:"));
+            if (GUILayout.Button(Loc.T("Обновить список шаблонов"))) RefreshTemplates();
+            _templateScroll = GUILayout.BeginScrollView(_templateScroll,
+                GUILayout.Height(112f));
+            foreach (var templateName in _templateNames)
+                if (GUILayout.Button(Loc.F("Установить: {0}", templateName)))
+                    ChooseTemplate(templateName);
+            GUILayout.EndScrollView();
+            if (_mode == Mode.Template)
             {
-                var issues = Validate();
-                _say = issues.Count == 0 ? Loc.T("Ошибок формата карты нет.")
-                    : Loc.F("Ошибок: {0}. {1}", issues.Count, issues[0]);
+                _templateGhostEnabled = GUILayout.Toggle(_templateGhostEnabled,
+                    Loc.T("3D-предпросмотр моделей"));
+                GUILayout.Label(Loc.T("ЛКМ: вставить · Q/E: повернуть · Esc: выйти. Зелёный: внутри карты; красный: границы/лимиты."));
+            }
+            if (GUILayout.Button(Loc.T("Проверить карту"))) RunValidation();
+            if (_validationIssues.Count > 0)
+            {
+                GUILayout.Label(Loc.F("Ошибок проверки: {0}", _validationIssues.Count));
+                for (int i = 0; i < Mathf.Min(3, _validationIssues.Count); i++)
+                    GUILayout.Label((i + 1) + ". " + _validationIssues[i]);
+                if (_validationIssues.Count > 3)
+                    GUILayout.Label(Loc.F("Ещё ошибок: {0}. Скопируйте весь список.", _validationIssues.Count - 3));
+                if (GUILayout.Button(Loc.T("Копировать список ошибок")))
+                    GUIUtility.systemCopyBuffer = string.Join("\n", _validationIssues);
             }
             if (GUILayout.Button(Loc.T("Очистить всё")))
             {
@@ -1407,7 +1854,7 @@ namespace Sinbinder.Gameplay
             GUILayout.Label(_dirty ? Loc.T("Есть несохранённые изменения")
                 : string.IsNullOrEmpty(_path) ? Loc.T("Новая карта ещё не записана")
                 : Loc.T("Изменения сохранены"));
-            GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Z/Y — отменить/повторить"));
+            GUILayout.Label(Loc.T("Ctrl+S — сохранить · Ctrl+Shift+S — копию · Ctrl+Z/Y — история"));
             if (!string.IsNullOrEmpty(_say)) GUILayout.Label(_say);
             GUILayout.EndArea();
 
@@ -1424,8 +1871,8 @@ namespace Sinbinder.Gameplay
                 GUILayout.EndScrollView();
                 GUILayout.EndArea();
             }
-            if (_selectionDragActive && _mode == Mode.Select &&
-                Input.GetMouseButton(0))
+            if (_selectionDragActive && !_selectionDragMovesGroup &&
+                _mode == Mode.Select && Input.GetMouseButton(0))
             {
                 float startX = _selectionDragScreen.x, endX = Input.mousePosition.x;
                 float startY = _selectionDragScreen.y, endY = Input.mousePosition.y;
@@ -1685,9 +2132,7 @@ namespace Sinbinder.Gameplay
             foreach (var t in _map.Events)
                 if (t == null || !InField(t.X, t.Z)) errors.Add(Loc.T("Событие вне карты."));
             if (!MapTerrain.Valid(_map))
-                errors.Add(Loc.T("Некорректные изменения рельефа (высота, радиус, позиция или лимит)."));
-            if (!MapTerrain.Valid(_map))
-                errors.Add(Loc.T("Некорректные данные высот или материалов земли."));
+                errors.Add(Loc.T("Некорректные параметры рельефа или материалов земли."));
             foreach (var paint in _map.TerrainPaints)
                 if (paint != null && (string.IsNullOrWhiteSpace(paint.MaterialId) ||
                     (paint.MaterialId != MapTerrain.RestoreOriginalMaterial &&
@@ -1770,6 +2215,7 @@ namespace Sinbinder.Gameplay
             var errors = Validate();
             if (errors.Count > 0)
             {
+                _validationIssues = errors;
                 _say = Loc.F("Карта не записана: {0} ошибок. Первая: {1}",
                     errors.Count, errors[0]);
                 return;
@@ -1810,6 +2256,7 @@ namespace Sinbinder.Gameplay
                 _savedSnapshot = JsonUtility.ToJson(_map);
                 _dirty = false;
                 _confirmExit = false;
+                _validationIssues.Clear();
                 var savedMap = JsonUtility.FromJson<MapData>(JsonUtility.ToJson(_map));
                 if (MapSession.Map != null && MapSession.Seats.Count == savedMap.Crypts.Count)
                 {

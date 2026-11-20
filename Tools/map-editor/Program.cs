@@ -971,6 +971,607 @@ static class Program
         }
     }
 
+    static void WorldForgeBestImprovementsContracts()
+    {
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", X = 20f, Z = 4f, Scale = 1f });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Set(editor, "_snap", 2f);
+        Invoke(editor, "SelectAllThings");
+        Check((bool)Invoke(editor, "NearSelectedThing", new Vector3(3f, 0f, 4f)),
+              "only already-selected props can start a world drag");
+        Check(!(bool)Invoke(editor, "NearSelectedThing", new Vector3(100f, 0f, 100f)),
+              "clicking empty ground does not start a group drag");
+        Invoke(editor, "CommitSelectionDrag",
+               new Vector3(3f, 0f, 4f), new Vector3(7.8f, 0f, 7.2f));
+        Check(map.Things[0].X == 7f && map.Things[0].Z == 8f &&
+              map.Things[1].X == 24f && map.Things[1].Z == 8f,
+              "viewport drag moves selected group by a snapped relative delta");
+        Check(map.Crypts[0].X == 0f && map.Regions[0].X == 1f &&
+              map.Triggers.Count == 0,
+              "viewport group move does not mutate gameplay anchors or trigger references");
+        var undoField = typeof(MapEditor).GetField("_undo",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Check(((List<string>)undoField.GetValue(editor)).Count == 1,
+              "one viewport group drag makes one undo transaction");
+        Invoke(editor, "Undo");
+        var reverted = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(reverted.Things[0].X == 3f && reverted.Things[1].X == 20f,
+              "one Undo reverts every moved prop");
+        Invoke(editor, "Redo");
+        var movedAgain = (MapData)typeof(MapEditor).GetField("_map",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+        Check(movedAgain.Things[0].X == 7f && movedAgain.Things[1].X == 24f,
+              "Redo restores viewport group move");
+
+        // A near-edge drag must reject the entire move without recording history.
+        var edgeMap = Map();
+        edgeMap.Things[0].X = 149f;
+        var edgeEditor = new MapEditor();
+        Set(edgeEditor, "_map", edgeMap);
+        Set(edgeEditor, "_name", edgeMap.Name);
+        Set(edgeEditor, "_snap", 2f);
+        Invoke(edgeEditor, "SelectAllThings");
+        Invoke(edgeEditor, "CommitSelectionDrag",
+               new Vector3(149f, 0f, 4f), new Vector3(154f, 0f, 4f));
+        Check(edgeMap.Things[0].X == 149f &&
+              ((List<string>)undoField.GetValue(edgeEditor)).Count == 0,
+              "out-of-bounds viewport drags are rejected atomically");
+
+        var camera = new Camera();
+        Set(editor, "_cam", camera);
+        Invoke(editor, "SelectAllThings");
+        Invoke(editor, "FocusSelection");
+        Check(MathF.Abs(camera.transform.position.x - 15.5f) < 0.001f &&
+              MathF.Abs(camera.transform.position.z - (8f - 70f * 0.35f)) < 0.001f,
+              "Ctrl+F focus centers the existing editor camera on selected group centroid");
+
+        var invalid = Map();
+        invalid.Things[0].X = 1000f;
+        invalid.Regions[0].Radius = -1f;
+        var diagnostics = new MapEditor();
+        Set(diagnostics, "_map", invalid);
+        Set(diagnostics, "_name", invalid.Name);
+        int count = (int)Invoke(diagnostics, "RunValidation");
+        var issueField = typeof(MapEditor).GetField("_validationIssues",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var issues = (List<string>)issueField.GetValue(diagnostics);
+        Check(count >= 2 && issues.Count == count,
+              "validation retains all map errors instead of the first only");
+        Invoke(diagnostics, "Record");
+        Check(issues.Count == 0,
+              "a new edit invalidates cached diagnostics rather than showing stale errors");
+    }
+
+    static void LayoutPlannerContracts()
+    {
+        var things = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "one", Prop = "Pine", X = 3, Z = 4, Yaw = 15, Scale = 1.2f },
+            new MapData.Thing { Id = "two", Prop = "Rock", X = 9, Z = 8, Yaw = 45, Scale = 0.8f },
+            new MapData.Thing { Id = "three", Prop = "Bush", X = 16, Z = 12, Yaw = 90, Scale = 1.5f },
+            new MapData.Thing { Id = "four", Prop = "Pine", X = 30, Z = 20, Yaw = 180, Scale = 1f },
+        };
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out var spaced),
+              "spacing planner accepts four nonuniform selected props");
+        Check(spaced[0].x == 3f && spaced[1].x == 12f &&
+              spaced[2].x == 21f && spaced[3].x == 30f,
+              "equal-X spacing keeps extremes and correctly interpolates inner props");
+        Check(things[1].X == 9f && spaced[1].y == 8f,
+              "planning is pure and leaves the other axis unchanged");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.Z,
+              MapObjectArrange.Operation.Minimum, out var minZ) &&
+              minZ[0].y == 4f && minZ[1].y == 4f && minZ[2].y == 4f && minZ[3].y == 4f && minZ[1].x == 9f,
+              "Z minimum alignment preserves all X values");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Center, out var middleX) &&
+              MathF.Abs(middleX[0].x - 16.5f) < 0.0001f &&
+              MathF.Abs(middleX[3].x - 16.5f) < 0.0001f,
+              "X center alignment uses bounding-box midpoint rather than arbitrary first prop");
+        Check(MapObjectArrange.TryPlan(things, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Maximum, out var maxX) &&
+              maxX[0].x == 30f && maxX[3].x == 30f,
+              "maximum alignment targets rightmost selected prop");
+
+        var tie = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", X = 3, Z = 0 },
+            new MapData.Thing { Id = "b", X = 3, Z = 0 },
+            new MapData.Thing { Id = "c", X = 10, Z = 0 },
+            new MapData.Thing { Id = "d", X = 20, Z = 0 },
+        };
+        Check(MapObjectArrange.TryPlan(tie, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out var stable) &&
+              stable[0].x == 3f && stable[1].x > 3f && stable[2].x > stable[1].x &&
+              stable[3].x == 20f,
+              "tied coordinates use original selection order for deterministic distribution");
+        Check(!MapObjectArrange.TryPlan(new List<MapData.Thing> { things[0], things[1] },
+              300f, MapObjectArrange.Axis.X, MapObjectArrange.Operation.Distribute,
+              out _),
+              "two objects cannot be distributed into intermediate equal gaps");
+        Check(!MapObjectArrange.TryPlan(things, float.NaN, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Minimum, out _),
+              "NaN map size is rejected");
+        var invalid = new List<MapData.Thing>(things);
+        invalid[1] = new MapData.Thing { Id = "bad", X = float.PositiveInfinity, Z = 3 };
+        Check(!MapObjectArrange.TryPlan(invalid, 300f, MapObjectArrange.Axis.Z,
+              MapObjectArrange.Operation.Minimum, out _),
+              "infinite object coordinate cannot produce partial layout");
+        invalid[1] = new MapData.Thing { Id = "outside", X = 151, Z = 3 };
+        Check(!MapObjectArrange.TryPlan(invalid, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Center, out _),
+              "out-of-bounds source blocks atomic layout");
+        var equallySpaced = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", X = 0, Z = 0 },
+            new MapData.Thing { Id = "b", X = 5, Z = 0 },
+            new MapData.Thing { Id = "c", X = 10, Z = 0 },
+        };
+        Check(!MapObjectArrange.TryPlan(equallySpaced, 300f, MapObjectArrange.Axis.X,
+              MapObjectArrange.Operation.Distribute, out _),
+              "no-op distribution does not create an unnecessary Undo");
+
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Rock", X = 9f, Z = 8f });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Bush", X = 30f, Z = 20f });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "interaction", Event = "OnInteractObject", TargetId = "p2",
+            Action = "ShowMessage", Message = "Hello", Enabled = true
+        });
+        var editor = new MapEditor();
+        Set(editor, "_map", map);
+        Set(editor, "_name", map.Name);
+        Invoke(editor, "SelectAllThings");
+        Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
+               MapObjectArrange.Operation.Distribute);
+        Check(map.Things[0].X == 3f && map.Things[1].X == 16.5f &&
+              map.Things[2].X == 30f,
+              "real editor applies equal spacing in the map rather than only preview");
+        Check(map.Triggers[0].TargetId == "p2" && map.Triggers[0].Message == "Hello" &&
+              map.Crypts[0].X == 0f && map.Regions[0].X == 1f,
+              "layout never changes gameplay anchors, triggering rules or text");
+        var undo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(undo.Count == 1, "three-object arrangement is exactly one undo step");
+        Invoke(editor, "Undo");
+        var undone = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(undone.Things[0].X == 3f && undone.Things[1].X == 9f &&
+              undone.Things[2].X == 30f,
+              "one Undo restores all previous object coordinates");
+        Invoke(editor, "Redo");
+        var redone = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(editor);
+        Check(redone.Things[1].X == 16.5f &&
+              redone.Triggers[0].TargetId == "p2",
+              "Redo restores arrangement with intact linked interaction references");
+        Invoke(editor, "SelectAllThings");
+        Invoke(editor, "ArrangeSelectedThings", MapObjectArrange.Axis.X,
+               MapObjectArrange.Operation.Distribute);
+        Check(redone.Things[1].X == 16.5f &&
+              ((List<string>)typeof(MapEditor)
+                .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(editor)).Count == 1,
+              "no-op layout does not allocate a second undo entry");
+    }
+
+    static void SelectionAndGroupGridContracts()
+    {
+        var all = new List<MapData.Thing>
+        {
+            new MapData.Thing { Id = "a", Prop = "Pine", MaterialId = null, X = 3, Z = 4 },
+            new MapData.Thing { Id = "b", Prop = "Pine", MaterialId = "Stone", X = 12, Z = 8 },
+            new MapData.Thing { Id = "c", Prop = "Rock", MaterialId = "Stone", X = 21, Z = 15 },
+            new MapData.Thing { Id = "d", Prop = "Bush", MaterialId = "", X = -11, Z = -14 },
+            new MapData.Thing { Id = "e", Prop = "Pine", MaterialId = null, X = 0, Z = 0 },
+            new MapData.Thing { Id = "", Prop = "Pine", MaterialId = null },
+            null,
+        };
+        var pick = new HashSet<string> { "a" };
+        Check(MapObjectSelection.Matching(all, pick, MapObjectSelection.Property.Model)
+              .SetEquals(new[] { "a", "b", "e" }),
+              "matching models includes all authored identical props, not anonymous entries");
+        Check(MapObjectSelection.Matching(all, pick, MapObjectSelection.Property.Material)
+              .SetEquals(new[] { "a", "d", "e" }),
+              "null and empty original materials are one intentional matching group");
+        Check(MapObjectSelection.Matching(all, new HashSet<string> { "a", "c" },
+              MapObjectSelection.Property.Material).SetEquals(new[] { "a", "b", "c", "d", "e" }),
+              "multi-seed matching expands across every selected material");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string> { "a", "c" })
+              .SetEquals(new[] { "b", "d", "e" }),
+              "inverse selection never includes anonymous or null props");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string> { "a", "b", "c", "d", "e" }).Count == 0,
+              "inverting a full selection produces an empty selection");
+        Check(MapObjectSelection.Inverted(all, new HashSet<string>()).Count == 5,
+              "inverting an empty selection selects all valid map prop IDs");
+        Check(MapObjectSelection.Matching(all, new HashSet<string> { "stale" },
+              MapObjectSelection.Property.Model).Count == 0,
+              "missing IDs cannot accidentally select a model family");
+        Check(MapObjectSelection.Matching(null, pick, MapObjectSelection.Property.Material).Count == 0 &&
+              MapObjectSelection.Inverted(null, pick).Count == 0,
+              "selection helpers fail closed on absent map data");
+        Check(all[0].X == 3 && all[1].MaterialId == "Stone",
+              "selection plans leave authored map data unchanged");
+
+        var map = Map();
+        map.Things.Add(new MapData.Thing { Id = "p2", Prop = "Pine", MaterialId = "Stone",
+                                           X = 12, Z = 8, Scale = 1 });
+        map.Things.Add(new MapData.Thing { Id = "p3", Prop = "Rock", MaterialId = "Stone",
+                                           X = 21, Z = 15, Scale = 1 });
+        map.Things.Add(new MapData.Thing { Id = "p4", Prop = "Bush", MaterialId = null,
+                                           X = -11, Z = -14, Scale = 1 });
+        map.Triggers.Add(new MapData.Trigger {
+            Id = "F", Event = "OnInteractObject", TargetId = "p3",
+            Action = "ShowMessage", Message = "Keep", Enabled = true
+        });
+        var e = new MapEditor();
+        Set(e, "_map", map);
+        Set(e, "_name", map.Name);
+        var selected = (HashSet<string>)typeof(MapEditor)
+            .GetField("_selectedThingIds", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        var undo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Invoke(e, "Select", new Vector3(3, 0, 4), false);
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Model);
+        Check(selected.SetEquals(new[] { "p1", "p2" }),
+              "editor expands single Pine selection to all Pine props");
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Material);
+        Check(selected.SetEquals(new[] { "p1", "p2", "p3", "p4" }),
+              "editor expands multiselection by original and imported materials");
+        Check(undo.Count == 0 && map.Things[0].X == 3 && map.Triggers[0].TargetId == "p3",
+              "selection changes neither Undo nor positions, anchors or F rules");
+        Invoke(e, "InvertThingSelection");
+        Check(selected.Count == 0, "editor can invert a full selection");
+        Invoke(e, "InvertThingSelection");
+        Check(selected.SetEquals(new[] { "p1", "p2", "p3", "p4" }),
+              "editor inverts empty selection back to all map props");
+        Invoke(e, "SetThingSelection", new HashSet<string> { "p1" });
+        Invoke(e, "SelectMatchingThings", MapObjectSelection.Property.Material);
+        Check(selected.SetEquals(new[] { "p1", "p4" }),
+              "editor matches original materials without changing Stone objects");
+
+        // Snap applies once to all selected Thing objects, with no JSON schema change.
+        Invoke(e, "SelectAllThings");
+        Set(e, "_snap", 5f);
+        Invoke(e, "SnapSelectedThingsToGrid");
+        Check(map.Things[0].X == 5 && map.Things[0].Z == 5 &&
+              map.Things[1].X == 10 && map.Things[1].Z == 10 &&
+              map.Things[2].X == 20 && map.Things[2].Z == 15 &&
+              map.Things[3].X == -10 && map.Things[3].Z == -15,
+              "group grid snap quantizes X/Z of all selected props");
+        Check(undo.Count == 1 &&
+              map.Triggers[0].TargetId == "p3" && map.Triggers[0].Message == "Keep" &&
+              map.Crypts[0].X == 0 && map.Regions[0].X == 1,
+              "one grid snap makes exactly one Undo without altering gameplay anchors");
+        Invoke(e, "Undo");
+        var prior = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Check(prior.Things[0].X == 3 && prior.Things[1].X == 12 &&
+              prior.Things[3].Z == -14,
+              "one Undo restores the complete unsnapped group");
+        Invoke(e, "Redo");
+        var redoMap = (MapData)typeof(MapEditor)
+            .GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(e);
+        Check(redoMap.Things[0].X == 5 && redoMap.Things[3].Z == -15 &&
+              redoMap.Triggers[0].TargetId == "p3",
+              "Redo restores grid positions and preserved interaction references");
+        Invoke(e, "SelectAllThings");
+        Invoke(e, "SnapSelectedThingsToGrid");
+        Check(undo.Count == 1 && redoMap.Things[1].X == 10,
+              "already-snapped group does not allocate an unnecessary Undo");
+
+        var edge = Map();
+        edge.Things[0].X = 149f;
+        var edgeEditor = new MapEditor();
+        Set(edgeEditor, "_map", edge);
+        Set(edgeEditor, "_name", edge.Name);
+        Set(edgeEditor, "_snap", 40f);
+        Invoke(edgeEditor, "SelectAllThings");
+        Invoke(edgeEditor, "SnapSelectedThingsToGrid");
+        var edgeUndo = (List<string>)typeof(MapEditor)
+            .GetField("_undo", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(edgeEditor);
+        Check(edge.Things[0].X == 149f && edge.Things[0].Z == 4f && edgeUndo.Count == 0,
+              "snap outside map bounds is rejected atomically without history pollution");
+        Check(!MapObjectArrange.TrySnap(edge.Things, edge.Size, float.NaN, out _) &&
+              !MapObjectArrange.TrySnap(edge.Things, edge.Size, 0f, out _),
+              "non-finite and disabled grid spacing are rejected");
+        var invalid = new List<MapData.Thing> {
+            new MapData.Thing { Id = "a", X = 3, Z = 4 },
+            new MapData.Thing { Id = "bad", X = float.PositiveInfinity, Z = 0 }
+        };
+        Check(!MapObjectArrange.TrySnap(invalid, 300f, 5f, out _) &&
+              invalid[0].X == 3 && float.IsInfinity(invalid[1].X),
+              "invalid selected prop cannot cause a partial grid snap");
+    }
+
+    static void ReusableTemplateContracts()
+    {
+        var map = Map();
+        map.Things[0].Yaw = 35f;
+        map.Things[0].Scale = 1.2f;
+        map.Things.Add(new MapData.Thing
+        {
+            Id = "p2", Prop = "Rock", MaterialId = "Stone",
+            X = 13f, Z = 14f, Yaw = 90f, Scale = 0.8f
+        });
+        map.Triggers.Add(new MapData.Trigger
+        {
+            Id = "rule1", Name = "Read sign", Event = "OnInteractObject",
+            TargetId = "p2", Action = "ShowMessage", Condition = "Always",
+            Message = "This is a test.", Once = false, Enabled = true
+        });
+        var ids = new HashSet<string> { "p1", "p2" };
+        var name = "Camp_" + Guid.NewGuid().ToString("N");
+        string path = null;
+        try
+        {
+            Check(!MapObjectTemplate.ValidName("../outside") &&
+                  !MapObjectTemplate.ValidName("one/two") &&
+                  !MapObjectTemplate.ValidName("") &&
+                  MapObjectTemplate.ValidName(name),
+                  "template filenames are strictly bounded and cannot traverse folders");
+            Check(MapObjectTemplate.TryCapture(map, ids, name, out var template),
+                  "selected authored props capture into reusable layout");
+            Check(template.Items.Count == 2 && template.Interactions.Count == 1 &&
+                  template.Items[0].Dx == -5 && template.Items[1].Dx == 5 &&
+                  template.Items[0].Dz == -5 && template.Items[1].Dz == 5,
+                  "template captures relative positions and linked F rules");
+            Check(template.Items[0].Prop == "Pine" && template.Items[0].Yaw == 35f &&
+                  template.Items[1].MaterialId == "Stone" && template.Items[1].Scale == 0.8f,
+                  "template retains prefabs, materials, rotations and scales");
+            Check(template.Interactions[0].TargetRef == template.Items[1].Ref &&
+                  template.Interactions[0].Message == "This is a test." &&
+                  !template.Interactions[0].Once,
+                  "template refers to its own local target, without original map GUID");
+            Check(MapObjectTemplate.TrySaveNew(template, out path, out _) &&
+                  File.Exists(path),
+                  "template is created as separate disk JSON without writing authored map");
+            string originalBytes = File.ReadAllText(path);
+            Check(!MapObjectTemplate.TrySaveNew(template, out _, out _) &&
+                  File.ReadAllText(path) == originalBytes,
+                  "existing template cannot be overwritten by repeated saves");
+            bool loadedOk = MapObjectTemplate.TryLoad(name, out var loaded, out _);
+            Check(MapObjectTemplate.ListNames().Contains(name) && loadedOk &&
+                  loaded.Items.Count == 2 && loaded.Interactions.Count == 1,
+                  "template is discoverable and roundtrips via separate library");
+            Check(!MapObjectTemplate.TryLoad("../outside", out _, out _),
+                  "loader rejects path traversal even when called directly");
+
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f,
+                  out var props, out var rules),
+                  "valid template plans a paste in open map bounds");
+            Check(props.Count == 2 && rules.Count == 1 &&
+                  props[0].X == 25f && props[0].Z == 35f &&
+                  props[1].X == 35f && props[1].Z == 45f,
+                  "pasted layout preserves shape at clicked anchor");
+            Check(MapObjectTemplate.TryProject(loaded, map.Size, 30f, 40f, 90f,
+                  out var footprint) && footprint.Count == 2 &&
+                  Math.Abs(footprint[0].x - 25f) < 0.001f &&
+                  Math.Abs(footprint[0].y - 45f) < 0.001f &&
+                  Math.Abs(footprint[1].x - 35f) < 0.001f &&
+                  Math.Abs(footprint[1].y - 35f) < 0.001f,
+                  "positive Y quarter-turn rotates template footprints around the center");
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f, 90f,
+                  out var rotatedProps, out var rotatedRules) &&
+                  Math.Abs(rotatedProps[0].X - footprint[0].x) < 0.001f &&
+                  Math.Abs(rotatedProps[0].Z - footprint[0].y) < 0.001f &&
+                  Math.Abs(rotatedProps[0].Yaw - 125f) < 0.001f &&
+                  Math.Abs(rotatedProps[1].Yaw - 180f) < 0.001f &&
+                  rotatedRules[0].TargetId == rotatedProps[1].Id,
+                  "rotated paste agrees with ghost footprint and preserves F links");
+            Check(MapObjectTemplate.TryPlanPaste(loaded, map, 30f, 40f, -90f,
+                  out var counterclockwise, out _) &&
+                  Math.Abs(counterclockwise[0].X - 35f) < 0.001f &&
+                  Math.Abs(counterclockwise[0].Z - 35f) < 0.001f &&
+                  Math.Abs(counterclockwise[0].Yaw - 305f) < 0.001f,
+                  "negative rotation counter-rotates layout and normalises object yaw");
+            Check(MapObjectTemplate.TryProject(loaded, map.Size, 149f, 149f, 90f,
+                  out var invalidFootprint) == false &&
+                  invalidFootprint != null && invalidFootprint.Count == 2 &&
+                  !MapObjectTemplate.TryPlanPaste(loaded, map, 149f, 149f, 90f,
+                  out _, out _),
+                  "out-of-bounds rotated preview stays visible but paste fails atomically");
+            Check(!MapObjectTemplate.TryProject(loaded, map.Size, 0f, 0f,
+                  float.NaN, out var noFootprint) && noFootprint == null &&
+                  !MapObjectTemplate.TryPlanPaste(loaded, map, 0f, 0f,
+                  float.PositiveInfinity, out _, out _),
+                  "non-finite template rotation is rejected before preview or paste");
+            Check(props[0].Id != "p1" && props[1].Id != "p2" &&
+                  props[0].Id != props[1].Id &&
+                  rules[0].Id != "rule1" && rules[0].TargetId == props[1].Id &&
+                  rules[0].RegionId == "",
+                  "pasted props and F events use fresh remapped IDs without stale region links");
+            Check(map.Things.Count == 2 && map.Triggers.Count == 1 &&
+                  map.Things[0].X == 3f,
+                  "failed or pending template plan does not mutate source map");
+            Check(!MapObjectTemplate.TryPlanPaste(loaded, map, 149f, 149f,
+                  out _, out _) && map.Things.Count == 2,
+                  "entire out-of-bounds template paste is rejected without partial objects");
+            var overfull = Map();
+            for (int i = 0; i < 128; i++)
+                overfull.Triggers.Add(new MapData.Trigger { Id = "limit" + i });
+            Check(!MapObjectTemplate.TryPlanPaste(loaded, overfull, 0f, 0f,
+                  out _, out _) && overfull.Triggers.Count == 128,
+                  "template cannot exceed total 128-map-trigger budget");
+
+            var corrupted = new MapObjectTemplate.Layout { Name = name };
+            corrupted.Items.Add(new MapObjectTemplate.Entry
+                { Ref = "a", Prop = "../escape", Scale = 1f });
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "template cannot contain arbitrary script or traversal asset names");
+            corrupted.Items[0].Prop = "Pine";
+            corrupted.Items[0].Dx = float.NaN;
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "non-finite relative geometry fails closed");
+            corrupted.Items[0].Dx = 0f;
+            corrupted.Interactions.Add(new MapObjectTemplate.Interaction
+                { TargetRef = "unknown", Message = "No target" });
+            Check(!MapObjectTemplate.Valid(corrupted),
+                  "a dangling interaction target is invalid before any map edit");
+
+            // Existing Unity API doubles must know about visible resources. The
+            // production editor uses the same MapLoader/MapAssets lookups.
+            // A visible user prefab may contain gameplay scripts and physics.
+            // The cursor preview must copy only its mesh hierarchy and original
+            // material references, never its behaviours or colliders.
+            var sourcePine = new GameObject("Authored pine prefab");
+            var pineMesh = new Mesh();
+            var pineMat = new Material(Shader.Find("Lit")) { name = "Pine bark" };
+            sourcePine.AddComponent<MeshFilter>().sharedMesh = pineMesh;
+            sourcePine.AddComponent<MeshRenderer>().sharedMaterials = new[] { pineMat };
+            sourcePine.AddComponent<Collider>();
+            sourcePine.AddComponent<MonoBehaviour>();
+            var pineChild = new GameObject("Pine foliage");
+            pineChild.transform.SetParent(sourcePine.transform, false);
+            pineChild.transform.localPosition = new Vector3(0f, 3f, 0f);
+            pineChild.transform.localScale = new Vector3(2f, 2f, 2f);
+            var leavesMesh = new Mesh();
+            pineChild.AddComponent<MeshFilter>().sharedMesh = leavesMesh;
+            pineChild.AddComponent<MeshRenderer>().sharedMaterials = new[] { pineMat };
+            var pureGhost = MapTemplateGhost.Create(sourcePine, null, 48,
+                out int pureNodes);
+            Check(pureGhost != null && pureNodes == 2 &&
+                  pureGhost.TryGetComponent<MeshFilter>(out var clonedMesh) &&
+                  clonedMesh.sharedMesh == pineMesh &&
+                  pureGhost.TryGetComponent<MeshRenderer>(out var clonedRenderer) &&
+                  clonedRenderer.sharedMaterials[0] == pineMat &&
+                  pureGhost.transform.childCount == 1,
+                  "mesh ghost retains mesh and material references with nested geometry");
+            var ghostChild = pureGhost.transform.GetChild(0);
+            Check(ghostChild.localPosition.y == 3f &&
+                  ghostChild.localScale.x == 2f &&
+                  ghostChild.gameObject.TryGetComponent<MeshFilter>(out var clonedLeaf) &&
+                  clonedLeaf.sharedMesh == leavesMesh,
+                  "mesh ghost preserves child-local position, scale and meshes");
+            Check(!pureGhost.TryGetComponent<Collider>(out _) &&
+                  !pureGhost.TryGetComponent<MonoBehaviour>(out _) &&
+                  !ghostChild.gameObject.TryGetComponent<Collider>(out _),
+                  "template ghost cannot run a source prefab script or physics collider");
+            var customMaterial = new Material(Shader.Find("Lit")) { name = "User override" };
+            var overrideGhost = MapTemplateGhost.Create(sourcePine,
+                customMaterial, 48, out _);
+            Check(overrideGhost != null &&
+                  overrideGhost.TryGetComponent<MeshRenderer>(out var overriddenRenderer) &&
+                  overriddenRenderer.sharedMaterials[0] == customMaterial &&
+                  sourcePine.GetComponent<MeshRenderer>().sharedMaterials[0] == pineMat,
+                  "custom material preview never mutates original prefab materials");
+            Check(MapTemplateGhost.Create(sourcePine, null, 1, out _) == null &&
+                  MapTemplateGhost.Create(new GameObject("Invisible model"), null,
+                  48, out _) == null,
+                  "over-budget and meshless prefabs fall back to safe position discs");
+            Resources.Register("MapProps/Pine", sourcePine);
+            Resources.Register("MapProps/Rock", new GameObject("Rock"));
+            Resources.Register("MapUserMaterials/Stone",
+                new Material(Shader.Find("Lit")) { name = "Stone" });
+            var editor = new MapEditor();
+            Set(editor, "_map", map);
+            Set(editor, "_name", map.Name);
+            var selectionField = typeof(MapEditor).GetField("_selectedThingIds",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var selection = (HashSet<string>)selectionField.GetValue(editor);
+            selection.Add("p1"); selection.Add("p2");
+            Set(editor, "_templateDraftName", name);
+            // A duplicate must fail, never mutate authoring map or Undo.
+            Invoke(editor, "SaveSelectedTemplate");
+            var undoField = typeof(MapEditor).GetField("_undo",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Check(((List<string>)undoField.GetValue(editor)).Count == 0 &&
+                  map.Things.Count == 2 && File.ReadAllText(path) == originalBytes,
+                  "editor template save does not overwrite existing file or mark map dirty");
+            Invoke(editor, "ChooseTemplate", name);
+            var meshGhostField = typeof(MapEditor).GetField("_templateGhostMeshes",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var previewMeshes = (List<GameObject>)meshGhostField.GetValue(editor);
+            Check(previewMeshes.Count == 2 && previewMeshes[0] != null &&
+                  previewMeshes[1] == null &&
+                  !previewMeshes[0].activeSelf,
+                  "editor caches safe 3D mesh where available and retains disc fallback");
+            Invoke(editor, "PasteActiveTemplate", new Vector3(60f, 0f, 65f));
+            Check(map.Things.Count == 4 && map.Triggers.Count == 2 &&
+                  map.Things[2].X == 55f && map.Things[3].X == 65f &&
+                  map.Triggers[1].TargetId == map.Things[3].Id,
+                  "editor click-to-place inserts two authored props with linked interaction");
+            Check(((List<string>)undoField.GetValue(editor)).Count == 1 &&
+                  selection.Contains(map.Things[2].Id) &&
+                  selection.Contains(map.Things[3].Id),
+                  "one template placement is one Undo and selects only inserted group");
+            Invoke(editor, "Undo");
+            var undone = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(undone.Things.Count == 2 && undone.Triggers.Count == 1,
+                  "Undo fully removes inserted props AND copied F events");
+            Invoke(editor, "Redo");
+            var redone = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
+                  redone.Triggers[1].TargetId == redone.Things[3].Id,
+                  "Redo restores pasted composition and exact new reference mapping");
+            // Moving the ghost must not dirty authored map or push Undo history.
+            Set(editor, "_yaw", 90f);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            var ghostField = typeof(MapEditor).GetField("_templatePreviewMarkers",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var ghosts = (List<GameObject>)ghostField.GetValue(editor);
+            Check(ghosts.Count == 2 && ghosts[0].activeSelf && ghosts[1].activeSelf &&
+                  Math.Abs(ghosts[0].transform.position.x - 55f) < 0.001f &&
+                  Math.Abs(ghosts[0].transform.position.z - 70f) < 0.001f &&
+                  Math.Abs(ghosts[1].transform.position.x - 65f) < 0.001f &&
+                  Math.Abs(ghosts[1].transform.position.z - 60f) < 0.001f,
+                  "editor previews every prop at the same rotated coordinates as placement");
+            Check(previewMeshes[0].activeSelf &&
+                  Math.Abs(previewMeshes[0].transform.position.x - 55f) < 0.001f &&
+                  Math.Abs(previewMeshes[0].transform.position.z - 70f) < 0.001f,
+                  "visible template mesh ghost follows same footprint as marker");
+            Set(editor, "_templateGhostEnabled", false);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            Check(!previewMeshes[0].activeSelf && ghosts[0].activeSelf,
+                  "3D preview toggle disables only mesh ghosts, not footprint safety markers");
+            Set(editor, "_templateGhostEnabled", true);
+            Invoke(editor, "ShowTemplatePreview", new Vector3(60f, 0f, 65f));
+            Check(previewMeshes[0].activeSelf,
+                  "3D preview can be re-enabled without recreating source prefabs");
+            Check(redone.Things.Count == 4 && redone.Triggers.Count == 2 &&
+                  ((List<string>)undoField.GetValue(editor)).Count == 1,
+                  "moving template ghost never mutates map or Undo history");
+            Invoke(editor, "PasteActiveTemplate", new Vector3(80f, 0f, 85f));
+            Check(redone.Things.Count == 6 && redone.Triggers.Count == 3 &&
+                  Math.Abs(redone.Things[4].X - 75f) < 0.001f &&
+                  Math.Abs(redone.Things[4].Z - 90f) < 0.001f &&
+                  Math.Abs(redone.Things[4].Yaw - 125f) < 0.001f &&
+                  redone.Triggers[2].TargetId == redone.Things[5].Id &&
+                  ((List<string>)undoField.GetValue(editor)).Count == 2,
+                  "actual editor placement rotates full template as single Undo transaction");
+            Invoke(editor, "Undo");
+            var unrotated = (MapData)typeof(MapEditor).GetField("_map",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(editor);
+            Check(unrotated.Things.Count == 4 && unrotated.Triggers.Count == 2,
+                  "Undo deletes rotated props AND their duplicated interaction");
+            Invoke(editor, "Redo");
+
+            // Simulate external corruption and ensure the loader refuses it.
+            File.WriteAllText(path, "{bad-json");
+            Check(!MapObjectTemplate.TryLoad(name, out _, out _),
+                  "corrupted template files are rejected without crashing editor");
+        }
+        finally
+        {
+            if (path != null && File.Exists(path)) File.Delete(path);
+        }
+    }
+
     static void Main()
     {
         LegacyJsonAndAtomicWrite();
@@ -990,6 +1591,10 @@ static class Program
         RectangleSelectionContracts();
         MissingPreviewAssetsAreVisible();
         AuthoringCameraFallback();
+        WorldForgeBestImprovementsContracts();
+        LayoutPlannerContracts();
+        SelectionAndGroupGridContracts();
+        ReusableTemplateContracts();
         Console.WriteLine("PASS: " + passed + " real C# compiled map-editor assertions (Unity API shim, NOT Unity PlayMode).");
     }
 }
