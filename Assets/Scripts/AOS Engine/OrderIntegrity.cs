@@ -73,6 +73,29 @@ namespace Sinbinder.AOS
             => decidedForRevision == currentRevision;
 
         /// <summary>
+        /// A whispered bargain must change the effective decision ONLY when
+        /// the soul was going to hesitate or act against the active command.
+        /// An independent Attack under an Attack order is still the soul's
+        /// own matching choice, not obedience purchased by Whisper.
+        /// </summary>
+        public static bool MustCompelByWhisper(
+            bool hasCommand, bool persuaded, bool hesitated,
+            bool chosenActionSatisfiesOrder)
+            => hasCommand && persuaded &&
+               (hesitated || !chosenActionSatisfiesOrder);
+
+        /// <summary>
+        /// Execute must not overwrite a naturally matching AOS action just
+        /// because Whisper consent remains active. It also must not execute
+        /// compelled obedience after the command revision has changed.
+        /// </summary>
+        public static bool MayApplyWhisperOverride(
+            bool alreadyObeyAction, bool currentCommandDecision,
+            bool lastDecisionWasCompelled, bool stillPersuaded)
+            => !alreadyObeyAction && currentCommandDecision &&
+               lastDecisionWasCompelled && stillPersuaded;
+
+        /// <summary>
         /// A successful whisper buys obedience to ONE specific order, not
         /// to any future order during the next twenty seconds. The soul's
         /// natural vote still exists, but it must not be misreported as
