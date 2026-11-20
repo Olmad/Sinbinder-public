@@ -69,6 +69,11 @@ class E0MergeInventoryTests(unittest.TestCase):
         self.assertEqual(report["merge_base"], self.base)
         self.assertTrue(report["canonical_docs_identical"])
         self.assertEqual(report["overlap_count"], 3)
+        self.assertEqual(report["overlap_identical_count"], 2)
+        self.assertEqual(report["overlap_distinct_count"], 1)
+        self.assertEqual(set(report["overlap_identical_paths"]), set(module.CANON))
+        self.assertEqual(report["overlap_distinct_paths"],
+                         ["Assets/Scripts/Gameplay/DreamRoad.cs"])
         self.assertIn("Assets/Scripts/Gameplay/DreamRoad.cs",
                       report["overlapping_paths"])
         self.assertIn("Tools/тест с пробелом.py", report["incoming_only"])
@@ -95,6 +100,9 @@ class E0MergeInventoryTests(unittest.TestCase):
         self.assertFalse(report["canonical_docs_identical"])
         self.assertEqual(report["canonical_docs"][module.CANON[0]]["status"],
                          "different")
+        self.assertIn(module.CANON[0], report["overlap_distinct_paths"])
+        self.assertIn(module.CANON[1], report["overlap_identical_paths"])
+        self.assertEqual(report["overlap_distinct_count"], 2)
 
     def test_missing_branch_fails_without_modification(self):
         self.make_author()
