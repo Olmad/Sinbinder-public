@@ -975,7 +975,7 @@ namespace Sinbinder.Gameplay
             // говорить много — каждое его слово должно быть редким, чтобы иметь больший вес.
             // Так же Смерть не многословна»). Колокол отзвучал — Смерть называет решение;
             // кто за, кто против и почему — голос суда. Ничьей Смерть не судит: решения нет.
-            string verdict = Loc.T("Вердикт");
+            string verdictTitle = Loc.T("Вердикт");
             string sentence = Sentence(w, d, voting);
             int cut = d.Hesitated ? -1 : sentence.IndexOf(". ", System.StringComparison.Ordinal);
             if (!d.Hesitated)
@@ -984,16 +984,16 @@ namespace Sinbinder.Gameplay
                 yield return Death(box, Loc.T("Бог Смерти"), cut > 0 ? sentence.Substring(0, cut + 1) : sentence);
             }
             if (d.Hesitated || cut > 0)
-                yield return Line(box, host, verdict, d.Hesitated ? sentence : sentence.Substring(cut + 2));
+                yield return Line(box, host, verdictTitle, d.Hesitated ? sentence : sentence.Substring(cut + 2));
             // Голосов «за» больше, а приказ отвергнут — новичок решит, что суд считает неправильно.
             string weight = Weight(d, voting);
-            if (weight != null) yield return Line(box, host, verdict, weight);
+            if (weight != null) yield return Line(box, host, verdictTitle, weight);
 
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
-                yield return Line(box, host, verdict, why);
+                yield return Line(box, host, verdictTitle, why);
             if (compelledByWhisper)
-                yield return Line(box, host, verdict,
+                yield return Line(box, host, verdictTitle,
                     Loc.T("Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."));
 
             if (originalVotes != null)
