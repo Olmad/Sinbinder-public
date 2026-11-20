@@ -150,6 +150,11 @@ namespace Sinbinder.Gameplay
         {
             if (_instance != null) return;
 
+            // WorldForge has a ground mesh but no game-side scouting. Installing
+            // fog here hides the entire editor viewport, including placed props.
+            // Gameplay scenes still receive normal fog via GroundNavMesh.
+            if (Object.FindFirstObjectByType<MapEditor>() != null) return;
+
             var ground = Object.FindFirstObjectByType<GroundNavMesh>();
             if (ground == null) return;
 
