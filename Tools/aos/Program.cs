@@ -15,7 +15,8 @@ internal static class Program
 
     private static void Contains(string file, string needle, string description)
     {
-        Check(File.ReadAllText(file).Contains(needle), description);
+        // \r\n из git autocrlf на Windows — тот же код; сверяем по \n.
+        Check(File.ReadAllText(file).Replace("\r\n", "\n").Contains(needle), description);
     }
 
     private static int Main(string[] args)
@@ -201,7 +202,8 @@ internal static class Program
         Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
         Contains(aosWrapper, "ExecuteDefenseAtPost();", "Defend uses the no-pursuit executor");
         Contains(aosWrapper, "distance <= aa.AttackRange", "defensive attack requires an actually reachable enemy");
-        Contains(aosWrapper, "LastWhisperCompelled = context.HasCommand", "effective action is labelled as whisper-driven");
+        // 382f8cf4 вынес условие в OrderIntegrity.MustCompelByWhisper(context.HasCommand, ...) — проверяем новую форму.
+        Contains(aosWrapper, "LastWhisperCompelled = OrderIntegrity.MustCompelByWhisper(\n                context.HasCommand", "effective action is labelled as whisper-driven");
         Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");
         Contains(aosWrapper, "_obeyedOrderRevision != _warrior.CommandRevision", "obedience credit distinguishes two same-frame commands");
         Contains(aosWrapper, "if (!LastWhisperCompelled && !string.IsNullOrEmpty(cmd.Lord)", "whisper compulsion cannot farm earned loyalty");

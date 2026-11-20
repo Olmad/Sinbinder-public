@@ -116,7 +116,8 @@ internal static class Program
               !contrastText.Contains("причина другая"),
             "dream retest reports action and observed voice, not an unproved vanished or changed cause");
 
-        var langSource = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
+        // На Windows git с autocrlf отдаёт каталог с \r\n — запись та же, сверяем по \n.
+        var langSource = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt").Replace("\r\n", "\n");
         (string ru, string en)[] retestTranslations =
         {
             ("Убийц рядом больше нет. Что решит душа теперь?",

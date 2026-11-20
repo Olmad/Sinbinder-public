@@ -198,7 +198,7 @@ static class Program
              !stageSource.Contains("CombatDecisionContext.Create("),
             "3D replay reconstructs chronology without rerolling AOS or touching the live battle");
         var polygon=System.IO.File.ReadAllText("Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs");
-        var buildScenes=System.IO.File.ReadAllText("ProjectSettings/EditorBuildSettings.asset");
+        var buildScenes=System.IO.File.ReadAllText("ProjectSettings/EditorBuildSettings.asset").Replace("\r\n","\n");
         var missionUi=System.IO.File.ReadAllText("Assets/Scripts/UI/MissionMapUI.cs");
         var launcher=System.IO.File.ReadAllText("Test-Expeditions.cmd");
         Test(polygon.Contains("Проверка экспедиций (склеп)") &&
