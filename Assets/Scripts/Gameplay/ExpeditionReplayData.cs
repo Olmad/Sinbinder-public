@@ -20,6 +20,10 @@ namespace Sinbinder.Gameplay
     {
         public ExpeditionReplayKind Kind;
         public string Actor;
+        // Authoritative AOS identity and the action executed at this event.
+        // Empty in legacy saves: never infer a specific action from prose.
+        public string ActorId;
+        public string ActionCode;
         public string Target;
         public string Description;
         public float Damage;
@@ -62,11 +66,13 @@ namespace Sinbinder.Gameplay
                            float damage = 0f, float healing = 0f, int round = 0,
                            string targetName = "", bool hasOutcome = false,
                            bool resolved = false, bool targetKilled = false,
-                           float targetHealthAfter = 0f)
+                           float targetHealthAfter = 0f,
+                           string actorId = "", string actionCode = "")
         {
             Frames.Add(new ExpeditionReplayFrame
             {
-                Kind=kind,Actor=actor ?? "",Target=target ?? "",
+                Kind=kind,Actor=actor ?? "",ActorId=actorId ?? "",
+                ActionCode=actionCode ?? "",Target=target ?? "",
                 Description=description ?? "",Damage=damage,Healing=healing,
                 Sequence=Frames.Count, Round=round,
                 TargetName=targetName ?? "",HasOutcome=hasOutcome,

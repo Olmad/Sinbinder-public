@@ -4,6 +4,7 @@
 <ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 </PropertyGroup><ItemGroup>
 <Compile Include="ReplayProgram.cs"/>
+<Compile Include="../../Assets/Scripts/Dev/ConsoleCommandSyntax.cs" Link="ConsoleCommandSyntax.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayData.cs" Link="ExpeditionReplayData.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs" Link="ExpeditionCombatFacts.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs" Link="ExpeditionReplayArchive.cs"/>

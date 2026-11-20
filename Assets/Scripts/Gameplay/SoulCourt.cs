@@ -47,8 +47,14 @@ namespace Sinbinder.Gameplay
         /// <summary>Сколько реплик суд сказал с запуска — прогон снимает кадр на каждую.</summary>
         public static int Spoken { get; private set; }
 
-        /// <summary>Сколько судов прошло с запуска.</summary>
+        /// <summary>Сколько раз Суд начал показ, включая прерванные попытки.</summary>
         public static int Held { get; private set; }
+
+        /// <summary>Количество Судов, дошедших до восстановления камеры и выхода из зала.</summary>
+        public static int Completed { get; private set; }
+
+        /// <summary>Длительность последнего ЗАВЕРШЁННОГО Суда, в реальных секундах. -1: замера нет.</summary>
+        public static float LastDurationSeconds { get; private set; } = -1f;
 
         /// <summary>Последний суд был коротким — для прогона.</summary>
         public static bool Brief { get; private set; }
@@ -63,7 +69,7 @@ namespace Sinbinder.Gameplay
         /// себя целиком (компас, весы, тринадцать судей); после него суды по делу идут
         /// коротко: приказ, голоса, вердикт. Иначе загрузка записи снова учила бы три минуты.
         /// </summary>
-        public static bool Seen => Held > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
+        public static bool Seen => Completed > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
 
         /// <summary>Какие голоса уже решали суд на глазах у игрока: новый — интереснее.</summary>
         private static readonly HashSet<string> Decided = new();
@@ -72,7 +78,8 @@ namespace Sinbinder.Gameplay
         private static void Rearm()
         {
             Sitting = false; Step = ""; Seated = 0; Outcome = null; Bench = ""; Spoken = 0;
-            Held = 0; Decided.Clear(); TookSeat = "";
+            Held = 0; Completed = 0; LastDurationSeconds = -1f;
+            Decided.Clear(); TookSeat = "";
             // Суд, оборванный сменой сцены (выход в меню посреди суда), запирал
             // все следующие до перезапуска игры: Sitting оставался true.
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Unstick;
@@ -675,6 +682,9 @@ namespace Sinbinder.Gameplay
                 yield break;
             }
 
+            // Real elapsed time, including animations, pauses, and player walking.
+            // This is measured in Unity, never inferred from scripted line counts.
+            float startedAt = Time.realtimeSinceStartup;
             Sitting = true;
             Step = "enter";
             bool shortly = brief ?? Seen;
@@ -697,7 +707,23 @@ namespace Sinbinder.Gameplay
                 (d.RefusedCommand || (d.Hesitated && c.HasCommand)))
                 new BehaviourResolver().Weigh(w, c, ref d);
 
-            Outcome = d.RefusedCommand ? "refused" : d.Hesitated ? "hesitated" : "obeyed";
+            // The original AOS verdict is passed BY VALUE. Normalize only this
+            // Court's copy of the refusal flag against the original command
+            // and chosen action; never rewrite stored votes or counterfactuals.
+            bool recordedRefusal = d.RefusedCommand;
+            var verdict = Verdict(d, c);
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
+            if (c.HasCommand && !d.Hesitated && recordedRefusal != d.RefusedCommand)
+            {
+                // A cause weighed for the opposite classification is not
+                // evidence for this one. Invalidate only the Court's struct copy.
+                d.Weighed = false;
+                Debug.LogWarning($"[СУД QA] Флаг и действие расходились: action={d.Action}, "
+                    + $"command={c.CommandType}, recorded={recordedRefusal}, actual={verdict}");
+            }
+            Outcome = verdict == SoulCourtVerdictKind.Hesitated ? "hesitated"
+                : verdict == SoulCourtVerdictKind.Refused ? "refused" : "obeyed";
             var rival = Rival(d);
             var judges = Seat(w, c, rival, out float total, originalVotes);
             Seated = judges.Count;
@@ -995,6 +1021,13 @@ namespace Sinbinder.Gameplay
             if (pause != null && pause.IsPaused && pause.Stamp == mine) pause.Resume();
             Sitting = false;
             Step = "";
+            // Count ONLY fully restored presentations. A missing camera or
+            // an interrupted coroutine cannot masquerade as a completed lesson.
+            LastDurationSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAt);
+            Completed++;
+            Debug.Log($"[СУД ЗАМЕР] completed={Completed} full={!shortly} " +
+                $"duration_s={LastDurationSeconds:F1} outcome={Outcome} " +
+                $"walk={(!shortly && Preferences.CourtWalk)}");
         }
 
         // ──────────────────────────────────
@@ -1132,6 +1165,10 @@ namespace Sinbinder.Gameplay
         public static string Loudest(Warrior w, Decision d, DecisionContext c)
         {
             if (w == null || c == null || !c.HasCommand) return null;
+            var verdict = Verdict(d, c);
+            // The same local-copy rule as in Convene: do not modify recorded votes.
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
             bool against = d.RefusedCommand || d.Hesitated;
             float loud = 0f;
             string top = null;
@@ -1147,6 +1184,10 @@ namespace Sinbinder.Gameplay
         {
             lean = 0f; voice = null; colour = Color.white;
             if (w == null || c == null || !c.HasCommand) return false;
+            var verdict = Verdict(d, c);
+            // The same local-copy rule as in Convene: do not modify recorded votes.
+            if (c.HasCommand && !d.Hesitated)
+                d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
             bool against = d.RefusedCommand || d.Hesitated;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
@@ -1211,6 +1252,16 @@ namespace Sinbinder.Gameplay
             }
             return true;
         }
+
+        /// <summary>
+        /// Court outcome reads the action against the ORIGINAL decision context.
+        /// A later Warrior.Command cannot rewrite an earlier Soul Court.
+        /// </summary>
+        private static SoulCourtVerdictKind Verdict(Decision d, DecisionContext c)
+            => SoulCourtVerdict.Classify(
+                c != null && c.HasCommand,
+                c != null && c.SatisfiedBy(d.Action),
+                d.Hesitated, d.RefusedCommand);
 
         /// <summary>
         /// Слово Смерти в коротком суде: приказ и что сделал воин — и слово судьям.
@@ -1619,7 +1670,10 @@ namespace Sinbinder.Gameplay
                 return Loc.F("Решил один голос — {0}. Без него {1}.",
                     Lower(UI.SelectedUnitPanelUI.VoiceName(d.DecisiveVoice, w.Soul)), obeyed);
 
-            return Loc.T("Одной причины нет — так решила вся душа разом.");
+            // Absence of a stored counterfactual is NOT evidence of a
+            // collective motive. A fresh analysis would rewrite history.
+            return d.Weighed ? Loc.T("Одной причины нет — так решила вся душа разом.")
+                             : Loc.T("Причина отказа не установлена.");
         }
 
         private static string Lower(string s)

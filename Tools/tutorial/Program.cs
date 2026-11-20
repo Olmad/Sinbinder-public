@@ -1,6 +1,7 @@
 using System;
 using Sinbinder.Gameplay;
 using Sinbinder.UI;
+using Sinbinder.AOS;
 
 internal static class Program
 {
@@ -15,6 +16,33 @@ internal static class Program
 
     public static int Main()
     {
+        // Production OrderIntegrity code, compiled directly from Assets.
+        // A matching autonomous choice must stay autonomous even when
+        // the warrior previously accepted a Whisper bargain.
+        Check(!OrderIntegrity.MustCompelByWhisper(true, true, false, true) &&
+              !OrderIntegrity.MustCompelByWhisper(false, true, false, false) &&
+              !OrderIntegrity.MustCompelByWhisper(true, false, false, false),
+            "whisper cannot replace a matching natural vote, absent order or unpersuaded choice");
+        Check(OrderIntegrity.MustCompelByWhisper(true, true, false, false) &&
+              OrderIntegrity.MustCompelByWhisper(true, true, true, true),
+            "whisper compels only a conflicting or hesitant decision under an active order");
+        Check(OrderIntegrity.MayApplyWhisperOverride(false, true, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(true, true, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, false, true, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, true, false, true) &&
+              !OrderIntegrity.MayApplyWhisperOverride(false, true, true, false),
+            "execution never forces a matching, stale, un-compelled or expired whisper action");
+
+        var wrapperSource = System.IO.File.ReadAllText("Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
+        Check(wrapperSource.Contains("LastWhisperCompelled = OrderIntegrity.MustCompelByWhisper(") &&
+              wrapperSource.Contains("context.SatisfiedBy(decision.Action)") &&
+              wrapperSource.Contains("decision.Hesitated, context.SatisfiedBy(decision.Action)") &&
+              wrapperSource.Contains("OrderIntegrity.MayApplyWhisperOverride(") &&
+              wrapperSource.Contains("HasCurrentCommandDecision,") &&
+              !wrapperSource.Contains("decision.Action != ActionType.ObeyCommand;") &&
+              !wrapperSource.Contains("action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded"),
+            "both real AOS vote and action execution use the guarded Whisper integrity rules");
+
         // The first five minutes are measured from the actual new-game click.
         // This is source-linked instrumentation: Unity must still produce logs
         // before anybody may claim to have measured a player's experience.
@@ -27,7 +55,8 @@ internal static class Program
         Check(dreamTrace.Contains("TraceFirstFive(\"first_command_detected\")") &&
               dreamTrace.Contains("TraceFirstFive(\"first_verdict action=\"") &&
               dreamTrace.Contains("TraceFirstFive(\"court_requested\")") &&
-              dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_completed duration_s=\"") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_not_shown\")") &&
               dreamTrace.Contains("TraceFirstFive(\"second_verdict action=\""),
             "dream traces player action, real AOS verdict, court attempt and independent retry");
         // 20.11: obedience is the engine's own rule (DecisionContext.SatisfiedBy) — Attack on
@@ -64,9 +93,77 @@ internal static class Program
               !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
 
+        // The second order is a controlled contrast, not proof of causation.
+        // Changing circumstances alone cannot prove that a particular voice
+        // or old motive disappeared. Both spoken text and hint must remain
+        // faithful to the actual decision and observed leading voice.
+        int contrastStart = dreamTrace.IndexOf("private IEnumerator Contrast(", StringComparison.Ordinal);
+        int contrastEnd = dreamTrace.IndexOf("private ", contrastStart + 12, StringComparison.Ordinal);
+        string contrastText = contrastStart >= 0
+            ? dreamTrace.Substring(contrastStart,
+                (contrastEnd > contrastStart ? contrastEnd : dreamTrace.Length) - contrastStart)
+            : "";
+        Check(dreamTrace.Contains("Убийц рядом больше нет. Что решит душа теперь?") &&
+              !dreamTrace.Contains("Причины больше нет — что решит душа теперь?") &&
+              contrastText.Contains("bool obeyed = ActuallyObeyed(d, c);") &&
+              contrastText.Contains("voice == _courtVoice") &&
+              contrastText.Contains("его решение совпало с вашим") &&
+              contrastText.Contains("её решение совпало с вашим") &&
+              contrastText.Contains("Среди голосов вновь выделяется {0}") &&
+              contrastText.Contains("Теперь среди голосов выделяется {0}") &&
+              !contrastText.Contains("Причины больше нет") &&
+              !contrastText.Contains("нашлась другая причина") &&
+              !contrastText.Contains("причина другая"),
+            "dream retest reports action and observed voice, not an unproved vanished or changed cause");
+
+        var langSource = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
+        (string ru, string en)[] retestTranslations =
+        {
+            ("Убийц рядом больше нет. Что решит душа теперь?",
+             "The killers are no longer nearby. What will the soul decide now?"),
+            ("Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет.",
+             "The same order, and now his decision matches yours. The killers are no longer nearby."),
+            ("Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет.",
+             "The same order, and now her decision matches yours. The killers are no longer nearby."),
+            ("И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно.",
+             "No again. The killers are no longer nearby; which voice tipped the balance is unknown."),
+            ("И снова нет. Среди голосов вновь выделяется {0}.",
+             "No again. Among the voices, {0} stands out once more."),
+            ("И снова нет. Теперь среди голосов выделяется {0}.",
+             "No again. Now {0} stands out among the voices."),
+        };
+        bool translated = true;
+        foreach (var item in retestTranslations)
+            translated &= langSource.Contains("msgid " + '"' + item.ru + '"' + "\nmsgstr " + '"' + item.en + '"');
+        Check(translated, "six honest retest prompts and verdicts have direct EN catalog entries");
+
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
+        // Production classifier, not a duplicate copy of its arithmetic.
+        // A flag saying "obeyed" cannot turn Attack into a completed Hold.
+        Check(SoulCourtVerdict.Classify(true, false, false, false) ==
+              SoulCourtVerdictKind.Refused &&
+              SoulCourtVerdict.Classify(true, false, false, true) ==
+              SoulCourtVerdictKind.Refused,
+            "Court cannot call an action obeyed just because refusal flag is missing");
+        Check(SoulCourtVerdict.Classify(true, true, false, true) ==
+              SoulCourtVerdictKind.Obeyed &&
+              SoulCourtVerdict.Classify(true, true, false, false) ==
+              SoulCourtVerdictKind.Obeyed,
+            "Court accepts real matching action even with stale refusal flag");
+        Check(SoulCourtVerdict.Classify(true, true, true, false) ==
+              SoulCourtVerdictKind.Hesitated &&
+              SoulCourtVerdict.Classify(true, false, true, true) ==
+              SoulCourtVerdictKind.Hesitated,
+            "hesitation is never misreported as completed obedience or refusal");
+        Check(SoulCourtVerdict.Classify(false, false, false, true) ==
+              SoulCourtVerdictKind.Refused &&
+              SoulCourtVerdict.Classify(false, false, false, false) ==
+              SoulCourtVerdictKind.Obeyed,
+            "legacy no-command court outcome is not manufactured from absent context");
+
+
         string preferencesSource = System.IO.File.ReadAllText("Assets/Scripts/Core/Preferences.cs");
         string selectionSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SelectionManager.cs");
         string courtCallerSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CourtCaller.cs");
@@ -76,9 +173,59 @@ internal static class Program
         // The bots' "show the court?" IMGUI prompt was not taken: the court toggle lives in the
         // pause menu (checked below), and the dream court is a lesson, so it is always forced.
         Check(dreamTrace.Contains("StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext, Ballot(mind)));") &&
-              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,") &&
+              dreamTrace.Contains("yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: briefCourt,") &&
+              dreamTrace.Contains("bool briefCourt = _courts > 0;") &&
+              dreamTrace.Contains("if (SoulCourt.Completed > completedBefore)") &&
+              dreamTrace.Contains("_courts++;") &&
               dreamTrace.Contains("originalVotes: ballot, force: true);"),
             "dream court judges the SAME AOS decision with its original ballot, full first then brief");
+        // Source-backed evidence, not a guessed duration: only the fully
+        // finished Court increments Completed and produces a Unity wall-clock
+        // duration. Early yield breaks do neither. The dream's first Court
+        // stays full until that concrete completion happens.
+        int completionPos = courtSource.IndexOf("Completed++;", StringComparison.Ordinal);
+        int finishPos = courtSource.LastIndexOf("yield return fader.To(0f, 0.6f);", StringComparison.Ordinal);
+        int lastExitPos = courtSource.LastIndexOf("Step = \"\";", StringComparison.Ordinal);
+        Check(courtSource.Contains("public static int Completed { get; private set; }") &&
+              courtSource.Contains("public static float LastDurationSeconds { get; private set; } = -1f;") &&
+              courtSource.Contains("float startedAt = Time.realtimeSinceStartup;") &&
+              courtSource.Contains("LastDurationSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAt);") &&
+              courtSource.Contains("[СУД ЗАМЕР]") &&
+              finishPos >= 0 && completionPos > finishPos &&
+              lastExitPos > finishPos && completionPos > lastExitPos,
+            "real Court timing is recorded only after camera and scene restoration");
+
+        Check(courtSource.Contains("public static bool Seen => Completed > 0") &&
+              courtSource.Contains("Held = 0; Completed = 0; LastDurationSeconds = -1f;") &&
+              dreamTrace.Contains("int completedBefore = SoulCourt.Completed;") &&
+              dreamTrace.Contains("bool briefCourt = _courts > 0;") &&
+              dreamTrace.Contains("if (SoulCourt.Completed > completedBefore)") &&
+              dreamTrace.Contains("TraceFirstFive(\"court_not_shown\")") &&
+              dreamTrace.Contains("T8 суд не состоялся") &&
+              !dreamTrace.Contains("brief: _courts++ > 0") &&
+              !dreamTrace.Contains("TraceFirstFive(\"court_coroutine_finished\")"),
+            "an aborted Court is not logged as a lesson and cannot shorten the next first Court");
+
+        Check(courtSource.Contains("var verdict = Verdict(d, c);") &&
+              courtSource.Contains("c.SatisfiedBy(d.Action)") &&
+              courtSource.Contains("bool recordedRefusal = d.RefusedCommand;") &&
+              courtSource.Contains("d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;") &&
+              courtSource.Contains("Outcome = verdict == SoulCourtVerdictKind.Hesitated") &&
+              courtSource.Contains("Причина отказа не установлена.") &&
+              !courtSource.Contains("Outcome = d.RefusedCommand ?") &&
+              courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
+            "real Soul Court classifies chosen action using original command and preserves historical votes");
+        Check(courtSource.Contains("recordedRefusal != d.RefusedCommand)") &&
+              courtSource.Contains("d.Weighed = false;") &&
+              courtSource.Contains("The original vote and original cause are authoritative.") &&
+              courtSource.Contains("return d.Weighed ? Loc.T("),
+            "Court never attributes a stale counterfactual cause to a corrected action verdict");
+        Check(courtSource.Split(new[] { "var verdict = Verdict(d, c);" },
+              StringSplitOptions.None).Length == 4 &&
+              courtSource.Contains("bool against = d.RefusedCommand || d.Hesitated;") &&
+              courtSource.Contains("host._aim = Final(d, total, reach);"),
+            "court, overhead leading voice and scale direction share the same action-based verdict");
+
         Check(!dreamTrace.Contains("DrawCourtChoice") &&
               !dreamTrace.Contains("_courtChoicePending") &&
               courtSource.Contains("The original vote and original cause are authoritative.") &&

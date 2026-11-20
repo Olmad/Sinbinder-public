@@ -4,12 +4,17 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - claude/3d-horror-survival-game-ckrslc
     paths:
       - "Assets/Scripts/Gameplay/DreamTutorialChecks.cs"
       - "Assets/Scripts/Gameplay/DreamRoad.cs"
       - "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
+      - "Assets/Scripts/Gameplay/SoulCourt.cs"
+      - "Assets/Scripts/Gameplay/SoulCourtVerdict.cs"
+      - "Assets/Resources/Lang/en.txt"
       - "Assets/Scripts/Gameplay/Bodyguard.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
       - "Tools/tutorial/**"
       - ".github/workflows/tutorial-smoke.yml"
   pull_request:
@@ -17,8 +22,12 @@ on:
       - "Assets/Scripts/Gameplay/DreamTutorialChecks.cs"
       - "Assets/Scripts/Gameplay/DreamRoad.cs"
       - "Assets/Scripts/Gameplay/DreamTutorialDirector.cs"
+      - "Assets/Scripts/Gameplay/SoulCourt.cs"
+      - "Assets/Scripts/Gameplay/SoulCourtVerdict.cs"
+      - "Assets/Resources/Lang/en.txt"
       - "Assets/Scripts/Gameplay/Bodyguard.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
       - "Tools/tutorial/**"
       - ".github/workflows/tutorial-smoke.yml"
 

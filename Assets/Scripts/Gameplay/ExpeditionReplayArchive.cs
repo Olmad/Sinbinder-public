@@ -6,7 +6,11 @@ namespace Sinbinder.Gameplay
     {
         public const int Capacity = 8;
         private static readonly List<ExpeditionReplayData> Entries = new List<ExpeditionReplayData>();
-        public static IReadOnlyList<ExpeditionReplayData> History => Entries;
+        // IReadOnlyList prevents adding/removing entries but does not make
+        // the mutable replay objects or their frames read-only. UI and report
+        // callers get detached observations; only Add/Restore own the archive.
+        // At most eight traces are copied when the history panel is opened.
+        public static IReadOnlyList<ExpeditionReplayData> History => Snapshot();
 
         // Snapshots must not share mutable frame/squad collections with a live
         // replay viewer or with an older save. Otherwise changing a displayed
@@ -30,6 +34,8 @@ namespace Sinbinder.Gameplay
                 {
                     Kind = frame.Kind,
                     Actor = frame.Actor ?? "",
+                    ActorId = frame.ActorId ?? "",
+                    ActionCode = frame.ActionCode ?? "",
                     Target = frame.Target ?? "",
                     Description = frame.Description ?? "",
                     Damage = frame.Damage,

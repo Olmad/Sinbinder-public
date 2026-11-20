@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - claude/3d-horror-survival-game-ckrslc
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"
       - "Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs"
@@ -24,6 +25,10 @@ on:
       - "Assets/Scripts/Gameplay/Expedition.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayStage3D.cs"
+      - "Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs"
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Test-Expeditions.cmd"
       - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
       - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
@@ -33,6 +38,9 @@ on:
       - "Assets/Scripts/Core/SaveGame.cs"
       - "Assets/Scripts/UI/MissionMapUI.cs"
       - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Crypt/TestChamber.cs"
+      - "Assets/Scripts/Dev/CheatConsole.cs"
+      - "Assets/Scripts/Dev/ConsoleCommandSyntax.cs"
       - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
       - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
       - "Assets/Scripts/Gameplay/SoulHarvester.cs"
@@ -62,12 +70,20 @@ on:
       - "Assets/Scripts/Gameplay/Expedition.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/UI/ExpeditionReplayViewer.cs"
+      - "Assets/Scripts/UI/ExpeditionReplayStage3D.cs"
+      - "Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs"
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Test-Expeditions.cmd"
       - "Assets/Scripts/Gameplay/ExpeditionReplayData.cs"
+      - "Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs"
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Core/SaveGame.cs"
       - "Assets/Scripts/UI/MissionMapUI.cs"
       - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/Crypt/TestChamber.cs"
+      - "Assets/Scripts/Dev/CheatConsole.cs"
+      - "Assets/Scripts/Dev/ConsoleCommandSyntax.cs"
       - "Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs"
       - "Assets/Scripts/Gameplay/ExpeditionMapPlan.cs"
       - "Assets/Scripts/Gameplay/SoulHarvester.cs"
@@ -102,3 +118,10 @@ jobs:
       - run: python3 Tools/expeditions/check_replay_wiring.py
       - run: python3 Tools/expeditions/check_map_wiring.py
       - run: python3 Tools/expeditions/check_wiring.py
+      - name: Compile syntax gate for all Unity gameplay code
+        working-directory: Tools/tutorial
+        run: dotnet build SyntaxChecks.csproj -c Release
+      - name: Parse all Unity gameplay C# (grammar only, not Unity runtime)
+        working-directory: Tools/tutorial
+        run: dotnet run --no-build --project SyntaxChecks.csproj -c Release -- ../../Assets/Scripts
+

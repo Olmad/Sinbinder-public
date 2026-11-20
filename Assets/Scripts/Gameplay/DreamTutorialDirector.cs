@@ -306,7 +306,7 @@ namespace Sinbinder.Gameplay
                         () => !Picked()
                             ? (Loc.T("ЛКМ"), Loc.T("Убийц больше нет.") + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
                             : (Loc.T("ПКМ"), Loc.T("Тот же приказ: правой кнопкой — по рычагу.")
-                                  + "\n" + Loc.T("Причины больше нет — что решит душа теперь?")),
+                                  + "\n" + Loc.T("Убийц рядом больше нет. Что решит душа теперь?")),
                         () => _stage != Stage.Retest || OrderedSinceMark());
                     break;
                 case Stage.Fallen:
@@ -1337,13 +1337,32 @@ namespace Sinbinder.Gameplay
             // «догнать») — коротко, как суды по делу потом.
             if (_zombie != null && !_zombie.IsDead)
             {
-                Mark("T8 суд начался");
+                Mark("T8 суд запрошен");
                 TraceFirstFive("court_requested");
+                // The Court coroutine can yield break without ever opening
+                // (missing camera/Letterbox). An enumerator ending is NOT a
+                // completed lesson. Keep the first Court full until it succeeds.
+                int completedBefore = SoulCourt.Completed;
+                bool briefCourt = _courts > 0;
                 // Суд во сне — урок: идёт и при выключенных автоматических судах (force).
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: briefCourt,
                     originalVotes: ballot, force: true);
-                TraceFirstFive("court_coroutine_finished");
-                Mark("T8 суд кончился");
+                if (SoulCourt.Completed > completedBefore)
+                {
+                    _courts++;
+                    TraceFirstFive("court_completed duration_s=" + SoulCourt.LastDurationSeconds.ToString("F1")
+                        + " brief=" + briefCourt);
+                    Mark("T8 суд показан за " + SoulCourt.LastDurationSeconds.ToString("F1") + " с");
+                }
+                else
+                {
+                    // Do not pretend the lesson happened and do not turn the
+                    // next attempted first Court into the abbreviated version.
+                    TraceFirstFive("court_not_shown");
+                    Mark("T8 суд не состоялся");
+                    Debug.LogWarning("[СОН QA] Суд не показан: отсутствует завершённый проход " +
+                        "(проверить камеру, Letterbox и ошибки Console).");
+                }
             }
             _courtRunning = false;
 
@@ -1475,8 +1494,9 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>
-        /// Тот же приказ без убийц на глазах. Послушался — значит, отказ держался
-        /// на причине, а не на сцене: это и есть довод, что сценария нет.
+        /// Тот же приказ в изменившихся обстоятельствах. Смена решения не
+        /// доказывает, какой голос или событие его изменили: слова не должны
+        /// выдавать корреляцию за причину. Суд хранит прежнее голосование.
         /// </summary>
         private IEnumerator Contrast(AOS.Decision d, AOS.DecisionContext c)
         {
@@ -1487,20 +1507,21 @@ namespace Sinbinder.Gameplay
             Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
             Mark($"T6 тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
 
-            // Причина — названа голосом, который решил (до 16.11 — «наведите мышь — узнаете»):
-            // тот же голос — держит прежнее; другой — мир другой, и решает другое.
+            // Названный голос — наблюдаемый результат голосования, не доказанная
+            // единственная причина. Не утверждать, будто прежняя причина исчезла:
+            // новый выбор может совпасть с приказом по совсем другому мотиву.
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
             string named = _zombie != null && !string.IsNullOrEmpty(voice)
                 ? UI.SelectedUnitPanelUI.VoiceName(voice, _zombie.Soul) : null;
             string line = obeyed
-                ? Grammar.Pick(g, Loc.T("Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."),
-                                  Loc.T("Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."))
+                ? Grammar.Pick(g,
+                    Loc.T("Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет."),
+                    Loc.T("Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет."))
                 : string.IsNullOrEmpty(named)
-                    ? Loc.T("И снова нет. Мир другой — и у души нашлась другая причина.")
+                    ? Loc.T("И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно.")
                     : voice == _courtVoice
-                        ? Grammar.Pick(g, Loc.F("И снова нет. Его всё так же держит {0}.", named),
-                                          Loc.F("И снова нет. Её всё так же держит {0}.", named))
-                        : Loc.F("И снова нет — но причина другая. Убийц нет, теперь решает {0}.", named);
+                        ? Loc.F("И снова нет. Среди голосов вновь выделяется {0}.", named)
+                        : Loc.F("И снова нет. Теперь среди голосов выделяется {0}.", named);
 
             var camera = Dialogue.DialogueCameraController.Instance;
             if (camera != null && _zombie != null && UI.Letterbox.Instance != null)

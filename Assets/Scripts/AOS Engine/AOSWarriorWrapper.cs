@@ -81,9 +81,12 @@ namespace Sinbinder.AOS
             // explicit external bargain; it changes the effective action,
             // not the votes. Preserve the raw result for the Soul Court.
             NaturalDecisionDetail = decision;
-            LastWhisperCompelled = context.HasCommand &&
-                Gameplay.Whisper.Persuaded(_warrior) &&
-                decision.Action != ActionType.ObeyCommand;
+            // Accepting Whisper does not erase a naturally matching vote.
+            // Attack under an Attack order, for example, already fulfils
+            // the command without external compulsion.
+            LastWhisperCompelled = OrderIntegrity.MustCompelByWhisper(
+                context.HasCommand, Gameplay.Whisper.Persuaded(_warrior),
+                decision.Hesitated, context.SatisfiedBy(decision.Action));
             if (LastWhisperCompelled)
             {
                 decision.Action = ActionType.ObeyCommand;
@@ -148,8 +151,14 @@ namespace Sinbinder.AOS
                 return;
             }
 
-            // Поддался шёпоту Греховода (Whisper, 60-TEMPTATION) — исполняет приказ, что бы ни решил сам.
-            if (action != ActionType.ObeyCommand && _warrior != null && Gameplay.Whisper.Persuaded(_warrior))
+            // The actual decision is authoritative. Do not turn an
+            // independent matching action into obedience merely because
+            // old Whisper consent remains active. A newer order invalidates
+            // the prior compelled decision, too.
+            if (OrderIntegrity.MayApplyWhisperOverride(
+                action == ActionType.ObeyCommand, HasCurrentCommandDecision,
+                LastWhisperCompelled,
+                _warrior != null && Gameplay.Whisper.Persuaded(_warrior)))
                 action = ActionType.ObeyCommand;
 
             // Охотник без врага рядом идёт к своей цели, что бы ни выбрал голос

@@ -6972,6 +6972,30 @@ msgid "Тот же приказ: правой кнопкой — по рычаг
 msgstr "The same order: right-click the lever."
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "Убийц рядом больше нет. Что решит душа теперь?"
+msgstr "The killers are no longer nearby. What will the soul decide now?"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет."
+msgstr "The same order, and now his decision matches yours. The killers are no longer nearby."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет."
+msgstr "The same order, and now her decision matches yours. The killers are no longer nearby."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно."
+msgstr "No again. The killers are no longer nearby; which voice tipped the balance is unknown."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Среди голосов вновь выделяется {0}."
+msgstr "No again. Among the voices, {0} stands out once more."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "И снова нет. Теперь среди голосов выделяется {0}."
+msgstr "No again. Now {0} stands out among the voices."
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Причины больше нет — что решит душа теперь?"
 msgstr "The reason is gone — what will the soul decide now?"
 
@@ -11486,6 +11510,10 @@ msgstr "One thing decided it: {0}. Without it, {1}."
 #: Gameplay/SoulCourt.cs
 msgid "Решил один голос — {0}. Без него {1}."
 msgstr "One voice decided it — {0}. Without it, {1}."
+
+#: Gameplay/SoulCourt.cs
+msgid "Причина отказа не установлена."
+msgstr "The reason for the refusal has not been established."
 
 #: Gameplay/SoulCourt.cs
 msgid "Одной причины нет — так решила вся душа разом."

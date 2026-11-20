@@ -39,7 +39,7 @@ namespace Sinbinder.Dev
         /// <summary>Esc этого кадра принадлежит консоли.</summary>
         public static bool OwnsEscape => Open || ClosedAt == Time.frameCount;
 
-        private const int Remembered = 6;
+        private const int Remembered = 13;
 
         private GameObject _bar;
         private InputField _input;
@@ -73,11 +73,23 @@ namespace Sinbinder.Dev
             if (Open) Close();
         }
 
+        // BackQuote is the physical ~/Ё key on Windows. Some keyboard
+        // layouts deliver the Russian glyph instead, so recognize either
+        // without binding unrelated gameplay keys.
+        private bool ConsoleKeyDown()
+        {
+            if (Input.GetKeyDown(_key)) return true;
+            string typed = Input.inputString;
+            foreach (char key in typed)
+                if (ConsoleCommandSyntax.IsToggleCharacter(key)) return true;
+            return false;
+        }
+
         void Update()
         {
             if (!Open)
             {
-                if (Input.GetKeyDown(_key)) Show();
+                if (ConsoleKeyDown()) Show();
                 return;
             }
 
@@ -85,7 +97,7 @@ namespace Sinbinder.Dev
             // сразу, а поле успело бы поймать её символом.
             if (Time.frameCount == _openedAt) return;
 
-            if (Input.GetKeyDown(_key) || Input.GetKeyDown(KeyCode.Escape))
+            if (ConsoleKeyDown() || Input.GetKeyDown(KeyCode.Escape))
             {
                 Close();
                 return;
@@ -126,6 +138,28 @@ namespace Sinbinder.Dev
             ["все"] = c => c.AllOn(),
             ["all"] = c => c.AllOn(),
             ["voice"] = c => c.ToggleVoice(),
+            ["combat"] = c => c.ToggleCombat(),
+            ["loot"] = c => c.ToggleLoot(),
+            ["camp"] = c => c.ToggleCamp(),
+            ["store"] = c => c.ToggleStore(),
+            ["reason"] = c => c.ToggleReason(),
+            ["lessons"] = c => c.ToggleLessons(),
+            ["workshop"] = c => c.ToggleWorkshop(),
+            ["map"] = c => c.ToggleMap(),
+            // Real expedition QA, no parallel AOS or reward implementations.
+            ["chamber"] = c => c.GoToChamber(),
+            ["testchamber"] = c => c.GoToChamber(),
+            ["chamber reset"] = c => c.RepeatChamber(),
+            ["chamber next"] = c => c.NextChamberSubject(),
+            ["chamber status"] = c => c.ChamberStatus(),
+            ["missions"] = c => c.OpenMissionBoard(),
+            ["expeditions"] = c => c.OpenMissionBoard(),
+            ["replays"] = c => c.OpenMissionBoard(),
+            ["expedition salt"] = c => c.StartPersonal("salt"),
+            ["expedition chapel"] = c => c.StartPersonal("chapel"),
+            ["replay latest"] = c => c.ReplayLatest(),
+            ["replay last"] = c => c.ReplayLatest(),
+            ["help legacy"] = c => c.HelpLegacy(),
             ["помощь"] = c => c.Help(),
             ["help"] = c => c.Help(),
             ["?"] = c => c.Help(),
@@ -140,6 +174,130 @@ namespace Sinbinder.Dev
 
             if (Commands.TryGetValue(command, out var act)) act(this);
             else Write("Такой команды нет. «помощь» — список.");
+        }
+
+        private bool QASceneAvailable()
+        {
+            if ((Core.GamePauseController.Instance != null &&
+                 Core.GamePauseController.Instance.IsPaused) || UI.PauseMenu.IsOpen)
+            {
+                Write("Close the pause menu before launching QA actions.");
+                return false;
+            }
+            if (Gameplay.PersonalExpedition.Active)
+            {
+                Write("Return from your current personal expedition first.");
+                return false;
+            }
+            return true;
+        }
+
+        private Crypt.TestChamber Chamber()
+        {
+            var chamber = FindFirstObjectByType<Crypt.TestChamber>();
+            if (chamber == null)
+                Write("TestChamber is not active. Run 'chamber' first.");
+            return chamber;
+        }
+
+        private void GoToChamber()
+        {
+            if (!QASceneAvailable()) return;
+            if (SceneManager.GetActiveScene().name == "Crypt_Test")
+            {
+                Write("Already in TestChamber. Try 'missions' or 'expedition salt'.");
+                return;
+            }
+            if (!Application.CanStreamedLevelBeLoaded("Crypt_Test"))
+            {
+                Write("Crypt_Test is not enabled in the build scenes.");
+                return;
+            }
+            Close();
+            SceneManager.LoadScene("Crypt_Test");
+        }
+
+        private void RepeatChamber()
+        {
+            if (!QASceneAvailable()) return;
+            var chamber = Chamber();
+            if (chamber == null) return;
+            chamber.Repeat();
+            Write("TestChamber repeated the SAME conditions. Issue an order to compare.");
+        }
+
+        private void NextChamberSubject()
+        {
+            if (!QASceneAvailable()) return;
+            var chamber = Chamber();
+            if (chamber == null) return;
+            chamber.NextSubject();
+            Write("TestChamber switched the AOS soul. Other conditions stay unchanged.");
+        }
+
+        private void ChamberStatus()
+        {
+            var chamber = Chamber();
+            if (chamber == null) return;
+            Write("Current: " + (string.IsNullOrEmpty(chamber.Current) ? "(no decision yet)" : chamber.Current));
+            Write("Previous: " + (string.IsNullOrEmpty(chamber.Previous) ? "(none)" : chamber.Previous));
+        }
+
+        private void OpenMissionBoard()
+        {
+            if (!QASceneAvailable()) return;
+            var chamber = Chamber();
+            if (chamber == null) return;
+            if (!chamber.OpenExpeditions(out var error))
+            {
+                Write(error);
+                return;
+            }
+            // The existing MissionMapUI owns pause, roster, commander picks,
+            // auto-dispatch, personal visits and the full replay archive.
+            Close();
+        }
+
+        private void StartPersonal(string map)
+        {
+            if (!QASceneAvailable()) return;
+            var chamber = Chamber();
+            if (chamber == null) return;
+            if (!chamber.StartPersonalExpedition(map, out var error))
+            {
+                Write(string.IsNullOrEmpty(error) ? "Personal expedition could not start." : error);
+                return;
+            }
+            Close();
+        }
+
+        private void ReplayLatest()
+        {
+            if (UI.ExpeditionReplayViewer.IsOpen)
+            {
+                Write("Close the current replay before opening another.");
+                return;
+            }
+            if (Core.GamePauseController.Instance != null &&
+                Core.GamePauseController.Instance.IsPaused)
+            {
+                Write("Close the pause/mission menu first, or select a replay there.");
+                return;
+            }
+            var entries = Gameplay.ExpeditionReplayArchive.History;
+            if (entries.Count == 0)
+            {
+                Write("No completed automatic expeditions recorded yet.");
+                return;
+            }
+            var last = entries[entries.Count - 1];
+            if (last == null || last.Frames == null || last.Frames.Count == 0)
+            {
+                Write("Last replay is empty or corrupt; nothing to play.");
+                return;
+            }
+            Close();
+            UI.ExpeditionReplayViewer.Open(last);
         }
 
         private void Shoot()
@@ -263,6 +421,17 @@ namespace Sinbinder.Dev
 
         private void Help()
         {
+            Write("QA: chamber | chamber reset | chamber next | chamber status.");
+            Write("MISSIONS: missions (real board: auto + squad + personal).");
+            Write("SOLO: expedition salt | expedition chapel.");
+            Write("REPLAY: replay latest | replays (full archive).");
+            Write("SETTINGS: aos | all | voice | combat | loot | camp | store.");
+            Write("SETTINGS: reason | lessons | workshop | map.");
+            Write("help legacy = detailed Russian options; ~ / ё / Esc = close.");
+        }
+
+        private void HelpLegacy()
+        {
             Write("aos — съёмка: буквы A, O, S, свободная камера, позы.");
             Write("голос — включить или выключить голос Греховода.");
             Write("удар — включить или выключить удар и защиту от оболочки и вещей.");
@@ -274,7 +443,7 @@ namespace Sinbinder.Dev
             Write("связывание — мастерская в склепе: поднять воина из души набега.");
             Write("вылазки — карта вылазок в склепе: обоз с развилкой и прочие.");
             Write("все — включить все девять разом.");
-            Write("помощь — этот список. ~ или Esc — закрыть.");
+            Write("help — English commands. ~ / ё / Esc — закрыть.");
         }
 
         /// <summary>
@@ -282,11 +451,7 @@ namespace Sinbinder.Dev
         /// и поле иногда ловит её символом; регистр игроку не важен.
         /// </summary>
         private static string Clean(string typed)
-        {
-            if (string.IsNullOrEmpty(typed)) return "";
-            return typed.Replace("`", "").Replace("~", "")
-                        .Trim().ToLowerInvariant();
-        }
+            => ConsoleCommandSyntax.Normalize(typed);
 
         private void Write(string line)
         {
@@ -354,7 +519,7 @@ namespace Sinbinder.Dev
             bar.anchorMin = new Vector2(0f, 1f);
             bar.anchorMax = new Vector2(1f, 1f);
             bar.pivot = new Vector2(0.5f, 1f);
-            bar.sizeDelta = new Vector2(0f, 190f);
+            bar.sizeDelta = new Vector2(0f, 340f);
             _bar.GetComponent<Image>().color = new Color(0.04f, 0.035f, 0.03f, 0.92f);
 
             _log = Label("Журнал консоли", bar, font, 20, new Color(0.72f, 0.68f, 0.60f));
@@ -381,7 +546,7 @@ namespace Sinbinder.Dev
 
             var hint = Label("Подсказка", field, font, 22, new Color(0.45f, 0.42f, 0.38f));
             Stretch(hint.rectTransform, 10f);
-            hint.text = "команда… «помощь» — список";
+            hint.text = "English command… help (QA: chamber, missions, expedition salt)";
             hint.fontStyle = FontStyle.Italic;
 
             _input = fieldGo.GetComponent<InputField>();
@@ -389,7 +554,7 @@ namespace Sinbinder.Dev
             _input.placeholder = hint;
             _input.lineType = InputField.LineType.SingleLine;
 
-            Write("Консоль. «помощь» — список команд.");
+            Write("Sinbinder QA console. Type help. ~ / ё / Esc closes.");
             _bar.SetActive(false);
         }
 
