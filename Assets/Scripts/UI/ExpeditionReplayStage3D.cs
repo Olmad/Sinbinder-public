@@ -12,7 +12,6 @@ namespace Sinbinder.UI
     internal sealed class ExpeditionReplayStage3D : IDisposable
     {
         private const int ReplayLayer = 29; // unused by game layers (TagManager.asset)
-        private const float Beat = 1.1f;
         private sealed class Figure
         {
             public string Key;
@@ -102,6 +101,14 @@ namespace Sinbinder.UI
             if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(name)) return null;
             string key = Key(id, name);
             if (_figures.TryGetValue(key, out var old)) return old;
+            // Roster starts with a name but AOS events carry stable runtime
+            // actor IDs. Join them instead of drawing a duplicate fighter.
+            if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name) &&
+                _figures.TryGetValue(Key("", name), out var named))
+            {
+                _figures[key] = named;
+                return named;
+            }
             var figure = new Figure { Key = key, Friendly = friendly };
             var pawn = new GameObject("AOS record · " + (name ?? id));
             pawn.layer = ReplayLayer;
@@ -156,7 +163,6 @@ namespace Sinbinder.UI
             foreach (var figure in _all)
             {
                 int index = figure.Friendly ? ally++ : enemy++;
-                int total = figure.Friendly ? ally : enemy;
                 float z = figure.Friendly ? -4.6f : 4.6f;
                 float x = ((index % 7) - 3) * 2.3f;
                 z += (index / 7) * (figure.Friendly ? -2.4f : 2.4f);
@@ -244,7 +250,12 @@ namespace Sinbinder.UI
             if (frame == null) return;
             fraction = Mathf.Clamp01(fraction);
             foreach (var f in _all)
-                if (!f.Fallen && !f.Escaped) f.Root.transform.localPosition = f.Home;
+                if (!f.Fallen && !f.Escaped)
+                {
+                    f.Root.transform.localPosition = f.Home;
+                    f.Root.transform.localRotation = Quaternion.identity;
+                    f.Body.localScale = new Vector3(0.85f, 1f, 0.85f);
+                }
 
             if (frame.Kind != ExpeditionReplayKind.CombatAction) return;
             var actor = Find(frame.ActorId, frame.Actor);
