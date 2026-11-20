@@ -22,6 +22,16 @@ namespace Sinbinder.UI
             _open._data = data;
             _open._index = 0;
             _open._running = true;
+            // Opening via the developer console must not leave live AOS
+            // actions running underneath a full-screen historical replay.
+            // When opened from MissionMapUI, that panel already owns pause.
+            var pause = Sinbinder.Core.GamePauseController.Instance;
+            if (pause != null && !pause.IsPaused && !pause.Halted)
+            {
+                pause.Pause();
+                _open._ownsPause = true;
+                _open._pauseStamp = pause.Stamp;
+            }
             // Legacy traces have no AOS action code; preserve the old honest
             // schematic instead of pretending to animate unrecorded actions.
             bool recordedActions = false;
@@ -45,6 +55,8 @@ namespace Sinbinder.UI
         private ExpeditionReplayStage3D _stage;
         private int _index;
         private bool _running;
+        private bool _ownsPause;
+        private int _pauseStamp;
         private float _clock, _speed = 1f;
         private Vector2 _scroll;
         private GUIStyle _caption, _item;
@@ -70,6 +82,12 @@ namespace Sinbinder.UI
         {
             _stage?.Dispose();
             _stage = null;
+            // Only release a pause that THIS viewer acquired. An overlapping
+            // court, pause menu, or mission panel keeps its own ownership.
+            var pause = Sinbinder.Core.GamePauseController.Instance;
+            if (_ownsPause && pause != null && pause.IsPaused &&
+                pause.Stamp == _pauseStamp && !pause.Halted)
+                pause.Resume();
             if (_open == this) _open = null;
         }
 
