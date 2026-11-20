@@ -326,6 +326,7 @@ namespace Sinbinder.UI
 
 namespace Sinbinder.Crypt
 {
+    internal static class CryptMap { public static bool Opened => false; }
     internal static class CryptWorkshop { public static bool Waiting => false; }
     internal static class CryptHands { public static void Forget() { } }
     internal static class MissionBoard { public static void Forget() { } }

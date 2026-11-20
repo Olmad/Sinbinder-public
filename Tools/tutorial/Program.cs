@@ -375,11 +375,13 @@ internal static class Program
         Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
               returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
               "missing destination scene rejects save before live state restoration");
-        Check(returnToBody.Contains("(reload || save.Scene != Here || WorkshopRecruitsChanged(save))") &&
+        Check(returnToBody.Contains("(reload || save.Scene != Here || sandboxChanged || WorkshopRecruitsChanged(save))") &&
               returnToBody.Contains("if (!changeScene) return true;") &&
               returnToBody.Contains("string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;") &&
               returnToBody.Contains("SceneManager.LoadScene(scene);"),
-              "same-scene and valid hosted raid destination still follow original restore paths");
+              "same-stage and valid hosted raid destinations still follow original restore paths");
+        Check(returnToBody.Contains("save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened"),
+              "loading a different crypt story stage rebuilds the scene before restoring its sandbox state");
         Check(!returnToBody.Contains("состояние возвращено, место — нет") &&
               !returnToBody.Contains("return true;\n            }\n\n            Arriving = true;"),
               "missing scene cannot be reported as successful partial restoration");

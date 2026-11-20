@@ -90,6 +90,7 @@ namespace Sinbinder.Core
                 Installed = CryptUpgrades.InstalledAll(),
                 Brought = CryptUpgrades.BroughtAll(),
                 Commitment = Commitment.On,
+                CryptSandboxOpened = CryptMap.IsOpenIn(scene),
             };
 
             save.FallenBags = Gameplay.FallenBag.Snapshot();
@@ -229,6 +230,10 @@ namespace Sinbinder.Core
             _saveOnArrival = null;
             if (restored.HasValue)
             {
+                // Awake has reset the new map; restore before the arrival dialogue,
+                // salary prompt and prologue director start in the loaded scene.
+                if (scene.name == CryptMap.SceneName && restored.Value.Save.OpensCryptSandbox)
+                    CryptMap.Open();
                 RestoreAos(restored.Value.Save, restored.Value.WarriorIds);
                 RestoreSouls(restored.Value.Save, scene);
             }
@@ -323,8 +328,9 @@ namespace Sinbinder.Core
             // inventory state. A save from a missing scene must fail atomically.
             // The raid part is hosted by the camp scene, not a standalone scene.
             if (save == null || Arriving) return false;
+            bool sandboxChanged = save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened;
             bool changeScene = !string.IsNullOrEmpty(save.Scene)
-                && (reload || save.Scene != Here || WorkshopRecruitsChanged(save));
+                && (reload || save.Scene != Here || sandboxChanged || WorkshopRecruitsChanged(save));
             string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
             if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {

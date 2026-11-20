@@ -103,7 +103,7 @@ namespace Sinbinder.UI
             // подкрепление и сразу побег. Нашёл прогон DemoWalkthrough.
             if (_askOnArrival)
             {
-                StartCoroutine(AskWhenArrived());
+                if (!Crypt.CryptMap.Opened) StartCoroutine(AskWhenArrived());
                 return;
             }
 

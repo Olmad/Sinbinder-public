@@ -77,6 +77,7 @@ namespace Sinbinder.Tests
                 Ladder();
                 Spoils();
                 Saving();
+                SavingCryptSandbox();
                 SavingEquipment();
                 SavingCustody();
                 Bodies();
@@ -1897,6 +1898,22 @@ namespace Sinbinder.Tests
             warrior.Initialize(new SoulData(name, SinType.Greed, MoralType.Neutral, 1), ShellType.Skeleton,
                 null, warriorId: id);
             return warrior;
+        }
+
+        private static void SavingCryptSandbox()
+        {
+            var beforeEpilogue = JsonUtility.FromJson<SaveGame>("{\"Scene\":\"Crypt_Entrance\"}");
+            Check(!beforeEpilogue.OpensCryptSandbox, "ранняя запись склепа не пропускает эпилог");
+
+            var opened = new SaveGame { Scene = Crypt.CryptMap.SceneName, CryptSandboxOpened = true };
+            var reopened = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(opened));
+            Check(reopened.OpensCryptSandbox, "песочница остаётся открытой при загрузке до первой вылазки");
+
+            var olderExpedition = JsonUtility.FromJson<SaveGame>(
+                "{\"Scene\":\"Crypt_Entrance\",\"AutoExpeditions\":[{\"Phase\":2}]}");
+            Check(olderExpedition.OpensCryptSandbox, "старая запись с вылазкой возвращает в песочницу");
+            olderExpedition.Scene = "Camp_Day";
+            Check(!olderExpedition.OpensCryptSandbox, "наличие вылазки не открывает песочницу в другой сцене");
         }
 
         private static void SavingEquipment()

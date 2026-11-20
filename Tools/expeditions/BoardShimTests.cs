@@ -1,6 +1,6 @@
 // High-level CPU integration against the production MissionBoard,
-// real expedition combat and actual save/replay state. Only Unity API
-// and the top-level personality vote are stubbed.
+// real expedition combat and actual save/replay state. Unity scene
+// services, the camp spawner and the top-level personality vote are stubbed.
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
 using Sinbinder.Inventory;
 using Sinbinder.Core;
+using SceneObjects=UnityEngine.Object;
 
 static class BoardShimTests
 {
@@ -23,7 +24,7 @@ static class BoardShimTests
     {
         return new SquadRoster.Member
         {
-            Name=name,IsAway=false,Loyalty=100f,
+            Name=name,WarriorId=name+"-id",IsAway=false,Loyalty=100f,
             HealthFraction=1f,Leadership=100f,
             Sin=SinType.Wrath,Moral=MoralType.Vicious,
             Shell=ShellType.Skeleton
@@ -34,10 +35,14 @@ static class BoardShimTests
         MissionBoard.Forget();
         ExpeditionReplayArchive.Forget();
         SquadRoster.Members.Clear();
+        Sinbinder.Core.SaveSystem.Arriving=false;
         Sinbinder.Core.SaveSystem.SaveCount=0;
         Sinbinder.Core.SaveSystem.LastSave=null;
         PersonalExpedition.Active=false;
         PlayerInventory.Instance=new PlayerInventory();
+        SceneObjects.SceneWarriors.Clear();
+        SceneObjects.CampSpawners.Clear();
+        SceneObjects.CampSpawners.Add(new PrologueCampSpawner());
     }
     static Mission Find(string name)
     {
@@ -51,6 +56,143 @@ static class BoardShimTests
         var json=JsonSerializer.Serialize(journeys,options);
         return JsonSerializer.Deserialize<List<SavedAutoExpedition>>(json,options);
     }
+
+    static Warrior PlaceWarrior(SquadRoster.Member member, bool active)
+    {
+        var warrior=new Warrior(member.Name,Team.Player) {Id=member.WarriorId};
+        warrior.gameObject.SetActive(active);
+        SceneObjects.SceneWarriors.Add(warrior);
+        return warrior;
+    }
+
+    static void ColdHomecoming(MissionBoard board, Mission mission)
+    {
+        Reset();
+        var missing=Make("Раненый командир");
+        missing.Sin=SinType.Greed;
+        missing.Loyalty=50f;
+        var inactive=Make("Боец в резерве");
+        var active=Make("Боец на ногах");
+        var fallen=Make("Павший боец");
+        inactive.UnpaidMissions=2;
+        var members=new[]{missing,inactive,active,fallen};
+        foreach(var member in members) member.IsAway=true;
+        SquadRoster.Members.AddRange(members);
+
+        var reserve=PlaceWarrior(inactive,false);
+        var standing=PlaceWarrior(active,true);
+        var casualty=PlaceWarrior(fallen,false);
+        var namesake=PlaceWarrior(missing,true);
+        namesake.Id="another-warrior-id";
+        var wrongScene=PlaceWarrior(missing,true);
+        wrongScene.gameObject.scene=1;
+        var cryptSpawner=SceneObjects.CampSpawners.Single();
+        SceneObjects.CampSpawners.Clear();
+
+        const int droppedCoins=13;
+        MissionBoard.RestoreJourneys(JsonRoundtrip(new List<SavedAutoExpedition>
+        {
+            new SavedAutoExpedition
+            {
+                MissionName=mission.Name,
+                Commander=missing.Name,
+                Party=members.Select(member=>member.Name).ToList(),
+                Phase=2,
+                EncounterResolved=true,
+                EncounterFought=true,
+                BattleWon=true,
+                Survivors=new List<string>{missing.Name,inactive.Name,active.Name},
+                SurvivorHealth=new List<ExpeditionSurvivorHealth>
+                {
+                    new ExpeditionSurvivorHealth {Name=missing.Name,Fraction=0.4f},
+                    new ExpeditionSurvivorHealth {Name=inactive.Name,Fraction=0.6f}
+                },
+                EncounterTrace=new ExpeditionReplayData(),
+                TakenCoins=droppedCoins
+            }
+        }));
+        Check(MissionBoard.Journeys.Count==1 && SquadRoster.Away.Count()==members.Length,
+            "cold load restores returning party with absent and present scene bodies");
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==1 && SquadRoster.Away.Count()==members.Length &&
+              !reserve.gameObject.activeSelf && !casualty.gameObject.WasDestroyed &&
+              PlayerInventory.Instance.Gold==0 && ExpeditionReplayArchive.History.Count==0,
+            "homecoming waits without scene or payout changes when camp spawner is unavailable");
+
+        var otherSpawner=new PrologueCampSpawner();
+        otherSpawner.gameObject.scene=1;
+        SceneObjects.CampSpawners.Add(otherSpawner);
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==1 && PlayerInventory.Instance.Gold==0,
+            "a spawner in another loaded scene cannot complete crypt homecoming");
+
+        SceneObjects.CampSpawners.Add(cryptSpawner);
+        board.AdvanceJourneys(0.1f,true);
+        var present=MissionBoard.Squad().Where(w=>w.gameObject.scene==0).ToArray();
+        var restored=present.SingleOrDefault(w=>w.Id==missing.WarriorId);
+        Check(restored!=null && Math.Abs(restored.HP/restored.MaxHP-0.4f)<0.001f,
+            "return materializes the original missing survivor with saved wounds");
+        Check(present.Length==4 && present.Contains(reserve) && present.Contains(standing) &&
+              reserve.UnpaidMissions==inactive.UnpaidMissions &&
+              Math.Abs(reserve.HP/reserve.MaxHP-0.6f)<0.001f,
+            "cold return reuses both present bodies and restores the dormant body state");
+        Check(namesake.HP==namesake.MaxHP && namesake.gameObject.activeSelf &&
+              !namesake.gameObject.WasDestroyed &&
+              wrongScene.HP==wrongScene.MaxHP && wrongScene.gameObject.activeSelf,
+            "same-name and wrong-scene actors stay untouched during homecoming");
+        Check(casualty.gameObject.WasDestroyed && !SquadRoster.TryGet(fallen.Name,out _) &&
+              !SquadRoster.Away.Any(),"homecoming removes the casualty and clears survivor reservations");
+        int paid=PlayerInventory.Instance.Gold;
+        int kept=restored.PocketGold;
+        Check(kept>0 && namesake.PocketGold==0 && wrongScene.PocketGold==0 &&
+              kept+paid==droppedCoins+MissionCatalog.Coin(mission.Prize),
+            "the restored survivor receives the personal share in the returning scene");
+        board.AdvanceJourneys(1f,true);
+        Check(MissionBoard.Journeys.Count==0 && PlayerInventory.Instance.Gold==paid &&
+              restored.PocketGold==kept &&
+              ExpeditionReplayArchive.History.Count==1 &&
+              MissionBoard.Squad().Count(w=>w.gameObject.scene==0)==4,
+            "retried cold homecoming delivers bodies, loot and replay only once");
+    }
+
+    static void RecallWithAndWithoutBody(MissionBoard board, Mission mission)
+    {
+        Reset();
+        var recalled=Make("Отозванный");
+        recalled.IsAway=true;
+        recalled.HealthFraction=0.75f;
+        SquadRoster.Members.Add(recalled);
+        var recall=new List<SavedAutoExpedition>
+        {
+            new SavedAutoExpedition
+            {
+                MissionName=mission.Name,
+                Commander=recalled.Name,
+                Party=new List<string>{recalled.Name},
+                Phase=2,
+                Recalled=true
+            }
+        };
+        MissionBoard.RestoreJourneys(JsonRoundtrip(recall));
+        board.AdvanceJourneys(0.1f,true);
+        var warrior=MissionBoard.Squad().SingleOrDefault();
+        Check(warrior!=null && warrior.Id==recalled.WarriorId &&
+              Math.Abs(warrior.HP/warrior.MaxHP-0.75f)<0.001f && !recalled.IsAway,
+            "a recalled expedition restores its absent warrior from roster on cold load");
+        Check(MissionBoard.Journeys.Count==0 && PlayerInventory.Instance.Gold==0 &&
+              ExpeditionReplayArchive.History.Count==1,
+            "cold recall preserves single return reporting without loot");
+
+        SceneObjects.CampSpawners.Clear();
+        warrior.gameObject.SetActive(false);
+        recalled.IsAway=true;
+        MissionBoard.RestoreJourneys(JsonRoundtrip(recall));
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==0 && MissionBoard.Squad().SingleOrDefault()==warrior &&
+              !recalled.IsAway && ExpeditionReplayArchive.History.Count==2,
+            "an existing dormant recall body returns in place without a camp spawner");
+    }
+
     public static void Run()
     {
         Reset();
@@ -222,6 +364,9 @@ static class BoardShimTests
         Check(ExpeditionReplayArchive.History.Count==2 &&
               PlayerInventory.Instance.Gold==paid,
             "two concurrent expeditions never duplicate loot on later frames");
+
+        ColdHomecoming(board,mission);
+        RecallWithAndWithoutBody(board,mission);
 
         Console.WriteLine("PASS: "+assertions+
             " real MissionBoard Unity API shim scenarios, JSON roundtrips and single payout");

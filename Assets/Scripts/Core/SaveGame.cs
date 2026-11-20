@@ -190,6 +190,13 @@ namespace Sinbinder.Core
         // Absent on old save files: these locations start unvisited.
         public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
             new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+        public bool CryptSandboxOpened;
+
+        // Older crypt saves record expeditions only after entering the sandbox.
+        internal bool OpensCryptSandbox => Scene == Sinbinder.Crypt.CryptMap.SceneName &&
+            (CryptSandboxOpened || AutoExpeditions?.Count > 0 || ExpeditionReplays?.Count > 0 ||
+             PersonalExpeditions?.Count > 0 || !string.IsNullOrEmpty(AutoExpeditionReport));
+
         // Delayed automatic operations, including assigned warriors and travel stage.
         public List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions =
             new List<Sinbinder.Crypt.SavedAutoExpedition>();

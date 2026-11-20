@@ -236,6 +236,10 @@ namespace Sinbinder.Gameplay
         /// не найдя их среди вернувшихся, вычёркивал из отряда как павших.
         /// </summary>
         public static void ComeBack(IReadOnlyList<string> party, IReadOnlyList<string> survivors)
+            => ComeBack(party, survivors, clearCommander: false);
+
+        internal static void ComeBack(IReadOnlyList<string> party, IReadOnlyList<string> survivors,
+            bool clearCommander)
         {
             for (int i = _members.Count - 1; i >= 0; i--)
             {
@@ -245,6 +249,7 @@ namespace Sinbinder.Gameplay
                 if (!Contains(survivors, m.Name)) { _members.RemoveAt(i); continue; }
 
                 m.IsAway = false;
+                if (clearCommander) m.IsCommander = false;
                 m.UnpaidMissions++;
                 _members[i] = m;
             }

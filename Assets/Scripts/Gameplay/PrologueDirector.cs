@@ -155,6 +155,12 @@ namespace Sinbinder.Gameplay
 
         void Start()
         {
+            if (_endsAfterSeconds > 0f && Crypt.CryptMap.Opened)
+            {
+                _leaving = true;
+                return;
+            }
+
             if (CombatManager.Instance != null)
             {
                 CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
