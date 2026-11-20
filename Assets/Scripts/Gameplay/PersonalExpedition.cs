@@ -36,6 +36,10 @@ namespace Sinbinder.Gameplay
         private static readonly Dictionary<string, SavedPersonalExpedition> Progress = new();
 
         public static bool Active => _active != null;
+
+        /// <summary>Ушёл ли воин на эту вылазку (Греховод — тоже). Не ушёл — его на карте быть не может.</summary>
+        public static bool Travels(Warrior w)
+            => _active != null && w != null && _active._travellers.Exists(t => t.Warrior == w);
         public static string CurrentMapKey => _active != null && _active._plan != null
             ? _active._plan.Id : SceneManager.GetActiveScene().name;
 
@@ -180,6 +184,15 @@ namespace Sinbinder.Gameplay
                 new Vector3(0f,0f,plan.GoalZ),new Color(0.9f,0.65f,0.25f));
             visit._state.Visits++;
 
+            // Туман войны — над этой картой, а не над склепом (иначе вся карта «не разведана»:
+            // чёрная, и стражи спрятаны вместе с коллайдерами — не щёлкнуть, не приказать).
+            // Дорога от знака до цели отряду известна — серым, как свой лагерь:
+            // земля и вещи видны, враги в сером прячутся, пока их не увидят.
+            FogOfWar.Cover(new Bounds(ExpeditionMapBuilder.Point(plan, 0f, 0f), new Vector3(plan.Width, 1f, plan.Depth)));
+            for (float z = plan.EntranceZ; z <= plan.GoalZ; z += 6f)
+                FogOfWar.Reveal(ExpeditionMapBuilder.Point(plan, 0f, z), 9f);
+            FogOfWar.Reveal(ExpeditionMapBuilder.Point(plan, 0f, plan.GoalZ), 12f);
+
             // Change virtual map BEFORE any combat death creates a bag.
             _active = visit;
             FallenBag.OnMapLoaded(plan.Id);
@@ -192,9 +205,19 @@ namespace Sinbinder.Gameplay
             }
 
             visit.SpawnGuards();
+            visit._night = Night.Fall(visit._mapRoot.transform);
             var camera=Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             visit._returnTactical=camera!=null && !camera.FirstPersonNow;
             camera?.SetView(RTS_Camera.CameraView.FirstPerson);
+            // Глаза — на цель, а не в землю: из вида сверху SetView оставлял наклон
+            // тактической камеры (70°), и первый кадр карты был чёрной землёй под ногами (20.11).
+            if (camera != null)
+            {
+                var ahead = ExpeditionMapBuilder.Point(plan, 0f, plan.GoalZ) - SinbinderPlayer.Where;
+                ahead.y = 0f;
+                if (ahead.sqrMagnitude > 1e-4f) camera.Yaw = Quaternion.LookRotation(ahead).eulerAngles.y;
+                camera.Pitch = 0f;
+            }
             visit.enabled = true;
             visit.Announce(Loc.F("Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку.",
                 Loc.T(plan.Title)));
@@ -210,6 +233,64 @@ namespace Sinbinder.Gameplay
         private bool _exiting, _returnTactical, _caravanChoiceOpen;
         private string _notice="";
         private float _noticeUntil;
+        private Night _night;
+
+        /// <summary>
+        /// Лунная ночь над картой. Карта строится внутри сцены склепа и наследовала его
+        /// подземный свет: ровный полумрак 0.11 и густой туман. 20.11 кадры из глаз
+        /// Греховода были чёрными — видны только небо с луной и подписи. Под открытым
+        /// небом светит луна: свет склепа запоминается на входе и возвращается на выходе.
+        /// </summary>
+        private sealed class Night
+        {
+            private UnityEngine.Rendering.AmbientMode _mode;
+            private Color _ambient;
+            private bool _fog;
+            private FogMode _fogMode;
+            private Color _fogColor;
+            private float _fogDensity;
+            private Light _sun;
+
+            public static Night Fall(Transform map)
+            {
+                var night = new Night
+                {
+                    _mode = RenderSettings.ambientMode, _ambient = RenderSettings.ambientLight,
+                    _fog = RenderSettings.fog, _fogMode = RenderSettings.fogMode,
+                    _fogColor = RenderSettings.fogColor, _fogDensity = RenderSettings.fogDensity,
+                    _sun = RenderSettings.sun,
+                };
+                var go = new GameObject("Луна");
+                go.transform.SetParent(map, false);
+                go.transform.rotation = Quaternion.Euler(38f, -30f, 0f);
+                var moon = go.AddComponent<Light>();
+                moon.type = LightType.Directional;
+                moon.color = new Color(0.62f, 0.70f, 0.90f);
+                moon.intensity = 0.55f;
+                moon.shadows = LightShadows.Soft;
+                moon.shadowStrength = 0.7f;
+                RenderSettings.sun = moon;
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+                RenderSettings.ambientLight = new Color(0.20f, 0.22f, 0.28f);
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.ExponentialSquared;
+                RenderSettings.fogColor = new Color(0.07f, 0.08f, 0.11f);
+                RenderSettings.fogDensity = 0.012f;
+                return night;
+            }
+
+            /// <summary>Свет склепа — назад. Луна уходит вместе с картой.</summary>
+            public void Lift()
+            {
+                RenderSettings.ambientMode = _mode;
+                RenderSettings.ambientLight = _ambient;
+                RenderSettings.fog = _fog;
+                RenderSettings.fogMode = _fogMode;
+                RenderSettings.fogColor = _fogColor;
+                RenderSettings.fogDensity = _fogDensity;
+                RenderSettings.sun = _sun;
+            }
+        }
 
         private static void Warp(Warrior character, Vector3 point)
         {
@@ -497,8 +578,26 @@ namespace Sinbinder.Gameplay
                     member.Warrior.ClearCommand();
                     Warp(member.Warrior,member.Home);
                 }
+            // Страховка: свой, который не уходил, но оказался на карте (навык, толчок),
+            // не остаётся на убранной карте — встаёт в склепе рядом с местом Греховода.
+            if (_plan != null && _travellers.Count > 0)
+            {
+                var centre = ExpeditionMapBuilder.Point(_plan, 0f, 0f);
+                float reach = Mathf.Max(_plan.Width, _plan.Depth);
+                int n = 0;
+                foreach (var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                {
+                    if (w == null || w.IsDead || w.Team != Team.Player || Travels(w) || Dist(w.transform.position, centre) > reach) continue;
+                    w.ClearCommand();
+                    Warp(w, _travellers[0].Home + new Vector3(1.5f + n++ * 1.2f, 0f, 1.5f));
+                    Debug.LogWarning("[EXPEDITION] не уходил, но был на карте — возвращён в склеп: " + w.DisplayName);
+                }
+            }
             _active=null;
             FallenBag.OnMapLoaded(SceneManager.GetActiveScene().name);
+            FogOfWar.Uncover();
+            _night?.Lift();
+            _night=null;
             var surface=_mapRoot!=null ? _mapRoot.GetComponent<NavMeshSurface>() : null;
             surface?.RemoveData();
             if(_mapRoot!=null) UnityEngine.Object.Destroy(_mapRoot);

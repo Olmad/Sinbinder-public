@@ -167,27 +167,47 @@ namespace Sinbinder.Gameplay
         private void Build(Bounds bounds)
         {
             _instance = this;
+            var (min, size) = Wide(bounds);
+            Grid(min, size, null);
+            KnownHome();
+            FirstPaint();
+        }
 
-            // Карта тумана шире земли. Иначе её край попадает в кадр:
-            // за пределами карты шейдер считает точку неразведанной,
-            // и на снимке набега 24 сентября светлая разведанная часть
-            // обрывалась ровным прямоугольником по границе земли.
-            // С запасом граница проходит там, где и так темно.
+        /// <summary>
+        /// Карта тумана шире земли. Иначе её край попадает в кадр:
+        /// за пределами карты шейдер считает точку неразведанной,
+        /// и на снимке набега 24 сентября светлая разведанная часть
+        /// обрывалась ровным прямоугольником по границе земли.
+        /// С запасом граница проходит там, где и так темно.
+        /// </summary>
+        private static (Vector2 min, Vector2 size) Wide(Bounds bounds)
+        {
             bounds.Expand(new Vector3(Margin * 2f, 0f, Margin * 2f));
+            return (new Vector2(bounds.min.x, bounds.min.z),
+                    new Vector2(Mathf.Max(1f, bounds.size.x), Mathf.Max(1f, bounds.size.z)));
+        }
 
-            _min = new Vector2(bounds.min.x, bounds.min.z);
-            _size = new Vector2(Mathf.Max(1f, bounds.size.x), Mathf.Max(1f, bounds.size.z));
+        /// <summary>
+        /// Сетка тумана над землёй. <paramref name="explored"/> — уже разведанное
+        /// той же сетки (возврат с карты экспедиции), иначе всё неразведано.
+        /// </summary>
+        private void Grid(Vector2 min, Vector2 size, bool[] explored)
+        {
+            _min = min;
+            _size = size;
             _w = Mathf.CeilToInt(_size.x / Cell);
             _h = Mathf.CeilToInt(_size.y / Cell);
 
             int n = _w * _h;
-            _explored = new bool[n];
+            _explored = explored != null && explored.Length == n ? explored : new bool[n];
             _seen = new bool[n];
             _seenBefore = new bool[n];
             _shownSeen = new float[n];
             _shownKnown = new float[n];
             _pixels = new Color32[n];
+            _looked = _lookedBefore = Area.None;
 
+            if (_texture != null) Destroy(_texture);
             _texture = new Texture2D(_w, _h, TextureFormat.RGBA32, false, true)
             {
                 name = "Туман войны",
@@ -197,17 +217,58 @@ namespace Sinbinder.Gameplay
 
             Shader.SetGlobalTexture(TexId, _texture);
             Shader.SetGlobalVector(RectId, new Vector4(_min.x, _min.y, _size.x, _size.y));
+        }
 
-            KnownHome();
-
-            // Первый пересчёт сразу и без плавности, всей картой: сцена
-            // не должна открываться чернотой, которая за треть секунды
-            // отступает.
+        /// <summary>
+        /// Первый пересчёт сразу и без плавности, всей картой: сцена
+        /// не должна открываться чернотой, которая за треть секунды отступает.
+        /// </summary>
+        private void FirstPaint()
+        {
             Recount(Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None));
             _dirty = Area.None;
             _dirty.Add(0, 0, _w - 1, _h - 1);
             Paint(0f);
             _paintedAt = Time.unscaledTime;
+        }
+
+        /// <summary>Земля сцены, отложенная на время чужой карты: где она и что на ней разведано.</summary>
+        private Vector2 _asideMin, _asideSize;
+        private bool[] _asideExplored;
+        private bool _aside;
+
+        /// <summary>
+        /// Туман — над другой землёй той же сцены (личная экспедиция строит карту вдали
+        /// от склепа). 20.11: сетка тумана лежала только над склепом, а за её краем всё
+        /// считалось неразведанным — карта экспедиции была чёрной, а стражи спрятаны
+        /// вместе с коллайдерами: щёлкнуть по врагу, чтобы приказать напасть, было нельзя.
+        /// Разведанное своей земли откладывается и возвращается в <see cref="Uncover"/>.
+        /// </summary>
+        public static void Cover(Bounds ground)
+        {
+            var fog = _instance;
+            if (fog == null) return;
+            if (!fog._aside)
+            {
+                fog._asideMin = fog._min;
+                fog._asideSize = fog._size;
+                fog._asideExplored = fog._explored;
+                fog._aside = true;
+            }
+            var (min, size) = Wide(ground);
+            fog.Grid(min, size, null);
+            fog.FirstPaint();
+        }
+
+        /// <summary>Туман — снова над своей землёй, с тем, что на ней было разведано.</summary>
+        public static void Uncover()
+        {
+            var fog = _instance;
+            if (fog == null || !fog._aside) return;
+            fog._aside = false;
+            fog.Grid(fog._asideMin, fog._asideSize, fog._asideExplored);
+            fog._asideExplored = null;
+            fog.FirstPaint();
         }
 
         /// <summary>Сколько вокруг костра Греховод знает с начала, в метрах: лагерь и лес вокруг.</summary>

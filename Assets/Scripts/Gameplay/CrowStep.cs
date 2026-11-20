@@ -49,6 +49,9 @@ namespace Sinbinder.Gameplay
         {
             why = "";
             if (!SinbinderPlayer.Exists) { why = Loc.T("Некого прикрывать."); return false; }
+            // Греховод ушёл на вылазку без него: карта экспедиции — другое место, не «рядом».
+            // 20.11 Карган перелетел туда из склепа, а после возвращения остался на убранной карте.
+            if (PersonalExpedition.Active && !PersonalExpedition.Travels(_warrior)) { why = Loc.T("Некого прикрывать."); return false; }
 
             // Прикрывает отход — пост не бросает (28-ORDERS, 26.10: «CrowStep ломает
             // арьергард»): развилка «подошёл или нет» — его сцена, и она одна.

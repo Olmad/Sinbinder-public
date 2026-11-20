@@ -60,6 +60,7 @@ namespace Sinbinder.EditorTools
             double now = EditorApplication.timeSinceStartup, spent = now - _since;
             DismissSalary(spent);
             var hero = SinbinderPlayer.Exists ? SinbinderPlayer.Instance : null;
+            if (AnswerLesson(now, hero)) return;
             switch (_step)
             {
                 case Step.Camp:
@@ -129,7 +130,9 @@ namespace Sinbinder.EditorTools
                     Write("  кадр сверху: shot <имя> " + Overview);
                     // Ход — как ПКМ по земле в виде сверху: Греховод идёт к страже и встаёт в 12 м.
                     _walkFrom = hero.transform.position;
-                    _walkTo = Vector3.MoveTowards(mid, hero.transform.position, 12f);
+                    // 24 м, а не 12: 20.11 без Каргана (он больше не перелетает на чужую вылазку)
+                    // двое скелетов окружили стоящего в 12 м Греховода — «Греховод пал», конец игры.
+                    _walkTo = Vector3.MoveTowards(mid, hero.transform.position, 24f);
                     var legs = hero.GetComponent<UnitMover>();
                     if (legs == null) { Finish("НЕ ПРОЙДЕНО: у Греховода нет ног (UnitMover)"); return; }
                     legs.CommandMove(_walkTo);
@@ -269,6 +272,32 @@ namespace Sinbinder.EditorTools
         }
 
         private static float _fightFrom;
+        private static string _lessonSeen;
+        private static double _lessonNext;
+
+        /// <summary>
+        /// Урок стоп-кадром (мир стоит, ждёт игрока) — ответ, как у прогона демо
+        /// (DemoWalkthrough): отказ — навести подсказку, спина — послать обходящего
+        /// за спину врага, прочие — Греховод идёт по кольцу. 20.11: стража стала видна,
+        /// и урок «спина» остановил бой — проверка стояла, пока мир ждал щелчка.
+        /// </summary>
+        private static bool AnswerLesson(double now, SinbinderPlayer hero)
+        {
+            if (!Lesson.Holding) { _lessonSeen = null; return false; }
+            string kind = Lesson.Now.ToString();
+            if (kind != _lessonSeen) { _lessonSeen = kind; Write($"урок «{kind}»: мир стоит и ждёт игрока — отвечаю, как прогон демо"); }
+            if (now < _lessonNext) return true;
+            _lessonNext = now + 0.5;
+            if (Lesson.Now == LessonKind.Refusal) { UI.WarriorTooltipUI.Pinned = Lesson.Partner; return true; }
+            if (Lesson.Now == LessonKind.Backstab)
+            {
+                var flanker = Lesson.Flanker;
+                if (flanker != null) flanker.IssueCommand(CommandKind.Move, Lesson.Mark);
+                return true;
+            }
+            hero?.GetComponent<UnitMover>()?.CommandMove(Lesson.Target);
+            return true;
+        }
 
         private static void DismissSalary(double spent)
         {
