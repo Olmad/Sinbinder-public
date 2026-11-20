@@ -86,9 +86,9 @@ namespace Sinbinder.UI
             float sideX=mapRect.xMax+12f,sideW=Mathf.Max(150f,w-mapWidth-44f);
             GUI.Box(new Rect(sideX,top+50f,sideW,mapHeight),"");
             GUI.Label(new Rect(sideX+9f,top+58f,sideW-18f,85f),
-                "Событие "+(_index+1)+" из "+_data.Frames.Count+"\n"+
+                Loc.F("Событие {0} из {1}",_index+1,_data.Frames.Count)+"\n"+
                 StageName(frame.Kind) +
-                (frame.Round>0 ? "\nХод AOS: "+frame.Round : ""),_caption);
+                (frame.Round>0 ? "\n"+Loc.F("Ход AOS: {0}",frame.Round) : ""),_caption);
             GUI.Label(new Rect(sideX+9f,top+155f,sideW-18f,mapHeight-115f),
                 (string.IsNullOrEmpty(frame.Actor)?"":frame.Actor+": ") +
                 frame.Description + ObservedEffect(frame),
