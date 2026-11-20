@@ -14669,3 +14669,7 @@ msgstr "Play"
 #: UI/ExpeditionReplayViewer.cs
 msgid "Вперёд"
 msgstr "Forward"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Приостановить"
+msgstr "Pause"
