@@ -69,6 +69,36 @@ static class Program
         callerOwned.Frames[0].Description="MUTATED";
         Test(ExpeditionReplayArchive.History.Last().Frames[0].Description=="Departure",
              "adding a replay must copy caller data");
+        // UI callers used to receive the actual mutable archive entries,
+        // despite the IReadOnlyList interface. A viewer/edit could silently
+        // rewrite recorded AOS outcomes and the NEXT save. History must be
+        // a detached read model; Add/Snapshot/Restore own persistence.
+        var historyView=ExpeditionReplayArchive.History;
+        int entryCountBefore=historyView.Count;
+        string storedName=ExpeditionReplayArchive.History.Last().MissionName;
+        string storedStep=ExpeditionReplayArchive.History.Last().Frames[0].Description;
+        historyView[historyView.Count-1].MissionName="FORGED MISSION";
+        historyView[historyView.Count-1].Leader="FORGED LEADER";
+        historyView[historyView.Count-1].Squad.Clear();
+        historyView[historyView.Count-1].Frames[0].Description="FORGED EVENT";
+        historyView[historyView.Count-1].Frames.Clear();
+        Test(ExpeditionReplayArchive.History.Count==entryCountBefore &&
+             ExpeditionReplayArchive.History.Last().MissionName==storedName &&
+             ExpeditionReplayArchive.History.Last().Frames[0].Description==storedStep,
+            "mutating the public History view cannot rewrite recorded expedition facts");
+        Test(ExpeditionReplayArchive.History.Last().Squad.Count==1 &&
+             ExpeditionReplayArchive.History.Last().Frames.Count==3 &&
+             ExpeditionReplayArchive.History.Last().Leader=="Captain",
+            "public History exposes detached squad, leader and complete event chronology");
+        Test(ExpeditionReplayArchive.Snapshot().Last().Frames[0].Description==storedStep,
+            "after History tampering the next SaveGame replay snapshot is unchanged");
+        var historyToRestore=ExpeditionReplayArchive.Snapshot();
+        ExpeditionReplayArchive.Forget();
+        ExpeditionReplayArchive.Restore(historyToRestore);
+        Test(ExpeditionReplayArchive.History.Last().MissionName==storedName &&
+             ExpeditionReplayArchive.History.Last().Frames.Count==3,
+            "saved expedition chronicle survives archive reset and restore unchanged");
+
         var roundTrace=new ExpeditionReplayData("Rounds","Captain",new[]{"Captain"});
         roundTrace.Append(ExpeditionReplayKind.Departure,"Captain","Leaving");
         roundTrace.Append(ExpeditionReplayKind.CombatAction,"Captain","Hit",round:7);
