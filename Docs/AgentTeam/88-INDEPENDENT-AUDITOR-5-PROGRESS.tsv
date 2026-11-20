@@ -463,7 +463,7 @@ Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs	5eabfba1656734b15e6d5add2b1d
 Assets/Scripts/ProjectStructure.txt	4e003dd7df7753e07ae09e68a81cb3d5869a668c	13545	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Scripts/TODO.txt	c16ec3309225fd8319e4777855ad20b0efe89317	7503	Text_Locale	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tests/SelfCheck.cs	28015b027572cb92f72d1d0e06f6fe426ab72d00	179547	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Tests/SelfCheckMenu.cs	0ecae5734f28e46d9ddb0668e7d6082fb5058c0b	3117	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tests/SelfCheckMenu.cs	0ecae5734f28e46d9ddb0668e7d6082fb5058c0b	3117	CSharp	0	0	0	0	EXCLUDED_TECH	QA2: source=Assets/Scripts/Tests/SelfCheckMenu.cs; blob=0ecae5734f28e46d9ddb0668e7d6082fb5058c0b; lines=1-78; context=entire file guarded by #if UNITY_EDITOR; MenuItem and EditorUtility.DisplayDialog visible only in Unity Editor; RunBatch logs and EditorApplication.Exit are development diagnostics; negative=player build excludes entire class when UNITY_EDITOR undefined, hence no game player-facing text; verified=0; total=0; RU_EN=not applicable, editor-only Russian developer diagnostics; outcome=EXCLUDED_TECH; checked=0; unknown=0; failed=0; full source read, not semantic PASS
 Assets/Scripts/Tests/SelfCheckRunner.cs	a0a215e3fdb7c211b2fcf52f10d3bd2a240ac511	1641	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tools/blender/motion/Dig.json	5d1581b6442b72733ed54835859314c0804ffc88	141669	JSON	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tools/blender/motion/Draw.json	df058d3812572c7858cc3fcce4b8262f1f36e6b9	28579	JSON	0	0	0	0	UNINSPECTED	
