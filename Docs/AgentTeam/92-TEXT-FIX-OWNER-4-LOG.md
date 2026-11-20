@@ -66,3 +66,12 @@
 - QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=a964c80f2ca29ca5fc98cc0175b1e6c1ad94eef5; lines=OnGUI schematic reconstruction GUI.Label; context=nonempty replay, schematic caption visible; negative=English locale previously showed Russian disclaimer; verified=1; total=1; RU_EN=en.txt blob 03d46e460af2f5e616f9635de0e570958969502c, exact key and meaning matched; outcome=FIX_PENDING_QA5.
 - Source-level JS checks 6/6 PASS: Loc.T caller unique, exact translation unique, nonempty replay guard and schematic absence-of-position contract retained. Компилируемый C# тест НЕ ЗАПУСКАЛСЯ, Unity UNKNOWN, независимая QA №5 PENDING; весь файл не PASS.
 - Commits: [C# 0da66d5](https://github.com/Olmad/Sinbinder-public/commit/0da66d58f00fd06e89df2b36656f1c5760eb79bd), [EN 7f9b1e9](https://github.com/Olmad/Sinbinder-public/commit/7f9b1e93d79c7ca401f29710458d80ed4a484e97).
+
+## 2026-11-21 — ExpeditionReplayViewer: локализация строк списка событий
+
+- Основание: ранее подтверждённый аудитором №2 source-level FAIL русского текста в английской локали реплея. До патча C# blob `a964c80f2ca29ca5fc98cc0175b1e6c1ad94eef5`, EN blob `03d46e460af2f5e616f9635de0e570958969502c`.
+- Контрпример: английская локаль, непустой реплей; при `step.Round>0` отображалось «Ход», при `step.HasOutcome` отображалось «исполнено» либо «без результата» без перевода.
+- Минимальная правка: список событий использует `Loc.F("Ход {0}",step.Round)` и `Loc.T("исполнено")` / `Loc.T("без результата")`. Переводы: Turn {0}; completed; no confirmed outcome. Ветвления `Round>0`, `HasOutcome`, `Resolved` и данные не изменены.
+- QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=3e3f575f0192d04903b6ef8b6905557633796c94; lines=OnGUI event list string line; context=nonempty replay with Round>0 and HasOutcome; negative=EN locale previously displayed untranslated Russian labels; verified=3; total=3; RU_EN=en.txt blob 6d06d895213146d068b20e29a0f246a9eed10838; outcome=FIX_PENDING_QA5.
+- Source-level string checks: three unique replacements, three new EN keys, existing round/outcome guards retained. **Compiled C# test NOT RUN; Unity runtime UNKNOWN; independent QA #5 PENDING.** Whole viewer NOT PASS.
+- Commits: [C# 664549d](https://github.com/Olmad/Sinbinder-public/commit/664549d11f31f6689e542b676f99744f50b018f7); [EN eb67ff8](https://github.com/Olmad/Sinbinder-public/commit/eb67ff8e32ef8c1b2b7d0a6eaf79fe8e023f6654).
