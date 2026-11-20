@@ -1337,13 +1337,32 @@ namespace Sinbinder.Gameplay
             // «догнать») — коротко, как суды по делу потом.
             if (_zombie != null && !_zombie.IsDead)
             {
-                Mark("T8 суд начался");
+                Mark("T8 суд запрошен");
                 TraceFirstFive("court_requested");
+                // The Court coroutine can yield break without ever opening
+                // (missing camera/Letterbox). An enumerator ending is NOT a
+                // completed lesson. Keep the first Court full until it succeeds.
+                int completedBefore = SoulCourt.Completed;
+                bool briefCourt = _courts > 0;
                 // Суд во сне — урок: идёт и при выключенных автоматических судах (force).
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: briefCourt,
                     originalVotes: ballot, force: true);
-                TraceFirstFive("court_coroutine_finished");
-                Mark("T8 суд кончился");
+                if (SoulCourt.Completed > completedBefore)
+                {
+                    _courts++;
+                    TraceFirstFive("court_completed duration_s=" + SoulCourt.LastDurationSeconds.ToString("F1")
+                        + " brief=" + briefCourt);
+                    Mark("T8 суд показан за " + SoulCourt.LastDurationSeconds.ToString("F1") + " с");
+                }
+                else
+                {
+                    // Do not pretend the lesson happened and do not turn the
+                    // next attempted first Court into the abbreviated version.
+                    TraceFirstFive("court_not_shown");
+                    Mark("T8 суд не состоялся");
+                    Debug.LogWarning("[СОН QA] Суд не показан: отсутствует завершённый проход " +
+                        "(проверить камеру, Letterbox и ошибки Console).");
+                }
             }
             _courtRunning = false;
 
