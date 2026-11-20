@@ -64,6 +64,50 @@ internal static class Program
               !retest.Contains("RetestResult = \"послушался\";"),
             "retest recovers from missing verdict without manufacturing obedience");
 
+        // The second order is a controlled contrast, not proof of causation.
+        // Changing circumstances alone cannot prove that a particular voice
+        // or old motive disappeared. Both spoken text and hint must remain
+        // faithful to the actual decision and observed leading voice.
+        int contrastStart = dreamTrace.IndexOf("private IEnumerator Contrast(", StringComparison.Ordinal);
+        int contrastEnd = dreamTrace.IndexOf("private ", contrastStart + 12, StringComparison.Ordinal);
+        string contrastText = contrastStart >= 0
+            ? dreamTrace.Substring(contrastStart,
+                (contrastEnd > contrastStart ? contrastEnd : dreamTrace.Length) - contrastStart)
+            : "";
+        Check(dreamTrace.Contains("Убийц рядом больше нет. Что решит душа теперь?") &&
+              !dreamTrace.Contains("Причины больше нет — что решит душа теперь?") &&
+              contrastText.Contains("bool obeyed = ActuallyObeyed(d, c);") &&
+              contrastText.Contains("voice == _courtVoice") &&
+              contrastText.Contains("его решение совпало с вашим") &&
+              contrastText.Contains("её решение совпало с вашим") &&
+              contrastText.Contains("Среди голосов вновь выделяется {0}") &&
+              contrastText.Contains("Теперь среди голосов выделяется {0}") &&
+              !contrastText.Contains("Причины больше нет") &&
+              !contrastText.Contains("нашлась другая причина") &&
+              !contrastText.Contains("причина другая"),
+            "dream retest reports action and observed voice, not an unproved vanished or changed cause");
+
+        var langSource = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
+        (string ru, string en)[] retestTranslations =
+        {
+            ("Убийц рядом больше нет. Что решит душа теперь?",
+             "The killers are no longer nearby. What will the soul decide now?"),
+            ("Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет.",
+             "The same order, and now his decision matches yours. The killers are no longer nearby."),
+            ("Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет.",
+             "The same order, and now her decision matches yours. The killers are no longer nearby."),
+            ("И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно.",
+             "No again. The killers are no longer nearby; which voice tipped the balance is unknown."),
+            ("И снова нет. Среди голосов вновь выделяется {0}.",
+             "No again. Among the voices, {0} stands out once more."),
+            ("И снова нет. Теперь среди голосов выделяется {0}.",
+             "No again. Now {0} stands out among the voices."),
+        };
+        bool translated = true;
+        foreach (var item in retestTranslations)
+            translated &= langSource.Contains("msgid \\"" + item.ru + "\\"\\nmsgstr \\"" + item.en + "\\"");
+        Check(translated, "six honest retest prompts and verdicts have direct EN catalog entries");
+
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
