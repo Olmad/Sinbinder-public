@@ -80,8 +80,9 @@ namespace Sinbinder.Dev
         {
             if (Input.GetKeyDown(_key)) return true;
             string typed = Input.inputString;
-            return typed.IndexOf('ё') >= 0 || typed.IndexOf('Ё') >= 0 ||
-                   typed.IndexOf('~') >= 0 || typed.IndexOf('`') >= 0;
+            foreach (char key in typed)
+                if (ConsoleCommandSyntax.IsToggleCharacter(key)) return true;
+            return false;
         }
 
         void Update()
@@ -177,8 +178,8 @@ namespace Sinbinder.Dev
 
         private bool QASceneAvailable()
         {
-            if (Core.GamePauseController.Instance != null &&
-                Core.GamePauseController.Instance.IsPaused || UI.PauseMenu.IsOpen)
+            if ((Core.GamePauseController.Instance != null &&
+                 Core.GamePauseController.Instance.IsPaused) || UI.PauseMenu.IsOpen)
             {
                 Write("Close the pause menu before launching QA actions.");
                 return false;
@@ -439,16 +440,7 @@ namespace Sinbinder.Dev
         /// и поле иногда ловит её символом; регистр игроку не важен.
         /// </summary>
         private static string Clean(string typed)
-        {
-            if (string.IsNullOrEmpty(typed)) return "";
-            // Cyrillic keyboard may place ё into the input field when
-            // console opens/closes. English command tokens never contain it.
-            string stripped = typed.Replace("`", "").Replace("~", "")
-                .Replace("ё", "").Replace("Ё", "");
-            return string.Join(" ", stripped.Split(
-                new[] { ' ', '\t', '\r', '\n' },
-                System.StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
-        }
+            => ConsoleCommandSyntax.Normalize(typed);
 
         private void Write(string line)
         {
