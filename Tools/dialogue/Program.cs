@@ -44,6 +44,38 @@ internal static class Program
         Check(VillageDialogueRules.SinAnswer(SinType.Gluttony, SinType.Pride) ==
               "Тебе только еда на уме?",
               "Pride answers Gluttony without inventing a recent meal");
+        // These lines previously asserted events never supplied by the dialogue
+        // context. Test the exact RU/EN runtime answers for both topics.
+        var groundedSin = new (SinType Speaker, SinType Responder, string Ru, string En)[]
+        {
+            (SinType.Greed, SinType.Envy,
+             "Сначала своим похвастайся, потом моё считай.",
+             "Show off what you have first, then count mine."),
+            (SinType.Lust, SinType.Envy,
+             "А ко мне кто-нибудь подсесть захочет?",
+             "And would anyone want to sit beside me?"),
+            (SinType.Gluttony, SinType.Envy,
+             "Тебе хочется, а мне что достанется?",
+             "You're hungry, but what will I get?"),
+            (SinType.Sloth, SinType.Envy,
+             "Тебе бы всё сидеть. А мне что, за всех вставать?",
+             "You'd rather sit all day. And I'm supposed to get up for everyone?")
+        };
+        var groundedLord = new (VillageLordTone Tone, string Ru, string En)[]
+        {
+            (VillageLordTone.Distrusted,
+             "Пусть другим нравится. Я ему не верю.",
+             "Others may like him. I don't trust him."),
+            (VillageLordTone.Undecided,
+             "Посмотрим, кому от его власти станет лучше.",
+             "We'll see who benefits from his rule.")
+        };
+        foreach (var v in groundedSin)
+            Check(VillageDialogueRules.SinAnswer(v.Speaker, v.Responder) == v.Ru,
+                  "RU SinAnswer has no invented memory: " + v.Speaker + "/" + v.Responder);
+        foreach (var v in groundedLord)
+            Check(VillageDialogueRules.LordAnswer(SinType.Envy, v.Tone) == v.Ru,
+                  "RU LordAnswer has no invented events: " + v.Tone);
         foreach (var sin in sins)
         {
             string positive = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Respected);
@@ -73,6 +105,12 @@ internal static class Program
                 Check(!Regex.IsMatch(VillageDialogueRules.LordAnswer(a, stance), "[А-Яа-яЁё]"),
                     "Lord reply translated: " + a + "/" + stance);
         }
+        foreach (var v in groundedSin)
+            Check(VillageDialogueRules.SinAnswer(v.Speaker, v.Responder) == v.En,
+                  "EN SinAnswer matches verified RU: " + v.Speaker + "/" + v.Responder);
+        foreach (var v in groundedLord)
+            Check(VillageDialogueRules.LordAnswer(SinType.Envy, v.Tone) == v.En,
+                  "EN LordAnswer matches verified RU: " + v.Tone);
         Loc.Use("ru", null);
         Console.WriteLine($"PASS: {count} production-linked village dialogue assertions");
     }
