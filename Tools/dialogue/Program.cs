@@ -36,6 +36,14 @@ internal static class Program
               "hungry villager challenges Pride, not the money question");
         Check(VillageDialogueRules.SinAnswer(SinType.Wrath, SinType.Gluttony).Contains("поешь"),
               "hungry villager responds to a threat with advice to eat");
+        // A vice-conditioned reply must not claim witnessed reputation
+        // or a recent meal without any memory/state predicate.
+        Check(VillageDialogueRules.SinAnswer(SinType.Pride, SinType.Envy) ==
+              "Думаешь, тебе первому место? С чего бы?",
+              "Envy questions Pride without inventing community ranking");
+        Check(VillageDialogueRules.SinAnswer(SinType.Gluttony, SinType.Pride) ==
+              "Тебе только еда на уме?",
+              "Pride answers Gluttony without inventing a recent meal");
         foreach (var sin in sins)
         {
             string positive = VillageDialogueRules.LordAnswer(sin, VillageLordTone.Respected);
