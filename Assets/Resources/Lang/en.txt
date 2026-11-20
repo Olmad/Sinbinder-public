@@ -14690,3 +14690,7 @@ msgstr "Event {0} of {1}"
 #: UI/ExpeditionReplayViewer.cs
 msgid "Ход AOS: {0}"
 msgstr "AOS turn: {0}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Схематическая реконструкция: боевые решения из движка, точные координаты в старой записи отсутствуют."
+msgstr "Schematic reconstruction: combat decisions come from the engine; exact coordinates are absent from the legacy record."
