@@ -40,3 +40,12 @@
 - Source-level RU/EN assertions: 6/6 PASS. Compiled C# NOT RUN; Unity UNKNOWN. Other replay captions still hardcoded Russian; entire viewer NOT PASS.
 - Commits: 23c9d08d6614f2b9149e57f58fbebd48a996efdf; 3c140ca408aa68a8e5450b41e877470ebb3f28a9; b59e9e4a43b2cb207a2f58bfd0b2d30b861e810f; b83f8dadf6cf97bee6a134a6198f8761d5d855c3.
 - Independent QA #5 pending; stage 1 remains open.
+
+## 2026-11-20 — ExpeditionReplayViewer: подписи схемы маршрута
+
+- Основание: ранее подтверждённая аудитором №2 незавершённая EN-локализация реплея; текущий source blob до изменения `bc75e8fa7caad015fc1e36754847ce446399c306`.
+- Три оставшиеся русские player-facing подписи в `DrawSchematicMap`: «СХЕМА МАРШРУТА», «Цель», «Выход / возврат». При английской локали ранее показывались по-русски.
+- Изменение: только `Loc.T` для трёх литералов и три точные пары RU/EN: ROUTE SCHEMATIC; Objective; Departure / return. Обработчики, схема и данные не менялись.
+- QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=f0d36ad782883556f8cf31e14ca9a94efde32c5f; lines=DrawSchematicMap GUI.Box/GUI.Label; context=nonempty expedition replay and schematic map visible; negative=EN locale previously displayed three Russian labels; verified=3; total=3; RU_EN=en.txt blob 278672b5b86a49357e301411a03f945ddb1c3579 matched 3 pairs; outcome=FIX_PENDING_QA5.
+- JS source-level проверки: 6/6 (каждый Loc.T вызов и точный RU/EN ключ). Компилируемый C# и Unity не запускались, runtime UNKNOWN; весь файл не PASS.
+- Коммиты: [C# cb1da0d](https://github.com/Olmad/Sinbinder-public/commit/cb1da0d5b78f44f75843ffadd30c9e4e5aeaef2d), [EN 717f50c](https://github.com/Olmad/Sinbinder-public/commit/717f50cee67afcc21303c07e9bc337bd4245f77e). Независимая QA №5 ожидается.
