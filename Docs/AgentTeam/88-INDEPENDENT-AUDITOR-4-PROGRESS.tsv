@@ -482,7 +482,7 @@ Assets/Scripts/Tools/blender/motion/Stand.json	351756a0ca3cd9c4d39639d6143aa6d3e
 Assets/Scripts/Tools/blender/motion/SwordSlash.json	5f8c0197e04402ea080e2f5c120d4f647a29a42a	52396	JSON	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tools/blender/motion/Walking.json	068afe4088725bb8eda93f9e7152473d3032f817	36389	JSON	0	0	0	0	UNINSPECTED	
 Assets/Scripts/UI/AOSDecisionAdvice.cs	bc1654cb7e2a8a3455e7416642ae9455d7bd6a9f	2441	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/UI/BattleLogUI.cs	b3f15c540d73d3d71e257c0a6f438a9d6908b77b	12240	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/BattleLogUI.cs	b3f15c540d73d3d71e257c0a6f438a9d6908b77b	12240	CSharp	0	0	0	0	UNKNOWN	QA2: source=Assets/Scripts/UI/BattleLogUI.cs; blob=b3f15c540d73d3d71e257c0a6f438a9d6908b77b; lines=1-244 (complete fetched file); context=Start subscribes OnRefusal/OnSelfWill; Told checks FogOfWar then PhraseGenerator.LogLine; Write saves any nonempty caller text to History, displays via UnityEngine.UI.Text only when _line exists and Transparency.Shows(Log); LateUpdate hides behind Modal/Letterbox; negative=Write accepts nonempty unsupported causal text without checking truth, and low Clarity hides it while retaining History; verified=0; total=0; RU_EN=NO_FIXED_PLAYER_FACING_SENTENCES; Tooltip editor-only; player text supplied dynamically by PhraseGenerator/Whisper, caller truth and RU_EN UNKNOWN; outcome=UNKNOWN. Complete file reviewed; zero fixed player-facing literals; dynamic text path means not EXCLUDED_TECH; runtime untested.
 Assets/Scripts/UI/Billboard.cs	aec098869c65a028b46ed23213e30090227a4ecd	4502	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/UI/CheatSpawner.cs	b34dee30f262052b0a2cdc38e6afb842dd96a275	4373	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/UI/ClarityPanel.cs	ba7bf791bf50af6814e57673e50feb08f4844f1e	8750	CSharp	0	0	0	0	UNINSPECTED	
@@ -581,4 +581,4 @@ ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca
 ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VFXManager.asset	3a95c98bec50cf72538061fd26eee95398f72128	308	UnitySerialized	0	0	0	0	UNINSPECTED	
 ProjectSettings/VersionControlSettings.asset	dca288142fc043d5a749e9058fe625505008834f	188	UnitySerialized	0	0	0	0	UNINSPECTED	
-ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	UNINSPECTED
+ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	UNINSPECTED	
