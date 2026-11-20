@@ -110,7 +110,7 @@ namespace Sinbinder.Multiplayer
             if (_verifyClient)
             {
                 if (string.IsNullOrEmpty(_launchConnect) || _dedicated ||
-                    _launchMechanicsMap)
+                    _launchMechanicsMap || _openExpeditionTest)
                 {
                     Debug.LogError("[Sinbinder REAL Unity Acceptance] FAIL " +
                         "-mp-verify-client requires -lan-connect and no test map/server flags");
@@ -124,8 +124,8 @@ namespace Sinbinder.Multiplayer
             if ((_launchMechanicsMap || _openExpeditionTest) && !_dedicated)
             {
                 // Defer scene loading until the first Update, outside Awake
-                // and IMGUI's layout pass.
-                _openMechanicsMap = true;
+                // and IMGUI's layout pass. The two QA scenes are exclusive.
+                _openMechanicsMap = _launchMechanicsMap && !_openExpeditionTest;
                 return;
             }
 
