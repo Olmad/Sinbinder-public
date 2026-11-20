@@ -68,6 +68,66 @@ namespace Sinbinder.Crypt
         /// <summary>Стоит ли сейчас это условие.</summary>
         public bool IsOn(Trial trial) => _on.Contains(trial);
 
+        /// <summary>
+        /// The TestChamber is also the real expedition QA hub. Reuse the
+        /// scene's MissionBoard/MissionMapUI, not a second mission simulator.
+        /// Collect actual scene warriors into the real roster before showing
+        /// the board. The AOS trial subject is eligible for automatic missions.
+        /// </summary>
+        public bool OpenExpeditions(out string error)
+        {
+            error = "";
+            if (PersonalExpedition.Active)
+            {
+                error = "Return from your current expedition first.";
+                return false;
+            }
+            var board = Object.FindFirstObjectByType<MissionBoard>();
+            var map = Object.FindFirstObjectByType<UI.MissionMapUI>();
+            if (board == null || map == null)
+            {
+                error = "This test scene has no real MissionBoard or MissionMapUI.";
+                return false;
+            }
+            SquadRoster.Remember(MissionBoard.Squad());
+            map.Open();
+            if (!UI.MissionMapUI.IsOpen)
+            {
+                error = "Mission board could not open. Check its panel and Unity Console.";
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Run one of the TWO actual visitable maps, solo as the Lord.
+        /// For a selected squad or automatic dispatch, use OpenExpeditions.
+        /// All combat, rewards and consequences come from PersonalExpedition.
+        /// </summary>
+        public bool StartPersonalExpedition(string shortName, out string error)
+        {
+            error = "";
+            if (PersonalExpedition.Active)
+            {
+                error = "Return from your current expedition first.";
+                return false;
+            }
+            string missionName = shortName == "salt" ? "Соляной обоз"
+                : shortName == "chapel" ? "Придорожная часовня" : "";
+            if (missionName.Length == 0)
+            {
+                error = "Choose expedition salt or expedition chapel.";
+                return false;
+            }
+            foreach (var mission in MissionCatalog.All())
+                if (mission.Name == missionName)
+                    return PersonalExpedition.Enter(
+                        mission, System.Array.Empty<string>(), out error);
+
+            error = "The requested mission is absent from the real catalog.";
+            return false;
+        }
+
         void Start() => Rebuild();
 
         /// <summary>Внести или убрать условие. Опыт при этом ставится заново.</summary>
