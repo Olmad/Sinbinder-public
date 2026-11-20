@@ -90,3 +90,24 @@ QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d7835
 **RU/EN:** русский литерал непосредственно проверен; соответствующий ключ в актуальном `en.txt` в этом запуске не извлечён, поэтому RU_EN=UNKNOWN, а не PASS. **Новые SEMANTIC VERIFIED=0; новый source-level FAIL=1; runtime=UNKNOWN.** Независимые .NET/Unity тесты не запускались. Существующие вердикты по Envy/SinReplies не изменяются.
 
 QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=LordReplies[Respected][Envy]; context=VillageLines.Exchange -> LordTalk with speaker allegiance >= Hostility.Follows and responder sin Envy; negative=no visitors to Lord but visitors to responder, yet comparative claim appears; verified=0; total=1; RU_EN=UNKNOWN; outcome=FAIL.
+
+
+## QA №5: новый блок SinReplies[Gluttony], 20.11.2026
+
+Независимо прочитаны семь ответов `VillageDialogueRules.SinReplies[Gluttony]` (строки 92–100), caller `VillageLines.Exchange` (18–35) и открывающая реплика `SinOpening` (89–99). Production blobs: `VillageDialogueRules.cs` `4a690bc08d783562c89f20aa8790c4b3548a48bd`, `VillageLines.cs` `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`, `en.txt` `413688e1522d7f0f95ae42fd04806170b157caf5` (локализация примерно строки 5998–6025; фрагмент 5970–6020 прочитан). Новых source-level исполняемых тестов и Unity не было.
+
+Условия: оба участника с Soul, `a.Soul.Sin=Gluttony`, `b.Soul.Sin` определяет столбец; `TopicIndex(k)==Sin` либо `Lord` без `Lords.Player`; `b` не Mute. Вступление: «Что-то есть хочется. Опять.» Это субъективное состояние говорящего, не утверждение о существовании еды. `SinAnswer` не проверяет инвентарь отвечающего.
+
+- Greed: «На чужой ужин не рассчитывай.» / «Don't count on someone else's supper.» — UNKNOWN_CONTEXT, запрет/совет без подтверждённого события.
+- Pride: «Тебе только еда на уме?» / «Is food all you think about?» — UNKNOWN_CONTEXT, вопрос, согласуется с вступлением.
+- Wrath: «Не ной. Лучше дров подкинь.» / «Stop moaning. Put another log on.» — UNKNOWN_CONTEXT, совет предполагает доступные дрова; инвентарь не проверен.
+- Envy: «Тебе хочется, а мне что достанется?» / «You're hungry, but what will I get?» — UNKNOWN_CONTEXT, вопрос о доле.
+- Lust: «Разделим хлеб, коли найдётся.» / «We'll share some bread if we find any.» — UNKNOWN_CONTEXT, корректное условное обещание.
+- Gluttony: «У меня горбушка осталась. Пополам?» / «I've got a heel of bread left. Half each?» — **FAIL source-level**: обе версии утверждают наличие хлеба у `b` без проверки его вещей.
+- Sloth: «Мне бы тоже, да вставать лень.» / EN **UNKNOWN**: в извлечённом фрагменте перевода нет этой пары; не считать проверенной.
+
+**Воспроизводимый отрицательный сценарий:** `a.Sin=Gluttony`, `b.Sin=Gluttony`, обе Soul есть, нет Mute, `Topic=Sin`, у `b` нет хлеба. Вызов `SinAnswer(Gluttony,Gluttony)` возвращает утверждение о наличии горбушки, поскольку метод индексирует только два греха. Это дефект фактической обоснованности текста, не доказательство конкретного игрового показа. **Итог блока: 7 READ, 0 SEMANTIC VERIFIED, 1 FAIL, 6 UNKNOWN; 6/7 RU/EN пар сопоставлены, последняя UNKNOWN.** Минимальная правка: заменить утверждение о собственном хлебе на условное предложение, не менять механики.
+
+QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=92-100; context=VillageLines.Exchange topic Sin and speaker Gluttony, responder Gluttony, no food inventory predicate; negative=responder owns no bread but claims to have a heel; verified=0; total=7; RU_EN=6 compared with en.txt blob 413688e1522d7f0f95ae42fd04806170b157caf5, Sloth UNKNOWN; outcome=FAIL.
+
+**Этап 1 остаётся NO-GO.** Исторический TSV не менялся; runtime и независимая приёмка исправления UNKNOWN.
