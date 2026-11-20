@@ -40,7 +40,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private string _campScene = "Prologue_Camp";
 
         // Порядок шагов — порядок сна (17.11: уроки глазами — до убийц).
-        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Chase, Bridge, Deciding, Battle, Retest, Whisper, Jars, Return, Finished }
+        private enum Stage { Approach, Dying, Harvest, Rebind, Command, FirstPerson, WarriorMode, DrawWeapon, Practice, Standoff, Chase, Bridge, Deciding, Battle, Fallen, Retest, Whisper, Jars, Return, Finished }
 
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
@@ -70,11 +70,20 @@ namespace Sinbinder.Gameplay
         /// <summary>Шёпот после «снова нет»: «поддался», «не поддался»; null — не шептали.</summary>
         public static string WhisperResult;
 
+        /// <summary>Засада (docs/68, этап 5): пал ли, поднят ли снова, пришёл ли владыка; null — не было.</summary>
+        public static string LateResult;
+
         /// <summary>Как открылись печати у ворот — для прогона: оба встали, один, поднятого нет.</summary>
         public static string SealsResult;
 
         /// <summary>Печати горят — ворота открываются на F.</summary>
         public bool SealsOpen => _sealsOpen;
+
+        /// <summary>Поднятый не погнался сам — сон ждёт приказа «догнать» (для прогона).</summary>
+        public bool ChaseAsked => _chaseAsked && !_chaseDecided;
+
+        /// <summary>Где пал поднятый в засаде (для прогона).</summary>
+        public Vector3 LateAt => _lateAt;
 
         /// <summary>Сон прячет задачи: руки заняты (наезд, ворота) или сон кончился.</summary>
         public static bool HidesTasks => Instance != null && (Instance._stage == Stage.Finished || Instance._handBusy);
@@ -120,7 +129,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Standoff: case Stage.Chase: case Stage.Bridge: case Stage.Deciding:
                     // До моста: на настил Греховод не ступает — мост поднимают у него перед носом.
                     return DreamRoad.Progress(DreamRoad.BridgeWestEnd) - 0.8f;
-                case Stage.Battle: case Stage.Retest: case Stage.Whisper:
+                case Stage.Battle: case Stage.Fallen: case Stage.Retest: case Stage.Whisper:
                     // Бой — у засады за мостом; мост поднят — в обход лесом, до бревна.
                     return DreamRoad.Progress(DreamRoad.LogAt) - 3f;
                 case Stage.Jars: return DreamRoad.Progress(DreamRoad.ShrineAt) + 3f;
@@ -262,6 +271,14 @@ namespace Sinbinder.Gameplay
                                   + "\n" + Loc.T("Причины больше нет — что решит душа теперь?")),
                         () => _stage != Stage.Retest || OrderedSinceMark());
                     break;
+                case Stage.Fallen:
+                    if (_lateBody == null) return;
+                    shown = Lesson.Guide(_lateAt,
+                        () => FindJar() < 0
+                            ? ("E", Loc.T("Душа угасает у тела. Подойдите и нажмите E — заберите её в банку."))
+                            : ("R", Loc.T("Теперь R у тела — душа вернётся в оболочку.")),
+                        () => _stage != Stage.Fallen);
+                    break;
                 default:
                     _guidedFor = _stage;   // этому шагу кольцо не нужно
                     return;
@@ -328,6 +345,7 @@ namespace Sinbinder.Gameplay
             RefusalResult = null;
             RetestResult = null;
             WhisperResult = null;
+            LateResult = null;
             SealsResult = null;
 
             // Причина отказа «от противного» — на весь сон: суд называет то,
@@ -421,7 +439,7 @@ namespace Sinbinder.Gameplay
             if (body != null) body.Pose(BodyMotion.Die);
             var voice = _wounded.GetComponent<Sinbinder.Audio.VoiceGenerator>();
             if (voice != null) { voice.Depth = 1.12f; voice.Tempo = 1.7f; }
-            Set(Stage.Approach, "Укажи Греховоду путь правой кнопкой мыши.");
+            Set(Stage.Approach, Loc.N("Укажи Греховоду путь правой кнопкой мыши."));
             _ready = true;
         }
 
@@ -560,7 +578,8 @@ namespace Sinbinder.Gameplay
 
         private void Log(string message)
         {
-            FindFirstObjectByType<UI.BattleLogUI>()?.Write(message);
+            // Строки сна помечены Loc.N — переводятся здесь, при показе; в журнал Unity — по-русски.
+            FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T(message));
             Debug.Log("[СОН] " + message);
         }
 
@@ -614,7 +633,7 @@ namespace Sinbinder.Gameplay
                         if (_wounded.IsDead) BeginHarvest();
                         else
                         {
-                            Set(Stage.Dying, "Незнакомец пытается что-то сказать.");
+                            Set(Stage.Dying, Loc.N("Незнакомец пытается что-то сказать."));
                             StartCoroutine(DyingEncounter());
                         }
                     }
@@ -626,13 +645,13 @@ namespace Sinbinder.Gameplay
                     // The actual SoulHarvester puts the soul in a jar after E.
                     if (FindJar() >= 0)
                     {
-                        Set(Stage.Rebind, "Подойди к телу. Нажми R, чтобы вернуть душу в оболочку.");
+                        Set(Stage.Rebind, Loc.N("Подойди к телу. Нажми R, чтобы вернуть душу в оболочку."));
                     }
                     else if (Time.time - _harvestSince > 50f && _wounded != null && _wounded.Soul != null)
                     {
                         // Душа угасает за минуту; несобранная — сон не должен на этом встать.
                         _fallbackSoul = _wounded.Soul;
-                        Set(Stage.Rebind, "Душа ещё держится за тело. Подойди к телу и нажми R, чтобы вернуть её.");
+                        Set(Stage.Rebind, Loc.N("Душа ещё держится за тело. Подойди к телу и нажми R, чтобы вернуть её."));
                     }
                     break;
                 case Stage.Rebind:
@@ -666,7 +685,7 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 case Stage.Standoff:
-                    if (_zombie == null || _zombie.IsDead) { StartBattle("Первый воин пал."); break; }
+                    if (_zombie == null || _zombie.IsDead) { StartBattle(Loc.N("Первый воин пал.")); break; }
                     // Узнали — и бегут: от мёртвого, которого сами оставили на дороге.
                     if (_killers.Count > 0 && !_fleeing && Time.time - _standoffSince > 3.2f) Flee();
                     break;
@@ -674,13 +693,13 @@ namespace Sinbinder.Gameplay
                     Chase();
                     break;
                 case Stage.Bridge:
-                    if (_zombie == null || _zombie.IsDead) { StartBattle("Первый воин пал."); break; }
+                    if (_zombie == null || _zombie.IsDead) { StartBattle(Loc.N("Первый воин пал.")); break; }
                     // Игрок медлит — приказ отдаёт сам Греховод: суд важнее урока клавиш.
                     if (!_autoOrdered && !OrderedSinceMark()
                         && Time.unscaledTime - _standoffReal > (Lesson.Holding ? 45f : 14f) && !SoulCourt.Sitting)
                     {
                         _autoOrdered = true;
-                        Log("Греховод сам велит опустить мост.");
+                        Log(Loc.N("Греховод сам велит опустить мост."));
                         _zombie.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
                     }
                     if (OrderedSinceMark())
@@ -697,7 +716,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Deciding:
                 {
                     var mind = _zombie != null ? _zombie.GetComponent<AOS.AOSWarriorWrapper>() : null;
-                    if (mind == null || _zombie.IsDead) { StartBattle("Решение не дошло до суда."); break; }
+                    if (mind == null || _zombie.IsDead) { StartBattle(Loc.N("Решение не дошло до суда.")); break; }
                     if (_courtRunning) break;
                     // Голоса не заговорили сами за секунду с лишним — спросить душу напрямую:
                     // тот же Decide, что зовёт её мозг, просто сейчас.
@@ -712,23 +731,27 @@ namespace Sinbinder.Gameplay
                     else if (Time.unscaledTime - _decideSince > 6f)
                     {
                         Debug.LogWarning("[СОН QA] Воин не принял решения за 6 с после приказа — суда не будет.");
-                        StartBattle("Убийцы идут.");
+                        StartBattle(Loc.N("Убийцы идут."));
                     }
                     break;
                 }
                 case Stage.Battle:
                     KeepHeroAlive();
                     ArmArrived();
+                    WatchLord();
+                    // Пал в засаде впервые — душа угасает у тела, как у любого павшего: успеть E и R.
+                    if (_battleStarted && _zombie != null && _zombie.IsDead && _lateBody == null) { Fall(); break; }
                     if (_battleStarted && _killers.Count > 0 && _killers.TrueForAll(k => k == null || k.IsDead))
                     {
-                        bool refused = RefusalResult == "отказал" || RefusalResult == "колебался";
+                        bool refused = Refused;
                         if (_zombie != null && !_zombie.IsDead && refused)
                         {
+                            if (_lordCame) Remember(false);
                             _retestSince = Time.time;
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
-                            Set(Stage.Retest, "Убийц больше нет. Отдайте ему тот же приказ — ПКМ по рычагу.");
+                            Set(Stage.Retest, Loc.N("Убийц больше нет. Отдайте ему тот же приказ — ПКМ по рычагу."));
                         }
                         else
                         {
@@ -739,6 +762,19 @@ namespace Sinbinder.Gameplay
                                                                  Loc.T("Она пала. Своё решение стоило ей второй жизни.")));
                             Set(Stage.Jars, JarsLine);
                         }
+                    }
+                    break;
+                case Stage.Fallen:
+                    KeepHeroAlive();
+                    ArmArrived();
+                    if (Pressed(KeyCode.R) && GroundDistance(_hero.transform.position, _lateAt) < 4f) Reraise();
+                    else if (Time.time - _lateSince > 2f && FindJar() < 0 && !Fading(_lateBody))
+                    {
+                        // Не успели: душа угасла. Дальше без него — как в игре.
+                        LateResult += "; душа угасла";
+                        Mark("T5 засада: душа угасла");
+                        Set(Stage.Battle, Grammar.Pick(_lateBody != null ? _lateBody.Gender : Gender.Male,
+                            Loc.N("Душа угасла — он больше не встанет."), Loc.N("Душа угасла — она больше не встанет.")));
                     }
                     break;
                 case Stage.Retest:
@@ -768,7 +804,7 @@ namespace Sinbinder.Gameplay
                 {
                     var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                     if (cam != null && cam.FirstPersonNow)
-                        Set(Stage.WarriorMode, "V: переключись в режим Воина. ЛКМ удар, ПКМ блок.");
+                        Set(Stage.WarriorMode, Loc.N("V: переключись в режим Воина. ЛКМ удар, ПКМ блок."));
                     break;
                 }
                 case Stage.WarriorMode:
@@ -777,7 +813,7 @@ namespace Sinbinder.Gameplay
                     if (cam == null || !cam.WarriorModeNow) break;
                     // Оружия со стойки во сне нет — Греховод бьёт посохом, и урока B не нужно.
                     if (_hero.GetComponentInChildren<Armament>(true) != null)
-                        Set(Stage.DrawWeapon, "B — достань оружие. Только обнажённым оружием можно атаковать.");
+                        Set(Stage.DrawWeapon, Loc.N("B — достань оружие. Только обнажённым оружием можно атаковать."));
                     else
                         BeginPractice("Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему.");
                     break;
@@ -857,7 +893,7 @@ namespace Sinbinder.Gameplay
                     if (Satchel.Selected != _jarIndex) break;
                     if (Sinbinder.Crypt.CryptHands.Empty) { _line = "Под рукой — банка с душой. R — возьмите её в руку: в склепе душу несут к телу в руках."; break; }
                     _soulHeld = true;
-                    Set(Stage.Return, "Банка в руке. " + GateLine);
+                    Set(Stage.Return, Loc.T("Банка в руке.") + " " + Loc.T(GateLine));
                     break;
                 }
                 case Stage.Return:
@@ -905,7 +941,7 @@ namespace Sinbinder.Gameplay
             yield return new WaitForSeconds(0.6f);
             if (_wounded == null || _wounded.IsDead) yield break;
             var hp = _wounded.GetComponent<Damageable>();
-            if (hp == null) { Log("Нет Damageable у раненого."); yield break; }
+            if (hp == null) { Log(Loc.N("Нет Damageable у раненого.")); yield break; }
             hp.TakeDamage(hp.HP + hp.MaxHP + 1f, null);
         }
 
@@ -913,7 +949,7 @@ namespace Sinbinder.Gameplay
         {
             // Отсчёт запасного пути стоит вместе с миром, пока игрок читает урок.
             _harvestSince = Time.time;
-            Set(Stage.Harvest, "Подойди к душе и нажми E. Свежая душа сохраняет память.");
+            Set(Stage.Harvest, Loc.N("Подойди к душе и нажми E. Свежая душа сохраняет память."));
         }
 
         private int FindJar()
@@ -927,13 +963,13 @@ namespace Sinbinder.Gameplay
         {
             int jar = FindJar();
             var soul = jar >= 0 ? Satchel.At(jar).Soul : _fallbackSoul;
-            if (soul == null) { Log("Сначала забери душу в банку."); return; }
+            if (soul == null) { Log(Loc.N("Сначала забери душу в банку.")); return; }
             // A tutorial reanimation is a local, explicit shortcut to Raising.Rise,
             // not a second copy of the binding/shell maths.
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
             var risen = Raising.Rise(soul, ShellType.Zombie,
                 _woundedAt + new Vector3(2f, 0f, 0f), Quaternion.identity, relations, corpse: _wounded);
-            if (risen == null) { Log("Не удалось поднять тело. Душа осталась в банке."); return; }
+            if (risen == null) { Log(Loc.N("Не удалось поднять тело. Душа осталась в банке.")); return; }
             if (jar >= 0) Satchel.TakeSoul(jar); // Only remove after successful creation.
             else if (_wounded != null) SoulManager.Instance?.RemoveFadingSoul(_wounded);
             _fallbackSoul = null;
@@ -947,7 +983,7 @@ namespace Sinbinder.Gameplay
             _commandWait = 0f;
             _orderedAt = -1f;
             MarkCommand();
-            Set(Stage.Command, "Выдели его и отдай приказ ПКМ по земле — он пойдёт.");
+            Set(Stage.Command, Loc.N("Выдели его и отдай приказ ПКМ по земле — он пойдёт."));
         }
 
         /// <summary>
@@ -978,7 +1014,7 @@ namespace Sinbinder.Gameplay
             Hold(_zombie, true);
             _fleeing = false;
             Set(Stage.Standoff, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
-                "Его убийцы вернулись.", "Её убийцы вернулись."));
+                Loc.N("Его убийцы вернулись."), Loc.N("Её убийцы вернулись.")));
             StartCoroutine(ReleaseKillers());
         }
 
@@ -1004,8 +1040,8 @@ namespace Sinbinder.Gameplay
             Hold(_zombie, Application.isBatchMode && System.Environment.GetEnvironmentVariable("SINBINDER_NOCHASE") == "1");
             Mark("убийцы бегут");
             Set(Stage.Chase, Grammar.Pick(_zombie != null ? _zombie.Gender : Gender.Male,
-                "Убийцы бегут к мосту. Гнаться ли за ними — решает его душа.",
-                "Убийцы бегут к мосту. Гнаться ли за ними — решает её душа."));
+                Loc.N("Убийцы бегут к мосту. Гнаться ли за ними — решает его душа."),
+                Loc.N("Убийцы бегут к мосту. Гнаться ли за ними — решает её душа.")));
         }
 
         /// <summary>Где и как идёт — для отчёта прогона.</summary>
@@ -1038,7 +1074,7 @@ namespace Sinbinder.Gameplay
             var road = DreamRoad.Instance;
             var g = _zombie != null ? _zombie.Gender : Gender.Male;
             bool alive = _zombie != null && !_zombie.IsDead;
-            if (road == null) { StartBattle("Убийцы идут."); return; }
+            if (road == null) { StartBattle(Loc.N("Убийцы идут.")); return; }
             var puller = _killers.Count > 0 ? _killers[0] : null;
             if (AskChase(puller, alive, g)) return;
             if (!DreamRoad.BridgeRaised)
@@ -1067,8 +1103,8 @@ namespace Sinbinder.Gameplay
                 var eye = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                 if (eye != null) eye.Overlook(Vector3.Lerp(_zombie.transform.position, _hero.transform.position, 0.5f));
                 Set(Stage.Bridge, Grammar.Pick(g,
-                    "Мост подняли у него за спиной. Он за рекой, у рычага. Прикажите ему опустить мост: выделите его и ПКМ по рычагу.",
-                    "Мост подняли у неё за спиной. Она за рекой, у рычага. Прикажите ей опустить мост: выделите её и ПКМ по рычагу."));
+                    Loc.N("Мост подняли у него за спиной. Он за рекой, у рычага. Прикажите ему опустить мост: выделите его и ПКМ по рычагу."),
+                    Loc.N("Мост подняли у неё за спиной. Она за рекой, у рычага. Прикажите ей опустить мост: выделите её и ПКМ по рычагу.")));
                 return;
             }
             // Не погнался — тоже его решение: суда нет, мост поднят, к засаде — лесом.
@@ -1076,9 +1112,9 @@ namespace Sinbinder.Gameplay
             Mark("не погнался");
             _battleStarted = true;
             Set(Stage.Battle, alive
-                ? Grammar.Pick(g, "Он не погнался — остался с вами. Мост поднят: к засаде — в обход, лесом.",
-                                  "Она не погналась — осталась с вами. Мост поднят: к засаде — в обход, лесом.")
-                : "Мост поднят. К засаде — в обход, лесом.");
+                ? Grammar.Pick(g, Loc.N("Он не погнался — остался с вами. Мост поднят: к засаде — в обход, лесом."),
+                                  Loc.N("Она не погналась — осталась с вами. Мост поднят: к засаде — в обход, лесом."))
+                : Loc.N("Мост поднят. К засаде — в обход, лесом."));
         }
 
         /// <summary>
@@ -1102,15 +1138,15 @@ namespace Sinbinder.Gameplay
                 MarkCommand();
                 Mark("не гонится сам — нужен приказ");
                 Set(Stage.Chase, Grammar.Pick(g,
-                    "Он не гонится сам. Прикажите ему догнать убийц: выделите его и ПКМ по убийце.",
-                    "Она не гонится сама. Прикажите ей догнать убийц: выделите её и ПКМ по убийце."));
+                    Loc.N("Он не гонится сам. Прикажите ему догнать убийц: выделите его и ПКМ по убийце."),
+                    Loc.N("Она не гонится сама. Прикажите ей догнать убийц: выделите её и ПКМ по убийце.")));
                 return true;
             }
             if (!_autoChase && !OrderedSinceMark() && !SoulCourt.Sitting && puller != null && !puller.IsDead
                 && Time.unscaledTime - _chaseAskedAt > (Lesson.Holding ? 45f : 14f))
             {
                 _autoChase = true;
-                Log("Греховод сам велит догнать убийц.");
+                Log(Loc.N("Греховод сам велит догнать убийц."));
                 _zombie.IssueCommand(CommandKind.Attack, puller.transform.position, puller.gameObject);
             }
             if (OrderedSinceMark())
@@ -1187,7 +1223,7 @@ namespace Sinbinder.Gameplay
             {
                 Debug.LogError("[СОН QA] No killers spawned. Check dependencies and Unity Console.");
                 Hold(_zombie, false);
-                Set(Stage.Return, "Убийцы не появились. Воспоминание прервано. " + GateLine);
+                Set(Stage.Return, Loc.T("Убийцы не появились. Воспоминание прервано.") + " " + Loc.T(GateLine));
             }
         }
 
@@ -1250,17 +1286,17 @@ namespace Sinbinder.Gameplay
                 _chaseDecidedAt = Time.time;
                 _chaseRefused = d.RefusedCommand || d.Hesitated;
                 Set(Stage.Chase, _chaseRefused
-                    ? Grammar.Pick(g, "Не погнался и по приказу. Убийцы уходят за мост.", "Не погналась и по приказу. Убийцы уходят за мост.")
-                    : Grammar.Pick(g, "Гонится — по вашему приказу. Идите за ним к мосту.", "Гонится — по вашему приказу. Идите за ней к мосту."));
+                    ? Grammar.Pick(g, Loc.N("Не погнался и по приказу. Убийцы уходят за мост."), Loc.N("Не погналась и по приказу. Убийцы уходят за мост."))
+                    : Grammar.Pick(g, Loc.N("Гонится — по вашему приказу. Идите за ним к мосту."), Loc.N("Гонится — по вашему приказу. Идите за ней к мосту.")));
                 yield break;
             }
             if (d.RefusedCommand || d.Hesitated)
                 StartBattle(Grammar.Pick(g,
-                    "Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.",
-                    "Она решила сама — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом."));
+                    Loc.N("Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом."),
+                    Loc.N("Она решила сама — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.")));
             else
-                StartBattle(Grammar.Pick(g, "Он идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады.",
-                                            "Она идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады."));
+                StartBattle(Grammar.Pick(g, Loc.N("Он идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады."),
+                                            Loc.N("Она идёт к рычагу. Мост опустится — убийцы ждут за рекой, у засады.")));
         }
 
         /// <summary>Бой: убийцы становятся обычными противниками, добежав до засады (ArmArrived).</summary>
@@ -1270,6 +1306,102 @@ namespace Sinbinder.Gameplay
             if (_zombie != null) Hold(_zombie, false);
             _battleStarted = true;
             Set(Stage.Battle, line);
+        }
+
+        // ── Засада (docs/68, этап 5): пришёл ли владыка ──────────────────────────────
+        // Отказал и убежал мстить один — бьётся у засады, пока Греховод идёт в обход. Успел —
+        // поднятый запомнит, что владыка пришёл; пал до прихода — душа угасает у тела, как у
+        // любого павшего (E, R), и, встав снова, он помнит, что владыка не пришёл. Мера общая
+        // для любой души и любого греха: память и верность, а не реплика под одну душу.
+        private const float LordCameGain = 10f, LordAbsentLoss = 15f, LordNear = 12f;
+        private Warrior _lateBody;
+        private Vector3 _lateAt;
+        private float _lateSince;
+        private bool _lordCame, _remembered;
+
+        private static bool Refused => RefusalResult == "отказал" || RefusalResult == "колебался";
+
+        /// <summary>Греховод рядом с поднятым, пока тот бьётся у засады, — пришёл.</summary>
+        private void WatchLord()
+        {
+            if (_lordCame || _zombie == null || _zombie.IsDead || _hero == null) return;
+            if (!_killers.Exists(k => k != null && !k.IsDead)) return;
+            if (GroundDistance(_zombie.transform.position, DreamRoad.AmbushAt) > 15f) return;
+            if (GroundDistance(_hero.transform.position, _zombie.transform.position) > LordNear) return;
+            _lordCame = true;
+            Mark("T5 засада: владыка пришёл");
+        }
+
+        private void Fall()
+        {
+            _lateBody = _zombie;
+            _lateAt = _zombie.transform.position;
+            _lateSince = Time.time;
+            bool alone = Refused && !_lordCame;
+            LateResult = alone ? "пал до вашего прихода" : "пал";
+            Mark("T5 засада: " + LateResult);
+            var g = _zombie.Gender;
+            Set(Stage.Fallen, alone
+                ? Grammar.Pick(g, Loc.N("Он пал до вашего прихода. Душа ещё у тела и угасает: подойдите — E, потом R, и он встанет снова."),
+                                  Loc.N("Она пала до вашего прихода. Душа ещё у тела и угасает: подойдите — E, потом R, и она встанет снова."))
+                : Grammar.Pick(g, Loc.N("Он пал. Душа ещё у тела и угасает: подойдите — E, потом R, и он встанет снова."),
+                                  Loc.N("Она пала. Душа ещё у тела и угасает: подойдите — E, потом R, и она встанет снова.")));
+        }
+
+        /// <summary>Душа этого тела ещё гаснет рядом с ним (не собрана и не угасла).</summary>
+        private static bool Fading(Warrior body)
+        {
+            var souls = SoulManager.Instance != null ? SoulManager.Instance.GetAllFadingSouls() : null;
+            return body != null && souls != null && souls.Exists(s => s.Warrior == body);
+        }
+
+        /// <summary>R у тела павшего: та же жатва и то же поднятие, что у дороги, — в его же тело.</summary>
+        private void Reraise()
+        {
+            int jar = FindJar();
+            if (jar < 0) { Log(Loc.N("Сначала заберите душу в банку — E у тела.")); return; }
+            var face = Flat(_hero.transform.position - _lateAt);
+            if (face.sqrMagnitude < 0.01f) face = Vector3.forward;
+            var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            var risen = Raising.Rise(Satchel.At(jar).Soul, ShellType.Zombie, _lateAt + face * 0.8f,
+                                     Quaternion.LookRotation(face), relations, corpse: _lateBody);
+            if (risen == null) { Log(Loc.N("Не удалось поднять тело. Душа осталась в банке.")); return; }
+            Satchel.TakeSoul(jar);
+            if (_lateBody != null) _lateBody.gameObject.SetActive(false);
+            _zombie = risen;
+            // Убийцы — всё те же его убийцы: свежая душа помнит (SoulDecay).
+            if (AOS.MemoryProcessor.Instance != null)
+                foreach (var k in _killers)
+                    if (k != null && !k.IsDead)
+                        AOS.MemoryProcessor.Instance.CreateMemory(_zombie, "MurderedMe", k.Id, AOS.EmotionType.Anger, 1f);
+            LateResult += "; поднят снова";
+            Mark("T5 засада: поднят снова — " + _zombie.DisplayName);
+            var g = _zombie.Gender;
+            bool abandoned = Refused && !_lordCame;
+            if (Refused) Remember(abandoned);
+            Set(Stage.Battle, abandoned
+                ? Grammar.Pick(g, Loc.N("Он снова на ногах — и помнит, что вы не пришли. Верность к вам упала."),
+                                  Loc.N("Она снова на ногах — и помнит, что вы не пришли. Верность к вам упала."))
+                : Grammar.Pick(g, Loc.N("Он снова на ногах."), Loc.N("Она снова на ногах.")));
+        }
+
+        /// <summary>Пришёл ли владыка — в память и в верность. Один раз за сон.</summary>
+        private void Remember(bool abandoned)
+        {
+            if (_remembered || _zombie == null || _hero == null) return;
+            _remembered = true;
+            float before = _zombie.Loyalty;
+            _zombie.ChangeLoyalty(abandoned ? -LordAbsentLoss : LordCameGain);
+            if (AOS.MemoryProcessor.Instance != null)
+                AOS.MemoryProcessor.Instance.CreateMemory(_zombie, abandoned ? "LordAbsent" : "LordCame", _hero.Id,
+                    abandoned ? AOS.EmotionType.Sadness : AOS.EmotionType.Joy, 0.9f);
+            string what = abandoned ? "владыка не пришёл" : "владыка пришёл";
+            LateResult = (string.IsNullOrEmpty(LateResult) ? "" : LateResult + "; ") + $"помнит: {what}, верность {before:F0} → {_zombie.Loyalty:F0}";
+            Mark($"T5 память: {what}, верность {before:F0} → {_zombie.Loyalty:F0}");
+            UI.SpeechBubbles.Say(_zombie, abandoned ? Loc.T("Вы не пришли.") : Loc.T("Вы пришли."), 3.5f);
+            if (!abandoned)
+                Log(Grammar.Pick(_zombie.Gender, Loc.N("Вы пришли к нему в бою — он это запомнит. Верность к вам выросла."),
+                                                 Loc.N("Вы пришли к ней в бою — она это запомнит. Верность к вам выросла.")));
         }
 
         /// <summary>
@@ -1318,8 +1450,8 @@ namespace Sinbinder.Gameplay
                 Whisper.LastResult = null;
                 _whisperSince = Time.unscaledTime;
                 Set(Stage.Whisper, Grammar.Pick(g,
-                    "Приказ можно и не повторять. Подойдите к нему и нажмите Z — шепните его греху. Что шепнуть, решит его душа.",
-                    "Приказ можно и не повторять. Подойдите к ней и нажмите Z — шепните её греху. Что шепнуть, решит её душа."));
+                    Loc.N("Приказ можно и не повторять. Подойдите к нему и нажмите Z — шепните его греху. Что шепнуть, решит его душа."),
+                    Loc.N("Приказ можно и не повторять. Подойдите к ней и нажмите Z — шепните её греху. Что шепнуть, решит её душа.")));
             }
             else Set(Stage.Jars, JarsLine);
         }
@@ -1404,7 +1536,7 @@ namespace Sinbinder.Gameplay
         {
             if (!Application.CanStreamedLevelBeLoaded(_campScene))
             {
-                Log("Сцена лагеря отсутствует в Build Settings: " + _campScene);
+                Log(Loc.F("Сцена лагеря отсутствует в Build Settings: {0}", _campScene));
                 return;
             }
             Mark("сон кончился");
@@ -1481,6 +1613,10 @@ namespace Sinbinder.Gameplay
                     UI.TaskList.Place(Loc.T("Рычаг"), DreamRoad.LeverAt + Vector3.up * 2.1f, 0f);
                     break;
                 case Stage.Battle: Place(Loc.T("Засада"), DreamRoad.AmbushAt, 1.6f, 6f); break;
+                case Stage.Fallen:
+                    if (_lateBody != null)
+                        Place(Grammar.Pick(_lateBody.Gender, Loc.T("Павший"), Loc.T("Павшая")), _lateAt, 1.2f, 2.5f);
+                    break;
                 case Stage.Whisper:
                     // К отказавшему — пока шёпот его не достаёт; подошли ближе — метка гаснет.
                     if (_zombie != null)
@@ -1524,6 +1660,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Bridge: case Stage.Deciding:
                     return _chaseCourt ? Loc.T("Прикажите догнать убийц (ПКМ по убийце)") : Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
                 case Stage.Battle: return DreamRoad.BridgeRaised ? Loc.T("Обойдите реку лесом — к засаде") : Loc.T("Отбейтесь от убийц");
+                case Stage.Fallen: return FindJar() < 0 ? Loc.T("Заберите душу павшего (E)") : Loc.T("Верните душу в тело (R)");
                 case Stage.Retest: return Loc.T("Тот же приказ — без убийц (ПКМ по рычагу)");
                 case Stage.Whisper: return Loc.T("Шепните греху поднятого (Z)");
                 case Stage.Jars: return Loc.T("Возьмите банку с камня у колонн (E, J, R)");
@@ -1539,6 +1676,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Approach: return Loc.T("ПКМ");
                 case Stage.Harvest: return "E";
                 case Stage.Rebind: return "R";
+                case Stage.Fallen: return FindJar() < 0 ? "E" : "R";
                 case Stage.FirstPerson: return "Tab";
                 case Stage.WarriorMode: return "V";
                 case Stage.DrawWeapon: return "B";
@@ -1739,7 +1877,7 @@ namespace Sinbinder.Gameplay
             var face = Flat(_hero.transform.position - at);
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
             var risen = Raising.Rise(body.Soul, ShellType.Zombie, at + face * 1.1f, Quaternion.LookRotation(face), relations, corpse: body);
-            if (risen == null) { Log("Не удалось поднять тело."); return; }
+            if (risen == null) { Log(Loc.N("Не удалось поднять тело.")); return; }
             body.gameObject.SetActive(false);
             _fallen.Remove(body);
             _raised.Add(risen);

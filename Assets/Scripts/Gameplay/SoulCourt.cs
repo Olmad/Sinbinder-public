@@ -495,9 +495,11 @@ namespace Sinbinder.Gameplay
             Piece(hall, PrimitiveType.Cube, "Место приказа, спинка", seat + dir * 0.42f + Vector3.up * (Dais + 0.95f),
                   new Vector3(0.56f, 1.9f, 0.08f), dark).transform.rotation = face;
             var candle = Candle(hall, seat - dir * 0.3f + Vector3.Cross(Vector3.up, dir) * 0.38f + Vector3.up * Dais, 0.18f,
-                                ForOrderTone, wax, out _, 1f);
+                                ForOrderTone, wax, out var flame, 1f);
             candle.intensity = 0.25f;
             candle.range = 2.2f;
+            _seatFire = candle;
+            _seatFlame = flame;
             var spot = new GameObject("Свет над местом приказа").AddComponent<Light>();
             spot.transform.SetParent(hall, false);
             spot.transform.position = seat + Vector3.up * 4.6f;
@@ -509,6 +511,16 @@ namespace Sinbinder.Gameplay
             spot.intensity = 6f;
             spot.color = new Color(1f, 0.86f, 0.62f);
             spot.shadows = LightShadows.None;
+            _seatSpot = spot;
+            // Сам свет должно быть видно, как луч подсудимого: тёплый столб с высоты (кадр 19.11 —
+            // без него место терялось во тьме на общем плане).
+            var shader = Application.isPlaying ? Shader.Find("Universal Render Pipeline/Particles/Unlit") : null;
+            if (shader != null)
+            {
+                _seatBeam = BeamMesh(hall, seat + Vector3.up * 5.4f, seat + Vector3.up * Dais, "Луч над местом приказа",
+                                     shader, 0.2f, 0.52f, out _);
+                _seatBeam.SetColor("_BaseColor", new Color(1f, 0.80f, 0.52f, 0.11f));
+            }
             var tag = host.AddTag(seat + Vector3.up * (Dais + 2.15f), Loc.T("Ваш приказ"), ForOrderTone, 0.024f, true);
             Show(tag);
 
@@ -541,9 +553,10 @@ namespace Sinbinder.Gameplay
             own.color = new Color(1f, 0.82f, 0.62f);
             own.shadows = LightShadows.None;
 
-            // Камера — за плечами, курс — на место: W всегда ведёт к нему.
-            Vector3 Eye(Vector3 at) => at - heading * 2.9f + Vector3.up * 1.75f;
-            Vector3 Aim(Vector3 at) => at + heading * 1.8f + Vector3.up * 0.95f;
+            // Камера — за правым плечом и выше головы, курс — на место: W всегда ведёт к нему.
+            // Прямо за спиной фигура сама заслоняла цель (кадр 19.11); со сдвигом место видно справа от неё.
+            Vector3 Eye(Vector3 at) => at - heading * 2.7f + right * 0.85f + Vector3.up * 2.2f;
+            Vector3 Aim(Vector3 at) => at + heading * 2.6f + right * 0.3f + Vector3.up * 0.7f;
             Vector3 follow = start;
             camera.Crane(Aim(follow), Eye(follow), WideFov, Aim(follow), Eye(follow), WideFov, 999f, 0.1f, 0f, 0f);
             yield return new WaitForSecondsRealtime(0.35f);
@@ -595,7 +608,7 @@ namespace Sinbinder.Gameplay
                 yield return null;
             }
             me.SetPositionAndRotation(seat + Vector3.up * Dais, face);
-            candle.intensity = 0.6f;
+            candle.intensity = 1.0f;
             TookSeat = (led ? "довела игра" : "сам") + $" за {Time.unscaledTime - t0:F1} с, громкость приказа {volume:F2}";
             Debug.Log($"[СУД] место приказа заняли: {TookSeat}");
 
@@ -606,7 +619,7 @@ namespace Sinbinder.Gameplay
             Vector3 aimAt = eye != null ? eyeAt + eye.transform.forward * 4f : Aim(follow);
             camera.Crane(aimAt, eyeAt, WideFov, look, overview, WideFov, 0.2f, RiseSeconds * 0.8f, 20f, OverviewPush);
             host.StartCoroutine(SunbeamFade(0.6f, RiseSeconds * 0.7f));
-            spot.intensity = 2.5f;
+            spot.intensity = 4f;
             yield return Beat(0.2f + RiseSeconds * 0.8f);
         }
 
@@ -736,6 +749,7 @@ namespace Sinbinder.Gameplay
             Audio.Music.Play(Audio.Track.Court, 2.5f);
             Vector3 overview = Hall + OverviewFrom, look = Hall + OverviewLook;
             string court = Loc.T("Суд души");
+            _seatFire = null; _seatSpot = null; _seatFlame = null; _seatBeam = null;
             if (!shortly && Preferences.CourtWalk)
                 yield return TakeSeat(host, camera, box, fader, hall.transform, c.CommandVolume, court, look, overview);
             else
@@ -913,6 +927,13 @@ namespace Sinbinder.Gameplay
                 foreach (var j in voting) host.StartCoroutine(Settle(j, refused ? !j.ForOrder : j.ForOrder));
             if (orderFire != null)
                 host.StartCoroutine(refused ? Die(orderFire, orderFlame) : Blaze(orderFire));
+            // Ваше место — вместе со свечой приказа: отказ гасит и его свет.
+            if (_seatFire != null)
+                host.StartCoroutine(refused ? Die(_seatFire, _seatFlame) : Blaze(_seatFire));
+            if (refused && _seatSpot != null)
+                host.StartCoroutine(Die(_seatSpot, null));
+            if (refused && _seatBeam != null)
+                host.StartCoroutine(Fade(_seatBeam, 1.4f));
 
             // Слово Смерти — одно на суд (автор, 07.11: «Голос Смерти — прекрасен, но им нельзя
             // говорить много — каждое его слово должно быть редким, чтобы иметь больший вес.
@@ -2346,13 +2367,34 @@ namespace Sinbinder.Gameplay
         // не надо. К общему плану гаснет (SunbeamFade): там он лёг бы поперёк весов.
         private static readonly List<(Material mat, Color full)> _sunbeam = new();
 
+        // Место приказа в зале (TakeSeat): его свет гаснет вместе со свечой приказа при отказе.
+        private static Light _seatFire, _seatSpot;
+        private static Transform _seatFlame;
+        private static Material _seatBeam;
+
         private static void Sunbeam(Transform parent, Vector3 from, Vector3 to)
         {
             _sunbeam.Clear();
             if (!Application.isPlaying) return;   // в сцене просмотра материал из кода не сохранится
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader == null) return;
-            var mat = Additive(shader, "Луч с высоты");
+            var mat = BeamMesh(parent, from, to, "Луч с высоты", shader, 0.32f, 0.62f, out var go);
+            float length = Vector3.Distance(from, to);
+
+            var full = new Color(0.78f, 0.85f, 1f, 0.12f);
+            mat.SetColor("_BaseColor", full);
+            _sunbeam.Add((mat, full));
+            var dust = Dust(go, shader, length - 1.5f, 1.1f, 30f);
+            var mote = new Color(0.90f, 0.93f, 1f, 0.8f);
+            dust.SetColor("_BaseColor", mote);
+            _sunbeam.Add((dust, mote));
+        }
+
+        /// <summary>Столб света из двух скрещённых полос: сверху выходит из тьмы, у пола слабеет.</summary>
+        private static Material BeamMesh(Transform parent, Vector3 from, Vector3 to, string name, Shader shader,
+                                         float near, float far, out Transform beam)
+        {
+            var mat = Additive(shader, name);
             float length = Vector3.Distance(from, to);
 
             // Пять столбцов поперёк (края гаснут), восемь рядов вдоль: сверху выходит
@@ -2370,7 +2412,7 @@ namespace Sinbinder.Gameplay
                 for (int r = 0; r <= rows; r++)
                 {
                     float k = r / (float)rows;
-                    float half = Mathf.Lerp(0.32f, 0.62f, k);
+                    float half = Mathf.Lerp(near, far, k);
                     float fade = Mathf.Clamp01(k * 2.5f) * Mathf.Lerp(1f, 0.3f, Mathf.InverseLerp(0.85f, 1f, k));
                     for (int c = 0; c < w; c++)
                     {
@@ -2386,13 +2428,13 @@ namespace Sinbinder.Gameplay
                         tris.AddRange(new[] { a, a + w, a + 1, a + 1, a + w, a + w + 1 });
                     }
             }
-            var mesh = new Mesh { name = "Луч с высоты" };
+            var mesh = new Mesh { name = name };
             mesh.SetVertices(verts);
             mesh.SetColors(cols);
             mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
 
-            var go = new GameObject("Луч с высоты");
+            var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -2400,14 +2442,21 @@ namespace Sinbinder.Gameplay
             mr.sharedMaterial = mat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
+            beam = go.transform;
+            return mat;
+        }
 
-            var full = new Color(0.78f, 0.85f, 1f, 0.12f);
-            mat.SetColor("_BaseColor", full);
-            _sunbeam.Add((mat, full));
-            var dust = Dust(go.transform, shader, length - 1.5f, 1.1f, 30f);
-            var mote = new Color(0.90f, 0.93f, 1f, 0.8f);
-            dust.SetColor("_BaseColor", mote);
-            _sunbeam.Add((dust, mote));
+        private static IEnumerator Fade(Material mat, float seconds)
+        {
+            Color full = mat.GetColor("_BaseColor");
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                if (mat == null) yield break;
+                var c = full; c.a *= 1f - Mathf.SmoothStep(0f, 1f, t / seconds);
+                mat.SetColor("_BaseColor", c);
+                yield return null;
+            }
+            if (mat != null) { var c = full; c.a = 0f; mat.SetColor("_BaseColor", c); }
         }
 
         private static IEnumerator SunbeamFade(float hold, float seconds)

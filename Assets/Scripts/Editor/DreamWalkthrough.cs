@@ -43,7 +43,8 @@ namespace Sinbinder.EditorTools
         private static bool _killersShot, _retestShot, _scalesShot, _foreseeShot, _retestIssued, _harvestTold, _done;
         private static bool _risenShot, _bridgeUpShot, _leverOrdered, _leverByRun, _leverHintShot;
         private static string _lastAim = "";
-        private static bool _whisperTried, _whisperShot;
+        private static bool _whisperTried, _whisperShot, _chaseAskShot;
+        private static bool _lateKilled, _fallenShot, _reraisedShot;
         private static float _legsAt = -10f, _leverOrderAt = -1f, _lowSince = -1f;
         private static string NL => Environment.NewLine;
         private static float _pausedAt = -1f;
@@ -319,6 +320,10 @@ namespace Sinbinder.EditorTools
                         _bridgeUpShot = true;
                         ShotFrom("сон — мост подняли", new Vector3(-73f, 8.5f, 41f), new Vector3(-53f, 2.4f, 28.5f), clear: false);
                     }
+                    // Не погнался сам (19.11): строка «прикажите догнать» допечатана — кадр, как видит игрок.
+                    var asked = UI.Letterbox.Instance;
+                    if (!_chaseAskShot && dream.ChaseAsked && asked != null && asked.Shown && asked.Typed)
+                    { _chaseAskShot = true; Snap("сон — не гонится сам, нужен приказ"); }
                     break;
                 case "Bridge":
                     if (_step != "мост")
@@ -352,6 +357,25 @@ namespace Sinbinder.EditorTools
                         Go("бой");
                         Write($"  итог мига: {DreamTutorialDirector.RefusalResult}; суд: {SoulCourt.Outcome}, судей {SoulCourt.Seated}: {SoulCourt.Bench}");
                     }
+                    // Ключ late (docs/68, этап 5): Греховод не успел — поднятый пал в засаде, пока бился один.
+                    if (Environment.GetEnvironmentVariable("SINBINDER_LATE") == "1" && !_lateKilled
+                        && now - _stepAt > 4f && dream.Zombie != null && !dream.Zombie.IsDead)
+                    {
+                        _lateKilled = true;
+                        var zhp = dream.Zombie.GetComponent<Damageable>();
+                        Write($"  [LATE] поднятый падёт до прихода: {DreamTutorialDirector.Legs(dream.Zombie)}; "
+                            + $"до Греховода {Vector3.Distance(dream.Zombie.transform.position, dream.Hero.transform.position):F0} м");
+                        // Защита тела (CombatMath.Absorb) гасит часть удара — бить, пока не падёт.
+                        var by = dream.Killers.Count > 0 && dream.Killers[0] != null ? dream.Killers[0].gameObject : null;
+                        for (int i = 0; i < 40 && zhp != null && !zhp.IsDead; i++) zhp.TakeDamage(zhp.MaxHP * 5f + 50f, by);
+                        Write($"  [LATE] пал: {(zhp != null && zhp.IsDead ? "да" : "НЕТ")}");
+                    }
+                    if (_reraisedShot == false && _fallenShot && dream.Zombie != null && !dream.Zombie.IsDead && now - _stepAt > 1.2f)
+                    {
+                        _reraisedShot = true;
+                        ShotFrom("сон — снова на ногах, «вы не пришли»", dream.Zombie.transform.position + new Vector3(2.4f, 1.9f, -2.4f),
+                                 dream.Zombie.transform.position + Vector3.up * 1.1f, clear: false);
+                    }
                     // Бой прогону не урок: через пятнадцать секунд убийц добивает сам прогон.
                     if (now - _stepAt > 15f)
                         foreach (var k in dream.Killers)
@@ -359,6 +383,28 @@ namespace Sinbinder.EditorTools
                             var hp = k != null ? k.GetComponent<Damageable>() : null;
                             if (hp != null && !hp.IsDead) hp.TakeDamage(hp.HP + 1f, dream.Hero.gameObject);
                         }
+                    break;
+                case "Fallen":
+                    // Пал в засаде: как игрок — к телу, E (жатва), затем R (снова в тело).
+                    if (_step != "павший")
+                    {
+                        Go("павший");
+                        Write($"  засада: {DreamTutorialDirector.LateResult}");
+                        Warp(dream.Hero, dream.LateAt + new Vector3(-1.2f, 0f, -0.6f));
+                    }
+                    if (!_fallenShot && now - _stepAt > 0.8f)
+                    {
+                        _fallenShot = true;
+                        ShotFrom("сон — пал в засаде, душа у тела", dream.LateAt + new Vector3(2.6f, 2.0f, -2.6f),
+                                 dream.LateAt + Vector3.up * 0.7f, clear: false);
+                    }
+                    if (poke && _fallenShot && now - _stepAt > 1.5f)
+                    {
+                        var reaper = dream.Hero.GetComponent<SoulHarvester>();
+                        if (reaper != null) reaper.HarvestNow();
+                        dream.TestPress(KeyCode.R);
+                    }
+                    if (now - _stepAt > 20f) { End(false, "павшего не подняли за 20 с: " + DreamTutorialDirector.LateResult); return; }
                     break;
                 case "Retest":
                     if (_step != "тот же приказ") Go("тот же приказ");
@@ -481,6 +527,9 @@ namespace Sinbinder.EditorTools
                         if (!dream.SealsOpen)
                         {
                             Write($"  [ПЕЧАТИ] поднятый не встал за 12 с; задача: {UI.TaskList.Current}; плашка: {Lesson.Hinted}");
+                            // Страж — тоже душа и тоже может отказать (прогон 20.11 завис на втором отказе):
+                            // как игрок — поднять следующего; некого — честный провал, а не зависание.
+                            if (dream.Fallen.Count == 0) { End(false, "печати: никто не встал, поднимать больше некого"); return; }
                             _raiseAt = now;
                         }
                     }
@@ -512,6 +561,7 @@ namespace Sinbinder.EditorTools
                             Write($"  [ПЕЧАТИ] поднят страж {risen.DisplayName}; плашка: {Lesson.Hinted}");
                             Warp(dream.Hero, DreamRoad.LordSealAt);
                             risen.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
+                            _sealCheckAt = now + 15f;
                         }
                     }
                     if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 0.6f;

@@ -46,8 +46,8 @@ namespace Sinbinder.EditorTools
             "refresh — перечитать файлы и перекомпилировать (ответ — ошибки компиляции)\n" +
             "open <Assets/...unity> — открыть сцену; play / stop / pause / resume; time <масштаб>\n" +
             "wait <с> — подождать в игре\n" +
-            "dream [until=bridge] [map] [nochase] [stop=<шаг>] — прогон сна; nochase — поднятый сам не гонится (ветка\n" +
-            "    «прикажите догнать»); stop= — пауза в начале шага (убийцы, погоня, мост, бой…)\n" +
+            "dream [until=bridge] [map] [nochase] [late] [stop=<шаг>] — прогон сна; nochase — поднятый сам не гонится (ветка\n" +
+            "    «прикажите догнать»); late — пал в засаде до прихода (E, R — снова в тело); stop= — пауза в начале шага\n" +
             "dreamwait — снять паузу и досмотреть сон до отчёта\n" +
             "shot <имя> [откуда x,y,z] [куда x,y,z] — кадр в Logs/workbench/shots\n" +
             "cam [x,y,z [x,y,z]] | cam off — поставить камеру (игровая отключается) / вернуть\n" +
@@ -295,12 +295,13 @@ namespace Sinbinder.EditorTools
         private static string Dream(string id, List<string> a)
         {
             if (EditorApplication.isPlaying) return "ОШИБКА: сначала stop";
-            string until = null, map = null, noChase = null, stop = "";
+            string until = null, map = null, noChase = null, late = null, stop = "";
             foreach (var w in a.Skip(1))
             {
                 if (w.StartsWith("until=")) until = w.Substring(6);
                 else if (w == "map") map = "1";
                 else if (w == "nochase") noChase = "1";
+                else if (w == "late") late = "1";
                 else if (w.StartsWith("stop=")) stop = w.Substring(5);
                 else return "ОШИБКА: непонятно «" + w + "»";
             }
@@ -308,6 +309,7 @@ namespace Sinbinder.EditorTools
             Environment.SetEnvironmentVariable("SINBINDER_UNTIL", until);
             Environment.SetEnvironmentVariable("SINBINDER_MAP_ONLY", map);
             Environment.SetEnvironmentVariable("SINBINDER_NOCHASE", noChase);
+            Environment.SetEnvironmentVariable("SINBINDER_LATE", late);
             SessionState.SetString(Key + "StopAt", stop);
             Pend(id, "dream");
             DreamWalkthrough.Run();
