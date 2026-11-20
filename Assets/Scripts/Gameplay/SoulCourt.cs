@@ -651,9 +651,15 @@ namespace Sinbinder.Gameplay
             while (!UI.Letterbox.Skipping && Time.realtimeSinceStartup < end) yield return null;
         }
 
-        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c, CommandKind? given = null, bool? brief = null)
+        public static IEnumerator Convene(Warrior w, Decision d, DecisionContext c,
+            CommandKind? given = null, bool? brief = null,
+            IReadOnlyList<Vote> originalVotes = null,
+            bool compelledByWhisper = false,
+            bool force = false)
         {
-            if (w == null || c == null || Sitting || !Preferences.Court) yield break;
+            // Player choice controls only AUTOMATIC court calls. The first
+            // instructional trial and intentional U / Shift+U review still work.
+            if (w == null || c == null || Sitting || (!Preferences.Court && !force)) yield break;
 
             // Сон, открытый из лагеря (меню паузы): Managers лагеря переживает
             // смену сцен, а Managers сна гибнет как двойник — и Instance мог
@@ -684,12 +690,16 @@ namespace Sinbinder.Gameplay
             if (pause != null && !pause.IsPaused) { pause.Pause(); mine = pause.Stamp; }
 
             // Причина «от противного» — даже если в этой сцене её не взвешивали.
-            if (!d.Weighed && (d.RefusedCommand || (d.Hesitated && c.HasCommand)))
+            // When reviewing an earlier decision, counterfactual causes
+            // must not be reweighed against current morale/equipment.
+            // The original vote and original cause are authoritative.
+            if (originalVotes == null && !d.Weighed &&
+                (d.RefusedCommand || (d.Hesitated && c.HasCommand)))
                 new BehaviourResolver().Weigh(w, c, ref d);
 
             Outcome = d.RefusedCommand ? "refused" : d.Hesitated ? "hesitated" : "obeyed";
             var rival = Rival(d);
-            var judges = Seat(w, c, rival, out float total);
+            var judges = Seat(w, c, rival, out float total, originalVotes);
             Seated = judges.Count;
             var voting = judges.FindAll(j => !j.Abstains);
             var decisive = Loudest(judges, d.RefusedCommand || d.Hesitated);
@@ -956,6 +966,13 @@ namespace Sinbinder.Gameplay
             string why = Why(w, d, c);
             if (!string.IsNullOrEmpty(why))
                 yield return Line(box, host, verdict, why);
+            if (compelledByWhisper)
+                yield return Line(box, host, verdict,
+                    Loc.T("Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."));
+
+            if (originalVotes != null)
+                yield return Line(box, host, court,
+                    Loc.T("Это голоса, записанные при решении. Помимо них, на итог могли повлиять вещи, перки и установка отряда."));
 
             // Что это значит для игры — одной строкой, напоследок. Короткий суд её не повторяет.
             if (!shortly)
@@ -1293,12 +1310,17 @@ namespace Sinbinder.Gameplay
         /// Судьи — все голоса души. Голос «за» и голос «против» — по разнице того,
         /// что он дал сопернику и что приказу; тише <see cref="Audible"/> — воздержался.
         /// </summary>
-        private static List<Judge> Seat(Warrior w, DecisionContext c, ActionType rival, out float total)
+        private static List<Judge> Seat(Warrior w, DecisionContext c,
+            ActionType rival, out float total, IReadOnlyList<Vote> originalVotes = null)
         {
             total = 0f;
             var byModule = new Dictionary<string, Judge>();
             foreach (var m in Voices) byModule[m] = new Judge { Module = m };
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            // Replay uses the original decision's actual votes. A new
+            // Ballot(w,c) would reflect changed HP, emotions and perks,
+            // silently rewriting history in front of the player.
+            var votes = originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c);
+            foreach (var v in votes)
             {
                 if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
                 if (!byModule.TryGetValue(v.Module, out var j))

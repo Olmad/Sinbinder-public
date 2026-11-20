@@ -98,9 +98,49 @@ namespace Sinbinder.Crypt
         /// Одна фраза. Положение не передаётся, и это правильный ответ:
         /// приказов на вылазке не отдают, значит отход был побегом.
         /// </summary>
+        /// <summary>One real event line, without the summary's 3-item cap.</summary>
+        public static string Describe(BattleEvent ev) => ev == null ? "" : Line(ev);
+
         private static string Line(BattleEvent ev)
         {
             string who = string.IsNullOrEmpty(ev.ActorName) ? Loc.T("Кто-то") : Loc.Name(ev.ActorName);
+            string target = string.IsNullOrEmpty(ev.TargetName)
+                ? Loc.T("неизвестного участника") : Loc.Name(ev.TargetName);
+
+            // AutoBattleResolver records AOS intent even when the physical
+            // executor could not enact it. Never narrate an unexecuted
+            // escape, nonexistent loot, failed bribe or empty healing
+            // as a completed deed or a real rescue.
+            switch (ev.Action)
+            {
+                case ActionType.Flee:
+                    return ev.Resolved
+                        ? Core.Grammar.Pick(ev.ActorGender,
+                            Loc.F("{0} вышел из боя и больше не участвовал в схватке.",who),
+                            Loc.F("{0} вышла из боя и больше не участвовала в схватке.",who))
+                        : Core.Grammar.Pick(ev.ActorGender,
+                            Loc.F("{0} попытался отступить, но не смог.",who),
+                            Loc.F("{0} попыталась отступить, но не смогла.",who));
+                case ActionType.Loot:
+                    return Loc.F("{0} отвлёкся на поиски добычи; предмет не был собран.",who);
+                case ActionType.BribeEnemy:
+                    return !ev.Resolved
+                        ? Loc.F("{0} попытался подкупить противника, но тот не перешёл на его сторону.",who)
+                        : Loc.F("{0} подкупил {1}: противник перешёл на другую сторону.",who,target);
+                case ActionType.SaveAlly:
+                    return ev.Resolved && ev.HealDealt>0f
+                        ? Loc.F("{0} восстановил {1} здоровья воину {2}.",who,
+                            ev.HealDealt.ToString("0.#"),target)
+                        : Loc.F("{0} попытался помочь союзнику, но лечения не произошло.",who);
+                case ActionType.Attack:
+                    if (!ev.Resolved || string.IsNullOrEmpty(ev.TargetId) || ev.DamageDealt<=0f)
+                        return Loc.F("{0} попытался атаковать, но подтверждённого урона не было.",who);
+                    return ev.TargetKilled
+                        ? Loc.F("{0} сразил {1}, нанеся {2} фактического урона.",who,
+                            target,ev.DamageDealt.ToString("0.#"))
+                        : Loc.F("{0} ранил {1}: фактический урон {2}.",who,
+                            target,ev.DamageDealt.ToString("0.#"));
+            }
             return $"{who} {PhraseGenerator.Did(ev.Action, null, ev.ActorGender)}.";
         }
     }

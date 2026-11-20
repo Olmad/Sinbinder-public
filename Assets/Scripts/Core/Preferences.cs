@@ -31,13 +31,17 @@ namespace Sinbinder.Core
         private const string GraphicsKey = "sinbinder.graphics.light";
         private const string MusicKey = "sinbinder.music";
         private const string CourtKey = "sinbinder.court";
+        private const string CourtChoiceKey = "sinbinder.court.choice.made";
 
         /// <summary>
-        /// Показывать ли Суд Души (автор, 06.11: «нужна настройка "Показывать Суд
-        /// Души"»): «по делу» — когда отказ того стоит (<see cref="Gameplay.CourtCaller"/>),
-        /// «нет» — никогда, и во сне тоже. Прогон в пакетном режиме — всегда «по делу».
+        /// Automatic Soul Courts for important decisions (CourtCaller).
+        /// The first instructional court and U / Shift+U manual review remain
+        /// available regardless of this setting. Batch walkthrough stays on.
         /// </summary>
         public static bool Court { get; private set; } = true;
+
+        /// <summary>The player has already made the one-time tutorial choice.</summary>
+        public static bool CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0;
 
         private const string CourtWalkKey = "sinbinder.court.walk";
 
@@ -184,12 +188,15 @@ namespace Sinbinder.Core
 
         public static string CourtName() => Court ? Loc.T("по делу") : Loc.T("нет");
 
-        public static void ToggleCourt()
+        public static void SetAutomaticCourt(bool enabled)
         {
-            Court = !Court;
-            PlayerPrefs.SetInt(CourtKey, Court ? 1 : 0);
+            Court = enabled;
+            PlayerPrefs.SetInt(CourtKey, enabled ? 1 : 0);
+            PlayerPrefs.SetInt(CourtChoiceKey, 1);
             PlayerPrefs.Save();
         }
+
+        public static void ToggleCourt() => SetAutomaticCourt(!Court);
 
         public static string CourtWalkName() => CourtWalk ? Loc.T("вы — судья") : Loc.T("как раньше");
 

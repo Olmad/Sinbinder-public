@@ -30,6 +30,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Tug/MapEditor.unity
     guid: 1ed0ce10d41efdd47a835abb9e454a0b
   - enabled: 1
+    path: Assets/Scenes/Tug/Multiplayer_Test.unity
+    guid: 82df2b7319bc4ab393db801f19f3b580
+  - enabled: 1
     path: Assets/Scenes/Prologue_Dream.unity
     guid: 19c4750af8ce4a14c95bb2e5ecc38522
   m_configObjects:

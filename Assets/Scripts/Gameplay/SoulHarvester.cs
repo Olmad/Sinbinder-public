@@ -34,7 +34,7 @@ namespace Sinbinder.Gameplay
             // Именно свой, а не любой Warrior: проверка «компонент есть»
             // считала бы своим и охотника, повесь его кто-нибудь на врага.
             _warrior = GetComponent<Warrior>();
-            _isPlayerUnit = _warrior != null && _warrior.Team == Team.Player;
+            _isPlayerUnit = _warrior is SinbinderPlayer && _warrior.Team == Team.Player;
         }
 
         void Update()
@@ -63,6 +63,12 @@ namespace Sinbinder.Gameplay
 
         private void TryHarvest()
         {
+            // Crucial: HarvestNow is also callable without Update/Start.
+            // Attaching SoulHarvester to an ordinary allied warrior must
+            // never grant them the Sinbinder's unique soul-collection power.
+            var actor = GetComponent<SinbinderPlayer>();
+            if (actor == null || actor.Team != Team.Player || actor.IsDead) return;
+
             var souls = SoulManager.Instance;
 
             if (souls == null)

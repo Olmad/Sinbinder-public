@@ -13,6 +13,7 @@ namespace Sinbinder.Gameplay
         private List<Damageable> _enemyUnits = new();
         private readonly List<Damageable> _neutralUnits = new();
         private List<HarvestableBody> _bodiesOnField = new();
+        private readonly BattleEndGate _battleEndGate = new BattleEndGate();
 
         public System.Action<Damageable, GameObject> OnAnyDeath;
         public System.Action OnUnitsChanged;
@@ -26,7 +27,16 @@ namespace Sinbinder.Gameplay
         }
 
         public void RegisterPlayerUnit(Damageable unit) => Register(unit, _playerUnits);
-        public void RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits);
+        public void RegisterEnemyUnit(Damageable unit)
+        {
+            // The same living guard can be registered by a hostility
+            // transition and later by Damageable.Start. Count it once;
+            // duplicated registration should not restart battle completion.
+            bool alreadyEnemy=unit!=null && _enemyUnits.Contains(unit);
+            Register(unit, _enemyUnits);
+            if (!alreadyEnemy && unit != null && !unit.IsDead)
+                _battleEndGate.EnemyRegistered();
+        }
         public void RegisterNeutralUnit(Damageable unit) => Register(unit, _neutralUnits);
 
         private void Register(Damageable unit, List<Damageable> destination)
@@ -136,7 +146,16 @@ namespace Sinbinder.Gameplay
                 return;
             }
             if (killed.Warrior != null)
-                CreateLootOnField(killed);
+            {
+                // Resolve card escrow before the fallen wallet becomes loot.
+                CardTable.Instance?.CancelForDeath(killed.Warrior);
+                var bodyLoot = CreateLootOnField(killed);
+                // Direct death path: independent of watcher Update timing.
+                // The bag takes tangible belongings. If LootChain is off,
+                // it also receives the body's generated treasure exactly
+                // once so enemies do not leave untouchable invisible loot.
+                FallenBag.CreateFor(killed, bodyLoot);
+            }
             if (OnAnyDeath != null)
                 foreach (var d in OnAnyDeath.GetInvocationList())
                     using (Core.Cost.Of(Core.Cost.On ? "death>" + d.Method.DeclaringType?.Name : null))
@@ -157,7 +176,7 @@ namespace Sinbinder.Gameplay
         /// и она же единственная, у которой есть огонёк, срок и цена
         /// промедления.
         /// </summary>
-        private void CreateLootOnField(Damageable killed)
+        private HarvestableBody CreateLootOnField(Damageable killed)
         {
             var pos = killed.transform.position;
 
@@ -167,11 +186,12 @@ namespace Sinbinder.Gameplay
             harvestableBody.Initialize(killed.Warrior.Shell, killed.Warrior.Soul);
             harvestableBody.Foe = killed.Warrior.Team != Team.Player;
             _bodiesOnField.Add(harvestableBody);
+            return harvestableBody;
         }
 
         private void CheckBattleEnd()
         {
-            if (_enemyUnits.Count == 0 || !_enemyUnits.Exists(e => e != null && !e.IsDead))
+            if (_battleEndGate.TryComplete(_enemyUnits.Exists(e => e != null && !e.IsDead)))
             {
                 int enemiesKilled = _enemyUnits.Count;
                 int alliesLost = 0;

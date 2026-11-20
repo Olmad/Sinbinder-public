@@ -62,11 +62,39 @@ namespace Sinbinder.Gameplay
 
         public void TakeDamage(float damage, GameObject attacker)
         {
+            ApplyDamage(damage, attacker, allowGuardInterception: true);
+        }
+
+        // A bodyguard must take the intercepted hit directly. Allowing this
+        // hit to enter Bodyguard.Absorb again could bounce between two wounded
+        // warriors who are each guarding the other, producing two false saves.
+        // The guard's own watch stays intact for the next INDEPENDENT attack.
+        internal void TakeInterceptedDamage(float damage, GameObject attacker)
+        {
+            ApplyDamage(damage, attacker, allowGuardInterception: false);
+        }
+
+        private void ApplyDamage(float damage, GameObject attacker, bool allowGuardInterception)
+        {
+            // Nonpositive or nonfinite input is not a hit: never heal through damage,
+            // mark hostility, consume a bodyguard watch or produce a death event.
+            if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
             if (IsDead) return;
             if (Untouchable != null && this == Untouchable) return;
 
             // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
-            if (Bodyguard.Absorb(this, attacker, damage)) return;
+            if (allowGuardInterception && Bodyguard.Absorb(this, attacker, damage)) return;
+
+            // The caravan is genuinely peaceful until the first hostile
+            // action. A hit by the player or a player-side warrior commits
+            // assault BEFORE the blow is applied, so its neutral guards
+            // immediately become real enemies. The method ignores all
+            // ordinary battles and personal maps other than Salt Road.
+            if(attacker!=null)
+            {
+                if(_warrior==null) _warrior=GetComponent<Warrior>();
+                PersonalExpedition.OnGuardAttacked(_warrior,attacker);
+            }
 
             // Кто ударил, тот в бою участвовал. Без этой отметки «Тень»
             // не отличить от остальных (AOSWarriorWrapper.Struck).
@@ -112,6 +140,9 @@ namespace Sinbinder.Gameplay
             if (_warrior is SinbinderPlayer && DreamTutorialDirector.ProtectingHero)
                 damage = Mathf.Min(damage, Mathf.Max(0f, _hp - 1f));
 
+            // Modifiers can invalidate an otherwise valid hit. Never poison HP or heal via damage.
+            if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
+
             _hp -= damage;
 
             // Удар слышно — по телу того, кого ударили (Audio.Sfx).
@@ -135,6 +166,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Wound(float remaining)
         {
+            // Invalid wound fractions must not poison HP or silently heal to full.
+            if (float.IsNaN(remaining) || float.IsInfinity(remaining)) return;
             if (IsDead) return;
             _hp = Mathf.Clamp(_maxHP * remaining, 1f, _maxHP);
         }
@@ -146,6 +179,8 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public void Heal(float amount)
         {
+            // Invalid healing must not poison HP or silently fill the health bar.
+            if (float.IsNaN(amount) || float.IsInfinity(amount)) return;
             if (IsDead) return;
             _hp = Mathf.Min(_maxHP, _hp + Mathf.Abs(amount));
         }
@@ -177,6 +212,14 @@ namespace Sinbinder.Gameplay
         {
             if (CombatManager.Instance != null)
                 CombatManager.Instance.OnUnitKilled(this, killer);
+        }
+
+        /// <summary>Restore wounds without causing a new death/kill event.</summary>
+        public void SetHealthFraction(float fraction)
+        {
+            if(IsDead || float.IsNaN(fraction) || float.IsInfinity(fraction)) return;
+            float safe=Mathf.Clamp(fraction,0.01f,1f);
+            _hp=Mathf.Max(0.01f,_maxHP*safe);
         }
 
         public void Initialize(float maxHP, float defense)

@@ -23,7 +23,7 @@ namespace Sinbinder.AOS.Modules
     /// — за убитого своего мстит гнев;
     /// — где взял однажды, помнит жадность.
     /// </summary>
-    public class MemoryModule : IPersonalityModule
+    public class MemoryModule : IPersonalityModule, IMissionModule
     {
         public string ModuleID => "Memory";
         public float Weight => 1.5f;
@@ -42,6 +42,19 @@ namespace Sinbinder.AOS.Modules
         /// </summary>
         private float Recall(float hold)
             => Mathf.Clamp(1f + hold / 100f, _config.RecallFloor, _config.RecallCeiling);
+
+        /// <summary>
+        /// Testimony of personally experienced expeditions is one bounded
+        /// memory vote, not a scripted outcome. Existing 13 personality
+        /// modules remain the sole decision makers; Loyalty/Morality and
+        /// all other mission voices still participate.
+        /// </summary>
+        public float EvaluateMission(Soul soul, MissionContext context, MissionAction action)
+        {
+            return Sinbinder.Gameplay.ExpeditionMemoryVote.Score(
+                context?.RecentMemories,context?.ExpeditionSite,action,
+                soul.Get(SinType.Wrath));
+        }
 
         public float Evaluate(Soul soul, DecisionContext context, ActionType action)
         {

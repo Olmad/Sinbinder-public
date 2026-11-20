@@ -1,0 +1,42 @@
+name: Map editor source compile and ECA safety checks
+on:
+  push:
+    branches:
+      - feature/server-prototype
+      - 'feature/map-editor-terrain-*'
+      - 'integration/worldforge-*'
+    paths:
+      - "Assets/Scripts/Core/MapData.cs"
+      - "Assets/Scripts/Gameplay/MapEditor.cs"
+      - "Assets/Scripts/Gameplay/MapLogicRunner.cs"
+      - "Assets/Scripts/Gameplay/MapLoader.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
+      - "Tools/map-editor/**"
+      - ".github/workflows/map-editor-smoke.yml"
+  pull_request:
+    paths:
+      - 'Assets/Scripts/Core/MapData.cs'
+      - 'Assets/Scripts/Gameplay/MapEditor.cs'
+      - 'Assets/Scripts/Gameplay/MapLoader.cs'
+      - 'Assets/Scripts/Gameplay/MapLogicRunner.cs'
+      - 'Assets/Editor/**'
+      - 'Tools/map-editor/**'
+      - '.github/workflows/map-editor-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  map-editor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile actual map data editor and ECA runner with Unity test doubles
+        run: dotnet run --project Tools/map-editor/MapEditorChecks.csproj --configuration Release
+      - name: Check real Unity map loader and F integration contracts (source-level)
+        run: python3 Tools/map-editor/check_map_editor_wiring.py

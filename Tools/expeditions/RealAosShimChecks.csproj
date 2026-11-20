@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="RealAosShimProgram.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" Link="ExpeditionMemoryVote.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/BehaviorResolver.cs" Link="RealAos/BehaviorResolver.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Soul.cs" Link="RealAos/Soul.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IPersonalityModule.cs" Link="RealAos/IPersonalityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/IMissionModule.cs" Link="RealAos/IMissionModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/ICampModule.cs" Link="RealAos/ICampModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" Link="RealAos/ActionType.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionAction.cs" Link="RealAos/MissionAction.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Decision.cs" Link="RealAos/Decision.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/DecisionContext.cs" Link="RealAos/DecisionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MissionContext.cs" Link="RealAos/MissionContext.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/AOSConfig.cs" Link="RealAos/AOSConfig.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/WrathModule.cs" Link="RealAos/WrathModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/SlothModule.cs" Link="RealAos/SlothModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/FearModule.cs" Link="RealAos/FearModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/LoyaltyModule.cs" Link="RealAos/LoyaltyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MoralityModule.cs" Link="RealAos/MoralityModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MemoryModule.cs" Link="RealAos/MemoryModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/VirtueModule.cs" Link="RealAos/VirtueModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GreedModule.cs" Link="RealAos/Modules/GreedModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PrideModule.cs" Link="RealAos/Modules/PrideModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/EnvyModule.cs" Link="RealAos/Modules/EnvyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/LustModule.cs" Link="RealAos/Modules/LustModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs" Link="RealAos/Modules/GluttonyModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" Link="RealAos/Modules/PatienceModule.cs" />
+  </ItemGroup>
+</Project>

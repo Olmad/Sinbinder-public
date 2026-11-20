@@ -1,0 +1,52 @@
+name: Five independent text audit quality gate
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - 'Docs/AgentTeam/88-INDEPENDENT-AUDITOR-*-PROGRESS.tsv'
+      - 'Tools/logic/audit_team_gate.py'
+      - 'Tools/logic/tests/test_audit_team_gate.py'
+      - '.github/workflows/text-audit-team-gate.yml'
+  pull_request:
+    paths:
+      - 'Docs/AgentTeam/88-INDEPENDENT-AUDITOR-*-PROGRESS.tsv'
+      - 'Tools/logic/audit_team_gate.py'
+      - 'Tools/logic/tests/test_audit_team_gate.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: five-audits-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Test the audit validator with falsified and valid evidence
+        run: python3 -m unittest discover -s Tools/logic/tests -p 'test_audit_team_gate.py' -v
+      - name: Validate five independent ledgers and publish honest progress
+        shell: bash
+        run: |
+          set +e
+          python3 Tools/logic/audit_team_gate.py --base-ref HEAD^ --enforce-changed --output-dir audit-team-report
+          status=$?
+          if [ -f audit-team-report/report.md ]; then
+            cat audit-team-report/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: five-text-audit-report-${{ github.run_id }}
+          path: audit-team-report/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,48 @@
+name: Corpse bag retention
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Gameplay/FallenBagChoice.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/Gameplay/PrologueDirector.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
+      - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
+      - "Assets/Scripts/Gameplay/CombatManager.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Assets/Scripts/Gameplay/SquadRoster.cs"
+      - "Tools/loot/**"
+      - ".github/workflows/loot-retention-smoke.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/FallenBag.cs"
+      - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
+      - "Assets/Scripts/Gameplay/FallenBagChoice.cs"
+      - "Assets/Scripts/Core/SaveGame.cs"
+      - "Assets/Scripts/Gameplay/PrologueDirector.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
+      - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
+      - "Assets/Scripts/Gameplay/CombatManager.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Gameplay/Warrior.cs"
+      - "Assets/Scripts/Gameplay/SquadRoster.cs"
+      - "Tools/loot/**"
+      - ".github/workflows/loot-retention-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  loot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run -c Release --project Tools/loot/LootChecks.csproj
+      - run: dotnet run -c Release --project Tools/loot/BagTimeChecks.csproj
+      - run: python3 Tools/loot/check_loot_wiring.py

@@ -18,8 +18,15 @@ namespace Sinbinder.AOS
     {
         public static string Build(IReadOnlyList<string> entries)
         {
+            // An absent or empty journal cannot prove obedience, disobedience,
+            // negotiation, or even that any reportable fight event occurred.
             if (entries == null || entries.Count == 0)
-                return Loc.T("Бой прошёл без единого спора. Отряд слушался.");
+                return Loc.T("Записей о ходе боя нет.");
+
+            bool hasEvent = false;
+            foreach (var entry in entries)
+                if (!string.IsNullOrWhiteSpace(entry)) { hasEvent = true; break; }
+            if (!hasEvent) return Loc.T("Записей о ходе боя нет.");
 
             var sb = new StringBuilder();
             sb.AppendLine(Loc.T("Как это было."));
@@ -32,6 +39,7 @@ namespace Sinbinder.AOS
             for (int i = 0; i <= entries.Count; i++)
             {
                 string current = i < entries.Count ? entries[i] : null;
+                if (i < entries.Count && string.IsNullOrWhiteSpace(current)) continue;
 
                 if (current == previous) { repeats++; continue; }
 
@@ -46,12 +54,10 @@ namespace Sinbinder.AOS
                 repeats = 0;
             }
 
-            sb.AppendLine();
-            sb.Append(entries.Count > 4
-                ? Loc.T("Отряд, которым не столько командовали, сколько договаривались.")
-                : Loc.T("В остальном приказы исполнялись."));
-
-            return sb.ToString();
+            // A list of narration lines has no structured order-outcome data.
+            // In particular, its length cannot tell us whether warriors obeyed
+            // or bargained. Only recount the events the journal actually holds.
+            return sb.ToString().TrimEnd();
         }
     }
 }

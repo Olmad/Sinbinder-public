@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "approved": {
+    "Greed": {
+      "offer": "За твой ответ я заплачу три монеты.",
+      "reply": "Три монеты. Договорились.",
+      "grounding": "Whisper.Moment checks bag.Gold >= GreedCoins (3), requires bag.SpendGold(GreedCoins) to succeed, credits exactly that sum to w.Pocket(GreedCoins), and only then stores consent. Warrior.Pocket syncs the roster used by saves.",
+      "negative_case": "With only 0–2 coins, w replies that three coins are unavailable and Outcome reports insufficient coins; changing the order cancels the charge.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Pride": {
+      "offer": "Докажи, что тебе по силам этот приказ.",
+      "reply": "Докажу.",
+      "grounding": "This is a challenge to the listener rather than an assertion about an existing audience, witnesses or an already accomplished feat.",
+      "negative_case": "No witness or other participant need exist; the challenge and response remain meaningful to the addressed warrior alone.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Wrath": {
+      "offer": "Обрати свой гнев в дело. Исполни приказ.",
+      "reply": "Гнев со мной. Сделаю.",
+      "grounding": "The line appeals to the Wrath sin currently selected for the listener; it asserts no prior mockery, attacker or specific memory.",
+      "negative_case": "A warrior with no MurderedMe or humiliation memory still hears a truthful appeal to Wrath rather than a fabricated incident.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Envy": {
+      "offer": "Докажи, что справишься не хуже других.",
+      "reply": "Ещё лучше справлюсь.",
+      "grounding": "An indefinite comparison is the temptation; no particular character, rivalry, relationship or knowledge of Kargan is asserted.",
+      "negative_case": "Even when Kargan does not exist in the current scene or is unknown to the warrior, no unsupported personal reference is shown.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Lust": {
+      "offer": "Направь своё желание на этот приказ.",
+      "reply": "Я выбираю. Сделаю.",
+      "grounding": "The selected Lust trait concerns desire and attachment, and the offer invokes that drive without saying a specific woman or other NPC is present.",
+      "negative_case": "A demo scene with only the Sinbinder and one warrior contains no female witness; neither line refers to one or invents a relationship.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Gluttony": {
+      "offer": "Сперва исполни приказ. О сытости подумаешь потом.",
+      "reply": "Сначала дело. Ладно.",
+      "grounding": "The line delays gratification associated with Gluttony but does not promise that a pot, meal or stored food exists after the order.",
+      "negative_case": "In an empty dungeon with no food, cauldron or reward, the offer and acceptance remain meaningful without guaranteeing supplies.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    },
+    "Sloth": {
+      "offer": "Хочешь покоя? Не затягивай с приказом.",
+      "reply": "Поскорее покончить с этим. Ладно.",
+      "grounding": "A rhetorical appeal to the Sloth personality asks to finish the current order without guaranteeing protection, future rest or safety until morning.",
+      "negative_case": "In an ongoing battle or nightless scene, the line makes no claim that attackers will stop or the warrior will be safe until dawn.",
+      "reviewer": "Assistant independent source-linked review, 2026-11-18; QA and Unity review remain pending"
+    }
+  }
+}

@@ -68,6 +68,19 @@ namespace Sinbinder.Gameplay
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue) return;
 
+            // U is a player-facing review of a decision that has ALREADY
+            // happened. It never asks the soul to decide again and cannot
+            // replace the ongoing tutorial's scripted first Court.
+            // Not J: J is SatchelHands' "next jar" in every scene, so one press
+            // switched the jar AND opened the Court (review 16.11).
+            if (Input.GetKeyDown(ReviewKey) && !SoulCourt.Sitting &&
+                (DreamTutorialDirector.Instance == null ||
+                 DreamTutorialDirector.StageName == "Finished"))
+            {
+                ReviewLastCommand();
+                return;
+            }
+
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
             if (Input.GetKeyDown(KeyCode.Tab) ||
                 (view != null && view.FirstPersonNow && Input.GetKeyDown(KeyCode.V)))
@@ -263,6 +276,84 @@ namespace Sinbinder.Gameplay
             }
 
             TellUnheard();
+        }
+
+        /// <summary>Суд над последним решением выбранного воина; Shift — полный суд.</summary>
+        public const KeyCode ReviewKey = KeyCode.U;
+
+        /// <summary>
+        /// Replay the exact LAST ORDER decision of one selected soldier in
+        /// the existing Soul Court. This does NOT create a second AOS
+        /// decision, raise a refusal event or grant memory/reputation.
+        /// Non-order autonomous decisions require a separate court layout:
+        /// claiming that the soldier obeyed a nonexistent order would lie.
+        /// </summary>
+        private void ReviewLastCommand()
+        {
+            var log = FindFirstObjectByType<UI.BattleLogUI>();
+            void Notice(string message)
+            {
+                if (log != null) log.Write(message);
+                else Debug.Log("[СУД] " + message);
+            }
+
+            Warrior chosen = null;
+            foreach(var unit in _selectedUnits)
+            {
+                if (unit == null) continue;
+                var warrior = unit.GetComponentInParent<Warrior>();
+                if (warrior == null || warrior is SinbinderPlayer ||
+                    warrior.IsDead || warrior.Team != Team.Player) continue;
+                if(chosen != null && chosen != warrior)
+                {
+                    Notice(Core.Loc.T("Для суда выберите одного воина, а не весь отряд."));
+                    return;
+                }
+                chosen = warrior;
+            }
+
+            if (chosen == null)
+            {
+                Notice(Core.Loc.T("Для суда выберите одного живого воина."));
+                return;
+            }
+
+            var mind = chosen.GetComponent<AOS.AOSWarriorWrapper>();
+            if (mind == null || mind.LastContext == null ||
+                mind.LastDecisionBallot == null || mind.LastDecisionBallot.Count == 0)
+            {
+                Notice(Core.Loc.T("У выбранного воина ещё нет записанного решения."));
+                return;
+            }
+
+            if (!mind.LastContext.HasCommand)
+            {
+                Notice(Core.Loc.T("Последнее решение принято без приказа. Для него нужен суд самостоятельного поступка."));
+                return;
+            }
+
+            // The Court needs a cinematic camera and letterbox. Give
+            // actionable feedback instead of printing "Court started"
+            // when a minimalist expedition scene has no Court rig.
+            if (Camera.main == null ||
+                (Dialogue.DialogueCameraController.Instance == null &&
+                 FindFirstObjectByType<Dialogue.DialogueCameraController>() == null) ||
+                (UI.Letterbox.Instance == null &&
+                 FindFirstObjectByType<UI.Letterbox>(FindObjectsInactive.Include) == null))
+            {
+                Notice(Core.Loc.T("Зал Суда души недоступен в этой сцене."));
+                return;
+            }
+
+            Notice(Core.Loc.F("Суд души: последнее решение воина {0}.",
+                Core.Loc.Name(chosen.DisplayName)));
+            bool showFullCourt = Input.GetKey(KeyCode.LeftShift) ||
+                                 Input.GetKey(KeyCode.RightShift);
+            StartCoroutine(SoulCourt.Convene(chosen, mind.NaturalDecisionDetail,
+                mind.LastContext, mind.LastDecisionOrderKind, brief: !showFullCourt,
+                originalVotes: mind.LastDecisionBallot,
+                compelledByWhisper: mind.LastWhisperCompelled,
+                force: true));
         }
 
         // ---------- голос Греховода ----------
@@ -699,7 +790,8 @@ namespace Sinbinder.Gameplay
                     }
 
                     // Чужой трон или дверь («Перетягивание»): ПКМ — осада, те же голосование и голос.
-                    var wall =!isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    var candidate = !isAttackOrder && Lords.Active ? hit.collider.GetComponentInParent<Sturdy>() : null;
+                    var wall = candidate;
                     if (wall != null && !wall.Mine && !wall.Broken)
                     {
                         int laid = 0;

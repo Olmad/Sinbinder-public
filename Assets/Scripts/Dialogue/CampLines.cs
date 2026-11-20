@@ -39,7 +39,7 @@ namespace Sinbinder.Dialogue
             if (a == null || b == null || a.Soul == null || b.Soul == null) return ("", "");
 
             // На кивок нельзя отвечать так, будто немой рассказал о долге или старшем.
-            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Loc.T("Пока тихо."));
+            if (Mute(a)) return (Gesture(a), Mute(b) ? Gesture(b) : Acknowledge(b));
 
             string first = Opening(a, b);
             // Ответ — на то, что сказано, а не просто грех на грех (автор, 28.10: «Старший — Вейн. Посмотрим,
@@ -81,11 +81,11 @@ namespace Sinbinder.Dialogue
                     if (sin == SinType.Greed) return b.UnpaidMissions > 0
                         ? Loc.T("И мне не платят. Считай за двоих.")
                         : Loc.T("Тебе должны — с владыки и спрашивай.");
-                    if (sin == SinType.Pride) return Loc.T("Плату просят, а не считают.");
+                    if (sin == SinType.Pride) return Loc.T("Не считай вылазки. Потребуй своё.");
                     return Loc.T("Мне бы и без платы полежать.");
                 case Topic.Took:
                     if (sin == SinType.Greed) return Loc.T("Моё он не заберёт.");
-                    if (sin == SinType.Pride) return Grammar.Pick(a.Gender, Loc.T("Значит, не заслужил держать."), Loc.T("Значит, не заслужила держать."));
+                    if (sin == SinType.Pride) return Loc.T("Твоё? Так забери обратно.");
                     return Loc.T("Меньше нести.");
                 case Topic.Brothers:
                     return Loc.T("А где ж мне ещё.");
@@ -128,6 +128,10 @@ namespace Sinbinder.Dialogue
         private static bool IsLiska(Warrior w) => w.DisplayName == "Лиска";
 
         public static string Gesture(Warrior w) => Loc.T("(молча кивает)");
+
+        /// <summary>Ответ на немой жест с учётом рода собеседника.</summary>
+        public static string Acknowledge(Warrior w) => Grammar.Pick(w.Gender,
+            Loc.T("Понял."), Loc.T("Поняла."));
 
         // ──────────────────────────────────
         // Первая строка

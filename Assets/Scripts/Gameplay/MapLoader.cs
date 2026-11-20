@@ -24,9 +24,17 @@ namespace Sinbinder.Gameplay
         public static int Match { get; private set; }
 
         private const string MatchKey = "Sinbinder.TugMatch";
+        private Mesh _terrainMesh;
+        private Mesh _originalGroundMesh;
 
         void Awake()
         {
+            // This scene is a dedicated, reproducible REAL-gameplay QA map.
+            // All existing MapLoader/Warrior/AOS systems remain intact.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                == "Multiplayer_Test")
+                MultiplayerTestMap.Choose();
+
             var map = MapSession.Map;
             // Пакетный проход обучения (TugSceneBuilder.TutorialRun): «-tugTutorial».
             if (map == null && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tugTutorial") >= 0)
@@ -46,13 +54,30 @@ namespace Sinbinder.Gameplay
                     if (args[a] == "-tugAi" && System.Enum.TryParse<MapSession.Seat>("Ai" + args[a + 1], out var level))
                         for (int s = 1; s < MapSession.Seats.Count; s++) MapSession.Seats[s] = level;
             }
+            map.EnsureLists();
             Current = map;
+            // Map-authored rules are a small allowlisted ECA language, never arbitrary code.
+            MapLogicRunner logic = null;
+            if (map.Triggers.Count > 0)
+            {
+                logic = gameObject.AddComponent<MapLogicRunner>();
+                logic.Configure(map);
+            }
 
             var ground = GameObject.Find("Поле");
-            if (ground != null) ground.transform.localScale = new Vector3(map.Size / 10f, 1f, map.Size / 10f);
+            if (!MapTerrain.Valid(map))
+                Debug.LogWarning("[КАРТЫ] Некорректный рельеф: используется ровное поле.");
+            if (ground != null)
+                MapTerrain.ApplyGround(ground, map, ref _terrainMesh, ref _originalGroundMesh);
 
             var root = new GameObject(Loc.F("Карта — {0}", map.Name)).transform;
-            foreach (var t in map.Things) Place(t.Prop, root, new Vector3(t.X, 0f, t.Z), t.Yaw, t.Scale);
+            foreach (var t in map.Things)
+            {
+                var model = Place(t.Prop, root, At(map, t.X, t.Z), t.Yaw, t.Scale);
+                MapAssets.ApplyObjectMaterial(model, t.MaterialId);
+                if (logic != null && model != null && !string.IsNullOrEmpty(t.Id))
+                    logic.RegisterObject(t.Id, model.transform);
+            }
 
             // Склеп — пол, стены, дверь на петле и трон (автор, 27.10: «у склепа не хватает стен и
             // возможности открывать дверь и пола»), префабом сборщика (TugSceneBuilder.BuildCrypt).
@@ -61,7 +86,7 @@ namespace Sinbinder.Gameplay
             for (int i = 0; i < map.Crypts.Count; i++)
             {
                 var c = map.Crypts[i];
-                var at = new Vector3(c.X, 0f, c.Z);
+                var at = At(map, c.X, c.Z);
                 var rot = Quaternion.Euler(0f, c.Yaw, 0f);
                 if (built == null)
                 {
@@ -112,10 +137,10 @@ namespace Sinbinder.Gameplay
                 var l = map.Locations[i];
                 var home = new GameObject(Loc.F("Подлокация — {0}", Loc.T(l.Name)));
                 home.transform.SetParent(root, false);
-                home.transform.position = new Vector3(l.X, 0f, l.Z);
+                home.transform.position = At(map, l.X, l.Z);
                 home.AddComponent<Residents>().Configure(l.Kind, l.Radius, l.People, Mathf.Abs(stamp % 10000) * 10 + i * 100);
             }
-            foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), new Vector3(s.X, 0f, s.Z));
+            foreach (var s in map.Trails) Mark(root, Loc.T("Тропа охотников"), At(map, s.X, s.Z));
             // События-экспедиции (MapEvent по ExpeditionBook) живут на карте одновременно, каждое — своё
             // время; где и какие — ведёт EventDirector. Трофеи — Trophies.
             Trophies.Forget();
@@ -140,14 +165,14 @@ namespace Sinbinder.Gameplay
                 var c = map.Crypts[seat];
                 var entry = new GameObject("Появление Греховода");
                 var inside = built != null ? new Vector3(0f, 0.12f, 1.5f) : new Vector3(0f, 0f, 9f);
-                entry.transform.position = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * inside;
+                entry.transform.position = At(map, c.X, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * inside;
                 entry.AddComponent<Crypt.TestChamberEntry>();
             }
             _match.Begin(seat);
 
             // Охотники — с троп карты, раз в пять минут к каждому склепу (HunterWaves).
             var trails = new System.Collections.Generic.List<Vector3>();
-            foreach (var s in map.Trails) trails.Add(new Vector3(s.X, 0f, s.Z));
+            foreach (var s in map.Trails) trails.Add(At(map, s.X, s.Z));
             gameObject.AddComponent<HunterWaves>().Begin(trails);
             // Армия без дела остывает — копить её вечно нельзя (Idleness).
             gameObject.AddComponent<Idleness>();
@@ -160,6 +185,10 @@ namespace Sinbinder.Gameplay
                 gameObject.AddComponent<TugTutorial>();
             }
         }
+
+        /// <summary>Same world-height contract used in the editor and mesh collider.</summary>
+        private static Vector3 At(MapData map, float x, float z)
+            => new Vector3(x, MapTerrain.HeightAt(map, x, z), z);
 
         private TugMatch _match;
 
@@ -176,9 +205,21 @@ namespace Sinbinder.Gameplay
                 var level = MapSession.Seats[i];
                 if (level != MapSession.Seat.AiWeak && level != MapSession.Seat.AiMedium && level != MapSession.Seat.AiStrong) continue;
                 var c = map.Crypts[i];
-                var at = new Vector3(c.X, 0f, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * new Vector3(0f, 0.12f, 1.5f);
+                var at = At(map, c.X, c.Z) + Quaternion.Euler(0f, c.Yaw, 0f) * new Vector3(0f, 0.12f, 1.5f);
                 Rival(i, level, at, Quaternion.Euler(0f, c.Yaw, 0f));
             }
+
+            // Opt-in real-world networking integration probe: it registers
+            // actual live Warrior objects with MatchAuthority and exercises
+            // the server-tick bridge. It does not change single-player
+            // gameplay, and is disabled unless explicitly requested.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                    == "Multiplayer_Test" &&
+                (System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-probe") >= 0 ||
+                 System.Array.IndexOf(System.Environment.GetCommandLineArgs(),
+                    "-mp-world-host") >= 0))
+                gameObject.AddComponent<Sinbinder.Multiplayer.ServerWorldProbe>();
         }
 
         /// <summary>Тело Греховода-ИИ: скелет, как Греховод игрока; решает не душа, а его ум (RivalLord).</summary>
@@ -213,7 +254,12 @@ namespace Sinbinder.Gameplay
         private const float RivalStrength = 300f;
 
         /// <summary>Ушли с поля — «Перетягивания» больше нет: приказы снова без имени, как в демо.</summary>
-        void OnDestroy() { Lords.Player = null; Voice.Enabled = false; }
+        void OnDestroy()
+        {
+            if (_terrainMesh != null) Destroy(_terrainMesh);
+            Lords.Player = null;
+            Voice.Enabled = false;
+        }
 
         /// <summary>Запас прочности трона и двери склепа. Дверь держит натиск, трон — партию.</summary>
         private const float ThroneStrength = 1500f;
@@ -225,18 +271,21 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static GameObject Prefab(string prop)
         {
+            if (MapAssets.IsUserProp(prop)) return MapAssets.UserPrefab(prop);
+            if (string.IsNullOrWhiteSpace(prop) || !MapAssets.ValidId(prop)) return null;
             var dressed = Resources.Load<GameObject>("MapProps/" + prop);
             return dressed != null ? dressed : Resources.Load<GameObject>("Props/" + prop);
         }
 
         /// <summary>Модель — как ставит сборщик сцен: поворот импорта сохраняется.</summary>
-        private static void Place(string prop, Transform parent, Vector3 at, float yaw, float scale)
+        private static GameObject Place(string prop, Transform parent, Vector3 at, float yaw, float scale)
         {
             var prefab = Prefab(prop);
-            if (prefab == null) { Debug.LogWarning($"[КАРТЫ] Нет модели «{prop}» в Resources/Props."); return; }
+            if (prefab == null) { Debug.LogWarning($"[КАРТЫ] Нет модели «{prop}» в Resources/Props."); return null; }
             var go = Instantiate(prefab, parent);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
             go.transform.localScale = prefab.transform.localScale * scale;
+            return go;
         }
 
         /// <summary>Невидимая метка места: по ней ставят жителей, охотников и события (шаги 1–4).</summary>

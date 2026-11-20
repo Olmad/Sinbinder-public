@@ -43,7 +43,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Заплатить из кошеля Греховода; не хватает — ничего не отдано.</summary>
         public static bool Spend(string lord, int coins)
         {
-            if (string.IsNullOrEmpty(lord) || PurseOf(lord) < coins) return false;
+            if (string.IsNullOrEmpty(lord) || coins <= 0 || PurseOf(lord) < coins) return false;
             Purses[lord] = PurseOf(lord) - coins;
             return true;
         }

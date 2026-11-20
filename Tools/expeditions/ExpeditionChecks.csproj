@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs" Link="ExpeditionCollectionPolicy.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs" Link="ExpeditionObjectiveRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionHealthRules.cs" Link="ExpeditionHealthRules.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs" Link="ExpeditionJourneyTiming.cs" />
+  </ItemGroup>
+</Project>

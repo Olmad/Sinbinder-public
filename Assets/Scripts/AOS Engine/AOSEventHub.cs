@@ -129,7 +129,7 @@ namespace Sinbinder.AOS
         /// </summary>
         public System.Action<Warrior, Decision, DecisionContext> OnSelfWill;
 
-        private readonly System.Collections.Generic.Dictionary<string, float> _lastRefusal = new();
+        private readonly RefusalEventGate _refusalEvents = new RefusalEventGate();
 
         /// <summary>
         /// Воин не выполнил приказ.
@@ -138,17 +138,21 @@ namespace Sinbinder.AOS
         /// в Debug.Log: отказ запоминается обеими сторонами, вызывает
         /// эмоцию и поднимает подписчиков — микропаузу, значок, журнал.
         ///
-        /// Голосование идёт раз в секунду, а приказ живёт дольше, поэтому
-        /// один и тот же отказ повторялся бы каждый такт. Гасим повтор:
-        /// не чаще раза в несколько секунд на воина.
+        /// Голосование идёт раз в секунду, а приказ живёт дольше. Один и
+        /// тот же приказ может получить много повторных вердиктов, но не
+        /// должен десятками раз ухудшать память и отношения. Запоминаем
+        /// один отказ на выдачу приказа, сохраняя защиту от спама новыми.
         /// </summary>
         public void OnCommandRefused(Warrior warrior, Decision decision, DecisionContext context)
         {
             if (warrior == null) return;
 
-            if (_lastRefusal.TryGetValue(warrior.Id, out float last)
-                && Time.time - last < RefusalCooldown) return;
-            _lastRefusal[warrior.Id] = Time.time;
+            // Use real command identity, not soul ID or elapsed seconds
+            // alone. Same-command refusal at t+4, t+8 must not repeatedly
+            // create a memory; two new orders in one frame have different
+            // Warrior.CommandRevision values.
+            if (!_refusalEvents.TryRecord(
+                warrior.GetInstanceID(), warrior.CommandRevision, Time.time, RefusalCooldown)) return;
 
             var commander = context?.Commander;
 
@@ -173,7 +177,7 @@ namespace Sinbinder.AOS
             OnRefusal?.Invoke(warrior, decision, context);
         }
 
-        /// <summary>Пауза между двумя отказами одного воина, секунды.</summary>
+        /// <summary>Защита от спама разными приказами, секунды.</summary>
         public const float RefusalCooldown = 4f;
 
         /// <summary>

@@ -45,6 +45,40 @@ namespace Sinbinder.Gameplay
         /// <summary>Шаг сна — для прогона (DreamWalkthrough) и отчёта.</summary>
         public static string StageName => Instance != null ? Instance._stage.ToString() : "";
 
+        // [AOS-5M] — вехи первых пяти минут для вечернего теста (ветка ботов, 16.11): от кнопки
+        // «Новая игра», а не от первого кадра сна. На игру не влияют — только строки журнала.
+        private static float _firstFiveStartedAt = -1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetFirstFiveTrace() => _firstFiveStartedAt = -1f;
+
+        public static void BeginFirstFiveTrace()
+        {
+            _firstFiveStartedAt = Time.realtimeSinceStartup;
+            Debug.Log("[AOS-5M] +0.0s new_game_clicked");
+        }
+
+        private static void TraceFirstFive(string milestone)
+        {
+            if (_firstFiveStartedAt < 0f)
+            {
+                BeginFirstFiveTrace();
+                Debug.Log("[AOS-5M] direct_dream_scene_without_menu");
+            }
+            Debug.Log($"[AOS-5M] +{Mathf.Max(0f, Time.realtimeSinceStartup - _firstFiveStartedAt):F1}s {milestone}");
+        }
+
+        /// <summary>
+        /// Послушался — только вердикт ObeyCommand. AOS может сам выбрать нападение или бегство,
+        /// не подняв флага отказа; до 16.11 такое считалось послушанием (ветка ботов).
+        /// </summary>
+        private static bool ActuallyObeyed(AOS.Decision d)
+            => d.Action == AOS.ActionType.ObeyCommand && !d.RefusedCommand && !d.Hesitated;
+
+        /// <summary>Голоса, записанные в миг решения: суд показывает их, а не пересчитывает (ветка ботов, 17.11).</summary>
+        private static List<AOS.Vote> Ballot(AOS.AOSWarriorWrapper mind)
+            => mind != null && mind.LastDecisionBallot != null ? new List<AOS.Vote>(mind.LastDecisionBallot) : null;
+
         /// <summary>
         /// Весы до приказа во сне — только на проверке тем же приказом (63-TEACHING, п. 7):
         /// суд их уже объяснил, плашка спрашивает «что решит душа теперь?» — и, пока игрок
@@ -726,7 +760,7 @@ namespace Sinbinder.Gameplay
                     if (mind.LastContext != null && mind.LastContext != _mindBefore)
                     {
                         _courtRunning = true;
-                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext));
+                        StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext, Ballot(mind)));
                     }
                     else if (Time.unscaledTime - _decideSince > 6f)
                     {
@@ -1251,9 +1285,11 @@ namespace Sinbinder.Gameplay
         /// Суд над решением — каким бы оно ни было. Отказ, колебание, послушание —
         /// суд показывает, чьи голоса это решили.
         /// </summary>
-        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c)
+        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c, List<AOS.Vote> ballot)
         {
-            RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался" : "послушался";
+            RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
+                : ActuallyObeyed(d) ? "послушался" : "выбрал своё";
+            TraceFirstFive("first_verdict action=" + d.Action + " outcome=" + RefusalResult);
             _courtVoice = Voice(d, c);
             Mark($"T3 решение при убийцах: {RefusalResult} ({d.Action}, голос {_courtVoice})");
             int murders = 0;
@@ -1272,7 +1308,11 @@ namespace Sinbinder.Gameplay
             if (_zombie != null && !_zombie.IsDead)
             {
                 Mark("T8 суд начался");
-                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0);
+                TraceFirstFive("court_requested");
+                // Суд во сне — урок: идёт и при выключенных автоматических судах (force).
+                yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: _courts++ > 0,
+                    originalVotes: ballot, force: true);
+                TraceFirstFive("court_coroutine_finished");
                 Mark("T8 суд кончился");
             }
             _courtRunning = false;
@@ -1284,13 +1324,13 @@ namespace Sinbinder.Gameplay
                 _chaseCourt = false;
                 _chaseDecided = true;
                 _chaseDecidedAt = Time.time;
-                _chaseRefused = d.RefusedCommand || d.Hesitated;
+                _chaseRefused = !ActuallyObeyed(d);
                 Set(Stage.Chase, _chaseRefused
                     ? Grammar.Pick(g, Loc.N("Не погнался и по приказу. Убийцы уходят за мост."), Loc.N("Не погналась и по приказу. Убийцы уходят за мост."))
                     : Grammar.Pick(g, Loc.N("Гонится — по вашему приказу. Идите за ним к мосту."), Loc.N("Гонится — по вашему приказу. Идите за ней к мосту.")));
                 yield break;
             }
-            if (d.RefusedCommand || d.Hesitated)
+            if (!ActuallyObeyed(d))
                 StartBattle(Grammar.Pick(g,
                     Loc.N("Он решил сам — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом."),
                     Loc.N("Она решила сама — гонится за убийцами к засаде. Мост поднят: идите в обход, лесом.")));
@@ -1319,7 +1359,7 @@ namespace Sinbinder.Gameplay
         private float _lateSince;
         private bool _lordCame, _remembered;
 
-        private static bool Refused => RefusalResult == "отказал" || RefusalResult == "колебался";
+        private static bool Refused => RefusalResult == "отказал" || RefusalResult == "колебался" || RefusalResult == "выбрал своё";
 
         /// <summary>Греховод рядом с поднятым, пока тот бьётся у засады, — пришёл.</summary>
         private void WatchLord()
@@ -1410,8 +1450,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private IEnumerator Contrast(AOS.Decision d, AOS.DecisionContext c)
         {
-            bool obeyed = !d.RefusedCommand && !d.Hesitated;
+            bool obeyed = ActuallyObeyed(d);
             RetestResult = obeyed ? "послушался" : "снова нет";
+            TraceFirstFive("second_verdict action=" + d.Action + " outcome=" + RetestResult);
             string voice = Voice(d, c);
             Debug.Log($"[СОН] Тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");
             Mark($"T6 тот же приказ без убийц: {RetestResult} ({d.Action}, голос {voice})");

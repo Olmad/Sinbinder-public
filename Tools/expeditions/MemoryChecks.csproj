@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="MemoryProgram.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs" Link="ExpeditionMemoryLedger.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" Link="ExpeditionMemoryVote.cs" />
+  </ItemGroup>
+</Project>

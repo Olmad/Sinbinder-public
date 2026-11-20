@@ -1,0 +1,38 @@
+name: Full game text extraction and coverage inventory
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Tools/logic/audit_all_game_texts.py"
+      - ".github/workflows/full-text-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    name: Inventory all tracked player-text candidates (NOT semantic approval)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Full source text extraction with per-file status
+        run: python3 Tools/logic/audit_all_game_texts.py --output-dir text-audit-results
+      - name: Upload exhaustive candidate inventory and coverage manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sinbinder-game-text-coverage
+          path: text-audit-results/
+          retention-days: 30
+      - name: Show honest source vs semantic status
+        if: always()
+        run: |
+          if test -f text-audit-results/text-audit-machine-summary.md; then
+            cat text-audit-results/text-audit-machine-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Text extraction failed before a coverage report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi

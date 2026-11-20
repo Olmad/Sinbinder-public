@@ -32,6 +32,8 @@ $pk = Get-ChildItem $packs -Filter *.dll | Where-Object { $_.Name -notlike 'Asse
 $pkRuntime = $pk | Where-Object { $_.Name -notmatch 'Editor|CodeGen|TestRunner|TestFramework|PerformanceTesting' }
 
 $all = Get-ChildItem (Join-Path $root 'Assets') -Recurse -Filter *.cs -File
+# Тесты NUnit (Assets/Tests, свой asmdef c TestAssemblies) Unity собирает отдельно с nunit — здесь не проверяем.
+$all = $all | Where-Object { $_.FullName -notmatch '\\Assets\\Tests\\' }
 $game = $all | Where-Object { $_.FullName -notmatch '\\Editor\\' }
 $edit = $all | Where-Object { $_.FullName -match '\\Editor\\' }
 $nowarn = 'CS0414,CS0649,CS0169,CS0067,CS0618,CS0612,CS0168,CS0219,CS1998,CS0162,CS0108,CS0114,CS0105,CS0436,CS8632'

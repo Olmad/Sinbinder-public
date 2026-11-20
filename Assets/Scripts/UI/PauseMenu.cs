@@ -43,7 +43,7 @@ namespace Sinbinder.UI
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
             // Этот Esc закрыл консоль (Dev.CheatConsole) — меню он не открывает.
-            if (Dev.CheatConsole.OwnsEscape) return;
+            if (Dev.CheatConsole.OwnsEscape || Gameplay.CardTable.OwnsEscape) return;
 
             if (_open) { Close(); return; }
 
@@ -170,8 +170,9 @@ namespace Sinbinder.UI
                 Draw();
             });
 
-            // Суд Души: по делу или никогда (автор, 06.11; пояснять не нужно).
-            Add(ref y, Loc.T("Показывать Суд Души"), Core.Preferences.CourtName(), () =>
+            // Only automatic important-moment courts. U / Shift+U manual
+            // replay and the first instructional court remain available.
+            Add(ref y, Loc.T("Автоматический Суд души"), Core.Preferences.CourtName(), () =>
             {
                 Core.Preferences.ToggleCourt();
                 Draw();

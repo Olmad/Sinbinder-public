@@ -56,6 +56,7 @@ UNITY_TYPES = {
     # (Gameplay/CampfireStoke, 26 октября; компилятор его принял).
     'MaterialPropertyBlock',
     'AnimationClip', 'RenderSettings', 'QualitySettings', 'TextureImporter',
+    'Plane',  # UnityEngine.Plane: LAN arena ray-ground intersection.
     'AssetImporter', 'ModelImporter', 'EditorApplication',
     'RenderTexture', 'RenderTextureFormat', 'Texture', 'Graphics', 'TextureFormat',
     'BuildPipeline', 'BuildPlayerOptions', 'BuildTarget', 'BuildOptions',
@@ -67,6 +68,9 @@ UNITY_TYPES = {
 DOTNET_TYPES = {
     'String', 'Math', 'Guid', 'DateTime', 'TimeSpan', 'Array', 'List', 'Dictionary', 'HashSet',
     'Queue', 'Stack', 'StringBuilder', 'Regex', 'Exception', 'IEnumerator', 'IEnumerable',
+    # .NET networking primitives used by the isolated LAN test server/client.
+    'TcpClient', 'TcpListener', 'MemoryStream', 'CancellationTokenSource',
+    'SemaphoreSlim', 'TimeoutException', 'InvalidDataException',
     'Action', 'Func', 'Nullable', 'Convert', 'Enum', 'Tuple', 'KeyValuePair',
 }
 

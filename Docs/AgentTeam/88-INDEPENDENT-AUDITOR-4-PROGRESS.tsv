@@ -1,0 +1,584 @@
+# INDEPENDENT_TEXT_AUDIT_PASS=4 BASE_SHA=3b642a701a990ace58556b2afc2de04fd517b351
+path	blob_sha	bytes	audit_class	found_text_candidates	checked_text_candidates	failed_text_candidates	unknown_text_candidates	status	evidence
+Assets/Models/Сцены/Холм.asset	7b314279dc229d96032641be4e4721ea4fe7cf44	604627	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Readme.asset	77c2f83ce8f788e94bcca20d047cf5bff16c9f5c	1144	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 33-line YAML inspected: Unity URP template Readme ScriptableObject; title and sections are editor onboarding/docs (Welcome to Universal Render Pipeline, documentation/forums/bug links), not game UI; no runtime dialogue or localization binding in this asset. 0 player-facing lines; editor-visible English excluded, RU/EN game comparison N/A. Source blob 77c2f83ce8f788e94bcca20d047cf5bff16c9f5; runtime reference reachability UNKNOWN.
+Assets/Resources/AOSConfig.asset	25496e7483e77c4971e4dc2600b0ef28eaccc5f8	2993	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94-line Unity YAML inspected at blob 25496e7483e77c4971e4dc2600b0ef28eaccc5f8: MonoBehaviour AOSConfig with numeric tuning values only (GreedLootPerItem through MemoryWeight), script GUID and editor identifiers. No player-facing literals, dialogue, Text/TMP, or localization keys. 0 player-facing strings; RU/EN N/A. Numeric effects and UI formatting in consumers not covered; Unity NOT VERIFIED.
+Assets/Resources/DialogueDatabase.asset	833e9bd0202d79a1614c5b5835c59fafc4dec1cb	10704	UnitySerialized	42	42	0	42	UNKNOWN	Full 10,704-byte Unity YAML read: 2 situations PRE_01 and JOIN_01, each 7 Sin x 3 Moral = 21 Russian Text entries, 42/42 inspected for literal claims. No EN translations serialized in this asset. Examples PRE_01 Sin=1 Moral=0 'Ты даже не запомнишь, кто тебя убил. А я запомню' requires actual kill; PRE_01 Sin=3 Moral=0 'Хороший клинок' requires weapon; JOIN_01 Sin=1 Moral=0 'Вы оба говорите слишком долго для мертвецов' presupposes two interlocutors and undead. Speaker/trigger/outcome/EN binding not yet source-traced; therefore 0 semantic PASS, 42 UNKNOWN, no confirmed FAIL. Blob 833e9bd0202d79a1614c5b5835c59fafc4dec1cb; Unity NOT VERIFIED.
+Assets/Resources/Fonts/OFL-CormorantSC.txt	507d70f4565352dbfcf2dfc9b42eb092b57c0be8	4387	Text_Locale	0	0	0	0	EXCLUDED_TECH	Full 93-line SIL Open Font License 1.1 inspected; copyright/license terms for Cormorant font only, no dialogue/UI or game claims; English legal text, not RU/EN player-facing localization. Blob 507d70f4565352dbfcf2dfc9b42eb092b57c0be8; external display of license outside game not assessed.
+Assets/Resources/Fonts/OFL-PTSerif.txt	e9f47cb8b582b7277c90c706f1a688348554a2c3	4434	Text_Locale	0	0	0	0	EXCLUDED_TECH	Full 93-line SIL Open Font License 1.1 read at blob e9f47cb8b582b7277c90c706f1a688348554a2c3: PT Serif copyright, reserved font names, permissions, conditions, termination, disclaimer only; no game dialogue, UI, player-facing claims or RU/EN localization keys. 0 player-facing strings; runtime display reachability UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/Lang/en.txt	c12806f2da2b415092b903b85c8ae489ebc46c78	474526	Text_Locale	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/Barrel.prefab	bdc6b9beb57a65807e84768fac7e4b0d9686c615	2753	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject name only; Transform MeshFilter MeshRenderer; no Text TMP UI script or dialogue fields; no player-facing text; RU/EN not applicable. Source blob bdc6b9beb57a65807e84768fac7e4b0d9686c615
+Assets/Resources/MapProps/Bush.prefab	1f2f43d6aa33bbe738b63826444095a8d794c5cb	2677	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject m_Name=Bush (editor object name only), Transform, MeshFilter, MeshRenderer; no MonoBehaviour, UI/Text/TMP or dialogue fields; zero player-facing strings in this prefab; RU/EN N/A; external referenced assets not verified. Source blob 1f2f43d6aa33bbe738b63826444095a8d794c5cb
+Assets/Resources/MapProps/Campfire.prefab	1316f1d329febab1d9b6b119509cbc5137246c9a	240463	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/Chest.prefab	7d088b8415ec7f0bbef7d95c90d4b66adc74cce1	2751	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject name only; Transform MeshFilter MeshRenderer; no Text TMP UI script or dialogue fields; no player-facing text; RU/EN not applicable. Source blob 7d088b8415ec7f0bbef7d95c90d4b66adc74cce1
+Assets/Resources/MapProps/Cradle.prefab	281b83a627e97e98cf8826d75494f4dbf7b068f8	2847	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject name only; Transform MeshFilter MeshRenderer; no Text TMP UI script or dialogue fields; no player-facing text; RU/EN not applicable. Source blob 281b83a627e97e98cf8826d75494f4dbf7b068f8
+Assets/Resources/MapProps/Crate.prefab	0afe94de10c4c36bbba517023629a48e5dd28514	2749	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject m_Name=Crate (editor object name only), Transform, MeshFilter, MeshRenderer; no MonoBehaviour, UI/Text/TMP or dialogue fields; zero player-facing strings in this prefab; RU/EN N/A; external referenced assets not verified. Source blob 0afe94de10c4c36bbba517023629a48e5dd28514
+Assets/Resources/MapProps/Crypt.prefab	21dac07860a24d904d91538c65c0809bda31a081	100743	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/DeadTreeA.prefab	799972bdc135a4df9deeddc2b2c3af3005117be1	2683	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected: GameObject m_Name=DeadTreeA (editor object name only), Transform, MeshFilter, MeshRenderer; no MonoBehaviour, UI/Text/TMP or dialogue fields; zero player-facing strings in this prefab; RU/EN N/A; external referenced assets not verified. Source blob 799972bdc135a4df9deeddc2b2c3af3005117be1
+Assets/Resources/MapProps/DeadTreeB.prefab	f980ee75e452f49e8b26b05e19458d37b1cca83c	2685	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected (92 content lines): GameObject editor m_Name, Transform, MeshFilter, MeshRenderer only; no MonoBehaviour, UI/Text/TMP, dialogue or player-facing strings. RU/EN N/A; referenced mesh/material assets not assessed. Blob f980ee75e452f49e8b26b05e19458d37b1cca83c
+Assets/Resources/MapProps/DeadTreeC.prefab	c0b6a78cb932c3e1d73a98c14ea7efaa987affc7	2686	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected (92 content lines): GameObject editor m_Name, Transform, MeshFilter, MeshRenderer only; no MonoBehaviour, UI/Text/TMP, dialogue or player-facing strings. RU/EN N/A; referenced mesh/material assets not assessed. Blob c0b6a78cb932c3e1d73a98c14ea7efaa987affc7
+Assets/Resources/MapProps/GrassTuft.prefab	c6df1bad5d91e12d7b50fb945972cf3a9680dad8	2682	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected (92 content lines): GameObject editor m_Name, Transform, MeshFilter, MeshRenderer only; no MonoBehaviour, UI/Text/TMP, dialogue or player-facing strings. RU/EN N/A; referenced mesh/material assets not assessed. Blob c6df1bad5d91e12d7b50fb945972cf3a9680dad8
+Assets/Resources/MapProps/Izba.prefab	1b650581c408091cedac26fbb6f8cdca7cf59ce8	3180	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 98 content lines of Unity YAML inspected at blob 1b650581c408091cedac26fbb6f8cdca7cf59ce8: one GameObject named Izba, Transform, MeshFilter and MeshRenderer; only numeric geometry/render settings and referenced mesh/material GUIDs. No MonoBehaviour, Text/TMP, UI, dialogue, localization fields or literal player-facing content (0/0). Object name is an editor identifier; player-visible names elsewhere and referenced model/material contents UNKNOWN. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Resources/MapProps/IzbaBed.prefab	41dfc8922b1d7a2baadfda471c320ace811987d7	2851	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full YAML inspected (94 content lines): GameObject editor m_Name, Transform, MeshFilter, MeshRenderer only; no MonoBehaviour, UI/Text/TMP, dialogue or player-facing strings. RU/EN N/A; referenced mesh/material assets not assessed. Blob 41dfc8922b1d7a2baadfda471c320ace811987d7
+Assets/Resources/MapProps/IzbaRoof.prefab	3266a80656c4c6102fa225fb41a6908109f071bf	2925	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 95 content lines of Unity YAML inspected at blob 3266a80656c4c6102fa225fb41a6908109f071bf: one GameObject named IzbaRoof, Transform, MeshFilter and MeshRenderer; only numeric geometry/render settings and referenced mesh/material GUIDs. No MonoBehaviour, Text/TMP, UI, dialogue, localization fields or literal player-facing content (0/0). Object name is an editor identifier; player-visible names elsewhere and referenced model/material contents UNKNOWN. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Resources/MapProps/IzbaRoofB.prefab	65ae9d92e3c5a725fa60901b7fca1f69d7ba8f86	2846	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94 content lines of Unity YAML inspected at blob 65ae9d92e3c5a725fa60901b7fca1f69d7ba8f86: one GameObject named IzbaRoofB, Transform, MeshFilter and MeshRenderer; only numeric geometry/render settings and referenced mesh/material GUIDs. No MonoBehaviour, Text/TMP, UI, dialogue, localization fields or literal player-facing content (0/0). Object name is an editor identifier; player-visible names elsewhere and referenced model/material contents UNKNOWN. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Resources/MapProps/IzbaRoofC.prefab	05e3db492b2db454e1660b836cafd6b17bb7608c	3011	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 96 content lines of Unity YAML inspected at blob 05e3db492b2db454e1660b836cafd6b17bb7608c: one GameObject named IzbaRoofC, Transform, MeshFilter and MeshRenderer; only numeric geometry/render settings and referenced mesh/material GUIDs. No MonoBehaviour, Text/TMP, UI, dialogue, localization fields or literal player-facing content (0/0). Object name is an editor identifier; player-visible names elsewhere and referenced model/material contents UNKNOWN. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Resources/MapProps/IzbaTable.prefab	e3a98ccf71b91e59818520f1fd91d9d2a3ae9043	2851	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94 content lines of Unity YAML inspected at blob e3a98ccf71b91e59818520f1fd91d9d2a3ae9043: one GameObject named IzbaTable, Transform, MeshFilter and MeshRenderer; only numeric geometry/render settings and referenced mesh/material GUIDs. No MonoBehaviour, Text/TMP, UI, dialogue, localization fields or literal player-facing content (0/0). Object name is an editor identifier; player-visible names elsewhere and referenced model/material contents UNKNOWN. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Resources/MapProps/IzbaWalls.prefab	d3c88fc94590d54e93cc91026aebf379f05a5b20	3095	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 100-line Unity prefab YAML read at blob d3c88fc94590d54e93cc91026aebf379f05a5b20: single GameObject named IzbaWalls; Transform, MeshFilter, MeshRenderer only. No MonoBehaviour, TMP/Text, dialogue, serialized player-facing text or Loc keys. 0 player-facing strings; RU/EN N/A. Referenced mesh/material resources and runtime-generated labels remain UNKNOWN; Unity not run.
+Assets/Resources/MapProps/IzbaWallsB.prefab	7f1b12a45c5c0cc5cd1497b969402dae06d40996	3098	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 100-line Unity prefab YAML read at blob 7f1b12a45c5c0cc5cd1497b969402dae06d40996: single GameObject named IzbaWallsB; Transform, MeshFilter, MeshRenderer only. No MonoBehaviour, TMP/Text, dialogue, serialized player-facing text or Loc keys. 0 player-facing strings; RU/EN N/A. Referenced mesh/material resources and runtime-generated labels remain UNKNOWN; Unity not run.
+Assets/Resources/MapProps/IzbaWallsC.prefab	98f9171163c68800c5f1c3cb762412b707d5cd0e	3095	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 100-line Unity prefab YAML read at blob 98f9171163c68800c5f1c3cb762412b707d5cd0e: single GameObject named IzbaWallsC; Transform, MeshFilter, MeshRenderer only. No MonoBehaviour, TMP/Text, dialogue, serialized player-facing text or Loc keys. 0 player-facing strings; RU/EN N/A. Referenced mesh/material resources and runtime-generated labels remain UNKNOWN; Unity not run.
+Assets/Resources/MapProps/LogBench.prefab	bb4937ddc0de68797068d96034fcd45ccf025876	2756	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 93-line Unity YAML inspected at source blob bb4937ddc0de68797068d96034fcd45ccf025876: exactly GameObject (m_Name=LogBench), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Palisade.prefab	06b1b98f2c63d14bf227cef2adb2cb34a8c354af	2768	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 93-line Unity YAML inspected at source blob 06b1b98f2c63d14bf227cef2adb2cb34a8c354af: exactly GameObject (m_Name=Palisade), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Pechka.prefab	8ffff3348cb09c1f4c7a156aa93300934e335cb7	2927	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 95-line Unity YAML inspected at source blob 8ffff3348cb09c1f4c7a156aa93300934e335cb7: exactly GameObject (m_Name=Pechka), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Pine.prefab	1ce7ddea7410b3e50b6bdcf0d8ad21c1223256d7	2764	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 93-line Unity YAML inspected at source blob 1ce7ddea7410b3e50b6bdcf0d8ad21c1223256d7: exactly GameObject (m_Name=Pine), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/PotShelf.prefab	a8efe33c50b05b03979315a17d1c98f8f9acebf0	2849	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94-line Unity YAML inspected at source blob a8efe33c50b05b03979315a17d1c98f8f9acebf0: exactly GameObject (m_Name=PotShelf), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Rock.prefab	df32476ebf273957aad75e4bb1450cdbd903b0af	2751	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 93-line Unity YAML inspected at source blob df32476ebf273957aad75e4bb1450cdbd903b0af: exactly GameObject (m_Name=Rock), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/SoulJar.prefab	7eedae3ba4944aa9adf4f7d0319e0097086fe52c	2849	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94-line Unity YAML inspected at source blob 7eedae3ba4944aa9adf4f7d0319e0097086fe52c: exactly GameObject (m_Name=SoulJar), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Spinner.prefab	b331b1ebcf4a222f93df9a39c241afb0dbf33305	2851	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 94-line Unity YAML inspected at source blob b331b1ebcf4a222f93df9a39c241afb0dbf33305: exactly GameObject (m_Name=Spinner), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/Stump.prefab	5aa983cb8a6536ec1c42875c4304062316de4e42	2766	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full 93-line Unity YAML inspected at source blob 5aa983cb8a6536ec1c42875c4304062316de4e42: exactly GameObject (m_Name=Stump), Transform, MeshFilter, MeshRenderer; mesh/material GUID references and numeric rendering fields only. No MonoBehaviour, TMP/Text, dialogue, localization, or player-facing literal. 0/0 player-facing strings; RU/EN N/A. Linked mesh/material contents and dynamically assigned UI labels remain UNKNOWN; Unity NOT VERIFIED.
+Assets/Resources/MapProps/TallPineA.prefab	669336b74f7dd5cbe5c428d20d1caf49b6d19e3e	2851	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (TallPineA: 94 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=TallPineA is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob 669336b74f7dd5cbe5c428d20d1caf49b6d19e3e.
+Assets/Resources/MapProps/TallPineB.prefab	464b7a0743f08cbdbfe5631ba35ed06b1034bf36	2851	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (TallPineB: 94 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=TallPineB is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob 464b7a0743f08cbdbfe5631ba35ed06b1034bf36.
+Assets/Resources/MapProps/TallPineC.prefab	47c671d2109a5b872527ee3c269f1fcd76229789	2850	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (TallPineC: 94 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=TallPineC is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob 47c671d2109a5b872527ee3c269f1fcd76229789.
+Assets/Resources/MapProps/Tent.prefab	33898861ca2d4f896040a39c128ed86b60b84186	2752	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (Tent: 93 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=Tent is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob 33898861ca2d4f896040a39c128ed86b60b84186.
+Assets/Resources/MapProps/Torch.prefab	42e5df67c56752c1fd58d32ea3ccce5d7f18899d	2836	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (Torch: 94 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=Torch is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob 42e5df67c56752c1fd58d32ea3ccce5d7f18899d.
+Assets/Resources/MapProps/TorchStand.prefab	1bcc44643ce332e914dd9dc957119ed6f375f971	240478	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/Wattle.prefab	e1b6c7c15ca5df8c725149416ccc1d2f1b5c6671	2765	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (Wattle: 93 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=Wattle is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob e1b6c7c15ca5df8c725149416ccc1d2f1b5c6671.
+Assets/Resources/MapProps/Well.prefab	6ed120715572bc9ee48d2f66fa21704fb98cae8c	3012	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/MapProps/Woodpile.prefab	fa21192de15ccea637a7f85fcd14c40e1b7e599d	2849	UnitySerialized	0	0	0	0	EXCLUDED_TECH	Full Unity YAML inspected (Woodpile: 94 nonempty lines, trailing newline). Exactly GameObject/Transform/MeshFilter/MeshRenderer; m_Name=Woodpile is internal object identifier, other values numeric/GUID/mesh/material refs. No serialized player-facing text, TMP/Text, MonoBehaviour, dialogue, or localization keys; 0/0 player-facing strings; RU/EN N/A. Linked model/material content and external UI names NOT verified (UNKNOWN); Unity not run. Source blob fa21192de15ccea637a7f85fcd14c40e1b7e599d.
+Assets/Resources/PerkDatabase.asset	f77ef190187b98fa38840c6a47077bd7c257b2f9	131833	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Resources/Shells/Ghost.asset	d0f122301e1ed6c16c1da8e968492b3fee7b7fd5	677	UnitySerialized	1	1	0	1	UNKNOWN	Full 30-line Unity YAML inspected at baseline blob d0f122301e1ed6c16c1da8e968492b3fee7b7fd5: ShellData MonoBehaviour has shellName="Призрак" (serialized Unicode escapes), potentially player-facing type name; m_Name=Ghost editor identifier; remaining fields numeric/bool stats and Unity references, no dialogue. Literal RU spelling read 1/1; EN mapping, runtime UI consumer, type-to-entity semantics and effects NOT source-traced; therefore semantic PASS 0, UNKNOWN 1. No text edit; Unity NOT VERIFIED.
+Assets/Resources/Shells/Golem.asset	a2e94c8f09da90473953ceb32147acda6bfe225e	667	UnitySerialized	1	1	0	1	UNKNOWN	Full 30-line Unity YAML inspected at baseline blob a2e94c8f09da90473953ceb32147acda6bfe225e: ShellData MonoBehaviour has shellName="Голем" (serialized Unicode escapes), potentially player-facing type name; m_Name=Golem editor identifier; remaining fields numeric/bool stats and Unity references, no dialogue. Literal RU spelling read 1/1; EN mapping, runtime UI consumer, type-to-entity semantics and effects NOT source-traced; therefore semantic PASS 0, UNKNOWN 1. No text edit; Unity NOT VERIFIED.
+Assets/Resources/Shells/Living.asset	a013c07c82277a4d8ea07781a4607dc62153d505	675	UnitySerialized	1	1	0	1	UNKNOWN	Full 30-line Unity YAML inspected at baseline blob a013c07c82277a4d8ea07781a4607dc62153d505: ShellData MonoBehaviour has shellName="Человек" (serialized Unicode escapes), potentially player-facing type name; m_Name=Living editor identifier; remaining fields numeric/bool stats and Unity references, no dialogue. Literal RU spelling read 1/1; EN mapping, runtime UI consumer, type-to-entity semantics and effects NOT source-traced; therefore semantic PASS 0, UNKNOWN 1. No text edit; Unity NOT VERIFIED.
+Assets/Resources/Shells/Skeleton.asset	14e6320a705c6f88fa6bf4c712f89b073ab5624b	679	UnitySerialized	1	1	0	1	UNKNOWN	Full 30-line Unity YAML inspected at baseline blob 14e6320a705c6f88fa6bf4c712f89b073ab5624b: ShellData MonoBehaviour has shellName="Скелет" (serialized Unicode escapes), potentially player-facing type name; m_Name=Skeleton editor identifier; remaining fields numeric/bool stats and Unity references, no dialogue. Literal RU spelling read 1/1; EN mapping, runtime UI consumer, type-to-entity semantics and effects NOT source-traced; therefore semantic PASS 0, UNKNOWN 1. No text edit; Unity NOT VERIFIED.
+Assets/Resources/Shells/Zombie.asset	803c702a6263f8f250d51f485d972e6f3fc6948b	669	UnitySerialized	1	1	0	1	UNKNOWN	Full 30-line Unity YAML inspected at baseline blob 803c702a6263f8f250d51f485d972e6f3fc6948b: ShellData MonoBehaviour has shellName="Зомби" (serialized Unicode escapes), potentially player-facing type name; m_Name=Zombie editor identifier; remaining fields numeric/bool stats and Unity references, no dialogue. Literal RU spelling read 1/1; EN mapping, runtime UI consumer, type-to-entity semantics and effects NOT source-traced; therefore semantic PASS 0, UNKNOWN 1. No text edit; Unity NOT VERIFIED.
+Assets/Scenes/Crypt_Entrance.unity	3ab7171d01aaffa915011d36b002afa41250bd3e	1116727	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Crypt_Test.unity	f716c8e52bdaf776c62801432f7efe6803010ee3	705457	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Prologue_Camp.unity	43f6f4a9cf2738a5c0ed646ac281030f931a7ded	6360580	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Prologue_Dream.unity	d5d514c3a0c64d9bba6796da27d2bb7250d835c5	279467	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/SampleScene.unity	1c63aa8ded8c325623e162675b13bfcd0b50aa5a	11413	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/SoulCourt.unity	e4d6790524c59d9d21b95d4d702f5637916a745e	3742161	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Tug/Field.unity	0f31408b8f5d775e04b8d887bb38f120d8618ba1	234248	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Tug/MapEditor.unity	f303386c6946fced899e1ec4c3b362939f0c68a3	19349	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Tug/Multiplayer_Test.unity	0f31408b8f5d775e04b8d887bb38f120d8618ba1	234248	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Tug/Tug_2.unity	4229ea52cd7295d25f77cc897fc275ed5e523df1	235760	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Tug/Tug_4.unity	c27db89742e1f5aeef481565f2c2542e4e16a9f4	235760	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scenes/Сакура.unity	eeefb0bea1303e539ec2c74902887181dbf50614	220609	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AOSConfig.cs	d379994db9521f72bb43877ae84d7a5e87d27459	18384	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AOSEventHub.cs	134ced529ab091544decb5ab6b0e9b3f530eed34	16092	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AOSSceneSetup.cs	befc1dfa76205fa9b3b53d726b1c6fb4230023d9	8087	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AOSStats.cs	e17f006adf66cb3140b8fc227de86db79bad2c93	5359	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs	4878de0743d9f53fcb22eb7240a1340fe9ebeb10	41478	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/ActionType.cs	2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa	2920	CSharp	0	0	0	0	EXCLUDED_TECH	Base blob 2d5026b5c0ff43fbd5dccdcb9b5c96cc757a36aa; entire 103-line enum inspected: identifiers and Russian developer comments only, no runtime strings/Loc.T/Loc.F/UI text; English labels require separate localization source review.
+Assets/Scripts/AOS Engine/AutoAttackAOS.cs	28b01f5aa2f3c04eb64090012a4e0eb434fa0b5a	4813	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/AutoBattleContext.cs	bc6fefc5f44b37b699979dcc1602c5840f1200be	3920	CSharp	0	0	0	0	EXCLUDED_TECH	Full 88-line C# source inspected: AutoBattleContext.Create constructs DecisionContext from combatant counts, HP, memories, commander and perks; no string literals, Loc.T/F or player-facing text. 0/0 player-facing lines; downstream combat narrative and source memories remain UNKNOWN; RU/EN N/A. Source blob bc6fefc5f44b37b699979dcc1602c5840f1200be; Unity not run.
+Assets/Scripts/AOS Engine/AutoBattleResolver.cs	ba1ed56d7e7b7b499b9a3ec7c972724f8bff5e96	14938	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/BattleNarrator.cs	b1a75d7c901f410f2a017924ee20504f5c9a1224	2278	CSharp	6	6	2	4	FAIL	Full 57-line C# source inspected at blob b1a75d7c901f410f2a017924ee20504f5c9a1224; all 6 Loc.T strings compared with en.txt at current blob 7e1d63f216a9c38a74f5b0cbe5bfa2208a90141f, lines 6-28: all six msgstr present and meaning broadly aligned. 2 semantic FAIL at method-contract level: Build(null/empty) unconditionally claims 'Отряд слушался' despite no evidence of obedience (negative case Build(new List<string>())); Build(five arbitrary entries), even five identical 'Приказы исполнялись', unconditionally claims the squad was negotiated with solely because entries.Count>4 (negative case Build(new[]{'Приказы исполнялись' x5})). Positive boundary: four entries yields 'В остальном приказы исполнялись', but also unproven by content. Remaining four literals are context/format dependent UNKNOWN, including repeated-event interpretation. Actual production call reachability and runtime output UNKNOWN; no Unity test; no production patch pending caller trace and evidence-backed safe replacement. Source line references: Build lines 18-55; en.txt 6-28. QA2: source=Assets/Scripts/AOS Engine/BattleNarrator.cs; blob=b1a75d7c901f410f2a017924ee20504f5c9a1224; lines=18-55; context=Build(IReadOnlyList<string>) only receives unstructured narration lines, not verified order outcomes; negative=Build(null) falsely asserted obedience and Build(five unrelated events) falsely asserted negotiation, Build(one refusal) falsely asserted obedience; verified=0; total=6; RU_EN=baseline six strings matched translation; outcome=FAIL. FIX FOR CURRENT CODE: BattleNarrator.cs new blob 974273d50701ef0676fb8390cadb72b4c83ff5e8, Loc new English catalog blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a. CI 44499180002 PASS 8 compiled C# assertions (not Unity). Source-level repair preserves the event order, repeated-event compression and truthful absence of records; baseline FAIL retained until independent QA review at fix SHA; no claim of full source semantic PASS.
+Assets/Scripts/AOS Engine/BattleRecord.cs	5ead96068234cf3877818d4c33fba407b78da041	2457	CSharp	3	3	0	3	UNKNOWN	Full 69-line C# source inspected at base blob 5ead96068234cf3877818d4c33fba407b78da041: BattleEvent.ActorName and TargetName plus BattleRecord.Winner are three runtime-provided potentially player-facing strings. No hard-coded player-facing literals or Loc.T/F; all other strings are comments/field identifiers. AddEvent only appends non-null events, no text validation. No RU/EN values or rendering/identity bindings in this file, so 3/3 field sites inspected, 0 semantic PASS, 3 UNKNOWN; verify producer AutoBattleResolver and replay UI separately. Unity not run.
+Assets/Scripts/AOS Engine/BehaviorResolver.cs	77c02f01b186d8da072a519e708a4ab648825799	30712	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/CombatDecisionContext.cs	342803f26060d9e93a8a29c7b04d1f02cdfd0be3	13693	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Counterfactual.cs	1a70366c45b70ce1ead084ddb1ea2b7df914163c	15911	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/DebugAOS.cs	ffd7c5d9fe40969e42f96fce3b67f7812e2b6e6a	2951	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Decision.cs	92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62	4151	CSharp	0	0	0	0	EXCLUDED_TECH	Full 77-line C# source inspected at blob 92c9aac281d0ffaad635bc8a8afa0f59c2cf1f62: Decision struct only typed fields (Action, TopModule, TopContender, RunnerUp, Gap, Confidence, Hesitated, RefusedCommand, Weighed, Decisive, DecisiveAlso, DecisiveVoice) and developer XML comments; no player-facing literals or Loc.T/F. 0 player-facing lines; eventual renderers of decision fields and RU/EN remain separate UNKNOWN. Unity NOT VERIFIED.
+Assets/Scripts/AOS Engine/DecisionContext.cs	d38c4552b5a99a3caf212cdc031e07c3ef718eb8	9235	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/DeedType.cs	9073ac7a17bbfe9370f8c52b7487eb4d9b303688	1381	CSharp	0	0	0	0	EXCLUDED_TECH	Full 37-line C# source inspected at blob 9073ac7a17bbfe9370f8c52b7487eb4d9b303688: enum DeedType has 14 identifiers (Kill through StayedOut), developer XML comments and see cref references only; no runtime string literals, Loc.T/F, UI or dialogue. 0 player-facing lines in this source; any title mapping by TitleManager is a separate UNKNOWN source. RU/EN N/A; Unity NOT VERIFIED.
+Assets/Scripts/AOS Engine/EmotionSystem.cs	5dbc7cb459db09204ac38f8996d5802258720fb7	3611	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/FalseGodQuest.cs	6a86ff689fd37499b93a6300dcaea7c895f4fde0	7784	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/FearModule.cs	bca652eff7865aab20edc5cb7183bf158373ec95	3935	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/ICampModule.cs	9ed654959215f4188791335d914a946e0726fe4f	7995	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/IMissionModule.cs	a4db8b87a77885ac0a8dc69b9572fa61c3f82f32	984	CSharp	0	0	0	0	EXCLUDED_TECH	Full 20-line C# source read, blob a4db8b87a77885ac0a8dc69b9572fa61c3f82f32. Interface only: EvaluateMission(Soul,MissionContext,MissionAction) and XML/developer comments; no string literals, Loc calls, UI bindings or runtime player-facing text. 0/0 player-facing strings. Comments about voice participation are editor-only; behaviour and text emitted by implementations remain UNKNOWN.
+Assets/Scripts/AOS Engine/IPersonalityModule.cs	a6888f136668fa58949c84336efa33c98ce6c48d	287	CSharp	0	0	0	0	EXCLUDED_TECH	Full 8-line C# interface read, blob a6888f136668fa58949c84336efa33c98ce6c48d: ModuleID is a programmatic module identifier; Evaluate returns float; no user-visible literals, Loc calls, dialogue or serialized content. 0/0 player-facing; downstream formatting not covered.
+Assets/Scripts/AOS Engine/ISkillSet.cs	489b9553af3d16a125578b359b4f4d3e3ed826a3	1398	CSharp	0	0	0	0	EXCLUDED_TECH	Full 28-line C# source read, blob 489b9553af3d16a125578b359b4f4d3e3ed826a3. Interface defines SkillActions, CanUseSkill, ExecuteSkill; Russian XML comments and historical counts (62/6/56) are developer documentation only, not runtime dialogue. No literals/Loc/UI binding. 0/0 player-facing strings; skill names and presentation in implementations remain UNKNOWN.
+Assets/Scripts/AOS Engine/LoyaltyModule.cs	e68ab4d6b814c5cd20bc7fb57556ca695b179b11	5536	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MemoryModule.cs	bed6f4b20037384c80da12715fcf8053693e723c	5533	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MemoryProcessor.cs	fd479b53307b6136d6f2fab2b8c97654e533cd6f	6778	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MemoryRecord.cs	db45ac40321e7fde8d5dc39cb2224cfd7aeeb596	2558	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/MissionAction.cs	b66adc1d0c18411beb4dbbabd8c931eccf177f75	1594	CSharp	0	0	0	0	EXCLUDED_TECH	Full 33-line C# source read, blob b66adc1d0c18411beb4dbbabd8c931eccf177f75. Enum of 12 mission action identifiers, Russian developer comments describe caravan outcomes but are not runtime player-facing strings; no literals, Loc calls, UI. 0/0 player-facing strings. Any enum-to-label mapping, translations and actual mission outcomes remain UNKNOWN.
+Assets/Scripts/AOS Engine/MissionContext.cs	0906ad0a823613c3b99731460635c9fc2f915cb7	1391	CSharp	0	0	0	0	EXCLUDED_TECH	Full 36-line C# source inspected at blob 0906ad0a823613c3b99731460635c9fc2f915cb7: MissionContext is a data-only DecisionContext subclass. Its sole string field ExpeditionSite is explicitly a stable non-localized location key, not a player-facing phrase. MissionID, victim/guilt/treasure/altar/village booleans, Traveler/VillageElder NPCData references, and HasSuggestion/SuggestedAction contain no literal dialogue, Loc.T/F, or UI text. Russian and English prose appears only in developer comments; 0 player-facing literals, RU/EN N/A. Downstream conversion of ExpeditionSite and NPC references into testimony/UI remains UNKNOWN and is not covered; Unity not run.
+Assets/Scripts/AOS Engine/MissionID.cs	4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164	285	CSharp	0	0	0	0	EXCLUDED_TECH	Full 12-line source reviewed on blob 4fe30b89f29ff8152b1cc59fd172f7a6c5a6d164; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/AOS Engine/MissionOutcome.cs	88586e1a961307b8fc82a302af5bc65d56693930	870	CSharp	0	0	0	0	EXCLUDED_TECH	Full 25-line C# enum inspected at blob 88586e1a961307b8fc82a302af5bc65d56693930: only MissionOutcome identifiers VillageSaved/VillageDestroyed/VillageAbandoned/NewCultEstablished/TravelerEscaped/TravelerKilled/None, with developer comments on serialization; no literals, localization keys, display annotations or player-facing prose. Outcome-to-text mapping in consumers is separately UNKNOWN; 0/0 player-facing strings in this file.
+Assets/Scripts/AOS Engine/MissionResolver.cs	a09504986e5d7116c4abb6f2fa76c18be413b7fc	1160	CSharp	0	0	0	0	EXCLUDED_TECH	Full 30-line C# source inspected at blob a09504986e5d7116c4abb6f2fa76c18be413b7fc: namespace/imports, singleton Awake and Resolve(Warrior,Quest) delegation to quest.ResolveCommander(commander). All Russian text is developer comments, including 'текст через Loc'; no string literals, Loc.T/F, UI output, dialogue, or localized keys. 0/0 player-facing strings; RU/EN N/A for this file. Quest.ResolveCommander and downstream outcome rendering remain UNKNOWN; no Unity runtime test.
+Assets/Scripts/AOS Engine/Modules/EnvyModule.cs	477923d69b5a66e1776c5f94e6b7e6e55d6e3f13	5430	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs	4992fb5ce5c328e4e668bd174dfd98f2004e31b8	4506	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Modules/GreedModule.cs	c6ef002df2b5a7e23770f1ab133e3c5d8da5df87	8329	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Modules/LustModule.cs	853b9e751a0a9509bb66763de068ad190d1e7a65	5322	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Modules/PatienceModule.cs	76ad5059e3f1dd50172b032f12b9928b6b141f21	1998	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Modules/PrideModule.cs	44d0b0688240ea8f514e4743b75683b85c3c8935	9919	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Moment.cs	3a0422e3d61ec623c4bc4d0059c93f3d86ca4da8	7022	CSharp	0	0	0	0	EXCLUDED_TECH	Full 133-line C# source inspected: Notice enum and Moment.SelfWilled/Worth/Loudness contain only technical action identifiers and developer comments; no string literals, Loc.T/F, displayed text or localization keys. 0/0 player-facing lines; action narration delegated to PhraseGenerator.Doing remains UNKNOWN; RU/EN N/A. Source blob 3a0422e3d61ec623c4bc4d0059c93f3d86ca4da8; Unity not run.
+Assets/Scripts/AOS Engine/MoralityModule.cs	b4625c6db1baa094c2ee6060857adb8e7da7ec66	6069	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/NPCData.cs	302532ad0ff3d10e2dd3e7a7ed9a55194093709b	581	CSharp	1	1	0	1	UNKNOWN	Full 19-line C# source inspected at blob 302532ad0ff3d10e2dd3e7a7ed9a55194093709b: serializable NPCData declares DisplayName potentially player-facing; Id technical, IsInnocent/IsAlive flags not prose. No literal NPC name or Loc key. Name source, presence, RU/EN, consumer and flag correspondence remain UNKNOWN; 1/1 text-bearing field inspected, 0 semantic PASS.
+Assets/Scripts/AOS Engine/OrderIntegrity.cs	cb54b867e839a0d370abe2bfabf074b46120c303	3815	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/PerkResolver.cs	e6e5ddcefffaca74c97ddd488f087a93aaf9670f	5606	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/PhraseGenerator.cs	da6ce1b5be754f8577772a6beb986d276e7d1c79	43924	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Quest.cs	7ef9ce15524b2e251564acea11d4b618a0479f98	2502	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/RefusalPresenter.cs	05e67a4e6e353889196bd2b8cde7d62c4d5e3b68	15256	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/ReputationData.cs	6be256050b3ecc14ca8e70c4d25ba7045f526a4a	1679	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Rumour.cs	82f150722bd0fe416d0bf475b3edd757b7f7331d	651	CSharp	1	1	0	1	UNKNOWN	Full 21-line C# source inspected at blob 82f150722bd0fe416d0bf475b3edd757b7f7331d: serializable Rumour has one potentially player-facing string Text, plus SubjectId, Progress, Confirmed. No hardcoded dialogue or Loc key; Text value, origin, consumers, RU/EN and truth of rumour are external and UNKNOWN. 1/1 field inspected; 0 semantic PASS; no runtime claim.
+Assets/Scripts/AOS Engine/RumourManager.cs	29825db74fb8f8e9055c9195d7533768d24302dc	7433	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/SkillCatalog.cs	a0ef40a2ad0c4cbd26b1ff253d376fdcd9d9fc61	4967	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/SlothModule.cs	149a6903b8a1dd8cf1ac6d36224a859d39a90447	8079	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/Soul.cs	8be7b1fb9ec1da43ede6e21bede198c0db89e4a8	2549	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/SquadStrategy.cs	236653640b310e0f9c8fc6a02d4c7e4e69a69103	703	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/StrategyDatabase.cs	88ae28858f07b965ddcc1677849fff854178fe6a	4294	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/StrategyModifier.cs	490f1365ef1f9177e157137f3717012ca2a92750	589	CSharp	0	0	0	0	EXCLUDED_TECH	Full 18-line C# class read, blob 490f1365ef1f9177e157137f3717012ca2a92750: only ActionType enum and numeric Bonus, comments are developer documentation; no player-facing literal or localization. UI explanations generated by consumers remain separate.
+Assets/Scripts/AOS Engine/TemperamentPredictor.cs	0a282030fcc8e04cb47d7c03c12bbe1111094ab7	9958	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TemptationResolver.cs	20b0c4cc2247b9bf293a499da3c0da289a82dfe9	4126	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleCeremony.cs	3bbe581a1941dc006a46f2a043dbece6b9f0da0a	3263	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleCeremonyBehaviour.cs	2939d318ca82fb4739e20cdf23a04fb36bc1c410	8927	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleDatabase.cs	01b46abda25a146c1ef0408d112e39b03a36d89e	12627	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleManager.cs	7bb914cec54653780f74112f9cd9a4dedb04c2c3	16424	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleRule.cs	2fe3901da37db781b29326bbf8dc6de72f40542f	5097	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/TitleWords.cs	37ff964bdb8ee6e49ea3e7a8c9284c9989b91056	10276	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/VirtueModule.cs	5e7cdffa35240b0ebbe5fa24bece98f426ea5b69	3311	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/AOS Engine/WrathModule.cs	718e194f9dcb6b155593002bd6ac60af5bd21a10	8087	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Audio/DeathVoice.cs	f04e55d15c5003904ee624d7c6610ad25378e915	33894	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Audio/Music.cs	29b28842bbcd01de1de40b7a36d21daac1f40b72	22839	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Audio/Sfx.cs	7de8c39f087cac17d1fea991b773015225a1bc6b	29055	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Audio/VoiceGenerator.cs	c28c207f0ef9bc2ddd4297ead5325fdcae874f60	37705	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Audio/VoiceModifier.cs	fe4291b50a86b39a8636bcb1abcecf5f09967f92	597	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Allegiance.cs	591ac5abe4c9b1f062013ad2239f8ee51efdd634	4072	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Commitment.cs	546ab1bec303023246e324ba6ba731d8c11b4156	3353	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Cost.cs	73819e25fdbda5311287082fd4984c95366b38b2	2178	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/FrameBudget.cs	f75ab881e9a9b0b3206b59e68a89300f60eaf374	18177	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/GameModeSettings.cs	d1b879dc14b73705168d69ff87446957c421fb93	3009	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/GamePauseController.cs	131ae591ee3ea15e115b006a557b09fb2ee45977	4353	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Grammar.cs	1b8a1a099e9474ae251b6d4314d97827bd2b159c	11173	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/GraphicsOptions.cs	4ee341038530ec0f06f07b3d5938d8eea00817d1	15118	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Loc.cs	0865eeb9310031767ae5f4f726e6e7715dd239aa	10310	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/LocSetup.cs	69e2549e92a0c4f34d2b089b0e17d21fadec552d	4489	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/LocationDatabase.asset	f028a7b03a9e23f830fa7f312a7f6b9e992bde03	1135	UnitySerialized	10	10	0	10	UNKNOWN	Full 45-line YAML inspected at blob f028a7b03a9e23f830fa7f312a7f6b9e992bde03: 10 Locations entries, each SceneName/DisplayName/Tag. All 10 DisplayName values exactly duplicate scene identifiers (Prologue_Camp, SampleScene, Prologue_Raid, Prologue_Escape, Crypt_Entrance, Crypt_Test, Tug_2, Tug_4, Field, MapEditor). LocationDatabase.cs defines DisplayName as player-facing display name (example 'Склеп'), but runtime consumers, localization RU/EN, scene reachability and actual UI rendering not traced; 10/10 candidate strings read, 0 semantic PASS, 10 UNKNOWN, potential raw-identifier display risk not proven FAIL. No runtime/Unity test.
+Assets/Scripts/Core/LocationDatabase.cs	0a8e1931e18b4e3026ad70c863c5d4b1b53d8c4b	707	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/LocationManager.cs	80cc265a1d12038e3319bce7f16ebe12c48fa7e8	4451	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/MapData.cs	57b01d191db80094c048fb512bb22d2ba6da7ba7	12905	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/MemorySeed.cs	02ff343c9979b8cf443c119d96fefa24623a1b2b	1227	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/MultiplayerTestMap.cs	42e8a2a841faf8c7d7e1a15568d4bf51640c02f1	5028	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Naming.cs	d52a06d81dfcba65369fabd3db2e342529250fc0	3484	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Preferences.cs	051dbcf50e7ce65a41fb71ff42e65a6c8376ceab	11910	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Punishment.cs	7d29c22cd13fdd91a4a81198d5eb3d668f5b5a53	8233	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Records.cs	d7396651fe3fd7f5c7bd272f52349fa2a30fe56b	8384	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/RelationshipSystem.cs	6b7babc9f700e8f112dc8fc0f0639cc99f97e4c6	1407	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Satchel.cs	141f38c00fecf2498d4c71cd5bd06ecd0d8a1173	9427	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/SaveGame.cs	d21606c05390e0cf20a72ecade30a4dea5d41101	11587	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/SaveSystem.cs	c604779d6c892ad62b06af80e12ba074d0b07433	32985	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/SinPalette.cs	912e07babd612fec0be5bab28e6d30bb7532cb85	2020	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/MoralType.cs	b3ccf6c5ea8b1d647a8a8f521845aa268292fba6	171	CSharp	0	0	0	0	EXCLUDED_TECH	Full 10-line source reviewed on blob b3ccf6c5ea8b1d647a8a8f521845aa268292fba6; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/Core/Soul/NarrativePerk.cs	fda4b6dbe5ec007ad23734e792f4be64fe83dee0	586	CSharp	1	1	0	1	UNKNOWN	Full 18-line C# data class read, blob fda4b6dbe5ec007ad23734e792f4be64fe83dee0: PerkName field (line 13) can potentially surface as a displayed perk name, but actual value, binding, RU/EN and player visibility are not established. RelatedCharacterID is a technical ID; 1/1 potential text field inspected, 0 PASS, 1 UNKNOWN.
+Assets/Scripts/Core/Soul/PerkDatabase.cs	d305aafa5e44a7c5556b0676b5690aee7d49e31b	563	CSharp	0	0	0	0	EXCLUDED_TECH	Full 17-line C# ScriptableObject container read, blob d305aafa5e44a7c5556b0676b5690aee7d49e31b: only Unity editor CreateAssetMenu labels and List<SoulPerk>; no player-facing text literal. Perk records and their descriptions remain separate UNKNOWN sources.
+Assets/Scripts/Core/Soul/PerkEffect.cs	6319f528ea2cbe6702608bdcc2fe2aa44858ba59	575	CSharp	0	0	0	0	EXCLUDED_TECH	Full 19-line C# effect data class read, blob 6319f528ea2cbe6702608bdcc2fe2aa44858ba59: Condition default 'Always' is a resolver condition token, not presented to player in this file; other members are action enum/float. No dialogue or localization. Consumers that might expose Condition remain unverified.
+Assets/Scripts/Core/Soul/PerkType.cs	3928f1edf43b5325d585db08c134b79e66e11488	885	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/ShellBinder.cs	56ec578fe74b5ac2b8dafd2d85da50abb3818821	1416	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/ShellChoice.cs	3617f5ed5fd972dbcaffb1ffd383241ec30f835b	5505	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/ShellLibrary.cs	dd087a99e4e03dea210eb486e2d64a660df003c9	2446	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/ShellType.cs	fe522c531b6ee279bafe599b0845faf133aaa3a1	1814	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/SinType.cs	9c90e8f6d78fee2f367f143f39ed0951abbcc113	242	CSharp	0	0	0	0	EXCLUDED_TECH	Full 14-line source reviewed on blob 9c90e8f6d78fee2f367f143f39ed0951abbcc113; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/Core/Soul/SoulData.cs	2609aa2731fc28c96fbf969f26b28f6703302a32	15940	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/SoulDecay.cs	28f70a32b73191f56ce44a14041f66d30210c7e0	7397	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/SoulPerk.cs	c805e31ccceb8bbba8cb6abf0b661e74b2a3278d	870	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Soul/SoulQuality.cs	7976486c80a60c8ba950e859a0e6757e4819cde8	198	CSharp	0	0	0	0	EXCLUDED_TECH	Full 11-line source reviewed on blob 7976486c80a60c8ba950e859a0e6757e4819cde8; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/Core/Soul/Trade.cs	5235653fd3845fcca7f608e7f81e96da6d45c3b3	10117	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Transparency.cs	b567aa2b4c65dd991d8b279dcc9a9a35ead95c84	17674	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/TransparencySettings.cs	2f62437225ef5c244fa6419263367cf445635f2d	6913	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Virtue/VirtueSystem.cs	9a8404cc68255ef44e3f5a991da000da88a9866f	603	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Core/Virtue/VirtueType.cs	70fe8bef7d5f2ca2f571999bb78438dcf3df5cf0	270	CSharp	0	0	0	0	EXCLUDED_TECH	Full 14-line source reviewed on blob 70fe8bef7d5f2ca2f571999bb78438dcf3df5cf0; enum identifiers and developer comments only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/Core/WarriorGenerator.cs	0448e60f39ee7d3d28c56953ad31bb8fa739934b	33046	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/Aftermath.cs	df41b92526be97f4c7fde261b041979688b69d6d	5543	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/BindingDevice.cs	f411a645e63524a40b68e78b6f500848de74387c	10432	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/BindingHandle.cs	d06e28d87d6cf223169d0cef1e01e2eb67904f1b	2057	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/BindingSocket.cs	7e34a544383963a6e800fa71265ba09ba961a6af	6876	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/CryptHands.cs	93f5d849ac4938463bb9d61276ae8975ad369b55	3188	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/CryptInteractable.cs	1c1427b095464d64a0128b4e91d17ff752df54a3	5636	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/CryptMap.cs	ed8d527f631079b6a38e7dc6dbcaa8b92ad3b11c	6199	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/CryptUpgrades.cs	7c401ddbca5fb23a4fb21a1947e03c3f9dadff58	8981	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/CryptWorkshop.cs	d4b3bbf82cd8e2f221807ff364d7e089973b52c7	5817	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/ExpeditionWorldClock.cs	04cb728425207e6bdbeb5faa69223edc210e5446	3498	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/JunctionCatalog.cs	ec9eb1a41705115ec80a5fb5fb8a83f6b7fd132e	6356	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/MissionBoard.cs	3ec9f6b0dd132376e12f92e94fd784b6434b4460	69966	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/MissionCatalog.cs	f4248913dcbb00a68bfc6f6077fcdd2b60ea0b42	11956	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/Retelling.cs	7b0d28f31550448df06db4da9d3b2bea9823fd5b	8001	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/ShelfPlace.cs	04f84f751945e7aa503d794bf31e5b95413414e7	2811	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/ShellStand.cs	8c1887d3a565a3983c022684d5c96187398f189f	3101	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/SoulJar.cs	838fcf05bda6c0bdce1ac3a3e0edde051dd0e8d0	4385	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/SoulShelf.cs	9a0cef1dbdbd9dc3098b1c3ffc2c20b04b30528b	14111	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/TestChamber.cs	324e33d7f650c8064786ad29885e2e738015c916	15331	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/TestChamberEntry.cs	bd3d9e623b6397abe7bfcc81fabc2df64e207090	2228	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/TestLever.cs	e2db5ddd03062dc5579f01fd35967531a1482823	3587	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/TrialCatalog.cs	8a80639c19a6ca55f6645704e052ecc4d949334e	3898	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/UpgradeSocket.cs	78b06cfe26c5b62d4cae94bdf7ccbd21b1f54b71	5597	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/WarriorForge.cs	0d2d0b0fa0553a4d355967113fd44e2ea99b4415	18261	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/CaptureMode.cs	4ed39ed52894a3b5b06b3061a67ee7b93524c8ad	8594	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/CheatConsole.cs	9fde44a37391f7ddf5d36995d0cbf60a68edffd7	21540	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/InputHush.cs	18191d8e788d4a9d1a2f81970b75bf9a9c501983	5214	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/LetterActor.cs	c070a7c0ff068bba2bef57ac9e394b9800418ac6	19232	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/LowMemory.cs	abaa414f4e0e96d7ecf74115770495444200f87e	1987	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/PhotoMode.cs	ed5058517f4681fb3300be1b8d8845b8d4e612a3	17722	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/Shooting.cs	ddfa244fc5d4b955b08d262cca83475da9fb9789	19095	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dev/TrailerCam.cs	fa39362ef21f9749ebcafa3d1b11985b1546a79b	7273	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/CampLines.cs	01f1b631ed4016b2e88204c7a1c6ffb9d97122fe	18089	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/DialogueCameraController.cs	8a5249e69db314d4ae558f0d01e15bbe9ca9d3e4	64782	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/DialogueDatabase.cs	65a91e208e181b1deaa3bf7c41abccced9003cb4	397	CSharp	0	0	0	0	EXCLUDED_TECH	Full 13-line C# ScriptableObject definition read, blob 65a91e208e181b1deaa3bf7c41abccced9003cb4: CreateAssetMenu fileName/menuName are Unity editor-only labels, not player-facing; Situations stores external DialogueSituation data. Serialized DialogueDatabase.asset must be audited separately; 0/0 player-facing here.
+Assets/Scripts/Dialogue/DialogueLoader.cs	94064031b0a6633c55a4f00bffb2ef91ddd8dbe3	2544	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/DialogueSituation.cs	d2b45d13e8e357413ac8c8838db473bae4683e69	1166	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/DialogueTrigger.cs	e18a61661a5d057dc72c5fbad4fadc490c9ed32b	14098	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/EncounterLines.cs	95c2f744faf457078c6a57ec544db4c25073b308	53817	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/TalkLines.cs	a8840f269f19b4362eb24de6fdae350d17b7b975	12319	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/VillageDialogueRules.cs	04874373bac0ef22c3abcdebd993426f144fa4b6	7212	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Dialogue/VillageLines.cs	23dadf30fbdd93cf6b1070dec9a54612de7f4cba	6179	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/ArtImport.cs	6b6ae32f655eb676d50fc9a38386e359df457471	1281	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/BindingCheck.cs	07c801a104a83c5a84dc162565c7d330b2f7333f	30813	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/BodyImport.cs	97bb37049c98427d68e1ceddfd82c778d1551e5c	14177	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/CampPlan.cs	d1801e120d970e113eeda3526331c0d083b626d1	7983	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/CourtPreview.cs	86f0a396004248246211d47bff4d79ac764d288d	4530	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/CursorImport.cs	53f064695c68558227c778cc6130ab54959e6b56	1618	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DemoAssetBuilder.cs	5745864cd58abc440cabbc3905df1138858f048a	24204	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DemoSceneBuilder.Dream.cs	c78f55857e09a01b386b7ef48856c8bde906324e	5382	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DemoSceneBuilder.cs	db8a96d896dcd4f02411b07cec99e53a80144fdf	263697	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DemoSmoke.cs	d8ea9ac78dc06cbf9d575be268c0d3085407300a	18888	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DemoWalkthrough.cs	7464802ab9dcba706797e71584f27a3e63ea5656	271640	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DoorCheck.cs	427ac91fc054b6d4cd57444f16cc8751d02c8030	8507	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DreamSceneValidator.cs	33881d457f6690555f14352c1f9160b594b37d3c	3869	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/DreamWalkthrough.cs	ad1647a6b142db5f58f406df402d60e31f25e818	33202	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/EffectsBuilder.cs	365debd4bf007e5cc68d89a013ed28e683bfb595	34082	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/GameBuild.cs	d0483dbb5f6591cddec9e43c48148a2e867949c0	4003	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/MaterialBuilder.cs	cbef7d8bded9eb2463ed8b237915f1143643cb51	8800	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/ModelCheck.cs	ca1163f57844a94d1dd3b8761bf03a2cba333a46	19227	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/OverlapCheck.cs	cb5ffc1312b975390f508d5f048f07eeacd0889f	19113	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/PropImport.cs	f452b2ed833ff356abc49fdd03cf866cbd6d9abd	5628	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/Reel.cs	99ca9825bc3a84cca750aa633a5319529e183330	3970	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/SakuraSceneBuilder.cs	d8c6231974ad61522d7abf329a92b04d6b254a06	24037	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/Snapshot.cs	d48d2059dfe6c3b345f7f3ea9c1624617ddd006a	25212	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/TextureImport.cs	0eefd94e627579c95c19db66ec842638073e75f4	2502	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/TrailerShoot.cs	d6e6fbfe7b25284ebfc1047e657d5ea496fa2341	27254	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/TugSceneBuilder.cs	40a437911527a339fa5bba5ca717c555a8f082ad	66286	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/VoiceSamples.cs	f18f408eaabaa22c43195a9fb3c71ad9c36f0ebe	8531	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Editor/WearImport.cs	0ff3bd93b7d6d30b1308bec06302149a6c38575f	2435	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/AltarVisualEnhancer.cs	9797edb34d97adc30e1422c13c1faa7c107262ab	8252	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Armament.cs	94e89c3b74e1b092489e06e668931e2fce44375f	2699	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/AskableSkill.cs	a123aaa178d8e2d52156d374177883c783a5d80c	1934	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/AutoAttack.cs	8c4bac86d9f805f8c280602d55a2fa43dc731780	8564	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BalalaikaHabit.cs	a2f6adc4350625752618a087bc22bff6ece5c963	27829	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BattleTest.cs	41b48c3799d41d12582cc252f40b43cb96fd6fc7	2473	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BattlefieldData.cs	8cdc955d88b78561bb0d1910e96ed3b03dd9b026	893	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BattlefieldManager.cs	c6a4dbbf141b9361e761de4c66d9f5cf5cd917dc	1598	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Beat.cs	361db2df077d1945e45411d550cd2735fb54df23	6148	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BodyComponent.cs	da690a77d36e33ac7d6b5c2c8660415332bd8a5d	332	CSharp	0	0	0	0	EXCLUDED_TECH	Full 16-line source reviewed on blob da690a77d36e33ac7d6b5c2c8660415332bd8a5d; runtime body collection state and Destroy only; no string literals, Loc.T/F or UI emission. Names rendered elsewhere require independent localization review.
+Assets/Scripts/Gameplay/BodyMotion.cs	47a88f1f9b7c4bc1f85aea1831c7488361fd527b	7043	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BodyWorth.cs	abc22701e3b4edf020713a1283c49f365bab55db	10554	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Bodyguard.cs	05db6f31264382e2e334b20cd4e0a535b33da417	8356	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Brew.cs	117b9e8b310143b25abaafe299272bf6c1b13844	7861	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/BuildSite.cs	f238b8f75e76566db9f2c212d81a66375ebc0740	19985	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CameraPullback.cs	3a6211e027d90dbcc6d566036645bcef504495b7	6134	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampAir.cs	630b5398bab921a71076c8aab6a3e263d88d0c74	12659	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampCardRules.cs	c2c547fabde47eed4653edc7682ca19bda40ad7b	6186	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampCardWagers.cs	72440f46b2264ef69f6654f36077110f65a2fd44	3425	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampFocus.cs	9b6ca15686ee7e3ae87152d9812ef787e6eed2f3	4859	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampLife.cs	17fa5d65b0d84c7ce45ec5b464193b74da0c2ef2	32454	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampMuster.cs	e5a49f3aeeaf4d73b810df7952793b473b1f6709	16523	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampOpening.cs	53d1928166bbcfb548307be9282b22b8abfd7cce	20700	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampTalk.cs	cf56469d52e40cd7f789dc517d0d51a4b16b3a4d	9473	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampWell.cs	d852f64389ecd7d3a529a377c5bd858ec7923efb	12547	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampYard.cs	64c70c221037c11fbd8545788d15720884821c2d	3190	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CampfireStoke.cs	1db9e4837be616f8cbd5801fec78aa399b69cfeb	24664	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CandleHabit.cs	528d0c3f9fea382b2288b1f1bd0953eaca9710a0	4973	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CardTable.cs	1efb1e1d05f8457b3992cf11d3f21aaa1175dc7e	33819	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Cauldron.cs	8c9023a1c6f0fcfb131a6742d98f71a4a484f790	7135	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Champions.cs	2825715f5d4480665062ac3e6dfbfd0fd25d7451	6342	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ClassData.cs	b76ae313ea16083f2123b516b49d0ba799a07176	676	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CombatManager.cs	8523c6eb1dcc183e075fd3b6ec8ae714aba7cac7	11118	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CombatMath.cs	1fcd11a92024c3a2ba232a9a345b5e121b1e6c10	3332	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CourtCaller.cs	f9fb72c8968d7bc386b5a98eeb2ee8fc37bf0b0a	4342	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CrowStep.cs	2aa81f64265788a830882663cfa748e9516fc677	15507	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CryptArrival.cs	cc707506ae90f16ea726809fd0a36b7f60f60800	13062	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CryptDoor.cs	1bce4dc963ee55a165ac73a58c89a7ae8693960b	3367	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CryptShaft.cs	a9fe80888729469a71ac991d74f1dcedfa79d40c	7507	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/CrystalBall.cs	23b67e795a6e7d5a9452c0a1a3ec3558eb4c7ca1	33728	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Damageable.cs	705c55fc09bee5abbff104d98f9e715966dceec8	11328	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DialogueTestSpawner.cs	65047281a86c0837d946760d251cba0811064bee	3149	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DiggerHabit.cs	4e9bf431a92ad619eeb1f9209376d17294855f31	6389	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DiligenceSkills.cs	70aacdf558584a78fc71a9007976226224a33988	3229	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DreamBowTarget.cs	bafe0221fd88eb367857bc9c33520437366c6ae3	5247	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DreamHandCursor.cs	5870ddc37365b54549f0cc64704b3b100ae51adf	3424	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DreamRoad.cs	ff9b709113c15be8d27f4c0c0b1b020eef2d179b	69198	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DreamTutorialChecks.cs	1c80b82464b08150bfaccd80cd4b6e93fe703015	4008	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/DreamTutorialDirector.cs	b3a5c12dcff1b3216d4d4a0066d1f33cba61ea59	109029	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/EmberBed.cs	c093e41b72ae6ac08b5bf74499a910f13034acd1	8045	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Engagement.cs	a69647c36305847891fc86d3553faf2e0a5a7312	5165	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/EscapeZone.cs	7b9228e9bdd3e2753e7a1f2dc6e6ce067af3cb13	25537	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/EventPlaque.cs	dcc6fdd693070a30b6857a55e53b83e50c1908e9	4006	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExitCircle.cs	891146f36a08d97b2f2fdba3ed7d0baca598b6b9	8224	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Expedition.cs	30ab79b6977604f34be7d3503a27c10e26450ab0	19911	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionAutoLoot.cs	ae627b68275b0c9f10cd5f9e82bbaa34b39c588c	2755	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionBattleCheckpoint.cs	425e2ebf4a729d53b29095009c8e6e8aed6ac751	6125	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionBook.cs	38916c894f7c066945aed2e67e2d41a51a0eb844	21843	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs	0d6308b0c929fad653e944d0028a1593a0e3ec31	1351	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs	bbba60ca2e179595e38b48a5e69a15bbc3e7c7d1	1223	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionHealthRules.cs	ad5919d03d979b961a8c52ca06a97800aa540a5a	1468	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionJourneyTiming.cs	15e1536e8c0457dfcc3682757435818ecdca982e	1668	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionMapBuilder.cs	75e6a4812aa08c1b60aae60910df28c7522d1143	10512	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionMapPlan.cs	9cbe0615fdc355e6eb1843b9110afe42c0a3d1d5	5347	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs	15ce7b1dd75c50f3cc6371f378ac4583ddbdc726	3974	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs	6c553dd58b8984afad86fd32e4e0b1aea4a8ac18	2125	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionObjectiveRules.cs	76e25eca3a5fec6d53deef90a2386b43e12d59a7	1231	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs	af9395bda0f7e68cb53aa2949d87da67d1821219	3062	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ExpeditionReplayData.cs	dc839111859568ee34a8c1e7e5c15b5edcec5c72	3207	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Facing.cs	136593c37bc39d06b49c0e74acdc7e2c25861f47	1973	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Fallen.cs	f5335d3c988265cdbd3b362ad322310eef3c0153	2766	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FallenBag.cs	29ebf86964b5624c4b17329e61d9aca827998fd9	19664	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FallenBagChoice.cs	e4bc36461108021fc03cd81a4157c57503d34cbc	1120	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FallenBagRetention.cs	69ff54075d382fe7a5ddac1c4c036fc0a594152e	1960	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FallenBagTransfer.cs	9e4c8673574cbb581401a947286072295c09dc3f	781	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Fatigue.cs	dab91375d533831fe9efeb63c2e631eb2706495c	4046	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Favor.cs	dbfe9e86cc45cf6163757b68ec30dc762f897c66	14082	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FireFlicker.cs	cbc654b75180d62b204235f22335f1c1e03dc25a	3026	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FirstPersonCombat.cs	cceae51a91f60a97bd2c844572ad6f376564e7b2	6713	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FogOfWar.cs	88ef95992c3740b2d8b0936bca246e15cd2acf59	25045	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/FogOfWarFeature.cs	d61ffaa87eb06209d407a2c373d3af09e7111164	5623	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Gaze.cs	fc1e02e1dfe034eb5ea32ed673d22e3910a74354	5491	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Gift.cs	e1f84830338da854f039eea1e5287c535880d5ff	8055	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/GluttonySkills.cs	bc8232f8374d0129b1611ddd6958e5cb8be89bb3	5241	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Gramophone.cs	a9fdd75df072a8433d4c3861e010d736032461c2	12203	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/GroundMist.cs	8c91fe6fbc6bda3bf23e72184b387dc14709905c	6637	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/GroundNavMesh.cs	6b7870d19283150acf803f13f6025447a9b270a9	5575	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HandsDrop.cs	f8c92ddbb19a96920ea06eaae641c9c043121111	1802	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HarvestableBody.cs	a438eadf1edcb2e6750f645a777d09e810bbb7bb	2900	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Herald.cs	d8ff648e41108ed59857cc29b1308d9d2ebe8fa0	13299	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HiddenRecord.cs	117b18867bbb3c46ad98280b5886e3b67db24c46	4963	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HitBurst.cs	15cd483456a7a4e63593b2161579afaef700eb4e	9782	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Homecoming.cs	a580b274b9735889aff7ea2de6568b753bab82ae	7907	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HoodVoid.cs	545e68038b19b2c4ccf10a39d96d110c28b19796	6769	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Hostility.cs	b63726046779b2e1c078b78842a8f47fff2c4166	12168	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HunterGoal.cs	744af03921698ae0e12da3ac8fb4d3e63dd36660	4191	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HunterSquadSpawner.cs	bf1144ae9b5dd4df14dd7e52d5ab164e0e9bd14a	27700	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/HunterWaves.cs	f37e34d3f842bef7875d7526ebef46b40085501e	14593	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Idleness.cs	cee94d35c0180425ee941f9dc6e2c23b640e602c	4242	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/InspectTexts.cs	1e650874a9edd49b6fd2d5702fc6e6beec553a18	9990	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Inspectable.cs	9bcb6fb92aa37f27cc02e8e5a54e9b3364d2b4cf	11423	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/IzbaInterior.cs	d130bbf27d536ff1d26563eea9a27c843ad6b2bd	8951	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Leadership.cs	9f545c93821643484bea83990b9943f8ff28ef9b	7441	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Lesson.cs	ab8c8e99ebd39e08905e8bc1268a83979a0e1d48	70386	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/LogSeat.cs	4255f90efb1f80d0a842315e43bf27a477af4d7d	14275	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/LootCarrySystem.cs	69e9c08901b742dce1b269ac28ccd5817ad68c39	3803	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/LootChain.cs	74d4c211c0dcd9bab2d2ce103347dd141ee25cea	6530	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/LootDrop.cs	69c345abb4545e830448a0203cabf59f6273e74b	512	CSharp	1	1	0	1	UNKNOWN	Full 24-line C# read, blob 69c345abb4545e830448a0203cabf59f6273e74b: public ItemName field (line 8) is a potential player-facing item label, but this class neither initializes nor displays it; no RU/EN literal or Loc call. 1/1 potential text field inspected, 0 semantic PASS, 1 UNKNOWN pending source/consumer/translation trace. Start 120s auto-destroy and Collect 0.2s destroy do not establish label correctness.
+Assets/Scripts/Gameplay/LordPurse.cs	f062f68ebe62d324b84baa7c4dfad6cddefbd34c	3623	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/LustSkills.cs	48abe18ed1926098030bb568348116e40e62aad3	4679	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MapEditor.cs	c05605621a3aa6b945db6cf523be852fce87d5d0	14386	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MapEvents.cs	6ffb9950c852afe2d3b4c14dc8b35c4c417b7e0d	42541	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MapLoader.cs	bfb8ce64930e7a43c904f1136929e4a56093290b	17147	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MatchEnd.cs	ff98e8515aa698fd4e9f549ade5a9e10c20a4d49	7341	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MomentCamera.cs	9a8bf8876a7ff86b88260e6c00f741f3ba81ce42	8224	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MoonDisc.cs	3acf5309737e6c901ca6277454f8a7fdac50e3c3	7422	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/MoonShafts.cs	de81b631286ea41a9f7145223c8fa4a7e66cca1d	8825	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/OpeningReveal.cs	8a002898a85d847ad036d174058972370e0778ff	34753	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/OrderAdvice.cs	eb296da60a13cd9825e600ca33174f5da4ec76bf	5303	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PatienceSkills.cs	acc6efcf65e8d83f2a9b75d6ff779dfc2298f96a	4845	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PendingCommand.cs	ea1bde459ece1af0701f53a2dfe7119bcab0445f	4842	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PersonalExpedition.cs	21dbe9dac0a9f7379c23f06b544229f7f982f386	25891	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PlayerWalk.cs	06946b35bd4383449661b388c884a7e0f4835218	6712	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PrologueCampSpawner.cs	6a541cc6b7add7766e5866da66122a0b290c7315	42951	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PrologueDirector.cs	0b88e3ad7d45a0cc25a2103ab877d455abb1cad2	24088	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Provocation.cs	b861419c7e8ca36f23e66532c1160940decaeccc	6335	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/PurseCounter.cs	2a030784ee96a91cf06f85e0e3264a8164e493fa	4747	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RTS_Camera.cs	c090558842f8339be3ad3dde5bcefeb3a0d1e7e8	34812	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RaidEvent.cs	0403701940b4abfb5f927e1c1b9211c73b3e22db	17159	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Raising.cs	99e87567d38430b5c6fe520547ab16f2d94d1bb7	7550	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RatBanner.cs	e0f70b003b6dc03fd84f1831823a8704b2702b6b	30317	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RatFamilyActor.cs	2d8c253e2a8b684ce98e9d9fa0443bb6a87d34f0	10508	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RatFamilyDirector.cs	041774a728893bee61fed2eed92fa0e0ac4383ef	13386	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RatFamilyVisual.cs	90d3c52d76716309f22f690e7d41186a81b78daf	8311	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RatTail.cs	3c64ab2ab65deaa7f42a5dd6c3f80909d3849be9	6033	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RavenFlight.cs	3662727f38e358724babf00d75748f5bdb7ae421	23248	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RavenPerch.cs	9ceff96811bd361114ac6ffed73e6ad5045412b6	3885	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RearguardMoment.cs	5a79941565ed4905655668e6f2a20ebed2224b0d	12767	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RecordHands.cs	87fadd1500ae00ccaccb634159a230471013b578	5741	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RecordShelf.cs	e87eea8c61df5feb0b0735da449980d3b4f9d9bd	8396	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Remains.cs	74ec7cf53f628f6b4a9c3e1f1010738e0ee5326a	10962	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Residents.cs	6e1f7c4b8a59f89aee8b687756169d81720e94d6	15269	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RetreatHorn.cs	82c3a24178231146a9fc678122817b13e47fc0a2	4010	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RisingWords.cs	c1e818fb91b21ddb9fc6bac853ebaef3f25f450a	11292	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/RivalLord.cs	8c401bf895c9469f8aca8b395330959a229d9580	42639	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SatchelHands.cs	3303a602977256a78caa888a17edb58e4a716573	5780	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SceneDoctor.cs	897f82b3075dff1a7bcf5e2b95ece0289045526c	9006	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Scryer.cs	7b03c056d659996a00c0a1395574a43b9bf3c939	6475	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SelectionComponent.cs	2b6acb47aba0760b305c027ec5042d5621e7fdf0	10858	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SelectionManager.cs	ecf218cc97a78d67e26dedd444de56c676d08199	42221	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ShellData.cs	484e31b0ef78d480d9b1855eb924c240a057db6b	4215	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Signature.cs	4c2e2c779fdf1f16e2dca86ee81e8c146116e9bc	9021	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SignatureDeaths.cs	4f0c99698785ccf3e4030a32c94e51e48f2beaac	1813	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SinEyes.cs	02b6858d47bb0944e97439599eb7f2c0e9bc6610	12377	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SinbinderPlayer.cs	044914c06a082e9583b60ea8872cbeb943288566	19358	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SinbinderTrail.cs	8ce8b49192b4bfcbeb9a43d2bde605008e79ae30	2605	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SkillData.cs	8b65d69a4b937d70383ff2fba7abfe50425c7d06	1206	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SkillManager.cs	a42eea76388a97803a61950541e13ba9ef26c0a8	374	CSharp	0	0	0	0	EXCLUDED_TECH	Full 18-line C# class read, blob a42eea76388a97803a61950541e13ba9ef26c0a8: only List<SkillData> and AddSkill deduplication; no string literals, UI output, dialogue or localization. SkillData contents are separate sources, not cleared here.
+Assets/Scripts/Gameplay/SkyEyes.cs	1f60d29f25150e77a0880ad6eb80f621ba0e24c0	9826	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SlothSkills.cs	aa3f49dddb5ba39c649ff79bcf5fee6b5d1ef37e	3373	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulCourt.cs	cabf5abd8eb65f04449e20209bfa02ff95983f6f	166767	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulCourtReasons.cs	78d34638a88e04d5cb962ecad43692c516350d47	24391	CSharp	122	122	1	121	UNKNOWN	QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=118-133 (focus 123-127); context=SoulCourt.Words at SoulCourt.cs:1204 calls Reason for nonabstaining judge; Reason selects Order when abs(obey)>abs(rival), then Greed/Lust when likes=false; negative=Greed without unpaid-history proof still says past work unpaid; Lust with no desired target nearby still asserts nearby object; both potential source-level unsupported claims, caller/context completeness UNKNOWN; verified=0; total=10; RU_EN=Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 10343-10350: Greed He was not paid for his past work. Greed keeps count.; Lust What he craves is near. He does not hear the order.; literal meaning matches RU for both, truth conditions UNKNOWN; outcome=UNKNOWN. Checkpoint 133; all 10 literals previously read, 2 EN pairs newly checked; semantic PASS=0; historical unresolved 10 retained. No production patch. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=205-230; context=Idle(module,wants,c,w) reached via Pull when rival ActionType.Idle; Sloth Fatigue>0.3, Greed PocketGold>0, Lust wants, Pride !wants, gender via P; negative=Greed PocketGold=0 correctly avoids claiming gold, but Gluttony 'full belly' has no food/satiety check in this branch; Fear 'standing here dangerous' has no local hazard test; Pride 'will not admit tired' has no fatigue check; verified=0; total=14; RU_EN=all 14 literal msgid have nonempty msgstr in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a; wording aligned broadly, causal truth UNKNOWN; outcome=UNKNOWN. Checkpoint=Idle end line 230; cumulative 24 candidate literals (prior 10 + new 14), 24 reviewed for source/EN, semantic verified 0, UNKNOWN 24. Historical evidence preserved; no production patch. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=232-252; context=Reason chooses Pull for abs(obey)<=abs(rival), then Kind(rivalAction)==Flee; Fear wants true checks c.Surrounded then Hurt(c) (MaxHP>0 and CurrentHP<0.4*MaxHP); remaining modules Sloth/Pride/Wrath/Patience/Morality use wants only; negative=Fear Surrounded false and HP>=40% still states 'Death is here' without explicit threat check in Flee; Morality claims 'abandoning your own' without checking allies nearby; these are potential contextual risks, not proven reachable false runtime outcomes; verified=0; total=11; RU_EN=11/11 exact RU msgid have nonempty EN msgstr in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 10528-10569; literal sense broadly aligned; event truth UNKNOWN; outcome=UNKNOWN. Checkpoint Flee end line 252; cumulative source/locale reviewed 35 candidates, semantic verified 0, UNKNOWN 35; no production change. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=255-276; context=Reason -> Pull when abs(obey)<=abs(rival) and Kind(rivalAction)==Loot; Loot(module,wants,c,w) checks module and wants only, no local presence of loot, corpse, desired person or actual memory proof; negative=Greed wants=true with no loot nearby still says 'Рядом добыча'; Gluttony wants=true with empty site still says 'Рядом есть чем набить суму'; Memory wants=true with no demonstrated prior loot still says 'Он помнит: здесь бывала добыча'; caller reachability and wider context UNKNOWN; verified=0; total=9; RU_EN=9/9 exact msgid matched to nonempty English msgstr in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a, entries around lines 10572-10605, literal meaning broadly aligned, factual truth UNKNOWN; outcome=UNKNOWN. Checkpoint Loot end line 276; cumulative 44 reviewed candidates, semantic verified 0, UNKNOWN 44; source-only context review, no production patch. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=278-302; context=SoulCourt.Words at SoulCourt.cs:1204 calls Reason for nonabstaining judge; Reason chooses Pull when abs(obey)<=abs(rival) and Kind(rivalAction)==SaveAlly; Save depends on module and wants only; negative=Lust wants=true with no beloved NPC nearby still asserts loved one near; Morality wants=true without local MoralType check states pious soul and wants=false states wicked soul; upstream reachability UNKNOWN; verified=0; total=10; RU_EN=10/10 exact RU msgid matched nonempty English msgstr in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 10608-10645, translation sense aligned but factual truth UNKNOWN; outcome=UNKNOWN. Checkpoint Save end line 302; cumulative 54 inspected, 0 semantic verified, 54 UNKNOWN; no production patch. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=304-319; context=Reason() -> Fallback(Kind(rivalAction), rival>0 || obey<0, w) only when Order/Pull yields null/empty; Kind maps six attack variants to Attack; Fallback selects one of five nouns for Attack/Idle/Flee/Loot/SaveAlly, otherwise generic order opinion; negative=unhandled rival action yields generic order preference, not a claim of an actual event; for rival>0 fallback says 'Мне милее другое' even if no actual rival action occurred, but this is stated preference not action history; grammar/voice context and AOS score semantics not fully proven; verified=0; total=9; RU_EN=9/9 msgid/msgstr nonempty and literal meaning aligned in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 10645-10678; English 'saving his own' hardcodes male possessive while RU 'спасать своих' is gender-neutral, potential EN gender mismatch for female warrior; outcome=UNKNOWN. Checkpoint Fallback end line 319; cumulative 63 candidates reviewed, semantic verified 0, UNKNOWN 63; no production patch. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=40-62 Idle(module,w); context=called for abstaining judge (full court/sleep according to source comment), switch on module; null warrior returns generic; Wrath branch based on Sin(w,Wrath)<0, gender Loyalty uses P and Fear/Pride Grammar.For; negative=RU 'мстить тут некому' means no target to retaliate against, but EN 'there is no one to avenge here' means no victim to vindicate: translation semantic reversal (source-level FAIL). Other claims 'no temptation', 'no debts', 'nothing to share' lack local checks and remain UNKNOWN; verified=1; total=17; RU_EN=17/17 Loc.T occurrences, 16 unique msgid, all nonempty EN in Assets/Resources/Lang/en.txt blob 1c98dacabcef8eeea623a81cb71fc1efd31c462a lines 9836,10216-10273; one confirmed semantic mistranslation Wrath negative branch; outcome=FAIL. Checkpoint Idle end line 62; cumulative 80 inspected occurrences (63 prior +17), 1 translation FAIL, 79 context/semantics UNKNOWN, 0 full-source PASS; production unchanged pending isolated correction/test. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=40-62 Wrath Idle; context=Sin(w,Wrath)>=0 chooses no revenge target line; negative=baseline EN 'no one to avenge' wrongly denotes absent victim, while RU 'мстить тут некому' denotes absent target; verified=1; total=1; RU_EN=EN Assets/Resources/Lang/en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13 now 'there is no one to take revenge on here', exact one-entry replacement, positive=msgid unchanged and English now identifies revenge target; outcome=UNKNOWN. Baseline translation FAIL preserved in earlier QA2; current translation source-level corrected commit 163aecd6659e309753b00623ea91286a1b98c5b2; independent QA5 and Unity not run; no semantic full PASS. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=88-117; context=Reason selects Order if abs(obey)>abs(rival), likes=obey>0; Loyalty uses CommandVolume<0.6; Virtue branches by Vicious/Pious and Gender; Morality uses likes only; negative=Morality likes=true and Soul.Moral=Vicious would assert pious soul absent upstream guarantee; Loyalty quiet command asserts hearing without local audibility proof; negative Loyalty assumes battle ongoing; reachability UNKNOWN; verified=0; total=14; RU_EN=14/14 Loc.T matched nonempty en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13 lines 10276-10323 and 14354-14359, literal meaning broadly aligned; outcome=UNKNOWN. Checkpoint Order line 117; cumulative 94 reviewed occurrences, historical translation FAIL=1, semantic/context UNKNOWN=93; no production change; Unity not tested. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=138-176; context=Pull(module,rival,wants,c,w) when abs(obey)<=abs(rival); Loyalty returns immediately; Attack reached when rival ActionType.Attack, Memory wants=true and c.KnownMurdererInSight selects branch; Wrath/Patience/Pride choose by wants; negative=Memory wants=true and KnownMurdererInSight=false still asserts enemy killed comrades without checking death history in this branch; Loyalty wants=false asserts lord watching without local witness check; Patience wants=true says strikes first although scoring preference alone does not prove action execution; upstream constraints UNKNOWN; verified=0; total=10; RU_EN=10/10 msgid matched nonempty msgstr in Assets/Resources/Lang/en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13 lines 10361-10398; semantic wording aligned but factual context UNKNOWN; outcome=UNKNOWN. Checkpoint=Attack line 176, next line 177 Envy; cumulative 104 inspected, historical translation FAIL=1, contextual UNKNOWN=103, full semantic PASS=0; no production changes. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=177-200; context=Attack(module,wants,c,w) called via Pull for rival attack, Greed NearbyLoot>0 and PocketGold>0, Sloth IsExhausted, Fear Hurt(c), Gluttony gender P; negative=Morality wants=true asserts wicked soul without MoralType check; Lust wants=true asserts 'they are here' without nearby NPC verification; Gluttony !wants asserts full belly without satiety test; unknown reachability via caller; verified=0; total=18; RU_EN=18/18 Loc.T occurrences matched exact msgid and nonempty msgstr in Assets/Resources/Lang/en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13; translations broadly equivalent; outcome=UNKNOWN. Checkpoint=Attack end line 203; semantic verified 0, newly reviewed 18 UNKNOWN. Legacy warning: previous found=94 checked=104 inconsistent; revised found=122 checked=122 by lower-bound cumulative 104+18; full-file candidate total not yet established; earlier evidence preserved. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=118-133; context=Reason->Order when abs(obey)>abs(rival); Pride likes and IsEngaged&&CommandLeavesFight and CommandVolume<0.7; Envy/Greed/Lust !likes; Sloth !likes and CommandIsPatrol; Wrath likes; negative=Pride CommandVolume<0.7 does not itself prove an order shouted from afar; Greed !likes does not prove unpaid past work; Lust !likes does not prove desired object nearby; actual upstream guarantees UNKNOWN; verified=0; total=10; RU_EN=10/10 literal pairs checked against Assets/Resources/Lang/en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13 lines 10324-10361; English meaning generally corresponds, 'приказ далёкий' rendered 'order is far away' semantically awkward in both; outcome=UNKNOWN. This pass closes EN comparison of 8 pairs previously not individually checked; 10 candidates already included in prior 122, do not double-count. Checkpoint Order end line 133; semantic verified 0, 10 contextual UNKNOWN; no production edit. | QA2: source=Assets/Scripts/Gameplay/SoulCourtReasons.cs; blob=fe8256054d45109df7001dbc26b789ea7429d23b; lines=1-39 (Reason 24-32); context=SoulCourt.Words at Assets/Scripts/Gameplay/SoulCourt.cs:1190-1205 invokes Reason for nonabstaining judge, passes j.Module/j.Obey/j.Rival/rival/c/w; Reason returns null on null warrior/context; abs(obey)>abs(rival) selects Order, ties select Pull; when explanation empty uses Fallback; negative=obey=0 rival=0 selects Pull with wants=false, potentially generic fallback asserts preference without evidence of a meaningful vote; runtime judge reachability UNKNOWN; verified=0; total=0; RU_EN=NO_NEW_PLAYER_FACING_LITERAL in lines 1-39; earlier text literals unchanged; outcome=UNKNOWN. Caller/source branch control reviewed; no new literal counted; existing found=122 checked=122 failed=1 unknown=121 preserved; lifecycle of court remains UNKNOWN pending author decision.
+Assets/Scripts/Gameplay/SoulFlight.cs	7e16ded3da8ec9f2bdfec15656e3b6e2804e2538	7327	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulHarvester.cs	11b476a52146964b8609d79ec30bb3873c858a8f	11247	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulIndicator.cs	54c568b40b0f86e3078e2579231514b38cdaf334	5816	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulJarGlow.cs	9957cf4d961f495fbfd3b26b52d831878581712f	11928	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SoulManager.cs	f8d01d17ebe10f048300e81111181a0832a667df	15647	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SquadGear.cs	1dba7103306869542df16c9cc561282c37fce871	21463	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SquadOrders.cs	e0b57cd0e71a72f314777b1aab943dfa85641d96	9895	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/SquadRoster.cs	aefa32295f8dbfaed612a31865620e1a8d29b093	25044	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/StarField.cs	96cceaac8f4ede9e5762def62a7ded83af7c1a71	6107	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Sturdy.cs	16ec58cf610ed5c92a0420d3c245f1804b936c30	4389	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TentFlap.cs	1698ba6d830a10de096db54f1e7fc2fed36d5914	7445	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TentInterior.cs	41037ebf35649b8b5defbdcc5a1427465fee998c	7794	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/ThroneVigil.cs	fbfd96c62759d7eb1279b5d8c7b597002598347c	6263	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TrophyChest.cs	a6517e45fd277f53d87f5cb6b4ea7024ea1e5b7d	21952	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TugBench.cs	48570835d8ed507d7f8cba6300d5b5cdbf576994	16163	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TugMatch.cs	fa1f84365ee8a7fdec3b90d37b187927bac2056a	9946	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/TugTutorial.cs	313c893def7d6e078b88fafe6026c80fa1f0bb48	17428	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/UnitFactory.cs	4cda985a21797da42ca53dc87e6a26c6df39cadd	8386	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/UnitMover.cs	01a893069f9d5d6a460fa5672468e6dafad101c1	7299	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Voice.cs	1a2aeb464879e60ae5c67ad8b01326184e5cd3e1	3909	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/VoiceRing.cs	4e0613b0af9ec499691cab902066f9cfc66b51ed	5810	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Wardrobe.cs	7c6506ba4971c18c4f3c61783074787959e07822	35296	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Warrior.cs	81e5f3d55f390a1a202a22cbbb67da8f08775350	28922	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/WarriorAnimation.cs	b38b97169551d73cb4257b8a0545a169cf3654d8	24154	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/WarriorLook.cs	f2308ba188bfe254438f3fcba1023de5f35a933a	11667	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/WarriorRig.cs	8572b69925e8398a2ab74cb036eeab248156f79a	10214	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/WeaponPickup.cs	2b2d43bb6d450fd5e90303b6662346522edd3356	5754	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/Whisper.cs	f0ef02a280108b3c304efa3bb0c5eb679c395f73	17674	CSharp	22	22	0	22	UNKNOWN	QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=127-137 + 139-191; context=Words(sin) called from Moment(w) after Can requires live allied commanded warrior with current hesitation/refusal at 12m; negative=Greed offer says three coins but purse can fall below 3 before ResolveBargain; then line 186 says no coins and no transfer, so offer is not an unconditional reward; verified=0; total=14; RU_EN=UNKNOWN (English locale mapping not yet checked); outcome=UNKNOWN. Reviewed all 14 RU offer/yes literals for seven SinType branches, including fallback Sloth; condition/settlement traced through 191. 14 inspected but 0 semantic verified; downstream dialogue/voice and runtime not checked. Baseline inventory blob=f0ef02a280108b3c304efa3bb0c5eb679c395f73 differs from current source blob; no false FAIL claimed. | QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=130-136,139-191; context=Words(sin) called by Moment after Can verifies live allied commanded warrior with current hesitation/refusal; ResolveBargain verifies order revision, life, soul, and sufficient gold before crediting; negative=Greed offer when purse falls below 3 before settlement yields no payment and an insufficient-coins outcome; runtime reachability UNKNOWN; verified=0; total=14; RU_EN=14/14 exact msgid have nonempty msgstr in Assets/Resources/Lang/en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13; seven branches Greed/Pride/Wrath/Envy/Lust/Gluttony/default match intended meaning; outcome=UNKNOWN. No new candidates: 14 previously inventoried, all remain context UNKNOWN; next checkpoint Whisper Outcome and battle-log text; no production patch. | QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=264-286 Outcome; context=Outcome(w,sin,yielded,virtuous,louder) called by ResolveBargain line 190 after settlement; applied true yields order-execution assertion, virtuous true selects refusal, Greed payment appended only when applied; negative=Public static Outcome(w,Greed,false,false,false) emits insufficient-coins message without inspecting wallet; external caller reachability UNKNOWN; verified=0; total=8; RU_EN=8/8 exact msgid nonempty msgstr in en.txt blob 911b9202b1e8fb5d252e4f6eb1d05b5f51cb7a13 lines 11404-11433; both gender variants and placeholders matched; outcome=UNKNOWN. Eight new Outcome Loc.F/Loc.T occurrences reviewed, no full semantic PASS because caller reachability and runtime effects not established; previous 14 remain UNKNOWN. Next checkpoint trace all Outcome callers and battle log lines 244-254. | QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=180-260; context=ResolveBargain assigns outcome before Letterbox or SpeechBubbles branch and BattleLogUI.Write follows both; negative=SpeechBubbles branch with w null before response can skip ResolveBargain leaving outcome unset; actual runtime reachability UNKNOWN; verified=0; total=0; RU_EN=UNKNOWN (no newly counted localized lines); outcome=UNKNOWN. Source trace only, no runtime claim; prior 22 candidate counts unchanged. Next checkpoint external Outcome callers. | QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=253-260; context=Moment(w) after letterbox or SpeechBubbles; LastResult is assigned Russian-only interpolation and Debug.Log prints it, while BattleLogUI.Write receives Loc.T(Шёпот) plus outcome; negative=English locale with successful bargain still produces Russian-only LastResult fragments поддался and кошель пуст in diagnostic report; whether this diagnostic is player-facing is UNKNOWN; verified=0; total=0; RU_EN=BattleLogUI.Write uses Loc.T while LastResult hardcodes Russian fragments with no Loc; outcome=UNKNOWN. Checked complete lines 253-260 and separated localized battle-log path from nonlocalized debug/report path; no gameplay FAIL absent proof LastResult is player-facing; no new literal counters; checkpoint trace LastResult consumers on exact branch. | QA2: source=Assets/Scripts/Gameplay/Whisper.cs; blob=6b527416ec8a6536f3cbb7f25f50a1d4ba7fff8a; lines=98,164-191,209-251,267-286; context=Full 314-line Whisper.cs checked for LastResult and Outcome: LastResult declared at 98, assigned at 250, Debug.Log at 251; Outcome declared at 267 and called in-file at 191 from ResolveBargain; negative=External consumers on feature/server-prototype remain UNKNOWN; default-branch code search no results is not branch-wide evidence; verified=0; total=0; RU_EN=LastResult has Russian-only diagnostic words, BattleLogUI receives localized outcome; external player exposure UNKNOWN; outcome=UNKNOWN. In-file consumer check completed; no new candidates; next checkpoint branch-specific external callsites.
+Assets/Scripts/Gameplay/WrathSkills.cs	a02f982a448ee35230e4401c08df50393f12a8bd	3304	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Inventory/InventoryItem.cs	e06d72f644ce0972c898685b3034e3a15a96e9c4	4468	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Inventory/PlayerInventory.cs	83385c84212bdf81da593600196721271549e53d	5289	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Inventory/StorageItem.cs	6063a292672bd97119debb7e51eed655493d3bc2	983	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Inventory/TrophyCatalog.cs	35cd9016a9ca30b6cd2d5a7fc7397fd020cdbe07	2380	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanGameOrderCodec.cs	25af81659abe14f36652df9a9a905a84f8686ee8	2748	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanLatencyFairness.cs	f8a0f7817ad68e1bd5dd1e6484f62c9e1299769a	5227	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanMessage.cs	9bc8465aede666002058d082dc843f3ba2221ce9	2292	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanRoomClient.cs	36b0449f1f412bb62ef111cae6e2f12dbd367b33	19936	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanRoomDirectory.cs	774535247db84f68a89810adfcfef33e5ef765f0	10332	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanRoomServer.cs	2a97cc607f865901566513f955ce5396164a9481	27590	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanServerBookmarks.cs	ab451be6443b2af2c1461a3854698452c1e61be8	4220	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanWire.cs	148d800ee7cd8e97800f741b95245df3a0bdb4c4	2832	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanWorldAutoVerifier.cs	87f4e4fe40ae673b690c346d0d45acd61e2fd23b	6580	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/LanWorldState.cs	063035d10c3aabe5c9f29da0fb141903175e896e	2631	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/MatchAuthority.cs	a67e0a06674a96a2812f97d411f6ffb397261f97	15618	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/NetworkActorIdentity.cs	d656c7bd6e85bed53d153ebad3c64671bc799bf1	1450	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs	adeb3a62b362d7eed5e9dea0c9d49354a1e82af6	16872	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/ServerWorldProbe.cs	955dd099626452ad6ff29ab6d3407e1d1813449d	18960	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs	5eabfba1656734b15e6d5add2b1db5bedcfe9fc4	26148	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/ProjectStructure.txt	4e003dd7df7753e07ae09e68a81cb3d5869a668c	13545	Text_Locale	0	0	0	0	UNINSPECTED	
+Assets/Scripts/TODO.txt	c16ec3309225fd8319e4777855ad20b0efe89317	7503	Text_Locale	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tests/SelfCheck.cs	28015b027572cb92f72d1d0e06f6fe426ab72d00	179547	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tests/SelfCheckMenu.cs	0ecae5734f28e46d9ddb0668e7d6082fb5058c0b	3117	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tests/SelfCheckRunner.cs	a0a215e3fdb7c211b2fcf52f10d3bd2a240ac511	1641	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Dig.json	5d1581b6442b72733ed54835859314c0804ffc88	141669	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Draw.json	df058d3812572c7858cc3fcce4b8262f1f36e6b9	28579	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Gesture.json	5c48df7e21c34cf3d7c303bbe1305020a148841c	112792	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantBreath.json	36be65d90fe906f12842ccfae74322cad807a51d	137063	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantIdle.json	41e5d702b42c6a3013f9ea73caab42fc2ffef1da	438122	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantPunch.json	fd3cc9545d415b40001feed06865de0414ac822d	38501	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantRun.json	a73b9636262e8ac9328bd8a148a5c26eb2211ec8	30695	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantSwipe.json	ee15f3de4ecae972a0210b49c3f3f8794ea09551	82803	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/MutantWalk.json	009294d98d9a664abdb88bea3409487a455425a1	50079	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Running.json	ae31da77d658b36fc4f13d680696e80b6f1e9622	26167	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Shamble.json	2797508f8f1ab186dfa31482c5ea579084a1548d	103528	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Sheathe.json	474f51d08d80a7b50f9fa93d49a8c6b541cb0677	44453	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/SitIdle.json	2dbf0fed8e42e646928c1f0cb52e63ce59b1d38d	43677	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Stand.json	351756a0ca3cd9c4d39639d6143aa6d3ef725789	322742	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/SwordSlash.json	5f8c0197e04402ea080e2f5c120d4f647a29a42a	52396	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Tools/blender/motion/Walking.json	068afe4088725bb8eda93f9e7152473d3032f817	36389	JSON	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/AOSDecisionAdvice.cs	bc1654cb7e2a8a3455e7416642ae9455d7bd6a9f	2441	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/BattleLogUI.cs	b3f15c540d73d3d71e257c0a6f438a9d6908b77b	12240	CSharp	0	0	0	0	UNKNOWN	QA2: source=Assets/Scripts/UI/BattleLogUI.cs; blob=b3f15c540d73d3d71e257c0a6f438a9d6908b77b; lines=1-244 (complete fetched file); context=Start subscribes OnRefusal/OnSelfWill; Told checks FogOfWar then PhraseGenerator.LogLine; Write saves any nonempty caller text to History, displays via UnityEngine.UI.Text only when _line exists and Transparency.Shows(Log); LateUpdate hides behind Modal/Letterbox; negative=Write accepts nonempty unsupported causal text without checking truth, and low Clarity hides it while retaining History; verified=0; total=0; RU_EN=NO_FIXED_PLAYER_FACING_SENTENCES; Tooltip editor-only; player text supplied dynamically by PhraseGenerator/Whisper, caller truth and RU_EN UNKNOWN; outcome=UNKNOWN. Complete file reviewed; zero fixed player-facing literals; dynamic text path means not EXCLUDED_TECH; runtime untested.
+Assets/Scripts/UI/Billboard.cs	aec098869c65a028b46ed23213e30090227a4ecd	4502	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/CheatSpawner.cs	b34dee30f262052b0a2cdc38e6afb842dd96a275	4373	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ClarityPanel.cs	ba7bf791bf50af6814e57673e50feb08f4844f1e	8750	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/CommandHintUI.cs	40e96e3243c69968eaec6aae41d5c874ce6c0e1a	6484	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/CommandPanel.cs	4621d91b524a99638ef545cb01059a0b490946e4	33778	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/CommanderCouncilUI.cs	1b930a5e606b5b8a8d6de801afa3027b8f9e25b5	56979	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/DecisionIconUI.cs	411c6c6961cb5dfd72f6b63cf31205d36ae7a792	1629	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/DemoEndUI.cs	211cd11a7eb071bd63fc0c13198313cd17d36981	15479	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/DialogueUI.cs	ee6985ab01d21a947a213f7d11ceaf9e8e6b1f57	11401	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ExitMarker.cs	f0b0181cc263812af32d19c7097c44605a4ab37b	8210	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ExpeditionReplayViewer.cs	3b4468fc57067a2d6557e60f890a27ca18284456	10087	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/GameCursor.cs	33e71ba88cce21a937966e181fc0435bc4ca0078	8505	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/GameOverUI.cs	5bc1b87c81d8be0337c089dad0c265527ff63102	13222	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/GearPanel.cs	449e6731f43f211efd4a012f6b6a065ce83c19e8	57359	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/HarvestHintUI.cs	21fcb89fc83d067ebbf16d9df135aaf6c8c4e342	7145	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/HealthBarUI.cs	8843240f4e2a252ddd871354c02b1b41930c9a84	5555	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/HintArrival.cs	aa99023c4b64de252e5629876290b0fb036ff3f2	6486	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/IconGenerator.cs	80d3232672e8137b50073144b0de19fc4bdca0b0	2053	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/Letterbox.cs	4f36ab91949d8499d51e3745c78409934f121797	23783	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/MenuRows.cs	00fc0544eb717c2d3c9fc90093eef7a0b34ba4f9	3726	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/MissionMapUI.cs	7564ede09fc9f1f8d06efdb05e4e8b0dfcd98345	37593	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/Modal.cs	ce736bb0052d53194ce9766a8ba10d0e52d754ce	6142	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/MomentCaption.cs	93beab351d7299cdad3694089ef6ecd165fc18db	9937	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/MovementHintUI.cs	e6da97acf85e9fa2f4b51ac1f1eb36eba5f44582	8184	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/OverheadBuilder.cs	b939f4fe6b099dd6fb302f0b8feda8e4680d6b71	10749	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/OverheadUI.cs	b867f54af6498c8928938460ed3965afad134274	1260	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/OverheadUIPool.cs	c4cf31fbcaf8adfb8b1d3aac38c0ae0f117b64d1	3057	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/OverheadWord.cs	b33dace851615ac6f41daf65f0f0f4c43851b602	6647	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PauseMenu.cs	f86e820b6f09e74ac1b2c003d4a6fe802084d31c	21416	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PlaceMarker.cs	2bded3ecfd509f49048fcb3e7303d202f41c4eac	6141	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PlateFit.cs	f71f0486b1712523a29cbdc49badb560aefdc4e8	3860	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PlateLook.cs	cb2e3d66e489817aed3081272fd53624917f1856	1086	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PlateSight.cs	72260f42213aaa5388b76910a421331b289fb3f0	8370	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/PrologueTitleUI.cs	43320a15298c8f89844d1165fbef6ef59b422142	5989	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/QuickSave.cs	1e997a4b2468009ec59c13b3935aea6c6aa36fec	3540	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/RefusalSilence.cs	40ef3fcb51bf99133414ee9a3e52ae082e8aed2a	3016	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SalaryPanelUI.cs	52d6217b22ec5a880cc9851c44b742fe2f06bf0c	16814	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SatchelUI.cs	c5a5eb53083bb7c42b6cff264f677dcd5b70fd60	10212	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SaveSlotsPanel.cs	a8c9676fbc1d3a505f051571bd74835c54976458	9576	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ScalesOverhead.cs	258f7f67987865885f3460df1bf2a80a016970a5	25025	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ScreenGrain.cs	34b6915508f5b64970014fcdb7434e1d1eee25bd	7244	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SelectedUnitPanelUI.cs	e0d486be0b1283b1e7b8cdd313d4e956b4d19d3e	44040	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ShellPickerUI.cs	5ca3286f440fde374a8da07c1b461728501a85b7	9856	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SoulAssemblyUI.cs	48195c6047658d0a1607c4ce597debd3d06bba81	3419	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SoulJarView.cs	936d81fed81fd55e32024e221850d73d6e0f74ba	7803	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SpeechBubbles.cs	9466266fe2f904184183b40135d030da830a3024	17388	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SquadStrategyUI.cs	1da4be1dee98b216cf9c80b9ce917d29a8a27ebf	5015	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/StaminaBarUI.cs	4a38d7dc1a767aa68e6ad92ce5f9530b3e7eba37	8014	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/StaminaHintUI.cs	679ef8d65cd934ec1c92e9132a94db1bd89f00bd	5165	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/StartPanel.cs	d3065e6a00822086767811d62e5cdf91153c2661	13383	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/SurroundedMarkUI.cs	a2ebd74fd7dc5e26e237ab718ddd175e402fbfa4	9233	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/TalkView.cs	3d0ef4b33e8fc4613630754f75cc32e889f64a44	10640	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/TaskList.cs	e65a8981e14a29f2447c88757e5ea5410d04536c	18889	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/TooltipViewportFit.cs	d8738996d7a3450c5a1b59a067c8275f1fb91090	978	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/UiStyle.cs	6cff30ea35f74e5bc7eb6e9fb040d8a269a87f8b	12452	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/ViewHintUI.cs	479e5abe323d9c8decf443143d8a8590a354a453	6026	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/WarriorTooltipUI.cs	c6640666dec5be55dd299efadbcf392ce2afbf11	19206	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/WorldPlate.cs	de84fb4f203f45671f4e804daac05d1c08969d05	2897	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Utilets/LocationDatabaseSync.cs	68640adf5314bca8ea970a59d81cb32b9e9104a8	4800	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Utilets/PerkDatabaseInitializer.cs	1e82fd56350a90a9cd2dcc3fefa3f624a2f5b5c9	78901	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/check-list.txt	3731de193f202eb1a3c8e502907a0e3cdbffb2e9	5222	Text_Locale	0	0	0	0	UNINSPECTED	
+Assets/Settings/DefaultVolumeProfile.asset	66d98de6299f53f3c079575dbc574ee63d86a5ba	24035	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/Mobile_RPAsset.asset	7ceffe7ad905e8e653b70918d1cf1488075f42ba	4345	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/Mobile_Renderer.asset	8444e1438b266d6a67357f410c66eb77606f47e6	2226	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/PC_RPAsset.asset	92fd7daa8f8c54361ea17c1e144ad4be92bf13a2	4669	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/PC_Renderer.asset	102728011224508316fd586aa89a687e63e8ec7a	3955	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/SampleSceneProfile.asset	c1b0f6319bcf0c43f2e3186b375c182c5c39340a	3703	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/UniversalRenderPipelineGlobalSettings.asset	c0c9da355cb766d6ff56eca6c3314abf5cdeb28c	26104	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Settings/Взгляд.asset	95243ce1b67e611a7e415bdccfad642e42dd7eef	6876	UnitySerialized	0	0	0	0	UNINSPECTED	
+Assets/Tests/Editor/CloudProjectSmokeTests.cs	94baacc2adc8d1f5d574787736e746b67ea67b14	1821	CSharp	0	0	0	0	UNINSPECTED	
+Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs	ad55ecaa457fec5a68095795cb24759d5594e547	6677	CSharp	0	0	0	0	UNINSPECTED	
+Assets/TutorialInfo/Scripts/Readme.cs	95f62693b6368237a9586e6ffce4670961877066	302	CSharp	0	0	0	0	UNINSPECTED	
+Packages/manifest.json	86d10be374c31b52df7100903261f0351b3a7e89	2062	JSON	0	0	0	0	UNINSPECTED	
+Packages/packages-lock.json	71b2ac61051147e693b3488b53c5e0337320cd0c	13242	JSON	0	0	0	0	UNINSPECTED	
+ProjectSettings/AudioManager.asset	27287fec5f4e4b712cbdd5b3a6383cbfd900b940	413	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/ClusterInputManager.asset	e7886b266a005f4d9d80f2fef8d1649dcfd3ed2b	114	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/DynamicsManager.asset	fc90ab9589af00aa403b7aeb17cf53779a9aa571	1254	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/EditorBuildSettings.asset	5662e39e7b36e52ffd4e6fb6d405d9b3e48f3d6c	1313	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/EditorSettings.asset	878c4cb8d33ea203c002885f3f658b5c52d5e3dd	1585	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/GraphicsSettings.asset	84b2182fe3e3bc3e639c1e90e9e979e5a2515cc2	2615	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/InputManager.asset	b16147e954fd861c2e2db769449894d310aa7b26	9731	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/MemorySettings.asset	5b5facecace9276319b6e497953ab0429de65b61	1192	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/MultiplayerManager.asset	2a936644e0d87339f17484efc93de6f0de5774b1	157	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/NavMeshAreas.asset	3b0b7c3d183abdd300112f56965916ef11667f54	1308	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/PackageManagerSettings.asset	be4a7974ec170d9bfa288154684b318966c43f13	1003	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/Physics2DSettings.asset	6c5cf8a004ac48f27cb36f7cdea139eb4d3e812f	2028	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/PresetManager.asset	67a94daefe2e6bce3ec73546ad7cda94f702ad22	146	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/ProjectSettings.asset	e0bd16d751c8aee0d0bbf7b0994c0194ad4653d8	25533	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/ProjectVersion.txt	b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb	85	Text_Locale	0	0	0	0	EXCLUDED_TECH	Full 2-line file inspected: Unity editor version 6000.3.22f1 and revision hash only; build metadata, not in-game text; 0 player-facing lines; RU/EN N/A. Source blob b5eaf96ac162ce0f0f8c03d01dd6828d2fcd7acb.
+ProjectSettings/QualitySettings.asset	f55198a746f15374850c7348fe8a5de9d0c97e5d	3662	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/SceneTemplateSettings.json	ede5887b3a3e5e7ce4e90f0d893a1e4cdb2c7451	3535	JSON	0	0	0	0	UNINSPECTED	
+ProjectSettings/ShaderGraphSettings.asset	ce8c2432884fcc0d627b3cef54a6ea51d4f766e4	556	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/TagManager.asset	6413d11ff54dc0a0b364765f1d35bbd42d7d79cf	657	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/TimeManager.asset	2e23a1f42187cc2b6b25e899a7caaede6e8a0bd1	305	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/URPProjectSettings.asset	6ad563183467c100d393c4c910b8cf697e956ca9	461	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/UnityConnectSettings.asset	029ad8b9e7fa7b57c7e3b4b8c29a8e6a57f906be	1063	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/VFXManager.asset	3a95c98bec50cf72538061fd26eee95398f72128	308	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/VersionControlSettings.asset	dca288142fc043d5a749e9058fe625505008834f	188	UnitySerialized	0	0	0	0	UNINSPECTED	
+ProjectSettings/XRSettings.asset	482590c196f7a82116679f58176b9d1aff21d7f9	158	UnitySerialized	0	0	0	0	UNINSPECTED	

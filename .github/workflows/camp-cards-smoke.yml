@@ -1,0 +1,40 @@
+name: Camp cards gameplay rules
+
+on:
+  push:
+    branches:
+      - feature/server-prototype
+    paths:
+      - "Assets/Scripts/Gameplay/CardTable.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Gameplay/CampCardRules.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
+      - "Assets/Scripts/UI/PauseMenu.cs"
+      - "Assets/Scripts/Core/Soul/SinType.cs"
+      - "Tools/cards/**"
+      - ".github/workflows/camp-cards-smoke.yml"
+  pull_request:
+    paths:
+      - "Assets/Scripts/Gameplay/CardTable.cs"
+      - "Assets/Scripts/Core/SaveSystem.cs"
+      - "Assets/Scripts/Gameplay/CampCardRules.cs"
+      - "Assets/Scripts/UI/GearPanel.cs"
+      - "Assets/Scripts/UI/PauseMenu.cs"
+      - "Tools/cards/**"
+      - ".github/workflows/camp-cards-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  cards:
+    name: Production linked cards and scene wiring
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Compile and test real card engine
+        run: dotnet run -c Release --project Tools/cards/CardChecks.csproj
+      - name: Verify integration in gameplay source
+        run: python3 Tools/cards/check_card_integration.py

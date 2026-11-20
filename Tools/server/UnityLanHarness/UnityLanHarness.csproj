@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Compile the SAME Unity networking sources against a tiny API shim.
+         This catches C# and transport mistakes without needing Unity on CI. -->
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanMessage.cs" Link="LanMessage.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanLatencyFairness.cs" Link="LanLatencyFairness.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanRoomDirectory.cs" Link="LanRoomDirectory.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanServerBookmarks.cs" Link="LanServerBookmarks.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanWorldState.cs" Link="LanWorldState.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanWorldAutoVerifier.cs" Link="LanWorldAutoVerifier.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanGameOrderCodec.cs" Link="LanGameOrderCodec.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/MatchAuthority.cs" Link="MatchAuthority.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/NetworkActorIdentity.cs" Link="NetworkActorIdentity.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/ServerWorldProbe.cs" Link="ServerWorldProbe.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/ServerWarriorOrderBridge.cs" Link="ServerWarriorOrderBridge.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanWire.cs" Link="LanWire.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanRoomServer.cs" Link="LanRoomServer.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/LanRoomClient.cs" Link="LanRoomClient.cs" />
+    <Compile Include="../../../Assets/Scripts/Multiplayer/SinbinderLanBootstrap.cs" Link="SinbinderLanBootstrap.cs" />
+    <Compile Include="../../../Assets/Scripts/Core/MultiplayerTestMap.cs" Link="MultiplayerTestMap.cs" />
+    <Compile Include="../../../Assets/Scripts/Gameplay/AltarVisualEnhancer.cs" Link="AltarVisualEnhancer.cs" />
+  </ItemGroup>
+</Project>

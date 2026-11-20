@@ -46,8 +46,45 @@ namespace Sinbinder.Core
         /// срабатывают. Поэтому об отсутствии базы говорим вслух,
         /// один раз за запуск.
         /// </summary>
+        // Offscreen battles must not read the location of a player's
+        // *currently open* scene. The current expedition catalog has no
+        // authored location tags, so an offscreen encounter conservatively
+        // has none. This never changes CurrentLocation for actual scene actors.
+        private static System.Collections.Generic.HashSet<string> _offscreenTags;
+
+        private sealed class OffscreenLocationScope : System.IDisposable
+        {
+            private readonly System.Collections.Generic.HashSet<string> _previous;
+            private bool _disposed;
+
+            public OffscreenLocationScope(string[] knownTags)
+            {
+                _previous=_offscreenTags;
+                _offscreenTags=new System.Collections.Generic.HashSet<string>(
+                    knownTags ?? System.Array.Empty<string>(),
+                    System.StringComparer.Ordinal);
+            }
+
+            public void Dispose()
+            {
+                if(_disposed) return;
+                _disposed=true;
+                _offscreenTags=_previous;
+            }
+        }
+
+        /// <summary>
+        /// During an auto-expedition use ONLY explicitly authored site tags.
+        /// If none exist, perks requiring a location remain inactive rather
+        /// than borrowing a Crypt/Ruins tag from the player's open scene.
+        /// </summary>
+        public static System.IDisposable ForOffscreenSite(params string[] knownTags)
+            => new OffscreenLocationScope(knownTags);
+
         public static bool HasTag(string tag)
         {
+            if(_offscreenTags!=null)
+                return !string.IsNullOrEmpty(tag) && _offscreenTags.Contains(tag);
             if (CurrentLocation == null)
             {
                 if (!_warnedNoLocation)

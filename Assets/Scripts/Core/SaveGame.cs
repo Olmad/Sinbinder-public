@@ -47,6 +47,8 @@ namespace Sinbinder.Core
         public int Gender;
         public float Intensity;
         public float Loyalty;
+        // New saves preserve a living warrior's injuries. Legacy zero = full.
+        public float HealthFraction;
         public int UnpaidMissions;
         public float Leadership;
         public bool IsCommander;
@@ -111,6 +113,21 @@ namespace Sinbinder.Core
     /// файле сохранения, который записался без единой ошибки.
     /// </summary>
     [System.Serializable]
+    public class SavedFallenBag
+    {
+        public string Scene;
+        public UnityEngine.Vector3 Position;
+        public string Owner;
+        public string OwnerId;
+        public List<Inventory.InventoryItem> Items = new List<Inventory.InventoryItem>();
+        public Inventory.InventoryItem Memento;
+        public int Gold;
+        public bool Decided;
+        public bool Away;
+        public float RemainingAway = 60f;
+    }
+
+    [System.Serializable]
     public class SaveGame
     {
         /// <summary>
@@ -134,6 +151,29 @@ namespace Sinbinder.Core
         /// загрузка из другой сцены теряла всё, что Греховод нёс.
         /// </summary>
         public List<Inventory.InventoryItem> Bag = new List<Inventory.InventoryItem>();
+
+        /// <summary>
+        /// Physical uncollected corpse bags on each map, including contents
+        /// and time remaining if the player is currently on another map.
+        /// Old saves without this field are treated as having no bags.
+        /// </summary>
+        public List<SavedFallenBag> FallenBags = new List<SavedFallenBag>();
+
+        // Progress on two personally visitable expedition maps.
+        // Absent on old save files: these locations start unvisited.
+        public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
+            new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+        // Delayed automatic operations, including assigned warriors and travel stage.
+        public List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions =
+            new List<Sinbinder.Crypt.SavedAutoExpedition>();
+        // Last known expedition event, including events while player was away
+        // from the crypt. Absent in earlier saves = no report.
+        public string AutoExpeditionReport;
+        // Actual expedition experiences, keyed by persistent roster identity.
+        public List<Sinbinder.Gameplay.ExpeditionMemoryEntry> ExpeditionMemories =
+            new List<Sinbinder.Gameplay.ExpeditionMemoryEntry>();
+        public List<Sinbinder.Gameplay.ExpeditionReplayData> ExpeditionReplays =
+            new List<Sinbinder.Gameplay.ExpeditionReplayData>();
 
         /// <summary>
         /// Открыт ли сундук Марги и что в нём осталось. Без этого загрузка
