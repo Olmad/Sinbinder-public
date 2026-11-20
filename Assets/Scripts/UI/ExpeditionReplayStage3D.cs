@@ -257,7 +257,26 @@ namespace Sinbinder.UI
                     f.Body.localScale = new Vector3(0.85f, 1f, 0.85f);
                 }
 
-            if (frame.Kind != ExpeditionReplayKind.CombatAction) return;
+            if (frame.Kind != ExpeditionReplayKind.CombatAction)
+            {
+                // Departure, march, commander choices, loot and return are
+                // shown as illustrative travel beats. The source stores
+                // no physical path, so these are NOT historical coordinates.
+                float travel = frame.Kind switch
+                {
+                    ExpeditionReplayKind.Departure => -3f + fraction * 2f,
+                    ExpeditionReplayKind.March => -1f + fraction * 4f,
+                    ExpeditionReplayKind.CommandDecision => 2f,
+                    ExpeditionReplayKind.Loot => 2.6f,
+                    ExpeditionReplayKind.Return => 2f - fraction * 5f,
+                    _ => 0f
+                };
+                foreach (var figure in _all)
+                    if (figure.Friendly && !figure.Fallen && !figure.Escaped)
+                        figure.Root.transform.localPosition = figure.Home +
+                            new Vector3(0f, 0f, travel);
+                return;
+            }
             var actor = Find(frame.ActorId, frame.Actor);
             var target = Find(frame.Target, frame.TargetName);
             if (actor == null || actor.Escaped || actor.Fallen) return;
