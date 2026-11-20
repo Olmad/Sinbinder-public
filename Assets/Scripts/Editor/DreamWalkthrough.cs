@@ -460,6 +460,7 @@ namespace Sinbinder.EditorTools
                         if (away.magnitude > 5f) Warp(dream.Hero, zp + away.normalized * 4f);
                         bool started = Whisper.TryAny();
                         Write($"  Z — шепнуть: {(started ? "начат" : "НЕКОМУ")}; {DreamTutorialDirector.Legs(dream.Zombie)}");
+                        if (!started) Write($"    почему: {Whisper.WhyNot(dream.Zombie)}; Греховод {SinbinderPlayer.Where}");
                     }
                     // Итог — когда строка допечатана (первый кадр 19.11 поймал одну букву).
                     var said = UI.Letterbox.Instance;

@@ -92,6 +92,29 @@ namespace Sinbinder.Gameplay
             return d.Hesitated || d.RefusedCommand;
         }
 
+        /// <summary>
+        /// Почему шепнуть нельзя — первое препятствие, в порядке <see cref="Can(Warrior, bool)"/>.
+        /// Пусто — можно. Для отчёта прогона: 20.11 шёпот раз «не нашёл кому», и причины в отчёте не было.
+        /// </summary>
+        public static string WhyNot(Warrior w)
+        {
+            if (w == null || w.IsDead) return "воина нет или он мёртв";
+            if (w is SinbinderPlayer || w.Team != Team.Player) return "не свой";
+            if (_busy) return "шёпот уже идёт";
+            if (!SinbinderPlayer.Exists || SinbinderPlayer.Instance.IsDead) return "Греховода нет";
+            float far = CampFocus.GroundDistance(SinbinderPlayer.Where, w.transform.position);
+            if (far > Reach) return $"далеко: {far:F1} м из {Reach:F0}";
+            if (Persuaded(w)) return "уже уговорён";
+            if (Last.TryGetValue(w, out var at) && Time.time - at < Again) return $"шептали {Time.time - at:F0} с назад";
+            var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
+            if (mind == null) return "нет ума AOS";
+            if (!w.HasCommand) return "приказа нет";
+            if (!mind.HasCurrentCommandDecision)
+                return $"о нынешнем приказе ещё не решал (приказ №{w.CommandRevision}, решение о №{mind.LastDecisionCommandRevision})";
+            var d = mind.LastDecisionDetail;
+            return d.Hesitated || d.RefusedCommand ? "" : $"не отказ и не колебание: {d.Action}";
+        }
+
         private static Whisper _one;
 
         /// <summary>Чем кончился последний шёпот — словом (прогон демо пишет его в отчёт). Сброс — null.</summary>
