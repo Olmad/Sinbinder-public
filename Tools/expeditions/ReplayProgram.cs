@@ -141,12 +141,20 @@ static class Program
         observed.Append(ExpeditionReplayKind.Departure,"Командир","Вышел");
         observed.Append(ExpeditionReplayKind.CombatAction,"Командир","Действительно ударил",
             target:"runtime-guid",damage:7f,round:4,targetName:"Чужой 2",
-            hasOutcome:true,resolved:true,targetKilled:true,targetHealthAfter:0f);
+            hasOutcome:true,resolved:true,targetKilled:true,targetHealthAfter:0f,
+            actorId:"recorded-actor-92",actionCode:"Attack");
         observed.Append(ExpeditionReplayKind.Return,"Командир","Вернулся");
         ExpeditionReplayArchive.Add(observed);
         var observedCopy=ExpeditionReplayArchive.Snapshot().Last().Frames[1];
         Test(observedCopy.TargetName=="Чужой 2" && observedCopy.Target=="runtime-guid",
             "real target label and original runtime ID both retained");
+        Test(observedCopy.ActorId=="recorded-actor-92" && observedCopy.ActionCode=="Attack",
+            "real actor identity and AOS action code survive independent replay archive");
+        observed.Frames[1].ActorId="TAMPERED ACTOR";
+        observed.Frames[1].ActionCode="FakeAction";
+        Test(ExpeditionReplayArchive.Snapshot().Last().Frames[1].ActorId=="recorded-actor-92" &&
+             ExpeditionReplayArchive.Snapshot().Last().Frames[1].ActionCode=="Attack",
+            "live caller cannot overwrite the saved historical AOS action");
         Test(observedCopy.HasOutcome && observedCopy.Resolved && observedCopy.TargetKilled,
             "verified hit, effective result and fatality survive archive copy");
         Test(observedCopy.Round==4 && observedCopy.Damage==7f &&
@@ -171,6 +179,24 @@ static class Program
         var legacy=ExpeditionReplayArchive.Snapshot().Last().Frames[0];
         Test(!legacy.HasOutcome && !legacy.Resolved && !legacy.TargetKilled,
             "route and old-save frames are not mislabeled as failed combat");
+        Test(string.IsNullOrEmpty(legacy.ActorId) && string.IsNullOrEmpty(legacy.ActionCode),
+            "legacy replay never invents actor IDs or AOS actions");
+
+        // The 3D visualization must be based on the recorded event stream
+        // and must not call the AOS resolver or award expedition loot again.
+        var viewSource=System.IO.File.ReadAllText("Assets/Scripts/UI/ExpeditionReplayViewer.cs");
+        var stageSource=System.IO.File.ReadAllText("Assets/Scripts/UI/ExpeditionReplayStage3D.cs");
+        var boardSource=System.IO.File.ReadAllText("Assets/Scripts/Crypt/MissionBoard.cs");
+        Test(boardSource.Contains("ev.ActorId,ev.Action.ToString()") &&
+             boardSource.Contains("frame.ActorId,frame.ActionCode") &&
+             stageSource.Contains("frame.ActionCode") && stageSource.Contains("frame.TargetKilled"),
+            "actual AOS action, identity, target and death reach the 3D recorded-event stage");
+        Test(viewSource.Contains("new ExpeditionReplayStage3D(data)") &&
+             viewSource.Contains("_stage?.Dispose()") &&
+             stageSource.Contains("for (int i = 0; i < index; i++) ApplyPast(_data.Frames[i]);") &&
+             !stageSource.Contains("AutoBattleResolver.Resolve(") &&
+             !stageSource.Contains("CombatDecisionContext.Create("),
+            "3D replay reconstructs chronology without rerolling AOS or touching the live battle");
         Console.WriteLine($"PASS: {tests} full expedition trace and archive tests");
     }
 }
