@@ -14706,3 +14706,27 @@ msgstr "completed"
 #: UI/ExpeditionReplayViewer.cs
 msgid "без результата"
 msgstr "no confirmed outcome"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие действительно исполнено."
+msgstr "Outcome: action was confirmed as executed."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие не дало подтверждённого эффекта."
+msgstr "Outcome: no confirmed effect from the action."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Цель: {0}."
+msgstr "Target: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальная потеря HP: {0}."
+msgstr "Actual HP lost: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальное лечение: {0}."
+msgstr "Actual healing: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Гибель цели подтверждена."
+msgstr "Target death confirmed."
