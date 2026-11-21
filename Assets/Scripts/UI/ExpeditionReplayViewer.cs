@@ -183,16 +183,16 @@ namespace Sinbinder.UI
             if(frame==null || frame.Kind!=ExpeditionReplayKind.CombatAction ||
                !frame.HasOutcome) return "";
             string result=frame.Resolved
-                ? "\nИтог: действие действительно исполнено."
-                : "\nИтог: действие не дало подтверждённого эффекта.";
+                ? "\n"+Loc.T("Итог: действие действительно исполнено.")
+                : "\n"+Loc.T("Итог: действие не дало подтверждённого эффекта.");
             if(!string.IsNullOrEmpty(frame.TargetName))
-                result+="\nЦель: "+frame.TargetName+".";
+                result+="\n"+Loc.F("Цель: {0}.",frame.TargetName);
             if(frame.Damage>0f)
-                result+="\nРеальная потеря HP: "+frame.Damage.ToString("0.#")+".";
+                result+="\n"+Loc.F("Реальная потеря HP: {0}.",frame.Damage.ToString("0.#"));
             if(frame.Healing>0f)
-                result+="\nРеальное лечение: "+frame.Healing.ToString("0.#")+".";
+                result+="\n"+Loc.F("Реальное лечение: {0}.",frame.Healing.ToString("0.#"));
             if(frame.TargetKilled)
-                result+="\nГибель цели подтверждена.";
+                result+="\n"+Loc.T("Гибель цели подтверждена.");
             return result;
         }
 
