@@ -75,3 +75,13 @@
 - QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=3e3f575f0192d04903b6ef8b6905557633796c94; lines=OnGUI event list string line; context=nonempty replay with Round>0 and HasOutcome; negative=EN locale previously displayed untranslated Russian labels; verified=3; total=3; RU_EN=en.txt blob 6d06d895213146d068b20e29a0f246a9eed10838; outcome=FIX_PENDING_QA5.
 - Source-level string checks: three unique replacements, three new EN keys, existing round/outcome guards retained. **Compiled C# test NOT RUN; Unity runtime UNKNOWN; independent QA #5 PENDING.** Whole viewer NOT PASS.
 - Commits: [C# 664549d](https://github.com/Olmad/Sinbinder-public/commit/664549d11f31f6689e542b676f99744f50b018f7); [EN eb67ff8](https://github.com/Olmad/Sinbinder-public/commit/eb67ff8e32ef8c1b2b7d0a6eaf79fe8e023f6654).
+
+
+## 2026-11-21 — ExpeditionReplayViewer: фактические результаты боевых действий
+
+- Основание: подтверждённая аудитором №2 неполная EN локализация реплея; source-level контрпример: EN locale, CombatAction frame with HasOutcome=true showed Russian outcome/target/damage/healing/kill lines from ObservedEffect().
+- Условия: ObservedEffect returns empty for null, non-CombatAction or !HasOutcome; Resolved selects one of two result messages; TargetName nonempty, Damage>0, Healing>0, TargetKilled gate optional lines. Guards preserved; no fabricated effects introduced.
+- Минимальный патч: six strings moved to Loc.T/Loc.F; EN six matching msgids and placeholders. Old source blob 3e3f575f0192d04903b6ef8b6905557633796c94, new source blob c25e3aeb703e8a62f0aa718d829096adb62164df; old EN blob 6d06d895213146d068b20e29a0f246a9eed10838, new EN blob 2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df.
+- QA2: source=Assets/Scripts/UI/ExpeditionReplayViewer.cs; blob=c25e3aeb703e8a62f0aa718d829096adb62164df; lines=ObservedEffect; context=CombatAction and HasOutcome, optional actual outcome facts; negative=English locale previously displayed hardcoded Russian result lines; verified=6; total=6; RU_EN=en.txt blob 2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df all six keys present; outcome=FIX_PENDING_QA5.
+- Source-level checks: 6/6 caller+EN existence assertions on post-commit source PASS; compiled C# test NOT RUN, Unity runtime UNKNOWN, independent QA #5 PENDING. This is not full file PASS. Stage 1 open.
+- Commits: [C# 935bece](https://github.com/Olmad/Sinbinder-public/commit/935bece993149c16de0542dd9d7efe654db1f0e5); [EN 8629263](https://github.com/Olmad/Sinbinder-public/commit/86292638c47f8db0091d28c2be3b334a002f6d57).
