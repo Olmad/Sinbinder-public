@@ -183,3 +183,15 @@ QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Dialogue/Vi
 Проверены текущие source blobs: VillageLines.cs 23dadf30fbdd93cf6b1070dec9a54612de7f4cba; VillageDialogueRules.cs 4a690bc08d783562c89f20aa8790c4b3548a48bd. Путь вызова: Exchange(a,b) -> LordTalk(a,b) -> Allegiance.Of(a.Id,a.Loyalty,Lords.Player) -> LordAnswer(b.Soul.Sin,tone). Для tone=Distrusted и b.Soul.Sin=Lust выбирается «Не нравится мне, как он смотрит на людей.». Это высказывание от лица b предполагает наблюдение b за тем, как Греховод смотрит на людей; в рассмотренной цепочке нет проверки встречи, видимости, памяти либо наблюдения b. Контрпример входа: a относится к Греховоду отрицательно; b имеет грех Lust, но никогда не встречал Греховода и не наблюдал его взгляд. Ответ всё равно выбирается из таблицы. Отрицательное отношение a не доказывает наблюдения b. **Вердикт UNKNOWN_CONTEXT / FACT_SOURCE_UNPROVEN**, не semantic PASS; требуется проверить более широкую модель памяти/свидетельств, RU/EN и реальную достижимость контрпримера в Unity до присвоения severity. Не подменять отсутствие локальной проверки доказательством невозможности наблюдения во всей игре.
 
 QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=23dadf30fbdd93cf6b1070dec9a54612de7f4cba,4a690bc08d783562c89f20aa8790c4b3548a48bd; context=LordTalk tone(a)=Distrusted, responder b.Sin=Lust, LordReplies[1][4]; negative=b has no recorded observation of Lord, phrase presupposes observed gaze; verified=0; total=1; RU_EN=UNKNOWN; runtime=UNKNOWN; outcome=UNKNOWN_CONTEXT. Исправления №4 не принимались. Этап 1 NO-GO.
+
+
+## QA №5, 21.11.2026: независимая повторная сверка четырёх EN-ключей
+
+Current `Assets/Resources/Lang/en.txt` blob `2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df` (GitHub fetch). `VillageLines.cs` blob `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`; `VillageDialogueRules.cs` blob `4a690bc08d783562c89f20aa8790c4b3548a48bd`.
+
+- «Видал, что у соседа новое?» → empty `msgstr`: FAIL_EN_COVERAGE_SOURCE.
+- «Видала, что у соседа новое?» → `Have you seen what the neighbor got?`: EN present; gender selector `b.Gender` in speaker `a` line remains wrong.
+- «К нему идут охотнее, чем ко мне.» → `They go to him more readily than to me.`: unsupported visit comparison persists in EN.
+- «У меня горбушка осталась. Пополам?» → `I've got a heel of bread left. Half each?`: unsupported possession of bread persists in EN.
+
+QA2: four exact entries checked against current EN blob; source-level only; Unity/.NET NOT_RUN; patch №4 not accepted; full changed-source delta UNKNOWN; Stage 1 NO-GO. Historical TSV unchanged.
