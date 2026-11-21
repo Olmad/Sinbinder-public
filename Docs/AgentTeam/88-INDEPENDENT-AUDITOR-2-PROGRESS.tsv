@@ -191,7 +191,7 @@ Assets/Scripts/Crypt/CryptUpgrades.cs	7c401ddbca5fb23a4fb21a1947e03c3f9dadff58	8
 Assets/Scripts/Crypt/CryptWorkshop.cs	d4b3bbf82cd8e2f221807ff364d7e089973b52c7	5817	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Crypt/ExpeditionWorldClock.cs	04cb728425207e6bdbeb5faa69223edc210e5446	3498	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Crypt/JunctionCatalog.cs	ec9eb1a41705115ec80a5fb5fb8a83f6b7fd132e	6356	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Crypt/MissionBoard.cs	3ec9f6b0dd132376e12f92e94fd784b6434b4460	69966	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Crypt/MissionBoard.cs	3ec9f6b0dd132376e12f92e94fd784b6434b4460	69966	CSharp	0	0	0	0	UNKNOWN_CONTEXT	QA2 2026-11-21 source-level partial producer trace; MissionBoard.cs blob 3ec9f6b0dd132376e12f92e94fd784b6434b4460 lines 437-450: noFight bypasses combat for LetThemPass/TakeGoodsSparePeople; lines 536-548: genuine BattleRecord.Events become CombatAction frames with source outcome fields; lines 1018-1044: BuildReplay adds departure/march and conditional decision, trace, no-combat explanation; lines 665-675: recalled party legitimately gets Departure/March/CommandDecision/Return without CombatAction. Thus no combat frames alone is NOT evidence of missing battle. HasCompleteRoute still does not validate arbitrary restored event consistency. Other branches and RU/EN not exhaustively checked; verified=0; UNKNOWN_CONTEXT; runtime UNKNOWN.
 Assets/Scripts/Crypt/MissionCatalog.cs	f4248913dcbb00a68bfc6f6077fcdd2b60ea0b42	11956	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Crypt/Retelling.cs	7b0d28f31550448df06db4da9d3b2bea9823fd5b	8001	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Crypt/ShelfPlace.cs	04f84f751945e7aa503d794bf31e5b95413414e7	2811	CSharp	0	0	0	0	UNINSPECTED	
