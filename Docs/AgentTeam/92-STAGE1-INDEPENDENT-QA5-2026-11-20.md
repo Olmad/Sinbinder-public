@@ -253,3 +253,12 @@ QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Resources/Lang/en.t
 QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=SinReplies Greed row; caller=VillageLines.Exchange blob 23dadf30fbdd93cf6b1070dec9a54612de7f4cba; context=topic Sin, speaker Greed, responder Wrath or Gluttony, no inventory/equipment predicate; negative=no axe and no bread yet respective possession claims; verified=0; total=2; RU_EN=UNKNOWN (EN catalog blob 2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df); outcome=FAIL_SOURCE_FACT_PROVENANCE; runtime=UNKNOWN.
 
 **Stage 1: NO-GO.** Исторический TSV №5 не изменён; регрессии 13 голосов, суда, Whisper, Tab/V, экспедиций и сохранений не проверялись в Unity.
+
+
+## QA №5: независимая EN-сверка Greed/Wrath и Greed/Gluttony, 22.11.2026
+
+Контроль GitHub compare: base `19b9f6210462f6b93cef7a42e0233ce9c703633b` → `feature/server-prototype`: ahead=47, behind=0; changed files: только реестры аудиторов №1–3 и этот отчёт, production delta в данном диапазоне отсутствует. Сверены актуальные source blobs: `VillageDialogueRules.cs=4a690bc08d783562c89f20aa8790c4b3548a48bd`, `VillageLines.cs=23dadf30fbdd93cf6b1070dec9a54612de7f4cba`, `en.txt=2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df`.
+
+Уточнение прежнего QA2 с RU_EN=UNKNOWN: `SinReplies[Greed][Wrath]` RU «Припрятал топор. Хочешь проверить?» ↔ EN `I've hidden an axe. Want to check?`; `SinReplies[Greed][Gluttony]` RU «Горбушка хлеба. До вечера не доживёт.» ↔ EN `A heel of bread. It won't last until evening.`. Обе EN-пары непустые, смысл утверждений о сокрытом топоре и наличии хлеба сохранён. Значит, **RU_EN=PAIR_MATCHED_SOURCE** для этих двух пар, но **FACT_SOURCE=FAIL** остаётся: `Exchange` выбирает ответы по грехам без проверки инвентаря/факта сокрытия. Никакого semantic PASS сценария не присваивается.
+
+QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Dialogue/VillageDialogueRules.cs + Assets/Resources/Lang/en.txt; blobs=23dadf30fbdd93cf6b1070dec9a54612de7f4cba,4a690bc08d783562c89f20aa8790c4b3548a48bd,2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df; caller=Exchange -> SinAnswer; context=topic Sin, a.Sin=Greed, b.Sin=Wrath/Gluttony, speaker not Mute; negative=no axe/no bread; verified=0; RU_EN=PAIR_MATCHED_SOURCE; FACT_SOURCE=FAIL; runtime=UNKNOWN; patch4_acceptance=NO; stage1=NO-GO. Исторический TSV №5 не изменён. Unity/.NET NOT_RUN.
