@@ -195,3 +195,14 @@ Current `Assets/Resources/Lang/en.txt` blob `2d7a907e150a0efaebc20ecc6b3c2b16cb4
 - «У меня горбушка осталась. Пополам?» → `I've got a heel of bread left. Half each?`: unsupported possession of bread persists in EN.
 
 QA2: four exact entries checked against current EN blob; source-level only; Unity/.NET NOT_RUN; patch №4 not accepted; full changed-source delta UNKNOWN; Stage 1 NO-GO. Historical TSV unchanged.
+
+
+## QA №5, 22.11.2026: актуализация evidence без ложного PASS
+
+Независимая сверка `19b9f6210462f6b93cef7a42e0233ce9c703633b...feature/server-prototype`: ahead=31, behind=0; GitHub compare перечисляет только `88-INDEPENDENT-AUDITOR-1-PROGRESS.tsv` (4 изменения), №2 (24), №3 (22). Это сравнение не доказывает отсутствие исправлений до base SHA. Production patch №4 в указанном delta не выявлен.
+
+Непосредственно перечитаны текущие source blobs: `VillageLines.cs=23dadf30fbdd93cf6b1070dec9a54612de7f4cba` (Exchange, строки 18–35); `VillageDialogueRules.cs=4a690bc08d783562c89f20aa8790c4b3548a48bd` (Gluttony/Gluttony, строка 99); `BattleNarrator.cs=974273d50701ef0676fb8390cadb72b4c83ff5e8` (Build); `en.txt=2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df`. Проверены точные RU/EN пары: `Видал, что у соседа новое?` → пустой `msgstr` (en.txt 6143–6144), `У меня горбушка осталась. Пополам?` → `I've got a heel of bread left. Half each?` (6019–6020), `Записей о ходе боя нет.` → `No battle events were recorded.` (11–12). Это повторное подтверждение ранее зарегистрированных проблем, **не новые дефекты и не дополнительные semantic PASS**.
+
+Контрпример Gluttony/Gluttony сохраняется: Exchange выбирает SinAnswer по грехам без проверки хлеба в инвентаре, а реплика утверждает владение хлебом. EN сохраняет ту же неподтверждённую фактичность. BattleNarrator.Build для пустого/whitespace журнала не выдумывает послушание, но production caller и Unity не проверены. `verified=0`; RU_EN=FAIL для пустого перевода и FACT_SOURCE_UNPROVEN для хлеба; runtime=UNKNOWN. Патчи №4 не приняты. Исторический TSV №5 не переписывался. **Stage 1 NO-GO**, авторское разрешение на UX/механики отсутствует.
+
+QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Scripts/Dialogue/VillageDialogueRules.cs + Assets/Resources/Lang/en.txt + Assets/Scripts/AOS Engine/BattleNarrator.cs; blobs=23dadf30fbdd93cf6b1070dec9a54612de7f4cba,4a690bc08d783562c89f20aa8790c4b3548a48bd,2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df,974273d50701ef0676fb8390cadb72b4c83ff5e8; context=Exchange topic Sin, Gluttony responder; negative=no bread yet asserts possession, and untranslated male Envy opening; verified=0; runtime=UNKNOWN; outcome=FAIL_SOURCE_LEVEL/NO_GO.
