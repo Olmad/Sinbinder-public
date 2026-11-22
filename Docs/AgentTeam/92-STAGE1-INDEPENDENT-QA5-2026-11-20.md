@@ -237,3 +237,19 @@ QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Resources/Lang/en.t
 QA2: source=Assets/Scripts/Dialogue/VillageLines.cs + Assets/Resources/Lang/en.txt; blobs=23dadf30fbdd93cf6b1070dec9a54612de7f4cba,2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df; lines=VillageLines.SinOpening, en.txt 6120-6160; context=Exchange topic Sin or Lord fallback, a.Soul.Sin, Envy b.Gender; negative=6 msgstr empty; verified=0; total=8; RU_EN=FAIL six keys, two nonempty but full semantic context UNKNOWN; outcome=FAIL_EN_COVERAGE_SOURCE; runtime=UNKNOWN.
 
 №4: требуется минимальное заполнение шести EN-ключей и устранение недоказанных фактов Envy с повторной независимой проверкой. До патча QA_ACCEPTED=NO. Полный этап 1 остаётся NO-GO. Исторический TSV №5 не менялся.
+
+
+## QA №5: новый независимый контрпример Greed/SinReplies, 22.11.2026
+
+**Область:** только два ответа на вопрос о припрятанном, не полный проход 7×7. Повторно получены production blobs: `VillageLines.cs` `23dadf30fbdd93cf6b1070dec9a54612de7f4cba`; `VillageDialogueRules.cs` `4a690bc08d783562c89f20aa8790c4b3548a48bd`. EN-каталог `en.txt` на HEAD имеет blob `2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df`, но точные EN-пары этих двух ответов в этом проходе не извлечены: RU_EN=UNKNOWN.
+
+**Вход:** `VillageLines.Exchange(a,b)`; обе `Soul != null`, оба не Mute; `TopicIndex(k)==Sin` (либо Lord при `Lords.Player==null`); `a.Soul.Sin=Greed`. Вступление: «Сколько у тебя припрятано? Только честно.»; `SinAnswer` выбирает ответ исключительно по `a.Soul.Sin` и `b.Soul.Sin`, не проверяя инвентарь или экипировку `b`.
+
+1. `b.Soul.Sin=Wrath`: «Припрятал топор. Хочешь проверить?» утверждает наличие спрятанного топора. Контрпример: у отвечающего нет топора и отсутствует факт его сокрытия, но текст выбирается тем же индексом.
+2. `b.Soul.Sin=Gluttony`: «Горбушка хлеба. До вечера не доживёт.» в контексте вопроса о запасах утверждает наличие хлеба. Контрпример: у отвечающего нет хлеба, но текст неизменен.
+
+**Вердикт:** два новых `FAIL_SOURCE_FACT_PROVENANCE` в конкретных ветвях, без доказательства runtime-показа. Это отдельные случаи от ранее выявленного Gluttony/Gluttony. Минимальная правка №4: заменить безусловное утверждение о принадлежащих предметах на условное/гипотетическое высказывание, не меняя механику, затем сверить EN и повторно принять контрпримеры. Не считать утверждения о вещах фактом только потому, что они произнесены NPC. Исполняемые тесты и Unity не запускались.
+
+QA2: source=Assets/Scripts/Dialogue/VillageDialogueRules.cs; blob=4a690bc08d783562c89f20aa8790c4b3548a48bd; lines=SinReplies Greed row; caller=VillageLines.Exchange blob 23dadf30fbdd93cf6b1070dec9a54612de7f4cba; context=topic Sin, speaker Greed, responder Wrath or Gluttony, no inventory/equipment predicate; negative=no axe and no bread yet respective possession claims; verified=0; total=2; RU_EN=UNKNOWN (EN catalog blob 2d7a907e150a0efaebc20ecc6b3c2b16cb4fa6df); outcome=FAIL_SOURCE_FACT_PROVENANCE; runtime=UNKNOWN.
+
+**Stage 1: NO-GO.** Исторический TSV №5 не изменён; регрессии 13 голосов, суда, Whisper, Tab/V, экспедиций и сохранений не проверялись в Unity.
