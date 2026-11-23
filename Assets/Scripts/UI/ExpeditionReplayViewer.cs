@@ -198,13 +198,13 @@ namespace Sinbinder.UI
 
         private static string StageName(ExpeditionReplayKind stage) => stage switch
         {
-            ExpeditionReplayKind.Departure => "Выступление",
-            ExpeditionReplayKind.March => "Маршрут",
-            ExpeditionReplayKind.CommandDecision => "Решение командира",
-            ExpeditionReplayKind.CombatAction => "Боевой эпизод",
-            ExpeditionReplayKind.Loot => "Добыча",
-            ExpeditionReplayKind.Return => "Возвращение",
-            _ => "Событие"
+            ExpeditionReplayKind.Departure => Loc.T("Выступление"),
+            ExpeditionReplayKind.March => Loc.T("Маршрут"),
+            ExpeditionReplayKind.CommandDecision => Loc.T("Решение командира"),
+            ExpeditionReplayKind.CombatAction => Loc.T("Боевой эпизод"),
+            ExpeditionReplayKind.Loot => Loc.T("Добыча"),
+            ExpeditionReplayKind.Return => Loc.T("Возвращение"),
+            _ => Loc.T("Событие")
         };
     }
 }
